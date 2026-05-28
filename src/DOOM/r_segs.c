@@ -384,7 +384,9 @@ void R_StoreWallRange(int start, int stop)
 
     // calculate rw_distance for scale calculation
     rw_normalangle = curline->angle + ANG90;
-    offsetangle = (angle_t)doom_abs((int)rw_normalangle - (int)rw_angle1);
+    offsetangle = rw_normalangle - rw_angle1;
+    if (offsetangle > ANG180)
+        offsetangle = -offsetangle;   // offsetangle = abs(rw_normalangle - rw_angle1)
 
     if (offsetangle > ANG90)
         offsetangle = ANG90;
