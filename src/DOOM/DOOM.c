@@ -572,7 +572,7 @@ void doom_init(int argc, char** argv, int flags)
 }
 
 
-void doom_update()
+void doom_update(void)
 {
     int now = I_GetTime();
     int delta_time = now - last_update_time;
@@ -589,7 +589,7 @@ void doom_update()
 }
 
 
-void doom_force_update()
+void doom_force_update(void)
 {
     if (is_wiping_screen)
         D_UpdateWipe();
@@ -667,13 +667,13 @@ const unsigned char* doom_get_framebuffer(int channels)
 }
 
 
-unsigned long doom_tick_midi()
+unsigned long doom_tick_midi(void)
 {
     return I_TickSong();
 }
 
 
-short* doom_get_sound_buffer()
+short* doom_get_sound_buffer(void)
 {
     I_UpdateSound();
     return mixbuffer;
