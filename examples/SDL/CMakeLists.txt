@@ -28,8 +28,12 @@ endif()
 # SDL
 add_definitions(-DSDL_MAIN_HANDLED)
 set(HAVE_LIBC ON)
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
+set(SDL_TEST OFF CACHE BOOL "" FORCE)
+set(HAVE_LIBC ON)
 add_subdirectory(../../thirdparty/SDL/ ./thirdparty/SDL/)
-list(APPEND dpsdl_libs SDL2-static)
+list(APPEND dpsdl_libs SDL3-static)
 list(APPEND dpsdl_includes PUBLIC ../../thirdparty/SDL/include/)
 
 # Source groups

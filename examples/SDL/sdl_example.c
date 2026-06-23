@@ -6,7 +6,7 @@
 #include <AudioToolbox/AudioToolbox.h>
 #include <CoreFoundation/CoreFoundation.h>
 #endif
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -34,6 +34,8 @@
 #define FULL_WIDTH (WIDTH * SCALE)
 #define FULL_HEIGHT (int)(HEIGHT * 1.2 * SCALE) // 1.2x higher than DOOM's height. Original game was designed stretched
 
+SDL_AudioStream* audio_stream = NULL;
+SDL_Mutex* audio_lock = NULL;
 
 doom_key_t sdl_scancode_to_doom_key(SDL_Scancode scancode)
 {
@@ -131,13 +133,18 @@ doom_button_t sdl_button_to_doom_button(Uint8 sdl_button)
 }
 
 
-void audio_callback(void* userdata, Uint8* stream, int len)
+void audio_callback(void *userdata, SDL_AudioStream *stream, int additional_amount, int total_amount)
 {
-    SDL_LockAudio();
+    SDL_LockMutex(audio_lock);
     int16_t* buffer = doom_get_sound_buffer();
-    SDL_UnlockAudio();
-
-    memcpy(stream, buffer, len);
+    
+    // PureDOOM populates its internal buffer during doom_update().
+    // We just feed the required number of bytes into the stream.
+    if (buffer)
+    {
+        SDL_PutAudioStreamData(stream, buffer, additional_amount);
+    }
+    SDL_UnlockMutex(audio_lock);
 }
 
 
@@ -169,13 +176,24 @@ void send_midi_msg(uint32_t midi_msg) {}
 
 
 SDL_TimerID midi_timer = 0;
-Uint32 tick_midi(Uint32 interval, void *param)
+Uint32 SDLCALL tick_midi(void *param, SDL_TimerID timerID, Uint32 interval)
 {
     uint32_t midi_msg;
 
-    SDL_LockAudio();
-    while ((midi_msg = doom_tick_midi()) != 0) send_midi_msg(midi_msg);
-    SDL_UnlockAudio();
+    if (audio_lock)
+    {
+        SDL_LockMutex(audio_lock);
+    }
+    
+    while ((midi_msg = doom_tick_midi()) != 0) 
+    {
+        send_midi_msg(midi_msg);
+    }
+    
+    if (audio_lock)
+    {
+        SDL_UnlockMutex(audio_lock);
+    }
 
 #if defined(__APPLE__)
     return 1000 / DOOM_MIDI_RATE - 1; // Weirdly, on Apple music is too slow
@@ -188,33 +206,36 @@ Uint32 tick_midi(Uint32 interval, void *param)
 int main(int argc, char** argv)
 {
     // Init SDL
-    SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_TIMER);
+    SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO);
     SDL_Window* window = SDL_CreateWindow("Pure DOOM - SDL Example", 
-                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
                                           FULL_WIDTH, FULL_HEIGHT, 
                                           SDL_WINDOW_RESIZABLE);
     
     // SDL Renderer
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
     SDL_Texture* render_target = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
     // SDL Audio thread
+    audio_lock = SDL_CreateMutex();
+    if (!audio_lock)
+    {
+        printf("Failed to create audio mutex\n");
+        return 1;
+    }
     SDL_AudioSpec audio_spec;
     memset(&audio_spec, 0, sizeof(audio_spec));
     audio_spec.freq = DOOM_SAMPLERATE;
-    audio_spec.format = AUDIO_S16;
+    audio_spec.format = SDL_AUDIO_S16;
     audio_spec.channels = 2;
-    audio_spec.samples = 512;
-    audio_spec.callback = audio_callback;
-
-    if (SDL_OpenAudio(&audio_spec, NULL) < 0)
+    audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &audio_spec, audio_callback, NULL);
+    if (!audio_stream)
     {
-        printf("Failed to SDL_OpenAudio\n");
+        printf("Failed to SDL_OpenAudioDeviceStream\n");
         return 1;
     }
 
     // Capture mouse
-    SDL_SetRelativeMouseMode(SDL_TRUE);
+    SDL_SetWindowRelativeMouseMode(window, true);
 
     //-----------------------------------------------------------------------
     // Setup DOOM
@@ -254,7 +275,7 @@ int main(int argc, char** argv)
 	AUGraphConnectNodeInput(graph,dlsNode,0,mixerNode,0);
 	AUGraphUpdate(graph,NULL);
 #endif
-    midi_timer = SDL_AddTimer(0, tick_midi, 0);
+    midi_timer = SDL_AddTimer(0, tick_midi, NULL);
 
     // Initialize doom
     doom_init(argc, argv, DOOM_FLAG_MENU_DARKEN_BG);
@@ -262,7 +283,7 @@ int main(int argc, char** argv)
     //-----------------------------------------------------------------------
     
     // Main loop
-    SDL_PauseAudio(0); 
+    SDL_ResumeAudioStreamDevice(audio_stream);
     int done = 0;
     int active_mouse = 1; // Dev allow us to take mouse out of window
     while (!done)
@@ -274,35 +295,35 @@ int main(int argc, char** argv)
         {
             switch (e.type)
             {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     done = 1;
                     break;
 
-                case SDL_KEYDOWN:
-                    if (e.key.keysym.scancode == SDL_SCANCODE_END)
+                case SDL_EVENT_KEY_DOWN:
+                    if (e.key.scancode == SDL_SCANCODE_END)
                     {
                         active_mouse = !active_mouse;
-                        SDL_SetRelativeMouseMode(active_mouse ? SDL_TRUE : SDL_FALSE);
+                        SDL_SetWindowRelativeMouseMode(window, active_mouse ? true : false);
                     }
 
                     if (!e.key.repeat)
-                        doom_key_down(sdl_scancode_to_doom_key(e.key.keysym.scancode));
+                        doom_key_down(sdl_scancode_to_doom_key(e.key.scancode));
                     break;
 
-                case SDL_KEYUP:
+                case SDL_EVENT_KEY_UP:
                     if (!e.key.repeat)
-                        doom_key_up(sdl_scancode_to_doom_key(e.key.keysym.scancode));
+                        doom_key_up(sdl_scancode_to_doom_key(e.key.scancode));
                     break;
 
-                case SDL_MOUSEBUTTONDOWN:
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     if (active_mouse) doom_button_down(sdl_button_to_doom_button(e.button.button));
                     break;
 
-                case SDL_MOUSEBUTTONUP:
+                case SDL_EVENT_MOUSE_BUTTON_UP:
                     if (active_mouse) doom_button_up(sdl_button_to_doom_button(e.button.button));
                     break;
 
-                case SDL_MOUSEMOTION:
+                case SDL_EVENT_MOUSE_MOTION:
                     if (active_mouse)
                     {
                         mouse_motion_x += e.motion.xrel;
@@ -317,9 +338,9 @@ int main(int argc, char** argv)
         if (mouse_motion_x || mouse_motion_y)
             doom_mouse_move(mouse_motion_x * 4, mouse_motion_y * 4);
         
-        SDL_LockAudio();
+        SDL_LockMutex(audio_lock);
         doom_update();
-        SDL_UnlockAudio();
+        SDL_UnlockMutex(audio_lock);
 
         // Blit DOOM's framebuffer onto our SDL texture
 #if GAME_BOY
@@ -334,7 +355,7 @@ int main(int argc, char** argv)
             0x8b, 0xac, 0x0f,
             0x9b, 0xbc, 0x0f
         };
-        if (!SDL_LockTexture(render_target, NULL, &dst, &dst_pitch))
+        if (SDL_LockTexture(render_target, NULL, &dst, &dst_pitch))
         {
             unsigned char* dst8 = (unsigned char*)dst;
             for (int y = 0; y < HEIGHT; ++y)
@@ -426,7 +447,7 @@ int main(int argc, char** argv)
             255, 204, 170
         };
 #endif
-        if (!SDL_LockTexture(render_target, NULL, &dst, &dst_pitch))
+        if (SDL_LockTexture(render_target, NULL, &dst, &dst_pitch))
         {
             unsigned char* dst8 = (unsigned char*)dst;
             for (int y = 0; y < HEIGHT; ++y)
@@ -477,7 +498,7 @@ int main(int argc, char** argv)
         const unsigned char* src = doom_get_framebuffer(4);
         int src_pitch = WIDTH * 4;
         int dst_pitch;
-        if (!SDL_LockTexture(render_target, NULL, &dst, &dst_pitch))
+        if (SDL_LockTexture(render_target, NULL, &dst, &dst_pitch))
         {
             for (int y = 0; y < HEIGHT; ++y)
             {
@@ -490,9 +511,9 @@ int main(int argc, char** argv)
 #endif
 
         // Stretch our texture on the screen
-        SDL_Rect src_rect = {0, 0, WIDTH, HEIGHT };
-        SDL_Rect dst_rect = {0, 0, FULL_WIDTH, FULL_HEIGHT};
-        SDL_RenderCopy(renderer, render_target, &src_rect, &dst_rect);
+        SDL_FRect src_rect = { 0.0f, 0.0f, (float)WIDTH, (float)HEIGHT };
+        SDL_FRect dst_rect = { 0.0f, 0.0f, (float)FULL_WIDTH, (float)FULL_HEIGHT };
+        SDL_RenderTexture(renderer, render_target, &src_rect, &dst_rect);
 
         // Swap
         SDL_RenderPresent(renderer);
@@ -503,8 +524,9 @@ int main(int argc, char** argv)
 #if defined(WIN32)
     if (midi_out_handle) midiOutClose(midi_out_handle);
 #endif
-    SDL_SetRelativeMouseMode(SDL_FALSE);
-    SDL_CloseAudio();
+    SDL_SetWindowRelativeMouseMode(window, false);
+    SDL_DestroyAudioStream(audio_stream);
+    SDL_DestroyMutex(audio_lock);
     SDL_DestroyTexture(render_target);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
