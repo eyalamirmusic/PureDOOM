@@ -13,7 +13,10 @@ constexpr auto doomHeight = 200;
 // stretched it 1.2x vertically; 320x240 is the intended display shape.
 constexpr auto displayWidth = 320.0f;
 constexpr auto displayHeight = 240.0f;
-constexpr auto windowScale = 4;
+
+// eacp has no display-metrics API yet (see the gap log), so the initial size
+// is a guess that fits laptop screens; the window resizes from there.
+constexpr auto windowScale = 3;
 
 constexpr auto mouseSpeed = 4.0f;
 
@@ -108,10 +111,31 @@ Graphics::WindowOptions windowOptions()
     options.width = (int) displayWidth * windowScale;
     options.height = (int) displayHeight * windowScale;
     options.title = "Pure DOOM (eacp)";
-    options.flags = {Graphics::WindowFlags::Titled,
-                     Graphics::WindowFlags::Closable,
-                     Graphics::WindowFlags::Miniaturizable};
+    options.minWidth = (int) displayWidth;
+    options.minHeight = (int) displayHeight;
     return options;
+}
+
+// The sprite space is fixed at 320x240 and stretches to the window, so a
+// window that isn't 4:3 would distort the frame. This returns the sub-rect
+// of that space which maps back to a centered 4:3 area of the window.
+Graphics::Rect letterboxedDisplayRect(const Graphics::Rect& bounds)
+{
+    constexpr auto contentAspect = displayWidth / displayHeight;
+
+    if (bounds.w <= 0.0f || bounds.h <= 0.0f)
+        return {0.0f, 0.0f, displayWidth, displayHeight};
+
+    auto viewAspect = bounds.w / bounds.h;
+
+    if (viewAspect > contentAspect)
+    {
+        auto width = displayWidth * contentAspect / viewAspect;
+        return {(displayWidth - width) / 2.0f, 0.0f, width, displayHeight};
+    }
+
+    auto height = displayHeight * viewAspect / contentAspect;
+    return {0.0f, (displayHeight - height) / 2.0f, displayWidth, height};
 }
 
 GPU::Texture makeFramebufferTexture()
@@ -154,9 +178,9 @@ struct DoomView final : GPU::GPUView
     {
         framebuffer.update(doom_get_framebuffer(4));
 
-        auto pass = frame.beginPass({Graphics::Color {0.0f, 0.0f, 0.0f}});
+        auto pass = frame.beginPass({Graphics::Color::black()});
         sprites->begin(pass);
-        sprites->drawTexture(framebuffer, {0.0f, 0.0f, displayWidth, displayHeight});
+        sprites->drawTexture(framebuffer, letterboxedDisplayRect(getLocalBounds()));
     }
 
     // DOOM binds Ctrl/Shift/Alt as ordinary keys (fire/run/strafe), but eacp

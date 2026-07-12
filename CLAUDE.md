@@ -83,6 +83,11 @@ Found while porting, newest last. Remove entries once fixed in eacp.
    target would stamp an empty Info.plist template. Workaround:
    `examples/EACP/CMakeLists.txt` sets the `EACP_MACOS_PLIST` cache variable
    itself from `eacp_SOURCE_DIR`.
+4. **No display-metrics API.** `Window` uses `NSScreen`/`GetSystemMetrics`
+   internally but nothing public reports the screen's visible size, so an app
+   cannot pick an initial window size that fits the display (a 4x-scale DOOM
+   window overflowed a laptop screen), nor clamp/center itself. Workaround: a
+   conservative 3x default plus a resizable window with letterboxed rendering.
 
 ## Code Style
 
