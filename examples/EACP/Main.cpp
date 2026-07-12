@@ -1,5 +1,7 @@
 #include <eacp/Sprites/Sprites.h>
 
+#include <cmath>
+
 #include "../../PureDOOM.h"
 
 using namespace eacp;
@@ -105,6 +107,23 @@ doom_button_t toDoomButton(Graphics::MouseButton button)
     }
 }
 
+// Snaps a proposed content size back to DOOM's 4:3 shape by applying the
+// smaller of the two possible corrections, so dragging any window edge or
+// corner feels natural.
+void keepDisplayAspect(int& width, int& height)
+{
+    constexpr auto aspect = displayWidth / displayHeight;
+
+    auto heightFromWidth = (float) width / aspect;
+    auto widthFromHeight = (float) height * aspect;
+
+    if (std::abs(heightFromWidth - (float) height)
+        <= std::abs(widthFromHeight - (float) width))
+        height = (int) std::lround(heightFromWidth);
+    else
+        width = (int) std::lround(widthFromHeight);
+}
+
 Graphics::WindowOptions windowOptions()
 {
     auto options = Graphics::WindowOptions {};
@@ -113,6 +132,7 @@ Graphics::WindowOptions windowOptions()
     options.title = "Pure DOOM (eacp)";
     options.minWidth = (int) displayWidth;
     options.minHeight = (int) displayHeight;
+    options.onWillResize = keepDisplayAspect;
     return options;
 }
 

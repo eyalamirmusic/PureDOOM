@@ -88,6 +88,12 @@ Found while porting, newest last. Remove entries once fixed in eacp.
    cannot pick an initial window size that fits the display (a 4x-scale DOOM
    window overflowed a laptop screen), nor clamp/center itself. Workaround: a
    conservative 3x default plus a resizable window with letterboxed rendering.
+5. **No declarative window aspect-ratio constraint.**
+   `WindowOptions::onWillResize` works for keeping a window 4:3 (the port
+   snaps the proposed size to the smaller correction), but macOS has a native
+   `NSWindow.contentAspectRatio` that anchors resize better and also governs
+   zoom; a `WindowOptions::contentAspectRatio` mapping to it (and to WM_SIZING
+   on Windows) would make the callback unnecessary for the common case.
 
 ## Code Style
 
