@@ -71,6 +71,24 @@ Two paths, toggled at runtime with **Shift+F8**:
   rather than on the player's last tic, so it glides at the display's rate
   instead of crawling at 35Hz. Zoom and hand-panning still step, being the
   engine's own per-tic quantities.
+
+  **The one place the port departs from vanilla on purpose**
+  (`eacpDoomRevealAutomap`). A wall is revealed on the map as a *side effect of
+  being drawn*: `R_StoreWallRange` sets `ML_MAPPED` as the software renderer lays
+  it down. But `D_Display` skips `R_RenderPlayerView` entirely while the automap
+  is up, so vanilla's map stops filling in the moment you look at it, and only
+  catches up when you close it — walking with the map open reveals nothing
+  (measured: the mapped-line count sits frozen while the player moves). Most
+  source ports quietly fix this, and so does this one: the BSP is walked once a
+  tic while the map is up, which marks what the player can see. It stops there —
+  the planes and the sprites are never drawn, and `R_RenderPlayerView`'s four
+  `NetUpdate` calls are not wanted, as they drain the event queue. The walls it
+  *does* draw on the way land in the frame the automap had just drawn itself into
+  (the column drawers write through `ylookup`, which was aimed at `screens[0]`
+  when the view size was set and does not follow it anywhere), so the map is
+  drawn again afterwards to put it back — which the software fallback needs, as
+  it reads that whole frame, and the GPU path does not, reading only the status
+  bar from it.
 - **Overlay** (`eacpDoomBuildOverlay`): the layers the engine draws over the
   view in software and nothing else reproduces - HUD messages, the level name,
   the PAUSE graphic, the menu, the automap's marks. Without it a menu forced the

@@ -114,6 +114,23 @@ extern "C"
     // R_RenderPlayerView entirely while it is up, so the two never coexist.
     int eacpDoomAutomapActive(void);
 
+    // Marks the walls the player can see from where they are standing, so the
+    // map keeps filling in while it is being looked at. Call once a tic, after
+    // the engine has run it. Does nothing unless the automap is up.
+    //
+    // A line is revealed as a *side effect of being drawn*: R_StoreWallRange
+    // sets ML_MAPPED as the software renderer lays the wall down. But D_Display
+    // skips the render entirely while the automap is up, so vanilla's map stops
+    // filling in at the moment you open it, and only catches up once you close
+    // it again. This is a deliberate departure from vanilla, and the only one in
+    // the port's behaviour.
+    //
+    // It walks the BSP the way R_RenderPlayerView would, and no further: the
+    // planes and the sprites are never drawn, and the four NetUpdate calls it
+    // makes on the way are not wanted here - they drain the event queue, which
+    // is not this function's business.
+    void eacpDoomRevealAutomap(void);
+
     // The COLORMAP row the view is remapped through before it reaches the
     // palette: 0 while playing, and the row the menu darkens its background
     // with while the menu is up (DOOM_FLAG_MENU_DARKEN_BG).

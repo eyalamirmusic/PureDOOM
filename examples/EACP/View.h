@@ -108,6 +108,11 @@ struct View final : GPU::GPUView
 
             doom_update();
 
+            // The engine reveals a wall on the map by drawing it, and draws
+            // nothing while the map is up - so vanilla's map stops filling in
+            // the moment it is looked at. This keeps it filling in.
+            eacpDoomRevealAutomap();
+
             currentCamera = eacpDoomGetCamera();
             eacpDoomGetHudSprites(hud.data());
 

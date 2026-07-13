@@ -228,6 +228,30 @@ int eacpDoomAutomapActive(void)
     return automapactive ? 1 : 0;
 }
 
+void eacpDoomRevealAutomap(void)
+{
+    player_t* player = &players[displayplayer];
+
+    if (gamestate != GS_LEVEL || !gametic || !automapactive || player->mo == 0)
+        return;
+
+    R_SetupFrame(player);
+    R_ClearClipSegs();
+    R_ClearDrawSegs();
+    R_ClearPlanes();
+    R_ClearSprites();
+
+    // Marking a line is R_StoreWallRange's doing, and it does it as it draws the
+    // wall - so the walls land in the frame the automap has just drawn itself
+    // into (the column drawers write through ylookup, which was pointed at
+    // screens[0] when the view size was set, and does not follow it anywhere).
+    // Drawing the map again puts it back. The GPU path does not read that frame
+    // for anything but the status bar, which the view never reaches; the
+    // software one reads all of it.
+    R_RenderBSPNode(numnodes - 1);
+    AM_Drawer();
+}
+
 int eacpDoomDarkenRow(void)
 {
     // M_Drawer only reaches its darkening once it is actually showing a menu: a
