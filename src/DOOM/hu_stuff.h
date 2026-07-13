@@ -36,7 +36,13 @@
 
 #define HU_BROADCAST 5
 
-#define HU_MSGREFRESH KEY_ENTER
+// [pd] Re-showing the last message sat on Enter, and HU_Responder *eats* the
+// key it sits on -- G_Responder asks the HUD first and returns the moment it
+// says it took the event, so Enter never reached gamekeydown and could not be
+// bound to anything. This port opens doors with it, so the refresh moves to
+// Backspace, which the game does not otherwise read (the menu takes it, but the
+// menu is asked before the HUD and only while it is up).
+#define HU_MSGREFRESH KEY_BACKSPACE
 #define HU_MSGX 0
 #define HU_MSGY 0
 #define HU_MSGWIDTH 64  // in characters

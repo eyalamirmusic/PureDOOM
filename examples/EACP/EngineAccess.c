@@ -170,6 +170,23 @@ int eacpDoomWorldVisible(void)
            && !is_wiping_screen;
 }
 
+void eacpDoomBindKeys(void)
+{
+    int count = (int)(sizeof(defaults) / sizeof(defaults[0]));
+    int i;
+
+    for (i = 0; i < count; i++)
+    {
+        default_t* entry = &defaults[i];
+
+        if (entry->defaultvalue != STRING_VALUE
+            && doom_strncmp(entry->name, "key_", 4) == 0)
+        {
+            *entry->location = entry->defaultvalue;
+        }
+    }
+}
+
 double eacpDoomTicTime(void)
 {
     int sec, usec;

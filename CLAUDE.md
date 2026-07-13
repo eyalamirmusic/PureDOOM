@@ -117,6 +117,15 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
   now builds no command when `singletics` is set (it still drains events). This
   took the aim's input-to-screen lag from 163ms to 17ms, and stopped the player
   coasting for five tics after a movement key was released.
+
+  There is also one vendored change that is *not* a bug fix, and so is a
+  deliberate exception to the rule above (`hu_stuff.h`, `HU_MSGREFRESH`). Vanilla
+  binds re-showing the last HUD message to Enter, and `HU_Responder` **eats** the
+  key it is bound to — `G_Responder` asks the HUD before it touches
+  `gamekeydown`, and returns the moment the HUD says it took the event. Enter
+  therefore never reaches `gamekeydown` at all and cannot be bound to anything.
+  This port opens doors with Enter, so the refresh moves to Backspace, which the
+  game does not otherwise read. Anything wanting Enter as a game key hits this.
 - The engine is single-threaded: `doom_init`, `doom_update`,
   `doom_get_framebuffer` and all input calls happen on the main thread. Audio,
   once wired, is the only exception and takes the engine lock the SDL example
@@ -126,6 +135,16 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
 
 Two of these are not obvious, and getting either wrong makes the game feel
 broken rather than fail outright.
+
+- **The keys the app asks for do not stick by themselves.** DOOM cannot rebind a
+  key from inside the game, yet it still writes every binding out to `~/.doomrc`
+  and, at startup, reads them back *over* whatever `doom_set_default_int` asked
+  for. A config left behind by an older build therefore pins that build's keys
+  for good, and changing the binding in `Main.cpp` silently does nothing at all —
+  the game keeps the old key with no sign anything was ignored. `Main.cpp` calls
+  `eacpDoomBindKeys()` after `doom_init` to apply them again once the config has
+  been read. What the player *can* change from the menu (mouse sensitivity,
+  screen size, volumes) is left alone and still persists.
 
 - **Hand it the mouse once per tic, with the whole movement.** `G_Responder`
   *assigns* the mouse delta (`mousex = ev->data2 * ...`) rather than adding to

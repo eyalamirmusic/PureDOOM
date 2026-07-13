@@ -73,6 +73,20 @@ extern "C"
     // the GPU world view can stand in for the software one.
     int eacpDoomWorldVisible(void);
 
+    // Re-applies the key bindings the app asked for with doom_set_default_int.
+    // Call once, after doom_init.
+    //
+    // DOOM has no way to rebind a key from inside the game, yet it still writes
+    // every binding out to ~/.doomrc and, at startup, reads them back *over* the
+    // defaults the app just set. A config left behind by an older build
+    // therefore pins that build's keys for good and the app's own choice
+    // silently does nothing - which is how "use" could be set to Enter here and
+    // still be E in the running game. The app owns the keys, so they are applied
+    // again once the config has been read. Everything the player can genuinely
+    // change from the menu - mouse sensitivity, screen size, volumes - is left
+    // alone and still persists.
+    void eacpDoomBindKeys(void);
+
     // The engine's own clock, in tics - 35 a second - with the fraction: its
     // whole part says which tic the world is on, and the rest says how far into
     // that tic time has moved.
