@@ -54,6 +54,19 @@ inline GPU::Texture makeOverlayTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
+// How far each of the melt's two-pixel columns has slid, in rows: one texel per
+// column, so sampling it nearest picks the column out on its own.
+inline GPU::Texture makeWipeOffsetTexture()
+{
+    auto descriptor = GPU::TextureDescriptor {};
+    descriptor.width = EACP_DOOM_WIPE_COLUMNS;
+    descriptor.height = 1;
+    descriptor.format = GPU::TextureFormat::R8Unorm;
+    descriptor.filter = GPU::TextureFilter::Nearest;
+
+    return GPU::Device::shared().makeTexture(descriptor, nullptr);
+}
+
 // Wall textures, flats and sprites tile across a surface, so they repeat; they
 // carry palette indices, which must never be blended, so they sample nearest. A
 // masked one needs a second channel for its coverage, so it goes up as RGBA -

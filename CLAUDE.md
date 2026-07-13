@@ -100,10 +100,37 @@ Two paths, toggled at runtime with **Shift+F8**:
   onto their twins - but it is the identity on the colour they resolve to.) The
   status bar needs none of this: the engine darkens its own frame, which is
   where the strip is sampled from.
-- Still missing (B4): the screen-melt wipe (needs offscreen render targets) and
-  spectre fuzz. Wipes, and anything outside a level (title, intermission,
-  finale), fall back to the software frame automatically; the status bar is
-  always composited from it.
+- **Screen melt**: drawn over the GPU view, not instead of it, which is what
+  keeps the level it is revealing at the window's resolution. It was the last
+  thing forcing the whole screen back to 320x200, and the most conspicuous once
+  the menu and automap stopped doing so: `G_DoLoadLevel` wipes on every level
+  start, so a new level arrived as a low-resolution image that snapped up to full
+  resolution a second later, when the melt ended.
+
+  It needs **no offscreen render target**, contrary to what this log used to say.
+  The melt only ever *reads* the outgoing frame; what it composites is
+
+      column c, row r = the outgoing frame's row (r - offset[c]) when
+                        r >= offset[c], and the incoming frame's row r otherwise
+
+  so "the incoming frame" is just the framebuffer left alone - the level the GPU
+  has already drawn there. Only the outgoing frame becomes a texture, and it is a
+  320x200 software frame whatever happens (it is the title or intermission
+  screen, which is 320x200 artwork), so nothing is lost by it staying one. The
+  rows a column has not reached are discarded in the shader, and the level shows
+  through. `eacpDoomBuildWipe` hands over that frame and the column offsets,
+  un-transposing the outgoing screen that `wipe_initMelt` left column-major.
+
+  Two things it has to respect. The engine raises `is_wiping_screen` at the end
+  of the frame that renders the incoming screen and only sets the melt up on the
+  *next* one, so on that first frame there is no column table yet and the whole
+  outgoing screen is still what should be on the screen. And `wipe_exitMelt`
+  frees the column table without clearing the pointer to it, so `go` - the melt's
+  own "I am set up" flag - is the only safe thing to test.
+- Still missing (B4): spectre fuzz. Anything outside a level (title,
+  intermission, finale) falls back to the software frame automatically, which is
+  right - those screens *are* 320x200 - and the status bar is always composited
+  from it.
 - `examples/SDL/` — upstream's SDL3 reference port. Read-only; the best
   reference for how the engine expects to be driven (input mapping, audio
   stream format, MIDI tick).

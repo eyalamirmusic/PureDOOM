@@ -46,10 +46,12 @@ constexpr auto automapWidth = (float) EACP_DOOM_AUTOMAP_WIDTH;
 constexpr auto automapHeight = (float) EACP_DOOM_AUTOMAP_HEIGHT;
 constexpr auto automapLineWidth = 1.0f;
 
+constexpr auto screenPixels =
+    (std::size_t) EACP_DOOM_SCREEN_WIDTH * EACP_DOOM_SCREEN_HEIGHT;
+
 // The captured overlay: a palette index and its coverage, per pixel of the
 // engine's frame.
-constexpr auto overlayBytes =
-    (std::size_t) EACP_DOOM_SCREEN_WIDTH * EACP_DOOM_SCREEN_HEIGHT * 4;
+constexpr auto overlayBytes = screenPixels * 4;
 
 constexpr auto colormapRows = (float) EACP_DOOM_COLORMAP_ROWS;
 constexpr auto pi = 3.14159265358979f;

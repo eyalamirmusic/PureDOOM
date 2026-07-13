@@ -32,6 +32,7 @@ add_executable(PureDoomEACP
         ScreenShader.h
         Textures.h
         View.h
+        WipeShader.h
         WorldShader.h)
 target_link_libraries(PureDoomEACP PRIVATE eacp-gpu)
 target_compile_definitions(PureDoomEACP PRIVATE

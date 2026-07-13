@@ -17,6 +17,9 @@
 // The COLORMAP row M_Drawer darkens its background with (DOOM_FLAG_MENU_DARKEN_BG).
 #define EACP_DOOM_MENU_DARKEN_ROW 20
 
+// The screen melt slides the outgoing frame down a two-pixel column at a time.
+#define EACP_DOOM_WIPE_COLUMNS (EACP_DOOM_SCREEN_WIDTH / 2)
+
 // One world vertex, already in the renderer's coordinate space: DOOM's map
 // (x, y) ground plane with z up becomes (x, z, -y).
 typedef struct
@@ -182,6 +185,31 @@ extern "C"
     double eacpDoomTicTime(void);
 
     int eacpDoomIsWiping(void);
+
+    // The screen melt, while one is running: the frame it is sliding *away*, as
+    // palette indices, and how far down each column of it has moved so far.
+    //
+    // The frame coming *in* is neither wanted nor asked for, and that is what
+    // lets the melt run with no offscreen render target. Vanilla only ever reads
+    // the outgoing frame; what it composites is
+    //
+    //     column c, row r = the outgoing frame's row (r - offset[c]) when
+    //                       r >= offset[c], and the incoming frame's row r
+    //                       when it is not,
+    //
+    // so "the incoming frame" is just the framebuffer left as it is - the level
+    // the renderer has already drawn there, at the window's resolution. Only the
+    // outgoing frame has to become a texture, and it is a 320x200 software frame
+    // whatever happens: the intermission or title screen it actually is.
+    //
+    // Writes EACP_DOOM_SCREEN_WIDTH x EACP_DOOM_SCREEN_HEIGHT indices and
+    // EACP_DOOM_WIPE_COLUMNS offsets in rows, and returns whether a melt is
+    // running. On the first frame of one it is not yet: the engine raises its
+    // wiping flag at the end of the frame that renders the incoming screen and
+    // only sets the melt up on the next, so that frame comes back with the
+    // outgoing screen whole and nothing slid, which is exactly what should still
+    // be on the screen.
+    int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets);
 
     // The engine's mouse sensitivity (the options menu changes it). It scales
     // the movement it is handed by (sensitivity + 5) / 10, so a view that runs

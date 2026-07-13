@@ -8,6 +8,7 @@
 #include "OverlayShader.h"
 #include "ScreenShader.h"
 #include "Textures.h"
+#include "WipeShader.h"
 #include "WorldShader.h"
 
 #include <optional>
@@ -48,10 +49,17 @@ struct View final : GPU::GPUView
         overlayShader.colormap = colormapTexture;
         overlayShader.palette = paletteTexture;
 
+        wipeShader.setVertices(unitQuad);
+        wipeShader.prepare(sampleCount(), true);
+        wipeShader.start = wipeTexture;
+        wipeShader.offsets = wipeOffsetTexture;
+        wipeShader.palette = paletteTexture;
+
         geometry.getVector().resize(maxVertices);
         draws.getVector().resize(maxDraws);
         automap.getVector().resize(maxAutomapVertices);
         overlayPixels.getVector().resize(overlayBytes);
+        wipePixels.getVector().resize(screenPixels);
 
         for (auto& sprite: hud)
             sprite.textureId = -1;
@@ -259,13 +267,22 @@ struct View final : GPU::GPUView
             framebuffer.update(doom_get_framebuffer(1));
             updatePalette();
             updateOverlay();
+            updateWipe();
         }
 
         ensureWorldTextures();
 
         auto bounds = getLocalBounds();
         auto dst = letterboxedDisplayRect(bounds);
-        auto gpuView = gpuWorld && eacpDoomViewActive() && worldTextures.size() > 0;
+
+        // A melt is drawn *over* the GPU view rather than instead of it - that is
+        // what keeps the level it is revealing at the window's resolution. But
+        // the engine raises its wiping flag at the end of the frame that renders
+        // the incoming screen and only sets the melt up on the next, so for that
+        // one frame there is nothing to draw over the view with, and the software
+        // frame has to stand in.
+        auto gpuView = gpuWorld && eacpDoomViewActive() && worldTextures.size() > 0
+                       && (!eacpDoomIsWiping() || wipeVisible);
 
         auto pass = frame.beginPass({Graphics::Color::black()});
 
@@ -297,6 +314,14 @@ struct View final : GPU::GPUView
                                          dst.w,
                                          dst.h * (1.0f - worldViewportShare)};
             drawScreen(pass, bounds, strip, viewRows / (float) doomHeight, 1.0f);
+
+            // Over the whole frame, status bar included: the melt slides the
+            // outgoing screen down across all 200 rows. Where a column has not
+            // reached, the pixel is thrown away and what is left standing is the
+            // new level - and, in the strip, the engine's own composite, which
+            // holds the incoming status bar at exactly those rows.
+            if (wipeVisible)
+                drawWipe(pass, bounds, dst);
 
             // The menu, the messages and the PAUSE graphic are already in the
             // software frame whenever that is what is on the screen; over the GPU
@@ -466,6 +491,27 @@ struct View final : GPU::GPUView
             overlayTexture.update(overlayPixels.data());
     }
 
+    void updateWipe()
+    {
+        wipeVisible = eacpDoomBuildWipe(wipePixels.data(), wipeOffsets.data()) != 0;
+
+        if (wipeVisible)
+        {
+            wipeTexture.update(wipePixels.data());
+            wipeOffsetTexture.update(wipeOffsets.data());
+        }
+    }
+
+    void drawWipe(GPU::RenderPass& pass,
+                  const Graphics::Rect& bounds,
+                  const Graphics::Rect& dst)
+    {
+        wipeShader.viewSize = std::array {bounds.w, bounds.h};
+        wipeShader.dstOrigin = std::array {dst.x, dst.y};
+        wipeShader.dstSize = std::array {dst.w, dst.h};
+        pass.draw(wipeShader);
+    }
+
     // The WAD's graphics are loaded once, so the slots are sized once; the
     // colormap comes along with them.
     void ensureWorldTextures()
@@ -612,10 +658,13 @@ struct View final : GPU::GPUView
     HudShader hudShader;
     AutomapShader automapShader;
     OverlayShader overlayShader;
+    WipeShader wipeShader;
     GPU::Texture framebuffer = makeIndexTexture();
     GPU::Texture paletteTexture = makePaletteTexture();
     GPU::Texture colormapTexture = makeColormapTexture();
     GPU::Texture overlayTexture = makeOverlayTexture();
+    GPU::Texture wipeTexture = makeIndexTexture();
+    GPU::Texture wipeOffsetTexture = makeWipeOffsetTexture();
     GPU::Buffer worldBuffer {GPU::Device::shared(),
                              nullptr,
                              (std::size_t) maxVertices * sizeof(EacpDoomVertex),
@@ -630,7 +679,10 @@ struct View final : GPU::GPUView
     Vector<EacpDoomDraw> draws;
     Vector<EacpDoomAutomapVertex> automap;
     Vector<std::uint8_t> overlayPixels;
+    Vector<std::uint8_t> wipePixels;
+    std::array<std::uint8_t, EACP_DOOM_WIPE_COLUMNS> wipeOffsets {};
     bool overlayVisible = false;
+    bool wipeVisible = false;
     std::array<std::uint8_t, 256 * 4> paletteData {};
 
     using HudSprites = std::array<EacpDoomHudSprite, EACP_DOOM_HUD_SPRITES>;

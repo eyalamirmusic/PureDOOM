@@ -16,6 +16,8 @@
 
 #define EACP_FLAT_SIZE 64
 
+#define EACP_SCREEN_PIXELS (EACP_DOOM_SCREEN_WIDTH * EACP_DOOM_SCREEN_HEIGHT)
+
 // The sky is a cylinder around the camera, far enough out that every wall in a
 // DOOM level stands in front of it, and tall enough to fill the view.
 #define EACP_SKY_SEGMENTS 64
@@ -165,7 +167,60 @@ void eacpDoomSnapshotTic(void)
 
 int eacpDoomViewActive(void)
 {
-    return gamestate == GS_LEVEL && gametic && !is_wiping_screen;
+    return gamestate == GS_LEVEL && gametic;
+}
+
+int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
+{
+    const unsigned char* start = (const unsigned char*) wipe_scr_start;
+    int column;
+    int row;
+
+    if (!is_wiping_screen || start == 0)
+        return 0;
+
+    // `go` is the melt's own "I have been set up" flag, and the only safe thing
+    // to test: wipe_exitMelt frees the column table but leaves y pointing at it,
+    // so between melts y is non-null and dangling. Until the melt is set up, the
+    // outgoing screen is still row-major and nothing has slid.
+    if (!go)
+    {
+        doom_memcpy(outStart, start, EACP_SCREEN_PIXELS);
+        doom_memset(outOffsets, 0, EACP_DOOM_WIPE_COLUMNS);
+
+        return 1;
+    }
+
+    for (column = 0; column < EACP_DOOM_WIPE_COLUMNS; ++column)
+    {
+        int slid = y[column];
+
+        // A column that has not started moving sits at a negative offset; it has
+        // slid nothing, which is what zero says.
+        if (slid < 0)
+            slid = 0;
+        else if (slid > EACP_DOOM_SCREEN_HEIGHT)
+            slid = EACP_DOOM_SCREEN_HEIGHT;
+
+        outOffsets[column] = (unsigned char) slid;
+
+        // wipe_initMelt leaves the outgoing screen column-major - a column of
+        // two-pixel shorts - because that is how the melt walks it. A texture
+        // wants it back the way round it was. Copying the two bytes rather than
+        // the short keeps this independent of byte order.
+        for (row = 0; row < EACP_DOOM_SCREEN_HEIGHT; ++row)
+        {
+            const unsigned char* source =
+                start + (column * EACP_DOOM_SCREEN_HEIGHT + row) * 2;
+            unsigned char* destination =
+                outStart + row * EACP_DOOM_SCREEN_WIDTH + column * 2;
+
+            destination[0] = source[0];
+            destination[1] = source[1];
+        }
+    }
+
+    return 1;
 }
 
 int eacpDoomAutomapActive(void)
@@ -182,8 +237,6 @@ int eacpDoomDarkenRow(void)
 
     return 0;
 }
-
-#define EACP_SCREEN_PIXELS (EACP_DOOM_SCREEN_WIDTH * EACP_DOOM_SCREEN_HEIGHT)
 
 static unsigned char eacpOverlayPass[2][EACP_SCREEN_PIXELS];
 static unsigned char eacpUnderIndex[EACP_SCREEN_PIXELS];
