@@ -1,11 +1,14 @@
 #pragma once
 
 #include "Common.h"
+#include "HudShader.h"
 #include "Input.h"
 #include "Layout.h"
 #include "ScreenShader.h"
 #include "Textures.h"
 #include "WorldShader.h"
+
+#include <optional>
 
 namespace PureDoom
 {
@@ -28,8 +31,14 @@ struct View final : GPU::GPUView
         worldShader.colormap = colormapTexture;
         worldShader.palette = paletteTexture;
 
+        hudShader.setVertices(unitQuad);
+        hudShader.prepare(sampleCount(), true);
+        hudShader.colormap = colormapTexture;
+        hudShader.palette = paletteTexture;
+
         geometry.getVector().resize(maxVertices);
         draws.getVector().resize(maxDraws);
+        hudSprites.getVector().resize(maxHudSprites);
 
         setHandlesMouseEvents(true);
         setGrabsFocusOnMouseDown(true);
@@ -62,7 +71,10 @@ struct View final : GPU::GPUView
 
         if (gpuWorld && eacpDoomWorldVisible() && worldTextures.size() > 0)
         {
-            drawWorld(pass, bounds, dst.withHeight(dst.h * worldViewportShare));
+            auto viewport = dst.withHeight(dst.h * worldViewportShare);
+
+            drawWorld(pass, bounds, viewport);
+            drawWeapon(pass, bounds, viewport);
 
             auto strip = Graphics::Rect {dst.x,
                                          dst.y + dst.h * worldViewportShare,
@@ -122,15 +134,45 @@ struct View final : GPU::GPUView
         {
             const auto& draw = draws[(std::size_t) i];
 
-            worldShader.texture = worldTextures[(std::size_t) draw.textureId];
+            worldShader.texture = textureFor(draw.textureId);
             worldShader.bindTextures(pass);
             pass.draw(draw.vertexCount, draw.firstVertex);
         }
     }
 
-    // The WAD's texture set is loaded once, at startup, so the GPU copies are
-    // uploaded once too — animated walls and flats cycle between textures that
-    // are all already here.
+    void drawWeapon(GPU::RenderPass& pass,
+                    const Graphics::Rect& bounds,
+                    const Graphics::Rect& viewport)
+    {
+        auto count = eacpDoomGetHudSprites(hudSprites.data(), maxHudSprites);
+
+        if (count <= 0)
+            return;
+
+        auto scaleX = viewport.w / (float) doomWidth;
+        auto scaleY = viewport.h / viewRows;
+
+        hudShader.viewSize = std::array {bounds.w, bounds.h};
+
+        for (auto i = 0; i < count; ++i)
+        {
+            const auto& sprite = hudSprites[(std::size_t) i];
+
+            hudShader.dstOrigin = std::array {viewport.x + sprite.x * scaleX,
+                                              viewport.y + sprite.y * scaleY};
+            hudShader.dstSize =
+                std::array {sprite.width * scaleX, sprite.height * scaleY};
+            hudShader.uRange =
+                sprite.flip ? std::array {1.0f, 0.0f} : std::array {0.0f, 1.0f};
+            hudShader.light = sprite.light;
+            hudShader.texture = textureFor(sprite.textureId);
+
+            pass.draw(hudShader);
+        }
+    }
+
+    // The WAD's graphics are loaded once, so the slots are sized once; the
+    // colormap comes along with them.
     void ensureWorldTextures()
     {
         auto count = eacpDoomGetTextureCount();
@@ -138,26 +180,37 @@ struct View final : GPU::GPUView
         if (count <= 0 || (int) worldTextures.size() == count)
             return;
 
-        auto pixels = Vector<std::uint8_t> {};
-        worldTextures.getVector().reserve((std::size_t) count);
-
-        for (auto id = 0; id < count; ++id)
-        {
-            auto info = eacpDoomGetTextureInfo(id);
-            auto width = info.width > 0 ? info.width : 1;
-            auto height = info.height > 0 ? info.height : 1;
-
-            pixels.getVector().assign((std::size_t) (width * height), 0);
-            eacpDoomGetTexturePixels(id, pixels.data());
-
-            worldTextures.getVector().emplace_back(
-                makeWorldTexture(width, height, pixels.data()));
-        }
+        worldTextures.getVector().clear();
+        worldTextures.getVector().resize((std::size_t) count);
 
         auto rows = Vector<std::uint8_t> {};
         rows.getVector().assign(256 * EACP_DOOM_COLORMAP_ROWS, 0);
         eacpDoomGetColormaps(rows.data());
         colormapTexture.update(rows.data());
+    }
+
+    // Uploaded the first time something is drawn with it: a WAD holds well over
+    // a thousand sprite lumps, and a level shows a small fraction of them.
+    GPU::Texture& textureFor(int id)
+    {
+        auto& slot = worldTextures[(std::size_t) id];
+
+        if (!slot.has_value())
+        {
+            auto info = eacpDoomGetTextureInfo(id);
+            auto width = info.width > 0 ? info.width : 1;
+            auto height = info.height > 0 ? info.height : 1;
+            auto bytes = (std::size_t) (width * height) * (info.masked ? 4 : 1);
+
+            auto pixels = Vector<std::uint8_t> {};
+            pixels.getVector().assign(bytes, 0);
+            eacpDoomGetTexturePixels(id, pixels.data());
+
+            slot.emplace(
+                makeWorldTexture(width, height, info.masked != 0, pixels.data()));
+        }
+
+        return *slot;
     }
 
     void updatePalette()
@@ -249,6 +302,7 @@ struct View final : GPU::GPUView
 
     ScreenShader shader;
     WorldShader worldShader;
+    HudShader hudShader;
     GPU::Texture framebuffer = makeIndexTexture();
     GPU::Texture paletteTexture = makePaletteTexture();
     GPU::Texture colormapTexture = makeColormapTexture();
@@ -256,9 +310,10 @@ struct View final : GPU::GPUView
                              nullptr,
                              (std::size_t) maxVertices * sizeof(EacpDoomVertex),
                              GPU::BufferUsage::Vertex};
-    Vector<GPU::Texture> worldTextures;
+    Vector<std::optional<GPU::Texture>> worldTextures;
     Vector<EacpDoomVertex> geometry;
     Vector<EacpDoomDraw> draws;
+    Vector<EacpDoomHudSprite> hudSprites;
     std::array<std::uint8_t, 256 * 4> paletteData {};
 
     // Shift+F8 flips between the GPU world renderer and the software frame.

@@ -40,15 +40,18 @@ inline GPU::Texture makeColormapTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
-// Wall textures and flats tile across a surface, so they repeat; they carry
-// palette indices, which must never be blended, so they sample nearest.
+// Wall textures, flats and sprites tile across a surface, so they repeat; they
+// carry palette indices, which must never be blended, so they sample nearest. A
+// masked one needs a second channel for its coverage, so it goes up as RGBA -
+// index in red, coverage in alpha - while the rest stay one byte per pixel.
 inline GPU::Texture
-    makeWorldTexture(int width, int height, const std::uint8_t* pixels)
+    makeWorldTexture(int width, int height, bool masked, const std::uint8_t* pixels)
 {
     auto descriptor = GPU::TextureDescriptor {};
     descriptor.width = width;
     descriptor.height = height;
-    descriptor.format = GPU::TextureFormat::R8Unorm;
+    descriptor.format =
+        masked ? GPU::TextureFormat::RGBA8Unorm : GPU::TextureFormat::R8Unorm;
     descriptor.filter = GPU::TextureFilter::Nearest;
     descriptor.addressMode = GPU::TextureAddressMode::Repeat;
 

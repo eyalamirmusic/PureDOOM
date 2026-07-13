@@ -35,23 +35,34 @@ Two paths, toggled at runtime with **Shift+F8**:
 - **Software frame** (Stage A): the engine's palette-indexed framebuffer as
   an R8 texture, palette looked up in the fragment shader. No CPU pixel
   conversion.
-- **GPU world** (Stages B1-B2): the level drawn as real hardware 3D, at the
+- **GPU world** (Stages B1-B3): the level drawn as real hardware 3D, at the
   window's resolution rather than 320x200.
   - Geometry is re-read from the live level every frame, so moving sectors,
-    doors and animated textures need no invalidation. Walls come from the
-    linedefs (both sides, with vanilla's upper/lower/middle pegging rules);
-    floors and ceilings come from subsector polygons reconstructed by
-    clipping a large square down the BSP, because vanilla nodes carry only
-    split planes and the segs alone would leave holes at BSP cuts.
+    doors, animated textures and moving monsters need no invalidation. Walls
+    come from the linedefs (both sides, with vanilla's upper/lower/middle
+    pegging rules); floors and ceilings come from subsector polygons
+    reconstructed by clipping a large square down the BSP, because vanilla
+    nodes carry only split planes and the segs alone would leave holes at BSP
+    cuts; every thing in the level is a camera-facing billboard using the same
+    eight-rotation frame the engine would pick.
+  - Textures are composed from their patches (as `R_GenerateComposite` does),
+    which is what makes a masked texture's holes come out as holes: the
+    engine's cached columns are post data, not pixels, for exactly those
+    textures. Masked textures and sprites carry coverage in alpha and are
+    alpha-tested in the shader.
   - Shading is DOOM's own, not an imitation: the texture yields a palette
     index, the COLORMAP row chosen by sector light and distance remaps it,
-    and the palette resolves the colour. Light banding, diminishing and
-    palette flashes all come out exact.
-  - Geometry is grouped by texture into one draw per wall texture / flat.
-  - Still missing (B3+): sprites (things, the weapon), the sky, two-sided
-    middle textures, and the screen-melt wipe. Menus, the automap and wipes
-    fall back to the software frame automatically; the status bar is always
-    composited from it.
+    and the palette resolves the colour. Light banding, diminishing, fullbright
+    frames and palette flashes all come out exact.
+  - The sky is a cylinder pinned to the camera, its texture repeating four
+    times around, mapped so a screen row lands where the engine would put it.
+  - The weapon and muzzle flash are drawn in screen space over the world.
+  - Geometry is grouped by texture into one draw per texture; textures upload
+    lazily on first use (a WAD holds well over a thousand sprite lumps).
+  - Still missing (B4): the screen-melt wipe (needs offscreen render targets),
+    spectre fuzz, and the automap. Menus, the automap and wipes fall back to
+    the software frame automatically; the status bar is always composited from
+    it.
 - `examples/SDL/` — upstream's SDL3 reference port. Read-only; the best
   reference for how the engine expects to be driven (input mapping, audio
   stream format, MIDI tick).
@@ -99,12 +110,13 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
 
 Found while porting, newest last. Remove entries once fixed in eacp.
 
-Already added on the eacp branch `doom-stage-a-gpu-palette` (both were gaps
-this port surfaced): `TextureFormat::R8Unorm`, so indexed data — the
+Already added on the eacp branch `doom-stage-a-gpu-palette` (all three were
+gaps this port surfaced): `TextureFormat::R8Unorm`, so indexed data — the
 framebuffer, wall textures, flats, the COLORMAP — uploads as one byte per
-pixel instead of being expanded to RGBA on the CPU; and `Buffer::update`, so
-the world's geometry buffer is re-uploaded each frame rather than
-reallocated.
+pixel instead of being expanded to RGBA on the CPU; `Buffer::update`, so the
+world's geometry buffer is re-uploaded each frame rather than reallocated;
+and `ShaderProgram::setDiscardBelow`, an alpha test in the shader EDSL,
+without which no sprite or masked texture can be drawn.
 
 1. **No audio subsystem.** Sound effects need a pull-model PCM output stream
    (`DOOM_SAMPLERATE` = 11025 Hz, 16-bit stereo, mixed via
@@ -136,11 +148,11 @@ reallocated.
    on Windows) would make the callback unnecessary for the common case.
 6. **The shader EDSL has almost no scalar maths.** `sin`/`cos` exist (the
    transform builders use them) but there is no `floor`, `fract`, `abs`,
-   `min`/`max`/`clamp`, `step` or `mix` for `Float`, and no `discard`. B2
-   dodged this by letting the samplers do the work — `Repeat` tiles wall
-   textures instead of `fract`, `Nearest` rounds the COLORMAP row instead of
-   `floor`, `Clamp` bounds it instead of `clamp` — but sprites (B3) need a
-   real `discard` for masked pixels, so this is the next blocker.
+   `min`/`max`/`clamp`, `step` or `mix` for `Float`. B2 dodged this by letting
+   the samplers do the work — `Repeat` tiles wall textures instead of `fract`,
+   `Nearest` rounds the COLORMAP row instead of `floor`, `Clamp` bounds it
+   instead of `clamp` — and it has held up so far, but any shader wanting real
+   arithmetic will hit this. (`discard` was the blocking case and is now in.)
 7. **No offscreen render targets.** `Frame` only ever renders into the view's
    drawable, so a pass cannot render into a texture and sample it later.
    DOOM's screen-melt wipe needs exactly that (it reads back the previous

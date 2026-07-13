@@ -16,6 +16,17 @@
 
 #define EACP_FLAT_SIZE 64
 
+// The sky is a cylinder around the camera, far enough out that every wall in a
+// DOOM level stands in front of it, and tall enough to fill the view.
+#define EACP_SKY_SEGMENTS 64
+#define EACP_SKY_RADIUS 12000.0f
+#define EACP_SKY_HEIGHT 9000.0f
+
+// The view's focal length in rows: half of the 168-row view divided by the
+// tangent of half its vertical field of view. It converts a height on the sky
+// cylinder into the screen row DOOM would have drawn it at.
+#define EACP_SKY_FOCAL 133.33f
+
 typedef struct
 {
     double x, y;
@@ -43,6 +54,10 @@ static void* eacpCachedNodes = 0;
 static int eacpCachedSubsectors = -1;
 static int eacpCachedEpisode = -1;
 static int eacpCachedMap = -1;
+
+static int eacpTexturesReady = 0;
+static unsigned char* eacpWallMasked = 0;
+static short* eacpSpriteHeights = 0;
 
 static double eacpFixedToDouble(fixed_t value)
 {
@@ -97,12 +112,143 @@ EacpDoomCamera eacpDoomGetCamera(void)
     return camera;
 }
 
+static int eacpSpriteBase(void)
+{
+    return numtextures + numflats;
+}
+
+// Draws a patch's posts into an index image and its coverage into an alpha
+// image. This is how DOOM stores every graphic: runs of pixels down a column,
+// with the gaps between the runs left transparent. Composing from the patches
+// (as R_GenerateComposite does) rather than reading the engine's cached columns
+// is what makes a masked texture's holes come out as holes.
+static void eacpBlitPatch(patch_t* patch,
+                          int originX,
+                          int originY,
+                          unsigned char* indices,
+                          unsigned char* alpha,
+                          int width,
+                          int height)
+{
+    int x;
+
+    for (x = 0; x < patch->width; ++x)
+    {
+        int destX = originX + x;
+        column_t* column;
+
+        if (destX < 0 || destX >= width)
+            continue;
+
+        column = (column_t*) ((byte*) patch + patch->columnofs[x]);
+
+        while (column->topdelta != 0xff)
+        {
+            byte* source = (byte*) column + 3;
+            int count = column->length;
+            int i;
+
+            for (i = 0; i < count; ++i)
+            {
+                int destY = originY + column->topdelta + i;
+
+                if (destY < 0 || destY >= height)
+                    continue;
+
+                indices[destY * width + destX] = source[i];
+                alpha[destY * width + destX] = 255;
+            }
+
+            column = (column_t*) ((byte*) column + column->length + 4);
+        }
+    }
+}
+
+static void eacpDecodeWall(int id,
+                           unsigned char* indices,
+                           unsigned char* alpha,
+                           int width,
+                           int height)
+{
+    texture_t* texture = textures[id];
+    int i;
+
+    doom_memset(indices, 0, width * height);
+    doom_memset(alpha, 0, width * height);
+
+    for (i = 0; i < texture->patchcount; ++i)
+    {
+        texpatch_t* piece = &texture->patches[i];
+        patch_t* patch = (patch_t*) W_CacheLumpNum(piece->patch, PU_CACHE);
+
+        eacpBlitPatch(
+            patch, piece->originx, piece->originy, indices, alpha, width, height);
+    }
+}
+
+static int eacpWallIsMasked(int id)
+{
+    int width = textures[id]->width;
+    int height = textures[id]->height;
+    int count = width * height;
+    int masked = 0;
+    int i;
+
+    unsigned char* indices = (unsigned char*) doom_malloc(count);
+    unsigned char* alpha = (unsigned char*) doom_malloc(count);
+
+    if (indices != 0 && alpha != 0)
+    {
+        eacpDecodeWall(id, indices, alpha, width, height);
+
+        for (i = 0; i < count; ++i)
+            if (alpha[i] == 0)
+            {
+                masked = 1;
+                break;
+            }
+    }
+
+    doom_free(indices);
+    doom_free(alpha);
+
+    return masked;
+}
+
+// Which wall textures have holes, and how tall each sprite is: both are known
+// only after decoding, and both are wanted before the renderer asks for a
+// single pixel.
+static void eacpEnsureTextureData(void)
+{
+    int i;
+
+    if (eacpTexturesReady || numtextures <= 0 || textures == 0)
+        return;
+
+    eacpWallMasked = (unsigned char*) doom_malloc(numtextures);
+    eacpSpriteHeights = (short*) doom_malloc(numspritelumps * (int) sizeof(short));
+
+    if (eacpWallMasked == 0 || eacpSpriteHeights == 0)
+        return;
+
+    for (i = 0; i < numtextures; ++i)
+        eacpWallMasked[i] = (unsigned char) eacpWallIsMasked(i);
+
+    for (i = 0; i < numspritelumps; ++i)
+    {
+        patch_t* patch = (patch_t*) W_CacheLumpNum(firstspritelump + i, PU_CACHE);
+        eacpSpriteHeights[i] = patch->height;
+    }
+
+    eacpTexturesReady = 1;
+}
+
 int eacpDoomGetTextureCount(void)
 {
     if (numtextures <= 0 || textures == 0)
         return 0;
 
-    return numtextures + numflats;
+    return numtextures + numflats + numspritelumps;
 }
 
 EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
@@ -110,19 +256,31 @@ EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
     EacpDoomTextureInfo info;
     info.width = 0;
     info.height = 0;
+    info.masked = 0;
 
-    if (id < 0 || id >= eacpDoomGetTextureCount())
+    eacpEnsureTextureData();
+
+    if (!eacpTexturesReady || id < 0 || id >= eacpDoomGetTextureCount())
         return info;
 
     if (id < numtextures)
     {
         info.width = textures[id]->width;
         info.height = textures[id]->height;
+        info.masked = eacpWallMasked[id];
     }
-    else
+    else if (id < eacpSpriteBase())
     {
         info.width = EACP_FLAT_SIZE;
         info.height = EACP_FLAT_SIZE;
+    }
+    else
+    {
+        int lump = id - eacpSpriteBase();
+
+        info.width = spritewidth[lump] >> FRACBITS;
+        info.height = eacpSpriteHeights[lump];
+        info.masked = 1;
     }
 
     return info;
@@ -130,32 +288,67 @@ EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
 
 void eacpDoomGetTexturePixels(int id, unsigned char* out)
 {
-    if (out == 0 || id < 0 || id >= eacpDoomGetTextureCount())
+    EacpDoomTextureInfo info = eacpDoomGetTextureInfo(id);
+    int count = info.width * info.height;
+    unsigned char* indices;
+    unsigned char* alpha;
+    int i;
+
+    if (out == 0 || count <= 0)
         return;
+
+    if (id >= numtextures && id < eacpSpriteBase())
+    {
+        byte* flat =
+            (byte*) W_CacheLumpNum(firstflat + (id - numtextures), PU_CACHE);
+        doom_memcpy(out, flat, EACP_FLAT_SIZE * EACP_FLAT_SIZE);
+        return;
+    }
+
+    indices = (unsigned char*) doom_malloc(count);
+    alpha = (unsigned char*) doom_malloc(count);
+
+    if (indices == 0 || alpha == 0)
+    {
+        doom_free(indices);
+        doom_free(alpha);
+        return;
+    }
 
     if (id < numtextures)
     {
-        // The engine stores composed textures column-major (and composes them
-        // on demand); transpose each column into the row-major image a GPU
-        // texture wants.
-        int width = textures[id]->width;
-        int height = textures[id]->height;
-        int x, y;
+        eacpDecodeWall(id, indices, alpha, info.width, info.height);
+    }
+    else
+    {
+        patch_t* patch = (patch_t*) W_CacheLumpNum(
+            firstspritelump + (id - eacpSpriteBase()), PU_CACHE);
 
-        for (x = 0; x < width; ++x)
+        doom_memset(indices, 0, count);
+        doom_memset(alpha, 0, count);
+        eacpBlitPatch(patch, 0, 0, indices, alpha, info.width, info.height);
+    }
+
+    // A masked texture carries its coverage in alpha, so the shader can throw
+    // the empty pixels away; everything else is a bare index.
+    if (info.masked)
+    {
+        for (i = 0; i < count; ++i)
         {
-            byte* column = R_GetColumn(id, x);
-
-            for (y = 0; y < height; ++y)
-                out[y * width + x] = column[y];
+            out[i * 4 + 0] = indices[i];
+            out[i * 4 + 1] = 0;
+            out[i * 4 + 2] = 0;
+            out[i * 4 + 3] = alpha[i];
         }
     }
     else
     {
-        byte* flat = (byte*) W_CacheLumpNum(firstflat + (id - numtextures),
-                                            PU_CACHE);
-        doom_memcpy(out, flat, EACP_FLAT_SIZE * EACP_FLAT_SIZE);
+        for (i = 0; i < count; ++i)
+            out[i] = indices[i];
     }
+
+    doom_free(indices);
+    doom_free(alpha);
 }
 
 void eacpDoomGetColormaps(unsigned char* out)
@@ -559,7 +752,270 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
                              frontCeiling, textureTop, uStart, uEnd,
                              textureHeight, light);
         }
+
+        // The middle texture of a two-sided line - a grate, a window, a hanging
+        // vine. It is masked, and unlike the walls above it never tiles: DOOM
+        // draws it once, clipped to the opening, which is why a too-short
+        // midtexture leaves a gap rather than repeating.
+        if (side->midtexture > 0)
+        {
+            int texture = texturetranslation[side->midtexture];
+            float textureWidth = (float) textures[texture]->width;
+            float textureHeight = (float) textures[texture]->height;
+
+            float openingBottom = backFloor > frontFloor ? backFloor : frontFloor;
+            float openingTop =
+                backCeiling < frontCeiling ? backCeiling : frontCeiling;
+
+            float textureTop = (line->flags & ML_DONTPEGBOTTOM)
+                                   ? openingBottom + textureHeight
+                                   : openingTop;
+            float top;
+            float bottom;
+
+            textureTop += rowOffset;
+
+            top = textureTop < openingTop ? textureTop : openingTop;
+            bottom = textureTop - textureHeight;
+
+            if (bottom < openingBottom)
+                bottom = openingBottom;
+
+            uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
+            uEnd = uStart + (float) length / textureWidth;
+
+            eacpEmitWallQuad(em, texture, x1, y1, x2, y2, bottom, top, textureTop,
+                             uStart, uEnd, textureHeight, light);
+        }
     }
+}
+
+// Every thing in the level - monsters, items, decorations, the player's
+// corpse - as a quad facing the camera, exactly where DOOM's own sprite
+// projection would put it: the sprite's left edge sits its own offset to the
+// left of the thing's position along the view plane, and its top sits the
+// sprite's top offset above the thing's feet.
+static void eacpEmitSprite(EacpEmitter* em,
+                           mobj_t* thing,
+                           mobj_t* viewer,
+                           double rightX,
+                           double rightY)
+{
+    spritedef_t* definition;
+    spriteframe_t* frame;
+    int rotation = 0;
+    int lump;
+    int flip;
+    float light;
+    double leftX, leftY;
+    float width, height, top, bottom;
+    float u0, u1;
+
+    if (thing == viewer || thing->sprite < 0 || thing->sprite >= numsprites)
+        return;
+
+    definition = &sprites[thing->sprite];
+
+    if ((int) (thing->frame & FF_FRAMEMASK) >= definition->numframes)
+        return;
+
+    frame = &definition->spriteframes[thing->frame & FF_FRAMEMASK];
+
+    // Eight drawings per frame, one per facing: which one shows depends on the
+    // angle the thing is seen from.
+    if (frame->rotate)
+    {
+        angle_t seen = R_PointToAngle2(viewer->x, viewer->y, thing->x, thing->y);
+        rotation =
+            (seen - thing->angle + (unsigned) (ANG45 / 2) * 9) >> 29;
+    }
+
+    lump = frame->lump[rotation];
+    flip = frame->flip[rotation];
+
+    if (lump < 0 || lump >= numspritelumps)
+        return;
+
+    width = (float) (spritewidth[lump] >> FRACBITS);
+    height = (float) eacpSpriteHeights[lump];
+
+    leftX = eacpFixedToDouble(thing->x)
+            - rightX * eacpFixedToDouble(spriteoffset[lump]);
+    leftY = eacpFixedToDouble(thing->y)
+            - rightY * eacpFixedToDouble(spriteoffset[lump]);
+
+    top = eacpFixedToFloat(thing->z) + eacpFixedToFloat(spritetopoffset[lump]);
+    bottom = top - height;
+
+    // A lit frame (a muzzle flash, a rocket) ignores the sector's light.
+    light = (thing->frame & FF_FULLBRIGHT)
+                ? 0.0f
+                : eacpStartMap(thing->subsector->sector->lightlevel, 0);
+
+    u0 = flip ? 1.0f : 0.0f;
+    u1 = flip ? 0.0f : 1.0f;
+
+    {
+        int texture = eacpSpriteBase() + lump;
+
+        float ax = (float) leftX;
+        float az = (float) -leftY;
+        float bx = (float) (leftX + rightX * width);
+        float bz = (float) -(leftY + rightY * width);
+
+        eacpEmitVertex(em, texture, ax, bottom, az, u0, 1.0f, light);
+        eacpEmitVertex(em, texture, bx, bottom, bz, u1, 1.0f, light);
+        eacpEmitVertex(em, texture, bx, top, bz, u1, 0.0f, light);
+
+        eacpEmitVertex(em, texture, ax, bottom, az, u0, 1.0f, light);
+        eacpEmitVertex(em, texture, bx, top, bz, u1, 0.0f, light);
+        eacpEmitVertex(em, texture, ax, top, az, u0, 0.0f, light);
+    }
+}
+
+static void eacpEmitSprites(EacpEmitter* em, mobj_t* viewer)
+{
+    thinker_t* thinker;
+
+    // The view plane's right axis, the one DOOM measures a sprite's width
+    // along, so the billboards stay square-on to the camera.
+    double rightX = eacpFixedToDouble(finesine[viewer->angle >> ANGLETOFINESHIFT]);
+    double rightY =
+        -eacpFixedToDouble(finecosine[viewer->angle >> ANGLETOFINESHIFT]);
+
+    for (thinker = thinkercap.next; thinker != &thinkercap;
+         thinker = thinker->next)
+    {
+        if (thinker->function.acp1 != (actionf_p1) P_MobjThinker)
+            continue;
+
+        eacpEmitSprite(em, (mobj_t*) thinker, viewer, rightX, rightY);
+    }
+}
+
+// The sky is not geometry in DOOM: it is painted wherever a ceiling is missing,
+// at a column picked by the direction the player faces. A cylinder around the
+// camera reproduces that - it never moves relative to the viewer, so it has no
+// parallax, and its texture repeats four times around, as the engine's does.
+static void eacpEmitSky(EacpEmitter* em, player_t* player)
+{
+    int texture;
+    int i;
+    double camX, camY;
+    float camZ;
+    float vTop, vBottom;
+
+    if (skytexture <= 0 || skytexture >= numtextures || player->mo == 0)
+        return;
+
+    texture = texturetranslation[skytexture];
+
+    camX = eacpFixedToDouble(player->mo->x);
+    camY = eacpFixedToDouble(player->mo->y);
+    camZ = eacpFixedToFloat(player->viewz);
+
+    // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
+    // row is linear in height on the cylinder, so two rings are exact.
+    vTop = (100.0f - EACP_SKY_FOCAL * EACP_SKY_HEIGHT / EACP_SKY_RADIUS) / 128.0f;
+    vBottom =
+        (100.0f + EACP_SKY_FOCAL * EACP_SKY_HEIGHT / EACP_SKY_RADIUS) / 128.0f;
+
+    for (i = 0; i < EACP_SKY_SEGMENTS; ++i)
+    {
+        angle_t a0 = (angle_t) i << 26;
+        angle_t a1 = (angle_t) (i + 1) << 26;
+
+        double x0 = camX
+                    + EACP_SKY_RADIUS
+                          * eacpFixedToDouble(finecosine[a0 >> ANGLETOFINESHIFT]);
+        double y0 = camY
+                    + EACP_SKY_RADIUS
+                          * eacpFixedToDouble(finesine[a0 >> ANGLETOFINESHIFT]);
+        double x1 = camX
+                    + EACP_SKY_RADIUS
+                          * eacpFixedToDouble(finecosine[a1 >> ANGLETOFINESHIFT]);
+        double y1 = camY
+                    + EACP_SKY_RADIUS
+                          * eacpFixedToDouble(finesine[a1 >> ANGLETOFINESHIFT]);
+
+        float u0 = 4.0f * (float) i / (float) EACP_SKY_SEGMENTS;
+        float u1 = 4.0f * (float) (i + 1) / (float) EACP_SKY_SEGMENTS;
+
+        float top = camZ + EACP_SKY_HEIGHT;
+        float bottom = camZ - EACP_SKY_HEIGHT;
+
+        float ax = (float) x0;
+        float az = (float) -y0;
+        float bx = (float) x1;
+        float bz = (float) -y1;
+
+        // Light 0: the sky is always at its brightest, at any distance.
+        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, 0.0f);
+        eacpEmitVertex(em, texture, bx, bottom, bz, u1, vBottom, 0.0f);
+        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, 0.0f);
+
+        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, 0.0f);
+        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, 0.0f);
+        eacpEmitVertex(em, texture, ax, top, az, u0, vTop, 0.0f);
+    }
+}
+
+int eacpDoomGetHudSprites(EacpDoomHudSprite* out, int maxSprites)
+{
+    player_t* player = &players[displayplayer];
+    int count = 0;
+    int i;
+
+    eacpEnsureTextureData();
+
+    if (!eacpTexturesReady || gamestate != GS_LEVEL || out == 0
+        || player->mo == 0)
+        return 0;
+
+    for (i = 0; i < NUMPSPRITES && count < maxSprites; ++i)
+    {
+        pspdef_t* weapon = &player->psprites[i];
+        state_t* state = weapon->state;
+        spritedef_t* definition;
+        spriteframe_t* frame;
+        int lump;
+
+        if (state == 0 || state->sprite < 0 || state->sprite >= numsprites)
+            continue;
+
+        definition = &sprites[state->sprite];
+
+        if ((int) (state->frame & FF_FRAMEMASK) >= definition->numframes)
+            continue;
+
+        frame = &definition->spriteframes[state->frame & FF_FRAMEMASK];
+        lump = frame->lump[0];
+
+        if (lump < 0 || lump >= numspritelumps)
+            continue;
+
+        out[count].textureId = eacpSpriteBase() + lump;
+        out[count].width = (float) (spritewidth[lump] >> FRACBITS);
+        out[count].height = (float) eacpSpriteHeights[lump];
+
+        // The engine positions the weapon in a 320x200 space centred on row
+        // 100, while the view it lands in is 168 rows tall and centred on row
+        // 84 - hence the 16-row shift.
+        out[count].x = eacpFixedToFloat(weapon->sx)
+                       - eacpFixedToFloat(spriteoffset[lump]);
+        out[count].y = eacpFixedToFloat(weapon->sy)
+                       - eacpFixedToFloat(spritetopoffset[lump]) - 16.0f;
+
+        out[count].light =
+            (state->frame & FF_FULLBRIGHT)
+                ? 0.0f
+                : eacpStartMap(player->mo->subsector->sector->lightlevel, 0);
+
+        out[count].flip = frame->flip[0];
+        ++count;
+    }
+
+    return count;
 }
 
 static void eacpEmitFlat(EacpEmitter* em,
@@ -615,6 +1071,7 @@ static void eacpEmitSubsector(EacpEmitter* em, int index)
 
 static void eacpEmitWorld(EacpEmitter* em)
 {
+    player_t* player = &players[displayplayer];
     int i;
 
     for (i = 0; i < numlines; ++i)
@@ -625,6 +1082,12 @@ static void eacpEmitWorld(EacpEmitter* em)
 
     for (i = 0; i < numsubsectors; ++i)
         eacpEmitSubsector(em, i);
+
+    if (player->mo == 0)
+        return;
+
+    eacpEmitSky(em, player);
+    eacpEmitSprites(em, player->mo);
 }
 
 int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
@@ -642,8 +1105,10 @@ int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
     if (outVertexCount != 0)
         *outVertexCount = 0;
 
+    eacpEnsureTextureData();
+
     if (gamestate != GS_LEVEL || vertices == 0 || draws == 0 || textureCount <= 0
-        || lines == 0)
+        || lines == 0 || !eacpTexturesReady)
         return 0;
 
     eacpEnsureLevel();

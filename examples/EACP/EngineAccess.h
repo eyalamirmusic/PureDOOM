@@ -34,7 +34,25 @@ typedef struct
 {
     int width;
     int height;
+
+    // Masked textures (every sprite, and the wall textures with holes in them —
+    // grates, windows) carry an alpha channel and are stored four bytes per
+    // pixel: the palette index in red, 0 or 255 in alpha. Everything else is
+    // one byte per pixel, and the shader reads its alpha as an implicit 1.
+    int masked;
 } EacpDoomTextureInfo;
+
+// The weapon and its muzzle flash: sprites the engine draws in screen space
+// rather than in the world, positioned in the 320 x 168 view with a top-left
+// origin.
+typedef struct
+{
+    int textureId;
+    float x, y;
+    float width, height;
+    float light;
+    int flip;
+} EacpDoomHudSprite;
 
 typedef struct
 {
@@ -55,29 +73,36 @@ extern "C"
 
     EacpDoomCamera eacpDoomGetCamera(void);
 
-    // Every wall texture and flat the game loaded, in one id space: ids below
-    // the wall-texture count are composed wall textures, the rest are flats.
-    // Stable for the whole run (the WAD's texture set is loaded once), so the
-    // renderer uploads them once. Zero until the engine has initialised.
+    // Every wall texture, flat and sprite the game loaded, in one id space and
+    // in that order. Stable for the whole run (the WAD's graphics are loaded
+    // once), so the renderer can upload each one lazily and keep it. Zero until
+    // the engine has initialised.
     int eacpDoomGetTextureCount(void);
     EacpDoomTextureInfo eacpDoomGetTextureInfo(int id);
 
-    // Fills out with width * height palette indices, row-major, top row first.
+    // Fills out with the texture's pixels, row-major, top row first: one byte
+    // per pixel, or four when the texture is masked (see EacpDoomTextureInfo).
     void eacpDoomGetTexturePixels(int id, unsigned char* out);
 
     // Fills out with EACP_DOOM_COLORMAP_ROWS rows of 256 palette indices: row r
     // maps a palette index to its appearance at light level r.
     void eacpDoomGetColormaps(unsigned char* out);
 
-    // Builds this frame's world geometry - textured walls, floors and ceilings
-    // read fresh from the live level, so moving sectors and animated textures
-    // are always current - and groups it into per-texture draw runs. Writes the
-    // vertex count through outVertexCount and returns the draw count.
+    // Builds this frame's world geometry - textured walls, floors, ceilings,
+    // the sky and every thing in the level as a camera-facing billboard, read
+    // fresh from the live level so moving sectors, animated textures and moving
+    // monsters are always current - and groups it into per-texture draw runs.
+    // Writes the vertex count through outVertexCount and returns the draw
+    // count.
     int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
                               int maxVertices,
                               EacpDoomDraw* draws,
                               int maxDraws,
                               int* outVertexCount);
+
+    // The player's weapon and muzzle flash, drawn over the world in screen
+    // space. Returns the number written (at most 2).
+    int eacpDoomGetHudSprites(EacpDoomHudSprite* out, int maxSprites);
 
 #ifdef __cplusplus
 }

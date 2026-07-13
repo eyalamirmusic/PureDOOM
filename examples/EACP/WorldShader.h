@@ -40,7 +40,16 @@ struct WorldShader final : GPU::ShaderProgram
         // falloff needs comes free with the transform.
         auto depth = varying(clip.w());
         auto startMap = varying(light);
-        auto index = sample(texture, varying(uv)).x();
+        auto texel = sample(texture, varying(uv));
+
+        // Masked textures - every sprite, and the walls with holes in them -
+        // carry their coverage in alpha; the empty pixels are thrown away here,
+        // so what is behind them shows through instead of being occluded. A
+        // plain indexed texture has no alpha channel and reads as 1, so it
+        // never loses a pixel.
+        setDiscardBelow(texel.w(), 0.5f);
+
+        auto index = texel.x();
 
         // The engine's light table, in closed form: a surface starts at the
         // COLORMAP row its sector's brightness picks and moves one row darker

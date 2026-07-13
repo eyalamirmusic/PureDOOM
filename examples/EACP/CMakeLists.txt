@@ -24,6 +24,7 @@ add_executable(PureDoomEACP
         App.h
         Common.h
         EngineAccess.h
+        HudShader.h
         Input.h
         Layout.h
         ScreenShader.h

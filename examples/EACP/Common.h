@@ -34,7 +34,10 @@ constexpr auto worldAspect = 320.0f / (viewRows * 1.2f);
 // Ceilings for one frame of world geometry; a shareware level fills a small
 // fraction of either.
 constexpr auto maxVertices = 262144;
-constexpr auto maxDraws = 1024;
+constexpr auto maxDraws = 2048;
+
+// The weapon and its muzzle flash.
+constexpr auto maxHudSprites = 4;
 
 constexpr auto colormapRows = (float) EACP_DOOM_COLORMAP_ROWS;
 constexpr auto pi = 3.14159265358979f;
