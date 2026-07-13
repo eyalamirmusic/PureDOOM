@@ -59,8 +59,6 @@ struct View final : GPU::GPUView
             syncModifierKeys(window->getModifiers());
         }
 
-        filterMouse();
-
         // One reading of the engine's clock decides both things the frame needs
         // from it: whether a tic is due, and how far into the tic the frame
         // sits. Reading it twice lets a tic boundary fall between the two, and
@@ -182,27 +180,6 @@ struct View final : GPU::GPUView
     // crawl. Accumulate the movement here and give the engine the whole of it,
     // once per tic, which is what it expects. It also keeps the engine's
     // 64-event queue from filling with mouse motion and dropping keystrokes.
-    // Raw mouse deltas are not smooth: one steady sweep measures -10, -30, -13,
-    // -12, -14, -24, -10 — the hardware's sampling beating against the refresh
-    // rate, and the system's pointer acceleration on top. The engine hides this
-    // by only reading the mouse once a tic, which averages it; anything drawn
-    // between tics sees it raw.
-    //
-    // Averaging each frame's movement with the one before halves that noise for
-    // half a frame of delay, and loses none of the movement — each sample is
-    // still counted once, spread across two frames. The engine and the view are
-    // handed the same filtered signal, so they stay in step.
-    void filterMouse()
-    {
-        auto filtered = (rawMouse.x + previousRawMouse.x) * 0.5f;
-        auto filteredY = (rawMouse.y + previousRawMouse.y) * 0.5f;
-
-        mouseMovement.x += filtered;
-        mouseMovement.y += filteredY;
-
-        previousRawMouse = rawMouse;
-        rawMouse = {};
-    }
 
     float pendingTurn() const { return turnFor(mouseMovement.x); }
 
@@ -508,10 +485,14 @@ struct View final : GPU::GPUView
 
     void aim(const Graphics::MouseEvent& event)
     {
+        // The device's own movement, not the pointer's: the system's
+        // acceleration curve is there to help a cursor reach a target, and
+        // through it the same flick of the hand turns the player a different
+        // amount depending how fast it was made.
         if (window != nullptr && window->isMouseLocked())
         {
-            rawMouse.x += event.delta.x * mouseSpeed;
-            rawMouse.y += event.delta.y * mouseSpeed;
+            mouseMovement.x += event.rawDelta.x * mouseSpeed;
+            mouseMovement.y += event.rawDelta.y * mouseSpeed;
         }
     }
 
@@ -547,10 +528,6 @@ struct View final : GPU::GPUView
     // the engine made from the movement handed to it at that tic.
     Graphics::Point mouseMovement;
     float appliedTurn = 0.0f;
-
-    // This frame's raw movement and the last frame's, which filterMouse averages.
-    Graphics::Point rawMouse;
-    Graphics::Point previousRawMouse;
 
     // Shift+F7 drops the aim back to plain interpolation — a tic of lag, and
     // nothing running ahead — to compare the two.

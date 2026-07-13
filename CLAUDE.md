@@ -154,15 +154,10 @@ broken rather than fail outright.
     to compare). Predicting is only safe because the movement it predicts from
     is filtered first — see below. Predicting from the raw signal was what made
     the mouse shake while the keyboard stayed smooth.
-  - the **mouse itself is filtered** (`View::filterMouse`). Raw deltas are not
-    smooth: one steady sweep measures -10, -30, -13, -12, -14, -24, -10 — the
-    hardware's sampling beating against the refresh rate, plus pointer
-    acceleration. The engine hides this by reading the mouse once a tic, which
-    averages it; anything drawn *between* tics sees it raw. Averaging each
-    frame's movement with the one before halves the noise for half a frame of
-    delay and loses none of the movement. The engine and the view are handed the
-    same filtered signal, so they stay in step and the prediction still cancels
-    exactly at the tic boundary.
+    The mouse is *not* filtered, and must not be: what looked like noise in it
+    (one steady sweep measuring -10, -30, -13, -12, -14, -24, -10) was the
+    system's pointer acceleration, and eacp now hands a locked window the raw
+    device movement instead, which is linear. GZDoom smooths nothing either.
   - **things** (monsters, items) are wound back from where the tic left them by
     their own momentum, which the engine already stores.
   - **floors and ceilings** a door or a lift is driving come from
@@ -185,13 +180,31 @@ framebuffer, wall textures, flats, the COLORMAP — uploads as one byte per
 pixel instead of being expanded to RGBA on the CPU; `Buffer::update`, so the
 world's geometry buffer is re-uploaded each frame rather than reallocated;
 `ShaderProgram::setDiscardBelow`, an alpha test in the shader EDSL, without
-which no sprite or masked texture can be drawn; and a **fix to the mouse
-lock** — engaging it warps the cursor into the window, and the next mouse
-event still reported that warp in its delta, as though the hand had made the
-jump. Measured at −222 px in one event, it spun a locked camera round the
-instant you clicked. The warp now marks itself and that one delta is dropped
-(GLFW compensates for the same behaviour; eacp's comment had asserted the
-disassociate-first ordering already prevented it, and it does not).
+which no sprite or masked texture can be drawn; and three **input fixes**, all
+found by comparing against GZDoom:
+
+- **`MouseEvent::rawDelta`** — a second movement figure alongside `delta`.
+  `delta` is the *pointer's* movement, shaped by the system's acceleration
+  curve; `rawDelta` is the *device's*, with no curve. The curve exists so a
+  cursor can cross a screen and land on a target, and a widget dragged by the
+  pointer (a knob, a scrubber) should follow it — but through it, the same
+  flick of the hand turns a camera a different amount depending how fast it
+  was made, which reads as the aim being unpredictable. That is why GZDoom
+  (which takes the device's figures through SDL) feels instant. Both are now
+  always reported and the caller picks. macOS reads the unaccelerated fields
+  off the CGEvent; Windows uses Raw Input, which also escapes the
+  whole-pixel rounding and screen-edge clamping of its warp-to-centre lock.
+- **The mouse lock's cursor warp** was reported as motion the user had made —
+  measured at −222 px in a single event, enough to spin a locked camera round
+  the instant you clicked. The warp now marks itself and that one delta is
+  dropped. (eacp's comment had asserted the disassociate-first ordering
+  prevented this; it does not. GLFW compensates for the same behaviour.)
+- **`GPUView::setFramesInFlight`** — every frame queued ahead of the screen is
+  a frame of delay between a hand moving and the picture answering. Metal
+  queued three by default and DXGI does the same, so the picture could be three
+  refreshes old, felt as heaviness in *all* input, keyboard included. Two is
+  now the default, with the choice exposed for a view whose frame times are
+  spiky and whose input is not being aimed with.
 
 1. **No audio subsystem.** Sound effects need a pull-model PCM output stream
    (`DOOM_SAMPLERATE` = 11025 Hz, 16-bit stereo, mixed via
