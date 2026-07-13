@@ -61,7 +61,17 @@ struct WorldShader final : GPU::ShaderProgram
                    float2(paletteCoordinate(index), (row + 0.5f) / colormapRows))
                 .x();
 
-        auto color = sample(palette, float2(paletteCoordinate(shaded), 0.5f));
+        // The menu darkens what is behind it by running the finished frame
+        // through a COLORMAP row, which is a second lookup here rather than a
+        // pass over 64000 pixels there - and leaves the world at full resolution
+        // under the menu instead of replacing it with the software frame. Row 0
+        // is the identity, so playing costs the lookup and nothing else.
+        auto darkened = sample(colormap,
+                               float2(paletteCoordinate(shaded),
+                                      (darkenRow + 0.5f) / colormapRows))
+                            .x();
+
+        auto color = sample(palette, float2(paletteCoordinate(darkened), 0.5f));
         setFragment(float4(color.xyz(), 1.0f));
     }
 
@@ -78,6 +88,7 @@ struct WorldShader final : GPU::ShaderProgram
     GPU::Uniform<GPU::Float> yaw;
     GPU::Uniform<GPU::Float2> ndcScale;
     GPU::Uniform<GPU::Float2> ndcOffset;
+    GPU::Uniform<GPU::Float> darkenRow;
 
     // Rebound per draw: the frame's geometry is grouped by texture, so each
     // wall texture and flat is drawn in one run.
@@ -85,7 +96,15 @@ struct WorldShader final : GPU::ShaderProgram
     GPU::Uniform<GPU::Texture2D> colormap;
     GPU::Uniform<GPU::Texture2D> palette;
 
-    EACP_SHADER(
-        camX, camY, camZ, yaw, ndcScale, ndcOffset, texture, colormap, palette)
+    EACP_SHADER(camX,
+                camY,
+                camZ,
+                yaw,
+                ndcScale,
+                ndcOffset,
+                darkenRow,
+                texture,
+                colormap,
+                palette)
 };
 } // namespace PureDoom

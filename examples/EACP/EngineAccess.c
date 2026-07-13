@@ -146,8 +146,7 @@ void eacpDoomSnapshotTic(void)
         doom_free(eacpPreviousCeiling);
 
         eacpPreviousFloor = (float*) doom_malloc(numsectors * (int) sizeof(float));
-        eacpPreviousCeiling =
-            (float*) doom_malloc(numsectors * (int) sizeof(float));
+        eacpPreviousCeiling = (float*) doom_malloc(numsectors * (int) sizeof(float));
         eacpSnapshotSectors = numsectors;
 
         if (eacpPreviousFloor == 0 || eacpPreviousCeiling == 0)
@@ -164,15 +163,126 @@ void eacpDoomSnapshotTic(void)
     }
 }
 
-int eacpDoomWorldVisible(void)
+int eacpDoomViewActive(void)
 {
-    return gamestate == GS_LEVEL && !menuactive && !automapactive
-           && !is_wiping_screen;
+    return gamestate == GS_LEVEL && gametic && !is_wiping_screen;
+}
+
+int eacpDoomAutomapActive(void)
+{
+    return automapactive ? 1 : 0;
+}
+
+int eacpDoomDarkenRow(void)
+{
+    // M_Drawer only reaches its darkening once it is actually showing a menu: a
+    // confirmation prompt draws its text and returns before then.
+    if (menuactive && !messageToPrint && (doom_flags & DOOM_FLAG_MENU_DARKEN_BG))
+        return EACP_DOOM_MENU_DARKEN_ROW;
+
+    return 0;
+}
+
+#define EACP_SCREEN_PIXELS (EACP_DOOM_SCREEN_WIDTH * EACP_DOOM_SCREEN_HEIGHT)
+
+static unsigned char eacpOverlayPass[2][EACP_SCREEN_PIXELS];
+static unsigned char eacpUnderIndex[EACP_SCREEN_PIXELS];
+static unsigned char eacpUnderMask[EACP_SCREEN_PIXELS];
+static unsigned char eacpMenuIndex[EACP_SCREEN_PIXELS];
+static unsigned char eacpMenuMask[EACP_SCREEN_PIXELS];
+
+// What D_Display draws over the view *before* the menu darkens the frame, in its
+// order - and so what the menu darkens along with the world.
+static void eacpDrawUnderLayers(void)
+{
+    if (gamestate != GS_LEVEL || !gametic)
+        return;
+
+    if (automapactive)
+        AM_drawMarks();
+
+    HU_Drawer();
+
+    if (paused)
+    {
+        int y = automapactive ? 4 : viewwindowy + 4;
+
+        V_DrawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
+                          y,
+                          0,
+                          W_CacheLumpName("M_PAUSE", PU_CACHE));
+    }
+}
+
+// One layer's pixels and the coverage that goes with them. Primed differently,
+// the two passes agree only where the layer drew, so where they agree is exactly
+// what it covered - which no single pass can tell, a drawn pixel being free to
+// hold whatever value the buffer was primed with.
+static void eacpCaptureLayer(void (*layer)(void),
+                             unsigned char* indices,
+                             unsigned char* coverage)
+{
+    byte* frame = screens[0];
+    int pass;
+    int i;
+
+    for (pass = 0; pass < 2; ++pass)
+    {
+        doom_memset(
+            eacpOverlayPass[pass], pass == 0 ? 0x00 : 0xff, EACP_SCREEN_PIXELS);
+
+        screens[0] = eacpOverlayPass[pass];
+        layer();
+    }
+
+    screens[0] = frame;
+
+    for (i = 0; i < EACP_SCREEN_PIXELS; ++i)
+    {
+        indices[i] = eacpOverlayPass[0][i];
+        coverage[i] = eacpOverlayPass[0][i] == eacpOverlayPass[1][i] ? 255 : 0;
+    }
+}
+
+int eacpDoomBuildOverlay(unsigned char* outRgba)
+{
+    int flags = doom_flags;
+    int covered = 0;
+    int i;
+
+    // Left to the GPU view, which can darken at full resolution and exactly (see
+    // eacpDoomDarkenRow). Were it left on, it would write to all 64000 pixels and
+    // the whole screen would come back as covered.
+    doom_flags &= ~DOOM_FLAG_MENU_DARKEN_BG;
+
+    eacpCaptureLayer(eacpDrawUnderLayers, eacpUnderIndex, eacpUnderMask);
+    eacpCaptureLayer(M_Drawer, eacpMenuIndex, eacpMenuMask);
+
+    doom_flags = flags;
+
+    for (i = 0; i < EACP_SCREEN_PIXELS; ++i)
+    {
+        int menu = eacpMenuMask[i] != 0;
+        int under = eacpUnderMask[i] != 0;
+
+        outRgba[i * 4 + 0] = menu ? eacpMenuIndex[i] : eacpUnderIndex[i];
+
+        // The menu darkens what was already on the screen and then draws itself
+        // over it, so a message or the PAUSE graphic dims with the world it sits
+        // on while the menu itself stays bright.
+        outRgba[i * 4 + 1] = (under && !menu) ? 255 : 0;
+        outRgba[i * 4 + 2] = 0;
+        outRgba[i * 4 + 3] = (menu || under) ? 255 : 0;
+
+        covered |= menu || under;
+    }
+
+    return covered;
 }
 
 void eacpDoomBindKeys(void)
 {
-    int count = (int)(sizeof(defaults) / sizeof(defaults[0]));
+    int count = (int) (sizeof(defaults) / sizeof(defaults[0]));
     int i;
 
     for (i = 0; i < count; i++)
@@ -281,11 +391,8 @@ static void eacpBlitPatch(patch_t* patch,
     }
 }
 
-static void eacpDecodeWall(int id,
-                           unsigned char* indices,
-                           unsigned char* alpha,
-                           int width,
-                           int height)
+static void eacpDecodeWall(
+    int id, unsigned char* indices, unsigned char* alpha, int width, int height)
 {
     texture_t* texture = textures[id];
     int i;
@@ -489,8 +596,7 @@ static float eacpStartMap(int lightlevel, int contrast)
     if (lightnum >= LIGHTLEVELS)
         lightnum = LIGHTLEVELS - 1;
 
-    return (float) ((LIGHTLEVELS - 1 - lightnum) * 2 * NUMCOLORMAPS
-                    / LIGHTLEVELS);
+    return (float) ((LIGHTLEVELS - 1 - lightnum) * 2 * NUMCOLORMAPS / LIGHTLEVELS);
 }
 
 // Sutherland-Hodgman against one half-plane. The side test matches the
@@ -566,8 +672,8 @@ static void eacpStoreSubsector(int index, const EacpPoint* poly, int count)
         double dx = eacpFixedToDouble(seg->v2->x) - x;
         double dy = eacpFixedToDouble(seg->v2->y) - y;
 
-        eacpClipToLine(current, currentCount, x, y, dx, dy, 1, clipped,
-                       &clippedCount);
+        eacpClipToLine(
+            current, currentCount, x, y, dx, dy, 1, clipped, &clippedCount);
 
         for (currentCount = 0; currentCount < clippedCount; ++currentCount)
             current[currentCount] = clipped[currentCount];
@@ -833,16 +939,26 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
         textureWidth = (float) textures[texture]->width;
         textureHeight = (float) textures[texture]->height;
 
-        textureTop = (line->flags & ML_DONTPEGBOTTOM)
-                         ? frontFloor + textureHeight
-                         : frontCeiling;
+        textureTop = (line->flags & ML_DONTPEGBOTTOM) ? frontFloor + textureHeight
+                                                      : frontCeiling;
         textureTop += rowOffset;
 
         uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
         uEnd = uStart + length / textureWidth;
 
-        eacpEmitWallQuad(em, texture, x1, y1, x2, y2, frontFloor, frontCeiling,
-                         textureTop, uStart, uEnd, textureHeight, light);
+        eacpEmitWallQuad(em,
+                         texture,
+                         x1,
+                         y1,
+                         x2,
+                         y2,
+                         frontFloor,
+                         frontCeiling,
+                         textureTop,
+                         uStart,
+                         uEnd,
+                         textureHeight,
+                         light);
         return;
     }
 
@@ -863,15 +979,25 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
             uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
             uEnd = uStart + length / textureWidth;
 
-            eacpEmitWallQuad(em, texture, x1, y1, x2, y2, frontFloor, backFloor,
-                             textureTop, uStart, uEnd, textureHeight, light);
+            eacpEmitWallQuad(em,
+                             texture,
+                             x1,
+                             y1,
+                             x2,
+                             y2,
+                             frontFloor,
+                             backFloor,
+                             textureTop,
+                             uStart,
+                             uEnd,
+                             textureHeight,
+                             light);
         }
 
         // Between two sky ceilings the step is invisible sky (the classic sky
         // hack), not an upper wall.
         if (side->toptexture > 0 && backCeiling < frontCeiling
-            && !(front->ceilingpic == skyflatnum
-                 && back->ceilingpic == skyflatnum))
+            && !(front->ceilingpic == skyflatnum && back->ceilingpic == skyflatnum))
         {
             int texture = texturetranslation[side->toptexture];
             float textureWidth = (float) textures[texture]->width;
@@ -885,9 +1011,19 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
             uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
             uEnd = uStart + length / textureWidth;
 
-            eacpEmitWallQuad(em, texture, x1, y1, x2, y2, backCeiling,
-                             frontCeiling, textureTop, uStart, uEnd,
-                             textureHeight, light);
+            eacpEmitWallQuad(em,
+                             texture,
+                             x1,
+                             y1,
+                             x2,
+                             y2,
+                             backCeiling,
+                             frontCeiling,
+                             textureTop,
+                             uStart,
+                             uEnd,
+                             textureHeight,
+                             light);
         }
 
         // The middle texture of a two-sided line - a grate, a window, a hanging
@@ -921,8 +1057,19 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
             uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
             uEnd = uStart + length / textureWidth;
 
-            eacpEmitWallQuad(em, texture, x1, y1, x2, y2, bottom, top, textureTop,
-                             uStart, uEnd, textureHeight, light);
+            eacpEmitWallQuad(em,
+                             texture,
+                             x1,
+                             y1,
+                             x2,
+                             y2,
+                             bottom,
+                             top,
+                             textureTop,
+                             uStart,
+                             uEnd,
+                             textureHeight,
+                             light);
         }
     }
 }
@@ -932,11 +1079,8 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
 // projection would put it: the sprite's left edge sits its own offset to the
 // left of the thing's position along the view plane, and its top sits the
 // sprite's top offset above the thing's feet.
-static void eacpEmitSprite(EacpEmitter* em,
-                           mobj_t* thing,
-                           mobj_t* viewer,
-                           double rightX,
-                           double rightY)
+static void eacpEmitSprite(
+    EacpEmitter* em, mobj_t* thing, mobj_t* viewer, double rightX, double rightY)
 {
     spritedef_t* definition;
     spriteframe_t* frame;
@@ -963,8 +1107,7 @@ static void eacpEmitSprite(EacpEmitter* em,
     if (frame->rotate)
     {
         angle_t seen = R_PointToAngle2(viewer->x, viewer->y, thing->x, thing->y);
-        rotation =
-            (seen - thing->angle + (unsigned) (ANG45 / 2) * 9) >> 29;
+        rotation = (seen - thing->angle + (unsigned) (ANG45 / 2) * 9) >> 29;
     }
 
     lump = frame->lump[rotation];
@@ -1031,9 +1174,8 @@ static angle_t eacpAngleFromRadians(float radians)
                                              * (2147483648.0 / 3.14159265358979));
 }
 
-static void eacpEmitSprites(EacpEmitter* em,
-                            mobj_t* viewer,
-                            const EacpDoomCamera* camera)
+static void
+    eacpEmitSprites(EacpEmitter* em, mobj_t* viewer, const EacpDoomCamera* camera)
 {
     thinker_t* thinker;
 
@@ -1044,8 +1186,7 @@ static void eacpEmitSprites(EacpEmitter* em,
     double rightX = eacpFixedToDouble(finesine[facing >> ANGLETOFINESHIFT]);
     double rightY = -eacpFixedToDouble(finecosine[facing >> ANGLETOFINESHIFT]);
 
-    for (thinker = thinkercap.next; thinker != &thinkercap;
-         thinker = thinker->next)
+    for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
     {
         if (thinker->function.acp1 != (actionf_p1) P_MobjThinker)
             continue;
@@ -1078,8 +1219,7 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
     // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
     // row is linear in height on the cylinder, so two rings are exact.
     vTop = (100.0f - EACP_SKY_FOCAL * EACP_SKY_HEIGHT / EACP_SKY_RADIUS) / 128.0f;
-    vBottom =
-        (100.0f + EACP_SKY_FOCAL * EACP_SKY_HEIGHT / EACP_SKY_RADIUS) / 128.0f;
+    vBottom = (100.0f + EACP_SKY_FOCAL * EACP_SKY_HEIGHT / EACP_SKY_RADIUS) / 128.0f;
 
     for (i = 0; i < EACP_SKY_SEGMENTS; ++i)
     {
@@ -1089,15 +1229,15 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
         double x0 = camX
                     + EACP_SKY_RADIUS
                           * eacpFixedToDouble(finecosine[a0 >> ANGLETOFINESHIFT]);
-        double y0 = camY
-                    + EACP_SKY_RADIUS
-                          * eacpFixedToDouble(finesine[a0 >> ANGLETOFINESHIFT]);
+        double y0 =
+            camY
+            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a0 >> ANGLETOFINESHIFT]);
         double x1 = camX
                     + EACP_SKY_RADIUS
                           * eacpFixedToDouble(finecosine[a1 >> ANGLETOFINESHIFT]);
-        double y1 = camY
-                    + EACP_SKY_RADIUS
-                          * eacpFixedToDouble(finesine[a1 >> ANGLETOFINESHIFT]);
+        double y1 =
+            camY
+            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a1 >> ANGLETOFINESHIFT]);
 
         float u0 = 4.0f * (float) i / (float) EACP_SKY_SEGMENTS;
         float u1 = 4.0f * (float) (i + 1) / (float) EACP_SKY_SEGMENTS;
@@ -1180,11 +1320,8 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
     }
 }
 
-static void eacpEmitFlat(EacpEmitter* em,
-                         int index,
-                         int flat,
-                         float height,
-                         float light)
+static void
+    eacpEmitFlat(EacpEmitter* em, int index, int flat, float height, float light)
 {
     int textureId = numtextures + flattranslation[flat];
     const float* poly = &eacpPolyVertices[eacpPolyStart[index] * 2];
@@ -1205,9 +1342,14 @@ static void eacpEmitFlat(EacpEmitter* em,
             float x = poly[corners[c] * 2 + 0];
             float y = poly[corners[c] * 2 + 1];
 
-            eacpEmitVertex(em, textureId, x, height, -y,
+            eacpEmitVertex(em,
+                           textureId,
+                           x,
+                           height,
+                           -y,
                            x / (float) EACP_FLAT_SIZE,
-                           -y / (float) EACP_FLAT_SIZE, light);
+                           -y / (float) EACP_FLAT_SIZE,
+                           light);
         }
     }
 }
@@ -1222,13 +1364,12 @@ static void eacpEmitSubsector(EacpEmitter* em, int index)
 
     light = eacpStartMap(sector->lightlevel, 0);
 
-    eacpEmitFlat(em, index, sector->floorpic,
-                 eacpFloorHeight(sector), light);
+    eacpEmitFlat(em, index, sector->floorpic, eacpFloorHeight(sector), light);
 
     // A sky ceiling is a hole onto the sky, not a surface.
     if (sector->ceilingpic != skyflatnum)
-        eacpEmitFlat(em, index, sector->ceilingpic,
-                     eacpCeilingHeight(sector), light);
+        eacpEmitFlat(
+            em, index, sector->ceilingpic, eacpCeilingHeight(sector), light);
 }
 
 static void eacpEmitWorld(EacpEmitter* em, const EacpDoomCamera* camera)
@@ -1318,4 +1459,294 @@ int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
         *outVertexCount = total;
 
     return drawCount;
+}
+
+// The automap, as geometry rather than as a rasterized frame.
+//
+// What is drawn, and in what colour, is AM_Drawer's own choice, mirrored below:
+// only its rasterizer (AM_drawFline, a Bresenham walk straight into the 320 x
+// 168 frame) is replaced. The shapes it draws the player and the things with -
+// player_arrow, cheat_player_arrow, thintriangle_guy - and the rotation it puts
+// them through are the engine's, used here as they stand.
+
+typedef struct
+{
+    EacpDoomAutomapVertex* vertices;
+    int count;
+    int max;
+
+    // The map point the frame's lower-left corner sits on, in fixed-point map
+    // units, and how many frame pixels one of those units spans.
+    double originX;
+    double originY;
+    double scale;
+} EacpAutomapEmitter;
+
+static void eacpAutomapCorner(EacpAutomapEmitter* em,
+                              double x,
+                              double y,
+                              double dx,
+                              double dy,
+                              float side,
+                              float color)
+{
+    EacpDoomAutomapVertex* vertex = &em->vertices[em->count++];
+
+    vertex->position[0] = (float) x;
+    vertex->position[1] = (float) y;
+    vertex->direction[0] = (float) dx;
+    vertex->direction[1] = (float) dy;
+    vertex->side = side;
+    vertex->color = color;
+}
+
+// One line of the map, in frame coordinates, as the two triangles of a quad the
+// vertex shader widens.
+static void eacpAutomapFrameLine(
+    EacpAutomapEmitter* em, double ax, double ay, double bx, double by, int color)
+{
+    double dx = bx - ax;
+    double dy = by - ay;
+    float shade = (float) (color & 0xff);
+
+    if (em->count + 6 > em->max || (dx == 0.0 && dy == 0.0))
+        return;
+
+    eacpAutomapCorner(em, ax, ay, dx, dy, 1.0f, shade);
+    eacpAutomapCorner(em, bx, by, dx, dy, 1.0f, shade);
+    eacpAutomapCorner(em, bx, by, dx, dy, -1.0f, shade);
+
+    eacpAutomapCorner(em, ax, ay, dx, dy, 1.0f, shade);
+    eacpAutomapCorner(em, bx, by, dx, dy, -1.0f, shade);
+    eacpAutomapCorner(em, ax, ay, dx, dy, -1.0f, shade);
+}
+
+// The same line, in map coordinates. CXMTOF and CYMTOF's transform, in floating
+// point and without their rounding to whole pixels: the map's y runs up and the
+// frame's runs down.
+static void eacpAutomapLine(EacpAutomapEmitter* em,
+                            fixed_t x1,
+                            fixed_t y1,
+                            fixed_t x2,
+                            fixed_t y2,
+                            int color)
+{
+    double ax = (double) f_x + ((double) x1 - em->originX) * em->scale;
+    double ay =
+        (double) f_y + (double) f_h - ((double) y1 - em->originY) * em->scale;
+    double bx = (double) f_x + ((double) x2 - em->originX) * em->scale;
+    double by =
+        (double) f_y + (double) f_h - ((double) y2 - em->originY) * em->scale;
+
+    eacpAutomapFrameLine(em, ax, ay, bx, by, color);
+}
+
+// AM_drawLineCharacter, emitting instead of rasterizing.
+static void eacpAutomapLineCharacter(EacpAutomapEmitter* em,
+                                     mline_t* lineguy,
+                                     int lineguylines,
+                                     fixed_t scale,
+                                     angle_t angle,
+                                     int color,
+                                     fixed_t x,
+                                     fixed_t y)
+{
+    int i;
+    mline_t l;
+
+    for (i = 0; i < lineguylines; i++)
+    {
+        l.a.x = lineguy[i].a.x;
+        l.a.y = lineguy[i].a.y;
+        l.b.x = lineguy[i].b.x;
+        l.b.y = lineguy[i].b.y;
+
+        if (scale)
+        {
+            l.a.x = FixedMul(scale, l.a.x);
+            l.a.y = FixedMul(scale, l.a.y);
+            l.b.x = FixedMul(scale, l.b.x);
+            l.b.y = FixedMul(scale, l.b.y);
+        }
+
+        if (angle)
+        {
+            AM_rotate(&l.a.x, &l.a.y, angle);
+            AM_rotate(&l.b.x, &l.b.y, angle);
+        }
+
+        eacpAutomapLine(em, l.a.x + x, l.a.y + y, l.b.x + x, l.b.y + y, color);
+    }
+}
+
+static void eacpAutomapWalls(EacpAutomapEmitter* em)
+{
+    int i;
+
+    for (i = 0; i < numlines; i++)
+    {
+        line_t* line = &lines[i];
+        fixed_t ax = line->v1->x;
+        fixed_t ay = line->v1->y;
+        fixed_t bx = line->v2->x;
+        fixed_t by = line->v2->y;
+
+        if (cheating || (line->flags & ML_MAPPED))
+        {
+            if ((line->flags & LINE_NEVERSEE) && !cheating)
+                continue;
+
+            if (!line->backsector)
+                eacpAutomapLine(em, ax, ay, bx, by, WALLCOLORS + lightlev);
+            else if (line->special == 39)
+                eacpAutomapLine(em, ax, ay, bx, by, WALLCOLORS + WALLRANGE / 2);
+            else if (line->flags & ML_SECRET)
+                eacpAutomapLine(em,
+                                ax,
+                                ay,
+                                bx,
+                                by,
+                                cheating ? SECRETWALLCOLORS + lightlev
+                                         : WALLCOLORS + lightlev);
+            else if (line->backsector->floorheight != line->frontsector->floorheight)
+                eacpAutomapLine(em, ax, ay, bx, by, FDWALLCOLORS + lightlev);
+            else if (line->backsector->ceilingheight
+                     != line->frontsector->ceilingheight)
+                eacpAutomapLine(em, ax, ay, bx, by, CDWALLCOLORS + lightlev);
+            else if (cheating)
+                eacpAutomapLine(em, ax, ay, bx, by, TSWALLCOLORS + lightlev);
+        }
+        else if (plr != 0 && plr->powers[pw_allmap])
+        {
+            if (!(line->flags & LINE_NEVERSEE))
+                eacpAutomapLine(em, ax, ay, bx, by, GRAYS + 3);
+        }
+    }
+}
+
+static void eacpAutomapGrid(EacpAutomapEmitter* em, int color)
+{
+    fixed_t block = MAPBLOCKUNITS << FRACBITS;
+    fixed_t originX = (fixed_t) em->originX;
+    fixed_t originY = (fixed_t) em->originY;
+    fixed_t x, y, start, end;
+
+    start = originX;
+    if ((start - bmaporgx) % block)
+        start += block - ((start - bmaporgx) % block);
+    end = originX + m_w;
+
+    for (x = start; x < end; x += block)
+        eacpAutomapLine(em, x, originY, x, originY + m_h, color);
+
+    start = originY;
+    if ((start - bmaporgy) % block)
+        start += block - ((start - bmaporgy) % block);
+    end = originY + m_h;
+
+    for (y = start; y < end; y += block)
+        eacpAutomapLine(em, originX, y, originX + m_w, y, color);
+}
+
+// Drawn from the view rather than from the player: the arrow is the one thing on
+// the map that turns, and turning it once a tic against a map that glides is
+// what would be seen.
+static void eacpAutomapPlayer(EacpAutomapEmitter* em, const EacpDoomCamera* camera)
+{
+    fixed_t x, y;
+    angle_t angle;
+
+    if (plr == 0 || plr->mo == 0)
+        return;
+
+    x = (fixed_t) ((double) camera->x * 65536.0);
+    y = (fixed_t) ((double) camera->y * 65536.0);
+    angle = eacpAngleFromRadians(camera->angle);
+
+    if (cheating)
+        eacpAutomapLineCharacter(
+            em, cheat_player_arrow, NUMCHEATPLYRLINES, 0, angle, WHITE, x, y);
+    else
+        eacpAutomapLineCharacter(
+            em, player_arrow, NUMPLYRLINES, 0, angle, WHITE, x, y);
+}
+
+static void eacpAutomapThings(EacpAutomapEmitter* em, int color)
+{
+    int i;
+
+    for (i = 0; i < numsectors; i++)
+    {
+        mobj_t* thing = sectors[i].thinglist;
+
+        while (thing != 0)
+        {
+            eacpAutomapLineCharacter(em,
+                                     thintriangle_guy,
+                                     NUMTHINTRIANGLEGUYLINES,
+                                     16 << FRACBITS,
+                                     thing->angle,
+                                     color + lightlev,
+                                     thing->x,
+                                     thing->y);
+            thing = thing->snext;
+        }
+    }
+}
+
+// AM_drawCrosshair pokes the frame's middle pixel; a line a pixel long over it
+// is the same dot, and widens with everything else.
+static void eacpAutomapCrosshair(EacpAutomapEmitter* em, int color)
+{
+    double x = (double) f_w * 0.5;
+    double y = (double) f_h * 0.5;
+
+    eacpAutomapFrameLine(em, x - 0.5, y, x + 0.5, y, color);
+}
+
+int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
+                         EacpDoomAutomapVertex* vertices,
+                         int maxVertices)
+{
+    EacpAutomapEmitter em;
+
+    if (!automapactive || gamestate != GS_LEVEL || camera == 0 || vertices == 0
+        || lines == 0)
+        return 0;
+
+    em.vertices = vertices;
+    em.count = 0;
+    em.max = maxVertices;
+
+    // MTOF in fixed point: a map unit spans scale_mtof / 2^32 frame pixels.
+    em.scale = (double) scale_mtof / 4294967296.0;
+
+    // Vanilla recentres on the player once a tic and snaps the map to whole
+    // frame pixels as it does it (AM_doFollowPlayer's FTOM(MTOF(x))). Following
+    // the interpolated view instead, and not rounding, is what makes the map
+    // glide rather than crawl. Panned by hand, it is the engine's window that
+    // moves, and that still steps.
+    if (followplayer && plr != 0 && plr->mo != 0)
+    {
+        em.originX = (double) camera->x * 65536.0 - (double) m_w / 2.0;
+        em.originY = (double) camera->y * 65536.0 - (double) m_h / 2.0;
+    }
+    else
+    {
+        em.originX = (double) m_x;
+        em.originY = (double) m_y;
+    }
+
+    if (grid)
+        eacpAutomapGrid(&em, GRIDCOLORS);
+
+    eacpAutomapWalls(&em);
+    eacpAutomapPlayer(&em, camera);
+
+    if (cheating == 2)
+        eacpAutomapThings(&em, THINGCOLORS);
+
+    eacpAutomapCrosshair(&em, XHAIRCOLORS);
+
+    return em.count;
 }

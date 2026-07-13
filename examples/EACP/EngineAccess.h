@@ -10,6 +10,13 @@
 // spare - which the light calculation never selects.)
 #define EACP_DOOM_COLORMAP_ROWS 32
 
+// The engine's frame, which the software-only overlay is captured at.
+#define EACP_DOOM_SCREEN_WIDTH 320
+#define EACP_DOOM_SCREEN_HEIGHT 200
+
+// The COLORMAP row M_Drawer darkens its background with (DOOM_FLAG_MENU_DARKEN_BG).
+#define EACP_DOOM_MENU_DARKEN_ROW 20
+
 // One world vertex, already in the renderer's coordinate space: DOOM's map
 // (x, y) ground plane with z up becomes (x, z, -y).
 typedef struct
@@ -63,15 +70,87 @@ typedef struct
     float angle;
 } EacpDoomCamera;
 
+// One automap vertex: a corner of the quad a map line is drawn as, in the
+// engine's own 320 x 168 frame space (origin top-left), carrying a palette
+// index - the automap picks raw colours rather than texturing anything.
+//
+// The quad is not widened here. Each corner carries the line's endpoint, the
+// line's direction and which side of it the corner lies on, and the vertex
+// shader offsets it perpendicular by half the line width. Widening it here would
+// need the line's length, and the only square root in this translation unit is
+// eacpSqrt, which is Newton's method (the engine links no libm) - fine for the
+// once-per-level work it was written for, and not something to run over every
+// line of the map every frame. The GPU normalizes for nothing.
+typedef struct
+{
+    float position[2];
+    float direction[2];
+    float side;
+    float color;
+} EacpDoomAutomapVertex;
+
+// The automap's frame, which its geometry is emitted in: the 3D view's rect,
+// with the status bar below it.
+#define EACP_DOOM_AUTOMAP_WIDTH 320
+#define EACP_DOOM_AUTOMAP_HEIGHT 168
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    // True while gameplay (or a demo) renders the full 3D view with nothing
-    // software-only on top - no menu, automap or screen-melt wipe - i.e. when
-    // the GPU world view can stand in for the software one.
-    int eacpDoomWorldVisible(void);
+    // True when the GPU renderer owns the view area rather than the software
+    // frame: the game is in a level and is not mid screen-melt (the wipe is the
+    // one thing still drawn from the software frame, top to bottom).
+    //
+    // What fills that area is then eacpDoomAutomapActive's business, and what
+    // sits on top of it is eacpDoomBuildOverlay's.
+    int eacpDoomViewActive(void);
+
+    // True when the automap has replaced the 3D view. The engine skips
+    // R_RenderPlayerView entirely while it is up, so the two never coexist.
+    int eacpDoomAutomapActive(void);
+
+    // The COLORMAP row the view is remapped through before it reaches the
+    // palette: 0 while playing, and the row the menu darkens its background
+    // with while the menu is up (DOOM_FLAG_MENU_DARKEN_BG).
+    //
+    // Row 0 is the identity map, so applying it unconditionally costs one
+    // lookup and changes nothing. (It is not *quite* the identity on the index
+    // - it folds the palette's seven duplicate entries onto their twins - but
+    // it is exactly the identity on the colour those indices resolve to.)
+    //
+    // The status bar needs none of this: the engine darkens its own framebuffer
+    // wholesale, so the strip the renderer samples from it is already dark.
+    int eacpDoomDarkenRow(void);
+
+    // The layers the engine draws on top of the view in software and nothing
+    // else reproduces: HUD messages, the PAUSE graphic, the menu, and the
+    // automap's marks. Writes EACP_DOOM_SCREEN_WIDTH x EACP_DOOM_SCREEN_HEIGHT
+    // RGBA pixels - palette index in red, whether the pixel darkens with the
+    // view in green, coverage in alpha - and returns whether any pixel was
+    // covered at all.
+    //
+    // They are captured as two layers, because the menu darkens the frame it
+    // finds and then draws itself over it: a message, the level's name and the
+    // PAUSE graphic are already on the screen by then and dim with the world,
+    // while the menu itself stays bright. Green is what tells the two apart.
+    //
+    // The engine offers no way to draw these anywhere but over the frame it has
+    // just rendered, so they are captured instead: screens[0] is pointed at
+    // scratch, the overlay drawers alone are run, and the real frame is put
+    // back. Coverage cannot be read off a single pass, because a pixel the menu
+    // legitimately drew may hold whatever value the scratch was primed with, so
+    // the drawers run twice over two differently-primed buffers and a pixel
+    // counts as covered exactly where the two agree. They are pure - the skull
+    // blinks on M_Ticker, not M_Drawer - so wherever anything was drawn, they
+    // agree by construction.
+    //
+    // The menu's background darkening is left out of the capture (it would touch
+    // every pixel, and so read as total coverage); eacpDoomDarkenRow applies it
+    // to the GPU view instead, which is both exact and what keeps the world
+    // behind the menu at full resolution.
+    int eacpDoomBuildOverlay(unsigned char* outRgba);
 
     // Re-applies the key bindings the app asked for with doom_set_default_int.
     // Call once, after doom_init.
@@ -150,6 +229,22 @@ extern "C"
                               EacpDoomDraw* draws,
                               int maxDraws,
                               int* outVertexCount);
+
+    // Builds the automap as triangles in its 320 x 168 frame: the level's walls
+    // in the colours the automap picks for them, the grid, the player's arrow,
+    // the things (with the map cheat on) and the crosshair. Returns the vertex
+    // count.
+    //
+    // Vanilla walks the same lines with a Bresenham rasterizer straight into
+    // the 320 x 168 frame, so its map is stepped both in space - it snaps the
+    // view to whole map pixels - and in time. Neither is reproduced here: the
+    // lines carry their real endpoints, and `camera` recentres the map on the
+    // interpolated view rather than on the player's last tic, so panning and
+    // turning glide at the display's rate the way the 3D view does. Zooming and
+    // manual panning still step, being the engine's own per-tic quantities.
+    int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
+                             EacpDoomAutomapVertex* vertices,
+                             int maxVertices);
 
     // Remembers where every sector's floor and ceiling are, so the next frame
     // can draw them part-way to wherever they move next. Call once per tic,

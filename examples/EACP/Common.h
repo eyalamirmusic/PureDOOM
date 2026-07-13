@@ -36,6 +36,21 @@ constexpr auto worldAspect = 320.0f / (viewRows * 1.2f);
 constexpr auto maxVertices = 262144;
 constexpr auto maxDraws = 2048;
 
+// Six vertices per map line, and a level's walls, grid and things together stay
+// far below this.
+constexpr auto maxAutomapVertices = 131072;
+
+// The automap's frame, and the width it draws its lines at in that frame's
+// units: vanilla rasterizes a single pixel.
+constexpr auto automapWidth = (float) EACP_DOOM_AUTOMAP_WIDTH;
+constexpr auto automapHeight = (float) EACP_DOOM_AUTOMAP_HEIGHT;
+constexpr auto automapLineWidth = 1.0f;
+
+// The captured overlay: a palette index and its coverage, per pixel of the
+// engine's frame.
+constexpr auto overlayBytes =
+    (std::size_t) EACP_DOOM_SCREEN_WIDTH * EACP_DOOM_SCREEN_HEIGHT * 4;
+
 constexpr auto colormapRows = (float) EACP_DOOM_COLORMAP_ROWS;
 constexpr auto pi = 3.14159265358979f;
 

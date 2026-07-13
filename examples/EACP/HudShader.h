@@ -30,8 +30,16 @@ struct HudShader final : GPU::ShaderProgram
         auto index = (texel.x() * 255.0f + 0.5f) / 256.0f;
         auto shaded =
             sample(colormap, float2(index, (light + 0.5f) / colormapRows)).x();
+
+        // The weapon darkens with the world it is held in front of; row 0 is the
+        // identity, so it only does so while the menu is up.
+        auto darkened = sample(colormap,
+                               float2((shaded * 255.0f + 0.5f) / 256.0f,
+                                      (darkenRow + 0.5f) / colormapRows))
+                            .x();
+
         auto color =
-            sample(palette, float2((shaded * 255.0f + 0.5f) / 256.0f, 0.5f));
+            sample(palette, float2((darkened * 255.0f + 0.5f) / 256.0f, 0.5f));
 
         setFragment(float4(color.xyz(), 1.0f));
     }
@@ -44,12 +52,20 @@ struct HudShader final : GPU::ShaderProgram
     // the engine marks as mirrored.
     GPU::Uniform<GPU::Float2> uRange;
     GPU::Uniform<GPU::Float> light;
+    GPU::Uniform<GPU::Float> darkenRow;
 
     GPU::Uniform<GPU::Texture2D> texture;
     GPU::Uniform<GPU::Texture2D> colormap;
     GPU::Uniform<GPU::Texture2D> palette;
 
-    EACP_SHADER(
-        viewSize, dstOrigin, dstSize, uRange, light, texture, colormap, palette)
+    EACP_SHADER(viewSize,
+                dstOrigin,
+                dstSize,
+                uRange,
+                light,
+                darkenRow,
+                texture,
+                colormap,
+                palette)
 };
 } // namespace PureDoom

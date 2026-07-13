@@ -14,7 +14,7 @@ int main(int argc, char** argv)
     doom_set_default_int("key_down", DOOM_KEY_S);
     doom_set_default_int("key_strafeleft", DOOM_KEY_A);
     doom_set_default_int("key_straferight", DOOM_KEY_D);
-    doom_set_default_int("key_use", DOOM_KEY_ENTER);
+    doom_set_default_int("key_use", DOOM_KEY_SPACE);
     doom_set_default_int("mouse_move", 0);
 
     doom_init(argc, argv, DOOM_FLAG_MENU_DARKEN_BG);

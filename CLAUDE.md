@@ -59,10 +59,51 @@ Two paths, toggled at runtime with **Shift+F8**:
   - The weapon and muzzle flash are drawn in screen space over the world.
   - Geometry is grouped by texture into one draw per texture; textures upload
     lazily on first use (a WAD holds well over a thousand sprite lumps).
-  - Still missing (B4): the screen-melt wipe (needs offscreen render targets),
-    spectre fuzz, and the automap. Menus, the automap and wipes fall back to
-    the software frame automatically; the status bar is always composited from
-    it.
+- **GPU automap**: the map as geometry rather than as a rasterized frame. What
+  it draws and the colour it picks are `AM_Drawer`'s own choices, mirrored in
+  `eacpDoomBuildAutomap`; only its Bresenham walk into the 320x168 frame is
+  replaced, by a quad per line that the vertex shader widens (the perpendicular
+  needs a length, and the GPU normalizes for free). The shapes it draws the
+  player and the things with, and the rotation it puts them through, are the
+  engine's own globals, used as they stand. Two things vanilla's rasterizer
+  cannot do come out of it: the lines keep their real endpoints instead of
+  snapping to whole pixels, and the map is recentred on the *interpolated* view
+  rather than on the player's last tic, so it glides at the display's rate
+  instead of crawling at 35Hz. Zoom and hand-panning still step, being the
+  engine's own per-tic quantities.
+- **Overlay** (`eacpDoomBuildOverlay`): the layers the engine draws over the
+  view in software and nothing else reproduces - HUD messages, the level name,
+  the PAUSE graphic, the menu, the automap's marks. Without it a menu forced the
+  whole screen back to the software frame, so the world visibly dropped to
+  320x200 the moment one opened; messages and PAUSE were not drawn at all in the
+  GPU path, which sampled only the status-bar rows from the software frame.
+
+  The engine offers no way to draw them anywhere but over the frame it has just
+  rendered, so they are captured: `screens[0]` is pointed at scratch, those
+  drawers alone are run, and the real frame is put back. Coverage cannot be read
+  off one pass - a pixel the menu legitimately drew may hold whatever the
+  scratch was primed with - so each layer is drawn twice over two differently
+  primed buffers and counts as covered exactly where the two agree. They are
+  pure (the skull blinks on `M_Ticker`, not `M_Drawer`), so wherever anything
+  was drawn they agree by construction.
+
+  It is captured as *two* layers, because a menu darkens the frame it finds and
+  then draws itself over it: a message, the level name and PAUSE are already on
+  the screen by then and dim with the world, while the menu stays bright. The
+  green channel says which, and picks the COLORMAP row.
+- **Menu darkening** is applied to the GPU view rather than to a framebuffer:
+  one extra COLORMAP lookup in the world, automap, weapon and overlay shaders
+  (`eacpDoomDarkenRow`). That is exactly what `M_Drawer` does to its 64000
+  pixels, and it leaves the world at full resolution behind the menu. Row 0 is
+  the identity, so playing costs the lookup and nothing else. (It is not quite
+  the identity on the *index* - it folds the palette's seven duplicate entries
+  onto their twins - but it is the identity on the colour they resolve to.) The
+  status bar needs none of this: the engine darkens its own frame, which is
+  where the strip is sampled from.
+- Still missing (B4): the screen-melt wipe (needs offscreen render targets) and
+  spectre fuzz. Wipes, and anything outside a level (title, intermission,
+  finale), fall back to the software frame automatically; the status bar is
+  always composited from it.
 - `examples/SDL/` — upstream's SDL3 reference port. Read-only; the best
   reference for how the engine expects to be driven (input mapping, audio
   stream format, MIDI tick).
@@ -118,14 +159,7 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
   took the aim's input-to-screen lag from 163ms to 17ms, and stopped the player
   coasting for five tics after a movement key was released.
 
-  There is also one vendored change that is *not* a bug fix, and so is a
-  deliberate exception to the rule above (`hu_stuff.h`, `HU_MSGREFRESH`). Vanilla
-  binds re-showing the last HUD message to Enter, and `HU_Responder` **eats** the
-  key it is bound to — `G_Responder` asks the HUD before it touches
-  `gamekeydown`, and returns the moment the HUD says it took the event. Enter
-  therefore never reaches `gamekeydown` at all and cannot be bound to anything.
-  This port opens doors with Enter, so the refresh moves to Backspace, which the
-  game does not otherwise read. Anything wanting Enter as a game key hits this.
+  That fix is currently the *only* vendored change.
 - The engine is single-threaded: `doom_init`, `doom_update`,
   `doom_get_framebuffer` and all input calls happen on the main thread. Audio,
   once wired, is the only exception and takes the engine lock the SDL example
@@ -145,6 +179,13 @@ broken rather than fail outright.
   `eacpDoomBindKeys()` after `doom_init` to apply them again once the config has
   been read. What the player *can* change from the menu (mouse sensitivity,
   screen size, volumes) is left alone and still persists.
+
+  Not every key can be bound, either. `HU_Responder` **eats** the key
+  `HU_MSGREFRESH` sits on (Enter): `G_Responder` asks the HUD before it touches
+  `gamekeydown` and returns the moment the HUD says it took the event, so Enter
+  never reaches `gamekeydown` and cannot be a game key without moving the
+  refresh off it. `use` is therefore bound to vanilla's own Space, which nothing
+  else reads.
 
 - **Hand it the mouse once per tic, with the whole movement.** `G_Responder`
   *assigns* the mouse delta (`mousex = ev->data2 * ...`) rather than adding to

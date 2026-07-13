@@ -1,9 +1,11 @@
 #pragma once
 
+#include "AutomapShader.h"
 #include "Common.h"
 #include "HudShader.h"
 #include "Input.h"
 #include "Layout.h"
+#include "OverlayShader.h"
 #include "ScreenShader.h"
 #include "Textures.h"
 #include "WorldShader.h"
@@ -36,8 +38,20 @@ struct View final : GPU::GPUView
         hudShader.colormap = colormapTexture;
         hudShader.palette = paletteTexture;
 
+        automapShader.prepare(sampleCount(), true);
+        automapShader.colormap = colormapTexture;
+        automapShader.palette = paletteTexture;
+
+        overlayShader.setVertices(unitQuad);
+        overlayShader.prepare(sampleCount(), true);
+        overlayShader.overlay = overlayTexture;
+        overlayShader.colormap = colormapTexture;
+        overlayShader.palette = paletteTexture;
+
         geometry.getVector().resize(maxVertices);
         draws.getVector().resize(maxDraws);
+        automap.getVector().resize(maxAutomapVertices);
+        overlayPixels.getVector().resize(overlayBytes);
 
         for (auto& sprite: hud)
             sprite.textureId = -1;
@@ -244,27 +258,51 @@ struct View final : GPU::GPUView
         {
             framebuffer.update(doom_get_framebuffer(1));
             updatePalette();
+            updateOverlay();
         }
 
         ensureWorldTextures();
 
         auto bounds = getLocalBounds();
         auto dst = letterboxedDisplayRect(bounds);
+        auto gpuView = gpuWorld && eacpDoomViewActive() && worldTextures.size() > 0;
 
         auto pass = frame.beginPass({Graphics::Color::black()});
 
-        if (gpuWorld && eacpDoomWorldVisible() && worldTextures.size() > 0)
+        // What the menu darkens behind itself. The status bar needs none of it:
+        // the engine darkens its own frame, which is where the strip comes from.
+        auto darkenRow = (float) eacpDoomDarkenRow();
+
+        worldShader.darkenRow = darkenRow;
+        hudShader.darkenRow = darkenRow;
+        automapShader.darkenRow = darkenRow;
+        overlayShader.darkenRow = darkenRow;
+
+        if (gpuView)
         {
             auto viewport = dst.withHeight(dst.h * worldViewportShare);
 
-            drawWorld(pass, bounds, viewport);
-            drawWeapon(pass, bounds, viewport);
+            // The engine skips the 3D view entirely while the automap is up, so
+            // the two never share the frame.
+            if (eacpDoomAutomapActive())
+                drawAutomap(pass, bounds, viewport);
+            else
+            {
+                drawWorld(pass, bounds, viewport);
+                drawWeapon(pass, bounds, viewport);
+            }
 
             auto strip = Graphics::Rect {dst.x,
                                          dst.y + dst.h * worldViewportShare,
                                          dst.w,
                                          dst.h * (1.0f - worldViewportShare)};
             drawScreen(pass, bounds, strip, viewRows / (float) doomHeight, 1.0f);
+
+            // The menu, the messages and the PAUSE graphic are already in the
+            // software frame whenever that is what is on the screen; over the GPU
+            // view they have to be put back.
+            if (overlayVisible)
+                drawOverlay(pass, bounds, dst);
         }
         else
             drawScreen(pass, bounds, dst, 0.0f, 1.0f);
@@ -376,6 +414,56 @@ struct View final : GPU::GPUView
 
             pass.draw(hudShader);
         }
+    }
+
+    // The map, drawn at the window's resolution rather than at DOOM's. It is
+    // rebuilt every frame, not every tic, because it is centred on the view, and
+    // between tics the view is somewhere the engine has not been yet.
+    void drawAutomap(GPU::RenderPass& pass,
+                     const Graphics::Rect& bounds,
+                     const Graphics::Rect& viewport)
+    {
+        auto camera = viewCamera();
+        auto vertexCount =
+            eacpDoomBuildAutomap(&camera, automap.data(), maxAutomapVertices);
+
+        if (vertexCount <= 0)
+            return;
+
+        automapBuffer.update(automap.data(),
+                             (std::size_t) vertexCount
+                                 * sizeof(EacpDoomAutomapVertex));
+
+        automapShader.viewSize = std::array {bounds.w, bounds.h};
+        automapShader.dstOrigin = std::array {viewport.x, viewport.y};
+        automapShader.dstSize = std::array {viewport.w, viewport.h};
+        automapShader.frameSize = std::array {automapWidth, automapHeight};
+        automapShader.lineWidth = automapLineWidth;
+
+        pass.setPipeline(automapShader.pipeline());
+        pass.setVertexBuffer(automapBuffer);
+        pass.setVertexUniforms(automapShader);
+        pass.setFragmentUniforms(automapShader);
+        automapShader.bindTextures(pass);
+        pass.draw(vertexCount, 0);
+    }
+
+    void drawOverlay(GPU::RenderPass& pass,
+                     const Graphics::Rect& bounds,
+                     const Graphics::Rect& dst)
+    {
+        overlayShader.viewSize = std::array {bounds.w, bounds.h};
+        overlayShader.dstOrigin = std::array {dst.x, dst.y};
+        overlayShader.dstSize = std::array {dst.w, dst.h};
+        pass.draw(overlayShader);
+    }
+
+    void updateOverlay()
+    {
+        overlayVisible = eacpDoomBuildOverlay(overlayPixels.data()) != 0;
+
+        if (overlayVisible)
+            overlayTexture.update(overlayPixels.data());
     }
 
     // The WAD's graphics are loaded once, so the slots are sized once; the
@@ -522,16 +610,27 @@ struct View final : GPU::GPUView
     ScreenShader shader;
     WorldShader worldShader;
     HudShader hudShader;
+    AutomapShader automapShader;
+    OverlayShader overlayShader;
     GPU::Texture framebuffer = makeIndexTexture();
     GPU::Texture paletteTexture = makePaletteTexture();
     GPU::Texture colormapTexture = makeColormapTexture();
+    GPU::Texture overlayTexture = makeOverlayTexture();
     GPU::Buffer worldBuffer {GPU::Device::shared(),
                              nullptr,
                              (std::size_t) maxVertices * sizeof(EacpDoomVertex),
                              GPU::BufferUsage::Vertex};
+    GPU::Buffer automapBuffer {GPU::Device::shared(),
+                               nullptr,
+                               (std::size_t) maxAutomapVertices
+                                   * sizeof(EacpDoomAutomapVertex),
+                               GPU::BufferUsage::Vertex};
     Vector<std::optional<GPU::Texture>> worldTextures;
     Vector<EacpDoomVertex> geometry;
     Vector<EacpDoomDraw> draws;
+    Vector<EacpDoomAutomapVertex> automap;
+    Vector<std::uint8_t> overlayPixels;
+    bool overlayVisible = false;
     std::array<std::uint8_t, 256 * 4> paletteData {};
 
     using HudSprites = std::array<EacpDoomHudSprite, EACP_DOOM_HUD_SPRITES>;

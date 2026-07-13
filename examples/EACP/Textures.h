@@ -40,6 +40,20 @@ inline GPU::Texture makeColormapTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
+// The software-only layers over the view - menu, messages, PAUSE, map marks -
+// as palette indices with their coverage in alpha, which is what lets the world
+// show through the pixels the engine never drew on.
+inline GPU::Texture makeOverlayTexture()
+{
+    auto descriptor = GPU::TextureDescriptor {};
+    descriptor.width = EACP_DOOM_SCREEN_WIDTH;
+    descriptor.height = EACP_DOOM_SCREEN_HEIGHT;
+    descriptor.format = GPU::TextureFormat::RGBA8Unorm;
+    descriptor.filter = GPU::TextureFilter::Nearest;
+
+    return GPU::Device::shared().makeTexture(descriptor, nullptr);
+}
+
 // Wall textures, flats and sprites tile across a surface, so they repeat; they
 // carry palette indices, which must never be blended, so they sample nearest. A
 // masked one needs a second channel for its coverage, so it goes up as RGBA -

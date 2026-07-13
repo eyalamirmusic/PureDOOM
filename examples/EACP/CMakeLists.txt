@@ -22,11 +22,13 @@ add_executable(PureDoomEACP
         Main.cpp
         DoomImpl.c
         App.h
+        AutomapShader.h
         Common.h
         EngineAccess.h
         HudShader.h
         Input.h
         Layout.h
+        OverlayShader.h
         ScreenShader.h
         Textures.h
         View.h
