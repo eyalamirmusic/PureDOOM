@@ -23,7 +23,23 @@ The port has two goals:
   `src/DOOM` by `tools/gen_single_header.py`. Vendored code: never hand-edit
   and never clang-format it (same for `src/DOOM`).
 - `examples/EACP/` — the eacp port. `DoomImpl.c` compiles the engine
-  implementation as plain C; `Main.cpp` is the eacp platform layer.
+  implementation as plain C; `Main.cpp` is the eacp platform layer and GPU
+  renderer. `EngineAccess.h/.c` is the plain-C snapshot interface to engine
+  internals (camera, wall geometry, view state) — the `.c` is included at the
+  end of `DoomImpl.c`'s translation unit, never compiled standalone.
+
+### Renderer status
+
+Two paths, toggled at runtime with **Shift+F8**:
+
+- Software frame (Stage A): the engine's palette-indexed framebuffer as an
+  R8 texture, palette looked up in the fragment shader.
+- GPU world (Stage B1): wall geometry extracted per frame from the live
+  level data and drawn depth-tested with sector lighting and the software
+  renderer's fake-contrast shading; the software status bar composites
+  below, and menus/automap/wipes automatically fall back to the software
+  frame. Floors, ceilings, textures, sprites and sky are still missing
+  (B2+): unrendered areas are black.
 - `examples/SDL/` — upstream's SDL3 reference port. Read-only; the best
   reference for how the engine expects to be driven (input mapping, audio
   stream format, MIDI tick).
@@ -43,10 +59,10 @@ checkout, pass `-DCPM_eacp_SOURCE=$HOME/Code/eacp` at configure time. Use
 `$HOME`, not `~` — CMake does not expand tildes, and a quoted `~/...` path
 silently configures against a non-existent directory.
 
-The GPU palette path currently requires eacp features that only exist on the
-local eacp branch `doom-stage-a-gpu-palette` (`TextureFormat::R8Unorm`), so
-until that merges, building against GitHub `main` fails — configure with the
-local-source override above.
+The GPU render paths currently require eacp features that only exist on the
+local eacp branch `doom-stage-a-gpu-palette` (`TextureFormat::R8Unorm`,
+`Buffer::update`), so until that merges, building against GitHub `main`
+fails — configure with the local-source override above.
 
 The app boots `doom1.wad` from the repository root by default: PureDOOM has
 no `-iwad` argument — it locates WADs via the `DOOMWADDIR` environment

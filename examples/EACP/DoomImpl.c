@@ -8,3 +8,5 @@
 
 #define DOOM_IMPLEMENTATION
 #include "../../PureDOOM.h"
+
+#include "EngineAccess.c"

@@ -6,6 +6,8 @@
 
 #include "../../PureDOOM.h"
 
+#include "EngineAccess.h"
+
 // The engine's current palette (RGB triplets), kept up to date by
 // I_SetPalette — including the damage/pickup/invulnerability flashes, which
 // are palette swaps. Defined in DoomImpl.c; PureDOOM.h doesn't declare it in
@@ -18,6 +20,17 @@ namespace
 {
 constexpr auto doomWidth = 320;
 constexpr auto doomHeight = 200;
+
+// The software frame splits into the 3D view (168 rows) and the status bar
+// (32 rows); with the 1.2 CRT stretch the view fills exactly 84% of the
+// displayed height, and its displayed aspect (320 : 201.6) fixes the GPU
+// camera's field of view: DOOM's horizontal FOV is 90 degrees.
+constexpr auto viewRows = 168.0f;
+constexpr auto worldViewportShare = viewRows * 1.2f / 240.0f;
+constexpr auto worldAspect = 320.0f / (viewRows * 1.2f);
+
+constexpr auto maxWalls = 8192;
+constexpr auto pi = 3.14159265358979f;
 
 // DOOM's 320x200 frame was designed for 4:3 CRTs, whose non-square pixels
 // stretched it 1.2x vertically; 320x240 is the intended display shape.
@@ -147,7 +160,8 @@ struct ScreenShader final : GPU::ShaderProgram
         auto ndcY = 1.0f - y / viewSize.y() * 2.0f;
         setPosition(float4(ndcX, ndcY, 0.0f, 1.0f));
 
-        auto uv = varying(corner);
+        auto v = uvY.x() + corner.y() * (uvY.y() - uvY.x());
+        auto uv = varying(float2(corner.x(), v));
         auto index = sample(screenIndices, uv).x();
         auto paletteU = (index * 255.0f + 0.5f) / 256.0f;
         auto color = sample(palette, float2(paletteU, 0.5f));
@@ -157,10 +171,57 @@ struct ScreenShader final : GPU::ShaderProgram
     GPU::Uniform<GPU::Float2> viewSize;
     GPU::Uniform<GPU::Float2> dstOrigin;
     GPU::Uniform<GPU::Float2> dstSize;
+
+    // Vertical source window into the frame (start, end in 0..1): the full
+    // frame is {0, 1}, the status-bar strip {168/200, 1}.
+    GPU::Uniform<GPU::Float2> uvY;
     GPU::Uniform<GPU::Texture2D> screenIndices;
     GPU::Uniform<GPU::Texture2D> palette;
 
-    EACP_SHADER(viewSize, dstOrigin, dstSize, screenIndices, palette)
+    EACP_SHADER(viewSize, dstOrigin, dstSize, uvY, screenIndices, palette)
+};
+
+struct WorldVertex
+{
+    float position[3];
+    float color[3];
+};
+
+// Draws the level geometry the engine access layer extracts, with DOOM's
+// map coordinates (x, y ground plane, z up) mapped to GPU space as
+// (x, z, -y). The full-frame perspective projection is then squeezed into
+// the 3D viewport's sub-rect of the window (offsets scale by w so they
+// survive the perspective divide), leaving the status bar strip and the
+// letterbox bars untouched.
+struct WorldShader final : GPU::ShaderProgram
+{
+    WorldShader() { compile(); }
+
+    void define() override
+    {
+        auto position = vertexInput(&WorldVertex::position);
+        auto color = vertexInput(&WorldVertex::color);
+
+        auto view = rotateY(-yaw) * translate(-camX, -camY, -camZ);
+        auto fovY = 2.0f * std::atan(1.0f / worldAspect);
+        auto projection = perspective(constant(worldAspect), fovY, 4.0f, 16384.0f);
+        auto clip = projection * view * float4(position, 1.0f);
+
+        auto x = clip.x() * ndcScale.x() + clip.w() * ndcOffset.x();
+        auto y = clip.y() * ndcScale.y() + clip.w() * ndcOffset.y();
+        setPosition(float4(x, y, clip.z(), clip.w()));
+
+        setFragment(float4(varying(color), 1.0f));
+    }
+
+    GPU::Uniform<GPU::Float> camX;
+    GPU::Uniform<GPU::Float> camY;
+    GPU::Uniform<GPU::Float> camZ;
+    GPU::Uniform<GPU::Float> yaw;
+    GPU::Uniform<GPU::Float2> ndcScale;
+    GPU::Uniform<GPU::Float2> ndcOffset;
+
+    EACP_SHADER(camX, camY, camZ, yaw, ndcScale, ndcOffset)
 };
 
 // Snaps a proposed content size back to DOOM's 4:3 shape by applying the
@@ -238,10 +299,14 @@ struct DoomView final : GPU::GPUView
     DoomView()
     {
         setSampleCount(1);
+        setDepth(true);
         shader.setVertices(unitQuad);
-        shader.prepare(sampleCount());
+        shader.prepare(sampleCount(), true);
         shader.screenIndices = framebuffer;
         shader.palette = paletteTexture;
+        worldShader.prepare(sampleCount(), true);
+        walls.getVector().resize(maxWalls);
+        wallVertices.getVector().reserve((std::size_t) maxWalls * 6);
         setHandlesMouseEvents(true);
         setGrabsFocusOnMouseDown(true);
         setContinuous(true);
@@ -268,12 +333,103 @@ struct DoomView final : GPU::GPUView
         auto bounds = getLocalBounds();
         auto dst = letterboxedDisplayRect(bounds);
 
+        auto pass = frame.beginPass({Graphics::Color::black()});
+
+        if (gpuWorld && eacpDoomWorldVisible())
+        {
+            drawWorld(pass, bounds, dst.withHeight(dst.h * worldViewportShare));
+
+            auto strip = Graphics::Rect {dst.x,
+                                         dst.y + dst.h * worldViewportShare,
+                                         dst.w,
+                                         dst.h * (1.0f - worldViewportShare)};
+            drawScreen(pass, bounds, strip, viewRows / (float) doomHeight, 1.0f);
+        }
+        else
+            drawScreen(pass, bounds, dst, 0.0f, 1.0f);
+    }
+
+    void drawScreen(GPU::RenderPass& pass,
+                    const Graphics::Rect& bounds,
+                    const Graphics::Rect& dst,
+                    float uvTop,
+                    float uvBottom)
+    {
         shader.viewSize = std::array {bounds.w, bounds.h};
         shader.dstOrigin = std::array {dst.x, dst.y};
         shader.dstSize = std::array {dst.w, dst.h};
-
-        auto pass = frame.beginPass({Graphics::Color::black()});
+        shader.uvY = std::array {uvTop, uvBottom};
         pass.draw(shader);
+    }
+
+    void drawWorld(GPU::RenderPass& pass,
+                   const Graphics::Rect& bounds,
+                   const Graphics::Rect& viewport)
+    {
+        auto wallCount = eacpDoomGetWalls(walls.data(), maxWalls);
+        buildWallVertices(wallCount);
+
+        if (wallVertices.size() == 0)
+            return;
+
+        worldBuffer.update(wallVertices.data(),
+                           wallVertices.size() * sizeof(WorldVertex));
+
+        auto camera = eacpDoomGetCamera();
+        worldShader.camX = camera.x;
+        worldShader.camY = camera.z;
+        worldShader.camZ = -camera.y;
+        worldShader.yaw = camera.angle - pi / 2.0f;
+
+        worldShader.ndcScale =
+            std::array {viewport.w / bounds.w, viewport.h / bounds.h};
+        worldShader.ndcOffset =
+            std::array {(viewport.x + viewport.w * 0.5f) / bounds.w * 2.0f - 1.0f,
+                        1.0f - (viewport.y + viewport.h * 0.5f) / bounds.h * 2.0f};
+
+        pass.setPipeline(worldShader.pipeline());
+        pass.setVertexBuffer(worldBuffer);
+        pass.setVertexUniforms(worldShader);
+        pass.setFragmentUniforms(worldShader);
+        pass.draw((int) wallVertices.size());
+    }
+
+    void buildWallVertices(int wallCount)
+    {
+        wallVertices.getVector().clear();
+
+        for (auto i = 0; i < wallCount; ++i)
+            appendWallVertices(walls[(std::size_t) i]);
+    }
+
+    void appendWallVertices(const EacpDoomWall& wall)
+    {
+        // The software renderer's fake contrast: north/south walls a step
+        // brighter, east/west a step darker, so corners stay readable.
+        auto shade = wall.light;
+
+        if (wall.x1 == wall.x2)
+            shade = shade * 1.15f > 1.0f ? 1.0f : shade * 1.15f;
+        else if (wall.y1 == wall.y2)
+            shade = shade * 0.85f;
+
+        auto color = std::array {0.62f * shade, 0.56f * shade, 0.48f * shade};
+
+        auto a = WorldVertex {{wall.x1, wall.bottom, -wall.y1},
+                              {color[0], color[1], color[2]}};
+        auto b = WorldVertex {{wall.x2, wall.bottom, -wall.y2},
+                              {color[0], color[1], color[2]}};
+        auto c = WorldVertex {{wall.x2, wall.top, -wall.y2},
+                              {color[0], color[1], color[2]}};
+        auto d = WorldVertex {{wall.x1, wall.top, -wall.y1},
+                              {color[0], color[1], color[2]}};
+
+        wallVertices.add(a);
+        wallVertices.add(b);
+        wallVertices.add(c);
+        wallVertices.add(a);
+        wallVertices.add(c);
+        wallVertices.add(d);
     }
 
     void updatePalette()
@@ -315,6 +471,12 @@ struct DoomView final : GPU::GPUView
     {
         if (event.isRepeat)
             return;
+
+        if (event.keyCode == Graphics::KeyCode::F8 && event.modifiers.shift)
+        {
+            gpuWorld = !gpuWorld;
+            return;
+        }
 
         if (auto key = toDoomKey(event); key != DOOM_KEY_UNKNOWN)
             doom_key_down(key);
@@ -358,9 +520,19 @@ struct DoomView final : GPU::GPUView
     }
 
     ScreenShader shader;
+    WorldShader worldShader;
     GPU::Texture framebuffer = makeIndexTexture();
     GPU::Texture paletteTexture = makePaletteTexture();
+    GPU::Buffer worldBuffer {GPU::Device::shared(),
+                             nullptr,
+                             (std::size_t) maxWalls * 6 * sizeof(WorldVertex),
+                             GPU::BufferUsage::Vertex};
+    Vector<EacpDoomWall> walls;
+    Vector<WorldVertex> wallVertices;
     std::array<std::uint8_t, 256 * 4> paletteData {};
+
+    // Shift+F8 flips between the GPU world renderer and the software frame.
+    bool gpuWorld = true;
     Graphics::Window* window = nullptr;
     Graphics::ModifierKeys modifiers;
 };
