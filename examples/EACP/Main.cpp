@@ -1,8 +1,16 @@
-#include <eacp/Sprites/Sprites.h>
+#include <eacp/GPU/GPU.h>
 
+#include <array>
 #include <cmath>
+#include <cstdint>
 
 #include "../../PureDOOM.h"
+
+// The engine's current palette (RGB triplets), kept up to date by
+// I_SetPalette — including the damage/pickup/invulnerability flashes, which
+// are palette swaps. Defined in DoomImpl.c; PureDOOM.h doesn't declare it in
+// its public section.
+extern "C" unsigned char screen_palette[256 * 3];
 
 using namespace eacp;
 
@@ -107,6 +115,54 @@ doom_button_t toDoomButton(Graphics::MouseButton button)
     }
 }
 
+struct ScreenVertex
+{
+    float corner[2];
+};
+
+constexpr ScreenVertex unitQuad[] = {
+    {{0.0f, 0.0f}},
+    {{1.0f, 0.0f}},
+    {{1.0f, 1.0f}},
+    {{0.0f, 0.0f}},
+    {{1.0f, 1.0f}},
+    {{0.0f, 1.0f}},
+};
+
+// Draws the DOOM frame natively: the engine's palette-indexed framebuffer is
+// sampled as an R8 texture and looked up in a 256x1 palette texture, so the
+// only CPU pixel work left is the engine's own software rasterizer. The unit
+// quad maps onto dstRect (view points) — the letterboxed 4:3 area.
+struct ScreenShader final : GPU::ShaderProgram
+{
+    ScreenShader() { compile(); }
+
+    void define() override
+    {
+        auto corner = vertexInput(&ScreenVertex::corner);
+
+        auto x = dstOrigin.x() + corner.x() * dstSize.x();
+        auto y = dstOrigin.y() + corner.y() * dstSize.y();
+        auto ndcX = x / viewSize.x() * 2.0f - 1.0f;
+        auto ndcY = 1.0f - y / viewSize.y() * 2.0f;
+        setPosition(float4(ndcX, ndcY, 0.0f, 1.0f));
+
+        auto uv = varying(corner);
+        auto index = sample(screenIndices, uv).x();
+        auto paletteU = (index * 255.0f + 0.5f) / 256.0f;
+        auto color = sample(palette, float2(paletteU, 0.5f));
+        setFragment(float4(color.xyz(), 1.0f));
+    }
+
+    GPU::Uniform<GPU::Float2> viewSize;
+    GPU::Uniform<GPU::Float2> dstOrigin;
+    GPU::Uniform<GPU::Float2> dstSize;
+    GPU::Uniform<GPU::Texture2D> screenIndices;
+    GPU::Uniform<GPU::Texture2D> palette;
+
+    EACP_SHADER(viewSize, dstOrigin, dstSize, screenIndices, palette)
+};
+
 // Snaps a proposed content size back to DOOM's 4:3 shape by applying the
 // smaller of the two possible corrections, so dragging any window edge or
 // corner feels natural.
@@ -136,33 +192,41 @@ Graphics::WindowOptions windowOptions()
     return options;
 }
 
-// The sprite space is fixed at 320x240 and stretches to the window, so a
-// window that isn't 4:3 would distort the frame. This returns the sub-rect
-// of that space which maps back to a centered 4:3 area of the window.
+// The largest centered 4:3 rect that fits the view, in view points; the
+// window's aspect constraint keeps this a no-op except during zoom and
+// fullscreen, where black bars fill the rest.
 Graphics::Rect letterboxedDisplayRect(const Graphics::Rect& bounds)
 {
     constexpr auto contentAspect = displayWidth / displayHeight;
 
     if (bounds.w <= 0.0f || bounds.h <= 0.0f)
-        return {0.0f, 0.0f, displayWidth, displayHeight};
+        return bounds;
 
-    auto viewAspect = bounds.w / bounds.h;
+    auto width = bounds.h * contentAspect;
 
-    if (viewAspect > contentAspect)
-    {
-        auto width = displayWidth * contentAspect / viewAspect;
-        return {(displayWidth - width) / 2.0f, 0.0f, width, displayHeight};
-    }
+    if (width <= bounds.w)
+        return {(bounds.w - width) / 2.0f, 0.0f, width, bounds.h};
 
-    auto height = displayHeight * viewAspect / contentAspect;
-    return {0.0f, (displayHeight - height) / 2.0f, displayWidth, height};
+    auto height = bounds.w / contentAspect;
+    return {0.0f, (bounds.h - height) / 2.0f, bounds.w, height};
 }
 
-GPU::Texture makeFramebufferTexture()
+GPU::Texture makeIndexTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
     descriptor.width = doomWidth;
     descriptor.height = doomHeight;
+    descriptor.format = GPU::TextureFormat::R8Unorm;
+    descriptor.filter = GPU::TextureFilter::Nearest;
+
+    return GPU::Device::shared().makeTexture(descriptor, nullptr);
+}
+
+GPU::Texture makePaletteTexture()
+{
+    auto descriptor = GPU::TextureDescriptor {};
+    descriptor.width = 256;
+    descriptor.height = 1;
     descriptor.filter = GPU::TextureFilter::Nearest;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
@@ -174,8 +238,10 @@ struct DoomView final : GPU::GPUView
     DoomView()
     {
         setSampleCount(1);
-        sprites.emplace(Graphics::Point {displayWidth, displayHeight},
-                        sampleCount());
+        shader.setVertices(unitQuad);
+        shader.prepare(sampleCount());
+        shader.screenIndices = framebuffer;
+        shader.palette = paletteTexture;
         setHandlesMouseEvents(true);
         setGrabsFocusOnMouseDown(true);
         setContinuous(true);
@@ -196,11 +262,31 @@ struct DoomView final : GPU::GPUView
 
     void render(GPU::Frame& frame) override
     {
-        framebuffer.update(doom_get_framebuffer(4));
+        framebuffer.update(doom_get_framebuffer(1));
+        updatePalette();
+
+        auto bounds = getLocalBounds();
+        auto dst = letterboxedDisplayRect(bounds);
+
+        shader.viewSize = std::array {bounds.w, bounds.h};
+        shader.dstOrigin = std::array {dst.x, dst.y};
+        shader.dstSize = std::array {dst.w, dst.h};
 
         auto pass = frame.beginPass({Graphics::Color::black()});
-        sprites->begin(pass);
-        sprites->drawTexture(framebuffer, letterboxedDisplayRect(getLocalBounds()));
+        pass.draw(shader);
+    }
+
+    void updatePalette()
+    {
+        for (auto i = 0; i < 256; ++i)
+        {
+            paletteData[(std::size_t) i * 4 + 0] = screen_palette[i * 3 + 0];
+            paletteData[(std::size_t) i * 4 + 1] = screen_palette[i * 3 + 1];
+            paletteData[(std::size_t) i * 4 + 2] = screen_palette[i * 3 + 2];
+            paletteData[(std::size_t) i * 4 + 3] = 255;
+        }
+
+        paletteTexture.update(paletteData.data());
     }
 
     // DOOM binds Ctrl/Shift/Alt as ordinary keys (fire/run/strafe), but eacp
@@ -271,8 +357,10 @@ struct DoomView final : GPU::GPUView
                             (int) (event.delta.y * mouseSpeed));
     }
 
-    std::optional<Sprites::SpriteRenderer> sprites;
-    GPU::Texture framebuffer = makeFramebufferTexture();
+    ScreenShader shader;
+    GPU::Texture framebuffer = makeIndexTexture();
+    GPU::Texture paletteTexture = makePaletteTexture();
+    std::array<std::uint8_t, 256 * 4> paletteData {};
     Graphics::Window* window = nullptr;
     Graphics::ModifierKeys modifiers;
 };

@@ -43,6 +43,11 @@ checkout, pass `-DCPM_eacp_SOURCE=$HOME/Code/eacp` at configure time. Use
 `$HOME`, not `~` — CMake does not expand tildes, and a quoted `~/...` path
 silently configures against a non-existent directory.
 
+The GPU palette path currently requires eacp features that only exist on the
+local eacp branch `doom-stage-a-gpu-palette` (`TextureFormat::R8Unorm`), so
+until that merges, building against GitHub `main` fails — configure with the
+local-source override above.
+
 The app boots `doom1.wad` from the repository root by default: PureDOOM has
 no `-iwad` argument — it locates WADs via the `DOOMWADDIR` environment
 variable (falling back to the current directory), so `main` points

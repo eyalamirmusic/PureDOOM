@@ -19,7 +19,7 @@ if (APPLE AND NOT IOS)
 endif ()
 
 add_executable(PureDoomEACP Main.cpp DoomImpl.c)
-target_link_libraries(PureDoomEACP PRIVATE eacp-sprites)
+target_link_libraries(PureDoomEACP PRIVATE eacp-gpu)
 target_compile_definitions(PureDoomEACP PRIVATE
         PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
 
