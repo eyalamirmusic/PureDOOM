@@ -36,11 +36,11 @@ constexpr auto worldAspect = 320.0f / (viewRows * 1.2f);
 constexpr auto maxVertices = 262144;
 constexpr auto maxDraws = 2048;
 
-// The weapon and its muzzle flash.
-constexpr auto maxHudSprites = 4;
-
 constexpr auto colormapRows = (float) EACP_DOOM_COLORMAP_ROWS;
 constexpr auto pi = 3.14159265358979f;
+
+// The engine's tics per second: the rate its whole world moves at.
+constexpr auto ticRate = 35.0;
 
 // DOOM's 320x200 frame was designed for 4:3 CRTs, whose non-square pixels
 // stretched it 1.2x vertically; 320x240 is the intended display shape.

@@ -46,6 +46,11 @@ static int* eacpPolyStart = 0;
 static int* eacpPolyCount = 0;
 static int eacpPolyTotal = 0;
 
+// A line's length never changes, and the geometry pass needs it for every wall
+// it lays a texture along, so it is measured once when the level loads rather
+// than thousands of times a frame.
+static float* eacpLineLengths = 0;
+
 static int* eacpTextureCounts = 0;
 static int* eacpTextureCursors = 0;
 static int eacpScratchTextures = 0;
@@ -58,6 +63,15 @@ static int eacpCachedMap = -1;
 static int eacpTexturesReady = 0;
 static unsigned char* eacpWallMasked = 0;
 static short* eacpSpriteHeights = 0;
+
+// Where every sector's floor and ceiling stood at the last tic, so a door or a
+// lift can be drawn part-way to where it is going rather than jumping there.
+static float* eacpPreviousFloor = 0;
+static float* eacpPreviousCeiling = 0;
+static int eacpSnapshotSectors = 0;
+
+// How far into the current tic the frame being built sits.
+static float eacpAlpha = 0.0f;
 
 static double eacpFixedToDouble(fixed_t value)
 {
@@ -88,20 +102,96 @@ static double eacpSqrt(double value)
     return guess;
 }
 
+static float eacpMix(float from, float to, float amount)
+{
+    return from + (to - from) * amount;
+}
+
+// A sector's floor and ceiling where they are *now*, part-way through whatever
+// move a door or a lift has them making, rather than where the last tic left
+// them. The walls that meet them are drawn from the same numbers, so nothing
+// tears.
+static float eacpFloorHeight(sector_t* sector)
+{
+    float now = eacpFixedToFloat(sector->floorheight);
+    int index = (int) (sector - sectors);
+
+    if (eacpPreviousFloor == 0 || index < 0 || index >= eacpSnapshotSectors)
+        return now;
+
+    return eacpMix(eacpPreviousFloor[index], now, eacpAlpha);
+}
+
+static float eacpCeilingHeight(sector_t* sector)
+{
+    float now = eacpFixedToFloat(sector->ceilingheight);
+    int index = (int) (sector - sectors);
+
+    if (eacpPreviousCeiling == 0 || index < 0 || index >= eacpSnapshotSectors)
+        return now;
+
+    return eacpMix(eacpPreviousCeiling[index], now, eacpAlpha);
+}
+
+void eacpDoomSnapshotTic(void)
+{
+    int i;
+
+    if (gamestate != GS_LEVEL || sectors == 0 || numsectors <= 0)
+        return;
+
+    if (eacpSnapshotSectors != numsectors)
+    {
+        doom_free(eacpPreviousFloor);
+        doom_free(eacpPreviousCeiling);
+
+        eacpPreviousFloor = (float*) doom_malloc(numsectors * (int) sizeof(float));
+        eacpPreviousCeiling =
+            (float*) doom_malloc(numsectors * (int) sizeof(float));
+        eacpSnapshotSectors = numsectors;
+
+        if (eacpPreviousFloor == 0 || eacpPreviousCeiling == 0)
+        {
+            eacpSnapshotSectors = 0;
+            return;
+        }
+    }
+
+    for (i = 0; i < numsectors; ++i)
+    {
+        eacpPreviousFloor[i] = eacpFixedToFloat(sectors[i].floorheight);
+        eacpPreviousCeiling[i] = eacpFixedToFloat(sectors[i].ceilingheight);
+    }
+}
+
 int eacpDoomWorldVisible(void)
 {
     return gamestate == GS_LEVEL && !menuactive && !automapactive
            && !is_wiping_screen;
 }
 
-int eacpDoomTicCount(void)
+double eacpDoomTicTime(void)
 {
-    return I_GetTime();
+    int sec, usec;
+
+    doom_gettime(&sec, &usec);
+
+    // I_GetTime's own expression, kept fractional instead of truncated, so this
+    // steps from one tic to the next at exactly the moment the engine does. It
+    // omits the engine's private start-of-run offset, which only shifts the
+    // count by a whole number of tics and so changes neither the steps nor the
+    // fraction.
+    return (double) sec * TICRATE + (double) usec * TICRATE / 1000000.0;
 }
 
 int eacpDoomIsWiping(void)
 {
     return is_wiping_screen ? 1 : 0;
+}
+
+int eacpDoomMouseSensitivity(void)
+{
+    return mouseSensitivity;
 }
 
 EacpDoomCamera eacpDoomGetCamera(void)
@@ -527,6 +617,25 @@ static int eacpEnsurePolyStorage(void)
     return eacpPolyVertices != 0 && eacpPolyStart != 0 && eacpPolyCount != 0;
 }
 
+static void eacpMeasureLines(void)
+{
+    int i;
+
+    doom_free(eacpLineLengths);
+    eacpLineLengths = (float*) doom_malloc(numlines * (int) sizeof(float));
+
+    if (eacpLineLengths == 0)
+        return;
+
+    for (i = 0; i < numlines; ++i)
+    {
+        double dx = eacpFixedToDouble(lines[i].dx);
+        double dy = eacpFixedToDouble(lines[i].dy);
+
+        eacpLineLengths[i] = (float) eacpSqrt(dx * dx + dy * dy);
+    }
+}
+
 // The BSP is static for a level, so the cells are rebuilt only when a new one
 // loads; per-frame the geometry pass just re-reads the (moving) heights.
 static void eacpEnsureLevel(void)
@@ -550,6 +659,8 @@ static void eacpEnsureLevel(void)
 
     if (!eacpEnsurePolyStorage())
         return;
+
+    eacpMeasureLines();
 
     for (i = 0; i < numsubsectors; ++i)
     {
@@ -650,14 +761,15 @@ static void eacpEmitWallQuad(EacpEmitter* em,
     eacpEmitVertex(em, textureId, ax, top, az, u1, vTop, light);
 }
 
-static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
+static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
 {
     side_t* side;
     sector_t* front;
     sector_t* back;
     vertex_t* v1;
     vertex_t* v2;
-    double x1, y1, x2, y2, dx, dy, length;
+    double x1, y1, x2, y2;
+    float length;
     float frontFloor, frontCeiling;
     float uStart, uEnd, rowOffset, light;
     int contrast;
@@ -676,12 +788,10 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
     y1 = eacpFixedToDouble(v1->y);
     x2 = eacpFixedToDouble(v2->x);
     y2 = eacpFixedToDouble(v2->y);
-    dx = x2 - x1;
-    dy = y2 - y1;
-    length = eacpSqrt(dx * dx + dy * dy);
+    length = eacpLineLengths[index];
 
-    frontFloor = eacpFixedToFloat(front->floorheight);
-    frontCeiling = eacpFixedToFloat(front->ceilingheight);
+    frontFloor = eacpFloorHeight(front);
+    frontCeiling = eacpCeilingHeight(front);
     rowOffset = eacpFixedToFloat(side->rowoffset);
 
     // The software renderer's fake contrast: walls running east-west are a
@@ -712,7 +822,7 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
         textureTop += rowOffset;
 
         uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-        uEnd = uStart + (float) length / textureWidth;
+        uEnd = uStart + length / textureWidth;
 
         eacpEmitWallQuad(em, texture, x1, y1, x2, y2, frontFloor, frontCeiling,
                          textureTop, uStart, uEnd, textureHeight, light);
@@ -720,8 +830,8 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
     }
 
     {
-        float backFloor = eacpFixedToFloat(back->floorheight);
-        float backCeiling = eacpFixedToFloat(back->ceilingheight);
+        float backFloor = eacpFloorHeight(back);
+        float backCeiling = eacpCeilingHeight(back);
 
         if (side->bottomtexture > 0 && backFloor > frontFloor)
         {
@@ -734,7 +844,7 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
             textureTop += rowOffset;
 
             uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-            uEnd = uStart + (float) length / textureWidth;
+            uEnd = uStart + length / textureWidth;
 
             eacpEmitWallQuad(em, texture, x1, y1, x2, y2, frontFloor, backFloor,
                              textureTop, uStart, uEnd, textureHeight, light);
@@ -756,7 +866,7 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
             textureTop += rowOffset;
 
             uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-            uEnd = uStart + (float) length / textureWidth;
+            uEnd = uStart + length / textureWidth;
 
             eacpEmitWallQuad(em, texture, x1, y1, x2, y2, backCeiling,
                              frontCeiling, textureTop, uStart, uEnd,
@@ -792,7 +902,7 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int s)
                 bottom = openingBottom;
 
             uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-            uEnd = uStart + (float) length / textureWidth;
+            uEnd = uStart + length / textureWidth;
 
             eacpEmitWallQuad(em, texture, x1, y1, x2, y2, bottom, top, textureTop,
                              uStart, uEnd, textureHeight, light);
@@ -849,13 +959,26 @@ static void eacpEmitSprite(EacpEmitter* em,
     width = (float) (spritewidth[lump] >> FRACBITS);
     height = (float) eacpSpriteHeights[lump];
 
-    leftX = eacpFixedToDouble(thing->x)
-            - rightX * eacpFixedToDouble(spriteoffset[lump]);
-    leftY = eacpFixedToDouble(thing->y)
-            - rightY * eacpFixedToDouble(spriteoffset[lump]);
+    // A thing moves once a tic, so drawing it where the tic left it makes it
+    // step while the world glides past. Its momentum is how far it travelled to
+    // get there, so winding that back by the part of the tic still to come puts
+    // it where it would be at the moment being drawn.
+    {
+        double back = 1.0 - (double) eacpAlpha;
 
-    top = eacpFixedToFloat(thing->z) + eacpFixedToFloat(spritetopoffset[lump]);
-    bottom = top - height;
+        double thingX =
+            eacpFixedToDouble(thing->x) - eacpFixedToDouble(thing->momx) * back;
+        double thingY =
+            eacpFixedToDouble(thing->y) - eacpFixedToDouble(thing->momy) * back;
+        float thingZ = eacpFixedToFloat(thing->z)
+                       - (float) (eacpFixedToDouble(thing->momz) * back);
+
+        leftX = thingX - rightX * eacpFixedToDouble(spriteoffset[lump]);
+        leftY = thingY - rightY * eacpFixedToDouble(spriteoffset[lump]);
+
+        top = thingZ + eacpFixedToFloat(spritetopoffset[lump]);
+        bottom = top - height;
+    }
 
     // A lit frame (a muzzle flash, a rocket) ignores the sector's light.
     light = (thing->frame & FF_FULLBRIGHT)
@@ -883,15 +1006,26 @@ static void eacpEmitSprite(EacpEmitter* em,
     }
 }
 
-static void eacpEmitSprites(EacpEmitter* em, mobj_t* viewer)
+// The engine's 32-bit angle for a heading in radians, so the view being drawn
+// can index the same sine tables the engine uses.
+static angle_t eacpAngleFromRadians(float radians)
+{
+    return (angle_t) (unsigned) (long long) ((double) radians
+                                             * (2147483648.0 / 3.14159265358979));
+}
+
+static void eacpEmitSprites(EacpEmitter* em,
+                            mobj_t* viewer,
+                            const EacpDoomCamera* camera)
 {
     thinker_t* thinker;
 
     // The view plane's right axis, the one DOOM measures a sprite's width
-    // along, so the billboards stay square-on to the camera.
-    double rightX = eacpFixedToDouble(finesine[viewer->angle >> ANGLETOFINESHIFT]);
-    double rightY =
-        -eacpFixedToDouble(finecosine[viewer->angle >> ANGLETOFINESHIFT]);
+    // along, so the billboards stay square-on to the camera being drawn.
+    angle_t facing = eacpAngleFromRadians(camera->angle);
+
+    double rightX = eacpFixedToDouble(finesine[facing >> ANGLETOFINESHIFT]);
+    double rightY = -eacpFixedToDouble(finecosine[facing >> ANGLETOFINESHIFT]);
 
     for (thinker = thinkercap.next; thinker != &thinkercap;
          thinker = thinker->next)
@@ -907,7 +1041,7 @@ static void eacpEmitSprites(EacpEmitter* em, mobj_t* viewer)
 // at a column picked by the direction the player faces. A cylinder around the
 // camera reproduces that - it never moves relative to the viewer, so it has no
 // parallax, and its texture repeats four times around, as the engine's does.
-static void eacpEmitSky(EacpEmitter* em, player_t* player)
+static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
 {
     int texture;
     int i;
@@ -915,14 +1049,14 @@ static void eacpEmitSky(EacpEmitter* em, player_t* player)
     float camZ;
     float vTop, vBottom;
 
-    if (skytexture <= 0 || skytexture >= numtextures || player->mo == 0)
+    if (skytexture <= 0 || skytexture >= numtextures)
         return;
 
     texture = texturetranslation[skytexture];
 
-    camX = eacpFixedToDouble(player->mo->x);
-    camY = eacpFixedToDouble(player->mo->y);
-    camZ = eacpFixedToFloat(player->viewz);
+    camX = camera->x;
+    camY = camera->y;
+    camZ = camera->z;
 
     // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
     // row is linear in height on the cylinder, so two rings are exact.
@@ -970,19 +1104,23 @@ static void eacpEmitSky(EacpEmitter* em, player_t* player)
     }
 }
 
-int eacpDoomGetHudSprites(EacpDoomHudSprite* out, int maxSprites)
+void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 {
     player_t* player = &players[displayplayer];
-    int count = 0;
     int i;
+
+    if (out == 0)
+        return;
+
+    for (i = 0; i < EACP_DOOM_HUD_SPRITES; ++i)
+        out[i].textureId = -1;
 
     eacpEnsureTextureData();
 
-    if (!eacpTexturesReady || gamestate != GS_LEVEL || out == 0
-        || player->mo == 0)
-        return 0;
+    if (!eacpTexturesReady || gamestate != GS_LEVEL || player->mo == 0)
+        return;
 
-    for (i = 0; i < NUMPSPRITES && count < maxSprites; ++i)
+    for (i = 0; i < NUMPSPRITES && i < EACP_DOOM_HUD_SPRITES; ++i)
     {
         pspdef_t* weapon = &player->psprites[i];
         state_t* state = weapon->state;
@@ -1004,28 +1142,25 @@ int eacpDoomGetHudSprites(EacpDoomHudSprite* out, int maxSprites)
         if (lump < 0 || lump >= numspritelumps)
             continue;
 
-        out[count].textureId = eacpSpriteBase() + lump;
-        out[count].width = (float) (spritewidth[lump] >> FRACBITS);
-        out[count].height = (float) eacpSpriteHeights[lump];
+        out[i].textureId = eacpSpriteBase() + lump;
+        out[i].width = (float) (spritewidth[lump] >> FRACBITS);
+        out[i].height = (float) eacpSpriteHeights[lump];
 
         // The engine positions the weapon in a 320x200 space centred on row
         // 100, while the view it lands in is 168 rows tall and centred on row
         // 84 - hence the 16-row shift.
-        out[count].x = eacpFixedToFloat(weapon->sx)
-                       - eacpFixedToFloat(spriteoffset[lump]);
-        out[count].y = eacpFixedToFloat(weapon->sy)
-                       - eacpFixedToFloat(spritetopoffset[lump]) - 16.0f;
+        out[i].x =
+            eacpFixedToFloat(weapon->sx) - eacpFixedToFloat(spriteoffset[lump]);
+        out[i].y = eacpFixedToFloat(weapon->sy)
+                   - eacpFixedToFloat(spritetopoffset[lump]) - 16.0f;
 
-        out[count].light =
+        out[i].light =
             (state->frame & FF_FULLBRIGHT)
                 ? 0.0f
                 : eacpStartMap(player->mo->subsector->sector->lightlevel, 0);
 
-        out[count].flip = frame->flip[0];
-        ++count;
+        out[i].flip = frame->flip[0];
     }
-
-    return count;
 }
 
 static void eacpEmitFlat(EacpEmitter* em,
@@ -1071,23 +1206,23 @@ static void eacpEmitSubsector(EacpEmitter* em, int index)
     light = eacpStartMap(sector->lightlevel, 0);
 
     eacpEmitFlat(em, index, sector->floorpic,
-                 eacpFixedToFloat(sector->floorheight), light);
+                 eacpFloorHeight(sector), light);
 
     // A sky ceiling is a hole onto the sky, not a surface.
     if (sector->ceilingpic != skyflatnum)
         eacpEmitFlat(em, index, sector->ceilingpic,
-                     eacpFixedToFloat(sector->ceilingheight), light);
+                     eacpCeilingHeight(sector), light);
 }
 
-static void eacpEmitWorld(EacpEmitter* em)
+static void eacpEmitWorld(EacpEmitter* em, const EacpDoomCamera* camera)
 {
     player_t* player = &players[displayplayer];
     int i;
 
     for (i = 0; i < numlines; ++i)
     {
-        eacpEmitLineSide(em, &lines[i], 0);
-        eacpEmitLineSide(em, &lines[i], 1);
+        eacpEmitLineSide(em, &lines[i], i, 0);
+        eacpEmitLineSide(em, &lines[i], i, 1);
     }
 
     for (i = 0; i < numsubsectors; ++i)
@@ -1096,11 +1231,13 @@ static void eacpEmitWorld(EacpEmitter* em)
     if (player->mo == 0)
         return;
 
-    eacpEmitSky(em, player);
-    eacpEmitSprites(em, player->mo);
+    eacpEmitSky(em, camera);
+    eacpEmitSprites(em, player->mo, camera);
 }
 
-int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
+int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
+                          float alpha,
+                          EacpDoomVertex* vertices,
                           int maxVertices,
                           EacpDoomDraw* draws,
                           int maxDraws,
@@ -1115,10 +1252,11 @@ int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
     if (outVertexCount != 0)
         *outVertexCount = 0;
 
+    eacpAlpha = alpha < 0.0f ? 0.0f : (alpha > 1.0f ? 1.0f : alpha);
     eacpEnsureTextureData();
 
-    if (gamestate != GS_LEVEL || vertices == 0 || draws == 0 || textureCount <= 0
-        || lines == 0 || !eacpTexturesReady)
+    if (gamestate != GS_LEVEL || vertices == 0 || draws == 0 || camera == 0
+        || textureCount <= 0 || lines == 0 || !eacpTexturesReady)
         return 0;
 
     eacpEnsureLevel();
@@ -1132,7 +1270,7 @@ int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
     em.counts = eacpTextureCounts;
     em.cursors = eacpTextureCursors;
     em.vertices = 0;
-    eacpEmitWorld(&em);
+    eacpEmitWorld(&em, camera);
 
     // Each texture's vertices become one contiguous run, so the frame draws
     // once per texture with no state changes in between.
@@ -1157,7 +1295,7 @@ int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
     }
 
     em.vertices = vertices;
-    eacpEmitWorld(&em);
+    eacpEmitWorld(&em, camera);
 
     if (outVertexCount != 0)
         *outVertexCount = total;

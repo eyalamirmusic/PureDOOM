@@ -44,7 +44,9 @@ typedef struct
 
 // The weapon and its muzzle flash: sprites the engine draws in screen space
 // rather than in the world, positioned in the 320 x 168 view with a top-left
-// origin.
+// origin. An empty slot has a negative textureId.
+#define EACP_DOOM_HUD_SPRITES 2
+
 typedef struct
 {
     int textureId;
@@ -71,16 +73,27 @@ extern "C"
     // the GPU world view can stand in for the software one.
     int eacpDoomWorldVisible(void);
 
-    // The engine's own clock, in tics (it runs at 35 of them a second).
+    // The engine's own clock, in tics - 35 a second - with the fraction: its
+    // whole part says which tic the world is on, and the rest says how far into
+    // that tic time has moved.
     //
-    // This matters because doom_update() BLOCKS until a tic is due: TryRunTics
-    // ends in a spin loop waiting for one, and always asks for at least one. On
-    // a display refresh with no tic to run it would sit there for most of a
-    // tic, which on the display link's thread means the whole app - input
-    // included - stalls with it. Call doom_update() only when this value has
-    // moved, or while a screen wipe is running.
-    int eacpDoomTicCount(void);
+    // Both answers must come from ONE reading of it. Ask for the tic and the
+    // fraction separately and a tic boundary can fall between the two asks: the
+    // fraction wraps back to nothing while the state it is meant to be placed
+    // between is still the previous tic's, and the frame is drawn a whole tic in
+    // the past - a jump backwards, and then a jump forwards to recover.
+    //
+    // (It counts from the epoch, not from when the game started, so it is far
+    // larger than the engine's own tic number - only its steps and its fraction
+    // are meaningful, and both agree with the engine's.)
+    double eacpDoomTicTime(void);
+
     int eacpDoomIsWiping(void);
+
+    // The engine's mouse sensitivity (the options menu changes it). It scales
+    // the movement it is handed by (sensitivity + 5) / 10, so a view that runs
+    // ahead of the engine has to scale by the same amount or the two disagree.
+    int eacpDoomMouseSensitivity(void);
 
     EacpDoomCamera eacpDoomGetCamera(void);
 
@@ -105,15 +118,35 @@ extern "C"
     // monsters are always current - and groups it into per-texture draw runs.
     // Writes the vertex count through outVertexCount and returns the draw
     // count.
-    int eacpDoomBuildGeometry(EacpDoomVertex* vertices,
+    //
+    // `camera` is where the frame is drawn from, which between tics is not
+    // quite where the engine has the player: the billboards have to square up
+    // to the view actually being drawn, or they sit half edge-on and flicker as
+    // it turns, and the sky has to be centred on it.
+    //
+    // `alpha` is how far into the current tic the frame sits (see
+    // eacpDoomTicFraction). Everything that moves on the tic — the things in
+    // the level, and the floors and ceilings a door or a lift is driving — is
+    // placed at that point between where it was and where it is, so it glides
+    // with the camera instead of stepping 35 times a second against it.
+    int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
+                              float alpha,
+                              EacpDoomVertex* vertices,
                               int maxVertices,
                               EacpDoomDraw* draws,
                               int maxDraws,
                               int* outVertexCount);
 
+    // Remembers where every sector's floor and ceiling are, so the next frame
+    // can draw them part-way to wherever they move next. Call once per tic,
+    // just after the engine has run it.
+    void eacpDoomSnapshotTic(void);
+
     // The player's weapon and muzzle flash, drawn over the world in screen
-    // space. Returns the number written (at most 2).
-    int eacpDoomGetHudSprites(EacpDoomHudSprite* out, int maxSprites);
+    // space. Always writes EACP_DOOM_HUD_SPRITES entries, one per slot, so a
+    // caller can match a slot against the one it saw last tic and interpolate
+    // between them.
+    void eacpDoomGetHudSprites(EacpDoomHudSprite* out);
 
 #ifdef __cplusplus
 }

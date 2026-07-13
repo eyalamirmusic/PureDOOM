@@ -125,18 +125,73 @@ broken rather than fail outright.
   (`eacpDoomTicCount`) says a tic is due, and rebuild what derives from its
   state — the software frame, the palette, the world's geometry — only then.
   Rendering still runs every refresh.
+- **Do not draw the camera straight from the engine.** It would then sit still
+  for two or three frames and jump, which reads as lag however fast the frames
+  arrive — this is what made the game feel sluggish. `View::viewCamera`
+  interpolates the position across the tic it is part-way through, and runs the
+  *aim* ahead: the mouse movement gathered since the last tic is the turn the
+  engine is about to make (`pendingTurn` reproduces its formula, sensitivity
+  included), so applying it now makes the view follow the mouse every frame
+  with no lag, and the engine's angle lands exactly where the view already was
+  when the tic applies it.
+- **Place everything between tics with the engine's clock, not the display's**
+  (`eacpDoomTicTime`). A tic lasts 28.6ms and a frame 8.3ms, so a ramp paced by
+  the display saturates early on some tics and is cut short on others.
+- **Read that clock exactly once a frame**, and take both answers from the one
+  reading: whether a tic is due, and how far into the tic the frame sits. Ask
+  twice — once to decide the tic, once to place the frame — and a tic boundary
+  can fall between the two asks, so the fraction wraps back to nothing while the
+  state it is placed between is still the *previous* tic's. The frame is then
+  drawn a whole tic in the past: a jump backwards, then a jump forwards to
+  recover, on a few percent of frames. That is what "jumps in the wrong
+  direction" was.
+- **Everything that moves on the tic has to be placed between tics too**, or it
+  jitters against a world that glides — and the engine keeps no previous state,
+  so each one is reconstructed differently:
+  - the **heading** is interpolated, and the mouse's share of the turn then runs
+    *ahead* of it, so the aim does not carry the tic of lag the interpolation
+    would otherwise add (`View::viewCamera`; Shift+F7 turns the prediction off
+    to compare). Predicting is only safe because the movement it predicts from
+    is filtered first — see below. Predicting from the raw signal was what made
+    the mouse shake while the keyboard stayed smooth.
+  - the **mouse itself is filtered** (`View::filterMouse`). Raw deltas are not
+    smooth: one steady sweep measures -10, -30, -13, -12, -14, -24, -10 — the
+    hardware's sampling beating against the refresh rate, plus pointer
+    acceleration. The engine hides this by reading the mouse once a tic, which
+    averages it; anything drawn *between* tics sees it raw. Averaging each
+    frame's movement with the one before halves the noise for half a frame of
+    delay and loses none of the movement. The engine and the view are handed the
+    same filtered signal, so they stay in step and the prediction still cancels
+    exactly at the tic boundary.
+  - **things** (monsters, items) are wound back from where the tic left them by
+    their own momentum, which the engine already stores.
+  - **floors and ceilings** a door or a lift is driving come from
+    `eacpDoomSnapshotTic`, taken before each tic runs. The walls that meet them
+    read the same numbers, so nothing tears.
+  - the **weapon** is interpolated from the previous tic's HUD sprites.
+- **Billboards and the sky must be built around the camera being drawn from**,
+  not the engine's. Built for the engine's heading, a sprite sits progressively
+  edge-on as the view turns within a tic and visibly pulses; hence
+  `eacpDoomBuildGeometry` takes the view camera and the geometry is rebuilt per
+  frame rather than per tic.
 
 ## eacp Gap Log
 
 Found while porting, newest last. Remove entries once fixed in eacp.
 
-Already added on the eacp branch `doom-stage-a-gpu-palette` (all three were
+Already added on the eacp branch `doom-stage-a-gpu-palette` (all four were
 gaps this port surfaced): `TextureFormat::R8Unorm`, so indexed data — the
 framebuffer, wall textures, flats, the COLORMAP — uploads as one byte per
 pixel instead of being expanded to RGBA on the CPU; `Buffer::update`, so the
 world's geometry buffer is re-uploaded each frame rather than reallocated;
-and `ShaderProgram::setDiscardBelow`, an alpha test in the shader EDSL,
-without which no sprite or masked texture can be drawn.
+`ShaderProgram::setDiscardBelow`, an alpha test in the shader EDSL, without
+which no sprite or masked texture can be drawn; and a **fix to the mouse
+lock** — engaging it warps the cursor into the window, and the next mouse
+event still reported that warp in its delta, as though the hand had made the
+jump. Measured at −222 px in one event, it spun a locked camera round the
+instant you clicked. The warp now marks itself and that one delta is dropped
+(GLFW compensates for the same behaviour; eacp's comment had asserted the
+disassociate-first ordering already prevented it, and it does not).
 
 1. **No audio subsystem.** Sound effects need a pull-model PCM output stream
    (`DOOM_SAMPLERATE` = 11025 Hz, 16-bit stereo, mixed via
