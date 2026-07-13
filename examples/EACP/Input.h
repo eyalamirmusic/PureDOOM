@@ -56,10 +56,9 @@ inline doom_key_t toDoomKey(const Graphics::KeyEvent& event)
             break;
     }
 
-    // DOOM's codes for letters, digits and punctuation are their ASCII
-    // values, so everything else maps through the typed character. This also
-    // covers keys eacp's KeyCode table has no constant for yet (see the gap
-    // log in CLAUDE.md).
+    // DOOM's codes for letters, digits and punctuation are their ASCII values, so
+    // everything else maps through the typed character - which also covers the
+    // keys eacp's KeyCode table has no constant for yet (see the gap log).
     const auto& characters = event.charactersIgnoringModifiers;
 
     if (characters.size() == 1)

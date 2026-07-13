@@ -4,9 +4,8 @@
 
 namespace PureDoom
 {
-// Snaps a proposed content size back to DOOM's 4:3 shape by applying the
-// smaller of the two possible corrections, so dragging any window edge or
-// corner feels natural.
+// Snaps a proposed content size back to DOOM's 4:3 shape by applying the smaller
+// of the two possible corrections, so dragging any edge or corner feels natural.
 inline void keepDisplayAspect(int& width, int& height)
 {
     constexpr auto aspect = displayWidth / displayHeight;
@@ -33,9 +32,9 @@ inline Graphics::WindowOptions windowOptions()
     return options;
 }
 
-// The largest centered 4:3 rect that fits the view, in view points; the
-// window's aspect constraint keeps this a no-op except during zoom and
-// fullscreen, where black bars fill the rest.
+// The largest centered 4:3 rect that fits the view, in view points. The window's
+// aspect constraint keeps this a no-op except during zoom and fullscreen, where
+// black bars fill the rest.
 inline Graphics::Rect letterboxedDisplayRect(const Graphics::Rect& bounds)
 {
     constexpr auto contentAspect = displayWidth / displayHeight;

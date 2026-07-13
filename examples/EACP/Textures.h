@@ -26,9 +26,8 @@ inline GPU::Texture makePaletteTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
-// One row per light level. Clamped, so the shader's row index needs no
-// explicit clamp: a surface too bright or too far simply lands on the first or
-// last row.
+// One row per light level. Clamped, so a surface too bright or too far simply
+// lands on the first or the last row and the shader needs no clamp of its own.
 inline GPU::Texture makeColormapTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
@@ -40,9 +39,9 @@ inline GPU::Texture makeColormapTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
-// The software-only layers over the view - menu, messages, PAUSE, map marks -
-// as palette indices with their coverage in alpha, which is what lets the world
-// show through the pixels the engine never drew on.
+// The software-only layers over the view, as palette indices with their coverage
+// in alpha - which is what lets the world show through the pixels the engine
+// never drew on.
 inline GPU::Texture makeOverlayTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};

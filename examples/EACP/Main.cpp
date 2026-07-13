@@ -5,8 +5,8 @@ using namespace eacp;
 int main(int argc, char** argv)
 {
     // PureDOOM locates WAD files via DOOMWADDIR (defaulting to the current
-    // directory), so point it at the repository's shareware WAD unless the
-    // user already chose a directory.
+    // directory), so point it at the repository's shareware WAD unless the user
+    // has already chosen a directory.
     if (!getEnv("DOOMWADDIR"))
         setEnv("DOOMWADDIR", PUREDOOM_ROOT_DIR);
 
@@ -19,10 +19,8 @@ int main(int argc, char** argv)
 
     doom_init(argc, argv, DOOM_FLAG_MENU_DARKEN_BG);
 
-    // doom_init reads ~/.doomrc over the defaults just set, and DOOM saves the
-    // bindings there even though it cannot rebind a key from inside the game —
-    // so without this an old config keeps its keys forever and the ones above do
-    // nothing at all.
+    // doom_init reads ~/.doomrc back over the defaults just set, so without this
+    // an old config keeps its keys forever and the bindings above do nothing.
     eacpDoomBindKeys();
 
     return Apps::run<PureDoom::App>();

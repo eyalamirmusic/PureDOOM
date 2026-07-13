@@ -23,10 +23,16 @@ The port has two goals:
   `src/DOOM` by `tools/gen_single_header.py`. Vendored code: never hand-edit
   and never clang-format it (same for `src/DOOM`).
 - `examples/EACP/` — the eacp port. `DoomImpl.c` compiles the engine
-  implementation as plain C; `Main.cpp` is the eacp platform layer and GPU
-  renderer. `EngineAccess.h/.c` is the plain-C snapshot interface to engine
-  internals (camera, wall geometry, view state) — the `.c` is included at the
-  end of `DoomImpl.c`'s translation unit, never compiled standalone.
+  implementation as plain C; `Main.cpp` boots the engine and `View.h` is the eacp
+  platform layer and GPU renderer. `EngineAccess.h/.c` is the plain-C snapshot
+  interface to engine internals (camera, wall geometry, view state) — the `.c` is
+  included at the end of `DoomImpl.c`'s translation unit, never compiled
+  standalone.
+
+  The six shaders share `DoomShader.h`: `DoomShader` resolves a palette index the
+  way the software renderer does (index → COLORMAP row → palette), and
+  `ScreenQuadShader` adds the screen-space quad the four full-frame passes draw.
+  Every shader is the difference from those, and nothing else.
 
 ### Renderer status
 
@@ -243,7 +249,7 @@ broken rather than fail outright.
   keystrokes.
 - **The game only moves on a tic, 35 times a second.** The display refreshes
   two to four times as often. Step the engine when its own clock
-  (`eacpDoomTicCount`) says a tic is due, and rebuild what derives from its
+  (`eacpDoomTicTime`) says a tic is due, and rebuild what derives from its
   state — the software frame, the palette, the world's geometry — only then.
   Rendering still runs every refresh.
 - **Do not draw the camera straight from the engine.** It would then sit still
@@ -385,6 +391,16 @@ found by comparing against GZDoom:
 8. **No cull-mode state** in `RenderPipelineDescriptor`. Not blocking (DOOM's
    walls are fine drawn double-sided), but every triangle is rasterised from
    both faces.
+9. **A `View` cannot reach the `Window` it is in.** Anything a view needs from
+   its window — the mouse lock, the modifier keys — has to be handed to it by the
+   app. eacp's own `Apps/GPU/Maze` assigns a `Graphics::Window*` back-pointer
+   after construction and null-checks it at every use; this port instead declares
+   the window *before* the view and hands it over as a `Graphics::Window&` at
+   construction, which makes it impossible to be null and removes the checks. That
+   is a workaround, not a fix: it constrains member order in `App`, and it only
+   works because a `Window` needs no content view to exist. A `View::getWindow()`,
+   or a window reference given to the view on `setContentView`, would settle it
+   properly for every view that locks the mouse.
 
 ## Code Style
 
@@ -405,6 +421,12 @@ checks.
 Member variables use plain names (no trailing underscores); constructor
 parameters that would shadow a member get a `ToUse` suffix. Pass by
 `const T&` whenever possible.
+
+Use eacp's own containers as they are meant to be used. `Vector<T>` (eacp's
+re-export of `EA::Vector`) is deliberately **`int`-indexed and `int`-sized** —
+call `resize`, `assign`, `size` and `operator[]` on it directly and index it with
+plain `int`. Reaching through `getVector()` for the underlying `std::vector`, or
+casting indices to `std::size_t`, is working against it.
 
 Enforced via `.clang-format` (copied from eacp):
 - Allman brace style
