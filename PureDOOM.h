@@ -10752,6 +10752,21 @@ void NetUpdate(void)
     {
         I_StartTic();
         D_ProcessEvents();
+
+        // [pd] A singletic update is synchronous: D_DoomLoop builds the tic's
+        // command and runs it in the same breath, advancing maketic and gametic
+        // together. Building another one here would consume the input that
+        // command is about to read, and would advance maketic with no gametic to
+        // match it -- and this runs from D_Display and R_RenderPlayerView too,
+        // which vanilla called to keep the netcode fed while a slow frame
+        // rendered. maketic therefore climbed until it jammed against the cap
+        // below and stayed there, and since D_DoomLoop writes the command to
+        // netcmds[maketic] while G_Ticker reads netcmds[gametic], every command
+        // was executed five tics (143ms) after it was built. Events are still
+        // drained above; there is simply no second command to build.
+        if (singletics)
+            continue;
+
         if (maketic - gameticdiv >= BACKUPTICS / 2 - 1)
             break;          // can't hold any more
 

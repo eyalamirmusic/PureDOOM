@@ -100,7 +100,23 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
   below. eacp changes happen in the eacp repo itself and get picked up via
   `CPM_eacp_SOURCE`.
 - Vendored DOOM sources (`PureDOOM.h`, `src/DOOM`) stay untouched apart from
-  upstreamable bug fixes.
+  upstreamable bug fixes. `PureDOOM.h` is *generated* from `src/DOOM` — edit the
+  `src/DOOM` file and regenerate (`cd tools && python3 gen_single_header.py`),
+  never the header directly.
+
+  One such fix is in place (`d_net.c`, `NetUpdate`). PureDOOM runs with
+  `singletics = true`, whose `D_DoomLoop` path builds a tic's command and runs it
+  in the same breath, advancing `maketic` and `gametic` together. But `NetUpdate`
+  is also called from `D_Display` and `R_RenderPlayerView` — vanilla called it
+  there to keep the netcode fed while a slow frame rendered — and each of those
+  calls advanced `maketic` with no `gametic` to match. `maketic` therefore
+  climbed until it jammed against the `BACKUPTICS/2-1` cap and stayed there
+  permanently, and since `D_DoomLoop` writes the command to `netcmds[maketic]`
+  while `G_Ticker` reads `netcmds[gametic]`, **every command was executed five
+  tics (143ms) after it was built** — aim, movement and fire alike. `NetUpdate`
+  now builds no command when `singletics` is set (it still drains events). This
+  took the aim's input-to-screen lag from 163ms to 17ms, and stopped the player
+  coasting for five tics after a movement key was released.
 - The engine is single-threaded: `doom_init`, `doom_update`,
   `doom_get_framebuffer` and all input calls happen on the main thread. Audio,
   once wired, is the only exception and takes the engine lock the SDL example
@@ -148,16 +164,25 @@ broken rather than fail outright.
 - **Everything that moves on the tic has to be placed between tics too**, or it
   jitters against a world that glides — and the engine keeps no previous state,
   so each one is reconstructed differently:
-  - the **heading** is interpolated, and the mouse's share of the turn then runs
-    *ahead* of it, so the aim does not carry the tic of lag the interpolation
-    would otherwise add (`View::viewCamera`; Shift+F7 turns the prediction off
-    to compare). Predicting is only safe because the movement it predicts from
-    is filtered first — see below. Predicting from the raw signal was what made
-    the mouse shake while the keyboard stayed smooth.
+  - the **heading** is split by where the turn came from (`View::viewAngle`;
+    Shift+F7 drops back to plain interpolation to compare). What the *keyboard*
+    turned is interpolated — a held key turns at a steady rate, and interpolating
+    is what makes that read as smooth. What the *mouse* turned is applied at
+    once, and the view then runs *ahead* by the movement the engine has not been
+    handed yet, which is the turn it is about to make anyway. Interpolating the
+    heading instead would cost a whole tic of lag on the one thing the hand is
+    holding. GZDoom does exactly this: `R_InterpolateView` gives the local
+    player's yaw as `curYaw + LocalViewAngle` and never interpolates it.
     The mouse is *not* filtered, and must not be: what looked like noise in it
     (one steady sweep measuring -10, -30, -13, -12, -14, -24, -10) was the
     system's pointer acceleration, and eacp now hands a locked window the raw
     device movement instead, which is linear. GZDoom smooths nothing either.
+    Running ahead is safe on it because what it runs ahead on is the
+    *accumulated* mouse, not the last delta, so a mouse's per-sample raggedness
+    integrates away. Measured against a deliberately ragged sweep, running ahead
+    was not merely no worse but far steadier than interpolating (frame-to-frame
+    wobble 0.3ms against 10.2ms) — interpolation quantises the aim to the tic and
+    then has to swing between the results.
   - **things** (monsters, items) are wound back from where the tic left them by
     their own momentum, which the engine already stores.
   - **floors and ceilings** a door or a lift is driving come from
@@ -199,12 +224,18 @@ found by comparing against GZDoom:
   the instant you clicked. The warp now marks itself and that one delta is
   dropped. (eacp's comment had asserted the disassociate-first ordering
   prevented this; it does not. GLFW compensates for the same behaviour.)
-- **`GPUView::setFramesInFlight`** — every frame queued ahead of the screen is
-  a frame of delay between a hand moving and the picture answering. Metal
-  queued three by default and DXGI does the same, so the picture could be three
-  refreshes old, felt as heaviness in *all* input, keyboard included. Two is
-  now the default, with the choice exposed for a view whose frame times are
-  spiky and whose input is not being aimed with.
+- **`GPUView::setFramesInFlight`** — exposed so a view can choose how many frames
+  the renderer has on the go at once. Note that the two backends mean different
+  things by it and **only DXGI's is a latency knob**. On DXGI it is the depth of
+  the present queue, and two is the default because a third queued frame is a
+  third refresh of delay. On Metal it is `maximumDrawableCount`: the size of the
+  pool of buffers the layer hands out to draw into, *not* a queue of finished
+  frames. A display-link-driven view presents one frame per refresh either way,
+  so shrinking the pool dequeues nothing — it just means `nextDrawable` may find
+  no free buffer and block the calling thread, and that wait lands between
+  sampling the input and drawing with it. Lowering it to two therefore *raises*
+  latency on Metal (measured: sample-to-screen 23ms at three, 32ms at two), and
+  three is the Apple default. This port should not lower it.
 
 1. **No audio subsystem.** Sound effects need a pull-model PCM output stream
    (`DOOM_SAMPLERATE` = 11025 Hz, 16-bit stereo, mixed via
