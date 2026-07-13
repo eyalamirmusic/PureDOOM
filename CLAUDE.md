@@ -106,6 +106,26 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
   once wired, is the only exception and takes the engine lock the SDL example
   demonstrates.
 
+### What the engine expects of its host
+
+Two of these are not obvious, and getting either wrong makes the game feel
+broken rather than fail outright.
+
+- **Hand it the mouse once per tic, with the whole movement.** `G_Responder`
+  *assigns* the mouse delta (`mousex = ev->data2 * ...`) rather than adding to
+  it, and `G_BuildTiccmd` consumes and zeroes it once a tic. Posting one
+  `doom_mouse_move` per platform mouse event — which arrive several times per
+  tic — therefore throws away all but the last, and the aim crawls. Accumulate
+  and flush once per tic (`View::flushMouse`), as vanilla's `I_StartTic` does.
+  It also stops mouse motion from filling `D_PostEvent`'s 64-slot ring buffer,
+  which silently overwrites rather than blocking, and so can swallow
+  keystrokes.
+- **The game only moves on a tic, 35 times a second.** The display refreshes
+  two to four times as often. Step the engine when its own clock
+  (`eacpDoomTicCount`) says a tic is due, and rebuild what derives from its
+  state — the software frame, the palette, the world's geometry — only then.
+  Rendering still runs every refresh.
+
 ## eacp Gap Log
 
 Found while porting, newest last. Remove entries once fixed in eacp.

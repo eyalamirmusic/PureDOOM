@@ -71,6 +71,17 @@ extern "C"
     // the GPU world view can stand in for the software one.
     int eacpDoomWorldVisible(void);
 
+    // The engine's own clock, in tics (it runs at 35 of them a second).
+    //
+    // This matters because doom_update() BLOCKS until a tic is due: TryRunTics
+    // ends in a spin loop waiting for one, and always asks for at least one. On
+    // a display refresh with no tic to run it would sit there for most of a
+    // tic, which on the display link's thread means the whole app - input
+    // included - stalls with it. Call doom_update() only when this value has
+    // moved, or while a screen wipe is running.
+    int eacpDoomTicCount(void);
+    int eacpDoomIsWiping(void);
+
     EacpDoomCamera eacpDoomGetCamera(void);
 
     // Every wall texture, flat and sprite the game loaded, in one id space and

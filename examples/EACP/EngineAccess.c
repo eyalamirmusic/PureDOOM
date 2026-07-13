@@ -94,6 +94,16 @@ int eacpDoomWorldVisible(void)
            && !is_wiping_screen;
 }
 
+int eacpDoomTicCount(void)
+{
+    return I_GetTime();
+}
+
+int eacpDoomIsWiping(void)
+{
+    return is_wiping_screen ? 1 : 0;
+}
+
 EacpDoomCamera eacpDoomGetCamera(void)
 {
     EacpDoomCamera camera = {0, 0, 0, 0};

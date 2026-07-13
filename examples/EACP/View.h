@@ -55,13 +55,56 @@ struct View final : GPU::GPUView
             syncModifierKeys(window->getModifiers());
         }
 
-        doom_update();
+        // The engine's state only moves on a tic, 35 times a second, so it is
+        // stepped when its own clock says there is a tic to run and left alone
+        // on the refreshes in between. A screen wipe animates per frame instead
+        // and is stepped every time.
+        auto tic = eacpDoomTicCount();
+
+        if (tic != lastTic || eacpDoomIsWiping())
+        {
+            lastTic = tic;
+            flushMouse();
+            doom_update();
+            frameChanged = true;
+        }
+    }
+
+    // DOOM reads the mouse once a tic, and the last event it saw wins:
+    // G_Responder assigns the movement rather than adding to it. Handing it one
+    // event per platform mouse move - which arrive several times per tic -
+    // would therefore throw all but the last of them away, and the aim would
+    // crawl. Accumulate the movement here and give the engine the whole of it,
+    // once per tic, which is what it expects. It also keeps the engine's
+    // 64-event queue from filling with mouse motion and dropping keystrokes.
+    void flushMouse()
+    {
+        auto x = (int) mouseMovement.x;
+        auto y = (int) mouseMovement.y;
+
+        if (x == 0 && y == 0)
+            return;
+
+        doom_mouse_move(x, y);
+
+        // Keep the fraction, so slow movement accumulates instead of rounding
+        // away to nothing.
+        mouseMovement.x -= (float) x;
+        mouseMovement.y -= (float) y;
     }
 
     void render(GPU::Frame& frame) override
     {
-        framebuffer.update(doom_get_framebuffer(1));
-        updatePalette();
+        // The game's state moves 35 times a second and the display refreshes
+        // two to four times as often, so everything derived from that state -
+        // the software frame, the palette, the world's geometry - is rebuilt
+        // only when a tic has actually run.
+        if (frameChanged)
+        {
+            framebuffer.update(doom_get_framebuffer(1));
+            updatePalette();
+        }
+
         ensureWorldTextures();
 
         auto bounds = getLocalBounds();
@@ -84,6 +127,8 @@ struct View final : GPU::GPUView
         }
         else
             drawScreen(pass, bounds, dst, 0.0f, 1.0f);
+
+        frameChanged = false;
     }
 
     void drawScreen(GPU::RenderPass& pass,
@@ -103,15 +148,21 @@ struct View final : GPU::GPUView
                    const Graphics::Rect& bounds,
                    const Graphics::Rect& viewport)
     {
-        auto vertexCount = 0;
-        auto drawCount = eacpDoomBuildGeometry(
-            geometry.data(), maxVertices, draws.data(), maxDraws, &vertexCount);
+        if (frameChanged)
+        {
+            auto vertexCount = 0;
 
-        if (drawCount <= 0 || vertexCount <= 0)
+            drawCount = eacpDoomBuildGeometry(
+                geometry.data(), maxVertices, draws.data(), maxDraws, &vertexCount);
+
+            if (drawCount > 0 && vertexCount > 0)
+                worldBuffer.update(geometry.data(),
+                                   (std::size_t) vertexCount
+                                       * sizeof(EacpDoomVertex));
+        }
+
+        if (drawCount <= 0)
             return;
-
-        worldBuffer.update(geometry.data(),
-                           (std::size_t) vertexCount * sizeof(EacpDoomVertex));
 
         auto camera = eacpDoomGetCamera();
         worldShader.camX = camera.x;
@@ -296,8 +347,10 @@ struct View final : GPU::GPUView
     void aim(const Graphics::MouseEvent& event)
     {
         if (window != nullptr && window->isMouseLocked())
-            doom_mouse_move((int) (event.delta.x * mouseSpeed),
-                            (int) (event.delta.y * mouseSpeed));
+        {
+            mouseMovement.x += event.delta.x * mouseSpeed;
+            mouseMovement.y += event.delta.y * mouseSpeed;
+        }
     }
 
     ScreenShader shader;
@@ -318,6 +371,16 @@ struct View final : GPU::GPUView
 
     // Shift+F8 flips between the GPU world renderer and the software frame.
     bool gpuWorld = true;
+
+    // Whether a tic has run since the last frame was drawn, and so whether
+    // anything the frame is built from has moved.
+    bool frameChanged = true;
+    int lastTic = -1;
+    int drawCount = 0;
+
+    // Mouse movement gathered since the last tic, in DOOM's units.
+    Graphics::Point mouseMovement;
+
     Graphics::Window* window = nullptr;
     Graphics::ModifierKeys modifiers;
 };
