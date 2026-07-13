@@ -18,7 +18,18 @@ if (APPLE AND NOT IOS)
             CACHE INTERNAL "eacp macOS bundle Info.plist template")
 endif ()
 
-add_executable(PureDoomEACP Main.cpp DoomImpl.c)
+add_executable(PureDoomEACP
+        Main.cpp
+        DoomImpl.c
+        App.h
+        Common.h
+        EngineAccess.h
+        Input.h
+        Layout.h
+        ScreenShader.h
+        Textures.h
+        View.h
+        WorldShader.h)
 target_link_libraries(PureDoomEACP PRIVATE eacp-gpu)
 target_compile_definitions(PureDoomEACP PRIVATE
         PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")

@@ -1,0 +1,82 @@
+#pragma once
+
+#include "Common.h"
+
+namespace PureDoom
+{
+// Draws the level geometry the engine access layer extracts, with DOOM's map
+// coordinates (x, y ground plane, z up) mapped to GPU space as (x, z, -y).
+// The full-frame perspective projection is then squeezed into the 3D
+// viewport's sub-rect of the window (offsets scale by w so they survive the
+// perspective divide), leaving the status bar strip and the letterbox bars
+// untouched.
+//
+// Shading reproduces the software renderer exactly, as two chained lookups on
+// data the engine already owns: the wall or flat texture yields a palette
+// index, the COLORMAP row picked by the surface's light level and its distance
+// remaps that index to a darker one, and the palette turns it into a colour.
+// The banding, the palette flashes and the light diminishing are DOOM's own,
+// not an approximation of them.
+struct WorldShader final : GPU::ShaderProgram
+{
+    WorldShader() { compile(); }
+
+    void define() override
+    {
+        auto position = vertexInput(&EacpDoomVertex::position);
+        auto uv = vertexInput(&EacpDoomVertex::uv);
+        auto light = vertexInput(&EacpDoomVertex::light);
+
+        auto view = rotateY(-yaw) * translate(-camX, -camY, -camZ);
+        auto fovY = 2.0f * std::atan(1.0f / worldAspect);
+        auto projection = perspective(constant(worldAspect), fovY, 4.0f, 16384.0f);
+        auto clip = projection * view * float4(position, 1.0f);
+
+        auto x = clip.x() * ndcScale.x() + clip.w() * ndcOffset.x();
+        auto y = clip.y() * ndcScale.y() + clip.w() * ndcOffset.y();
+        setPosition(float4(x, y, clip.z(), clip.w()));
+
+        // The projection's w is the view depth, so the distance the light
+        // falloff needs comes free with the transform.
+        auto depth = varying(clip.w());
+        auto startMap = varying(light);
+        auto index = sample(texture, varying(uv)).x();
+
+        // The engine's light table, in closed form: a surface starts at the
+        // COLORMAP row its sector's brightness picks and moves one row darker
+        // as it recedes. Sampling nearest and clamped, the texture's own edges
+        // do the rounding and the clamping.
+        auto row = startMap - constant(1280.0f) / (depth + constant(16.0f));
+        auto shaded =
+            sample(colormap,
+                   float2(paletteCoordinate(index), (row + 0.5f) / colormapRows))
+                .x();
+
+        auto color = sample(palette, float2(paletteCoordinate(shaded), 0.5f));
+        setFragment(float4(color.xyz(), 1.0f));
+    }
+
+    // A palette index arrives from an R8 texture as 0..1; this lands it on the
+    // centre of its texel in a 256-wide lookup row.
+    GPU::Float paletteCoordinate(const GPU::Float& index)
+    {
+        return (index * 255.0f + 0.5f) / 256.0f;
+    }
+
+    GPU::Uniform<GPU::Float> camX;
+    GPU::Uniform<GPU::Float> camY;
+    GPU::Uniform<GPU::Float> camZ;
+    GPU::Uniform<GPU::Float> yaw;
+    GPU::Uniform<GPU::Float2> ndcScale;
+    GPU::Uniform<GPU::Float2> ndcOffset;
+
+    // Rebound per draw: the frame's geometry is grouped by texture, so each
+    // wall texture and flat is drawn in one run.
+    GPU::Uniform<GPU::Texture2D> texture;
+    GPU::Uniform<GPU::Texture2D> colormap;
+    GPU::Uniform<GPU::Texture2D> palette;
+
+    EACP_SHADER(
+        camX, camY, camZ, yaw, ndcScale, ndcOffset, texture, colormap, palette)
+};
+} // namespace PureDoom

@@ -32,14 +32,26 @@ The port has two goals:
 
 Two paths, toggled at runtime with **Shift+F8**:
 
-- Software frame (Stage A): the engine's palette-indexed framebuffer as an
-  R8 texture, palette looked up in the fragment shader.
-- GPU world (Stage B1): wall geometry extracted per frame from the live
-  level data and drawn depth-tested with sector lighting and the software
-  renderer's fake-contrast shading; the software status bar composites
-  below, and menus/automap/wipes automatically fall back to the software
-  frame. Floors, ceilings, textures, sprites and sky are still missing
-  (B2+): unrendered areas are black.
+- **Software frame** (Stage A): the engine's palette-indexed framebuffer as
+  an R8 texture, palette looked up in the fragment shader. No CPU pixel
+  conversion.
+- **GPU world** (Stages B1-B2): the level drawn as real hardware 3D, at the
+  window's resolution rather than 320x200.
+  - Geometry is re-read from the live level every frame, so moving sectors,
+    doors and animated textures need no invalidation. Walls come from the
+    linedefs (both sides, with vanilla's upper/lower/middle pegging rules);
+    floors and ceilings come from subsector polygons reconstructed by
+    clipping a large square down the BSP, because vanilla nodes carry only
+    split planes and the segs alone would leave holes at BSP cuts.
+  - Shading is DOOM's own, not an imitation: the texture yields a palette
+    index, the COLORMAP row chosen by sector light and distance remaps it,
+    and the palette resolves the colour. Light banding, diminishing and
+    palette flashes all come out exact.
+  - Geometry is grouped by texture into one draw per wall texture / flat.
+  - Still missing (B3+): sprites (things, the weapon), the sky, two-sided
+    middle textures, and the screen-melt wipe. Menus, the automap and wipes
+    fall back to the software frame automatically; the status bar is always
+    composited from it.
 - `examples/SDL/` — upstream's SDL3 reference port. Read-only; the best
   reference for how the engine expects to be driven (input mapping, audio
   stream format, MIDI tick).
@@ -87,6 +99,13 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
 
 Found while porting, newest last. Remove entries once fixed in eacp.
 
+Already added on the eacp branch `doom-stage-a-gpu-palette` (both were gaps
+this port surfaced): `TextureFormat::R8Unorm`, so indexed data — the
+framebuffer, wall textures, flats, the COLORMAP — uploads as one byte per
+pixel instead of being expanded to RGBA on the CPU; and `Buffer::update`, so
+the world's geometry buffer is re-uploaded each frame rather than
+reallocated.
+
 1. **No audio subsystem.** Sound effects need a pull-model PCM output stream
    (`DOOM_SAMPLERATE` = 11025 Hz, 16-bit stereo, mixed via
    `doom_get_sound_buffer()`); music needs a 140 Hz (`DOOM_MIDI_RATE`) tick
@@ -115,6 +134,21 @@ Found while porting, newest last. Remove entries once fixed in eacp.
    `NSWindow.contentAspectRatio` that anchors resize better and also governs
    zoom; a `WindowOptions::contentAspectRatio` mapping to it (and to WM_SIZING
    on Windows) would make the callback unnecessary for the common case.
+6. **The shader EDSL has almost no scalar maths.** `sin`/`cos` exist (the
+   transform builders use them) but there is no `floor`, `fract`, `abs`,
+   `min`/`max`/`clamp`, `step` or `mix` for `Float`, and no `discard`. B2
+   dodged this by letting the samplers do the work — `Repeat` tiles wall
+   textures instead of `fract`, `Nearest` rounds the COLORMAP row instead of
+   `floor`, `Clamp` bounds it instead of `clamp` — but sprites (B3) need a
+   real `discard` for masked pixels, so this is the next blocker.
+7. **No offscreen render targets.** `Frame` only ever renders into the view's
+   drawable, so a pass cannot render into a texture and sample it later.
+   DOOM's screen-melt wipe needs exactly that (it reads back the previous
+   frame), as does any post-processing pass — a CRT/scanline filter over the
+   finished frame, for instance.
+8. **No cull-mode state** in `RenderPipelineDescriptor`. Not blocking (DOOM's
+   walls are fine drawn double-sided), but every triangle is rasterised from
+   both faces.
 
 ## Code Style
 
