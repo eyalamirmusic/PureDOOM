@@ -60,10 +60,25 @@ apparatus:
   static library, which both the app and the tests link, so a change to the
   simulation reaches both and neither can run code the other is not.
 
-  It is **C++20 as of Step 2 of `REFACTOR.md`** — but it is 1993 C that a compiler
-  now accepts, not C++ anyone wrote. Every file is still `-w` and still exempt
-  from clang-format; a file leaves both the moment it is genuinely rewritten, and
-  not before. There is no C left anywhere in the repository.
+  It is **C++20 as of Step 2 of `REFACTOR.md`**, and there is no C left anywhere
+  in the repository — but the flat files are still 1993 C that a compiler now
+  accepts, not C++ anyone wrote.
+
+  **The subdirectories are the rewrite.** `Math/` (`Fixed`, `Angle`, `Trig`,
+  `BBox`) and `Sim/` (`Random`) are real C++ in `namespace Doom`, and a file moves
+  into one the moment it stops being vanilla. Progress is the flat list getting
+  shorter. The two are compiled differently on purpose: rewritten sources get
+  `-Wall -Wextra -Wpedantic` and clang-format from their first line; vanilla keeps
+  a blanket `-w` and its formatting exemption until someone rewrites it. Both are
+  set per-file in `src/DOOM/CMakeLists.txt`, so the line moves as the work does.
+
+  The vanilla API is still there — `FixedMul`, `finesine`, `P_Random`,
+  `prndindex` — because most of the engine still calls it. But `m_fixed.cpp`,
+  `tables.cpp`, `m_bbox.cpp` and `m_random.cpp` are now **shims that delegate**,
+  not implementations: one copy of the arithmetic, one copy of the tables, one
+  supply of chance. `rndindex` and `prndindex` are *references* into
+  `Doom::Random`. That is deliberate — it puts the new types on the critical path
+  of every demo the suite replays, which is the only thing that can test them.
 
   Three constraints died with the single header in Step 1, and the code may now
   rely on their absence: **two files may share a file-scope name** (the header
@@ -407,6 +422,13 @@ Three of them pin things that look like bugs and are not. A refactor will want t
 - **`R_PointToAngle2` lands one unit below the exact cardinal** — due north is
   `ANG90 - 1` — inheriting the same half-bucket offset. (Due south is exact, being
   reached by negating rather than by a lookup.)
+- **`M_AddToBox` / `BBox::add` is `else if`, not an independent min and max.** On
+  a fresh (inverted) box, one point moves `left` and leaves `right` at its
+  sentinel — a point cannot be both below the minimum and above the maximum in a
+  single call — and points fed in descending x never write `right` at all. The
+  engine gets away with it (`P_GroupLines` feeds whole linedefs), but min/max
+  changes what a sector's bounding box comes out as, and therefore what the
+  renderer and `P_BlockLinesIterator` see. `Tests/Sim/MathTests.cpp` pins it.
 
 Also worth knowing before touching `m_fixed.cpp`: **`FixedDiv2` goes through
 `double`.** The simulation is therefore not strictly integer-only. It is still

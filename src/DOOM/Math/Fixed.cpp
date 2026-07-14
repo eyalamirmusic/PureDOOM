@@ -1,0 +1,27 @@
+#include "Fixed.h"
+
+#include "../i_system.h"
+
+namespace Doom
+{
+Fixed fixedDivUnchecked(Fixed a, Fixed b)
+{
+    auto quotient = ((double) a.raw) / ((double) b.raw) * (double) fracUnit;
+
+    if (quotient >= 2147483648.0 || quotient < -2147483648.0)
+        I_Error("Error: FixedDiv: divide by zero");
+
+    return Fixed {(std::int32_t) quotient};
+}
+
+Fixed fixedDiv(Fixed a, Fixed b)
+{
+    // The guard is not "is b zero" but "will the quotient fit": shifting the
+    // numerator down by 14 asks whether it is more than four times the
+    // denominator's magnitude, which is exactly when 16.16 overflows.
+    if ((abs(a).raw >> 14) >= abs(b).raw)
+        return (a.raw ^ b.raw) < 0 ? Fixed {DOOM_MININT} : Fixed {DOOM_MAXINT};
+
+    return fixedDivUnchecked(a, b);
+}
+} // namespace Doom

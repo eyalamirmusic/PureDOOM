@@ -250,7 +250,9 @@ extern doomdata_t* netbuffer;
 
 
 extern ticcmd_t localcmds[BACKUPTICS];
-extern int rndindex;
+
+// rndindex was declared here too, a second name for m_random.h's. Include that
+// instead - Doom::Random owns the state now and there is one declaration of it.
 
 extern int maketic;
 extern int nettics[MAXNETNODES];

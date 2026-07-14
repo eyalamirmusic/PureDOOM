@@ -33,8 +33,8 @@ has none.
 | 0 | Widen the net to the renderer, the WAD and the tables | **done** |
 | 1 | Retire the single-header packaging | **done** |
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
-| 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | next |
-| 4 | Ownership: kill the zone allocator | |
+| 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
+| 4 | Ownership: kill the zone allocator | next |
 | 5 | The `Engine` object: globals become members | |
 | 6 | The playsim | |
 | 7 | The renderer | |
@@ -242,7 +242,61 @@ nothing — no eacp, no graphics. But `CPMAddPackage(eacp)` currently runs insid
 target does not exist when the engine is configured. Hoist
 `CPMAddPackage(NAME EADataStructures ...)` into the root list ahead of the
 engine; CPM dedupes by name, so eacp's own `find_package` reuses it, and the
-tests keep linking `doom-engine` alone.
+tests keep linking `doom-engine` alone. (Not needed yet — nothing in the core
+wanted a container.)
+
+### Landed
+
+`src/DOOM/Math/` — `Fixed`, `Angle`, `Trig`, `BBox`. `src/DOOM/Sim/` — `Random`.
+Those two directories **are** the rewrite: a file moves into one the moment it
+stops being 1993 C, and progress is the flat vanilla list getting shorter. New
+code is compiled with `-Wall -Wextra -Wpedantic` and clang-formatted from its
+first line; vanilla keeps its blanket `-w` and its exemption, per file, until
+someone rewrites it.
+
+**The shims are what make this real.** `m_fixed.cpp`, `tables.cpp`, `m_bbox.cpp`
+and `m_random.cpp` still export the vanilla API — `FixedMul`, `finesine`,
+`P_Random`, `prndindex` — because most of the engine still calls it. But they
+*delegate* rather than duplicate, so the new types sit on the critical path of
+every demo the suite replays. There is one copy of the arithmetic, one copy of the
+tables, one supply of chance; a caller that has been rewritten and one that has
+not cannot disagree. That is the only way a new implementation of the simulation's
+core gets tested at all, and it is why they are shims and not copies.
+
+Two details that had to be got right for that to hold:
+
+- **`rndindex` and `prndindex` are now references** into `Doom::Random`. The
+  simulation probe hashes four bytes of `prndindex` every tic, so the index stays
+  an `int` (masked by hand) rather than becoming a `std::uint8_t`. The refactor may
+  change how the tests find state; it may never change what they mix.
+- **The trig tables are `const`, not `constexpr`,** and store raw words with the
+  type in the accessors. Wrapping sixteen thousand literals in `Fixed {...}` would
+  be a sixteen-thousand-line diff on data whose entire point is that it did not
+  change, and a `constexpr` array in a header included by sixty translation units
+  buys nothing at runtime and costs compile time. `// clang-format off` guards the
+  data so it stays visibly verbatim.
+
+**`BBox::add` is `else if`, and must stay so.** It is the obvious candidate for an
+independent `min`/`max` per axis, and that would be a different function. On a
+fresh (inverted) box a single point moves `left` and leaves `right` at its
+sentinel — a point cannot be both below the minimum and above the maximum in one
+call — and points fed in descending x never write `right` at all. The engine gets
+away with it (`P_GroupLines` feeds whole linedefs, `V_MarkRect` a top-left then a
+bottom-right), but "gets away with" is not "does not depend on": min/max changes
+what `P_GroupLines` computes for a sector's bounding box, which changes what the
+renderer and `P_BlockLinesIterator` see. Pinned by `Tests/Sim/MathTests.cpp`, both
+in its own right and against `M_AddToBox` directly.
+
+18 new tests (`Tests/Sim/MathTests.cpp`), 53 in total, still about two seconds.
+`I_Error` now takes a `const char*`, which it always should have.
+
+**Deferred, with reasons.** `m_swap` is entirely `#ifdef __BIG_ENDIAN__` and
+compiles to nothing on every machine this builds on; `m_argv` and `m_cheat` are
+better rewritten with the subsystems that use them. `info.cpp` and `sounds.cpp`
+stay as they are: `states[]` is half function pointers into the action table, and
+that table is precisely what Step 6 replaces with a real `Thinker` — converting it
+to `constexpr` now means converting it twice. The whole-table checksums from Step
+0 are already watching all of them.
 
 ## Step 4 — Ownership: kill the zone allocator
 

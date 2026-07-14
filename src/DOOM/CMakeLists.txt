@@ -6,9 +6,13 @@
 # generated single header is gone, and with it the rule that no two files may
 # share a file-scope name.
 
-file(GLOB DOOM_ENGINE_SOURCES CONFIGURE_DEPENDS *.cpp *.h)
+# Vanilla's files are the flat ones. The subdirectories are the rewrite: a file
+# moves into one the moment it stops being 1993 C and becomes C++ someone wrote,
+# and the vanilla name disappears. Progress is the flat list getting shorter.
+file(GLOB DOOM_VANILLA_SOURCES CONFIGURE_DEPENDS *.cpp *.h)
+file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS Math/*.cpp Math/*.h Sim/*.cpp Sim/*.h)
 
-add_library(doom-engine STATIC ${DOOM_ENGINE_SOURCES})
+add_library(doom-engine STATIC ${DOOM_VANILLA_SOURCES} ${DOOM_REWRITTEN_SOURCES})
 add_library(DOOM::engine ALIAS doom-engine)
 
 target_compile_features(doom-engine PUBLIC cxx_std_20)
@@ -30,10 +34,17 @@ target_compile_definitions(doom-engine
 # bare name, which resolves next to them.
 target_include_directories(doom-engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-# 1993 C compiled as C++: it warns copiously and none of it is news. Kept quiet
-# until the refactor reaches each file, which is when that file leaves this
-# blanket and comes under -Wall.
-target_compile_options(doom-engine PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/w,-w>)
+# 1993 C compiled as C++: it warns copiously and none of it is news. The blanket
+# is per-file, and a file leaves it the moment it is genuinely rewritten - which
+# is why the rewritten sources below are compiled with warnings on instead. New
+# code is held to eacp's standard from its first line; vanilla is not held to
+# anything until someone rewrites it.
+set_source_files_properties(${DOOM_VANILLA_SOURCES} DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        PROPERTIES COMPILE_OPTIONS "$<IF:$<CXX_COMPILER_ID:MSVC>,/w,-w>")
+
+set_source_files_properties(${DOOM_REWRITTEN_SOURCES} DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        PROPERTIES COMPILE_OPTIONS
+        "$<IF:$<CXX_COMPILER_ID:MSVC>,/W4,-Wall;-Wextra;-Wpedantic>")
 
 # The simulation is not strictly integer-only: FixedDiv2 divides through a double
 # (m_fixed.cpp), and the demos replay because that is the same IEEE-754 operation

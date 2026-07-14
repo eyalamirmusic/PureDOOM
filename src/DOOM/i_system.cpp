@@ -143,7 +143,7 @@ byte* I_AllocLow(int length)
 //
 // I_Error
 //
-void I_Error(char* error)
+void I_Error(const char* error)
 {
     // Message first.
     if (error) doom_print(error);

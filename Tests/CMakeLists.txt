@@ -37,7 +37,9 @@ target_compile_definitions(SimTests PRIVATE
 # ships with, so these boot nothing and are free to share a process - which is
 # why they are their own binary rather than more cases in SimTests.
 nano_add_executable(PrimitiveTests
-        SOURCES Sim/PrimitiveTests.cpp
+        SOURCES
+        Sim/PrimitiveTests.cpp
+        Sim/MathTests.cpp
         TARGETS doom-sim-probe)
 
 # Re-records the goldens - one demo per process, because the engine only boots

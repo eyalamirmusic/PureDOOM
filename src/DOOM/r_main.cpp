@@ -90,7 +90,6 @@ int viewangletox[FINEANGLES / 2];
 // from clipangle to -clipangle.
 angle_t xtoviewangle[SCREENWIDTH + 1];
 
-fixed_t* finecosine = &finesine[FINEANGLES / 4];
 
 lighttable_t* scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 lighttable_t* scalelightfixed[MAXLIGHTSCALE];

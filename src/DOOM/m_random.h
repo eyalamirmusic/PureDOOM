@@ -50,9 +50,14 @@ void M_ClearRandom(void);
 //
 // Exported so the tests can watch them; they are the sharpest canary there is
 // for an accidental change to the simulation.
-extern int rndindex;
-extern int prndindex;
-extern unsigned char rndtable[256];
+//
+// References, not variables: Doom::Random (Sim/Random.h) owns the state now, and
+// these are the vanilla names for the same four bytes. They read and write the
+// object, so a caller that has not been rewritten yet and one that has cannot
+// disagree about where the world's chance comes from.
+extern int& rndindex;
+extern int& prndindex;
+extern const unsigned char* rndtable;
 
 
 #endif
