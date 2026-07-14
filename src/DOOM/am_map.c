@@ -40,41 +40,16 @@
 #include "am_map.h"
 
 
-// For use if I do walls with outsides/insides
-#define REDS        (256-5*16)
-#define REDRANGE    16
-#define BLUES       (256-4*16+8)
-#define BLUERANGE   8
-#define GREENS      (7*16)
-#define GREENRANGE  16
-#define GRAYS       (6*16)
-#define GRAYSRANGE  16
-#define BROWNS      (4*16)
-#define BROWNRANGE  16
-#define YELLOWS     (256-32+7)
-#define YELLOWRANGE 1
-#define BLACK       0
-#define WHITE       (256-47)
+// Colours, the line-drawing shapes and the view state now live in am_map.h,
+// so a renderer can draw the same map without rasterising it.
 
-// Automap colors
-#define BACKGROUND          BLACK
-#define YOURCOLORS          WHITE
 #define YOURRANGE           0
-#define WALLCOLORS          REDS
-#define WALLRANGE           REDRANGE
-#define TSWALLCOLORS        GRAYS
 #define TSWALLRANGE         GRAYSRANGE
-#define FDWALLCOLORS        BROWNS
 #define FDWALLRANGE         BROWNRANGE
-#define CDWALLCOLORS        YELLOWS
 #define CDWALLRANGE         YELLOWRANGE
-#define THINGCOLORS         GREENS
 #define THINGRANGE          GREENRANGE
-#define SECRETWALLCOLORS    WALLCOLORS
 #define SECRETWALLRANGE     WALLRANGE
-#define GRIDCOLORS          (GRAYS + GRAYSRANGE/2)
 #define GRIDRANGE           0
-#define XHAIRCOLORS         GRAYS
 
 // drawing stuff
 #define FB 0
@@ -114,8 +89,6 @@
 #define CXMTOF(x)  (f_x + MTOF((x)-m_x))
 #define CYMTOF(y)  (f_y + (f_h - MTOF((y)-m_y)))
 
-// the following is crap
-#define LINE_NEVERSEE ML_DONTDRAW
 
 
 typedef struct
@@ -128,18 +101,6 @@ typedef struct
 {
     fpoint_t a, b;
 } fline_t;
-
-
-typedef struct
-{
-    fixed_t                x, y;
-} mpoint_t;
-
-
-typedef struct
-{
-    mpoint_t a, b;
-} mline_t;
 
 
 typedef struct
@@ -164,7 +125,6 @@ mline_t player_arrow[] = {
     { { -R + 3 * R / 8, 0 }, { -R + R / 8, -R / 4 } }
 };
 #undef R
-#define NUMPLYRLINES (sizeof(player_arrow)/sizeof(mline_t))
 
 #define R ((8*PLAYERRADIUS)/7)
 mline_t cheat_player_arrow[] = {
@@ -186,7 +146,6 @@ mline_t cheat_player_arrow[] = {
     { { R / 6 + R / 32, -R / 7 - R / 32 }, { R / 6 + R / 10, -R / 7 } }
 };
 #undef R
-#define NUMCHEATPLYRLINES (sizeof(cheat_player_arrow)/sizeof(mline_t))
 
 #define R (FRACUNIT)
 mline_t triangle_guy[] = {
@@ -204,11 +163,10 @@ mline_t thintriangle_guy[] = {
     { { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) }, { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) } }
 };
 #undef R
-#define NUMTHINTRIANGLEGUYLINES (sizeof(thintriangle_guy)/sizeof(mline_t))
 
 
-static int cheating = 0;
-static int grid = 0;
+int cheating = 0;
+int grid = 0;
 
 static int leveljuststarted = 1; // kluge until AM_LevelInit() is called
 
@@ -216,14 +174,14 @@ static int finit_width = SCREENWIDTH;
 static int finit_height = SCREENHEIGHT - 32;
 
 // location of window on screen
-static int f_x;
-static int f_y;
+int f_x;
+int f_y;
 
 // size of window on screen
-static int f_w;
-static int f_h;
+int f_w;
+int f_h;
 
-static int lightlev; // used for funky strobing effect
+int lightlev; // used for funky strobing effect
 static byte* fb; // pseudo-frame buffer
 static int amclock;
 
@@ -231,14 +189,14 @@ static mpoint_t m_paninc; // how far the window pans each tic (map coords)
 static fixed_t mtof_zoommul; // how far the window zooms in each tic (map coords)
 static fixed_t ftom_zoommul; // how far the window zooms in each tic (fb coords)
 
-static fixed_t m_x, m_y;   // LL x,y where the window is on the map (map coords)
+fixed_t m_x, m_y;   // LL x,y where the window is on the map (map coords)
 static fixed_t m_x2, m_y2; // UR x,y where the window is on the map (map coords)
 
 //
 // width/height of window on map (map coords)
 //
-static fixed_t m_w;
-static fixed_t m_h;
+fixed_t m_w;
+fixed_t m_h;
 
 // based on level size
 static fixed_t min_x;
@@ -264,17 +222,17 @@ static fixed_t old_m_x, old_m_y;
 static mpoint_t f_oldloc;
 
 // used by MTOF to scale from map-to-frame-buffer coords
-static fixed_t scale_mtof = (fixed_t)INITSCALEMTOF;
+fixed_t scale_mtof = (fixed_t)INITSCALEMTOF;
 // used by FTOM to scale from frame-buffer-to-map coords (=1/scale_mtof)
 static fixed_t scale_ftom;
 
-static player_t* plr; // the player represented by an arrow
+player_t* am_plr; // the player represented by an arrow
 
 static patch_t* marknums[10]; // numbers used for marking by the automap
 static mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
 static int markpointnum = 0; // next point to be assigned
 
-static int followplayer = 1; // specifies whether to follow the player around
+int followplayer = 1; // specifies whether to follow the player around
 
 static unsigned char cheat_amap_seq[] = { 0xb2, 0x26, 0x26, 0x2e, 0xff };
 static cheatseq_t cheat_amap = { cheat_amap_seq, 0 };
@@ -349,8 +307,8 @@ void AM_restoreScaleAndLoc(void)
     }
     else
     {
-        m_x = plr->mo->x - m_w / 2;
-        m_y = plr->mo->y - m_h / 2;
+        m_x = am_plr->mo->x - m_w / 2;
+        m_y = am_plr->mo->y - m_h / 2;
     }
     m_x2 = m_x + m_w;
     m_y2 = m_y + m_h;
@@ -469,9 +427,9 @@ void AM_initVariables(void)
             if (playeringame[pnum])
                 break;
 
-    plr = &players[pnum];
-    m_x = plr->mo->x - m_w / 2;
-    m_y = plr->mo->y - m_h / 2;
+    am_plr = &players[pnum];
+    m_x = am_plr->mo->x - m_w / 2;
+    m_y = am_plr->mo->y - m_h / 2;
     AM_changeWindowLoc();
 
     // for saving & restoring
@@ -667,23 +625,23 @@ doom_boolean AM_Responder(event_t* ev)
             case AM_FOLLOWKEY:
                 followplayer = !followplayer;
                 f_oldloc.x = DOOM_MAXINT;
-                plr->message = followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF;
+                am_plr->message = followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF;
                 break;
             case AM_GRIDKEY:
                 grid = !grid;
-                plr->message = grid ? AMSTR_GRIDON : AMSTR_GRIDOFF;
+                am_plr->message = grid ? AMSTR_GRIDON : AMSTR_GRIDOFF;
                 break;
             case AM_MARKKEY:
                 doom_strcpy(buffer, AMSTR_MARKEDSPOT);
                 doom_concat(buffer, " ");
                 doom_concat(buffer, doom_itoa(markpointnum, 10));
                 //doom_sprintf(buffer, "%s %d", AMSTR_MARKEDSPOT, markpointnum);
-                plr->message = buffer;
+                am_plr->message = buffer;
                 AM_addMark();
                 break;
             case AM_CLEARMARKKEY:
                 AM_clearMarks();
-                plr->message = AMSTR_MARKSCLEARED;
+                am_plr->message = AMSTR_MARKSCLEARED;
                 break;
             default:
                 cheatstate = 0;
@@ -749,14 +707,14 @@ void AM_changeWindowScale(void)
 //
 void AM_doFollowPlayer(void)
 {
-    if (f_oldloc.x != plr->mo->x || f_oldloc.y != plr->mo->y)
+    if (f_oldloc.x != am_plr->mo->x || f_oldloc.y != am_plr->mo->y)
     {
-        m_x = FTOM(MTOF(plr->mo->x)) - m_w / 2;
-        m_y = FTOM(MTOF(plr->mo->y)) - m_h / 2;
+        m_x = FTOM(MTOF(am_plr->mo->x)) - m_w / 2;
+        m_y = FTOM(MTOF(am_plr->mo->y)) - m_h / 2;
         m_x2 = m_x + m_w;
         m_y2 = m_y + m_h;
-        f_oldloc.x = plr->mo->x;
-        f_oldloc.y = plr->mo->y;
+        f_oldloc.x = am_plr->mo->x;
+        f_oldloc.y = am_plr->mo->y;
     }
 }
 
@@ -1134,7 +1092,7 @@ void AM_drawWalls(void)
                 }
             }
         }
-        else if (plr->powers[pw_allmap])
+        else if (am_plr->powers[pw_allmap])
         {
             if (!(lines[i].flags & LINE_NEVERSEE)) AM_drawMline(&l, GRAYS + 3);
         }
@@ -1223,11 +1181,11 @@ void AM_drawPlayers(void)
         if (cheating)
             AM_drawLineCharacter
             (cheat_player_arrow, NUMCHEATPLYRLINES, 0,
-             plr->mo->angle, WHITE, plr->mo->x, plr->mo->y);
+             am_plr->mo->angle, WHITE, am_plr->mo->x, am_plr->mo->y);
         else
             AM_drawLineCharacter
-            (player_arrow, NUMPLYRLINES, 0, plr->mo->angle,
-             WHITE, plr->mo->x, plr->mo->y);
+            (player_arrow, NUMPLYRLINES, 0, am_plr->mo->angle,
+             WHITE, am_plr->mo->x, am_plr->mo->y);
         return;
     }
 
@@ -1236,7 +1194,7 @@ void AM_drawPlayers(void)
         their_color++;
         p = &players[i];
 
-        if ((deathmatch && !singledemo) && p != plr)
+        if ((deathmatch && !singledemo) && p != am_plr)
             continue;
 
         if (!playeringame[i])

@@ -36,14 +36,17 @@
 // SCREEN WIPE PACKAGE
 //
 
-// when zero, stop the wipe
-static doom_boolean go = 0;
+// Raised while a melt is running, and the only safe thing to test: wipe_exitMelt
+// frees the column table without clearing the pointer to it.
+doom_boolean wipe_melt_running = 0;
 
-static byte* wipe_scr_start;
+byte* wipe_scr_start;
 static byte* wipe_scr_end;
 static byte* wipe_scr;
 
-static int* y;
+// How far down each two-pixel column of the outgoing screen has slid so far.
+// Negative means the column has not started moving yet.
+int* wipe_melt_offsets;
 
 
 void wipe_shittyColMajorXform(short* array, int width, int height)
@@ -132,15 +135,15 @@ int wipe_initMelt(int width, int height, int ticks)
     wipe_shittyColMajorXform((short*)wipe_scr_end, width / 2, height);
 
     // setup initial column positions
-    // (y<0 => not ready to scroll yet)
-    y = (int*)Z_Malloc(width * sizeof(int), PU_STATIC, 0);
-    y[0] = -(M_Random() % 16);
+    // (wipe_melt_offsets<0 => not ready to scroll yet)
+    wipe_melt_offsets = (int*)Z_Malloc(width * sizeof(int), PU_STATIC, 0);
+    wipe_melt_offsets[0] = -(M_Random() % 16);
     for (i = 1; i < width; i++)
     {
         r = (M_Random() % 3) - 1;
-        y[i] = y[i - 1] + r;
-        if (y[i] > 0) y[i] = 0;
-        else if (y[i] == -16) y[i] = -15;
+        wipe_melt_offsets[i] = wipe_melt_offsets[i - 1] + r;
+        if (wipe_melt_offsets[i] > 0) wipe_melt_offsets[i] = 0;
+        else if (wipe_melt_offsets[i] == -16) wipe_melt_offsets[i] = -15;
     }
 
     return 0;
@@ -164,27 +167,27 @@ int wipe_doMelt(int width, int height, int ticks)
     {
         for (i = 0; i < width; i++)
         {
-            if (y[i] < 0)
+            if (wipe_melt_offsets[i] < 0)
             {
-                y[i]++; done = false;
+                wipe_melt_offsets[i]++; done = false;
             }
-            else if (y[i] < height)
+            else if (wipe_melt_offsets[i] < height)
             {
-                dy = (y[i] < 16) ? y[i] + 1 : 8;
-                if (y[i] + dy >= height) dy = height - y[i];
-                s = &((short*)wipe_scr_end)[i * height + y[i]];
-                d = &((short*)wipe_scr)[y[i] * width + i];
+                dy = (wipe_melt_offsets[i] < 16) ? wipe_melt_offsets[i] + 1 : 8;
+                if (wipe_melt_offsets[i] + dy >= height) dy = height - wipe_melt_offsets[i];
+                s = &((short*)wipe_scr_end)[i * height + wipe_melt_offsets[i]];
+                d = &((short*)wipe_scr)[wipe_melt_offsets[i] * width + i];
                 idx = 0;
                 for (j = dy; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
                 }
-                y[i] += dy;
+                wipe_melt_offsets[i] += dy;
                 s = &((short*)wipe_scr_start)[i * height];
-                d = &((short*)wipe_scr)[y[i] * width + i];
+                d = &((short*)wipe_scr)[wipe_melt_offsets[i] * width + i];
                 idx = 0;
-                for (j = height - y[i]; j; j--)
+                for (j = height - wipe_melt_offsets[i]; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
@@ -200,7 +203,7 @@ int wipe_doMelt(int width, int height, int ticks)
 
 int wipe_exitMelt(int width, int height, int ticks)
 {
-    Z_Free(y);
+    Z_Free(wipe_melt_offsets);
     return 0;
 }
 
@@ -234,9 +237,9 @@ int wipe_ScreenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     void V_MarkRect(int, int, int, int);
 
     // initial stuff
-    if (!go)
+    if (!wipe_melt_running)
     {
-        go = 1;
+        wipe_melt_running = 1;
         // wipe_scr = (byte *) Z_Malloc(width*height, PU_STATIC, 0); // DEBUG
         wipe_scr = screens[0];
         (*wipes[wipeno * 3])(width, height, ticks);
@@ -250,9 +253,9 @@ int wipe_ScreenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     // final stuff
     if (rc)
     {
-        go = 0;
+        wipe_melt_running = 0;
         (*wipes[wipeno * 3 + 2])(width, height, ticks);
     }
 
-    return !go;
+    return !wipe_melt_running;
 }

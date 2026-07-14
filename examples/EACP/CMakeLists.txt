@@ -20,7 +20,7 @@ endif ()
 
 add_executable(PureDoomEACP
         Main.cpp
-        DoomImpl.c
+        EngineAccess.c
         App.h
         AutomapShader.h
         Common.h
@@ -35,12 +35,13 @@ add_executable(PureDoomEACP
         View.h
         WipeShader.h
         WorldShader.h)
-target_link_libraries(PureDoomEACP PRIVATE eacp-gpu)
+
+# The engine is a library, and the same one the tests link - so a change to the
+# simulation reaches the game and the suite together, and neither can be running
+# code the other is not.
+target_link_libraries(PureDoomEACP PRIVATE eacp-gpu doom-engine)
 target_compile_definitions(PureDoomEACP PRIVATE
         PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
-
-set_source_files_properties(DoomImpl.c PROPERTIES
-        COMPILE_OPTIONS "$<IF:$<C_COMPILER_ID:MSVC>,/w,-w>")
 
 set(BUNDLE_ID "com.eacp.puredoom")
 

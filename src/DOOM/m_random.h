@@ -37,6 +37,24 @@ int P_Random(void);
 void M_ClearRandom(void);
 
 
+// DOOM is not random at all: it walks a fixed 256-entry table with an index, and
+// keeps two indices into it.
+//
+// prndindex is P_Random's, and it is the one the game world turns on - damage
+// rolls, monster decisions, weapon spread. A demo replays byte-identically only
+// because this sequence is reproduced exactly, so any change that adds, drops or
+// reorders a single P_Random call shifts everything after it and the world
+// diverges. rndindex is M_Random's, for everything outside the simulation, and
+// is deliberately kept apart so that sounds and menus can vary without desyncing
+// the game.
+//
+// Exported so the tests can watch them; they are the sharpest canary there is
+// for an accidental change to the simulation.
+extern int rndindex;
+extern int prndindex;
+extern unsigned char rndtable[256];
+
+
 #endif
 
 //-----------------------------------------------------------------------------

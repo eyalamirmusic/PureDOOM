@@ -55,5 +55,10 @@ void D_PageDrawer(void);
 void D_AdvanceDemo(void);
 void D_StartTitle(void);
 
+// The attract loop's "move on to the next screen" flag. D_DoAdvanceDemo clears
+// gameaction and picks its own demo, so a host that wants to drive one itself
+// has to lower this first, or the title sequence takes the game straight back.
+extern doom_boolean advancedemo;
+
 
 #endif

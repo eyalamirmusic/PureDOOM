@@ -41,6 +41,15 @@ typedef struct
 } default_t;
 
 
+// A default whose value is text rather than a number: `defaultvalue` is this
+// sentinel and the string lives in text_location.
+#define STRING_VALUE 0xFFFF
+
+
+extern default_t defaults[];
+extern int numdefaults;
+
+
 doom_boolean M_WriteFile(char const* name, void* source, int length);
 int M_ReadFile(char const* name, byte** buffer);
 void M_ScreenShot(void);

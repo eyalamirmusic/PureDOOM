@@ -5,29 +5,50 @@ code in this repository.
 
 ## Project Overview
 
-This is a fork of [Daivuk/PureDOOM](https://github.com/Daivuk/PureDOOM) — the
-single-header DOOM source port — whose purpose is to port DOOM's platform
-layer (video, input, timing; later audio and music) to
+This began as a fork of [Daivuk/PureDOOM](https://github.com/Daivuk/PureDOOM) —
+the single-header DOOM source port — to port DOOM's platform layer (video,
+input, timing; later audio and music) to
 [eacp](https://github.com/eyalamirmusic/eacp).
 
-The port has two goals:
+It no longer tracks upstream. **This repository owns `src/DOOM`** and modifies
+it freely; the engine itself is being refactored into modern code, physics and
+game logic included. Divergence from upstream PureDOOM is deliberate and
+permanent, and nothing here needs to be upstreamable.
+
+The project now has three goals:
 
 1. Run DOOM on eacp's application, GPU and input stack.
 2. Exercise eacp as a game platform layer and surface what it is missing.
    Every missing feature or rough edge found while porting is recorded in the
    gap log below.
+3. Refactor the engine itself, behind the safety net described under
+   **Testing** below. Read that section before touching anything in `src/DOOM`:
+   DOOM's simulation is exactly reproducible, and the tests exist to keep it
+   that way through a rewrite.
 
 ## Layout
 
-- `PureDOOM.h` — the upstream engine as a single header, generated from
-  `src/DOOM` by `tools/gen_single_header.py`. Vendored code: never hand-edit
-  and never clang-format it (same for `src/DOOM`).
-- `examples/EACP/` — the eacp port. `DoomImpl.c` compiles the engine
-  implementation as plain C; `Main.cpp` boots the engine and `View.h` is the eacp
-  platform layer and GPU renderer. `EngineAccess.h/.c` is the plain-C snapshot
-  interface to engine internals (camera, wall geometry, view state) — the `.c` is
-  included at the end of `DoomImpl.c`'s translation unit, never compiled
-  standalone.
+- `src/DOOM/` — **the engine, and the code we own.** Built as the `doom-engine`
+  static library, which both the app and the tests link, so a change to the
+  simulation reaches both and neither can run code the other is not. Still
+  1993 C, and still exempt from clang-format until the refactor reaches each
+  file.
+- `PureDOOM.h` — the engine flattened into one header, *generated* from
+  `src/DOOM` by `tools/gen_single_header.py`. Now only a packaging artifact:
+  nothing in this repository builds against it. Never hand-edit it; edit
+  `src/DOOM` and regenerate.
+
+  It concatenates every `.c` into one translation unit, so it constrains the
+  engine in one way worth knowing: **a file-scope name promoted to a global can
+  collide with a `static` of the same name in another file.** Exporting
+  `am_map.c`'s `plr` hit exactly this (`hu_stuff.c` has its own), which is why
+  it is now `am_plr`. Prefix anything you export.
+- `Tests/` — the test suite. See **Testing**.
+- `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
+  eacp platform layer and GPU renderer, and `EngineAccess.h/.c` is the plain-C
+  snapshot interface to engine internals (camera, wall geometry, view state).
+  `EngineAccess.c` is an ordinary translation unit that includes the engine's
+  headers; nothing DOOM-typed leaks out through the `.h`.
 
   The six shaders share `DoomShader.h`: `DoomShader` resolves a palette index the
   way the software renderer does (index → COLORMAP row → palette), and
@@ -201,11 +222,23 @@ Two paths, toggled at runtime with **Shift+F8**:
 ## Build
 
 ```bash
-cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
 cmake --build build --target PureDoomEACP
 
 ./build/examples/EACP/PureDoomEACP.app/Contents/MacOS/PureDoomEACP
 ```
+
+Targets: `doom-engine` (the engine, from `src/DOOM`), `PureDoomEACP` (the game),
+`SimTests` and `PrimitiveTests` (see **Testing**), and `record-goldens`. The
+tests need no GPU and no eacp — they link `doom-engine` alone — so
+`-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast engine-only loop while
+refactoring.
+
+`PUREDOOM_BUILD_LEGACY_TESTS=ON` builds upstream's original whole-frame `memcmp`
+against a golden framebuffer (`examples/Tests`), which is the only thing that
+still compiles the generated `PureDOOM.h`. It is superseded by `Tests/` but is
+kept as the check that the single-header generator still produces a working
+engine.
 
 eacp is fetched from GitHub via CPM. To co-develop against a local eacp
 checkout, pass `-DCPM_eacp_SOURCE=$HOME/Code/eacp` at configure time. Use
@@ -223,18 +256,122 @@ variable (falling back to the current directory), so `main` points
 `DOOMWADDIR` at the repo root unless the user already set it. Other classic
 DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
 
+## Testing
+
+```bash
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Roughly two seconds for the lot. **Run it before and after anything you change
+in `src/DOOM`.**
+
+Run the binaries through ctest, not bare. NanoTest registers one ctest case per
+test and re-runs the binary with `--test <name>`, so every test gets a fresh
+process — which the engine needs, being several hundred globals and a zone
+allocator that `doom_init` does not undo. A bare `./SimTests` puts all of them in
+one process and only the first can boot; it says so rather than quietly passing.
+
+### The demo tests are the safety net
+
+DOOM's simulation is exactly reproducible: fixed-point arithmetic, and a fixed
+256-byte random table walked by an index. That is why demos work at all — a
+`.lmp` is nothing but the player's input, one ticcmd per tic, and `G_ReadDemoTiccmd`
+feeds the game from it instead of from the keyboard. Identical input against a
+deterministic simulation must produce an identical world.
+
+So a demo *is* the assertion, and there is nothing to hand-write. `Tests/Sim/DemoTests.cpp`
+replays the shareware WAD's three attract-mode demos (11,410 tics of real play:
+combat, damage, death, respawn, doors, lifts, and a level's worth of monsters
+thinking), hashes the world after every tic, and holds it against
+`Tests/Goldens/*.hashes`. On a mismatch it reports **the first diverging tic**,
+with where the player was standing and what the random index had reached.
+
+It is extremely sharp. Changing `FRICTION` from `0xe800` to `0xe801` — one part
+in 59,392, invisible to any player — desyncs demo1 at tic 48.
+
+`prndindex` is the canary. `P_Random` drives the simulation and `M_Random` does
+not, and they keep separate indices for exactly that reason (the screen melt
+calls `M_Random`, which is why a wipe cannot desync the game). Add, drop or
+reorder a single `P_Random` call and everything after it shifts.
+
+**When a change to behaviour was intended**, re-record:
+
+```bash
+cmake --build build --target record-goldens
+```
+
+The diff on `Tests/Goldens/` is then the reviewable record of what you changed.
+Re-recording to make a red suite go green is the one thing that defeats the whole
+apparatus — the goldens pin the simulation *as it stands, bugs included*, which
+is exactly what a behaviour-preserving refactor wants held still.
+
+### What the demos do not cover
+
+They watch the simulation, and nothing else. The renderer, the automap, the HUD,
+the melt and the platform layer are all invisible to them — a wipe cannot desync
+a demo, so renaming the melt's internals cannot fail one. Those still need the
+app run and looked at.
+
+### The primitive tests give locality
+
+`Tests/Sim/PrimitiveTests.cpp` covers the arithmetic underneath the simulation —
+fixed-point, the random table, the trig tables, the geometry helpers. When a demo
+desyncs at tic 48, these say *which primitive* stopped agreeing with itself.
+
+Three of them pin things that look like bugs and are not. A refactor will want to
+"fix" all three, and all three would desync every demo ever recorded:
+
+- **The trig tables are sampled at bucket centres**, so `finesine[0]` is 25 and
+  not 0, and `sin(90°)` comes out as 65535 rather than 65536.
+- **`SlopeDiv` gives up on any denominator under 512** and answers `SLOPERANGE`,
+  so `SlopeDiv(0, 1)` is 2048, not 0.
+- **`R_PointToAngle2` lands one unit below the exact cardinal** — due north is
+  `ANG90 - 1` — inheriting the same half-bucket offset. (Due south is exact, being
+  reached by negating rather than by a lookup.)
+
+Also worth knowing before touching `m_fixed.c`: **`FixedDiv2` goes through
+`double`.** The simulation is therefore not strictly integer-only. It is still
+deterministic — the same IEEE-754 operation every time, which is why demos replay
+— but anyone rewriting `FixedDiv` in pure integer arithmetic will change the
+rounding and desync the game.
+
+### Layers still to build
+
+- **Scenario tests**: load a level, place mobjs, run tics, assert. `P_TryMove`
+  into a wall, `P_DamageMobj`, `P_CheckSight`, door and lift specials. Write
+  these per-subsystem *as* you refactor it — they are how you get locality on
+  code the demos only cover in aggregate.
+- **Port-layer tests**: `View`'s tic/interpolation state machine is still not
+  testable, because it lives inside a `GPU::GPUView` whose members construct GPU
+  textures from `GPU::Device::shared()`. Extracting it into a plain GPU-free
+  struct that `View` owns and delegates to is the prerequisite, and it is where
+  the port's subtlest bugs have lived (the double-clock-read that drew frames a
+  tic in the past, the five-tic input lag, mouse accumulate-and-flush).
+
 ## Porting Rules
 
 - eacp is never modified from this repository. When the port hits something
   eacp cannot do, implement a workaround here, and record it in the gap log
   below. eacp changes happen in the eacp repo itself and get picked up via
   `CPM_eacp_SOURCE`.
-- Vendored DOOM sources (`PureDOOM.h`, `src/DOOM`) stay untouched apart from
-  upstreamable bug fixes. `PureDOOM.h` is *generated* from `src/DOOM` — edit the
-  `src/DOOM` file and regenerate (`cd tools && python3 gen_single_header.py`),
-  never the header directly.
+- **The engine is ours to change.** `src/DOOM` is edited directly, and the
+  refactor's whole point is to change it. `PureDOOM.h` is generated from it —
+  regenerate with `cd tools && python3 gen_single_header.py`, never hand-edit —
+  and a change there is not a reason to hold back a change here.
 
-  One such fix is in place (`d_net.c`, `NetUpdate`). PureDOOM runs with
+  What *does* hold you back is the simulation's behaviour, which the demo tests
+  pin exactly. Read **Testing** before changing anything under `src/DOOM`.
+
+  The engine's headers are also the interface, and several things a renderer
+  needs were `static` in a `.c` and only reachable because the single-header
+  build made one translation unit of everything. Those are now exported properly
+  (`am_map.h` has the automap's state and shapes, `f_wipe.h` the melt's,
+  `r_data.h` the texture composition types, `m_random.h` the two random
+  indices). Export the next one the same way rather than reaching around it.
+
+  One older fix predates all this (`d_net.c`, `NetUpdate`). PureDOOM runs with
   `singletics = true`, whose `D_DoomLoop` path builds a tic's command and runs it
   in the same breath, advancing `maketic` and `gametic` together. But `NetUpdate`
   is also called from `D_Display` and `R_RenderPlayerView` — vanilla called it
@@ -247,8 +384,6 @@ DOOM arguments (`-warp`, `-skill`, `-episode`, ...) pass straight through.
   now builds no command when `singletics` is set (it still drains events). This
   took the aim's input-to-screen lag from 163ms to 17ms, and stopped the player
   coasting for five tics after a movement key was released.
-
-  That fix is currently the *only* vendored change.
 - The engine is single-threaded: `doom_init`, `doom_update`,
   `doom_get_framebuffer` and all input calls happen on the main thread. Audio,
   once wired, is the only exception and takes the engine lock the SDL example

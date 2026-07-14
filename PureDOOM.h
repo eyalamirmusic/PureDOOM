@@ -1380,37 +1380,6 @@ extern gameaction_t gameaction;
 #endif
 
 
-#ifndef __AMMAP_H__
-#define __AMMAP_H__
-
-
-//#include "d_event.h"
-
-
-// Used by ST StatusBar stuff.
-#define AM_MSGHEADER (('a'<<24)+('m'<<16))
-#define AM_MSGENTERED (AM_MSGHEADER | ('e'<<8))
-#define AM_MSGEXITED (AM_MSGHEADER | ('x'<<8))
-
-
-// Called by main loop.
-doom_boolean AM_Responder(event_t* ev);
-
-// Called by main loop.
-void AM_Ticker(void);
-
-// Called by main loop,
-// called instead of view drawer if automap active.
-void AM_Drawer(void);
-
-// Called to force the automap to quit
-// if the level is completed while it is up.
-void AM_Stop(void);
-
-
-#endif
-
-
 #ifndef __D_MAIN__
 #define __D_MAIN__
 
@@ -1444,6 +1413,11 @@ void D_PageTicker(void);
 void D_PageDrawer(void);
 void D_AdvanceDemo(void);
 void D_StartTitle(void);
+
+// The attract loop's "move on to the next screen" flag. D_DoAdvanceDemo clears
+// gameaction and picks its own demo, so a host that wants to drive one itself
+// has to lower this first, or the title sequence takes the game straight back.
+extern doom_boolean advancedemo;
 
 
 #endif
@@ -1770,6 +1744,27 @@ enum
 int wipe_StartScreen(int x, int y, int width, int height);
 int wipe_EndScreen(int x, int y, int width, int height);
 int wipe_ScreenWipe(int wipeno, int x, int y, int width, int height, int ticks);
+
+
+//
+// The melt's state, for a renderer that composites the wipe itself rather than
+// letting wipe_doMelt blit into the frame buffer.
+//
+// The melt only ever READS the outgoing screen and slides it down over whatever
+// is beneath, so a renderer needs the outgoing frame and how far each column has
+// moved - and nothing else. The incoming frame is just what is already there.
+//
+
+// Raised while a melt is running. wipe_exitMelt frees the column table without
+// clearing the pointer to it, so this is the only safe thing to test.
+extern doom_boolean wipe_melt_running;
+
+// The outgoing frame, as palette indices. wipe_initMelt leaves it column-major.
+extern byte* wipe_scr_start;
+
+// How far down each two-pixel column has slid, in rows. Negative means the
+// column has not started moving yet.
+extern int* wipe_melt_offsets;
 
 
 #endif
@@ -3421,6 +3416,13 @@ void M_Init(void);
 void M_StartControlPanel(void);
 
 
+
+// Raised while the menu is showing a yes/no prompt rather than a menu proper.
+// M_Drawer returns before its background darkening in that case, so anything
+// reproducing the darkening has to test this too.
+extern int messageToPrint;
+
+
 #endif
 
 
@@ -3444,6 +3446,15 @@ typedef struct
     char** text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
     char* default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
 } default_t;
+
+
+// A default whose value is text rather than a number: `defaultvalue` is this
+// sentinel and the string lives in text_location.
+#define STRING_VALUE 0xFFFF
+
+
+extern default_t defaults[];
+extern int numdefaults;
 
 
 doom_boolean M_WriteFile(char const* name, void* source, int length);
@@ -3473,6 +3484,24 @@ int P_Random(void);
 
 // Fix randoms for demos.
 void M_ClearRandom(void);
+
+
+// DOOM is not random at all: it walks a fixed 256-entry table with an index, and
+// keeps two indices into it.
+//
+// prndindex is P_Random's, and it is the one the game world turns on - damage
+// rolls, monster decisions, weapon spread. A demo replays byte-identically only
+// because this sequence is reproduced exactly, so any change that adds, drops or
+// reorders a single P_Random call shifts everything after it and the world
+// diverges. rndindex is M_Random's, for everything outside the simulation, and
+// is deliberately kept apart so that sounds and menus can vary without desyncing
+// the game.
+//
+// Exported so the tests can watch them; they are the sharpest canary there is
+// for an accidental change to the simulation.
+extern int rndindex;
+extern int prndindex;
+extern unsigned char rndtable[256];
 
 
 #endif
@@ -4485,6 +4514,141 @@ typedef struct
 
     wbplayerstruct_t plyr[MAXPLAYERS];
 } wbstartstruct_t;
+
+
+#endif
+
+
+#ifndef __AMMAP_H__
+#define __AMMAP_H__
+
+
+//#include "d_event.h"
+//#include "d_player.h"
+//#include "doomdata.h"
+//#include "m_fixed.h"
+//#include "tables.h"
+
+
+// Used by ST StatusBar stuff.
+#define AM_MSGHEADER (('a'<<24)+('m'<<16))
+#define AM_MSGENTERED (AM_MSGHEADER | ('e'<<8))
+#define AM_MSGEXITED (AM_MSGHEADER | ('x'<<8))
+
+
+// Called by main loop.
+doom_boolean AM_Responder(event_t* ev);
+
+// Called by main loop.
+void AM_Ticker(void);
+
+// Called by main loop,
+// called instead of view drawer if automap active.
+void AM_Drawer(void);
+
+// Called to force the automap to quit
+// if the level is completed while it is up.
+void AM_Stop(void);
+
+
+//
+// What the automap is made of, for a renderer that wants to draw it as
+// something other than lines poked into a 320x200 frame buffer.
+//
+// AM_Drawer rasterises the map with Bresenham straight into the frame. A GPU
+// renderer wants the same decisions - the same lines, the same colours, the same
+// player arrow, rotated the same way - without the rasterising, so what it needs
+// is what AM_Drawer reads, not what it writes. That is all this is: the state and
+// the shapes, named. The choices stay AM_Drawer's own.
+//
+
+typedef struct
+{
+    fixed_t x, y;
+} mpoint_t;
+
+
+typedef struct
+{
+    mpoint_t a, b;
+} mline_t;
+
+
+// The automap's palette. It picks raw colour indices rather than texturing
+// anything, and these are the ones it picks.
+#define REDS        (256-5*16)
+#define REDRANGE    16
+#define BLUES       (256-4*16+8)
+#define BLUERANGE   8
+#define GREENS      (7*16)
+#define GREENRANGE  16
+#define GRAYS       (6*16)
+#define GRAYSRANGE  16
+#define BROWNS      (4*16)
+#define BROWNRANGE  16
+#define YELLOWS     (256-32+7)
+#define YELLOWRANGE 1
+#define BLACK       0
+#define WHITE       (256-47)
+
+#define BACKGROUND          BLACK
+#define YOURCOLORS          WHITE
+#define WALLCOLORS          REDS
+#define WALLRANGE           REDRANGE
+#define TSWALLCOLORS        GRAYS
+#define FDWALLCOLORS        BROWNS
+#define CDWALLCOLORS        YELLOWS
+#define THINGCOLORS         GREENS
+#define SECRETWALLCOLORS    WALLCOLORS
+#define GRIDCOLORS          (GRAYS + GRAYSRANGE/2)
+#define XHAIRCOLORS         GRAYS
+
+// A line the map never draws, whatever the player has seen.
+#define LINE_NEVERSEE ML_DONTDRAW
+
+
+// The line drawings the map is made of. Their sizes are asserted against the
+// definitions in am_map.c: a count that drifts is a compile error, not a
+// renderer walking off the end of an array.
+#define NUMPLYRLINES 7
+#define NUMCHEATPLYRLINES 16
+#define NUMTHINTRIANGLEGUYLINES 3
+
+extern mline_t player_arrow[NUMPLYRLINES];
+extern mline_t cheat_player_arrow[NUMCHEATPLYRLINES];
+extern mline_t thintriangle_guy[NUMTHINTRIANGLEGUYLINES];
+
+
+// Where the map is looking, and how far in. m_x/m_y is the lower-left corner in
+// map coordinates; scale_mtof converts a map distance to a frame one.
+extern fixed_t m_x, m_y;
+
+// How much of the map the window spans, in map coordinates.
+extern fixed_t m_w, m_h;
+
+extern fixed_t scale_mtof;
+
+// The map's rect within the frame.
+extern int f_x, f_y, f_w, f_h;
+
+// The player it draws the arrow for, and whether it is keeping them centred.
+extern player_t* am_plr;
+extern int followplayer;
+
+// The map cheats: `cheating` reveals the walls and the things, `grid` the grid.
+extern int cheating;
+extern int grid;
+
+// Wall brightness, which the map strobes.
+extern int lightlev;
+
+
+// Turns a map point about the origin. The automap's own, used as it stands, so a
+// renderer puts the player arrow through exactly the rotation AM_Drawer would.
+void AM_rotate(fixed_t* x, fixed_t* y, angle_t a);
+
+// Draws the player's marks into the frame.
+void AM_drawMarks(void);
 
 
 #endif
@@ -6146,6 +6310,47 @@ extern visplane_t* ceilingplane;
 
 
 // Retrieve column data for span blitting.
+// A single patch from a texture definition,
+// basically a rectangular area within
+// the texture rectangle.
+typedef struct
+{
+    // Block origin (allways UL),
+    // which has allready accounted
+    // for the internal origin of the patch.
+    int originx;
+    int originy;
+    int patch;
+} texpatch_t;
+
+
+// A maptexturedef_t describes a rectangular texture,
+// which is composed of one or more mappatch_t structures
+// that arrange graphic patches.
+typedef struct
+{
+    // Keep name for switch changing, etc.
+    char name[8];
+    short width;
+    short height;
+
+    // All the patches[patchcount]
+    //  are drawn back to front into the cached texture.
+    short patchcount;
+    texpatch_t patches[1];
+} texture_t;
+
+
+// Every wall texture the WAD loaded, and how many.
+//
+// A texture is a list of patches to be drawn back to front, not a bitmap - which
+// is why a masked texture's holes are holes: R_GenerateComposite leaves whatever
+// no patch covered. Anything that wants the pixels rather than the engine's
+// cached columns (which are post data, not pixels, for exactly those textures)
+// has to compose them the same way.
+extern texture_t** textures;
+
+
 byte* R_GetColumn(int tex, int col);
 
 // I/O, setting up the stuff.
@@ -6161,6 +6366,13 @@ int R_FlatNumForName(char* name);
 // returns the texture number for the texture name.
 int R_TextureNumForName(char* name);
 int R_CheckTextureNumForName(char* name);
+
+
+// How many wall textures and flats the WAD loaded. Composed lazily, so these are
+// the id space anything walking the graphics has to work in.
+extern int numtextures;
+extern int numflats;
+
 
 #endif
 
@@ -6248,6 +6460,15 @@ int R_PointOnSide(fixed_t x, fixed_t y, node_t* node);
 int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t* line);
 angle_t R_PointToAngle(fixed_t x, fixed_t y);
 angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
+
+// Places the camera and picks the light tables for a frame, from the player's
+// position and their fixedcolormap (the invulnerability sphere and the light-amp
+// visor lock the view to one COLORMAP row, overriding light and distance both).
+void R_SetupFrame(player_t* player);
+
+// How fast light falls off with distance in the scale-light table. Anything
+// reproducing DOOM's shading has to use the same number or the banding differs.
+#define DISTMAP 2
 fixed_t R_PointToDist(fixed_t x, fixed_t y);
 fixed_t R_ScaleFromGlobalAngle(angle_t visangle);
 subsector_t* R_PointInSubsector(fixed_t x, fixed_t y);
@@ -7735,40 +7956,13 @@ void doom_mouse_move(int delta_x, int delta_y)
         D_PostEvent(&event);
     }
 }
-#define REDS        (256-5*16)
-#define REDRANGE    16
-#define BLUES       (256-4*16+8)
-#define BLUERANGE   8
-#define GREENS      (7*16)
-#define GREENRANGE  16
-#define GRAYS       (6*16)
-#define GRAYSRANGE  16
-#define BROWNS      (4*16)
-#define BROWNRANGE  16
-#define YELLOWS     (256-32+7)
-#define YELLOWRANGE 1
-#define BLACK       0
-#define WHITE       (256-47)
-
-// Automap colors
-#define BACKGROUND          BLACK
-#define YOURCOLORS          WHITE
 #define YOURRANGE           0
-#define WALLCOLORS          REDS
-#define WALLRANGE           REDRANGE
-#define TSWALLCOLORS        GRAYS
 #define TSWALLRANGE         GRAYSRANGE
-#define FDWALLCOLORS        BROWNS
 #define FDWALLRANGE         BROWNRANGE
-#define CDWALLCOLORS        YELLOWS
 #define CDWALLRANGE         YELLOWRANGE
-#define THINGCOLORS         GREENS
 #define THINGRANGE          GREENRANGE
-#define SECRETWALLCOLORS    WALLCOLORS
 #define SECRETWALLRANGE     WALLRANGE
-#define GRIDCOLORS          (GRAYS + GRAYSRANGE/2)
 #define GRIDRANGE           0
-#define XHAIRCOLORS         GRAYS
 
 // drawing stuff
 #define FB 0
@@ -7808,8 +8002,6 @@ void doom_mouse_move(int delta_x, int delta_y)
 #define CXMTOF(x)  (f_x + MTOF((x)-m_x))
 #define CYMTOF(y)  (f_y + (f_h - MTOF((y)-m_y)))
 
-// the following is crap
-#define LINE_NEVERSEE ML_DONTDRAW
 
 
 typedef struct
@@ -7822,18 +8014,6 @@ typedef struct
 {
     fpoint_t a, b;
 } fline_t;
-
-
-typedef struct
-{
-    fixed_t                x, y;
-} mpoint_t;
-
-
-typedef struct
-{
-    mpoint_t a, b;
-} mline_t;
 
 
 typedef struct
@@ -7858,7 +8038,6 @@ mline_t player_arrow[] = {
     { { -R + 3 * R / 8, 0 }, { -R + R / 8, -R / 4 } }
 };
 #undef R
-#define NUMPLYRLINES (sizeof(player_arrow)/sizeof(mline_t))
 
 #define R ((8*PLAYERRADIUS)/7)
 mline_t cheat_player_arrow[] = {
@@ -7880,7 +8059,6 @@ mline_t cheat_player_arrow[] = {
     { { R / 6 + R / 32, -R / 7 - R / 32 }, { R / 6 + R / 10, -R / 7 } }
 };
 #undef R
-#define NUMCHEATPLYRLINES (sizeof(cheat_player_arrow)/sizeof(mline_t))
 
 #define R (FRACUNIT)
 mline_t triangle_guy[] = {
@@ -7898,11 +8076,10 @@ mline_t thintriangle_guy[] = {
     { { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) }, { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) } }
 };
 #undef R
-#define NUMTHINTRIANGLEGUYLINES (sizeof(thintriangle_guy)/sizeof(mline_t))
 
 
-static int cheating = 0;
-static int grid = 0;
+int cheating = 0;
+int grid = 0;
 
 static int leveljuststarted = 1; // kluge until AM_LevelInit() is called
 
@@ -7910,14 +8087,14 @@ static int finit_width = SCREENWIDTH;
 static int finit_height = SCREENHEIGHT - 32;
 
 // location of window on screen
-static int f_x;
-static int f_y;
+int f_x;
+int f_y;
 
 // size of window on screen
-static int f_w;
-static int f_h;
+int f_w;
+int f_h;
 
-static int lightlev; // used for funky strobing effect
+int lightlev; // used for funky strobing effect
 static byte* fb; // pseudo-frame buffer
 static int amclock;
 
@@ -7925,14 +8102,14 @@ static mpoint_t m_paninc; // how far the window pans each tic (map coords)
 static fixed_t mtof_zoommul; // how far the window zooms in each tic (map coords)
 static fixed_t ftom_zoommul; // how far the window zooms in each tic (fb coords)
 
-static fixed_t m_x, m_y;   // LL x,y where the window is on the map (map coords)
+fixed_t m_x, m_y;   // LL x,y where the window is on the map (map coords)
 static fixed_t m_x2, m_y2; // UR x,y where the window is on the map (map coords)
 
 //
 // width/height of window on map (map coords)
 //
-static fixed_t m_w;
-static fixed_t m_h;
+fixed_t m_w;
+fixed_t m_h;
 
 // based on level size
 static fixed_t min_x;
@@ -7958,17 +8135,17 @@ static fixed_t old_m_x, old_m_y;
 static mpoint_t f_oldloc;
 
 // used by MTOF to scale from map-to-frame-buffer coords
-static fixed_t scale_mtof = (fixed_t)INITSCALEMTOF;
+fixed_t scale_mtof = (fixed_t)INITSCALEMTOF;
 // used by FTOM to scale from frame-buffer-to-map coords (=1/scale_mtof)
 static fixed_t scale_ftom;
 
-static player_t* plr; // the player represented by an arrow
+player_t* am_plr; // the player represented by an arrow
 
 static patch_t* marknums[10]; // numbers used for marking by the automap
 static mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
 static int markpointnum = 0; // next point to be assigned
 
-static int followplayer = 1; // specifies whether to follow the player around
+int followplayer = 1; // specifies whether to follow the player around
 
 static unsigned char cheat_amap_seq[] = { 0xb2, 0x26, 0x26, 0x2e, 0xff };
 static cheatseq_t cheat_amap = { cheat_amap_seq, 0 };
@@ -8043,8 +8220,8 @@ void AM_restoreScaleAndLoc(void)
     }
     else
     {
-        m_x = plr->mo->x - m_w / 2;
-        m_y = plr->mo->y - m_h / 2;
+        m_x = am_plr->mo->x - m_w / 2;
+        m_y = am_plr->mo->y - m_h / 2;
     }
     m_x2 = m_x + m_w;
     m_y2 = m_y + m_h;
@@ -8163,9 +8340,9 @@ void AM_initVariables(void)
             if (playeringame[pnum])
                 break;
 
-    plr = &players[pnum];
-    m_x = plr->mo->x - m_w / 2;
-    m_y = plr->mo->y - m_h / 2;
+    am_plr = &players[pnum];
+    m_x = am_plr->mo->x - m_w / 2;
+    m_y = am_plr->mo->y - m_h / 2;
     AM_changeWindowLoc();
 
     // for saving & restoring
@@ -8361,23 +8538,23 @@ doom_boolean AM_Responder(event_t* ev)
             case AM_FOLLOWKEY:
                 followplayer = !followplayer;
                 f_oldloc.x = DOOM_MAXINT;
-                plr->message = followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF;
+                am_plr->message = followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF;
                 break;
             case AM_GRIDKEY:
                 grid = !grid;
-                plr->message = grid ? AMSTR_GRIDON : AMSTR_GRIDOFF;
+                am_plr->message = grid ? AMSTR_GRIDON : AMSTR_GRIDOFF;
                 break;
             case AM_MARKKEY:
                 doom_strcpy(buffer, AMSTR_MARKEDSPOT);
                 doom_concat(buffer, " ");
                 doom_concat(buffer, doom_itoa(markpointnum, 10));
                 //doom_sprintf(buffer, "%s %d", AMSTR_MARKEDSPOT, markpointnum);
-                plr->message = buffer;
+                am_plr->message = buffer;
                 AM_addMark();
                 break;
             case AM_CLEARMARKKEY:
                 AM_clearMarks();
-                plr->message = AMSTR_MARKSCLEARED;
+                am_plr->message = AMSTR_MARKSCLEARED;
                 break;
             default:
                 cheatstate = 0;
@@ -8443,14 +8620,14 @@ void AM_changeWindowScale(void)
 //
 void AM_doFollowPlayer(void)
 {
-    if (f_oldloc.x != plr->mo->x || f_oldloc.y != plr->mo->y)
+    if (f_oldloc.x != am_plr->mo->x || f_oldloc.y != am_plr->mo->y)
     {
-        m_x = FTOM(MTOF(plr->mo->x)) - m_w / 2;
-        m_y = FTOM(MTOF(plr->mo->y)) - m_h / 2;
+        m_x = FTOM(MTOF(am_plr->mo->x)) - m_w / 2;
+        m_y = FTOM(MTOF(am_plr->mo->y)) - m_h / 2;
         m_x2 = m_x + m_w;
         m_y2 = m_y + m_h;
-        f_oldloc.x = plr->mo->x;
-        f_oldloc.y = plr->mo->y;
+        f_oldloc.x = am_plr->mo->x;
+        f_oldloc.y = am_plr->mo->y;
     }
 }
 
@@ -8828,7 +9005,7 @@ void AM_drawWalls(void)
                 }
             }
         }
-        else if (plr->powers[pw_allmap])
+        else if (am_plr->powers[pw_allmap])
         {
             if (!(lines[i].flags & LINE_NEVERSEE)) AM_drawMline(&l, GRAYS + 3);
         }
@@ -8917,11 +9094,11 @@ void AM_drawPlayers(void)
         if (cheating)
             AM_drawLineCharacter
             (cheat_player_arrow, NUMCHEATPLYRLINES, 0,
-             plr->mo->angle, WHITE, plr->mo->x, plr->mo->y);
+             am_plr->mo->angle, WHITE, am_plr->mo->x, am_plr->mo->y);
         else
             AM_drawLineCharacter
-            (player_arrow, NUMPLYRLINES, 0, plr->mo->angle,
-             WHITE, plr->mo->x, plr->mo->y);
+            (player_arrow, NUMPLYRLINES, 0, am_plr->mo->angle,
+             WHITE, am_plr->mo->x, am_plr->mo->y);
         return;
     }
 
@@ -8930,7 +9107,7 @@ void AM_drawPlayers(void)
         their_color++;
         p = &players[i];
 
-        if ((deathmatch && !singledemo) && p != plr)
+        if ((deathmatch && !singledemo) && p != am_plr)
             continue;
 
         if (!playeringame[i])
@@ -11866,13 +12043,15 @@ void F_Drawer(void)
         }
     }
 }
-static doom_boolean go = 0;
+doom_boolean wipe_melt_running = 0;
 
-static byte* wipe_scr_start;
+byte* wipe_scr_start;
 static byte* wipe_scr_end;
 static byte* wipe_scr;
 
-static int* y;
+// How far down each two-pixel column of the outgoing screen has slid so far.
+// Negative means the column has not started moving yet.
+int* wipe_melt_offsets;
 
 
 void wipe_shittyColMajorXform(short* array, int width, int height)
@@ -11961,15 +12140,15 @@ int wipe_initMelt(int width, int height, int ticks)
     wipe_shittyColMajorXform((short*)wipe_scr_end, width / 2, height);
 
     // setup initial column positions
-    // (y<0 => not ready to scroll yet)
-    y = (int*)Z_Malloc(width * sizeof(int), PU_STATIC, 0);
-    y[0] = -(M_Random() % 16);
+    // (wipe_melt_offsets<0 => not ready to scroll yet)
+    wipe_melt_offsets = (int*)Z_Malloc(width * sizeof(int), PU_STATIC, 0);
+    wipe_melt_offsets[0] = -(M_Random() % 16);
     for (i = 1; i < width; i++)
     {
         r = (M_Random() % 3) - 1;
-        y[i] = y[i - 1] + r;
-        if (y[i] > 0) y[i] = 0;
-        else if (y[i] == -16) y[i] = -15;
+        wipe_melt_offsets[i] = wipe_melt_offsets[i - 1] + r;
+        if (wipe_melt_offsets[i] > 0) wipe_melt_offsets[i] = 0;
+        else if (wipe_melt_offsets[i] == -16) wipe_melt_offsets[i] = -15;
     }
 
     return 0;
@@ -11993,27 +12172,27 @@ int wipe_doMelt(int width, int height, int ticks)
     {
         for (i = 0; i < width; i++)
         {
-            if (y[i] < 0)
+            if (wipe_melt_offsets[i] < 0)
             {
-                y[i]++; done = false;
+                wipe_melt_offsets[i]++; done = false;
             }
-            else if (y[i] < height)
+            else if (wipe_melt_offsets[i] < height)
             {
-                dy = (y[i] < 16) ? y[i] + 1 : 8;
-                if (y[i] + dy >= height) dy = height - y[i];
-                s = &((short*)wipe_scr_end)[i * height + y[i]];
-                d = &((short*)wipe_scr)[y[i] * width + i];
+                dy = (wipe_melt_offsets[i] < 16) ? wipe_melt_offsets[i] + 1 : 8;
+                if (wipe_melt_offsets[i] + dy >= height) dy = height - wipe_melt_offsets[i];
+                s = &((short*)wipe_scr_end)[i * height + wipe_melt_offsets[i]];
+                d = &((short*)wipe_scr)[wipe_melt_offsets[i] * width + i];
                 idx = 0;
                 for (j = dy; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
                 }
-                y[i] += dy;
+                wipe_melt_offsets[i] += dy;
                 s = &((short*)wipe_scr_start)[i * height];
-                d = &((short*)wipe_scr)[y[i] * width + i];
+                d = &((short*)wipe_scr)[wipe_melt_offsets[i] * width + i];
                 idx = 0;
-                for (j = height - y[i]; j; j--)
+                for (j = height - wipe_melt_offsets[i]; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
@@ -12029,7 +12208,7 @@ int wipe_doMelt(int width, int height, int ticks)
 
 int wipe_exitMelt(int width, int height, int ticks)
 {
-    Z_Free(y);
+    Z_Free(wipe_melt_offsets);
     return 0;
 }
 
@@ -12063,9 +12242,9 @@ int wipe_ScreenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     void V_MarkRect(int, int, int, int);
 
     // initial stuff
-    if (!go)
+    if (!wipe_melt_running)
     {
-        go = 1;
+        wipe_melt_running = 1;
         // wipe_scr = (byte *) Z_Malloc(width*height, PU_STATIC, 0); // DEBUG
         wipe_scr = screens[0];
         (*wipes[wipeno * 3])(width, height, ticks);
@@ -12079,11 +12258,11 @@ int wipe_ScreenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     // final stuff
     if (rc)
     {
-        go = 0;
+        wipe_melt_running = 0;
         (*wipes[wipeno * 3 + 2])(width, height, ticks);
     }
 
-    return !go;
+    return !wipe_melt_running;
 }
 #define SAVEGAMESIZE    0x2c000
 #define SAVESTRINGSIZE  24
@@ -23467,7 +23646,6 @@ void M_Init(void)
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-#define STRING_VALUE 0xFFFF
 
 
 //
@@ -36740,35 +36918,8 @@ typedef struct
 } maptexture_t;
 
 
-// A single patch from a texture definition,
-// basically a rectangular area within
-// the texture rectangle.
-typedef struct
-{
-    // Block origin (allways UL),
-    // which has allready accounted
-    // for the internal origin of the patch.
-    int originx;
-    int originy;
-    int patch;
-} texpatch_t;
-
-
-// A maptexturedef_t describes a rectangular texture,
-// which is composed of one or more mappatch_t structures
-// that arrange graphic patches.
-typedef struct
-{
-    // Keep name for switch changing, etc.
-    char name[8];
-    short width;
-    short height;
-
-    // All the patches[patchcount]
-    //  are drawn back to front into the cached texture.
-    short patchcount;
-    texpatch_t patches[1];
-} texture_t;
+// texpatch_t and texture_t now live in r_data.h: composing a texture from its
+// patches is what a renderer other than the software one has to do too.
 
 
 int firstflat;
@@ -38164,7 +38315,6 @@ void R_DrawViewBorder(void)
     V_MarkRect(0, 0, SCREENWIDTH, SCREENHEIGHT - SBARHEIGHT);
 }
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
-#define DISTMAP 2
 
 
 int viewangleoffset;

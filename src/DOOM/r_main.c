@@ -37,7 +37,6 @@
 
 
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
-#define DISTMAP 2
 
 
 int viewangleoffset;

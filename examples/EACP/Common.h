@@ -6,13 +6,13 @@
 #include <cmath>
 #include <cstdint>
 
-#include "../../PureDOOM.h"
+#include <DOOM/DOOM.h>
 
 #include "EngineAccess.h"
 
 // The engine's live palette, including the damage, pickup and invulnerability
-// flashes, which are palette swaps. Defined in DoomImpl.c; PureDOOM.h does not
-// declare it in its public section.
+// flashes, which are palette swaps. DOOM.h does not declare it in its public
+// section.
 extern "C" unsigned char screen_palette[256 * 3];
 
 namespace PureDoom

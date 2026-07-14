@@ -54,6 +54,13 @@ void M_Init(void);
 void M_StartControlPanel(void);
 
 
+
+// Raised while the menu is showing a yes/no prompt rather than a menu proper.
+// M_Drawer returns before its background darkening in that case, so anything
+// reproducing the darkening has to test this too.
+extern int messageToPrint;
+
+
 #endif
 
 //-----------------------------------------------------------------------------

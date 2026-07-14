@@ -1,8 +1,46 @@
-// Included at the end of DoomImpl.c, inside the engine translation unit, so
-// the functions below can use the engine's types and globals directly. Never
-// compiled standalone.
+// The snapshot interface between the DOOM engine's internals and the eacp
+// renderer: an ordinary translation unit that includes the engine's headers.
+// Nothing DOOM-typed leaks out through EngineAccess.h.
 
 #include "EngineAccess.h"
+
+#include <DOOM/DOOM.h>
+#include <DOOM/doom_config.h>
+
+#include <DOOM/am_map.h>
+#include <DOOM/d_player.h>
+#include <DOOM/doomdef.h>
+#include <DOOM/doomstat.h>
+#include <DOOM/doomtype.h>
+#include <DOOM/f_wipe.h>
+#include <DOOM/hu_stuff.h>
+#include <DOOM/info.h>
+#include <DOOM/m_fixed.h>
+#include <DOOM/m_menu.h>
+#include <DOOM/m_misc.h>
+#include <DOOM/p_local.h>
+#include <DOOM/p_pspr.h>
+#include <DOOM/r_bsp.h>
+#include <DOOM/r_data.h>
+#include <DOOM/r_defs.h>
+#include <DOOM/r_main.h>
+#include <DOOM/r_plane.h>
+#include <DOOM/r_sky.h>
+#include <DOOM/r_state.h>
+#include <DOOM/r_things.h>
+#include <DOOM/st_stuff.h>
+#include <DOOM/tables.h>
+#include <DOOM/v_video.h>
+#include <DOOM/w_wad.h>
+#include <DOOM/z_zone.h>
+
+// Engine globals that no header declares. DOOM.c reaches them the same way, so
+// this is the house style rather than a workaround - but they are the natural
+// candidates for a real interface as the engine gets refactored.
+extern doom_boolean is_wiping_screen;
+extern unsigned char screen_palette[256 * 3];
+extern int screenblocks;
+extern doom_boolean st_statusbaron;
 
 // Convex subsector cells rarely exceed a handful of corners; the cap only
 // bounds the clipper's scratch space.
@@ -179,11 +217,11 @@ int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
     if (!is_wiping_screen || start == 0)
         return 0;
 
-    // `go` is the melt's own "I have been set up" flag, and the only safe thing
+    // wipe_melt_running is the melt's own "I have been set up" flag, and the only
     // to test: wipe_exitMelt frees the column table but leaves y pointing at it,
     // so between melts y is non-null and dangling. Until the melt is set up, the
     // outgoing screen is still row-major and nothing has slid.
-    if (!go)
+    if (!wipe_melt_running)
     {
         doom_memcpy(outStart, start, EACP_SCREEN_PIXELS);
         doom_memset(outOffsets, 0, EACP_DOOM_WIPE_COLUMNS);
@@ -193,7 +231,7 @@ int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
 
     for (column = 0; column < EACP_DOOM_WIPE_COLUMNS; ++column)
     {
-        int slid = y[column];
+        int slid = wipe_melt_offsets[column];
 
         // A column that has not started moving sits at a negative offset; it has
         // slid nothing, which is what zero says.
@@ -372,7 +410,7 @@ int eacpDoomBuildOverlay(unsigned char* outRgba)
 
 void eacpDoomBindKeys(void)
 {
-    int count = (int) (sizeof(defaults) / sizeof(defaults[0]));
+    int count = numdefaults;
     int i;
 
     for (i = 0; i < count; i++)
@@ -1799,7 +1837,7 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
             else if (cheating)
                 eacpAutomapLine(em, ax, ay, bx, by, TSWALLCOLORS + lightlev);
         }
-        else if (plr != 0 && plr->powers[pw_allmap])
+        else if (am_plr != 0 && am_plr->powers[pw_allmap])
         {
             if (!(line->flags & LINE_NEVERSEE))
                 eacpAutomapLine(em, ax, ay, bx, by, GRAYS + 3);
@@ -1839,7 +1877,7 @@ static void eacpAutomapPlayer(EacpAutomapEmitter* em, const EacpDoomCamera* came
     fixed_t x, y;
     angle_t angle;
 
-    if (plr == 0 || plr->mo == 0)
+    if (am_plr == 0 || am_plr->mo == 0)
         return;
 
     x = (fixed_t) ((double) camera->x * 65536.0);
@@ -1909,7 +1947,7 @@ int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
     // the interpolated view instead, and not rounding, is what makes the map
     // glide rather than crawl. Panned by hand, it is the engine's window that
     // moves, and that still steps.
-    if (followplayer && plr != 0 && plr->mo != 0)
+    if (followplayer && am_plr != 0 && am_plr->mo != 0)
     {
         em.originX = (double) camera->x * 65536.0 - (double) m_w / 2.0;
         em.originY = (double) camera->y * 65536.0 - (double) m_h / 2.0;

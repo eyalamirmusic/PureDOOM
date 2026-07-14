@@ -44,7 +44,6 @@
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-#define STRING_VALUE 0xFFFF
 
 
 //
