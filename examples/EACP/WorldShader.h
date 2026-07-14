@@ -18,6 +18,7 @@ struct WorldShader final : DoomShader
         auto position = vertexInput(&EacpDoomVertex::position);
         auto uv = vertexInput(&EacpDoomVertex::uv);
         auto light = vertexInput(&EacpDoomVertex::light);
+        auto falloff = vertexInput(&EacpDoomVertex::falloff);
 
         auto view = rotateY(-yaw) * translate(-camX, -camY, -camZ);
         auto fovY = 2.0f * std::atan(1.0f / worldAspect);
@@ -32,6 +33,7 @@ struct WorldShader final : DoomShader
         // falloff needs comes free with the transform.
         auto depth = varying(clip.w());
         auto startMap = varying(light);
+        auto recedes = varying(falloff);
         auto texel = sample(texture, varying(uv));
 
         // Sprites and the wall textures with holes in them carry their coverage
@@ -41,8 +43,13 @@ struct WorldShader final : DoomShader
 
         // A surface starts at the COLORMAP row its sector's brightness picks and
         // moves one row darker as it recedes - the engine's light table, in
-        // closed form.
-        auto row = startMap - constant(1280.0f) / (depth + constant(16.0f));
+        // closed form. A surface the engine locks to a single row - the sky, a
+        // lit sprite frame, anything seen through the invulnerability sphere or
+        // the light-amp visor - carries a falloff of zero and keeps the row it
+        // came in with.
+        auto row =
+            startMap - recedes * (constant(1280.0f) / (depth + constant(16.0f)));
+
         setPaletteFragment(darkened(remap(indexOf(texel), row)));
     }
 

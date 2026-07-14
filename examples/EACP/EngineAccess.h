@@ -5,10 +5,12 @@
 // of the engine translation unit so the implementation can reach the engine's
 // (non-static) types and globals; nothing DOOM-typed leaks out.
 
-// The COLORMAP rows the renderer uses: 32 progressively darker remaps of the
-// palette. (The lump carries two more - the invulnerability inverse map and a
-// spare - which the light calculation never selects.)
-#define EACP_DOOM_COLORMAP_ROWS 32
+// Every row of the COLORMAP lump: 32 progressively darker remaps of the palette,
+// then the invulnerability sphere's inverse map and a spare. The light
+// calculation only ever picks one of the first 32, but a powerup can lock the
+// view to row 32 outright (see EacpDoomVertex::falloff), so all of them are
+// wanted on the GPU.
+#define EACP_DOOM_COLORMAP_ROWS 34
 
 #define EACP_DOOM_SCREEN_WIDTH 320
 #define EACP_DOOM_SCREEN_HEIGHT 200
@@ -26,9 +28,18 @@ typedef struct
     float position[3];
     float uv[2];
 
-    // The sector's COLORMAP row before distance falloff (0 = brightest); the
-    // shader subtracts the depth term from it.
+    // The COLORMAP row the surface starts at (0 = brightest); the shader
+    // subtracts the depth term from it.
     float light;
+
+    // How much of that depth term applies: 1 normally, and 0 for a surface the
+    // engine locks to a single row - the sky, a fullbright sprite frame, and
+    // everything in sight while the invulnerability sphere or the light-amp visor
+    // is up (R_SetupFrame's fixedcolormap, which overrides light and distance
+    // both). Carried per vertex rather than as a uniform because the sky is
+    // exempt from the powerups: vanilla draws it through row 0 whatever the
+    // player has picked up.
+    float falloff;
 } EacpDoomVertex;
 
 // A run of vertices sharing one texture - one draw call.
@@ -61,7 +72,11 @@ typedef struct
     int textureId;
     float x, y;
     float width, height;
+
+    // The COLORMAP row to draw it through, outright: a weapon is at no distance
+    // from the camera, so nothing further is subtracted from this.
     float light;
+
     int flip;
 } EacpDoomHudSprite;
 
@@ -104,6 +119,21 @@ extern "C"
     // True when the automap has replaced the 3D view. The engine skips
     // R_RenderPlayerView entirely while it is up, so the two never coexist.
     int eacpDoomAutomapActive(void);
+
+    // Whether the engine is drawing the status bar, which the player sizes away
+    // with the last notch of the menu's screen size (screenblocks 11). The view
+    // is then the whole 320x200 frame rather than the 320x168 above the bar, and
+    // there is no strip to composite from the software frame - the rows the bar
+    // sat in hold the 3D view.
+    //
+    // The GPU renderer honours those two layouts and no others: at a smaller
+    // screen size it keeps drawing the full-width view rather than shrinking it
+    // into a border, that being a concession to 1993 hardware and not something
+    // this renderer needs to reproduce.
+    int eacpDoomStatusBarVisible(void);
+
+    // The rows the 3D view occupies, which is the above as a number.
+    float eacpDoomViewRows(void);
 
     // Marks the walls the player can see from where they are standing, so the map
     // keeps filling in while it is being looked at. Call once a tic, after the

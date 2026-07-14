@@ -228,6 +228,19 @@ int eacpDoomAutomapActive(void)
     return automapactive ? 1 : 0;
 }
 
+int eacpDoomStatusBarVisible(void)
+{
+    // ST_Drawer's own st_statusbaron, which is private to it: D_Display asks for
+    // a bar-less frame once the view fills all 200 rows, and the automap keeps
+    // the bar whatever the screen size says.
+    return viewheight != SCREENHEIGHT || automapactive;
+}
+
+float eacpDoomViewRows(void)
+{
+    return eacpDoomStatusBarVisible() ? (float) ST_Y : (float) SCREENHEIGHT;
+}
+
 void eacpDoomRevealAutomap(void)
 {
     player_t* player = &players[displayplayer];
@@ -660,12 +673,48 @@ void eacpDoomGetColormaps(unsigned char* out)
     doom_memcpy(out, colormaps, 256 * EACP_DOOM_COLORMAP_ROWS);
 }
 
-// The COLORMAP row a surface starts at, before distance darkens it further:
-// the engine's light level scaled into the 32 maps, offset by the sector's
-// brightness and the fake contrast walls get for their orientation.
-static float eacpStartMap(int lightlevel, int contrast)
+// The COLORMAP row a surface resolves through, and whether distance darkens it
+// further.
+typedef struct
 {
-    int lightnum = (lightlevel >> LIGHTSEGSHIFT) + extralight + contrast;
+    float row;
+    float falloff;
+} EacpLight;
+
+// The row the whole view is locked to, or zero for none: the invulnerability
+// sphere picks the inverse map and the light-amp visor the brightest row
+// (P_PlayerThink), and R_SetupFrame then puts every wall, flat, sprite and the
+// weapon through it, with the sector's brightness and the distance falloff both
+// ignored.
+static int eacpFixedRow(void)
+{
+    return players[displayplayer].fixedcolormap;
+}
+
+// One row, whatever the distance - what the engine does with a bare colormap
+// pointer rather than a light table.
+static EacpLight eacpFixedLight(int row)
+{
+    EacpLight light;
+
+    light.row = (float) row;
+    light.falloff = 0.0f;
+
+    return light;
+}
+
+// The row a surface starts at before distance darkens it further: the engine's
+// light level scaled into the 32 maps, offset by the sector's brightness and the
+// fake contrast walls get for their orientation.
+static EacpLight eacpSectorLight(int lightlevel, int contrast)
+{
+    EacpLight light;
+    int lightnum;
+
+    if (eacpFixedRow())
+        return eacpFixedLight(eacpFixedRow());
+
+    lightnum = (lightlevel >> LIGHTSEGSHIFT) + extralight + contrast;
 
     if (lightnum < 0)
         lightnum = 0;
@@ -673,7 +722,19 @@ static float eacpStartMap(int lightlevel, int contrast)
     if (lightnum >= LIGHTLEVELS)
         lightnum = LIGHTLEVELS - 1;
 
-    return (float) ((LIGHTLEVELS - 1 - lightnum) * 2 * NUMCOLORMAPS / LIGHTLEVELS);
+    light.row =
+        (float) ((LIGHTLEVELS - 1 - lightnum) * 2 * NUMCOLORMAPS / LIGHTLEVELS);
+    light.falloff = 1.0f;
+
+    return light;
+}
+
+// A frame the engine marks as lit - a muzzle flash, a rocket - is drawn through
+// row 0 at any distance. A powerup outranks it (R_ProjectSprite tests
+// fixedcolormap first), and this says both.
+static EacpLight eacpFullbrightLight(void)
+{
+    return eacpFixedLight(eacpFixedRow());
 }
 
 // Sutherland-Hodgman against one half-plane. The side test matches the
@@ -902,7 +963,7 @@ static void eacpEmitVertex(EacpEmitter* em,
                            float z,
                            float u,
                            float v,
-                           float light)
+                           EacpLight light)
 {
     EacpDoomVertex* out;
 
@@ -921,7 +982,8 @@ static void eacpEmitVertex(EacpEmitter* em,
     out->position[2] = z;
     out->uv[0] = u;
     out->uv[1] = v;
-    out->light = light;
+    out->light = light.row;
+    out->falloff = light.falloff;
 }
 
 // DOOM's map plane is (x, y) with z up; the renderer's is (x, up, -y).
@@ -937,7 +999,7 @@ static void eacpEmitWallQuad(EacpEmitter* em,
                              float uStart,
                              float uEnd,
                              float textureHeight,
-                             float light)
+                             EacpLight light)
 {
     float u1 = uStart;
     float u2 = uEnd;
@@ -971,7 +1033,8 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
     double x1, y1, x2, y2;
     float length;
     float frontFloor, frontCeiling;
-    float uStart, uEnd, rowOffset, light;
+    float uStart, uEnd, rowOffset;
+    EacpLight light;
     int contrast;
 
     if (line->sidenum[s] < 0)
@@ -1003,7 +1066,7 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
     else if (line->v1->x == line->v2->x)
         contrast = 1;
 
-    light = eacpStartMap(front->lightlevel, contrast);
+    light = eacpSectorLight(front->lightlevel, contrast);
 
     if (back == 0)
     {
@@ -1164,7 +1227,7 @@ static void eacpEmitSprite(
     int rotation = 0;
     int lump;
     int flip;
-    float light;
+    EacpLight light;
     double leftX, leftY;
     float width, height, top, bottom;
     float u0, u1;
@@ -1217,10 +1280,9 @@ static void eacpEmitSprite(
         bottom = top - height;
     }
 
-    // A lit frame (a muzzle flash, a rocket) ignores the sector's light.
     light = (thing->frame & FF_FULLBRIGHT)
-                ? 0.0f
-                : eacpStartMap(thing->subsector->sector->lightlevel, 0);
+                ? eacpFullbrightLight()
+                : eacpSectorLight(thing->subsector->sector->lightlevel, 0);
 
     u0 = flip ? 1.0f : 0.0f;
     u1 = flip ? 0.0f : 1.0f;
@@ -1284,6 +1346,11 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
     float camZ;
     float vTop, vBottom;
 
+    // "Sky is allways drawn full bright, i.e. colormaps[0] is used. Because of
+    // this hack, sky is not affected by INVUL inverse mapping" - R_DrawPlanes,
+    // whose words those are. Row 0 at any distance, and through any powerup.
+    EacpLight light = eacpFixedLight(0);
+
     if (skytexture <= 0 || skytexture >= numtextures)
         return;
 
@@ -1327,15 +1394,58 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
         float bx = (float) x1;
         float bz = (float) -y1;
 
-        // Light 0: the sky is always at its brightest, at any distance.
-        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, 0.0f);
-        eacpEmitVertex(em, texture, bx, bottom, bz, u1, vBottom, 0.0f);
-        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, 0.0f);
+        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, light);
+        eacpEmitVertex(em, texture, bx, bottom, bz, u1, vBottom, light);
+        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, light);
 
-        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, 0.0f);
-        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, 0.0f);
-        eacpEmitVertex(em, texture, ax, top, az, u0, vTop, 0.0f);
+        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, light);
+        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, light);
+        eacpEmitVertex(em, texture, ax, top, az, u0, vTop, light);
     }
+}
+
+// R_DrawPSprite lights the weapon at the *nearest* entry of the scale table -
+// it is right up against the camera - and that entry is this many rows brighter
+// than the sector's start map. Reading the start map alone lights the weapon as
+// if it stood infinitely far away, which is nearly black in a dim room and
+// visibly dark in almost any room: DOOM's weapon is fullbright in every sector
+// above light level 240 and close to it well below that.
+static float eacpWeaponBrightening(void)
+{
+    int width = viewwidth << detailshift;
+
+    if (width <= 0)
+        return 0.0f;
+
+    return (float) ((MAXLIGHTSCALE - 1) * SCREENWIDTH / width / DISTMAP);
+}
+
+// R_DrawPSprite's choice of colormap, in its own order: a powerup first, then a
+// lit frame, then the sector.
+static float eacpWeaponLight(int fullbright)
+{
+    float row;
+
+    if (eacpFixedRow())
+        return (float) eacpFixedRow();
+
+    if (fullbright)
+        return 0.0f;
+
+    row =
+        eacpSectorLight(players[displayplayer].mo->subsector->sector->lightlevel, 0)
+            .row
+        - eacpWeaponBrightening();
+
+    return row < 0.0f ? 0.0f : row;
+}
+
+// The engine places the weapon in a 320x200 space centred on row 100
+// (BASEYCENTER), and R_DrawPSprite lands that centre on the middle row of
+// whatever the view is: row 84 with the status bar up, row 100 without it.
+static float eacpWeaponRowShift(void)
+{
+    return 100.0f - eacpDoomViewRows() * 0.5f;
 }
 
 void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
@@ -1380,25 +1490,18 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
         out[i].width = (float) (spritewidth[lump] >> FRACBITS);
         out[i].height = (float) eacpSpriteHeights[lump];
 
-        // The engine positions the weapon in a 320x200 space centred on row
-        // 100, while the view it lands in is 168 rows tall and centred on row
-        // 84 - hence the 16-row shift.
         out[i].x =
             eacpFixedToFloat(weapon->sx) - eacpFixedToFloat(spriteoffset[lump]);
         out[i].y = eacpFixedToFloat(weapon->sy)
-                   - eacpFixedToFloat(spritetopoffset[lump]) - 16.0f;
+                   - eacpFixedToFloat(spritetopoffset[lump]) - eacpWeaponRowShift();
 
-        out[i].light =
-            (state->frame & FF_FULLBRIGHT)
-                ? 0.0f
-                : eacpStartMap(player->mo->subsector->sector->lightlevel, 0);
-
+        out[i].light = eacpWeaponLight(state->frame & FF_FULLBRIGHT);
         out[i].flip = frame->flip[0];
     }
 }
 
 static void
-    eacpEmitFlat(EacpEmitter* em, int index, int flat, float height, float light)
+    eacpEmitFlat(EacpEmitter* em, int index, int flat, float height, EacpLight light)
 {
     int textureId = numtextures + flattranslation[flat];
     const float* poly = &eacpPolyVertices[eacpPolyStart[index] * 2];
@@ -1434,16 +1537,19 @@ static void
 static void eacpEmitSubsector(EacpEmitter* em, int index)
 {
     sector_t* sector = subsectors[index].sector;
-    float light;
+    EacpLight light;
 
     if (eacpPolyCount[index] < 3 || sector == 0)
         return;
 
-    light = eacpStartMap(sector->lightlevel, 0);
+    light = eacpSectorLight(sector->lightlevel, 0);
 
-    eacpEmitFlat(em, index, sector->floorpic, eacpFloorHeight(sector), light);
+    // Either way round, a sky flat is a hole onto the sky rather than a surface:
+    // R_DrawPlanes paints the sky wherever it finds one, and a floor is as free
+    // to carry it as a ceiling.
+    if (sector->floorpic != skyflatnum)
+        eacpEmitFlat(em, index, sector->floorpic, eacpFloorHeight(sector), light);
 
-    // A sky ceiling is a hole onto the sky, not a surface.
     if (sector->ceilingpic != skyflatnum)
         eacpEmitFlat(
             em, index, sector->ceilingpic, eacpCeilingHeight(sector), light);

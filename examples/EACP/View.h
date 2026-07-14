@@ -262,7 +262,10 @@ struct View final : GPU::GPUView
             return;
         }
 
-        auto viewport = dst.withHeight(dst.h * worldViewportShare);
+        // The last notch of the menu's screen size takes the status bar away, and
+        // the view is then the whole frame rather than the rows above the bar.
+        auto rows = eacpDoomViewRows();
+        auto viewport = dst.withHeight(dst.h * worldViewportShare(rows));
 
         // The engine skips the 3D view entirely while the automap is up, so the
         // two never share the frame.
@@ -270,11 +273,16 @@ struct View final : GPU::GPUView
             drawAutomap(pass, bounds, viewport);
         else
         {
-            drawWorld(pass, bounds, viewport);
-            drawWeapon(pass, bounds, viewport);
+            drawWorld(pass, bounds, viewport, rows);
+            drawWeapon(pass, bounds, viewport, rows);
         }
 
-        drawScreen(pass, bounds, statusBarRect(dst), viewRows / doomHeight, 1.0f);
+        // With no status bar there is no strip to composite: the rows it sat in
+        // hold the software renderer's own view of the world, which is the one
+        // thing that must not reach the screen.
+        if (eacpDoomStatusBarVisible())
+            drawScreen(
+                pass, bounds, statusBarRect(dst, rows), rows / doomHeight, 1.0f);
 
         // Over the whole frame, status bar included: the melt slides the outgoing
         // screen down across all 200 rows.
@@ -300,12 +308,11 @@ struct View final : GPU::GPUView
         overlayShader.darkenRow = row;
     }
 
-    static Graphics::Rect statusBarRect(const Graphics::Rect& dst)
+    static Graphics::Rect statusBarRect(const Graphics::Rect& dst, float rows)
     {
-        return {dst.x,
-                dst.y + dst.h * worldViewportShare,
-                dst.w,
-                dst.h * (1.0f - worldViewportShare)};
+        auto share = worldViewportShare(rows);
+
+        return {dst.x, dst.y + dst.h * share, dst.w, dst.h * (1.0f - share)};
     }
 
     void drawScreen(GPU::RenderPass& pass,
@@ -321,7 +328,8 @@ struct View final : GPU::GPUView
 
     void drawWorld(GPU::RenderPass& pass,
                    const Graphics::Rect& bounds,
-                   const Graphics::Rect& viewport)
+                   const Graphics::Rect& viewport,
+                   float rows)
     {
         // Rebuilt every frame rather than every tic, because the billboards and
         // the sky are built around the camera being drawn from, and that moves
@@ -346,8 +354,14 @@ struct View final : GPU::GPUView
         worldShader.camZ = -camera.y;
         worldShader.yaw = camera.angle - pi / 2.0f;
 
+        // The projection is built for the view with the status bar up, so a
+        // taller view has to widen its vertical field of view by the same
+        // proportion - which on a perspective projection is one scale on y, and
+        // the viewport already applies one.
         worldShader.ndcScale =
-            std::array {viewport.w / bounds.w, viewport.h / bounds.h};
+            std::array {viewport.w / bounds.w,
+                        viewport.h / bounds.h * (viewRowsWithStatusBar / rows)};
+
         worldShader.ndcOffset =
             std::array {(viewport.x + viewport.w * 0.5f) / bounds.w * 2.0f - 1.0f,
                         1.0f - (viewport.y + viewport.h * 0.5f) / bounds.h * 2.0f};
@@ -369,10 +383,11 @@ struct View final : GPU::GPUView
 
     void drawWeapon(GPU::RenderPass& pass,
                     const Graphics::Rect& bounds,
-                    const Graphics::Rect& viewport)
+                    const Graphics::Rect& viewport,
+                    float rows)
     {
         auto scaleX = viewport.w / (float) doomWidth;
-        auto scaleY = viewport.h / viewRows;
+        auto scaleY = viewport.h / rows;
 
         hudShader.viewSize = std::array {bounds.w, bounds.h};
 

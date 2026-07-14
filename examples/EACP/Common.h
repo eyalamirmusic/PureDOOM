@@ -22,13 +22,24 @@ using namespace eacp;
 constexpr auto doomWidth = 320;
 constexpr auto doomHeight = 200;
 
-// The software frame splits into the 3D view and the status bar below it. With
-// the 1.2 CRT stretch the view fills 84% of the displayed height, and its
-// displayed aspect fixes the GPU camera's field of view: DOOM's horizontal FOV
-// is 90 degrees.
-constexpr auto viewRows = 168.0f;
-constexpr auto worldViewportShare = viewRows * 1.2f / 240.0f;
-constexpr auto worldAspect = 320.0f / (viewRows * 1.2f);
+// The software frame splits into the 3D view and the status bar below it -
+// unless the player sizes the bar away, when the view is the whole frame
+// (eacpDoomViewRows).
+constexpr auto viewRowsWithStatusBar = 168.0f;
+
+// The rows a view of that height occupies out of the 240 the frame is displayed
+// as, once the 1.2 CRT stretch is applied: 84% of it with the status bar up.
+inline float worldViewportShare(float rows)
+{
+    return rows * 1.2f / 240.0f;
+}
+
+// DOOM's horizontal field of view is 90 degrees, and its vertical one follows
+// from how tall the view stands on the display. The camera's projection is built
+// for the view with the status bar up; a taller view wants a wider vertical
+// field, which is one more scale on the projected y rather than another
+// projection (View::drawWorld).
+constexpr auto worldAspect = (float) doomWidth / (viewRowsWithStatusBar * 1.2f);
 
 // Ceilings for one frame of geometry; a shareware level fills a small fraction.
 constexpr auto maxVertices = 262144;

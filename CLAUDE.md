@@ -60,9 +60,31 @@ Two paths, toggled at runtime with **Shift+F8**:
     index, the COLORMAP row chosen by sector light and distance remaps it,
     and the palette resolves the colour. Light banding, diminishing, fullbright
     frames and palette flashes all come out exact.
+
+    A powerup can take that choice away entirely: `R_SetupFrame` reads
+    `player->fixedcolormap` and puts every wall, flat, sprite and the weapon
+    through one row with no light and no distance — the invulnerability sphere's
+    inverse map (row 32), the light-amp visor's brightest row (row 1). The whole
+    COLORMAP lump is therefore uploaded, all 34 rows, not the 32 the light
+    calculation can reach, and each vertex carries not just its row but *how much
+    of the distance term applies* — one for an ordinary surface, zero for one the
+    engine has locked. Which is also why that is a vertex attribute rather than a
+    uniform: **the sky is exempt from the powerups** and stays on row 0, a vanilla
+    quirk its own source calls out ("Because of this hack, sky is not affected by
+    INVUL inverse mapping").
   - The sky is a cylinder pinned to the camera, its texture repeating four
     times around, mapped so a screen row lands where the engine would put it.
   - The weapon and muzzle flash are drawn in screen space over the world.
+
+    The weapon is **not** lit at its sector's start map, and lighting it that way
+    (as this port first did) draws it far too dark in almost every room in the
+    game. `R_DrawPSprite` reads `spritelights[MAXLIGHTSCALE-1]` — the *nearest*
+    entry of the scale table, the weapon being right up against the camera — which
+    is 23 rows brighter than the start map at a 320-column view. DOOM's weapon is
+    therefore fullbright in any sector above light level 240 and close to it well
+    below that, and the start map alone lights it as though it stood infinitely
+    far away: at light level 96 the row comes out at 31 (near-black) where vanilla
+    picks 13.
   - Geometry is grouped by texture into one draw per texture; textures upload
     lazily on first use (a WAD holds well over a thousand sprite lumps).
 - **GPU automap**: the map as geometry rather than as a rasterized frame. What
@@ -151,6 +173,22 @@ Two paths, toggled at runtime with **Shift+F8**:
   outgoing screen is still what should be on the screen. And `wipe_exitMelt`
   frees the column table without clearing the pointer to it, so `go` - the melt's
   own "I am set up" flag - is the only safe thing to test.
+- **Screen size** (the menu's, which persists in `~/.doomrc` — and whose default
+  is **9**, not 10, so this is never hypothetical). The GPU renderer honours the
+  two layouts that change what is on the screen and no others: with the status bar
+  (the 168 rows above it) and without it (screenblocks 11, the whole 320x200
+  frame). At a *smaller* size it keeps drawing the full-width view rather than
+  shrinking it into a border, that having been a concession to 1993 hardware and
+  not something this renderer needs to reproduce.
+
+  Ignoring 11 was not an option, only a bug: the engine then renders the view over
+  all 200 rows and `ST_Drawer` draws no bar at all (its widgets hang off
+  `st_statusbaron`), so the strip composited from the software frame stops being
+  the status bar and becomes a 320x200 slice of the world. The world is drawn over
+  the whole frame instead, and no strip is composited. A taller view also wants a
+  wider vertical field of view, which is one more scale on the projected y rather
+  than a second projection — the horizontal 90 degrees is unchanged, the view being
+  full-width either way.
 - Still missing (B4): spectre fuzz. Anything outside a level (title,
   intermission, finale) falls back to the software frame automatically, which is
   right - those screens *are* 320x200 - and the status bar is always composited
