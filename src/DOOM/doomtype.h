@@ -24,19 +24,24 @@
 #define __DOOMTYPE__
 
 
-// Fixed to use builtin bool type with C++.
-#ifdef __cplusplus
-typedef bool doom_boolean;
-#else
-#if !defined(false) && !defined(true)
-typedef enum
-{
-    false, true
-} doom_boolean;
-#else
+// An int, and NOT the built-in bool, even though the engine is C++ now.
+//
+// Compiled as C this was `enum { false, true }`, which is int-sized, and the
+// engine leans on that in places where a boolean is read through a pointer to
+// something else. `ST_createWidgets` binds the ARMS widget with
+//
+//     STlib_initMultIcon(..., (int*) &plyr->weaponowned[i + 1], ...)
+//
+// - vanilla's own cast - and `STlib_updateMultIcon` then reads four bytes back
+// out through that `int*`. Against a one-byte bool those reads are three bytes of
+// neighbouring struct, the icon index comes out as garbage, and the status bar
+// draws a null patch on the first tic of the first demo.
+//
+// Making it a real bool is a change to the engine's behaviour, not to its
+// spelling, so it belongs to the refactor proper (REFACTOR.md, Step 5 onward),
+// one subsystem at a time with the demos watching - not to the language flip,
+// whose whole promise is that nothing moves.
 typedef int doom_boolean;
-#endif
-#endif
 
 
 typedef unsigned char byte;

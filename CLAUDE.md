@@ -58,23 +58,31 @@ apparatus:
 
 - `src/DOOM/` — **the engine, and the code we own.** Built as the `doom-engine`
   static library, which both the app and the tests link, so a change to the
-  simulation reaches both and neither can run code the other is not. Still
-  1993 C, and still exempt from clang-format until the refactor reaches each
-  file.
+  simulation reaches both and neither can run code the other is not.
 
-  It is now the *only* way the engine is built. The generated single header
-  (`PureDOOM.h`), its generator, and the two C-only examples that were its last
-  consumers were deleted in Step 1 of `REFACTOR.md`. Three constraints went with
-  them, and it is worth knowing they are gone: **two files may now share a
-  file-scope name** (the header concatenated every `.c` into one translation
-  unit, which is why `am_map.c`'s `plr` had to become `am_plr`); a `.c` may now
-  include a system header; and the header include graph no longer has to be
-  acyclic.
+  It is **C++20 as of Step 2 of `REFACTOR.md`** — but it is 1993 C that a compiler
+  now accepts, not C++ anyone wrote. Every file is still `-w` and still exempt
+  from clang-format; a file leaves both the moment it is genuinely rewritten, and
+  not before. There is no C left anywhere in the repository.
+
+  Three constraints died with the single header in Step 1, and the code may now
+  rely on their absence: **two files may share a file-scope name** (the header
+  concatenated every `.c` into one translation unit, which is why `am_map.cpp`'s
+  `plr` had to become `am_plr`); a source file may include a system header; and
+  the header include graph need not be acyclic.
+
+  One trap survives the flip and is load-bearing: **`doom_boolean` is an `int`,
+  not a `bool`** (`doomtype.h` says why at length). Vanilla reads booleans through
+  pointers to other types — `ST_createWidgets` binds the ARMS widget with
+  `(int*) &plyr->weaponowned[i + 1]`, its own cast — and a one-byte `bool` makes
+  those reads garbage. Turning it into a real `bool` is a change to the engine's
+  behaviour, not its spelling, and belongs to a later step, one subsystem at a
+  time with the demos watching.
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
-  eacp platform layer and GPU renderer, and `EngineAccess.h/.c` is the plain-C
+  eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the plain-C
   snapshot interface to engine internals (camera, wall geometry, view state).
-  `EngineAccess.c` is an ordinary translation unit that includes the engine's
+  `EngineAccess.cpp` is an ordinary translation unit that includes the engine's
   headers; nothing DOOM-typed leaks out through the `.h`.
 
   The six shaders share `DoomShader.h`: `DoomShader` resolves a palette index the
@@ -367,7 +375,7 @@ Two things had to be true for it to work at all, and both were already true:
 ### What the tests do not cover
 
 The menu (nothing in a demo opens one), audio, and the eacp platform layer and
-GPU renderer. `m_menu.c` gets its own frame golden — synthetic key events, same
+GPU renderer. `m_menu.cpp` gets its own frame golden — synthetic key events, same
 technique — before it is rewritten; see Step 8 of `REFACTOR.md`. The rest still
 needs the app run and looked at.
 
@@ -400,7 +408,7 @@ Three of them pin things that look like bugs and are not. A refactor will want t
   `ANG90 - 1` — inheriting the same half-bucket offset. (Due south is exact, being
   reached by negating rather than by a lookup.)
 
-Also worth knowing before touching `m_fixed.c`: **`FixedDiv2` goes through
+Also worth knowing before touching `m_fixed.cpp`: **`FixedDiv2` goes through
 `double`.** The simulation is therefore not strictly integer-only. It is still
 deterministic — the same IEEE-754 operation every time, which is why demos replay
 — but anyone rewriting `FixedDiv` in pure integer arithmetic will change the
@@ -409,7 +417,7 @@ rounding and desync the game.
 Those are all spot-checks, which is the right shape for a property and the wrong
 shape for a transcription. So the tables are *also* checksummed whole — `finesine`,
 `finetangent`, `tantoangle`, `rndtable`, `states[]` and `mobjinfo[]`, every entry.
-Step 3 of `REFACTOR.md` turns `tables.c` (2,130 lines) and `info.c` (4,663) into
+Step 3 of `REFACTOR.md` turns `tables.cpp` (2,130 lines) and `info.cpp` (4,663) into
 `constexpr` arrays, and a spot-check would happily pass over one mistyped digit in
 the middle of 16,000 numbers. A failure prints the new checksum, so you can see
 what you did and decide whether you meant it.
@@ -453,7 +461,7 @@ and differs between builds of the same engine.)
   `r_data.h` the texture composition types, `m_random.h` the two random
   indices). Export the next one the same way rather than reaching around it.
 
-  One older fix predates all this (`d_net.c`, `NetUpdate`). PureDOOM runs with
+  One older fix predates all this (`d_net.cpp`, `NetUpdate`). PureDOOM runs with
   `singletics = true`, whose `D_DoomLoop` path builds a tic's command and runs it
   in the same breath, advancing `maketic` and `gametic` together. But `NetUpdate`
   is also called from `D_Display` and `R_RenderPlayerView` — vanilla called it

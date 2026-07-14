@@ -32,8 +32,8 @@ has none.
 |---|---|---|
 | 0 | Widen the net to the renderer, the WAD and the tables | **done** |
 | 1 | Retire the single-header packaging | **done** |
-| 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | next |
-| 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | |
+| 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
+| 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | next |
 | 4 | Ownership: kill the zone allocator | |
 | 5 | The `Engine` object: globals become members | |
 | 6 | The playsim | |
@@ -158,6 +158,52 @@ Alongside:
 
 **Nothing may change.** Goldens byte-identical, app runs, suite green. That is
 the proof the flip was mechanical.
+
+### Landed
+
+275 errors, and none of the casts were written by hand. They were generated from
+clang's own diagnostics: the target type read out of the error message, wrapped
+around the source range the compiler points at, looping until the file was clean.
+A cast therefore cannot be to the wrong type — which is the whole reason not to
+type two hundred of them yourself. The whole range is parenthesised, `(T) (expr)`,
+because a cast binds tighter than the `&` in `x = P_Random() & 1`.
+
+The goldens held: the C++ engine's simulation and its rendered frames are
+bit-identical to the C engine's, tic for tic, and the WAD reads back the same
+bytes. Which is what the step promised, and the only thing that could have
+demonstrated it.
+
+**`doom_boolean` is an `int`, and must stay one.** `doomtype.h` already had a
+`typedef bool` waiting behind `#ifdef __cplusplus`, and taking it was the single
+worst thing that happened here. Vanilla reads booleans through pointers to other
+types — `ST_createWidgets` binds the status bar's ARMS widget with
+`(int*) &plyr->weaponowned[i + 1]`, its *own* cast, and `STlib_updateMultIcon`
+then reads four bytes back through that `int*`. Against a one-byte `bool` those
+are three bytes of the neighbouring struct, the icon index comes out as garbage,
+and the status bar draws a null patch on the first tic of the first demo. Making
+it a real `bool` is a change to behaviour, not to spelling; it belongs to Step 5
+onward, one subsystem at a time, with the demos watching.
+
+Two more of the same shape, both **booleans that were never booleans** — a third
+state, `-1`, that an int-sized enum could hold and a `bool` cannot:
+
+- `animdef_t.istexture` (`p_spec.cpp`). The animated-texture table ends with
+  `{-1}` and `P_InitPicAnims` walks until it finds it. As a `bool` the terminator
+  is `true`, is never recognised, and the loop runs off the end of the array. The
+  compiler caught this one, as a narrowing error.
+- `spriteframe_t.rotate` (`r_defs.h`). `R_InitSpriteDefs` memsets `sprtemp` to
+  `-1` meaning "no lump seen for this frame yet", and `R_InstallSpriteLump` tests
+  `== false` and `== true` *separately*, needing a frame that is neither. The
+  compiler could not see through the `memset`; the engine simply refused to boot,
+  with `Sprite TROO frame I has rotations and a rot=0 lump`.
+
+Both are now `int`, with the sentinel documented. They are the only two: every
+other `memset` to `-1` in the engine is over a `short` array.
+
+And one that C hid rather than tolerated: **`info.cpp` declared all 74 action
+functions as `void A_Look();`** — which in C means *unspecified* arguments and
+links against `A_Look(mobj_t*)`, and in C++ means *none* and does not. They now
+carry their real signatures, taken from the definitions.
 
 ## Step 3 — The core: leaves first
 

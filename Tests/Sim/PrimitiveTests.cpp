@@ -9,8 +9,9 @@
 
 #include "../Common.h"
 
-extern "C"
-{
+// No extern "C" here any more: the engine is C++ as of Step 2 of REFACTOR.md, so
+// these are C++ declarations of C++ functions and wrapping them would ask the
+// linker for symbols that do not exist.
 #include <DOOM/doomtype.h>
 #include <DOOM/info.h>
 #include <DOOM/m_fixed.h>
@@ -18,8 +19,7 @@ extern "C"
 #include <DOOM/r_main.h>
 #include <DOOM/tables.h>
 
-    fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
-}
+fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
 
 #include <cstdint>
 

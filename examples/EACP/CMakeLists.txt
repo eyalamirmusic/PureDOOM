@@ -20,7 +20,7 @@ endif ()
 
 add_executable(PureDoomEACP
         Main.cpp
-        EngineAccess.c
+        EngineAccess.cpp
         App.h
         AutomapShader.h
         Common.h

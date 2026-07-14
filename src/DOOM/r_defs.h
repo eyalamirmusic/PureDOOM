@@ -376,10 +376,17 @@ typedef struct vissprite_s
 //
 typedef struct
 {
-    // If false use 0 for any position.
-    // Note: as eight entries are available,
-    //  we might as well insert the same name eight times.
-    doom_boolean rotate;
+    // If 0, use lump 0 for any position - the sprite is drawn the same from
+    // every angle. If 1, the eight rotations are all present.
+    //
+    // Not a boolean, despite vanilla's type: R_InitSpriteDefs memsets sprtemp to
+    // -1, and -1 means "no lump seen for this frame yet". R_InstallSpriteLump
+    // relies on the third state - it tests `== false` and `== true` separately,
+    // and a frame that is still -1 must match neither. As a C++ bool the -1 would
+    // read back as true, every sprite with rotations would look like a frame that
+    // already had a rot=0 lump, and the engine would I_Error on the very first
+    // one it loaded (TROO frame I).
+    int rotate;
 
     // Lump to use for view angles 0-7.
     short lump[8];

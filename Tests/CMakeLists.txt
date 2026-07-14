@@ -5,7 +5,7 @@ find_package(NanoTest REQUIRED)
 
 # The window into the running simulation. A library of its own so every test
 # binary links the same shim rather than recompiling it.
-add_library(doom-sim-probe STATIC SimProbe.c SimProbe.h)
+add_library(doom-sim-probe STATIC SimProbe.cpp SimProbe.h)
 target_link_libraries(doom-sim-probe PUBLIC doom-engine)
 target_include_directories(doom-sim-probe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

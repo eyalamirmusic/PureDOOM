@@ -12,8 +12,10 @@
 
 // The engine's live palette, including the damage, pickup and invulnerability
 // flashes, which are palette swaps. DOOM.h does not declare it in its public
-// section.
-extern "C" unsigned char screen_palette[256 * 3];
+// section. No extern "C": the engine is C++ now, and i_video.cpp defines this
+// with C++ linkage. (It would have linked either way - a namespace-scope variable
+// is not mangled - but the declaration would have been a lie.)
+extern unsigned char screen_palette[256 * 3];
 
 namespace PureDoom
 {
