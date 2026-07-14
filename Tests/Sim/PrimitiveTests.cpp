@@ -12,6 +12,7 @@
 extern "C"
 {
 #include <DOOM/doomtype.h>
+#include <DOOM/info.h>
 #include <DOOM/m_fixed.h>
 #include <DOOM/m_random.h>
 #include <DOOM/r_main.h>
@@ -20,12 +21,50 @@ extern "C"
     fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
 }
 
+#include <cstdint>
+
 using namespace nano;
 
 namespace
 {
 constexpr auto one = FRACUNIT;
 constexpr auto half = FRACUNIT / 2;
+
+// FNV-1a, the same mix the simulation probe uses, so a checksum quoted in one
+// place means the same thing in the other.
+struct Checksum
+{
+    std::uint64_t value = 1469598103934665603ULL;
+
+    Checksum& operator<<(std::int64_t datum)
+    {
+        for (auto i = 0; i < 8; ++i)
+        {
+            value ^= (std::uint64_t) ((datum >> (i * 8)) & 0xff);
+            value *= 1099511628211ULL;
+        }
+
+        return *this;
+    }
+};
+
+// Says what the table now checksums to, not merely that it disagrees. A table is
+// 16,000 numbers and "false is not true" would leave you with nothing to do next.
+void checkTable(const char* table, const Checksum& sum, std::uint64_t expected)
+{
+    if (sum.value != expected)
+        std::printf("\n%s has changed.\n"
+                    "  expected 0x%016llx\n"
+                    "  now      0x%016llx\n"
+                    "  If the table was rewritten and this was intended, put the\n"
+                    "  new checksum in PrimitiveTests.cpp - on purpose, and having\n"
+                    "  looked at what moved.\n\n",
+                    table,
+                    (unsigned long long) expected,
+                    (unsigned long long) sum.value);
+
+    check(sum.value == expected, "the table is intact");
+}
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -316,3 +355,95 @@ auto tPointToAngleQuadrants = test("Geometry/pointToAngleQuadrants") = []
 // The same point is no angle at all, rather than an out-of-range index.
 auto tPointToAngleDegenerate = test("Geometry/pointToAngleAtSamePoint") = []
 { check(R_PointToAngle2(100, 100, 100, 100) == 0); };
+
+// ---------------------------------------------------------------------------
+// The tables, whole.
+//
+// Everything above spot-checks: finesine[0], tantoangle[0], the first eight
+// P_Randoms. That is the right shape for a property, and the wrong shape for a
+// transcription. Step 3 of REFACTOR.md turns tables.c (2,130 lines) and info.c
+// (4,663 lines) into constexpr arrays, and a spot-check would happily pass over
+// a single mistyped digit in the middle of 16,000 numbers.
+//
+// So: every entry, checksummed. If one of these fails, a table was mistranscribed
+// and the number below says which table. Nothing else in the suite would tell you
+// that - a demo would just desync somewhere and blame the physics.
+// ---------------------------------------------------------------------------
+
+auto tFineSineTableIsIntact = test("Tables/fineSineIsIntact") = []
+{
+    auto sum = Checksum {};
+
+    for (auto i = 0; i < 5 * FINEANGLES / 4; ++i)
+        sum << finesine[i];
+
+    checkTable("finesine", sum, 0xd68e94130bb61a68ULL);
+};
+
+auto tFineTangentTableIsIntact = test("Tables/fineTangentIsIntact") = []
+{
+    auto sum = Checksum {};
+
+    for (auto i = 0; i < FINEANGLES / 2; ++i)
+        sum << finetangent[i];
+
+    checkTable("finetangent", sum, 0xa0ba8deb9438b0dbULL);
+};
+
+auto tTanToAngleTableIsIntact = test("Tables/tanToAngleIsIntact") = []
+{
+    auto sum = Checksum {};
+
+    for (auto i = 0; i <= SLOPERANGE; ++i)
+        sum << tantoangle[i];
+
+    checkTable("tantoangle", sum, 0x373392e3c4a34270ULL);
+};
+
+auto tRandomTableIsIntact = test("Random/tableIsIntact") = []
+{
+    auto sum = Checksum {};
+
+    for (auto i = 0; i < 256; ++i)
+        sum << rndtable[i];
+
+    checkTable("rndtable", sum, 0xff36db03f01bc0f7ULL);
+};
+
+// The action pointer is deliberately left out: it is a function address, and it
+// differs between builds of the same engine. Everything the simulation actually
+// reads out of a state goes in.
+auto tStateTableIsIntact = test("Info/stateTableIsIntact") = []
+{
+    auto sum = Checksum {};
+
+    for (auto i = 0; i < NUMSTATES; ++i)
+    {
+        const auto& state = states[i];
+
+        sum << state.sprite << state.frame << state.tics << state.nextstate
+            << state.misc1 << state.misc2;
+    }
+
+    checkTable("states[]", sum, 0x9a0e177f5784c873ULL);
+};
+
+auto tMobjInfoTableIsIntact = test("Info/mobjInfoTableIsIntact") = []
+{
+    auto sum = Checksum {};
+
+    for (auto i = 0; i < NUMMOBJTYPES; ++i)
+    {
+        const auto& info = mobjinfo[i];
+
+        sum << info.doomednum << info.spawnstate << info.spawnhealth << info.seestate
+            << info.seesound << info.reactiontime << info.attacksound
+            << info.painstate << info.painchance << info.painsound << info.meleestate
+            << info.missilestate << info.deathstate << info.xdeathstate
+            << info.deathsound << info.speed << info.radius << info.height
+            << info.mass << info.damage << info.activesound << info.flags
+            << info.raisestate;
+    }
+
+    checkTable("mobjinfo[]", sum, 0x55b7217727afe6b6ULL);
+};

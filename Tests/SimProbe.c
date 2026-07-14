@@ -10,9 +10,17 @@
 #include <DOOM/p_local.h>
 #include <DOOM/p_mobj.h>
 #include <DOOM/tables.h>
+#include <DOOM/v_video.h>
+#include <DOOM/w_wad.h>
+#include <DOOM/z_zone.h>
 
 #include <setjmp.h>
 #include <stdio.h>
+
+// The live palette. i_video.c defines it and no header declares it; DOOM.c and
+// the eacp port both reach it exactly this way, so this is the house style
+// rather than a workaround.
+extern unsigned char screen_palette[256 * 3];
 
 // I_Error reports through doom_exit, which by default takes the process with
 // it. A test wants the failure, not the corpse, so the engine is entered under
@@ -27,13 +35,27 @@ static void simOnExit(int code)
 }
 
 // The engine narrates its startup at length, which drowns the test output.
-static void simOnPrint(const char* text) { (void) text; }
+static void simOnPrint(const char* text)
+{
+    (void) text;
+}
+
+// The engine does not copy its argv - doom_init keeps the pointer, and
+// M_CheckParm walks it for the rest of the run. P_SpawnSpecials asks for "-avg"
+// on every level load, which is long after the function that booted the engine
+// has returned, so the array has to outlive it. Static, therefore, and not on
+// doomSimBoot's stack.
+//
+// It went unnoticed until this file passed a second argument: with argc at 1,
+// M_CheckParm's loop never dereferenced myargv at all, and the dangling pointer
+// was harmless.
+static char simProgram[] = "doom-tests";
+static char simConfigFlag[] = "-config";
+static char simConfigFile[] = PUREDOOM_TESTS_DIR "/doom-tests.cfg";
+static char* simArgv[] = {simProgram, simConfigFlag, simConfigFile};
 
 int doomSimBoot(const char* demoLump)
 {
-    char program[] = "doom-tests";
-    char* argv[] = {program};
-
     // The engine is several hundred globals and a zone allocator, and doom_init
     // does not undo any of it: a second boot in one process quietly simulates
     // nothing. Each test therefore needs a process of its own, which is what
@@ -57,7 +79,7 @@ int doomSimBoot(const char* demoLump)
     doom_set_exit(simOnExit);
     doom_set_print(simOnPrint);
 
-    doom_init(1, argv, 0);
+    doom_init((int) (sizeof(simArgv) / sizeof(simArgv[0])), simArgv, 0);
 
     // doom_init ends in D_StartTitle, which raises the attract loop's flag. Left
     // alone, D_DoAdvanceDemo runs on the very first tic, clears gameaction and
@@ -68,16 +90,20 @@ int doomSimBoot(const char* demoLump)
 
     // Deliberately NOT -playdemo. That sets `singledemo`, which ends the demo
     // through I_Quit - and I_Quit calls M_SaveDefaults, which would have every
-    // test run scribble on the developer's ~/.doomrc. Deferring the demo by
-    // hand lets the engine retire it the ordinary way, by clearing
-    // demoplayback, and touches nothing outside the process.
-    G_DeferedPlayDemo((char*) demoLump);
+    // test run scribble on the config. Deferring the demo by hand lets the
+    // engine retire it the ordinary way, by clearing demoplayback, and touches
+    // nothing outside the process.
+    if (demoLump)
+        G_DeferedPlayDemo((char*) demoLump);
 
     simBooted = 1;
     return 1;
 }
 
-int doomSimInLevel(void) { return demoplayback && gamestate == GS_LEVEL; }
+int doomSimInLevel(void)
+{
+    return demoplayback && gamestate == GS_LEVEL;
+}
 
 // The demo is deferred, so it is not playing on the tic that queues it. "Not
 // playing" therefore only means "finished" once it has actually started.
@@ -175,12 +201,71 @@ unsigned long long doomSimStateHash(void)
     return simHash;
 }
 
+unsigned long long doomSimFrameHash(void)
+{
+    simHash = 1469598103934665603ULL;
+
+    // screens[0] is the frame the engine has just finished drawing, one palette
+    // index per pixel. The palette goes in beside it because it is live: a
+    // damage flash or an invulnerability sphere changes what those same indices
+    // resolve to without changing a single one of them.
+    simMix(screens[0], SCREENWIDTH * SCREENHEIGHT);
+    simMix(screen_palette, 256 * 3);
+
+    return simHash;
+}
+
+int doomSimLumpCount(void)
+{
+    return numlumps;
+}
+
+void doomSimLumpName(int lump, char* nameOut)
+{
+    int i;
+
+    // A lump name is eight bytes and is only null-terminated if it is shorter.
+    for (i = 0; i < 8; ++i)
+        nameOut[i] = lumpinfo[lump].name[i];
+
+    nameOut[8] = '\0';
+}
+
+int doomSimLumpSize(int lump)
+{
+    return W_LumpLength(lump);
+}
+
+unsigned long long doomSimLumpHash(int lump)
+{
+    int size = W_LumpLength(lump);
+
+    simHash = 1469598103934665603ULL;
+
+    // The section markers (S_START, F_END, ...) are real lumps with no bytes in
+    // them, and asking the zone for a zero-byte block to read nothing into is
+    // not worth finding out about.
+    if (size > 0)
+        simMix(W_CacheLumpNum(lump, PU_CACHE), size);
+
+    return simHash;
+}
+
 // The simulation's random index, which is P_Random's.
-int doomSimRndIndex(void) { return prndindex; }
+int doomSimRndIndex(void)
+{
+    return prndindex;
+}
 
-int doomSimLevelTime(void) { return leveltime; }
+int doomSimLevelTime(void)
+{
+    return leveltime;
+}
 
-int doomSimPlayerHealth(void) { return players[0].health; }
+int doomSimPlayerHealth(void)
+{
+    return players[0].health;
+}
 
 int doomSimPlayerX(void)
 {

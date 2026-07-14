@@ -12,13 +12,27 @@
 
 namespace DoomTests
 {
-// The simulation's state after each tic of a demo.
-using TicHashes = std::vector<std::uint64_t>;
+using Hashes = std::vector<std::uint64_t>;
+
+// What a demo leaves behind: the simulation after every tic, and the picture the
+// software renderer drew of it. Both come out of one replay because the engine
+// boots once per process and a second pass is not on offer.
+struct DemoRun
+{
+    Hashes sim;
+    Hashes frames;
+};
+
+// The frame is 64,000 bytes and the demos are 11,410 tics; hashing every one of
+// them would cost more than the whole suite currently does, and buy very little.
+// A quarter of them still catches any renderer change that lasts longer than a
+// tenth of a second, and nothing in the renderer is briefer than that.
+constexpr auto ticsPerFrameHash = 4;
 
 // Plays a demo through to its end, hashing the world after every tic.
-inline TicHashes replayDemo(const std::string& demo)
+inline DemoRun replayDemo(const std::string& demo)
 {
-    auto hashes = TicHashes {};
+    auto run = DemoRun {};
 
     nano::check(doomSimBoot(demo.c_str()) != 0, "engine booted");
 
@@ -34,46 +48,59 @@ inline TicHashes replayDemo(const std::string& demo)
 
         // The engine spends its first few tics on the title screen, before the
         // deferred demo takes over.
-        if (doomSimInLevel())
-            hashes.push_back(doomSimStateHash());
+        if (!doomSimInLevel())
+            continue;
+
+        if (run.sim.size() % ticsPerFrameHash == 0)
+            run.frames.push_back(doomSimFrameHash());
+
+        run.sim.push_back(doomSimStateHash());
     }
 
-    return hashes;
+    return run;
 }
 
-inline std::string goldenPath(const std::string& demo)
+// The simulation and the picture are held against separate goldens, so a failure
+// says which of the two moved. A renderer refactor that desyncs the simulation is
+// a very different bug from one that merely draws it wrong, and the suite should
+// not make you guess which you have.
+inline std::string goldenPath(const std::string& demo, const std::string& kind)
 {
-    return std::string {PUREDOOM_TESTS_DIR} + "/Goldens/" + demo + ".hashes";
+    return std::string {PUREDOOM_TESTS_DIR} + "/Goldens/" + demo + "." + kind;
 }
 
 // Set DOOM_UPDATE_GOLDENS=1 to re-record. That is the deliberate act of saying
-// "this behaviour change was intended" - the goldens pin the simulation as it
+// "this behaviour change was intended" - the goldens pin the engine as it
 // stands, bugs included, which is exactly what a behaviour-preserving refactor
-// wants held still.
+// wants held still. The C++ refactor in REFACTOR.md never re-records: if a
+// golden moves under it, the refactor was wrong.
 inline bool updatingGoldens()
 {
     const auto* flag = std::getenv("DOOM_UPDATE_GOLDENS");
     return flag && flag[0] == '1';
 }
 
-inline void writeGolden(const std::string& demo, const TicHashes& hashes)
+inline void writeGolden(const std::string& demo,
+                        const std::string& kind,
+                        const std::string& what,
+                        const Hashes& hashes)
 {
-    auto file = std::ofstream {goldenPath(demo)};
+    auto file = std::ofstream {goldenPath(demo, kind)};
 
-    file << "# " << demo << ": the DOOM simulation hashed after every tic.\n"
+    file << "# " << demo << ": " << what << "\n"
          << "# Re-record with DOOM_UPDATE_GOLDENS=1, and only on purpose.\n";
 
     for (auto hash: hashes)
         file << std::hex << hash << '\n';
 
     std::printf(
-        "recorded %zu tics -> %s\n", hashes.size(), goldenPath(demo).c_str());
+        "recorded %zu -> %s\n", hashes.size(), goldenPath(demo, kind).c_str());
 }
 
-inline TicHashes readGolden(const std::string& demo)
+inline Hashes readGolden(const std::string& demo, const std::string& kind)
 {
-    auto file = std::ifstream {goldenPath(demo)};
-    auto hashes = TicHashes {};
+    auto file = std::ifstream {goldenPath(demo, kind)};
+    auto hashes = Hashes {};
     auto line = std::string {};
 
     while (std::getline(file, line))
@@ -112,16 +139,64 @@ inline void reportDivergence(const std::string& demo, int tic, int goldenTics)
                 "  If that was deliberate, re-record: DOOM_UPDATE_GOLDENS=1\n\n");
 }
 
-// Replays a demo and holds it against its golden, failing at the FIRST tic that
-// differs rather than merely reporting that the run as a whole did.
+// Holds a run against its golden, failing at the FIRST entry that differs rather
+// than merely reporting that the run as a whole did.
+inline void checkAgainstGolden(const std::string& demo,
+                               const std::string& kind,
+                               const Hashes& actual,
+                               const char* subject)
+{
+    auto golden = readGolden(demo, kind);
+
+    if (golden.empty())
+    {
+        std::printf(
+            "\nNo %s golden for %s. Record one with DOOM_UPDATE_GOLDENS=1\n\n",
+            kind.c_str(),
+            demo.c_str());
+        nano::check(false, "golden exists");
+        return;
+    }
+
+    const auto shared = std::min(actual.size(), golden.size());
+
+    for (auto i = std::size_t {0}; i < shared; ++i)
+    {
+        if (actual[i] == golden[i])
+            continue;
+
+        if (kind == "hashes")
+            reportDivergence(demo, (int) i, (int) golden.size());
+        else
+            std::printf(
+                "\n%s: the rendered frame changed at tic %d\n"
+                "  The simulation is a separate golden - if it is still\n"
+                "  green, the world is right and the picture of it is not.\n\n",
+                demo.c_str(),
+                (int) i * ticsPerFrameHash);
+
+        nano::check(false, subject);
+        return;
+    }
+
+    if (actual.size() != golden.size())
+        std::printf("\n%s.%s: %zu entries, golden has %zu\n\n",
+                    demo.c_str(),
+                    kind.c_str(),
+                    actual.size(),
+                    golden.size());
+
+    nano::check(actual.size() == golden.size(), "the run is the same length");
+}
+
 inline void checkDemoMatchesGolden(const std::string& demo)
 {
-    auto actual = replayDemo(demo);
+    auto run = replayDemo(demo);
 
     // Never record or compare an empty run. A golden of nothing would agree
     // with any future nothing, and the suite would stay green while testing
     // that the engine still fails to start.
-    if (actual.empty())
+    if (run.sim.empty())
     {
         std::printf("\n%s simulated no tics at all - the engine did not come "
                     "up.\n\n",
@@ -132,40 +207,16 @@ inline void checkDemoMatchesGolden(const std::string& demo)
 
     if (updatingGoldens())
     {
-        writeGolden(demo, actual);
+        writeGolden(
+            demo, "hashes", "the DOOM simulation hashed after every tic.", run.sim);
+        writeGolden(demo,
+                    "frames",
+                    "the software frame and palette, hashed every 4th tic.",
+                    run.frames);
         return;
     }
 
-    auto golden = readGolden(demo);
-
-    if (golden.empty())
-    {
-        std::printf("\nNo golden for %s. Record one with DOOM_UPDATE_GOLDENS=1\n\n",
-                    demo.c_str());
-        nano::check(false, "golden exists");
-        return;
-    }
-
-    const auto shared = std::min(actual.size(), golden.size());
-
-    for (auto tic = std::size_t {0}; tic < shared; ++tic)
-    {
-        if (actual[tic] == golden[tic])
-            continue;
-
-        reportDivergence(demo, (int) tic, (int) golden.size());
-        nano::check(false, "simulation matches the golden");
-        return;
-    }
-
-    // Same world every tic, but the demo ran for a different length: the sim
-    // agreed and the demo's own bookkeeping did not.
-    if (actual.size() != golden.size())
-        std::printf("\n%s ran %zu tics, golden has %zu\n\n",
-                    demo.c_str(),
-                    actual.size(),
-                    golden.size());
-
-    nano::check(actual.size() == golden.size(), "the demo ran to the same length");
+    checkAgainstGolden(demo, "hashes", run.sim, "simulation matches the golden");
+    checkAgainstGolden(demo, "frames", run.frames, "renderer matches the golden");
 }
 } // namespace DoomTests

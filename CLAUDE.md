@@ -26,6 +26,34 @@ The project now has three goals:
    DOOM's simulation is exactly reproducible, and the tests exist to keep it
    that way through a rewrite.
 
+## The C++ refactor is underway — read `REFACTOR.md` first
+
+The engine is being rewritten from 1993 C into modern C++ in eacp's style,
+step by step. **`REFACTOR.md` is the plan and the running state of it**: which
+step we are on, what each one changes, and the rules the whole thing rests on.
+Read it before touching `src/DOOM`, and update its progress table as steps land.
+
+The end state: no C left, no `PureDOOM.h`, no zone allocator, and no ~684
+globals — an `Engine` object that can be constructed twice in one process, which
+is what makes scenario tests writable at all.
+
+The four rules that matter most, because breaking one silently defeats the whole
+apparatus:
+
+1. **A refactor never re-records a golden.** `record-goldens` is for behaviour
+   changes that were *intended*, and this refactor has none. `git diff --stat
+   Tests/Goldens/` comes back empty after every step. A red suite is telling you
+   the refactor was wrong, not that the goldens are stale.
+2. **The simulation probe's hash is append-only.** `Tests/SimProbe` may change
+   *how* it finds state; it may never change *what* it mixes, or in what order.
+3. A file leaves the engine's blanket `-w` and comes under `clang-format` the
+   moment it is genuinely rewritten, and not before. Vanilla filenames stay until
+   then, so a half-refactored file is still diffable against the 1993 source.
+4. Some things that look like bugs are load-bearing and must survive: `FixedDiv2`
+   goes through `double`; the trig tables are sampled at bucket centres;
+   `SlopeDiv` gives up under 512; `R_PointToAngle2` lands one unit below north.
+   `Tests/Sim/PrimitiveTests.cpp` pins three of the four on purpose.
+
 ## Layout
 
 - `src/DOOM/` — **the engine, and the code we own.** Built as the `doom-engine`
@@ -34,15 +62,17 @@ The project now has three goals:
   1993 C, and still exempt from clang-format until the refactor reaches each
   file.
 - `PureDOOM.h` — the engine flattened into one header, *generated* from
-  `src/DOOM` by `tools/gen_single_header.py`. Now only a packaging artifact:
-  nothing in this repository builds against it. Never hand-edit it; edit
-  `src/DOOM` and regenerate.
+  `src/DOOM` by `tools/gen_single_header.py`. **Slated for deletion in Step 1 of
+  `REFACTOR.md`**, along with the generator and the two C-only examples that are
+  its last consumers. Nothing in this repository builds against it. Until it
+  goes: never hand-edit it; edit `src/DOOM` and regenerate.
 
   It concatenates every `.c` into one translation unit, so it constrains the
   engine in one way worth knowing: **a file-scope name promoted to a global can
   collide with a `static` of the same name in another file.** Exporting
   `am_map.c`'s `plr` hit exactly this (`hu_stuff.c` has its own), which is why
-  it is now `am_plr`. Prefix anything you export.
+  it is now `am_plr`. Prefix anything you export — a rule that dies with the
+  generator.
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
   eacp platform layer and GPU renderer, and `EngineAccess.h/.c` is the plain-C
@@ -307,12 +337,54 @@ Re-recording to make a red suite go green is the one thing that defeats the whol
 apparatus — the goldens pin the simulation *as it stands, bugs included*, which
 is exactly what a behaviour-preserving refactor wants held still.
 
-### What the demos do not cover
+### The same replay also watches the renderer
 
-They watch the simulation, and nothing else. The renderer, the automap, the HUD,
-the melt and the platform layer are all invisible to them — a wipe cannot desync
-a demo, so renaming the melt's internals cannot fail one. Those still need the
-app run and looked at.
+`D_DoomLoop` calls `D_Display` every tic, so the software renderer has been
+running throughout the suite the whole time — it was simply that nobody looked at
+what it produced. Now the replay hashes that too: `screens[0]`, the finished
+320x200 palette-indexed frame, together with the live palette (the damage, pickup
+and invulnerability flashes are palette swaps, and change nothing else). Every 4th
+tic, against `Tests/Goldens/*.frames`.
+
+They are **separate goldens on purpose**, and the failure says which moved. A
+renderer refactor that desyncs the simulation is a very different bug from one
+that merely draws it wrong, and the suite should not make you guess which you
+have.
+
+This is what pins `r_*`, the status bar and the HUD through the rewrite, and it is
+sharp: adding 1 to the light-level start map in `R_SetViewSize` — one COLORMAP row,
+a shade — fails demo1 at tic 4 while the simulation golden sails through.
+
+Two things had to be true for it to work at all, and both were already true:
+
+- **The melt does not read the clock.** Vanilla's `D_Display` busy-waits on
+  `I_GetTime` to advance the wipe (it is still there, `#if 0`'d). PureDOOM moved
+  it into `D_UpdateWipe`, which advances by exactly one tic per call.
+- **The config is pinned.** `M_LoadDefaults` reads the developer's real
+  `~/.doomrc` unless given `-config`, and `screenblocks` alone (10 in a real
+  config, 9 by default) changes the shape of every frame. `SimProbe` boots against
+  `Tests/doom-tests.cfg` instead, so the frames mean the same thing on every
+  machine. The simulation never cared — a demo's input comes from the `.lmp` — so
+  this changed no existing golden, and that was checked.
+
+### What the tests do not cover
+
+The menu (nothing in a demo opens one), audio, and the eacp platform layer and
+GPU renderer. `m_menu.c` gets its own frame golden — synthetic key events, same
+technique — before it is rewritten; see Step 8 of `REFACTOR.md`. The rest still
+needs the app run and looked at.
+
+### The WAD directory has its own golden
+
+`Tests/Sim/WadTests.cpp` walks all 1,264 lumps of `doom1.wad` and hashes each
+one's bytes as `W_CacheLumpNum` hands them over, against
+`Tests/Goldens/doom1.lumps`. A demo would notice a corrupt lump only as a desync
+at some tic with no explanation; this names the lump.
+
+It exists for Step 4 of `REFACTOR.md`, which takes the zone allocator out from
+under the lump cache — the one refactor with no other net, since `PU_CACHE`, the
+purge rover and the `**user` back-pointers *are* what `W_CacheLumpNum` is built
+on.
 
 ### The primitive tests give locality
 
@@ -337,12 +409,25 @@ deterministic — the same IEEE-754 operation every time, which is why demos rep
 — but anyone rewriting `FixedDiv` in pure integer arithmetic will change the
 rounding and desync the game.
 
+Those are all spot-checks, which is the right shape for a property and the wrong
+shape for a transcription. So the tables are *also* checksummed whole — `finesine`,
+`finetangent`, `tantoangle`, `rndtable`, `states[]` and `mobjinfo[]`, every entry.
+Step 3 of `REFACTOR.md` turns `tables.c` (2,130 lines) and `info.c` (4,663) into
+`constexpr` arrays, and a spot-check would happily pass over one mistyped digit in
+the middle of 16,000 numbers. A failure prints the new checksum, so you can see
+what you did and decide whether you meant it.
+
+(`states[]` is hashed without its `action` pointer, which is a function address
+and differs between builds of the same engine.)
+
 ### Layers still to build
 
 - **Scenario tests**: load a level, place mobjs, run tics, assert. `P_TryMove`
   into a wall, `P_DamageMobj`, `P_CheckSight`, door and lift specials. Write
   these per-subsystem *as* you refactor it — they are how you get locality on
-  code the demos only cover in aggregate.
+  code the demos only cover in aggregate. **Blocked on Step 4 of `REFACTOR.md`**:
+  the engine cannot be booted twice in one process, so there is nowhere to put
+  them. Killing the zone allocator is what unblocks it.
 - **Port-layer tests**: `View`'s tic/interpolation state machine is still not
   testable, because it lives inside a `GPU::GPUView` whose members construct GPU
   textures from `GPU::Device::shared()`. Extracting it into a plain GPU-free
