@@ -61,18 +61,15 @@ apparatus:
   simulation reaches both and neither can run code the other is not. Still
   1993 C, and still exempt from clang-format until the refactor reaches each
   file.
-- `PureDOOM.h` — the engine flattened into one header, *generated* from
-  `src/DOOM` by `tools/gen_single_header.py`. **Slated for deletion in Step 1 of
-  `REFACTOR.md`**, along with the generator and the two C-only examples that are
-  its last consumers. Nothing in this repository builds against it. Until it
-  goes: never hand-edit it; edit `src/DOOM` and regenerate.
 
-  It concatenates every `.c` into one translation unit, so it constrains the
-  engine in one way worth knowing: **a file-scope name promoted to a global can
-  collide with a `static` of the same name in another file.** Exporting
-  `am_map.c`'s `plr` hit exactly this (`hu_stuff.c` has its own), which is why
-  it is now `am_plr`. Prefix anything you export — a rule that dies with the
-  generator.
+  It is now the *only* way the engine is built. The generated single header
+  (`PureDOOM.h`), its generator, and the two C-only examples that were its last
+  consumers were deleted in Step 1 of `REFACTOR.md`. Three constraints went with
+  them, and it is worth knowing they are gone: **two files may now share a
+  file-scope name** (the header concatenated every `.c` into one translation
+  unit, which is why `am_map.c`'s `plr` had to become `am_plr`); a `.c` may now
+  include a system header; and the header include graph no longer has to be
+  acyclic.
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
   eacp platform layer and GPU renderer, and `EngineAccess.h/.c` is the plain-C
@@ -244,10 +241,13 @@ Two paths, toggled at runtime with **Shift+F8**:
   intermission, finale) falls back to the software frame automatically, which is
   right - those screens *are* 320x200 - and the status bar is always composited
   from it.
-- `examples/SDL/` — upstream's SDL3 reference port. Read-only; the best
-  reference for how the engine expects to be driven (input mapping, audio
-  stream format, MIDI tick).
 - `doom1.wad` — the shareware data file the game boots with.
+
+Upstream's SDL reference port used to live in `examples/SDL` and was the best
+worked example of how the engine expects to be driven. It was deleted with the
+single header in Step 1 — it was a C consumer of it — and what it knew that this
+repository did not is written down under **What the engine expects of its host**
+below. `git log -- examples/SDL` still has it if you want to read it.
 
 ## Build
 
@@ -259,16 +259,13 @@ cmake --build build --target PureDoomEACP
 ```
 
 Targets: `doom-engine` (the engine, from `src/DOOM`), `PureDoomEACP` (the game),
-`SimTests` and `PrimitiveTests` (see **Testing**), and `record-goldens`. The
-tests need no GPU and no eacp — they link `doom-engine` alone — so
-`-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast engine-only loop while
-refactoring.
+`SimTests` and `PrimitiveTests` (see **Testing**), and `record-goldens`. That is
+all of them — there are only two build options left, `PUREDOOM_BUILD_TESTS` and
+`PUREDOOM_BUILD_EACP_EXAMPLE`.
 
-`PUREDOOM_BUILD_LEGACY_TESTS=ON` builds upstream's original whole-frame `memcmp`
-against a golden framebuffer (`examples/Tests`), which is the only thing that
-still compiles the generated `PureDOOM.h`. It is superseded by `Tests/` but is
-kept as the check that the single-header generator still produces a working
-engine.
+The tests need no GPU and no eacp — they link `doom-engine` alone — so
+`-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast engine-only loop while
+refactoring. That is also what CI builds, for the same reason.
 
 eacp is fetched from GitHub via CPM. To co-develop against a local eacp
 checkout, pass `-DCPM_eacp_SOURCE=$HOME/Code/eacp` at configure time. Use
@@ -442,12 +439,12 @@ and differs between builds of the same engine.)
   below. eacp changes happen in the eacp repo itself and get picked up via
   `CPM_eacp_SOURCE`.
 - **The engine is ours to change.** `src/DOOM` is edited directly, and the
-  refactor's whole point is to change it. `PureDOOM.h` is generated from it —
-  regenerate with `cd tools && python3 gen_single_header.py`, never hand-edit —
-  and a change there is not a reason to hold back a change here.
+  refactor's whole point is to change it. There is nothing to regenerate and
+  nothing downstream to keep in step: the library is the only artifact.
 
-  What *does* hold you back is the simulation's behaviour, which the demo tests
-  pin exactly. Read **Testing** before changing anything under `src/DOOM`.
+  What *does* hold you back is the engine's behaviour, which the demo tests pin
+  exactly — the simulation *and*, since Step 0, the frames drawn of it. Read
+  **Testing** before changing anything under `src/DOOM`.
 
   The engine's headers are also the interface, and several things a renderer
   needs were `static` in a `.c` and only reachable because the single-header
@@ -471,13 +468,23 @@ and differs between builds of the same engine.)
   coasting for five tics after a movement key was released.
 - The engine is single-threaded: `doom_init`, `doom_update`,
   `doom_get_framebuffer` and all input calls happen on the main thread. Audio,
-  once wired, is the only exception and takes the engine lock the SDL example
-  demonstrates.
+  once wired, is the only exception — it is pulled from the audio callback, on
+  another thread, and must take a lock against `doom_update`.
 
 ### What the engine expects of its host
 
 Two of these are not obvious, and getting either wrong makes the game feel
 broken rather than fail outright.
+
+- **Audio, when it is wired** (nothing here plays a sound yet — gap-log item 1).
+  This is what the deleted SDL example demonstrated and nothing else in the
+  repository records. Sound is a **pull** model: run an output stream at
+  `DOOM_SAMPLERATE` (11025 Hz), 16-bit stereo, 512 samples — 2,048 bytes a
+  buffer — and call `doom_get_sound_buffer(len)` from the audio callback, taking
+  the engine lock around it, because `doom_update` is on another thread. Music is
+  a **push** model: a 140 Hz timer (`DOOM_MIDI_RATE`) draining `doom_tick_midi()`
+  into a synth for as long as it keeps returning messages. Resample if your device
+  wants another rate; the engine only ever produces that one.
 
 - **The keys the app asks for do not stick by themselves.** DOOM cannot rebind a
   key from inside the game, yet it still writes every binding out to `~/.doomrc`

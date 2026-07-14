@@ -2,8 +2,9 @@
 #
 # This fork owns these sources and modifies them. The app and the test suite
 # both link this one library, so a change to the simulation reaches both and
-# cannot go stale in one of them. PureDOOM.h is a generated packaging artifact
-# and is no longer what anything here builds against.
+# cannot go stale in one of them. It is the only way to build the engine: the
+# generated single header is gone, and with it the rule that no two files may
+# share a file-scope name.
 
 file(GLOB DOOM_ENGINE_SOURCES CONFIGURE_DEPENDS *.c *.h)
 

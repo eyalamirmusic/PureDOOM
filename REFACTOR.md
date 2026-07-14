@@ -31,8 +31,8 @@ has none.
 | Step | What | State |
 |---|---|---|
 | 0 | Widen the net to the renderer, the WAD and the tables | **done** |
-| 1 | Retire the single-header packaging | next |
-| 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | |
+| 1 | Retire the single-header packaging | **done** |
+| 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | next |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | |
 | 4 | Ownership: kill the zone allocator | |
 | 5 | The `Engine` object: globals become members | |
@@ -92,10 +92,31 @@ never dereferenced it. Adding `-config` made it a segfault. It is static now.
 
 ## Step 1 — Retire the single-header packaging
 
-Pure deletion: `PureDOOM.h`, `tools/gen_single_header.py`, `examples/SDL`,
-`examples/Tests`, and the `PUREDOOM_BUILD_SDL_EXAMPLE` /
-`PUREDOOM_BUILD_LEGACY_TESTS` options. `.github/workflows/tests.yml` still runs
-the generator and is stale — fix it.
+Deleted: `PureDOOM.h`, `tools/gen_single_header.py`, `examples/SDL`,
+`examples/Tests`, `test_framebuffer.raw`, the `thirdparty/SDL` submodule (which
+existed only for the SDL example), and the `PUREDOOM_BUILD_SDL_EXAMPLE` /
+`PUREDOOM_BUILD_LEGACY_TESTS` options. Two options remain.
+
+Three constraints died with the generator, and Step 2 onward may now rely on
+their absence: **two files may share a file-scope name** (`am_map.c`'s `plr` had
+to become `am_plr` because `hu_stuff.c` had one too); a `.c` may include a system
+header (the generator commented every `#include` out, exempting only `DOOM.c`);
+and the header include graph need no longer be acyclic. `dstrings.h`'s deliberate
+double space — *"leave the extra space there, to throw off regex in PureDOOM.h
+creation"* — is gone with it.
+
+The CI workflow was stale in three ways and is rewritten: it ran the generator,
+carried a `single_header` matrix axis that had been a no-op since the option's
+last reader was disabled by default, and built the eacp app — which needs a GPU
+and tracks a local eacp branch. It now builds the engine and the tests, which is
+exactly what CI can actually check, and checks the thing that matters: that the
+goldens hold on Linux and Windows too, not only on the machine that recorded them.
+
+**Landed.** 35 tests green from a clean configure, goldens untouched, and the app
+still builds. What the SDL example knew that nothing else recorded — the audio
+pull model and the 140 Hz MIDI tick — is now written down under *What the engine
+expects of its host* in `CLAUDE.md`, and `git log -- examples/SDL` still has the
+code.
 
 ## Step 2 — The language flip: 62 `.c` → 62 `.cpp`, in one commit
 

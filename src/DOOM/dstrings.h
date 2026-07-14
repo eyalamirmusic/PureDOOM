@@ -31,7 +31,7 @@
 // Use -DFRENCH etc.
 
 #ifdef FRENCH
-#include  "d_french.h" // Leave the extra space there, to throw off regex in PureDOOM.h creation
+#include "d_french.h"
 #else
 #include "d_englsh.h"
 #endif

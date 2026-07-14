@@ -1,158 +1,100 @@
 ![](images/PureDOOM.png)
 
-# Pure DOOM
-Header only, no dependencies DOOM source port. Designed to run on any devices.
+# DOOM on eacp
 
-Primarily of interest to people that want to "run DOOM on their microwave".
+DOOM, ported to [eacp](https://github.com/eyalamirmusic/eacp)'s application, GPU
+and input stack — and, increasingly, rewritten.
 
-## LICENSE
-See end of file for license information.
+This began as a fork of [Daivuk/PureDOOM](https://github.com/Daivuk/PureDOOM),
+the single-header DOOM source port. It no longer tracks upstream, and it is no
+longer a single header: the engine is a library (`src/DOOM`, built as
+`doom-engine`), this repository owns it, and it is being refactored into modern
+C++ — physics and game logic included. See [REFACTOR.md](REFACTOR.md) for the
+plan and where it has got to.
 
-## Main Features:
-- Single header
-- Pure-C, No includes dependencies: no stdlib, stdio, etc.
-- Supports 32 bits and 64 bits
+## What is here
 
-## Other Features:
-- Menu option to disable mouse move Forward/Backward
-- Crosshair option
-- Always-Run option
+- **A GPU renderer.** The level is drawn as real hardware 3D at the window's
+  resolution rather than at 320x200 — walls, flats, sprites, sky, weapon, and an
+  automap drawn as geometry. The shading is DOOM's own, not an imitation: the
+  texture yields a palette index, the COLORMAP row chosen by sector light and
+  distance remaps it, and the palette resolves the colour. Light banding,
+  diminishing, fullbright frames and palette flashes all come out exact. The
+  software renderer is still there behind **Shift+F8** and still draws the
+  status bar.
+- **The simulation, held still.** DOOM is exactly reproducible — fixed-point
+  arithmetic and a 256-byte random table walked by an index — so a recorded demo
+  *is* an assertion. The suite replays the shareware WAD's three attract-mode
+  demos, 11,410 tics of real play, and hashes the world after every tic and the
+  rendered frame every fourth. That is what makes rewriting the engine tractable
+  at all.
+- **No audio yet.** The engine produces it; nothing plays it.
 
-## TODOs
-- Custom resolution
-- Remove exit and have update return 0 on quit. Add doom_get_exit_code()
-- Implement Sockets and Multiplayer
+## Build
 
-## Cool TODOs to have
-- Rebindable keys
-- Unlocked FPS
-- Release mouse in menus and use it for clicking
-- Wipe screen freezes menu
-- Use floats instead of fixed_t
-- French and german
-- Full color mode (Don't use COLORMAPS, use full 24 bits RGB)
+```bash
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --target PureDoomEACP
 
-## Usage
-Call `doom_init()`, then call `doom_update()` every frame, or as often as you can. This will run DOOM, without any video, inputs, sounds or music.
-
-```c
-#define DOOM_IMPLEMENTATION 
-#include "PureDOOM.h"
-
-int main(int argc, char** argv)
-{
-    doom_init(argc, argv, 0);
-    while (true)
-    {
-        doom_update();
-    }
-}
+./build/examples/EACP/PureDoomEACP.app/Contents/MacOS/PureDoomEACP
 ```
 
-## Enable features
-Most standard headers are available on most platforms. Define these preprocessors to toggle these features.
+The GPU paths currently need eacp features that only exist on a local eacp
+branch; until they merge, configure with `-DCPM_eacp_SOURCE=$HOME/Code/eacp`.
 
-- `DOOM_IMPLEMENT_PRINT`. Allows printf, requires `<stdio.h>`
-- `DOOM_IMPLEMENT_MALLOC`. Allows malloc/free, requires `<stdlib.h>`
-- `DOOM_IMPLEMENT_FILE_IO`. Allows FILE, requires `<stdio.h>`
-- `DOOM_IMPLEMENT_GETTIME`. Requires `<sys/time.h>` or `<winsock.h>`
-- `DOOM_IMPLEMENT_EXIT`. Allows exit(), requires `<stdlib.h>`
-- `DOOM_IMPLEMENT_GETENV`. Requires `<stdlib.h>`
+The engine needs no GPU and no eacp, so `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF`
+builds it and the tests alone.
 
-If your microwave doesn't have these headers, you can override their default implementations:
+## Test
 
-```c
-void doom_set_print(doom_print_fn print_fn);
-void doom_set_malloc(doom_malloc_fn malloc_fn, doom_free_fn free_fn);
-void doom_set_file_io(doom_open_fn open_fn,
-                      doom_close_fn close_fn,
-                      doom_read_fn read_fn,
-                      doom_write_fn write_fn,
-                      doom_seek_fn seek_fn,
-                      doom_tell_fn tell_fn,
-                      doom_eof_fn eof_fn);
-void doom_set_gettime(doom_gettime_fn gettime_fn);
-void doom_set_exit(doom_exit_fn exit_fn);
-void doom_set_getenv(doom_getenv_fn getenv_fn);
+```bash
+ctest --test-dir build --output-on-failure
 ```
 
-## Video
-Every frame, after having called `doom_update()`, you can get the screen pixels with `doom_get_framebuffer` and display it as you please.
+About two seconds. Run them through ctest rather than bare: the engine is several
+hundred globals and a zone allocator that `doom_init` does not undo, so each test
+needs a process of its own — which is exactly the thing the refactor is going to
+fix.
+
+## Using the engine
+
+Link `doom-engine` and `#include <DOOM/DOOM.h>`. Call `doom_init` once,
+`doom_update` every frame, hand it input as it arrives, and take the framebuffer
+from `doom_get_framebuffer`:
 
 ```c
-while (true)
+doom_init(argc, argv, 0);
+
+while (running)
 {
     doom_update();
-    uint8_t* framebuffer = doom_get_framebuffer(4 /* RGBA */);
-    // ... Display framebuffer
+    const unsigned char* rgba = doom_get_framebuffer(4);
+    // ... display it
 }
 ```
 
-## Inputs
-When you receive input events from your microwave touch pad, simply call one of the DOOM input events:
+The engine reaches the outside world through function pointers — printing,
+allocation, file I/O, time, exit, getenv — each with a default implementation
+gated behind a `DOOM_IMPLEMENT_*` define, and each replaceable with
+`doom_set_print`, `doom_set_malloc`, `doom_set_file_io` and friends. That is how
+the test suite boots it headless and stops `I_Error` from taking the process
+down.
 
-```c
-void doom_key_down(doom_key_t key);
-void doom_key_up(doom_key_t key);
-void doom_button_down(doom_button_t button);
-void doom_button_up(doom_button_t button);
-void doom_mouse_move(int delta_x, int delta_y);
-```
+`doom_set_default_int` sets a key binding *before* the config file is read, which
+means a `~/.doomrc` left by an older build silently wins. `examples/EACP` applies
+its bindings again after `doom_init` for exactly that reason.
 
-## Sounds
-Create a sound thread that outputs at 11025hz (`DOOM_SAMPLERATE`), 512 samples, 16 bits, stereo. Then in your sound callback, call `doom_get_sound_buffer` to update and get the current DOOM's sound output. Make sure to add synchronization primitives around this and `doom_update` if your sound loop is in a thread.
+There is no `-iwad` argument: WADs are found through `DOOMWADDIR`, falling back
+to the working directory. Other classic arguments (`-warp`, `-skill`, `-episode`,
+`-config`) pass straight through.
 
-Here is a quick example using SDL audio callback:
-```c
-void sdl_audio_callback(void* userdata, Uint8* stream, int len)
-{
-    SDL_LockAudio();
-    int16_t* buffer = doom_get_sound_buffer(len);
-    SDL_UnlockAudio();
+## Where things are
 
-    memcpy(stream, buffer, len);
-}
-```
-
-You can use different bitrate, but make sure to resample because DOOM will always be 11025hz, 512 samples, 16 bits, 2 channels. For a total for 2048 bytes per buffer.
-
-## Music
-Set a timer in your application that runs at 140hz. In the timer's callback, tick DOOM's music as long as there are MIDI messages to send.
-
-Here is an example using Window's MultiMedia to play MIDI events, using an SDL timer.
-```c
-Uint32 tick_music(Uint32 interval, void *param)
-{
-    uint32_t midi_msg;
-
-    SDL_LockAudio();
-
-    while (midi_msg = doom_tick_midi())
-        midiOutShortMsg(midi_out_handle, midi_msg);
-
-    SDL_UnlockAudio();
-
-    return 1000 / DOOM_MIDI_RATE /* 140 */;
-}
-```
-
-## Change default settings
-Default input setup in DOOM's source is not modern. It uses Arrows to move and `','` / `'.'` to strafe. You can call `doom_set_default_int` and `doom_set_default_str` to change them:
-
-```c
-// Change default bindings to modern mapping
-doom_set_default_int("key_up",          DOOM_KEY_W);
-doom_set_default_int("key_down",        DOOM_KEY_S);
-doom_set_default_int("key_strafeleft",  DOOM_KEY_A);
-doom_set_default_int("key_straferight", DOOM_KEY_D);
-doom_set_default_int("key_use",         DOOM_KEY_E);
-doom_set_default_int("mouse_move",      0); // Mouse will not move forward
-```
-
-Refer to the defaults in `m_misc.cpp` for the complete list.
-
-## Working SDL Example
-See the file `src/sdl_example.c` for a complete SDL example.
+- `src/DOOM/` — the engine. The code we own and are rewriting.
+- `Tests/` — the demo, frame, WAD and primitive tests, and their goldens.
+- `examples/EACP/` — the port: the eacp platform layer and the GPU renderer.
+- `CLAUDE.md` — how all of it actually works, at length.
+- `REFACTOR.md` — the C++ refactor: the plan, the rules, and the progress.
 
 # DOOM LICENSE
 ```

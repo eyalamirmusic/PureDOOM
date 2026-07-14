@@ -12,18 +12,13 @@
 // for more details.
 //
 //-----------------------------------------------------------------------------
-/* Pure DOOM usage
+/* The engine's public interface to whatever is hosting it.
 
-   Do this:
-      #define DOOM_IMPLEMENTATION
-   before you include this file in *one* C or C++ file to create the implementation.
+   Link the `doom-engine` library and #include <DOOM/DOOM.h>. Call doom_init
+   once, doom_update every frame, and hand it input as it arrives.
 
-   // i.e. it should look like this:
-   #include ...
-   #include ...
-   #include ...
-   #define DOOM_IMPLEMENTATION
-   #include "PureDOOM.h"
+   This was once a single header you defined DOOM_IMPLEMENTATION in front of.
+   It is a library now, and the header that was generated from it is gone.
 
 */
 //-----------------------------------------------------------------------------
