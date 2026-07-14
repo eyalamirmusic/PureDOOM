@@ -461,10 +461,9 @@ void AM_loadPics(void)
 
 void AM_unloadPics(void)
 {
-    int i;
-
-    for (i = 0; i < 10; i++)
-        Z_ChangeTag(marknums[i], PU_CACHE);
+    // Nothing to unload any more: Doom::WadFile owns the lumps and they are
+    // permanent (Wad/WadFile.h). This used to hand each patch back to the zone
+    // as PU_CACHE, meaning "purge me if you need the space".
 }
 
 

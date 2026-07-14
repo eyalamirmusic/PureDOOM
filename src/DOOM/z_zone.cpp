@@ -112,6 +112,7 @@ void Z_Init(void)
     block->user = 0;
 
     block->size = mainzone->size - sizeof(memzone_t);
+
 }
 
 

@@ -564,7 +564,6 @@ void S_StopMusic(void)
 
         I_StopSong(mus_playing_s_sound->handle);
         I_UnRegisterSong(mus_playing_s_sound->handle);
-        Z_ChangeTag(mus_playing_s_sound->data, PU_CACHE);
 
         mus_playing_s_sound->data = 0;
         mus_playing_s_sound = 0;

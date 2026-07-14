@@ -55,7 +55,9 @@ typedef struct
 } lumpinfo_t;
 
 
-extern void** lumpcache;
+// lumpcache is gone with the zone's lump ownership: Doom::WadFile (Wad/WadFile.h)
+// owns the bytes now, and a lump pointer stays valid for as long as the WAD does.
+// These two are a view onto its directory, not a second copy of it.
 extern lumpinfo_t* lumpinfo;
 extern int numlumps;
 

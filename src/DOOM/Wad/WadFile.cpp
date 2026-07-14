@@ -1,0 +1,302 @@
+#include "WadFile.h"
+
+#include "../doom_config.h"
+#include "../i_system.h"
+#include "../m_swap.h"
+#include "../w_wad.h"
+
+#include <cstring>
+
+namespace Doom
+{
+namespace
+{
+// The on-disk directory entry. The file stores sizes and offsets little-endian,
+// which LONG() swaps on a big-endian host and leaves alone everywhere else.
+struct FileLump
+{
+    int filepos;
+    int size;
+    char name[8];
+};
+
+struct WadHeader
+{
+    char identification[4]; // "IWAD" or "PWAD"
+    int numlumps;
+    int infotableofs;
+};
+
+void upperCase(char* text)
+{
+    for (; *text; ++text)
+        *text = (char) doom_toupper(*text);
+}
+
+// A file that is not a .wad becomes a single lump named after itself: the base
+// name, up to eight characters, upper-cased.
+void extractFileBase(const char* path, char* destination)
+{
+    const auto* source = path + doom_strlen(path) - 1;
+
+    while (source != path && *(source - 1) != '\\' && *(source - 1) != '/')
+        --source;
+
+    doom_memset(destination, 0, 8);
+
+    auto length = 0;
+
+    while (*source && *source != '.')
+    {
+        if (++length == 9)
+            I_Error("Error: Filename base of  >8 chars");
+
+        *destination++ = (char) doom_toupper(*source++);
+    }
+}
+
+// The lump name as eight upper-case bytes, zero-padded - which is how the
+// directory stores it, and how the engine compares it. A name that fills all
+// eight is NOT terminated.
+struct LumpName
+{
+    char text[9] = {};
+
+    explicit LumpName(const char* name)
+    {
+        doom_strncpy(text, name, 8);
+        text[8] = 0;
+        upperCase(text);
+    }
+
+    bool matches(const char* directoryName) const
+    {
+        return std::memcmp(text, directoryName, 8) == 0;
+    }
+};
+
+void fail(const char* what, const char* detail)
+{
+    doom_strcpy(error_buf, what);
+    doom_concat(error_buf, detail);
+    I_Error(error_buf);
+}
+
+bool endsInWad(const char* path)
+{
+    return doom_strcasecmp(path + doom_strlen(path) - 3, "wad") == 0;
+}
+} // namespace
+
+WadFile& wad()
+{
+    static auto instance = WadFile {};
+    return instance;
+}
+
+WadFile::~WadFile()
+{
+    // Vanilla never closed them - it had no shutdown at all, which is the whole
+    // reason the engine could not be booted twice.
+    for (auto* handle: handles)
+        doom_close(handle);
+}
+
+void WadFile::addFile(const char* path)
+{
+    auto reloadable = path[0] == '~';
+
+    if (reloadable)
+    {
+        ++path;
+        reloadName = path;
+        reloadLump = count();
+    }
+
+    auto* handle = doom_open(path, "rb");
+
+    if (handle == nullptr)
+    {
+        doom_print(" couldn't open ");
+        doom_print(path);
+        doom_print("\n");
+        return;
+    }
+
+    doom_print(" adding ");
+    doom_print(path);
+    doom_print("\n");
+
+    if (endsInWad(path))
+        addDirectory(path, handle);
+    else
+        addSingleLump(path, handle);
+
+    // A reloadable file is re-opened on every read, so its lumps carry no handle
+    // and this one is done with.
+    if (reloadable)
+        doom_close(handle);
+    else
+        handles.push_back(handle);
+
+    cache.resize(lumps.size());
+}
+
+void WadFile::addSingleLump(const char* path, void* handle)
+{
+    doom_seek(handle, 0, DOOM_SEEK_END);
+
+    auto lump = Lump {};
+    lump.handle = reloadName ? nullptr : handle;
+    lump.position = 0;
+    lump.size = doom_tell(handle);
+
+    doom_seek(handle, 0, DOOM_SEEK_SET);
+
+    // The lump is named after the file it came from.
+    char base[9] = {};
+    extractFileBase(path, base);
+    doom_strncpy(lump.name, base, 8);
+
+    lumps.push_back(lump);
+}
+
+void WadFile::addDirectory(const char* path, void* handle)
+{
+    auto header = WadHeader {};
+    doom_read(handle, &header, sizeof(header));
+
+    if (doom_strncmp(header.identification, "IWAD", 4) != 0
+        && doom_strncmp(header.identification, "PWAD", 4) != 0)
+    {
+        fail("Error: Wad file ", path);
+    }
+
+    auto lumpCount = LONG(header.numlumps);
+    auto entries = std::vector<FileLump> ((std::size_t) lumpCount);
+
+    doom_seek(handle, LONG(header.infotableofs), DOOM_SEEK_SET);
+    doom_read(handle, entries.data(), (int) (entries.size() * sizeof(FileLump)));
+
+    for (const auto& entry: entries)
+    {
+        auto lump = Lump {};
+
+        // A reloadable file's lumps carry no handle: read() re-opens the file
+        // every time, which is what makes the reload hack work at all.
+        lump.handle = reloadName ? nullptr : handle;
+        lump.position = LONG(entry.filepos);
+        lump.size = LONG(entry.size);
+        doom_strncpy(lump.name, entry.name, 8);
+
+        lumps.push_back(lump);
+    }
+}
+
+int WadFile::find(const char* name) const
+{
+    const auto wanted = LumpName {name};
+
+    // Backwards, so that a lump from a later file takes precedence over the same
+    // name in an earlier one. That is how a PWAD overrides the IWAD.
+    for (auto lump = count() - 1; lump >= 0; --lump)
+        if (wanted.matches(lumps[(std::size_t) lump].name))
+            return lump;
+
+    return -1;
+}
+
+int WadFile::number(const char* name) const
+{
+    auto lump = find(name);
+
+    if (lump < 0)
+        fail("Error: W_GetNumForName: not found: ", name);
+
+    return lump;
+}
+
+int WadFile::length(int lump) const
+{
+    if (lump < 0 || lump >= count())
+        fail("Error: W_LumpLength: no such lump: ", doom_itoa(lump, 10));
+
+    return lumps[(std::size_t) lump].size;
+}
+
+void WadFile::read(int lump, void* destination) const
+{
+    if (lump < 0 || lump >= count())
+        fail("Error: W_ReadLump: no such lump: ", doom_itoa(lump, 10));
+
+    const auto& entry = lumps[(std::size_t) lump];
+    auto* handle = entry.handle;
+    auto reopened = handle == nullptr;
+
+    if (reopened)
+    {
+        handle = doom_open(reloadName, "rb");
+
+        if (handle == nullptr)
+            fail("Error: W_ReadLump: couldn't open ", reloadName);
+    }
+
+    doom_seek(handle, entry.position, DOOM_SEEK_SET);
+    auto read = doom_read(handle, destination, entry.size);
+
+    if (reopened)
+        doom_close(handle);
+
+    if (read < entry.size)
+        fail("Error: W_ReadLump: only read part of lump ", doom_itoa(lump, 10));
+}
+
+const std::byte* WadFile::data(int lump)
+{
+    if (lump < 0 || lump >= count())
+        fail("Error: W_CacheLumpNum: no such lump: ", doom_itoa(lump, 10));
+
+    auto& bytes = cache[(std::size_t) lump];
+
+    if (bytes.empty() && length(lump) > 0)
+    {
+        bytes.resize((std::size_t) length(lump));
+        read(lump, bytes.data());
+    }
+
+    return bytes.data();
+}
+
+void WadFile::reload()
+{
+    if (reloadName == nullptr)
+        return;
+
+    auto* handle = doom_open(reloadName, "rb");
+
+    if (handle == nullptr)
+        fail("Error: W_Reload: couldn't open ", reloadName);
+
+    auto header = WadHeader {};
+    doom_read(handle, &header, sizeof(header));
+
+    auto lumpCount = LONG(header.numlumps);
+    auto entries = std::vector<FileLump> ((std::size_t) lumpCount);
+
+    doom_seek(handle, LONG(header.infotableofs), DOOM_SEEK_SET);
+    doom_read(handle, entries.data(), (int) (entries.size() * sizeof(FileLump)));
+    doom_close(handle);
+
+    for (auto i = 0; i < lumpCount; ++i)
+    {
+        auto lump = (std::size_t) (reloadLump + i);
+
+        lumps[lump].position = LONG(entries[(std::size_t) i].filepos);
+        lumps[lump].size = LONG(entries[(std::size_t) i].size);
+
+        // Whatever was cached is now the old file's bytes. Drop it; the next
+        // caller re-reads.
+        cache[lump] = {};
+    }
+}
+} // namespace Doom

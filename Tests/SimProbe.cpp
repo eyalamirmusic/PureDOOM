@@ -298,3 +298,5 @@ int doomSimMobjCount(void)
 
     return count;
 }
+
+

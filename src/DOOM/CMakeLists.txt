@@ -10,7 +10,10 @@
 # moves into one the moment it stops being 1993 C and becomes C++ someone wrote,
 # and the vanilla name disappears. Progress is the flat list getting shorter.
 file(GLOB DOOM_VANILLA_SOURCES CONFIGURE_DEPENDS *.cpp *.h)
-file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS Math/*.cpp Math/*.h Sim/*.cpp Sim/*.h)
+file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
+        Math/*.cpp Math/*.h
+        Sim/*.cpp Sim/*.h
+        Wad/*.cpp Wad/*.h)
 
 add_library(doom-engine STATIC ${DOOM_VANILLA_SOURCES} ${DOOM_REWRITTEN_SOURCES})
 add_library(DOOM::engine ALIAS doom-engine)

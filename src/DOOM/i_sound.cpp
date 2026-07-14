@@ -220,7 +220,6 @@ void* getsfx(char* sfxname, int* len)
         paddedsfx[i] = 128;
 
     // Remove the cached lump.
-    Z_Free(sfx);
 
     // Preserve padded length.
     *len = paddedsize;

@@ -136,7 +136,6 @@ void P_LoadVertexes(int lump)
     }
 
     // Free buffer memory.
-    Z_Free(data);
 }
 
 
@@ -179,7 +178,6 @@ void P_LoadSegs(int lump)
             li->backsector = 0;
     }
 
-    Z_Free(data);
 }
 
 
@@ -207,7 +205,6 @@ void P_LoadSubsectors(int lump)
         ss->firstline = SHORT(ms->firstseg);
     }
 
-    Z_Free(data);
 }
 
 
@@ -240,7 +237,6 @@ void P_LoadSectors(int lump)
         ss->thinglist = 0;
     }
 
-    Z_Free(data);
 }
 
 
@@ -277,7 +273,6 @@ void P_LoadNodes(int lump)
         }
     }
 
-    Z_Free(data);
 }
 
 
@@ -332,7 +327,6 @@ void P_LoadThings(int lump)
         P_SpawnMapThing(mt);
     }
 
-    Z_Free(data);
 }
 
 
@@ -414,7 +408,6 @@ void P_LoadLineDefs(int lump)
             ld->backsector = 0;
     }
 
-    Z_Free(data);
 }
 
 
@@ -445,7 +438,6 @@ void P_LoadSideDefs(int lump)
         sd->sector = &sectors[SHORT(msd->sector)];
     }
 
-    Z_Free(data);
 }
 
 

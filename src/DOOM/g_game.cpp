@@ -1646,7 +1646,6 @@ doom_boolean G_CheckDemoStatus(void)
         if (singledemo)
             I_Quit();
 
-        Z_ChangeTag(demobuffer, PU_CACHE);
         demoplayback = false;
         netdemo = false;
         netgame = false;

@@ -361,6 +361,7 @@ byte* R_GetColumn(int tex, int col)
     lump = texturecolumnlump[tex][col];
     ofs = texturecolumnofs[tex][col];
 
+
     if (lump > 0)
         return (byte*)W_CacheLumpNum(lump, PU_CACHE) + ofs;
 
@@ -422,7 +423,6 @@ void R_InitTextures(void)
         doom_strncpy(name, name_p + i * 8, 8);
         patchlookup[i] = W_CheckNumForName(name);
     }
-    Z_Free(names);
 
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
@@ -450,7 +450,11 @@ void R_InitTextures(void)
     texturecolumnlump = (short**) (Z_Malloc(numtextures * sizeof(short*), PU_STATIC, 0));
     texturecolumnofs = (unsigned short**) (Z_Malloc(numtextures * sizeof(unsigned short*), PU_STATIC, 0));
     texturecomposite = (byte**) (Z_Malloc(numtextures * sizeof(byte*), PU_STATIC, 0));
+
+
     texturecompositesize = (int*) (Z_Malloc(numtextures * sizeof(int), PU_STATIC, 0));
+
+
     texturewidthmask = (int*) (Z_Malloc(numtextures * sizeof(int), PU_STATIC, 0));
     textureheight = (fixed_t*) (Z_Malloc(numtextures * sizeof(fixed_t), PU_STATIC, 0));
 
@@ -529,11 +533,7 @@ void R_InitTextures(void)
         totalwidth += texture->width;
     }
 
-    Z_Free(maptex1);
-    if (maptex2)
-        Z_Free(maptex2);
-
-    // Precalculate whatever possible.        
+    // Precalculate whatever possible.
     for (i = 0; i < numtextures; i++)
         R_GenerateLookup(i);
 

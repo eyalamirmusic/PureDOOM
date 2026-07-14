@@ -1,0 +1,93 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+
+namespace Doom
+{
+// One entry of a WAD's directory. Laid out exactly as vanilla's lumpinfo_t,
+// because r_things reads sprite names straight out of the directory (it parses
+// TROOA1 into a frame and a rotation) and r_data adds up lump sizes, and both
+// still hold it as a bare array. m_bbox's BBox does the same trick, and for the
+// same reason: layout compatibility is what lets a rewritten owner sit under
+// callers that have not been rewritten yet.
+struct Lump
+{
+    char name[8]; // eight bytes, and NOT null-terminated when it fills them
+    void* handle; // the file it came from
+    int position;
+    int size;
+};
+
+// The WAD, and everything in it.
+//
+// This replaces the zone allocator's role as the lump cache, which was the
+// tangled half of z_zone: PU_CACHE blocks were purgeable, so W_CacheLumpNum had
+// to hand Z_Malloc a back-pointer (`&lumpcache[lump]`) for the allocator to null
+// out behind the caller's back, and every user of a lump then had to say
+// Z_ChangeTag when it was done. All of that is gone. A WadFile owns its lumps for
+// as long as it lives, so **a pointer to lump data stays valid**, and there is
+// nothing to tag, purge or release.
+//
+// It costs what the WAD costs. doom1.wad is 4MB and the zone was 12MB, so the
+// zone got smaller by more than this class holds.
+class WadFile
+{
+public:
+    ~WadFile();
+
+    // Vanilla's rules: a `.wad` is a directory of lumps, anything else is a
+    // single lump named after the file, and a leading `~` marks the file
+    // reloadable (see reload()).
+    void addFile(const char* path);
+
+    int count() const { return (int) lumps.size(); }
+
+    // -1 when there is no such lump, which is a question several callers ask -
+    // the engine checks for TEXTURE2 before deciding it is playing DOOM II.
+    int find(const char* name) const;
+
+    // The same, but a missing lump is fatal. Most callers want this one: a WAD
+    // without PLAYPAL is not a WAD anyone can render.
+    int number(const char* name) const;
+
+    int length(int lump) const;
+
+    // Straight into the caller's buffer, uncached.
+    void read(int lump, void* destination) const;
+
+    // Cached, and owned. The bytes stay put for the life of the WadFile, so a
+    // caller may hold this pointer for as long as it likes.
+    const std::byte* data(int lump);
+
+    const Lump& info(int lump) const { return lumps[(std::size_t) lump]; }
+    const std::vector<Lump>& directory() const { return lumps; }
+
+    // Vanilla's `~file` hack: re-read the reloadable file's directory and drop
+    // whatever it had cached, so a level can be edited and reloaded without
+    // restarting. Its own source calls it fragile. Nothing exercises it unless a
+    // WAD is passed with a leading tilde.
+    void reload();
+
+private:
+    void addSingleLump(const char* path, void* handle);
+    void addDirectory(const char* path, void* handle);
+    void openFile(const char* path, bool reloadable);
+
+    std::vector<Lump> lumps;
+
+    // One buffer per lump, filled the first time it is asked for and empty until
+    // then. Indexed alongside `lumps`, so the two never disagree about how many
+    // lumps there are.
+    std::vector<std::vector<std::byte>> cache;
+
+    std::vector<void*> handles;
+
+    const char* reloadName = nullptr;
+    int reloadLump = 0;
+};
+
+// The engine's one WAD, for as long as the engine has one of everything.
+WadFile& wad();
+} // namespace Doom
