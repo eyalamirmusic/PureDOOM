@@ -73,6 +73,7 @@
 #include "PlayerState.h"
 #include "RefreshFlags.h"
 #include "TiccmdInput.h"
+#include "TimeDemo.h"
 
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
@@ -110,10 +111,12 @@ doom_boolean sendsave; // send a save event next tic
 // are references onto it (REFACTOR.md, Step 5).
 doom_boolean& usergame = Doom::demoState().usergame; // ok to save / end game
 
-doom_boolean timingdemo; // if true, exit with report on completion
+// timingdemo (with starttime below) is the -timedemo benchmark state, a Doom::TimeDemo owned by
+// the Engine now; these vanilla names are references onto it (REFACTOR.md, Step 5).
+doom_boolean& timingdemo = Doom::timeDemo().timingdemo; // if true, exit with report on completion
 doom_boolean& nodrawers = Doom::refreshFlags().nodrawers; // comparative timing
 doom_boolean& noblit = Doom::refreshFlags().noblit; // comparative timing
-int starttime; // for comparative timing purposes
+int& starttime = Doom::timeDemo().starttime; // for comparative timing purposes
 
 doom_boolean& viewactive = Doom::refreshFlags().viewactive;
 

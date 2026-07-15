@@ -199,4 +199,9 @@ MovementSpeeds& movementSpeeds()
 {
     return engine().movementSpeeds;
 }
+
+TimeDemo& timeDemo()
+{
+    return engine().timeDemo;
+}
 } // namespace Doom

@@ -23,6 +23,7 @@
 #include "../Game/SkyState.h"
 #include "../Game/StartupDefaults.h"
 #include "../Game/TiccmdInput.h"
+#include "../Game/TimeDemo.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
 #include "../Render/RenderScratch.h"
@@ -92,6 +93,7 @@ struct Engine
     DeferredNewGame deferredNewGame;
     ParTimes parTimes;
     MovementSpeeds movementSpeeds;
+    TimeDemo timeDemo;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
