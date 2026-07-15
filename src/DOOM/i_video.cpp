@@ -1,143 +1,66 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
-//
-// $Id:$
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
 //
-// This source is available for distribution and/or modification
-// only under the terms of the DOOM Source Code License as
-// published by id Software. All rights reserved.
-//
-// The source is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// FITNESS FOR A PARTICULAR PURPOSE. See the DOOM Source Code License
-// for more details.
-//
-// $Log:$
+// This source is available for distribution and/or modification only under the
+// terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//        DOOM graphics stuff for X11, UNIX.
+//        DOOM graphics seam. Rewritten in Host/Video.{h,cpp}; this keeps the
+//        vanilla I_ names as shims. screen_palette is defined at file scope in
+//        Video.cpp for its many readers, so there is nothing to own here.
 //
 //-----------------------------------------------------------------------------
 
-
 #include "doom_config.h"
 
+#include "i_system.h" // I_StartFrame / I_StartTic / I_GetEvent
+#include "i_video.h"
 
-
-#include "doomstat.h"
-#include "i_system.h"
-#include "v_video.h"
-#include "m_argv.h"
-#include "d_main.h"
-#include "doomdef.h"
-
-
-#define POINTER_WARP_COUNTDOWN 1
-
-
-// Fake mouse handling.
-// This cannot work properly w/o DGA.
-// Needs an invisible mouse cursor at least.
-doom_boolean grabMouse;
-int doPointerWarp = POINTER_WARP_COUNTDOWN;
-
-unsigned char screen_palette[256 * 3];
-
-doom_boolean mousemoved = false;
-doom_boolean shmFinished;
-
-
-// Blocky mode,
-// replace each 320x200 pixel with multiply*multiply pixels.
-// According to Dave Taylor, it still is a bonehead thing
-// to use ....
-static int multiply = 1;
-static int lastmousex = 0;
-static int lastmousey = 0;
-
+#include "Host/Video.h"
 
 void I_ShutdownGraphics(void)
 {
+    Doom::I_ShutdownGraphics();
 }
 
-
-//
-// I_StartFrame
-//
 void I_StartFrame(void)
 {
+    Doom::I_StartFrame();
 }
-
 
 void I_GetEvent(void)
 {
+    Doom::I_GetEvent();
 }
 
-
-//
-// I_StartTic
-//
 void I_StartTic(void)
 {
+    Doom::I_StartTic();
 }
 
-
-//
-// I_UpdateNoBlit
-//
 void I_UpdateNoBlit(void)
 {
-    // what is this?
+    Doom::I_UpdateNoBlit();
 }
 
-
-//
-// I_FinishUpdate
-//
 void I_FinishUpdate(void)
 {
-    static int lasttic;
-    int tics;
-    int i;
-
-    // draws little dots on the bottom of the screen
-    if (devparm)
-    {
-        i = I_GetTime();
-        tics = i - lasttic;
-        lasttic = i;
-        if (tics > 20) tics = 20;
-
-        for (i = 0; i < tics * 2; i += 2)
-            screens[0][(SCREENHEIGHT - 1) * SCREENWIDTH + i] = 0xff;
-        for (; i < 20 * 2; i += 2)
-            screens[0][(SCREENHEIGHT - 1) * SCREENWIDTH + i] = 0x0;
-
-    }
+    Doom::I_FinishUpdate();
 }
 
-
-//
-// I_ReadScreen
-//
 void I_ReadScreen(byte* scr)
 {
-    doom_memcpy(scr, screens[0], SCREENWIDTH * SCREENHEIGHT);
+    Doom::I_ReadScreen(scr);
 }
 
-
-//
-// I_SetPalette
-//
 void I_SetPalette(byte* palette)
 {
-    doom_memcpy(screen_palette, palette, 256 * 3);
+    Doom::I_SetPalette(palette);
 }
-
 
 void I_InitGraphics(void)
 {
-    screens[0] = (unsigned char*)doom_malloc(SCREENWIDTH * SCREENHEIGHT);
+    Doom::I_InitGraphics();
 }
