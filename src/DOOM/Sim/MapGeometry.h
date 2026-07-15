@@ -79,4 +79,59 @@ inline Fixed interceptVector(const DivLine& a, const DivLine& b)
 
     return fixedDiv(num, den);
 }
+
+// DOOM's cheap distance estimate: never exact, but branch-light and monotone, and
+// the only distance the playsim and the renderer ever agree on. It takes the two
+// axis deltas and returns |larger| + |smaller|/2 - so it overestimates a diagonal
+// by up to ~12%. It is load-bearing exactly because it is this and not a real
+// hypotenuse: the aim, the blockmap search radius and the sound attenuation were
+// all tuned against these numbers. The halve is an arithmetic shift of the raw
+// fixed value, matching vanilla's `(dx >> 1)`.
+inline Fixed approxDistance(Fixed dx, Fixed dy)
+{
+    dx = abs(dx);
+    dy = abs(dy);
+
+    auto smaller = dx < dy ? dx : dy;
+    return dx + dy - Fixed {smaller.raw >> 1};
+}
+
+// The vertical window a two-sided line leaves open: the gap between the lower of
+// the two ceilings and the higher of the two floors, plus the lower floor (which a
+// step-down uses). PIT_CheckLine narrows a mover's tmceilingz/tmfloorz against this
+// as it contacts each line. Ties go to the back sector, exactly as vanilla's
+// if/else chain does - the demos would notice min/max that rounded a tie the other
+// way. The single-sided-line early-out (openrange = 0) stays with the caller,
+// being about the linedef's structure rather than the two sectors' heights.
+struct Opening
+{
+    Fixed top; // opentop:    the lower of the two ceilings
+    Fixed bottom; // openbottom: the higher of the two floors
+    Fixed range; // openrange:  top - bottom
+    Fixed lowFloor; // lowfloor:   the lower of the two floors
+};
+
+inline Opening lineOpening(Fixed frontFloor,
+                           Fixed frontCeiling,
+                           Fixed backFloor,
+                           Fixed backCeiling)
+{
+    Opening opening;
+
+    opening.top = frontCeiling < backCeiling ? frontCeiling : backCeiling;
+
+    if (frontFloor > backFloor)
+    {
+        opening.bottom = frontFloor;
+        opening.lowFloor = backFloor;
+    }
+    else
+    {
+        opening.bottom = backFloor;
+        opening.lowFloor = frontFloor;
+    }
+
+    opening.range = opening.top - opening.bottom;
+    return opening;
+}
 } // namespace Doom

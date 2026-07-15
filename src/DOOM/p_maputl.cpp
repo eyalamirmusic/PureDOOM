@@ -63,11 +63,7 @@ int ptflags;
 //
 fixed_t P_AproxDistance(fixed_t dx, fixed_t dy)
 {
-    dx = doom_abs(dx);
-    dy = doom_abs(dy);
-    if (dx < dy)
-        return dx + dy - (dx >> 1);
-    return dx + dy - (dy >> 1);
+    return Doom::approxDistance(Doom::Fixed {dx}, Doom::Fixed {dy}).raw;
 }
 
 
@@ -191,23 +187,15 @@ void P_LineOpening(line_t* linedef)
     front = linedef->frontsector;
     back = linedef->backsector;
 
-    if (front->ceilingheight < back->ceilingheight)
-        opentop = front->ceilingheight;
-    else
-        opentop = back->ceilingheight;
+    Doom::Opening opening = Doom::lineOpening(Doom::Fixed {front->floorheight},
+                                              Doom::Fixed {front->ceilingheight},
+                                              Doom::Fixed {back->floorheight},
+                                              Doom::Fixed {back->ceilingheight});
 
-    if (front->floorheight > back->floorheight)
-    {
-        openbottom = front->floorheight;
-        lowfloor = back->floorheight;
-    }
-    else
-    {
-        openbottom = back->floorheight;
-        lowfloor = front->floorheight;
-    }
-
-    openrange = opentop - openbottom;
+    opentop = opening.top.raw;
+    openbottom = opening.bottom.raw;
+    lowfloor = opening.lowFloor.raw;
+    openrange = opening.range.raw;
 }
 
 

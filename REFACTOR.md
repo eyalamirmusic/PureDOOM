@@ -48,14 +48,14 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`; scalar clusters move in with Steps 6–8 |
-| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core (`p_maputl` side/intercept helpers) rewritten with unit tests |
+| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core (`p_maputl` side/intercept/distance/opening helpers) rewritten with unit tests; the scenario-test harness (place a mobj, drive `P_TryMove`/`P_CheckPosition`) is built and proven to bite |
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**63 tests**, ~2s: `ctest --test-dir build`). Steps
+clean and the suite is green (**66 tests**, ~2s: `ctest --test-dir build`). Steps
 0–3 are complete; 4's payoff is delivered; 5 and 6 are underway.
 
 **What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
@@ -73,26 +73,36 @@ Everywhere the vanilla API survives (`FixedMul`, `finesine`, `P_Random`,
 those owners, not a second implementation — so the new code sits on the critical
 path of every demo and cannot go untested.
 
-**The immediate next step** (continuing Step 6, `p_maputl` → `p_map`):
+**The scenario-test harness has landed** — the enabler the rest of Step 6 rests on.
+`Tests/SimProbe` now loads a level directly (`doomSimLoadLevel` → `G_InitNew`, no
+demo, single-player forced so the player mobj spawns), spawns and places mobjs
+(`doomSimSpawnMobj`, plain-int handles into a probe-side registry invalidated on
+each level reload), and drives `P_CheckPosition` / `P_TryMove` on a handle, reading
+the result and the mobj's position/flags back. `SimProbe.h` stays free of DOOM
+types — the tests see integers and named-constant accessors (`doomSimTypeBarrel`,
+`doomSimFlagNoClip`). `Tests/Sim/ScenarioTests.cpp` uses it for three collision
+facts the demos only cover in aggregate, each shown to bite by mutation (see the
+"Landed so far" note below).
+
+**The immediate next step** (continuing Step 6, `p_maputl` → `p_map`), now with the
+harness in hand:
 
 1. The stateful half of `p_maputl` — the blockmap iterators
    (`P_BlockLinesIterator`/`P_BlockThingsIterator`, function-pointer callbacks →
    consider lambdas), thing-position linking (`P_SetThingPosition`/`Unset`),
-   `P_PathTraverse`, `P_LineOpening`. These read live level state, so they need the
-   **scenario-test harness** below.
-2. **Build the scenario-test harness**: probe API to load a level, spawn/place a
-   mobj, call `P_TryMove`/`P_CheckPosition`, and read the result. This is the real
-   enabler for the rest of the playsim, and it rests on the multi-scenario replay
-   capability proven in Step 4 (`Tests/Sim/ReplayTests.cpp` shows the pattern —
-   boot once, load a level, reset by loading again).
-3. Then `p_map` (`P_TryMove`) itself, under that harness.
+   `P_PathTraverse` — rewritten in `namespace Doom`, tested with the harness for
+   locality. (`P_LineOpening`'s pure core and `P_AproxDistance` are already extracted
+   into `MapGeometry.h` — see below; the iterators, thing-linking and path traversal
+   are the genuinely stateful remainder, which is what the harness was built for.)
+2. Then `p_map` (`P_TryMove`, `P_CheckPosition`) itself — the scenario tests above
+   pin it directly and specifically now.
 
 **How to verify, every step** (nothing here re-records goldens):
 
 ```bash
 cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
 cmake --build build
-ctest --test-dir build --output-on-failure     # 63 tests, ~2s
+ctest --test-dir build --output-on-failure     # 66 tests, ~2s
 git diff --stat Tests/Goldens/                 # MUST be empty
 cmake --build build --target PureDoomEACP      # app still links (touches EngineAccess)
 ```
@@ -584,10 +594,61 @@ line, and the intercept of two crossing lines landing a quarter of the way along
 The demos remain the proof the shims read the right fields — a bit-identical replay
 could not survive reading `dx` where `dy` was meant.
 
+Two more pure helpers from `p_maputl` joined the header: `approxDistance` (DOOM's
+`|larger| + |smaller|/2` distance estimate) and `lineOpening` (the vertical window a
+two-sided line leaves — lower ceiling down to higher floor, plus the lower floor,
+which `PIT_CheckLine` narrows a mover against). `p_maputl.cpp`'s `P_AproxDistance`
+and `P_LineOpening` are shims over them; the single-sided-line early-out
+(`openrange = 0`) stays in the shim, being about the linedef's structure rather than
+the two sectors' heights. `GeometryTests.cpp` pins the estimate as an *over*estimate
+of a real diagonal — a "fix" to a true hypotenuse would desync every demo, the aim
+and the blockmap search radius having been tuned against these numbers — and pins
+the opening window. The goldens held bit-identical across the swap, which, with
+`P_AproxDistance` on the critical path of the renderer and the sound code as well as
+the playsim, is the real proof the extraction changed nothing.
+
+### Landed so far — the scenario-test harness
+
+The enabler for the rest of the playsim, and the Step-0 move again — widen the net
+before touching the code, with a new driver. `Tests/SimProbe` grew a scenario API:
+`doomSimLoadLevel(episode, map, skill)` loads a level synchronously through
+`G_InitNew` with no demo (forcing single-player so the map's player-1 start spawns
+a mobj); `doomSimSpawnMobj` places a thing and hands back a plain-`int` handle into
+a probe-side registry (invalidated whenever a level load frees the `PU_LEVEL`
+mobjs, and re-seeded with the fresh player as handle 0); `doomSimCheckPosition` /
+`doomSimTryMove` drive the two clipping functions on a handle and return the
+answer, with `doomSimMobjX/Y/Z` and a flags get/set for the before/after state.
+`SimProbe.h` stays free of DOOM types — the tests see integers and named-constant
+accessors (`doomSimTypeBarrel`, `doomSimOnFloorZ`, `doomSimFlagNoClip`). It rests
+on the multi-scenario capability Step 4 proved: a level load resets the world
+cleanly, so a scenario runs on a fresh world in the same process.
+
+`Tests/Sim/ScenarioTests.cpp` pins three collision facts the demos only prove in
+aggregate, **two of them without any reference to the map's geometry** — they
+follow from the collision code, not from where E1M1's walls happen to be:
+
+- a solid barrel dropped exactly on the player's own start flips `P_CheckPosition`
+  from legal to illegal, and `MF_NOCLIP` flips it back — isolating thing collision
+  and the NOCLIP early-out from the walls entirely;
+- a blocked `P_TryMove` (onto a barrel 40 units east, past the 26-unit combined
+  radius) answers false and leaves the mobj exactly where it was — the invariant a
+  rewrite is likeliest to break subtly;
+- a legal `P_TryMove`, into a spot *discovered* clear by asking `P_CheckPosition`
+  rather than assuming one, commits the new position, and the round trip back
+  proves it was a real move and not a no-op.
+
+Each was shown to bite by mutation: making `PIT_CheckThing` never block fails the
+first two; removing the position commit in `P_TryMove` fails the third's commit
+assertion while its "the move succeeds" assertion still passes — so it pins the
+commit specifically. (A cautionary detour worth recording: the first attempt to
+prove the commit case mutated the *earlier* occurrence of `thing->x = x;`, which is
+in `P_TeleportMove`, not `P_TryMove` — the net only looks like it bites if you make
+sure the mutation lands where you think. Prove it, don't trust it.) Nothing here
+touches a golden or the append-only probe hash; it is purely additive.
+
 Next in the module: the stateful half of `p_maputl` (the blockmap iterators, the
-thing-position linking, `P_PathTraverse`) and then `p_map` (`P_TryMove`), which is
-where the scenario-test harness — place a mobj, move it, assert — gets built on the
-multi-scenario capability from Step 4.
+thing-position linking, `P_PathTraverse`) and then `p_map` (`P_TryMove`,
+`P_CheckPosition`), which the scenario tests now pin directly.
 
 ## Step 7 — The renderer
 

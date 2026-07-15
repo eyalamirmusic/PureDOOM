@@ -99,4 +99,75 @@ auto tInterceptVectorParallel = test("Geometry/interceptVectorParallelIsZero") =
 
     check(interceptVector(a, b) == Fixed {0}, "parallel lines answer zero");
 };
+
+// approxDistance is exact on an axis, symmetric, and sign-blind (it takes abs
+// first). These are the properties the blockmap search and sound attenuation rely
+// on; the demos prove the shim in aggregate, these give the locality.
+auto tApproxDistanceAxisAndSymmetry =
+    test("Geometry/approxDistanceAxisAndSymmetry") = []
+{
+    check(approxDistance(Fixed::fromInt(5), Fixed {0}) == Fixed::fromInt(5),
+          "distance along x is exact");
+    check(approxDistance(Fixed {0}, Fixed::fromInt(5)) == Fixed::fromInt(5),
+          "distance along y is exact");
+
+    check(approxDistance(Fixed::fromInt(3), Fixed::fromInt(4))
+              == approxDistance(Fixed::fromInt(4), Fixed::fromInt(3)),
+          "symmetric in dx, dy");
+    check(approxDistance(Fixed::fromInt(-3), Fixed::fromInt(4))
+              == approxDistance(Fixed::fromInt(3), Fixed::fromInt(4)),
+          "the sign of the deltas does not matter");
+};
+
+// The load-bearing part: it is |larger| + |smaller|/2, which OVERestimates a real
+// diagonal. Anyone "fixing" it into a true hypotenuse changes every aim and search
+// radius tuned against it and desyncs the demos.
+auto tApproxDistanceOverestimatesDiagonal =
+    test("Geometry/approxDistanceOverestimatesDiagonal") = []
+{
+    // 3-4-5: the true distance is 5, the estimate is 4 + 3/2 = 5.5.
+    check(approxDistance(Fixed::fromInt(3), Fixed::fromInt(4))
+              == Fixed {Fixed::fromInt(11).raw / 2},
+          "3,4 estimates 5.5 units, not 5");
+    // Equal legs: true 4*sqrt(2) ~= 5.66, estimate 4 + 4/2 = 6.
+    check(approxDistance(Fixed::fromInt(4), Fixed::fromInt(4)) == Fixed::fromInt(6),
+          "equal legs estimate 6 units");
+    check(approxDistance(Fixed::fromInt(3), Fixed::fromInt(4)) > Fixed::fromInt(5),
+          "the estimate never underrates the diagonal");
+};
+
+// lineOpening is the vertical window a two-sided line leaves: lower ceiling down to
+// higher floor, plus the lower of the two floors. PIT_CheckLine narrows a mover
+// against exactly these.
+auto tLineOpeningWindow = test("Geometry/lineOpeningWindow") = []
+{
+    // Front floor 0 ceil 128, back floor 32 ceil 96.
+    auto o = lineOpening(Fixed::fromInt(0),
+                         Fixed::fromInt(128),
+                         Fixed::fromInt(32),
+                         Fixed::fromInt(96));
+
+    check(o.top == Fixed::fromInt(96), "top is the lower ceiling");
+    check(o.bottom == Fixed::fromInt(32), "bottom is the higher floor");
+    check(o.range == Fixed::fromInt(64), "range is top - bottom");
+    check(o.lowFloor == Fixed::fromInt(0), "lowFloor is the lower floor");
+};
+
+// top (min ceiling), bottom (max floor) and lowFloor (min floor) do not depend on
+// which sector is called front, so swapping the pair leaves the window unchanged.
+auto tLineOpeningIsSymmetric = test("Geometry/lineOpeningIsSymmetric") = []
+{
+    auto a = lineOpening(Fixed::fromInt(0),
+                         Fixed::fromInt(128),
+                         Fixed::fromInt(32),
+                         Fixed::fromInt(96));
+    auto b = lineOpening(Fixed::fromInt(32),
+                         Fixed::fromInt(96),
+                         Fixed::fromInt(0),
+                         Fixed::fromInt(128));
+
+    check(a.top == b.top && a.bottom == b.bottom && a.range == b.range
+              && a.lowFloor == b.lowFloor,
+          "the window is the same whichever sector is front");
+};
 } // namespace
