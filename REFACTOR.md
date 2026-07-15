@@ -50,7 +50,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
-| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI mostly done: `f_wipe`→`Wipe`, `hu_lib`→`HudWidgets`, `st_lib`→`StatusWidgets`, `hu_stuff`→`Hud`, `st_stuff`→`StatusBar`, `f_finale`→`Finale`, `am_map`→`Automap`, `wi_stuff`→`Intermission`. Left: `m_menu` (needs its golden first), `g_game`, `d_main`, the host boundary, `thinker_t`→`Thinker`, zone deletion |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI + game loop done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`. Left: `m_menu` (needs its golden first), the host boundary (`DOOM.cpp`/`i_*`/`d_net`), the remaining util+data files (`v_video`, `s_sound`, `m_misc`, `m_cheat`, `m_argv`, `d_items`, `sounds`, `info`, `doomstat`, `doomdef`, `dstrings`), `thinker_t`→`Thinker`, zone deletion |
 
 ## Where this is — session handoff
 
@@ -835,6 +835,50 @@ Step 0, different driver.
 Last, the host boundary: the 13 function pointers in `doom_config.h` become a
 `Host` interface, and audio (gap-log item 1) is wired through it rather than
 around it.
+
+### Landed so far — the UI and the game loop
+
+Ten flat files are now `namespace Doom` units shimmed by their vanilla names, in
+two new subdirs `UI/` and `Game/`. The recipe is the same shim shape as the
+renderer, with the whole-file depth-0 global scan where globals scatter:
+
+- **`f_wipe`→`UI/Wipe`**, **`hu_lib`→`UI/HudWidgets`**, **`st_lib`→
+  `UI/StatusWidgets`**, **`hu_stuff`→`UI/Hud`**, **`st_stuff`→`UI/StatusBar`**,
+  **`am_map`→`UI/Automap`**, **`wi_stuff`→`UI/Intermission`**, **`f_finale`→
+  `UI/Finale`** — the screen/HUD/effect files. The status bar, HUD and melt are
+  pinned by the frame goldens; the automap, intermission and finale are not (no
+  demo opens them), so those are faithful cp-and-relocate transcriptions verified
+  by build + app-link. `st_statusbaron` became a real shared global (the app had
+  been externing a file static across a linkage mismatch); `am_map`'s shapes /
+  window state stay in the shim because the GPU automap reads them.
+- **`g_game`→`Game/Game`** and **`d_main`→`Game/DoomMain`** — the game loop.
+  Both are golden-covered (the demos drive `G_*` end to end and `D_Display` runs
+  every tic), and both are the *state owners* of the core game globals: neither
+  has a single file-static. Rather than scatter ~90 shared globals into the shim
+  with a matching extern wall, those globals stay defined at file scope in the
+  rewritten unit, above its `namespace Doom` — still `::`-scoped, so `doomstat.h`
+  and every reader resolve unchanged. The trap this exposed: an `extern` of a
+  *global* symbol that lands inside `namespace Doom` (a function-local
+  `extern int always_run;`, or a scattered mid-file definition) becomes
+  `Doom::always_run` and fails to link — those move to global scope, before the
+  namespace.
+
+Two `-Wall`/`-Wextra` patterns recurred across these and were fixed
+behaviour-neutrally: **`-Wwritable-strings`**, from the pervasive 1993 idiom of
+`char*` pointing at string literals — the fix is `const char*` on the read-only
+lump/file-name paths (`R_TextureNumForName`/`R_FlatNumForName`, `D_AddFile`,
+`G_DeferedPlayDemo`, `pagename`, `doomwaddir`), the same const cleanup
+`W_CacheLumpName` had; and **`-Wmissing-field-initializers`** on legitimate
+partial-init data tables (`wi_stuff`'s anim tables), silenced with a localized
+`#pragma GCC diagnostic ignored`. `player_t.message` was already `const char*`
+in the tree, so message assignments were clean.
+
+**Steps 6 and 7 are complete** — every `p_*` and `r_*` file is a shim (`p_setup`
+and `p_saveg` finished into `Sim/Setup` and `Sim/SaveGame`). What remains of
+Step 8: `m_menu` (build its frame golden first), the host boundary, the util +
+data files still flat (`v_video`, `s_sound`, `m_misc`, `m_cheat`, `m_argv`,
+`d_items`, `d_net`, `i_*`, `sounds`, `info`, `doomstat`, `doomdef`, `dstrings`),
+the `thinker_t`→`Thinker` virtualisation, and deleting the zone.
 
 ## The rules
 
