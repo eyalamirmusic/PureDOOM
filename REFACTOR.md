@@ -62,11 +62,14 @@ clean and the suite is green (**74 tests**, ~2s: `ctest --test-dir build`). Step
 everything else is still vanilla C compiled as C++ under `-w`):
 
 - `Math/` — `Fixed`, `Angle`, `Trig`, `BBox`, `Vec2`.
-- `Sim/` — `Random`, `Level` (level geometry, RAII), `MapGeometry`
-  (`pointOnLineSide` / `pointOnDivlineSide` / `interceptVector`).
+- `Sim/` — `Random`, `Level` (level geometry, RAII), `Blockmap` (the grid
+  descriptor + block-index arithmetic, owned by `Level`), `Clip` (the movement
+  scratch — `P_PathTraverse`'s intercept list — owned by `Engine`), and
+  `MapGeometry` (`pointOnLineSide` / `pointOnDivlineSide` / `interceptVector` /
+  `boxOnLineSide` / `approxDistance` / `lineOpening`).
 - `Wad/` — `WadFile` (owns lumps, RAII).
 - `Engine/` — `Engine`, the composition root owning `Random`/`WadFile`/`Level`/`Clip`;
-  `randomness()`/`wad()`/`level()` are accessors into the one `engine()`.
+  `randomness()`/`wad()`/`level()`/`clip()` are accessors into the one `engine()`.
 
 Everywhere the vanilla API survives (`FixedMul`, `finesine`, `P_Random`,
 `W_CacheLumpNum`, `vertexes`, `P_PointOnLineSide`, …) it is a **shim/view** over
@@ -105,14 +108,17 @@ harness in hand:
 **How to verify, every step** (nothing here re-records goldens):
 
 ```bash
-cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ctest --test-dir build --output-on-failure     # 74 tests, ~2s
 git diff --stat Tests/Goldens/                 # MUST be empty
 cmake --build build --target PureDoomEACP      # app still links (touches EngineAccess)
 ```
 
-`-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives the fast engine-only loop.
+`-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives the fast engine-only loop. eacp now
+fetches from GitHub `main` by default — the GPU-palette features this port needed
+have merged, so no `-DCPM_eacp_SOURCE` override is required (pass one only to
+co-develop against a local eacp checkout).
 
 **Traps already paid for, do not rediscover:** `doom_boolean` must stay `int` (not
 `bool`); `pointOnLineSide` and `pointOnDivlineSide` are different formulae on
@@ -188,8 +194,8 @@ creation"* — is gone with it.
 
 The CI workflow was stale in three ways and is rewritten: it ran the generator,
 carried a `single_header` matrix axis that had been a no-op since the option's
-last reader was disabled by default, and built the eacp app — which needs a GPU
-and tracks a local eacp branch. It now builds the engine and the tests, which is
+last reader was disabled by default, and built the eacp app — which needs a GPU CI
+does not have. It now builds the engine and the tests, which is
 exactly what CI can actually check, and checks the thing that matters: that the
 goldens hold on Linux and Windows too, not only on the machine that recorded them.
 
