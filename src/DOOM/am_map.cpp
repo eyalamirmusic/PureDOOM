@@ -22,6 +22,7 @@
 #include "p_local.h"  // PLAYERRADIUS
 #include "am_map.h"
 
+#include "Game/OverlayState.h"
 #include "UI/Automap.h"
 
 // The vector graphics for the automap (the GPU automap path reads these shapes).
@@ -86,7 +87,9 @@ int cheating = 0;
 int grid = 0;
 int lightlev; // used for funky strobing effect
 
-doom_boolean automapactive = false;
+// automapactive (with menuactive) is a Doom::OverlayState owned by the Engine now; this is a
+// reference onto it (REFACTOR.md, Step 5).
+doom_boolean& automapactive = Doom::overlayState().automapactive;
 
 
 doom_boolean AM_Responder(event_t* ev)

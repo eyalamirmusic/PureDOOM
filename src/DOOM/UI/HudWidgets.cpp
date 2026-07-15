@@ -16,7 +16,7 @@
 
 #include "HudWidgets.h"
 
-extern doom_boolean automapactive; // in am_map
+extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
 
 namespace Doom
 {

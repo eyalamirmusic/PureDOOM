@@ -109,4 +109,9 @@ RefreshFlags& refreshFlags()
 {
     return engine().refreshFlags;
 }
+
+OverlayState& overlayState()
+{
+    return engine().overlayState;
+}
 } // namespace Doom

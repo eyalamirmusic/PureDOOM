@@ -6,6 +6,7 @@
 #include "../Game/GameVersion.h"
 #include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
+#include "../Game/OverlayState.h"
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
 #include "../Game/StartupDefaults.h"
@@ -56,6 +57,7 @@ struct Engine
     GameFlow gameFlow;
     DemoState demoState;
     RefreshFlags refreshFlags;
+    OverlayState overlayState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

@@ -41,6 +41,8 @@
 #include "../sounds.h" // Data.
 #include "../m_menu.h"
 
+#include "../Game/OverlayState.h"
+
 #include "Menu.h"
 
 #define SAVESTRINGSIZE 24
@@ -56,7 +58,9 @@
 // read by the renderer and HUD; inhelpscreens gates D_Display's status-bar
 // redraw; messageToPrint (m_menu.h) is read by the eacp overlay capture.
 doom_boolean inhelpscreens;
-doom_boolean menuactive;
+// menuactive (with automapactive) is a Doom::OverlayState owned by the Engine now; this is a
+// reference onto it (REFACTOR.md, Step 5).
+doom_boolean& menuactive = Doom::overlayState().menuactive;
 int mouseSensitivity; // has default
 int showMessages; // has default, 0 = off, 1 = on
 int detailLevel; // has default, 0 = high, 1 = normal

@@ -54,7 +54,7 @@ extern char* mapnames[];
 
 // Other subsystems' globals this file reads.
 extern int showMessages; // m_misc config
-extern doom_boolean automapactive; // am_map
+extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
 
 //
 // Locally used constants, shortcuts.

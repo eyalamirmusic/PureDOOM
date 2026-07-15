@@ -130,8 +130,10 @@ extern int snd_DesiredSfxDevice;
 //  status bar explicitely.
 extern doom_boolean statusbaractive;
 
-extern doom_boolean automapactive;  // In AutoMap mode?
-extern doom_boolean menuactive;     // Menu overlayed?
+// automapactive/menuactive live in Doom::OverlayState (an Engine member) now; these are
+// references onto it (REFACTOR.md, Step 5).
+extern doom_boolean& automapactive;  // In AutoMap mode?
+extern doom_boolean& menuactive;     // Menu overlayed?
 
 // paused/viewactive/nodrawers/noblit live in Doom::RefreshFlags (an Engine member) now;
 // these are references onto it (REFACTOR.md, Step 5).
