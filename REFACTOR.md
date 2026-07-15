@@ -56,11 +56,14 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
 clean and the suite is green (**76 tests**, ~8s: `ctest --test-dir build`). Steps
-0–4 are complete; 5 is underway; 6 and 7 are done; 8 is nearly done — **the whole
-UI, game loop, netcode, utility layer and host boundary are migrated, and the zone
-allocator is deleted**. The flat vanilla list is down to the shims plus **one
-file**: `info.cpp` (the generated actor/state LUT). Everything else flat is now a
-shim over a `namespace Doom` unit.
+0–4 are complete; 6 and 7 are done; 8 is nearly done — **the whole UI, game loop,
+netcode, utility layer and host boundary are migrated, and the zone allocator is
+deleted**; and **Step 5 is now largely done** — ~18 cohesive clusters have moved into
+the `Engine`, so `doomstat.h`/`r_state.h`/`p_local.h` are nearly empty of loose globals
+(what is left is config-backed-and-blocked, deferred with the `Thinker` rewrite, or a
+few vestigial scalars — see the Step-8 tail). The flat vanilla list is down to the shims
+plus **one file**: `info.cpp` (the generated actor/state LUT). Everything else flat is
+now a shim over a `namespace Doom` unit.
 
 **The zone is gone.** `z_zone.cpp`/`z_zone.h` are deleted. Mobjs and the thinker
 specials live in a level-scoped malloc pool (`Sim/Tick`: `levelAlloc`/`levelFree`
@@ -171,13 +174,18 @@ init, and p_saveg's byte-serialisation, all under the demo goldens), and the uni
 being kept means the append-only probe hash — which finds mobjs by
 `thinker->function.acp1 == P_MobjThinker` — is untouched.
 
-**What remains overall:** Step 8 (UI, game loop, host boundary, and finally the
-`thinker_t`→`Thinker` virtualisation + retiring the zone allocator). Steps 6 and 7
-are complete — every `p_*` and `r_*` file is now a shim over a `namespace Doom`
-unit. The per-file recipe is settled and mechanical: move the logic into a
-`namespace Doom` `Sim/` or `Render/` unit, leave the vanilla names as shims in the
-flat file, keep as globals only what another file reads (or identifies by
-function-pointer address), and run the demos.
+**What remains overall:** the deep tail of Step 8 (the `thinker_t`→`Thinker`
+virtualisation + `info.cpp`, and the `doom_config`→`Host` redesign + audio), plus the
+*finish* of Step 5. Steps 6 and 7 are complete — every `p_*` and `r_*` file is now a
+shim over a `namespace Doom` unit — and Step 5 has migrated ~18 cohesive clusters, so
+`doomstat.h`/`r_state.h`/`p_local.h` are nearly empty of loose globals. What is left of
+Step 5 is scoped and blocked-or-deferred, not open-ended: the config-backed globals wait
+on the config rework (proven necessary — a naive migration segfaulted every test),
+`thinkercap` waits on the `Thinker` rewrite, and a few vestigial scalars move with their
+subsystems. The full remaining list is in the Step-8 tail at the end of this document.
+The per-file recipe is settled and mechanical: move the logic into a `namespace Doom`
+`Sim/` or `Render/` unit, leave the vanilla names as shims, keep as globals only what
+another file reads (or identifies by function-pointer address), and run the demos.
 
 **How to verify, every step** (nothing here re-records goldens):
 
@@ -1268,10 +1276,26 @@ never really C — the tiny data/decl remainders — are gone:
 - **The `doom_config`→`Host` redesign + audio** — folding the 13 host function
   pointers into a `Host` interface and wiring audio (gap-log item 1) through it, a
   structural pass orthogonal to all of the above.
-- **The globals-into-`Engine` work** (Step 5) — the ~684 scalar globals still to
-  move into the `Engine` object cluster by cluster, as each subsystem is rewritten
-  to take an `Engine&`. The largest remaining piece, and what finally lets the
-  engine be *constructed* rather than booted.
+- **The globals-into-`Engine` work** (Step 5) — **now largely done for the three
+  export headers.** `doomstat.h`, `r_state.h` and `p_local.h` are nearly empty: ~18
+  cohesive clusters have moved into `Engine` (see "the game state begins" under Step 5
+  for the full list), each a `Doom::` struct reached by an accessor with the vanilla
+  names as references onto the members. What is left, and is the *next* Step-5 work:
+  - **Config-backed globals** (`snd_SfxVolume`/`snd_MusicVolume`/`mouseSensitivity`,
+    plus `basedefault`) — **blocked until the `doom_config`→`Host` rework**, because
+    `Config.cpp`'s static `defaults[]` table captures their address at static-init
+    time and a reference-alias turns that into a TU-order-dependent dynamic
+    initializer (proven: a naive migration segfaulted every test — see Step 5). Do
+    these *with* the config rework, which removes the static address capture.
+  - **`thinkercap`** — moves with the `thinker_t`→`Thinker` rewrite (it is the head of
+    the intrusive thinker list that step reworks).
+  - **A few vestigial/scattered scalars** (`viewangleoffset`, `debugfile`, `precache`,
+    `singletics`) — no cohesive cluster; they move with their subsystems (or
+    `viewangleoffset`, always zero, is simply deleted) rather than into a grab-bag.
+  - **Then the file-scope statics** (~1,534 of them) and the remaining Game-local
+    globals, which the reference-alias pattern also fits — this is what finally lets
+    the engine be *constructed* rather than booted, once nothing reaches state by free
+    function.
 
 ## The rules
 
