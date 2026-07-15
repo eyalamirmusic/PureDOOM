@@ -62,6 +62,7 @@
 
 #include "DoomMain.h"
 #include "LaunchOptions.h"
+#include "StartupDefaults.h"
 
 #define MAXARGVS 100
 
@@ -80,10 +81,12 @@ doom_boolean singletics = true; // debug flag to cancel adaptiveness
 
 doom_boolean is_wiping_screen = false;
 
-skill_t startskill;
-int startepisode;
-int startmap;
-doom_boolean autostart;
+// The new-game defaults are a Doom::StartupDefaults owned by the Engine now; these are
+// references onto it (REFACTOR.md, Step 5).
+skill_t& startskill = Doom::startupDefaults().startskill;
+int& startepisode = Doom::startupDefaults().startepisode;
+int& startmap = Doom::startupDefaults().startmap;
+doom_boolean& autostart = Doom::startupDefaults().autostart;
 
 void* debugfile = 0;
 

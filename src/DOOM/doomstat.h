@@ -69,12 +69,13 @@ extern Language_t& language;
 // Selected skill type, map etc.
 //
 
-// Defaults for menu, methinks.
-extern skill_t startskill;
-extern int startepisode;
-extern int startmap;
+// Defaults for menu, methinks. They live in Doom::StartupDefaults (an Engine member) now;
+// these are references onto it (REFACTOR.md, Step 5).
+extern skill_t& startskill;
+extern int& startepisode;
+extern int& startmap;
 
-extern doom_boolean autostart;
+extern doom_boolean& autostart;
 
 // The current game's rules live in Doom::GameSession (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).

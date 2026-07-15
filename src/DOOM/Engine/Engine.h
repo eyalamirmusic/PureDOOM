@@ -4,6 +4,7 @@
 #include "../Game/GameVersion.h"
 #include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
+#include "../Game/StartupDefaults.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
 #include "../Render/RenderScratch.h"
@@ -46,6 +47,7 @@ struct Engine
     LaunchOptions launchOptions;
     GameVersion gameVersion;
     GameSession gameSession;
+    StartupDefaults startupDefaults;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

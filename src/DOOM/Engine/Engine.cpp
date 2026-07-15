@@ -84,4 +84,9 @@ GameSession& gameSession()
 {
     return engine().gameSession;
 }
+
+StartupDefaults& startupDefaults()
+{
+    return engine().startupDefaults;
+}
 } // namespace Doom
