@@ -58,6 +58,7 @@
 #include "../wi_stuff.h"
 #include "../g_game.h"
 
+#include "DemoState.h"
 #include "Game.h"
 #include "GameFlow.h"
 #include "GameSession.h"
@@ -94,7 +95,10 @@ int& gamemap = Doom::gameSession().gamemap;
 doom_boolean paused;
 doom_boolean sendpause; // send a pause event next tic
 doom_boolean sendsave; // send a save event next tic
-doom_boolean usergame; // ok to save / end game
+
+// usergame (with the demo flags below) is a Doom::DemoState owned by the Engine now; these
+// are references onto it (REFACTOR.md, Step 5).
+doom_boolean& usergame = Doom::demoState().usergame; // ok to save / end game
 
 doom_boolean timingdemo; // if true, exit with report on completion
 doom_boolean nodrawers; // for comparative timing purposes
@@ -122,13 +126,13 @@ int& totalitems = Doom::levelStats().totalitems;
 int& totalsecret = Doom::levelStats().totalsecret;
 
 char demoname[32];
-doom_boolean demorecording;
-doom_boolean demoplayback;
+doom_boolean& demorecording = Doom::demoState().demorecording;
+doom_boolean& demoplayback = Doom::demoState().demoplayback;
 doom_boolean netdemo;
 byte* demobuffer;
 byte* demo_p;
 byte* demoend;
-doom_boolean singledemo; // quit after playing a demo from cmdline
+doom_boolean& singledemo = Doom::demoState().singledemo; // quit after one demo
 
 doom_boolean precache = true; // if true, load all graphics at start
 

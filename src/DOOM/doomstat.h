@@ -177,14 +177,16 @@ extern int& leveltime;       // tics in game play for par
 // DEMO playback/recording related stuff.
 // No demo, there is a human player in charge?
 // Disable save/end game?
-extern doom_boolean usergame;
+// The demo-playback state lives in Doom::DemoState (an Engine member) now; these are
+// references onto it (REFACTOR.md, Step 5).
+extern doom_boolean& usergame;
 
 //?
-extern doom_boolean demoplayback;
-extern doom_boolean demorecording;
+extern doom_boolean& demoplayback;
+extern doom_boolean& demorecording;
 
 // Quit after playing a demo from cmdline.
-extern doom_boolean singledemo;
+extern doom_boolean& singledemo;
 
 // gamestate and wipegamestate live in Doom::GameFlow (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).

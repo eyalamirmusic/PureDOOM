@@ -26,8 +26,8 @@
 
 #include "System.h"
 
-// Defined in g_game; read by I_Error to flush a demo before it aborts.
-extern doom_boolean demorecording;
+// In Doom::DemoState (an Engine member); read by I_Error to flush a demo before it aborts.
+extern doom_boolean& demorecording;
 
 namespace Doom
 {

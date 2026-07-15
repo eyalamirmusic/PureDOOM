@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Game/DemoState.h"
 #include "../Game/GameFlow.h"
 #include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"
@@ -52,6 +53,7 @@ struct Engine
     StartupDefaults startupDefaults;
     PlayerState playerState;
     GameFlow gameFlow;
+    DemoState demoState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

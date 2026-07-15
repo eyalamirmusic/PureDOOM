@@ -118,7 +118,7 @@ char title[128];
 extern doom_boolean inhelpscreens;
 extern doom_boolean& setsizeneeded;
 extern int showMessages;
-extern doom_boolean demorecording;
+extern doom_boolean& demorecording; // Doom::DemoState (Engine member)
 
 // Title/demo-loop state, kept at file scope (pagename is read by g_game).
 int demosequence;

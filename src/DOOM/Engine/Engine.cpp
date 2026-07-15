@@ -99,4 +99,9 @@ GameFlow& gameFlow()
 {
     return engine().gameFlow;
 }
+
+DemoState& demoState()
+{
+    return engine().demoState;
+}
 } // namespace Doom
