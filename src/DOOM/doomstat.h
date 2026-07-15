@@ -248,25 +248,27 @@ extern int bodyqueslot;
 extern int skyflatnum;
 
 
-// Netgame stuff (buffers and pointers, i.e. indices).
+// Netgame stuff (buffers and pointers, i.e. indices). Lives in Doom::NetState (an Engine
+// member) now; these are references onto it, the arrays as references-to-array
+// (REFACTOR.md, Step 5).
 
 // This is ???
-extern doomcom_t* doomcom;
+extern doomcom_t*& doomcom;
 
 // This points inside doomcom.
-extern doomdata_t* netbuffer;
+extern doomdata_t*& netbuffer;
 
 
-extern ticcmd_t localcmds[BACKUPTICS];
+extern ticcmd_t (&localcmds)[BACKUPTICS];
 
 // rndindex was declared here too, a second name for m_random.h's. Include that
 // instead - Doom::Random owns the state now and there is one declaration of it.
 
-extern int maketic;
-extern int nettics[MAXNETNODES];
+extern int& maketic;
+extern int (&nettics)[MAXNETNODES];
 
-extern ticcmd_t netcmds[MAXPLAYERS][BACKUPTICS];
-extern int ticdup;
+extern ticcmd_t (&netcmds)[MAXPLAYERS][BACKUPTICS];
+extern int& ticdup;
 
 
 #endif

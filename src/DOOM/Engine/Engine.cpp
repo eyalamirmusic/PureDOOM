@@ -114,4 +114,9 @@ OverlayState& overlayState()
 {
     return engine().overlayState;
 }
+
+NetState& netState()
+{
+    return engine().netState;
+}
 } // namespace Doom

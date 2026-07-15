@@ -41,6 +41,8 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 
+#include "NetState.h"
+
 #include "Net.h"
 
 //
@@ -62,13 +64,16 @@
 #define RESENDCOUNT 10
 #define PL_DRONE 0x80 // bit flag in doomdata->player
 
-doomcom_t* doomcom;
-doomdata_t* netbuffer; // points inside doomcom
+// The netcode buffers and tic bookkeeping are a Doom::NetState owned by the Engine now; these
+// (and maketic/ticdup below) are references onto it, the arrays as references-to-array
+// (REFACTOR.md, Step 5).
+doomcom_t*& doomcom = Doom::netState().doomcom;
+doomdata_t*& netbuffer = Doom::netState().netbuffer; // points inside doomcom
 
-ticcmd_t localcmds[BACKUPTICS];
+ticcmd_t (&localcmds)[BACKUPTICS] = Doom::netState().localcmds;
 
-ticcmd_t netcmds[MAXPLAYERS][BACKUPTICS];
-int nettics[MAXNETNODES];
+ticcmd_t (&netcmds)[MAXPLAYERS][BACKUPTICS] = Doom::netState().netcmds;
+int (&nettics)[MAXNETNODES] = Doom::netState().nettics;
 doom_boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
 doom_boolean remoteresend[MAXNETNODES]; // set when local needs tics
 int resendto[MAXNETNODES]; // set when remote needs tics
@@ -76,10 +81,10 @@ int resendcount[MAXNETNODES];
 
 int nodeforplayer[MAXPLAYERS];
 
-int maketic;
+int& maketic = Doom::netState().maketic;
 int lastnettic;
 int skiptics;
-int ticdup;
+int& ticdup = Doom::netState().ticdup;
 int maxsend; // BACKUPTICS/(2*ticdup)-1
 
 doom_boolean reboundpacket;
