@@ -1,51 +1,27 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
-//
-// $Id:$
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
 //
-// This source is available for distribution and/or modification
-// only under the terms of the DOOM Source Code License as
-// published by id Software. All rights reserved.
-//
-// The source is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// FITNESS FOR A PARTICULAR PURPOSE. See the DOOM Source Code License
-// for more details.
-//
-// $Log:$
+// This source is available for distribution and/or modification only under the
+// terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//  Sky rendering. The DOOM sky is a texture map like any
-//  wall, wrapping around. A 1024 columns equal 360 degrees.
-//  The default sky map is 256 columns and repeats 4 times
-//  on a 320 screen?
-//  
+//        Sky rendering. Rewritten in Render/Sky.{h,cpp}; this keeps R_InitSkyMap as
+//        a shim and owns the sky globals (read across the renderer and the shooting
+//        code).
 //
 //-----------------------------------------------------------------------------
 
-
-#include "doom_config.h"
-
-#include "m_fixed.h" // Needed for FRACUNIT.
-#include "r_data.h" // Needed for Flat retrieval.
 #include "r_sky.h"
 
+#include "Render/Sky.h"
 
-//
-// sky mapping
-//
 int skyflatnum;
 int skytexture;
 int skytexturemid;
 
-
-//
-// R_InitSkyMap
-// Called whenever the view size changes.
-//
 void R_InitSkyMap(void)
 {
-    skytexturemid = 100 * FRACUNIT;
+    Doom::initSkyMap();
 }

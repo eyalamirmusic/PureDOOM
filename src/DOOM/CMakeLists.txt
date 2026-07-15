@@ -13,6 +13,7 @@ file(GLOB DOOM_VANILLA_SOURCES CONFIGURE_DEPENDS *.cpp *.h)
 file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
         Math/*.cpp Math/*.h
         Sim/*.cpp Sim/*.h
+        Render/*.cpp Render/*.h
         Wad/*.cpp Wad/*.h
         Engine/*.cpp Engine/*.h)
 
