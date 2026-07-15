@@ -14,11 +14,13 @@
 
 #include "p_local.h"
 
+#include "Game/LevelStats.h"
 #include "Sim/Tick.h"
 
-// leveltime (the level clock) and thinkercap (the thinker list head) are read
-// across the engine; their storage lives here.
-int leveltime;
+// leveltime (the level clock) lives in Doom::LevelStats (an Engine member) now; this is a
+// reference onto it. thinkercap (the thinker list head) is read across the engine; its
+// storage lives here.
+int& leveltime = Doom::levelStats().leveltime;
 thinker_t thinkercap;
 
 void P_InitThinkers(void)

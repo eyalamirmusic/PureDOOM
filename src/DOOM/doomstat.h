@@ -153,13 +153,15 @@ extern int displayplayer;
 // Scores, rating.
 // Statistics on a given map, for intermission.
 //
-extern int totalkills;
-extern int totalitems;
-extern int totalsecret;
+// The level's progress lives in Doom::LevelStats (an Engine member) now; these are
+// references onto it (REFACTOR.md, Step 5).
+extern int& totalkills;
+extern int& totalitems;
+extern int& totalsecret;
 
 // Timer, for scores.
-extern int levelstarttic;   // gametic at level start
-extern int leveltime;       // tics in game play for par
+extern int& levelstarttic;   // gametic at level start
+extern int& leveltime;       // tics in game play for par
 
 
 // --------------------------------------

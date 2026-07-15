@@ -59,6 +59,7 @@
 #include "../g_game.h"
 
 #include "Game.h"
+#include "LevelStats.h"
 
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
@@ -101,8 +102,13 @@ player_t players[MAXPLAYERS];
 int consoleplayer; // player taking events and displaying
 int displayplayer; // view being displayed
 int gametic;
-int levelstarttic; // gametic at level start
-int totalkills, totalitems, totalsecret; // for intermission
+
+// The level's progress (levelstarttic + the intermission totals, and leveltime over in
+// p_tick) is a Doom::LevelStats owned by the Engine now; these are references onto it.
+int& levelstarttic = Doom::levelStats().levelstarttic; // gametic at level start
+int& totalkills = Doom::levelStats().totalkills;       // for intermission
+int& totalitems = Doom::levelStats().totalitems;
+int& totalsecret = Doom::levelStats().totalsecret;
 
 char demoname[32];
 doom_boolean demorecording;

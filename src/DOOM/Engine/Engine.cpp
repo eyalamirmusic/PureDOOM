@@ -64,4 +64,9 @@ RenderScratch& renderScratch()
 {
     return engine().renderScratch;
 }
+
+LevelStats& levelStats()
+{
+    return engine().levelStats;
+}
 } // namespace Doom
