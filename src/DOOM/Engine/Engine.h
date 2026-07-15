@@ -18,6 +18,7 @@
 #include "../Game/NetState.h"
 #include "../Game/OverlayState.h"
 #include "../Game/ParTimes.h"
+#include "../Game/PendingCommands.h"
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
 #include "../Game/SkyState.h"
@@ -94,6 +95,7 @@ struct Engine
     ParTimes parTimes;
     MovementSpeeds movementSpeeds;
     TimeDemo timeDemo;
+    PendingCommands pendingCommands;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

@@ -70,6 +70,7 @@
 #include "MovementSpeeds.h"
 #include "NetState.h"
 #include "ParTimes.h"
+#include "PendingCommands.h"
 #include "PlayerState.h"
 #include "RefreshFlags.h"
 #include "TiccmdInput.h"
@@ -104,8 +105,11 @@ int& gamemap = Doom::gameSession().gamemap;
 // paused (with viewactive/nodrawers/noblit below) is a Doom::RefreshFlags owned by the
 // Engine now; these are references onto it (REFACTOR.md, Step 5).
 doom_boolean& paused = Doom::refreshFlags().paused;
-doom_boolean sendpause; // send a pause event next tic
-doom_boolean sendsave; // send a save event next tic
+// sendpause/sendsave are a Doom::PendingCommands owned by the Engine now, moved by the
+// file-scope-statics sweep; these vanilla names are references onto the members (REFACTOR.md,
+// Step 5).
+doom_boolean& sendpause = Doom::pendingCommands().sendpause; // send a pause event next tic
+doom_boolean& sendsave = Doom::pendingCommands().sendsave; // send a save event next tic
 
 // usergame (with the demo flags below) is a Doom::DemoState owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).

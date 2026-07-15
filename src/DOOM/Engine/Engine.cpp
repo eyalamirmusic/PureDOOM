@@ -204,4 +204,9 @@ TimeDemo& timeDemo()
 {
     return engine().timeDemo;
 }
+
+PendingCommands& pendingCommands()
+{
+    return engine().pendingCommands;
+}
 } // namespace Doom

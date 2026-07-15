@@ -78,7 +78,6 @@ extern patch_t* hu_font[HU_FONTSIZE];
 extern doom_boolean message_dontfuckwithme;
 extern doom_boolean chat_on; // in heads-up code
 extern int mousemove;
-extern doom_boolean sendpause;
 extern int crosshair; // Game/Config.cpp
 extern int always_run; // Game/Config.cpp
 extern unsigned char screen_palette[256 * 3]; // i_video, no header
