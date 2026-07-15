@@ -924,9 +924,10 @@ them: `wadfiles[]` (the WAD list `D_AddFile` builds and `W_InitMultipleFiles` co
 `d_main.h` extern but no external `.cpp` reader, and `title[]` (the startup banner) had no
 extern at all — both became `static` (file-local), the extern dropped. `wadfile[]` and
 `mapdir[]` turned out **dead** — referenced only in comments — and were deleted the
-`linecount`/`loopcount`/`viewangleoffset` way. `basedefault[]` stays a loose global, config-
-blocked (`Config.cpp`'s `defaults[]` captures its address at static-init). All four goldens
-byte-identical.
+`linecount`/`loopcount`/`viewangleoffset` way, as was the always-unread `drone` flag beside them
+(the `doomcom_t.drone` in `d_net.h` is an unrelated struct member). `basedefault[]` stays a
+loose global, config-blocked (`Config.cpp`'s `defaults[]` captures its address at static-init).
+All four goldens byte-identical.
 
 What is left of the tail: `save_p` (p_saveg's serialization cursor, which moves with the
 `Thinker`/p_saveg rewrite) and `basedefault[]` (config-blocked, above). The `am_map` automap

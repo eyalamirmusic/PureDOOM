@@ -82,7 +82,8 @@ doom_boolean& respawnparm =
     Doom::launchOptions().respawnparm; // checkparm of -respawn
 doom_boolean& fastparm = Doom::launchOptions().fastparm; // checkparm of -fast
 
-doom_boolean drone;
+// (drone, an always-unread vestige, was deleted here - the doomcom_t.drone in d_net.h
+// is an unrelated struct member.)
 
 doom_boolean singletics = true; // debug flag to cancel adaptiveness
 
