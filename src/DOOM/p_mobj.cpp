@@ -50,7 +50,7 @@ int iquehead;
 int iquetail;
 
 
-extern fixed_t attackrange;
+extern fixed_t& attackrange; // a reference into Doom::Clip (Sim/MapAction)
 
 
 void G_PlayerReborn(int player);

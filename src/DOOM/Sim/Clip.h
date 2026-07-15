@@ -62,6 +62,12 @@ struct Clip
     static constexpr int maxSpecialCross = 8;
     line_t* spechit[maxSpecialCross] = {};
     int numspechit = 0;
+
+    // Hitscan results read outside the attack code: the thing a P_AimLineAttack
+    // locked onto (0 if none), and the range of the shot in progress. p_mobj and
+    // p_pspr read both; the rest of the attack scratch is file-local to MapAction.
+    mobj_t* linetarget = nullptr;
+    fixed_t attackrange = 0;
 };
 
 // The one Clip, a view onto the Engine's member - the same pattern as level(),

@@ -214,7 +214,7 @@ void P_UseLines(player_t* player);
 doom_boolean P_ChangeSector(sector_t* sector, doom_boolean crunch);
 
 
-extern mobj_t* linetarget;        // who got hit (or 0)
+extern mobj_t*& linetarget; // who got hit (or 0); a reference into Doom::Clip
 
 
 fixed_t P_AimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance);
