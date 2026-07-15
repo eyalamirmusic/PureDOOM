@@ -1024,15 +1024,34 @@ flat vanilla list is down to **`info.cpp` and `z_zone.cpp`**. What remains is th
 deep, interlocking tail, and it is all *layout-identical* until the very end:
 
 - **Delete the zone**, netted by the p_saveg suite and the frame goldens, in three
-  moves that keep `mobj_t` byte-identical (no vtable): the renderer's boot-once
-  `PU_STATIC` tables (`Render/{Data,Things,Draw,Planes}`) and the scratch buffers
+  moves that keep `mobj_t` byte-identical (no vtable). The two easy, independent
+  buckets first: the renderer's boot-once `PU_STATIC` tables
+  (`Render/{Data,Things,Draw,Planes}`, all 24 confirmed) and the scratch buffers
   (`UI/{Wipe,Intermission,StatusBar}`, `Game/{Game,Config,Sound}`) become RAII
-  owners; the mobjs and thinker specials (`PU_LEVEL`/`PU_LEVSPEC`) become
-  malloc-per-object freed through the thinker list (every one *is* a thinker, so a
-  `thinkercap` walk replaces `Z_FreeTags(PU_LEVEL)`). Care: the composite-cache
-  zero-tail (tutti-frutti) when `Render/Data`'s pixel blocks move, and a
-  `doom_memset(0)` after a special's malloc to match the first-load zero the demos
-  recorded (`Z_Malloc` does not zero on reuse; the spawners field-init anyway).
+  owners (`std::vector`/`unique_ptr`), frame-golden and boot covered, no atomicity.
+  The one care there: the composite-cache **zero-tail** (tutti-frutti) when
+  `Render/Data`'s pixel blocks move — the metadata arrays are safe, the pixel data
+  is not.
+
+  The hard bucket is the mobjs and thinker specials (`PU_LEVEL`/`PU_LEVSPEC`, 24
+  sites: `Sim/{Mobj,Doors,Floors,Plats,Ceilings,Lights,Specials,SaveGame}`). It
+  must be **atomic** (a `doom_free` on a still-`Z_Malloc`'d block corrupts the
+  heap, so all allocs and all frees — `Sim/Tick`'s run-loop free, `Sim/SaveGame`'s,
+  and `Sim/Setup`'s `Z_FreeTags(PU_LEVEL)` — flip together), and it is **not the
+  trivial "free through the thinker list" swap it first looks like.** `removeMobj`
+  frees *lazily* (`P_RemoveThinker` marks `function = -1`; the run loop frees next
+  tic), and `unArchiveThinkers` clears the world by calling `removeMobj` on every
+  fresh mobj and then `P_InitThinkers`, which empties `thinkercap` **without**
+  freeing those marked blocks. The zone reclaims them at the next
+  `Z_FreeTags(PU_LEVEL)` because they are still `PU_LEVEL`-tagged in the arena; a
+  `thinkercap` walk would miss them and leak. So a clean, leak-free Bucket 1 needs
+  real allocation tracking (an owning list/pool, e.g. on `Doom::Level`) rather than
+  the thinker list, or an `unArchiveThinkers` that frees immediately instead of
+  marking — which is why this bucket is genuinely coupled to the ownership
+  restructure, not a mechanical find-and-replace. `Z_Malloc` does not zero on
+  reuse (only OS first-touch) and `P_SpawnMobj` memsets its own mobj, so the pool's
+  alloc should `doom_memset(0)` to match the first-load zero the demos recorded and
+  keep the specials deterministic.
 - **`thinker_t`→`Thinker`** virtualisation and **`info.cpp`** last, together: a
   real base with a virtual `tick()` makes `mobj_t`/the specials polymorphic, which
   breaks the memcpy serialisation and the `memset`-over-raw-alloc init, so it lands
