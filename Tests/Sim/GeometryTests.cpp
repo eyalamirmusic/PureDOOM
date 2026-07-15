@@ -27,6 +27,19 @@ constexpr Vec2 at(int x, int y)
     return {Fixed::fromInt(x), Fixed::fromInt(y)};
 }
 
+// boxOnLineSide with whole-unit box edges, so the cases read at a glance.
+int boxSide(
+    int top, int bottom, int left, int right, Vec2 start, Vec2 delta, int slope)
+{
+    return boxOnLineSide(Fixed::fromInt(top),
+                         Fixed::fromInt(bottom),
+                         Fixed::fromInt(left),
+                         Fixed::fromInt(right),
+                         start,
+                         delta,
+                         slope);
+}
+
 // side 0 is "front" - to the right of the line's direction (the right-hand rule
 // DOOM's linedefs follow). These cases are chosen so the answer is obvious from
 // the geometry, not read back off the implementation.
@@ -169,5 +182,31 @@ auto tLineOpeningIsSymmetric = test("Geometry/lineOpeningIsSymmetric") = []
     check(a.top == b.top && a.bottom == b.bottom && a.range == b.range
               && a.lowFloor == b.lowFloor,
           "the window is the same whichever sector is front");
+};
+
+// boxOnLineSide answers 0 (front) / 1 (back) when the whole box is on one side and
+// -1 when it straddles. Front is "below an eastward line" / "east of a northward
+// line", the same right-hand side pointOnLineSide uses. Each slopetype has its own
+// path, so each is checked.
+auto tBoxOnLineSideAxisAligned = test("Geometry/boxOnLineSideAxisAligned") = []
+{
+    // Eastward line along y = 0 (ST_HORIZONTAL, slope 0). Below is front.
+    check(boxSide(-1, -2, -1, 1, at(0, 0), at(1, 0), 0) == 0, "box below = front");
+    check(boxSide(2, 1, -1, 1, at(0, 0), at(1, 0), 0) == 1, "box above = back");
+    check(boxSide(1, -1, -1, 1, at(0, 0), at(1, 0), 0) == -1, "box on it straddles");
+
+    // Northward line along x = 0 (ST_VERTICAL, slope 1). East is front.
+    check(boxSide(1, -1, 1, 2, at(0, 0), at(0, 1), 1) == 0, "box east = front");
+    check(boxSide(1, -1, -2, -1, at(0, 0), at(0, 1), 1) == 1, "box west = back");
+    check(boxSide(1, -1, -1, 1, at(0, 0), at(0, 1), 1) == -1, "box on it straddles");
+};
+
+auto tBoxOnLineSideDiagonal = test("Geometry/boxOnLineSideDiagonal") = []
+{
+    // North-east line through the origin (ST_POSITIVE, slope 2). A box in the SE
+    // quadrant is clearly to its right (front); one centred on the origin straddles.
+    check(boxSide(-1, -3, 1, 3, at(0, 0), at(1, 1), 2) == 0, "SE box = front");
+    check(boxSide(3, 1, -3, -1, at(0, 0), at(1, 1), 2) == 1, "NW box = back");
+    check(boxSide(1, -1, -1, 1, at(0, 0), at(1, 1), 2) == -1, "box on it straddles");
 };
 } // namespace

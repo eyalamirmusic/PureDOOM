@@ -597,18 +597,24 @@ line, and the intercept of two crossing lines landing a quarter of the way along
 The demos remain the proof the shims read the right fields — a bit-identical replay
 could not survive reading `dx` where `dy` was meant.
 
-Two more pure helpers from `p_maputl` joined the header: `approxDistance` (DOOM's
-`|larger| + |smaller|/2` distance estimate) and `lineOpening` (the vertical window a
+Three more pure helpers from `p_maputl` joined the header: `approxDistance` (DOOM's
+`|larger| + |smaller|/2` distance estimate), `lineOpening` (the vertical window a
 two-sided line leaves — lower ceiling down to higher floor, plus the lower floor,
-which `PIT_CheckLine` narrows a mover against). `p_maputl.cpp`'s `P_AproxDistance`
-and `P_LineOpening` are shims over them; the single-sided-line early-out
-(`openrange = 0`) stays in the shim, being about the linedef's structure rather than
-the two sectors' heights. `GeometryTests.cpp` pins the estimate as an *over*estimate
-of a real diagonal — a "fix" to a true hypotenuse would desync every demo, the aim
-and the blockmap search radius having been tuned against these numbers — and pins
-the opening window. The goldens held bit-identical across the swap, which, with
-`P_AproxDistance` on the critical path of the renderer and the sound code as well as
-the playsim, is the real proof the extraction changed nothing.
+which `PIT_CheckLine` narrows a mover against) and `boxOnLineSide` (which side of a
+line a whole bounding box is on, or −1 straddling — the cheap reject `PIT_CheckLine`
+runs before the exact test). `p_maputl.cpp`'s `P_AproxDistance`, `P_LineOpening` and
+`P_BoxOnLineSide` are shims over them; the single-sided-line early-out
+(`openrange = 0`) stays in the `P_LineOpening` shim, being about the linedef's
+structure rather than the two sectors' heights, and `boxOnLineSide` takes the
+linedef's precomputed `slopetype` as an int rather than recomputing it.
+`GeometryTests.cpp` pins the estimate as an *over*estimate of a real diagonal — a
+"fix" to a true hypotenuse would desync every demo, the aim and the blockmap search
+radius having been tuned against these numbers — the opening window, and the box
+side for each slopetype (front, back, straddle). The goldens held bit-identical
+across every swap, which, with `P_AproxDistance` on the critical path of the
+renderer and the sound code as well as the playsim, is the real proof the extraction
+changed nothing. With this the pure geometry of `p_maputl` is fully out; what stays
+in the file is the stateful part (linking, iterators, intercepts, `P_PathTraverse`).
 
 ### Landed so far — the scenario-test harness
 

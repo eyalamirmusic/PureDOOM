@@ -37,6 +37,64 @@ inline int pointOnLineSide(Vec2 point, Vec2 lineStart, Vec2 lineDelta)
     return right < left ? 0 : 1;
 }
 
+// Which side of a line's infinite extension a whole bounding box lies on: 0 in
+// front, 1 behind, -1 if the box straddles the line. This is what PIT_CheckLine
+// asks to reject lines a mover's box cannot touch before the exact test.
+//
+// `slopeType` is the linedef's precomputed orientation (vanilla's slopetype_t:
+// 0 ST_HORIZONTAL, 1 ST_VERTICAL, 2 ST_POSITIVE, 3 ST_NEGATIVE); the axis-aligned
+// cases answer from a single edge comparison and skip the cross product, and the
+// two diagonal cases test the box corners that face the line's direction. The box
+// edges are the vanilla tmbox order - top/bottom/left/right. p1/p2 start at 0 so a
+// slope outside 0..3 is harmless rather than undefined; the engine only ever
+// passes the four it precomputed.
+inline int boxOnLineSide(Fixed top,
+                         Fixed bottom,
+                         Fixed left,
+                         Fixed right,
+                         Vec2 lineStart,
+                         Vec2 lineDelta,
+                         int slopeType)
+{
+    int p1 = 0;
+    int p2 = 0;
+
+    switch (slopeType)
+    {
+        case 0: // ST_HORIZONTAL
+            p1 = top.raw > lineStart.y.raw;
+            p2 = bottom.raw > lineStart.y.raw;
+            if (lineDelta.x.raw < 0)
+            {
+                p1 ^= 1;
+                p2 ^= 1;
+            }
+            break;
+
+        case 1: // ST_VERTICAL
+            p1 = right.raw < lineStart.x.raw;
+            p2 = left.raw < lineStart.x.raw;
+            if (lineDelta.y.raw < 0)
+            {
+                p1 ^= 1;
+                p2 ^= 1;
+            }
+            break;
+
+        case 2: // ST_POSITIVE
+            p1 = pointOnLineSide({left, top}, lineStart, lineDelta);
+            p2 = pointOnLineSide({right, bottom}, lineStart, lineDelta);
+            break;
+
+        case 3: // ST_NEGATIVE
+            p1 = pointOnLineSide({right, top}, lineStart, lineDelta);
+            p2 = pointOnLineSide({left, bottom}, lineStart, lineDelta);
+            break;
+    }
+
+    return p1 == p2 ? p1 : -1;
+}
+
 // The same question against a DivLine, and a different answer path: the sign-bit
 // fast path decides most cases without a multiply, and when it does multiply it
 // shifts BOTH factors by 8 rather than one by 16. This is what the BSP, the sight
