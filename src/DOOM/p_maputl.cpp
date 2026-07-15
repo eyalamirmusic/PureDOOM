@@ -34,6 +34,7 @@
 #include "p_local.h"
 #include "r_state.h" // State.
 
+#include "Sim/Clip.h"
 #include "Sim/Level.h"
 #include "Sim/MapGeometry.h"
 
@@ -51,11 +52,7 @@ fixed_t opentop;
 fixed_t openbottom;
 fixed_t openrange;
 fixed_t lowfloor;
-intercept_t intercepts[MAXINTERCEPTS];
-intercept_t* intercept_p;
 divline_t trace;
-doom_boolean earlyout;
-int ptflags;
 
 
 //
@@ -393,18 +390,20 @@ doom_boolean PIT_AddLineIntercepts(line_t* ld)
     if (frac < 0)
         return true; // behind source
 
+    auto& clip = Doom::clip();
+
     // try to early out the check
-    if (earlyout
+    if (clip.earlyOut
         && frac < FRACUNIT
         && !ld->backsector)
     {
         return false; // stop checking
     }
 
-    intercept_p->frac = frac;
-    intercept_p->isaline = true;
-    intercept_p->d.line = ld;
-    intercept_p++;
+    clip.interceptPtr->frac = frac;
+    clip.interceptPtr->isaline = true;
+    clip.interceptPtr->d.line = ld;
+    clip.interceptPtr++;
 
     return true; // continue
 }
@@ -465,10 +464,12 @@ doom_boolean PIT_AddThingIntercepts(mobj_t* thing)
     if (frac < 0)
         return true; // behind source
 
-    intercept_p->frac = frac;
-    intercept_p->isaline = false;
-    intercept_p->d.thing = thing;
-    intercept_p++;
+    auto& clip = Doom::clip();
+
+    clip.interceptPtr->frac = frac;
+    clip.interceptPtr->isaline = false;
+    clip.interceptPtr->d.thing = thing;
+    clip.interceptPtr++;
 
     return true; // keep going
 }
@@ -486,14 +487,16 @@ doom_boolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
     intercept_t* scan;
     intercept_t* in;
 
-    count = (int)(intercept_p - intercepts);
+    auto& clip = Doom::clip();
+
+    count = (int)(clip.interceptPtr - clip.intercepts);
 
     in = 0;                        // shut up compiler warning
 
     while (count--)
     {
         dist = DOOM_MAXINT;
-        for (scan = intercepts; scan < intercept_p; scan++)
+        for (scan = clip.intercepts; scan < clip.interceptPtr; scan++)
         {
             if (scan->frac < dist)
             {
@@ -503,16 +506,16 @@ doom_boolean P_TraverseIntercepts(traverser_t func, fixed_t maxfrac)
         }
 
         if (dist > maxfrac)
-            return true;        // checked everything in range                
+            return true;        // checked everything in range
 
 #if 0  // UNUSED
         {
             // don't check these yet, there may be others inserted
-            in = scan = intercepts;
-            for (scan = intercepts; scan < intercept_p; scan++)
+            in = scan = clip.intercepts;
+            for (scan = clip.intercepts; scan < clip.interceptPtr; scan++)
                 if (scan->frac > maxfrac)
                     *in++ = *scan;
-            intercept_p = in;
+            clip.interceptPtr = in;
             return false;
         }
 #endif
@@ -557,10 +560,12 @@ doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int 
 
     int count;
 
-    earlyout = flags & PT_EARLYOUT;
+    auto& clip = Doom::clip();
+
+    clip.earlyOut = flags & PT_EARLYOUT;
 
     validcount++;
-    intercept_p = intercepts;
+    clip.interceptPtr = clip.intercepts;
 
     if (((x1 - bmaporgx) & (MAPBLOCKSIZE - 1)) == 0)
         x1 += FRACUNIT;        // don't side exactly on a line

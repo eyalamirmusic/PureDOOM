@@ -29,4 +29,9 @@ Level& level()
 {
     return engine().level;
 }
+
+Clip& clip()
+{
+    return engine().clip;
+}
 } // namespace Doom

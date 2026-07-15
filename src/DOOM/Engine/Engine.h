@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Sim/Clip.h"
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
 #include "../Wad/WadFile.h"
@@ -24,6 +25,7 @@ struct Engine
     Random random;
     WadFile wad;
     Level level;
+    Clip clip;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

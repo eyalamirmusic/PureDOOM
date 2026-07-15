@@ -146,8 +146,8 @@ typedef struct
 
 
 #define MAXINTERCEPTS        128
-extern intercept_t intercepts[MAXINTERCEPTS];
-extern intercept_t* intercept_p;
+// intercepts[] and intercept_p moved into Doom::Clip (Sim/Clip.h), reached through
+// Doom::clip(); they were p_maputl's own scratch, read by no other file.
 
 
 typedef doom_boolean(*traverser_t) (intercept_t* in);
