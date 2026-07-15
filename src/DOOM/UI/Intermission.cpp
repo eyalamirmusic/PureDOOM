@@ -45,6 +45,7 @@
 #include "../wi_stuff.h"
 
 #include "Intermission.h"
+#include "IntermissionState.h"
 
 namespace Doom
 {
@@ -260,112 +261,119 @@ static anim_t_wi_stuff* anims_wi_stuff[NUMEPISODES] = {
 // GENERAL DATA
 //
 
+// The intermission's residual runtime state and loaded graphics now live on the Engine
+// (UI/IntermissionState.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5). The
+// vanilla names below are references onto that member, so every use is unchanged. The
+// animation/layout data tables above (lnodes / epsd*animinfo / NUMANIMS / anims_wi_stuff) stay
+// file-local: anims_wi_stuff points into epsd*animinfo, a self-referential-pointer table that does
+// not survive being a copyable struct member (the trap AutomapView's cheat sequence documented).
+
 //
 // Locally used stuff.
 //
 
 // used to accelerate or skip a stage
-static int acceleratestage;
+static int& acceleratestage = intermissionState().acceleratestage;
 
 // wbs->pnum
-static int me;
+static int& me = intermissionState().me;
 
 // specifies current state
-static stateenum_t state;
+static stateenum_t& state = intermissionState().state;
 
 // contains information passed into intermission
-static wbstartstruct_t* wbs;
+static wbstartstruct_t*& wbs = intermissionState().wbs;
 
-static wbplayerstruct_t* plrs; // wbs->plyr[]
+static wbplayerstruct_t*& plrs = intermissionState().plrs; // wbs->plyr[]
 
 // used for general timing
-static int cnt;
+static int& cnt = intermissionState().cnt;
 
 // used for timing of background animation
-static int bcnt;
+static int& bcnt = intermissionState().bcnt;
 
 // signals to refresh everything for one frame
-static int firstrefresh;
+static int& firstrefresh = intermissionState().firstrefresh;
 
-static int cnt_kills[MAXPLAYERS];
-static int cnt_items[MAXPLAYERS];
-static int cnt_secret[MAXPLAYERS];
-static int cnt_time;
-static int cnt_par;
-static int cnt_pause;
+static int (&cnt_kills)[MAXPLAYERS] = intermissionState().cnt_kills;
+static int (&cnt_items)[MAXPLAYERS] = intermissionState().cnt_items;
+static int (&cnt_secret)[MAXPLAYERS] = intermissionState().cnt_secret;
+static int& cnt_time = intermissionState().cnt_time;
+static int& cnt_par = intermissionState().cnt_par;
+static int& cnt_pause = intermissionState().cnt_pause;
 
 // # of commercial levels
-static int NUMCMAPS;
+static int& NUMCMAPS = intermissionState().NUMCMAPS;
 
 //
 // GRAPHICS
 //
 
 // background (map of levels).
-static patch_t* bg;
+static patch_t*& bg = intermissionState().bg;
 
 // You Are Here graphic
-static patch_t* yah[2];
+static patch_t* (&yah)[2] = intermissionState().yah;
 
 // splat
-static patch_t* splat;
+static patch_t*& splat = intermissionState().splat;
 
 // %, : graphics
-static patch_t* percent;
-static patch_t* colon;
+static patch_t*& percent = intermissionState().percent;
+static patch_t*& colon = intermissionState().colon;
 
 // 0-9 graphic
-static patch_t* num[10];
+static patch_t* (&num)[10] = intermissionState().num;
 
 // minus sign
-static patch_t* wiminus;
+static patch_t*& wiminus = intermissionState().wiminus;
 
 // "Finished!" graphics
-static patch_t* finished;
+static patch_t*& finished = intermissionState().finished;
 
 // "Entering" graphic
-static patch_t* entering;
+static patch_t*& entering = intermissionState().entering;
 
 // "secret"
-static patch_t* sp_secret;
+static patch_t*& sp_secret = intermissionState().sp_secret;
 
 // "Kills", "Scrt", "Items", "Frags"
-static patch_t* kills;
-static patch_t* secret;
-static patch_t* items;
-static patch_t* frags;
+static patch_t*& kills = intermissionState().kills;
+static patch_t*& secret = intermissionState().secret;
+static patch_t*& items = intermissionState().items;
+static patch_t*& frags = intermissionState().frags;
 
 // Time sucks.
-static patch_t* time_patch;
-static patch_t* par;
-static patch_t* sucks;
+static patch_t*& time_patch = intermissionState().time_patch;
+static patch_t*& par = intermissionState().par;
+static patch_t*& sucks = intermissionState().sucks;
 
 // "killers", "victims"
-static patch_t* killers;
-static patch_t* victims;
+static patch_t*& killers = intermissionState().killers;
+static patch_t*& victims = intermissionState().victims;
 
 // "Total", your face, your dead face
-static patch_t* total;
-static patch_t* star;
-static patch_t* bstar;
+static patch_t*& total = intermissionState().total;
+static patch_t*& star = intermissionState().star;
+static patch_t*& bstar = intermissionState().bstar;
 
 // "red P[1..MAXPLAYERS]"
-static patch_t* p[MAXPLAYERS];
+static patch_t* (&p)[MAXPLAYERS] = intermissionState().p;
 
 // "gray P[1..MAXPLAYERS]"
-static patch_t* bp[MAXPLAYERS];
+static patch_t* (&bp)[MAXPLAYERS] = intermissionState().bp;
 
 // Name graphics of each level (centered)
-static patch_t** lnames;
+static patch_t**& lnames = intermissionState().lnames;
 
-static doom_boolean snl_pointeron = false;
-static int dm_state;
-static int dm_frags[MAXPLAYERS][MAXPLAYERS];
-static int dm_totals[MAXPLAYERS];
-static int cnt_frags[MAXPLAYERS];
-static int dofrags;
-static int ng_state;
-static int sp_state;
+static doom_boolean& snl_pointeron = intermissionState().snl_pointeron;
+static int& dm_state = intermissionState().dm_state;
+static int (&dm_frags)[MAXPLAYERS][MAXPLAYERS] = intermissionState().dm_frags;
+static int (&dm_totals)[MAXPLAYERS] = intermissionState().dm_totals;
+static int (&cnt_frags)[MAXPLAYERS] = intermissionState().cnt_frags;
+static int& dofrags = intermissionState().dofrags;
+static int& ng_state = intermissionState().ng_state;
+static int& sp_state = intermissionState().sp_state;
 
 //
 // CODE

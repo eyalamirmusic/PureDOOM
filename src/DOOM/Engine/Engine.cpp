@@ -225,6 +225,11 @@ HudState& hudState()
     return engine().hudState;
 }
 
+IntermissionState& intermissionState()
+{
+    return engine().intermissionState;
+}
+
 AutomapView& automapView()
 {
     return engine().automapView;

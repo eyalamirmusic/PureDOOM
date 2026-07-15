@@ -74,6 +74,12 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
               && AutomapView {}.finit_width == SCREENWIDTH
               && AutomapView {}.finit_height == SCREENHEIGHT - 32,
           "AutomapView kluge flag, closed flag and frame size");
+    // The one non-zero-looking default: stateenum_t zero-init lands on StatCount, since NoState is
+    // -1, not 0. A migration that "helpfully" defaulted state to NoState would change the value.
+    check(IntermissionState {}.state == StatCount
+              && IntermissionState {}.snl_pointeron == false
+              && IntermissionState {}.bg == nullptr,
+          "IntermissionState zero-init state, cleared pointer flag, null patches");
 };
 
 // The free accessors are views onto the one Engine's members, the same property EngineTests pins
@@ -93,5 +99,7 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
           "statusBarGraphics()");
     check(&statusBarState() == &engine().statusBarState, "statusBarState()");
     check(&automapView() == &engine().automapView, "automapView()");
+    check(&intermissionState() == &engine().intermissionState,
+          "intermissionState()");
 };
 } // namespace

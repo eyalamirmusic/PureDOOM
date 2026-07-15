@@ -42,6 +42,7 @@
 #include "../UI/HudChat.h"
 #include "../UI/HudMessage.h"
 #include "../UI/HudState.h"
+#include "../UI/IntermissionState.h"
 #include "../UI/StatusBarFace.h"
 #include "../UI/StatusBarGraphics.h"
 #include "../UI/StatusBarState.h"
@@ -107,6 +108,7 @@ struct Engine
     HudMessage hudMessage;
     HudChat hudChat;
     HudState hudState;
+    IntermissionState intermissionState;
     AutomapView automapView;
     StatusBarFace statusBarFace;
     StatusBarGraphics statusBarGraphics;
