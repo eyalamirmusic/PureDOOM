@@ -31,7 +31,8 @@
 #define MAXWADFILES 20
 
 
-extern char* wadfiles[MAXWADFILES];
+// wadfiles[] is file-local to Game/DoomMain.cpp (a static there) - the boot-time WAD
+// list D_AddFile builds and W_InitMultipleFiles consumes, read by no other file.
 
 
 void D_AddFile(const char* file);

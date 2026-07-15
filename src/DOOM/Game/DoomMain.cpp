@@ -69,13 +69,17 @@
 
 #define MAXARGVS 100
 
-char* wadfiles[MAXWADFILES];
+// The boot-time WAD list, file-local: D_AddFile appends to it and W_InitMultipleFiles
+// consumes it, and nothing outside this file reads it (its d_main.h extern is gone).
+static char* wadfiles[MAXWADFILES];
 
 // The command-line launch flags are a Doom::LaunchOptions owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
 doom_boolean& devparm = Doom::launchOptions().devparm; // started game with -devparm
-doom_boolean& nomonsters = Doom::launchOptions().nomonsters; // checkparm of -nomonsters
-doom_boolean& respawnparm = Doom::launchOptions().respawnparm; // checkparm of -respawn
+doom_boolean& nomonsters =
+    Doom::launchOptions().nomonsters; // checkparm of -nomonsters
+doom_boolean& respawnparm =
+    Doom::launchOptions().respawnparm; // checkparm of -respawn
 doom_boolean& fastparm = Doom::launchOptions().fastparm; // checkparm of -fast
 
 doom_boolean drone;
@@ -97,8 +101,9 @@ void* debugfile = 0;
 // vanilla names are references onto it (REFACTOR.md, Step 5).
 doom_boolean& advancedemo = Doom::attractMode().advancedemo;
 
-char wadfile[1024]; // primary wad file
-char mapdir[1024]; // directory of development maps
+// wadfile[]/mapdir[] were dead (referenced only in comments) and are deleted, the
+// linecount/loopcount/viewangleoffset way. basedefault stays a loose global until the
+// config rework - Config.cpp's defaults[] captures its address at static-init time.
 char basedefault[1024]; // default file
 
 //
@@ -118,8 +123,8 @@ int& eventtail = Doom::eventQueue().eventtail;
 gamestate_t& wipegamestate = Doom::gameFlow().wipegamestate;
 void R_ExecuteSetViewSize(void);
 
-// print title for every printed line
-char title[128];
+// print title for every printed line - file-local, built and printed only here
+static char title[128];
 
 extern doom_boolean inhelpscreens;
 extern doom_boolean& setsizeneeded;
