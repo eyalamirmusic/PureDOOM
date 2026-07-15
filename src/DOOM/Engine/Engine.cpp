@@ -129,4 +129,9 @@ GameClock& gameClock()
 {
     return engine().gameClock;
 }
+
+AmmoLimits& ammoLimits()
+{
+    return engine().ammoLimits;
+}
 } // namespace Doom

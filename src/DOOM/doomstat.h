@@ -216,9 +216,10 @@ extern mapthing_t (&playerstarts)[MAXPLAYERS];
 extern wbstartstruct_t wminfo;
 
 
-// LUT of ammunition limits for each kind.
-// This doubles with BackPack powerup item.
-extern int maxammo[NUMAMMO];
+// LUT of ammunition limits for each kind. This doubles with BackPack powerup item.
+// In Doom::AmmoLimits (an Engine member) now; a reference-to-array onto it, also declared in
+// p_local.h (REFACTOR.md, Step 5).
+extern int (&maxammo)[NUMAMMO];
 
 
 //-----------------------------------------

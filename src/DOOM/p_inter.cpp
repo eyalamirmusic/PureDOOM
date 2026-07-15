@@ -27,6 +27,7 @@
 #include "doomdef.h"
 #include "p_local.h"
 
+#include "Game/AmmoLimits.h"
 #include "Sim/Interaction.h"
 
 #ifdef __GNUG__
@@ -36,7 +37,9 @@
 
 
 // a weapon is found with two clip loads, a big item has five clip loads
-int maxammo[NUMAMMO] = {200, 50, 300, 50};
+// maxammo is a Doom::AmmoLimits owned by the Engine now; this is a reference-to-array onto
+// it (REFACTOR.md, Step 5).
+int (&maxammo)[NUMAMMO] = Doom::ammoLimits().maxammo;
 int clipammo[NUMAMMO] = {10, 4, 20, 1};
 
 

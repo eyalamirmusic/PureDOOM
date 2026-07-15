@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Game/AmmoLimits.h"
 #include "../Game/DemoState.h"
 #include "../Game/GameClock.h"
 #include "../Game/GameFlow.h"
@@ -64,6 +65,7 @@ struct Engine
     NetState netState;
     MapSpawns mapSpawns;
     GameClock gameClock;
+    AmmoLimits ammoLimits;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
