@@ -47,7 +47,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **done** — `z_zone.cpp`/`z_zone.h` deleted. Mobjs and thinker specials moved to a level-scoped malloc pool (`Sim/Tick`'s `levelAlloc`/`freeLevelAllocations`); the renderer's boot-once `PU_STATIC` and the scratch buffers to `doom_malloc`; the WAD and `Level` geometry already owned theirs. The vestigial `PU_*` tags `W_CacheLumpNum` ignores moved to `w_wad.h`. All goldens byte-identical throughout |
-| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`/`ViewPoint`; `Clip` holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`); `ViewPoint` holds the renderer's camera (`viewx`/…/`viewplayer`), `ViewProjection` its screen projection (`centerx`/…/`projection`, the `viewangletox`/`xtoviewangle` tables), `ViewWindow` the view's on-screen geometry (`viewwidth`/…/`viewwindowy`), `Lighting` its light selection (`fixedcolormap`/`extralight`, the `scalelight`/`zlight` tables) and `GraphicsData` its loaded WAD graphics (`textures`/`colormaps`/`sprites`/…, the R_InitData tables) and `RenderScratch` its per-frame BSP scratch (`rw_*`/`sscount`/`floorplane`/`ceilingplane`) — the renderer's own state, now fully off the loose globals; the game state has followed — **all three headers (`doomstat.h`, `r_state.h`, `p_local.h`) are now nearly empty of loose globals**, and the same pattern has reached the other headers too — ~22 cohesive clusters migrated: from `doomstat.h`, `LevelStats`/`LaunchOptions`/`GameVersion`/`GameSession`/`StartupDefaults`/`PlayerState`/`GameFlow`/`DemoState`/`RefreshFlags`/`OverlayState`/`NetState`/`MapSpawns`/`GameClock`/`AmmoLimits`/`IntermissionInfo`/`SkyState`/`CorpseQueue`; from `p_local.h`, `ItemRespawnQueue` and `clipammo` (folded into `AmmoLimits`); from `d_event`/`d_main`, `EventQueue`/`AttractMode` and `gameaction` (folded into `GameFlow`); from `p_spec`, `ActiveSpecials`/`EndLevelTimer` — `r_state.h` was already done (its externs are geometry views onto `Level`). Three vestigial globals were *deleted* rather than migrated (`viewangleoffset`, `linecount`, `loopcount` — all always-zero or dead). What is left loose is the config-backed set (`snd_*Volume`/`mouseSensitivity`, blocked by `Config.cpp`'s static address capture until the config rework — proven, a naive migration segfaulted every test), the deferred `thinkercap` (moves with the `Thinker` rewrite), and a short tail of single scalars (`save_p`, `basedefault`) that move with their subsystems/the config rework. The lone engine-global scalar `validcount` — owned by no subsystem — has moved in as a `Doom::ValidCount` `Engine` member, and DoomMain's boot-path string globals are off the cloud (`wadfiles[]`/`title[]` made file-local `static`, the dead `wadfile[]`/`mapdir[]` deleted). The **file-scope-statics sweep has begun** (the last Step-5 phase) — g_game's per-tic input (`TiccmdInput`), its demo buffer (folded into `DemoState`), its deferred new-game params (`DeferredNewGame`), its `consistancy` array (folded into `NetState`), its par-time tables (`ParTimes`), its movement-speed tables (`MovementSpeeds`), the `-timedemo` benchmark (`TimeDemo`) and the pending-command flags (`PendingCommands`) are the first Game-local internal state into the `Engine`, and the HUD message line (`HudMessage`) is the first *file-local* `static` (out of g_game and into the UI) |
+| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`/`ViewPoint`; `Clip` holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`); `ViewPoint` holds the renderer's camera (`viewx`/…/`viewplayer`), `ViewProjection` its screen projection (`centerx`/…/`projection`, the `viewangletox`/`xtoviewangle` tables), `ViewWindow` the view's on-screen geometry (`viewwidth`/…/`viewwindowy`), `Lighting` its light selection (`fixedcolormap`/`extralight`, the `scalelight`/`zlight` tables) and `GraphicsData` its loaded WAD graphics (`textures`/`colormaps`/`sprites`/…, the R_InitData tables) and `RenderScratch` its per-frame BSP scratch (`rw_*`/`sscount`/`floorplane`/`ceilingplane`) — the renderer's own state, now fully off the loose globals; the game state has followed — **all three headers (`doomstat.h`, `r_state.h`, `p_local.h`) are now nearly empty of loose globals**, and the same pattern has reached the other headers too — ~22 cohesive clusters migrated: from `doomstat.h`, `LevelStats`/`LaunchOptions`/`GameVersion`/`GameSession`/`StartupDefaults`/`PlayerState`/`GameFlow`/`DemoState`/`RefreshFlags`/`OverlayState`/`NetState`/`MapSpawns`/`GameClock`/`AmmoLimits`/`IntermissionInfo`/`SkyState`/`CorpseQueue`; from `p_local.h`, `ItemRespawnQueue` and `clipammo` (folded into `AmmoLimits`); from `d_event`/`d_main`, `EventQueue`/`AttractMode` and `gameaction` (folded into `GameFlow`); from `p_spec`, `ActiveSpecials`/`EndLevelTimer` — `r_state.h` was already done (its externs are geometry views onto `Level`). Three vestigial globals were *deleted* rather than migrated (`viewangleoffset`, `linecount`, `loopcount` — all always-zero or dead). What is left loose is the config-backed set (`snd_*Volume`/`mouseSensitivity`, blocked by `Config.cpp`'s static address capture until the config rework — proven, a naive migration segfaulted every test), the deferred `thinkercap` (moves with the `Thinker` rewrite), and a short tail of single scalars (`save_p`, `basedefault`) that move with their subsystems/the config rework. The lone engine-global scalar `validcount` — owned by no subsystem — has moved in as a `Doom::ValidCount` `Engine` member, and DoomMain's boot-path string globals are off the cloud (`wadfiles[]`/`title[]` made file-local `static`, the dead `wadfile[]`/`mapdir[]` deleted). The **file-scope-statics sweep has begun** (the last Step-5 phase) — g_game's per-tic input (`TiccmdInput`), its demo buffer (folded into `DemoState`), its deferred new-game params (`DeferredNewGame`), its `consistancy` array (folded into `NetState`), its par-time tables (`ParTimes`), its movement-speed tables (`MovementSpeeds`), the `-timedemo` benchmark (`TimeDemo`) and the pending-command flags (`PendingCommands`) are the first Game-local internal state into the `Engine`, and the sweep has since reached the UI's *file-local* `static`s: the HUD message line (`HudMessage`) and chat (`HudChat`), and the status bar's face (`StatusBarFace`), widgets (`StatusBarWidgets`) and loaded patches (`StatusBarGraphics`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list is down to the shims plus `info.cpp` alone. Left: `thinker_t`→`Thinker` and `info.cpp` (deferred *together* with the action-model rewrite, since `states[]` is the action table that step replaces), plus the `doom_config`→`Host` interface redesign + audio and the ongoing globals-into-`Engine` work |
@@ -59,7 +59,7 @@ clean and the suite is green (**76 tests**, ~8s: `ctest --test-dir build`). Step
 0–4 are complete; 6 and 7 are done; 8 is nearly done — **the whole UI, game loop,
 netcode, utility layer and host boundary are migrated, and the zone allocator is
 deleted**; and **Step 5 is well advanced** — ~25 cohesive clusters have moved into
-the `Engine` (40 members in all), so `doomstat.h`/`r_state.h`/`p_local.h` are nearly empty of
+the `Engine` (44 members in all), so `doomstat.h`/`r_state.h`/`p_local.h` are nearly empty of
 loose globals and the same pattern has reached the `d_event`/`d_main`/`p_spec` clusters too
 (`EventQueue`, `AttractMode`, `gameaction`→`GameFlow`, `ActiveSpecials`, `EndLevelTimer`). The
 export-header tail is now cleared of its clean items: `validcount` (the lone engine-global
@@ -70,9 +70,10 @@ begun** — the last Step-5 phase, retiring the state a file keeps to itself so 
 into `DemoState`), its deferred new-game params (`DeferredNewGame`), its `consistancy` array
 (folded into `NetState`), its par-time tables (`ParTimes`), its movement-speed tables
 (`MovementSpeeds`), the `-timedemo` benchmark (`TimeDemo`) and the pending-command flags
-(`PendingCommands`) — and the sweep has now reached its first *file-local* `static` (as opposed to
-a `::`-scoped loose global): the HUD message line (`HudMessage`), out of g_game and into the UI.
-What is still left is config-backed-and-blocked,
+(`PendingCommands`) — and the sweep has now reached the UI's *file-local* `static`s (as opposed to
+`::`-scoped loose globals): the HUD message line (`HudMessage`) and chat (`HudChat`), and the
+status bar's animated face (`StatusBarFace`), STlib widgets (`StatusBarWidgets`) and loaded patches
+(`StatusBarGraphics`). What is still left is config-backed-and-blocked,
 deferred with the `Thinker` rewrite, or the remaining file-scope statics across the UI/renderer/
 specials — see the Step-8 tail. The flat vanilla list is down to the shims plus **one file**:
 `info.cpp` (the generated actor/state LUT). Everything else flat is now a shim over a
@@ -1045,6 +1046,32 @@ table captures their address (the config trap) before they move.
   warning-clean and formatted. The message widget is drawn into `screens[0]` every tic and the
   demos pick items up, so this is **live** frame-golden-covered — the byte-identical goldens are a
   live confirmation, not just an absence.
+- **`HudChat`** (`UI/HudChat.h`) — the tenth, the chat half of `UI/Hud`. The multiplayer chat
+  state: `w_chat` (the local input line), `chatchars`/`head`/`tail` (the outgoing keystroke ring
+  the netcode drains), `w_inputbuffer` (each remote player's incoming text), `chat_dest` (who each
+  is addressing), and `always_off` (the permanently-false flag the input buffers bind their cursor
+  to — assembled from the wire, never shown as editable). All seven were file-local statics.
+  PureDOOM ships single-player, so no demo drives the chat — golden-neutral. (`HU_Responder`'s send
+  path keeps a few *function-local* statics — `lastmessage`, the destination-key table — for a
+  later function-local pass; this is the file-scope half.)
+- **`StatusBarFace`** (`UI/StatusBarFace.h`) — the eleventh, the first cluster out of
+  `UI/StatusBar`. The animated face's selection state (`ST_updateFaceWidget`): `st_faceindex` (the
+  patch shown — `w_faces` binds to it), `st_facecount` (how long an expression holds), `st_oldhealth`
+  (last tic's health → a pained face on a big drop), `oldweaponsowned` (last tic's weapons → the evil
+  grin), and `st_randomnumber` (a per-tic `M_Random` the straight face varies with). The demos take
+  damage, grab weapons, rampage and die, so the face animates into `screens[0]` — **live**
+  frame-golden-covered.
+- **`StatusBarWidgets`** (`UI/StatusBarWidgets.h`) — the twelfth. The ten STlib widgets
+  `ST_createWidgets` binds and `ST_drawWidgets` paints each tic: `w_ready`, `w_ammo`/`w_maxammo`,
+  `w_health`/`w_armor`, `w_arms` over `w_armsbg`, `w_faces`, `w_keyboxes`, `w_frags`. The addresses
+  the STlib calls take (`&w_ready`, …) resolve to the members; live frame-golden-covered.
+- **`StatusBarGraphics`** (`UI/StatusBarGraphics.h`) — the thirteenth. The patches `ST_loadGraphics`
+  reads from the WAD (`sbar`/`armsbg`, `tallnum`/`tallpercent`, `shortnum`, `keys`, `arms`,
+  `faces`/`faceback`) — init-once, read-only, the status bar's `GraphicsData`. `faces` is sized by
+  the StatusBar-local `ST_NUMFACES`, so the struct carries a `numFaces` constexpr equal to it and
+  the reference-to-array binding self-checks the two — a drift won't compile. These three cover the
+  status bar's face, widgets and patches; its display/lifecycle remainder (`plyr`, the chat and
+  deathmatch flags, timing) is a mixed bag left for later.
 
 ## Step 6 — The playsim
 
@@ -1454,7 +1481,7 @@ never really C — the tiny data/decl remainders — are gone:
   structural pass orthogonal to all of the above.
 - **The globals-into-`Engine` work** (Step 5) — **the loose globals are nearly all in, and
   the file-scope-statics sweep has begun.** `doomstat.h`, `r_state.h` and `p_local.h` are nearly
-  empty: ~25 cohesive clusters have moved into `Engine` (40 members in all — see "the game state
+  empty: ~25 cohesive clusters have moved into `Engine` (44 members in all — see "the game state
   begins" and "the file-scope-statics sweep begins" under Step 5), each a `Doom::` struct reached
   by an accessor with the vanilla names as references onto the members. The clean export-header
   tail is cleared: `validcount` moved in (the lone engine-global scalar), DoomMain's boot-path
@@ -1477,8 +1504,9 @@ never really C — the tiny data/decl remainders — are gone:
     which the reference-alias pattern also fits — the sweep has cleared g_game's cohesive
     clusters (`TiccmdInput`, the demo buffer into `DemoState`, `DeferredNewGame`, `consistancy`
     into `NetState`, `ParTimes`, `MovementSpeeds`, `TimeDemo`, `PendingCommands`) and has reached
-    the UI (`HudMessage`, the first file-local `static` migrated). This is what finally lets the
-    engine be *constructed* rather than booted, once nothing reaches state by free function.
+    the UI's file-local `static`s (`HudMessage`, `HudChat`, and the status bar's `StatusBarFace`/
+    `StatusBarWidgets`/`StatusBarGraphics`). This is what finally lets the engine be *constructed*
+    rather than booted, once nothing reaches state by free function.
 
 ## The rules
 
