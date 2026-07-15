@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Game/AmmoLimits.h"
+#include "../Game/AttractMode.h"
 #include "../Game/CorpseQueue.h"
 #include "../Game/DemoState.h"
 #include "../Game/EventQueue.h"
@@ -80,6 +81,7 @@ struct Engine
     EventQueue eventQueue;
     ActiveSpecials activeSpecials;
     EndLevelTimer endLevelTimer;
+    AttractMode attractMode;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

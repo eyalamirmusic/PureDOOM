@@ -60,6 +60,7 @@
 #include "../r_local.h"
 #include "../d_main.h"
 
+#include "AttractMode.h"
 #include "DoomMain.h"
 #include "EventQueue.h"
 #include "GameFlow.h"
@@ -92,7 +93,9 @@ doom_boolean& autostart = Doom::startupDefaults().autostart;
 
 void* debugfile = 0;
 
-doom_boolean advancedemo;
+// advancedemo (with the page state below) is a Doom::AttractMode owned by the Engine now; the
+// vanilla names are references onto it (REFACTOR.md, Step 5).
+doom_boolean& advancedemo = Doom::attractMode().advancedemo;
 
 char wadfile[1024]; // primary wad file
 char mapdir[1024]; // directory of development maps
@@ -123,10 +126,10 @@ extern doom_boolean& setsizeneeded;
 extern int showMessages;
 extern doom_boolean& demorecording; // Doom::DemoState (Engine member)
 
-// Title/demo-loop state, kept at file scope (pagename is read by g_game).
-int demosequence;
-int pagetic;
-const char* pagename;
+// Title/demo-loop state: members of the Doom::AttractMode above (pagename is read by g_game).
+int& demosequence = Doom::attractMode().demosequence;
+int& pagetic = Doom::attractMode().pagetic;
+const char*& pagename = Doom::attractMode().pagename;
 
 // Other subsystems' globals/functions this file reaches (at global scope so the
 // namespace code below binds :: not Doom::).

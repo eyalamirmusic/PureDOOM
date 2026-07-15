@@ -236,7 +236,7 @@ int d_map;
 const char* defdemoname;
 
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
-extern const char* pagename;
+extern const char*& pagename; // Doom::AttractMode (Engine member)
 extern doom_boolean& setsizeneeded;
 
 // The sky texture to be used instead of the F_SKY1 dummy.

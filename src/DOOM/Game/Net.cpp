@@ -97,7 +97,7 @@ int frameon;
 int frameskip[4];
 int oldnettics;
 
-extern doom_boolean advancedemo;
+extern doom_boolean& advancedemo; // Doom::AttractMode (Engine member)
 
 void D_ProcessEvents(void);
 void G_BuildTiccmd(ticcmd_t* cmd);

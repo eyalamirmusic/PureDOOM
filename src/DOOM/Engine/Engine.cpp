@@ -169,4 +169,9 @@ EndLevelTimer& endLevelTimer()
 {
     return engine().endLevelTimer;
 }
+
+AttractMode& attractMode()
+{
+    return engine().attractMode;
+}
 } // namespace Doom
