@@ -67,6 +67,7 @@
 #include "GameSession.h"
 #include "IntermissionInfo.h"
 #include "LevelStats.h"
+#include "NetState.h"
 #include "PlayerState.h"
 #include "RefreshFlags.h"
 #include "TiccmdInput.h"
@@ -150,7 +151,9 @@ doom_boolean precache = true; // if true, load all graphics at start
 // (REFACTOR.md, Step 5).
 wbstartstruct_t& wminfo = Doom::intermissionInfo().wminfo; // world map / intermission parms
 
-short consistancy[MAXPLAYERS][BACKUPTICS];
+// consistancy folded into Doom::NetState (the netcode bookkeeping) by the file-scope-statics
+// sweep; this vanilla name is a reference-to-array onto the member (REFACTOR.md, Step 5).
+short (&consistancy)[MAXPLAYERS][BACKUPTICS] = Doom::netState().consistancy;
 
 byte* savebuffer;
 

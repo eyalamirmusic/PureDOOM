@@ -976,6 +976,15 @@ table captures their address (the config trap) before they move.
   onto the member. `gameaction` (the action they are the payload of) is already in `GameFlow`;
   these are kept a small cluster of their own so `GameFlow` stays the screen/wipe/action state.
   Golden-neutral.
+- **`consistancy` folded into `NetState`** — the fourth. The per-player, per-tic desync checksum
+  `G_BuildTiccmd` stamps into the command it sends and `G_Ticker` compares on the way back
+  (`I_Error` on a mismatch). It looked cross-file, but the `consistancy` in `d_ticcmd.h` and
+  `Host/Net.cpp` is the unrelated `ticcmd_t` member — the global array is `Game/Game.cpp`'s own,
+  read by no other file. It is netcode tic-bookkeeping, so it folds into `NetState` beside the
+  command rings; the seven doomstat.h members still bind in `Game/Net.cpp`, `consistancy` binds
+  in `Game/Game.cpp`, each at its definition site. Unlike the new-game params it is squarely on
+  the demo path — the consistency check runs every replayed tic — so the byte-identical goldens
+  are a live confirmation.
 
 ## Step 6 — The playsim
 
