@@ -54,7 +54,7 @@
 #define NUM_QUITMESSAGES   22
 
 
-extern char* endmsg[];
+extern const char* endmsg[];
 
 
 #endif

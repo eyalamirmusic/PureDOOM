@@ -24,12 +24,13 @@
 
 
 // Endianess handling.
-// WAD files are stored little endian.
+// WAD files are stored little endian. The swaps live in Math/Swap.h now; this
+// keeps the vanilla SHORT/LONG macros the loaders spell out, forwarding to them
+// only on a big-endian host (a no-op everywhere this builds).
 #ifdef __BIG_ENDIAN__
-unsigned short SwapSHORT(unsigned short);
-unsigned long SwapLONG(unsigned long);
-#define SHORT(x) ((short)SwapSHORT((unsigned short) (x)))
-#define LONG(x) ((long)SwapLONG((unsigned long) (x)))
+#include "Math/Swap.h"
+#define SHORT(x) ((short) Doom::swap16((unsigned short) (x)))
+#define LONG(x) ((long) Doom::swap32((unsigned long) (x)))
 #else
 #define SHORT(x) (x)
 #define LONG(x) (x)
