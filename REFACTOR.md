@@ -48,7 +48,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
-| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core rewritten with unit tests; `p_maputl` **fully migrated** (stateful half → `Sim/MapUtil`, callable-taking blockmap iterators); `p_map` **fully migrated** (`Sim/Movement` collision core + `Sim/MapAction` slide/hitscan/use/radius/changesector); the scenario-test harness pins `P_TryMove`/`P_CheckPosition` directly |
+| 6 | The playsim | **in progress** — the whole mobj / movement / combat / AI core is now modern C++ in `namespace Doom`: `p_maputl`→`MapUtil`, `p_map`→`Movement`+`MapAction`, `p_sight`→`Sight`, `p_inter`→`Interaction`, `p_user`→`Player`, `p_mobj`→`Mobj`, `p_pspr`→`Weapon`, `p_enemy`→`Enemy`. What's left is the thinker-container cluster (the specials, `p_tick`, `p_saveg`), gated on the `thinker_t`→`Thinker` decision below |
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
 
@@ -69,9 +69,11 @@ everything else is still vanilla C compiled as C++ under `-w`):
   shot's `attackrange`), `MapGeometry` (`pointOnLineSide` / `pointOnDivlineSide` /
   `interceptVector` / `boxOnLineSide` / `approxDistance` / `lineOpening`), `MapUtil`
   (the callable-taking blockmap iterators, thing linking, `pathTraverse`),
-  `Movement` (`checkPosition` / `tryMove` / `teleportMove` / `thingHeightClip`) and
+  `Movement` (`checkPosition` / `tryMove` / `teleportMove` / `thingHeightClip`),
   `MapAction` (`slideMove` / `aimLineAttack` / `lineAttack` / `useLines` /
-  `radiusAttack` / `changeSector`).
+  `radiusAttack` / `changeSector`), `Sight` (`checkSight`), `Interaction` (pickups /
+  damage / death), `Player` (`playerThink`), `Mobj` (spawn / mobj thinker /
+  missiles), `Weapon` (the `A_*` weapon actions) and `Enemy` (the `A_*` monster AI).
 - `Wad/` — `WadFile` (owns lumps, RAII).
 - `Engine/` — `Engine`, the composition root owning `Random`/`WadFile`/`Level`/`Clip`;
   `randomness()`/`wad()`/`level()`/`clip()` are accessors into the one `engine()`.
@@ -92,23 +94,40 @@ types — the tests see integers and named-constant accessors (`doomSimTypeBarre
 facts the demos only cover in aggregate, each shown to bite by mutation (see the
 "Landed so far" note below).
 
-**`p_maputl` and `p_map` are now fully migrated.** The stateful half of `p_maputl`
-(blockmap iterators, thing linking, `P_PathTraverse`) is `Sim/MapUtil`; the iterators
-are templates taking any callable, so a rewritten caller passes a lambda where
-vanilla routed a function pointer through a global. `p_map` split into `Sim/Movement`
-(the collision core the scenario tests pin — `checkPosition`/`tryMove`/
-`teleportMove`/`thingHeightClip`) and `Sim/MapAction` (slide/hitscan/use/radius/
-changesector). Both flat files (`p_maputl.cpp`, `p_map.cpp`) are now shims. The
-`tm*` and clipping-window globals live in `Clip`; ~17 slide/hitscan/radius globals
-that no other file reads became file-local statics in `MapAction`, gone from the
-global cloud entirely.
+**The playsim's actor core is fully migrated** — eight flat files rewritten into
+`namespace Doom` under `Sim/`, each shimmed by its vanilla-named flat file so the
+still-vanilla callers, info.cpp's state table and p_saveg are untouched:
 
-**The immediate next step** (continuing Step 6, the module order below): `p_mobj`
-(`P_SpawnMobj`, `P_MobjThinker`, the mobj lifecycle) — the first file to touch the
-`thinker_t` function-pointer union, which becomes a real `Thinker` with a virtual
-`tick()`. The probe finds mobjs by `thinker->function.acp1 == P_MobjThinker`, so the
-append-only hash rule bites here: change how the probe finds things, never what it
-mixes.
+- `MapUtil` (blockmap iterators as callable-taking templates, thing linking,
+  `pathTraverse`), `Movement` (`checkPosition`/`tryMove`/`teleportMove`/
+  `thingHeightClip`, scenario-test-pinned), `MapAction` (slide/hitscan/use/radius/
+  changesector), `Sight` (`checkSight`).
+- `Interaction` (pickups/damage/death), `Player` (`playerThink`), `Mobj` (spawn/
+  thinker/missiles), `Weapon` (the `A_*` weapon actions), `Enemy` (the `A_*` monster
+  AI).
+
+The movement/collision/aim/sight scratch consolidated into `Doom::Clip`; module-
+private state that no other file reads became file-local statics (gone from the
+global cloud). The pattern for the action files: the `A_*` functions info.cpp
+references by address, `P_MobjThinker` and the `T_*` thinker functions p_saveg
+identifies by pointer, and `soundtarget` p_saveg archives all stay **global shims**
+in the flat file, forwarding to the `Doom::` logic. That preserves every
+function-pointer identity the save code and the probe rest on.
+
+**The immediate next step and the decision it needs.** What remains of the playsim is
+the thinker-container cluster: the specials (`p_spec`, `p_doors`, `p_floor`,
+`p_plats`, `p_lights`, `p_ceilng`, `p_switch`, `p_telept`), `p_tick` (the thinker run
+loop) and `p_saveg`. These are coupled through the `thinker_t` function-pointer union:
+`p_saveg` serialises a thinker by comparing its `function.acp1` to each `T_*`
+(`T_MoveCeiling`, `T_PlatRaise`, …) and to `P_MobjThinker`, and `p_tick` dispatches
+through it. They can be migrated the same way the action files were — `T_*` global
+shims, logic in `Sim/` — **or** the union can first become a real `Thinker` with a
+virtual `tick()`, which is the end-state Step 6 wants but a deeper change (mobj_t and
+the special structs become polymorphic, which touches spawning, `Z_Malloc`/`memset`
+init, and p_saveg's byte-serialisation, all under the demo goldens). The append-only
+probe-hash rule bites hardest here: the probe finds mobjs by
+`thinker->function.acp1 == P_MobjThinker`, so however the thinker is rewritten, that
+identification must survive.
 
 **How to verify, every step** (nothing here re-records goldens):
 
