@@ -4,15 +4,15 @@
 #define _CRT_NONSTDC_NO_DEPRECATE
 #endif
 
-#include "DOOM.h"
+#include "../DOOM.h"
 
-#include "d_main.h"
-#include "doomdef.h"
-#include "doomtype.h"
-#include "i_system.h"
-#include "m_argv.h"
-#include "m_misc.h"
-
+#include "../doom_config.h" // the 13 host pointers / helpers we define, for drift
+#include "../d_main.h"
+#include "../doomdef.h"
+#include "../doomtype.h"
+#include "../i_system.h"
+#include "../m_argv.h"
+#include "../m_misc.h"
 
 extern byte* screens[5];
 extern unsigned char screen_palette[256 * 3];
@@ -21,13 +21,11 @@ extern default_t defaults[];
 extern int numdefaults;
 extern signed short mixbuffer[2048];
 
-
 static unsigned char* screen_buffer = 0;
 static unsigned char* final_screen_buffer = 0;
 static int last_update_time = 0;
-static int button_states[3] = { 0 };
+static int button_states[3] = {0};
 static char itoa_buf[20];
-
 
 char error_buf[260];
 int doom_flags = 0;
@@ -45,12 +43,10 @@ doom_gettime_fn doom_gettime = 0;
 doom_exit_fn doom_exit = 0;
 doom_getenv_fn doom_getenv = 0;
 
-
 void D_DoomLoop(void);
 void D_UpdateWipe(void);
 void I_UpdateSound();
 unsigned long I_TickSong();
-
 
 #if defined(DOOM_IMPLEMENT_PRINT)
 #include <stdio.h>
@@ -66,17 +62,19 @@ static void doom_print_impl(const char* str) {}
 #include <stdlib.h>
 static void* doom_malloc_impl(int size)
 {
-    return malloc((size_t)size);
+    return malloc((size_t) size);
 }
 static void doom_free_impl(void* ptr)
 {
     free(ptr);
 }
 #else
-static void* doom_malloc_impl(int size) { return 0; }
+static void* doom_malloc_impl(int size)
+{
+    return 0;
+}
 static void doom_free_impl(void* ptr) {}
 #endif
-
 
 #if defined(DOOM_IMPLEMENT_FILE_IO)
 #include <stdio.h>
@@ -88,13 +86,13 @@ void doom_close_impl(void* handle)
 {
     fclose((FILE*) (handle));
 }
-int doom_read_impl(void* handle, void *buf, int count)
+int doom_read_impl(void* handle, void* buf, int count)
 {
-    return (int)fread(buf, 1, count, (FILE*) (handle));
+    return (int) fread(buf, 1, count, (FILE*) (handle));
 }
-int doom_write_impl(void* handle, const void *buf, int count)
+int doom_write_impl(void* handle, const void* buf, int count)
 {
-    return (int)fwrite(buf, 1, count, (FILE*) (handle));
+    return (int) fwrite(buf, 1, count, (FILE*) (handle));
 }
 int doom_seek_impl(void* handle, int offset, doom_seek_t origin)
 {
@@ -102,7 +100,7 @@ int doom_seek_impl(void* handle, int offset, doom_seek_t origin)
 }
 int doom_tell_impl(void* handle)
 {
-    return (int)ftell((FILE*) (handle));
+    return (int) ftell((FILE*) (handle));
 }
 int doom_eof_impl(void* handle)
 {
@@ -114,11 +112,11 @@ void* doom_open_impl(const char* filename, const char* mode)
     return 0;
 }
 void doom_close_impl(void* handle) {}
-int doom_read_impl(void* handle, void *buf, int count)
+int doom_read_impl(void* handle, void* buf, int count)
 {
     return -1;
 }
-int doom_write_impl(void* handle, const void *buf, int count)
+int doom_write_impl(void* handle, const void* buf, int count)
 {
     return -1;
 }
@@ -136,7 +134,6 @@ int doom_eof_impl(void* handle)
 }
 #endif
 
-
 #if defined(DOOM_IMPLEMENT_GETTIME)
 #if defined(WIN32)
 #include <winsock.h>
@@ -146,16 +143,17 @@ int doom_eof_impl(void* handle)
 void doom_gettime_impl(int* sec, int* usec)
 {
 #if defined(WIN32)
-    static const unsigned long long EPOCH = ((unsigned long long)116444736000000000ULL);
+    static const unsigned long long EPOCH =
+        ((unsigned long long) 116444736000000000ULL);
     SYSTEMTIME system_time;
     FILETIME file_time;
     unsigned long long time;
     GetSystemTime(&system_time);
     SystemTimeToFileTime(&system_time, &file_time);
-    time = ((unsigned long long)file_time.dwLowDateTime);
-    time += ((unsigned long long)file_time.dwHighDateTime) << 32;
-    *sec = (int)((time - EPOCH) / 10000000L);
-    *usec = (int)(system_time.wMilliseconds * 1000);
+    time = ((unsigned long long) file_time.dwLowDateTime);
+    time += ((unsigned long long) file_time.dwHighDateTime) << 32;
+    *sec = (int) ((time - EPOCH) / 10000000L);
+    *usec = (int) (system_time.wMilliseconds * 1000);
 #else
     struct timeval tp;
 
@@ -178,7 +176,6 @@ void doom_gettime_impl(int* sec, int* usec)
 }
 #endif
 
-
 #if defined(DOOM_IMPLEMENT_EXIT)
 #include <stdlib.h>
 void doom_exit_impl(int code)
@@ -189,7 +186,6 @@ void doom_exit_impl(int code)
 void doom_exit_impl(int code) {}
 #endif
 
-
 #if defined(DOOM_IMPLEMENT_GETENV)
 #include <stdlib.h>
 char* doom_getenv_impl(const char* var)
@@ -197,19 +193,20 @@ char* doom_getenv_impl(const char* var)
     return getenv(var);
 }
 #else
-char* doom_getenv_impl(const char* var) { return 0; }
+char* doom_getenv_impl(const char* var)
+{
+    return 0;
+}
 #endif
-
 
 void doom_memset(void* ptr, int value, int num)
 {
     unsigned char* p = (unsigned char*) (ptr);
     for (int i = 0; i < num; ++i, ++p)
     {
-        *p = (unsigned char)value;
+        *p = (unsigned char) value;
     }
 }
-
 
 void* doom_memcpy(void* destination, const void* source, int num)
 {
@@ -224,37 +221,36 @@ void* doom_memcpy(void* destination, const void* source, int num)
     return destination;
 }
 
-
 int doom_strlen(const char* str)
 {
     int len = 0;
-    while (*str++) ++len;
+    while (*str++)
+        ++len;
     return len;
 }
-
 
 char* doom_concat(char* dst, const char* src)
 {
     char* ret = dst;
     dst += doom_strlen(dst);
 
-    while (*src) *dst++ = *src++;
+    while (*src)
+        *dst++ = *src++;
     *dst = *src; // \0
 
     return ret;
 }
-
 
 char* doom_strcpy(char* dst, const char* src)
 {
     char* ret = dst;
 
-    while (*src) *dst++ = *src++;
+    while (*src)
+        *dst++ = *src++;
     *dst = *src; // \0
 
     return ret;
 }
-
 
 char* doom_strncpy(char* dst, const char* src, int num)
 {
@@ -262,21 +258,22 @@ char* doom_strncpy(char* dst, const char* src, int num)
 
     for (; i < num; ++i)
     {
-        if (!src[i]) break;
+        if (!src[i])
+            break;
         dst[i] = src[i];
     }
 
-    while (i < num) dst[i++] = '\0';
+    while (i < num)
+        dst[i++] = '\0';
 
     return dst;
 }
-
 
 int doom_strcmp(const char* str1, const char* str2)
 {
     int ret = 0;
 
-    while (!(ret = *(unsigned char*)str1 - *(unsigned char*) str2) && *str1)
+    while (!(ret = *(unsigned char*) str1 - *(unsigned char*) str2) && *str1)
         ++str1, ++str2;
 
     if (ret < 0)
@@ -286,14 +283,14 @@ int doom_strcmp(const char* str1, const char* str2)
 
     return (ret);
 }
-
 
 int doom_strncmp(const char* str1, const char* str2, int n)
 {
     int ret = 0;
     int count = 1;
 
-    while (!(ret = *(unsigned char*)str1 - *(unsigned char*) str2) && *str1 && count++ < n)
+    while (!(ret = *(unsigned char*) str1 - *(unsigned char*) str2) && *str1
+           && count++ < n)
         ++str1, ++str2;
 
     if (ret < 0)
@@ -304,19 +301,20 @@ int doom_strncmp(const char* str1, const char* str2, int n)
     return (ret);
 }
 
-
 int doom_toupper(int c)
 {
-    if (c >= 'a' && c <= 'z') return c - 'a' + 'A';
+    if (c >= 'a' && c <= 'z')
+        return c - 'a' + 'A';
     return c;
 }
-
 
 int doom_strcasecmp(const char* str1, const char* str2)
 {
     int ret = 0;
 
-    while (!(ret = doom_toupper(*(unsigned char*)str1) - doom_toupper(*(unsigned char*)str2)) && *str1)
+    while (!(ret = doom_toupper(*(unsigned char*) str1)
+                   - doom_toupper(*(unsigned char*) str2))
+           && *str1)
         ++str1, ++str2;
 
     if (ret < 0)
@@ -326,14 +324,15 @@ int doom_strcasecmp(const char* str1, const char* str2)
 
     return (ret);
 }
-
 
 int doom_strncasecmp(const char* str1, const char* str2, int n)
 {
     int ret = 0;
     int count = 1;
 
-    while (!(ret = doom_toupper(*(unsigned char*)str1) - doom_toupper(*(unsigned char*)str2)) && *str1 && count++ < n)
+    while (!(ret = doom_toupper(*(unsigned char*) str1)
+                   - doom_toupper(*(unsigned char*) str2))
+           && *str1 && count++ < n)
         ++str1, ++str2;
 
     if (ret < 0)
@@ -343,7 +342,6 @@ int doom_strncasecmp(const char* str1, const char* str2, int n)
 
     return (ret);
 }
-
 
 int doom_atoi(const char* str)
 {
@@ -358,7 +356,6 @@ int doom_atoi(const char* str)
 
     return i;
 }
-
 
 int doom_atox(const char* str)
 {
@@ -376,7 +373,6 @@ int doom_atox(const char* str)
 
     return i;
 }
-
 
 const char* doom_itoa(int k, int radix)
 {
@@ -418,11 +414,11 @@ const char* doom_itoa(int k, int radix)
         }
     }
 
-    if (k < 0) itoa_buf[0] = '-';
+    if (k < 0)
+        itoa_buf[0] = '-';
 
     return itoa_buf;
 }
-
 
 const char* doom_ctoa(char c)
 {
@@ -431,11 +427,10 @@ const char* doom_ctoa(char c)
     return itoa_buf;
 }
 
-
 const char* doom_ptoa(void* p)
 {
     int idx = 0;
-    unsigned long long i = (unsigned long long)p;
+    unsigned long long i = (unsigned long long) p;
 
     itoa_buf[idx++] = '0';
     itoa_buf[idx++] = 'x';
@@ -454,59 +449,55 @@ const char* doom_ptoa(void* p)
     return itoa_buf;
 }
 
-
 int doom_fprint(void* handle, const char* str)
 {
     return doom_write(handle, str, doom_strlen(str));
 }
 
-
 static default_t* get_default(const char* name)
 {
     for (int i = 0; i < numdefaults; ++i)
     {
-        if (doom_strcmp(defaults[i].name, name) == 0) return &defaults[i];
+        if (doom_strcmp(defaults[i].name, name) == 0)
+            return &defaults[i];
     }
     return 0;
 }
 
-
 void doom_set_resolution(int width, int height)
 {
-    if (width <= 0 || height <= 0) return;
+    if (width <= 0 || height <= 0)
+        return;
     // SCREENWIDTH = width;
     // SCREENHEIGHT = height;
 }
 
-
 void doom_set_default_int(const char* name, int value)
 {
     default_t* def = get_default(name);
-    if (!def) return;
+    if (!def)
+        return;
     def->defaultvalue = value;
 }
-
 
 void doom_set_default_string(const char* name, const char* value)
 {
     default_t* def = get_default(name);
-    if (!def) return;
-    def->default_text_value = (char*)value;
+    if (!def)
+        return;
+    def->default_text_value = (char*) value;
 }
-
 
 void doom_set_print(doom_print_fn print_fn)
 {
     doom_print = print_fn;
 }
 
-
 void doom_set_malloc(doom_malloc_fn malloc_fn, doom_free_fn free_fn)
 {
     doom_malloc = malloc_fn;
     doom_free = free_fn;
 }
-
 
 void doom_set_file_io(doom_open_fn open_fn,
                       doom_close_fn close_fn,
@@ -525,43 +516,53 @@ void doom_set_file_io(doom_open_fn open_fn,
     doom_eof = eof_fn;
 }
 
-
 void doom_set_gettime(doom_gettime_fn gettime_fn)
 {
     doom_gettime = gettime_fn;
 }
-
 
 void doom_set_exit(doom_exit_fn exit_fn)
 {
     doom_exit = exit_fn;
 }
 
-
 void doom_set_getenv(doom_getenv_fn getenv_fn)
 {
     doom_getenv = getenv_fn;
 }
 
-
 void doom_init(int argc, char** argv, int flags)
 {
-    if (!doom_print) doom_print = doom_print_impl;
-    if (!doom_malloc) doom_malloc = doom_malloc_impl;
-    if (!doom_free) doom_free = doom_free_impl;
-    if (!doom_open) doom_open = doom_open_impl;
-    if (!doom_close) doom_close = doom_close_impl;
-    if (!doom_read) doom_read = doom_read_impl;
-    if (!doom_write) doom_write = doom_write_impl;
-    if (!doom_seek) doom_seek = doom_seek_impl;
-    if (!doom_tell) doom_tell = doom_tell_impl;
-    if (!doom_eof) doom_eof = doom_eof_impl;
-    if (!doom_gettime) doom_gettime = doom_gettime_impl;
-    if (!doom_exit) doom_exit = doom_exit_impl;
-    if (!doom_getenv) doom_getenv = doom_getenv_impl;
+    if (!doom_print)
+        doom_print = doom_print_impl;
+    if (!doom_malloc)
+        doom_malloc = doom_malloc_impl;
+    if (!doom_free)
+        doom_free = doom_free_impl;
+    if (!doom_open)
+        doom_open = doom_open_impl;
+    if (!doom_close)
+        doom_close = doom_close_impl;
+    if (!doom_read)
+        doom_read = doom_read_impl;
+    if (!doom_write)
+        doom_write = doom_write_impl;
+    if (!doom_seek)
+        doom_seek = doom_seek_impl;
+    if (!doom_tell)
+        doom_tell = doom_tell_impl;
+    if (!doom_eof)
+        doom_eof = doom_eof_impl;
+    if (!doom_gettime)
+        doom_gettime = doom_gettime_impl;
+    if (!doom_exit)
+        doom_exit = doom_exit_impl;
+    if (!doom_getenv)
+        doom_getenv = doom_getenv_impl;
 
     screen_buffer = (unsigned char*) (doom_malloc(SCREENWIDTH * SCREENHEIGHT));
-    final_screen_buffer = (unsigned char*) (doom_malloc(SCREENWIDTH * SCREENHEIGHT * 4));
+    final_screen_buffer =
+        (unsigned char*) (doom_malloc(SCREENWIDTH * SCREENHEIGHT * 4));
     last_update_time = I_GetTime();
 
     myargc = argc;
@@ -570,7 +571,6 @@ void doom_init(int argc, char** argv, int flags)
 
     D_DoomMain();
 }
-
 
 void doom_update(void)
 {
@@ -588,7 +588,6 @@ void doom_update(void)
     last_update_time = now;
 }
 
-
 void doom_force_update(void)
 {
     if (is_wiping_screen)
@@ -597,7 +596,6 @@ void doom_force_update(void)
         D_DoomLoop();
 }
 
-
 const unsigned char* doom_get_framebuffer(int channels)
 {
     int i, len;
@@ -605,20 +603,19 @@ const unsigned char* doom_get_framebuffer(int channels)
     doom_memcpy(screen_buffer, screens[0], SCREENWIDTH * SCREENHEIGHT);
 
     extern doom_boolean menuactive;
-    extern gamestate_t gamestate; 
+    extern gamestate_t gamestate;
     extern doom_boolean automapactive;
     extern int crosshair;
 
     // Draw crosshair
-    if (crosshair && 
-        !menuactive &&
-        gamestate == GS_LEVEL &&
-        !automapactive)
+    if (crosshair && !menuactive && gamestate == GS_LEVEL && !automapactive)
     {
         int y;
         extern int setblocks;
-        if (setblocks == 11) y = SCREENHEIGHT / 2 + 8;
-        else y = SCREENHEIGHT / 2 - 8;
+        if (setblocks == 11)
+            y = SCREENHEIGHT / 2 + 8;
+        else
+            y = SCREENHEIGHT / 2 - 8;
         for (i = 0; i < 2; ++i)
         {
             screen_buffer[SCREENWIDTH / 2 - 2 - i + y * SCREENWIDTH] = 4;
@@ -666,12 +663,10 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
 }
 
-
 unsigned long doom_tick_midi(void)
 {
     return I_TickSong();
 }
-
 
 short* doom_get_sound_buffer(void)
 {
@@ -679,24 +674,21 @@ short* doom_get_sound_buffer(void)
     return mixbuffer;
 }
 
-
 void doom_key_down(doom_key_t key)
 {
     event_t event;
     event.type = ev_keydown;
-    event.data1 = (int)key;
+    event.data1 = (int) key;
     D_PostEvent(&event);
 }
-
 
 void doom_key_up(doom_key_t key)
 {
     event_t event;
     event.type = ev_keyup;
-    event.data1 = (int)key;
+    event.data1 = (int) key;
     D_PostEvent(&event);
 }
-
 
 void doom_button_down(doom_button_t button)
 {
@@ -705,13 +697,10 @@ void doom_button_down(doom_button_t button)
     event_t event;
     event.type = ev_mouse;
     event.data1 =
-        (button_states[0]) |
-        (button_states[1] ? 2 : 0) |
-        (button_states[2] ? 4 : 0);
+        (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = event.data3 = 0;
     D_PostEvent(&event);
 }
-
 
 void doom_button_up(doom_button_t button)
 {
@@ -720,20 +709,14 @@ void doom_button_up(doom_button_t button)
     event_t event;
     event.type = ev_mouse;
     event.data1 =
-        (button_states[0]) |
-        (button_states[1] ? 2 : 0) |
-        (button_states[2] ? 4 : 0);
+        (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
 
-    event.data1 =
-        event.data1
-        ^ (button_states[0] ? 1 : 0)
-        ^ (button_states[1] ? 2 : 0)
-        ^ (button_states[2] ? 4 : 0);
+    event.data1 = event.data1 ^ (button_states[0] ? 1 : 0)
+                  ^ (button_states[1] ? 2 : 0) ^ (button_states[2] ? 4 : 0);
 
     event.data2 = event.data3 = 0;
     D_PostEvent(&event);
 }
-
 
 void doom_mouse_move(int delta_x, int delta_y)
 {
@@ -741,9 +724,7 @@ void doom_mouse_move(int delta_x, int delta_y)
 
     event.type = ev_mouse;
     event.data1 =
-        (button_states[0]) |
-        (button_states[1] ? 2 : 0) |
-        (button_states[2] ? 4 : 0);
+        (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = delta_x;
     event.data3 = -delta_y;
 
