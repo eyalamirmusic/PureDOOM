@@ -54,14 +54,14 @@
 #if defined(I_NET_ENABLED)
 // For some odd reason...
 #if !defined(DOOM_APPLE) // It doesn't complain on Win32? O_o
-#define ntohl(x) \
-    ((unsigned long int) ((((unsigned long int) (x) & 0x000000ffU) << 24) \
-                          | (((unsigned long int) (x) & 0x0000ff00U) << 8) \
-                          | (((unsigned long int) (x) & 0x00ff0000U) >> 8) \
+#define ntohl(x)                                                                    \
+    ((unsigned long int) ((((unsigned long int) (x) & 0x000000ffU) << 24)           \
+                          | (((unsigned long int) (x) & 0x0000ff00U) << 8)          \
+                          | (((unsigned long int) (x) & 0x00ff0000U) >> 8)          \
                           | (((unsigned long int) (x) & 0xff000000U) >> 24)))
 
-#define ntohs(x) \
-    ((unsigned short int) ((((unsigned short int) (x) & 0x00ff) << 8) \
+#define ntohs(x)                                                                    \
+    ((unsigned short int) ((((unsigned short int) (x) & 0x00ff) << 8)               \
                            | (((unsigned short int) (x) & 0xff00) >> 8)))
 
 #define htonl(x) ntohl(x)
@@ -164,7 +164,10 @@ void PacketSend(void)
     }
 
     // doom_print ("sending %i\n",gametic);
-    c = sendto(sendsocket, (const char*) &sw, doomcom->datalength, 0,
+    c = sendto(sendsocket,
+               (const char*) &sw,
+               doomcom->datalength,
+               0,
                (void*) &sendaddress[doomcom->remotenode],
                sizeof(sendaddress[doomcom->remotenode]));
 #endif
@@ -187,8 +190,12 @@ void PacketGet(void)
     doomdata_t sw;
 
     fromlen = sizeof(fromaddress);
-    c = recvfrom(insocket, (char*) &sw, sizeof(sw), 0,
-                 (struct sockaddr*) &fromaddress, &fromlen);
+    c = recvfrom(insocket,
+                 (char*) &sw,
+                 sizeof(sw),
+                 0,
+                 (struct sockaddr*) &fromaddress,
+                 &fromlen);
     if (c == -1)
     {
 #if defined(DOOM_WIN32)
@@ -287,8 +294,7 @@ int GetLocalAddress(void)
     hostentry = gethostbyname(hostname);
     if (!hostentry)
     {
-        I_Error(
-            "Error: GetLocalAddress : gethostbyname: couldn't get local host");
+        I_Error("Error: GetLocalAddress : gethostbyname: couldn't get local host");
     }
 
     return *(int*) hostentry->h_addr_list[0];
@@ -388,8 +394,8 @@ void I_InitNetwork(void)
         sendaddress[doomcom->numnodes].sin_port = htons(DOOMPORT);
         if (myargv[i][0] == '.')
         {
-            sendaddress[doomcom->numnodes].sin_addr.s_addr
-                = inet_addr(myargv[i] + 1);
+            sendaddress[doomcom->numnodes].sin_addr.s_addr =
+                inet_addr(myargv[i] + 1);
         }
         else
         {
@@ -402,8 +408,8 @@ void I_InitNetwork(void)
                 doom_concat(error_buf, myargv[i]);
                 I_Error(error_buf);
             }
-            sendaddress[doomcom->numnodes].sin_addr.s_addr
-                = *(int*) hostentry->h_addr_list[0];
+            sendaddress[doomcom->numnodes].sin_addr.s_addr =
+                *(int*) hostentry->h_addr_list[0];
         }
         doomcom->numnodes++;
     }
