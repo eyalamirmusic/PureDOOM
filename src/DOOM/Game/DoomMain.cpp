@@ -61,15 +61,18 @@
 #include "../d_main.h"
 
 #include "DoomMain.h"
+#include "LaunchOptions.h"
 
 #define MAXARGVS 100
 
 char* wadfiles[MAXWADFILES];
 
-doom_boolean devparm; // started game with -devparm
-doom_boolean nomonsters; // checkparm of -nomonsters
-doom_boolean respawnparm; // checkparm of -respawn
-doom_boolean fastparm; // checkparm of -fast
+// The command-line launch flags are a Doom::LaunchOptions owned by the Engine now; these
+// are references onto it (REFACTOR.md, Step 5).
+doom_boolean& devparm = Doom::launchOptions().devparm; // started game with -devparm
+doom_boolean& nomonsters = Doom::launchOptions().nomonsters; // checkparm of -nomonsters
+doom_boolean& respawnparm = Doom::launchOptions().respawnparm; // checkparm of -respawn
+doom_boolean& fastparm = Doom::launchOptions().fastparm; // checkparm of -fast
 
 doom_boolean drone;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
@@ -40,6 +41,7 @@ struct Engine
     GraphicsData graphicsData;
     RenderScratch renderScratch;
     LevelStats levelStats;
+    LaunchOptions launchOptions;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

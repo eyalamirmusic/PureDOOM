@@ -40,10 +40,12 @@
 // ------------------------
 // Command line parameters.
 //
-extern doom_boolean nomonsters;     // checkparm of -nomonsters
-extern doom_boolean respawnparm;    // checkparm of -respawn
-extern doom_boolean fastparm;       // checkparm of -fast
-extern doom_boolean devparm;        // DEBUG: launched with -devparm
+// The command-line launch flags live in Doom::LaunchOptions (an Engine member) now; these
+// are references onto it (REFACTOR.md, Step 5).
+extern doom_boolean& nomonsters;     // checkparm of -nomonsters
+extern doom_boolean& respawnparm;    // checkparm of -respawn
+extern doom_boolean& fastparm;       // checkparm of -fast
+extern doom_boolean& devparm;        // DEBUG: launched with -devparm
 
 
 // -----------------------------------------------------

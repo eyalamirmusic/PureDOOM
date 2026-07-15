@@ -69,4 +69,9 @@ LevelStats& levelStats()
 {
     return engine().levelStats;
 }
+
+LaunchOptions& launchOptions()
+{
+    return engine().launchOptions;
+}
 } // namespace Doom
