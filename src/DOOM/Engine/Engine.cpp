@@ -194,4 +194,9 @@ ParTimes& parTimes()
 {
     return engine().parTimes;
 }
+
+MovementSpeeds& movementSpeeds()
+{
+    return engine().movementSpeeds;
+}
 } // namespace Doom

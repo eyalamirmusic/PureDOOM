@@ -14,6 +14,7 @@
 #include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
 #include "../Game/MapSpawns.h"
+#include "../Game/MovementSpeeds.h"
 #include "../Game/NetState.h"
 #include "../Game/OverlayState.h"
 #include "../Game/ParTimes.h"
@@ -90,6 +91,7 @@ struct Engine
     TiccmdInput ticcmdInput;
     DeferredNewGame deferredNewGame;
     ParTimes parTimes;
+    MovementSpeeds movementSpeeds;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

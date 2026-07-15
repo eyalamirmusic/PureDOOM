@@ -67,6 +67,7 @@
 #include "GameSession.h"
 #include "IntermissionInfo.h"
 #include "LevelStats.h"
+#include "MovementSpeeds.h"
 #include "NetState.h"
 #include "ParTimes.h"
 #include "PlayerState.h"
@@ -183,9 +184,13 @@ int joybstrafe;
 int joybuse;
 int joybspeed;
 
-fixed_t forwardmove[2] = {0x19, 0x32};
-fixed_t sidemove[2] = {0x18, 0x28};
-fixed_t angleturn[3] = {640, 1280, 320}; // + slow turn
+// The movement-speed tables G_BuildTiccmd applies to the player's input are a Doom::MovementSpeeds
+// owned by the Engine now, moved by the file-scope-statics sweep; these vanilla names are
+// references-to-array onto the members (REFACTOR.md, Step 5). forwardmove/sidemove are also scaled
+// by -turbo over in Game/DoomMain.cpp, whose externs move to references in lockstep.
+fixed_t (&forwardmove)[2] = Doom::movementSpeeds().forwardmove;
+fixed_t (&sidemove)[2] = Doom::movementSpeeds().sidemove;
+fixed_t (&angleturn)[3] = Doom::movementSpeeds().angleturn; // + slow turn
 
 // The per-tic input accumulators are a Doom::TiccmdInput owned by the Engine now; these
 // vanilla names are references onto it (REFACTOR.md, Step 5, the file-scope-statics sweep). The

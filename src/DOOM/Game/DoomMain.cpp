@@ -139,8 +139,11 @@ const char*& pagename = Doom::attractMode().pagename;
 
 // Other subsystems' globals/functions this file reaches (at global scope so the
 // namespace code below binds :: not Doom::).
-extern int forwardmove[2]; // g_game (fixed_t; identical type)
-extern int sidemove[2]; // g_game
+// forwardmove/sidemove are a Doom::MovementSpeeds owned by the Engine now; these are the vanilla
+// names as references-to-array (int(&)[2] == fixed_t(&)[2]), so -turbo's scaling below writes
+// through to the member (REFACTOR.md, Step 5).
+extern int (&forwardmove)[2]; // g_game (fixed_t; identical type)
+extern int (&sidemove)[2]; // g_game
 extern void* statcopy; // g_game
 void D_CheckNetGame(void);
 void G_BuildTiccmd(ticcmd_t* cmd);
