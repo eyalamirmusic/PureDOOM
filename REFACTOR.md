@@ -49,14 +49,15 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
-| 7 | The renderer | **mostly done** — 6 of 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, all holding the frame goldens byte-identical and the app linking. Left: `r_things` and `r_draw` (see the recipe note for why `r_things` needs the whole-file global scan) |
-| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | |
+| 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
 clean and the suite is green (**74 tests**, ~2s: `ctest --test-dir build`). Steps
-0–3 are complete; 4's payoff is delivered; 5 and 6 are underway.
+0–3 are complete; 4's payoff is delivered; 5 is underway; 6 and 7 are done; 8 is
+underway.
 
 **What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
 everything else is still vanilla C compiled as C++ under `-w`):
@@ -76,6 +77,11 @@ everything else is still vanilla C compiled as C++ under `-w`):
   missiles), `Weapon` (the `A_*` weapon actions), `Enemy` (the `A_*` monster AI), the
   specials `Lights` / `Plats` / `Ceilings` / `Floors` / `Doors` / `Switches` /
   `Teleport` / `Specials`, and `Tick` (the thinker list and per-tic ticker).
+- `Render/` — the whole software renderer: `Sky`, `Data` (texture composition),
+  `Main` (view setup, `R_PointToAngle`), `Planes`, `BSP`, `Segs` (wall columns),
+  `Things` (sprites / psprites), `Draw` (the column/span blitters). Each is shimmed
+  by its flat `r_*.cpp` name, which keeps the `r_state.h` view-state cluster and the
+  drawer input state (`dc_*`/`ds_*`) the files share.
 - `Wad/` — `WadFile` (owns lumps, RAII).
 - `Engine/` — `Engine`, the composition root owning `Random`/`WadFile`/`Level`/`Clip`;
   `randomness()`/`wad()`/`level()`/`clip()` are accessors into the one `engine()`.
@@ -127,12 +133,13 @@ init, and p_saveg's byte-serialisation, all under the demo goldens), and the uni
 being kept means the append-only probe hash — which finds mobjs by
 `thinker->function.acp1 == P_MobjThinker` — is untouched.
 
-**What remains overall:** `p_setup` and `p_saveg` (finishing Step 6); then Step 7
-(the renderer, `r_*`) and Step 8 (UI, game loop, host boundary, and finally the
-`thinker_t`→`Thinker` virtualisation + retiring the zone allocator). The per-file
-recipe is settled and mechanical: move the logic into a `namespace Doom` `Sim/` unit,
-leave the vanilla names as shims in the flat file, keep as globals only what another
-file reads (or identifies by function-pointer address), and run the demos.
+**What remains overall:** Step 8 (UI, game loop, host boundary, and finally the
+`thinker_t`→`Thinker` virtualisation + retiring the zone allocator). Steps 6 and 7
+are complete — every `p_*` and `r_*` file is now a shim over a `namespace Doom`
+unit. The per-file recipe is settled and mechanical: move the logic into a
+`namespace Doom` `Sim/` or `Render/` unit, leave the vanilla names as shims in the
+flat file, keep as globals only what another file reads (or identifies by
+function-pointer address), and run the demos.
 
 **How to verify, every step** (nothing here re-records goldens):
 
@@ -781,20 +788,39 @@ The globals split was automated: a name is kept in the shim if a header `extern`
 included — the drawer pointers `colfunc`/`spanfunc`, the pending-view flags, the
 view state all stay), and moved file-local otherwise.
 
-**Two remaining, `r_things` and `r_draw`, and both need the same thing.** The
-preamble-scan shortcut (extract the block of globals before the first function, split
-it) works for a file whose globals sit in one place. Both of these scatter theirs:
-`r_things` defines `mfloorclip`/`mceilingclip` mid-render, and `r_draw` defines the
-span-drawer globals (`ds_x1`, `ds_source`, …) *after* the column drawers, past
-several functions. A mid-file global lands in the `namespace Doom` body and becomes
-`Doom::x`, which the shim's header `extern` and the other files that switch it can no
-longer link to. The finish is a **whole-file depth-0 global scan**: walk the file
-tracking brace depth, collect every top-level `type name…;` (not just the preamble),
-classify each with the same header-or-cross-reference test, and lift the kept ones
-out of the namespace into the flat shim. `r_draw`'s drawer functions themselves
-(`R_DrawColumn`/`R_DrawSpan`/…) are ordinary `R_*` shims — `Main`'s `colfunc = …`
-assignments already store the shim address, so the function-pointer dispatch keeps
-working once they exist.
+**Landed the last two, `r_things` and `r_draw`, with the whole-file depth-0 scan.**
+The preamble-scan shortcut (extract the block of globals before the first function,
+split it) works for a file whose globals sit in one place. Both of these scatter
+theirs: `r_things` defines `mfloorclip`/`mceilingclip` mid-render, and `r_draw`
+defines the span-drawer globals (`ds_x1`, `ds_source`, …) *after* the column drawers,
+past several functions. A mid-file global lands in the `namespace Doom` body and
+becomes `Doom::x`, which the shim's header `extern` and the other files that switch it
+can no longer link to. The finish is a **whole-file depth-0 global scan**: collect
+every top-level `type name…;` (not just the preamble), classify each with the same
+header-or-cross-reference test, and lift the kept ones out of the namespace into the
+flat shim.
+
+Two traps the classification had to see through, both false positives on a bare
+name-grep: `r_draw`'s `columnofs`/`ylookup` (the frame-address tables) looked read
+by other files, but every hit was a `patch->columnofs` struct-member access or a
+comment — the real globals live only in the drawers, so they moved file-local. And
+`r_draw`'s `translations[3][256]` looked read by `Sim/Mobj`, but that too was a
+comment; it was dead (as were `viewimage`, `dccount`, `dscount`, and the fuzz
+drawer's texture step, which never samples a pixel). `r_draw`'s drawer functions
+themselves (`R_DrawColumn`/`R_DrawSpan`/…) are ordinary `R_*` shims — `Main`'s
+`colfunc = …` assignments already store the shim address, so the function-pointer
+dispatch keeps working. `r_things` kept `sprites`/`numsprites` (app reads them) and
+the vissprite pool + `mfloorclip`/`spryscale` window (`r_segs` reads them) in the
+shim; `spritelights`/`sprtemp`/`maxframe`/`spritename`/`overflowsprite` moved
+file-local.
+
+**Step 7 is complete:** all eight `r_*` files (`Sky`, `Data`, `Main`, `Planes`,
+`BSP`, `Segs`, `Things`, `Draw`) are `namespace Doom` `Render/` units shimmed by
+their flat vanilla names — all frame-golden-clean and app-linking. The globals split
+was automated: a name is kept in the shim if a header `extern`s it *or* any other
+`.cpp` genuinely reads it (checked against every source file, playsim and app
+included — the drawer pointers `colfunc`/`spanfunc`, the pending-view flags, the view
+state all stay), and moved file-local otherwise.
 
 ## Step 8 — UI, game loop, host boundary
 
