@@ -759,10 +759,45 @@ transparent to every reader, so the breadth costs nothing.
   (filled by -skill / -episode / -warp) and `autostart` (the command line asked for a
   specific start). Defined in `Game/DoomMain.cpp` above its namespace. None is hashed.
 
-Each was externed only in `doomstat.h` (no cross-file `extern` to keep in step), so each is
-the same three-touch move `LevelStats` was: the header struct, the `Engine` member and
-accessor, and the definition line becoming a reference — verified by ctest + goldens-clean
-+ app-link.
+The five above were each externed only in `doomstat.h` (no cross-file `extern` to keep in
+step), so each was the same three-touch move `LevelStats` was: the header struct, the
+`Engine` member and accessor, and the definition line becoming a reference.
+
+Then the clusters with cross-file readers, where the extra `extern`s had to move to
+references *in lockstep* — an untouched `extern gamestate_t gamestate;` against a
+`gamestate_t& gamestate` definition is not a link error but a silent one, the old declaration
+reading the reference's hidden pointer as a value:
+
+- **`PlayerState`** (`Game/PlayerState.h`) — the player roster and view selection:
+  `players[]` (every player's state), `playeringame[]` (which slots are live), `consoleplayer`
+  and `displayplayer`. The two arrays become references-to-array, so every indexed read —
+  including vanilla's own `(int*)` casts into `playeringame`, which lean on `doom_boolean`
+  being int-sized — is unchanged. `players`' fields are hashed; a reference reads the same
+  bytes. Defined in `Game/Game.cpp`, no extra externs.
+- **`GameFlow`** (`Game/GameFlow.h`) — `gamestate` (which screen we are on) and
+  `wipegamestate` (the last drawn frame's state, which `D_Display` melts on when it differs).
+  `gamestate` from `Game/Game.cpp`, `wipegamestate` from `Game/DoomMain.cpp`; the extra
+  externs — `wipegamestate` in `Game/Game.cpp` and `UI/Finale.cpp`, `gamestate` a
+  function-body extern in `Host/Api.cpp`'s crosshair draw — all went to references in step.
+  `gamestate` is hashed.
+- **`DemoState`** (`Game/DemoState.h`) — `usergame` (a real game is running, so save/end are
+  allowed), `demoplayback`, `demorecording`, `singledemo`. Defined in `Game/Game.cpp`;
+  `demorecording`'s extra externs (`Game/DoomMain.cpp`, `Host/System.cpp`'s `I_Error` demo
+  flush) went to references. None is hashed.
+- **`RefreshFlags`** (`Game/RefreshFlags.h`) — `paused`, `viewactive` (the 3D view is being
+  drawn, false under the full-screen automap), and the `-nodraw`/`-noblit` timing switches
+  `nodrawers`/`noblit`. Defined in `Game/Game.cpp`, no extra externs. `viewactive` was left
+  out of the renderer's Step-5 clusters as game-loop-owned; this is where it lands.
+- **`OverlayState`** (`Game/OverlayState.h`) — `automapactive` and `menuactive`, the two
+  overlay flags the loop, HUD and crosshair read together. `automapactive` from `am_map.cpp`
+  (a flat renderer shim), `menuactive` from `UI/Menu.cpp`; extra externs updated in step —
+  `automapactive` in `UI/HudWidgets`, `UI/Hud` and `Host/Api`'s function-body crosshair
+  draw, `menuactive` in `Host/Api` beside it. Neither is hashed; the app's overlay capture
+  and crosshair read them through `doomstat.h` unchanged.
+
+Every cluster verified by ctest + goldens-clean + app-link. The app declares no bare externs
+of any migrated global (it reads them through the engine headers, so the reference-externs
+reach it), which was checked across `examples/` before the cross-file clusters landed.
 
 ## Step 6 — The playsim
 
