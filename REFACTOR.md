@@ -47,8 +47,8 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
-| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; the first movement-clipping globals (blockmap descriptor, intercept scratch) have moved in |
-| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core (`p_maputl` side/intercept/distance/opening helpers) rewritten with unit tests; the scenario-test harness (place a mobj, drive `P_TryMove`/`P_CheckPosition`, read blockmap linking) is built and proven to bite |
+| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
+| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core rewritten with unit tests; `p_maputl` **fully migrated** (stateful half → `Sim/MapUtil`, callable-taking blockmap iterators); `p_map` **fully migrated** (`Sim/Movement` collision core + `Sim/MapAction` slide/hitscan/use/radius/changesector); the scenario-test harness pins `P_TryMove`/`P_CheckPosition` directly |
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
 
@@ -63,10 +63,15 @@ everything else is still vanilla C compiled as C++ under `-w`):
 
 - `Math/` — `Fixed`, `Angle`, `Trig`, `BBox`, `Vec2`.
 - `Sim/` — `Random`, `Level` (level geometry, RAII), `Blockmap` (the grid
-  descriptor + block-index arithmetic, owned by `Level`), `Clip` (the movement
-  scratch — `P_PathTraverse`'s intercept list — owned by `Engine`), and
-  `MapGeometry` (`pointOnLineSide` / `pointOnDivlineSide` / `interceptVector` /
-  `boxOnLineSide` / `approxDistance` / `lineOpening`).
+  descriptor + block-index arithmetic, owned by `Level`), `Clip` (the movement /
+  collision scratch owned by `Engine`: `P_PathTraverse`'s intercept list, the line
+  opening window + trace, the `tm*` clipping state, the aim's `linetarget` and
+  shot's `attackrange`), `MapGeometry` (`pointOnLineSide` / `pointOnDivlineSide` /
+  `interceptVector` / `boxOnLineSide` / `approxDistance` / `lineOpening`), `MapUtil`
+  (the callable-taking blockmap iterators, thing linking, `pathTraverse`),
+  `Movement` (`checkPosition` / `tryMove` / `teleportMove` / `thingHeightClip`) and
+  `MapAction` (`slideMove` / `aimLineAttack` / `lineAttack` / `useLines` /
+  `radiusAttack` / `changeSector`).
 - `Wad/` — `WadFile` (owns lumps, RAII).
 - `Engine/` — `Engine`, the composition root owning `Random`/`WadFile`/`Level`/`Clip`;
   `randomness()`/`wad()`/`level()`/`clip()` are accessors into the one `engine()`.
@@ -87,23 +92,23 @@ types — the tests see integers and named-constant accessors (`doomSimTypeBarre
 facts the demos only cover in aggregate, each shown to bite by mutation (see the
 "Landed so far" note below).
 
-**The immediate next step** (continuing Step 6, `p_maputl` → `p_map`), now with the
-harness in hand:
+**`p_maputl` and `p_map` are now fully migrated.** The stateful half of `p_maputl`
+(blockmap iterators, thing linking, `P_PathTraverse`) is `Sim/MapUtil`; the iterators
+are templates taking any callable, so a rewritten caller passes a lambda where
+vanilla routed a function pointer through a global. `p_map` split into `Sim/Movement`
+(the collision core the scenario tests pin — `checkPosition`/`tryMove`/
+`teleportMove`/`thingHeightClip`) and `Sim/MapAction` (slide/hitscan/use/radius/
+changesector). Both flat files (`p_maputl.cpp`, `p_map.cpp`) are now shims. The
+`tm*` and clipping-window globals live in `Clip`; ~17 slide/hitscan/radius globals
+that no other file reads became file-local statics in `MapAction`, gone from the
+global cloud entirely.
 
-1. The stateful half of `p_maputl` — the blockmap iterators
-   (`P_BlockLinesIterator`/`P_BlockThingsIterator`, function-pointer callbacks →
-   consider lambdas), thing-position linking (`P_SetThingPosition`/`Unset`),
-   `P_PathTraverse`. **Underway.** The net is in place (`MapGeometry.h` extractions
-   + scenario tests), and the migration has begun: the blockmap addressing moved
-   onto `Doom::Blockmap`, and `P_PathTraverse`'s intercept scratch
-   (`intercepts[]`/`intercept_p`/`earlyout`) moved into `Doom::Clip`, reached
-   through `Doom::clip()`. What remains: the shared clipping globals (`opentop`,
-   `openbottom`, `openrange`, `lowfloor`, `trace`) join `Clip` as their readers
-   (`p_map`/`p_sight`/`p_enemy`) are rewritten, the iterators take callables, and
-   the file makes its per-file move out of `-w`.
-2. Then `p_map` (`P_TryMove`, `P_CheckPosition`) itself — the scenario tests above
-   pin it directly and specifically now, and its `tm*` clipping globals join the
-   same `Doom::Clip`.
+**The immediate next step** (continuing Step 6, the module order below): `p_mobj`
+(`P_SpawnMobj`, `P_MobjThinker`, the mobj lifecycle) — the first file to touch the
+`thinker_t` function-pointer union, which becomes a real `Thinker` with a virtual
+`tick()`. The probe finds mobjs by `thinker->function.acp1 == P_MobjThinker`, so the
+append-only hash rule bites here: change how the probe finds things, never what it
+mixes.
 
 **How to verify, every step** (nothing here re-records goldens):
 
@@ -683,12 +688,31 @@ the commit case mutated the *earlier* occurrence of `thing->x = x;`, which is in
 sure the mutation lands where you think. Prove it, don't trust it.) Nothing here
 touches a golden or the append-only probe hash; it is purely additive.
 
-Next in the module, now netted for locality: the wholesale rewrite of the stateful
-half of `p_maputl` into modern C++ (the blockmap iterators — function-pointer
-callbacks → lambdas — the thing-position linking, the intercept routines and
-`P_PathTraverse`), which flips the whole file out of the `-w` blanket and under
-`clang-format`, and then `p_map` (`P_TryMove`, `P_CheckPosition`) itself, which the
-scenario tests pin directly.
+### Landed — `p_maputl` and `p_map`, fully migrated
+
+The stateful half of `p_maputl` — the blockmap iterators, thing linking and
+`P_PathTraverse` — is now `Sim/MapUtil`, and `p_maputl.cpp` a shim. Following the
+established shim pattern (a genuinely-rewritten module's logic moves to a subdir
+under `-Wall` + `clang-format`; the flat vanilla-named file stays a `-w` shim), the
+rewrite lives in `Sim/` rather than `p_maputl.cpp` itself flipping out of `-w`. The
+iterators are templates (`forEachLineInBlock`/`forEachThingInBlock`) taking any
+callable — the payoff a rewritten caller uses to pass a lambda capturing its own clip
+state; today the shims and `MapAction` pass function pointers, so behaviour is
+identical.
+
+`p_map` split in two: `Sim/Movement` (the collision core — `checkPosition`,
+`tryMove`, `teleportMove`, `thingHeightClip`, with `PIT_CheckLine`/`CheckThing`/
+`StompThing` as file-local statics fed to the callable iterators) and `Sim/MapAction`
+(slide, hitscan aim/shoot, use, radius, sector-change). `p_map.cpp` went from 1296
+lines to a 184-line shim. Its `tm*` clipping state joined `Clip`; the ~17
+slide/hitscan/radius globals no other file reads became file-local statics in
+`MapAction` and left the global cloud; only `linetarget` and `attackrange` (read by
+`p_mobj`/`p_pspr`) stayed, as `Clip` members with vanilla-name references. The
+scenario tests pin `checkPosition`/`tryMove` directly, and every demo fires, slides
+and crushes through the rest — all four `*.hashes`/`*.frames` goldens held
+byte-identical across the split.
+
+Next in the module: `p_mobj`, and with it the `thinker_t` → `Thinker` rewrite.
 
 ## Step 7 — The renderer
 
