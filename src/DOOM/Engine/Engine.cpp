@@ -225,6 +225,11 @@ StatusBarFace& statusBarFace()
     return engine().statusBarFace;
 }
 
+StatusBarGraphics& statusBarGraphics()
+{
+    return engine().statusBarGraphics;
+}
+
 StatusBarWidgets& statusBarWidgets()
 {
     return engine().statusBarWidgets;

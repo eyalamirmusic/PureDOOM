@@ -54,6 +54,7 @@
 
 #include "StatusBar.h"
 #include "StatusBarFace.h"
+#include "StatusBarGraphics.h"
 #include "StatusBarWidgets.h"
 
 // st_statusbaron is owned by the st_stuff.cpp shim: the app (EngineAccess) reads
@@ -275,15 +276,19 @@ static doom_boolean st_cursoron; // whether chat window has the cursor on
 static doom_boolean st_notdeathmatch; // !deathmatch
 static doom_boolean st_armson; // !deathmatch && st_statusbaron
 static doom_boolean st_fragson; // !deathmatch
-static patch_t* sbar; // main bar left
-static patch_t* tallnum[10]; // 0-9, tall numbers
-static patch_t* tallpercent; // tall % sign
-static patch_t* shortnum[10]; // 0-9, short, yellow (,different!) numbers
-static patch_t* keys[NUMCARDS]; // 3 key-cards, 3 skulls
-static patch_t* faces[ST_NUMFACES]; // face status patches
-static patch_t* faceback; // face background
-static patch_t* armsbg; // main bar right
-static patch_t* arms[6][2]; // weapon ownership patches
+// The loaded status-bar patches are a Doom::StatusBarGraphics owned by the Engine now, moved by
+// the file-scope-statics sweep; these names are references onto the members, the arrays as
+// references-to-array (REFACTOR.md, Step 5). The faces[ST_NUMFACES] binding self-checks the
+// member's numFaces against the macro - a drift won't compile.
+static patch_t*& sbar = statusBarGraphics().sbar; // main bar left
+static patch_t* (&tallnum)[10] = statusBarGraphics().tallnum; // 0-9, tall numbers
+static patch_t*& tallpercent = statusBarGraphics().tallpercent; // tall % sign
+static patch_t* (&shortnum)[10] = statusBarGraphics().shortnum; // 0-9, short yellow
+static patch_t* (&keys)[NUMCARDS] = statusBarGraphics().keys; // key-cards, skulls
+static patch_t* (&faces)[ST_NUMFACES] = statusBarGraphics().faces; // face patches
+static patch_t*& faceback = statusBarGraphics().faceback; // face background
+static patch_t*& armsbg = statusBarGraphics().armsbg; // main bar right
+static patch_t* (&arms)[6][2] = statusBarGraphics().arms; // weapon ownership
 // The STlib widgets are a Doom::StatusBarWidgets owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members, the arrays as
 // references-to-array (REFACTOR.md, Step 5).
