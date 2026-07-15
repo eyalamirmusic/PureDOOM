@@ -636,7 +636,7 @@ void setupFrame(player_t* player)
     viewplayer = player;
     viewx = player->mo->x;
     viewy = player->mo->y;
-    viewangle = player->mo->angle + viewangleoffset;
+    viewangle = player->mo->angle;
     extralight = player->extralight;
 
     viewz = player->viewz;

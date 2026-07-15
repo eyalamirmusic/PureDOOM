@@ -21,8 +21,6 @@
 #include "Render/ViewPoint.h"
 #include "Render/ViewProjection.h"
 
-int viewangleoffset;
-
 // increment every time a check is made
 int validcount = 1;
 

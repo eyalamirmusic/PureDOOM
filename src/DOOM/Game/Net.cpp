@@ -97,7 +97,6 @@ int frameon;
 int frameskip[4];
 int oldnettics;
 
-extern int viewangleoffset;
 extern doom_boolean advancedemo;
 
 void D_ProcessEvents(void);

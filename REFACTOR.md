@@ -861,10 +861,12 @@ but three genuine loose clusters remained:
   forward-declares it. `bodyqueslot`'s `P_SetupLevel` reset is golden-covered.
 
 **What remains loose, and why it waits.** In `doomstat.h`: the three config-backed scalars
-above (blocked until the config rework); `viewangleoffset` (the vestigial 3-screen-mode offset,
-always zero — better *deleted* than migrated, a future cleanup); and three scattered internals
+above (blocked until the config rework); and three scattered internals
 — `basedefault` (the config path, which belongs with the config rework), `debugfile` (the
--debugfile handle) and `precache`/`singletics` (a level-load flag and a loop-mode flag). In
+-debugfile handle) and `precache`/`singletics` (a level-load flag and a loop-mode flag).
+(`viewangleoffset`, the vestigial 3-screen-mode offset that was always zero, has now been
+*deleted* rather than migrated — `viewangle = player->mo->angle` directly, and the psprites
+draw unconditionally; goldens held byte-identical.) In
 `p_local.h`: `thinkercap`, the thinker-list head, which moves with the deferred
 `thinker_t`→`Thinker` rewrite. None of the scattered scalars forms a cohesive cluster, and
 bucketing them would be exactly the grab-bag this refactor avoids; they move with their
@@ -1289,9 +1291,9 @@ never really C — the tiny data/decl remainders — are gone:
     these *with* the config rework, which removes the static address capture.
   - **`thinkercap`** — moves with the `thinker_t`→`Thinker` rewrite (it is the head of
     the intrusive thinker list that step reworks).
-  - **A few vestigial/scattered scalars** (`viewangleoffset`, `debugfile`, `precache`,
-    `singletics`) — no cohesive cluster; they move with their subsystems (or
-    `viewangleoffset`, always zero, is simply deleted) rather than into a grab-bag.
+  - **A few vestigial/scattered scalars** (`debugfile`, `precache`, `singletics`) — no
+    cohesive cluster; they move with their subsystems rather than into a grab-bag.
+    (`viewangleoffset`, the always-zero 3-screen offset, has now simply been deleted.)
   - **Then the file-scope statics** (~1,534 of them) and the remaining Game-local
     globals, which the reference-alias pattern also fits — this is what finally lets
     the engine be *constructed* rather than booted, once nothing reaches state by free

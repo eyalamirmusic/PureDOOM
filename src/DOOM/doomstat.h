@@ -141,7 +141,6 @@ extern int& scaledviewwidth;
 
 // This one is related to the 3-screen display mode.
 // ANG90 = left side, ANG270 = right
-extern int viewangleoffset;
 
 // Player taking events, and displaying. These live in Doom::PlayerState (an Engine member)
 // now, with the player arrays below; all four are references onto it (REFACTOR.md, Step 5).
