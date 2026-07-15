@@ -49,7 +49,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
-| 7 | The renderer | |
+| 7 | The renderer | **in progress** — new `Render/` subdir (in the CMake rewritten-glob). `r_sky`→`Sky` and `r_data`→`Data` done: the foundational `r_data` (texture/flat/sprite/colormap data, the composite cache, the tutti-frutti over-read) holds the frame goldens byte-identical. Recipe below. Left: `r_bsp`, `r_segs`, `r_plane`, `r_things`, `r_draw`, `r_main` |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | |
 
 ## Where this is — session handoff
@@ -749,6 +749,35 @@ the composited status bar, and what the overlay capture draws into.
 `EngineAccess` reaches directly into `r_state.h`, `r_bsp.h` and `r_data.h`, so it
 moves with each renderer change — it is ours, and the intent is that it gradually
 stops being a reach-around and becomes the engine's actual interface.
+
+### The recipe (proven on `r_data`)
+
+The renderer files carry the same shim shape as the playsim, with two wrinkles the
+playsim did not have:
+
+- **Split the module globals by whether another file reads them.** The renderer's
+  state is a mix: `viewx`, `textures`, `colormaps`, `spritewidth`, the core
+  `r_state.h` cluster — read by every renderer file and by `EngineAccess` — stay
+  defined in the flat shim (they have `extern`s in a header, and the `Doom::` code
+  reaches them through it). But a file's *own* private globals (`r_data`'s composite
+  cache — `texturecomposite`/`texturecolumnofs`/…, its patch/flat counts and memory
+  counters, 12 in all) have no header `extern` and no other reader, so they move
+  *file-local* into the `Render/` unit. The test is mechanical: `grep` the name in
+  `*.h` — a hit means keep it in the shim, a miss means move it in.
+- **Build the app after every renderer commit.** `EngineAccess.cpp` calls the `R_*`
+  functions and indexes the `r_*` globals; because the shims keep both, it keeps
+  linking, but that is the thing to verify (the sim tests do not link it).
+
+Two frame-golden traps carried from Step 4: `getColumn`'s tutti-frutti over-read is
+load-bearing — do not "fix" it — and it held byte-identical here; and the many
+literal lump names the loaders pass (`W_CacheLumpName("PNAMES")`, …) want their
+callee taking `const char*` (done for `W_CacheLumpName`/`W_GetNumForName`/
+`W_CheckNumForName`/`M_CheckParm`) so the rewritten code is `-Wall`-clean.
+
+**Landed:** `Sky` (trivial), `Data` (the foundational one). Remaining in module
+order: `r_bsp`, `r_segs`, `r_plane`, `r_things`, `r_draw`, `r_main` — several own
+function-pointer drawers (`colfunc`/`spanfunc` in `r_draw`) that, like the `T_*`
+thinkers, stay global because other code stores and switches them.
 
 ## Step 8 — UI, game loop, host boundary
 
