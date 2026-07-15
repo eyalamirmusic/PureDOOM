@@ -425,9 +425,12 @@ after a single load: that `vertexes`/`numsegs`/… still equal their `Level` vec
 
 ### What the tests do not cover
 
-The menu (nothing in a demo opens one), audio, and the eacp platform layer and
-GPU renderer. `m_menu.cpp` gets its own frame golden — synthetic key events, same
-technique — before it is rewritten; see Step 8 of `REFACTOR.md`. The rest still
+Audio, and the eacp platform layer and GPU renderer. The **menu** used to be
+here — nothing in a demo opens one — but it now has its own frame golden
+(`Tests/Goldens/menu.frames`, via `Tests/MenuReplay.h`): synthetic `doom_key_down`
+events drive a scripted walk through the menus over the title screen, hashed every
+tic, the same Step-0 technique the renderer got. That golden was built *before*
+`m_menu` was rewritten into `UI/Menu` and holds it byte-identical. The rest still
 needs the app run and looked at.
 
 ### The WAD directory has its own golden

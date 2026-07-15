@@ -50,17 +50,18 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
-| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI, game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`; `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. Left: `m_menu` (needs its golden first), the host boundary (`DOOM.cpp`/`i_system`/`i_video`/`i_sound`/`i_net`), the data files (`sounds`, `info`, `d_items` — deferred with the `Thinker` rewrite), the small remainders (`doomstat`, `doomdef`, `dstrings`, `m_swap`), `thinker_t`→`Thinker`, zone deletion |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. Left: the host boundary (`DOOM.cpp`/`i_system`/`i_video`/`i_sound`/`i_net`), the data files (`sounds`, `info`, `d_items` — deferred with the `Thinker` rewrite), the small remainders (`doomstat`, `doomdef`, `dstrings`, `m_swap`), `thinker_t`→`Thinker`, zone deletion |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**74 tests**, ~2s: `ctest --test-dir build`). Steps
+clean and the suite is green (**75 tests**, ~5s: `ctest --test-dir build`). Steps
 0–3 are complete; 4's payoff is delivered; 5 is underway; 6 and 7 are done; 8 is
-well underway — the whole UI, game loop, netcode and utility layer are migrated,
-leaving `m_menu`, the host boundary, the deferred data files, the `Thinker`
-virtualisation and the zone deletion. The flat vanilla list is down to ~15 files,
-most of them either data (deferred with `Thinker`) or the host boundary.
+well underway — the whole UI (the menu included), game loop, netcode and utility
+layer are migrated, leaving the host boundary, the deferred data files, the
+`Thinker` virtualisation and the zone deletion. The flat vanilla list is down to
+~14 files, most of them either data (deferred with `Thinker`) or the host
+boundary.
 
 **What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
 everything else is still vanilla C compiled as C++ under `-w`):
@@ -889,13 +890,50 @@ state at file scope in the rewritten unit above the namespace (they are the stat
   `NetUpdate`'s singletics quirk preserved verbatim),
 - **`s_sound`→`Game/Sound`** (audio state, exercised each tic though unheard).
 
+### Landed — `m_menu`, behind a golden built for it first
+
+`m_menu` was the one file with **no test coverage at all** — nothing in a demo
+opens a menu — so it got the Step-0 treatment: widen the net *before* touching
+the code. `Tests/SimProbe` grew a menu harness (`doomSimBootToTitle`,
+`doomSimPostKeyDown`/`Up`, `doomSimStepTic`, and `doomSimIsWiping`/`GameState`/
+`MenuActive` accessors); `Tests/MenuReplay.h` scripts a player's walk through the
+menus over the attract-mode title screen — options and their toggles, the
+thermometer sliders, the mouse and sound submenus, episode/skill select, the help
+pages, load/save, the quit prompt and the title-screen F-keys — and hashes the
+finished software frame **every tic** into `Tests/Goldens/menu.frames` (86
+frames, 45 distinct). The title screen is a static, deterministic picture, so the
+golden pins the menu drawn over it and nothing else; the entry wipe is run out
+before hashing starts. The script **never commits** — it answers the quit and
+nightmare prompts "no" and never starts, loads or saves a game — so `gamestate`
+stays `GS_DEMOSCREEN` and the process is never taken down, while nearly every
+branch of `M_Responder`/`M_Drawer`/`M_Ticker` still runs. It was shown to bite by
+mutation (a one-pixel `SKULLXOFF` shift fails `menu.frames` while every demo
+golden sails through), and shown to bite the *rewritten* code the same way. The
+darken-background path (`DOOM_FLAG_MENU_DARKEN_BG`, off by default) and the
+no-mouse/no-sound menu variants are covered by app-run, which sets that flag.
+
+Then the rewrite: **`m_menu`→`UI/Menu`**, the same shim shape. The seven globals
+another subsystem reads — `menuactive`, `inhelpscreens`, the config-backed
+`screenblocks`/`detailLevel`/`showMessages`/`mouseSensitivity`, and
+`messageToPrint` (the eacp overlay capture reads it) — stay defined at file scope
+above the namespace, `::`-scoped so `doomstat.h`/`Game/Config.cpp` and the
+renderer resolve unchanged; the ~40 private globals (the menu-definition tables,
+the skull cursor, the message and save-string state) moved into `namespace Doom`.
+The vanilla `M_` names are kept *inside* the namespace so the 2,000-line
+transcription stays diffable against the 1993 source; `m_menu.cpp` is a five-line
+shim forwarding `M_Responder`/`M_Ticker`/`M_Drawer`/`M_Init`/`M_StartControlPanel`
+to their `Doom::` counterparts. The Step-8 extern trap bit again — the
+function-local `extern int crosshair;`/`always_run;` and the drawer's
+`extern ... screens`/`colormaps` would have become `Doom::` members — so those
+moved to file scope above the namespace. `-Wwritable-strings` (the string-drawing
+helpers took `const char*`) and `-Wmissing-field-initializers` (the localized
+`#pragma`, as `wi_stuff`) were the recurring fixes. All four `*.frames`/`*.hashes`
+goldens held byte-identical and the app links.
+
 **Steps 6 and 7 are complete** — every `p_*` and `r_*` file is a shim (`p_setup`
 and `p_saveg` finished into `Sim/Setup` and `Sim/SaveGame`). What remains of
 Step 8:
 
-- **`m_menu`** — the one file with no coverage at all; build its frame golden
-  (synthetic `doom_key_down` events, hash the frames, Step-0 technique) *before*
-  rewriting it.
 - **The host boundary** — `DOOM.cpp` (the public `doom_*` API), `i_system`,
   `i_video`, `i_sound`, `i_net`. The 13 `doom_config.h` function pointers become
   a `Host` interface; audio (gap-log item 1) wires through it.
