@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
@@ -34,6 +35,7 @@ struct Engine
     ViewProjection viewProjection;
     ViewWindow viewWindow;
     Lighting lighting;
+    GraphicsData graphicsData;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

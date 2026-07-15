@@ -16,31 +16,35 @@
 #include "r_local.h"
 
 #include "Render/Data.h"
+#include "Render/GraphicsData.h"
 
-int firstflat;
-int numflats;
+// The renderer's loaded graphics data (textures, flats, sprite lumps, colormaps) is a
+// Doom::GraphicsData owned by the Engine now; these vanilla names are references onto it.
+// R_InitData fills the members once at startup; they are read-only after.
+int& firstflat = Doom::graphicsData().firstflat;
+int& numflats = Doom::graphicsData().numflats;
 
 
-int firstspritelump;
-int lastspritelump;
-int numspritelumps;
+int& firstspritelump = Doom::graphicsData().firstspritelump;
+int& lastspritelump = Doom::graphicsData().lastspritelump;
+int& numspritelumps = Doom::graphicsData().numspritelumps;
 
-int numtextures;
-texture_t** textures;
+int& numtextures = Doom::graphicsData().numtextures;
+texture_t**& textures = Doom::graphicsData().textures;
 
 // needed for texture pegging
-fixed_t* textureheight;
+fixed_t*& textureheight = Doom::graphicsData().textureheight;
 
 // for global animation
-int* flattranslation;
-int* texturetranslation;
+int*& flattranslation = Doom::graphicsData().flattranslation;
+int*& texturetranslation = Doom::graphicsData().texturetranslation;
 
 // needed for pre rendering
-fixed_t* spritewidth;
-fixed_t* spriteoffset;
-fixed_t* spritetopoffset;
+fixed_t*& spritewidth = Doom::graphicsData().spritewidth;
+fixed_t*& spriteoffset = Doom::graphicsData().spriteoffset;
+fixed_t*& spritetopoffset = Doom::graphicsData().spritetopoffset;
 
-lighttable_t* colormaps;
+lighttable_t*& colormaps = Doom::graphicsData().colormaps;
 
 
 void R_DrawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight)

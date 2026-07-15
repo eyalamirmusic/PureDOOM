@@ -54,4 +54,9 @@ Lighting& lighting()
 {
     return engine().lighting;
 }
+
+GraphicsData& graphicsData()
+{
+    return engine().graphicsData;
+}
 } // namespace Doom

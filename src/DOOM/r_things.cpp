@@ -15,6 +15,7 @@
 
 #include "r_local.h"
 
+#include "Render/GraphicsData.h"
 #include "Render/Things.h"
 
 // Sprite scaling for the player's own weapon sprites (read by r_main/r_plane).
@@ -27,9 +28,10 @@ short negonearray[SCREENWIDTH];
 short screenheightarray[SCREENWIDTH];
 
 // Variables used to look up and range check thing_t sprites patches
-//  (read across the renderer and the app).
-spritedef_t* sprites;
-int numsprites;
+//  (read across the renderer and the app). The sprite frame table lives in
+//  Doom::GraphicsData (an Engine member) now; these are references onto it.
+spritedef_t*& sprites = Doom::graphicsData().sprites;
+int& numsprites = Doom::graphicsData().numsprites;
 
 // The vissprite pool and its sorted list head (read by r_segs).
 vissprite_t vissprites[MAXVISSPRITES];

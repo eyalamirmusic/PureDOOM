@@ -32,38 +32,41 @@
 // for rendering.
 //
 
+// The renderer's loaded graphics data lives in Doom::GraphicsData (an Engine member)
+// now; these are references onto it (REFACTOR.md, Step 5).
+
 // needed for texture pegging
-extern fixed_t* textureheight;
+extern fixed_t*& textureheight;
 
 // needed for pre rendering (fracs)
-extern fixed_t* spritewidth;
+extern fixed_t*& spritewidth;
 
-extern fixed_t* spriteoffset;
-extern fixed_t* spritetopoffset;
+extern fixed_t*& spriteoffset;
+extern fixed_t*& spritetopoffset;
 
-extern lighttable_t* colormaps;
+extern lighttable_t*& colormaps;
 
 // View window geometry: references onto Doom::ViewWindow (an Engine member).
 extern int& viewwidth;
 extern int& scaledviewwidth;
 extern int& viewheight;
 
-extern int firstflat;
+extern int& firstflat;
 
 // for global animation
-extern int* flattranslation;
-extern int* texturetranslation;
+extern int*& flattranslation;
+extern int*& texturetranslation;
 
 // Sprite....
-extern int firstspritelump;
-extern int lastspritelump;
-extern int numspritelumps;
+extern int& firstspritelump;
+extern int& lastspritelump;
+extern int& numspritelumps;
 
 //
 // Lookup tables for map data.
 //
-extern int numsprites;
-extern spritedef_t* sprites;
+extern int& numsprites;
+extern spritedef_t*& sprites;
 
 extern int numvertexes;
 extern vertex_t* vertexes;

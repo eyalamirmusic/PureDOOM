@@ -67,7 +67,9 @@ typedef struct
 // no patch covered. Anything that wants the pixels rather than the engine's
 // cached columns (which are post data, not pixels, for exactly those textures)
 // has to compose them the same way.
-extern texture_t** textures;
+// The texture table lives in Doom::GraphicsData (an Engine member) now; a reference
+// onto it (REFACTOR.md, Step 5).
+extern texture_t**& textures;
 
 
 byte* R_GetColumn(int tex, int col);
@@ -89,8 +91,8 @@ int R_CheckTextureNumForName(const char* name);
 
 // How many wall textures and flats the WAD loaded. Composed lazily, so these are
 // the id space anything walking the graphics has to work in.
-extern int numtextures;
-extern int numflats;
+extern int& numtextures;
+extern int& numflats;
 
 
 #endif
