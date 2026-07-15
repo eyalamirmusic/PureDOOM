@@ -15,6 +15,7 @@
 #include "r_local.h"
 
 #include "Render/Planes.h"
+#include "Render/RenderScratch.h"
 
 #define MAXVISPLANES        128
 #define MAXOPENINGS        SCREENWIDTH*64
@@ -25,9 +26,10 @@ planefunction_t floorfunc;
 // opening
 //
 
-// Here comes the obnoxious "visplane".
-visplane_t* floorplane;
-visplane_t* ceilingplane;
+// Here comes the obnoxious "visplane". The current subsector's floor/ceiling visplanes
+// live in Doom::RenderScratch (an Engine member) now; these are references onto it.
+visplane_t*& floorplane = Doom::renderScratch().floorplane;
+visplane_t*& ceilingplane = Doom::renderScratch().ceilingplane;
 
 // ?
 short* lastopening;

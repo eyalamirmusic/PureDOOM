@@ -14,6 +14,7 @@
 
 #include "r_local.h"
 
+#include "Render/RenderScratch.h"
 #include "Render/Segs.h"
 
 #define HEIGHTBITS 12
@@ -34,10 +35,12 @@ int bottomtexture;
 int midtexture;
 
 
-angle_t rw_normalangle;
+// The current wall segment's projection lives in Doom::RenderScratch (an Engine member)
+// now; these are references onto it.
+angle_t& rw_normalangle = Doom::renderScratch().rw_normalangle;
 
 // angle to line origin
-int rw_angle1;
+int& rw_angle1 = Doom::renderScratch().rw_angle1;
 
 
 //
@@ -47,7 +50,7 @@ int rw_x;
 
 int rw_stopx;
 
-fixed_t rw_distance;
+fixed_t& rw_distance = Doom::renderScratch().rw_distance;
 
 
 lighttable_t** walllights;

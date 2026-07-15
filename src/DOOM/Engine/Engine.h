@@ -2,6 +2,7 @@
 
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
+#include "../Render/RenderScratch.h"
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
@@ -36,6 +37,7 @@ struct Engine
     ViewWindow viewWindow;
     Lighting lighting;
     GraphicsData graphicsData;
+    RenderScratch renderScratch;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

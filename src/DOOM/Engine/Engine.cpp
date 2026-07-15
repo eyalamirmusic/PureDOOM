@@ -59,4 +59,9 @@ GraphicsData& graphicsData()
 {
     return engine().graphicsData;
 }
+
+RenderScratch& renderScratch()
+{
+    return engine().renderScratch;
+}
 } // namespace Doom

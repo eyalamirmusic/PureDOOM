@@ -16,6 +16,7 @@
 
 #include "Render/Lighting.h"
 #include "Render/Main.h"
+#include "Render/RenderScratch.h"
 #include "Render/ViewPoint.h"
 #include "Render/ViewProjection.h"
 
@@ -39,9 +40,11 @@ fixed_t& centerxfrac = Doom::viewProjection().centerxfrac;
 fixed_t& centeryfrac = Doom::viewProjection().centeryfrac;
 fixed_t& projection = Doom::viewProjection().projection;
 
-// just for profiling purposes
+// The subsector counter is a Doom::RenderScratch member (an Engine member) now; a
+// reference onto it. linecount/loopcount are vestigial profiling counters, left as-is.
+int& sscount = Doom::renderScratch().sscount;
 
-int sscount;
+// just for profiling purposes
 int linecount;
 int loopcount;
 
