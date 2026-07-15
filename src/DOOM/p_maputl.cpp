@@ -48,11 +48,14 @@ static Doom::DivLine asDivLine(divline_t* d)
 }
 
 
-fixed_t opentop;
-fixed_t openbottom;
-fixed_t openrange;
-fixed_t lowfloor;
-divline_t trace;
+// The clipping window and the trace live in Doom::Clip now; these vanilla names are
+// references onto that owner, bound at static-init time through Doom::clip() the way
+// m_random binds rndindex. p_map/p_sight/p_enemy still read them as globals.
+fixed_t& opentop = Doom::clip().opentop;
+fixed_t& openbottom = Doom::clip().openbottom;
+fixed_t& openrange = Doom::clip().openrange;
+fixed_t& lowfloor = Doom::clip().lowfloor;
+divline_t& trace = Doom::clip().trace;
 
 
 //

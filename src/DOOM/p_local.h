@@ -161,10 +161,14 @@ fixed_t P_InterceptVector(divline_t* v2, divline_t* v1);
 int P_BoxOnLineSide(fixed_t* tmbox, line_t* ld);
 
 
-extern fixed_t opentop;
-extern fixed_t openbottom;
-extern fixed_t openrange;
-extern fixed_t lowfloor;
+// References into Doom::Clip (Sim/Clip.h), reached through Doom::clip() - the same
+// vanilla-name-over-owning-object shim rndindex/prndindex use. The clipping code
+// still reads these as globals; they become clip().opentop directly once p_map /
+// p_sight / p_enemy are rewritten to take an Engine&.
+extern fixed_t& opentop;
+extern fixed_t& openbottom;
+extern fixed_t& openrange;
+extern fixed_t& lowfloor;
 
 
 void P_LineOpening(line_t* linedef);
@@ -179,7 +183,7 @@ doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean(*func)(mobj_t*));
 #define PT_EARLYOUT     4
 
 
-extern divline_t trace;
+extern divline_t& trace;
 
 
 doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, doom_boolean(*trav) (intercept_t*));
