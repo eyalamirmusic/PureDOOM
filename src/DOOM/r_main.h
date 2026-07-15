@@ -48,7 +48,7 @@ extern fixed_t& centerxfrac;
 extern fixed_t& centeryfrac;
 extern fixed_t& projection;
 
-extern int validcount;
+extern int& validcount; // Doom::ValidCount (Engine member), reference onto it
 
 
 //

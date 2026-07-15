@@ -31,6 +31,7 @@
 #include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
+#include "../Sim/ValidCount.h"
 #include "../Wad/WadFile.h"
 
 namespace Doom
@@ -82,6 +83,7 @@ struct Engine
     ActiveSpecials activeSpecials;
     EndLevelTimer endLevelTimer;
     AttractMode attractMode;
+    ValidCount validCount;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

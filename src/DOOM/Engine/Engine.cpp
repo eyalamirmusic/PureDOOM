@@ -174,4 +174,9 @@ AttractMode& attractMode()
 {
     return engine().attractMode;
 }
+
+ValidCount& validCount()
+{
+    return engine().validCount;
+}
 } // namespace Doom

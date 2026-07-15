@@ -20,9 +20,11 @@
 #include "Render/ViewWindow.h"
 #include "Render/ViewPoint.h"
 #include "Render/ViewProjection.h"
+#include "Sim/ValidCount.h"
 
-// increment every time a check is made
-int validcount = 1;
+// increment every time a check is made - a Doom::ValidCount owned by the Engine now
+// (the one scalar owned by no subsystem); this vanilla name is a reference onto it.
+int& validcount = Doom::validCount().validcount;
 
 // The light selection is a Doom::Lighting owned by the Engine now; these vanilla names
 // are references onto it. fixedcolormap/extralight are set per frame by R_SetupFrame,
