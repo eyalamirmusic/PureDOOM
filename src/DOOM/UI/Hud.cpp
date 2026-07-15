@@ -41,6 +41,7 @@
 #include "../w_wad.h"
 
 #include "Hud.h"
+#include "HudMessage.h"
 
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 // externs): the HUD font, the config-persisted chat macros, the player names,
@@ -82,10 +83,13 @@ static hu_itext_t w_chat;
 static doom_boolean always_off = false;
 static char chat_dest[MAXPLAYERS];
 static hu_itext_t w_inputbuffer[MAXPLAYERS];
-static doom_boolean message_on;
-static doom_boolean message_nottobefuckedwith;
-static hu_stext_t w_message;
-static int message_counter;
+// The HUD message line is a Doom::HudMessage owned by the Engine now, moved by the
+// file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
+static doom_boolean& message_on = hudMessage().message_on;
+static doom_boolean& message_nottobefuckedwith =
+    hudMessage().message_nottobefuckedwith;
+static hu_stext_t& w_message = hudMessage().w_message;
+static int& message_counter = hudMessage().message_counter;
 static doom_boolean headsupactive = false;
 static char chatchars[QUEUESIZE];
 static int head = 0;

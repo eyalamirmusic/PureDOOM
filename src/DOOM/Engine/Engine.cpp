@@ -209,4 +209,9 @@ PendingCommands& pendingCommands()
 {
     return engine().pendingCommands;
 }
+
+HudMessage& hudMessage()
+{
+    return engine().hudMessage;
+}
 } // namespace Doom

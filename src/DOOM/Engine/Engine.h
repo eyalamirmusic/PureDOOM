@@ -38,6 +38,7 @@
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
 #include "../Sim/ValidCount.h"
+#include "../UI/HudMessage.h"
 #include "../Wad/WadFile.h"
 
 namespace Doom
@@ -96,6 +97,7 @@ struct Engine
     MovementSpeeds movementSpeeds;
     TimeDemo timeDemo;
     PendingCommands pendingCommands;
+    HudMessage hudMessage;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
