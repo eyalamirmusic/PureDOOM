@@ -107,6 +107,62 @@ extern "C"
     int doomSimPlayerAngleDegrees(void);
     int doomSimMobjCount(void);
 
+    // --- The scenario harness (Step 6) ---------------------------------------
+    //
+    // The demos exercise P_TryMove and P_CheckPosition thousands of times, but
+    // only in aggregate: when one desyncs, the tic hash says the world moved, not
+    // which playsim call answered wrong. These drive the playsim directly - load a
+    // level, place a thing, ask whether a spot is legal, try to move onto it - so a
+    // scenario test can pin one collision fact in isolation and give the rewrite of
+    // p_map somewhere to fail *loudly and locally*.
+    //
+    // It rests on the multi-scenario capability proven in Step 4: a level load
+    // resets the whole simulation cleanly (Doom::Level reassigns its geometry,
+    // Z_FreeTags clears the mobjs), so a scenario runs on a fresh world in the same
+    // process. Handles are plain ints into a probe-side registry, so nothing
+    // DOOM-typed leaks through this header; a level load invalidates every handle
+    // (its mobjs are freed) and re-registers the player as handle 0.
+    //
+    // Coordinates are raw 16.16 fixed-point (fixed_t is int32), so a test can place
+    // and read a thing to the exact unit rather than the truncated whole units the
+    // human-readable player probes above report.
+
+    // Loads episode/map at the given skill directly (G_InitNew), no demo, and
+    // forces single-player so the player mobj spawns. Returns 1 on success, 0 if
+    // the engine aborted. Must be called after doomSimBoot(0).
+    int doomSimLoadLevel(int episode, int map, int skill);
+
+    // The player-1 mobj as a handle (0), or -1 if no level is loaded.
+    int doomSimPlayerHandle(void);
+
+    // Spawns a mobj of `type` at fixed-point (x, y, z) - z may be the ONFLOORZ
+    // sentinel from doomSimOnFloorZ() - links it into the world, and returns a
+    // handle (>= 0), or -1 if the spawn aborted.
+    int doomSimSpawnMobj(int type, int x, int y, int z);
+
+    // P_CheckPosition (does the thing fit at (x, y)?) and P_TryMove (fit, then
+    // commit the move and cross any special lines) for a handle's mobj. Both
+    // return 1 if the answer was yes, 0 if no or the handle was bad. TryMove
+    // leaves the mobj where it was when it answers 0.
+    int doomSimCheckPosition(int handle, int x, int y);
+    int doomSimTryMove(int handle, int x, int y);
+
+    // A handle's mobj position, raw fixed-point.
+    int doomSimMobjX(int handle);
+    int doomSimMobjY(int handle);
+    int doomSimMobjZ(int handle);
+
+    // A handle's flags word, and a blunt setter - enough for a scenario to toggle
+    // MF_NOCLIP and watch the collision early-out take effect.
+    int doomSimMobjFlags(int handle);
+    void doomSimSetMobjFlags(int handle, int flags);
+
+    // Named constants, so a scenario test stays free of DOOM's enums (info.h,
+    // p_mobj.h). Add more here as scenarios need them.
+    int doomSimTypeBarrel(void); // MT_BARREL: solid, shootable, radius 10
+    int doomSimOnFloorZ(void);   // ONFLOORZ, the "rest on the floor" spawn z
+    int doomSimFlagNoClip(void); // MF_NOCLIP
+
 #ifdef __cplusplus
 }
 #endif

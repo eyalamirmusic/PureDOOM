@@ -20,6 +20,8 @@
 #include <setjmp.h>
 #include <stdio.h>
 
+#include <vector>
+
 // The live palette. i_video.c defines it and no header declares it; DOOM.c and
 // the eacp port both reach it exactly this way, so this is the house style
 // rather than a workaround.
@@ -326,4 +328,139 @@ int doomSimGeometryViewsConsistent(void)
            && view(nodes, numnodes, lvl.nodes) && view(lines, numlines, lvl.lines)
            && view(sides, numsides, lvl.sides)
            && blocklinks == lvl.blockLinks.data();
+}
+
+// --- The scenario harness (Step 6) ------------------------------------------
+//
+// Handles are indices into this vector. A level load frees every PU_LEVEL mobj,
+// so the handles it hands out are only valid until the next load - which clears
+// the registry and re-registers the fresh player as handle 0.
+static std::vector<mobj_t*> simMobjs;
+
+static mobj_t* simMobj(int handle)
+{
+    if (handle < 0 || handle >= (int) simMobjs.size())
+        return 0;
+
+    return simMobjs[(unsigned) handle];
+}
+
+int doomSimLoadLevel(int episode, int map, int skill)
+{
+    if (setjmp(simAbort))
+        return 0;
+
+    // A demo playback would have set these from the .lmp header; a direct load
+    // has no header, so establish single-player ourselves. Without playeringame[0]
+    // the map's player-1 start spawns no mobj and there is nothing to move.
+    consoleplayer = displayplayer = 0;
+    deathmatch = false;
+    netgame = false;
+    playeringame[0] = true;
+
+    // The old level's mobjs are about to be freed by Z_FreeTags in P_SetupLevel,
+    // so every handle into them dies here.
+    simMobjs.clear();
+
+    // G_InitNew runs the whole load synchronously (G_DoLoadLevel -> P_SetupLevel),
+    // unlike G_DeferedInitNew which only queues it for the next tic.
+    G_InitNew((skill_t) skill, episode, map);
+
+    // Handle 0 is always the player, so a scenario can move it without spawning
+    // anything. It is null only if the map had no player-1 start.
+    simMobjs.push_back(players[0].mo);
+
+    return players[0].mo != 0;
+}
+
+int doomSimPlayerHandle(void)
+{
+    return (!simMobjs.empty() && simMobjs[0]) ? 0 : -1;
+}
+
+int doomSimSpawnMobj(int type, int x, int y, int z)
+{
+    if (setjmp(simAbort))
+        return -1;
+
+    mobj_t* mobj = P_SpawnMobj(x, y, z, (mobjtype_t) type);
+
+    if (!mobj)
+        return -1;
+
+    simMobjs.push_back(mobj);
+    return (int) simMobjs.size() - 1;
+}
+
+int doomSimCheckPosition(int handle, int x, int y)
+{
+    mobj_t* mobj = simMobj(handle);
+
+    if (!mobj)
+        return 0;
+
+    if (setjmp(simAbort))
+        return 0;
+
+    return P_CheckPosition(mobj, x, y) ? 1 : 0;
+}
+
+int doomSimTryMove(int handle, int x, int y)
+{
+    mobj_t* mobj = simMobj(handle);
+
+    if (!mobj)
+        return 0;
+
+    if (setjmp(simAbort))
+        return 0;
+
+    return P_TryMove(mobj, x, y) ? 1 : 0;
+}
+
+int doomSimMobjX(int handle)
+{
+    mobj_t* mobj = simMobj(handle);
+    return mobj ? mobj->x : 0;
+}
+
+int doomSimMobjY(int handle)
+{
+    mobj_t* mobj = simMobj(handle);
+    return mobj ? mobj->y : 0;
+}
+
+int doomSimMobjZ(int handle)
+{
+    mobj_t* mobj = simMobj(handle);
+    return mobj ? mobj->z : 0;
+}
+
+int doomSimMobjFlags(int handle)
+{
+    mobj_t* mobj = simMobj(handle);
+    return mobj ? (int) mobj->flags : 0;
+}
+
+void doomSimSetMobjFlags(int handle, int flags)
+{
+    mobj_t* mobj = simMobj(handle);
+
+    if (mobj)
+        mobj->flags = flags;
+}
+
+int doomSimTypeBarrel(void)
+{
+    return MT_BARREL;
+}
+
+int doomSimOnFloorZ(void)
+{
+    return ONFLOORZ;
+}
+
+int doomSimFlagNoClip(void)
+{
+    return MF_NOCLIP;
 }
