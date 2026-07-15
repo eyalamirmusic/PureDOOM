@@ -16,6 +16,7 @@
 #include "../Game/MapSpawns.h"
 #include "../Game/NetState.h"
 #include "../Game/OverlayState.h"
+#include "../Game/ParTimes.h"
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
 #include "../Game/SkyState.h"
@@ -88,6 +89,7 @@ struct Engine
     ValidCount validCount;
     TiccmdInput ticcmdInput;
     DeferredNewGame deferredNewGame;
+    ParTimes parTimes;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

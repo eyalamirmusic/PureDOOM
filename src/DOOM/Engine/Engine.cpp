@@ -189,4 +189,9 @@ DeferredNewGame& deferredNewGame()
 {
     return engine().deferredNewGame;
 }
+
+ParTimes& parTimes()
+{
+    return engine().parTimes;
+}
 } // namespace Doom

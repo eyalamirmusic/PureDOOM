@@ -68,6 +68,7 @@
 #include "IntermissionInfo.h"
 #include "LevelStats.h"
 #include "NetState.h"
+#include "ParTimes.h"
 #include "PlayerState.h"
 #include "RefreshFlags.h"
 #include "TiccmdInput.h"
@@ -223,19 +224,11 @@ int& bodyqueslot = Doom::corpseQueue().bodyqueslot;
 
 void* statcopy; // for statistics driver
 
-// DOOM Par Times
-int pars[4][10] = {{0},
-                   {0, 30, 75, 120, 90, 165, 180, 180, 30, 165},
-                   {0, 90, 90, 90, 120, 90, 360, 240, 30, 170},
-                   {0, 90, 45, 90, 150, 90, 90, 165, 30, 135}};
-
-// DOOM II Par Times
-int cpars[32] = {
-    30,  90,  120, 120, 90,  150, 120, 120, 270, 90, //  1-10
-    210, 150, 150, 150, 210, 150, 420, 150, 210, 150, // 11-20
-    240, 150, 180, 150, 150, 300, 330, 420, 300, 180, // 21-30
-    120, 30 // 31-32
-};
+// The par-time tables (DOOM's pars[episode][map] and DOOM II's flat cpars[]) are a Doom::ParTimes
+// owned by the Engine now, moved by the file-scope-statics sweep; these vanilla names are
+// references-to-array onto the members (REFACTOR.md, Step 5).
+int (&pars)[4][10] = Doom::parTimes().pars;
+int (&cpars)[32] = Doom::parTimes().cpars;
 
 doom_boolean secretexit;
 
