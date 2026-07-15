@@ -2,11 +2,8 @@
 
 namespace Doom
 {
-Random& randomness()
-{
-    static auto instance = Random {};
-    return instance;
-}
+// randomness() is defined in Engine/Engine.cpp now - it is a view onto the one
+// Engine's `random` member, not a singleton of its own.
 
 // Moved here verbatim from m_random.cpp. This table is the simulation's entire
 // supply of chance, and Tests/Sim/PrimitiveTests.cpp checksums it whole.

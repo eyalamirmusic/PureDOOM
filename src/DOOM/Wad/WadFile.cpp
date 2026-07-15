@@ -88,11 +88,8 @@ bool endsInWad(const char* path)
 }
 } // namespace
 
-WadFile& wad()
-{
-    static auto instance = WadFile {};
-    return instance;
-}
+// wad() is defined in Engine/Engine.cpp now - a view onto the one Engine's `wad`
+// member rather than a singleton of its own.
 
 WadFile::~WadFile()
 {

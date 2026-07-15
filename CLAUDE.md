@@ -74,8 +74,9 @@ apparatus:
   accepts, not C++ anyone wrote.
 
   **The subdirectories are the rewrite.** `Math/` (`Fixed`, `Angle`, `Trig`,
-  `BBox`), `Sim/` (`Random`, `Level`) and `Wad/` (`WadFile`) are real C++ in
-  `namespace Doom`, and a file moves into one the moment it stops being vanilla.
+  `BBox`), `Sim/` (`Random`, `Level`), `Wad/` (`WadFile`) and `Engine/` (`Engine`,
+  the composition root that owns the other three) are real C++ in `namespace Doom`,
+  and a file moves into one the moment it stops being vanilla.
   Progress is the flat list getting shorter. The two are compiled differently on
   purpose: rewritten sources get `-Wall -Wextra -Wpedantic` and clang-format from
   their first line; vanilla keeps a blanket `-w` and its formatting exemption until
@@ -93,6 +94,13 @@ apparatus:
   `Doom::Level`'s vectors, refreshed by each loader after it fills its vector.
   That is deliberate — it puts the new types on the critical path of every demo
   the suite replays, which is the only thing that can test them.
+
+  Those three owners live inside one `Doom::Engine` now (`Engine/Engine.h`), and
+  `randomness()`/`wad()`/`level()` are accessors into the single `engine()`
+  instance. The `Engine` is the composition root that the ~684 scalar globals
+  (`doomstat.h`, `r_state.h`, `p_local.h`) migrate into — but each cluster moves
+  *with* the subsystem that owns it, as Steps 6–8 rewrite that code to take an
+  `Engine&`, not speculatively ahead of it.
 
   Three constraints died with the single header in Step 1, and the code may now
   rely on their absence: **two files may share a file-scope name** (the header

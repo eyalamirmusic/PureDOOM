@@ -47,7 +47,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
-| 5 | The `Engine` object: globals become members | |
+| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`; scalar clusters move in with Steps 6–8 |
 | 6 | The playsim | |
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
@@ -455,11 +455,36 @@ headers that empty out.
 The three subsystems already extracted — `Doom::Random`, `Doom::WadFile`,
 `Doom::Level` — are the `Engine`'s first members; the free `randomness()`, `wad()`
 and `level()` singletons become accessors into the one instance. With the whole of
-the engine's state under one object, the engine can finally be *constructed*
+the engine's state eventually under one object, the engine can be *constructed*
 rather than only booted: a fresh `Engine` is a clean world, which is what a test
 that re-inits (rather than reloads a level) would need. That is a stronger property
 than the scenario-test unlock already in hand, and it is what retires the loose
 globals for good.
+
+### Landed — the composition root
+
+`Doom::Engine` (`Engine/Engine.h`) holds `Random`, `WadFile` and `Level`. The three
+free accessors moved into `Engine/Engine.cpp` and now return `engine().random`,
+`engine().wad`, `engine().level` — one owner where there were three independent
+singletons. `Sim/Level.cpp` held nothing but `level()` and is gone.
+`Tests/Sim/EngineTests.cpp` pins the wiring (`&randomness() == &engine().random`,
+and so for the others) and that a second `Engine` is genuinely independent — no
+hidden shared state, the property a test-owned world will rest on.
+
+`engine()` is a function-local static, deliberately: `m_random.cpp` binds
+`int& rndindex = randomness().menuIndex` at static-init time, which reaches through
+it before `main()`, and a function-local static is constructed on that first call
+regardless of translation-unit order.
+
+**What did not move, and why.** The ~684 scalar globals (`doomstat.h`'s 73,
+`r_state.h`'s 44, `p_local.h`'s 27) stay put. Each cluster is owned by a subsystem
+that Steps 6–8 rewrite, and it moves *into the `Engine` when that subsystem is
+rewritten to take an `Engine&`* — not before. Aliasing them in now (`int& gametic =
+engine().gametic`) would be golden-neutral but would scatter reference-globals
+across the transition for no gain until the call sites change. The `Engine` grows
+with the rewrite; it is not filled speculatively ahead of it.
+
+The end shape, once the clusters have moved in:
 
 ```cpp
 auto doom = Engine {config, wad};

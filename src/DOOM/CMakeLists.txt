@@ -13,7 +13,8 @@ file(GLOB DOOM_VANILLA_SOURCES CONFIGURE_DEPENDS *.cpp *.h)
 file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
         Math/*.cpp Math/*.h
         Sim/*.cpp Sim/*.h
-        Wad/*.cpp Wad/*.h)
+        Wad/*.cpp Wad/*.h
+        Engine/*.cpp Engine/*.h)
 
 add_library(doom-engine STATIC ${DOOM_VANILLA_SOURCES} ${DOOM_REWRITTEN_SOURCES})
 add_library(DOOM::engine ALIAS doom-engine)
