@@ -958,6 +958,16 @@ table captures their address (the config trap) before they move.
   arrays. `mousex`/`mousey` reach the sim through the ticcmd, but a demo overrides the built
   command and the headless suite feeds no mouse, so they are zero throughout — golden-neutral,
   as the four byte-identical goldens confirm.
+- **The demo buffer folded into `DemoState`** — the second. `DemoState` already held the demo
+  *flags* (`usergame`/`demoplayback`/`demorecording`/`singledemo`, a doomstat.h loose-global
+  cluster); g_game's own file-scope demo *buffer* state — `demobuffer` (the byte block), `demo_p`
+  (the read/write cursor `G_ReadDemoTiccmd`/`G_WriteDemoTiccmd` walk), `demoend` (the end guard),
+  `demoname` (the `-playdemo`/`-record` name) and `netdemo` — folds in beside them, one
+  demo-subsystem owner (the way `clipammo` folded into `AmmoLimits`). All five were `Game/Game.cpp`
+  file-scope, read by no other file; the vanilla names became references onto the members
+  (`demoname` a reference-to-array, the buffer pointers references-to-pointer). Unlike
+  `TiccmdInput` this is squarely on the demo replays' path — they drive `demobuffer`/`demo_p` end
+  to end — so its byte-identical goldens are a live confirmation, not just an absence.
 
 ## Step 6 — The playsim
 

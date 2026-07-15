@@ -131,13 +131,16 @@ int& totalkills = Doom::levelStats().totalkills;       // for intermission
 int& totalitems = Doom::levelStats().totalitems;
 int& totalsecret = Doom::levelStats().totalsecret;
 
-char demoname[32];
+// The demo flags and buffer are a Doom::DemoState owned by the Engine now; these vanilla names
+// are references onto it (the buffer state folded in by the file-scope-statics sweep - REFACTOR.md,
+// Step 5). demoname is a reference-to-array, the buffer pointers references-to-pointer.
+char (&demoname)[32] = Doom::demoState().demoname;
 doom_boolean& demorecording = Doom::demoState().demorecording;
 doom_boolean& demoplayback = Doom::demoState().demoplayback;
-doom_boolean netdemo;
-byte* demobuffer;
-byte* demo_p;
-byte* demoend;
+doom_boolean& netdemo = Doom::demoState().netdemo;
+byte*& demobuffer = Doom::demoState().demobuffer;
+byte*& demo_p = Doom::demoState().demo_p;
+byte*& demoend = Doom::demoState().demoend;
 doom_boolean& singledemo = Doom::demoState().singledemo; // quit after one demo
 
 doom_boolean precache = true; // if true, load all graphics at start
