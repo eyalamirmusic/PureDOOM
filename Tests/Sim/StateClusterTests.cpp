@@ -41,7 +41,8 @@ auto tMovementSpeeds = test("StateClusters/movementSpeedsMatchVanilla") = []
 {
     auto m = MovementSpeeds {};
 
-    check(m.forwardmove[0] == 0x19 && m.forwardmove[1] == 0x32, "forwardmove walk/run");
+    check(m.forwardmove[0] == 0x19 && m.forwardmove[1] == 0x32,
+          "forwardmove walk/run");
     check(m.sidemove[0] == 0x18 && m.sidemove[1] == 0x28, "sidemove walk/run");
     check(m.angleturn[0] == 640 && m.angleturn[1] == 1280 && m.angleturn[2] == 320,
           "angleturn fast/faster/slow");
@@ -51,16 +52,24 @@ auto tMovementSpeeds = test("StateClusters/movementSpeedsMatchVanilla") = []
 // where vanilla's zero/-1/constant initializers put it.
 auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
 {
-    check(TimeDemo {}.timingdemo == false && TimeDemo {}.starttime == 0, "TimeDemo clear");
-    check(PendingCommands {}.sendpause == false && PendingCommands {}.sendsave == false,
+    check(TimeDemo {}.timingdemo == false && TimeDemo {}.starttime == 0,
+          "TimeDemo clear");
+    check(PendingCommands {}.sendpause == false
+              && PendingCommands {}.sendsave == false,
           "PendingCommands clear");
-    check(HudChat {}.queueSize == 128 && HudChat {}.head == 0 && HudChat {}.tail == 0,
+    check(HudChat {}.queueSize == 128 && HudChat {}.head == 0
+              && HudChat {}.tail == 0,
           "HudChat ring empty");
     check(HudMessage {}.message_on == false && HudMessage {}.message_counter == 0,
           "HudMessage clear");
-    check(StatusBarFace {}.st_oldhealth == -1, "StatusBarFace st_oldhealth sentinel");
-    check(StatusBarGraphics {}.numFaces == 42 && StatusBarGraphics {}.sbar == nullptr,
+    check(StatusBarFace {}.st_oldhealth == -1,
+          "StatusBarFace st_oldhealth sentinel");
+    check(StatusBarGraphics {}.numFaces == 42
+              && StatusBarGraphics {}.sbar == nullptr,
           "StatusBarGraphics face count and null patches");
+    check(StatusBarState {}.veryfirsttime == 1
+              && StatusBarState {}.st_stopped == true,
+          "StatusBarState one-time gate and parked flag");
 };
 
 // The free accessors are views onto the one Engine's members, the same property EngineTests pins
@@ -75,6 +84,8 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&hudChat() == &engine().hudChat, "hudChat()");
     check(&statusBarFace() == &engine().statusBarFace, "statusBarFace()");
     check(&statusBarWidgets() == &engine().statusBarWidgets, "statusBarWidgets()");
-    check(&statusBarGraphics() == &engine().statusBarGraphics, "statusBarGraphics()");
+    check(&statusBarGraphics() == &engine().statusBarGraphics,
+          "statusBarGraphics()");
+    check(&statusBarState() == &engine().statusBarState, "statusBarState()");
 };
 } // namespace

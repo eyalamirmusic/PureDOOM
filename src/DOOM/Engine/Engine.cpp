@@ -230,6 +230,11 @@ StatusBarGraphics& statusBarGraphics()
     return engine().statusBarGraphics;
 }
 
+StatusBarState& statusBarState()
+{
+    return engine().statusBarState;
+}
+
 StatusBarWidgets& statusBarWidgets()
 {
     return engine().statusBarWidgets;

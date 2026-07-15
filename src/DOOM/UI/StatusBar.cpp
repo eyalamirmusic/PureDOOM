@@ -55,6 +55,7 @@
 #include "StatusBar.h"
 #include "StatusBarFace.h"
 #include "StatusBarGraphics.h"
+#include "StatusBarState.h"
 #include "StatusBarWidgets.h"
 
 // st_statusbaron is owned by the st_stuff.cpp shim: the app (EngineAccess) reads
@@ -262,20 +263,28 @@ extern int doom_flags;
 namespace Doom
 {
 
-static player_t* plyr; // main player in game
-static doom_boolean st_firsttime; // stStart() has just been called
-static int veryfirsttime = 1; // used to execute stInit() only once
-static int lu_palette; // lump number for PLAYPAL
-static unsigned int st_clock; // used for timing
-static int st_msgcounter = 0; // used for making messages go away
-static st_chatstateenum_t st_chatstate; // used when in chat
-static st_stateenum_t st_gamestate; // whether in automap or first-person
-static doom_boolean st_chat; // whether status bar chat is active
-static doom_boolean st_oldchat; // value of st_chat before message popped up
-static doom_boolean st_cursoron; // whether chat window has the cursor on
-static doom_boolean st_notdeathmatch; // !deathmatch
-static doom_boolean st_armson; // !deathmatch && st_statusbaron
-static doom_boolean st_fragson; // !deathmatch
+// The status bar's residual runtime state is a Doom::StatusBarState owned by the Engine now, moved
+// by the file-scope-statics sweep; these names are references onto the members (REFACTOR.md,
+// Step 5). keyboxes, st_fragscount, st_palette and st_stopped follow below, at their own sites.
+static player_t*& plyr = statusBarState().plyr; // main player in game
+static doom_boolean& st_firsttime =
+    statusBarState().st_firsttime; // stStart() just called
+static int& veryfirsttime = statusBarState().veryfirsttime; // execute stInit() once
+static int& lu_palette = statusBarState().lu_palette; // lump number for PLAYPAL
+static unsigned int& st_clock = statusBarState().st_clock; // used for timing
+static int& st_msgcounter = statusBarState().st_msgcounter; // messages go away
+static st_chatstateenum_t& st_chatstate = statusBarState().st_chatstate; // in chat
+static st_stateenum_t& st_gamestate =
+    statusBarState().st_gamestate; // automap/1st-person
+static doom_boolean& st_chat = statusBarState().st_chat; // status bar chat is active
+static doom_boolean& st_oldchat =
+    statusBarState().st_oldchat; // st_chat before message
+static doom_boolean& st_cursoron =
+    statusBarState().st_cursoron; // chat window cursor on
+static doom_boolean& st_notdeathmatch =
+    statusBarState().st_notdeathmatch; // !deathmatch
+static doom_boolean& st_armson = statusBarState().st_armson; // !DM && st_statusbaron
+static doom_boolean& st_fragson = statusBarState().st_fragson; // !deathmatch
 // The loaded status-bar patches are a Doom::StatusBarGraphics owned by the Engine now, moved by
 // the file-scope-statics sweep; these names are references onto the members, the arrays as
 // references-to-array (REFACTOR.md, Step 5). The faces[ST_NUMFACES] binding self-checks the
@@ -303,17 +312,18 @@ static st_percent_t& w_armor = statusBarWidgets().w_armor; // armor widget
 static st_number_t (&w_ammo)[4] = statusBarWidgets().w_ammo; // ammo widgets
 static st_number_t (&w_maxammo)[4] =
     statusBarWidgets().w_maxammo; // max ammo widgets
-static int st_fragscount; // number of frags so far in deathmatch
+static int& st_fragscount =
+    statusBarState().st_fragscount; // frags so far in deathmatch
 // The animated face's selection state is a Doom::StatusBarFace owned by the Engine now, moved by
 // the file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
 static int& st_oldhealth = statusBarFace().st_oldhealth;
 static doom_boolean (&oldweaponsowned)[NUMWEAPONS] = statusBarFace().oldweaponsowned;
 static int& st_facecount = statusBarFace().st_facecount;
 static int& st_faceindex = statusBarFace().st_faceindex;
-static int keyboxes[3]; // holds key-type for each key box on bar
+static int (&keyboxes)[3] = statusBarState().keyboxes; // key-type for each key box
 static int& st_randomnumber = statusBarFace().st_randomnumber; // a random per tick
-static int st_palette = 0;
-static doom_boolean st_stopped = true;
+static int& st_palette = statusBarState().st_palette;
+static doom_boolean& st_stopped = statusBarState().st_stopped;
 
 // Massive bunches of cheat shit
 //  to keep it from being easy to figure them out.

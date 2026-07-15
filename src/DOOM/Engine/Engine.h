@@ -42,6 +42,7 @@
 #include "../UI/HudMessage.h"
 #include "../UI/StatusBarFace.h"
 #include "../UI/StatusBarGraphics.h"
+#include "../UI/StatusBarState.h"
 #include "../UI/StatusBarWidgets.h"
 #include "../Wad/WadFile.h"
 
@@ -105,6 +106,7 @@ struct Engine
     HudChat hudChat;
     StatusBarFace statusBarFace;
     StatusBarGraphics statusBarGraphics;
+    StatusBarState statusBarState;
     StatusBarWidgets statusBarWidgets;
 };
 
