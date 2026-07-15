@@ -84,9 +84,9 @@ void initFlats(void);
 void initSpriteLumps(void);
 void initColormaps(void);
 void initData(void);
-int flatNumForName(char* name);
-int checkTextureNumForName(char* name);
-int textureNumForName(char* name);
+int flatNumForName(const char* name);
+int checkTextureNumForName(const char* name);
+int textureNumForName(const char* name);
 void precacheLevel(void);
 
 void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight)
@@ -560,7 +560,7 @@ void initData(void)
 // flatNumForName
 // Retrieval, get a flat number for a flat name.
 //
-int flatNumForName(char* name)
+int flatNumForName(const char* name)
 {
     int i;
     char namet[9];
@@ -586,7 +586,7 @@ int flatNumForName(char* name)
 // Check whether texture is available.
 // Filter out NoTexture indicator.
 //
-int checkTextureNumForName(char* name)
+int checkTextureNumForName(const char* name)
 {
     int i;
 
@@ -606,7 +606,7 @@ int checkTextureNumForName(char* name)
 // Calls checkTextureNumForName,
 //  aborts with error message.
 //
-int textureNumForName(char* name)
+int textureNumForName(const char* name)
 {
     int i;
 

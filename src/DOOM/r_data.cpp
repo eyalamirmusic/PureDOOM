@@ -88,17 +88,17 @@ void R_InitData(void)
     Doom::initData();
 }
 
-int R_FlatNumForName(char* name)
+int R_FlatNumForName(const char* name)
 {
     return Doom::flatNumForName(name);
 }
 
-int R_CheckTextureNumForName(char* name)
+int R_CheckTextureNumForName(const char* name)
 {
     return Doom::checkTextureNumForName(name);
 }
 
-int R_TextureNumForName(char* name)
+int R_TextureNumForName(const char* name)
 {
     return Doom::textureNumForName(name);
 }
