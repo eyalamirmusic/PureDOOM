@@ -16,6 +16,7 @@
 
 #include "Render/Main.h"
 #include "Render/ViewPoint.h"
+#include "Render/ViewProjection.h"
 
 int viewangleoffset;
 
@@ -24,12 +25,15 @@ int validcount = 1;
 
 lighttable_t* fixedcolormap;
 
-int centerx;
-int centery;
+// The screen projection is a Doom::ViewProjection owned by the Engine now; these
+// vanilla names are references onto it. R_ExecuteSetViewSize (Render/Main.cpp) writes
+// through them when the view size changes.
+int& centerx = Doom::viewProjection().centerx;
+int& centery = Doom::viewProjection().centery;
 
-fixed_t centerxfrac;
-fixed_t centeryfrac;
-fixed_t projection;
+fixed_t& centerxfrac = Doom::viewProjection().centerxfrac;
+fixed_t& centeryfrac = Doom::viewProjection().centeryfrac;
+fixed_t& projection = Doom::viewProjection().projection;
 
 // just for profiling purposes
 
@@ -55,20 +59,22 @@ player_t*& viewplayer = Doom::viewPoint().viewplayer;
 int detailshift;
 
 //
-// precalculated math tables
+// precalculated math tables (references onto the Engine's ViewProjection). The two
+// tables are references-to-array, so their type is unchanged and every indexed read
+// resolves exactly as before.
 //
-angle_t clipangle;
+angle_t& clipangle = Doom::viewProjection().clipangle;
 
 // The viewangletox[viewangle + FINEANGLES/4] lookup
 // maps the visible view angles to screen X coordinates,
 // flattening the arc to a flat projection plane.
-// There will be many angles mapped to the same X. 
-int viewangletox[FINEANGLES / 2];
+// There will be many angles mapped to the same X.
+int (&viewangletox)[FINEANGLES / 2] = Doom::viewProjection().viewangletox;
 
 // The xtoviewangleangle[] table maps a screen pixel
 // to the lowest viewangle that maps back to x ranges
 // from clipangle to -clipangle.
-angle_t xtoviewangle[SCREENWIDTH + 1];
+angle_t (&xtoviewangle)[SCREENWIDTH + 1] = Doom::viewProjection().xtoviewangle;
 
 
 lighttable_t* scalelight[LIGHTLEVELS][MAXLIGHTSCALE];

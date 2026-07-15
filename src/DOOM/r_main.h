@@ -38,12 +38,14 @@ extern int viewheight;
 extern int viewwindowx;
 extern int viewwindowy;
 
-extern int centerx;
-extern int centery;
+// The screen projection lives in Doom::ViewProjection now (see r_state.h); these are
+// references onto it.
+extern int& centerx;
+extern int& centery;
 
-extern fixed_t centerxfrac;
-extern fixed_t centeryfrac;
-extern fixed_t projection;
+extern fixed_t& centerxfrac;
+extern fixed_t& centeryfrac;
+extern fixed_t& projection;
 
 extern int validcount;
 

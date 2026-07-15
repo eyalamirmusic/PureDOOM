@@ -97,11 +97,13 @@ extern fixed_t& viewz;
 extern angle_t& viewangle;
 extern player_t*& viewplayer;
 
-// ?
-extern angle_t clipangle;
+// The screen projection also lives in Doom::ViewProjection (an Engine member); these
+// are references onto it, the two tables as references-to-array so their type and every
+// indexed read are unchanged.
+extern angle_t& clipangle;
 
-extern int viewangletox[FINEANGLES / 2];
-extern angle_t xtoviewangle[SCREENWIDTH + 1];
+extern int (&viewangletox)[FINEANGLES / 2];
+extern angle_t (&xtoviewangle)[SCREENWIDTH + 1];
 
 extern fixed_t rw_distance;
 extern angle_t rw_normalangle;

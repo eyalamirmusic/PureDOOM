@@ -39,4 +39,9 @@ ViewPoint& viewPoint()
 {
     return engine().viewPoint;
 }
+
+ViewProjection& viewProjection()
+{
+    return engine().viewProjection;
+}
 } // namespace Doom
