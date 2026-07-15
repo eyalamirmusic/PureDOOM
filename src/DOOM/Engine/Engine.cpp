@@ -134,4 +134,9 @@ AmmoLimits& ammoLimits()
 {
     return engine().ammoLimits;
 }
+
+IntermissionInfo& intermissionInfo()
+{
+    return engine().intermissionInfo;
+}
 } // namespace Doom

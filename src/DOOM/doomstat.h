@@ -211,9 +211,9 @@ extern mapthing_t*& deathmatch_p;
 
 extern mapthing_t (&playerstarts)[MAXPLAYERS];
 
-// Intermission stats.
-// Parameters for world map / intermission.
-extern wbstartstruct_t wminfo;
+// Intermission stats. Parameters for world map / intermission. In Doom::IntermissionInfo
+// (an Engine member) now; a reference onto it (REFACTOR.md, Step 5).
+extern wbstartstruct_t& wminfo;
 
 
 // LUT of ammunition limits for each kind. This doubles with BackPack powerup item.

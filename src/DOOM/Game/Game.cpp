@@ -63,6 +63,7 @@
 #include "GameClock.h"
 #include "GameFlow.h"
 #include "GameSession.h"
+#include "IntermissionInfo.h"
 #include "LevelStats.h"
 #include "PlayerState.h"
 #include "RefreshFlags.h"
@@ -140,7 +141,9 @@ doom_boolean& singledemo = Doom::demoState().singledemo; // quit after one demo
 
 doom_boolean precache = true; // if true, load all graphics at start
 
-wbstartstruct_t wminfo; // parms for world map / intermission
+// wminfo is a Doom::IntermissionInfo owned by the Engine now; this is a reference onto it
+// (REFACTOR.md, Step 5).
+wbstartstruct_t& wminfo = Doom::intermissionInfo().wminfo; // world map / intermission parms
 
 short consistancy[MAXPLAYERS][BACKUPTICS];
 

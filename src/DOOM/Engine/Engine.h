@@ -6,6 +6,7 @@
 #include "../Game/GameFlow.h"
 #include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"
+#include "../Game/IntermissionInfo.h"
 #include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
 #include "../Game/MapSpawns.h"
@@ -66,6 +67,7 @@ struct Engine
     MapSpawns mapSpawns;
     GameClock gameClock;
     AmmoLimits ammoLimits;
+    IntermissionInfo intermissionInfo;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
