@@ -101,34 +101,20 @@ extern doom_boolean& deathmatch;
 // but are not (yet) supported with Linux
 // (e.g. no sound volume adjustment with menu.
 
-// These are not used, but should be (menu).
-// From m_menu.c:
-// Sound FX volume has default, 0 - 15
-// Music volume has default, 0 - 15
-// These are multiplied by 8.
+// The sfx/music volumes stay loose globals for now - they are config-backed, and the Engine
+// migration by reference-alias races Config.cpp's static defaults[] address capture (see
+// Game/Sound.cpp). They move with the doom_config->Host rework. The snd_*Device selectors
+// that were declared here were always dead (no definition, no reader) and are dropped.
 extern int snd_SfxVolume;      // maximum volume for sound
 extern int snd_MusicVolume;    // maximum volume for music
-
-// Current music/sfx card - index useless
-//  w/o a reference LUT in a sound module.
-// Ideally, this would use indices found
-//  in: /usr/include/linux/soundcard.h
-extern int snd_MusicDevice;
-extern int snd_SfxDevice;
-
-// Config file? Same disclaimer as above.
-extern int snd_DesiredMusicDevice;
-extern int snd_DesiredSfxDevice;
 
 
 // -------------------------
 // Status flags for refresh.
 //
 
-// Depending on view size - no status bar?
-// Note that there is no way to disable the
-//  status bar explicitely.
-extern doom_boolean statusbaractive;
+// statusbaractive was declared here but never defined or read - dropped (REFACTOR.md,
+// Step 5).
 
 // automapactive/menuactive live in Doom::OverlayState (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).

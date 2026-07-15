@@ -64,13 +64,8 @@
 #define NA 0
 #define S_NUMCHANNELS 2
 
-// Current music/sfx card - index useless
-//  w/o a reference LUT in a sound module.
-extern int snd_MusicDevice;
-extern int snd_SfxDevice;
-// Config file? Same disclaimer as above.
-extern int snd_DesiredMusicDevice;
-extern int snd_DesiredSfxDevice;
+// The snd_*Device selectors that were externed here were always dead - no definition, no
+// reader - and are dropped (with their doomstat.h declarations), not moved.
 
 typedef struct
 {
@@ -95,13 +90,12 @@ static musicinfo_t* mus_playing_s_sound = 0;
 
 static int nextcleanup;
 
-// These are not used, but should be (menu).
-// Maximum volume of a sound effect.
-// Internal default is max out of 0-15.
-int snd_SfxVolume = 15;
-
-// Maximum volume of music. Useless so far.
-int snd_MusicVolume = 15;
+// The sfx/music volumes stay loose globals for now: they are config-backed, and Config.cpp's
+// static defaults[] table captures &snd_SfxVolume at static-init time. A reference-alias
+// would make that a dynamic initializer racing this binding across translation units - it
+// segfaults - so config-backed globals wait for the doom_config->Host rework (REFACTOR.md).
+int snd_SfxVolume = 15;   // sound-effect volume, 0-15
+int snd_MusicVolume = 15; // music volume, 0-15
 
 // following is set
 //  by the defaults code in M_misc:
