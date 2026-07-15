@@ -245,10 +245,10 @@ extern doom_boolean singletics;
 extern int bodyqueslot;
 
 
-// Needed to store the number of the dummy sky flat.
-// Used for rendering,
-//  as well as tracking projectiles etc.
-extern int skyflatnum;
+// Needed to store the number of the dummy sky flat. Used for rendering, as well as tracking
+// projectiles etc. In Doom::SkyState (an Engine member) now; a reference onto it
+// (REFACTOR.md, Step 5).
+extern int& skyflatnum;
 
 
 // Netgame stuff (buffers and pointers, i.e. indices). Lives in Doom::NetState (an Engine

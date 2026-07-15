@@ -139,4 +139,9 @@ IntermissionInfo& intermissionInfo()
 {
     return engine().intermissionInfo;
 }
+
+SkyState& skyState()
+{
+    return engine().skyState;
+}
 } // namespace Doom

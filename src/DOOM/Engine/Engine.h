@@ -14,6 +14,7 @@
 #include "../Game/OverlayState.h"
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
+#include "../Game/SkyState.h"
 #include "../Game/StartupDefaults.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
@@ -68,6 +69,7 @@ struct Engine
     GameClock gameClock;
     AmmoLimits ammoLimits;
     IntermissionInfo intermissionInfo;
+    SkyState skyState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
