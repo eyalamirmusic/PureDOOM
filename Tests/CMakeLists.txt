@@ -28,6 +28,7 @@ nano_add_executable(SimTests
         DemoReplay.h
         Sim/DemoTests.cpp
         Sim/WadTests.cpp
+        Sim/LevelTests.cpp
         TARGETS doom-sim-probe)
 
 target_compile_definitions(SimTests PRIVATE

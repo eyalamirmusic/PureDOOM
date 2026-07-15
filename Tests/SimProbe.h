@@ -78,6 +78,13 @@ extern "C"
     int doomSimLumpSize(int lump);
     unsigned long long doomSimLumpHash(int lump);
 
+    // Whether the level geometry the engine renders from is owned by Doom::Level
+    // and the vanilla globals (vertexes, numsegs, ...) are consistent views onto
+    // it: every pointer equal to its vector's data(), every count equal to its
+    // vector's size(). The transitional design leans on a loader refreshing the
+    // global after every resize; this catches one that forgot.
+    int doomSimGeometryViewsConsistent(void);
+
     // Individual probes, so a failure can say what actually differs rather than
     // just that two hashes do.
     int doomSimRndIndex(void);

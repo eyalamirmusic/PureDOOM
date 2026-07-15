@@ -14,6 +14,9 @@
 #include <DOOM/w_wad.h>
 #include <DOOM/z_zone.h>
 
+#include <DOOM/Sim/Level.h>
+#include <DOOM/r_state.h>
+
 #include <setjmp.h>
 #include <stdio.h>
 
@@ -299,4 +302,17 @@ int doomSimMobjCount(void)
     return count;
 }
 
+int doomSimGeometryViewsConsistent(void)
+{
+    const auto& lvl = Doom::level();
 
+    auto view = [](const void* ptr, int num, const auto& vec)
+    { return ptr == vec.data() && num == (int) vec.size(); };
+
+    return view(vertexes, numvertexes, lvl.vertexes) && view(segs, numsegs, lvl.segs)
+           && view(subsectors, numsubsectors, lvl.subsectors)
+           && view(sectors, numsectors, lvl.sectors)
+           && view(nodes, numnodes, lvl.nodes) && view(lines, numlines, lvl.lines)
+           && view(sides, numsides, lvl.sides)
+           && blocklinks == lvl.blockLinks.data();
+}

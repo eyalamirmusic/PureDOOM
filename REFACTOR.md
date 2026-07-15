@@ -43,7 +43,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 1 | Retire the single-header packaging | **done** |
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
-| 4 | Ownership: kill the zone allocator | **in progress** — WAD done, `Level` + zone deletion next |
+| 4 | Ownership: kill the zone allocator | **in progress** — WAD + `Level` geometry done; mobjs/thinkers + zone deletion next |
 | 5 | The `Engine` object: globals become members | |
 | 6 | The playsim | |
 | 7 | The renderer | |
@@ -375,8 +375,37 @@ zeroed. It is nonetheless safe, because `R_GenerateLookup` writes
 `texturecomposite[texnum] = 0` for every texture before any column is drawn — so
 the "fix" of `memset`-ing it changed nothing, which is how it was ruled out.
 
-Still ahead in Step 4: the `Level` object for `PU_LEVEL`, `PU_STATIC` to members,
-deleting `z_zone.cpp`, and then the boot-twice test.
+### Landed so far — the level geometry (`PU_LEVEL`, the clean half)
+
+`Doom::Level` (`Sim/Level.h`) owns the nine arrays that a level builds once and
+throws away whole: `vertexes`, `segs`, `subsectors`, `sectors`, `nodes`, `lines`,
+`sides`, the per-block mobj-chain heads (`blocklinks`), and the flat line-pointer
+buffer `P_GroupLines` carves into per-sector slices (vanilla's `linebuffer`). Each
+is a `std::vector`; the loaders in `p_setup.cpp` `assign` into them and refresh the
+vanilla global to `.data()`. **`assign`, not `resize`** — a shorter second level
+must not inherit the first level's tail, and `Z_Malloc` handed back fresh zeroed
+memory every load.
+
+The vanilla globals (`vertexes`, `numsegs`, `sectors`, …) stay as views onto the
+vectors — the renderer and playsim index them thousands of times and are not being
+rewritten yet. `Tests/Sim/LevelTests.cpp` pins the one invariant the demos can't
+see: that every global still equals its vector's `data()`/`size()` after a load. A
+loader that resized a vector and forgot to refresh its global would leave it
+dangling, and the demos might survive that by allocator luck.
+
+The blockmap and reject matrix are *not* here: they are WAD lumps
+(`W_CacheLumpNum`), so `WadFile` already owns them permanently — `blocklinks` is
+the only blockmap-related allocation that was ever the zone's.
+
+What stays on the zone, deliberately: **mobjs and the thinker specials** (doors,
+lifts, lights — `PU_LEVEL`/`PU_LEVSPEC`). They have a per-object lifecycle
+(`P_RemoveThinker` frees them mid-play), and untangling that is the thinker
+rewrite in Step 6, not this. `Z_FreeTags(PU_LEVEL, …)` at the top of
+`P_SetupLevel` therefore stays — it now frees only those, not the geometry.
+
+Still ahead in Step 4: mobjs and thinkers off the zone, `PU_STATIC` to members,
+deleting `z_zone.cpp`, and then the boot-twice test. The zone cannot go until all
+three tags are gone.
 
 ## Step 5 — The `Engine` object
 

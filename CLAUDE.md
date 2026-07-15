@@ -71,7 +71,7 @@ apparatus:
   accepts, not C++ anyone wrote.
 
   **The subdirectories are the rewrite.** `Math/` (`Fixed`, `Angle`, `Trig`,
-  `BBox`), `Sim/` (`Random`) and `Wad/` (`WadFile`) are real C++ in
+  `BBox`), `Sim/` (`Random`, `Level`) and `Wad/` (`WadFile`) are real C++ in
   `namespace Doom`, and a file moves into one the moment it stops being vanilla.
   Progress is the flat list getting shorter. The two are compiled differently on
   purpose: rewritten sources get `-Wall -Wextra -Wpedantic` and clang-format from
@@ -80,13 +80,16 @@ apparatus:
   line moves as the work does.
 
   The vanilla API is still there — `FixedMul`, `finesine`, `P_Random`,
-  `prndindex`, `W_CacheLumpNum` — because most of the engine still calls it. But
-  `m_fixed.cpp`, `tables.cpp`, `m_bbox.cpp`, `m_random.cpp` and `w_wad.cpp` are now
-  **shims that delegate**, not implementations: one copy of the arithmetic, one
-  copy of the tables, one supply of chance, one owner of the lumps. `rndindex` and
-  `prndindex` are *references* into
-  `Doom::Random`. That is deliberate — it puts the new types on the critical path
-  of every demo the suite replays, which is the only thing that can test them.
+  `prndindex`, `W_CacheLumpNum`, `vertexes`, `numsegs` — because most of the engine
+  still calls it. But `m_fixed.cpp`, `tables.cpp`, `m_bbox.cpp`, `m_random.cpp`,
+  `w_wad.cpp` and the geometry loaders in `p_setup.cpp` are now **shims/views over
+  owning objects**, not the owners: one copy of the arithmetic, one copy of the
+  tables, one supply of chance, one owner of the lumps, one owner of the level
+  geometry. `rndindex`/`prndindex` are *references* into `Doom::Random`;
+  `vertexes`/`numsegs`/`sectors`/… are pointer-and-count *views* onto
+  `Doom::Level`'s vectors, refreshed by each loader after it fills its vector.
+  That is deliberate — it puts the new types on the critical path of every demo
+  the suite replays, which is the only thing that can test them.
 
   Three constraints died with the single header in Step 1, and the code may now
   rely on their absence: **two files may share a file-scope name** (the header
@@ -469,9 +472,11 @@ and differs between builds of the same engine.)
 - **Scenario tests**: load a level, place mobjs, run tics, assert. `P_TryMove`
   into a wall, `P_DamageMobj`, `P_CheckSight`, door and lift specials. Write
   these per-subsystem *as* you refactor it — they are how you get locality on
-  code the demos only cover in aggregate. **Blocked on Step 4 of `REFACTOR.md`**:
-  the engine cannot be booted twice in one process, so there is nowhere to put
-  them. Killing the zone allocator is what unblocks it.
+  code the demos only cover in aggregate. **Still blocked** on the rest of Step 4:
+  the WAD and the level geometry are RAII now, but mobjs, thinkers and `PU_STATIC`
+  are still on the zone, and `Z_Init` cannot re-run — so the engine still cannot
+  be booted twice in one process, and there is nowhere to put these. Finishing the
+  zone's removal is what unblocks it.
 - **Port-layer tests**: `View`'s tic/interpolation state machine is still not
   testable, because it lives inside a `GPU::GPUView` whose members construct GPU
   textures from `GPU::Device::shared()`. Extracting it into a plain GPU-free
