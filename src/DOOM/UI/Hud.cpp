@@ -41,6 +41,7 @@
 #include "../w_wad.h"
 
 #include "Hud.h"
+#include "HudChat.h"
 #include "HudMessage.h"
 
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
@@ -79,10 +80,12 @@ namespace Doom
 
 static player_t* plr;
 static hu_textline_t w_title;
-static hu_itext_t w_chat;
-static doom_boolean always_off = false;
-static char chat_dest[MAXPLAYERS];
-static hu_itext_t w_inputbuffer[MAXPLAYERS];
+// The heads-up chat state is a Doom::HudChat owned by the Engine now, moved by the
+// file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
+static hu_itext_t& w_chat = hudChat().w_chat;
+static doom_boolean& always_off = hudChat().always_off;
+static char (&chat_dest)[MAXPLAYERS] = hudChat().chat_dest;
+static hu_itext_t (&w_inputbuffer)[MAXPLAYERS] = hudChat().w_inputbuffer;
 // The HUD message line is a Doom::HudMessage owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
 static doom_boolean& message_on = hudMessage().message_on;
@@ -91,9 +94,10 @@ static doom_boolean& message_nottobefuckedwith =
 static hu_stext_t& w_message = hudMessage().w_message;
 static int& message_counter = hudMessage().message_counter;
 static doom_boolean headsupactive = false;
-static char chatchars[QUEUESIZE];
-static int head = 0;
-static int tail = 0;
+static char (&chatchars)[QUEUESIZE] =
+    hudChat().chatchars; // outgoing local keystrokes
+static int& head = hudChat().head;
+static int& tail = hudChat().tail;
 
 const char* shiftxform;
 

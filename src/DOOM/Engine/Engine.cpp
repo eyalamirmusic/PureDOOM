@@ -214,4 +214,9 @@ HudMessage& hudMessage()
 {
     return engine().hudMessage;
 }
+
+HudChat& hudChat()
+{
+    return engine().hudChat;
+}
 } // namespace Doom
