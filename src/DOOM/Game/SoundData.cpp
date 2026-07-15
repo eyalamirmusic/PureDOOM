@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -22,11 +22,19 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "../doom_config.h"
 
-#include "doom_config.h"
+#include "../doomtype.h"
+#include "../sounds.h"
 
-#include "doomtype.h"
-#include "sounds.h"
+// The sfx / music tables are 1993 data verbatim: partial-init rows (only the
+// leading fields are given; the rest zero) and name literals bound to char*.
+// Keep them exactly as they were - guard the layout from clang-format and quiet
+// the two warnings that legitimate data of this shape raises under -Wall.
+// clang-format off
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wwritable-strings"
 
 
 //
@@ -221,3 +229,6 @@ sfxinfo_t S_sfx[] =
     { "skeatk", false, 70, 0, -1, -1, 0 },
     { "radio", false, 60, 0, -1, -1, 0 }
 };
+
+#pragma GCC diagnostic pop
+// clang-format on

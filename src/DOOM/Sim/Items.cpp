@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -20,11 +20,12 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "../doom_config.h"
 
-#include "doom_config.h"
+#include "../info.h" // We are referring to sprite numbers.
+#include "../d_items.h"
 
-#include "info.h" // We are referring to sprite numbers.
-#include "d_items.h"
+// clang-format off
 
 
 //
@@ -123,3 +124,5 @@ weaponinfo_t weaponinfo[NUMWEAPONS] =
         S_DSGUNFLASH1
     },
 };
+
+// clang-format on
