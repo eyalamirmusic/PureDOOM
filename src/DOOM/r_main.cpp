@@ -40,12 +40,8 @@ fixed_t& centeryfrac = Doom::viewProjection().centeryfrac;
 fixed_t& projection = Doom::viewProjection().projection;
 
 // The subsector counter is a Doom::RenderScratch member (an Engine member) now; a
-// reference onto it. linecount/loopcount are vestigial profiling counters, left as-is.
+// reference onto it.
 int& sscount = Doom::renderScratch().sscount;
-
-// just for profiling purposes
-int linecount;
-int loopcount;
 
 // The view point (camera) is a Doom::ViewPoint owned by the Engine now; these
 // vanilla names are references onto it for the renderer code still reading them as
