@@ -144,4 +144,9 @@ SkyState& skyState()
 {
     return engine().skyState;
 }
+
+ItemRespawnQueue& itemRespawnQueue()
+{
+    return engine().itemRespawnQueue;
+}
 } // namespace Doom

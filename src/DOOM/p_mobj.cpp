@@ -26,15 +26,18 @@
 #include "doomdef.h"
 #include "p_local.h"
 
+#include "Sim/ItemRespawnQueue.h"
 #include "Sim/Mobj.h"
 
 
 // The item-respawn queue. iquehead/iquetail are reset by p_setup on level load; the
 // arrays are read only here and by Sim/Mobj.cpp through these definitions.
-mapthing_t itemrespawnque[ITEMQUESIZE];
-int itemrespawntime[ITEMQUESIZE];
-int iquehead;
-int iquetail;
+// The item respawn queue is a Doom::ItemRespawnQueue owned by the Engine now; these are
+// references onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
+mapthing_t (&itemrespawnque)[ITEMQUESIZE] = Doom::itemRespawnQueue().itemrespawnque;
+int (&itemrespawntime)[ITEMQUESIZE] = Doom::itemRespawnQueue().itemrespawntime;
+int& iquehead = Doom::itemRespawnQueue().iquehead;
+int& iquetail = Doom::itemRespawnQueue().iquetail;
 
 
 doom_boolean P_SetMobjState(mobj_t* mobj, statenum_t state)

@@ -23,6 +23,7 @@
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
 #include "../Sim/Clip.h"
+#include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
 #include "../Wad/WadFile.h"
@@ -70,6 +71,7 @@ struct Engine
     AmmoLimits ammoLimits;
     IntermissionInfo intermissionInfo;
     SkyState skyState;
+    ItemRespawnQueue itemRespawnQueue;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

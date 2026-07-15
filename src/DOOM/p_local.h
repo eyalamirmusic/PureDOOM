@@ -98,10 +98,12 @@ void P_PlayerThink(player_t* player);
 #define ITEMQUESIZE                128
 
 
-extern mapthing_t itemrespawnque[ITEMQUESIZE];
-extern int itemrespawntime[ITEMQUESIZE];
-extern int iquehead;
-extern int iquetail;
+// The item respawn queue lives in Doom::ItemRespawnQueue (an Engine member) now; these are
+// references onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
+extern mapthing_t (&itemrespawnque)[ITEMQUESIZE];
+extern int (&itemrespawntime)[ITEMQUESIZE];
+extern int& iquehead;
+extern int& iquetail;
 
 
 void P_RespawnSpecials(void);
