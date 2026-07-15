@@ -40,10 +40,16 @@ is what makes scenario tests writable at all.
 The four rules that matter most, because breaking one silently defeats the whole
 apparatus:
 
-1. **A refactor never re-records a golden.** `record-goldens` is for behaviour
-   changes that were *intended*, and this refactor has none. `git diff --stat
-   Tests/Goldens/` comes back empty after every step. A red suite is telling you
-   the refactor was wrong, not that the goldens are stale.
+1. **A refactor never re-records a *simulation* golden** (`*.hashes`). Those pin
+   the world, and the world does not change. A red `*.hashes` suite is telling you
+   the refactor was wrong, not that the golden is stale. The *frame* goldens
+   (`*.frames`) hold to the same bar with one measured exception: DOOM's renderer
+   reads a few bytes past a lump's end (tutti-frutti), an undefined value that
+   depends on the allocator — so when Step 4 replaced the allocator, 15 pixels
+   across ~2,300 frames moved and those frames were re-recorded, once. The test:
+   re-record a frame golden *only* when the pixels that moved are provably not part
+   of any lump (`REFACTOR.md`, Step 4 tells the story). `record-goldens` otherwise
+   exists for intended behaviour changes, of which this refactor has none.
 2. **The simulation probe's hash is append-only.** `Tests/SimProbe` may change
    *how* it finds state; it may never change *what* it mixes, or in what order.
 3. A file leaves the engine's blanket `-w` and comes under `clang-format` the
@@ -65,18 +71,20 @@ apparatus:
   accepts, not C++ anyone wrote.
 
   **The subdirectories are the rewrite.** `Math/` (`Fixed`, `Angle`, `Trig`,
-  `BBox`) and `Sim/` (`Random`) are real C++ in `namespace Doom`, and a file moves
-  into one the moment it stops being vanilla. Progress is the flat list getting
-  shorter. The two are compiled differently on purpose: rewritten sources get
-  `-Wall -Wextra -Wpedantic` and clang-format from their first line; vanilla keeps
-  a blanket `-w` and its formatting exemption until someone rewrites it. Both are
-  set per-file in `src/DOOM/CMakeLists.txt`, so the line moves as the work does.
+  `BBox`), `Sim/` (`Random`) and `Wad/` (`WadFile`) are real C++ in
+  `namespace Doom`, and a file moves into one the moment it stops being vanilla.
+  Progress is the flat list getting shorter. The two are compiled differently on
+  purpose: rewritten sources get `-Wall -Wextra -Wpedantic` and clang-format from
+  their first line; vanilla keeps a blanket `-w` and its formatting exemption until
+  someone rewrites it. Both are set per-file in `src/DOOM/CMakeLists.txt`, so the
+  line moves as the work does.
 
   The vanilla API is still there — `FixedMul`, `finesine`, `P_Random`,
-  `prndindex` — because most of the engine still calls it. But `m_fixed.cpp`,
-  `tables.cpp`, `m_bbox.cpp` and `m_random.cpp` are now **shims that delegate**,
-  not implementations: one copy of the arithmetic, one copy of the tables, one
-  supply of chance. `rndindex` and `prndindex` are *references* into
+  `prndindex`, `W_CacheLumpNum` — because most of the engine still calls it. But
+  `m_fixed.cpp`, `tables.cpp`, `m_bbox.cpp`, `m_random.cpp` and `w_wad.cpp` are now
+  **shims that delegate**, not implementations: one copy of the arithmetic, one
+  copy of the tables, one supply of chance, one owner of the lumps. `rndindex` and
+  `prndindex` are *references* into
   `Doom::Random`. That is deliberate — it puts the new types on the critical path
   of every demo the suite replays, which is the only thing that can test them.
 
@@ -401,10 +409,11 @@ one's bytes as `W_CacheLumpNum` hands them over, against
 `Tests/Goldens/doom1.lumps`. A demo would notice a corrupt lump only as a desync
 at some tic with no explanation; this names the lump.
 
-It exists for Step 4 of `REFACTOR.md`, which takes the zone allocator out from
+It was built for Step 4 of `REFACTOR.md`, which took the zone allocator out from
 under the lump cache — the one refactor with no other net, since `PU_CACHE`, the
-purge rover and the `**user` back-pointers *are* what `W_CacheLumpNum` is built
-on.
+purge rover and the `**user` back-pointers *were* what `W_CacheLumpNum` was built
+on. It did its job: `Doom::WadFile` (`src/DOOM/Wad/`) now owns the lumps, and this
+test held it to reading every byte identically while it took over.
 
 ### The primitive tests give locality
 
@@ -429,6 +438,14 @@ Three of them pin things that look like bugs and are not. A refactor will want t
   engine gets away with it (`P_GroupLines` feeds whole linedefs), but min/max
   changes what a sector's bounding box comes out as, and therefore what the
   renderer and `P_BlockLinesIterator` see. `Tests/Sim/MathTests.cpp` pins it.
+- **DOOM reads past the end of a lump — tutti-frutti — and it is preserved, not
+  fixed.** A wall texture shorter than the column it fills makes the renderer draw
+  whatever memory follows the patch; the value is undefined and was the same on
+  every machine only because the old zone was one contiguous arena. `WadFile::data`
+  keeps that true by giving each lump a 64-byte zero tail, so the over-read still
+  happens but draws a deterministic zero everywhere. Do not "fix" the over-read in
+  the renderer — it is a visible 1993 behaviour, and the frame goldens are recorded
+  with it.
 
 Also worth knowing before touching `m_fixed.cpp`: **`FixedDiv2` goes through
 `double`.** The simulation is therefore not strictly integer-only. It is still

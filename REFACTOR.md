@@ -20,11 +20,20 @@ Three decisions frame the work:
 
 The invariant that makes any of this safe is already in place. DOOM's simulation
 is exactly reproducible, and `Tests/` replays 11,410 tics of recorded demo input
-against a per-tic hash of the world. **The goldens under `Tests/Goldens/` come
-out byte-identical after every step below.** A refactor never re-records. If a
-golden moves, the refactor was wrong — that is the whole apparatus, and
-`record-goldens` exists for intended behaviour changes, of which this project
-has none.
+against a per-tic hash of the world. **The simulation goldens (`*.hashes`) come
+out byte-identical after every step below, and are never re-recorded.** If one
+moves, the refactor was wrong — that is the whole apparatus.
+
+The *frame* goldens (`*.frames`) are held to almost the same standard, with one
+documented exception that has now happened exactly once. They hash the rendered
+picture, and DOOM's renderer has a 1993 quirk — tutti-frutti — where it reads a
+few bytes past the end of a lump and draws whatever memory follows. That value is
+undefined by DOOM's own design, and it depends on the allocator. Step 4 replaced
+the allocator, so at 15 pixels across ~2,300 frames the garbage changed. Those
+frames were re-recorded, once, with the allocator's new (deterministic) tail —
+see Step 4. The simulation was bit-identical throughout; nothing about the *world*
+changed, only undefined bytes landing differently. That is the bar: a frame golden
+is re-recorded only when the pixels that moved are provably not part of any lump.
 
 ## Progress
 
@@ -34,7 +43,7 @@ has none.
 | 1 | Retire the single-header packaging | **done** |
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
-| 4 | Ownership: kill the zone allocator | next |
+| 4 | Ownership: kill the zone allocator | **in progress** — WAD done, `Level` + zone deletion next |
 | 5 | The `Engine` object: globals become members | |
 | 6 | The playsim | |
 | 7 | The renderer | |
@@ -305,10 +314,10 @@ and no way to give it back — the direct cause of *the engine cannot be booted
 twice*. Its `PU_*` tags serve exactly two purposes:
 
 - `PU_CACHE` — lump caching → a `Wad/WadFile` owning its directory and its
-  decoded lumps, handing out `EA::BufferView<const std::byte>`.
+  decoded lumps.
 - `PU_LEVEL` — level lifetime → a `Level` whose destructor frees its own geometry.
 
-`PU_STATIC` becomes ordinary members. Then `z_zone.c` is deleted.
+`PU_STATIC` becomes ordinary members. Then `z_zone.cpp` is deleted.
 
 Nothing observable in the simulation depends on the allocator — the hash mixes
 mobj *fields*, never addresses, and `P_SpawnMobj` zeroes its own memory — so the
@@ -316,7 +325,58 @@ goldens hold this step honest, and `WadTests` holds the lump reader honest.
 
 **The payoff is a test**: boot the engine twice in one process and get the same
 demo hashes both times. Once that is green, NanoTest's one-case-per-process rule
-is lifted and scenario tests become cheap.
+is lifted and scenario tests become cheap. That comes with the `Level` object and
+the zone's deletion, not with the WAD alone.
+
+### Landed so far — the WAD (`PU_CACHE`)
+
+`Doom::WadFile` (`Wad/WadFile.h`) owns the directory, the file handles and the
+decoded lump bytes. It replaces the *tangled* half of the zone: `PU_CACHE` blocks
+were purgeable, so `W_CacheLumpNum` had to hand `Z_Malloc` a back-pointer
+(`&lumpcache[lump]`) for the allocator to null out behind the caller's back, and
+every user of a lump then had to remember `Z_ChangeTag`/`Z_Free` when it was done.
+All of that is gone — the `lumpcache` array, the tag argument (now ignored), and
+~40 `Z_ChangeTag`/`Z_Free` calls across nine files. **A lump pointer is now
+permanent.** `AM_unloadPics` and `ST_unloadGraphics` had nothing left to do and
+say so.
+
+`w_wad.cpp` is a shim over it; `lumpinfo`/`numlumps` are a *view* onto the
+WadFile's own vector (`Doom::Lump` is layout-compatible with `lumpinfo_t`), because
+`r_things` still parses sprite names out of the directory and `r_data` still sums
+lump sizes.
+
+Three bugs surfaced, and they are the reason this half took the work it did:
+
+- **A deleted `Z_Free` was the body of an unbraced `if`.** Removing
+  `Z_Free(maptex2)` from `R_InitTextures` left `if (maptex2)` with no body, which
+  then swallowed the `for` loop below it — so on shareware (no TEXTURE2, `maptex2`
+  null) `R_GenerateLookup` never ran, the wall column tables were never built, and
+  every wall, floor and ceiling rendered as smeared garbage while the sprites and
+  status bar (which read lump data directly) stayed perfect. It compiled clean.
+  Audit every unbraced body when deleting a statement.
+
+- **Tutti-frutti, and the one golden re-record.** After that fix, 15 pixels across
+  ~2,300 frames still differed. The WAD golden passed (all 1,264 lumps read
+  byte-identical) and the simulation was bit-identical, so the pixels could not be
+  a lump-reading bug. Padding the lump buffers' tails moved *exactly* those pixels:
+  proof that DOOM reads a few bytes past a lump's end — the 1993 tutti-frutti
+  quirk, undefined by design and allocator-dependent. The old self-contained zone
+  made that garbage the same on every machine; a per-lump `std::vector` would read
+  heap-adjacent bytes that differ across platforms. So `WadFile::data` gives each
+  lump a **64-byte zero tail** (measured: the over-read is under that): the quirk
+  still happens, deterministically, reading zero everywhere. The frame goldens were
+  re-recorded once against that — 3 lines total, demo1 #1332 and demo2 #168/#957.
+  This was settled by building the pre-Step-4 commit in a worktree and diffing the
+  actual pixels, not by argument.
+
+The one that looked like a third bug and was not: `R_GetColumn` tests
+`if (!texturecomposite[tex])` on a `Z_Malloc`'d array that is never explicitly
+zeroed. It is nonetheless safe, because `R_GenerateLookup` writes
+`texturecomposite[texnum] = 0` for every texture before any column is drawn — so
+the "fix" of `memset`-ing it changed nothing, which is how it was ruled out.
+
+Still ahead in Step 4: the `Level` object for `PU_LEVEL`, `PU_STATIC` to members,
+deleting `z_zone.cpp`, and then the boot-twice test.
 
 ## Step 5 — The `Engine` object
 

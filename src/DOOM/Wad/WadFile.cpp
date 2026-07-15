@@ -260,7 +260,23 @@ const std::byte* WadFile::data(int lump)
 
     if (bytes.empty() && length(lump) > 0)
     {
-        bytes.resize((std::size_t) length(lump));
+        // A zero tail past the lump's own bytes, and it is load-bearing.
+        //
+        // DOOM reads a few bytes past the end of a lump when a wall texture is
+        // shorter than the column it fills - the tutti-frutti effect, a genuine
+        // 1993 quirk that draws whatever memory follows the patch. On DOS, and in
+        // PureDOOM's old zone allocator, "whatever follows" was another block in
+        // one contiguous arena: garbage, but the *same* garbage on every machine.
+        // A per-lump std::vector has no such neighbour, so the over-read would hit
+        // heap memory that differs from platform to platform, and the rendered
+        // frame would stop being reproducible.
+        //
+        // Sixty-four zero bytes is enough (the over-read is under that, measured),
+        // so the quirk still happens - a wall still tutti-fruttis - but it now
+        // draws a deterministic zero everywhere instead of undefined heap.
+        constexpr auto overReadGuard = 64;
+
+        bytes.resize((std::size_t) length(lump) + overReadGuard, std::byte {0});
         read(lump, bytes.data());
     }
 
