@@ -49,4 +49,9 @@ ViewWindow& viewWindow()
 {
     return engine().viewWindow;
 }
+
+Lighting& lighting()
+{
+    return engine().lighting;
+}
 } // namespace Doom
