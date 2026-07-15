@@ -37,7 +37,7 @@ void G_DeferedInitNew(skill_t skill, int episode, int map)
     Doom::gDeferedInitNew(skill, episode, map);
 }
 
-void G_DeferedPlayDemo(char* demo)
+void G_DeferedPlayDemo(const char* demo)
 {
     Doom::gDeferedPlayDemo(demo);
 }

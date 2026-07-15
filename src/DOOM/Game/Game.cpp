@@ -204,10 +204,10 @@ skill_t d_skill;
 int d_episode;
 int d_map;
 
-char* defdemoname;
+const char* defdemoname;
 
 extern gamestate_t wipegamestate;
-extern char* pagename;
+extern const char* pagename;
 extern doom_boolean setsizeneeded;
 
 // The sky texture to be used instead of the F_SKY1 dummy.
@@ -1511,7 +1511,7 @@ void gBeginRecording(void)
 // gPlayDemo
 //
 
-void gDeferedPlayDemo(char* name)
+void gDeferedPlayDemo(const char* name)
 {
     defdemoname = name;
     gameaction = ga_playdemo;

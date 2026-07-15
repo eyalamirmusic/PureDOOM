@@ -10,7 +10,7 @@ namespace Doom
 void gDeathMatchSpawnPlayer(int playernum);
 void gInitNew(skill_t skill, int episode, int map);
 void gDeferedInitNew(skill_t skill, int episode, int map);
-void gDeferedPlayDemo(char* demo);
+void gDeferedPlayDemo(const char* demo);
 void gLoadGame(char* name);
 void gDoLoadGame(void);
 void gSaveGame(int slot, char* description);

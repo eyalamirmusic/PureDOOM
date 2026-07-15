@@ -34,7 +34,7 @@
 extern char* wadfiles[MAXWADFILES];
 
 
-void D_AddFile(char* file);
+void D_AddFile(const char* file);
 
 //
 // D_DoomMain()
