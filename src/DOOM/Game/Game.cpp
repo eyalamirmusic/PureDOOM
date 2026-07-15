@@ -68,6 +68,7 @@
 #include "LevelStats.h"
 #include "PlayerState.h"
 #include "RefreshFlags.h"
+#include "TiccmdInput.h"
 
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
@@ -178,27 +179,31 @@ fixed_t forwardmove[2] = {0x19, 0x32};
 fixed_t sidemove[2] = {0x18, 0x28};
 fixed_t angleturn[3] = {640, 1280, 320}; // + slow turn
 
-doom_boolean gamekeydown[NUMKEYS];
-int turnheld; // for accelerative turning
+// The per-tic input accumulators are a Doom::TiccmdInput owned by the Engine now; these
+// vanilla names are references onto it (REFACTOR.md, Step 5, the file-scope-statics sweep). The
+// arrays become references-to-array; the interior view pointers mousebuttons/joybuttons stay
+// here, indexing into the referenced arrays to allow a [-1] index.
+doom_boolean (&gamekeydown)[NUMKEYS] = Doom::ticcmdInput().gamekeydown;
+int& turnheld = Doom::ticcmdInput().turnheld; // for accelerative turning
 
-doom_boolean mousearray[4];
+doom_boolean (&mousearray)[4] = Doom::ticcmdInput().mousearray;
 doom_boolean* mousebuttons = &mousearray[1]; // allow [-1]
 
 // mouse values are used once
-int mousex;
-int mousey;
+int& mousex = Doom::ticcmdInput().mousex;
+int& mousey = Doom::ticcmdInput().mousey;
 
-int dclicktime;
-int dclickstate;
-int dclicks;
-int dclicktime2;
-int dclickstate2;
-int dclicks2;
+int& dclicktime = Doom::ticcmdInput().dclicktime;
+int& dclickstate = Doom::ticcmdInput().dclickstate;
+int& dclicks = Doom::ticcmdInput().dclicks;
+int& dclicktime2 = Doom::ticcmdInput().dclicktime2;
+int& dclickstate2 = Doom::ticcmdInput().dclickstate2;
+int& dclicks2 = Doom::ticcmdInput().dclicks2;
 
 // joystick values are repeated
-int joyxmove;
-int joyymove;
-doom_boolean joyarray[5];
+int& joyxmove = Doom::ticcmdInput().joyxmove;
+int& joyymove = Doom::ticcmdInput().joyymove;
+doom_boolean (&joyarray)[5] = Doom::ticcmdInput().joyarray;
 doom_boolean* joybuttons = &joyarray[1]; // allow [-1]
 
 int savegameslot;

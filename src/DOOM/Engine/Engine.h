@@ -19,6 +19,7 @@
 #include "../Game/RefreshFlags.h"
 #include "../Game/SkyState.h"
 #include "../Game/StartupDefaults.h"
+#include "../Game/TiccmdInput.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
 #include "../Render/RenderScratch.h"
@@ -84,6 +85,7 @@ struct Engine
     EndLevelTimer endLevelTimer;
     AttractMode attractMode;
     ValidCount validCount;
+    TiccmdInput ticcmdInput;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

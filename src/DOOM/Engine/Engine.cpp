@@ -179,4 +179,9 @@ ValidCount& validCount()
 {
     return engine().validCount;
 }
+
+TiccmdInput& ticcmdInput()
+{
+    return engine().ticcmdInput;
+}
 } // namespace Doom
