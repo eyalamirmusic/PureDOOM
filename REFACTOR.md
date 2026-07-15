@@ -55,7 +55,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**66 tests**, ~2s: `ctest --test-dir build`). Steps
+clean and the suite is green (**74 tests**, ~2s: `ctest --test-dir build`). Steps
 0–3 are complete; 4's payoff is delivered; 5 and 6 are underway.
 
 **What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
@@ -105,7 +105,7 @@ harness in hand:
 ```bash
 cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
 cmake --build build
-ctest --test-dir build --output-on-failure     # 66 tests, ~2s
+ctest --test-dir build --output-on-failure     # 74 tests, ~2s
 git diff --stat Tests/Goldens/                 # MUST be empty
 cmake --build build --target PureDoomEACP      # app still links (touches EngineAccess)
 ```
