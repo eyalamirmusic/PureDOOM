@@ -34,4 +34,9 @@ Clip& clip()
 {
     return engine().clip;
 }
+
+ViewPoint& viewPoint()
+{
+    return engine().viewPoint;
+}
 } // namespace Doom

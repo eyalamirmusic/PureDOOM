@@ -15,6 +15,7 @@
 #include "r_local.h"
 
 #include "Render/Main.h"
+#include "Render/ViewPoint.h"
 
 int viewangleoffset;
 
@@ -36,16 +37,19 @@ int sscount;
 int linecount;
 int loopcount;
 
-fixed_t viewx;
-fixed_t viewy;
-fixed_t viewz;
+// The view point (camera) is a Doom::ViewPoint owned by the Engine now; these
+// vanilla names are references onto it for the renderer code still reading them as
+// globals. R_SetupFrame (Render/Main.cpp) writes through them each frame.
+fixed_t& viewx = Doom::viewPoint().viewx;
+fixed_t& viewy = Doom::viewPoint().viewy;
+fixed_t& viewz = Doom::viewPoint().viewz;
 
-angle_t viewangle;
+angle_t& viewangle = Doom::viewPoint().viewangle;
 
-fixed_t viewcos;
-fixed_t viewsin;
+fixed_t& viewcos = Doom::viewPoint().viewcos;
+fixed_t& viewsin = Doom::viewPoint().viewsin;
 
-player_t* viewplayer;
+player_t*& viewplayer = Doom::viewPoint().viewplayer;
 
 // 0 = high, 1 = low
 int detailshift;

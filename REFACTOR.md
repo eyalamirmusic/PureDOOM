@@ -47,7 +47,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **done** — `z_zone.cpp`/`z_zone.h` deleted. Mobjs and thinker specials moved to a level-scoped malloc pool (`Sim/Tick`'s `levelAlloc`/`freeLevelAllocations`); the renderer's boot-once `PU_STATIC` and the scratch buffers to `doom_malloc`; the WAD and `Level` geometry already owned theirs. The vestigial `PU_*` tags `W_CacheLumpNum` ignores moved to `w_wad.h`. All goldens byte-identical throughout |
-| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
+| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`/`ViewPoint`; `Clip` holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`); `ViewPoint` holds the renderer's camera (`viewx`/…/`viewplayer`) — the first scalar cluster off the loose globals |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list is down to the shims plus `info.cpp` alone. Left: `thinker_t`→`Thinker` and `info.cpp` (deferred *together* with the action-model rewrite, since `states[]` is the action table that step replaces), plus the `doom_config`→`Host` interface redesign + audio and the ongoing globals-into-`Engine` work |
@@ -636,13 +636,14 @@ hidden shared state, the property a test-owned world will rest on.
 it before `main()`, and a function-local static is constructed on that first call
 regardless of translation-unit order.
 
-**What did not move, and why.** The ~684 scalar globals (`doomstat.h`'s 73,
-`r_state.h`'s 44, `p_local.h`'s 27) stay put. Each cluster is owned by a subsystem
-that Steps 6–8 rewrite, and it moves *into the `Engine` when that subsystem is
-rewritten to take an `Engine&`* — not before. Aliasing them in now (`int& gametic =
-engine().gametic`) would be golden-neutral but would scatter reference-globals
-across the transition for no gain until the call sites change. The `Engine` grows
-with the rewrite; it is not filled speculatively ahead of it.
+**What moves, and when.** The ~684 scalar globals (`doomstat.h`'s 73,
+`r_state.h`'s 44, `p_local.h`'s 27) move cluster by cluster, each *into the `Engine`
+once the subsystem that owns it has been rewritten* — the renderer, playsim and UI
+now have (Steps 6–8), so the clusters they own are ready to migrate. The first one
+has (the view point, below). Aliasing a cluster in *before* its subsystem is rewritten
+(`int& gametic = engine().gametic` while `g_game` was still vanilla) would be
+golden-neutral but would scatter reference-globals across the transition for no gain;
+the `Engine` grows with the rewrite, not speculatively ahead of it.
 
 The end shape, once the clusters have moved in:
 
@@ -650,6 +651,21 @@ The end shape, once the clusters have moved in:
 auto doom = Engine {config, wad};
 doom.runTic();
 ```
+
+### Landed — the first scalar cluster: the view point
+
+`viewx`/`viewy`/`viewz`/`viewangle`/`viewcos`/`viewsin`/`viewplayer` — the camera
+`R_SetupFrame` computes each frame and the whole software renderer reads back — are
+now `Doom::ViewPoint` (`Render/ViewPoint.h`), an `Engine` member reached through
+`Doom::viewPoint()`. The storage moved off the `r_main.cpp` file-scope globals; the
+vanilla names are **references onto the member** (the header `extern`s became
+`extern fixed_t& viewx;` etc.), exactly the mechanism `Random`/`Level`/`Clip` used —
+so every reader (all eight `Render/` units, and `EngineAccess`/playsim for `viewz`)
+resolves unchanged and no call site had to move. This is the first of the ~684
+scalar globals to actually migrate, and the template for the rest: a cohesive cluster
+to a `Doom::` struct, an `Engine` member, an accessor, vanilla-name references in the
+shim. All four `*.hashes`/`*.frames` goldens held byte-identical (the frame goldens
+see the *picture*, not the camera numbers) and the app links.
 
 ## Step 6 — The playsim
 

@@ -86,14 +86,16 @@ extern int numsides;
 extern side_t* sides;
 
 //
-// POV data.
+// POV data. The storage lives in Doom::ViewPoint (an Engine member); these names are
+// references onto it while the renderer still reads them as globals (REFACTOR.md,
+// Step 5). They resolve to viewPoint().<member> once each reader takes an Engine&.
 //
-extern fixed_t viewx;
-extern fixed_t viewy;
-extern fixed_t viewz;
+extern fixed_t& viewx;
+extern fixed_t& viewy;
+extern fixed_t& viewz;
 
-extern angle_t viewangle;
-extern player_t* viewplayer;
+extern angle_t& viewangle;
+extern player_t*& viewplayer;
 
 // ?
 extern angle_t clipangle;

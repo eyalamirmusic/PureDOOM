@@ -27,10 +27,11 @@
 
 
 //
-// POV related.
+// POV related. viewcos/viewsin live in Doom::ViewPoint now (see r_state.h); these
+// are references onto it.
 //
-extern fixed_t viewcos;
-extern fixed_t viewsin;
+extern fixed_t& viewcos;
+extern fixed_t& viewsin;
 
 extern int viewwidth;
 extern int viewheight;
