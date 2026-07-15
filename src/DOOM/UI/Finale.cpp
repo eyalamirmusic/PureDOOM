@@ -41,7 +41,6 @@
 #include "../sounds.h" // Data.
 #include "../v_video.h" // Functions.
 #include "../w_wad.h" // Functions.
-#include "../z_zone.h" // Functions.
 
 #include "Finale.h"
 

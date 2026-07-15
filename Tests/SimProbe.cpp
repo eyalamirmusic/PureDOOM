@@ -13,7 +13,6 @@
 #include <DOOM/tables.h>
 #include <DOOM/v_video.h>
 #include <DOOM/w_wad.h>
-#include <DOOM/z_zone.h>
 
 #include <DOOM/Sim/Level.h>
 #include <DOOM/r_state.h>
@@ -378,8 +377,8 @@ int doomSimLoadLevel(int episode, int map, int skill)
     netgame = false;
     playeringame[0] = true;
 
-    // The old level's mobjs are about to be freed by Z_FreeTags in P_SetupLevel,
-    // so every handle into them dies here.
+    // The old level's mobjs are about to be freed by P_SetupLevel (the level
+    // allocation pool is released whole), so every handle into them dies here.
     simMobjs.clear();
 
     // G_InitNew runs the whole load synchronously (G_DoLoadLevel -> P_SetupLevel),

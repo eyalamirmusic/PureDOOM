@@ -14,7 +14,6 @@
 #include "../m_swap.h"
 #include "../r_local.h"
 #include "../w_wad.h"
-#include "../z_zone.h"
 
 #include "Things.h"
 
@@ -174,7 +173,7 @@ void initSpriteDefs(char** namelist)
     if (!numsprites)
         return;
 
-    sprites = (spritedef_t*) (Z_Malloc(numsprites * sizeof(*sprites), PU_STATIC, 0));
+    sprites = (spritedef_t*) (doom_malloc(numsprites * sizeof(*sprites)));
 
     start = firstspritelump - 1;
     end = lastspritelump + 1;
@@ -262,8 +261,8 @@ void initSpriteDefs(char** namelist)
 
         // allocate space for the frames present and copy sprtemp to it
         sprites[i].numframes = maxframe;
-        sprites[i].spriteframes = (spriteframe_t*) (Z_Malloc(
-            maxframe * sizeof(spriteframe_t), PU_STATIC, 0));
+        sprites[i].spriteframes =
+            (spriteframe_t*) (doom_malloc(maxframe * sizeof(spriteframe_t)));
         doom_memcpy(
             sprites[i].spriteframes, sprtemp, maxframe * sizeof(spriteframe_t));
     }

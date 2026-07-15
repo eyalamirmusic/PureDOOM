@@ -40,7 +40,6 @@
 #include "../doomstat.h"
 #include "../dstrings.h"
 #include "../sounds.h"
-#include "../z_zone.h"
 #include "../w_wad.h"
 #include "../s_sound.h"
 #include "../v_video.h"
@@ -1063,9 +1062,6 @@ void dDoomMain(void)
 
     doom_print("M_LoadDefaults: Load system defaults.\n");
     M_LoadDefaults(); // load before initing other systems
-
-    doom_print("Z_Init: Init zone memory allocation daemon. \n");
-    Z_Init();
 
     doom_print("W_Init: Init WADfiles.\n");
     W_InitMultipleFiles(wadfiles);

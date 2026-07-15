@@ -15,7 +15,6 @@
 #include "../r_local.h"
 #include "../v_video.h" // Needs access to LFB, V_DrawPatch, V_MarkRect.
 #include "../w_wad.h"
-#include "../z_zone.h"
 
 #include "Draw.h"
 
@@ -291,7 +290,7 @@ void initTranslationTables(void)
 {
     int i;
 
-    translationtables = (byte*) (Z_Malloc(256 * 3 + 255, PU_STATIC, 0));
+    translationtables = (byte*) (doom_malloc(256 * 3 + 255));
     translationtables =
         (byte*) (((unsigned long long) translationtables + 255) & ~255);
 

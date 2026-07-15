@@ -56,7 +56,6 @@
 #include "../v_video.h" // Needs access to LFB.
 #include "../w_wad.h"
 #include "../wi_stuff.h"
-#include "../z_zone.h"
 #include "../g_game.h"
 
 #include "Game.h"
@@ -491,7 +490,6 @@ void gDoLoadLevel(void)
     displayplayer = consoleplayer; // view the guy you are playing
     starttime = I_GetTime();
     gameaction = ga_nothing;
-    Z_CheckHeap();
 
     // clear cmd building stuff
     doom_memset(gamekeydown, 0, sizeof(gamekeydown));
@@ -1209,7 +1207,7 @@ void gDoLoadGame(void)
         I_Error("Error: Bad savegame");
 
     // done
-    Z_Free(savebuffer);
+    doom_free(savebuffer);
 
     if (setsizeneeded)
         R_ExecuteSetViewSize();
@@ -1481,7 +1479,7 @@ void gRecordDemo(char* name)
     i = M_CheckParm("-maxdemo");
     if (i && i < myargc - 1)
         maxsize = doom_atoi(myargv[i + 1]) * 1024;
-    demobuffer = (byte*) (Z_Malloc(maxsize, PU_STATIC, 0));
+    demobuffer = (byte*) (doom_malloc(maxsize));
     demoend = demobuffer + maxsize;
 
     demorecording = true;
@@ -1628,7 +1626,7 @@ doom_boolean gCheckDemoStatus(void)
     {
         *demo_p++ = DEMOMARKER;
         M_WriteFile(demoname, demobuffer, (int) (demo_p - demobuffer));
-        Z_Free(demobuffer);
+        doom_free(demobuffer);
         demorecording = false;
         //I_Error("Error: Demo %s recorded", demoname);
 

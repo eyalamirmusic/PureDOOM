@@ -26,7 +26,6 @@
 #include "../i_sound.h"
 #include "../sounds.h"
 #include "../s_sound.h"
-#include "../z_zone.h"
 #include "../m_random.h"
 #include "../w_wad.h"
 #include "../doomdef.h"
@@ -144,8 +143,7 @@ void sInit(int sfxVolume, int musicVolume)
     // Allocating the internal channels for mixing
     // (the maximum numer of sounds rendered
     // simultaneously) within zone memory.
-    channels_s_sound =
-        (channel_t*) Z_Malloc(numChannels * sizeof(channel_t), PU_STATIC, 0);
+    channels_s_sound = (channel_t*) doom_malloc(numChannels * sizeof(channel_t));
 
     // Free all channels for use
     for (i = 0; i < numChannels; i++)

@@ -43,7 +43,6 @@
 #include "../v_video.h" // Needs access to LFB.
 #include "../w_wad.h"
 #include "../wi_stuff.h"
-#include "../z_zone.h"
 
 #include "Intermission.h"
 
@@ -1444,7 +1443,7 @@ void wiLoadData(void)
     if (gamemode == commercial)
     {
         NUMCMAPS = 32;
-        lnames = (patch_t**) Z_Malloc(sizeof(patch_t*) * NUMCMAPS, PU_STATIC, 0);
+        lnames = (patch_t**) doom_malloc(sizeof(patch_t*) * NUMCMAPS);
         for (i = 0; i < NUMCMAPS; i++)
         {
             //doom_sprintf(name, "CWILV%2.2d", i);
@@ -1457,7 +1456,7 @@ void wiLoadData(void)
     }
     else
     {
-        lnames = (patch_t**) Z_Malloc(sizeof(patch_t*) * NUMMAPS, PU_STATIC, 0);
+        lnames = (patch_t**) doom_malloc(sizeof(patch_t*) * NUMMAPS);
         for (i = 0; i < NUMMAPS; i++)
         {
             //doom_sprintf(name, "WILV%d%d", wbs->epsd, i);
@@ -1605,7 +1604,7 @@ void wiUnloadData(void)
     //
     // lnames is not a lump. It is the array of pointers *to* the lumps, allocated
     // by wiLoadData, and it is still ours.
-    Z_Free(lnames);
+    doom_free(lnames);
 }
 
 void wiDrawer(void)

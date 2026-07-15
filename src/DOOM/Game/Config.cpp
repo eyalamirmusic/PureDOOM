@@ -45,7 +45,6 @@
 #include "../m_swap.h"
 #include "../v_video.h"
 #include "../w_wad.h"
-#include "../z_zone.h"
 
 #include "Config.h"
 
@@ -272,7 +271,7 @@ int mReadFile(char const* name, byte** buffer)
     doom_seek(handle, 0, DOOM_SEEK_END);
     length = doom_tell(handle);
     doom_seek(handle, 0, DOOM_SEEK_SET);
-    buf = (byte*) (Z_Malloc(length, PU_STATIC, 0));
+    buf = (byte*) (doom_malloc(length));
     count = doom_read(handle, buf, length);
     doom_close(handle);
 
@@ -464,7 +463,7 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
     pcx_t* pcx;
     byte* pack;
 
-    pcx = (pcx_t*) (Z_Malloc(width * height * 2 + 1000, PU_STATIC, 0));
+    pcx = (pcx_t*) (doom_malloc(width * height * 2 + 1000));
 
     pcx->manufacturer = 0x0a; // PCX id
     pcx->version = 5; // 256 color
@@ -505,7 +504,7 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
     length = (int) (pack - (byte*) pcx);
     mWriteFile(filename, pcx, length);
 
-    Z_Free(pcx);
+    doom_free(pcx);
 }
 
 //

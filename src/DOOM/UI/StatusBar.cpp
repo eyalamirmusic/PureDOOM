@@ -51,7 +51,6 @@
 #include "../st_stuff.h"
 #include "../v_video.h" // Needs access to LFB.
 #include "../w_wad.h"
-#include "../z_zone.h"
 
 #include "StatusBar.h"
 
@@ -1287,7 +1286,7 @@ void stInit(void)
 {
     veryfirsttime = 0;
     stloadData();
-    screens[4] = (byte*) Z_Malloc(ST_WIDTH * ST_HEIGHT, PU_STATIC, 0);
+    screens[4] = (byte*) doom_malloc(ST_WIDTH * ST_HEIGHT);
 }
 
 } // namespace Doom

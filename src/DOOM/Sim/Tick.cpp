@@ -10,7 +10,6 @@
 
 #include "../doomstat.h"
 #include "../p_local.h"
-#include "../z_zone.h"
 
 #include "Tick.h"
 

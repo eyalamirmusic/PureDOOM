@@ -18,7 +18,6 @@
 #include "../r_local.h"
 #include "../r_sky.h"
 #include "../w_wad.h"
-#include "../z_zone.h"
 
 #include <alloca.h>
 
@@ -139,8 +138,14 @@ void generateComposite(int texnum)
 
     texture = textures[texnum];
 
-    block = (byte*) (Z_Malloc(
-        texturecompositesize[texnum], PU_STATIC, &texturecomposite[texnum]));
+    // A 64-byte zero tail, as WadFile gives each lump, so the renderer's
+    // tutti-frutti over-read past a composited column draws a deterministic zero
+    // rather than whatever heap follows (the zone's arena made it deterministic
+    // for free; malloc does not). The whole block is zeroed for the same reason -
+    // drawColumnInCache fills only the covered columns.
+    block = (byte*) doom_malloc(texturecompositesize[texnum] + 64);
+    doom_memset(block, 0, texturecompositesize[texnum] + 64);
+    texturecomposite[texnum] = block;
 
     collump = texturecolumnlump[texnum];
     colofs = texturecolumnofs[texnum];
@@ -175,9 +180,9 @@ void generateComposite(int texnum)
         }
     }
 
-    // Now that the texture has been built in column cache,
-    //  it is purgable from zone memory.
-    Z_ChangeTag(block, PU_CACHE);
+    // The block is a plain owning allocation now, never purged, so there is no
+    // Z_ChangeTag to PU_CACHE and getColumn's regenerate-if-purged branch never
+    // re-fires (texturecomposite[texnum] stays set once built).
 }
 
 //
@@ -365,21 +370,16 @@ void initTextures(void)
     }
     numtextures = numtextures1 + numtextures2;
 
-    textures =
-        (texture_t**) (Z_Malloc(numtextures * sizeof(texture_t*), PU_STATIC, 0));
-    texturecolumnlump =
-        (short**) (Z_Malloc(numtextures * sizeof(short*), PU_STATIC, 0));
-    texturecolumnofs = (unsigned short**) (Z_Malloc(
-        numtextures * sizeof(unsigned short*), PU_STATIC, 0));
-    texturecomposite =
-        (byte**) (Z_Malloc(numtextures * sizeof(byte*), PU_STATIC, 0));
+    textures = (texture_t**) (doom_malloc(numtextures * sizeof(texture_t*)));
+    texturecolumnlump = (short**) (doom_malloc(numtextures * sizeof(short*)));
+    texturecolumnofs =
+        (unsigned short**) (doom_malloc(numtextures * sizeof(unsigned short*)));
+    texturecomposite = (byte**) (doom_malloc(numtextures * sizeof(byte*)));
 
-    texturecompositesize =
-        (int*) (Z_Malloc(numtextures * sizeof(int), PU_STATIC, 0));
+    texturecompositesize = (int*) (doom_malloc(numtextures * sizeof(int)));
 
-    texturewidthmask = (int*) (Z_Malloc(numtextures * sizeof(int), PU_STATIC, 0));
-    textureheight =
-        (fixed_t*) (Z_Malloc(numtextures * sizeof(fixed_t), PU_STATIC, 0));
+    texturewidthmask = (int*) (doom_malloc(numtextures * sizeof(int)));
+    textureheight = (fixed_t*) (doom_malloc(numtextures * sizeof(fixed_t)));
 
     // Really complex printing shit...
     temp1 = W_GetNumForName("S_START"); // P_???????
@@ -413,11 +413,9 @@ void initTextures(void)
 
         mtexture = (maptexture_t*) ((byte*) maptex + offset);
 
-        texture = textures[i] = (texture_t*) (Z_Malloc(
+        texture = textures[i] = (texture_t*) (doom_malloc(
             sizeof(texture_t)
-                + sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1),
-            PU_STATIC,
-            0));
+            + sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1)));
 
         texture->width = SHORT(mtexture->width);
         texture->height = SHORT(mtexture->height);
@@ -444,9 +442,9 @@ void initTextures(void)
             }
         }
         texturecolumnlump[i] =
-            (short*) (Z_Malloc(texture->width * sizeof(short), PU_STATIC, 0));
-        texturecolumnofs[i] = (unsigned short*) (Z_Malloc(
-            texture->width * sizeof(unsigned short), PU_STATIC, 0));
+            (short*) (doom_malloc(texture->width * sizeof(short)));
+        texturecolumnofs[i] =
+            (unsigned short*) (doom_malloc(texture->width * sizeof(unsigned short)));
 
         j = 1;
         while (j * 2 <= texture->width)
@@ -461,8 +459,7 @@ void initTextures(void)
         generateLookup(i);
 
     // Create translation table for global animation.
-    texturetranslation =
-        (int*) (Z_Malloc((numtextures + 1) * sizeof(int), PU_STATIC, 0));
+    texturetranslation = (int*) (doom_malloc((numtextures + 1) * sizeof(int)));
 
     for (i = 0; i < numtextures; i++)
         texturetranslation[i] = i;
@@ -482,7 +479,7 @@ void initFlats(void)
     numflats = lastflat - firstflat + 1;
 
     // Create translation table for global animation.
-    flattranslation = (int*) (Z_Malloc((numflats + 1) * sizeof(int), PU_STATIC, 0));
+    flattranslation = (int*) (doom_malloc((numflats + 1) * sizeof(int)));
 
     for (i = 0; i < numflats; i++)
         flattranslation[i] = i;
@@ -503,12 +500,9 @@ void initSpriteLumps(void)
     lastspritelump = W_GetNumForName("S_END") - 1;
 
     numspritelumps = lastspritelump - firstspritelump + 1;
-    spritewidth =
-        (fixed_t*) (Z_Malloc(numspritelumps * sizeof(fixed_t), PU_STATIC, 0));
-    spriteoffset =
-        (fixed_t*) (Z_Malloc(numspritelumps * sizeof(fixed_t), PU_STATIC, 0));
-    spritetopoffset =
-        (fixed_t*) (Z_Malloc(numspritelumps * sizeof(fixed_t), PU_STATIC, 0));
+    spritewidth = (fixed_t*) (doom_malloc(numspritelumps * sizeof(fixed_t)));
+    spriteoffset = (fixed_t*) (doom_malloc(numspritelumps * sizeof(fixed_t)));
+    spritetopoffset = (fixed_t*) (doom_malloc(numspritelumps * sizeof(fixed_t)));
 
     for (i = 0; i < numspritelumps; i++)
     {
@@ -533,7 +527,7 @@ void initColormaps(void)
     //  256 byte align tables.
     lump = W_GetNumForName("COLORMAP");
     length = W_LumpLength(lump) + 255;
-    colormaps = (lighttable_t*) (Z_Malloc(length, PU_STATIC, 0));
+    colormaps = (lighttable_t*) (doom_malloc(length));
     colormaps = (byte*) (((unsigned long long) colormaps + 255) & ~0xff);
     W_ReadLump(lump, colormaps);
 }

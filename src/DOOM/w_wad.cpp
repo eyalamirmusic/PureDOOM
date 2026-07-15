@@ -21,7 +21,6 @@
 #include "i_system.h"
 #include "m_swap.h"
 #include "w_wad.h"
-#include "z_zone.h"
 
 lumpinfo_t* lumpinfo;
 int numlumps;

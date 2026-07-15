@@ -14,7 +14,6 @@
 #include "../i_system.h"
 #include "../p_local.h"
 #include "../r_state.h"
-#include "../z_zone.h"
 
 #include "SaveGame.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations

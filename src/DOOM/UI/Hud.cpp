@@ -39,7 +39,6 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 #include "../w_wad.h"
-#include "../z_zone.h"
 
 #include "Hud.h"
 

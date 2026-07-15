@@ -14,7 +14,6 @@
 #include "../r_state.h"
 #include "../s_sound.h"
 #include "../sounds.h"
-#include "../z_zone.h"
 
 #include "Doors.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations

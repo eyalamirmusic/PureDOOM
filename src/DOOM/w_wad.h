@@ -23,6 +23,20 @@
 #define __W_WAD__
 
 
+// The purge tags W_CacheLumpNum/Name still take but ignore: WadFile owns every
+// lump for the process's life now, so the tag decides nothing. They lived in
+// z_zone.h until the zone was deleted; kept here so the vanilla call signatures
+// (and the many literal PU_STATIC / PU_CACHE arguments) still compile.
+#define PU_STATIC 1 // static entire execution time
+#define PU_SOUND 2 // static while playing
+#define PU_MUSIC 3 // static while playing
+#define PU_DAVE 4 // anything else Dave wants static
+#define PU_LEVEL 50 // static until level exited
+#define PU_LEVSPEC 51 // a special thinker in a level
+#define PU_PURGELEVEL 100
+#define PU_CACHE 101
+
+
 //
 // TYPES
 //

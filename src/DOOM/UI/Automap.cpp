@@ -42,7 +42,6 @@
 #include "../st_stuff.h"
 #include "../v_video.h" // Needs access to LFB, V_MarkRect.
 #include "../w_wad.h"
-#include "../z_zone.h"
 
 #include "Automap.h"
 

@@ -32,7 +32,6 @@
 #include <DOOM/tables.h>
 #include <DOOM/v_video.h>
 #include <DOOM/w_wad.h>
-#include <DOOM/z_zone.h>
 
 // Engine globals that no header declares. DOOM.c reaches them the same way, so
 // this is the house style rather than a workaround - but they are the natural

@@ -28,7 +28,6 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 #include "../st_stuff.h"
-#include "../z_zone.h"
 
 #include "Mobj.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations

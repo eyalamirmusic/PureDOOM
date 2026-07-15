@@ -12,7 +12,6 @@
 #include "../i_video.h"
 #include "../m_random.h"
 #include "../v_video.h"
-#include "../z_zone.h"
 
 #include "../f_wipe.h" // the shim's globals (wipe_scr_start / offsets / running)
 #include "Wipe.h"
@@ -30,7 +29,7 @@ void colMajorXform(short* array, int width, int height)
     int y;
     short* dest;
 
-    dest = (short*) Z_Malloc(width * height * sizeof(short), PU_STATIC, 0);
+    dest = (short*) doom_malloc(width * height * sizeof(short));
 
     for (y = 0; y < height; y++)
         for (x = 0; x < width; x++)
@@ -38,7 +37,7 @@ void colMajorXform(short* array, int width, int height)
 
     doom_memcpy(array, dest, width * height * 2);
 
-    Z_Free(dest);
+    doom_free(dest);
 }
 
 int initColorXForm(int width, int height, int ticks)
@@ -112,7 +111,7 @@ int initMelt(int width, int height, int ticks)
 
     // setup initial column positions
     // (wipe_melt_offsets<0 => not ready to scroll yet)
-    wipe_melt_offsets = (int*) Z_Malloc(width * sizeof(int), PU_STATIC, 0);
+    wipe_melt_offsets = (int*) doom_malloc(width * sizeof(int));
     wipe_melt_offsets[0] = -(M_Random() % 16);
     for (i = 1; i < width; i++)
     {
@@ -184,7 +183,7 @@ int exitMelt(int width, int height, int ticks)
     (void) width;
     (void) height;
     (void) ticks;
-    Z_Free(wipe_melt_offsets);
+    doom_free(wipe_melt_offsets);
     return 0;
 }
 
