@@ -47,7 +47,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
-| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`; scalar clusters move in with Steps 6–8 |
+| 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; the first movement-clipping globals (blockmap descriptor, intercept scratch) have moved in |
 | 6 | The playsim | **in progress** — `Vec2` + the map-geometry core (`p_maputl` side/intercept/distance/opening helpers) rewritten with unit tests; the scenario-test harness (place a mobj, drive `P_TryMove`/`P_CheckPosition`, read blockmap linking) is built and proven to bite |
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
@@ -65,7 +65,7 @@ everything else is still vanilla C compiled as C++ under `-w`):
 - `Sim/` — `Random`, `Level` (level geometry, RAII), `MapGeometry`
   (`pointOnLineSide` / `pointOnDivlineSide` / `interceptVector`).
 - `Wad/` — `WadFile` (owns lumps, RAII).
-- `Engine/` — `Engine`, the composition root owning `Random`/`WadFile`/`Level`;
+- `Engine/` — `Engine`, the composition root owning `Random`/`WadFile`/`Level`/`Clip`;
   `randomness()`/`wad()`/`level()` are accessors into the one `engine()`.
 
 Everywhere the vanilla API survives (`FixedMul`, `finesine`, `P_Random`,
@@ -90,15 +90,17 @@ harness in hand:
 1. The stateful half of `p_maputl` — the blockmap iterators
    (`P_BlockLinesIterator`/`P_BlockThingsIterator`, function-pointer callbacks →
    consider lambdas), thing-position linking (`P_SetThingPosition`/`Unset`),
-   `P_PathTraverse`. The **net is now in place**: `P_LineOpening`'s pure core and
-   `P_AproxDistance` are already extracted into `MapGeometry.h` with unit tests, and
-   scenario tests pin the thing-position linking and `P_BlockThingsIterator` with
-   locality (see below). What remains is the wholesale rewrite of the file into
-   modern C++ and its flip out of the `-w` blanket — a per-file move, so the whole
-   of `p_maputl.cpp` (the still-stateful iterators, intercepts and `P_PathTraverse`)
-   goes at once, with the demos and these scenario tests holding it bit-identical.
+   `P_PathTraverse`. **Underway.** The net is in place (`MapGeometry.h` extractions
+   + scenario tests), and the migration has begun: the blockmap addressing moved
+   onto `Doom::Blockmap`, and `P_PathTraverse`'s intercept scratch
+   (`intercepts[]`/`intercept_p`/`earlyout`) moved into `Doom::Clip`, reached
+   through `Doom::clip()`. What remains: the shared clipping globals (`opentop`,
+   `openbottom`, `openrange`, `lowfloor`, `trace`) join `Clip` as their readers
+   (`p_map`/`p_sight`/`p_enemy`) are rewritten, the iterators take callables, and
+   the file makes its per-file move out of `-w`.
 2. Then `p_map` (`P_TryMove`, `P_CheckPosition`) itself — the scenario tests above
-   pin it directly and specifically now.
+   pin it directly and specifically now, and its `tm*` clipping globals join the
+   same `Doom::Clip`.
 
 **How to verify, every step** (nothing here re-records goldens):
 
@@ -540,7 +542,8 @@ globals for good.
 
 ### Landed — the composition root
 
-`Doom::Engine` (`Engine/Engine.h`) holds `Random`, `WadFile` and `Level`. The three
+`Doom::Engine` (`Engine/Engine.h`) holds `Random`, `WadFile`, `Level` and now `Clip`
+(the movement/clipping scratch, `Sim/Clip.h`, reached through `Doom::clip()`). The three
 free accessors moved into `Engine/Engine.cpp` and now return `engine().random`,
 `engine().wad`, `engine().level` — one owner where there were three independent
 singletons. `Sim/Level.cpp` held nothing but `level()` and is gone.
