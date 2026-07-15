@@ -54,6 +54,7 @@
 
 #include "StatusBar.h"
 #include "StatusBarFace.h"
+#include "StatusBarWidgets.h"
 
 // st_statusbaron is owned by the st_stuff.cpp shim: the app (EngineAccess) reads
 // it to decide whether to composite the status-bar strip. mapnames (hu_stuff) and
@@ -283,16 +284,20 @@ static patch_t* faces[ST_NUMFACES]; // face status patches
 static patch_t* faceback; // face background
 static patch_t* armsbg; // main bar right
 static patch_t* arms[6][2]; // weapon ownership patches
-static st_number_t w_ready; // ready-weapon widget
-static st_number_t w_frags; // in deathmatch only, summary of frags stats
-static st_percent_t w_health; // health widget
-static st_binicon_t w_armsbg; // arms background
-static st_multicon_t w_arms[6]; // weapon ownership widgets
-static st_multicon_t w_faces; // face status widget
-static st_multicon_t w_keyboxes[3]; // keycard widgets
-static st_percent_t w_armor; // armor widget
-static st_number_t w_ammo[4]; // ammo widgets
-static st_number_t w_maxammo[4]; // max ammo widgets
+// The STlib widgets are a Doom::StatusBarWidgets owned by the Engine now, moved by the
+// file-scope-statics sweep; these names are references onto the members, the arrays as
+// references-to-array (REFACTOR.md, Step 5).
+static st_number_t& w_ready = statusBarWidgets().w_ready; // ready-weapon widget
+static st_number_t& w_frags = statusBarWidgets().w_frags; // deathmatch frags summary
+static st_percent_t& w_health = statusBarWidgets().w_health; // health widget
+static st_binicon_t& w_armsbg = statusBarWidgets().w_armsbg; // arms background
+static st_multicon_t (&w_arms)[6] = statusBarWidgets().w_arms; // weapon ownership
+static st_multicon_t& w_faces = statusBarWidgets().w_faces; // face status widget
+static st_multicon_t (&w_keyboxes)[3] = statusBarWidgets().w_keyboxes; // keycards
+static st_percent_t& w_armor = statusBarWidgets().w_armor; // armor widget
+static st_number_t (&w_ammo)[4] = statusBarWidgets().w_ammo; // ammo widgets
+static st_number_t (&w_maxammo)[4] =
+    statusBarWidgets().w_maxammo; // max ammo widgets
 static int st_fragscount; // number of frags so far in deathmatch
 // The animated face's selection state is a Doom::StatusBarFace owned by the Engine now, moved by
 // the file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).

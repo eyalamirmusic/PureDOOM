@@ -41,6 +41,7 @@
 #include "../UI/HudChat.h"
 #include "../UI/HudMessage.h"
 #include "../UI/StatusBarFace.h"
+#include "../UI/StatusBarWidgets.h"
 #include "../Wad/WadFile.h"
 
 namespace Doom
@@ -102,6 +103,7 @@ struct Engine
     HudMessage hudMessage;
     HudChat hudChat;
     StatusBarFace statusBarFace;
+    StatusBarWidgets statusBarWidgets;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

@@ -224,4 +224,9 @@ StatusBarFace& statusBarFace()
 {
     return engine().statusBarFace;
 }
+
+StatusBarWidgets& statusBarWidgets()
+{
+    return engine().statusBarWidgets;
+}
 } // namespace Doom
