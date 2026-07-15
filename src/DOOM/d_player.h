@@ -127,8 +127,9 @@ typedef struct player_s
     int itemcount;
     int secretcount;
 
-    // Hint messages.
-    char* message;
+    // Hint messages. const: these are always string literals (the GOT*/STSTR*
+    // macros), so rewritten code can assign them without a writable-strings cast.
+    const char* message;
 
     // For screen flashing (red or bright).
     int damagecount;
