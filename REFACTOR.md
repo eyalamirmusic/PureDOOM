@@ -49,7 +49,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
-| 7 | The renderer | **in progress** — new `Render/` subdir (in the CMake rewritten-glob). `r_sky`→`Sky` and `r_data`→`Data` done: the foundational `r_data` (texture/flat/sprite/colormap data, the composite cache, the tutti-frutti over-read) holds the frame goldens byte-identical. Recipe below. Left: `r_bsp`, `r_segs`, `r_plane`, `r_things`, `r_draw`, `r_main` |
+| 7 | The renderer | **mostly done** — 6 of 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, all holding the frame goldens byte-identical and the app linking. Left: `r_things` and `r_draw` (see the recipe note for why `r_things` needs the whole-file global scan) |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | |
 
 ## Where this is — session handoff
@@ -774,10 +774,22 @@ literal lump names the loaders pass (`W_CacheLumpName("PNAMES")`, …) want thei
 callee taking `const char*` (done for `W_CacheLumpName`/`W_GetNumForName`/
 `W_CheckNumForName`/`M_CheckParm`) so the rewritten code is `-Wall`-clean.
 
-**Landed:** `Sky` (trivial), `Data` (the foundational one). Remaining in module
-order: `r_bsp`, `r_segs`, `r_plane`, `r_things`, `r_draw`, `r_main` — several own
-function-pointer drawers (`colfunc`/`spanfunc` in `r_draw`) that, like the `T_*`
-thinkers, stay global because other code stores and switches them.
+**Landed:** `Sky`, `Data` (the foundational one), `Main` (view setup, the load-bearing
+`R_PointToAngle`), `Planes`, `BSP`, `Segs` — all frame-golden-clean and app-linking.
+The globals split was automated: a name is kept in the shim if a header `extern`s it
+*or* any other `.cpp` reads it (checked against every source file, playsim and app
+included — the drawer pointers `colfunc`/`spanfunc`, the pending-view flags, the
+view state all stay), and moved file-local otherwise.
+
+**Two remaining, `r_things` and `r_draw`.** `r_draw` holds the low-level column/span
+drawers `colfunc`/`spanfunc` point at — those get shims like any `R_*`, and the
+pointer assignments in `Main` already store the shim address, so it should follow the
+recipe directly. `r_things` is the one that needs more than a preamble scan: it
+defines its globals in *three* places (before the first function, in the preamble,
+and mid-file — `mfloorclip`/`mceilingclip` are set deep inside the render), so the
+"extract the preamble, split it" shortcut misclassifies the scattered ones. The fix
+is a whole-file depth-0 global scan (classify every top-level definition, not just
+the preamble block) before finishing it.
 
 ## Step 8 — UI, game loop, host boundary
 
