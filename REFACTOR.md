@@ -50,7 +50,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
-| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. Left: the host boundary (`DOOM.cpp`/`i_system`/`i_video`/`i_sound`/`i_net`), the data files (`sounds`, `info`, `d_items` — deferred with the `Thinker` rewrite), the small remainders (`doomstat`, `doomdef`, `dstrings`, `m_swap`), `thinker_t`→`Thinker`, zone deletion |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. Host layer started: `i_video`→`Host/Video`, `i_system`→`Host/System`. Left: the rest of the host boundary (`DOOM.cpp`/`i_sound`/`i_net`, then the `doom_config`→`Host` interface redesign + audio), the data files (`sounds`, `info`, `d_items` — deferred with the `Thinker` rewrite), the small remainders (`doomstat`, `doomdef`, `dstrings`, `m_swap`), `thinker_t`→`Thinker`, zone deletion |
 
 ## Where this is — session handoff
 
@@ -58,10 +58,12 @@ Everything below is committed on branch **`C++Refactor`**; the working tree is
 clean and the suite is green (**75 tests**, ~5s: `ctest --test-dir build`). Steps
 0–3 are complete; 4's payoff is delivered; 5 is underway; 6 and 7 are done; 8 is
 well underway — the whole UI (the menu included), game loop, netcode and utility
-layer are migrated, leaving the host boundary, the deferred data files, the
-`Thinker` virtualisation and the zone deletion. The flat vanilla list is down to
-~14 files, most of them either data (deferred with `Thinker`) or the host
-boundary.
+layer are migrated, and the host boundary has begun (a new `Host/` subdir, with
+`i_video` and `i_system` moved in). Left: the rest of the host boundary
+(`i_sound`, `i_net`, `DOOM.cpp`, then the `doom_config`→`Host` redesign + audio),
+the deferred data files, the small remainders, the `Thinker` virtualisation and
+the zone deletion. The flat vanilla list is down to ~11 files, most of them
+either data (deferred with `Thinker`) or the remaining host boundary.
 
 **What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
 everything else is still vanilla C compiled as C++ under `-w`):
@@ -930,13 +932,35 @@ helpers took `const char*`) and `-Wmissing-field-initializers` (the localized
 `#pragma`, as `wi_stuff`) were the recurring fixes. All four `*.frames`/`*.hashes`
 goldens held byte-identical and the app links.
 
+### Landed — the host layer begins (`Host/`)
+
+The host boundary is where the engine calls out to the platform. Its files start
+moving into a new `Host/` subdir on the settled shim shape, cheapest and most
+golden-covered first:
+
+- **`i_video`→`Host/Video`** — the video seam. A thin host stub in PureDOOM (the
+  eacp app does the drawing, reading `screens[0]` and the palette back out), but
+  golden-covered where it counts: `screen_palette` and `screens[0]` are on the
+  frame-hash path and `I_SetPalette` runs on every flash the demos replay.
+  `screen_palette` stays `::`-scoped for its many readers; the vestigial X11
+  mouse-warp globals were dead and dropped.
+- **`i_system`→`Host/System`** — timing, the zone's backing allocation,
+  startup/teardown and `I_Error` (the abort the probe catches through
+  `doom_set_exit`). `mb_used`/`emptycmd` moved file-local.
+
+Both keep the vanilla `I_` names inside the namespace and a flat `i_*.cpp` shim,
+same as the menu. This is orthogonal to the `doom_config`→`Host` redesign below:
+moving the engine's `I_` seams into namespace units is the routine step every
+file took; reshaping the *host-provided* hooks is the separate structural pass.
+
 **Steps 6 and 7 are complete** — every `p_*` and `r_*` file is a shim (`p_setup`
 and `p_saveg` finished into `Sim/Setup` and `Sim/SaveGame`). What remains of
 Step 8:
 
-- **The host boundary** — `DOOM.cpp` (the public `doom_*` API), `i_system`,
-  `i_video`, `i_sound`, `i_net`. The 13 `doom_config.h` function pointers become
-  a `Host` interface; audio (gap-log item 1) wires through it.
+- **The rest of the host boundary** — `i_sound`, `i_net`, and `DOOM.cpp` (the
+  public `doom_*` API) into `Host/`, then the redesign: the 13 `doom_config.h`
+  function pointers become a `Host` interface, and audio (gap-log item 1) wires
+  through it rather than around it. `i_video`/`i_system` are already in.
 - **The data files** — `info` (`states[]`/`mobjinfo[]`), `sounds`, `d_items`
   (`weaponinfo[]`). Deferred with the `Thinker` rewrite on purpose: `states[]` is
   half function-pointers into the action table, and that table is what the
