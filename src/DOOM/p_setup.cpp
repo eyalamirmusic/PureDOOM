@@ -16,6 +16,7 @@
 #include "p_mobj.h"
 #include "r_defs.h"
 
+#include "Game/MapSpawns.h"
 #include "Sim/Setup.h"
 
 #define MAX_DEATHMATCH_STARTS 10
@@ -74,9 +75,11 @@ mobj_t** blocklinks;
 //
 byte* rejectmatrix;
 
-mapthing_t deathmatchstarts[MAX_DEATHMATCH_STARTS];
-mapthing_t* deathmatch_p;
-mapthing_t playerstarts[MAXPLAYERS];
+// The map's spawn spots are a Doom::MapSpawns owned by the Engine now; these are references
+// onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
+mapthing_t (&deathmatchstarts)[MAX_DEATHMATCH_STARTS] = Doom::mapSpawns().deathmatchstarts;
+mapthing_t*& deathmatch_p = Doom::mapSpawns().deathmatch_p;
+mapthing_t (&playerstarts)[MAXPLAYERS] = Doom::mapSpawns().playerstarts;
 
 void P_LoadVertexes(int lump)
 {

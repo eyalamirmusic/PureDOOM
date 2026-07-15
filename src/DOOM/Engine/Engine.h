@@ -6,6 +6,7 @@
 #include "../Game/GameVersion.h"
 #include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
+#include "../Game/MapSpawns.h"
 #include "../Game/NetState.h"
 #include "../Game/OverlayState.h"
 #include "../Game/PlayerState.h"
@@ -60,6 +61,7 @@ struct Engine
     RefreshFlags refreshFlags;
     OverlayState overlayState;
     NetState netState;
+    MapSpawns mapSpawns;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

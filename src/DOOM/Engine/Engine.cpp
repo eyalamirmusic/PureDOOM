@@ -119,4 +119,9 @@ NetState& netState()
 {
     return engine().netState;
 }
+
+MapSpawns& mapSpawns()
+{
+    return engine().mapSpawns;
+}
 } // namespace Doom

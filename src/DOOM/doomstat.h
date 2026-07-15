@@ -201,13 +201,13 @@ extern player_t (&players)[MAXPLAYERS];
 extern doom_boolean (&playeringame)[MAXPLAYERS];
 
 
-// Player spawn spots for deathmatch.
+// Player spawn spots. These live in Doom::MapSpawns (an Engine member) now; the references
+// onto it are references-to-array for the two arrays (REFACTOR.md, Step 5).
 #define MAX_DM_STARTS 10
-extern mapthing_t deathmatchstarts[MAX_DM_STARTS];
-extern mapthing_t* deathmatch_p;
+extern mapthing_t (&deathmatchstarts)[MAX_DM_STARTS];
+extern mapthing_t*& deathmatch_p;
 
-// Player spawn spots.
-extern mapthing_t playerstarts[MAXPLAYERS];
+extern mapthing_t (&playerstarts)[MAXPLAYERS];
 
 // Intermission stats.
 // Parameters for world map / intermission.
