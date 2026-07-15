@@ -82,6 +82,7 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&pendingCommands() == &engine().pendingCommands, "pendingCommands()");
     check(&hudMessage() == &engine().hudMessage, "hudMessage()");
     check(&hudChat() == &engine().hudChat, "hudChat()");
+    check(&hudState() == &engine().hudState, "hudState()");
     check(&statusBarFace() == &engine().statusBarFace, "statusBarFace()");
     check(&statusBarWidgets() == &engine().statusBarWidgets, "statusBarWidgets()");
     check(&statusBarGraphics() == &engine().statusBarGraphics,

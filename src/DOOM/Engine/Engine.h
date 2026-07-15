@@ -40,6 +40,7 @@
 #include "../Sim/ValidCount.h"
 #include "../UI/HudChat.h"
 #include "../UI/HudMessage.h"
+#include "../UI/HudState.h"
 #include "../UI/StatusBarFace.h"
 #include "../UI/StatusBarGraphics.h"
 #include "../UI/StatusBarState.h"
@@ -104,6 +105,7 @@ struct Engine
     PendingCommands pendingCommands;
     HudMessage hudMessage;
     HudChat hudChat;
+    HudState hudState;
     StatusBarFace statusBarFace;
     StatusBarGraphics statusBarGraphics;
     StatusBarState statusBarState;

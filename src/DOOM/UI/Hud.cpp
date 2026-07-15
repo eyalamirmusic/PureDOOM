@@ -43,6 +43,7 @@
 #include "Hud.h"
 #include "HudChat.h"
 #include "HudMessage.h"
+#include "HudState.h"
 
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 // externs): the HUD font, the config-persisted chat macros, the player names,
@@ -78,8 +79,11 @@ extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
 namespace Doom
 {
 
-static player_t* plr;
-static hu_textline_t w_title;
+// The HUD's residual state (the player, the level-title line, the active flag) is a Doom::HudState
+// owned by the Engine now, moved by the file-scope-statics sweep; these names are references onto
+// the members (headsupactive follows below, at its own site) (REFACTOR.md, Step 5).
+static player_t*& plr = hudState().plr;
+static hu_textline_t& w_title = hudState().w_title;
 // The heads-up chat state is a Doom::HudChat owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
 static hu_itext_t& w_chat = hudChat().w_chat;
@@ -93,7 +97,7 @@ static doom_boolean& message_nottobefuckedwith =
     hudMessage().message_nottobefuckedwith;
 static hu_stext_t& w_message = hudMessage().w_message;
 static int& message_counter = hudMessage().message_counter;
-static doom_boolean headsupactive = false;
+static doom_boolean& headsupactive = hudState().headsupactive;
 static char (&chatchars)[QUEUESIZE] =
     hudChat().chatchars; // outgoing local keystrokes
 static int& head = hudChat().head;

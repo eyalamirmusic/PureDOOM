@@ -220,6 +220,11 @@ HudChat& hudChat()
     return engine().hudChat;
 }
 
+HudState& hudState()
+{
+    return engine().hudState;
+}
+
 StatusBarFace& statusBarFace()
 {
     return engine().statusBarFace;
