@@ -9,6 +9,7 @@
 #include <DOOM/m_random.h>
 #include <DOOM/p_local.h>
 #include <DOOM/p_mobj.h>
+#include <DOOM/p_saveg.h>
 #include <DOOM/tables.h>
 #include <DOOM/v_video.h>
 #include <DOOM/w_wad.h>
@@ -527,6 +528,160 @@ int doomSimOnFloorZ(void)
 int doomSimFlagNoClip(void)
 {
     return MF_NOCLIP;
+}
+
+// --- The save/load serialization net (pre-Thinker) --------------------------
+//
+// p_saveg's archive/unarchive is the one simulation path the goldens do not
+// watch: no demo saves or loads, so P_ArchiveThinkers / P_UnArchiveThinkers and
+// the whole mobj/special byte layout ride unpinned. The thinker_t -> Thinker
+// virtualisation and the mobj/special zone-ownership change both rewrite exactly
+// that layout, so this builds the missing net first (the Step-0 move): archive
+// the live world, reload a fresh base level and unarchive over it - precisely
+// what gDoLoadGame does - and assert the world hash is unchanged.
+//
+// This uses its own hash, not doomSimStateHash: that one is golden-compared and
+// append-only, and it covers only the mobjs and the player, not the sectors,
+// lines and sides P_ArchiveWorld round-trips. This one walks everything the
+// archive serializes - and only the scalar fields it restores exactly, never the
+// pointers (target, subsector, the blockmap/sector links) that P_SetThingPosition
+// legitimately recomputes on load and would differ between two world instances.
+// The random indices and leveltime ride outside the archive, so they are left
+// out of the hash rather than restored.
+static unsigned long long simWorldHash(void)
+{
+    simHash = 1469598103934665603ULL;
+
+    // Players - the scalar state P_ArchivePlayers/P_UnArchivePlayers round-trip
+    // (pointers like mo/attacker/message are fixed up or nulled on load).
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        if (!playeringame[i])
+            continue;
+        player_t* p = &players[i];
+        simMix(&p->health, sizeof(p->health));
+        simMix(&p->armorpoints, sizeof(p->armorpoints));
+        simMix(&p->armortype, sizeof(p->armortype));
+        simMix(&p->readyweapon, sizeof(p->readyweapon));
+        simMix(&p->pendingweapon, sizeof(p->pendingweapon));
+        simMix(p->ammo, sizeof(p->ammo));
+        simMix(p->maxammo, sizeof(p->maxammo));
+        simMix(p->weaponowned, sizeof(p->weaponowned));
+        simMix(p->powers, sizeof(p->powers));
+        simMix(p->cards, sizeof(p->cards));
+        simMix(&p->killcount, sizeof(p->killcount));
+        simMix(&p->itemcount, sizeof(p->itemcount));
+        simMix(&p->secretcount, sizeof(p->secretcount));
+    }
+
+    // The world - sectors, lines and sides, exactly the fields P_ArchiveWorld
+    // walks (moving floors/ceilings and switched textures live here).
+    for (int i = 0; i < numsectors; i++)
+    {
+        sector_t* s = &sectors[i];
+        simMix(&s->floorheight, sizeof(s->floorheight));
+        simMix(&s->ceilingheight, sizeof(s->ceilingheight));
+        simMix(&s->floorpic, sizeof(s->floorpic));
+        simMix(&s->ceilingpic, sizeof(s->ceilingpic));
+        simMix(&s->lightlevel, sizeof(s->lightlevel));
+        simMix(&s->special, sizeof(s->special));
+        simMix(&s->tag, sizeof(s->tag));
+    }
+    for (int i = 0; i < numlines; i++)
+    {
+        line_t* l = &lines[i];
+        simMix(&l->flags, sizeof(l->flags));
+        simMix(&l->special, sizeof(l->special));
+        simMix(&l->tag, sizeof(l->tag));
+    }
+    for (int i = 0; i < numsides; i++)
+    {
+        side_t* sd = &sides[i];
+        simMix(&sd->textureoffset, sizeof(sd->textureoffset));
+        simMix(&sd->rowoffset, sizeof(sd->rowoffset));
+        simMix(&sd->toptexture, sizeof(sd->toptexture));
+        simMix(&sd->bottomtexture, sizeof(sd->bottomtexture));
+        simMix(&sd->midtexture, sizeof(sd->midtexture));
+    }
+
+    // Every thinker: each mobj by the scalar fields P_ArchiveThinkers restores,
+    // plus a total thinker count so a wrong number of specials from
+    // P_UnArchiveSpecials shows up even though the specials are hashed only
+    // through the sector state they drive.
+    int mobjCount = 0;
+    int thinkerCount = 0;
+    for (thinker_t* th = thinkercap.next; th && th != &thinkercap; th = th->next)
+    {
+        ++thinkerCount;
+        if (!simIsMobj(th))
+            continue;
+        mobj_t* m = (mobj_t*) th;
+        int frame = (int) (m->state - states);
+        simMix(&m->x, sizeof(fixed_t));
+        simMix(&m->y, sizeof(fixed_t));
+        simMix(&m->z, sizeof(fixed_t));
+        simMix(&m->angle, sizeof(angle_t));
+        simMix(&m->momx, sizeof(fixed_t));
+        simMix(&m->momy, sizeof(fixed_t));
+        simMix(&m->momz, sizeof(fixed_t));
+        simMix(&m->health, sizeof(int));
+        simMix(&m->type, sizeof(int));
+        simMix(&frame, sizeof(frame));
+        simMix(&m->flags, sizeof(m->flags));
+        simMix(&m->tics, sizeof(m->tics));
+        simMix(&m->movedir, sizeof(m->movedir));
+        simMix(&m->movecount, sizeof(m->movecount));
+        simMix(&m->reactiontime, sizeof(m->reactiontime));
+        simMix(&m->threshold, sizeof(m->threshold));
+        ++mobjCount;
+    }
+    simMix(&mobjCount, sizeof(mobjCount));
+    simMix(&thinkerCount, sizeof(thinkerCount));
+    return simHash;
+}
+
+int doomSimSaveLoadPreservesWorld(void)
+{
+    static byte saveScratch[0x2c000]; // SAVEGAMESIZE
+
+    if (setjmp(simAbort))
+        return 0;
+
+    int ep = gameepisode;
+    int map = gamemap;
+    int skill = (int) gameskill;
+
+    unsigned long long before = simWorldHash();
+
+    // Archive the live world, exactly the P_Archive* sequence gDoSaveGame runs.
+    save_p = saveScratch;
+    P_ArchivePlayers();
+    P_ArchiveWorld();
+    P_ArchiveThinkers();
+    P_ArchiveSpecials();
+
+    // Reload a fresh base level (gDoLoadGame's gInitNew), which wipes the world
+    // the unarchive then rebuilds. doomSimLoadLevel re-arms simAbort on the way
+    // through and returns with it pointing at a dead frame, so re-arm it here.
+    if (!doomSimLoadLevel(ep, map, skill))
+        return 0;
+    if (setjmp(simAbort))
+        return 0;
+
+    // Unarchive over the fresh world.
+    save_p = saveScratch;
+    P_UnArchivePlayers();
+    P_UnArchiveWorld();
+    P_UnArchiveThinkers();
+    P_UnArchiveSpecials();
+
+    // The fresh player doomSimLoadLevel registered as handle 0 was just freed and
+    // rebuilt by the unarchive; point the registry at the restored one.
+    simMobjs.clear();
+    simMobjs.push_back(players[0].mo);
+
+    unsigned long long after = simWorldHash();
+    return before == after ? 1 : 0;
 }
 
 // --- The menu/UI harness (Step 8) -------------------------------------------

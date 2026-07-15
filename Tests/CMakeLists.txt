@@ -32,6 +32,7 @@ nano_add_executable(SimTests
         Sim/LevelTests.cpp
         Sim/ReplayTests.cpp
         Sim/ScenarioTests.cpp
+        Sim/SaveGameTests.cpp
         Sim/MenuTests.cpp
         TARGETS doom-sim-probe)
 

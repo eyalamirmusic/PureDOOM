@@ -173,6 +173,14 @@ extern "C"
     int doomSimOnFloorZ(void); // ONFLOORZ, the "rest on the floor" spawn z
     int doomSimFlagNoClip(void); // MF_NOCLIP
 
+    // Archives the live world (players/sectors/thinkers/specials), reloads a
+    // fresh base level and unarchives over it - the exact p_saveg round trip
+    // gDoLoadGame runs - and returns 1 iff the world hash is unchanged. The one
+    // simulation path no demo golden covers, and precisely the mobj/special byte
+    // layout the thinker_t->Thinker step rewrites: the net that must exist before
+    // it. Requires a level to be loaded (doomSimLoadLevel) with the world set up.
+    int doomSimSaveLoadPreservesWorld(void);
+
     // --- The menu/UI harness (Step 8) ----------------------------------------
     //
     // m_menu is the one part of the engine no demo covers - nothing in a .lmp
