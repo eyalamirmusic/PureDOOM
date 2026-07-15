@@ -30,8 +30,8 @@ extern int screenblocks;
 
 // setsizeneeded/setblocks live in the r_main.cpp shim (d_main, g_game and DOOM.cpp
 // switch them through a local extern); declared here so the setup code can too.
-extern int setsizeneeded;
-extern int setblocks;
+extern int& setsizeneeded;
+extern int& setblocks;
 
 namespace Doom
 {

@@ -207,7 +207,7 @@ const char* defdemoname;
 
 extern gamestate_t wipegamestate;
 extern const char* pagename;
-extern doom_boolean setsizeneeded;
+extern doom_boolean& setsizeneeded;
 
 // The sky texture to be used instead of the F_SKY1 dummy.
 extern int skytexture;

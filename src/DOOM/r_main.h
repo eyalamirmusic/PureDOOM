@@ -88,8 +88,8 @@ extern lighttable_t*& fixedcolormap;
 
 // Blocky/low detail mode.
 //B remove this?
-//  0 = high, 1 = low
-extern int detailshift;
+//  0 = high, 1 = low. Lives in Doom::ViewWindow now (see r_state.h); a reference onto it.
+extern int& detailshift;
 
 
 //

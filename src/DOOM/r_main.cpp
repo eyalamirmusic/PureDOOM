@@ -17,6 +17,7 @@
 #include "Render/Lighting.h"
 #include "Render/Main.h"
 #include "Render/RenderScratch.h"
+#include "Render/ViewWindow.h"
 #include "Render/ViewPoint.h"
 #include "Render/ViewProjection.h"
 
@@ -62,8 +63,9 @@ fixed_t& viewsin = Doom::viewPoint().viewsin;
 
 player_t*& viewplayer = Doom::viewPoint().viewplayer;
 
-// 0 = high, 1 = low
-int detailshift;
+// 0 = high, 1 = low. Part of the view-sizing state in Doom::ViewWindow now; a reference
+// onto it.
+int& detailshift = Doom::viewWindow().detailshift;
 
 //
 // precalculated math tables (references onto the Engine's ViewProjection). The two
@@ -93,8 +95,10 @@ lighttable_t* (&zlight)[LIGHTLEVELS][MAXLIGHTZ] = Doom::lighting().zlight;
 // bumped light from gun blasts
 int& extralight = Doom::lighting().extralight;
 
-doom_boolean setsizeneeded;
-int setblocks;
+// The pending view-size request, stashed by R_SetViewSize (Render/Main.cpp) for
+// R_ExecuteSetViewSize. Part of Doom::ViewWindow now; references onto it.
+doom_boolean& setsizeneeded = Doom::viewWindow().setsizeneeded;
+int& setblocks = Doom::viewWindow().setblocks;
 
 
 

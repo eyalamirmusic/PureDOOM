@@ -108,7 +108,7 @@ void R_ExecuteSetViewSize(void);
 char title[128];
 
 extern doom_boolean inhelpscreens;
-extern doom_boolean setsizeneeded;
+extern doom_boolean& setsizeneeded;
 extern int showMessages;
 extern doom_boolean demorecording;
 

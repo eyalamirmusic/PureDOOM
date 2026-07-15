@@ -611,7 +611,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     if (crosshair && !menuactive && gamestate == GS_LEVEL && !automapactive)
     {
         int y;
-        extern int setblocks;
+        extern int& setblocks;
         if (setblocks == 11)
             y = SCREENHEIGHT / 2 + 8;
         else
