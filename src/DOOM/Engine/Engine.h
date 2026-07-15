@@ -2,6 +2,7 @@
 
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
+#include "../Render/ViewWindow.h"
 #include "../Sim/Clip.h"
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
@@ -30,6 +31,7 @@ struct Engine
     Clip clip;
     ViewPoint viewPoint;
     ViewProjection viewProjection;
+    ViewWindow viewWindow;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

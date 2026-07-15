@@ -17,15 +17,18 @@
 #include "r_local.h"
 
 #include "Render/Draw.h"
+#include "Render/ViewWindow.h"
 
 //
-// The view window geometry (set by r_main, read across the renderer and app).
+// The view window geometry (set by r_main, read across the renderer and app). The
+// storage is a Doom::ViewWindow owned by the Engine now; these vanilla names are
+// references onto it.
 //
-int viewwidth;
-int scaledviewwidth;
-int viewheight;
-int viewwindowx;
-int viewwindowy;
+int& viewwidth = Doom::viewWindow().viewwidth;
+int& scaledviewwidth = Doom::viewWindow().scaledviewwidth;
+int& viewheight = Doom::viewWindow().viewheight;
+int& viewwindowx = Doom::viewWindow().viewwindowx;
+int& viewwindowy = Doom::viewWindow().viewwindowy;
 
 //
 // R_DrawColumn input: the caller (r_segs/r_plane/r_things) fills these in, the

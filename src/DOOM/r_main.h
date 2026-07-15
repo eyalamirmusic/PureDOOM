@@ -33,10 +33,11 @@
 extern fixed_t& viewcos;
 extern fixed_t& viewsin;
 
-extern int viewwidth;
-extern int viewheight;
-extern int viewwindowx;
-extern int viewwindowy;
+// The view window geometry lives in Doom::ViewWindow now (see r_state.h); references.
+extern int& viewwidth;
+extern int& viewheight;
+extern int& viewwindowx;
+extern int& viewwindowy;
 
 // The screen projection lives in Doom::ViewProjection now (see r_state.h); these are
 // references onto it.

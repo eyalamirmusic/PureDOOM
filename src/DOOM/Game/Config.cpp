@@ -114,8 +114,8 @@ extern int joybstrafe;
 extern int joybuse;
 extern int joybspeed;
 
-extern int viewwidth;
-extern int viewheight;
+extern int& viewwidth;
+extern int& viewheight;
 
 extern int mouseSensitivity;
 extern int showMessages;

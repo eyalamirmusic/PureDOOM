@@ -131,11 +131,13 @@ extern doom_boolean viewactive;
 extern doom_boolean nodrawers;
 extern doom_boolean noblit;
 
-extern int viewwindowx;
-extern int viewwindowy;
-extern int viewheight;
-extern int viewwidth;
-extern int scaledviewwidth;
+// The view window geometry lives in Doom::ViewWindow (an Engine member) now; these
+// are references onto it (REFACTOR.md, Step 5).
+extern int& viewwindowx;
+extern int& viewwindowy;
+extern int& viewheight;
+extern int& viewwidth;
+extern int& scaledviewwidth;
 
 
 // This one is related to the 3-screen display mode.
