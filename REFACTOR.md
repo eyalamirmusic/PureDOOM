@@ -665,11 +665,14 @@ is an `Engine` member:
   changes: the screen centre (`centerx`/`centery`/`centerxfrac`/`centeryfrac`), the
   `projection` scale, the field-of-view edge `clipangle`, and the angle↔column tables
   `viewangletox`/`xtoviewangle`.
-- **`ViewWindow`** (`Render/ViewWindow.h`) — the region of the screen the view fills,
-  derived by `R_SetViewSize` from the menu's screen-size choice:
-  `viewwidth`/`viewheight`/`scaledviewwidth`/`viewwindowx`/`viewwindowy`. (The engine
-  global `viewheight` is distinct from `player_t::viewheight`, the player's eye height —
-  that member is untouched.)
+- **`ViewWindow`** (`Render/ViewWindow.h`) — all the view-sizing state: the region of the
+  screen the view fills (`viewwidth`/`viewheight`/`scaledviewwidth`/`viewwindowx`/
+  `viewwindowy`), the pending resize request `R_SetViewSize` stashes (`setsizeneeded`/
+  `setblocks`), and the applied `detailshift`. (The engine global `viewheight` is distinct
+  from `player_t::viewheight`, the player's eye height — that member is untouched;
+  `setdetail` stays file-local to `Render/Main`, its only toucher.) The request pair had no
+  header extern, only file-scope externs in `Render/Main`/`Game`/`Host` — all confirmed at
+  global/function scope, so no Step-8 namespace trap.
 - **`Lighting`** (`Render/Lighting.h`) — the light selection: `fixedcolormap` (the row a
   powerup locks the view to) and `extralight` (the muzzle-flash bump) set per frame by
   `R_SetupFrame`, and the diminishing-light lookups `scalelight`/`scalelightfixed`/`zlight`
@@ -710,6 +713,15 @@ links.
 This is the template for the rest: a cohesive cluster → a `Doom::` struct → an `Engine`
 member → an accessor → vanilla-name references in the shim, verified by
 ctest + goldens-clean + app-link.
+
+**With these six the renderer's own globals are fully migrated.** What is left in
+`r_state.h` and `r_main.h` is either a view onto `Doom::Level` (the geometry — `vertexes`,
+`segs`, `sectors`, …, migrated back in Step 4) or a symbol that is *not* the renderer's:
+the shared pass counter `validcount` and the drawer function pointers
+(`colfunc`/`spanfunc`), which the playsim and the game loop write too, and the vestigial
+`viewactive`/`linecount`/`loopcount`/`viewangleoffset`. Those move with the subsystem that
+owns them — the next bucket is `doomstat.h`'s game state (`gametic`/`gamestate`/`players[]`/
+…), whose owner (`Game/`) is already rewritten.
 
 ## Step 6 — The playsim
 
