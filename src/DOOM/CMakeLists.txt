@@ -14,6 +14,8 @@ file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
         Math/*.cpp Math/*.h
         Sim/*.cpp Sim/*.h
         Render/*.cpp Render/*.h
+        UI/*.cpp UI/*.h
+        Game/*.cpp Game/*.h
         Wad/*.cpp Wad/*.h
         Engine/*.cpp Engine/*.h)
 
