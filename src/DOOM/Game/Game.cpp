@@ -59,6 +59,7 @@
 #include "../g_game.h"
 
 #include "Game.h"
+#include "GameSession.h"
 #include "LevelStats.h"
 
 #define SAVEGAMESIZE 0x2c000
@@ -77,10 +78,13 @@ void R_ExecuteSetViewSize(void);
 
 gameaction_t gameaction;
 gamestate_t gamestate;
-skill_t gameskill;
-doom_boolean respawnmonsters;
-int gameepisode;
-int gamemap;
+
+// The current game's rules are a Doom::GameSession owned by the Engine now; these (and
+// netgame/deathmatch below) are references onto it (REFACTOR.md, Step 5).
+skill_t& gameskill = Doom::gameSession().gameskill;
+doom_boolean& respawnmonsters = Doom::gameSession().respawnmonsters;
+int& gameepisode = Doom::gameSession().gameepisode;
+int& gamemap = Doom::gameSession().gamemap;
 
 doom_boolean paused;
 doom_boolean sendpause; // send a pause event next tic
@@ -94,8 +98,8 @@ int starttime; // for comparative timing purposes
 
 doom_boolean viewactive;
 
-doom_boolean deathmatch; // only if started as net death
-doom_boolean netgame; // only true if packets are broadcast
+doom_boolean& deathmatch = Doom::gameSession().deathmatch; // net deathmatch
+doom_boolean& netgame = Doom::gameSession().netgame; // packets are broadcast
 doom_boolean playeringame[MAXPLAYERS];
 player_t players[MAXPLAYERS];
 

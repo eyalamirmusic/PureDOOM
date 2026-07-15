@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"
 #include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
@@ -44,6 +45,7 @@ struct Engine
     LevelStats levelStats;
     LaunchOptions launchOptions;
     GameVersion gameVersion;
+    GameSession gameSession;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

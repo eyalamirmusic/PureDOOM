@@ -79,4 +79,9 @@ GameVersion& gameVersion()
 {
     return engine().gameVersion;
 }
+
+GameSession& gameSession()
+{
+    return engine().gameSession;
+}
 } // namespace Doom

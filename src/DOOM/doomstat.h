@@ -76,20 +76,23 @@ extern int startmap;
 
 extern doom_boolean autostart;
 
-// Selected by user. 
-extern skill_t gameskill;
-extern int gameepisode;
-extern int gamemap;
+// The current game's rules live in Doom::GameSession (an Engine member) now; these are
+// references onto it (REFACTOR.md, Step 5).
+
+// Selected by user.
+extern skill_t& gameskill;
+extern int& gameepisode;
+extern int& gamemap;
 
 // Nightmare mode flag, single player.
-extern doom_boolean respawnmonsters;
+extern doom_boolean& respawnmonsters;
 
 // Netgame? Only true if >1 player.
-extern doom_boolean netgame;
+extern doom_boolean& netgame;
 
 // Flag: true only if started as net deathmatch.
 // An enum might handle altdeath/cooperative better.
-extern doom_boolean deathmatch;
+extern doom_boolean& deathmatch;
 
 // -------------------------
 // Internal parameters for sound rendering.
