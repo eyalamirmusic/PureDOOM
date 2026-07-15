@@ -242,7 +242,9 @@ extern int mouseSensitivity;
 // debug flag to cancel adaptiveness
 extern doom_boolean singletics;
 
-extern int bodyqueslot;
+// bodyqueslot lives in Doom::CorpseQueue (an Engine member) now, with the bodyque[] array;
+// this is a reference onto it (REFACTOR.md, Step 5).
+extern int& bodyqueslot;
 
 
 // Needed to store the number of the dummy sky flat. Used for rendering, as well as tracking

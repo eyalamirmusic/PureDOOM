@@ -58,6 +58,7 @@
 #include "../wi_stuff.h"
 #include "../g_game.h"
 
+#include "CorpseQueue.h"
 #include "DemoState.h"
 #include "Game.h"
 #include "GameClock.h"
@@ -204,8 +205,10 @@ doom_boolean* joybuttons = &joyarray[1]; // allow [-1]
 int savegameslot;
 char savedescription[32];
 
-mobj_t* bodyque[BODYQUESIZE];
-int bodyqueslot;
+// The corpse queue (bodyque + bodyqueslot) is a Doom::CorpseQueue owned by the Engine now;
+// these are references onto it, bodyque as a reference-to-array (REFACTOR.md, Step 5).
+mobj_t* (&bodyque)[BODYQUESIZE] = Doom::corpseQueue().bodyque;
+int& bodyqueslot = Doom::corpseQueue().bodyqueslot;
 
 void* statcopy; // for statistics driver
 

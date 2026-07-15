@@ -149,4 +149,9 @@ ItemRespawnQueue& itemRespawnQueue()
 {
     return engine().itemRespawnQueue;
 }
+
+CorpseQueue& corpseQueue()
+{
+    return engine().corpseQueue;
+}
 } // namespace Doom
