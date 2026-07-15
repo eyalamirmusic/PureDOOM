@@ -55,7 +55,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**76 tests**, ~8s: `ctest --test-dir build`). Steps
+clean and the suite is green (**80 tests**, ~8s: `ctest --test-dir build`). Steps
 0–4 are complete; 6 and 7 are done; 8 is nearly done — **the whole UI, game loop,
 netcode, utility layer and host boundary are migrated, and the zone allocator is
 deleted**; and **Step 5 is well advanced** — ~25 cohesive clusters have moved into
@@ -212,7 +212,7 @@ another file reads (or identifies by function-pointer address), and run the demo
 ```bash
 cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
-ctest --test-dir build --output-on-failure     # 76 tests, ~5s
+ctest --test-dir build --output-on-failure     # 80 tests, ~5s
 git diff --stat Tests/Goldens/                 # MUST be empty
 cmake --build build --target PureDoomEACP      # app still links (touches EngineAccess)
 ```
