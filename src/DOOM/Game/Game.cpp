@@ -60,6 +60,7 @@
 
 #include "DemoState.h"
 #include "Game.h"
+#include "GameClock.h"
 #include "GameFlow.h"
 #include "GameSession.h"
 #include "LevelStats.h"
@@ -119,7 +120,7 @@ player_t (&players)[MAXPLAYERS] = Doom::playerState().players;
 
 int& consoleplayer = Doom::playerState().consoleplayer; // taking events and displaying
 int& displayplayer = Doom::playerState().displayplayer; // view being displayed
-int gametic;
+int& gametic = Doom::gameClock().gametic; // Doom::GameClock (Engine member)
 
 // The level's progress (levelstarttic + the intermission totals, and leveltime over in
 // p_tick) is a Doom::LevelStats owned by the Engine now; these are references onto it.

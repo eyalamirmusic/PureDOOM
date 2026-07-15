@@ -124,4 +124,9 @@ MapSpawns& mapSpawns()
 {
     return engine().mapSpawns;
 }
+
+GameClock& gameClock()
+{
+    return engine().gameClock;
+}
 } // namespace Doom

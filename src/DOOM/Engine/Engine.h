@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Game/DemoState.h"
+#include "../Game/GameClock.h"
 #include "../Game/GameFlow.h"
 #include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"
@@ -62,6 +63,7 @@ struct Engine
     OverlayState overlayState;
     NetState netState;
     MapSpawns mapSpawns;
+    GameClock gameClock;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

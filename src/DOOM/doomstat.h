@@ -190,7 +190,9 @@ extern gamestate_t& gamestate;
 // according to user inputs. Partly load from
 // WAD, partly set at startup time.
 
-extern int gametic;
+// gametic lives in Doom::GameClock (an Engine member) now; this is a reference onto it
+// (REFACTOR.md, Step 5).
+extern int& gametic;
 
 
 // Bookkeeping on players - state. In Doom::PlayerState (an Engine member) now, with
