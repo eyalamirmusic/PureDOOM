@@ -18,6 +18,7 @@
 #include "../z_zone.h"
 
 #include "Floors.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -263,7 +264,7 @@ int doFloor(line_t* line, floor_e floortype)
 
         // new floor thinker
         rtn = 1;
-        floor = (floormove_t*) (Z_Malloc(sizeof(*floor), PU_LEVSPEC, 0));
+        floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
         P_AddThinker(&floor->thinker);
         sec->specialdata = floor;
         floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
@@ -448,7 +449,7 @@ int buildStairs(line_t* line, stair_e type)
 
         // new floor thinker
         rtn = 1;
-        floor = (floormove_t*) (Z_Malloc(sizeof(*floor), PU_LEVSPEC, 0));
+        floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
         P_AddThinker(&floor->thinker);
         sec->specialdata = floor;
         floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
@@ -501,7 +502,7 @@ int buildStairs(line_t* line, stair_e type)
 
                 sec = tsec;
                 secnum = newsecnum;
-                floor = (floormove_t*) (Z_Malloc(sizeof(*floor), PU_LEVSPEC, 0));
+                floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
 
                 P_AddThinker(&floor->thinker);
 

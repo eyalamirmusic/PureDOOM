@@ -16,6 +16,7 @@
 #include "../z_zone.h"
 
 #include "Ceilings.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -182,7 +183,7 @@ int doCeiling(line_t* line, ceiling_e type)
 
         // new door thinker
         rtn = 1;
-        ceiling = (ceiling_t*) (Z_Malloc(sizeof(*ceiling), PU_LEVSPEC, 0));
+        ceiling = (ceiling_t*) (levelAlloc(sizeof(*ceiling)));
         P_AddThinker(&ceiling->thinker);
         sec->specialdata = ceiling;
         ceiling->thinker.function.acp1 = (actionf_p1) T_MoveCeiling;

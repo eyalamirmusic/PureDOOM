@@ -18,6 +18,7 @@
 #include "../z_zone.h"
 
 #include "Plats.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -142,7 +143,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
 
         // Find lowest & highest floors around sector
         rtn = 1;
-        plat = (plat_t*) (Z_Malloc(sizeof(*plat), PU_LEVSPEC, 0));
+        plat = (plat_t*) (levelAlloc(sizeof(*plat)));
         P_AddThinker(&plat->thinker);
 
         plat->type = type;

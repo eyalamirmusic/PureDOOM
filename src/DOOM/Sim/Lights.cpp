@@ -14,6 +14,7 @@
 #include "../z_zone.h"
 
 #include "Lights.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -65,7 +66,7 @@ void spawnFireFlicker(sector_t* sector)
     // Nothing special about it during gameplay.
     sector->special = 0;
 
-    flick = (fireflicker_t*) (Z_Malloc(sizeof(*flick), PU_LEVSPEC, 0));
+    flick = (fireflicker_t*) (levelAlloc(sizeof(*flick)));
 
     P_AddThinker(&flick->thinker);
 
@@ -113,7 +114,7 @@ void spawnLightFlash(sector_t* sector)
     // nothing special about it during gameplay
     sector->special = 0;
 
-    flash = (lightflash_t*) (Z_Malloc(sizeof(*flash), PU_LEVSPEC, 0));
+    flash = (lightflash_t*) (levelAlloc(sizeof(*flash)));
 
     P_AddThinker(&flash->thinker);
 
@@ -160,7 +161,7 @@ void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync)
 {
     strobe_t* flash;
 
-    flash = (strobe_t*) (Z_Malloc(sizeof(*flash), PU_LEVSPEC, 0));
+    flash = (strobe_t*) (levelAlloc(sizeof(*flash)));
 
     P_AddThinker(&flash->thinker);
 
@@ -307,7 +308,7 @@ void spawnGlowingLight(sector_t* sector)
 {
     glow_t* g;
 
-    g = (glow_t*) (Z_Malloc(sizeof(*g), PU_LEVSPEC, 0));
+    g = (glow_t*) (levelAlloc(sizeof(*g)));
 
     P_AddThinker(&g->thinker);
 

@@ -31,6 +31,7 @@
 #include "../z_zone.h"
 
 #include "Mobj.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 #define STOPSPEED 0x1000
 #define FRICTION 0xe800
@@ -440,7 +441,7 @@ mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
     state_t* st;
     mobjinfo_t* info;
 
-    mobj = (mobj_t*) (Z_Malloc(sizeof(*mobj), PU_LEVEL, 0));
+    mobj = (mobj_t*) (levelAlloc(sizeof(*mobj)));
     doom_memset(mobj, 0, sizeof(*mobj));
     info = &mobjinfo[type];
 

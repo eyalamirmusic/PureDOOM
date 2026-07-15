@@ -25,6 +25,7 @@
 #include "../z_zone.h"
 
 #include "Specials.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 #define MAXANIMS 32
 #define MAXLINEANIMS 64
@@ -1102,7 +1103,7 @@ int doDonut(line_t* line)
             s3 = s2->lines[i]->backsector;
 
             //        Spawn rising slime
-            floor = (floormove_t*) (Z_Malloc(sizeof(*floor), PU_LEVSPEC, 0));
+            floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
             P_AddThinker(&floor->thinker);
             s2->specialdata = floor;
             floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
@@ -1116,7 +1117,7 @@ int doDonut(line_t* line)
             floor->floordestheight = s3->floorheight;
 
             //        Spawn lowering donut-hole
-            floor = (floormove_t*) (Z_Malloc(sizeof(*floor), PU_LEVSPEC, 0));
+            floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
             P_AddThinker(&floor->thinker);
             s1->specialdata = floor;
             floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;

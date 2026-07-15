@@ -17,6 +17,7 @@
 #include "../z_zone.h"
 
 #include "Doors.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -239,7 +240,7 @@ int doDoor(line_t* line, vldoor_e type)
 
         // new door thinker
         rtn = 1;
-        door = (vldoor_t*) (Z_Malloc(sizeof(*door), PU_LEVSPEC, 0));
+        door = (vldoor_t*) (levelAlloc(sizeof(*door)));
         P_AddThinker(&door->thinker);
         sec->specialdata = door;
 
@@ -401,7 +402,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
     }
 
     // new door thinker
-    door = (vldoor_t*) (Z_Malloc(sizeof(*door), PU_LEVSPEC, 0));
+    door = (vldoor_t*) (levelAlloc(sizeof(*door)));
     P_AddThinker(&door->thinker);
     sec->specialdata = door;
     door->thinker.function.acp1 = (actionf_p1) T_VerticalDoor;
@@ -450,7 +451,7 @@ void spawnDoorCloseIn30(sector_t* sec)
 {
     vldoor_t* door;
 
-    door = (vldoor_t*) (Z_Malloc(sizeof(*door), PU_LEVSPEC, 0));
+    door = (vldoor_t*) (levelAlloc(sizeof(*door)));
 
     P_AddThinker(&door->thinker);
 
@@ -472,7 +473,7 @@ void spawnDoorRaiseIn5Mins(sector_t* sec, int)
 {
     vldoor_t* door;
 
-    door = (vldoor_t*) (Z_Malloc(sizeof(*door), PU_LEVSPEC, 0));
+    door = (vldoor_t*) (levelAlloc(sizeof(*door)));
 
     P_AddThinker(&door->thinker);
 

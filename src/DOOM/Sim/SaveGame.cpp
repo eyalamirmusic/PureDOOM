@@ -17,6 +17,7 @@
 #include "../z_zone.h"
 
 #include "SaveGame.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 // save_p is defined in the shim; g_game and this file share it.
 extern byte* save_p;
@@ -259,7 +260,7 @@ void unArchiveThinkers(void)
         if (currentthinker->function.acp1 == (actionf_p1) P_MobjThinker)
             P_RemoveMobj((mobj_t*) currentthinker);
         else
-            Z_Free(currentthinker);
+            levelFree(currentthinker);
 
         currentthinker = next;
     }
@@ -276,7 +277,7 @@ void unArchiveThinkers(void)
 
             case tc_mobj:
                 PADSAVEP();
-                mobj = (mobj_t*) (Z_Malloc(sizeof(*mobj), PU_LEVEL, 0));
+                mobj = (mobj_t*) (levelAlloc(sizeof(*mobj)));
                 doom_memcpy(mobj, save_p, sizeof(*mobj));
                 save_p += sizeof(*mobj);
                 mobj->state = &states[(long long) mobj->state];
@@ -473,7 +474,7 @@ void unArchiveSpecials(void)
 
             case tc_ceiling:
                 PADSAVEP();
-                ceiling = (ceiling_t*) (Z_Malloc(sizeof(*ceiling), PU_LEVEL, 0));
+                ceiling = (ceiling_t*) (levelAlloc(sizeof(*ceiling)));
                 doom_memcpy(ceiling, save_p, sizeof(*ceiling));
                 save_p += sizeof(*ceiling);
                 ceiling->sector = &sectors[(long long) ceiling->sector];
@@ -488,7 +489,7 @@ void unArchiveSpecials(void)
 
             case tc_door:
                 PADSAVEP();
-                door = (vldoor_t*) (Z_Malloc(sizeof(*door), PU_LEVEL, 0));
+                door = (vldoor_t*) (levelAlloc(sizeof(*door)));
                 doom_memcpy(door, save_p, sizeof(*door));
                 save_p += sizeof(*door);
                 door->sector = &sectors[(long long) door->sector];
@@ -499,7 +500,7 @@ void unArchiveSpecials(void)
 
             case tc_floor:
                 PADSAVEP();
-                floor = (floormove_t*) (Z_Malloc(sizeof(*floor), PU_LEVEL, 0));
+                floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
                 doom_memcpy(floor, save_p, sizeof(*floor));
                 save_p += sizeof(*floor);
                 floor->sector = &sectors[(long long) floor->sector];
@@ -510,7 +511,7 @@ void unArchiveSpecials(void)
 
             case tc_plat:
                 PADSAVEP();
-                plat = (plat_t*) (Z_Malloc(sizeof(*plat), PU_LEVEL, 0));
+                plat = (plat_t*) (levelAlloc(sizeof(*plat)));
                 doom_memcpy(plat, save_p, sizeof(*plat));
                 save_p += sizeof(*plat);
                 plat->sector = &sectors[(long long) plat->sector];
@@ -525,7 +526,7 @@ void unArchiveSpecials(void)
 
             case tc_flash:
                 PADSAVEP();
-                flash = (lightflash_t*) (Z_Malloc(sizeof(*flash), PU_LEVEL, 0));
+                flash = (lightflash_t*) (levelAlloc(sizeof(*flash)));
                 doom_memcpy(flash, save_p, sizeof(*flash));
                 save_p += sizeof(*flash);
                 flash->sector = &sectors[(long long) flash->sector];
@@ -535,7 +536,7 @@ void unArchiveSpecials(void)
 
             case tc_strobe:
                 PADSAVEP();
-                strobe = (strobe_t*) (Z_Malloc(sizeof(*strobe), PU_LEVEL, 0));
+                strobe = (strobe_t*) (levelAlloc(sizeof(*strobe)));
                 doom_memcpy(strobe, save_p, sizeof(*strobe));
                 save_p += sizeof(*strobe);
                 strobe->sector = &sectors[(long long) strobe->sector];
@@ -545,7 +546,7 @@ void unArchiveSpecials(void)
 
             case tc_glow:
                 PADSAVEP();
-                glow = (glow_t*) (Z_Malloc(sizeof(*glow), PU_LEVEL, 0));
+                glow = (glow_t*) (levelAlloc(sizeof(*glow)));
                 doom_memcpy(glow, save_p, sizeof(*glow));
                 save_p += sizeof(*glow);
                 glow->sector = &sectors[(long long) glow->sector];

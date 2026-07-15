@@ -22,6 +22,7 @@
 
 #include "Level.h"
 #include "Setup.h"
+#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
 // P_SpawnMapThing is Mobj's now (global shim); the things loader calls it.
 void P_SpawnMapThing(mapthing_t* mthing);
@@ -511,10 +512,13 @@ void setupLevel(int episode, int map, int, skill_t)
     // will be set by player think.
     players[consoleplayer].viewz = 1;
 
-    // Make sure all sounds are stopped before Z_FreeTags.
+    // Make sure all sounds are stopped before the level's allocations go.
     S_Start();
 
-    Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+    // Free the previous level's mobjs and thinker specials - what
+    // Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1) reclaimed when they lived in the
+    // zone. Must run before P_InitThinkers empties the thinker list.
+    freeLevelAllocations();
 
     // UNUSED W_Profile ();
     P_InitThinkers();

@@ -26,6 +26,65 @@ void removeThinker(thinker_t* thinker);
 void runThinkers(void);
 void ticker(void);
 
+// The level-allocation pool. Each block carries a small header linking it into an
+// intrusive list, so a level reset frees every block malloc gave out - live
+// thinkers and the marked-but-orphaned alike - where Z_FreeTags(PU_LEVEL) once
+// swept the whole tag. The header is two pointers, so the returned block stays
+// 16-byte aligned, more than mobj_t asks for.
+namespace
+{
+struct LevelChunk
+{
+    LevelChunk* next;
+    LevelChunk* prev;
+};
+
+LevelChunk* levelChunks = 0;
+} // namespace
+
+void* levelAlloc(int size)
+{
+    int total = (int) sizeof(LevelChunk) + size;
+    LevelChunk* chunk = (LevelChunk*) doom_malloc(total);
+    doom_memset(chunk, 0, total);
+
+    chunk->prev = 0;
+    chunk->next = levelChunks;
+    if (levelChunks)
+        levelChunks->prev = chunk;
+    levelChunks = chunk;
+
+    return (void*) (chunk + 1);
+}
+
+void levelFree(void* block)
+{
+    if (!block)
+        return;
+
+    LevelChunk* chunk = (LevelChunk*) block - 1;
+    if (chunk->prev)
+        chunk->prev->next = chunk->next;
+    else
+        levelChunks = chunk->next;
+    if (chunk->next)
+        chunk->next->prev = chunk->prev;
+
+    doom_free(chunk);
+}
+
+void freeLevelAllocations(void)
+{
+    LevelChunk* chunk = levelChunks;
+    while (chunk)
+    {
+        LevelChunk* next = chunk->next;
+        doom_free(chunk);
+        chunk = next;
+    }
+    levelChunks = 0;
+}
+
 void initThinkers(void)
 {
     thinkercap.prev = thinkercap.next = &thinkercap;
@@ -66,17 +125,26 @@ void runThinkers(void)
     {
         if (currentthinker->function.acv == (actionf_v) (-1))
         {
-            // time to remove it
+            // Time to remove it. Vanilla advanced by reading currentthinker->next
+            // *after* Z_Free, which the zone tolerated because a freed block kept
+            // its bytes until reused; a real free() unmaps them, so capture next
+            // before releasing (the unlink leaves currentthinker->next intact, so
+            // this is the same value vanilla read - only sooner).
+            thinker_t* next = currentthinker->next;
             currentthinker->next->prev = currentthinker->prev;
             currentthinker->prev->next = currentthinker->next;
-            Z_Free(currentthinker);
+            levelFree(currentthinker);
+            currentthinker = next;
         }
         else
         {
             if (currentthinker->function.acp1)
                 currentthinker->function.acp1(currentthinker);
+            // Advance after the think, so a mobj its thinker just spawned (linked
+            // at the tail, i.e. onto currentthinker->next when it was last) runs
+            // this same tic, as vanilla does.
+            currentthinker = currentthinker->next;
         }
-        currentthinker = currentthinker->next;
     }
 }
 
