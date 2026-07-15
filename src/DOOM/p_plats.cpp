@@ -15,10 +15,12 @@
 
 #include "p_local.h"
 
+#include "Sim/ActiveSpecials.h"
 #include "Sim/Plats.h"
 
-// activeplats is declared in p_spec.h and read by p_saveg; its storage lives here.
-plat_t* activeplats[MAXPLATS];
+// activeplats is declared in p_spec.h and read by p_saveg; it is a member of the
+// Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
+plat_t* (&activeplats)[MAXPLATS] = Doom::activeSpecials().activeplats;
 
 void T_PlatRaise(plat_t* plat)
 {

@@ -24,6 +24,7 @@
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
+#include "../Sim/ActiveSpecials.h"
 #include "../Sim/Clip.h"
 #include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
@@ -76,6 +77,7 @@ struct Engine
     ItemRespawnQueue itemRespawnQueue;
     CorpseQueue corpseQueue;
     EventQueue eventQueue;
+    ActiveSpecials activeSpecials;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

@@ -180,7 +180,9 @@ typedef struct
 #define BUTTONTIME 35             
 
 
-extern button_t buttonlist[MAXBUTTONS];
+// The active-special registries are a Doom::ActiveSpecials owned by the Engine now; these
+// (and activeplats/activeceilings below) are references onto its members (REFACTOR.md, Step 5).
+extern button_t (&buttonlist)[MAXBUTTONS];
 
 
 void P_ChangeSwitchTexture(line_t* line, int useAgain);
@@ -231,7 +233,7 @@ typedef struct
 #define MAXPLATS 30
 
 
-extern plat_t* activeplats[MAXPLATS];
+extern plat_t* (&activeplats)[MAXPLATS];
 
 
 void T_PlatRaise(plat_t* plat);
@@ -328,7 +330,7 @@ typedef struct
 #define MAXCEILINGS 30
 
 
-extern ceiling_t* activeceilings[MAXCEILINGS];
+extern ceiling_t* (&activeceilings)[MAXCEILINGS];
 
 
 int EV_DoCeiling(line_t* line, ceiling_e type);

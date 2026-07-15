@@ -159,4 +159,9 @@ EventQueue& eventQueue()
 {
     return engine().eventQueue;
 }
+
+ActiveSpecials& activeSpecials()
+{
+    return engine().activeSpecials;
+}
 } // namespace Doom

@@ -14,10 +14,12 @@
 
 #include "p_local.h"
 
+#include "Sim/ActiveSpecials.h"
 #include "Sim/Switches.h"
 
-// buttonlist is declared in p_spec.h and ticked by p_spec's P_UpdateSpecials.
-button_t buttonlist[MAXBUTTONS];
+// buttonlist is declared in p_spec.h and ticked by p_spec's P_UpdateSpecials; it is a member
+// of the Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
+button_t (&buttonlist)[MAXBUTTONS] = Doom::activeSpecials().buttonlist;
 
 void P_InitSwitchList(void)
 {
