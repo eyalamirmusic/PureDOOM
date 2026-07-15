@@ -219,4 +219,9 @@ HudChat& hudChat()
 {
     return engine().hudChat;
 }
+
+StatusBarFace& statusBarFace()
+{
+    return engine().statusBarFace;
+}
 } // namespace Doom

@@ -53,6 +53,7 @@
 #include "../w_wad.h"
 
 #include "StatusBar.h"
+#include "StatusBarFace.h"
 
 // st_statusbaron is owned by the st_stuff.cpp shim: the app (EngineAccess) reads
 // it to decide whether to composite the status-bar strip. mapnames (hu_stuff) and
@@ -293,12 +294,14 @@ static st_percent_t w_armor; // armor widget
 static st_number_t w_ammo[4]; // ammo widgets
 static st_number_t w_maxammo[4]; // max ammo widgets
 static int st_fragscount; // number of frags so far in deathmatch
-static int st_oldhealth = -1; // used to use appopriately pained face
-static doom_boolean oldweaponsowned[NUMWEAPONS]; // used for evil grin
-static int st_facecount = 0; // count until face changes
-static int st_faceindex = 0; // current face index, used by w_faces
+// The animated face's selection state is a Doom::StatusBarFace owned by the Engine now, moved by
+// the file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
+static int& st_oldhealth = statusBarFace().st_oldhealth;
+static doom_boolean (&oldweaponsowned)[NUMWEAPONS] = statusBarFace().oldweaponsowned;
+static int& st_facecount = statusBarFace().st_facecount;
+static int& st_faceindex = statusBarFace().st_faceindex;
 static int keyboxes[3]; // holds key-type for each key box on bar
-static int st_randomnumber; // a random number per tick
+static int& st_randomnumber = statusBarFace().st_randomnumber; // a random per tick
 static int st_palette = 0;
 static doom_boolean st_stopped = true;
 

@@ -40,6 +40,7 @@
 #include "../Sim/ValidCount.h"
 #include "../UI/HudChat.h"
 #include "../UI/HudMessage.h"
+#include "../UI/StatusBarFace.h"
 #include "../Wad/WadFile.h"
 
 namespace Doom
@@ -100,6 +101,7 @@ struct Engine
     PendingCommands pendingCommands;
     HudMessage hudMessage;
     HudChat hudChat;
+    StatusBarFace statusBarFace;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
