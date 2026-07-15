@@ -50,14 +50,17 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
 | 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
-| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI + game loop done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`. Left: `m_menu` (needs its golden first), the host boundary (`DOOM.cpp`/`i_*`/`d_net`), the remaining util+data files (`v_video`, `s_sound`, `m_misc`, `m_cheat`, `m_argv`, `d_items`, `sounds`, `info`, `doomstat`, `doomdef`, `dstrings`), `thinker_t`→`Thinker`, zone deletion |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI, game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`; `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. Left: `m_menu` (needs its golden first), the host boundary (`DOOM.cpp`/`i_system`/`i_video`/`i_sound`/`i_net`), the data files (`sounds`, `info`, `d_items` — deferred with the `Thinker` rewrite), the small remainders (`doomstat`, `doomdef`, `dstrings`, `m_swap`), `thinker_t`→`Thinker`, zone deletion |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
 clean and the suite is green (**74 tests**, ~2s: `ctest --test-dir build`). Steps
 0–3 are complete; 4's payoff is delivered; 5 is underway; 6 and 7 are done; 8 is
-underway.
+well underway — the whole UI, game loop, netcode and utility layer are migrated,
+leaving `m_menu`, the host boundary, the deferred data files, the `Thinker`
+virtualisation and the zone deletion. The flat vanilla list is down to ~15 files,
+most of them either data (deferred with `Thinker`) or the host boundary.
 
 **What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
 everything else is still vanilla C compiled as C++ under `-w`):
@@ -873,12 +876,41 @@ partial-init data tables (`wi_stuff`'s anim tables), silenced with a localized
 `#pragma GCC diagnostic ignored`. `player_t.message` was already `const char*`
 in the tree, so message assignments were clean.
 
+Then the game loop, netcode and the utility layer followed the same shape — the
+KEEP-heavy ones (`g_game`, `d_main`, `d_net`, `v_video`, `m_misc`) keep their
+state at file scope in the rewritten unit above the namespace (they are the state
+*owners*), the small ones (`m_cheat`, `m_argv`, `s_sound`) move it file-local:
+
+- **`v_video`→`Render/Video`** (the framebuffer blitters; frame-golden pinned),
+- **`m_cheat`→`UI/Cheat`**, **`m_argv`→`Game/Args`**, **`m_misc`→`Game/Config`**
+  (config/file I/O; `M_LoadDefaults` reads the test config, frame-golden pinned),
+- **`g_game`→`Game/Game`**, **`d_main`→`Game/DoomMain`**, **`d_net`→`Game/Net`**
+  (ticcmd building, the loop, the netcode — all golden-covered end to end;
+  `NetUpdate`'s singletics quirk preserved verbatim),
+- **`s_sound`→`Game/Sound`** (audio state, exercised each tic though unheard).
+
 **Steps 6 and 7 are complete** — every `p_*` and `r_*` file is a shim (`p_setup`
 and `p_saveg` finished into `Sim/Setup` and `Sim/SaveGame`). What remains of
-Step 8: `m_menu` (build its frame golden first), the host boundary, the util +
-data files still flat (`v_video`, `s_sound`, `m_misc`, `m_cheat`, `m_argv`,
-`d_items`, `d_net`, `i_*`, `sounds`, `info`, `doomstat`, `doomdef`, `dstrings`),
-the `thinker_t`→`Thinker` virtualisation, and deleting the zone.
+Step 8:
+
+- **`m_menu`** — the one file with no coverage at all; build its frame golden
+  (synthetic `doom_key_down` events, hash the frames, Step-0 technique) *before*
+  rewriting it.
+- **The host boundary** — `DOOM.cpp` (the public `doom_*` API), `i_system`,
+  `i_video`, `i_sound`, `i_net`. The 13 `doom_config.h` function pointers become
+  a `Host` interface; audio (gap-log item 1) wires through it.
+- **The data files** — `info` (`states[]`/`mobjinfo[]`), `sounds`, `d_items`
+  (`weaponinfo[]`). Deferred with the `Thinker` rewrite on purpose: `states[]` is
+  half function-pointers into the action table, and that table is what the
+  virtualisation replaces — converting it now means converting it twice. The
+  whole-table checksums from Step 0 watch them meanwhile.
+- **The small remainders** — `doomstat`/`doomdef`/`dstrings` (declarations +
+  data) and `m_swap` (endian, `#ifdef __BIG_ENDIAN__`, compiles to nothing on
+  every machine this builds on).
+- **`thinker_t`→`Thinker`** virtualisation and **deleting the zone**, the last
+  and deepest step (mobj_t and the specials become polymorphic; touches spawning,
+  `Z_Malloc`/`memset` init and p_saveg's byte-serialisation, all under the demo
+  goldens).
 
 ## The rules
 
