@@ -51,16 +51,18 @@ extern doom_boolean& devparm;        // DEBUG: launched with -devparm
 // -----------------------------------------------------
 // Game Mode - identify IWAD as shareware, retail etc.
 //
-extern GameMode_t gamemode;
-extern GameMission_t gamemission;
+// The loaded game's identity lives in Doom::GameVersion (an Engine member) now; these
+// are references onto it (REFACTOR.md, Step 5).
+extern GameMode_t& gamemode;
+extern GameMission_t& gamemission;
 
 // Set if homebrew PWAD stuff has been added.
-extern doom_boolean modifiedgame;
+extern doom_boolean& modifiedgame;
 
 
 // -------------------------------------------
 // Language.
-extern Language_t language;
+extern Language_t& language;
 
 
 // -------------------------------------------

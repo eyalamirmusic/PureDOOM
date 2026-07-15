@@ -74,4 +74,9 @@ LaunchOptions& launchOptions()
 {
     return engine().launchOptions;
 }
+
+GameVersion& gameVersion()
+{
+    return engine().gameVersion;
+}
 } // namespace Doom
