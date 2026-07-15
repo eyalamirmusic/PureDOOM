@@ -3,6 +3,7 @@
 #include "../Game/AmmoLimits.h"
 #include "../Game/CorpseQueue.h"
 #include "../Game/DemoState.h"
+#include "../Game/EventQueue.h"
 #include "../Game/GameClock.h"
 #include "../Game/GameFlow.h"
 #include "../Game/GameSession.h"
@@ -74,6 +75,7 @@ struct Engine
     SkyState skyState;
     ItemRespawnQueue itemRespawnQueue;
     CorpseQueue corpseQueue;
+    EventQueue eventQueue;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

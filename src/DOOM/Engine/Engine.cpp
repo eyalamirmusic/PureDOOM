@@ -154,4 +154,9 @@ CorpseQueue& corpseQueue()
 {
     return engine().corpseQueue;
 }
+
+EventQueue& eventQueue()
+{
+    return engine().eventQueue;
+}
 } // namespace Doom

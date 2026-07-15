@@ -103,9 +103,11 @@ typedef enum
 //
 #define MAXEVENTS (64 * 64) // [pd] Crank up the number because we pump them faster
 
-extern event_t events[MAXEVENTS];
-extern int eventhead;
-extern int eventtail;
+// The input event ring buffer is a Doom::EventQueue owned by the Engine now; these are
+// references onto its members (REFACTOR.md, Step 5).
+extern event_t (&events)[MAXEVENTS];
+extern int& eventhead;
+extern int& eventtail;
 
 extern gameaction_t gameaction;
 
