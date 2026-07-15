@@ -26,11 +26,13 @@ nano_add_executable(SimTests
         SOURCES
         TestMain.cpp
         DemoReplay.h
+        MenuReplay.h
         Sim/DemoTests.cpp
         Sim/WadTests.cpp
         Sim/LevelTests.cpp
         Sim/ReplayTests.cpp
         Sim/ScenarioTests.cpp
+        Sim/MenuTests.cpp
         TARGETS doom-sim-probe)
 
 target_compile_definitions(SimTests PRIVATE
@@ -51,7 +53,7 @@ nano_add_executable(PrimitiveTests
 # once. Run it when a change to the simulation was *intended*; the diff on
 # Goldens/ is then the reviewable record of what it changed.
 set(RECORD_GOLDENS_COMMANDS "")
-foreach (case IN ITEMS demo1 demo2 demo3 wadDirectory)
+foreach (case IN ITEMS demo1 demo2 demo3 wadDirectory menu)
     list(APPEND RECORD_GOLDENS_COMMANDS
             COMMAND ${CMAKE_COMMAND} -E env DOOM_UPDATE_GOLDENS=1
             $<TARGET_FILE:SimTests> --test Sim/${case})

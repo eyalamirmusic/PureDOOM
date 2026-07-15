@@ -173,6 +173,49 @@ extern "C"
     int doomSimOnFloorZ(void); // ONFLOORZ, the "rest on the floor" spawn z
     int doomSimFlagNoClip(void); // MF_NOCLIP
 
+    // --- The menu/UI harness (Step 8) ----------------------------------------
+    //
+    // m_menu is the one part of the engine no demo covers - nothing in a .lmp
+    // opens a menu - so before it is rewritten it gets its own frame golden, the
+    // same way Step 0 gave the renderer one: drive synthetic key events through
+    // the real host path (doom_key_down -> D_PostEvent -> M_Responder), let
+    // M_Ticker and M_Drawer run, and hash the finished software frame.
+    //
+    // The background is the attract-mode title screen (TITLEPIC): a static,
+    // deterministic picture, so what the golden pins is the menu drawn over it
+    // and nothing else. It rests on the same pinned -config as doomSimBoot, so
+    // the frame means the same thing on every machine.
+
+    // Boots to the title screen instead of queuing a demo: leaves the attract
+    // loop's advancedemo flag up so the first tic brings up TITLEPIC. Returns 0
+    // if the engine aborted. Must be the only boot in the process, like
+    // doomSimBoot.
+    int doomSimBootToTitle(void);
+
+    // Post a synthetic key event, exactly as the host's doom_key_down/up do. The
+    // key is a doom_key_t value from DOOM/DOOM.h - the public host API a menu is
+    // driven through, so the menu test names its keys from that header.
+    void doomSimPostKeyDown(int key);
+    void doomSimPostKeyUp(int key);
+
+    // Run one tic unconditionally (doom_force_update), with no demo bookkeeping.
+    // While a screen melt is in flight this advances the melt instead of the
+    // game loop, exactly as the host does. Returns 1 normally, 0 if the engine
+    // aborted (e.g. a menu action reached I_Quit).
+    int doomSimStepTic(void);
+
+    // Whether a screen melt is animating right now. The title screen arrives
+    // through a wipe, so the menu harness runs warm-up tics until this clears
+    // before it starts hashing - the golden pins the menu, not the entry wipe.
+    int doomSimIsWiping(void);
+
+    // The current gamestate as a small int (GS_LEVEL=0 .. GS_DEMOSCREEN=3), so
+    // the harness can assert the background stayed the title screen for the whole
+    // script (the attract loop would otherwise advance to a demo after ~170
+    // tics), and whether the menu is currently open.
+    int doomSimGameState(void);
+    int doomSimMenuActive(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -59,7 +59,11 @@ static char simConfigFlag[] = "-config";
 static char simConfigFile[] = PUREDOOM_TESTS_DIR "/doom-tests.cfg";
 static char* simArgv[] = {simProgram, simConfigFlag, simConfigFile};
 
-int doomSimBoot(const char* demoLump)
+// The two boots below share everything but what they do with the attract loop.
+// A demo boot lowers advancedemo so the game runs only the demo we hand it; a
+// title boot leaves it up so the first tic brings up the title screen for a menu
+// script to run over.
+static int simBootInternal(const char* demoLump, int keepAttract)
 {
     // The engine is several hundred globals and a zone allocator, and doom_init
     // does not undo any of it: a second boot in one process quietly simulates
@@ -89,9 +93,11 @@ int doomSimBoot(const char* demoLump)
     // doom_init ends in D_StartTitle, which raises the attract loop's flag. Left
     // alone, D_DoAdvanceDemo runs on the very first tic, clears gameaction and
     // starts the title sequence - which then plays demo1, the credits, demo2 and
-    // so on, whatever we asked for. Lower the flag and the game runs only the
-    // demo we hand it.
-    advancedemo = false;
+    // so on. A demo boot lowers the flag so the game runs only the demo we hand
+    // it; a title boot (keepAttract) leaves it up, so the first tic brings up
+    // TITLEPIC and the attract loop then holds there for ~170 tics.
+    if (!keepAttract)
+        advancedemo = false;
 
     // Deliberately NOT -playdemo. That sets `singledemo`, which ends the demo
     // through I_Quit - and I_Quit calls M_SaveDefaults, which would have every
@@ -103,6 +109,16 @@ int doomSimBoot(const char* demoLump)
 
     simBooted = 1;
     return 1;
+}
+
+int doomSimBoot(const char* demoLump)
+{
+    return simBootInternal(demoLump, 0);
+}
+
+int doomSimBootToTitle(void)
+{
+    return simBootInternal(0, 1);
 }
 
 int doomSimInLevel(void)
@@ -511,4 +527,45 @@ int doomSimOnFloorZ(void)
 int doomSimFlagNoClip(void)
 {
     return MF_NOCLIP;
+}
+
+// --- The menu/UI harness (Step 8) -------------------------------------------
+//
+// gamestate is declared in doomstat.h (already included); menuactive lives
+// there too. is_wiping_screen has no header - DOOM.c externs it exactly this
+// way, so this matches the house style rather than reaching around anything.
+extern doom_boolean is_wiping_screen;
+
+void doomSimPostKeyDown(int key)
+{
+    doom_key_down((doom_key_t) key);
+}
+
+void doomSimPostKeyUp(int key)
+{
+    doom_key_up((doom_key_t) key);
+}
+
+int doomSimStepTic(void)
+{
+    if (setjmp(simAbort))
+        return 0;
+
+    doom_force_update();
+    return 1;
+}
+
+int doomSimIsWiping(void)
+{
+    return is_wiping_screen ? 1 : 0;
+}
+
+int doomSimGameState(void)
+{
+    return (int) gamestate;
+}
+
+int doomSimMenuActive(void)
+{
+    return menuactive ? 1 : 0;
 }
