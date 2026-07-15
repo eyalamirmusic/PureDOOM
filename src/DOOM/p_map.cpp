@@ -37,6 +37,8 @@
 #include "r_state.h" // State.
 #include "sounds.h" // Data.
 
+#include "Sim/Level.h"
+
 
 #define MAXSPECIALCROSS 8
 
@@ -424,10 +426,12 @@ doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y)
     // because mobj_ts are grouped into mapblocks
     // based on their origin point, and can overlap
     // into adjacent blocks by up to MAXRADIUS units.
-    xl = (tmbbox[BOXLEFT] - bmaporgx - MAXRADIUS) >> MAPBLOCKSHIFT;
-    xh = (tmbbox[BOXRIGHT] - bmaporgx + MAXRADIUS) >> MAPBLOCKSHIFT;
-    yl = (tmbbox[BOXBOTTOM] - bmaporgy - MAXRADIUS) >> MAPBLOCKSHIFT;
-    yh = (tmbbox[BOXTOP] - bmaporgy + MAXRADIUS) >> MAPBLOCKSHIFT;
+    const Doom::Blockmap& bmap = Doom::level().blockmap;
+
+    xl = bmap.blockX(Doom::Fixed {tmbbox[BOXLEFT] - MAXRADIUS});
+    xh = bmap.blockX(Doom::Fixed {tmbbox[BOXRIGHT] + MAXRADIUS});
+    yl = bmap.blockY(Doom::Fixed {tmbbox[BOXBOTTOM] - MAXRADIUS});
+    yh = bmap.blockY(Doom::Fixed {tmbbox[BOXTOP] + MAXRADIUS});
 
     for (bx = xl; bx <= xh; bx++)
         for (by = yl; by <= yh; by++)
@@ -435,10 +439,10 @@ doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y)
                 return false;
 
     // check lines
-    xl = (tmbbox[BOXLEFT] - bmaporgx) >> MAPBLOCKSHIFT;
-    xh = (tmbbox[BOXRIGHT] - bmaporgx) >> MAPBLOCKSHIFT;
-    yl = (tmbbox[BOXBOTTOM] - bmaporgy) >> MAPBLOCKSHIFT;
-    yh = (tmbbox[BOXTOP] - bmaporgy) >> MAPBLOCKSHIFT;
+    xl = bmap.blockX(Doom::Fixed {tmbbox[BOXLEFT]});
+    xh = bmap.blockX(Doom::Fixed {tmbbox[BOXRIGHT]});
+    yl = bmap.blockY(Doom::Fixed {tmbbox[BOXBOTTOM]});
+    yh = bmap.blockY(Doom::Fixed {tmbbox[BOXTOP]});
 
     for (bx = xl; bx <= xh; bx++)
         for (by = yl; by <= yh; by++)

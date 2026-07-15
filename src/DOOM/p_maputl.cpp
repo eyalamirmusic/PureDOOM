@@ -301,19 +301,14 @@ doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean(*func)(line_t*))
     short* list;
     line_t* ld;
 
-    if (x < 0
-        || y < 0
-        || x >= bmapwidth
-        || y >= bmapheight)
-    {
+    const Doom::Blockmap& bmap = Doom::level().blockmap;
+
+    if (!bmap.contains(x, y))
         return true;
-    }
 
-    offset = y * bmapwidth + x;
+    offset = bmap.offsets[bmap.index(x, y)];
 
-    offset = *(blockmap + offset);
-
-    for (list = blockmaplump + offset; *list != -1; list++)
+    for (list = bmap.lump + offset; *list != -1; list++)
     {
         ld = &lines[*list];
 
@@ -336,16 +331,12 @@ doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean(*func)(mobj_t*))
 {
     mobj_t* mobj;
 
-    if (x < 0
-        || y < 0
-        || x >= bmapwidth
-        || y >= bmapheight)
-    {
+    const Doom::Blockmap& bmap = Doom::level().blockmap;
+
+    if (!bmap.contains(x, y))
         return true;
-    }
 
-
-    for (mobj = blocklinks[y * bmapwidth + x];
+    for (mobj = blocklinks[bmap.index(x, y)];
          mobj;
          mobj = mobj->bnext)
     {
