@@ -318,10 +318,13 @@ checkout, pass `-DCPM_eacp_SOURCE=$HOME/Code/eacp` at configure time. Use
 `$HOME`, not `~` — CMake does not expand tildes, and a quoted `~/...` path
 silently configures against a non-existent directory.
 
-The GPU render paths currently require eacp features that only exist on the
-local eacp branch `doom-stage-a-gpu-palette` (`TextureFormat::R8Unorm`,
-`Buffer::update`), so until that merges, building against GitHub `main`
-fails — configure with the local-source override above.
+The GPU render paths need four eacp features this port surfaced
+(`TextureFormat::R8Unorm`, `Buffer::update`, `ShaderProgram::setDiscardBelow`,
+and the raw-mouse/warp input fixes). These have since **merged to eacp `main`**,
+so the default CPM fetch builds the app cleanly — the local-source override is now
+only for co-developing eacp, not a requirement. (It used to be: the features
+lived on the branch `doom-stage-a-gpu-palette` and building against `main`
+failed.)
 
 The app boots `doom1.wad` from the repository root by default: PureDOOM has
 no `-iwad` argument — it locates WADs via the `DOOMWADDIR` environment
