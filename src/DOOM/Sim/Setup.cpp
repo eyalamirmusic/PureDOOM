@@ -1,0 +1,603 @@
+// Rewritten out of vanilla p_setup into namespace Doom.
+//
+// Level loading: parse each map lump into Doom::Level's vectors and refresh the
+// geometry view-globals the renderer and playsim index, build the blockmap
+// descriptor and per-sector line lists, spawn the things, and set up a fresh level.
+// p_setup.cpp shims P_SetupLevel and P_Init and owns the view-global storage; the
+// per-lump loaders are file-local. Golden-neutral - every demo loads its level
+// through this, and LevelTests pins the view invariant.
+
+#include "../doom_config.h"
+
+#include "../doomdef.h"
+#include "../doomstat.h"
+#include "../g_game.h"
+#include "../i_system.h"
+#include "../m_bbox.h"
+#include "../m_swap.h"
+#include "../p_local.h"
+#include "../s_sound.h"
+#include "../w_wad.h"
+#include "../z_zone.h"
+
+#include "Level.h"
+#include "Setup.h"
+
+// P_SpawnMapThing is Mobj's now (global shim); the things loader calls it.
+void P_SpawnMapThing(mapthing_t* mthing);
+
+// The thinker functions stay global (p_saveg identity); declared so the spawners
+// can store their address.
+
+namespace Doom
+{
+// Forward declarations so the file's own call order needs no rearranging.
+void loadVertexes(int lump);
+void loadSegs(int lump);
+void loadSubsectors(int lump);
+void loadSectors(int lump);
+void loadNodes(int lump);
+void loadThings(int lump);
+void loadLineDefs(int lump);
+void loadSideDefs(int lump);
+void loadBlockMap(int lump);
+void groupLines(void);
+void setupLevel(int episode, int map, int playermask, skill_t skill);
+void init(void);
+
+void loadVertexes(int lump)
+{
+    byte* data;
+    int i;
+    mapvertex_t* ml;
+    vertex_t* li;
+
+    // Determine number of lumps:
+    //  total lump length / vertex record length.
+    numvertexes = W_LumpLength(lump) / sizeof(mapvertex_t);
+
+    // Owned by the Level now (Sim/Level.h); vertexes is a view onto its vector.
+    // assign, not resize, so a shorter second level does not inherit the first
+    // level's tail - Z_Malloc handed back fresh zeroed memory every load.
+    Doom::level().vertexes.assign(numvertexes, vertex_t {});
+    vertexes = Doom::level().vertexes.data();
+
+    // Load data into cache.
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+
+    ml = (mapvertex_t*) data;
+    li = vertexes;
+
+    // Copy and convert vertex coordinates,
+    // internal representation as fixed.
+    for (i = 0; i < numvertexes; i++, li++, ml++)
+    {
+        li->x = SHORT(ml->x) << FRACBITS;
+        li->y = SHORT(ml->y) << FRACBITS;
+    }
+
+    // Free buffer memory.
+}
+
+//
+// loadSegs
+//
+void loadSegs(int lump)
+{
+    byte* data;
+    int i;
+    mapseg_t* ml;
+    seg_t* li;
+    line_t* ldef;
+    int linedef;
+    int side;
+
+    numsegs = W_LumpLength(lump) / sizeof(mapseg_t);
+    Doom::level().segs.assign(numsegs, seg_t {});
+    segs = Doom::level().segs.data();
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+
+    ml = (mapseg_t*) data;
+    li = segs;
+    for (i = 0; i < numsegs; i++, li++, ml++)
+    {
+        li->v1 = &vertexes[SHORT(ml->v1)];
+        li->v2 = &vertexes[SHORT(ml->v2)];
+
+        li->angle = (SHORT(ml->angle)) << 16;
+        li->offset = (SHORT(ml->offset)) << 16;
+        linedef = SHORT(ml->linedef);
+        ldef = &lines[linedef];
+        li->linedef = ldef;
+        side = SHORT(ml->side);
+        li->sidedef = &sides[ldef->sidenum[side]];
+        li->frontsector = sides[ldef->sidenum[side]].sector;
+        if (ldef->flags & ML_TWOSIDED)
+            li->backsector = sides[ldef->sidenum[side ^ 1]].sector;
+        else
+            li->backsector = 0;
+    }
+}
+
+//
+// loadSubsectors
+//
+void loadSubsectors(int lump)
+{
+    byte* data;
+    int i;
+    mapsubsector_t* ms;
+    subsector_t* ss;
+
+    numsubsectors = W_LumpLength(lump) / sizeof(mapsubsector_t);
+    Doom::level().subsectors.assign(numsubsectors, subsector_t {});
+    subsectors = Doom::level().subsectors.data();
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+
+    ms = (mapsubsector_t*) data;
+    ss = subsectors;
+
+    for (i = 0; i < numsubsectors; i++, ss++, ms++)
+    {
+        ss->numlines = SHORT(ms->numsegs);
+        ss->firstline = SHORT(ms->firstseg);
+    }
+}
+
+//
+// loadSectors
+//
+void loadSectors(int lump)
+{
+    byte* data;
+    int i;
+    mapsector_t* ms;
+    sector_t* ss;
+
+    numsectors = W_LumpLength(lump) / sizeof(mapsector_t);
+    Doom::level().sectors.assign(numsectors, sector_t {});
+    sectors = Doom::level().sectors.data();
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+
+    ms = (mapsector_t*) data;
+    ss = sectors;
+    for (i = 0; i < numsectors; i++, ss++, ms++)
+    {
+        ss->floorheight = SHORT(ms->floorheight) << FRACBITS;
+        ss->ceilingheight = SHORT(ms->ceilingheight) << FRACBITS;
+        ss->floorpic = R_FlatNumForName(ms->floorpic);
+        ss->ceilingpic = R_FlatNumForName(ms->ceilingpic);
+        ss->lightlevel = SHORT(ms->lightlevel);
+        ss->special = SHORT(ms->special);
+        ss->tag = SHORT(ms->tag);
+        ss->thinglist = 0;
+    }
+}
+
+//
+// loadNodes
+//
+void loadNodes(int lump)
+{
+    byte* data;
+    int i;
+    int j;
+    int k;
+    mapnode_t* mn;
+    node_t* no;
+
+    numnodes = W_LumpLength(lump) / sizeof(mapnode_t);
+    Doom::level().nodes.assign(numnodes, node_t {});
+    nodes = Doom::level().nodes.data();
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+
+    mn = (mapnode_t*) data;
+    no = nodes;
+
+    for (i = 0; i < numnodes; i++, no++, mn++)
+    {
+        no->x = SHORT(mn->x) << FRACBITS;
+        no->y = SHORT(mn->y) << FRACBITS;
+        no->dx = SHORT(mn->dx) << FRACBITS;
+        no->dy = SHORT(mn->dy) << FRACBITS;
+        for (j = 0; j < 2; j++)
+        {
+            no->children[j] = SHORT(mn->children[j]);
+            for (k = 0; k < 4; k++)
+                no->bbox[j][k] = SHORT(mn->bbox[j][k]) << FRACBITS;
+        }
+    }
+}
+
+//
+// loadThings
+//
+void loadThings(int lump)
+{
+    byte* data;
+    int i;
+    mapthing_t* mt;
+    int numthings;
+    doom_boolean spawn;
+
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    numthings = W_LumpLength(lump) / sizeof(mapthing_t);
+
+    mt = (mapthing_t*) data;
+    for (i = 0; i < numthings; i++, mt++)
+    {
+        spawn = true;
+
+        // Do not spawn cool, new monsters if !commercial
+        if (gamemode != commercial)
+        {
+            switch (mt->type)
+            {
+                case 68: // Arachnotron
+                case 64: // Archvile
+                case 88: // Boss Brain
+                case 89: // Boss Shooter
+                case 69: // Hell Knight
+                case 67: // Mancubus
+                case 71: // Pain Elemental
+                case 65: // Former Human Commando
+                case 66: // Revenant
+                case 84: // Wolf SS
+                    spawn = false;
+                    break;
+            }
+        }
+        if (spawn == false)
+            break;
+
+        // Do spawn all other stuff.
+        mt->x = SHORT(mt->x);
+        mt->y = SHORT(mt->y);
+        mt->angle = SHORT(mt->angle);
+        mt->type = SHORT(mt->type);
+        mt->options = SHORT(mt->options);
+
+        P_SpawnMapThing(mt);
+    }
+}
+
+//
+// loadLineDefs
+// Also counts secret lines for intermissions.
+//
+void loadLineDefs(int lump)
+{
+    byte* data;
+    int i;
+    maplinedef_t* mld;
+    line_t* ld;
+    vertex_t* v1;
+    vertex_t* v2;
+
+    numlines = W_LumpLength(lump) / sizeof(maplinedef_t);
+    Doom::level().lines.assign(numlines, line_t {});
+    lines = Doom::level().lines.data();
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+
+    mld = (maplinedef_t*) data;
+    ld = lines;
+    for (i = 0; i < numlines; i++, mld++, ld++)
+    {
+        ld->flags = SHORT(mld->flags);
+        ld->special = SHORT(mld->special);
+        ld->tag = SHORT(mld->tag);
+        v1 = ld->v1 = &vertexes[SHORT(mld->v1)];
+        v2 = ld->v2 = &vertexes[SHORT(mld->v2)];
+        ld->dx = v2->x - v1->x;
+        ld->dy = v2->y - v1->y;
+
+        if (!ld->dx)
+            ld->slopetype = ST_VERTICAL;
+        else if (!ld->dy)
+            ld->slopetype = ST_HORIZONTAL;
+        else
+        {
+            if (FixedDiv(ld->dy, ld->dx) > 0)
+                ld->slopetype = ST_POSITIVE;
+            else
+                ld->slopetype = ST_NEGATIVE;
+        }
+
+        if (v1->x < v2->x)
+        {
+            ld->bbox[BOXLEFT] = v1->x;
+            ld->bbox[BOXRIGHT] = v2->x;
+        }
+        else
+        {
+            ld->bbox[BOXLEFT] = v2->x;
+            ld->bbox[BOXRIGHT] = v1->x;
+        }
+
+        if (v1->y < v2->y)
+        {
+            ld->bbox[BOXBOTTOM] = v1->y;
+            ld->bbox[BOXTOP] = v2->y;
+        }
+        else
+        {
+            ld->bbox[BOXBOTTOM] = v2->y;
+            ld->bbox[BOXTOP] = v1->y;
+        }
+
+        ld->sidenum[0] = SHORT(mld->sidenum[0]);
+        ld->sidenum[1] = SHORT(mld->sidenum[1]);
+
+        if (ld->sidenum[0] != -1)
+            ld->frontsector = sides[ld->sidenum[0]].sector;
+        else
+            ld->frontsector = 0;
+
+        if (ld->sidenum[1] != -1)
+            ld->backsector = sides[ld->sidenum[1]].sector;
+        else
+            ld->backsector = 0;
+    }
+}
+
+//
+// loadSideDefs
+//
+void loadSideDefs(int lump)
+{
+    byte* data;
+    int i;
+    mapsidedef_t* msd;
+    side_t* sd;
+
+    numsides = W_LumpLength(lump) / sizeof(mapsidedef_t);
+    Doom::level().sides.assign(numsides, side_t {});
+    sides = Doom::level().sides.data();
+    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+
+    msd = (mapsidedef_t*) data;
+    sd = sides;
+    for (i = 0; i < numsides; i++, msd++, sd++)
+    {
+        sd->textureoffset = SHORT(msd->textureoffset) << FRACBITS;
+        sd->rowoffset = SHORT(msd->rowoffset) << FRACBITS;
+        sd->toptexture = R_TextureNumForName(msd->toptexture);
+        sd->bottomtexture = R_TextureNumForName(msd->bottomtexture);
+        sd->midtexture = R_TextureNumForName(msd->midtexture);
+        sd->sector = &sectors[SHORT(msd->sector)];
+    }
+}
+
+//
+// loadBlockMap
+//
+void loadBlockMap(int lump)
+{
+    int i;
+    int count;
+
+    blockmaplump = (short*) (W_CacheLumpNum(lump, PU_LEVEL));
+    count = W_LumpLength(lump) / 2;
+
+    for (i = 0; i < count; i++)
+        blockmaplump[i] = SHORT(blockmaplump[i]);
+
+    // Fill the Level's blockmap descriptor from the lump header, then refresh the
+    // vanilla globals as views onto it.
+    Doom::Blockmap& bmap = Doom::level().blockmap;
+    bmap.lump = blockmaplump;
+    bmap.offsets = blockmaplump + 4;
+    bmap.origin = {Doom::Fixed {blockmaplump[0] << FRACBITS},
+                   Doom::Fixed {blockmaplump[1] << FRACBITS}};
+    bmap.width = blockmaplump[2];
+    bmap.height = blockmaplump[3];
+
+    blockmap = bmap.offsets;
+    bmaporgx = bmap.origin.x.raw;
+    bmaporgy = bmap.origin.y.raw;
+    bmapwidth = bmap.width;
+    bmapheight = bmap.height;
+
+    // clear out mobj chains. The array is the Level's; the mobjs it will point at
+    // are the zone's.
+    Doom::level().blockLinks.assign((std::size_t) (bmapwidth * bmapheight), nullptr);
+    blocklinks = Doom::level().blockLinks.data();
+}
+
+//
+// groupLines
+// Builds sector line lists and subsector sector numbers.
+// Finds block bounding boxes for sectors.
+//
+void groupLines(void)
+{
+    line_t** linebuffer;
+    int i;
+    int j;
+    int total;
+    line_t* li;
+    sector_t* sector;
+    subsector_t* ss;
+    seg_t* seg;
+    fixed_t bbox[4];
+    int block;
+
+    // look up sector number for each subsector
+    ss = subsectors;
+    for (i = 0; i < numsubsectors; i++, ss++)
+    {
+        seg = &segs[ss->firstline];
+        ss->sector = seg->sidedef->sector;
+    }
+
+    // count number of lines in each sector
+    li = lines;
+    total = 0;
+    for (i = 0; i < numlines; i++, li++)
+    {
+        total++;
+        li->frontsector->linecount++;
+
+        if (li->backsector && li->backsector != li->frontsector)
+        {
+            li->backsector->linecount++;
+            total++;
+        }
+    }
+
+    // build line tables for each sector. One flat array carved into per-sector
+    // slices, owned by the Level (Sim/Level.h); linebuffer walks it as vanilla's
+    // did, and sector->lines points into it.
+    Doom::level().sectorLines.assign((std::size_t) total, nullptr);
+    linebuffer = Doom::level().sectorLines.data();
+    sector = sectors;
+    for (i = 0; i < numsectors; i++, sector++)
+    {
+        M_ClearBox(bbox);
+        sector->lines = linebuffer;
+        li = lines;
+        for (j = 0; j < numlines; j++, li++)
+        {
+            if (li->frontsector == sector || li->backsector == sector)
+            {
+                *linebuffer++ = li;
+                M_AddToBox(bbox, li->v1->x, li->v1->y);
+                M_AddToBox(bbox, li->v2->x, li->v2->y);
+            }
+        }
+        if (linebuffer - sector->lines != sector->linecount)
+            I_Error("Error: groupLines: miscounted");
+
+        // set the degenmobj_t to the middle of the bounding box
+        sector->soundorg.x = (bbox[BOXRIGHT] + bbox[BOXLEFT]) / 2;
+        sector->soundorg.y = (bbox[BOXTOP] + bbox[BOXBOTTOM]) / 2;
+
+        // adjust bounding box to map blocks
+        block = (bbox[BOXTOP] - bmaporgy + MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = block >= bmapheight ? bmapheight - 1 : block;
+        sector->blockbox[BOXTOP] = block;
+
+        block = (bbox[BOXBOTTOM] - bmaporgy - MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = block < 0 ? 0 : block;
+        sector->blockbox[BOXBOTTOM] = block;
+
+        block = (bbox[BOXRIGHT] - bmaporgx + MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = block >= bmapwidth ? bmapwidth - 1 : block;
+        sector->blockbox[BOXRIGHT] = block;
+
+        block = (bbox[BOXLEFT] - bmaporgx - MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = block < 0 ? 0 : block;
+        sector->blockbox[BOXLEFT] = block;
+    }
+}
+
+//
+// setupLevel
+//
+void setupLevel(int episode, int map, int, skill_t)
+{
+    int i;
+    char lumpname[9];
+    int lumpnum;
+
+    totalkills = totalitems = totalsecret = wminfo.maxfrags = 0;
+    wminfo.partime = 180;
+    for (i = 0; i < MAXPLAYERS; i++)
+    {
+        players[i].killcount = players[i].secretcount = players[i].itemcount = 0;
+    }
+
+    // Initial height of PointOfView
+    // will be set by player think.
+    players[consoleplayer].viewz = 1;
+
+    // Make sure all sounds are stopped before Z_FreeTags.
+    S_Start();
+
+    Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+
+    // UNUSED W_Profile ();
+    P_InitThinkers();
+
+    // if working with a devlopment map, reload it
+    W_Reload();
+
+    // find map name
+    if (gamemode == commercial)
+    {
+        if (map < 10)
+        {
+            //doom_sprintf(lumpname, "map0%i", map);
+            doom_strcpy(lumpname, "map0");
+            doom_concat(lumpname, doom_itoa(map, 10));
+        }
+        else
+        {
+            //doom_sprintf(lumpname, "map%i", map);
+            doom_strcpy(lumpname, "map");
+            doom_concat(lumpname, doom_itoa(map, 10));
+        }
+    }
+    else
+    {
+        lumpname[0] = 'E';
+        lumpname[1] = '0' + episode;
+        lumpname[2] = 'M';
+        lumpname[3] = '0' + map;
+        lumpname[4] = 0;
+    }
+
+    lumpnum = W_GetNumForName(lumpname);
+
+    leveltime = 0;
+
+    // note: most of this ordering is important
+    loadBlockMap(lumpnum + ML_BLOCKMAP);
+    loadVertexes(lumpnum + ML_VERTEXES);
+    loadSectors(lumpnum + ML_SECTORS);
+    loadSideDefs(lumpnum + ML_SIDEDEFS);
+
+    loadLineDefs(lumpnum + ML_LINEDEFS);
+    loadSubsectors(lumpnum + ML_SSECTORS);
+    loadNodes(lumpnum + ML_NODES);
+    loadSegs(lumpnum + ML_SEGS);
+
+    rejectmatrix = (byte*) (W_CacheLumpNum(lumpnum + ML_REJECT, PU_LEVEL));
+    groupLines();
+
+    bodyqueslot = 0;
+    deathmatch_p = deathmatchstarts;
+    loadThings(lumpnum + ML_THINGS);
+
+    // if deathmatch, randomly spawn the active players
+    if (deathmatch)
+    {
+        for (i = 0; i < MAXPLAYERS; i++)
+            if (playeringame[i])
+            {
+                players[i].mo = 0;
+                G_DeathMatchSpawnPlayer(i);
+            }
+    }
+
+    // clear special respawning que
+    iquehead = iquetail = 0;
+
+    // set up world state
+    P_SpawnSpecials();
+
+    // preload graphics
+    if (precache)
+        R_PrecacheLevel();
+}
+
+//
+// init
+//
+void init(void)
+{
+    P_InitSwitchList();
+    P_InitPicAnims();
+    R_InitSprites(sprnames);
+}
+} // namespace Doom
