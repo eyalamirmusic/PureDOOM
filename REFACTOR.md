@@ -52,6 +52,60 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
 
+## Where this is — session handoff
+
+Everything below is committed on branch **`C++Refactor`**; the working tree is
+clean and the suite is green (**63 tests**, ~2s: `ctest --test-dir build`). Steps
+0–3 are complete; 4's payoff is delivered; 5 and 6 are underway.
+
+**What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
+everything else is still vanilla C compiled as C++ under `-w`):
+
+- `Math/` — `Fixed`, `Angle`, `Trig`, `BBox`, `Vec2`.
+- `Sim/` — `Random`, `Level` (level geometry, RAII), `MapGeometry`
+  (`pointOnLineSide` / `pointOnDivlineSide` / `interceptVector`).
+- `Wad/` — `WadFile` (owns lumps, RAII).
+- `Engine/` — `Engine`, the composition root owning `Random`/`WadFile`/`Level`;
+  `randomness()`/`wad()`/`level()` are accessors into the one `engine()`.
+
+Everywhere the vanilla API survives (`FixedMul`, `finesine`, `P_Random`,
+`W_CacheLumpNum`, `vertexes`, `P_PointOnLineSide`, …) it is a **shim/view** over
+those owners, not a second implementation — so the new code sits on the critical
+path of every demo and cannot go untested.
+
+**The immediate next step** (continuing Step 6, `p_maputl` → `p_map`):
+
+1. The stateful half of `p_maputl` — the blockmap iterators
+   (`P_BlockLinesIterator`/`P_BlockThingsIterator`, function-pointer callbacks →
+   consider lambdas), thing-position linking (`P_SetThingPosition`/`Unset`),
+   `P_PathTraverse`, `P_LineOpening`. These read live level state, so they need the
+   **scenario-test harness** below.
+2. **Build the scenario-test harness**: probe API to load a level, spawn/place a
+   mobj, call `P_TryMove`/`P_CheckPosition`, and read the result. This is the real
+   enabler for the rest of the playsim, and it rests on the multi-scenario replay
+   capability proven in Step 4 (`Tests/Sim/ReplayTests.cpp` shows the pattern —
+   boot once, load a level, reset by loading again).
+3. Then `p_map` (`P_TryMove`) itself, under that harness.
+
+**How to verify, every step** (nothing here re-records goldens):
+
+```bash
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
+cmake --build build
+ctest --test-dir build --output-on-failure     # 63 tests, ~2s
+git diff --stat Tests/Goldens/                 # MUST be empty
+cmake --build build --target PureDoomEACP      # app still links (touches EngineAccess)
+```
+
+`-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives the fast engine-only loop.
+
+**Traps already paid for, do not rediscover:** `doom_boolean` must stay `int` (not
+`bool`); `pointOnLineSide` and `pointOnDivlineSide` are different formulae on
+purpose; deleting a statement can silently orphan an unbraced `if`/`for` body;
+changing a renderer allocator re-triggers tutti-frutti on composite pixel blocks;
+the engine cannot re-`doom_init` but does not need to. All detailed in the step
+notes below and in `CLAUDE.md`'s load-bearing-quirks list.
+
 ## Step 0 — Widen the net, then freeze it
 
 The tic hash watches the simulation and nothing else. The renderer, the WAD
