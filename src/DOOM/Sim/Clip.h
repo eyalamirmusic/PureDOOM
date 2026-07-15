@@ -68,6 +68,12 @@ struct Clip
     // p_pspr read both; the rest of the attack scratch is file-local to MapAction.
     mobj_t* linetarget = nullptr;
     fixed_t attackrange = 0;
+
+    // The slope window narrowed as a trace crosses two-sided lines. DOOM reuses one
+    // pair for two jobs it never runs at once: the auto-aim in MapAction and the
+    // line-of-sight check in Sight. Both write and read them here.
+    fixed_t topslope = 0;
+    fixed_t bottomslope = 0;
 };
 
 // The one Clip, a view onto the Engine's member - the same pattern as level(),

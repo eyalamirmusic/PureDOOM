@@ -14,12 +14,6 @@
 #include "MapUtil.h"
 #include "Movement.h"
 
-// topslope / bottomslope are p_sight's globals (::topslope), shared with the aim
-// trace; declared at global scope so the aim code below binds to p_sight's, not a
-// Doom:: copy. They move into their owner when p_sight is rewritten.
-extern fixed_t topslope;
-extern fixed_t bottomslope;
-
 namespace Doom
 {
 namespace
@@ -184,18 +178,18 @@ doom_boolean aimTraverse(intercept_t* in)
         if (li->frontsector->floorheight != li->backsector->floorheight)
         {
             slope = FixedDiv(clip.openbottom - shootz, dist);
-            if (slope > bottomslope)
-                bottomslope = slope;
+            if (slope > clip.bottomslope)
+                clip.bottomslope = slope;
         }
 
         if (li->frontsector->ceilingheight != li->backsector->ceilingheight)
         {
             slope = FixedDiv(clip.opentop - shootz, dist);
-            if (slope < topslope)
-                topslope = slope;
+            if (slope < clip.topslope)
+                clip.topslope = slope;
         }
 
-        if (topslope <= bottomslope)
+        if (clip.topslope <= clip.bottomslope)
             return false; // stop
 
         return true; // shot continues
@@ -213,20 +207,20 @@ doom_boolean aimTraverse(intercept_t* in)
     dist = FixedMul(clip.attackrange, in->frac);
     thingtopslope = FixedDiv(th->z + th->height - shootz, dist);
 
-    if (thingtopslope < bottomslope)
+    if (thingtopslope < clip.bottomslope)
         return true; // shot over the thing
 
     thingbottomslope = FixedDiv(th->z - shootz, dist);
 
-    if (thingbottomslope > topslope)
+    if (thingbottomslope > clip.topslope)
         return true; // shot under the thing
 
     // this thing can be hit!
-    if (thingtopslope > topslope)
-        thingtopslope = topslope;
+    if (thingtopslope > clip.topslope)
+        thingtopslope = clip.topslope;
 
-    if (thingbottomslope < bottomslope)
-        thingbottomslope = bottomslope;
+    if (thingbottomslope < clip.bottomslope)
+        thingbottomslope = clip.bottomslope;
 
     aimslope = (thingtopslope + thingbottomslope) / 2;
     clip.linetarget = th;
@@ -625,8 +619,8 @@ fixed_t aimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance)
     shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
 
     // can't shoot outside view angles
-    topslope = 100 * FRACUNIT / 160;
-    bottomslope = -100 * FRACUNIT / 160;
+    clip.topslope = 100 * FRACUNIT / 160;
+    clip.bottomslope = -100 * FRACUNIT / 160;
 
     clip.attackrange = distance;
     clip.linetarget = 0;
