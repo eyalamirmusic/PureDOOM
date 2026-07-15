@@ -38,6 +38,7 @@
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
 #include "../Sim/ValidCount.h"
+#include "../UI/AutomapView.h"
 #include "../UI/HudChat.h"
 #include "../UI/HudMessage.h"
 #include "../UI/HudState.h"
@@ -106,6 +107,7 @@ struct Engine
     HudMessage hudMessage;
     HudChat hudChat;
     HudState hudState;
+    AutomapView automapView;
     StatusBarFace statusBarFace;
     StatusBarGraphics statusBarGraphics;
     StatusBarState statusBarState;

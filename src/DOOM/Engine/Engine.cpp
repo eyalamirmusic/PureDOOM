@@ -225,6 +225,11 @@ HudState& hudState()
     return engine().hudState;
 }
 
+AutomapView& automapView()
+{
+    return engine().automapView;
+}
+
 StatusBarFace& statusBarFace()
 {
     return engine().statusBarFace;

@@ -44,6 +44,7 @@
 #include "../w_wad.h"
 
 #include "Automap.h"
+#include "AutomapView.h"
 
 namespace Doom
 {
@@ -126,63 +127,70 @@ mline_t triangle_guy[] = {{{(fixed_t) (-.867 * R), (fixed_t) (-.5 * R)},
 #undef R
 #define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(mline_t))
 
-static int leveljuststarted = 1; // kluge until amLevelInit() is called
+// The automap's internal view state is a Doom::AutomapView owned by the Engine now, moved by the
+// file-scope-statics sweep; these names are references onto the members, the arrays as
+// references-to-array (REFACTOR.md, Step 5). The "iddt" cheat below stays a file-local static.
+static int& leveljuststarted =
+    automapView().leveljuststarted; // kluge until AM_LevelInit
 
-static int finit_width = SCREENWIDTH;
-static int finit_height = SCREENHEIGHT - 32;
+static int& finit_width = automapView().finit_width;
+static int& finit_height = automapView().finit_height;
 
-// location of window on screen
+static byte*& fb = automapView().fb; // pseudo-frame buffer
+static int& amclock = automapView().amclock;
 
-// size of window on screen
+static mpoint_t& m_paninc =
+    automapView().m_paninc; // window pan per tic (map coords)
+static fixed_t& mtof_zoommul =
+    automapView().mtof_zoommul; // window zoom per tic (map)
+static fixed_t& ftom_zoommul =
+    automapView().ftom_zoommul; // window zoom per tic (fb)
 
-static byte* fb; // pseudo-frame buffer
-static int amclock;
-
-static mpoint_t m_paninc; // how far the window pans each tic (map coords)
-static fixed_t mtof_zoommul; // how far the window zooms in each tic (map coords)
-static fixed_t ftom_zoommul; // how far the window zooms in each tic (fb coords)
-
-static fixed_t m_x2, m_y2; // UR x,y where the window is on the map (map coords)
+static fixed_t& m_x2 =
+    automapView().m_x2; // UR corner where the window is (map coords)
+static fixed_t& m_y2 = automapView().m_y2;
 
 //
 // width/height of window on map (map coords)
 //
 
 // based on level size
-static fixed_t min_x;
-static fixed_t min_y;
-static fixed_t max_x;
-static fixed_t max_y;
+static fixed_t& min_x = automapView().min_x;
+static fixed_t& min_y = automapView().min_y;
+static fixed_t& max_x = automapView().max_x;
+static fixed_t& max_y = automapView().max_y;
 
-static fixed_t max_w; // max_x-min_x,
-static fixed_t max_h; // max_y-min_y
+static fixed_t& max_w = automapView().max_w; // max_x-min_x,
+static fixed_t& max_h = automapView().max_h; // max_y-min_y
 
 // based on player size
-static fixed_t min_w;
-static fixed_t min_h;
+static fixed_t& min_w = automapView().min_w;
+static fixed_t& min_h = automapView().min_h;
 
-static fixed_t min_scale_mtof; // used to tell when to stop zooming out
-static fixed_t max_scale_mtof; // used to tell when to stop zooming in
+static fixed_t& min_scale_mtof = automapView().min_scale_mtof; // stop zooming out
+static fixed_t& max_scale_mtof = automapView().max_scale_mtof; // stop zooming in
 
 // old stuff for recovery later
-static fixed_t old_m_w, old_m_h;
-static fixed_t old_m_x, old_m_y;
+static fixed_t& old_m_w = automapView().old_m_w;
+static fixed_t& old_m_h = automapView().old_m_h;
+static fixed_t& old_m_x = automapView().old_m_x;
+static fixed_t& old_m_y = automapView().old_m_y;
 
 // old location used by the Follower routine
-static mpoint_t f_oldloc;
+static mpoint_t& f_oldloc = automapView().f_oldloc;
 
-// used by MTOF to scale from map-to-frame-buffer coords
-// used by FTOM to scale from frame-buffer-to-map coords (=1/scale_mtof)
-static fixed_t scale_ftom;
+// used by MTOF/FTOM to scale between map and frame-buffer coords (=1/scale_mtof)
+static fixed_t& scale_ftom = automapView().scale_ftom;
 
-static patch_t* marknums[10]; // numbers used for marking by the automap
-static mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
-static int markpointnum = 0; // next point to be assigned
+static patch_t* (&marknums)[10] = automapView().marknums; // mark-number patches
+static mpoint_t (&markpoints)[AM_NUMMARKPOINTS] =
+    automapView().markpoints; // the marks
+static int& markpointnum = automapView().markpointnum; // next point to be assigned
 
 static unsigned char cheat_amap_seq[] = {0xb2, 0x26, 0x26, 0x2e, 0xff};
 static cheatseq_t cheat_amap = {cheat_amap_seq, 0};
 
-static doom_boolean stopped = true;
+static doom_boolean& stopped = automapView().stopped;
 
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so

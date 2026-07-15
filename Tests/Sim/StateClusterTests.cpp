@@ -70,6 +70,10 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
     check(StatusBarState {}.veryfirsttime == 1
               && StatusBarState {}.st_stopped == true,
           "StatusBarState one-time gate and parked flag");
+    check(AutomapView {}.leveljuststarted == 1 && AutomapView {}.stopped == true
+              && AutomapView {}.finit_width == SCREENWIDTH
+              && AutomapView {}.finit_height == SCREENHEIGHT - 32,
+          "AutomapView kluge flag, closed flag and frame size");
 };
 
 // The free accessors are views onto the one Engine's members, the same property EngineTests pins
@@ -88,5 +92,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&statusBarGraphics() == &engine().statusBarGraphics,
           "statusBarGraphics()");
     check(&statusBarState() == &engine().statusBarState, "statusBarState()");
+    check(&automapView() == &engine().automapView, "automapView()");
 };
 } // namespace
