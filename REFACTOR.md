@@ -48,9 +48,9 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`; `Clip` now holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`) |
-| 6 | The playsim | **nearly done** — the mobj/movement/combat/AI core *and* the specials cluster are all modern C++ in `namespace Doom`: the actor files (`p_maputl`→`MapUtil`, `p_map`→`Movement`+`MapAction`, `p_sight`→`Sight`, `p_inter`→`Interaction`, `p_user`→`Player`, `p_mobj`→`Mobj`, `p_pspr`→`Weapon`, `p_enemy`→`Enemy`), the specials (`p_lights`/`p_plats`/`p_ceilng`/`p_floor`/`p_doors`/`p_switch`/`p_telept`/`p_spec` → `Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), and `p_tick`→`Tick`. The `thinker_t` union is kept (the `T_*`/`P_MobjThinker` addresses stay global shims, so p_saveg's pointer-identity serialisation is untouched). What's left of the playsim: `p_setup` (level load) and `p_saveg` |
+| 6 | The playsim | **done** (modulo the deferred `Thinker` virtualisation) — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` is deferred to Step 8 |
 | 7 | The renderer | |
-| 8 | UI, game loop, host boundary | |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | |
 
 ## Where this is — session handoff
 
