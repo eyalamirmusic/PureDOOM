@@ -738,6 +738,31 @@ transparent to every reader, so the breadth costs nothing.
   (`leveltime`). Unlike the renderer clusters these values *are* mixed into the simulation
   probe's hash — but a reference reads the identical value, so the move is golden-neutral
   all the same, which the demos confirm.
+- **`LaunchOptions`** (`Game/LaunchOptions.h`) — the command-line launch flags, doomstat's
+  first section: `nomonsters` (-nomonsters), `respawnparm` (-respawn), `fastparm` (-fast)
+  and `devparm` (-devparm). Defined in `Game/DoomMain.cpp` above its namespace, externed
+  only in `doomstat.h`. The three gameplay modifiers feed the playsim, so they are
+  indirectly on the hash's path — golden-neutral through the reference, as ever.
+- **`GameVersion`** (`Game/GameVersion.h`) — the loaded game's identity, doomstat's "Game
+  Mode" and "Language" sections: `gamemode` (shareware/registered/retail/commercial),
+  `gamemission` (the mission pack), `modifiedgame` (a PWAD has been layered on) and
+  `language` (the string-table selector). These were the whole content of `Game/State.cpp`
+  (the flat `doomstat`→`Game/State` file); its four `::`-scoped definitions become
+  references, read unchanged by the ~17 files that use them. None is hashed.
+- **`GameSession`** (`Game/GameSession.h`) — the current game's rules, doomstat's "Selected
+  by user" skill/map selection and the net flags beside it: `gameskill`/`gameepisode`/
+  `gamemap`, `respawnmonsters` (the dead come back), `netgame` and `deathmatch`. Defined in
+  `Game/Game.cpp` above its namespace. respawnmonsters/netgame/deathmatch steer the
+  simulation, so they are indirectly on the hash's path.
+- **`StartupDefaults`** (`Game/StartupDefaults.h`) — the new-game defaults, doomstat's
+  "Defaults for menu" half of the skill/map section: `startskill`/`startepisode`/`startmap`
+  (filled by -skill / -episode / -warp) and `autostart` (the command line asked for a
+  specific start). Defined in `Game/DoomMain.cpp` above its namespace. None is hashed.
+
+Each was externed only in `doomstat.h` (no cross-file `extern` to keep in step), so each is
+the same three-touch move `LevelStats` was: the header struct, the `Engine` member and
+accessor, and the definition line becoming a reference — verified by ctest + goldens-clean
++ app-link.
 
 ## Step 6 — The playsim
 
