@@ -37,10 +37,10 @@
 
 
 // a weapon is found with two clip loads, a big item has five clip loads
-// maxammo is a Doom::AmmoLimits owned by the Engine now; this is a reference-to-array onto
-// it (REFACTOR.md, Step 5).
+// The ammo tables (maxammo carry caps, clipammo pickup amounts) are a Doom::AmmoLimits owned
+// by the Engine now; these are references-to-array onto it (REFACTOR.md, Step 5).
 int (&maxammo)[NUMAMMO] = Doom::ammoLimits().maxammo;
-int clipammo[NUMAMMO] = {10, 4, 20, 1};
+int (&clipammo)[NUMAMMO] = Doom::ammoLimits().clipammo;
 
 
 void P_TouchSpecialThing(mobj_t* special, mobj_t* toucher)
