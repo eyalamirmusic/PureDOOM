@@ -450,6 +450,51 @@ void doomSimSetMobjFlags(int handle, int flags)
         mobj->flags = flags;
 }
 
+// P_BlockThingsIterator takes a bare function pointer, so the count rides a file
+// static rather than a lambda capture. One process per test (NanoTest), and the
+// probe is single-threaded, so the static is safe.
+static int simBlockThingCount;
+
+static doom_boolean simCountThing(mobj_t*)
+{
+    ++simBlockThingCount;
+    return (doom_boolean) 1;
+}
+
+int doomSimThingsInBlockOf(int handle)
+{
+    mobj_t* mobj = simMobj(handle);
+
+    if (!mobj)
+        return -1;
+
+    if (setjmp(simAbort))
+        return -1;
+
+    int blockx = (mobj->x - bmaporgx) >> MAPBLOCKSHIFT;
+    int blocky = (mobj->y - bmaporgy) >> MAPBLOCKSHIFT;
+
+    simBlockThingCount = 0;
+    P_BlockThingsIterator(blockx, blocky, simCountThing);
+    return simBlockThingCount;
+}
+
+void doomSimUnsetThingPosition(int handle)
+{
+    mobj_t* mobj = simMobj(handle);
+
+    if (mobj)
+        P_UnsetThingPosition(mobj);
+}
+
+void doomSimSetThingPosition(int handle)
+{
+    mobj_t* mobj = simMobj(handle);
+
+    if (mobj)
+        P_SetThingPosition(mobj);
+}
+
 int doomSimTypeBarrel(void)
 {
     return MT_BARREL;

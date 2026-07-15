@@ -85,8 +85,7 @@ auto tThingBlocksAndNoClipBypasses =
 // the barrel sits 40 units east (past the 26-unit combined radius, so the player
 // still stands legally at its start), and the move onto it is stopped by the
 // thing, whatever is or isn't behind it.
-auto tBlockedTryMoveDoesNotMove =
-    test("Sim/scenarioBlockedTryMoveDoesNotMove") = []
+auto tBlockedTryMoveDoesNotMove = test("Sim/scenarioBlockedTryMoveDoesNotMove") = []
 {
     check(loadE1M1(), "E1M1 loaded and the player spawned");
 
@@ -103,7 +102,8 @@ auto tBlockedTryMoveDoesNotMove =
     check(doomSimCheckPosition(player, sx, sy) == 1,
           "the barrel is far enough that the player still stands legally");
 
-    check(doomSimTryMove(player, bx, by) == 0, "the move onto the barrel is blocked");
+    check(doomSimTryMove(player, bx, by) == 0,
+          "the move onto the barrel is blocked");
 
     check(doomSimMobjX(player) == sx && doomSimMobjY(player) == sy,
           "a blocked move left the player exactly where it was");
@@ -154,5 +154,40 @@ auto tLegalTryMoveCommits = test("Sim/scenarioLegalTryMoveCommits") = []
     check(doomSimTryMove(player, sx, sy) == 1, "stepping back succeeds");
     check(doomSimMobjX(player) == sx && doomSimMobjY(player) == sy,
           "the player is back at its start");
+};
+
+// The blockmap linking the collision code stands on, read directly. A spawned
+// thing is linked into its blockmap cell by P_SetThingPosition and found there by
+// P_BlockThingsIterator; unlinking it takes it back out; relinking puts it back.
+// The demos exercise all three thousands of times per replay - this is the
+// locality that says which one broke. Geometry-free: two barrels share the
+// player's start cell and the count moves by exactly one as the second is linked,
+// unlinked and relinked, whatever the surrounding map.
+auto tThingLinkingAndBlockmap = test("Sim/scenarioThingLinkingAndBlockmap") = []
+{
+    check(loadE1M1(), "E1M1 loaded and the player spawned");
+
+    auto player = doomSimPlayerHandle();
+    auto sx = doomSimMobjX(player);
+    auto sy = doomSimMobjY(player);
+
+    auto first = doomSimSpawnMobj(doomSimTypeBarrel(), sx, sy, doomSimOnFloorZ());
+    check(first > 0, "a first barrel spawned on the player's cell");
+
+    auto base = doomSimThingsInBlockOf(first);
+    check(base >= 1, "the iterator finds the barrel P_SetThingPosition linked in");
+
+    auto second = doomSimSpawnMobj(doomSimTypeBarrel(), sx, sy, doomSimOnFloorZ());
+    check(second > 0, "a second barrel spawned on the same cell");
+    check(doomSimThingsInBlockOf(second) == base + 1,
+          "linking the second barrel raised the cell's count by one");
+
+    doomSimUnsetThingPosition(second);
+    check(doomSimThingsInBlockOf(first) == base,
+          "P_UnsetThingPosition took it back out of the cell");
+
+    doomSimSetThingPosition(second);
+    check(doomSimThingsInBlockOf(first) == base + 1,
+          "P_SetThingPosition relinked it into the cell");
 };
 } // namespace

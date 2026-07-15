@@ -48,7 +48,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`; scalar clusters move in with Steps 6–8 |
-| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core (`p_maputl` side/intercept/distance/opening helpers) rewritten with unit tests; the scenario-test harness (place a mobj, drive `P_TryMove`/`P_CheckPosition`) is built and proven to bite |
+| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core (`p_maputl` side/intercept/distance/opening helpers) rewritten with unit tests; the scenario-test harness (place a mobj, drive `P_TryMove`/`P_CheckPosition`, read blockmap linking) is built and proven to bite |
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
 
@@ -90,10 +90,13 @@ harness in hand:
 1. The stateful half of `p_maputl` — the blockmap iterators
    (`P_BlockLinesIterator`/`P_BlockThingsIterator`, function-pointer callbacks →
    consider lambdas), thing-position linking (`P_SetThingPosition`/`Unset`),
-   `P_PathTraverse` — rewritten in `namespace Doom`, tested with the harness for
-   locality. (`P_LineOpening`'s pure core and `P_AproxDistance` are already extracted
-   into `MapGeometry.h` — see below; the iterators, thing-linking and path traversal
-   are the genuinely stateful remainder, which is what the harness was built for.)
+   `P_PathTraverse`. The **net is now in place**: `P_LineOpening`'s pure core and
+   `P_AproxDistance` are already extracted into `MapGeometry.h` with unit tests, and
+   scenario tests pin the thing-position linking and `P_BlockThingsIterator` with
+   locality (see below). What remains is the wholesale rewrite of the file into
+   modern C++ and its flip out of the `-w` blanket — a per-file move, so the whole
+   of `p_maputl.cpp` (the still-stateful iterators, intercepts and `P_PathTraverse`)
+   goes at once, with the demos and these scenario tests holding it bit-identical.
 2. Then `p_map` (`P_TryMove`, `P_CheckPosition`) itself — the scenario tests above
    pin it directly and specifically now.
 
@@ -623,9 +626,10 @@ accessors (`doomSimTypeBarrel`, `doomSimOnFloorZ`, `doomSimFlagNoClip`). It rest
 on the multi-scenario capability Step 4 proved: a level load resets the world
 cleanly, so a scenario runs on a fresh world in the same process.
 
-`Tests/Sim/ScenarioTests.cpp` pins three collision facts the demos only prove in
-aggregate, **two of them without any reference to the map's geometry** — they
-follow from the collision code, not from where E1M1's walls happen to be:
+`Tests/Sim/ScenarioTests.cpp` pins four playsim facts the demos only prove in
+aggregate, **three of them without any reference to the map's geometry** — they
+follow from the collision and linking code, not from where E1M1's walls happen to
+be:
 
 - a solid barrel dropped exactly on the player's own start flips `P_CheckPosition`
   from legal to illegal, and `MF_NOCLIP` flips it back — isolating thing collision
@@ -635,20 +639,31 @@ follow from the collision code, not from where E1M1's walls happen to be:
   rewrite is likeliest to break subtly;
 - a legal `P_TryMove`, into a spot *discovered* clear by asking `P_CheckPosition`
   rather than assuming one, commits the new position, and the round trip back
-  proves it was a real move and not a no-op.
+  proves it was a real move and not a no-op;
+- the blockmap linking under all of it, read directly: two barrels share the
+  player's start cell, and the count `P_BlockThingsIterator` finds there moves by
+  exactly one as the second is linked (`P_SetThingPosition`), unlinked
+  (`P_UnsetThingPosition`) and relinked — the locality that says *which* of the
+  three broke, where the demos only say the world moved.
 
 Each was shown to bite by mutation: making `PIT_CheckThing` never block fails the
 first two; removing the position commit in `P_TryMove` fails the third's commit
 assertion while its "the move succeeds" assertion still passes — so it pins the
-commit specifically. (A cautionary detour worth recording: the first attempt to
-prove the commit case mutated the *earlier* occurrence of `thing->x = x;`, which is
-in `P_TeleportMove`, not `P_TryMove` — the net only looks like it bites if you make
+commit specifically; skipping the blockmap link in `P_SetThingPosition` fails the
+fourth, and a no-op `P_UnsetThingPosition` breaks it too (the relink then splices
+the barrel into the cell twice and the iterator loops — the corruption a real
+unlink prevents). (A cautionary detour worth recording: the first attempt to prove
+the commit case mutated the *earlier* occurrence of `thing->x = x;`, which is in
+`P_TeleportMove`, not `P_TryMove` — the net only looks like it bites if you make
 sure the mutation lands where you think. Prove it, don't trust it.) Nothing here
 touches a golden or the append-only probe hash; it is purely additive.
 
-Next in the module: the stateful half of `p_maputl` (the blockmap iterators, the
-thing-position linking, `P_PathTraverse`) and then `p_map` (`P_TryMove`,
-`P_CheckPosition`), which the scenario tests now pin directly.
+Next in the module, now netted for locality: the wholesale rewrite of the stateful
+half of `p_maputl` into modern C++ (the blockmap iterators — function-pointer
+callbacks → lambdas — the thing-position linking, the intercept routines and
+`P_PathTraverse`), which flips the whole file out of the `-w` blanket and under
+`clang-format`, and then `p_map` (`P_TryMove`, `P_CheckPosition`) itself, which the
+scenario tests pin directly.
 
 ## Step 7 — The renderer
 

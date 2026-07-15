@@ -157,10 +157,20 @@ extern "C"
     int doomSimMobjFlags(int handle);
     void doomSimSetMobjFlags(int handle, int flags);
 
+    // The stateful map-utility functions, exposed so a scenario can pin them with
+    // locality rather than only through the collision they feed. A thing is linked
+    // into a blockmap cell (P_SetThingPosition) and found there by the iterator
+    // (P_BlockThingsIterator); unlinking it (P_UnsetThingPosition) takes it back
+    // out. doomSimThingsInBlockOf counts what the iterator finds in the cell that
+    // holds a handle's mobj, so a test reads the link/unlink as a count that moves.
+    int doomSimThingsInBlockOf(int handle);
+    void doomSimUnsetThingPosition(int handle);
+    void doomSimSetThingPosition(int handle);
+
     // Named constants, so a scenario test stays free of DOOM's enums (info.h,
     // p_mobj.h). Add more here as scenarios need them.
     int doomSimTypeBarrel(void); // MT_BARREL: solid, shootable, radius 10
-    int doomSimOnFloorZ(void);   // ONFLOORZ, the "rest on the floor" spawn z
+    int doomSimOnFloorZ(void); // ONFLOORZ, the "rest on the floor" spawn z
     int doomSimFlagNoClip(void); // MF_NOCLIP
 
 #ifdef __cplusplus
