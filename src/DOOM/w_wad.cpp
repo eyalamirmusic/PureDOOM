@@ -80,7 +80,7 @@ int W_CheckNumForName(const char* name)
     return Doom::wad().find(name);
 }
 
-int W_GetNumForName(char* name)
+int W_GetNumForName(const char* name)
 {
     return Doom::wad().number(name);
 }
@@ -104,7 +104,7 @@ void* W_CacheLumpNum(int lump, int tag)
     return (void*) Doom::wad().data(lump);
 }
 
-void* W_CacheLumpName(char* name, int tag)
+void* W_CacheLumpName(const char* name, int tag)
 {
     return W_CacheLumpNum(W_GetNumForName(name), tag);
 }
