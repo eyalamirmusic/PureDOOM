@@ -14,11 +14,13 @@
 
 #include "p_local.h"
 
+#include "Sim/EndLevelTimer.h"
 #include "Sim/Specials.h"
 
-// levelTimer/levelTimeCount are declared in p_spec.h (the -TIMER option).
-doom_boolean levelTimer;
-int levelTimeCount;
+// levelTimer/levelTimeCount are declared in p_spec.h (the -TIMER option); they are members of
+// the Doom::EndLevelTimer owned by the Engine now, and these vanilla names references onto it.
+doom_boolean& levelTimer = Doom::endLevelTimer().levelTimer;
+int& levelTimeCount = Doom::endLevelTimer().levelTimeCount;
 
 void P_InitPicAnims(void)
 {

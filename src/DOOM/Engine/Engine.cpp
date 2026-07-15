@@ -164,4 +164,9 @@ ActiveSpecials& activeSpecials()
 {
     return engine().activeSpecials;
 }
+
+EndLevelTimer& endLevelTimer()
+{
+    return engine().endLevelTimer;
+}
 } // namespace Doom

@@ -26,6 +26,7 @@
 #include "../Render/ViewWindow.h"
 #include "../Sim/ActiveSpecials.h"
 #include "../Sim/Clip.h"
+#include "../Sim/EndLevelTimer.h"
 #include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
@@ -78,6 +79,7 @@ struct Engine
     CorpseQueue corpseQueue;
     EventQueue eventQueue;
     ActiveSpecials activeSpecials;
+    EndLevelTimer endLevelTimer;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

@@ -33,8 +33,10 @@
 //
 // End-level timer (-TIMER option)
 //
-extern doom_boolean levelTimer;
-extern int levelTimeCount;
+// The end-level timer is a Doom::EndLevelTimer owned by the Engine now; these are references
+// onto its members (REFACTOR.md, Step 5).
+extern doom_boolean& levelTimer;
+extern int& levelTimeCount;
 
 
 // Define values for map objects
