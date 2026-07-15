@@ -128,6 +128,17 @@ int doomSimRunTic(void)
     return !simDemoStarted;
 }
 
+void doomSimReplayDemo(const char* demoLump)
+{
+    // The previous demo has ended (G_CheckDemoStatus cleared demoplayback and
+    // advanced the attract loop), so this is a fresh start. Lower advancedemo
+    // again for the same reason doomSimBoot does, and forget that the last demo
+    // ran so doomSimRunTic's "finished" test starts over.
+    simDemoStarted = 0;
+    advancedemo = false;
+    G_DeferedPlayDemo((char*) demoLump);
+}
+
 static unsigned long long simHash;
 
 static void simMix(const void* bytes, int count)

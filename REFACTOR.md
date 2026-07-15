@@ -10,10 +10,13 @@ does.**
 Three decisions frame the work:
 
 - **The whole engine goes.** No permanent C/C++ seam.
-- **The globals go with it.** The end state is an `Engine` object that can be
-  constructed twice in one process. That is not cosmetic: it is what makes
-  scenario tests (*load MAP01, place an imp, run 20 tics, assert*) writable at
-  all, and today they are not.
+- **The globals go with it.** The end state is an `Engine` object rather than
+  ~684 loose globals. That is not cosmetic — it is what will let the engine be
+  *constructed*, not just booted, so a test owns its world instead of borrowing
+  the process's. (Scenario tests — *load MAP01, place an imp, run 20 tics,
+  assert* — turned out to need less than that: loading a level already resets the
+  simulation cleanly, so the engine runs many scenarios per process today. See
+  Step 4.)
 - **`PureDOOM.h`, `tools/gen_single_header.py`, `examples/SDL` and
   `examples/Tests` are retired.** Nothing builds against them, and they are the
   only reason two files in the engine may not share a file-scope name.
@@ -43,7 +46,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 1 | Retire the single-header packaging | **done** |
 | 2 | The language flip: 62 `.c` → 62 `.cpp`, atomically | **done** |
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
-| 4 | Ownership: kill the zone allocator | **in progress** — WAD + `Level` geometry done; mobjs/thinkers + zone deletion next |
+| 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | |
 | 6 | The playsim | |
 | 7 | The renderer | |
@@ -323,10 +326,19 @@ Nothing observable in the simulation depends on the allocator — the hash mixes
 mobj *fields*, never addresses, and `P_SpawnMobj` zeroes its own memory — so the
 goldens hold this step honest, and `WadTests` holds the lump reader honest.
 
-**The payoff is a test**: boot the engine twice in one process and get the same
-demo hashes both times. Once that is green, NanoTest's one-case-per-process rule
-is lifted and scenario tests become cheap. That comes with the `Level` object and
-the zone's deletion, not with the WAD alone.
+**The payoff — and it was mis-stated.** The plan said the payoff was "boot the
+engine twice in one process". It is not, and that framing sent the work chasing
+the wrong target. `doom_init` still cannot run twice (`Z_Init` would leak the
+arena), and it does not need to: a scenario test never re-inits the engine, it
+loads another *level*. And loading a level already resets the whole simulation —
+`G_InitNew` → `P_SetupLevel` clears the thinkers (`P_InitThinkers`), the random
+indices (`M_ClearRandom`), the leftover mobjs and specials (`Z_FreeTags`), and now
+the geometry (`Doom::Level` assigns fresh vectors). Once the geometry moved to the
+`Level` object, that reset became *clean*, and the engine runs any number of
+scenarios per process. `Tests/Sim/ReplayTests.cpp` proves it: a demo replayed a
+second time matches itself tic for tic, and a *different* demo loaded over the
+first matches its own fresh-boot golden. The zone need not be deleted for this —
+that was the surprise.
 
 ### Landed so far — the WAD (`PU_CACHE`)
 
@@ -398,14 +410,39 @@ The blockmap and reject matrix are *not* here: they are WAD lumps
 the only blockmap-related allocation that was ever the zone's.
 
 What stays on the zone, deliberately: **mobjs and the thinker specials** (doors,
-lifts, lights — `PU_LEVEL`/`PU_LEVSPEC`). They have a per-object lifecycle
-(`P_RemoveThinker` frees them mid-play), and untangling that is the thinker
-rewrite in Step 6, not this. `Z_FreeTags(PU_LEVEL, …)` at the top of
-`P_SetupLevel` therefore stays — it now frees only those, not the geometry.
+lifts, lights — `PU_LEVEL`/`PU_LEVSPEC`) and all the renderer's `PU_STATIC` data
+(textures, colormaps, sprite tables). The mobjs and thinkers have a per-object
+lifecycle (`P_RemoveThinker` frees them mid-play), which is the thinker rewrite in
+Step 6; the renderer data belongs to Step 7. `Z_FreeTags(PU_LEVEL, …)` at the top
+of `P_SetupLevel` therefore stays — it now frees only those, not the geometry.
 
-Still ahead in Step 4: mobjs and thinkers off the zone, `PU_STATIC` to members,
-deleting `z_zone.cpp`, and then the boot-twice test. The zone cannot go until all
-three tags are gone.
+### The scenario-test unlock, delivered
+
+The reason to care about all this was scenario tests, and they are unblocked now —
+not by deleting the zone (the plan's mistaken gate), but by the `Level` object
+making the per-level reset clean. `Tests/Sim/ReplayTests.cpp`:
+
+- **`replaysASecondTimeInOneProcess`** — play a demo to the end, queue it again
+  without re-initing, play it again: identical tic for tic. If the reset left a
+  stale sector, an un-freed thinker or an uncleared random index, it would diverge.
+- **`aDifferentLevelLoadsOverThePrevious`** — play demo1, then demo2 in the same
+  process; demo2 must match its own fresh-boot golden. This is the only test that
+  drives `Level::assign` to a *different* size than the level already in its
+  vectors — the grow/shrink reload a single demo never exercises.
+
+### What is left of Step 4, and where it went
+
+Deleting `z_zone.cpp` outright is no longer a step of its own. Its last users are
+subsystem-specific and move with their subsystems: the renderer's `PU_STATIC` in
+Step 7, the mobjs and thinker specials in Step 6. The zone is deleted when its last
+caller does, and there is no longer a reason to force it earlier — the payoff it
+was gating is already in hand.
+
+One caveat carried forward: changing the *allocator* under a renderer allocation
+can re-trigger tutti-frutti (composite pixel blocks get over-read the same way
+lumps did). So when the renderer's `PU_STATIC` moves in Step 7, the pixel blocks
+want the same zero-tail treatment `WadFile` gave the lumps — the metadata arrays
+(pointers, sizes, offsets) are safe, the pixel data is not.
 
 ## Step 5 — The `Engine` object
 
@@ -414,6 +451,15 @@ During the transition a single `Engine*` keeps the old call sites compiling; as
 each file is rewritten it takes `Engine&` explicitly and the alias goes.
 `doomstat.h` (73 externs), `r_state.h` (44) and `p_local.h` (27) are the three
 headers that empty out.
+
+The three subsystems already extracted — `Doom::Random`, `Doom::WadFile`,
+`Doom::Level` — are the `Engine`'s first members; the free `randomness()`, `wad()`
+and `level()` singletons become accessors into the one instance. With the whole of
+the engine's state under one object, the engine can finally be *constructed*
+rather than only booted: a fresh `Engine` is a clean world, which is what a test
+that re-inits (rather than reloads a level) would need. That is a stronger property
+than the scenario-test unlock already in hand, and it is what retires the loose
+globals for good.
 
 ```cpp
 auto doom = Engine {config, wad};

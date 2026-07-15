@@ -34,8 +34,11 @@ step we are on, what each one changes, and the rules the whole thing rests on.
 Read it before touching `src/DOOM`, and update its progress table as steps land.
 
 The end state: no C left, no `PureDOOM.h`, no zone allocator, and no ~684
-globals — an `Engine` object that can be constructed twice in one process, which
-is what makes scenario tests writable at all.
+globals — an `Engine` object constructed rather than booted. (Scenario tests, once
+thought to depend on that, do not: the engine already runs many scenarios per
+process — see `Tests/Sim/ReplayTests.cpp` — because loading a level resets the
+simulation cleanly. The `Engine` object is what retires the loose globals, not
+what unblocks the tests.)
 
 The four rules that matter most, because breaking one silently defeats the whole
 apparatus:
@@ -398,6 +401,16 @@ Two things had to be true for it to work at all, and both were already true:
   machine. The simulation never cared — a demo's input comes from the `.lmp` — so
   this changed no existing golden, and that was checked.
 
+### The engine runs many scenarios per process
+
+`Tests/Sim/ReplayTests.cpp` replays a demo a second time in one process (identical
+tic for tic) and loads a *different* demo over the first (matches its own
+fresh-boot golden). Together they prove the per-level reset is clean — the thing
+that makes scenario tests possible and the only test of `Doom::Level`'s reload
+(grow/shrink) path. `Tests/Sim/LevelTests.cpp` separately checks the view invariant
+after a single load: that `vertexes`/`numsegs`/… still equal their `Level` vector's
+`data()`/`size()`.
+
 ### What the tests do not cover
 
 The menu (nothing in a demo opens one), audio, and the eacp platform layer and
@@ -472,11 +485,12 @@ and differs between builds of the same engine.)
 - **Scenario tests**: load a level, place mobjs, run tics, assert. `P_TryMove`
   into a wall, `P_DamageMobj`, `P_CheckSight`, door and lift specials. Write
   these per-subsystem *as* you refactor it — they are how you get locality on
-  code the demos only cover in aggregate. **Still blocked** on the rest of Step 4:
-  the WAD and the level geometry are RAII now, but mobjs, thinkers and `PU_STATIC`
-  are still on the zone, and `Z_Init` cannot re-run — so the engine still cannot
-  be booted twice in one process, and there is nowhere to put these. Finishing the
-  zone's removal is what unblocks it.
+  code the demos only cover in aggregate. **Unblocked** as of Step 4: the engine
+  runs many scenarios per process (it never needed re-`doom_init`, only a clean
+  per-level reset, which the `Level` object completed — see
+  `Tests/Sim/ReplayTests.cpp`). What is still missing is only *probe surface* —
+  functions to place a mobj, set the player, read back a result — which is
+  additive and lands with the playsim rewrite.
 - **Port-layer tests**: `View`'s tic/interpolation state machine is still not
   testable, because it lives inside a `GPU::GPUView` whose members construct GPU
   textures from `GPU::Device::shared()`. Extracting it into a plain GPU-free

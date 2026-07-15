@@ -37,6 +37,18 @@ extern "C"
     // Runs one tic. Returns 0 once the demo has played out.
     int doomSimRunTic(void);
 
+    // Queues a demo again, in the same process, WITHOUT re-running doom_init.
+    //
+    // This is the scenario-test enabler, and it is a smaller claim than "boot the
+    // engine twice". The engine cannot be re-inited (Z_Init would leak the arena),
+    // but it does not need to be: G_InitNew -> P_SetupLevel already resets the
+    // simulation each time a level loads - the geometry (Doom::Level assigns fresh
+    // vectors), the thinkers (P_InitThinkers), the random indices (M_ClearRandom),
+    // the leftover mobjs and specials (Z_FreeTags). So a second scenario runs on a
+    // clean world in the same process. Replaying one demo twice and getting the
+    // same tics both times is what proves that reset is clean.
+    void doomSimReplayDemo(const char* demoLump);
+
     // Whether the demo is actually driving a level yet: the engine spends a few
     // tics on the title screen first.
     int doomSimInLevel(void);
