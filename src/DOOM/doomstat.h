@@ -186,8 +186,9 @@ extern doom_boolean demorecording;
 // Quit after playing a demo from cmdline.
 extern doom_boolean singledemo;
 
-//?
-extern gamestate_t gamestate;
+// gamestate and wipegamestate live in Doom::GameFlow (an Engine member) now; these are
+// references onto it (REFACTOR.md, Step 5).
+extern gamestate_t& gamestate;
 
 
 //-----------------------------
@@ -237,8 +238,8 @@ extern void* debugfile;
 extern doom_boolean precache;
 
 // wipegamestate can be set to -1
-// to force a wipe on the next draw
-extern gamestate_t wipegamestate;
+// to force a wipe on the next draw (in Doom::GameFlow now; see gamestate above)
+extern gamestate_t& wipegamestate;
 
 extern int mouseSensitivity;
 //?

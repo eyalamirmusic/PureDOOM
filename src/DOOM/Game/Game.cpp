@@ -59,6 +59,7 @@
 #include "../g_game.h"
 
 #include "Game.h"
+#include "GameFlow.h"
 #include "GameSession.h"
 #include "LevelStats.h"
 #include "PlayerState.h"
@@ -78,7 +79,10 @@ void P_SpawnPlayer(mapthing_t* mthing);
 void R_ExecuteSetViewSize(void);
 
 gameaction_t gameaction;
-gamestate_t gamestate;
+
+// gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; this (and the
+// extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
+gamestate_t& gamestate = Doom::gameFlow().gamestate;
 
 // The current game's rules are a Doom::GameSession owned by the Engine now; these (and
 // netgame/deathmatch below) are references onto it (REFACTOR.md, Step 5).
@@ -218,7 +222,7 @@ int d_map;
 
 const char* defdemoname;
 
-extern gamestate_t wipegamestate;
+extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
 extern const char* pagename;
 extern doom_boolean& setsizeneeded;
 

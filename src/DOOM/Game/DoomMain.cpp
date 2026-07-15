@@ -61,6 +61,7 @@
 #include "../d_main.h"
 
 #include "DoomMain.h"
+#include "GameFlow.h"
 #include "LaunchOptions.h"
 #include "StartupDefaults.h"
 
@@ -106,8 +107,9 @@ event_t events[MAXEVENTS];
 int eventhead;
 int eventtail;
 
-// wipegamestate can be set to -1 to force a wipe on the next draw
-gamestate_t wipegamestate = GS_DEMOSCREEN;
+// wipegamestate (with gamestate) is a Doom::GameFlow owned by the Engine now; this is a
+// reference onto it. It can be set to -1 to force a wipe on the next draw.
+gamestate_t& wipegamestate = Doom::gameFlow().wipegamestate;
 void R_ExecuteSetViewSize(void);
 
 // print title for every printed line

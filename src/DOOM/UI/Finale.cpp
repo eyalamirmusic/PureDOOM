@@ -45,7 +45,7 @@
 #include "Finale.h"
 
 // Other subsystems' globals/functions this file reads.
-extern gamestate_t wipegamestate; // d_main
+extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
 extern patch_t* hu_font[HU_FONTSIZE]; // hu_stuff
 void V_DrawPatchFlipped(int x, int y, int scrn, patch_t* patch); // v_video
 

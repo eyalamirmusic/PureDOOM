@@ -603,7 +603,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     doom_memcpy(screen_buffer, screens[0], SCREENWIDTH * SCREENHEIGHT);
 
     extern doom_boolean menuactive;
-    extern gamestate_t gamestate;
+    extern gamestate_t& gamestate; // Doom::GameFlow (Engine member)
     extern doom_boolean automapactive;
     extern int crosshair;
 
