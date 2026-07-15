@@ -456,16 +456,26 @@ void P_LoadBlockMap(int lump)
     int count;
 
     blockmaplump = (short*) (W_CacheLumpNum(lump, PU_LEVEL));
-    blockmap = blockmaplump + 4;
     count = W_LumpLength(lump) / 2;
 
     for (i = 0; i < count; i++)
         blockmaplump[i] = SHORT(blockmaplump[i]);
 
-    bmaporgx = blockmaplump[0] << FRACBITS;
-    bmaporgy = blockmaplump[1] << FRACBITS;
-    bmapwidth = blockmaplump[2];
-    bmapheight = blockmaplump[3];
+    // Fill the Level's blockmap descriptor from the lump header, then refresh the
+    // vanilla globals as views onto it.
+    Doom::Blockmap& bmap = Doom::level().blockmap;
+    bmap.lump = blockmaplump;
+    bmap.offsets = blockmaplump + 4;
+    bmap.origin = {Doom::Fixed {blockmaplump[0] << FRACBITS},
+                   Doom::Fixed {blockmaplump[1] << FRACBITS}};
+    bmap.width = blockmaplump[2];
+    bmap.height = blockmaplump[3];
+
+    blockmap = bmap.offsets;
+    bmaporgx = bmap.origin.x.raw;
+    bmaporgy = bmap.origin.y.raw;
+    bmapwidth = bmap.width;
+    bmapheight = bmap.height;
 
     // clear out mobj chains. The array is the Level's; the mobjs it will point at
     // are the zone's.

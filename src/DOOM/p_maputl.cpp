@@ -34,6 +34,7 @@
 #include "p_local.h"
 #include "r_state.h" // State.
 
+#include "Sim/Level.h"
 #include "Sim/MapGeometry.h"
 
 // Reads a vanilla divline_t's four fields as a Doom::DivLine, so the geometry
@@ -207,14 +208,12 @@ void P_UnsetThingPosition(mobj_t* thing)
             thing->bprev->bnext = thing->bnext;
         else
         {
-            blockx = (thing->x - bmaporgx) >> MAPBLOCKSHIFT;
-            blocky = (thing->y - bmaporgy) >> MAPBLOCKSHIFT;
+            const Doom::Blockmap& bmap = Doom::level().blockmap;
+            blockx = bmap.blockX(Doom::Fixed {thing->x});
+            blocky = bmap.blockY(Doom::Fixed {thing->y});
 
-            if (blockx >= 0 && blockx < bmapwidth
-                && blocky >= 0 && blocky < bmapheight)
-            {
-                blocklinks[blocky * bmapwidth + blockx] = thing->bnext;
-            }
+            if (bmap.contains(blockx, blocky))
+                blocklinks[bmap.index(blockx, blocky)] = thing->bnext;
         }
     }
 }
@@ -257,15 +256,13 @@ void P_SetThingPosition(mobj_t* thing)
     if (!(thing->flags & MF_NOBLOCKMAP))
     {
         // inert things don't need to be in blockmap                
-        blockx = (thing->x - bmaporgx) >> MAPBLOCKSHIFT;
-        blocky = (thing->y - bmaporgy) >> MAPBLOCKSHIFT;
+        const Doom::Blockmap& bmap = Doom::level().blockmap;
+        blockx = bmap.blockX(Doom::Fixed {thing->x});
+        blocky = bmap.blockY(Doom::Fixed {thing->y});
 
-        if (blockx >= 0
-            && blockx < bmapwidth
-            && blocky >= 0
-            && blocky < bmapheight)
+        if (bmap.contains(blockx, blocky))
         {
-            link = &blocklinks[blocky * bmapwidth + blockx];
+            link = &blocklinks[bmap.index(blockx, blocky)];
             thing->bprev = 0;
             thing->bnext = *link;
             if (*link)

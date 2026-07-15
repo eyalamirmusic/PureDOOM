@@ -472,9 +472,19 @@ see: that every global still equals its vector's `data()`/`size()` after a load.
 loader that resized a vector and forgot to refresh its global would leave it
 dangling, and the demos might survive that by allocator luck.
 
-The blockmap and reject matrix are *not* here: they are WAD lumps
+The blockmap and reject matrix lumps are *not* here: they are WAD lumps
 (`W_CacheLumpNum`), so `WadFile` already owns them permanently — `blocklinks` is
-the only blockmap-related allocation that was ever the zone's.
+the only blockmap-related allocation that was ever the zone's. The blockmap
+*descriptor*, though — the grid's origin, extent and the lump pointers the iterators
+read cells from — has since moved onto `Level` as a `Doom::Blockmap` (`Sim/Blockmap.h`),
+which also carries the block-index arithmetic (`(world - origin) >> MAPBLOCKSHIFT`,
+the bounds check, the flat index) that the playsim used to re-derive at every call
+site. `P_LoadBlockMap` fills it and refreshes the vanilla `bmaporgx`/`bmapwidth`/
+`blockmap` globals as views onto it — `LevelTests` pins that, the same way it pins
+the geometry views — and `P_SetThingPosition`/`P_UnsetThingPosition` (which the
+thing-linking scenario test pins) address the grid through it. This is the first
+piece of Step 5's globals-into-`Engine` work to actually move: the clipping globals
+follow as `p_map`/`p_maputl` are rewritten to reach them through the owner.
 
 What stays on the zone, deliberately: **mobjs and the thinker specials** (doors,
 lifts, lights — `PU_LEVEL`/`PU_LEVSPEC`) and all the renderer's `PU_STATIC` data

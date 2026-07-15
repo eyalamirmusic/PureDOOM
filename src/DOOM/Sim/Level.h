@@ -2,6 +2,8 @@
 
 #include "../r_defs.h"
 
+#include "Blockmap.h"
+
 #include <vector>
 
 namespace Doom
@@ -37,6 +39,12 @@ struct Level
     // The per-block mobj chain heads. The array is ours; the mobjs it points at
     // are the zone's.
     std::vector<mobj_t*> blockLinks;
+
+    // The blockmap descriptor - origin, extent and the lump pointers the iterators
+    // read from. Filled by P_LoadBlockMap, which then refreshes the vanilla
+    // bmaporgx/bmapwidth/blockmap globals as views onto it. blockLinks above is the
+    // one blockmap array that is ours to allocate; the lump itself is WadFile's.
+    Blockmap blockmap;
 
     // One flat array of line pointers, carved into per-sector slices that
     // sector_t::lines point into. Vanilla calls this `linebuffer`, a single

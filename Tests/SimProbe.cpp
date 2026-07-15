@@ -326,8 +326,11 @@ int doomSimGeometryViewsConsistent(void)
            && view(subsectors, numsubsectors, lvl.subsectors)
            && view(sectors, numsectors, lvl.sectors)
            && view(nodes, numnodes, lvl.nodes) && view(lines, numlines, lvl.lines)
-           && view(sides, numsides, lvl.sides)
-           && blocklinks == lvl.blockLinks.data();
+           && view(sides, numsides, lvl.sides) && blocklinks == lvl.blockLinks.data()
+           && bmaporgx == lvl.blockmap.origin.x.raw
+           && bmaporgy == lvl.blockmap.origin.y.raw
+           && bmapwidth == lvl.blockmap.width && bmapheight == lvl.blockmap.height
+           && blockmap == lvl.blockmap.offsets && blockmaplump == lvl.blockmap.lump;
 }
 
 // --- The scenario harness (Step 6) ------------------------------------------

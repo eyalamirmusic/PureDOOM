@@ -15,6 +15,7 @@
 
 #include <DOOM/Math/Fixed.h>
 #include <DOOM/Math/Vec2.h>
+#include <DOOM/Sim/Blockmap.h>
 #include <DOOM/Sim/MapGeometry.h>
 
 using namespace nano;
@@ -208,5 +209,33 @@ auto tBoxOnLineSideDiagonal = test("Geometry/boxOnLineSideDiagonal") = []
     check(boxSide(-1, -3, 1, 3, at(0, 0), at(1, 1), 2) == 0, "SE box = front");
     check(boxSide(3, 1, -3, -1, at(0, 0), at(1, 1), 2) == 1, "NW box = back");
     check(boxSide(1, -1, -1, 1, at(0, 0), at(1, 1), 2) == -1, "box on it straddles");
+};
+
+// Blockmap addressing: a world point to its 128-unit cell, the bounds check, and
+// the flat index. The demos and the thing-linking scenario drive this on the
+// critical path; these pin the arithmetic, including the signed shift that floors
+// a point west/south of the origin into a negative (out-of-range) cell.
+auto tBlockmapAddressing = test("Geometry/blockmapAddressing") = []
+{
+    Blockmap bm;
+    bm.origin = at(-512, -256); // origin need not be at (0, 0), and usually isn't
+    bm.width = 4;
+    bm.height = 3;
+
+    // 200 units east of the origin is column 1 (200 / 128 = 1.56 -> 1); 300 north
+    // is row 2 (300 / 128 = 2.34 -> 2).
+    check(bm.blockX(Fixed::fromInt(-512 + 200)) == 1, "200 units east = column 1");
+    check(bm.blockY(Fixed::fromInt(-256 + 300)) == 2, "300 units north = row 2");
+    check(bm.blockX(Fixed::fromInt(-512)) == 0
+              && bm.blockY(Fixed::fromInt(-256)) == 0,
+          "the origin corner is cell (0, 0)");
+
+    // One unit before the origin floors to cell -1, out of range - the signed shift.
+    check(bm.blockX(Fixed::fromInt(-513)) == -1, "west of the origin floors to -1");
+
+    check(bm.contains(0, 0) && bm.contains(3, 2), "the corner cells are in range");
+    check(!bm.contains(-1, 0) && !bm.contains(4, 0) && !bm.contains(0, 3),
+          "cells outside the grid are rejected");
+    check(bm.index(2, 1) == 1 * 4 + 2, "the flat index is row * width + column");
 };
 } // namespace
