@@ -75,7 +75,7 @@ int W_NumLumps(void)
     return numlumps;
 }
 
-int W_CheckNumForName(char* name)
+int W_CheckNumForName(const char* name)
 {
     return Doom::wad().find(name);
 }
