@@ -781,15 +781,20 @@ The globals split was automated: a name is kept in the shim if a header `extern`
 included — the drawer pointers `colfunc`/`spanfunc`, the pending-view flags, the
 view state all stay), and moved file-local otherwise.
 
-**Two remaining, `r_things` and `r_draw`.** `r_draw` holds the low-level column/span
-drawers `colfunc`/`spanfunc` point at — those get shims like any `R_*`, and the
-pointer assignments in `Main` already store the shim address, so it should follow the
-recipe directly. `r_things` is the one that needs more than a preamble scan: it
-defines its globals in *three* places (before the first function, in the preamble,
-and mid-file — `mfloorclip`/`mceilingclip` are set deep inside the render), so the
-"extract the preamble, split it" shortcut misclassifies the scattered ones. The fix
-is a whole-file depth-0 global scan (classify every top-level definition, not just
-the preamble block) before finishing it.
+**Two remaining, `r_things` and `r_draw`, and both need the same thing.** The
+preamble-scan shortcut (extract the block of globals before the first function, split
+it) works for a file whose globals sit in one place. Both of these scatter theirs:
+`r_things` defines `mfloorclip`/`mceilingclip` mid-render, and `r_draw` defines the
+span-drawer globals (`ds_x1`, `ds_source`, …) *after* the column drawers, past
+several functions. A mid-file global lands in the `namespace Doom` body and becomes
+`Doom::x`, which the shim's header `extern` and the other files that switch it can no
+longer link to. The finish is a **whole-file depth-0 global scan**: walk the file
+tracking brace depth, collect every top-level `type name…;` (not just the preamble),
+classify each with the same header-or-cross-reference test, and lift the kept ones
+out of the namespace into the flat shim. `r_draw`'s drawer functions themselves
+(`R_DrawColumn`/`R_DrawSpan`/…) are ordinary `R_*` shims — `Main`'s `colfunc = …`
+assignments already store the shim address, so the function-pointer dispatch keeps
+working once they exist.
 
 ## Step 8 — UI, game loop, host boundary
 
