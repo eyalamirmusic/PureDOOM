@@ -109,7 +109,9 @@ extern event_t (&events)[MAXEVENTS];
 extern int& eventhead;
 extern int& eventtail;
 
-extern gameaction_t gameaction;
+// The pending game action is a member of the Doom::GameFlow owned by the Engine now; this is
+// a reference onto it (REFACTOR.md, Step 5).
+extern gameaction_t& gameaction;
 
 
 #endif

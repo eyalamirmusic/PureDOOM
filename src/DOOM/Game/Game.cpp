@@ -83,10 +83,9 @@
 void P_SpawnPlayer(mapthing_t* mthing);
 void R_ExecuteSetViewSize(void);
 
-gameaction_t gameaction;
-
-// gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; this (and the
-// extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
+// gameaction, gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; these
+// (and the extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
+gameaction_t& gameaction = Doom::gameFlow().gameaction;
 gamestate_t& gamestate = Doom::gameFlow().gamestate;
 
 // The current game's rules are a Doom::GameSession owned by the Engine now; these (and
