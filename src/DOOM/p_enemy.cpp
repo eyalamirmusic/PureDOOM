@@ -86,8 +86,11 @@ int numbraintargets;
 int braintargeton;
 
 
-extern line_t* spechit[MAXSPECIALCROSS];
-extern int numspechit;
+// spechit/numspechit are Doom::Clip's now (Sim/Movement.h); spechit is a pointer
+// to the Clip array, numspechit a reference. p_enemy still reads and decrements
+// them in A_Look's line-crossing check.
+extern line_t** spechit;
+extern int& numspechit;
 
 
 void A_Fall(mobj_t* actor);

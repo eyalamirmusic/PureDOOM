@@ -195,13 +195,14 @@ void P_SetThingPosition(mobj_t* thing);
 // P_MAP
 //
 
-// If "floatok" true, move would be ok
-// if within "tmfloorz - tmceilingz".
-extern doom_boolean floatok;
-extern fixed_t tmfloorz;
-extern fixed_t tmceilingz;
+// If "floatok" true, move would be ok if within "tmfloorz - tmceilingz".
+// These are references into Doom::Clip now (see Sim/Movement.h); p_enemy reads
+// floatok/tmfloorz, p_mobj reads ceilingline.
+extern doom_boolean& floatok;
+extern fixed_t& tmfloorz;
+extern fixed_t& tmceilingz;
 
-extern line_t* ceilingline;
+extern line_t*& ceilingline;
 
 
 doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y);

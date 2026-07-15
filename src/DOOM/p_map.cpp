@@ -37,35 +37,21 @@
 #include "r_state.h" // State.
 #include "sounds.h" // Data.
 
+#include "Sim/Clip.h"
 #include "Sim/Level.h"
+#include "Sim/Movement.h"
 
 
-#define MAXSPECIALCROSS 8
-
-
-fixed_t tmbbox[4];
-mobj_t* tmthing;
-int tmflags;
-fixed_t tmx;
-fixed_t tmy;
-
-// If "floatok" true, move would be ok
-// if within "tmfloorz - tmceilingz".
-doom_boolean floatok;
-
-fixed_t tmfloorz;
-fixed_t tmceilingz;
-fixed_t tmdropoffz;
-
-// keep track of the line that lowers the ceiling,
-// so missiles don't explode against sky hack walls
-line_t* ceilingline;
-
-// keep track of special lines as they are hit,
-// but don't process them until the move is proven valid
-
-line_t* spechit[MAXSPECIALCROSS];
-int numspechit;
+// The movement-clipping state (vanilla's tm*) lives in Doom::Clip now, and the core
+// clipping functions moved to Sim/Movement.{h,cpp}, which read it directly. These
+// vanilla names are references onto Clip for the code not yet rewritten: p_enemy
+// (spechit/numspechit/tmfloorz/floatok) and p_mobj (ceilingline).
+doom_boolean& floatok = Doom::clip().floatok;
+fixed_t& tmfloorz = Doom::clip().tmfloorz;
+fixed_t& tmceilingz = Doom::clip().tmceilingz;
+line_t*& ceilingline = Doom::clip().ceilingline;
+line_t** spechit = Doom::clip().spechit;
+int& numspechit = Doom::clip().numspechit;
 
 mobj_t* linetarget; // who got hit (or 0)
 mobj_t* shootthing;
@@ -93,269 +79,20 @@ extern fixed_t bottomslope;
 // 
 
 //
-// PIT_StompThing
-//
-doom_boolean PIT_StompThing(mobj_t* thing)
-{
-    fixed_t blockdist;
-
-    if (!(thing->flags & MF_SHOOTABLE))
-        return true;
-
-    blockdist = thing->radius + tmthing->radius;
-
-    if (doom_abs(thing->x - tmx) >= blockdist
-        || doom_abs(thing->y - tmy) >= blockdist)
-    {
-        // didn't hit it
-        return true;
-    }
-
-    // don't clip against self
-    if (thing == tmthing)
-        return true;
-
-    // monsters don't stomp things except on boss level
-    if (!tmthing->player && gamemap != 30)
-        return false;
-
-    P_DamageMobj(thing, tmthing, tmthing, 10000);
-
-    return true;
-}
-
-
-//
 // P_TeleportMove
 //
 doom_boolean P_TeleportMove(mobj_t* thing, fixed_t x, fixed_t y)
 {
-    int xl;
-    int xh;
-    int yl;
-    int yh;
-    int bx;
-    int by;
-
-    subsector_t* newsubsec;
-
-    // kill anything occupying the position
-    tmthing = thing;
-    tmflags = thing->flags;
-
-    tmx = x;
-    tmy = y;
-
-    tmbbox[BOXTOP] = y + tmthing->radius;
-    tmbbox[BOXBOTTOM] = y - tmthing->radius;
-    tmbbox[BOXRIGHT] = x + tmthing->radius;
-    tmbbox[BOXLEFT] = x - tmthing->radius;
-
-    newsubsec = R_PointInSubsector(x, y);
-    ceilingline = 0;
-
-    // The base floor/ceiling is from the subsector
-    // that contains the point.
-    // Any contacted lines the step closer together
-    // will adjust them.
-    tmfloorz = tmdropoffz = newsubsec->sector->floorheight;
-    tmceilingz = newsubsec->sector->ceilingheight;
-
-    validcount++;
-    numspechit = 0;
-
-    // stomp on any things contacted
-    xl = (tmbbox[BOXLEFT] - bmaporgx - MAXRADIUS) >> MAPBLOCKSHIFT;
-    xh = (tmbbox[BOXRIGHT] - bmaporgx + MAXRADIUS) >> MAPBLOCKSHIFT;
-    yl = (tmbbox[BOXBOTTOM] - bmaporgy - MAXRADIUS) >> MAPBLOCKSHIFT;
-    yh = (tmbbox[BOXTOP] - bmaporgy + MAXRADIUS) >> MAPBLOCKSHIFT;
-
-    for (bx = xl; bx <= xh; bx++)
-        for (by = yl; by <= yh; by++)
-            if (!P_BlockThingsIterator(bx, by, PIT_StompThing))
-                return false;
-
-    // the move is ok,
-    // so link the thing into its new position
-    P_UnsetThingPosition(thing);
-
-    thing->floorz = tmfloorz;
-    thing->ceilingz = tmceilingz;
-    thing->x = x;
-    thing->y = y;
-
-    P_SetThingPosition(thing);
-
-    return true;
+    return Doom::teleportMove(thing, x, y);
 }
 
 
 //
 // MOVEMENT ITERATOR FUNCTIONS
 //
-
+// PIT_CheckLine, PIT_CheckThing and PIT_StompThing moved to Sim/Movement.cpp as
+// file-local helpers of checkPosition/teleportMove.
 //
-// PIT_CheckLine
-// Adjusts tmfloorz and tmceilingz as lines are contacted
-//
-doom_boolean PIT_CheckLine(line_t* ld)
-{
-    if (tmbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
-        || tmbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-        || tmbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
-        || tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
-        return true;
-
-    if (P_BoxOnLineSide(tmbbox, ld) != -1)
-        return true;
-
-    // A line has been hit
-
-    // The moving thing's destination position will cross
-    // the given line.
-    // If this should not be allowed, return false.
-    // If the line is special, keep track of it
-    // to process later if the move is proven ok.
-    // NOTE: specials are NOT sorted by order,
-    // so two special lines that are only 8 pixels apart
-    // could be crossed in either order.
-
-    if (!ld->backsector)
-        return false;                // one sided line
-
-    if (!(tmthing->flags & MF_MISSILE))
-    {
-        if (ld->flags & ML_BLOCKING)
-            return false;        // explicitly blocking everything
-
-        if (!tmthing->player && ld->flags & ML_BLOCKMONSTERS)
-            return false;        // block monsters only
-    }
-
-    // set openrange, opentop, openbottom
-    P_LineOpening(ld);
-
-    // adjust floor / ceiling heights
-    if (opentop < tmceilingz)
-    {
-        tmceilingz = opentop;
-        ceilingline = ld;
-    }
-
-    if (openbottom > tmfloorz)
-        tmfloorz = openbottom;
-
-    if (lowfloor < tmdropoffz)
-        tmdropoffz = lowfloor;
-
-    // if contacted a special line, add it to the list
-    if (ld->special)
-    {
-        spechit[numspechit] = ld;
-        numspechit++;
-    }
-
-    return true;
-}
-
-
-//
-// PIT_CheckThing
-//
-doom_boolean PIT_CheckThing(mobj_t* thing)
-{
-    fixed_t                blockdist;
-    doom_boolean                solid;
-    int                        damage;
-
-    if (!(thing->flags & (MF_SOLID | MF_SPECIAL | MF_SHOOTABLE)))
-        return true;
-
-    blockdist = thing->radius + tmthing->radius;
-
-    if (doom_abs(thing->x - tmx) >= blockdist
-        || doom_abs(thing->y - tmy) >= blockdist)
-    {
-        // didn't hit it
-        return true;
-    }
-
-    // don't clip against self
-    if (thing == tmthing)
-        return true;
-
-    // check for skulls slamming into things
-    if (tmthing->flags & MF_SKULLFLY)
-    {
-        damage = ((P_Random() % 8) + 1) * tmthing->info->damage;
-
-        P_DamageMobj(thing, tmthing, tmthing, damage);
-
-        tmthing->flags &= ~MF_SKULLFLY;
-        tmthing->momx = tmthing->momy = tmthing->momz = 0;
-
-        P_SetMobjState(tmthing, (statenum_t) (tmthing->info->spawnstate));
-
-        return false; // stop moving
-    }
-
-
-    // missiles can hit other things
-    if (tmthing->flags & MF_MISSILE)
-    {
-        // see if it went over / under
-        if (tmthing->z > thing->z + thing->height)
-            return true; // overhead
-        if (tmthing->z + tmthing->height < thing->z)
-            return true; // underneath
-
-        if (tmthing->target && (
-            tmthing->target->type == thing->type ||
-            (tmthing->target->type == MT_KNIGHT && thing->type == MT_BRUISER) ||
-            (tmthing->target->type == MT_BRUISER && thing->type == MT_KNIGHT)))
-        {
-            // Don't hit same species as originator.
-            if (thing == tmthing->target)
-                return true;
-
-            if (thing->type != MT_PLAYER)
-            {
-                // Explode, but do no damage.
-                // Let players missile other players.
-                return false;
-            }
-        }
-
-        if (!(thing->flags & MF_SHOOTABLE))
-        {
-            // didn't do any damage
-            return !(thing->flags & MF_SOLID);
-        }
-
-        // damage / explode
-        damage = ((P_Random() % 8) + 1) * tmthing->info->damage;
-        P_DamageMobj(thing, tmthing, tmthing->target, damage);
-
-        // don't traverse any more
-        return false;
-    }
-
-    // check for special pickup
-    if (thing->flags & MF_SPECIAL)
-    {
-        solid = thing->flags & MF_SOLID;
-        if (tmflags & MF_PICKUP)
-        {
-            // can remove thing
-            P_TouchSpecialThing(thing, tmthing);
-        }
-        return !solid;
-    }
-
-    return !(thing->flags & MF_SOLID);
-}
-
-
 //
 // MOVEMENT CLIPPING
 //
@@ -386,70 +123,7 @@ doom_boolean PIT_CheckThing(mobj_t* thing)
 //
 doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y)
 {
-    int xl;
-    int xh;
-    int yl;
-    int yh;
-    int bx;
-    int by;
-    subsector_t* newsubsec;
-
-    tmthing = thing;
-    tmflags = thing->flags;
-
-    tmx = x;
-    tmy = y;
-
-    tmbbox[BOXTOP] = y + tmthing->radius;
-    tmbbox[BOXBOTTOM] = y - tmthing->radius;
-    tmbbox[BOXRIGHT] = x + tmthing->radius;
-    tmbbox[BOXLEFT] = x - tmthing->radius;
-
-    newsubsec = R_PointInSubsector(x, y);
-    ceilingline = 0;
-
-    // The base floor / ceiling is from the subsector
-    // that contains the point.
-    // Any contacted lines the step closer together
-    // will adjust them.
-    tmfloorz = tmdropoffz = newsubsec->sector->floorheight;
-    tmceilingz = newsubsec->sector->ceilingheight;
-
-    validcount++;
-    numspechit = 0;
-
-    if (tmflags & MF_NOCLIP)
-        return true;
-
-    // Check things first, possibly picking things up.
-    // The bounding box is extended by MAXRADIUS
-    // because mobj_ts are grouped into mapblocks
-    // based on their origin point, and can overlap
-    // into adjacent blocks by up to MAXRADIUS units.
-    const Doom::Blockmap& bmap = Doom::level().blockmap;
-
-    xl = bmap.blockX(Doom::Fixed {tmbbox[BOXLEFT] - MAXRADIUS});
-    xh = bmap.blockX(Doom::Fixed {tmbbox[BOXRIGHT] + MAXRADIUS});
-    yl = bmap.blockY(Doom::Fixed {tmbbox[BOXBOTTOM] - MAXRADIUS});
-    yh = bmap.blockY(Doom::Fixed {tmbbox[BOXTOP] + MAXRADIUS});
-
-    for (bx = xl; bx <= xh; bx++)
-        for (by = yl; by <= yh; by++)
-            if (!P_BlockThingsIterator(bx, by, PIT_CheckThing))
-                return false;
-
-    // check lines
-    xl = bmap.blockX(Doom::Fixed {tmbbox[BOXLEFT]});
-    xh = bmap.blockX(Doom::Fixed {tmbbox[BOXRIGHT]});
-    yl = bmap.blockY(Doom::Fixed {tmbbox[BOXBOTTOM]});
-    yh = bmap.blockY(Doom::Fixed {tmbbox[BOXTOP]});
-
-    for (bx = xl; bx <= xh; bx++)
-        for (by = yl; by <= yh; by++)
-            if (!P_BlockLinesIterator(bx, by, PIT_CheckLine))
-                return false;
-
-    return true;
+    return Doom::checkPosition(thing, x, y);
 }
 
 
@@ -460,67 +134,7 @@ doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y)
 //
 doom_boolean P_TryMove(mobj_t* thing, fixed_t x, fixed_t y)
 {
-    fixed_t oldx;
-    fixed_t oldy;
-    int side;
-    int oldside;
-    line_t* ld;
-
-    floatok = false;
-    if (!P_CheckPosition(thing, x, y))
-        return false;                // solid wall or thing
-
-    if (!(thing->flags & MF_NOCLIP))
-    {
-        if (tmceilingz - tmfloorz < thing->height)
-            return false;        // doesn't fit
-
-        floatok = true;
-
-        if (!(thing->flags & MF_TELEPORT)
-            && tmceilingz - thing->z < thing->height)
-            return false;        // mobj must lower itself to fit
-
-        if (!(thing->flags & MF_TELEPORT)
-            && tmfloorz - thing->z > 24 * FRACUNIT)
-            return false;        // too big a step up
-
-        if (!(thing->flags & (MF_DROPOFF | MF_FLOAT))
-            && tmfloorz - tmdropoffz > 24 * FRACUNIT)
-            return false;        // don't stand over a dropoff
-    }
-
-    // the move is ok,
-    // so link the thing into its new position
-    P_UnsetThingPosition(thing);
-
-    oldx = thing->x;
-    oldy = thing->y;
-    thing->floorz = tmfloorz;
-    thing->ceilingz = tmceilingz;
-    thing->x = x;
-    thing->y = y;
-
-    P_SetThingPosition(thing);
-
-    // if any special lines were hit, do the effect
-    if (!(thing->flags & (MF_TELEPORT | MF_NOCLIP)))
-    {
-        while (numspechit--)
-        {
-            // see if the line was crossed
-            ld = spechit[numspechit];
-            side = P_PointOnLineSide(thing->x, thing->y, ld);
-            oldside = P_PointOnLineSide(oldx, oldy, ld);
-            if (side != oldside)
-            {
-                if (ld->special)
-                    P_CrossSpecialLine((int)(ld - lines), oldside, thing);
-            }
-        }
-    }
-
-    return true;
+    return Doom::tryMove(thing, x, y);
 }
 
 
@@ -536,32 +150,7 @@ doom_boolean P_TryMove(mobj_t* thing, fixed_t x, fixed_t y)
 //
 doom_boolean P_ThingHeightClip(mobj_t* thing)
 {
-    doom_boolean                onfloor;
-
-    onfloor = (thing->z == thing->floorz);
-
-    P_CheckPosition(thing, thing->x, thing->y);
-    // what about stranding a monster partially off an edge?
-
-    thing->floorz = tmfloorz;
-    thing->ceilingz = tmceilingz;
-
-    if (onfloor)
-    {
-        // walking monsters rise and fall with the floor
-        thing->z = thing->floorz;
-    }
-    else
-    {
-        // don't adjust a floating monster unless forced to
-        if (thing->z + thing->height > thing->ceilingz)
-            thing->z = thing->ceilingz - thing->height;
-    }
-
-    if (thing->ceilingz - thing->floorz < thing->height)
-        return false;
-
-    return true;
+    return Doom::thingHeightClip(thing);
 }
 
 

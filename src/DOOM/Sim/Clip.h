@@ -34,6 +34,34 @@ struct Clip
     fixed_t openbottom = 0;
     fixed_t openrange = 0;
     fixed_t lowfloor = 0;
+
+    // P_CheckPosition / P_TryMove clipping state (vanilla's tm*). The mover being
+    // clipped, its flags and centre, and the bounding box its radius sweeps.
+    mobj_t* tmthing = nullptr;
+    int tmflags = 0;
+    fixed_t tmx = 0;
+    fixed_t tmy = 0;
+    fixed_t tmbbox[4] = {};
+
+    // floatok: the move would fit if the mobj sat between tmfloorz and tmceilingz.
+    doom_boolean floatok = false;
+
+    // The floor/ceiling the contacted lines leave for the mover, and the lowest
+    // floor under it (a dropoff a monster refuses to walk off).
+    fixed_t tmfloorz = 0;
+    fixed_t tmceilingz = 0;
+    fixed_t tmdropoffz = 0;
+
+    // The line that lowered the ceiling, kept so missiles don't explode against
+    // sky-hack walls.
+    line_t* ceilingline = nullptr;
+
+    // Special lines contacted during a move, held until the move is proven valid
+    // and then crossed. Not sorted - two specials 8 units apart cross in either
+    // order, a vanilla quirk.
+    static constexpr int maxSpecialCross = 8;
+    line_t* spechit[maxSpecialCross] = {};
+    int numspechit = 0;
 };
 
 // The one Clip, a view onto the Engine's member - the same pattern as level(),
