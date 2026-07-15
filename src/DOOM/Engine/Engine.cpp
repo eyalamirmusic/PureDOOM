@@ -104,4 +104,9 @@ DemoState& demoState()
 {
     return engine().demoState;
 }
+
+RefreshFlags& refreshFlags()
+{
+    return engine().refreshFlags;
+}
 } // namespace Doom

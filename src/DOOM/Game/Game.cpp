@@ -64,6 +64,7 @@
 #include "GameSession.h"
 #include "LevelStats.h"
 #include "PlayerState.h"
+#include "RefreshFlags.h"
 
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
@@ -92,7 +93,9 @@ doom_boolean& respawnmonsters = Doom::gameSession().respawnmonsters;
 int& gameepisode = Doom::gameSession().gameepisode;
 int& gamemap = Doom::gameSession().gamemap;
 
-doom_boolean paused;
+// paused (with viewactive/nodrawers/noblit below) is a Doom::RefreshFlags owned by the
+// Engine now; these are references onto it (REFACTOR.md, Step 5).
+doom_boolean& paused = Doom::refreshFlags().paused;
 doom_boolean sendpause; // send a pause event next tic
 doom_boolean sendsave; // send a save event next tic
 
@@ -101,11 +104,11 @@ doom_boolean sendsave; // send a save event next tic
 doom_boolean& usergame = Doom::demoState().usergame; // ok to save / end game
 
 doom_boolean timingdemo; // if true, exit with report on completion
-doom_boolean nodrawers; // for comparative timing purposes
-doom_boolean noblit; // for comparative timing purposes
+doom_boolean& nodrawers = Doom::refreshFlags().nodrawers; // comparative timing
+doom_boolean& noblit = Doom::refreshFlags().noblit; // comparative timing
 int starttime; // for comparative timing purposes
 
-doom_boolean viewactive;
+doom_boolean& viewactive = Doom::refreshFlags().viewactive;
 
 doom_boolean& deathmatch = Doom::gameSession().deathmatch; // net deathmatch
 doom_boolean& netgame = Doom::gameSession().netgame; // packets are broadcast

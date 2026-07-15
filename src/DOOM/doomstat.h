@@ -132,12 +132,15 @@ extern doom_boolean statusbaractive;
 
 extern doom_boolean automapactive;  // In AutoMap mode?
 extern doom_boolean menuactive;     // Menu overlayed?
-extern doom_boolean paused;         // Game Pause?
 
-extern doom_boolean viewactive;
+// paused/viewactive/nodrawers/noblit live in Doom::RefreshFlags (an Engine member) now;
+// these are references onto it (REFACTOR.md, Step 5).
+extern doom_boolean& paused;         // Game Pause?
 
-extern doom_boolean nodrawers;
-extern doom_boolean noblit;
+extern doom_boolean& viewactive;
+
+extern doom_boolean& nodrawers;
+extern doom_boolean& noblit;
 
 // The view window geometry lives in Doom::ViewWindow (an Engine member) now; these
 // are references onto it (REFACTOR.md, Step 5).
