@@ -47,6 +47,7 @@ nano_add_executable(PrimitiveTests
         Sim/PrimitiveTests.cpp
         Sim/MathTests.cpp
         Sim/EngineTests.cpp
+        Sim/StateClusterTests.cpp
         Sim/GeometryTests.cpp
         TARGETS doom-sim-probe)
 
