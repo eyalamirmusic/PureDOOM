@@ -184,4 +184,9 @@ TiccmdInput& ticcmdInput()
 {
     return engine().ticcmdInput;
 }
+
+DeferredNewGame& deferredNewGame()
+{
+    return engine().deferredNewGame;
+}
 } // namespace Doom

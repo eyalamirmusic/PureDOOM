@@ -59,6 +59,7 @@
 #include "../g_game.h"
 
 #include "CorpseQueue.h"
+#include "DeferredNewGame.h"
 #include "DemoState.h"
 #include "Game.h"
 #include "GameClock.h"
@@ -237,9 +238,11 @@ doom_boolean secretexit;
 
 char savename[256];
 
-skill_t d_skill;
-int d_episode;
-int d_map;
+// The deferred new-game request is a Doom::DeferredNewGame owned by the Engine now; these vanilla
+// names are references onto it (the file-scope-statics sweep - REFACTOR.md, Step 5).
+skill_t& d_skill = Doom::deferredNewGame().d_skill;
+int& d_episode = Doom::deferredNewGame().d_episode;
+int& d_map = Doom::deferredNewGame().d_map;
 
 const char* defdemoname;
 

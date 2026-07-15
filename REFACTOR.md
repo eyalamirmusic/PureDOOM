@@ -968,6 +968,14 @@ table captures their address (the config trap) before they move.
   (`demoname` a reference-to-array, the buffer pointers references-to-pointer). Unlike
   `TiccmdInput` this is squarely on the demo replays' path — they drive `demobuffer`/`demo_p` end
   to end — so its byte-identical goldens are a live confirmation, not just an absence.
+- **`DeferredNewGame`** (`Game/DeferredNewGame.h`) — the third. Starting a game cannot happen
+  inside the responder that asks for it, so `G_DeferedInitNew` (the menu's skill/episode pick, or
+  `-warp`/`-skill`) stashes `d_skill`/`d_episode`/`d_map` and raises `gameaction = ga_newgame`;
+  `G_Ticker` replays them into `G_InitNew` when the tic runs. All three were `Game/Game.cpp`
+  file-scope, read by no other file and not config-backed; the vanilla names became references
+  onto the member. `gameaction` (the action they are the payload of) is already in `GameFlow`;
+  these are kept a small cluster of their own so `GameFlow` stays the screen/wipe/action state.
+  Golden-neutral.
 
 ## Step 6 — The playsim
 

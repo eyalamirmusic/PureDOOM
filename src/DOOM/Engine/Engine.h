@@ -3,6 +3,7 @@
 #include "../Game/AmmoLimits.h"
 #include "../Game/AttractMode.h"
 #include "../Game/CorpseQueue.h"
+#include "../Game/DeferredNewGame.h"
 #include "../Game/DemoState.h"
 #include "../Game/EventQueue.h"
 #include "../Game/GameClock.h"
@@ -86,6 +87,7 @@ struct Engine
     AttractMode attractMode;
     ValidCount validCount;
     TiccmdInput ticcmdInput;
+    DeferredNewGame deferredNewGame;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
