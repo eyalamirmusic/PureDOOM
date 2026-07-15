@@ -152,9 +152,10 @@ extern int& scaledviewwidth;
 // ANG90 = left side, ANG270 = right
 extern int viewangleoffset;
 
-// Player taking events, and displaying.
-extern int consoleplayer;
-extern int displayplayer;
+// Player taking events, and displaying. These live in Doom::PlayerState (an Engine member)
+// now, with the player arrays below; all four are references onto it (REFACTOR.md, Step 5).
+extern int& consoleplayer;
+extern int& displayplayer;
 
 
 // -------------------------------------
@@ -198,11 +199,12 @@ extern gamestate_t gamestate;
 extern int gametic;
 
 
-// Bookkeeping on players - state.
-extern player_t players[MAXPLAYERS];
+// Bookkeeping on players - state. In Doom::PlayerState (an Engine member) now, with
+// consoleplayer/displayplayer above; references-to-array onto it (REFACTOR.md, Step 5).
+extern player_t (&players)[MAXPLAYERS];
 
 // Alive? Disconnected?
-extern doom_boolean playeringame[MAXPLAYERS];
+extern doom_boolean (&playeringame)[MAXPLAYERS];
 
 
 // Player spawn spots for deathmatch.

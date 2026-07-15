@@ -89,4 +89,9 @@ StartupDefaults& startupDefaults()
 {
     return engine().startupDefaults;
 }
+
+PlayerState& playerState()
+{
+    return engine().playerState;
+}
 } // namespace Doom

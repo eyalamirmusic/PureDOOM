@@ -61,6 +61,7 @@
 #include "Game.h"
 #include "GameSession.h"
 #include "LevelStats.h"
+#include "PlayerState.h"
 
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
@@ -100,11 +101,13 @@ doom_boolean viewactive;
 
 doom_boolean& deathmatch = Doom::gameSession().deathmatch; // net deathmatch
 doom_boolean& netgame = Doom::gameSession().netgame; // packets are broadcast
-doom_boolean playeringame[MAXPLAYERS];
-player_t players[MAXPLAYERS];
+// The player roster and view selection is a Doom::PlayerState owned by the Engine now;
+// these are references onto it (the arrays as references-to-array) (REFACTOR.md, Step 5).
+doom_boolean (&playeringame)[MAXPLAYERS] = Doom::playerState().playeringame;
+player_t (&players)[MAXPLAYERS] = Doom::playerState().players;
 
-int consoleplayer; // player taking events and displaying
-int displayplayer; // view being displayed
+int& consoleplayer = Doom::playerState().consoleplayer; // taking events and displaying
+int& displayplayer = Doom::playerState().displayplayer; // view being displayed
 int gametic;
 
 // The level's progress (levelstarttic + the intermission totals, and leveltime over in
