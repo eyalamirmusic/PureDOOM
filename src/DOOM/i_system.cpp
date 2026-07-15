@@ -1,160 +1,81 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
-//
-// $Id:$
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
 //
-// This source is available for distribution and/or modification
-// only under the terms of the DOOM Source Code License as
-// published by id Software. All rights reserved.
-//
-// The source is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// FITNESS FOR A PARTICULAR PURPOSE. See the DOOM Source Code License
-// for more details.
-//
-// $Log:$
+// This source is available for distribution and/or modification only under the
+// terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
+//        DOOM system seam - timing, zone backing, startup/teardown, I_Error.
+//        Rewritten in Host/System.{h,cpp}; this keeps the vanilla I_ names as
+//        shims. mb_used / emptycmd are file-local to System.cpp, so there is
+//        nothing to own here.
 //
 //-----------------------------------------------------------------------------
 
-
 #include "doom_config.h"
 
-#include "doomdef.h"
-#include "m_misc.h"
-#include "i_video.h"
-#include "i_sound.h"
-#include "d_net.h"
-#include "g_game.h"
 #include "i_system.h"
 
-
-int mb_used = 6 * (sizeof(void*) / 4);
-ticcmd_t emptycmd;
-
-
-extern doom_boolean demorecording;
-
+#include "Host/System.h"
 
 void I_Tactile(int on, int off, int total)
 {
+    Doom::I_Tactile(on, off, total);
 }
-
 
 ticcmd_t* I_BaseTiccmd(void)
 {
-    return &emptycmd;
+    return Doom::I_BaseTiccmd();
 }
-
 
 int I_GetHeapSize(void)
 {
-    return mb_used * 1024 * 1024;
+    return Doom::I_GetHeapSize();
 }
-
 
 byte* I_ZoneBase(int* size)
 {
-    *size = mb_used * 1024 * 1024;
-    return (byte*)doom_malloc(*size);
+    return Doom::I_ZoneBase(size);
 }
 
-
-//
-// I_GetTime
-// returns time in 1/70th second tics
-//
 int I_GetTime(void)
 {
-    int sec, usec;
-    int newtics;
-    static int basetime = 0;
-
-    doom_gettime(&sec, &usec);
-    if (!basetime)
-        basetime = sec;
-    newtics = (sec - basetime) * TICRATE + usec * TICRATE / 1000000;
-    return newtics;
+    return Doom::I_GetTime();
 }
 
-
-//
-// I_Init
-//
 void I_Init(void)
 {
-    I_InitSound();
+    Doom::I_Init();
 }
 
-
-//
-// I_Quit
-//
 void I_Quit(void)
 {
-    D_QuitNetGame();
-    I_ShutdownSound();
-    I_ShutdownMusic();
-    M_SaveDefaults();
-    I_ShutdownGraphics();
-    doom_exit(0);
+    Doom::I_Quit();
 }
-
 
 void I_WaitVBL(int count)
 {
-#if 0 // [pd] Never sleep in main thread
-#ifdef SGI
-    sginap(1);
-#else
-#ifdef SUN
-    sleep(0);
-#else
-    usleep(count * (1000000 / 70));
-#endif
-#endif
-#endif
+    Doom::I_WaitVBL(count);
 }
-
 
 void I_BeginRead(void)
 {
+    Doom::I_BeginRead();
 }
-
 
 void I_EndRead(void)
 {
+    Doom::I_EndRead();
 }
-
 
 byte* I_AllocLow(int length)
 {
-    byte* mem;
-
-    mem = (byte*)doom_malloc(length);
-    doom_memset(mem, 0, length);
-    return mem;
+    return Doom::I_AllocLow(length);
 }
 
-
-//
-// I_Error
-//
 void I_Error(const char* error)
 {
-    // Message first.
-    if (error) doom_print(error);
-    doom_print("\n");
-
-    // Shutdown. Here might be other errors.
-    if (demorecording)
-        G_CheckDemoStatus();
-
-    D_QuitNetGame();
-    I_ShutdownGraphics();
-
-    doom_exit(-1);
+    Doom::I_Error(error);
 }
