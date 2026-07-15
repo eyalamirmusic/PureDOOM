@@ -48,7 +48,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 3 | The core: leaves first (`Fixed`, `Angle`, `Trig`, `Random`) | **done** |
 | 4 | Ownership: kill the zone allocator | **payoff delivered** — WAD + `Level` geometry own their memory, multi-scenario replay proven; zone's *deletion* deferred into Steps 6–7 (its last users are mobjs/thinkers and renderer `PU_STATIC`) |
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`; scalar clusters move in with Steps 6–8 |
-| 6 | The playsim | |
+| 6 | The playsim | **in progress** — `Vec2` + the map-geometry core (`p_maputl` side/intercept helpers) rewritten with unit tests |
 | 7 | The renderer | |
 | 8 | UI, game loop, host boundary | |
 
@@ -505,6 +505,35 @@ blockmap walk) → `p_mobj` → `p_inter` → `p_enemy` → `p_pspr` → `p_sigh
 things; it may never change what it mixes, or in what order.** Otherwise a golden
 moves for a reason that is not a behaviour change, and the net has been cut
 rather than widened.
+
+### Landed so far — `Vec2` and the map-geometry core
+
+The playsim's core value type is in: `Doom::Vec2` (`Math/Vec2.h`), two `Fixed`
+making a point or a vector in the map plane, trivially copyable and
+layout-compatible with the pair of `fixed_t`s the vanilla structs still store — so
+a rewritten function takes a `Vec2` while the `mobj_t`/`line_t` it came from stays
+1993 C.
+
+The geometric core of collision, sight and shooting moved onto it:
+`Sim/MapGeometry.h` has `pointOnLineSide`, `pointOnDivlineSide` and
+`interceptVector` (plus a `DivLine` value), and `p_maputl.cpp`'s `P_PointOnLineSide`
+/ `P_PointOnDivlineSide` / `P_InterceptVector` are three-line shims over them. The
+fixed-point quirks are preserved verbatim and commented as load-bearing — the
+`>> FRACBITS` on one factor in the line formula, the `>> 8` on both plus the
+sign-bit fast path in the divline formula. **They are different formulae and the
+header says so**; a merge would desync the demos.
+
+`Tests/Sim/GeometryTests.cpp` gives the locality the demos can't: side answers on
+by-hand-clear geometry (a point south of an eastward line is on the front), a sweep
+proving the line and divline formulae agree wherever a point sits clearly off the
+line, and the intercept of two crossing lines landing a quarter of the way along.
+The demos remain the proof the shims read the right fields — a bit-identical replay
+could not survive reading `dx` where `dy` was meant.
+
+Next in the module: the stateful half of `p_maputl` (the blockmap iterators, the
+thing-position linking, `P_PathTraverse`) and then `p_map` (`P_TryMove`), which is
+where the scenario-test harness — place a mobj, move it, assert — gets built on the
+multi-scenario capability from Step 4.
 
 ## Step 7 — The renderer
 

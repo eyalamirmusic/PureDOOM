@@ -74,9 +74,10 @@ apparatus:
   accepts, not C++ anyone wrote.
 
   **The subdirectories are the rewrite.** `Math/` (`Fixed`, `Angle`, `Trig`,
-  `BBox`), `Sim/` (`Random`, `Level`), `Wad/` (`WadFile`) and `Engine/` (`Engine`,
-  the composition root that owns the other three) are real C++ in `namespace Doom`,
-  and a file moves into one the moment it stops being vanilla.
+  `BBox`, `Vec2`), `Sim/` (`Random`, `Level`, `MapGeometry`), `Wad/` (`WadFile`)
+  and `Engine/` (`Engine`, the composition root that owns `Random`/`WadFile`/
+  `Level`) are real C++ in `namespace Doom`, and a file moves into one the moment
+  it stops being vanilla.
   Progress is the flat list getting shorter. The two are compiled differently on
   purpose: rewritten sources get `-Wall -Wextra -Wpedantic` and clang-format from
   their first line; vanilla keeps a blanket `-w` and its formatting exemption until
@@ -470,6 +471,13 @@ Three of them pin things that look like bugs and are not. A refactor will want t
   happens but draws a deterministic zero everywhere. Do not "fix" the over-read in
   the renderer — it is a visible 1993 behaviour, and the frame goldens are recorded
   with it.
+- **`pointOnLineSide` and `pointOnDivlineSide` are different formulae** (both in
+  `Sim/MapGeometry.h`) and must stay different. The line version shifts one factor
+  of the cross product by `FRACBITS`; the divline version shifts both by 8 and has
+  a sign-bit fast path that decides most cases without multiplying. They answer the
+  same for a point clearly off the line but not identically at the margins, and the
+  collision/BSP/sight code depends on the specific one it calls. Merging them into
+  one "clean" side test desyncs the demos. `Tests/Sim/GeometryTests.cpp` pins both.
 
 Also worth knowing before touching `m_fixed.cpp`: **`FixedDiv2` goes through
 `double`.** The simulation is therefore not strictly integer-only. It is still

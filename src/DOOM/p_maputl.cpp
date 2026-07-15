@@ -34,6 +34,17 @@
 #include "p_local.h"
 #include "r_state.h" // State.
 
+#include "Sim/MapGeometry.h"
+
+// Reads a vanilla divline_t's four fields as a Doom::DivLine, so the geometry
+// helpers can take a clean value while the traversal code still stores the vanilla
+// struct.
+static Doom::DivLine asDivLine(divline_t* d)
+{
+    return {{Doom::Fixed {d->x}, Doom::Fixed {d->y}},
+            {Doom::Fixed {d->dx}, Doom::Fixed {d->dy}}};
+}
+
 
 fixed_t opentop;
 fixed_t openbottom;
@@ -66,35 +77,9 @@ fixed_t P_AproxDistance(fixed_t dx, fixed_t dy)
 //
 int P_PointOnLineSide(fixed_t x, fixed_t y, line_t* line)
 {
-    fixed_t dx;
-    fixed_t dy;
-    fixed_t left;
-    fixed_t right;
-
-    if (!line->dx)
-    {
-        if (x <= line->v1->x)
-            return line->dy > 0;
-
-        return line->dy < 0;
-    }
-    if (!line->dy)
-    {
-        if (y <= line->v1->y)
-            return line->dx < 0;
-
-        return line->dx > 0;
-    }
-
-    dx = (x - line->v1->x);
-    dy = (y - line->v1->y);
-
-    left = FixedMul(line->dy >> FRACBITS, dx);
-    right = FixedMul(dy, line->dx >> FRACBITS);
-
-    if (right < left)
-        return 0; // front side
-    return 1; // back side
+    return Doom::pointOnLineSide({Doom::Fixed {x}, Doom::Fixed {y}},
+                                 {Doom::Fixed {line->v1->x}, Doom::Fixed {line->v1->y}},
+                                 {Doom::Fixed {line->dx}, Doom::Fixed {line->dy}});
 }
 
 
@@ -153,43 +138,8 @@ int P_BoxOnLineSide(fixed_t* tmbox, line_t* ld)
 //
 int P_PointOnDivlineSide(fixed_t x, fixed_t y, divline_t* line)
 {
-    fixed_t dx;
-    fixed_t dy;
-    fixed_t left;
-    fixed_t right;
-
-    if (!line->dx)
-    {
-        if (x <= line->x)
-            return line->dy > 0;
-
-        return line->dy < 0;
-    }
-    if (!line->dy)
-    {
-        if (y <= line->y)
-            return line->dx < 0;
-
-        return line->dx > 0;
-    }
-
-    dx = (x - line->x);
-    dy = (y - line->y);
-
-    // try to quickly decide by looking at sign bits
-    if ((line->dy ^ line->dx ^ dx ^ dy) & 0x80000000)
-    {
-        if ((line->dy ^ dx) & 0x80000000)
-            return 1; // (left is negative)
-        return 0;
-    }
-
-    left = FixedMul(line->dy >> 8, dx >> 8);
-    right = FixedMul(dy >> 8, line->dx >> 8);
-
-    if (right < left)
-        return 0; // front side
-    return 1; // back side
+    return Doom::pointOnDivlineSide({Doom::Fixed {x}, Doom::Fixed {y}},
+                                    asDivLine(line));
 }
 
 
@@ -214,23 +164,9 @@ void P_MakeDivline(line_t* li, divline_t* dl)
 //
 fixed_t P_InterceptVector(divline_t* v2, divline_t* v1)
 {
-    fixed_t frac;
-    fixed_t num;
-    fixed_t den;
-
-    den = FixedMul(v1->dy >> 8, v2->dx) - FixedMul(v1->dx >> 8, v2->dy);
-
-    if (den == 0)
-        return 0;
-    //        I_Error ("P_InterceptVector: parallel");
-
-    num =
-        FixedMul((v1->x - v2->x) >> 8, v1->dy)
-        + FixedMul((v2->y - v1->y) >> 8, v1->dx);
-
-    frac = FixedDiv(num, den);
-
-    return frac;
+    // interceptVector(a, b) computes the crossing along `a`; vanilla's v2 is that
+    // `a` and v1 is `b`.
+    return Doom::interceptVector(asDivLine(v2), asDivLine(v1)).raw;
 }
 
 
