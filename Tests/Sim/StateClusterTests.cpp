@@ -104,5 +104,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&finaleState() == &engine().finaleState, "finaleState()");
     check(&wipeState() == &engine().wipeState, "wipeState()");
     check(&menuState() == &engine().menuState, "menuState()");
+    check(&compositeCache() == &engine().compositeCache, "compositeCache()");
 };
 } // namespace

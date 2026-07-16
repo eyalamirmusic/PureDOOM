@@ -25,6 +25,7 @@
 #include "../Game/StartupDefaults.h"
 #include "../Game/TiccmdInput.h"
 #include "../Game/TimeDemo.h"
+#include "../Render/CompositeCache.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
 #include "../Render/RenderScratch.h"
@@ -78,6 +79,7 @@ struct Engine
     ViewWindow viewWindow;
     Lighting lighting;
     GraphicsData graphicsData;
+    CompositeCache compositeCache;
     RenderScratch renderScratch;
     LevelStats levelStats;
     LaunchOptions launchOptions;

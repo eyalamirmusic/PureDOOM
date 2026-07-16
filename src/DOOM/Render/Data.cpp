@@ -22,6 +22,7 @@
 #include <alloca.h>
 
 #include "../r_data.h"
+#include "CompositeCache.h"
 #include "Data.h"
 
 namespace Doom
@@ -58,20 +59,22 @@ typedef struct
     mappatch_t patches[1];
 } maptexture_t;
 
-// r_data's own state - the per-texture composite cache, patch/flat bookkeeping and
-// the memory counters - read by nothing else.
-int lastflat;
-int firstpatch;
-int lastpatch;
-int numpatches;
-int* texturewidthmask;
-int* texturecompositesize;
-short** texturecolumnlump;
-unsigned short** texturecolumnofs;
-byte** texturecomposite;
-int flatmemory;
-int texturememory;
-int spritememory;
+// r_data's own state - the per-texture composite cache, patch/flat bookkeeping and the memory
+// counters - now lives on the Engine (Render/CompositeCache.h, moved by the file-scope-statics
+// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by nothing
+// else.
+static int& lastflat = compositeCache().lastflat;
+static int& firstpatch = compositeCache().firstpatch;
+static int& lastpatch = compositeCache().lastpatch;
+static int& numpatches = compositeCache().numpatches;
+static int*& texturewidthmask = compositeCache().texturewidthmask;
+static int*& texturecompositesize = compositeCache().texturecompositesize;
+static short**& texturecolumnlump = compositeCache().texturecolumnlump;
+static unsigned short**& texturecolumnofs = compositeCache().texturecolumnofs;
+static byte**& texturecomposite = compositeCache().texturecomposite;
+static int& flatmemory = compositeCache().flatmemory;
+static int& texturememory = compositeCache().texturememory;
+static int& spritememory = compositeCache().spritememory;
 
 // Forward declarations so call order needs no rearranging.
 void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight);

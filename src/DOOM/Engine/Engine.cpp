@@ -60,6 +60,11 @@ GraphicsData& graphicsData()
     return engine().graphicsData;
 }
 
+CompositeCache& compositeCache()
+{
+    return engine().compositeCache;
+}
+
 RenderScratch& renderScratch()
 {
     return engine().renderScratch;
