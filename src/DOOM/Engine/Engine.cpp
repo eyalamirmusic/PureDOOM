@@ -414,4 +414,9 @@ StatusWidgetGraphics& statusWidgetGraphics()
 {
     return engine().statusWidgetGraphics;
 }
+
+DisplayState& displayState()
+{
+    return engine().displayState;
+}
 } // namespace Doom

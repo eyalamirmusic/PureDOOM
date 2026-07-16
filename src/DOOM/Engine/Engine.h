@@ -6,6 +6,7 @@
 #include "../Game/CorpseQueue.h"
 #include "../Game/DeferredNewGame.h"
 #include "../Game/DemoState.h"
+#include "../Game/DisplayState.h"
 #include "../Game/EngineParams.h"
 #include "../Game/EventQueue.h"
 #include "../Game/GameClock.h"
@@ -178,6 +179,7 @@ struct Engine
     SoundTarget soundTarget;
     HudFont hudFont;
     StatusWidgetGraphics statusWidgetGraphics;
+    DisplayState displayState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

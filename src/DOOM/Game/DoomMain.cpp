@@ -63,6 +63,7 @@
 #include "AttractMode.h"
 #include "DoomMain.h"
 #include "ConfigPaths.h"
+#include "DisplayState.h"
 #include "EngineParams.h"
 #include "EventQueue.h"
 #include "GameFlow.h"
@@ -201,12 +202,16 @@ void dProcessEvents(void)
 //
 void dDisplay(void)
 {
-    static doom_boolean viewactivestate = false;
-    static doom_boolean menuactivestate = false;
-    static doom_boolean inhelpscreensstate = false;
-    static doom_boolean fullscreen = false;
-    static gamestate_t oldgamestate = (gamestate_t) (-1);
-    static int borderdrawcount;
+    // The frame-diff state machine: a Doom::DisplayState owned by the Engine now, reached by local
+    // references (formerly dDisplay's own function-local statics, never reset - identical
+    // persistence).
+    DisplayState& ds = displayState();
+    doom_boolean& viewactivestate = ds.viewactivestate;
+    doom_boolean& menuactivestate = ds.menuactivestate;
+    doom_boolean& inhelpscreensstate = ds.inhelpscreensstate;
+    doom_boolean& fullscreen = ds.fullscreen;
+    gamestate_t& oldgamestate = ds.oldgamestate;
+    int& borderdrawcount = ds.borderdrawcount;
     int y;
     doom_boolean wipe;
     doom_boolean redrawsbar;
