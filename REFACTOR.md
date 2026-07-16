@@ -1733,10 +1733,15 @@ never really C — the tiny data/decl remainders — are gone:
     (`EngineParams`: `debugfile` / `precache` / `singletics`), with a `StateClusterTests` net for the
     golden-neutral tables. Since then `soundtarget` (`Sim/SoundTarget`) and the whole of `Game/Net`'s
     private bookkeeping (folded into `NetState`) have moved in too, so **every cohesive cluster is now
-    migrated**. **What genuinely remains of the sweep** is a tail: a few scattered single flags with no
-    cohesive cluster home (`st_statusbaron`, `is_wiping_screen`, `inhelpscreens`) — each belongs to a
+    migrated**. The loaded-once **asset pointers are now in too**: `hu_font` (the heads-up font, a
+    `Doom::HudFont` cluster — a loose global the `hu_stuff.cpp` shim owned and `UI/Hud`/`UI/Menu`/
+    `UI/Finale`/`Game/Config` read by bare extern, all moved to references-to-array in lockstep) and
+    `sttminus` (the status-bar number widget's minus sign, a `Doom::StatusWidgetGraphics` cluster kept
+    the widget library's own rather than folded into `StatusBarGraphics`, so `UI/StatusWidgets` stays
+    self-contained). **What genuinely remains of the sweep** is a tail: a few scattered single flags with
+    no cohesive cluster home (`st_statusbaron`, `is_wiping_screen`, `inhelpscreens`) — each belongs to a
     different subsystem and does not group without a grab-bag, so they wait for their subsystem to want
-    them; the loaded-once **asset pointers** (`hu_font`, `sttminus`); and the **function-local
+    them; and the **function-local
     `static`s** (the "later function-local pass" — `HU_Responder`'s send state, the status-bar
     face-drawer's counters, `D_Display`'s frame-diff state, `A_BrainSpit`'s alternating toggle, …),
     which are a different shape from the file-scope sweep. Beyond the tail, the last thing
