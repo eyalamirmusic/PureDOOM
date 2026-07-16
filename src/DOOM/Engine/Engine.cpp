@@ -35,6 +35,11 @@ Clip& clip()
     return engine().clip;
 }
 
+ActionScratch& actionScratch()
+{
+    return engine().actionScratch;
+}
+
 ViewPoint& viewPoint()
 {
     return engine().viewPoint;

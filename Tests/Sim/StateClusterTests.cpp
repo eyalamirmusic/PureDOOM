@@ -106,5 +106,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&menuState() == &engine().menuState, "menuState()");
     check(&compositeCache() == &engine().compositeCache, "compositeCache()");
     check(&wallScratch() == &engine().wallScratch, "wallScratch()");
+    check(&actionScratch() == &engine().actionScratch, "actionScratch()");
 };
 } // namespace

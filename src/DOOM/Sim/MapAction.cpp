@@ -11,6 +11,7 @@
 #include "../sounds.h"
 
 #include "Clip.h"
+#include "ActionScratch.h"
 #include "MapUtil.h"
 #include "Movement.h"
 
@@ -19,19 +20,24 @@ namespace Doom
 namespace
 {
 //
+// The p_map action scratch now lives on the Engine (Sim/ActionScratch.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names below (grouped by the action
+// that uses them: slide, hitscan, use, radius, change-sector) are references onto that member; read
+// by no other file.
+
 // SLIDE MOVE scratch - the best (and second-best) wall the momentum hit, and the
 // move being clipped along it.
 //
-fixed_t bestslidefrac;
-fixed_t secondslidefrac;
+static fixed_t& bestslidefrac = actionScratch().bestslidefrac;
+static fixed_t& secondslidefrac = actionScratch().secondslidefrac;
 
-line_t* bestslideline;
-line_t* secondslideline;
+static line_t*& bestslideline = actionScratch().bestslideline;
+static line_t*& secondslideline = actionScratch().secondslideline;
 
-mobj_t* slidemo;
+static mobj_t*& slidemo = actionScratch().slidemo;
 
-fixed_t tmxmove;
-fixed_t tmymove;
+static fixed_t& tmxmove = actionScratch().tmxmove;
+static fixed_t& tmymove = actionScratch().tmymove;
 
 //
 // P_HitSlideLine
@@ -140,13 +146,13 @@ isblocking:
 // PTR_AimTraverse
 // Sets linetarget and aimslope when a target is aimed at.
 //
-fixed_t aimslope;
-mobj_t* shootthing;
+static fixed_t& aimslope = actionScratch().aimslope;
+static mobj_t*& shootthing = actionScratch().shootthing;
 
 // Height if not aiming up or down.
-fixed_t shootz;
+static fixed_t& shootz = actionScratch().shootz;
 
-int la_damage;
+static int& la_damage = actionScratch().la_damage;
 
 doom_boolean aimTraverse(intercept_t* in)
 {
@@ -351,7 +357,7 @@ doom_boolean shootTraverse(intercept_t* in)
 //
 // USE LINES
 //
-mobj_t* usething;
+static mobj_t*& usething = actionScratch().usething;
 
 doom_boolean useTraverse(intercept_t* in)
 {
@@ -386,9 +392,9 @@ doom_boolean useTraverse(intercept_t* in)
 //
 // RADIUS ATTACK scratch
 //
-mobj_t* bombsource;
-mobj_t* bombspot;
-int bombdamage;
+static mobj_t*& bombsource = actionScratch().bombsource;
+static mobj_t*& bombspot = actionScratch().bombspot;
+static int& bombdamage = actionScratch().bombdamage;
 
 //
 // PIT_RadiusAttack
@@ -431,8 +437,8 @@ doom_boolean radiusAttackThing(mobj_t* thing)
 //
 // PIT_ChangeSector
 //
-doom_boolean nofit;
-doom_boolean crushchange;
+static doom_boolean& nofit = actionScratch().nofit;
+static doom_boolean& crushchange = actionScratch().crushchange;
 
 doom_boolean changeSectorThing(mobj_t* thing)
 {

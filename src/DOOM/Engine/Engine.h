@@ -33,6 +33,7 @@
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
 #include "../Render/WallScratch.h"
+#include "../Sim/ActionScratch.h"
 #include "../Sim/ActiveSpecials.h"
 #include "../Sim/Clip.h"
 #include "../Sim/EndLevelTimer.h"
@@ -75,6 +76,7 @@ struct Engine
     WadFile wad;
     Level level;
     Clip clip;
+    ActionScratch actionScratch;
     ViewPoint viewPoint;
     ViewProjection viewProjection;
     ViewWindow viewWindow;
