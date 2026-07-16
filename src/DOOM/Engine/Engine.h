@@ -28,6 +28,7 @@
 #include "../Game/StartupDefaults.h"
 #include "../Game/TiccmdInput.h"
 #include "../Game/TimeDemo.h"
+#include "../Render/BSPScratch.h"
 #include "../Render/CompositeCache.h"
 #include "../Render/DrawTables.h"
 #include "../Render/GraphicsData.h"
@@ -158,6 +159,7 @@ struct Engine
     SoundSettings soundSettings;
     MenuSettings menuSettings;
     ConfigPaths configPaths;
+    BSPScratch bspScratch;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

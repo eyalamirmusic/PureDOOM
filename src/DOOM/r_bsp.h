@@ -26,11 +26,13 @@
 #include "r_defs.h"
 
 
-extern seg_t* curline;
-extern side_t* sidedef;
-extern line_t* linedef;
-extern sector_t* frontsector;
-extern sector_t* backsector;
+// The BSP traversal pointers and the drawseg pool below are Doom::BSPScratch members
+// (Engine); these are references onto them (REFACTOR.md, Step 5).
+extern seg_t*& curline;
+extern side_t*& sidedef;
+extern line_t*& linedef;
+extern sector_t*& frontsector;
+extern sector_t*& backsector;
 
 extern int rw_x;
 extern int rw_stopx;
@@ -43,8 +45,8 @@ extern doom_boolean markceiling;
 
 extern doom_boolean skymap;
 
-extern drawseg_t drawsegs[MAXDRAWSEGS];
-extern drawseg_t* ds_p;
+extern drawseg_t (&drawsegs)[MAXDRAWSEGS];
+extern drawseg_t*& ds_p;
 
 extern lighttable_t** hscalelight;
 extern lighttable_t** vscalelight;

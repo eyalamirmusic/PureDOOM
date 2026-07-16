@@ -364,4 +364,9 @@ ConfigPaths& configPaths()
 {
     return engine().configPaths;
 }
+
+BSPScratch& bspScratch()
+{
+    return engine().bspScratch;
+}
 } // namespace Doom

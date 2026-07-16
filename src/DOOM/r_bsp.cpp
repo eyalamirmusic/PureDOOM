@@ -15,23 +15,26 @@
 #include "r_local.h"
 
 #include "Render/BSP.h"
+#include "Render/BSPScratch.h"
 
 #define MAXSEGS 32
 
-seg_t* curline;
+// The BSP traversal pointers and the drawseg pool are a Doom::BSPScratch owned by the Engine
+// now; these are references onto its members (REFACTOR.md, Step 5).
+seg_t*& curline = Doom::bspScratch().curline;
 
-side_t* sidedef;
+side_t*& sidedef = Doom::bspScratch().sidedef;
 
-line_t* linedef;
+line_t*& linedef = Doom::bspScratch().linedef;
 
-sector_t* frontsector;
+sector_t*& frontsector = Doom::bspScratch().frontsector;
 
-sector_t* backsector;
+sector_t*& backsector = Doom::bspScratch().backsector;
 
 
-drawseg_t drawsegs[MAXDRAWSEGS];
+drawseg_t (&drawsegs)[MAXDRAWSEGS] = Doom::bspScratch().drawsegs;
 
-drawseg_t* ds_p;
+drawseg_t*& ds_p = Doom::bspScratch().ds_p;
 
 
 
