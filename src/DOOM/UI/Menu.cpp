@@ -80,8 +80,9 @@ int messageToPrint; // 1 = message to be printed
 // headers; screen_palette has no header, so it is declared here.
 extern int doom_flags;
 extern patch_t* hu_font[HU_FONTSIZE];
-extern doom_boolean message_dontfuckwithme;
-extern doom_boolean chat_on; // in heads-up code
+// chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
+extern doom_boolean& message_dontfuckwithme;
+extern doom_boolean& chat_on; // in heads-up code
 extern int mousemove;
 extern int crosshair; // Game/Config.cpp
 extern int always_run; // Game/Config.cpp

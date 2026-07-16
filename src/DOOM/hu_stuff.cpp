@@ -22,14 +22,15 @@
 #include "r_defs.h" // patch_t
 
 #include "UI/Hud.h"
+#include "UI/HudFlags.h"
 
 // The heads-up font (read by f_finale, m_menu, m_misc).
 patch_t* hu_font[HU_FONTSIZE];
 
-// Chat state read elsewhere: whether chat input is open (m_menu) and whether a
-// message must not be suppressed (m_menu).
-doom_boolean chat_on;
-doom_boolean message_dontfuckwithme;
+// The two cross-read HUD flags (chat input open; a forced message locks the line)
+// are a Doom::HudFlags owned by the Engine now; these are references onto its members.
+doom_boolean& chat_on = Doom::hudFlags().chat_on;
+doom_boolean& message_dontfuckwithme = Doom::hudFlags().message_dontfuckwithme;
 
 // The chat macros (m_misc persists them in the config).
 char* chat_macros[] = {

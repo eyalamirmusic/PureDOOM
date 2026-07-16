@@ -51,8 +51,9 @@
 extern char* chat_macros[];
 extern char* player_names[];
 extern patch_t* hu_font[HU_FONTSIZE];
-extern doom_boolean chat_on;
-extern doom_boolean message_dontfuckwithme;
+// chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
+extern doom_boolean& chat_on;
+extern doom_boolean& message_dontfuckwithme;
 extern char* mapnames[];
 
 // Other subsystems' globals this file reads.

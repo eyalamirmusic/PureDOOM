@@ -64,6 +64,7 @@
 #include "../UI/AutomapView.h"
 #include "../UI/FinaleState.h"
 #include "../UI/HudChat.h"
+#include "../UI/HudFlags.h"
 #include "../UI/HudMessage.h"
 #include "../UI/HudState.h"
 #include "../UI/IntermissionState.h"
@@ -168,6 +169,7 @@ struct Engine
     SpriteState spriteState;
     DrawState drawState;
     VideoState videoState;
+    HudFlags hudFlags;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

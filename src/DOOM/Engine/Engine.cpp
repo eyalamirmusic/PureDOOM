@@ -389,4 +389,9 @@ VideoState& videoState()
 {
     return engine().videoState;
 }
+
+HudFlags& hudFlags()
+{
+    return engine().hudFlags;
+}
 } // namespace Doom
