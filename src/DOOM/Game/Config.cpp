@@ -94,28 +94,9 @@ extern patch_t* hu_font[HU_FONTSIZE];
 //
 // DEFAULTS
 //
-extern int key_right;
-extern int key_left;
-extern int key_up;
-extern int key_down;
-
-extern int key_strafeleft;
-extern int key_straferight;
-
-extern int key_fire;
-extern int key_use;
-extern int key_strafe;
-extern int key_speed;
-
-extern int mousebfire;
-extern int mousebstrafe;
-extern int mousebforward;
-extern int mousemove;
-
-extern int joybfire;
-extern int joybstrafe;
-extern int joybuse;
-extern int joybspeed;
+// The keyboard/mouse/joystick bindings are Doom::InputConfig members (Engine) now, so their
+// defaults[] entries are bound to those members at runtime by bindEngineDefaults() rather than
+// capturing their addresses here at static-init. Config.cpp no longer needs to name them.
 
 extern int& viewwidth;
 extern int& viewheight;
@@ -129,10 +110,11 @@ extern char* chat_macros[];
 
 extern byte scantokey[128];
 
-int usemouse;
-int usejoystick;
-int crosshair;
-int always_run;
+// usemouse/usejoystick/crosshair/always_run are Doom::InputConfig members (Engine); references.
+int& usemouse = Doom::inputConfig().usemouse;
+int& usejoystick = Doom::inputConfig().usejoystick;
+int& crosshair = Doom::inputConfig().crosshair;
+int& always_run = Doom::inputConfig().always_run;
 
 // The config keys are string literals bound to option globals by address;
 // the -Wwritable-strings that legitimate 1993 table raises is benign here.
@@ -149,34 +131,36 @@ default_t defaults[] = {
     {"music_volume", 0, 8},
     {"show_messages", 0, 1},
 
-    {"key_right", &key_right, KEY_RIGHTARROW},
-    {"key_left", &key_left, KEY_LEFTARROW},
-    {"key_up", &key_up, KEY_UPARROW},
-    {"key_down", &key_down, KEY_DOWNARROW},
-    {"key_strafeleft", &key_strafeleft, ','},
-    {"key_straferight", &key_straferight, '.'},
+    // The control bindings are bound to their Doom::InputConfig members at runtime
+    // (bindEngineDefaults); a static &member here would race that binding across TUs.
+    {"key_right", 0, KEY_RIGHTARROW},
+    {"key_left", 0, KEY_LEFTARROW},
+    {"key_up", 0, KEY_UPARROW},
+    {"key_down", 0, KEY_DOWNARROW},
+    {"key_strafeleft", 0, ','},
+    {"key_straferight", 0, '.'},
 
-    {"key_fire", &key_fire, KEY_RCTRL},
-    {"key_use", &key_use, ' '},
-    {"key_strafe", &key_strafe, KEY_RALT},
-    {"key_speed", &key_speed, KEY_RSHIFT},
+    {"key_fire", 0, KEY_RCTRL},
+    {"key_use", 0, ' '},
+    {"key_strafe", 0, KEY_RALT},
+    {"key_speed", 0, KEY_RSHIFT},
 
-    {"use_mouse", &usemouse, 1},
-    {"mouseb_fire", &mousebfire, 0},
-    {"mouseb_strafe", &mousebstrafe, 1},
-    {"mouseb_forward", &mousebforward, 2},
-    {"mouse_move", &mousemove, 0},
+    {"use_mouse", 0, 1},
+    {"mouseb_fire", 0, 0},
+    {"mouseb_strafe", 0, 1},
+    {"mouseb_forward", 0, 2},
+    {"mouse_move", 0, 0},
 
-    {"use_joystick", &usejoystick, 0},
-    {"joyb_fire", &joybfire, 0},
-    {"joyb_strafe", &joybstrafe, 1},
-    {"joyb_use", &joybuse, 3},
-    {"joyb_speed", &joybspeed, 2},
+    {"use_joystick", 0, 0},
+    {"joyb_fire", 0, 0},
+    {"joyb_strafe", 0, 1},
+    {"joyb_use", 0, 3},
+    {"joyb_speed", 0, 2},
 
     {"screenblocks", 0, 9},
     {"detaillevel", 0, 0},
-    {"crosshair", &crosshair, 0},
-    {"always_run", &always_run, 0},
+    {"crosshair", 0, 0},
+    {"always_run", 0, 0},
 
     {"snd_channels", 0, 3}, // bound to soundSettings().numChannels at runtime
 
@@ -307,14 +291,50 @@ static void bindEngineDefault(const char* name, int* location)
 
 static void bindEngineDefaults(void)
 {
-    bindEngineDefault("sfx_volume", &engine().soundSettings.sfxVolume);
-    bindEngineDefault("music_volume", &engine().soundSettings.musicVolume);
-    bindEngineDefault("snd_channels", &engine().soundSettings.numChannels);
-    bindEngineDefault("mouse_sensitivity", &engine().menuSettings.mouseSensitivity);
-    bindEngineDefault("show_messages", &engine().menuSettings.showMessages);
-    bindEngineDefault("screenblocks", &engine().menuSettings.screenblocks);
-    bindEngineDefault("detaillevel", &engine().menuSettings.detailLevel);
-    bindEngineDefault("usegamma", &engine().menuSettings.usegamma);
+    Engine& e = engine();
+
+    // The member addresses are taken here, at runtime, not in the static defaults[] table -
+    // that is the whole point (a static &member captures the address of a reference before the
+    // Engine exists). A local table keeps the pairing readable.
+    const struct
+    {
+        const char* name;
+        int* location;
+    } binds[] = {
+        {"sfx_volume", &e.soundSettings.sfxVolume},
+        {"music_volume", &e.soundSettings.musicVolume},
+        {"snd_channels", &e.soundSettings.numChannels},
+        {"mouse_sensitivity", &e.menuSettings.mouseSensitivity},
+        {"show_messages", &e.menuSettings.showMessages},
+        {"screenblocks", &e.menuSettings.screenblocks},
+        {"detaillevel", &e.menuSettings.detailLevel},
+        {"usegamma", &e.menuSettings.usegamma},
+        {"key_right", &e.inputConfig.key_right},
+        {"key_left", &e.inputConfig.key_left},
+        {"key_up", &e.inputConfig.key_up},
+        {"key_down", &e.inputConfig.key_down},
+        {"key_strafeleft", &e.inputConfig.key_strafeleft},
+        {"key_straferight", &e.inputConfig.key_straferight},
+        {"key_fire", &e.inputConfig.key_fire},
+        {"key_use", &e.inputConfig.key_use},
+        {"key_strafe", &e.inputConfig.key_strafe},
+        {"key_speed", &e.inputConfig.key_speed},
+        {"use_mouse", &e.inputConfig.usemouse},
+        {"mouseb_fire", &e.inputConfig.mousebfire},
+        {"mouseb_strafe", &e.inputConfig.mousebstrafe},
+        {"mouseb_forward", &e.inputConfig.mousebforward},
+        {"mouse_move", &e.inputConfig.mousemove},
+        {"use_joystick", &e.inputConfig.usejoystick},
+        {"joyb_fire", &e.inputConfig.joybfire},
+        {"joyb_strafe", &e.inputConfig.joybstrafe},
+        {"joyb_use", &e.inputConfig.joybuse},
+        {"joyb_speed", &e.inputConfig.joybspeed},
+        {"crosshair", &e.inputConfig.crosshair},
+        {"always_run", &e.inputConfig.always_run},
+    };
+
+    for (const auto& b : binds)
+        bindEngineDefault(b.name, b.location);
 }
 
 //

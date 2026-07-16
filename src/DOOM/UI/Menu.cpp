@@ -83,9 +83,10 @@ extern patch_t* hu_font[HU_FONTSIZE];
 // chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
 extern doom_boolean& message_dontfuckwithme;
 extern doom_boolean& chat_on; // in heads-up code
-extern int mousemove;
-extern int crosshair; // Game/Config.cpp
-extern int always_run; // Game/Config.cpp
+// mousemove/crosshair/always_run are Doom::InputConfig members (Engine); references onto them.
+extern int& mousemove;
+extern int& crosshair;
+extern int& always_run;
 extern unsigned char screen_palette[256 * 3]; // i_video, no header
 
 // The quit-screen taunts, drawn by M_QuitDOOM. Declared in dstrings.h, read only

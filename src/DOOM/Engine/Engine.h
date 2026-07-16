@@ -12,6 +12,7 @@
 #include "../Game/GameFlow.h"
 #include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"
+#include "../Game/InputConfig.h"
 #include "../Game/IntermissionInfo.h"
 #include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
@@ -170,6 +171,7 @@ struct Engine
     DrawState drawState;
     VideoState videoState;
     HudFlags hudFlags;
+    InputConfig inputConfig;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

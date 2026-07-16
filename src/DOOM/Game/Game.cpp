@@ -66,6 +66,7 @@
 #include "GameClock.h"
 #include "GameFlow.h"
 #include "GameSession.h"
+#include "InputConfig.h"
 #include "IntermissionInfo.h"
 #include "LevelStats.h"
 #include "MovementSpeeds.h"
@@ -175,29 +176,32 @@ short (&consistancy)[MAXPLAYERS][BACKUPTICS] = Doom::netState().consistancy;
 byte* savebuffer;
 
 //
-// controls (have defaults)
+// controls (have defaults). The config-backed control bindings are a Doom::InputConfig owned by
+// the Engine now (Game/InputConfig.h); these are references onto its members. Config.cpp binds
+// its defaults[] entries to the members at runtime rather than capturing their addresses at
+// static-init, which is what unblocked the migration.
 //
-int key_right;
-int key_left;
+int& key_right = Doom::inputConfig().key_right;
+int& key_left = Doom::inputConfig().key_left;
 
-int key_up;
-int key_down;
-int key_strafeleft;
-int key_straferight;
-int key_fire;
-int key_use;
-int key_strafe;
-int key_speed;
+int& key_up = Doom::inputConfig().key_up;
+int& key_down = Doom::inputConfig().key_down;
+int& key_strafeleft = Doom::inputConfig().key_strafeleft;
+int& key_straferight = Doom::inputConfig().key_straferight;
+int& key_fire = Doom::inputConfig().key_fire;
+int& key_use = Doom::inputConfig().key_use;
+int& key_strafe = Doom::inputConfig().key_strafe;
+int& key_speed = Doom::inputConfig().key_speed;
 
-int mousebfire;
-int mousebstrafe;
-int mousebforward;
-int mousemove;
+int& mousebfire = Doom::inputConfig().mousebfire;
+int& mousebstrafe = Doom::inputConfig().mousebstrafe;
+int& mousebforward = Doom::inputConfig().mousebforward;
+int& mousemove = Doom::inputConfig().mousemove;
 
-int joybfire;
-int joybstrafe;
-int joybuse;
-int joybspeed;
+int& joybfire = Doom::inputConfig().joybfire;
+int& joybstrafe = Doom::inputConfig().joybstrafe;
+int& joybuse = Doom::inputConfig().joybuse;
+int& joybspeed = Doom::inputConfig().joybspeed;
 
 // The movement-speed tables G_BuildTiccmd applies to the player's input are a Doom::MovementSpeeds
 // owned by the Engine now, moved by the file-scope-statics sweep; these vanilla names are
@@ -271,7 +275,7 @@ extern int& skytexture;
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
-extern int always_run; // m_menu
+extern int& always_run; // Doom::InputConfig member (Engine)
 extern char* player_names[4]; // hu_stuff
 
 namespace Doom

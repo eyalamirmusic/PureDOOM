@@ -605,7 +605,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     extern doom_boolean& menuactive; // Doom::OverlayState (Engine member)
     extern gamestate_t& gamestate; // Doom::GameFlow (Engine member)
     extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
-    extern int crosshair;
+    extern int& crosshair; // Doom::InputConfig (Engine member)
 
     // Draw crosshair
     if (crosshair && !menuactive && gamestate == GS_LEVEL && !automapactive)

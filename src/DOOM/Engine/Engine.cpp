@@ -394,4 +394,9 @@ HudFlags& hudFlags()
 {
     return engine().hudFlags;
 }
+
+InputConfig& inputConfig()
+{
+    return engine().inputConfig;
+}
 } // namespace Doom
