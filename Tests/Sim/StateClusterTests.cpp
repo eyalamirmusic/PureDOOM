@@ -109,5 +109,8 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&actionScratch() == &engine().actionScratch, "actionScratch()");
     check(&sightScratch() == &engine().sightScratch, "sightScratch()");
     check(&weaponScratch() == &engine().weaponScratch, "weaponScratch()");
+    check(&enemyAI() == &engine().enemyAI, "enemyAI()");
+    check(&switchList() == &engine().switchList, "switchList()");
+    check(&playerScratch() == &engine().playerScratch, "playerScratch()");
 };
 } // namespace

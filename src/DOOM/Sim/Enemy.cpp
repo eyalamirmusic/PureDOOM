@@ -29,6 +29,7 @@
 #include "../sounds.h"
 
 #include "Enemy.h"
+#include "EnemyAI.h"
 
 #define MAXSPECIALCROSS 8
 #define FATSPREAD (ANG90 / 8)
@@ -75,13 +76,16 @@ dirtype_t diags[] = {DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
 fixed_t xspeed[8] = {FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000, 0, 47000};
 fixed_t yspeed[8] = {0, 47000, FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000};
 int TRACEANGLE = 0xc000000;
-mobj_t* corpsehit;
-mobj_t* vileobj;
-fixed_t viletryx;
-fixed_t viletryy;
-mobj_t* braintargets[32];
-int numbraintargets;
-int braintargeton;
+// The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
+// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
+// file. (The const direction/speed tables above stay file-local.)
+static mobj_t*& corpsehit = enemyAI().corpsehit;
+static mobj_t*& vileobj = enemyAI().vileobj;
+static fixed_t& viletryx = enemyAI().viletryx;
+static fixed_t& viletryy = enemyAI().viletryy;
+static mobj_t* (&braintargets)[32] = enemyAI().braintargets;
+static int& numbraintargets = enemyAI().numbraintargets;
+static int& braintargeton = enemyAI().braintargeton;
 
 // Forward declarations so the file's own call order needs no rearranging.
 void recursiveSound(sector_t* sec, int soundblocks);

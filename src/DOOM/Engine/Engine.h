@@ -36,11 +36,14 @@
 #include "../Sim/ActionScratch.h"
 #include "../Sim/ActiveSpecials.h"
 #include "../Sim/Clip.h"
+#include "../Sim/EnemyAI.h"
 #include "../Sim/EndLevelTimer.h"
 #include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
+#include "../Sim/PlayerScratch.h"
 #include "../Sim/Random.h"
 #include "../Sim/SightScratch.h"
+#include "../Sim/SwitchList.h"
 #include "../Sim/ValidCount.h"
 #include "../Sim/WeaponScratch.h"
 #include "../UI/AutomapView.h"
@@ -81,6 +84,9 @@ struct Engine
     ActionScratch actionScratch;
     SightScratch sightScratch;
     WeaponScratch weaponScratch;
+    EnemyAI enemyAI;
+    SwitchList switchList;
+    PlayerScratch playerScratch;
     ViewPoint viewPoint;
     ViewProjection viewProjection;
     ViewWindow viewWindow;

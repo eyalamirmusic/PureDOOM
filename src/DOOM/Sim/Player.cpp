@@ -23,6 +23,7 @@
 #include "../p_local.h"
 
 #include "Player.h"
+#include "PlayerScratch.h"
 
 // Index of the special effects (INVUL inverse) map.
 #define INVERSECOLORMAP 32
@@ -39,7 +40,9 @@ namespace Doom
 // Movement.
 //
 
-doom_boolean onground;
+// onground now lives on the Engine (Sim/PlayerScratch.h, moved by the file-scope-statics sweep -
+// REFACTOR.md, Step 5). The vanilla name is a reference onto that member; read by no other file.
+static doom_boolean& onground = playerScratch().onground;
 
 //
 // thrust

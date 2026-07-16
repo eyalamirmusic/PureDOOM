@@ -18,6 +18,7 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
+#include "SwitchList.h"
 #include "Switches.h"
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
@@ -74,8 +75,11 @@ switchlist_t alphSwitchList[] = {
 
     {"\0", "\0", 0}};
 
-int switchlist[MAXSWITCHES * 2];
-int numswitches;
+// switchlist/numswitches now live on the Engine (Sim/SwitchList.h, moved by the file-scope-statics
+// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
+// file.
+static int (&switchlist)[MAXSWITCHES * 2] = switchList().switchlist;
+static int& numswitches = switchList().numswitches;
 
 // Forward declarations so the file's own call order needs no rearranging.
 void initSwitchList(void);

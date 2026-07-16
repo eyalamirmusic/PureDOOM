@@ -50,6 +50,21 @@ WeaponScratch& weaponScratch()
     return engine().weaponScratch;
 }
 
+EnemyAI& enemyAI()
+{
+    return engine().enemyAI;
+}
+
+SwitchList& switchList()
+{
+    return engine().switchList;
+}
+
+PlayerScratch& playerScratch()
+{
+    return engine().playerScratch;
+}
+
 ViewPoint& viewPoint()
 {
     return engine().viewPoint;
