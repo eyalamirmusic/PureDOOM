@@ -374,4 +374,9 @@ SegState& segState()
 {
     return engine().segState;
 }
+
+SpriteState& spriteState()
+{
+    return engine().spriteState;
+}
 } // namespace Doom

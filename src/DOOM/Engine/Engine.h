@@ -39,6 +39,7 @@
 #include "../Render/SegState.h"
 #include "../Render/SolidSegs.h"
 #include "../Render/SpriteScratch.h"
+#include "../Render/SpriteState.h"
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
@@ -162,6 +163,7 @@ struct Engine
     ConfigPaths configPaths;
     BSPScratch bspScratch;
     SegState segState;
+    SpriteState spriteState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
