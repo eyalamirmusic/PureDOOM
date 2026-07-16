@@ -29,6 +29,12 @@ struct StatusBarWidgets
     st_percent_t w_armor = {}; // armor percent
     st_number_t w_ammo[4] = {}; // the four ammo-type counts
     st_number_t w_maxammo[4] = {}; // the four ammo-type caps
+
+    // The "n/a" sentinel w_ready.num points at when the ready weapon uses no ammo (fist/chainsaw).
+    // stupdateWidgets' own function-local static (the "later function-local pass"); it must persist,
+    // since the widget holds its address and reads it when drawing. Never reassigned - a constant in
+    // practice - so its stable member address is what the widget needs.
+    int largeammo = 1994;
 };
 
 // The one StatusBarWidgets, a view onto the Engine's member - the same pattern as the other

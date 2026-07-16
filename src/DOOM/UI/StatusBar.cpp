@@ -821,7 +821,9 @@ void stupdateFaceWidget(void)
 
 void stupdateWidgets(void)
 {
-    static int largeammo = 1994; // means "n/a"
+    // The "n/a" ammo sentinel: a Doom::StatusBarWidgets member (Engine) now, reached by a local
+    // reference (w_ready.num takes its address, so the member's stable address is what it needs).
+    int& largeammo = statusBarWidgets().largeammo;
     int i;
 
     if (weaponinfo[plyr->readyweapon].ammo == am_noammo)

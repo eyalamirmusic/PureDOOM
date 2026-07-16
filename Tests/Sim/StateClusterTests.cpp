@@ -68,6 +68,8 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
     check(StatusBarGraphics {}.numFaces == 42
               && StatusBarGraphics {}.sbar == nullptr,
           "StatusBarGraphics face count and null patches");
+    check(StatusBarWidgets {}.largeammo == 1994,
+          "StatusBarWidgets largeammo n/a sentinel");
     check(StatusBarState {}.veryfirsttime == 1
               && StatusBarState {}.st_stopped == true,
           "StatusBarState one-time gate and parked flag");
