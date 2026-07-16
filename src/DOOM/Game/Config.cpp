@@ -179,7 +179,7 @@ default_t defaults[] = {
 
     {"snd_channels", 0, 3}, // bound to soundSettings().numChannels at runtime
 
-    {"usegamma", &usegamma, 0},
+    {"usegamma", 0, 0}, // bound to menuSettings().usegamma at runtime
 
     {"chatmacro0", 0, STRING_VALUE, 0, 0, &chat_macros[0], HUSTR_CHATMACRO0},
     {"chatmacro1", 0, STRING_VALUE, 0, 0, &chat_macros[1], HUSTR_CHATMACRO1},
@@ -312,6 +312,7 @@ static void bindEngineDefaults(void)
     bindEngineDefault("show_messages", &engine().menuSettings.showMessages);
     bindEngineDefault("screenblocks", &engine().menuSettings.screenblocks);
     bindEngineDefault("detaillevel", &engine().menuSettings.detailLevel);
+    bindEngineDefault("usegamma", &engine().menuSettings.usegamma);
 }
 
 //

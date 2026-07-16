@@ -43,6 +43,7 @@
 #include "../v_video.h"
 
 #include "Video.h"
+#include "../UI/MenuSettings.h"
 
 // Each screen is [SCREENWIDTH*SCREENHEIGHT];
 byte* screens[5];
@@ -138,7 +139,10 @@ byte gammatable[5][256] = {
      247, 248, 248, 249, 249, 250, 250, 251, 251, 252, 252, 253, 254, 254, 255,
      255}};
 
-int usegamma;
+// usegamma is config-backed and owned by the Engine's MenuSettings cluster now
+// (UI/MenuSettings.h); this is a reference onto that member. Config.cpp binds its
+// defaults[] entry at runtime rather than capturing the address at static-init.
+int& usegamma = Doom::menuSettings().usegamma;
 
 namespace Doom
 {

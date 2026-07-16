@@ -24,6 +24,7 @@ struct MenuSettings
     int showMessages = 0;     // has default (1), 0 = off, 1 = on
     int detailLevel = 0;      // has default (0), 0 = high, 1 = normal
     int screenblocks = 0;     // has default (9)
+    int usegamma = 0;         // has default (0), gamma-correction level 0-4 (F11)
 };
 
 MenuSettings& menuSettings();
