@@ -27,6 +27,7 @@
 #include "../sounds.h"
 
 #include "Weapon.h"
+#include "WeaponScratch.h"
 
 #define LOWERSPEED (FRACUNIT * 6)
 #define RAISESPEED (FRACUNIT * 6)
@@ -40,9 +41,12 @@
 namespace Doom
 {
 // Weapon-bob offset and the auto-aim slope of the shot being fired; file-local.
-fixed_t swingx;
-fixed_t swingy;
-fixed_t bulletslope;
+// The weapon scratch now lives on the Engine (Sim/WeaponScratch.h, moved by the file-scope-statics
+// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
+// file.
+static fixed_t& swingx = weaponScratch().swingx;
+static fixed_t& swingy = weaponScratch().swingy;
+static fixed_t& bulletslope = weaponScratch().bulletslope;
 
 // Forward declarations so call order needs no rearranging.
 void bringUpWeapon(player_t* player);

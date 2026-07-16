@@ -107,5 +107,7 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&compositeCache() == &engine().compositeCache, "compositeCache()");
     check(&wallScratch() == &engine().wallScratch, "wallScratch()");
     check(&actionScratch() == &engine().actionScratch, "actionScratch()");
+    check(&sightScratch() == &engine().sightScratch, "sightScratch()");
+    check(&weaponScratch() == &engine().weaponScratch, "weaponScratch()");
 };
 } // namespace

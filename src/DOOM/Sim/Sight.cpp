@@ -7,19 +7,22 @@
 #include "../r_state.h" // sectors, segs, nodes, rejectmatrix, validcount
 
 #include "Clip.h"
+#include "SightScratch.h"
 
 namespace Doom
 {
 namespace
 {
 // The sight line and its endpoint; p_sight's own scratch (unlike topslope/
-// bottomslope, which it shares with the aim and so live in Clip).
-fixed_t sightzstart; // eye z of looker
-divline_t strace; // from t1 to t2
-fixed_t t2x;
-fixed_t t2y;
+// bottomslope, which it shares with the aim and so live in Clip). Now on the Engine
+// (Sim/SightScratch.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla
+// names are references onto that member (sightcounts as a reference-to-array).
+fixed_t& sightzstart = sightScratch().sightzstart; // eye z of looker
+divline_t& strace = sightScratch().strace; // from t1 to t2
+fixed_t& t2x = sightScratch().t2x;
+fixed_t& t2y = sightScratch().t2y;
 
-int sightcounts[2];
+int (&sightcounts)[2] = sightScratch().sightcounts;
 
 //
 // P_DivlineSide

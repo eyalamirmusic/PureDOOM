@@ -40,7 +40,9 @@
 #include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
 #include "../Sim/Random.h"
+#include "../Sim/SightScratch.h"
 #include "../Sim/ValidCount.h"
+#include "../Sim/WeaponScratch.h"
 #include "../UI/AutomapView.h"
 #include "../UI/FinaleState.h"
 #include "../UI/HudChat.h"
@@ -77,6 +79,8 @@ struct Engine
     Level level;
     Clip clip;
     ActionScratch actionScratch;
+    SightScratch sightScratch;
+    WeaponScratch weaponScratch;
     ViewPoint viewPoint;
     ViewProjection viewProjection;
     ViewWindow viewWindow;
