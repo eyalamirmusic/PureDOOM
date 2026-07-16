@@ -14,6 +14,7 @@
 #include "../r_sky.h"
 #include "../w_wad.h"
 
+#include "PlaneScratch.h"
 #include "Planes.h"
 
 #define MAXVISPLANES 128
@@ -21,20 +22,23 @@
 
 namespace Doom
 {
-planefunction_t ceilingfunc;
-visplane_t visplanes[MAXVISPLANES];
-visplane_t* lastvisplane;
-short openings[MAXOPENINGS];
-int spanstart[SCREENHEIGHT];
-int spanstop[SCREENHEIGHT];
-lighttable_t** planezlight;
-fixed_t planeheight;
-fixed_t basexscale;
-fixed_t baseyscale;
-fixed_t cachedheight[SCREENHEIGHT];
-fixed_t cacheddistance[SCREENHEIGHT];
-fixed_t cachedxstep[SCREENHEIGHT];
-fixed_t cachedystep[SCREENHEIGHT];
+// The visplane and span machinery now lives on the Engine (Render/PlaneScratch.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member;
+// read by no other file. (The header-externed lastopening stays in the r_plane shim; the dead
+// vestigial `ceilingfunc` was deleted.)
+static visplane_t (&visplanes)[MAXVISPLANES] = planeScratch().visplanes;
+static visplane_t*& lastvisplane = planeScratch().lastvisplane;
+static short (&openings)[MAXOPENINGS] = planeScratch().openings;
+static int (&spanstart)[SCREENHEIGHT] = planeScratch().spanstart;
+static int (&spanstop)[SCREENHEIGHT] = planeScratch().spanstop;
+static lighttable_t**& planezlight = planeScratch().planezlight;
+static fixed_t& planeheight = planeScratch().planeheight;
+static fixed_t& basexscale = planeScratch().basexscale;
+static fixed_t& baseyscale = planeScratch().baseyscale;
+static fixed_t (&cachedheight)[SCREENHEIGHT] = planeScratch().cachedheight;
+static fixed_t (&cacheddistance)[SCREENHEIGHT] = planeScratch().cacheddistance;
+static fixed_t (&cachedxstep)[SCREENHEIGHT] = planeScratch().cachedxstep;
+static fixed_t (&cachedystep)[SCREENHEIGHT] = planeScratch().cachedystep;
 
 // Forward declarations so call order needs no rearranging.
 void initPlanes(void);

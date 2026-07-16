@@ -29,6 +29,7 @@
 #include "../Render/DrawTables.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
+#include "../Render/PlaneScratch.h"
 #include "../Render/RenderMainState.h"
 #include "../Render/RenderScratch.h"
 #include "../Render/SolidSegs.h"
@@ -102,6 +103,7 @@ struct Engine
     SpriteScratch spriteScratch;
     DrawTables drawTables;
     SolidSegs solidSegs;
+    PlaneScratch planeScratch;
     RenderMainState renderMainState;
     LevelStats levelStats;
     LaunchOptions launchOptions;

@@ -115,6 +115,11 @@ SolidSegs& solidSegs()
     return engine().solidSegs;
 }
 
+PlaneScratch& planeScratch()
+{
+    return engine().planeScratch;
+}
+
 RenderMainState& renderMainState()
 {
     return engine().renderMainState;

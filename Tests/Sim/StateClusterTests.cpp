@@ -109,6 +109,7 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&spriteScratch() == &engine().spriteScratch, "spriteScratch()");
     check(&drawTables() == &engine().drawTables, "drawTables()");
     check(&solidSegs() == &engine().solidSegs, "solidSegs()");
+    check(&planeScratch() == &engine().planeScratch, "planeScratch()");
     check(&renderMainState() == &engine().renderMainState, "renderMainState()");
     check(&actionScratch() == &engine().actionScratch, "actionScratch()");
     check(&sightScratch() == &engine().sightScratch, "sightScratch()");
