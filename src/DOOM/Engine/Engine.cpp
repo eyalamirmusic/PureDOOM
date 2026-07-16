@@ -235,6 +235,11 @@ FinaleState& finaleState()
     return engine().finaleState;
 }
 
+MenuState& menuState()
+{
+    return engine().menuState;
+}
+
 AutomapView& automapView()
 {
     return engine().automapView;

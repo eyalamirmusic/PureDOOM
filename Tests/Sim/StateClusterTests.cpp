@@ -103,5 +103,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
           "intermissionState()");
     check(&finaleState() == &engine().finaleState, "finaleState()");
     check(&wipeState() == &engine().wipeState, "wipeState()");
+    check(&menuState() == &engine().menuState, "menuState()");
 };
 } // namespace

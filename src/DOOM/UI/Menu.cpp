@@ -44,6 +44,7 @@
 #include "../Game/OverlayState.h"
 
 #include "Menu.h"
+#include "MenuState.h"
 
 #define SAVESTRINGSIZE 24
 #define SKULLXOFF -32
@@ -164,48 +165,55 @@ typedef struct
     menu_custom_text_seg_t segs[16];
 } menu_custom_text_t;
 
+// The menu's transient interaction state now lives on the Engine (UI/MenuState.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names below are references onto that
+// member, so every use is unchanged. The immutable reference-data tables interspersed among them
+// (gammamsg / skullName / detailNames / msgNames / quitsounds / menu_custom_texts) and the
+// self-referential menu-definition apparatus further down stay file-local.
+
 // temp for screenblocks (0-9)
-int screenSize;
+static int& screenSize = menuState().screenSize;
 
 // -1 = no quicksave slot picked!
-int quickSaveSlot;
+static int& quickSaveSlot = menuState().quickSaveSlot;
 
 // ...and here is the message string!
-const char* messageString;
+static const char*& messageString = menuState().messageString;
 
 // message x & y
-int messx;
-int messy;
-int messageLastMenuActive;
+static int& messx = menuState().messx;
+static int& messy = menuState().messy;
+static int& messageLastMenuActive = menuState().messageLastMenuActive;
 
 // timed message = no input from user
-doom_boolean messageNeedsInput;
+static doom_boolean& messageNeedsInput = menuState().messageNeedsInput;
 
-void (*messageRoutine)(int response);
+static void (*&messageRoutine)(int response) = menuState().messageRoutine;
 
 char gammamsg[5][26] = {GAMMALVL0, GAMMALVL1, GAMMALVL2, GAMMALVL3, GAMMALVL4};
 
 // we are going to be entering a savegame string
-int saveStringEnter;
-int saveSlot; // which slot to save in
-int saveCharIndex; // which char we're editing
+static int& saveStringEnter = menuState().saveStringEnter;
+static int& saveSlot = menuState().saveSlot; // which slot to save in
+static int& saveCharIndex = menuState().saveCharIndex; // which char we're editing
 // old save description before edit
-char saveOldString[SAVESTRINGSIZE];
+static char (&saveOldString)[SAVESTRINGSIZE] = menuState().saveOldString;
 
-char savegamestrings[10][SAVESTRINGSIZE];
+static char (&savegamestrings)[10][SAVESTRINGSIZE] = menuState().savegamestrings;
 
-char endstring[160];
+static char (&endstring)[160] = menuState().endstring;
 
-short itemOn; // menu item skull is on
-short skullAnimCounter; // skull animation counter
-short whichSkull; // which skull to draw
+static short& itemOn = menuState().itemOn; // menu item skull is on
+static short& skullAnimCounter =
+    menuState().skullAnimCounter; // skull animation counter
+static short& whichSkull = menuState().whichSkull; // which skull to draw
 
 // graphic name of skulls
 // warning: initializer-string for array of chars is too long
 char skullName[2][/*8*/ 9] = {"M_SKULL1", "M_SKULL2"};
 
 // current menudef
-menu_t* currentMenu;
+static menu_t*& currentMenu = menuState().currentMenu;
 
 // The menu-definition tables below lean on partial aggregate initializers on
 // purpose: a {0} terminates a custom-text segment list, and a {-1,"",0} marks a
@@ -254,8 +262,8 @@ menu_custom_text_t menu_custom_texts[] = {
 const int custom_texts_count =
     sizeof(menu_custom_texts) / sizeof(menu_custom_text_t);
 
-char tempstring[80];
-int epi;
+static char (&tempstring)[80] = menuState().tempstring;
+static int& epi = menuState().epi;
 char detailNames[2][9] = {"M_GDHIGH", "M_GDLOW"};
 char msgNames[2][9] = {"M_MSGOFF", "M_MSGON"};
 

@@ -44,6 +44,7 @@
 #include "../UI/HudMessage.h"
 #include "../UI/HudState.h"
 #include "../UI/IntermissionState.h"
+#include "../UI/MenuState.h"
 #include "../UI/StatusBarFace.h"
 #include "../UI/StatusBarGraphics.h"
 #include "../UI/StatusBarState.h"
@@ -112,6 +113,7 @@ struct Engine
     HudState hudState;
     IntermissionState intermissionState;
     FinaleState finaleState;
+    MenuState menuState;
     AutomapView automapView;
     StatusBarFace statusBarFace;
     StatusBarGraphics statusBarGraphics;
