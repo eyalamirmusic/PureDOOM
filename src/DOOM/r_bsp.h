@@ -34,14 +34,15 @@ extern line_t*& linedef;
 extern sector_t*& frontsector;
 extern sector_t*& backsector;
 
-extern int rw_x;
-extern int rw_stopx;
+// rw_x/rw_stopx/segtextured/markfloor/markceiling are Doom::SegState members (Engine); references.
+extern int& rw_x;
+extern int& rw_stopx;
 
-extern doom_boolean segtextured;
+extern doom_boolean& segtextured;
 
 // false if the back side is the same plane
-extern doom_boolean markfloor;
-extern doom_boolean markceiling;
+extern doom_boolean& markfloor;
+extern doom_boolean& markceiling;
 
 extern doom_boolean skymap;
 

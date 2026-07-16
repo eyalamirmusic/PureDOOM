@@ -18,11 +18,14 @@
 #define HEIGHTBITS 12
 #define HEIGHTUNIT (1 << HEIGHTBITS)
 
-extern int toptexture;
-extern int bottomtexture;
-extern int midtexture;
-extern lighttable_t** walllights;
-extern short* maskedtexturecol;
+// These are Doom::SegState members (Engine), exported by the r_segs.cpp shim; references onto
+// them - and as references, not plain externs, since Render/Segs writes them (a write through a
+// plain extern would clobber the reference's pointer, the skytexturemid trap).
+extern int& toptexture;
+extern int& bottomtexture;
+extern int& midtexture;
+extern lighttable_t**& walllights;
+extern short*& maskedtexturecol;
 
 namespace Doom
 {

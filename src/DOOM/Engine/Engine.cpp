@@ -369,4 +369,9 @@ BSPScratch& bspScratch()
 {
     return engine().bspScratch;
 }
+
+SegState& segState()
+{
+    return engine().segState;
+}
 } // namespace Doom

@@ -25,7 +25,7 @@
 
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
-extern lighttable_t** walllights;
+extern lighttable_t**& walllights; // Doom::SegState member (Engine); reference
 // detailLevel/screenblocks are config-backed Engine members (UI/MenuSettings.h); references.
 extern int& detailLevel;
 extern int& screenblocks;

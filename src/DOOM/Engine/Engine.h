@@ -36,6 +36,7 @@
 #include "../Render/PlaneScratch.h"
 #include "../Render/RenderMainState.h"
 #include "../Render/RenderScratch.h"
+#include "../Render/SegState.h"
 #include "../Render/SolidSegs.h"
 #include "../Render/SpriteScratch.h"
 #include "../Render/ViewPoint.h"
@@ -160,6 +161,7 @@ struct Engine
     MenuSettings menuSettings;
     ConfigPaths configPaths;
     BSPScratch bspScratch;
+    SegState segState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
