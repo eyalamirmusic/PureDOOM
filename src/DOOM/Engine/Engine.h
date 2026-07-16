@@ -77,6 +77,7 @@
 #include "../UI/StatusBarGraphics.h"
 #include "../UI/StatusBarState.h"
 #include "../UI/StatusBarWidgets.h"
+#include "../UI/StatusWidgetGraphics.h"
 #include "../UI/WipeState.h"
 #include "../Wad/WadFile.h"
 
@@ -176,6 +177,7 @@ struct Engine
     InputConfig inputConfig;
     SoundTarget soundTarget;
     HudFont hudFont;
+    StatusWidgetGraphics statusWidgetGraphics;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

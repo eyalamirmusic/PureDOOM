@@ -409,4 +409,9 @@ HudFont& hudFont()
 {
     return engine().hudFont;
 }
+
+StatusWidgetGraphics& statusWidgetGraphics()
+{
+    return engine().statusWidgetGraphics;
+}
 } // namespace Doom

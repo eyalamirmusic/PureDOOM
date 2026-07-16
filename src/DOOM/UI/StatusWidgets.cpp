@@ -2,8 +2,9 @@
 //
 // Status-bar widgets: a difference-drawn number, a number with a trailing percent
 // glyph, a multi-icon (the arms/faces), and a binary on/off icon. st_stuff.cpp
-// shims the STlib_ names; the minus-sign patch is the only global and is
-// file-local here. Covered by the frame goldens (the bar lands in screens[0]).
+// shims the STlib_ names; the minus-sign patch is the only global, now a
+// Doom::StatusWidgetGraphics member owned by the Engine (reached by a reference
+// alias). Covered by the frame goldens (the bar lands in screens[0]).
 
 #include "../doom_config.h"
 
@@ -17,12 +18,15 @@
 #include "../w_wad.h"
 
 #include "StatusWidgets.h"
+#include "StatusWidgetGraphics.h"
 
 namespace Doom
 {
 
-// Hack display negative frags: the STTMINUS lump. File-local.
-patch_t* sttminus;
+// Hack display negative frags: the STTMINUS lump. A Doom::StatusWidgetGraphics member owned by the
+// Engine now; this is a reference onto it (initStatusWidgets writes it, so it must be a reference -
+// a plain pointer would clobber the reference's storage).
+patch_t*& sttminus = statusWidgetGraphics().sttminus;
 
 void drawNum(st_number_t* n);
 
