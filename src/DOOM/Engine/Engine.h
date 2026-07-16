@@ -48,6 +48,7 @@
 #include "../UI/StatusBarGraphics.h"
 #include "../UI/StatusBarState.h"
 #include "../UI/StatusBarWidgets.h"
+#include "../UI/WipeState.h"
 #include "../Wad/WadFile.h"
 
 namespace Doom
@@ -116,6 +117,7 @@ struct Engine
     StatusBarGraphics statusBarGraphics;
     StatusBarState statusBarState;
     StatusBarWidgets statusBarWidgets;
+    WipeState wipeState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

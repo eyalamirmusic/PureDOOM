@@ -15,13 +15,17 @@
 
 #include "../f_wipe.h" // the shim's globals (wipe_scr_start / offsets / running)
 #include "Wipe.h"
+#include "WipeState.h"
 
 namespace Doom
 {
 
-// File-local scratch: the incoming frame and the working frame.
-byte* wipe_scr_end;
-byte* wipe_scr;
+// The melt's scratch framebuffers now live on the Engine (UI/WipeState.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto that
+// member. The exported wipe_scr_start / wipe_melt_offsets / wipe_melt_running stay in the f_wipe.cpp
+// shim, being what the GPU compositor reads.
+static byte*& wipe_scr_end = wipeState().wipe_scr_end;
+static byte*& wipe_scr = wipeState().wipe_scr;
 
 void colMajorXform(short* array, int width, int height)
 {

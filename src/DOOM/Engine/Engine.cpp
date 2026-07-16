@@ -259,4 +259,9 @@ StatusBarWidgets& statusBarWidgets()
 {
     return engine().statusBarWidgets;
 }
+
+WipeState& wipeState()
+{
+    return engine().wipeState;
+}
 } // namespace Doom
