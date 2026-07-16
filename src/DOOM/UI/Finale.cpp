@@ -43,6 +43,7 @@
 #include "../w_wad.h" // Functions.
 
 #include "Finale.h"
+#include "FinaleState.h"
 
 // Other subsystems' globals/functions this file reads.
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
@@ -61,11 +62,16 @@ typedef struct
     mobjtype_t type;
 } castinfo_t;
 
+// The finale's runtime state now lives on the Engine (UI/FinaleState.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names below are references onto that
+// member, so every use is unchanged. The immutable reference data - the per-ending text pointers
+// and the castorder[] cast list - stays file-local: it is fixed constants, not per-run state.
+
 // Stage of animation:
 //  0 = text, 1 = art screen, 2 = character cast
-int finalestage;
+static int& finalestage = finaleState().finalestage;
 
-int finalecount;
+static int& finalecount = finaleState().finalecount;
 
 const char* e1text = E1TEXT;
 const char* e2text = E2TEXT;
@@ -93,8 +99,8 @@ const char* t4text = T4TEXT;
 const char* t5text = T5TEXT;
 const char* t6text = T6TEXT;
 
-const char* finaletext;
-const char* finaleflat;
+static const char*& finaletext = finaleState().finaletext;
+static const char*& finaleflat = finaleState().finaleflat;
 
 castinfo_t castorder[] = {{CC_ZOMBIE, MT_POSSESSED},
                           {CC_SHOTGUN, MT_SHOTGUY},
@@ -116,13 +122,13 @@ castinfo_t castorder[] = {{CC_ZOMBIE, MT_POSSESSED},
 
                           {0, (mobjtype_t) (0)}};
 
-int castnum;
-int casttics;
-state_t* caststate;
-doom_boolean castdeath;
-int castframes;
-int castonmelee;
-doom_boolean castattacking;
+static int& castnum = finaleState().castnum;
+static int& casttics = finaleState().casttics;
+static state_t*& caststate = finaleState().caststate;
+static doom_boolean& castdeath = finaleState().castdeath;
+static int& castframes = finaleState().castframes;
+static int& castonmelee = finaleState().castonmelee;
+static doom_boolean& castattacking = finaleState().castattacking;
 
 //
 // fStartCast

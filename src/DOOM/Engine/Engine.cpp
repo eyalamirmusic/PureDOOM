@@ -230,6 +230,11 @@ IntermissionState& intermissionState()
     return engine().intermissionState;
 }
 
+FinaleState& finaleState()
+{
+    return engine().finaleState;
+}
+
 AutomapView& automapView()
 {
     return engine().automapView;

@@ -39,6 +39,7 @@
 #include "../Sim/Random.h"
 #include "../Sim/ValidCount.h"
 #include "../UI/AutomapView.h"
+#include "../UI/FinaleState.h"
 #include "../UI/HudChat.h"
 #include "../UI/HudMessage.h"
 #include "../UI/HudState.h"
@@ -109,6 +110,7 @@ struct Engine
     HudChat hudChat;
     HudState hudState;
     IntermissionState intermissionState;
+    FinaleState finaleState;
     AutomapView automapView;
     StatusBarFace statusBarFace;
     StatusBarGraphics statusBarGraphics;
