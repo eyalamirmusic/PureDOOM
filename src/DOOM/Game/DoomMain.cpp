@@ -62,6 +62,7 @@
 
 #include "AttractMode.h"
 #include "DoomMain.h"
+#include "ConfigPaths.h"
 #include "EngineParams.h"
 #include "EventQueue.h"
 #include "GameFlow.h"
@@ -106,9 +107,10 @@ void*& debugfile = Doom::engineParams().debugfile;
 doom_boolean& advancedemo = Doom::attractMode().advancedemo;
 
 // wadfile[]/mapdir[] were dead (referenced only in comments) and are deleted, the
-// linecount/loopcount/viewangleoffset way. basedefault stays a loose global until the
-// config rework - Config.cpp's defaults[] captures its address at static-init time.
-char basedefault[1024]; // default file
+// linecount/loopcount/viewangleoffset way. basedefault is an Engine member now
+// (Game/ConfigPaths.h) - it was never actually config-blocked, since defaults[] does
+// not capture its address (defaultfile is assigned it at runtime, not bound to it).
+char (&basedefault)[1024] = Doom::configPaths().basedefault; // default file
 
 //
 // EVENT HANDLING

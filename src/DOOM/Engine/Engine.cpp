@@ -359,4 +359,9 @@ MenuSettings& menuSettings()
 {
     return engine().menuSettings;
 }
+
+ConfigPaths& configPaths()
+{
+    return engine().configPaths;
+}
 } // namespace Doom

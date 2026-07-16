@@ -2,6 +2,7 @@
 
 #include "../Game/AmmoLimits.h"
 #include "../Game/AttractMode.h"
+#include "../Game/ConfigPaths.h"
 #include "../Game/CorpseQueue.h"
 #include "../Game/DeferredNewGame.h"
 #include "../Game/DemoState.h"
@@ -156,6 +157,7 @@ struct Engine
     WipeState wipeState;
     SoundSettings soundSettings;
     MenuSettings menuSettings;
+    ConfigPaths configPaths;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

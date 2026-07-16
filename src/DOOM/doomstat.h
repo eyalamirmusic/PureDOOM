@@ -226,8 +226,8 @@ extern int (&maxammo)[NUMAMMO];
 // Internal parameters, used for engine.
 //
 
-// File handling stuff.
-extern char basedefault[1024];
+// File handling stuff. basedefault is an Engine member (Game/ConfigPaths.h); reference.
+extern char (&basedefault)[1024];
 // debugfile / precache / singletics are Doom::EngineParams (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
 extern void*& debugfile;

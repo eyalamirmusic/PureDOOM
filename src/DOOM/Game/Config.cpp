@@ -28,9 +28,10 @@
 //
 // Config load/save, the raw file I/O, the screenshot writer and M_DrawText.
 // m_misc.cpp shims the M_ names. The defaults[] table (binding config keys to
-// the engine's option globals by address) and defaultfile stay at file scope
-// here, above the namespace, alongside the externs the table takes addresses of.
-// mLoadDefaults reads the test config, so the frame goldens pin it.
+// the engine's option globals) stays at file scope here, above the namespace,
+// alongside the externs the still-loose entries take addresses of; defaultfile
+// is a reference onto its Engine member (Game/ConfigPaths.h). mLoadDefaults reads
+// the test config, so the frame goldens pin it.
 
 #include "../doom_config.h"
 
@@ -194,7 +195,8 @@ default_t defaults[] = {
 
 #pragma GCC diagnostic pop
 int numdefaults = sizeof(defaults) / sizeof(default_t);
-char* defaultfile;
+// defaultfile is an Engine member now (Game/ConfigPaths.h); reference onto it.
+char*& defaultfile = Doom::configPaths().defaultfile;
 
 namespace Doom
 {
