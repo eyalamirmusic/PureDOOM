@@ -1731,15 +1731,15 @@ never really C — the tiny data/decl remainders — are gone:
     and the playsim's (`ActionScratch` / `WeaponScratch` / `SightScratch` / `EnemyAI` / `SwitchList` /
     `PlayerScratch` / `AnimatedSurfaces` / `LevelPool`), plus doomstat's internal-parameter scalars
     (`EngineParams`: `debugfile` / `precache` / `singletics`), with a `StateClusterTests` net for the
-    golden-neutral tables. **What genuinely remains of the sweep** is now a tail: a handful of
-    scattered single flags with no cohesive cluster home (`st_statusbaron`, `is_wiping_screen`,
-    `inhelpscreens`, `soundtarget`) — each belongs to a different subsystem and does not group
-    without a grab-bag, so they wait for their subsystem to want them; the **inert netcode
-    bookkeeping** in `Game/Net` (`resendcount`/`nodeforplayer`/… — single-player never runs it, so it
-    is not golden-covered); the loaded-once **asset pointers** (`hu_font`, `sttminus`); and the
-    **function-local `static`s** (the "later function-local pass" — `HU_Responder`'s send state, the
-    status-bar face-drawer's counters, `D_Display`'s frame-diff state, `A_BrainSpit`'s alternating
-    toggle, …), which are a different shape from the file-scope sweep. Beyond the tail, the last thing
+    golden-neutral tables. Since then `soundtarget` (`Sim/SoundTarget`) and the whole of `Game/Net`'s
+    private bookkeeping (folded into `NetState`) have moved in too, so **every cohesive cluster is now
+    migrated**. **What genuinely remains of the sweep** is a tail: a few scattered single flags with no
+    cohesive cluster home (`st_statusbaron`, `is_wiping_screen`, `inhelpscreens`) — each belongs to a
+    different subsystem and does not group without a grab-bag, so they wait for their subsystem to want
+    them; the loaded-once **asset pointers** (`hu_font`, `sttminus`); and the **function-local
+    `static`s** (the "later function-local pass" — `HU_Responder`'s send state, the status-bar
+    face-drawer's counters, `D_Display`'s frame-diff state, `A_BrainSpit`'s alternating toggle, …),
+    which are a different shape from the file-scope sweep. Beyond the tail, the last thing
     that *finally* lets the engine be **constructed** rather than booted is flipping `engine()` from a
     function-local-static singleton to an instance threaded through the `doom_*` entry points — a large
     API change, not a mechanical migration, and the real end of Step 5.
