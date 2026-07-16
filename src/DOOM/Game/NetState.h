@@ -3,6 +3,7 @@
 #include "../d_net.h" // doomcom_t, doomdata_t, BACKUPTICS, MAXNETNODES
 #include "../d_ticcmd.h" // ticcmd_t
 #include "../doomdef.h" // MAXPLAYERS
+#include "../doomtype.h" // doom_boolean
 
 namespace Doom
 {
@@ -38,6 +39,27 @@ struct NetState
 
     // per-player, per-tic desync checksum
     short consistancy[MAXPLAYERS][BACKUPTICS] = {};
+
+    // Game/Net's own private bookkeeping (the resend/rebound machinery and the frame-rate
+    // counters), folded in here as the file-scope-statics sweep reaches it - the same
+    // netcode-bookkeeping owner. Read by no other file, and inert in single-player (the socket
+    // code sits behind I_NET_ENABLED), so verified by build + app-link rather than a golden.
+    doom_boolean nodeingame[MAXNETNODES] = {};   // node still in the game
+    doom_boolean remoteresend[MAXNETNODES] = {}; // node needs local tics resent
+    int resendto[MAXNETNODES] = {};              // next tic to send that node
+    int resendcount[MAXNETNODES] = {};           // resend backoff counter
+    int nodeforplayer[MAXPLAYERS] = {};          // node index per player
+    int lastnettic = 0;                          // last tic processed
+    int skiptics = 0;                            // tics to skip catching up
+    int maxsend = 0;                             // BACKUPTICS/(2*ticdup)-1
+    doom_boolean reboundpacket = false;          // a loopback packet is queued
+    doomdata_t reboundstore = {};                // the loopback packet
+    char exitmsg[80] = {};                       // netgame exit message scratch
+    int gametime = 0;                            // I_GetTime at the last TryRunTics
+    int frametics[4] = {};                       // per-frame tic counts (rate meter)
+    int frameon = 0;                             // rate-meter frame counter
+    int frameskip[4] = {};                       // per-frame skip flags (rate meter)
+    int oldnettics = 0;                          // nettics at the last rate sample
 };
 
 // The one NetState, a view onto the Engine's member - the same pattern as

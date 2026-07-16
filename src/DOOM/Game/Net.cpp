@@ -74,28 +74,29 @@ ticcmd_t (&localcmds)[BACKUPTICS] = Doom::netState().localcmds;
 
 ticcmd_t (&netcmds)[MAXPLAYERS][BACKUPTICS] = Doom::netState().netcmds;
 int (&nettics)[MAXNETNODES] = Doom::netState().nettics;
-doom_boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
-doom_boolean remoteresend[MAXNETNODES]; // set when local needs tics
-int resendto[MAXNETNODES]; // set when remote needs tics
-int resendcount[MAXNETNODES];
+// Game/Net's private bookkeeping is a Doom::NetState now (Engine); references onto its members.
+doom_boolean (&nodeingame)[MAXNETNODES] = Doom::netState().nodeingame;
+doom_boolean (&remoteresend)[MAXNETNODES] = Doom::netState().remoteresend;
+int (&resendto)[MAXNETNODES] = Doom::netState().resendto;
+int (&resendcount)[MAXNETNODES] = Doom::netState().resendcount;
 
-int nodeforplayer[MAXPLAYERS];
+int (&nodeforplayer)[MAXPLAYERS] = Doom::netState().nodeforplayer;
 
 int& maketic = Doom::netState().maketic;
-int lastnettic;
-int skiptics;
+int& lastnettic = Doom::netState().lastnettic;
+int& skiptics = Doom::netState().skiptics;
 int& ticdup = Doom::netState().ticdup;
-int maxsend; // BACKUPTICS/(2*ticdup)-1
+int& maxsend = Doom::netState().maxsend; // BACKUPTICS/(2*ticdup)-1
 
-doom_boolean reboundpacket;
-doomdata_t reboundstore;
+doom_boolean& reboundpacket = Doom::netState().reboundpacket;
+doomdata_t& reboundstore = Doom::netState().reboundstore;
 
-char exitmsg[80];
-int gametime;
-int frametics[4];
-int frameon;
-int frameskip[4];
-int oldnettics;
+char (&exitmsg)[80] = Doom::netState().exitmsg;
+int& gametime = Doom::netState().gametime;
+int (&frametics)[4] = Doom::netState().frametics;
+int& frameon = Doom::netState().frameon;
+int (&frameskip)[4] = Doom::netState().frameskip;
+int& oldnettics = Doom::netState().oldnettics;
 
 extern doom_boolean& advancedemo; // Doom::AttractMode (Engine member)
 
