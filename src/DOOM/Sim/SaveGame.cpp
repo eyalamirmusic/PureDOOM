@@ -18,6 +18,8 @@
 #include "SaveGame.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new> // placement new
+
 // save_p is defined in the shim; g_game and this file share it.
 extern byte* save_p;
 
@@ -201,6 +203,24 @@ typedef enum
     tc_mobj
 } thinkerclass_t;
 
+// Reconstruct a saved thinker in a fresh level-pool block. placement-new sets the
+// vtable (and the base's prev/next/removed/stopped), then the saved bytes are copied
+// back over the object exactly as vanilla's whole-struct memcpy did - but the vtable
+// pointer is preserved across the copy, since the bytes on disk carry a stale one.
+// Every derived field lands byte-identical; only the (reconstructed) linkage and the
+// vtable are not taken from the save. This is what lets p_saveg keep memcpy'ing a now
+// polymorphic mobj_t / special without corrupting its dispatch.
+template <typename T>
+static T* unarchiveThinker()
+{
+    T* obj = new (levelAlloc(sizeof(T))) T {};
+    void* vtable = *reinterpret_cast<void**>(obj);
+    doom_memcpy(obj, save_p, sizeof(T));
+    *reinterpret_cast<void**>(obj) = vtable;
+    save_p += sizeof(T);
+    return obj;
+}
+
 //
 // archiveThinkers
 //
@@ -212,7 +232,9 @@ void archiveThinkers()
     // save off the current thinkers
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(P_MobjThinker))
+        // A removed-but-not-yet-freed mobj is skipped, as vanilla did (its function
+        // was the -1 sentinel, matching no archived type).
+        if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
         {
             *save_p++ = tc_mobj;
             PADSAVEP();
@@ -250,8 +272,7 @@ void unArchiveThinkers()
     {
         next = currentthinker->next;
 
-        if (currentthinker->function.acp1
-            == reinterpret_cast<actionf_p1>(P_MobjThinker))
+        if (currentthinker->kind() == Doom::ThinkerKind::Mobj)
             P_RemoveMobj(reinterpret_cast<mobj_t*>(currentthinker));
         else
             levelFree(currentthinker);
@@ -271,9 +292,7 @@ void unArchiveThinkers()
 
             case tc_mobj:
                 PADSAVEP();
-                mobj = static_cast<mobj_t*>(levelAlloc(sizeof(*mobj)));
-                doom_memcpy(mobj, save_p, sizeof(*mobj));
-                save_p += sizeof(*mobj);
+                mobj = unarchiveThinker<mobj_t>();
                 mobj->state = &states[reinterpret_cast<long long>(mobj->state)];
                 mobj->target = nullptr;
                 if (mobj->player)
@@ -286,9 +305,7 @@ void unArchiveThinkers()
                 mobj->info = &mobjinfo[mobj->type];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;
-                mobj->thinker.function.acp1 =
-                    reinterpret_cast<actionf_p1>(P_MobjThinker);
-                P_AddThinker(&mobj->thinker);
+                P_AddThinker(mobj);
                 break;
 
             default:
@@ -340,18 +357,20 @@ void archiveSpecials()
     lightflash_t* flash;
     strobe_t* strobe;
     glow_t* glow;
-    int i;
 
     // save off the current thinkers
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
-        if (th->function.acv == (actionf_v) 0)
-        {
-            for (i = 0; i < MAXCEILINGS; i++)
-                if (activeceilings[i] == reinterpret_cast<ceiling_t*>(th))
-                    break;
+        // Skip a removed-but-not-yet-freed thinker (vanilla's -1 function matched
+        // no type).
+        if (th->removed)
+            continue;
 
-            if (i < MAXCEILINGS)
+        // A crusher in stasis (vanilla nulled its function). Only a ceiling is
+        // tracked this way; a stopped plat, as in vanilla, is not archived.
+        if (th->stopped)
+        {
+            if (th->kind() == Doom::ThinkerKind::Ceiling)
             {
                 *save_p++ = tc_ceiling;
                 PADSAVEP();
@@ -364,7 +383,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(T_MoveCeiling))
+        if (th->kind() == Doom::ThinkerKind::Ceiling)
         {
             *save_p++ = tc_ceiling;
             PADSAVEP();
@@ -375,7 +394,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(T_VerticalDoor))
+        if (th->kind() == Doom::ThinkerKind::Door)
         {
             *save_p++ = tc_door;
             PADSAVEP();
@@ -386,7 +405,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(T_MoveFloor))
+        if (th->kind() == Doom::ThinkerKind::Floor)
         {
             *save_p++ = tc_floor;
             PADSAVEP();
@@ -397,7 +416,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(T_PlatRaise))
+        if (th->kind() == Doom::ThinkerKind::Plat)
         {
             *save_p++ = tc_plat;
             PADSAVEP();
@@ -408,7 +427,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(T_LightFlash))
+        if (th->kind() == Doom::ThinkerKind::LightFlash)
         {
             *save_p++ = tc_flash;
             PADSAVEP();
@@ -419,7 +438,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(T_StrobeFlash))
+        if (th->kind() == Doom::ThinkerKind::StrobeFlash)
         {
             *save_p++ = tc_strobe;
             PADSAVEP();
@@ -430,7 +449,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->function.acp1 == reinterpret_cast<actionf_p1>(T_Glow))
+        if (th->kind() == Doom::ThinkerKind::Glow)
         {
             *save_p++ = tc_glow;
             PADSAVEP();
@@ -471,92 +490,61 @@ void unArchiveSpecials()
 
             case tc_ceiling:
                 PADSAVEP();
-                ceiling = static_cast<ceiling_t*>(levelAlloc(sizeof(*ceiling)));
-                doom_memcpy(ceiling, save_p, sizeof(*ceiling));
-                save_p += sizeof(*ceiling);
+                ceiling = unarchiveThinker<ceiling_t>();
                 ceiling->sector =
                     &sectors[reinterpret_cast<long long>(ceiling->sector)];
                 ceiling->sector->specialdata = ceiling;
 
-                if (ceiling->thinker.function.acp1)
-                    ceiling->thinker.function.acp1 =
-                        reinterpret_cast<actionf_p1>(T_MoveCeiling);
-
-                P_AddThinker(&ceiling->thinker);
+                P_AddThinker(ceiling);
                 P_AddActiveCeiling(ceiling);
                 break;
 
             case tc_door:
                 PADSAVEP();
-                door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
-                doom_memcpy(door, save_p, sizeof(*door));
-                save_p += sizeof(*door);
+                door = unarchiveThinker<vldoor_t>();
                 door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
-                door->thinker.function.acp1 =
-                    reinterpret_cast<actionf_p1>(T_VerticalDoor);
-                P_AddThinker(&door->thinker);
+                P_AddThinker(door);
                 break;
 
             case tc_floor:
                 PADSAVEP();
-                floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
-                doom_memcpy(floor, save_p, sizeof(*floor));
-                save_p += sizeof(*floor);
+                floor = unarchiveThinker<floormove_t>();
                 floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
-                floor->thinker.function.acp1 =
-                    reinterpret_cast<actionf_p1>(T_MoveFloor);
-                P_AddThinker(&floor->thinker);
+                P_AddThinker(floor);
                 break;
 
             case tc_plat:
                 PADSAVEP();
-                plat = static_cast<plat_t*>(levelAlloc(sizeof(*plat)));
-                doom_memcpy(plat, save_p, sizeof(*plat));
-                save_p += sizeof(*plat);
+                plat = unarchiveThinker<plat_t>();
                 plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
 
-                if (plat->thinker.function.acp1)
-                    plat->thinker.function.acp1 =
-                        reinterpret_cast<actionf_p1>(T_PlatRaise);
-
-                P_AddThinker(&plat->thinker);
+                P_AddThinker(plat);
                 P_AddActivePlat(plat);
                 break;
 
             case tc_flash:
                 PADSAVEP();
-                flash = static_cast<lightflash_t*>(levelAlloc(sizeof(*flash)));
-                doom_memcpy(flash, save_p, sizeof(*flash));
-                save_p += sizeof(*flash);
+                flash = unarchiveThinker<lightflash_t>();
                 flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
-                flash->thinker.function.acp1 =
-                    reinterpret_cast<actionf_p1>(T_LightFlash);
-                P_AddThinker(&flash->thinker);
+                P_AddThinker(flash);
                 break;
 
             case tc_strobe:
                 PADSAVEP();
-                strobe = static_cast<strobe_t*>(levelAlloc(sizeof(*strobe)));
-                doom_memcpy(strobe, save_p, sizeof(*strobe));
-                save_p += sizeof(*strobe);
+                strobe = unarchiveThinker<strobe_t>();
                 strobe->sector =
                     &sectors[reinterpret_cast<long long>(strobe->sector)];
-                strobe->thinker.function.acp1 =
-                    reinterpret_cast<actionf_p1>(T_StrobeFlash);
-                P_AddThinker(&strobe->thinker);
+                P_AddThinker(strobe);
                 break;
 
             case tc_glow:
                 PADSAVEP();
-                glow = static_cast<glow_t*>(levelAlloc(sizeof(*glow)));
-                doom_memcpy(glow, save_p, sizeof(*glow));
-                save_p += sizeof(*glow);
+                glow = unarchiveThinker<glow_t>();
                 glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];
-                glow->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_Glow);
-                P_AddThinker(&glow->thinker);
+                P_AddThinker(glow);
                 break;
 
             default:

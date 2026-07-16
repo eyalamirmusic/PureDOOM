@@ -19,6 +19,8 @@
 #include "Plats.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new>
+
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
 void T_PlatRaise(plat_t* plat);
@@ -147,13 +149,12 @@ int doPlat(line_t* line, plattype_e type, int amount)
 
         // Find lowest & highest floors around sector
         rtn = 1;
-        plat = static_cast<plat_t*>(levelAlloc(sizeof(*plat)));
-        P_AddThinker(&plat->thinker);
+        plat = new (levelAlloc(sizeof(*plat))) plat_t {};
+        P_AddThinker(plat);
 
         plat->type = type;
         plat->sector = sec;
         plat->sector->specialdata = plat;
-        plat->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_PlatRaise);
         plat->crush = false;
         plat->tag = line->tag;
 
@@ -238,8 +239,7 @@ void activateInStasis(int tag)
             && (activeplats[i])->status == in_stasis)
         {
             (activeplats[i])->status = (activeplats[i])->oldstatus;
-            (activeplats[i])->thinker.function.acp1 =
-                reinterpret_cast<actionf_p1>(T_PlatRaise);
+            (activeplats[i])->stopped = false;
         }
 }
 
@@ -251,7 +251,7 @@ void stopPlat(line_t* line)
         {
             (activeplats[j])->oldstatus = (activeplats[j])->status;
             (activeplats[j])->status = in_stasis;
-            (activeplats[j])->thinker.function.acv = (actionf_v) 0;
+            (activeplats[j])->stopped = true;
         }
 }
 
@@ -272,7 +272,7 @@ void removeActivePlat(plat_t* plat)
         if (plat == activeplats[i])
         {
             (activeplats[i])->sector->specialdata = nullptr;
-            P_RemoveThinker(&(activeplats[i])->thinker);
+            P_RemoveThinker(activeplats[i]);
             activeplats[i] = nullptr;
 
             return;

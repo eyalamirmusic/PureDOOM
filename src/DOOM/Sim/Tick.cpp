@@ -67,12 +67,24 @@ void levelFree(void* block)
     doom_free(chunk);
 }
 
+// Every level allocation is a Thinker (mobj or special), so a chunk's payload can
+// be destroyed as one. The virtual destructor is defaulted and the fields are all
+// trivially destructible, so this frees no resources - it is here because ending
+// the lifetime of a polymorphic object by releasing its storage is only well-defined
+// once its destructor has run.
+static void destroyThinker(thinker_t* thinker)
+{
+    thinker->~Thinker();
+    levelFree(thinker);
+}
+
 void freeLevelAllocations()
 {
     LevelChunk* chunk = levelChunks;
     while (chunk)
     {
         LevelChunk* next = chunk->next;
+        reinterpret_cast<thinker_t*>(chunk + 1)->~Thinker();
         doom_free(chunk);
         chunk = next;
     }
@@ -103,8 +115,9 @@ void addThinker(thinker_t* thinker)
 //
 void removeThinker(thinker_t* thinker)
 {
-    // FIXME: NOP.
-    thinker->function.acv = reinterpret_cast<actionf_v>(-1);
+    // Deallocation is lazy: mark it, and runThinkers frees it when its turn next
+    // comes up. Was `function.acv = (actionf_v) -1`.
+    thinker->removed = true;
 }
 
 //
@@ -112,12 +125,10 @@ void removeThinker(thinker_t* thinker)
 //
 void runThinkers()
 {
-    thinker_t* currentthinker;
-
-    currentthinker = thinkercap.next;
+    thinker_t* currentthinker = thinkercap.next;
     while (currentthinker != &thinkercap)
     {
-        if (currentthinker->function.acv == reinterpret_cast<actionf_v>(-1))
+        if (currentthinker->removed)
         {
             // Time to remove it. Vanilla advanced by reading currentthinker->next
             // *after* Z_Free, which the zone tolerated because a freed block kept
@@ -127,13 +138,15 @@ void runThinkers()
             thinker_t* next = currentthinker->next;
             currentthinker->next->prev = currentthinker->prev;
             currentthinker->prev->next = currentthinker->next;
-            levelFree(currentthinker);
+            destroyThinker(currentthinker);
             currentthinker = next;
         }
         else
         {
-            if (currentthinker->function.acp1)
-                currentthinker->function.acp1(currentthinker);
+            // A stopped thinker (a crusher/lift in stasis - vanilla's null function)
+            // stays on the list but does not act.
+            if (!currentthinker->stopped)
+                currentthinker->tick();
             // Advance after the think, so a mobj its thinker just spawned (linked
             // at the tail, i.e. onto currentthinker->next when it was last) runs
             // this same tic, as vanilla does.

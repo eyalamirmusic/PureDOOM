@@ -711,7 +711,7 @@ void precacheLevel()
 
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
-        if (th->function.acp1 == (actionf_p1) P_MobjThinker)
+        if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
             spritepresent[reinterpret_cast<mobj_t*>(th)->sprite] = 1;
     }
 

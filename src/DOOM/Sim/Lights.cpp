@@ -15,6 +15,8 @@
 #include "Lights.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new>
+
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
 void T_FireFlicker(fireflicker_t* flick);
@@ -65,11 +67,10 @@ void spawnFireFlicker(sector_t* sector)
     // Nothing special about it during gameplay.
     sector->special = 0;
 
-    flick = static_cast<fireflicker_t*>(levelAlloc(sizeof(*flick)));
+    flick = new (levelAlloc(sizeof(*flick))) fireflicker_t {};
 
-    P_AddThinker(&flick->thinker);
+    P_AddThinker(flick);
 
-    flick->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_FireFlicker);
     flick->sector = sector;
     flick->maxlight = sector->lightlevel;
     flick->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel) + 16;
@@ -113,11 +114,10 @@ void spawnLightFlash(sector_t* sector)
     // nothing special about it during gameplay
     sector->special = 0;
 
-    flash = static_cast<lightflash_t*>(levelAlloc(sizeof(*flash)));
+    flash = new (levelAlloc(sizeof(*flash))) lightflash_t {};
 
-    P_AddThinker(&flash->thinker);
+    P_AddThinker(flash);
 
-    flash->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_LightFlash);
     flash->sector = sector;
     flash->maxlight = sector->lightlevel;
 
@@ -160,14 +160,13 @@ void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync)
 {
     strobe_t* flash;
 
-    flash = static_cast<strobe_t*>(levelAlloc(sizeof(*flash)));
+    flash = new (levelAlloc(sizeof(*flash))) strobe_t {};
 
-    P_AddThinker(&flash->thinker);
+    P_AddThinker(flash);
 
     flash->sector = sector;
     flash->darktime = fastOrSlow;
     flash->brighttime = STROBEBRIGHT;
-    flash->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_StrobeFlash);
     flash->maxlight = sector->lightlevel;
     flash->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel);
 
@@ -303,14 +302,13 @@ void spawnGlowingLight(sector_t* sector)
 {
     glow_t* g;
 
-    g = static_cast<glow_t*>(levelAlloc(sizeof(*g)));
+    g = new (levelAlloc(sizeof(*g))) glow_t {};
 
-    P_AddThinker(&g->thinker);
+    P_AddThinker(g);
 
     g->sector = sector;
     g->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel);
     g->maxlight = sector->lightlevel;
-    g->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_Glow);
     g->direction = -1;
 
     sector->special = 0;

@@ -49,13 +49,13 @@ typedef union
 typedef actionf_t think_t;
 
 
-// Doubly linked list of actors.
-typedef struct thinker_s
-{
-    struct thinker_s* prev;
-    struct thinker_s* next;
-    think_t function;
-} thinker_t;
+// The doubly-linked list node is now a real base class with a virtual tick() -
+// Doom::Thinker (Sim/Thinker.h). thinker_t stays as the vanilla spelling the
+// engine still writes, aliased onto it. The actionf_* union above survives only
+// because state_t.action (info.h) still uses it; the per-object thinker dispatch
+// no longer does.
+#include "Sim/Thinker.h"
+using thinker_t = Doom::Thinker;
 
 
 #endif

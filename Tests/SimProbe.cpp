@@ -173,7 +173,9 @@ static void simMix(const void* bytes, int count)
 
 static int simIsMobj(thinker_t* thinker)
 {
-    return thinker->function.acp1 == (actionf_p1) P_MobjThinker;
+    // How the probe finds mobjs, not what it mixes: the thinker's virtual kind()
+    // replaces the old function-pointer identity test (thinker_t -> Thinker).
+    return thinker->kind() == Doom::ThinkerKind::Mobj && !thinker->removed;
 }
 
 unsigned long long doomSimStateHash(void)

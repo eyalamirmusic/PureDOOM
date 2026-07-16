@@ -79,9 +79,10 @@ int EV_DoDonut(line_t* line);
 //
 // P_LIGHTS
 //
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::FireFlicker; }
     sector_t* sector;
     int count;
     int maxlight;
@@ -89,9 +90,10 @@ typedef struct
 } fireflicker_t;
 
 
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::LightFlash; }
     sector_t* sector;
     int count;
     int maxlight;
@@ -101,9 +103,10 @@ typedef struct
 } lightflash_t;
 
 
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::StrobeFlash; }
     sector_t* sector;
     int count;
     int minlight;
@@ -113,9 +116,10 @@ typedef struct
 } strobe_t;
 
 
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Glow; }
     sector_t* sector;
     int minlight;
     int maxlight;
@@ -213,9 +217,10 @@ typedef enum
 } plattype_e;
 
 
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Plat; }
     sector_t* sector;
     fixed_t speed;
     fixed_t low;
@@ -262,9 +267,10 @@ typedef enum
 } vldoor_e;
 
 
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Door; }
     vldoor_e type;
     sector_t* sector;
     fixed_t topheight;
@@ -308,9 +314,10 @@ typedef enum
 } ceiling_e;
 
 
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Ceiling; }
     ceiling_e type;
     sector_t* sector;
     fixed_t bottomheight;
@@ -388,9 +395,10 @@ typedef enum
 } stair_e;
 
 
-typedef struct
+typedef struct : Doom::Thinker
 {
-    thinker_t thinker;
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Floor; }
     floor_e type;
     doom_boolean crush;
     sector_t* sector;

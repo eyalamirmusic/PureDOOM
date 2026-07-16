@@ -42,8 +42,7 @@ int teleport(line_t* line, int side, mobj_t* thing)
                  thinker = thinker->next)
             {
                 // not a mobj
-                if (thinker->function.acp1
-                    != reinterpret_cast<actionf_p1>(P_MobjThinker))
+                if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
                     continue;
 
                 m = reinterpret_cast<mobj_t*>(thinker);

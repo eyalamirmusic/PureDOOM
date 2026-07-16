@@ -32,6 +32,8 @@
 #include "Mobj.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new>
+
 #define STOPSPEED 0x1000
 #define FRICTION 0xe800
 
@@ -385,7 +387,7 @@ void mobjThinker(mobj_t* mobj)
         xyMovement(mobj);
 
         // FIXME: decent NOP/0/Nil function pointer please.
-        if (mobj->thinker.function.acv == (actionf_v) (-1))
+        if (mobj->removed)
             return; // mobj was removed
     }
     if ((mobj->z != mobj->floorz) || mobj->momz)
@@ -393,7 +395,7 @@ void mobjThinker(mobj_t* mobj)
         zMovement(mobj);
 
         // FIXME: decent NOP/0/Nil function pointer please.
-        if (mobj->thinker.function.acv == (actionf_v) (-1))
+        if (mobj->removed)
             return; // mobj was removed
     }
 
@@ -441,8 +443,7 @@ mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
     state_t* st;
     mobjinfo_t* info;
 
-    mobj = static_cast<mobj_t*>(levelAlloc(sizeof(*mobj)));
-    doom_memset(mobj, 0, sizeof(*mobj));
+    mobj = new (levelAlloc(sizeof(*mobj))) mobj_t {};
     info = &mobjinfo[type];
 
     mobj->type = type;
@@ -480,9 +481,7 @@ mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
     else
         mobj->z = z;
 
-    mobj->thinker.function.acp1 = reinterpret_cast<actionf_p1>(P_MobjThinker);
-
-    P_AddThinker(&mobj->thinker);
+    P_AddThinker(mobj);
 
     return mobj;
 }

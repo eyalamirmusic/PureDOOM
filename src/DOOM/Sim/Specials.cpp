@@ -27,6 +27,8 @@
 #include "Specials.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new>
+
 #define MAXANIMS 32
 #define MAXLINEANIMS 64
 #define MAX_ADJOINING_SECTORS 20
@@ -1083,10 +1085,9 @@ int doDonut(line_t* line)
             s3 = s2->lines[i]->backsector;
 
             //        Spawn rising slime
-            floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
-            P_AddThinker(&floor->thinker);
+            floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+            P_AddThinker(floor);
             s2->specialdata = floor;
-            floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
             floor->type = donutRaise;
             floor->crush = false;
             floor->direction = 1;
@@ -1097,10 +1098,9 @@ int doDonut(line_t* line)
             floor->floordestheight = s3->floorheight;
 
             //        Spawn lowering donut-hole
-            floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
-            P_AddThinker(&floor->thinker);
+            floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+            P_AddThinker(floor);
             s1->specialdata = floor;
-            floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
             floor->type = lowerFloor;
             floor->crush = false;
             floor->direction = -1;

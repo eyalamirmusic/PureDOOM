@@ -17,6 +17,8 @@
 #include "Ceilings.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new>
+
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
 void T_MoveCeiling(ceiling_t* ceiling);
@@ -186,10 +188,9 @@ int doCeiling(line_t* line, ceiling_e type)
 
         // new door thinker
         rtn = 1;
-        ceiling = static_cast<ceiling_t*>(levelAlloc(sizeof(*ceiling)));
-        P_AddThinker(&ceiling->thinker);
+        ceiling = new (levelAlloc(sizeof(*ceiling))) ceiling_t {};
+        P_AddThinker(ceiling);
         sec->specialdata = ceiling;
-        ceiling->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveCeiling);
         ceiling->sector = sec;
         ceiling->crush = false;
 
@@ -256,7 +257,7 @@ void removeActiveCeiling(ceiling_t* c)
         if (activeceilings[i] == c)
         {
             activeceilings[i]->sector->specialdata = nullptr;
-            P_RemoveThinker(&activeceilings[i]->thinker);
+            P_RemoveThinker(activeceilings[i]);
             activeceilings[i] = nullptr;
             break;
         }
@@ -274,8 +275,7 @@ void activateInStasisCeiling(line_t* line)
             && (activeceilings[i]->direction == 0))
         {
             activeceilings[i]->direction = activeceilings[i]->olddirection;
-            activeceilings[i]->thinker.function.acp1 =
-                reinterpret_cast<actionf_p1>(T_MoveCeiling);
+            activeceilings[i]->stopped = false;
         }
     }
 }
@@ -295,7 +295,7 @@ int ceilingCrushStop(line_t* line)
             && (activeceilings[i]->direction != 0))
         {
             activeceilings[i]->olddirection = activeceilings[i]->direction;
-            activeceilings[i]->thinker.function.acv = (actionf_v) 0;
+            activeceilings[i]->stopped = true;
             activeceilings[i]->direction = 0; // in-stasis
             rtn = 1;
         }

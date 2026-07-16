@@ -18,6 +18,8 @@
 #include "Doors.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new>
+
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
 void T_VerticalDoor(vldoor_t* door);
@@ -106,7 +108,7 @@ void verticalDoor(vldoor_t* door)
                     case blazeRaise:
                     case blazeClose:
                         door->sector->specialdata = nullptr;
-                        P_RemoveThinker(&door->thinker); // unlink and free
+                        P_RemoveThinker(door); // unlink and free
                         S_StartSound(
                             reinterpret_cast<mobj_t*>(&door->sector->soundorg),
                             sfx_bdcls);
@@ -115,7 +117,7 @@ void verticalDoor(vldoor_t* door)
                     case door_normal:
                     case door_close:
                         door->sector->specialdata = nullptr;
-                        P_RemoveThinker(&door->thinker); // unlink and free
+                        P_RemoveThinker(door); // unlink and free
                         break;
 
                     case close30ThenOpen:
@@ -168,7 +170,7 @@ void verticalDoor(vldoor_t* door)
                     case blazeOpen:
                     case door_open:
                         door->sector->specialdata = nullptr;
-                        P_RemoveThinker(&door->thinker); // unlink and free
+                        P_RemoveThinker(door); // unlink and free
                         break;
 
                     default:
@@ -251,11 +253,10 @@ int doDoor(line_t* line, vldoor_e type)
 
         // new door thinker
         rtn = 1;
-        door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
-        P_AddThinker(&door->thinker);
+        door = new (levelAlloc(sizeof(*door))) vldoor_t {};
+        P_AddThinker(door);
         sec->specialdata = door;
 
-        door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
         door->sector = sec;
         door->type = type;
         door->topwait = VDOORWAIT;
@@ -418,10 +419,9 @@ void verticalDoor(line_t* line, mobj_t* thing)
     }
 
     // new door thinker
-    door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
-    P_AddThinker(&door->thinker);
+    door = new (levelAlloc(sizeof(*door))) vldoor_t {};
+    P_AddThinker(door);
     sec->specialdata = door;
-    door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
     door->sector = sec;
     door->direction = 1;
     door->speed = VDOORSPEED;
@@ -467,14 +467,13 @@ void spawnDoorCloseIn30(sector_t* sec)
 {
     vldoor_t* door;
 
-    door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
+    door = new (levelAlloc(sizeof(*door))) vldoor_t {};
 
-    P_AddThinker(&door->thinker);
+    P_AddThinker(door);
 
     sec->specialdata = door;
     sec->special = 0;
 
-    door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
     door->sector = sec;
     door->direction = 0;
     door->type = door_normal;
@@ -489,14 +488,13 @@ void spawnDoorRaiseIn5Mins(sector_t* sec, int)
 {
     vldoor_t* door;
 
-    door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
+    door = new (levelAlloc(sizeof(*door))) vldoor_t {};
 
-    P_AddThinker(&door->thinker);
+    P_AddThinker(door);
 
     sec->specialdata = door;
     sec->special = 0;
 
-    door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
     door->sector = sec;
     door->direction = 2;
     door->type = raiseIn5Mins;

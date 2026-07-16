@@ -19,6 +19,8 @@
 #include "Floors.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <new>
+
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
 void T_MoveFloor(floormove_t* floor);
@@ -235,7 +237,7 @@ void moveFloor(floormove_t* floor)
                     break;
             }
         }
-        P_RemoveThinker(&floor->thinker);
+        P_RemoveThinker(floor);
 
         S_StartSound(reinterpret_cast<mobj_t*>(&floor->sector->soundorg), sfx_pstop);
     }
@@ -263,10 +265,9 @@ int doFloor(line_t* line, floor_e floortype)
 
         // new floor thinker
         rtn = 1;
-        floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
-        P_AddThinker(&floor->thinker);
+        floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+        P_AddThinker(floor);
         sec->specialdata = floor;
-        floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
         floor->type = floortype;
         floor->crush = false;
 
@@ -447,10 +448,9 @@ int buildStairs(line_t* line, stair_e type)
 
         // new floor thinker
         rtn = 1;
-        floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
-        P_AddThinker(&floor->thinker);
+        floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+        P_AddThinker(floor);
         sec->specialdata = floor;
-        floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
         floor->direction = 1;
         floor->sector = sec;
         switch (type)
@@ -500,13 +500,11 @@ int buildStairs(line_t* line, stair_e type)
 
                 sec = tsec;
                 secnum = newsecnum;
-                floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
+                floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
 
-                P_AddThinker(&floor->thinker);
+                P_AddThinker(floor);
 
                 sec->specialdata = floor;
-                floor->thinker.function.acp1 =
-                    reinterpret_cast<actionf_p1>(T_MoveFloor);
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = speed;

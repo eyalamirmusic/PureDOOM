@@ -580,7 +580,7 @@ void keenDie(mobj_t* mo)
     // to see if all Keens are dead
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
-        if (th->function.acp1 != reinterpret_cast<actionf_p1>(P_MobjThinker))
+        if (th->kind() != Doom::ThinkerKind::Mobj || th->removed)
             continue;
 
         mo2 = reinterpret_cast<mobj_t*>(th);
@@ -1399,8 +1399,8 @@ void painShootSkull(mobj_t* actor, angle_t angle)
     currentthinker = thinkercap.next;
     while (currentthinker != &thinkercap)
     {
-        if ((currentthinker->function.acp1
-             == reinterpret_cast<actionf_p1>(P_MobjThinker))
+        if (currentthinker->kind() == Doom::ThinkerKind::Mobj
+            && !currentthinker->removed
             && (reinterpret_cast<mobj_t*>(currentthinker))->type == MT_SKULL)
             count++;
         currentthinker = currentthinker->next;
@@ -1606,7 +1606,7 @@ void bossDeath(mobj_t* mo)
     // if all bosses are dead
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
-        if (th->function.acp1 != reinterpret_cast<actionf_p1>(P_MobjThinker))
+        if (th->kind() != Doom::ThinkerKind::Mobj || th->removed)
             continue;
 
         mo2 = reinterpret_cast<mobj_t*>(th);
@@ -1714,7 +1714,7 @@ void brainAwake(mobj_t*)
     thinker = thinkercap.next;
     for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
     {
-        if (thinker->function.acp1 != reinterpret_cast<actionf_p1>(P_MobjThinker))
+        if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
             continue; // not a mobj
 
         m = reinterpret_cast<mobj_t*>(thinker);

@@ -1364,7 +1364,10 @@ static void
 
     for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
     {
-        if (thinker->function.acp1 != (actionf_p1) P_MobjThinker)
+        // A mobj is a Thinker whose virtual kind() is Mobj (was the function.acp1 ==
+        // P_MobjThinker identity, before thinker_t became a real Doom::Thinker);
+        // skip a removed-but-not-yet-freed one, as the engine's own scans do.
+        if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
             continue;
 
         eacpEmitSprite(em, (mobj_t*) thinker, viewer, rightX, rightY);

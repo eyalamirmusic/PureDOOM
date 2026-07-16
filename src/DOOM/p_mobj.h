@@ -196,10 +196,12 @@ typedef enum
 
 
 // Map Object definition.
-typedef struct mobj_s
+typedef struct mobj_s : Doom::Thinker
 {
-    // List: thinker links.
-    thinker_t thinker;
+    // Was `thinker_t thinker;` as the first member; a mobj now *is* a Thinker.
+    // Its per-tic action (vanilla's P_MobjThinker) is tick(), defined in Mobj.cpp.
+    void tick() override;
+    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Mobj; }
 
     // Info for drawing: position.
     fixed_t x;
