@@ -62,8 +62,9 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
           "HudChat ring empty");
     check(HudMessage {}.message_on == false && HudMessage {}.message_counter == 0,
           "HudMessage clear");
-    check(StatusBarFace {}.st_oldhealth == -1,
-          "StatusBarFace st_oldhealth sentinel");
+    check(StatusBarFace {}.st_oldhealth == -1 && StatusBarFace {}.oldhealth == -1
+              && StatusBarFace {}.lastattackdown == -1,
+          "StatusBarFace -1 sentinels");
     check(StatusBarGraphics {}.numFaces == 42
               && StatusBarGraphics {}.sbar == nullptr,
           "StatusBarGraphics face count and null patches");

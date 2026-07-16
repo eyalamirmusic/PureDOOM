@@ -637,8 +637,10 @@ doom_boolean stResponder(event_t* ev)
 int stcalcPainOffset(void)
 {
     int health;
-    static int lastcalc;
-    static int oldhealth = -1;
+    // The pain-offset cache: Doom::StatusBarFace members (Engine) now, reached by a local
+    // reference (formerly function-local statics, never reset - identical persistence).
+    int& lastcalc = statusBarFace().lastcalc;
+    int& oldhealth = statusBarFace().oldhealth;
 
     health = plyr->health > 100 ? 100 : plyr->health;
 
@@ -661,8 +663,10 @@ void stupdateFaceWidget(void)
     int i;
     angle_t badguyangle;
     angle_t diffang;
-    static int lastattackdown = -1;
-    static int priority = 0;
+    // The face state machine's carry: Doom::StatusBarFace members (Engine) now, reached by a local
+    // reference (formerly function-local statics, never reset - identical persistence).
+    int& lastattackdown = statusBarFace().lastattackdown;
+    int& priority = statusBarFace().priority;
     doom_boolean doevilgrin;
 
     if (priority < 10)
