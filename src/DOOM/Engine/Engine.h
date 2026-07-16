@@ -67,6 +67,7 @@
 #include "../UI/FinaleState.h"
 #include "../UI/HudChat.h"
 #include "../UI/HudFlags.h"
+#include "../UI/HudFont.h"
 #include "../UI/HudMessage.h"
 #include "../UI/HudState.h"
 #include "../UI/IntermissionState.h"
@@ -174,6 +175,7 @@ struct Engine
     HudFlags hudFlags;
     InputConfig inputConfig;
     SoundTarget soundTarget;
+    HudFont hudFont;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

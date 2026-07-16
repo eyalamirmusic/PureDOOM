@@ -404,4 +404,9 @@ SoundTarget& soundTarget()
 {
     return engine().soundTarget;
 }
+
+HudFont& hudFont()
+{
+    return engine().hudFont;
+}
 } // namespace Doom

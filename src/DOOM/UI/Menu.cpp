@@ -79,7 +79,9 @@ int messageToPrint; // 1 = message to be printed
 // out). screens (v_video.h) and colormaps (r_state.h) already come in through
 // headers; screen_palette has no header, so it is declared here.
 extern int doom_flags;
-extern patch_t* hu_font[HU_FONTSIZE];
+// hu_font is a Doom::HudFont member (Engine); a reference onto it, so this extern is a
+// reference-to-array (a plain array extern would misread the reference's pointer).
+extern patch_t* (&hu_font)[HU_FONTSIZE];
 // chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
 extern doom_boolean& message_dontfuckwithme;
 extern doom_boolean& chat_on; // in heads-up code

@@ -89,7 +89,8 @@ typedef struct
 // Returns the final X coordinate
 // HU_Init must have been called to init the font
 //
-extern patch_t* hu_font[HU_FONTSIZE];
+// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (HU_Start writes it).
+extern patch_t* (&hu_font)[HU_FONTSIZE];
 
 //
 // DEFAULTS

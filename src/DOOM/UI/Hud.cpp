@@ -50,7 +50,8 @@
 // the level-name tables (st_stuff reads mapnames), and the two message flags.
 extern char* chat_macros[];
 extern char* player_names[];
-extern patch_t* hu_font[HU_FONTSIZE];
+// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (HU_Start writes it).
+extern patch_t* (&hu_font)[HU_FONTSIZE];
 // chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
 extern doom_boolean& chat_on;
 extern doom_boolean& message_dontfuckwithme;

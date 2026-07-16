@@ -23,9 +23,14 @@
 
 #include "UI/Hud.h"
 #include "UI/HudFlags.h"
+#include "UI/HudFont.h"
 
-// The heads-up font (read by f_finale, m_menu, m_misc).
-patch_t* hu_font[HU_FONTSIZE];
+// The heads-up font (read by f_finale, m_menu, m_misc). A Doom::HudFont owned by the Engine now;
+// this is a reference onto its member. HU_Start writes the array, so every reader's extern is a
+// reference-to-array too (a plain array extern would read the reference's hidden pointer as the
+// first glyph and fault). The reference-to-array binding self-checks HU_FONTSIZE against the
+// cluster's fontSize - a drift won't compile.
+patch_t* (&hu_font)[HU_FONTSIZE] = Doom::hudFont().hu_font;
 
 // The two cross-read HUD flags (chat input open; a forced message locks the line)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.

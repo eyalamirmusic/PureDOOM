@@ -47,7 +47,7 @@
 
 // Other subsystems' globals/functions this file reads.
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
-extern patch_t* hu_font[HU_FONTSIZE]; // hu_stuff
+extern patch_t* (&hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
 void V_DrawPatchFlipped(int x, int y, int scrn, patch_t* patch); // v_video
 
 namespace Doom
