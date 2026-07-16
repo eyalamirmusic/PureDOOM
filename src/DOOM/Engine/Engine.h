@@ -32,6 +32,7 @@
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
+#include "../Render/WallScratch.h"
 #include "../Sim/ActiveSpecials.h"
 #include "../Sim/Clip.h"
 #include "../Sim/EndLevelTimer.h"
@@ -81,6 +82,7 @@ struct Engine
     GraphicsData graphicsData;
     CompositeCache compositeCache;
     RenderScratch renderScratch;
+    WallScratch wallScratch;
     LevelStats levelStats;
     LaunchOptions launchOptions;
     GameVersion gameVersion;

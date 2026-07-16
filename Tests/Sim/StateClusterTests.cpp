@@ -105,5 +105,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&wipeState() == &engine().wipeState, "wipeState()");
     check(&menuState() == &engine().menuState, "menuState()");
     check(&compositeCache() == &engine().compositeCache, "compositeCache()");
+    check(&wallScratch() == &engine().wallScratch, "wallScratch()");
 };
 } // namespace

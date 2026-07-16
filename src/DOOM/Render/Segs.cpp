@@ -13,6 +13,7 @@
 #include "../r_local.h"
 
 #include "Segs.h"
+#include "WallScratch.h"
 
 #define HEIGHTBITS 12
 #define HEIGHTUNIT (1 << HEIGHTBITS)
@@ -26,45 +27,32 @@ extern short* maskedtexturecol;
 namespace Doom
 {
 
-doom_boolean maskedtexture;
+// The per-wall-segment rendering intermediates now live on the Engine (Render/WallScratch.h, moved
+// by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto that
+// member; read by no other file.
+static doom_boolean& maskedtexture = wallScratch().maskedtexture;
 
-angle_t rw_centerangle;
+static angle_t& rw_centerangle = wallScratch().rw_centerangle;
+static fixed_t& rw_offset = wallScratch().rw_offset;
+static fixed_t& rw_scale = wallScratch().rw_scale;
+static fixed_t& rw_scalestep = wallScratch().rw_scalestep;
+static fixed_t& rw_midtexturemid = wallScratch().rw_midtexturemid;
+static fixed_t& rw_toptexturemid = wallScratch().rw_toptexturemid;
+static fixed_t& rw_bottomtexturemid = wallScratch().rw_bottomtexturemid;
 
-fixed_t rw_offset;
+static int& worldtop = wallScratch().worldtop;
+static int& worldbottom = wallScratch().worldbottom;
+static int& worldhigh = wallScratch().worldhigh;
+static int& worldlow = wallScratch().worldlow;
 
-fixed_t rw_scale;
-
-fixed_t rw_scalestep;
-
-fixed_t rw_midtexturemid;
-
-fixed_t rw_toptexturemid;
-
-fixed_t rw_bottomtexturemid;
-
-int worldtop;
-
-int worldbottom;
-
-int worldhigh;
-
-int worldlow;
-
-fixed_t pixhigh;
-
-fixed_t pixlow;
-
-fixed_t pixhighstep;
-
-fixed_t pixlowstep;
-
-fixed_t topfrac;
-
-fixed_t topstep;
-
-fixed_t bottomfrac;
-
-fixed_t bottomstep;
+static fixed_t& pixhigh = wallScratch().pixhigh;
+static fixed_t& pixlow = wallScratch().pixlow;
+static fixed_t& pixhighstep = wallScratch().pixhighstep;
+static fixed_t& pixlowstep = wallScratch().pixlowstep;
+static fixed_t& topfrac = wallScratch().topfrac;
+static fixed_t& topstep = wallScratch().topstep;
+static fixed_t& bottomfrac = wallScratch().bottomfrac;
+static fixed_t& bottomstep = wallScratch().bottomstep;
 
 // Forward declarations so call order needs no rearranging.
 void renderMaskedSegRange(drawseg_t* ds, int x1, int x2);

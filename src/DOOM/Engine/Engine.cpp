@@ -65,6 +65,11 @@ CompositeCache& compositeCache()
     return engine().compositeCache;
 }
 
+WallScratch& wallScratch()
+{
+    return engine().wallScratch;
+}
+
 RenderScratch& renderScratch()
 {
     return engine().renderScratch;
