@@ -23,6 +23,7 @@
 #include "../sounds.h"
 #include "../w_wad.h"
 
+#include "AnimatedSurfaces.h"
 #include "Specials.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
@@ -30,14 +31,8 @@
 #define MAXLINEANIMS 64
 #define MAX_ADJOINING_SECTORS 20
 
-typedef struct
-{
-    doom_boolean istexture;
-    int picnum;
-    int basepic;
-    int numpics;
-    int speed;
-} anim_t;
+// (The vanilla file-scope `anim_t` typedef that sat here was dead - unused at global scope, a
+// leftover of the namespace wrap - and was removed; anim_t now lives in Sim/AnimatedSurfaces.h.)
 
 side_t* getSide(int currentSector, int line, int side)
 {
@@ -88,14 +83,7 @@ sector_t* getNextSector(line_t* line, sector_t* sec)
 
 namespace Doom
 {
-typedef struct
-{
-    doom_boolean istexture;
-    int picnum;
-    int basepic;
-    int numpics;
-    int speed;
-} anim_t;
+// anim_t moved to Sim/AnimatedSurfaces.h with the anims/lastanim it types.
 
 typedef struct
 {
@@ -140,11 +128,14 @@ animdef_t animdefs[] = {{false, "NUKAGE3", "NUKAGE1", 8},
 
                         {-1, "", "", 0}};
 
-anim_t anims[MAXANIMS];
-anim_t* lastanim;
+// The animated flats/textures and the scrolling-line list now live on the Engine
+// (Sim/AnimatedSurfaces.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla
+// names are references onto that member; read by no other file.
+static anim_t (&anims)[MAXANIMS] = animatedSurfaces().anims;
+static anim_t*& lastanim = animatedSurfaces().lastanim;
 
-short numlinespecials;
-line_t* linespeciallist[MAXLINEANIMS];
+static short& numlinespecials = animatedSurfaces().numlinespecials;
+static line_t* (&linespeciallist)[MAXLINEANIMS] = animatedSurfaces().linespeciallist;
 
 // Forward declarations so call order needs no rearranging.
 void initPicAnims(void);

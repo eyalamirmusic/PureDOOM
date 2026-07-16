@@ -40,11 +40,13 @@
 #include "../Render/WallScratch.h"
 #include "../Sim/ActionScratch.h"
 #include "../Sim/ActiveSpecials.h"
+#include "../Sim/AnimatedSurfaces.h"
 #include "../Sim/Clip.h"
 #include "../Sim/EnemyAI.h"
 #include "../Sim/EndLevelTimer.h"
 #include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
+#include "../Sim/LevelPool.h"
 #include "../Sim/PlayerScratch.h"
 #include "../Sim/Random.h"
 #include "../Sim/SightScratch.h"
@@ -92,6 +94,8 @@ struct Engine
     EnemyAI enemyAI;
     SwitchList switchList;
     PlayerScratch playerScratch;
+    AnimatedSurfaces animatedSurfaces;
+    LevelPool levelPool;
     ViewPoint viewPoint;
     ViewProjection viewProjection;
     ViewWindow viewWindow;

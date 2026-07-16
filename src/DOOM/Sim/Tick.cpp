@@ -11,6 +11,7 @@
 #include "../doomstat.h"
 #include "../p_local.h"
 
+#include "LevelPool.h"
 #include "Tick.h"
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
@@ -30,16 +31,10 @@ void ticker(void);
 // thinkers and the marked-but-orphaned alike - where Z_FreeTags(PU_LEVEL) once
 // swept the whole tag. The header is two pointers, so the returned block stays
 // 16-byte aligned, more than mobj_t asks for.
-namespace
-{
-struct LevelChunk
-{
-    LevelChunk* next;
-    LevelChunk* prev;
-};
-
-LevelChunk* levelChunks = 0;
-} // namespace
+// LevelChunk and the list head now live on the Engine (Sim/LevelPool.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla name levelChunks is a reference onto
+// that member, so the pool is owned per-Engine. Read by no other file.
+static LevelChunk*& levelChunks = levelPool().head;
 
 void* levelAlloc(int size)
 {

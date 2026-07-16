@@ -117,5 +117,7 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&enemyAI() == &engine().enemyAI, "enemyAI()");
     check(&switchList() == &engine().switchList, "switchList()");
     check(&playerScratch() == &engine().playerScratch, "playerScratch()");
+    check(&animatedSurfaces() == &engine().animatedSurfaces, "animatedSurfaces()");
+    check(&levelPool() == &engine().levelPool, "levelPool()");
 };
 } // namespace

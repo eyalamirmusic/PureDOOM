@@ -65,6 +65,16 @@ PlayerScratch& playerScratch()
     return engine().playerScratch;
 }
 
+AnimatedSurfaces& animatedSurfaces()
+{
+    return engine().animatedSurfaces;
+}
+
+LevelPool& levelPool()
+{
+    return engine().levelPool;
+}
+
 ViewPoint& viewPoint()
 {
     return engine().viewPoint;
