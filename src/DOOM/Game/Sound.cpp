@@ -33,6 +33,7 @@
 #include "../doomstat.h"
 
 #include "Sound.h"
+#include "SoundSettings.h"
 
 #define S_MAX_VOLUME 127
 
@@ -90,17 +91,20 @@ static musicinfo_t* mus_playing_s_sound = 0;
 
 static int nextcleanup;
 
-// The sfx/music volumes stay loose globals for now: they are config-backed, and Config.cpp's
-// static defaults[] table captures &snd_SfxVolume at static-init time. A reference-alias
-// would make that a dynamic initializer racing this binding across translation units - it
-// segfaults - so config-backed globals wait for the doom_config->Host rework (REFACTOR.md).
-int snd_SfxVolume = 15;   // sound-effect volume, 0-15
-int snd_MusicVolume = 15; // music volume, 0-15
+// The sfx/music volumes and the channel count are config-backed, and used to
+// resist the Engine migration because Config.cpp's defaults[] captured their
+// addresses at static-init time (a reference-alias raced that capture and
+// segfaulted). Config.cpp now binds those defaults[] entries to the members at
+// runtime (bindEngineDefaults) instead, so these are ordinary references onto
+// the Engine's SoundSettings cluster like any other migrated global (Game/
+// SoundSettings.h, REFACTOR.md Step 5).
+int& snd_SfxVolume = Doom::soundSettings().sfxVolume;     // sound-effect volume, 0-15
+int& snd_MusicVolume = Doom::soundSettings().musicVolume; // music volume, 0-15
 
 // following is set
 //  by the defaults code in M_misc:
 // number of channels available
-int numChannels;
+int& numChannels = Doom::soundSettings().numChannels;
 
 namespace Doom
 {

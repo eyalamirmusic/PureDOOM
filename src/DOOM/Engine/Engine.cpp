@@ -349,4 +349,9 @@ WipeState& wipeState()
 {
     return engine().wipeState;
 }
+
+SoundSettings& soundSettings()
+{
+    return engine().soundSettings;
+}
 } // namespace Doom

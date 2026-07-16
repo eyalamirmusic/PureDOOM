@@ -47,6 +47,8 @@
 #include "../w_wad.h"
 
 #include "Config.h"
+#include "SoundSettings.h"
+#include "../Engine/Engine.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -126,8 +128,9 @@ extern int screenblocks;
 
 extern int showMessages;
 
-// machine-independent sound params
-extern int numChannels;
+// machine-independent sound params (numChannels/snd_*Volume) are Engine members now
+// (Game/SoundSettings.h); their defaults[] entries are bound to those members at runtime
+// by bindEngineDefaults() rather than capturing their addresses here at static-init.
 
 extern char* chat_macros[];
 
@@ -145,8 +148,11 @@ int always_run;
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 default_t defaults[] = {
     {"mouse_sensitivity", &mouseSensitivity, 5},
-    {"sfx_volume", &snd_SfxVolume, 8},
-    {"music_volume", &snd_MusicVolume, 8},
+    // sfx_volume / music_volume are bound to the Engine's SoundSettings at runtime
+    // (bindEngineDefaults); a static &snd_SfxVolume here would capture the address of a
+    // reference before the Engine exists and race its binding across translation units.
+    {"sfx_volume", 0, 8},
+    {"music_volume", 0, 8},
     {"show_messages", &showMessages, 1},
 
     {"key_right", &key_right, KEY_RIGHTARROW},
@@ -178,7 +184,7 @@ default_t defaults[] = {
     {"crosshair", &crosshair, 0},
     {"always_run", &always_run, 0},
 
-    {"snd_channels", &numChannels, 3},
+    {"snd_channels", 0, 3}, // bound to soundSettings().numChannels at runtime
 
     {"usegamma", &usegamma, 0},
 
@@ -288,6 +294,29 @@ int mReadFile(char const* name, byte** buffer)
     return length;
 }
 
+// Point the defaults[] entries for the config-backed globals that now live on the
+// Engine at their members. Done at runtime rather than by capturing &member in the
+// static table initializer, because those members are reached through references
+// bound at dynamic-init time: a static &member would race that binding across
+// translation units (it segfaulted every test when tried). Idempotent, so both
+// mLoadDefaults and mSaveDefaults call it before touching a location pointer.
+static void bindEngineDefault(const char* name, int* location)
+{
+    for (int i = 0; i < numdefaults; i++)
+        if (!doom_strcmp(defaults[i].name, name))
+        {
+            defaults[i].location = location;
+            return;
+        }
+}
+
+static void bindEngineDefaults(void)
+{
+    bindEngineDefault("sfx_volume", &engine().soundSettings.sfxVolume);
+    bindEngineDefault("music_volume", &engine().soundSettings.musicVolume);
+    bindEngineDefault("snd_channels", &engine().soundSettings.numChannels);
+}
+
 //
 // mSaveDefaults
 //
@@ -296,6 +325,8 @@ void mSaveDefaults(void)
     int i;
     int v;
     void* f;
+
+    bindEngineDefaults();
 
     f = doom_open(defaultfile, "w");
     if (!f)
@@ -339,6 +370,8 @@ void mLoadDefaults(void)
     char* newstring;
     int parm;
     doom_boolean isstring;
+
+    bindEngineDefaults();
 
     // set everything to base values
     // numdefaults = sizeof(defaults)/sizeof(defaults[0]);

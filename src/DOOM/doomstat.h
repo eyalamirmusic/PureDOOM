@@ -101,12 +101,13 @@ extern doom_boolean& deathmatch;
 // but are not (yet) supported with Linux
 // (e.g. no sound volume adjustment with menu.
 
-// The sfx/music volumes stay loose globals for now - they are config-backed, and the Engine
-// migration by reference-alias races Config.cpp's static defaults[] address capture (see
-// Game/Sound.cpp). They move with the doom_config->Host rework. The snd_*Device selectors
-// that were declared here were always dead (no definition, no reader) and are dropped.
-extern int snd_SfxVolume;      // maximum volume for sound
-extern int snd_MusicVolume;    // maximum volume for music
+// The sfx/music volumes are config-backed and now owned by the Engine's SoundSettings
+// cluster (Game/SoundSettings.h); these are references onto those members. Config.cpp
+// binds its defaults[] entries to them at runtime rather than capturing their addresses
+// at static-init, which is what unblocked the migration. The snd_*Device selectors that
+// were declared here were always dead (no definition, no reader) and are dropped.
+extern int& snd_SfxVolume;     // maximum volume for sound
+extern int& snd_MusicVolume;   // maximum volume for music
 
 
 // -------------------------

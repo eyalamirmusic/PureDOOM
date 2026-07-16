@@ -23,6 +23,7 @@
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
 #include "../Game/SkyState.h"
+#include "../Game/SoundSettings.h"
 #include "../Game/StartupDefaults.h"
 #include "../Game/TiccmdInput.h"
 #include "../Game/TimeDemo.h"
@@ -152,6 +153,7 @@ struct Engine
     StatusBarState statusBarState;
     StatusBarWidgets statusBarWidgets;
     WipeState wipeState;
+    SoundSettings soundSettings;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
