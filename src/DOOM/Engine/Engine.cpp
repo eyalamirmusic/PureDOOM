@@ -399,4 +399,9 @@ InputConfig& inputConfig()
 {
     return engine().inputConfig;
 }
+
+SoundTarget& soundTarget()
+{
+    return engine().soundTarget;
+}
 } // namespace Doom

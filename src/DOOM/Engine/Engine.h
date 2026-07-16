@@ -59,6 +59,7 @@
 #include "../Sim/PlayerScratch.h"
 #include "../Sim/Random.h"
 #include "../Sim/SightScratch.h"
+#include "../Sim/SoundTarget.h"
 #include "../Sim/SwitchList.h"
 #include "../Sim/ValidCount.h"
 #include "../Sim/WeaponScratch.h"
@@ -172,6 +173,7 @@ struct Engine
     VideoState videoState;
     HudFlags hudFlags;
     InputConfig inputConfig;
+    SoundTarget soundTarget;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free

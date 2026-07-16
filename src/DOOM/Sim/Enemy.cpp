@@ -36,9 +36,11 @@
 #define SKULLSPEED (20 * FRACUNIT)
 
 // A_CloseShotgun2 calls the weapon refire; soundtarget and spechit/numspechit are
-// globals the AI shares (p_saveg archives soundtarget; spechit is Clip's).
+// globals the AI shares. soundtarget is a Doom::SoundTarget member (Engine) now, so this
+// extern is a reference - and must be, since recursiveSound writes it (a plain-mobj_t*
+// extern that wrote it would clobber the reference's pointer). spechit is Clip's.
 void A_ReFire(player_t* player, pspdef_t* psp);
-extern mobj_t* soundtarget;
+extern mobj_t*& soundtarget;
 extern line_t** spechit;
 extern int& numspechit;
 
@@ -46,7 +48,7 @@ namespace Doom
 {
 // P_NewChaseDir movement LUTs and the transient targets the AI threads through its
 // state actions (the vile's corpse, the fat/brain spit targets). All file-local;
-// soundtarget alone is global, because p_saveg archives it.
+// soundtarget alone is shared (now a Doom::SoundTarget Engine member, reached above).
 enum dirtype_t
 {
     DI_EAST,

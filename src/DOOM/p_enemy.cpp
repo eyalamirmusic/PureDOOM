@@ -19,10 +19,13 @@
 #include "p_mobj.h"
 
 #include "Sim/Enemy.h"
+#include "Sim/SoundTarget.h"
 
-// The last thing that made noise, propagated to nearby monsters. Global because
-// p_saveg archives it; written by Doom::noiseAlert / recursiveSound.
-mobj_t* soundtarget;
+// The last thing that made noise, propagated to nearby monsters. A Doom::SoundTarget owned by the
+// Engine now (Sim/SoundTarget.h); this is a reference onto it. (The old "p_saveg archives it" note
+// was wrong - p_saveg only touches sector_t::soundtarget, never this global.) Written by
+// Doom::noiseAlert / recursiveSound.
+mobj_t*& soundtarget = Doom::soundTarget().soundtarget;
 
 void A_KeenDie(mobj_t* mo)
 {
