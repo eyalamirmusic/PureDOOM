@@ -379,4 +379,9 @@ SpriteState& spriteState()
 {
     return engine().spriteState;
 }
+
+DrawState& drawState()
+{
+    return engine().drawState;
+}
 } // namespace Doom
