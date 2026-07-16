@@ -43,12 +43,14 @@
 #include "../v_video.h"
 
 #include "Video.h"
+#include "VideoState.h"
 #include "../UI/MenuSettings.h"
 
 // Each screen is [SCREENWIDTH*SCREENHEIGHT];
 byte* screens[5];
 
-int dirtybox[4];
+// dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
+int (&dirtybox)[4] = Doom::videoState().dirtybox;
 
 // Now where did these came from?
 byte gammatable[5][256] = {

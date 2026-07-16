@@ -384,4 +384,9 @@ DrawState& drawState()
 {
     return engine().drawState;
 }
+
+VideoState& videoState()
+{
+    return engine().videoState;
+}
 } // namespace Doom

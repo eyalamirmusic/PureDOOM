@@ -44,6 +44,7 @@
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
+#include "../Render/VideoState.h"
 #include "../Render/WallScratch.h"
 #include "../Sim/ActionScratch.h"
 #include "../Sim/ActiveSpecials.h"
@@ -166,6 +167,7 @@ struct Engine
     SegState segState;
     SpriteState spriteState;
     DrawState drawState;
+    VideoState videoState;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
