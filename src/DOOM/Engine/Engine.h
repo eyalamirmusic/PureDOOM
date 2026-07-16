@@ -5,6 +5,7 @@
 #include "../Game/CorpseQueue.h"
 #include "../Game/DeferredNewGame.h"
 #include "../Game/DemoState.h"
+#include "../Game/EngineParams.h"
 #include "../Game/EventQueue.h"
 #include "../Game/GameClock.h"
 #include "../Game/GameFlow.h"
@@ -96,6 +97,7 @@ struct Engine
     PlayerScratch playerScratch;
     AnimatedSurfaces animatedSurfaces;
     LevelPool levelPool;
+    EngineParams engineParams;
     ViewPoint viewPoint;
     ViewProjection viewProjection;
     ViewWindow viewWindow;

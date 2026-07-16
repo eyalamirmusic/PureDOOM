@@ -61,6 +61,7 @@
 #include "CorpseQueue.h"
 #include "DeferredNewGame.h"
 #include "DemoState.h"
+#include "EngineParams.h"
 #include "Game.h"
 #include "GameClock.h"
 #include "GameFlow.h"
@@ -108,8 +109,10 @@ doom_boolean& paused = Doom::refreshFlags().paused;
 // sendpause/sendsave are a Doom::PendingCommands owned by the Engine now, moved by the
 // file-scope-statics sweep; these vanilla names are references onto the members (REFACTOR.md,
 // Step 5).
-doom_boolean& sendpause = Doom::pendingCommands().sendpause; // send a pause event next tic
-doom_boolean& sendsave = Doom::pendingCommands().sendsave; // send a save event next tic
+doom_boolean& sendpause =
+    Doom::pendingCommands().sendpause; // send a pause event next tic
+doom_boolean& sendsave =
+    Doom::pendingCommands().sendsave; // send a save event next tic
 
 // usergame (with the demo flags below) is a Doom::DemoState owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
@@ -117,7 +120,8 @@ doom_boolean& usergame = Doom::demoState().usergame; // ok to save / end game
 
 // timingdemo (with starttime below) is the -timedemo benchmark state, a Doom::TimeDemo owned by
 // the Engine now; these vanilla names are references onto it (REFACTOR.md, Step 5).
-doom_boolean& timingdemo = Doom::timeDemo().timingdemo; // if true, exit with report on completion
+doom_boolean& timingdemo =
+    Doom::timeDemo().timingdemo; // if true, exit with report on completion
 doom_boolean& nodrawers = Doom::refreshFlags().nodrawers; // comparative timing
 doom_boolean& noblit = Doom::refreshFlags().noblit; // comparative timing
 int& starttime = Doom::timeDemo().starttime; // for comparative timing purposes
@@ -131,14 +135,15 @@ doom_boolean& netgame = Doom::gameSession().netgame; // packets are broadcast
 doom_boolean (&playeringame)[MAXPLAYERS] = Doom::playerState().playeringame;
 player_t (&players)[MAXPLAYERS] = Doom::playerState().players;
 
-int& consoleplayer = Doom::playerState().consoleplayer; // taking events and displaying
+int& consoleplayer =
+    Doom::playerState().consoleplayer; // taking events and displaying
 int& displayplayer = Doom::playerState().displayplayer; // view being displayed
 int& gametic = Doom::gameClock().gametic; // Doom::GameClock (Engine member)
 
 // The level's progress (levelstarttic + the intermission totals, and leveltime over in
 // p_tick) is a Doom::LevelStats owned by the Engine now; these are references onto it.
 int& levelstarttic = Doom::levelStats().levelstarttic; // gametic at level start
-int& totalkills = Doom::levelStats().totalkills;       // for intermission
+int& totalkills = Doom::levelStats().totalkills; // for intermission
 int& totalitems = Doom::levelStats().totalitems;
 int& totalsecret = Doom::levelStats().totalsecret;
 
@@ -154,11 +159,14 @@ byte*& demo_p = Doom::demoState().demo_p;
 byte*& demoend = Doom::demoState().demoend;
 doom_boolean& singledemo = Doom::demoState().singledemo; // quit after one demo
 
-doom_boolean precache = true; // if true, load all graphics at start
+// precache is a Doom::EngineParams owned by the Engine now; this is a reference onto it (default
+// true - load all graphics at start; REFACTOR.md, Step 5).
+doom_boolean& precache = Doom::engineParams().precache;
 
 // wminfo is a Doom::IntermissionInfo owned by the Engine now; this is a reference onto it
 // (REFACTOR.md, Step 5).
-wbstartstruct_t& wminfo = Doom::intermissionInfo().wminfo; // world map / intermission parms
+wbstartstruct_t& wminfo =
+    Doom::intermissionInfo().wminfo; // world map / intermission parms
 
 // consistancy folded into Doom::NetState (the netcode bookkeeping) by the file-scope-statics
 // sweep; this vanilla name is a reference-to-array onto the member (REFACTOR.md, Step 5).

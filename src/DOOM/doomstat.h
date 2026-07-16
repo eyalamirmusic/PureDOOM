@@ -227,10 +227,12 @@ extern int (&maxammo)[NUMAMMO];
 
 // File handling stuff.
 extern char basedefault[1024];
-extern void* debugfile;
+// debugfile / precache / singletics are Doom::EngineParams (an Engine member) now; these are
+// references onto it (REFACTOR.md, Step 5).
+extern void*& debugfile;
 
 // if true, load all graphics at level load
-extern doom_boolean precache;
+extern doom_boolean& precache;
 
 // wipegamestate can be set to -1
 // to force a wipe on the next draw (in Doom::GameFlow now; see gamestate above)
@@ -238,8 +240,8 @@ extern gamestate_t& wipegamestate;
 
 extern int mouseSensitivity;
 //?
-// debug flag to cancel adaptiveness
-extern doom_boolean singletics;
+// debug flag to cancel adaptiveness (in Doom::EngineParams now; see debugfile above)
+extern doom_boolean& singletics;
 
 // bodyqueslot lives in Doom::CorpseQueue (an Engine member) now, with the bodyque[] array;
 // this is a reference onto it (REFACTOR.md, Step 5).

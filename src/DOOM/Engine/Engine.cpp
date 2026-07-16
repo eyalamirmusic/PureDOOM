@@ -75,6 +75,11 @@ LevelPool& levelPool()
     return engine().levelPool;
 }
 
+EngineParams& engineParams()
+{
+    return engine().engineParams;
+}
+
 ViewPoint& viewPoint()
 {
     return engine().viewPoint;

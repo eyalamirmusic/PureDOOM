@@ -80,6 +80,12 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
               && IntermissionState {}.snl_pointeron == false
               && IntermissionState {}.bg == nullptr,
           "IntermissionState zero-init state, cleared pointer flag, null patches");
+    // Load-bearing true defaults. singletics drives the singletics loop/NetUpdate quirk (a wrong
+    // default would desync the demos); precache is golden-neutral (it changes only *when* graphics
+    // load, not the pixels), so its default has no golden watching it and is pinned only here.
+    check(EngineParams {}.precache == true && EngineParams {}.singletics == true
+              && EngineParams {}.debugfile == nullptr,
+          "EngineParams precache/singletics true, debugfile null");
 };
 
 // The free accessors are views onto the one Engine's members, the same property EngineTests pins
@@ -119,5 +125,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&playerScratch() == &engine().playerScratch, "playerScratch()");
     check(&animatedSurfaces() == &engine().animatedSurfaces, "animatedSurfaces()");
     check(&levelPool() == &engine().levelPool, "levelPool()");
+    check(&engineParams() == &engine().engineParams, "engineParams()");
 };
 } // namespace

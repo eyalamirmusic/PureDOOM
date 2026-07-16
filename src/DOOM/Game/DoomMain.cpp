@@ -62,6 +62,7 @@
 
 #include "AttractMode.h"
 #include "DoomMain.h"
+#include "EngineParams.h"
 #include "EventQueue.h"
 #include "GameFlow.h"
 #include "LaunchOptions.h"
@@ -85,7 +86,9 @@ doom_boolean& fastparm = Doom::launchOptions().fastparm; // checkparm of -fast
 // (drone, an always-unread vestige, was deleted here - the doomcom_t.drone in d_net.h
 // is an unrelated struct member.)
 
-doom_boolean singletics = true; // debug flag to cancel adaptiveness
+// singletics / debugfile are Doom::EngineParams owned by the Engine now; these are references onto
+// it (REFACTOR.md, Step 5).
+doom_boolean& singletics = Doom::engineParams().singletics;
 
 doom_boolean is_wiping_screen = false;
 
@@ -96,7 +99,7 @@ int& startepisode = Doom::startupDefaults().startepisode;
 int& startmap = Doom::startupDefaults().startmap;
 doom_boolean& autostart = Doom::startupDefaults().autostart;
 
-void* debugfile = 0;
+void*& debugfile = Doom::engineParams().debugfile;
 
 // advancedemo (with the page state below) is a Doom::AttractMode owned by the Engine now; the
 // vanilla names are references onto it (REFACTOR.md, Step 5).
