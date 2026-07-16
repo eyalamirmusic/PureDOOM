@@ -44,6 +44,7 @@
 #include "../Game/OverlayState.h"
 
 #include "Menu.h"
+#include "MenuSettings.h"
 #include "MenuState.h"
 
 #define SAVESTRINGSIZE 24
@@ -54,18 +55,21 @@
 //
 // These are the only menu globals anything outside the menu touches, so they
 // stay at file scope rather than moving into namespace Doom below. menuactive
-// and mouseSensitivity are declared in doomstat.h; screenblocks / detailLevel /
-// showMessages are config-backed (Game/Config.cpp binds their addresses) and
-// read by the renderer and HUD; inhelpscreens gates D_Display's status-bar
-// redraw; messageToPrint (m_menu.h) is read by the eacp overlay capture.
+// and mouseSensitivity are declared in doomstat.h; inhelpscreens gates
+// D_Display's status-bar redraw; messageToPrint (m_menu.h) is read by the eacp
+// overlay capture.
 doom_boolean inhelpscreens;
 // menuactive (with automapactive) is a Doom::OverlayState owned by the Engine now; this is a
 // reference onto it (REFACTOR.md, Step 5).
 doom_boolean& menuactive = Doom::overlayState().menuactive;
-int mouseSensitivity; // has default
-int showMessages; // has default, 0 = off, 1 = on
-int detailLevel; // has default, 0 = high, 1 = normal
-int screenblocks; // has default
+// The config-backed settings (mouse sensitivity, message toggle, detail, view
+// size) are Engine members now (UI/MenuSettings.h); these are references onto
+// them. Config.cpp binds its defaults[] entries to the members at runtime rather
+// than capturing their addresses at static-init, which is what unblocked the move.
+int& mouseSensitivity = Doom::menuSettings().mouseSensitivity;
+int& showMessages = Doom::menuSettings().showMessages; // 0 = off, 1 = on
+int& detailLevel = Doom::menuSettings().detailLevel;   // 0 = high, 1 = normal
+int& screenblocks = Doom::menuSettings().screenblocks;
 int messageToPrint; // 1 = message to be printed
 
 // Globals owned elsewhere that the menu reads or writes. They are declared here,

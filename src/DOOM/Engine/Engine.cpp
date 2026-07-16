@@ -354,4 +354,9 @@ SoundSettings& soundSettings()
 {
     return engine().soundSettings;
 }
+
+MenuSettings& menuSettings()
+{
+    return engine().menuSettings;
+}
 } // namespace Doom

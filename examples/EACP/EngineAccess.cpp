@@ -38,7 +38,7 @@
 // candidates for a real interface as the engine gets refactored.
 extern doom_boolean is_wiping_screen;
 extern unsigned char screen_palette[256 * 3];
-extern int screenblocks;
+extern int& screenblocks; // config-backed Engine member (UI/MenuSettings.h)
 extern doom_boolean st_statusbaron;
 
 // Convex subsector cells rarely exceed a handful of corners; the cap only

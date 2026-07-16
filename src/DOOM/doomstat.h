@@ -239,7 +239,9 @@ extern doom_boolean& precache;
 // to force a wipe on the next draw (in Doom::GameFlow now; see gamestate above)
 extern gamestate_t& wipegamestate;
 
-extern int mouseSensitivity;
+// mouseSensitivity is config-backed and owned by the Engine's MenuSettings cluster
+// (UI/MenuSettings.h) now; this is a reference onto that member.
+extern int& mouseSensitivity;
 //?
 // debug flag to cancel adaptiveness (in Doom::EngineParams now; see debugfile above)
 extern doom_boolean& singletics;

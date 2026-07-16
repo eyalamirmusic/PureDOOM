@@ -119,18 +119,10 @@ extern int joybspeed;
 extern int& viewwidth;
 extern int& viewheight;
 
-extern int mouseSensitivity;
-extern int showMessages;
-
-extern int detailLevel;
-
-extern int screenblocks;
-
-extern int showMessages;
-
-// machine-independent sound params (numChannels/snd_*Volume) are Engine members now
-// (Game/SoundSettings.h); their defaults[] entries are bound to those members at runtime
-// by bindEngineDefaults() rather than capturing their addresses here at static-init.
+// mouseSensitivity / showMessages / detailLevel / screenblocks are Engine members now
+// (UI/MenuSettings.h), reached through references (doomstat.h / their owner files). Like the
+// sound params below, their defaults[] entries are bound to those members at runtime by
+// bindEngineDefaults() rather than capturing their addresses here at static-init.
 
 extern char* chat_macros[];
 
@@ -147,13 +139,14 @@ int always_run;
 #pragma GCC diagnostic ignored "-Wwritable-strings"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 default_t defaults[] = {
-    {"mouse_sensitivity", &mouseSensitivity, 5},
-    // sfx_volume / music_volume are bound to the Engine's SoundSettings at runtime
-    // (bindEngineDefaults); a static &snd_SfxVolume here would capture the address of a
-    // reference before the Engine exists and race its binding across translation units.
+    // These config-backed globals are Engine members reached through references, so their
+    // location is bound to the member at runtime (bindEngineDefaults) rather than captured
+    // here: a static &member would take the address of a reference before the Engine exists
+    // and race its binding across translation units (it segfaulted every test when tried).
+    {"mouse_sensitivity", 0, 5},
     {"sfx_volume", 0, 8},
     {"music_volume", 0, 8},
-    {"show_messages", &showMessages, 1},
+    {"show_messages", 0, 1},
 
     {"key_right", &key_right, KEY_RIGHTARROW},
     {"key_left", &key_left, KEY_LEFTARROW},
@@ -179,8 +172,8 @@ default_t defaults[] = {
     {"joyb_use", &joybuse, 3},
     {"joyb_speed", &joybspeed, 2},
 
-    {"screenblocks", &screenblocks, 9},
-    {"detaillevel", &detailLevel, 0},
+    {"screenblocks", 0, 9},
+    {"detaillevel", 0, 0},
     {"crosshair", &crosshair, 0},
     {"always_run", &always_run, 0},
 
@@ -315,6 +308,10 @@ static void bindEngineDefaults(void)
     bindEngineDefault("sfx_volume", &engine().soundSettings.sfxVolume);
     bindEngineDefault("music_volume", &engine().soundSettings.musicVolume);
     bindEngineDefault("snd_channels", &engine().soundSettings.numChannels);
+    bindEngineDefault("mouse_sensitivity", &engine().menuSettings.mouseSensitivity);
+    bindEngineDefault("show_messages", &engine().menuSettings.showMessages);
+    bindEngineDefault("screenblocks", &engine().menuSettings.screenblocks);
+    bindEngineDefault("detaillevel", &engine().menuSettings.detailLevel);
 }
 
 //

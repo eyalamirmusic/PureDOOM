@@ -56,7 +56,7 @@ extern doom_boolean message_dontfuckwithme;
 extern char* mapnames[];
 
 // Other subsystems' globals this file reads.
-extern int showMessages; // m_misc config
+extern int& showMessages; // config-backed Engine member (UI/MenuSettings.h)
 extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
 
 //

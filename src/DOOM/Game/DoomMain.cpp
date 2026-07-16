@@ -132,7 +132,7 @@ static char title[128];
 
 extern doom_boolean inhelpscreens;
 extern doom_boolean& setsizeneeded;
-extern int showMessages;
+extern int& showMessages; // config-backed Engine member (UI/MenuSettings.h)
 extern doom_boolean& demorecording; // Doom::DemoState (Engine member)
 
 // Title/demo-loop state: members of the Doom::AttractMode above (pagename is read by g_game).

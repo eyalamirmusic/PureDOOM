@@ -26,8 +26,9 @@
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
 extern lighttable_t** walllights;
-extern int detailLevel;
-extern int screenblocks;
+// detailLevel/screenblocks are config-backed Engine members (UI/MenuSettings.h); references.
+extern int& detailLevel;
+extern int& screenblocks;
 
 // setsizeneeded/setblocks live in the r_main.cpp shim (d_main, g_game and DOOM.cpp
 // switch them through a local extern); declared here so the setup code can too.

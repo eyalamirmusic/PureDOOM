@@ -61,6 +61,7 @@
 #include "../UI/HudMessage.h"
 #include "../UI/HudState.h"
 #include "../UI/IntermissionState.h"
+#include "../UI/MenuSettings.h"
 #include "../UI/MenuState.h"
 #include "../UI/StatusBarFace.h"
 #include "../UI/StatusBarGraphics.h"
@@ -154,6 +155,7 @@ struct Engine
     StatusBarWidgets statusBarWidgets;
     WipeState wipeState;
     SoundSettings soundSettings;
+    MenuSettings menuSettings;
 };
 
 // The one instance, for as long as the vanilla globals still reach state by free
