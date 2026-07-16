@@ -206,11 +206,12 @@ void moveFloor(floormove_t* floor)
                     floor->direction);
 
     if (!(leveltime & 7))
-        S_StartSound((mobj_t*) &floor->sector->soundorg, sfx_stnmov);
+        S_StartSound(reinterpret_cast<mobj_t*>(&floor->sector->soundorg),
+                     sfx_stnmov);
 
     if (res == pastdest)
     {
-        floor->sector->specialdata = 0;
+        floor->sector->specialdata = nullptr;
 
         if (floor->direction == 1)
         {
@@ -236,7 +237,7 @@ void moveFloor(floormove_t* floor)
         }
         P_RemoveThinker(&floor->thinker);
 
-        S_StartSound((mobj_t*) &floor->sector->soundorg, sfx_pstop);
+        S_StartSound(reinterpret_cast<mobj_t*>(&floor->sector->soundorg), sfx_pstop);
     }
 }
 
@@ -247,7 +248,6 @@ int doFloor(line_t* line, floor_e floortype)
 {
     int secnum;
     int rtn;
-    int i;
     sector_t* sec;
     floormove_t* floor;
 
@@ -263,10 +263,10 @@ int doFloor(line_t* line, floor_e floortype)
 
         // new floor thinker
         rtn = 1;
-        floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
+        floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
         P_AddThinker(&floor->thinker);
         sec->specialdata = floor;
-        floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
+        floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
         floor->type = floortype;
         floor->crush = false;
 
@@ -354,7 +354,7 @@ int doFloor(line_t* line, floor_e floortype)
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                for (i = 0; i < sec->linecount; i++)
+                for (int i = 0; i < sec->linecount; i++)
                 {
                     if (twoSided(secnum, i))
                     {
@@ -379,7 +379,7 @@ int doFloor(line_t* line, floor_e floortype)
                 floor->floordestheight = P_FindLowestFloorSurrounding(sec);
                 floor->texture = sec->floorpic;
 
-                for (i = 0; i < sec->linecount; i++)
+                for (int i = 0; i < sec->linecount; i++)
                 {
                     if (twoSided(secnum, i))
                     {
@@ -422,7 +422,6 @@ int buildStairs(line_t* line, stair_e type)
 {
     int secnum;
     int height;
-    int i;
     int newsecnum;
     int texture;
     int ok;
@@ -448,10 +447,10 @@ int buildStairs(line_t* line, stair_e type)
 
         // new floor thinker
         rtn = 1;
-        floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
+        floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
         P_AddThinker(&floor->thinker);
         sec->specialdata = floor;
-        floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
+        floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
         floor->direction = 1;
         floor->sector = sec;
         switch (type)
@@ -477,19 +476,19 @@ int buildStairs(line_t* line, stair_e type)
         do
         {
             ok = 0;
-            for (i = 0; i < sec->linecount; i++)
+            for (int i = 0; i < sec->linecount; i++)
             {
                 if (!((sec->lines[i])->flags & ML_TWOSIDED))
                     continue;
 
                 tsec = (sec->lines[i])->frontsector;
-                newsecnum = (int) (tsec - sectors);
+                newsecnum = static_cast<int>(tsec - sectors);
 
                 if (secnum != newsecnum)
                     continue;
 
                 tsec = (sec->lines[i])->backsector;
-                newsecnum = (int) (tsec - sectors);
+                newsecnum = static_cast<int>(tsec - sectors);
 
                 if (tsec->floorpic != texture)
                     continue;
@@ -501,12 +500,13 @@ int buildStairs(line_t* line, stair_e type)
 
                 sec = tsec;
                 secnum = newsecnum;
-                floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
+                floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
 
                 P_AddThinker(&floor->thinker);
 
                 sec->specialdata = floor;
-                floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
+                floor->thinker.function.acp1 =
+                    reinterpret_cast<actionf_p1>(T_MoveFloor);
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = speed;

@@ -15,8 +15,8 @@ namespace Doom
 // stay at file scope for them. The M_ names are kept inside the namespace so the
 // transcription stays diffable against the 1993 source.
 doom_boolean M_Responder(event_t* ev);
-void M_Ticker(void);
-void M_Drawer(void);
-void M_Init(void);
-void M_StartControlPanel(void);
+void M_Ticker();
+void M_Drawer();
+void M_Init();
+void M_StartControlPanel();
 } // namespace Doom

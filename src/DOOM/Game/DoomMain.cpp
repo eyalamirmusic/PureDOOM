@@ -128,7 +128,7 @@ int& eventtail = Doom::eventQueue().eventtail;
 // wipegamestate (with gamestate) is a Doom::GameFlow owned by the Engine now; this is a
 // reference onto it. It can be set to -1 to force a wipe on the next draw.
 gamestate_t& wipegamestate = Doom::gameFlow().wipegamestate;
-void R_ExecuteSetViewSize(void);
+void R_ExecuteSetViewSize();
 
 // print title for every printed line - file-local, built and printed only here
 static char title[128];
@@ -151,16 +151,16 @@ const char*& pagename = Doom::attractMode().pagename;
 extern int (&forwardmove)[2]; // g_game (fixed_t; identical type)
 extern int (&sidemove)[2]; // g_game
 extern void* statcopy; // g_game
-void D_CheckNetGame(void);
+void D_CheckNetGame();
 void G_BuildTiccmd(ticcmd_t* cmd);
 
 namespace Doom
 {
 
 // Forward declarations so call order needs no rearranging.
-void dDoomLoop(void);
-void dProcessEvents(void);
-void dDoAdvanceDemo(void);
+void dDoomLoop();
+void dProcessEvents();
+void dDoAdvanceDemo();
 
 //
 // dPostEvent
@@ -177,7 +177,7 @@ void dPostEvent(event_t* ev)
 // dProcessEvents
 // Send all the events of the given timestamp down the responder chain
 //
-void dProcessEvents(void)
+void dProcessEvents()
 {
     event_t* ev;
 
@@ -200,7 +200,7 @@ void dProcessEvents(void)
 // dDisplay
 //  draw current display, possibly wiping it from the previous
 //
-void dDisplay(void)
+void dDisplay()
 {
     // The frame-diff state machine: a Doom::DisplayState owned by the Engine now, reached by local
     // references (formerly dDisplay's own function-local statics, never reset - identical
@@ -225,7 +225,7 @@ void dDisplay(void)
     if (setsizeneeded)
     {
         R_ExecuteSetViewSize();
-        oldgamestate = (gamestate_t) (-1); // force background redraw
+        oldgamestate = static_cast<gamestate_t>((-1)); // force background redraw
         borderdrawcount = 3;
     }
 
@@ -282,7 +282,7 @@ void dDisplay(void)
 
     // clean up border stuff
     if (gamestate != oldgamestate && gamestate != GS_LEVEL)
-        I_SetPalette((byte*) (W_CacheLumpName("PLAYPAL", PU_CACHE)));
+        I_SetPalette(static_cast<byte*>((W_CacheLumpName("PLAYPAL", PU_CACHE))));
 
     // see if the border needs to be initially drawn
     if (gamestate == GS_LEVEL && oldgamestate != GS_LEVEL)
@@ -315,10 +315,11 @@ void dDisplay(void)
             y = 4;
         else
             y = viewwindowy + 4;
-        V_DrawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
-                          y,
-                          0,
-                          (patch_t*) (W_CacheLumpName("M_PAUSE", PU_CACHE)));
+        V_DrawPatchDirect(
+            viewwindowx + (scaledviewwidth - 68) / 2,
+            y,
+            0,
+            static_cast<patch_t*>((W_CacheLumpName("M_PAUSE", PU_CACHE))));
     }
 
     // menus go directly to the screen
@@ -357,13 +358,13 @@ void dDisplay(void)
 //
 //  dDoomLoop
 //
-void dUpdateWipe(void)
+void dUpdateWipe()
 {
     if (wipe_ScreenWipe(wipe_Melt, 0, 0, SCREENWIDTH, SCREENHEIGHT, 1))
         is_wiping_screen = false;
 }
 
-void dDoomLoop(void)
+void dDoomLoop()
 {
 #if 0 // [pd] Moved to dDoomMain()
     if (demorecording)
@@ -427,7 +428,7 @@ void dDoomLoop(void)
 // dPageTicker
 // Handles timing for warped projection
 //
-void dPageTicker(void)
+void dPageTicker()
 {
     if (--pagetic < 0)
         dAdvanceDemo();
@@ -436,16 +437,17 @@ void dPageTicker(void)
 //
 // dPageDrawer
 //
-void dPageDrawer(void)
+void dPageDrawer()
 {
-    V_DrawPatch(0, 0, 0, (patch_t*) (W_CacheLumpName(pagename, PU_CACHE)));
+    V_DrawPatch(
+        0, 0, 0, static_cast<patch_t*>((W_CacheLumpName(pagename, PU_CACHE))));
 }
 
 //
 // dAdvanceDemo
 // Called after each demo or intro demosequence finishes
 //
-void dAdvanceDemo(void)
+void dAdvanceDemo()
 {
     advancedemo = true;
 }
@@ -454,7 +456,7 @@ void dAdvanceDemo(void)
 // This cycles through the demo sequences.
 // FIXME - version dependend demo numbers?
 //
-void dDoAdvanceDemo(void)
+void dDoAdvanceDemo()
 {
     players[consoleplayer].playerstate = PST_LIVE; // not reborn
     advancedemo = false;
@@ -523,7 +525,7 @@ void dDoAdvanceDemo(void)
 //
 // dStartTitle
 //
-void dStartTitle(void)
+void dStartTitle()
 {
     gameaction = ga_nothing;
     demosequence = -1;
@@ -541,7 +543,7 @@ void dAddFile(const char* file)
     for (numwadfiles = 0; wadfiles[numwadfiles]; numwadfiles++)
         ;
 
-    newfile = (char*) (doom_malloc(doom_strlen(file) + 1));
+    newfile = static_cast<char*>((doom_malloc(doom_strlen(file) + 1)));
     doom_strcpy(newfile, file);
 
     wadfiles[numwadfiles] = newfile;
@@ -553,7 +555,7 @@ void dAddFile(const char* file)
 // to determine whether registered/commercial features
 // should be executed (notably loading PWAD's).
 //
-void IdentifyVersion(void)
+void IdentifyVersion()
 {
     char* doom1wad;
     char* doomwad;
@@ -565,49 +567,53 @@ void IdentifyVersion(void)
     char* tntwad;
 
     char* home;
-    const char* doomwaddir;
-    doomwaddir = doom_getenv("DOOMWADDIR");
+    const char* doomwaddir = doom_getenv("DOOMWADDIR");
     if (!doomwaddir)
         doomwaddir = ".";
 
     // Commercial.
-    doom2wad = (char*) (doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1));
+    doom2wad =
+        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1)));
     //doom_sprintf(doom2wad, "%s/doom2.wad", doomwaddir);
     doom_strcpy(doom2wad, doomwaddir);
     doom_concat(doom2wad, "/doom2.wad");
 
     // Retail.
-    doomuwad = (char*) (doom_malloc(doom_strlen(doomwaddir) + 1 + 8 + 1));
+    doomuwad =
+        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 8 + 1)));
     //doom_sprintf(doomuwad, "%s/doomu.wad", doomwaddir);
     doom_strcpy(doomuwad, doomwaddir);
     doom_concat(doomuwad, "/doomu.wad");
 
     // Registered.
-    doomwad = (char*) (doom_malloc(doom_strlen(doomwaddir) + 1 + 8 + 1));
+    doomwad = static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 8 + 1)));
     //doom_sprintf(doomwad, "%s/doom.wad", doomwaddir);
     doom_strcpy(doomwad, doomwaddir);
     doom_concat(doomwad, "/doom.wad");
 
     // Shareware.
-    doom1wad = (char*) (doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1));
+    doom1wad =
+        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1)));
     //doom_sprintf(doom1wad, "%s/doom1.wad", doomwaddir);
     doom_strcpy(doom1wad, doomwaddir);
     doom_concat(doom1wad, "/doom1.wad");
 
     // Bug, dear Shawn.
     // Insufficient malloc, caused spurious realloc errors.
-    plutoniawad = (char*) (doom_malloc(doom_strlen(doomwaddir) + 1 + /*9*/ 12 + 1));
+    plutoniawad = static_cast<char*>(
+        (doom_malloc(doom_strlen(doomwaddir) + 1 + /*9*/ 12 + 1)));
     //doom_sprintf(plutoniawad, "%s/plutonia.wad", doomwaddir);
     doom_strcpy(plutoniawad, doomwaddir);
     doom_concat(plutoniawad, "/plutonia.wad");
 
-    tntwad = (char*) (doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1));
+    tntwad = static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1)));
     //doom_sprintf(tntwad, "%s/tnt.wad", doomwaddir);
     doom_strcpy(tntwad, doomwaddir);
     doom_concat(tntwad, "/tnt.wad");
 
     // French stuff.
-    doom2fwad = (char*) (doom_malloc(doom_strlen(doomwaddir) + 1 + 10 + 1));
+    doom2fwad =
+        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 10 + 1)));
     //doom_sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
     doom_strcpy(doom2fwad, doomwaddir);
     doom_concat(doom2fwad, "/doom2f.wad");
@@ -732,14 +738,12 @@ void IdentifyVersion(void)
 //
 // Find a Response File
 //
-void FindResponseFile(void)
+void FindResponseFile()
 {
-    int i;
-
-    for (i = 1; i < myargc; i++)
+    for (int i = 1; i < myargc; i++)
         if (myargv[i][0] == '@')
         {
-            void* handle = 0;
+            void* handle = nullptr;
             int size;
             int k;
             int index;
@@ -762,7 +766,7 @@ void FindResponseFile(void)
             doom_seek(handle, 0, DOOM_SEEK_END);
             size = doom_tell(handle);
             doom_seek(handle, 0, DOOM_SEEK_SET);
-            file = (char*) (doom_malloc(size));
+            file = static_cast<char*>((doom_malloc(size)));
             doom_read(handle, file, size * 1);
             doom_close(handle);
 
@@ -771,7 +775,7 @@ void FindResponseFile(void)
                 moreargs[index++] = myargv[k];
 
             firstargv = myargv[0];
-            myargv = (char**) (doom_malloc(sizeof(char*) * MAXARGVS));
+            myargv = static_cast<char**>((doom_malloc(sizeof(char*) * MAXARGVS)));
             doom_memset(myargv, 0, sizeof(char*) * MAXARGVS);
             myargv[0] = firstargv;
 
@@ -810,7 +814,7 @@ void FindResponseFile(void)
 //
 // dDoomMain
 //
-void dDoomMain(void)
+void dDoomMain()
 {
     int p;
     char file[256];
@@ -1046,7 +1050,7 @@ void dDoomMain(void)
     p = M_CheckParm("-skill");
     if (p && p < myargc - 1)
     {
-        startskill = (skill_t) (myargv[p + 1][0] - '1');
+        startskill = static_cast<skill_t>((myargv[p + 1][0] - '1'));
         autostart = true;
     }
 
@@ -1061,8 +1065,7 @@ void dDoomMain(void)
     p = M_CheckParm("-timer");
     if (p && p < myargc - 1 && deathmatch)
     {
-        int time;
-        time = doom_atoi(myargv[p + 1]);
+        int time = doom_atoi(myargv[p + 1]);
         //doom_print("Levels will end after %d minute", time);
         doom_print("Levels will end after ");
         doom_print(doom_itoa(time, 10));
@@ -1109,7 +1112,6 @@ void dDoomMain(void)
                             "e3m3",   "e3m3",   "e3m4",    "e3m5",   "e3m6",
                             "e3m7",   "e3m8",   "e3m9",    "dphoof", "bfgga0",
                             "heada1", "cybra1", "spida1d1"};
-        int i;
 
         if (gamemode == shareware)
             I_Error("Error: \nYou cannot -file with the shareware "
@@ -1118,7 +1120,7 @@ void dDoomMain(void)
         // Check for fake IWAD with right name,
         // but w/o all the lumps of the registered version.
         if (gamemode == registered)
-            for (i = 0; i < 23; i++)
+            for (int i = 0; i < 23; i++)
                 if (W_CheckNumForName(name[i]) < 0)
                     I_Error("Error: \nThis is not the registered version.");
     }

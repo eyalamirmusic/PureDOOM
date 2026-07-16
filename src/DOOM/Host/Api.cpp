@@ -43,8 +43,8 @@ doom_gettime_fn doom_gettime = 0;
 doom_exit_fn doom_exit = 0;
 doom_getenv_fn doom_getenv = 0;
 
-void D_DoomLoop(void);
-void D_UpdateWipe(void);
+void D_DoomLoop();
+void D_UpdateWipe();
 void I_UpdateSound();
 unsigned long I_TickSong();
 
@@ -62,7 +62,7 @@ static void doom_print_impl(const char* str) {}
 #include <stdlib.h>
 static void* doom_malloc_impl(int size)
 {
-    return malloc((size_t) size);
+    return malloc(static_cast<size_t>(size));
 }
 static void doom_free_impl(void* ptr)
 {
@@ -71,7 +71,7 @@ static void doom_free_impl(void* ptr)
 #else
 static void* doom_malloc_impl(int size)
 {
-    return 0;
+    return nullptr;
 }
 static void doom_free_impl(void* ptr) {}
 #endif
@@ -84,32 +84,32 @@ void* doom_open_impl(const char* filename, const char* mode)
 }
 void doom_close_impl(void* handle)
 {
-    fclose((FILE*) (handle));
+    fclose(static_cast<FILE*>(handle));
 }
 int doom_read_impl(void* handle, void* buf, int count)
 {
-    return (int) fread(buf, 1, count, (FILE*) (handle));
+    return static_cast<int>(fread(buf, 1, count, static_cast<FILE*>(handle)));
 }
 int doom_write_impl(void* handle, const void* buf, int count)
 {
-    return (int) fwrite(buf, 1, count, (FILE*) (handle));
+    return static_cast<int>(fwrite(buf, 1, count, static_cast<FILE*>(handle)));
 }
 int doom_seek_impl(void* handle, int offset, doom_seek_t origin)
 {
-    return fseek((FILE*) (handle), offset, origin);
+    return fseek(static_cast<FILE*>(handle), offset, origin);
 }
 int doom_tell_impl(void* handle)
 {
-    return (int) ftell((FILE*) (handle));
+    return static_cast<int>(ftell(static_cast<FILE*>(handle)));
 }
 int doom_eof_impl(void* handle)
 {
-    return feof((FILE*) (handle));
+    return feof(static_cast<FILE*>(handle));
 }
 #else
 void* doom_open_impl(const char* filename, const char* mode)
 {
-    return 0;
+    return nullptr;
 }
 void doom_close_impl(void* handle) {}
 int doom_read_impl(void* handle, void* buf, int count)
@@ -158,7 +158,7 @@ void doom_gettime_impl(int* sec, int* usec)
     struct timeval tp;
 
 #ifdef __linux__
-    gettimeofday(&tp, NULL);
+    gettimeofday(&tp, nullptr);
 #else
     struct timezone tzp;
     gettimeofday(&tp, &tzp);
@@ -485,7 +485,7 @@ void doom_set_default_string(const char* name, const char* value)
     default_t* def = get_default(name);
     if (!def)
         return;
-    def->default_text_value = (char*) value;
+    def->default_text_value = const_cast<char*>(value);
 }
 
 void doom_set_print(doom_print_fn print_fn)
@@ -572,7 +572,7 @@ void doom_init(int argc, char** argv, int flags)
     D_DoomMain();
 }
 
-void doom_update(void)
+void doom_update()
 {
     int now = I_GetTime();
     int delta_time = now - last_update_time;
@@ -588,7 +588,7 @@ void doom_update(void)
     last_update_time = now;
 }
 
-void doom_force_update(void)
+void doom_force_update()
 {
     if (is_wiping_screen)
         D_UpdateWipe();
@@ -598,8 +598,6 @@ void doom_force_update(void)
 
 const unsigned char* doom_get_framebuffer(int channels)
 {
-    int i, len;
-
     doom_memcpy(screen_buffer, screens[0], SCREENWIDTH * SCREENHEIGHT);
 
     extern doom_boolean& menuactive; // Doom::OverlayState (Engine member)
@@ -616,12 +614,12 @@ const unsigned char* doom_get_framebuffer(int channels)
             y = SCREENHEIGHT / 2 + 8;
         else
             y = SCREENHEIGHT / 2 - 8;
-        for (i = 0; i < 2; ++i)
+        for (int i = 0; i < 2; ++i)
         {
             screen_buffer[SCREENWIDTH / 2 - 2 - i + y * SCREENWIDTH] = 4;
             screen_buffer[SCREENWIDTH / 2 + 2 + i + y * SCREENWIDTH] = 4;
         }
-        for (i = 0; i < 2; ++i)
+        for (int i = 0; i < 2; ++i)
         {
             screen_buffer[SCREENWIDTH / 2 + (y - 2 - i) * SCREENWIDTH] = 4;
             screen_buffer[SCREENWIDTH / 2 + (y + 2 + i) * SCREENWIDTH] = 4;
@@ -634,7 +632,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
     else if (channels == 3)
     {
-        for (i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
+        for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
         {
             int k = i * 3;
             int kpal = screen_buffer[i] * 3;
@@ -646,7 +644,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
     else if (channels == 4)
     {
-        for (i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
+        for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
         {
             int k = i * 4;
             int kpal = screen_buffer[i] * 3;
@@ -659,16 +657,16 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
     else
     {
-        return 0;
+        return nullptr;
     }
 }
 
-unsigned long doom_tick_midi(void)
+unsigned long doom_tick_midi()
 {
     return I_TickSong();
 }
 
-short* doom_get_sound_buffer(void)
+short* doom_get_sound_buffer()
 {
     I_UpdateSound();
     return mixbuffer;
@@ -678,7 +676,7 @@ void doom_key_down(doom_key_t key)
 {
     event_t event;
     event.type = ev_keydown;
-    event.data1 = (int) key;
+    event.data1 = static_cast<int>(key);
     D_PostEvent(&event);
 }
 
@@ -686,7 +684,7 @@ void doom_key_up(doom_key_t key)
 {
     event_t event;
     event.type = ev_keyup;
-    event.data1 = (int) key;
+    event.data1 = static_cast<int>(key);
     D_PostEvent(&event);
 }
 

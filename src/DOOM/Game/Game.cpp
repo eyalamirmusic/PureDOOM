@@ -90,7 +90,7 @@
 
 // Prototypes for other subsystems' functions.
 void P_SpawnPlayer(mapthing_t* mthing);
-void R_ExecuteSetViewSize(void);
+void R_ExecuteSetViewSize();
 
 // gameaction, gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; these
 // (and the extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
@@ -282,27 +282,26 @@ namespace Doom
 {
 
 // Forward declarations so call order needs no rearranging.
-doom_boolean gCheckDemoStatus(void);
+doom_boolean gCheckDemoStatus();
 void gReadDemoTiccmd(ticcmd_t* cmd);
 void gWriteDemoTiccmd(ticcmd_t* cmd);
 void gPlayerReborn(int player);
 void gInitNew(skill_t skill, int episode, int map);
 void gDoReborn(int playernum);
-void gDoLoadLevel(void);
-void gDoNewGame(void);
-void gDoLoadGame(void);
-void gDoPlayDemo(void);
-void gDoCompleted(void);
-void gDoWorldDone(void);
-void gDoSaveGame(void);
+void gDoLoadLevel();
+void gDoNewGame();
+void gDoLoadGame();
+void gDoPlayDemo();
+void gDoCompleted();
+void gDoWorldDone();
+void gDoSaveGame();
 
 int gCmdChecksum(ticcmd_t* cmd)
 {
-    int i;
     int sum = 0;
 
-    for (i = 0; i < (int) (sizeof(*cmd) / 4 - 1); i++)
-        sum += ((int*) cmd)[i];
+    for (int i = 0; i < static_cast<int>((sizeof(*cmd) / 4 - 1)); i++)
+        sum += (reinterpret_cast<int*>(cmd))[i];
 
     return sum;
 }
@@ -315,7 +314,6 @@ int gCmdChecksum(ticcmd_t* cmd)
 //
 void gBuildTiccmd(ticcmd_t* cmd)
 {
-    int i;
     doom_boolean strafe;
     doom_boolean bstrafe;
     int speed;
@@ -411,7 +409,7 @@ void gBuildTiccmd(ticcmd_t* cmd)
     }
 
     // chainsaw overrides
-    for (i = 0; i < NUMWEAPONS - 1; i++)
+    for (int i = 0; i < NUMWEAPONS - 1; i++)
         if (gamekeydown['1' + i])
         {
             cmd->buttons |= BT_CHANGE;
@@ -510,10 +508,8 @@ void gBuildTiccmd(ticcmd_t* cmd)
 //
 // gDoLoadLevel
 //
-void gDoLoadLevel(void)
+void gDoLoadLevel()
 {
-    int i;
-
     // Set the sky map.
     // First thing, we have a dummy sky texture name,
     //  a flat. The data is in the WAD only because
@@ -523,8 +519,9 @@ void gDoLoadLevel(void)
 
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
-    if ((gamemode == commercial) || ((int) gamemode == (int) pack_tnt)
-        || ((int) gamemode == (int) pack_plut))
+    if ((gamemode == commercial)
+        || (static_cast<int>(gamemode) == static_cast<int>(pack_tnt))
+        || (static_cast<int>(gamemode) == static_cast<int>(pack_plut)))
     {
         skytexture = R_TextureNumForName("SKY3");
         if (gamemap < 12)
@@ -536,11 +533,11 @@ void gDoLoadLevel(void)
     levelstarttic = gametic; // for time calculation
 
     if (wipegamestate == GS_LEVEL)
-        wipegamestate = (gamestate_t) (-1); // force a wipe
+        wipegamestate = static_cast<gamestate_t>((-1)); // force a wipe
 
     gamestate = GS_LEVEL;
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (playeringame[i] && players[i].playerstate == PST_DEAD)
             players[i].playerstate = PST_REBORN;
@@ -662,14 +659,13 @@ doom_boolean gResponder(event_t* ev)
 // gTicker
 // Make ticcmd_ts for the players.
 //
-void gTicker(void)
+void gTicker()
 {
-    int i;
     int buf;
     ticcmd_t* cmd;
 
     // do player reborns if needed
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         if (playeringame[i] && players[i].playerstate == PST_REBORN)
             gDoReborn(i);
 
@@ -715,7 +711,7 @@ void gTicker(void)
     // and build new consistancy check
     buf = (gametic / ticdup) % BACKUPTICS;
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (playeringame[i])
         {
@@ -762,7 +758,7 @@ void gTicker(void)
     }
 
     // check for special buttons
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (playeringame[i])
         {
@@ -857,7 +853,6 @@ void gPlayerFinishLevel(int player)
 void gPlayerReborn(int player)
 {
     player_t* p;
-    int i;
     int frags[MAXPLAYERS];
     int killcount;
     int itemcount;
@@ -884,7 +879,7 @@ void gPlayerReborn(int player)
     p->weaponowned[wp_pistol] = true;
     p->ammo[am_clip] = 50;
 
-    for (i = 0; i < NUMAMMO; i++)
+    for (int i = 0; i < NUMAMMO; i++)
         p->maxammo[i] = maxammo[i];
 }
 
@@ -902,12 +897,11 @@ doom_boolean gCheckSpot(int playernum, mapthing_t* mthing)
     subsector_t* ss;
     unsigned an;
     mobj_t* mo;
-    int i;
 
     if (!players[playernum].mo)
     {
         // first spawn of level, before corpses
-        for (i = 0; i < playernum; i++)
+        for (int i = 0; i < playernum; i++)
             if (players[i].mo->x == mthing->x << FRACBITS
                 && players[i].mo->y == mthing->y << FRACBITS)
                 return false;
@@ -948,10 +942,10 @@ doom_boolean gCheckSpot(int playernum, mapthing_t* mthing)
 //
 void gDeathMatchSpawnPlayer(int playernum)
 {
-    int i, j;
+    int i;
     int selections;
 
-    selections = (int) (deathmatch_p - deathmatchstarts);
+    selections = static_cast<int>((deathmatch_p - deathmatchstarts));
     if (selections < 4)
     {
         //I_Error("Error: Only %i deathmatch spots, 4 required", selections);
@@ -962,7 +956,7 @@ void gDeathMatchSpawnPlayer(int playernum)
         I_Error(error_buf);
     }
 
-    for (j = 0; j < 20; j++)
+    for (int j = 0; j < 20; j++)
     {
         i = P_Random() % selections;
         if (gCheckSpot(playernum, &deathmatchstarts[i]))
@@ -982,8 +976,6 @@ void gDeathMatchSpawnPlayer(int playernum)
 //
 void gDoReborn(int playernum)
 {
-    int i;
-
     if (!netgame)
     {
         // reload the level from scratch
@@ -994,7 +986,7 @@ void gDoReborn(int playernum)
         // respawn at the start
 
         // first dissasociate the corpse
-        players[playernum].mo->player = 0;
+        players[playernum].mo->player = nullptr;
 
         // spawn at random spot if in death match
         if (deathmatch)
@@ -1010,7 +1002,7 @@ void gDoReborn(int playernum)
         }
 
         // try to spawn at one of the other players spots
-        for (i = 0; i < MAXPLAYERS; i++)
+        for (int i = 0; i < MAXPLAYERS; i++)
         {
             if (gCheckSpot(playernum, &playerstarts[i]))
             {
@@ -1025,7 +1017,7 @@ void gDoReborn(int playernum)
     }
 }
 
-void gScreenShot(void)
+void gScreenShot()
 {
     gameaction = ga_screenshot;
 }
@@ -1033,14 +1025,14 @@ void gScreenShot(void)
 //
 // gDoCompleted
 //
-void gExitLevel(void)
+void gExitLevel()
 {
     secretexit = false;
     gameaction = ga_completed;
 }
 
 // Here's for the german edition.
-void gSecretExitLevel(void)
+void gSecretExitLevel()
 {
     // IF NO WOLF3D LEVELS, NO SECRET EXIT!
     if ((gamemode == commercial) && (W_CheckNumForName("map31") < 0))
@@ -1050,13 +1042,11 @@ void gSecretExitLevel(void)
     gameaction = ga_completed;
 }
 
-void gDoCompleted(void)
+void gDoCompleted()
 {
-    int i;
-
     gameaction = ga_nothing;
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         if (playeringame[i])
             gPlayerFinishLevel(i); // take away cards and stuff
 
@@ -1070,7 +1060,7 @@ void gDoCompleted(void)
                 gameaction = ga_victory;
                 return;
             case 9:
-                for (i = 0; i < MAXPLAYERS; i++)
+                for (int i = 0; i < MAXPLAYERS; i++)
                     players[i].didsecret = true;
                 break;
         }
@@ -1085,7 +1075,7 @@ void gDoCompleted(void)
     if ((gamemap == 9) && (gamemode != commercial))
     {
         // exit secret level
-        for (i = 0; i < MAXPLAYERS; i++)
+        for (int i = 0; i < MAXPLAYERS; i++)
             players[i].didsecret = true;
     }
 
@@ -1154,7 +1144,7 @@ void gDoCompleted(void)
         wminfo.partime = 35 * pars[gameepisode][gamemap];
     wminfo.pnum = consoleplayer;
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
     {
         wminfo.plyr[i].in = playeringame[i];
         wminfo.plyr[i].skills = players[i].killcount;
@@ -1178,7 +1168,7 @@ void gDoCompleted(void)
 //
 // gWorldDone
 //
-void gWorldDone(void)
+void gWorldDone()
 {
     gameaction = ga_worlddone;
 
@@ -1203,7 +1193,7 @@ void gWorldDone(void)
     }
 }
 
-void gDoWorldDone(void)
+void gDoWorldDone()
 {
     gamestate = GS_LEVEL;
     gamemap = wminfo.next + 1;
@@ -1223,9 +1213,8 @@ void gLoadGame(char* name)
     gameaction = ga_loadgame;
 }
 
-void gDoLoadGame(void)
+void gDoLoadGame()
 {
-    int i;
     int a, b, c;
     char vcheck[VERSIONSIZE];
 
@@ -1239,14 +1228,15 @@ void gDoLoadGame(void)
     //doom_sprintf(vcheck, "version %i", VERSION);
     doom_strcpy(vcheck, "version ");
     doom_concat(vcheck, doom_itoa(VERSION, 10));
-    if (doom_strcmp((const char*) save_p, (const char*) vcheck))
+    if (doom_strcmp(reinterpret_cast<const char*>(save_p),
+                    const_cast<const char*>(vcheck)))
         return; // bad version
     save_p += VERSIONSIZE;
 
-    gameskill = (skill_t) (*save_p++);
+    gameskill = static_cast<skill_t>((*save_p++));
     gameepisode = *save_p++;
     gamemap = *save_p++;
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         playeringame[i] = *save_p++;
 
     // load a base level
@@ -1289,13 +1279,12 @@ void gSaveGame(int slot, char* description)
     sendsave = true;
 }
 
-void gDoSaveGame(void)
+void gDoSaveGame()
 {
     char name[100];
     char name2[VERSIONSIZE];
     char* description;
     int length;
-    int i;
 
 #if 0
     if (M_CheckParm("-cdrom"))
@@ -1324,7 +1313,7 @@ void gDoSaveGame(void)
     *save_p++ = gameskill;
     *save_p++ = gameepisode;
     *save_p++ = gamemap;
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         *save_p++ = playeringame[i];
     *save_p++ = leveltime >> 16;
     *save_p++ = leveltime >> 8;
@@ -1337,7 +1326,7 @@ void gDoSaveGame(void)
 
     *save_p++ = 0x1d; // consistancy marker
 
-    length = (int) (save_p - savebuffer);
+    length = static_cast<int>((save_p - savebuffer));
     if (length > SAVEGAMESIZE)
         I_Error("Error: Savegame buffer overrun");
     M_WriteFile(name, savebuffer, length);
@@ -1364,7 +1353,7 @@ void gDeferedInitNew(skill_t skill, int episode, int map)
     gameaction = ga_newgame;
 }
 
-void gDoNewGame(void)
+void gDoNewGame()
 {
     demoplayback = false;
     netdemo = false;
@@ -1381,8 +1370,6 @@ void gDoNewGame(void)
 
 void gInitNew(skill_t skill, int episode, int map)
 {
-    int i;
-
     if (paused)
     {
         paused = false;
@@ -1429,7 +1416,7 @@ void gInitNew(skill_t skill, int episode, int map)
 
     if (fastparm || (skill == sk_nightmare && gameskill != sk_nightmare))
     {
-        for (i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
+        for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics >>= 1;
         mobjinfo[MT_BRUISERSHOT].speed = 20 * FRACUNIT;
         mobjinfo[MT_HEADSHOT].speed = 20 * FRACUNIT;
@@ -1437,7 +1424,7 @@ void gInitNew(skill_t skill, int episode, int map)
     }
     else if (skill != sk_nightmare && gameskill == sk_nightmare)
     {
-        for (i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
+        for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics <<= 1;
         mobjinfo[MT_BRUISERSHOT].speed = 15 * FRACUNIT;
         mobjinfo[MT_HEADSHOT].speed = 10 * FRACUNIT;
@@ -1445,7 +1432,7 @@ void gInitNew(skill_t skill, int episode, int map)
     }
 
     // force players to be initialized upon first level load
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         players[i].playerstate = PST_REBORN;
 
     usergame = true; // will be set false if a demo
@@ -1500,10 +1487,10 @@ void gReadDemoTiccmd(ticcmd_t* cmd)
         gCheckDemoStatus();
         return;
     }
-    cmd->forwardmove = ((signed char) *demo_p++);
-    cmd->sidemove = ((signed char) *demo_p++);
-    cmd->angleturn = ((unsigned char) *demo_p++) << 8;
-    cmd->buttons = (unsigned char) *demo_p++;
+    cmd->forwardmove = (static_cast<signed char>(*demo_p++));
+    cmd->sidemove = (static_cast<signed char>(*demo_p++));
+    cmd->angleturn = (static_cast<unsigned char>(*demo_p++)) << 8;
+    cmd->buttons = static_cast<unsigned char>(*demo_p++);
 }
 
 void gWriteDemoTiccmd(ticcmd_t* cmd)
@@ -1540,16 +1527,14 @@ void gRecordDemo(char* name)
     i = M_CheckParm("-maxdemo");
     if (i && i < myargc - 1)
         maxsize = doom_atoi(myargv[i + 1]) * 1024;
-    demobuffer = (byte*) (doom_malloc(maxsize));
+    demobuffer = static_cast<byte*>((doom_malloc(maxsize)));
     demoend = demobuffer + maxsize;
 
     demorecording = true;
 }
 
-void gBeginRecording(void)
+void gBeginRecording()
 {
-    int i;
-
     demo_p = demobuffer;
 
     *demo_p++ = VERSION;
@@ -1562,7 +1547,7 @@ void gBeginRecording(void)
     *demo_p++ = nomonsters;
     *demo_p++ = consoleplayer;
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         *demo_p++ = playeringame[i];
 }
 
@@ -1576,20 +1561,21 @@ void gDeferedPlayDemo(const char* name)
     gameaction = ga_playdemo;
 }
 
-void gDoPlayDemo(void)
+void gDoPlayDemo()
 {
     skill_t skill;
-    int i, episode, map;
+    int episode, map;
 
     gameaction = ga_nothing;
-    demobuffer = demo_p = (byte*) (W_CacheLumpName(defdemoname, PU_STATIC));
+    demobuffer = demo_p =
+        static_cast<byte*>((W_CacheLumpName(defdemoname, PU_STATIC)));
     byte demo_version = *demo_p++;
     if (demo_version != VERSION
         && demo_version != 109) // Demos seem to run fine with version 109
     {
         //doom_print("Demo is from a different game version! Demo Verson = %i, this version = %i\n", (int)demo_version, VERSION);
         doom_print("Demo is from a different game version! Demo Verson = ");
-        doom_print(doom_itoa((int) demo_version, 10));
+        doom_print(doom_itoa(static_cast<int>(demo_version), 10));
         doom_print(", this version = ");
         doom_print(doom_itoa(VERSION, 10));
         doom_print("\n");
@@ -1597,7 +1583,7 @@ void gDoPlayDemo(void)
         return;
     }
 
-    skill = (skill_t) (*demo_p++);
+    skill = static_cast<skill_t>((*demo_p++));
     episode = *demo_p++;
     map = *demo_p++;
     deathmatch = *demo_p++;
@@ -1606,7 +1592,7 @@ void gDoPlayDemo(void)
     nomonsters = *demo_p++;
     consoleplayer = *demo_p++;
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         playeringame[i] = *demo_p++;
     if (playeringame[1])
     {
@@ -1647,7 +1633,7 @@ void gTimeDemo(char* name)
 ===================
 */
 
-doom_boolean gCheckDemoStatus(void)
+doom_boolean gCheckDemoStatus()
 {
     int endtime;
 
@@ -1686,7 +1672,7 @@ doom_boolean gCheckDemoStatus(void)
     if (demorecording)
     {
         *demo_p++ = DEMOMARKER;
-        M_WriteFile(demoname, demobuffer, (int) (demo_p - demobuffer));
+        M_WriteFile(demoname, demobuffer, static_cast<int>((demo_p - demobuffer)));
         doom_free(demobuffer);
         demorecording = false;
         //I_Error("Error: Demo %s recorded", demoname);

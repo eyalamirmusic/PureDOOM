@@ -129,9 +129,7 @@ void calcHeight(player_t* player)
 //
 void movePlayer(player_t* player)
 {
-    ticcmd_t* cmd;
-
-    cmd = &player->cmd;
+    ticcmd_t* cmd = &player->cmd;
 
     player->mo->angle += (cmd->angleturn << 16);
 
@@ -181,7 +179,7 @@ void deathThink(player_t* player)
 
         delta = angle - player->mo->angle;
 
-        if (delta < ANG5 || delta > (unsigned) -ANG5)
+        if (delta < ANG5 || delta > static_cast<unsigned>(-ANG5))
         {
             // Looking at killer,
             //  so fade damage flash down.
@@ -256,8 +254,8 @@ void playerThink(player_t* player)
         // The actual changing of the weapon is done
         //  when the weapon psprite can do it
         //  (read: not in the middle of an attack).
-        newweapon =
-            (weapontype_t) ((cmd->buttons & BT_WEAPONMASK) >> BT_WEAPONSHIFT);
+        newweapon = static_cast<weapontype_t>((cmd->buttons & BT_WEAPONMASK)
+                                              >> BT_WEAPONSHIFT);
 
         if (newweapon == wp_fist && player->weaponowned[wp_chainsaw]
             && !(player->readyweapon == wp_chainsaw && player->powers[pw_strength]))

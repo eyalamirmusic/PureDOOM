@@ -3,7 +3,7 @@
 #include "Angle.h"
 #include "Fixed.h"
 
-#include <array>
+#include <ea_data_structures/Structures/Array.h>
 
 namespace Doom
 {
@@ -37,12 +37,12 @@ constexpr auto fineTangentCount = fineAngles / 2;
 // through. The tables are `const` and defined once, not `constexpr` in a header:
 // they are read at runtime, and a header copy in each of sixty translation units
 // buys nothing and costs compile time.
-extern const std::array<std::int32_t, fineSineCount> fineSineTable;
-extern const std::array<std::int32_t, fineTangentCount> fineTangentTable;
+extern const EA::Array<std::int32_t, fineSineCount> fineSineTable;
+extern const EA::Array<std::int32_t, fineTangentCount> fineTangentTable;
 
 // Maps a slope to the angle that has it. The +1 entry is there so that the x == y
 // case needs no extra check.
-extern const std::array<std::uint32_t, slopeRange + 1> tanToAngleTable;
+extern const EA::Array<std::uint32_t, slopeRange + 1> tanToAngleTable;
 
 inline Fixed fineSine(int fineIndex)
 {

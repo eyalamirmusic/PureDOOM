@@ -240,7 +240,7 @@ doom_boolean crossBSPNode(int bspnum)
     bsp = &nodes[bspnum];
 
     // decide which side the start point is on
-    side = divlineSide(strace.x, strace.y, (divline_t*) bsp);
+    side = divlineSide(strace.x, strace.y, reinterpret_cast<divline_t*>(bsp));
     if (side == 2)
         side = 0; // an "on" should cross both sides
 
@@ -249,7 +249,7 @@ doom_boolean crossBSPNode(int bspnum)
         return false;
 
     // the partition plane is crossed here
-    if (side == divlineSide(t2x, t2y, (divline_t*) bsp))
+    if (side == divlineSide(t2x, t2y, reinterpret_cast<divline_t*>(bsp)))
     {
         // the line doesn't touch the other side
         return true;
@@ -273,8 +273,8 @@ bool checkSight(mobj_t* t1, mobj_t* t2)
     // First check for trivial rejection.
 
     // Determine subsector entries in REJECT table.
-    s1 = (int) (t1->subsector->sector - sectors);
-    s2 = (int) (t2->subsector->sector - sectors);
+    s1 = static_cast<int>(t1->subsector->sector - sectors);
+    s2 = static_cast<int>(t2->subsector->sector - sectors);
     pnum = s1 * numsectors + s2;
     bytenum = pnum >> 3;
     bitnum = 1 << (pnum & 7);

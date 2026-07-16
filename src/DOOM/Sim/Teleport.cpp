@@ -13,7 +13,6 @@ namespace Doom
 
 int teleport(line_t* line, int side, mobj_t* thing)
 {
-    int i;
     int tag;
     mobj_t* m;
     mobj_t* fog;
@@ -34,7 +33,7 @@ int teleport(line_t* line, int side, mobj_t* thing)
         return 0;
 
     tag = line->tag;
-    for (i = 0; i < numsectors; i++)
+    for (int i = 0; i < numsectors; i++)
     {
         if (sectors[i].tag == tag)
         {
@@ -43,10 +42,11 @@ int teleport(line_t* line, int side, mobj_t* thing)
                  thinker = thinker->next)
             {
                 // not a mobj
-                if (thinker->function.acp1 != (actionf_p1) P_MobjThinker)
+                if (thinker->function.acp1
+                    != reinterpret_cast<actionf_p1>(P_MobjThinker))
                     continue;
 
-                m = (mobj_t*) thinker;
+                m = reinterpret_cast<mobj_t*>(thinker);
 
                 // not a teleportman
                 if (m->type != MT_TELEPORTMAN)

@@ -6,9 +6,9 @@ namespace Doom
 {
 // Sprite / thing rendering; r_things.cpp keeps the vanilla R_ names as shims.
 void drawMaskedColumn(column_t* column);
-void sortVisSprites(void);
+void sortVisSprites();
 void addSprites(sector_t* sec);
 void initSprites(char** namelist);
-void clearSprites(void);
-void drawMasked(void);
+void clearSprites();
+void drawMasked();
 } // namespace Doom

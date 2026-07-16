@@ -23,13 +23,12 @@ static unsigned char cheat_xlate_table[256];
 //
 int checkCheat(cheatseq_t* cht, char key)
 {
-    int i;
     int rc = 0;
 
     if (firsttime)
     {
         firsttime = 0;
-        for (i = 0; i < 256; i++)
+        for (int i = 0; i < 256; i++)
             cheat_xlate_table[i] = SCRAMBLE(i);
     }
 
@@ -38,7 +37,7 @@ int checkCheat(cheatseq_t* cht, char key)
 
     if (*cht->p == 0)
         *(cht->p++) = key;
-    else if (cheat_xlate_table[(unsigned char) key] == *cht->p)
+    else if (cheat_xlate_table[static_cast<unsigned char>(key)] == *cht->p)
         cht->p++;
     else
         cht->p = cht->sequence;

@@ -46,17 +46,23 @@ void verticalDoor(vldoor_t* door)
                 {
                     case blazeRaise:
                         door->direction = -1; // time to go back down
-                        S_StartSound((mobj_t*) &door->sector->soundorg, sfx_bdcls);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            sfx_bdcls);
                         break;
 
                     case door_normal:
                         door->direction = -1; // time to go back down
-                        S_StartSound((mobj_t*) &door->sector->soundorg, sfx_dorcls);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            sfx_dorcls);
                         break;
 
                     case close30ThenOpen:
                         door->direction = 1;
-                        S_StartSound((mobj_t*) &door->sector->soundorg, sfx_doropn);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            sfx_doropn);
                         break;
 
                     default:
@@ -74,7 +80,9 @@ void verticalDoor(vldoor_t* door)
                     case raiseIn5Mins:
                         door->direction = 1;
                         door->type = door_normal;
-                        S_StartSound((mobj_t*) &door->sector->soundorg, sfx_doropn);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            sfx_doropn);
                         break;
 
                     default:
@@ -97,14 +105,16 @@ void verticalDoor(vldoor_t* door)
                 {
                     case blazeRaise:
                     case blazeClose:
-                        door->sector->specialdata = 0;
+                        door->sector->specialdata = nullptr;
                         P_RemoveThinker(&door->thinker); // unlink and free
-                        S_StartSound((mobj_t*) &door->sector->soundorg, sfx_bdcls);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            sfx_bdcls);
                         break;
 
                     case door_normal:
                     case door_close:
-                        door->sector->specialdata = 0;
+                        door->sector->specialdata = nullptr;
                         P_RemoveThinker(&door->thinker); // unlink and free
                         break;
 
@@ -127,7 +137,9 @@ void verticalDoor(vldoor_t* door)
 
                     default:
                         door->direction = 1;
-                        S_StartSound((mobj_t*) &door->sector->soundorg, sfx_doropn);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            sfx_doropn);
                         break;
                 }
             }
@@ -155,7 +167,7 @@ void verticalDoor(vldoor_t* door)
                     case close30ThenOpen:
                     case blazeOpen:
                     case door_open:
-                        door->sector->specialdata = 0;
+                        door->sector->specialdata = nullptr;
                         P_RemoveThinker(&door->thinker); // unlink and free
                         break;
 
@@ -189,7 +201,7 @@ int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing)
             if (!p->cards[it_bluecard] && !p->cards[it_blueskull])
             {
                 p->message = PD_BLUEO;
-                S_StartSound(0, sfx_oof);
+                S_StartSound(nullptr, sfx_oof);
                 return 0;
             }
             break;
@@ -201,7 +213,7 @@ int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing)
             if (!p->cards[it_redcard] && !p->cards[it_redskull])
             {
                 p->message = PD_REDO;
-                S_StartSound(0, sfx_oof);
+                S_StartSound(nullptr, sfx_oof);
                 return 0;
             }
             break;
@@ -213,7 +225,7 @@ int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing)
             if (!p->cards[it_yellowcard] && !p->cards[it_yellowskull])
             {
                 p->message = PD_YELLOWO;
-                S_StartSound(0, sfx_oof);
+                S_StartSound(nullptr, sfx_oof);
                 return 0;
             }
             break;
@@ -239,11 +251,11 @@ int doDoor(line_t* line, vldoor_e type)
 
         // new door thinker
         rtn = 1;
-        door = (vldoor_t*) (levelAlloc(sizeof(*door)));
+        door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
         P_AddThinker(&door->thinker);
         sec->specialdata = door;
 
-        door->thinker.function.acp1 = (actionf_p1) T_VerticalDoor;
+        door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
         door->sector = sec;
         door->type = type;
         door->topwait = VDOORWAIT;
@@ -256,20 +268,23 @@ int doDoor(line_t* line, vldoor_e type)
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 door->speed = VDOORSPEED * 4;
-                S_StartSound((mobj_t*) &door->sector->soundorg, sfx_bdcls);
+                S_StartSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                             sfx_bdcls);
                 break;
 
             case door_close:
                 door->topheight = P_FindLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
-                S_StartSound((mobj_t*) &door->sector->soundorg, sfx_dorcls);
+                S_StartSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                             sfx_dorcls);
                 break;
 
             case close30ThenOpen:
                 door->topheight = sec->ceilingheight;
                 door->direction = -1;
-                S_StartSound((mobj_t*) &door->sector->soundorg, sfx_dorcls);
+                S_StartSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                             sfx_dorcls);
                 break;
 
             case blazeRaise:
@@ -279,7 +294,8 @@ int doDoor(line_t* line, vldoor_e type)
                 door->topheight -= 4 * FRACUNIT;
                 door->speed = VDOORSPEED * 4;
                 if (door->topheight != sec->ceilingheight)
-                    S_StartSound((mobj_t*) &door->sector->soundorg, sfx_bdopn);
+                    S_StartSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                                 sfx_bdopn);
                 break;
 
             case door_normal:
@@ -288,7 +304,8 @@ int doDoor(line_t* line, vldoor_e type)
                 door->topheight = P_FindLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 if (door->topheight != sec->ceilingheight)
-                    S_StartSound((mobj_t*) &door->sector->soundorg, sfx_doropn);
+                    S_StartSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                                 sfx_doropn);
                 break;
 
             default:
@@ -324,7 +341,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
             if (!player->cards[it_bluecard] && !player->cards[it_blueskull])
             {
                 player->message = PD_BLUEK;
-                S_StartSound(0, sfx_oof);
+                S_StartSound(nullptr, sfx_oof);
                 return;
             }
             break;
@@ -337,7 +354,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
             if (!player->cards[it_yellowcard] && !player->cards[it_yellowskull])
             {
                 player->message = PD_YELLOWK;
-                S_StartSound(0, sfx_oof);
+                S_StartSound(nullptr, sfx_oof);
                 return;
             }
             break;
@@ -350,7 +367,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
             if (!player->cards[it_redcard] && !player->cards[it_redskull])
             {
                 player->message = PD_REDK;
-                S_StartSound(0, sfx_oof);
+                S_StartSound(nullptr, sfx_oof);
                 return;
             }
             break;
@@ -361,7 +378,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
 
     if (sec->specialdata)
     {
-        door = (vldoor_t*) (sec->specialdata);
+        door = static_cast<vldoor_t*>(sec->specialdata);
         switch (line->special)
         {
             case 1: // ONLY FOR "RAISE" DOORS, NOT "OPEN"s
@@ -387,24 +404,24 @@ void verticalDoor(line_t* line, mobj_t* thing)
     {
         case 117: // BLAZING DOOR RAISE
         case 118: // BLAZING DOOR OPEN
-            S_StartSound((mobj_t*) &sec->soundorg, sfx_bdopn);
+            S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_bdopn);
             break;
 
         case 1: // NORMAL DOOR SOUND
         case 31:
-            S_StartSound((mobj_t*) &sec->soundorg, sfx_doropn);
+            S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_doropn);
             break;
 
         default: // LOCKED DOOR SOUND
-            S_StartSound((mobj_t*) &sec->soundorg, sfx_doropn);
+            S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_doropn);
             break;
     }
 
     // new door thinker
-    door = (vldoor_t*) (levelAlloc(sizeof(*door)));
+    door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
     P_AddThinker(&door->thinker);
     sec->specialdata = door;
-    door->thinker.function.acp1 = (actionf_p1) T_VerticalDoor;
+    door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
     door->sector = sec;
     door->direction = 1;
     door->speed = VDOORSPEED;
@@ -450,14 +467,14 @@ void spawnDoorCloseIn30(sector_t* sec)
 {
     vldoor_t* door;
 
-    door = (vldoor_t*) (levelAlloc(sizeof(*door)));
+    door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
 
     P_AddThinker(&door->thinker);
 
     sec->specialdata = door;
     sec->special = 0;
 
-    door->thinker.function.acp1 = (actionf_p1) T_VerticalDoor;
+    door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
     door->sector = sec;
     door->direction = 0;
     door->type = door_normal;
@@ -472,14 +489,14 @@ void spawnDoorRaiseIn5Mins(sector_t* sec, int)
 {
     vldoor_t* door;
 
-    door = (vldoor_t*) (levelAlloc(sizeof(*door)));
+    door = static_cast<vldoor_t*>(levelAlloc(sizeof(*door)));
 
     P_AddThinker(&door->thinker);
 
     sec->specialdata = door;
     sec->special = 0;
 
-    door->thinker.function.acp1 = (actionf_p1) T_VerticalDoor;
+    door->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_VerticalDoor);
     door->sector = sec;
     door->direction = 2;
     door->type = raiseIn5Mins;

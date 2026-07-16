@@ -68,7 +68,7 @@
 // The snd_*Device selectors that were externed here were always dead - no definition, no
 // reader - and are dropped (with their doomstat.h declarations), not moved.
 
-typedef struct
+struct channel_t
 {
     // sound information (if null, channel avail.)
     sfxinfo_t* sfxinfo;
@@ -78,7 +78,7 @@ typedef struct
 
     // handle of the sound being played
     int handle;
-} channel_t;
+};
 
 // the set of channels available
 static channel_t* channels_s_sound;
@@ -87,7 +87,7 @@ static channel_t* channels_s_sound;
 static doom_boolean mus_paused;
 
 // music currently being played
-static musicinfo_t* mus_playing_s_sound = 0;
+static musicinfo_t* mus_playing_s_sound = nullptr;
 
 static int nextcleanup;
 
@@ -98,7 +98,7 @@ static int nextcleanup;
 // runtime (bindEngineDefaults) instead, so these are ordinary references onto
 // the Engine's SoundSettings cluster like any other migrated global (Game/
 // SoundSettings.h, REFACTOR.md Step 5).
-int& snd_SfxVolume = Doom::soundSettings().sfxVolume;     // sound-effect volume, 0-15
+int& snd_SfxVolume = Doom::soundSettings().sfxVolume; // sound-effect volume, 0-15
 int& snd_MusicVolume = Doom::soundSettings().musicVolume; // music volume, 0-15
 
 // following is set
@@ -124,8 +124,6 @@ void sStopChannel(int cnum);
 //
 void sInit(int sfxVolume, int musicVolume)
 {
-    int i;
-
     //doom_print("sInit: default sfx volume %d\n", sfxVolume);
     doom_print("sInit: default sfx volume ");
     doom_print(doom_itoa(sfxVolume, 10));
@@ -141,17 +139,18 @@ void sInit(int sfxVolume, int musicVolume)
     // Allocating the internal channels for mixing
     // (the maximum numer of sounds rendered
     // simultaneously) within zone memory.
-    channels_s_sound = (channel_t*) doom_malloc(numChannels * sizeof(channel_t));
+    channels_s_sound =
+        static_cast<channel_t*>(doom_malloc(numChannels * sizeof(channel_t)));
 
     // Free all channels for use
-    for (i = 0; i < numChannels; i++)
-        channels_s_sound[i].sfxinfo = 0;
+    for (int i = 0; i < numChannels; i++)
+        channels_s_sound[i].sfxinfo = nullptr;
 
     // no sounds are playing, and they are not mus_paused
     mus_paused = 0;
 
     // Note that sounds have not been cached (yet).
-    for (i = 1; i < NUMSFX; i++)
+    for (int i = 1; i < NUMSFX; i++)
         S_sfx[i].lumpnum = S_sfx[i].usefulness = -1;
 }
 
@@ -160,14 +159,13 @@ void sInit(int sfxVolume, int musicVolume)
 // Kills playing sounds at start of level,
 //  determines music if any, changes music.
 //
-void sStart(void)
+void sStart()
 {
-    int cnum;
     int mnum;
 
     // kill all playing sounds at start of level
     //  (trust me - a good idea)
-    for (cnum = 0; cnum < numChannels; cnum++)
+    for (int cnum = 0; cnum < numChannels; cnum++)
         if (channels_s_sound[cnum].sfxinfo)
             sStopChannel(cnum);
 
@@ -216,7 +214,7 @@ void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
     sfxinfo_t* sfx;
     int cnum;
 
-    mobj_t* origin = (mobj_t*) origin_p;
+    mobj_t* origin = static_cast<mobj_t*>(origin_p);
 
     // check for bogus sound #
     if (sfx_id < 1 || sfx_id > NUMSFX)
@@ -343,9 +341,7 @@ void sStartSound(void* origin, int sfx_id)
 
 void sStopSound(void* origin)
 {
-    int cnum;
-
-    for (cnum = 0; cnum < numChannels; cnum++)
+    for (int cnum = 0; cnum < numChannels; cnum++)
     {
         if (channels_s_sound[cnum].sfxinfo
             && channels_s_sound[cnum].origin == origin)
@@ -359,7 +355,7 @@ void sStopSound(void* origin)
 //
 // Stop and resume music, during game PAUSE.
 //
-void sPauseSound(void)
+void sPauseSound()
 {
     if (mus_playing_s_sound && !mus_paused)
     {
@@ -368,7 +364,7 @@ void sPauseSound(void)
     }
 }
 
-void sResumeSound(void)
+void sResumeSound()
 {
     if (mus_playing_s_sound && mus_paused)
     {
@@ -383,16 +379,15 @@ void sResumeSound(void)
 void sUpdateSounds(void* listener_p)
 {
     int audible;
-    int cnum;
     int volume;
     int sep;
     int pitch;
     sfxinfo_t* sfx;
     channel_t* c;
 
-    mobj_t* listener = (mobj_t*) listener_p;
+    mobj_t* listener = static_cast<mobj_t*>(listener_p);
 
-    for (cnum = 0; cnum < numChannels; cnum++)
+    for (int cnum = 0; cnum < numChannels; cnum++)
     {
         c = &channels_s_sound[cnum];
         sfx = c->sfxinfo;
@@ -425,8 +420,11 @@ void sUpdateSounds(void* listener_p)
                 //  or modify their params
                 if (c->origin && listener_p != c->origin)
                 {
-                    audible = sAdjustSoundParams(
-                        listener, (mobj_t*) (c->origin), &volume, &sep, &pitch);
+                    audible = sAdjustSoundParams(listener,
+                                                 static_cast<mobj_t*>((c->origin)),
+                                                 &volume,
+                                                 &sep,
+                                                 &pitch);
 
                     if (!audible)
                     {
@@ -485,7 +483,7 @@ void sStartMusic(int m_id)
 
 void sChangeMusic(int musicnum, int looping)
 {
-    musicinfo_t* music = 0;
+    musicinfo_t* music = nullptr;
     char namebuf[9];
 
     if ((musicnum <= mus_None) || (musicnum >= NUMMUSIC))
@@ -523,7 +521,7 @@ void sChangeMusic(int musicnum, int looping)
     mus_playing_s_sound = music;
 }
 
-void sStopMusic(void)
+void sStopMusic()
 {
     if (mus_playing_s_sound)
     {
@@ -533,42 +531,41 @@ void sStopMusic(void)
         I_StopSong(mus_playing_s_sound->handle);
         I_UnRegisterSong(mus_playing_s_sound->handle);
 
-        mus_playing_s_sound->data = 0;
-        mus_playing_s_sound = 0;
+        mus_playing_s_sound->data = nullptr;
+        mus_playing_s_sound = nullptr;
     }
 }
 
 void sStopChannel(int cnum)
 {
-    int i;
-    channel_t* c = &channels_s_sound[cnum];
+    channel_t& c = channels_s_sound[cnum];
 
-    if (c->sfxinfo)
+    if (c.sfxinfo)
     {
         // stop the sound playing
-        if (I_SoundIsPlaying(c->handle))
+        if (I_SoundIsPlaying(c.handle))
         {
 #ifdef SAWDEBUG
-            if (c->sfxinfo == &S_sfx[sfx_sawful])
+            if (c.sfxinfo == &S_sfx[sfx_sawful])
                 doom_print("stopped\n");
 #endif
-            I_StopSound(c->handle);
+            I_StopSound(c.handle);
         }
 
         // check to see
         //  if other channels are playing the sound
-        for (i = 0; i < numChannels; i++)
+        for (int i = 0; i < numChannels; i++)
         {
-            if (cnum != i && c->sfxinfo == channels_s_sound[i].sfxinfo)
+            if (cnum != i && c.sfxinfo == channels_s_sound[i].sfxinfo)
             {
                 break;
             }
         }
 
         // degrade usefulness of sound data
-        c->sfxinfo->usefulness--;
+        c.sfxinfo->usefulness--;
 
-        c->sfxinfo = 0;
+        c.sfxinfo = nullptr;
     }
 }
 

@@ -30,7 +30,7 @@ struct WadHeader
 void upperCase(char* text)
 {
     for (; *text; ++text)
-        *text = (char) doom_toupper(*text);
+        *text = static_cast<char>(doom_toupper(*text));
 }
 
 // A file that is not a .wad becomes a single lump named after itself: the base
@@ -51,7 +51,7 @@ void extractFileBase(const char* path, char* destination)
         if (++length == 9)
             I_Error("Error: Filename base of  >8 chars");
 
-        *destination++ = (char) doom_toupper(*source++);
+        *destination++ = static_cast<char>(doom_toupper(*source++));
     }
 }
 
@@ -170,10 +170,11 @@ void WadFile::addDirectory(const char* path, void* handle)
     }
 
     auto lumpCount = LONG(header.numlumps);
-    auto entries = std::vector<FileLump> ((std::size_t) lumpCount);
+    auto entries = EA::Vector<FileLump>(lumpCount);
 
     doom_seek(handle, LONG(header.infotableofs), DOOM_SEEK_SET);
-    doom_read(handle, entries.data(), (int) (entries.size() * sizeof(FileLump)));
+    doom_read(
+        handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
 
     for (const auto& entry: entries)
     {
@@ -197,7 +198,7 @@ int WadFile::find(const char* name) const
     // Backwards, so that a lump from a later file takes precedence over the same
     // name in an earlier one. That is how a PWAD overrides the IWAD.
     for (auto lump = count() - 1; lump >= 0; --lump)
-        if (wanted.matches(lumps[(std::size_t) lump].name))
+        if (wanted.matches(lumps[lump].name))
             return lump;
 
     return -1;
@@ -218,7 +219,7 @@ int WadFile::length(int lump) const
     if (lump < 0 || lump >= count())
         fail("Error: W_LumpLength: no such lump: ", doom_itoa(lump, 10));
 
-    return lumps[(std::size_t) lump].size;
+    return lumps[lump].size;
 }
 
 void WadFile::read(int lump, void* destination) const
@@ -226,7 +227,7 @@ void WadFile::read(int lump, void* destination) const
     if (lump < 0 || lump >= count())
         fail("Error: W_ReadLump: no such lump: ", doom_itoa(lump, 10));
 
-    const auto& entry = lumps[(std::size_t) lump];
+    const auto& entry = lumps[lump];
     auto* handle = entry.handle;
     auto reopened = handle == nullptr;
 
@@ -253,7 +254,7 @@ const std::byte* WadFile::data(int lump)
     if (lump < 0 || lump >= count())
         fail("Error: W_CacheLumpNum: no such lump: ", doom_itoa(lump, 10));
 
-    auto& bytes = cache[(std::size_t) lump];
+    auto& bytes = cache[lump];
 
     if (bytes.empty() && length(lump) > 0)
     {
@@ -264,7 +265,7 @@ const std::byte* WadFile::data(int lump)
         // 1993 quirk that draws whatever memory follows the patch. On DOS, and in
         // PureDOOM's old zone allocator, "whatever follows" was another block in
         // one contiguous arena: garbage, but the *same* garbage on every machine.
-        // A per-lump std::vector has no such neighbour, so the over-read would hit
+        // A per-lump vector has no such neighbour, so the over-read would hit
         // heap memory that differs from platform to platform, and the rendered
         // frame would stop being reproducible.
         //
@@ -273,7 +274,7 @@ const std::byte* WadFile::data(int lump)
         // draws a deterministic zero everywhere instead of undefined heap.
         constexpr auto overReadGuard = 64;
 
-        bytes.resize((std::size_t) length(lump) + overReadGuard, std::byte {0});
+        bytes.resize(length(lump) + overReadGuard, std::byte {0});
         read(lump, bytes.data());
     }
 
@@ -294,22 +295,23 @@ void WadFile::reload()
     doom_read(handle, &header, sizeof(header));
 
     auto lumpCount = LONG(header.numlumps);
-    auto entries = std::vector<FileLump> ((std::size_t) lumpCount);
+    auto entries = EA::Vector<FileLump>(lumpCount);
 
     doom_seek(handle, LONG(header.infotableofs), DOOM_SEEK_SET);
-    doom_read(handle, entries.data(), (int) (entries.size() * sizeof(FileLump)));
+    doom_read(
+        handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
     doom_close(handle);
 
     for (auto i = 0; i < lumpCount; ++i)
     {
-        auto lump = (std::size_t) (reloadLump + i);
+        auto lump = reloadLump + i;
 
-        lumps[lump].position = LONG(entries[(std::size_t) i].filepos);
-        lumps[lump].size = LONG(entries[(std::size_t) i].size);
+        lumps[lump].position = LONG(entries[i].filepos);
+        lumps[lump].size = LONG(entries[i].size);
 
         // Whatever was cached is now the old file's bytes. Drop it; the next
         // caller re-reads.
-        cache[lump] = {};
+        cache[lump].clear();
     }
 }
 } // namespace Doom

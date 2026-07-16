@@ -157,7 +157,6 @@ void playerScream(mobj_t* mo);
 
 void recursiveSound(sector_t* sec, int soundblocks)
 {
-    int i;
     line_t* check;
     sector_t* other;
 
@@ -171,7 +170,7 @@ void recursiveSound(sector_t* sec, int soundblocks)
     sec->soundtraversed = soundblocks + 1;
     sec->soundtarget = soundtarget;
 
-    for (i = 0; i < sec->linecount; i++)
+    for (int i = 0; i < sec->linecount; i++)
     {
         check = sec->lines[i];
         if (!(check->flags & ML_TWOSIDED))
@@ -313,7 +312,7 @@ doom_boolean move(mobj_t* actor)
     if (actor->movedir == DI_NODIR)
         return false;
 
-    if ((unsigned) actor->movedir >= 8)
+    if (static_cast<unsigned>(actor->movedir) >= 8)
         I_Error("Error: Weird actor->movedir!");
 
     tryx = actor->x + actor->info->speed * xspeed[actor->movedir];
@@ -400,7 +399,7 @@ void newChaseDir(mobj_t* actor)
     if (!actor->target)
         I_Error("Error: newChaseDir: called with no target");
 
-    olddir = (dirtype_t) (actor->movedir);
+    olddir = static_cast<dirtype_t>(actor->movedir);
     turnaround = opposite[olddir];
 
     deltax = actor->target->x - actor->x;
@@ -433,7 +432,7 @@ void newChaseDir(mobj_t* actor)
     {
         tdir = d[1];
         d[1] = d[2];
-        d[2] = (dirtype_t) (tdir);
+        d[2] = static_cast<dirtype_t>(tdir);
     }
 
     if (d[1] == turnaround)
@@ -581,10 +580,10 @@ void keenDie(mobj_t* mo)
     // to see if all Keens are dead
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
-        if (th->function.acp1 != (actionf_p1) P_MobjThinker)
+        if (th->function.acp1 != reinterpret_cast<actionf_p1>(P_MobjThinker))
             continue;
 
-        mo2 = (mobj_t*) th;
+        mo2 = reinterpret_cast<mobj_t*>(th);
         if (mo2 != mo && mo2->type == mo->type && mo2->health > 0)
         {
             // other Keen not dead
@@ -660,7 +659,7 @@ seeyou:
             S_StartSound(actor, sound);
     }
 
-    P_SetMobjState(actor, (statenum_t) (actor->info->seestate));
+    P_SetMobjState(actor, static_cast<statenum_t>(actor->info->seestate));
 }
 
 //
@@ -704,7 +703,7 @@ void chase(mobj_t* actor)
         if (lookForPlayers(actor, true))
             return; // got a new target
 
-        P_SetMobjState(actor, (statenum_t) (actor->info->spawnstate));
+        P_SetMobjState(actor, static_cast<statenum_t>(actor->info->spawnstate));
         return;
     }
 
@@ -723,7 +722,7 @@ void chase(mobj_t* actor)
         if (actor->info->attacksound)
             S_StartSound(actor, actor->info->attacksound);
 
-        P_SetMobjState(actor, (statenum_t) (actor->info->meleestate));
+        P_SetMobjState(actor, static_cast<statenum_t>(actor->info->meleestate));
         return;
     }
 
@@ -738,7 +737,7 @@ void chase(mobj_t* actor)
         if (!checkMissileRange(actor))
             goto nomissile;
 
-        P_SetMobjState(actor, (statenum_t) (actor->info->missilestate));
+        P_SetMobjState(actor, static_cast<statenum_t>(actor->info->missilestate));
         actor->flags |= MF_JUSTATTACKED;
         return;
     }
@@ -806,7 +805,6 @@ void posAttack(mobj_t* actor)
 
 void sPosAttack(mobj_t* actor)
 {
-    int i;
     int angle;
     int bangle;
     int damage;
@@ -820,7 +818,7 @@ void sPosAttack(mobj_t* actor)
     bangle = actor->angle;
     slope = P_AimLineAttack(actor, bangle, MISSILERANGE);
 
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         angle = bangle + ((P_Random() - P_Random()) << 20);
         damage = ((P_Random() % 5) + 1) * 3;
@@ -859,7 +857,7 @@ void cPosRefire(mobj_t* actor)
     if (!actor->target || actor->target->health <= 0
         || !P_CheckSight(actor, actor->target))
     {
-        P_SetMobjState(actor, (statenum_t) (actor->info->seestate));
+        P_SetMobjState(actor, static_cast<statenum_t>(actor->info->seestate));
     }
 }
 
@@ -874,7 +872,7 @@ void spidRefire(mobj_t* actor)
     if (!actor->target || actor->target->health <= 0
         || !P_CheckSight(actor, actor->target))
     {
-        P_SetMobjState(actor, (statenum_t) (actor->info->seestate));
+        P_SetMobjState(actor, static_cast<statenum_t>(actor->info->seestate));
     }
 }
 
@@ -1133,9 +1131,6 @@ void vileChase(mobj_t* actor)
     int yl;
     int yh;
 
-    int bx;
-    int by;
-
     mobjinfo_t* info;
     mobj_t* temp;
 
@@ -1151,9 +1146,9 @@ void vileChase(mobj_t* actor)
         yh = (viletryy - bmaporgy + MAXRADIUS * 2) >> MAPBLOCKSHIFT;
 
         vileobj = actor;
-        for (bx = xl; bx <= xh; bx++)
+        for (int bx = xl; bx <= xh; bx++)
         {
-            for (by = yl; by <= yh; by++)
+            for (int by = yl; by <= yh; by++)
             {
                 // Call vileCheck to check
                 // whether object is a corpse
@@ -1170,11 +1165,12 @@ void vileChase(mobj_t* actor)
                     S_StartSound(corpsehit, sfx_slop);
                     info = corpsehit->info;
 
-                    P_SetMobjState(corpsehit, (statenum_t) (info->raisestate));
+                    P_SetMobjState(corpsehit,
+                                   static_cast<statenum_t>(info->raisestate));
                     corpsehit->height <<= 2;
                     corpsehit->flags = info->flags;
                     corpsehit->health = info->spawnhealth;
-                    corpsehit->target = 0;
+                    corpsehit->target = nullptr;
 
                     return;
                 }
@@ -1403,8 +1399,9 @@ void painShootSkull(mobj_t* actor, angle_t angle)
     currentthinker = thinkercap.next;
     while (currentthinker != &thinkercap)
     {
-        if ((currentthinker->function.acp1 == (actionf_p1) P_MobjThinker)
-            && ((mobj_t*) currentthinker)->type == MT_SKULL)
+        if ((currentthinker->function.acp1
+             == reinterpret_cast<actionf_p1>(P_MobjThinker))
+            && (reinterpret_cast<mobj_t*>(currentthinker))->type == MT_SKULL)
             count++;
         currentthinker = currentthinker->next;
     }
@@ -1609,10 +1606,10 @@ void bossDeath(mobj_t* mo)
     // if all bosses are dead
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
-        if (th->function.acp1 != (actionf_p1) P_MobjThinker)
+        if (th->function.acp1 != reinterpret_cast<actionf_p1>(P_MobjThinker))
             continue;
 
-        mo2 = (mobj_t*) th;
+        mo2 = reinterpret_cast<mobj_t*>(th);
         if (mo2 != mo && mo2->type == mo->type && mo2->health > 0)
         {
             // other boss not dead
@@ -1717,10 +1714,10 @@ void brainAwake(mobj_t*)
     thinker = thinkercap.next;
     for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
     {
-        if (thinker->function.acp1 != (actionf_p1) P_MobjThinker)
+        if (thinker->function.acp1 != reinterpret_cast<actionf_p1>(P_MobjThinker))
             continue; // not a mobj
 
-        m = (mobj_t*) thinker;
+        m = reinterpret_cast<mobj_t*>(thinker);
 
         if (m->type == MT_BOSSTARGET)
         {
@@ -1739,12 +1736,12 @@ void brainPain(mobj_t*)
 
 void brainScream(mobj_t* mo)
 {
-    int x;
     int y;
     int z;
     mobj_t* th;
 
-    for (x = mo->x - 196 * FRACUNIT; x < mo->x + 320 * FRACUNIT; x += FRACUNIT * 8)
+    for (int x = mo->x - 196 * FRACUNIT; x < mo->x + 320 * FRACUNIT;
+         x += FRACUNIT * 8)
     {
         y = mo->y - 320 * FRACUNIT;
         z = 128 + P_Random() * 2 * FRACUNIT;
@@ -1864,7 +1861,7 @@ void spawnFly(mobj_t* mo)
 
     newmobj = P_SpawnMobj(targ->x, targ->y, targ->z, type);
     if (lookForPlayers(newmobj, true))
-        P_SetMobjState(newmobj, (statenum_t) (newmobj->info->seestate));
+        P_SetMobjState(newmobj, static_cast<statenum_t>(newmobj->info->seestate));
 
     // telefrag anything in this spot
     P_TeleportMove(newmobj, newmobj->x, newmobj->y);

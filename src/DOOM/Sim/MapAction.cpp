@@ -482,7 +482,7 @@ doom_boolean changeSectorThing(mobj_t* thing)
 
     if (crushchange && !(leveltime & 3))
     {
-        P_DamageMobj(thing, 0, 0, 10);
+        P_DamageMobj(thing, nullptr, nullptr, 10);
 
         // spray blood in a random direction
         mo = P_SpawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
@@ -629,7 +629,7 @@ fixed_t aimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance)
     clip.bottomslope = -100 * FRACUNIT / 160;
 
     clip.attackrange = distance;
-    clip.linetarget = 0;
+    clip.linetarget = nullptr;
 
     pathTraverse(t1->x, t1->y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, aimTraverse);
 
@@ -693,9 +693,6 @@ void useLines(player_t* player)
 //
 void radiusAttack(mobj_t* spot, mobj_t* source, int damage)
 {
-    int x;
-    int y;
-
     int xl;
     int xh;
     int yl;
@@ -712,8 +709,8 @@ void radiusAttack(mobj_t* spot, mobj_t* source, int damage)
     bombsource = source;
     bombdamage = damage;
 
-    for (y = yl; y <= yh; y++)
-        for (x = xl; x <= xh; x++)
+    for (int y = yl; y <= yh; y++)
+        for (int x = xl; x <= xh; x++)
             forEachThingInBlock(x, y, radiusAttackThing);
 }
 
@@ -722,15 +719,12 @@ void radiusAttack(mobj_t* spot, mobj_t* source, int damage)
 //
 bool changeSector(sector_t* sector, doom_boolean crunch)
 {
-    int x;
-    int y;
-
     nofit = false;
     crushchange = crunch;
 
     // re-check heights for all things near the moving sector
-    for (x = sector->blockbox[BOXLEFT]; x <= sector->blockbox[BOXRIGHT]; x++)
-        for (y = sector->blockbox[BOXBOTTOM]; y <= sector->blockbox[BOXTOP]; y++)
+    for (int x = sector->blockbox[BOXLEFT]; x <= sector->blockbox[BOXRIGHT]; x++)
+        for (int y = sector->blockbox[BOXBOTTOM]; y <= sector->blockbox[BOXTOP]; y++)
             forEachThingInBlock(x, y, changeSectorThing);
 
     return nofit;

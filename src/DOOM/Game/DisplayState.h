@@ -22,7 +22,8 @@ struct DisplayState
     doom_boolean menuactivestate = false; // last frame's menuactive
     doom_boolean inhelpscreensstate = false; // last frame's inhelpscreens
     doom_boolean fullscreen = false; // last frame's full-view (viewheight == 200)
-    gamestate_t oldgamestate = (gamestate_t) (-1); // last drawn gamestate, -1 forces a redraw
+    gamestate_t oldgamestate =
+        static_cast<gamestate_t>(-1); // last drawn gamestate, -1 forces a redraw
     int borderdrawcount = 0; // frames of view-border redraw still owed
 };
 

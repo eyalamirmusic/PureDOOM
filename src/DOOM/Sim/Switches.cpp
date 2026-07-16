@@ -82,15 +82,13 @@ static int (&switchlist)[MAXSWITCHES * 2] = switchList().switchlist;
 static int& numswitches = switchList().numswitches;
 
 // Forward declarations so the file's own call order needs no rearranging.
-void initSwitchList(void);
+void initSwitchList();
 void startButton(line_t* line, bwhere_e w, int texture, int time);
 void changeSwitchTexture(line_t* line, int useAgain);
 doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side);
 
-void initSwitchList(void)
+void initSwitchList()
 {
-    int i;
-    int index;
     int episode;
 
     episode = 1;
@@ -100,7 +98,7 @@ void initSwitchList(void)
     else if (gamemode == commercial)
         episode = 3;
 
-    for (index = 0, i = 0; i < MAXSWITCHES; i++)
+    for (int index = 0, i = 0; i < MAXSWITCHES; i++)
     {
         if (!alphSwitchList[i].episode)
         {
@@ -122,10 +120,8 @@ void initSwitchList(void)
 //
 void startButton(line_t* line, bwhere_e w, int texture, int time)
 {
-    int i;
-
     // See if button is already pressed
-    for (i = 0; i < MAXBUTTONS; i++)
+    for (int i = 0; i < MAXBUTTONS; i++)
     {
         if (buttonlist[i].btimer && buttonlist[i].line == line)
         {
@@ -133,7 +129,7 @@ void startButton(line_t* line, bwhere_e w, int texture, int time)
         }
     }
 
-    for (i = 0; i < MAXBUTTONS; i++)
+    for (int i = 0; i < MAXBUTTONS; i++)
     {
         if (!buttonlist[i].btimer)
         {
@@ -141,7 +137,8 @@ void startButton(line_t* line, bwhere_e w, int texture, int time)
             buttonlist[i].where = w;
             buttonlist[i].btexture = texture;
             buttonlist[i].btimer = time;
-            buttonlist[i].soundorg = (mobj_t*) &line->frontsector->soundorg;
+            buttonlist[i].soundorg =
+                reinterpret_cast<mobj_t*>(&line->frontsector->soundorg);
             return;
         }
     }
@@ -158,7 +155,6 @@ void changeSwitchTexture(line_t* line, int useAgain)
     int texTop;
     int texMid;
     int texBot;
-    int i;
     int sound;
 
     if (!useAgain)
@@ -174,7 +170,7 @@ void changeSwitchTexture(line_t* line, int useAgain)
     if (line->special == 11)
         sound = sfx_swtchx;
 
-    for (i = 0; i < numswitches * 2; i++)
+    for (int i = 0; i < numswitches * 2; i++)
     {
         if (switchlist[i] == texTop)
         {

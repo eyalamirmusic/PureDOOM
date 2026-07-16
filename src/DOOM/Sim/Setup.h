@@ -14,7 +14,7 @@ void loadThings(int lump);
 void loadLineDefs(int lump);
 void loadSideDefs(int lump);
 void loadBlockMap(int lump);
-void groupLines(void);
+void groupLines();
 void setupLevel(int episode, int map, int playermask, skill_t skill);
-void init(void);
+void init();
 } // namespace Doom

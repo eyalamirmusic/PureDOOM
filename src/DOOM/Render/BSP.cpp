@@ -46,16 +46,16 @@ int checkcoord[12][4] = {{3, 0, 2, 1},
                          {2, 1, 3, 0}};
 
 // Forward declarations so call order needs no rearranging.
-void clearDrawSegs(void);
+void clearDrawSegs();
 void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
-void clearClipSegs(void);
+void clearClipSegs();
 void addLine(seg_t* line);
 doom_boolean checkBBox(fixed_t* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);
 
-void clearDrawSegs(void)
+void clearDrawSegs()
 {
     ds_p = drawsegs;
 }
@@ -197,7 +197,7 @@ void clipPassWallSegment(int first, int last)
 //
 // clearClipSegs
 //
-void clearClipSegs(void)
+void clearClipSegs()
 {
     solidsegs[0].first = -0x7fffffff;
     solidsegs[0].last = -1;
@@ -475,7 +475,7 @@ void subsector(int num)
                                  frontsector->lightlevel);
     }
     else
-        floorplane = 0;
+        floorplane = nullptr;
 
     if (frontsector->ceilingheight > viewz || frontsector->ceilingpic == skyflatnum)
     {
@@ -484,7 +484,7 @@ void subsector(int num)
                                    frontsector->lightlevel);
     }
     else
-        ceilingplane = 0;
+        ceilingplane = nullptr;
 
     R_AddSprites(frontsector);
 

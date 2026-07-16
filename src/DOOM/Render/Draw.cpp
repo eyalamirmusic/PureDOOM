@@ -50,7 +50,7 @@ static int (&columnofs)[MAXWIDTH] = drawTables().columnofs;
 // Thus a special case loop for very fast rendering can be used. It has also been
 // used with Wolfenstein 3D.
 //
-void drawColumn(void)
+void drawColumn()
 {
     int count;
     byte* dest;
@@ -64,7 +64,8 @@ void drawColumn(void)
         return;
 
 #ifdef RANGECHECK
-    if ((unsigned) dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
+        || dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: R_DrawColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
@@ -101,7 +102,7 @@ void drawColumn(void)
     } while (count--);
 }
 
-void drawColumnLow(void)
+void drawColumnLow()
 {
     int count;
     byte* dest;
@@ -116,7 +117,8 @@ void drawColumnLow(void)
         return;
 
 #ifdef RANGECHECK
-    if ((unsigned) dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
+        || dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: R_DrawColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
@@ -171,7 +173,7 @@ int fuzzoffset[FUZZTABLE] = {
 
 static int& fuzzpos = drawTables().fuzzpos;
 
-void drawFuzzColumn(void)
+void drawFuzzColumn()
 {
     int count;
     byte* dest;
@@ -191,7 +193,8 @@ void drawFuzzColumn(void)
         return;
 
 #ifdef RANGECHECK
-    if ((unsigned) dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
+        || dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: R_DrawFuzzColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
@@ -235,7 +238,7 @@ void drawFuzzColumn(void)
 //  of the BaronOfHell, the HellKnight, uses
 //  identical sprites, kinda brightened up.
 //
-void drawTranslatedColumn(void)
+void drawTranslatedColumn()
 {
     int count;
     byte* dest;
@@ -247,7 +250,8 @@ void drawTranslatedColumn(void)
         return;
 
 #ifdef RANGECHECK
-    if ((unsigned) dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
+        || dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: R_DrawColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
@@ -288,16 +292,14 @@ void drawTranslatedColumn(void)
 // Assumes a given structure of the PLAYPAL.
 // Could be read from a lump instead.
 //
-void initTranslationTables(void)
+void initTranslationTables()
 {
-    int i;
-
-    translationtables = (byte*) (doom_malloc(256 * 3 + 255));
+    translationtables = static_cast<byte*>(doom_malloc(256 * 3 + 255));
     translationtables =
         (byte*) (((unsigned long long) translationtables + 255) & ~255);
 
     // translate just the 16 green colors
-    for (i = 0; i < 256; i++)
+    for (int i = 0; i < 256; i++)
     {
         if (i >= 0x70 && i <= 0x7f)
         {
@@ -327,7 +329,7 @@ void initTranslationTables(void)
 // In consequence, flats are not stored by column (like walls),
 // and the inner loop has to step in texture space u and v.
 //
-void drawSpan(void)
+void drawSpan()
 {
     fixed_t xfrac;
     fixed_t yfrac;
@@ -337,7 +339,7 @@ void drawSpan(void)
 
 #ifdef RANGECHECK
     if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH
-        || (unsigned) ds_y > SCREENHEIGHT)
+        || static_cast<unsigned>(ds_y) > SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: R_DrawSpan: ");
         doom_concat(error_buf, doom_itoa(ds_x1, 10));
@@ -376,7 +378,7 @@ void drawSpan(void)
 //
 // Again..
 //
-void drawSpanLow(void)
+void drawSpanLow()
 {
     fixed_t xfrac;
     fixed_t yfrac;
@@ -386,7 +388,7 @@ void drawSpanLow(void)
 
 #ifdef RANGECHECK
     if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH
-        || (unsigned) ds_y > SCREENHEIGHT)
+        || static_cast<unsigned>(ds_y) > SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: R_DrawSpan: ");
         doom_concat(error_buf, doom_itoa(ds_x1, 10));
@@ -431,15 +433,13 @@ void drawSpanLow(void)
 //
 void initBuffer(int width, int height)
 {
-    int i;
-
     // Handle resize,
     //  e.g. smaller view windows
     //  with border and/or status bar.
     viewwindowx = (SCREENWIDTH - width) >> 1;
 
     // Column offset. For windows.
-    for (i = 0; i < width; i++)
+    for (int i = 0; i < width; i++)
         columnofs[i] = viewwindowx + i;
 
     // Samw with base row offset.
@@ -449,7 +449,7 @@ void initBuffer(int width, int height)
         viewwindowy = (SCREENHEIGHT - SBARHEIGHT - height) >> 1;
 
     // Preclaculate all row offsets.
-    for (i = 0; i < height; i++)
+    for (int i = 0; i < height; i++)
         ylookup[i] = screens[0] + (i + viewwindowy) * SCREENWIDTH;
 }
 
@@ -459,7 +459,7 @@ void initBuffer(int width, int height)
 //  for variable screen sizes
 // Also draws a beveled edge.
 //
-void fillBackScreen(void)
+void fillBackScreen()
 {
     byte* src;
     byte* dest;
@@ -483,7 +483,7 @@ void fillBackScreen(void)
     else
         name = name1;
 
-    src = (byte*) (W_CacheLumpName(name, PU_CACHE));
+    src = static_cast<byte*>(W_CacheLumpName(name, PU_CACHE));
     dest = screens[1];
 
     for (y = 0; y < SCREENHEIGHT - SBARHEIGHT; y++)
@@ -501,19 +501,19 @@ void fillBackScreen(void)
         }
     }
 
-    patch = (patch_t*) (W_CacheLumpName("brdr_t", PU_CACHE));
+    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_t", PU_CACHE));
 
     for (x = 0; x < scaledviewwidth; x += 8)
         V_DrawPatch(viewwindowx + x, viewwindowy - 8, 1, patch);
-    patch = (patch_t*) (W_CacheLumpName("brdr_b", PU_CACHE));
+    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_b", PU_CACHE));
 
     for (x = 0; x < scaledviewwidth; x += 8)
         V_DrawPatch(viewwindowx + x, viewwindowy + viewheight, 1, patch);
-    patch = (patch_t*) (W_CacheLumpName("brdr_l", PU_CACHE));
+    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_l", PU_CACHE));
 
     for (y = 0; y < viewheight; y += 8)
         V_DrawPatch(viewwindowx - 8, viewwindowy + y, 1, patch);
-    patch = (patch_t*) (W_CacheLumpName("brdr_r", PU_CACHE));
+    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_r", PU_CACHE));
 
     for (y = 0; y < viewheight; y += 8)
         V_DrawPatch(viewwindowx + scaledviewwidth, viewwindowy + y, 1, patch);
@@ -522,22 +522,22 @@ void fillBackScreen(void)
     V_DrawPatch(viewwindowx - 8,
                 viewwindowy - 8,
                 1,
-                (patch_t*) (W_CacheLumpName("brdr_tl", PU_CACHE)));
+                static_cast<patch_t*>(W_CacheLumpName("brdr_tl", PU_CACHE)));
 
     V_DrawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy - 8,
                 1,
-                (patch_t*) (W_CacheLumpName("brdr_tr", PU_CACHE)));
+                static_cast<patch_t*>(W_CacheLumpName("brdr_tr", PU_CACHE)));
 
     V_DrawPatch(viewwindowx - 8,
                 viewwindowy + viewheight,
                 1,
-                (patch_t*) (W_CacheLumpName("brdr_bl", PU_CACHE)));
+                static_cast<patch_t*>(W_CacheLumpName("brdr_bl", PU_CACHE)));
 
     V_DrawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy + viewheight,
                 1,
-                (patch_t*) (W_CacheLumpName("brdr_br", PU_CACHE)));
+                static_cast<patch_t*>(W_CacheLumpName("brdr_br", PU_CACHE)));
 }
 
 //
@@ -558,7 +558,7 @@ void videoErase(unsigned ofs, int count)
 // Draws the border around the view
 //  for different size windows?
 //
-void drawViewBorder(void)
+void drawViewBorder()
 {
     int top;
     int side;

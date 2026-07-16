@@ -37,7 +37,10 @@ struct Angle
 
     // Which of the 8192 fine-angle buckets this lands in - the index the trig
     // tables are read with.
-    constexpr int fineIndex() const { return (int) (raw >> angleToFineShift); }
+    constexpr int fineIndex() const
+    {
+        return static_cast<int>(raw >> angleToFineShift);
+    }
 
     static constexpr auto angleToFineShift = 19;
 };

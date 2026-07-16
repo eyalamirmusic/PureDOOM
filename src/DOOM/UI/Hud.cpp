@@ -227,9 +227,8 @@ char foreignTranslation(unsigned char ch)
     return ch < 128 ? frenchKeyMap[ch] : ch;
 }
 
-void huInit(void)
+void huInit()
 {
-    int i;
     int j;
     char buffer[9];
 
@@ -240,7 +239,7 @@ void huInit(void)
 
     // load the heads-up font
     j = HU_FONTSTART;
-    for (i = 0; i < HU_FONTSIZE; i++)
+    for (int i = 0; i < HU_FONTSIZE; i++)
     {
         //if (j == 40) __debugbreak();
         //doom_sprintf(buffer, "STCFN%.3d", j++);
@@ -250,18 +249,17 @@ void huInit(void)
         if (j < 10)
             doom_concat(buffer, "0");
         doom_concat(buffer, doom_itoa(j++, 10));
-        hu_font[i] = (patch_t*) W_CacheLumpName(buffer, PU_STATIC);
+        hu_font[i] = static_cast<patch_t*>(W_CacheLumpName(buffer, PU_STATIC));
     }
 }
 
-void huStop(void)
+void huStop()
 {
     headsupactive = false;
 }
 
-void huStart(void)
+void huStart()
 {
-    int i;
     const char* s;
 
     if (headsupactive)
@@ -315,13 +313,13 @@ void huStart(void)
     HUlib_initIText(&w_chat, HU_INPUTX, HU_INPUTY, hu_font, HU_FONTSTART, &chat_on);
 
     // create the inputbuffer widgets
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         HUlib_initIText(&w_inputbuffer[i], 0, 0, 0, 0, &always_off);
 
     headsupactive = true;
 }
 
-void huDrawer(void)
+void huDrawer()
 {
     HUlib_drawSText(&w_message);
     HUlib_drawIText(&w_chat);
@@ -329,16 +327,16 @@ void huDrawer(void)
         HUlib_drawTextLine(&w_title, false);
 }
 
-void huErase(void)
+void huErase()
 {
     HUlib_eraseSText(&w_message);
     HUlib_eraseIText(&w_chat);
     HUlib_eraseTextLine(&w_title);
 }
 
-void huTicker(void)
+void huTicker()
 {
-    int i, rc;
+    int rc;
     char c;
 
     // tick down message counter if message is up
@@ -355,7 +353,7 @@ void huTicker(void)
             || (plr->message && message_dontfuckwithme))
         {
             HUlib_addMessageToSText(&w_message, 0, plr->message);
-            plr->message = 0;
+            plr->message = nullptr;
             message_on = true;
             message_counter = HU_MSGTIMEOUT;
             message_nottobefuckedwith = message_dontfuckwithme;
@@ -367,7 +365,7 @@ void huTicker(void)
     // check for incoming chat characters
     if (netgame)
     {
-        for (i = 0; i < MAXPLAYERS; i++)
+        for (int i = 0; i < MAXPLAYERS; i++)
         {
             if (!playeringame[i])
                 continue;
@@ -378,7 +376,8 @@ void huTicker(void)
                 else
                 {
                     if (c >= 'a' && c <= 'z')
-                        c = (char) shiftxform[(unsigned char) c];
+                        c = static_cast<char>(
+                            shiftxform[static_cast<unsigned char>(c)]);
                     rc = HUlib_keyInIText(&w_inputbuffer[i], c);
                     if (rc && c == KEY_ENTER)
                     {
@@ -419,7 +418,7 @@ void huQueueChatChar(char c)
     }
 }
 
-char huDequeueChatChar(void)
+char huDequeueChatChar()
 {
     char c;
 
@@ -444,7 +443,6 @@ doom_boolean huResponder(event_t* ev)
     static doom_boolean shiftdown = false;
     static doom_boolean altdown = false;
     unsigned char c;
-    int i;
     int numplayers;
 
     static char destination_keys[MAXPLAYERS] = {
@@ -453,7 +451,7 @@ doom_boolean huResponder(event_t* ev)
     static int num_nobrainers = 0;
 
     numplayers = 0;
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         numplayers += playeringame[i];
 
     if (ev->data1 == KEY_RSHIFT)
@@ -486,7 +484,7 @@ doom_boolean huResponder(event_t* ev)
         }
         else if (netgame && numplayers > 2)
         {
-            for (i = 0; i < MAXPLAYERS; i++)
+            for (int i = 0; i < MAXPLAYERS; i++)
             {
                 if (ev->data1 == destination_keys[i])
                 {

@@ -10,6 +10,6 @@ namespace Doom
 // an empty I_NetCmd. i_net.cpp keeps the vanilla I_ names as shims over these;
 // everything else (DOOMPORT, netget/netsend, the packet helpers) is file-local
 // to Net.cpp.
-void I_InitNetwork(void);
-void I_NetCmd(void);
+void I_InitNetwork();
+void I_NetCmd();
 } // namespace Doom

@@ -403,13 +403,13 @@ cheatseq_t cheat_choppers = {cheat_choppers_seq, 0};
 cheatseq_t cheat_clev = {cheat_clev_seq, 0};
 cheatseq_t cheat_mypos = {cheat_mypos_seq, 0};
 
-void stStop(void);
+void stStop();
 
 //
 // STATUS BAR CODE
 //
 
-void strefreshBackground(void)
+void strefreshBackground()
 {
     if (st_statusbaron)
     {
@@ -426,8 +426,6 @@ void strefreshBackground(void)
 //  intercept cheats.
 doom_boolean stResponder(event_t* ev)
 {
-    int i;
-
     // Filter automap on/off.
     if (ev->type == ev_keyup && ((ev->data1 & 0xffff0000) == AM_MSGHEADER))
     {
@@ -474,10 +472,10 @@ doom_boolean stResponder(event_t* ev)
                 plyr->armorpoints = 200;
                 plyr->armortype = 2;
 
-                for (i = 0; i < NUMWEAPONS; i++)
+                for (int i = 0; i < NUMWEAPONS; i++)
                     plyr->weaponowned[i] = true;
 
-                for (i = 0; i < NUMAMMO; i++)
+                for (int i = 0; i < NUMAMMO; i++)
                     plyr->ammo[i] = plyr->maxammo[i];
 
                 plyr->message = STSTR_FAADDED;
@@ -488,13 +486,13 @@ doom_boolean stResponder(event_t* ev)
                 plyr->armorpoints = 200;
                 plyr->armortype = 2;
 
-                for (i = 0; i < NUMWEAPONS; i++)
+                for (int i = 0; i < NUMWEAPONS; i++)
                     plyr->weaponowned[i] = true;
 
-                for (i = 0; i < NUMAMMO; i++)
+                for (int i = 0; i < NUMAMMO; i++)
                     plyr->ammo[i] = plyr->maxammo[i];
 
-                for (i = 0; i < NUMCARDS; i++)
+                for (int i = 0; i < NUMCARDS; i++)
                     plyr->cards[i] = true;
 
                 plyr->message = STSTR_KFAADDED;
@@ -540,7 +538,7 @@ doom_boolean stResponder(event_t* ev)
                     plyr->message = STSTR_NCOFF;
             }
             // 'behold?' power-up cheats
-            for (i = 0; i < 6; i++)
+            for (int i = 0; i < 6; i++)
             {
                 if (cht_CheckCheat(&cheat_powerup[i], ev->data1))
                 {
@@ -634,7 +632,7 @@ doom_boolean stResponder(event_t* ev)
     return false;
 }
 
-int stcalcPainOffset(void)
+int stcalcPainOffset()
 {
     int health;
     // The pain-offset cache: Doom::StatusBarFace members (Engine) now, reached by a local
@@ -658,7 +656,7 @@ int stcalcPainOffset(void)
 // the precedence of expressions is:
 //  dead > evil grin > turned head > straight ahead
 //
-void stupdateFaceWidget(void)
+void stupdateFaceWidget()
 {
     int i;
     angle_t badguyangle;
@@ -819,12 +817,11 @@ void stupdateFaceWidget(void)
     st_facecount--;
 }
 
-void stupdateWidgets(void)
+void stupdateWidgets()
 {
     // The "n/a" ammo sentinel: a Doom::StatusBarWidgets member (Engine) now, reached by a local
     // reference (w_ready.num takes its address, so the member's stable address is what it needs).
     int& largeammo = statusBarWidgets().largeammo;
-    int i;
 
     if (weaponinfo[plyr->readyweapon].ammo == am_noammo)
         w_ready.num = &largeammo;
@@ -834,7 +831,7 @@ void stupdateWidgets(void)
     w_ready.data = plyr->readyweapon;
 
     // update keycard multiple widgets
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         keyboxes[i] = plyr->cards[i] ? i : -1;
 
@@ -855,7 +852,7 @@ void stupdateWidgets(void)
     st_fragson = deathmatch && st_statusbaron;
     st_fragscount = 0;
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (i != consoleplayer)
             st_fragscount += plyr->frags[i];
@@ -868,7 +865,7 @@ void stupdateWidgets(void)
         st_chat = st_oldchat;
 }
 
-void stTicker(void)
+void stTicker()
 {
     st_clock++;
     st_randomnumber = M_Random();
@@ -876,7 +873,7 @@ void stTicker(void)
     st_oldhealth = plyr->health;
 }
 
-void stdoPaletteStuff(void)
+void stdoPaletteStuff()
 {
     int palette;
     byte* pal;
@@ -922,15 +919,14 @@ void stdoPaletteStuff(void)
     if (palette != st_palette)
     {
         st_palette = palette;
-        pal = (byte*) W_CacheLumpNum(lu_palette, PU_CACHE) + palette * 768;
+        pal =
+            static_cast<byte*>(W_CacheLumpNum(lu_palette, PU_CACHE)) + palette * 768;
         I_SetPalette(pal);
     }
 }
 
 void stdrawWidgets(doom_boolean refresh)
 {
-    int i;
-
     // used by w_arms[] widgets
     st_armson = st_statusbaron && !deathmatch;
 
@@ -939,7 +935,7 @@ void stdrawWidgets(doom_boolean refresh)
 
     STlib_updateNum(&w_ready, refresh);
 
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
         STlib_updateNum(&w_ammo[i], refresh);
         STlib_updateNum(&w_maxammo[i], refresh);
@@ -950,18 +946,18 @@ void stdrawWidgets(doom_boolean refresh)
 
     STlib_updateBinIcon(&w_armsbg, refresh);
 
-    for (i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++)
         STlib_updateMultIcon(&w_arms[i], refresh);
 
     STlib_updateMultIcon(&w_faces, refresh);
 
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
         STlib_updateMultIcon(&w_keyboxes[i], refresh);
 
     STlib_updateNum(&w_frags, refresh);
 }
 
-void stdoRefresh(void)
+void stdoRefresh()
 {
     st_firsttime = false;
 
@@ -972,7 +968,7 @@ void stdoRefresh(void)
     stdrawWidgets(true);
 }
 
-void stdiffDraw(void)
+void stdiffDraw()
 {
     // update all widgets
     stdrawWidgets(false);
@@ -1001,53 +997,51 @@ void stDrawer(doom_boolean fullscreen, doom_boolean refresh)
     }
 }
 
-void stloadGraphics(void)
+void stloadGraphics()
 {
-    int i;
-    int j;
     int facenum;
 
     char namebuf[9];
 
     // Load the numbers, tall and short
-    for (i = 0; i < 10; i++)
+    for (int i = 0; i < 10; i++)
     {
         //doom_sprintf(namebuf, "STTNUM%d", i);
         doom_strcpy(namebuf, "STTNUM");
         doom_concat(namebuf, doom_itoa(i, 10));
-        tallnum[i] = (patch_t*) W_CacheLumpName(namebuf, PU_STATIC);
+        tallnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
 
         //doom_sprintf(namebuf, "STYSNUM%d", i);
         doom_strcpy(namebuf, "STYSNUM");
         doom_concat(namebuf, doom_itoa(i, 10));
-        shortnum[i] = (patch_t*) W_CacheLumpName(namebuf, PU_STATIC);
+        shortnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
     }
 
     // Load percent key.
     //Note: why not load STMINUS here, too?
-    tallpercent = (patch_t*) W_CacheLumpName("STTPRCNT", PU_STATIC);
+    tallpercent = static_cast<patch_t*>(W_CacheLumpName("STTPRCNT", PU_STATIC));
 
     // key cards
-    for (i = 0; i < NUMCARDS; i++)
+    for (int i = 0; i < NUMCARDS; i++)
     {
         //doom_sprintf(namebuf, "STKEYS%d", i);
         doom_strcpy(namebuf, "STKEYS");
         doom_concat(namebuf, doom_itoa(i, 10));
-        keys[i] = (patch_t*) W_CacheLumpName(namebuf, PU_STATIC);
+        keys[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
     }
 
     // arms background
-    armsbg = (patch_t*) W_CacheLumpName("STARMS", PU_STATIC);
+    armsbg = static_cast<patch_t*>(W_CacheLumpName("STARMS", PU_STATIC));
 
     // arms ownership widgets
-    for (i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++)
     {
         //doom_sprintf(namebuf, "STGNUM%d", i + 2);
         doom_strcpy(namebuf, "STGNUM");
         doom_concat(namebuf, doom_itoa(i + 2, 10));
 
         // gray #
-        arms[i][0] = (patch_t*) W_CacheLumpName(namebuf, PU_STATIC);
+        arms[i][0] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
 
         // yellow #
         arms[i][1] = shortnum[i + 2];
@@ -1057,72 +1051,76 @@ void stloadGraphics(void)
     //doom_sprintf(namebuf, "STFB%d", consoleplayer);
     doom_strcpy(namebuf, "STFB");
     doom_concat(namebuf, doom_itoa(consoleplayer, 10));
-    faceback = (patch_t*) W_CacheLumpName(namebuf, PU_STATIC);
+    faceback = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
 
     // status bar background bits
-    sbar = (patch_t*) W_CacheLumpName("STBAR", PU_STATIC);
+    sbar = static_cast<patch_t*>(W_CacheLumpName("STBAR", PU_STATIC));
 
     // face states
     facenum = 0;
-    for (i = 0; i < ST_NUMPAINFACES; i++)
+    for (int i = 0; i < ST_NUMPAINFACES; i++)
     {
-        for (j = 0; j < ST_NUMSTRAIGHTFACES; j++)
+        for (int j = 0; j < ST_NUMSTRAIGHTFACES; j++)
         {
             //doom_sprintf(namebuf, "STFST%d%d", i, j);
             doom_strcpy(namebuf, "STFST");
             doom_concat(namebuf, doom_itoa(i, 10));
             doom_concat(namebuf, doom_itoa(j, 10));
-            faces[facenum++] = (patch_t*) (W_CacheLumpName(namebuf, PU_STATIC));
+            faces[facenum++] =
+                static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
         }
         //doom_sprintf(namebuf, "STFTR%d0", i);        // turn right
         doom_strcpy(namebuf, "STFTR");
         doom_concat(namebuf, doom_itoa(i, 10));
         doom_concat(namebuf, "0");
-        faces[facenum++] = (patch_t*) (W_CacheLumpName(namebuf, PU_STATIC));
+        faces[facenum++] =
+            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
         //doom_sprintf(namebuf, "STFTL%d0", i);        // turn left
         doom_strcpy(namebuf, "STFTL");
         doom_concat(namebuf, doom_itoa(i, 10));
         doom_concat(namebuf, "0");
-        faces[facenum++] = (patch_t*) (W_CacheLumpName(namebuf, PU_STATIC));
+        faces[facenum++] =
+            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
         //doom_sprintf(namebuf, "STFOUCH%d", i);        // ouch!
         doom_strcpy(namebuf, "STFOUCH");
         doom_concat(namebuf, doom_itoa(i, 10));
-        faces[facenum++] = (patch_t*) (W_CacheLumpName(namebuf, PU_STATIC));
+        faces[facenum++] =
+            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
         //doom_sprintf(namebuf, "STFEVL%d", i);        // evil grin ;)
         doom_strcpy(namebuf, "STFEVL");
         doom_concat(namebuf, doom_itoa(i, 10));
-        faces[facenum++] = (patch_t*) (W_CacheLumpName(namebuf, PU_STATIC));
+        faces[facenum++] =
+            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
         //doom_sprintf(namebuf, "STFKILL%d", i);        // pissed off
         doom_strcpy(namebuf, "STFKILL");
         doom_concat(namebuf, doom_itoa(i, 10));
-        faces[facenum++] = (patch_t*) (W_CacheLumpName(namebuf, PU_STATIC));
+        faces[facenum++] =
+            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
     }
-    faces[facenum++] = (patch_t*) (W_CacheLumpName("STFGOD0", PU_STATIC));
-    faces[facenum++] = (patch_t*) (W_CacheLumpName("STFDEAD0", PU_STATIC));
+    faces[facenum++] = static_cast<patch_t*>(W_CacheLumpName("STFGOD0", PU_STATIC));
+    faces[facenum++] = static_cast<patch_t*>(W_CacheLumpName("STFDEAD0", PU_STATIC));
 }
 
-void stloadData(void)
+void stloadData()
 {
     lu_palette = W_GetNumForName("PLAYPAL");
     stloadGraphics();
 }
 
-void stunloadGraphics(void)
+void stunloadGraphics()
 {
     // Nothing to unload any more: Doom::WadFile owns the lumps and they are
     // permanent (Wad/WadFile.h). This used to hand each patch back to the zone
     // as PU_CACHE, meaning "purge me if you need the space".
 }
 
-void stunloadData(void)
+void stunloadData()
 {
     stunloadGraphics();
 }
 
-void stinitData(void)
+void stinitData()
 {
-    int i;
-
     st_firsttime = true;
     plyr = &players[consoleplayer];
 
@@ -1139,19 +1137,17 @@ void stinitData(void)
 
     st_oldhealth = -1;
 
-    for (i = 0; i < NUMWEAPONS; i++)
+    for (int i = 0; i < NUMWEAPONS; i++)
         oldweaponsowned[i] = plyr->weaponowned[i];
 
-    for (i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
         keyboxes[i] = -1;
 
     STlib_init();
 }
 
-void stcreateWidgets(void)
+void stcreateWidgets()
 {
-    int i;
-
     // ready weapon ammo
     STlib_initNum(&w_ready,
                   ST_AMMOX,
@@ -1182,7 +1178,7 @@ void stcreateWidgets(void)
                       &st_statusbaron);
 
     // weapons owned
-    for (i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++)
     {
         STlib_initMultIcon(&w_arms[i],
                            ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
@@ -1291,7 +1287,7 @@ void stcreateWidgets(void)
                   ST_MAXAMMO3WIDTH);
 }
 
-void stStart(void)
+void stStart()
 {
     if (!st_stopped)
         stStop();
@@ -1301,21 +1297,21 @@ void stStart(void)
     st_stopped = false;
 }
 
-void stStop(void)
+void stStop()
 {
     if (st_stopped)
         return;
 
-    I_SetPalette((byte*) (W_CacheLumpNum(lu_palette, PU_CACHE)));
+    I_SetPalette(static_cast<byte*>(W_CacheLumpNum(lu_palette, PU_CACHE)));
 
     st_stopped = true;
 }
 
-void stInit(void)
+void stInit()
 {
     veryfirsttime = 0;
     stloadData();
-    screens[4] = (byte*) doom_malloc(ST_WIDTH * ST_HEIGHT);
+    screens[4] = static_cast<byte*>(doom_malloc(ST_WIDTH * ST_HEIGHT));
 }
 
 } // namespace Doom

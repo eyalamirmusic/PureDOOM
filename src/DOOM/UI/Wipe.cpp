@@ -29,14 +29,12 @@ static byte*& wipe_scr = wipeState().wipe_scr;
 
 void colMajorXform(short* array, int width, int height)
 {
-    int x;
-    int y;
     short* dest;
 
-    dest = (short*) doom_malloc(width * height * sizeof(short));
+    dest = static_cast<short*>(doom_malloc(width * height * sizeof(short)));
 
-    for (y = 0; y < height; y++)
-        for (x = 0; x < width; x++)
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
             dest[x * height + y] = array[y * width + x];
 
     doom_memcpy(array, dest, width * height * 2);
@@ -102,7 +100,7 @@ int exitColorXForm(int width, int height, int ticks)
 
 int initMelt(int width, int height, int ticks)
 {
-    int i, r;
+    int r;
     (void) ticks;
 
     // copy start screen to main screen
@@ -110,14 +108,14 @@ int initMelt(int width, int height, int ticks)
 
     // makes this wipe faster (in theory)
     // to have stuff in column-major format
-    colMajorXform((short*) wipe_scr_start, width / 2, height);
-    colMajorXform((short*) wipe_scr_end, width / 2, height);
+    colMajorXform(reinterpret_cast<short*>(wipe_scr_start), width / 2, height);
+    colMajorXform(reinterpret_cast<short*>(wipe_scr_end), width / 2, height);
 
     // setup initial column positions
     // (wipe_melt_offsets<0 => not ready to scroll yet)
-    wipe_melt_offsets = (int*) doom_malloc(width * sizeof(int));
+    wipe_melt_offsets = static_cast<int*>(doom_malloc(width * sizeof(int)));
     wipe_melt_offsets[0] = -(M_Random() % 16);
-    for (i = 1; i < width; i++)
+    for (int i = 1; i < width; i++)
     {
         r = (M_Random() % 3) - 1;
         wipe_melt_offsets[i] = wipe_melt_offsets[i - 1] + r;
@@ -132,8 +130,6 @@ int initMelt(int width, int height, int ticks)
 
 int doMelt(int width, int height, int ticks)
 {
-    int i;
-    int j;
     int dy;
     int idx;
 
@@ -145,7 +141,7 @@ int doMelt(int width, int height, int ticks)
 
     while (ticks--)
     {
-        for (i = 0; i < width; i++)
+        for (int i = 0; i < width; i++)
         {
             if (wipe_melt_offsets[i] < 0)
             {
@@ -157,19 +153,22 @@ int doMelt(int width, int height, int ticks)
                 dy = (wipe_melt_offsets[i] < 16) ? wipe_melt_offsets[i] + 1 : 8;
                 if (wipe_melt_offsets[i] + dy >= height)
                     dy = height - wipe_melt_offsets[i];
-                s = &((short*) wipe_scr_end)[i * height + wipe_melt_offsets[i]];
-                d = &((short*) wipe_scr)[wipe_melt_offsets[i] * width + i];
+                s = &(reinterpret_cast<short*>(
+                    wipe_scr_end))[i * height + wipe_melt_offsets[i]];
+                d = &(reinterpret_cast<short*>(
+                    wipe_scr))[wipe_melt_offsets[i] * width + i];
                 idx = 0;
-                for (j = dy; j; j--)
+                for (int j = dy; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
                 }
                 wipe_melt_offsets[i] += dy;
-                s = &((short*) wipe_scr_start)[i * height];
-                d = &((short*) wipe_scr)[wipe_melt_offsets[i] * width + i];
+                s = &(reinterpret_cast<short*>(wipe_scr_start))[i * height];
+                d = &(reinterpret_cast<short*>(
+                    wipe_scr))[wipe_melt_offsets[i] * width + i];
                 idx = 0;
-                for (j = height - wipe_melt_offsets[i]; j; j--)
+                for (int j = height - wipe_melt_offsets[i]; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;

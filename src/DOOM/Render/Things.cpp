@@ -42,17 +42,17 @@ void installSpriteLump(int lump,
                        doom_boolean flipped);
 void initSpriteDefs(char** namelist);
 void initSprites(char** namelist);
-void clearSprites(void);
-vissprite_t* newVisSprite(void);
+void clearSprites();
+vissprite_t* newVisSprite();
 void drawMaskedColumn(column_t* column);
 void drawVisSprite(vissprite_t* vis);
 void projectSprite(mobj_t* thing);
 void addSprites(sector_t* sec);
 void drawPSprite(pspdef_t* psp);
-void drawPlayerSprites(void);
-void sortVisSprites(void);
+void drawPlayerSprites();
+void sortVisSprites();
 void drawSprite(vissprite_t* spr);
-void drawMasked(void);
+void drawMasked();
 
 //
 // installSpriteLump
@@ -63,8 +63,6 @@ void installSpriteLump(int lump,
                        unsigned rotation,
                        doom_boolean flipped)
 {
-    int r;
-
     if (frame >= 29 || rotation > 8)
     {
         doom_strcpy(error_buf,
@@ -73,7 +71,7 @@ void installSpriteLump(int lump,
         I_Error(error_buf);
     }
 
-    if ((int) frame > maxframe)
+    if (static_cast<int>(frame) > maxframe)
         maxframe = frame;
 
     if (rotation == 0)
@@ -100,10 +98,10 @@ void installSpriteLump(int lump,
         }
 
         sprtemp[frame].rotate = false;
-        for (r = 0; r < 8; r++)
+        for (int r = 0; r < 8; r++)
         {
             sprtemp[frame].lump[r] = lump - firstspritelump;
-            sprtemp[frame].flip[r] = (byte) flipped;
+            sprtemp[frame].flip[r] = static_cast<byte>(flipped);
         }
         return;
     }
@@ -136,7 +134,7 @@ void installSpriteLump(int lump,
     }
 
     sprtemp[frame].lump[rotation] = lump - firstspritelump;
-    sprtemp[frame].flip[rotation] = (byte) flipped;
+    sprtemp[frame].flip[rotation] = static_cast<byte>(flipped);
 }
 
 //
@@ -168,15 +166,15 @@ void initSpriteDefs(char** namelist)
 
     // count the number of sprite names
     check = namelist;
-    while (*check != 0)
+    while (*check != nullptr)
         check++;
 
-    numsprites = (int) (check - namelist);
+    numsprites = static_cast<int>(check - namelist);
 
     if (!numsprites)
         return;
 
-    sprites = (spritedef_t*) (doom_malloc(numsprites * sizeof(*sprites)));
+    sprites = static_cast<spritedef_t*>(doom_malloc(numsprites * sizeof(*sprites)));
 
     start = firstspritelump - 1;
     end = lastspritelump + 1;
@@ -190,13 +188,13 @@ void initSpriteDefs(char** namelist)
         doom_memset(sprtemp, -1, sizeof(sprtemp));
 
         maxframe = -1;
-        intname = *(int*) namelist[i];
+        intname = *reinterpret_cast<int*>(namelist[i]);
 
         // scan the lumps,
         //  filling in the frames for whatever is found
         for (l = start + 1; l < end; l++)
         {
-            if (*(int*) lumpinfo[l].name == intname)
+            if (*reinterpret_cast<int*>(lumpinfo[l].name) == intname)
             {
                 frame = lumpinfo[l].name[4] - 'A';
                 rotation = lumpinfo[l].name[5] - '0';
@@ -228,7 +226,7 @@ void initSpriteDefs(char** namelist)
 
         for (frame = 0; frame < maxframe; frame++)
         {
-            switch ((int) sprtemp[frame].rotate)
+            switch (static_cast<int>(sprtemp[frame].rotate))
             {
                 case -1:
                 {
@@ -264,8 +262,8 @@ void initSpriteDefs(char** namelist)
 
         // allocate space for the frames present and copy sprtemp to it
         sprites[i].numframes = maxframe;
-        sprites[i].spriteframes =
-            (spriteframe_t*) (doom_malloc(maxframe * sizeof(spriteframe_t)));
+        sprites[i].spriteframes = static_cast<spriteframe_t*>(
+            doom_malloc(maxframe * sizeof(spriteframe_t)));
         doom_memcpy(
             sprites[i].spriteframes, sprtemp, maxframe * sizeof(spriteframe_t));
     }
@@ -281,9 +279,7 @@ void initSpriteDefs(char** namelist)
 //
 void initSprites(char** namelist)
 {
-    int i;
-
-    for (i = 0; i < SCREENWIDTH; i++)
+    for (int i = 0; i < SCREENWIDTH; i++)
     {
         negonearray[i] = -1;
     }
@@ -295,7 +291,7 @@ void initSprites(char** namelist)
 // clearSprites
 // Called at frame start.
 //
-void clearSprites(void)
+void clearSprites()
 {
     vissprite_p = vissprites;
 }
@@ -303,7 +299,7 @@ void clearSprites(void)
 //
 // newVisSprite
 //
-vissprite_t* newVisSprite(void)
+vissprite_t* newVisSprite()
 {
     if (vissprite_p == &vissprites[MAXVISSPRITES])
         return &overflowsprite;
@@ -343,7 +339,7 @@ void drawMaskedColumn(column_t* column)
 
         if (dc_yl <= dc_yh)
         {
-            dc_source = (byte*) column + 3;
+            dc_source = reinterpret_cast<byte*>(column) + 3;
             dc_texturemid = basetexturemid - (column->topdelta << FRACBITS);
             // dc_source = (byte *)column + 3 - column->topdelta;
 
@@ -351,7 +347,8 @@ void drawMaskedColumn(column_t* column)
             //  or (SHADOW) R_DrawFuzzColumn.
             colfunc();
         }
-        column = (column_t*) ((byte*) column + column->length + 4);
+        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+                                             + column->length + 4);
     }
 
     dc_texturemid = basetexturemid;
@@ -368,7 +365,8 @@ void drawVisSprite(vissprite_t* vis)
     fixed_t frac;
     patch_t* patch;
 
-    patch = (patch_t*) (W_CacheLumpNum(vis->patch + firstspritelump, PU_CACHE));
+    patch = static_cast<patch_t*>(
+        W_CacheLumpNum(vis->patch + firstspritelump, PU_CACHE));
 
     dc_colormap = vis->colormap;
 
@@ -398,7 +396,8 @@ void drawVisSprite(vissprite_t* vis)
         if (texturecolumn < 0 || texturecolumn >= SHORT(patch->width))
             I_Error("Error: R_DrawSpriteRange: bad texturecolumn");
 #endif
-        column = (column_t*) ((byte*) patch + LONG(patch->columnofs[texturecolumn]));
+        column = reinterpret_cast<column_t*>(
+            reinterpret_cast<byte*>(patch) + LONG(patch->columnofs[texturecolumn]));
         drawMaskedColumn(column);
     }
 
@@ -465,7 +464,7 @@ void projectSprite(mobj_t* thing)
 
     // decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
-    if ((unsigned) thing->sprite >= (unsigned) numsprites)
+    if (static_cast<unsigned>(thing->sprite) >= static_cast<unsigned>(numsprites))
     {
         doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
         doom_concat(error_buf, doom_itoa(thing->sprite, 10));
@@ -491,15 +490,15 @@ void projectSprite(mobj_t* thing)
     {
         // choose a different rotation based on player view
         ang = R_PointToAngle(thing->x, thing->y);
-        rot = (ang - thing->angle + (unsigned) (ANG45 / 2) * 9) >> 29;
+        rot = (ang - thing->angle + static_cast<unsigned>(ANG45 / 2) * 9) >> 29;
         lump = sprframe->lump[rot];
-        flip = (doom_boolean) sprframe->flip[rot];
+        flip = static_cast<doom_boolean>(sprframe->flip[rot]);
     }
     else
     {
         // use single rotation for all views
         lump = sprframe->lump[0];
-        flip = (doom_boolean) sprframe->flip[0];
+        flip = static_cast<doom_boolean>(sprframe->flip[0]);
     }
 
     // calculate edges of the shape
@@ -549,7 +548,7 @@ void projectSprite(mobj_t* thing)
     if (thing->flags & MF_SHADOW)
     {
         // shadow draw
-        vis->colormap = 0;
+        vis->colormap = nullptr;
     }
     else if (fixedcolormap)
     {
@@ -624,7 +623,8 @@ void drawPSprite(pspdef_t* psp)
 
     // decide which patch to use
 #ifdef RANGECHECK
-    if ((unsigned) psp->state->sprite >= (unsigned) numsprites)
+    if (static_cast<unsigned>(psp->state->sprite)
+        >= static_cast<unsigned>(numsprites))
     {
         doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
         doom_concat(error_buf, doom_itoa(psp->state->sprite, 10));
@@ -647,7 +647,7 @@ void drawPSprite(pspdef_t* psp)
     sprframe = &sprdef->spriteframes[psp->state->frame & FF_FRAMEMASK];
 
     lump = sprframe->lump[0];
-    flip = (doom_boolean) sprframe->flip[0];
+    flip = static_cast<doom_boolean>(sprframe->flip[0]);
 
     // calculate edges of the shape
     tx = psp->sx - 160 * FRACUNIT;
@@ -695,7 +695,7 @@ void drawPSprite(pspdef_t* psp)
         || viewplayer->powers[pw_invisibility] & 8)
     {
         // shadow draw
-        vis->colormap = 0;
+        vis->colormap = nullptr;
     }
     else if (fixedcolormap)
     {
@@ -719,7 +719,7 @@ void drawPSprite(pspdef_t* psp)
 //
 // drawPlayerSprites
 //
-void drawPlayerSprites(void)
+void drawPlayerSprites()
 {
     int i;
     int lightnum;
@@ -751,16 +751,15 @@ void drawPlayerSprites(void)
 //
 // sortVisSprites
 //
-void sortVisSprites(void)
+void sortVisSprites()
 {
-    int i;
     int count;
     vissprite_t* ds;
-    vissprite_t* best = 0;
+    vissprite_t* best = nullptr;
     vissprite_t unsorted;
     fixed_t bestscale;
 
-    count = (int) (vissprite_p - vissprites);
+    count = static_cast<int>(vissprite_p - vissprites);
 
     unsorted.next = unsorted.prev = &unsorted;
 
@@ -780,7 +779,7 @@ void sortVisSprites(void)
 
     // pull the vissprites out by scale
     vsprsortedhead.next = vsprsortedhead.prev = &vsprsortedhead;
-    for (i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
     {
         bestscale = DOOM_MAXINT;
         for (ds = unsorted.next; ds != &unsorted; ds = ds->next)
@@ -912,7 +911,7 @@ void drawSprite(vissprite_t* spr)
 //
 // drawMasked
 //
-void drawMasked(void)
+void drawMasked()
 {
     vissprite_t* spr;
     drawseg_t* ds;

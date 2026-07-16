@@ -21,9 +21,7 @@ namespace Doom
 //
 int checkParm(const char* check)
 {
-    int i;
-
-    for (i = 1; i < myargc; i++)
+    for (int i = 1; i < myargc; i++)
     {
         if (!doom_strcasecmp(check, myargv[i]))
             return i;

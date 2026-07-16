@@ -59,7 +59,7 @@ static fixed_t& bottomstep = wallScratch().bottomstep;
 
 // Forward declarations so call order needs no rearranging.
 void renderMaskedSegRange(drawseg_t* ds, int x1, int x2);
-void renderSegLoop(void);
+void renderSegLoop();
 void storeWallRange(int start, int stop);
 
 void renderMaskedSegRange(drawseg_t* ds, int x1, int x2)
@@ -136,7 +136,7 @@ void renderMaskedSegRange(drawseg_t* ds, int x1, int x2)
             }
 
             sprtopscreen = centeryfrac - FixedMul(dc_texturemid, spryscale);
-            dc_iscale = 0xffffffffu / (unsigned) spryscale;
+            dc_iscale = 0xffffffffu / static_cast<unsigned>(spryscale);
 
             // draw the texture
             col = (column_t*) ((byte*) R_GetColumn(texnum, maskedtexturecol[dc_x])
@@ -157,7 +157,7 @@ void renderMaskedSegRange(drawseg_t* ds, int x1, int x2)
 //  textures.
 // CALLED: CORE LOOPING ROUTINE.
 //
-void renderSegLoop(void)
+void renderSegLoop()
 {
     angle_t angle;
     unsigned index;
@@ -225,7 +225,7 @@ void renderSegLoop(void)
 
             dc_colormap = walllights[index];
             dc_x = rw_x;
-            dc_iscale = 0xffffffffu / (unsigned) rw_scale;
+            dc_iscale = 0xffffffffu / static_cast<unsigned>(rw_scale);
         }
 
         // draw the wall tiers
@@ -404,7 +404,7 @@ void storeWallRange(int start, int stop)
     worldbottom = frontsector->floorheight - viewz;
 
     midtexture = toptexture = bottomtexture = maskedtexture = 0;
-    ds_p->maskedtexturecol = 0;
+    ds_p->maskedtexturecol = nullptr;
 
     if (!backsector)
     {
@@ -434,7 +434,7 @@ void storeWallRange(int start, int stop)
     else
     {
         // two sided line
-        ds_p->sprtopclip = ds_p->sprbottomclip = 0;
+        ds_p->sprtopclip = ds_p->sprbottomclip = nullptr;
         ds_p->silhouette = 0;
 
         if (frontsector->floorheight > backsector->floorheight)

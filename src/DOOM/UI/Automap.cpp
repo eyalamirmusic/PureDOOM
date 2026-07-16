@@ -98,20 +98,20 @@ namespace Doom
 #define CXMTOF(x) (f_x + MTOF((x) - m_x))
 #define CYMTOF(y) (f_y + (f_h - MTOF((y) - m_y)))
 
-typedef struct
+struct fpoint_t
 {
     int x, y;
-} fpoint_t;
+};
 
-typedef struct
+struct fline_t
 {
     fpoint_t a, b;
-} fline_t;
+};
 
-typedef struct
+struct islope_t
 {
     fixed_t slp, islp;
-} islope_t;
+};
 
 //
 // The vector graphics for the automap.
@@ -120,10 +120,11 @@ typedef struct
 //
 
 #define R (FRACUNIT)
-mline_t triangle_guy[] = {{{(fixed_t) (-.867 * R), (fixed_t) (-.5 * R)},
-                           {(fixed_t) (.867 * R), (fixed_t) (-.5 * R)}},
-                          {{(fixed_t) (.867 * R), (fixed_t) (-.5 * R)}, {0, R}},
-                          {{0, R}, {(fixed_t) (-.867 * R), (fixed_t) (-.5 * R)}}};
+mline_t triangle_guy[] = {
+    {{static_cast<fixed_t>(-.867 * R), static_cast<fixed_t>(-.5 * R)},
+     {static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}},
+    {{static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}, {0, R}},
+    {{0, R}, {static_cast<fixed_t>(-.867 * R), static_cast<fixed_t>(-.5 * R)}}};
 #undef R
 #define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(mline_t))
 
@@ -214,7 +215,7 @@ void amGetIslope(mline_t* ml, islope_t* is)
 //
 //
 //
-void amActivateNewScale(void)
+void amActivateNewScale()
 {
     m_x += m_w / 2;
     m_y += m_h / 2;
@@ -229,7 +230,7 @@ void amActivateNewScale(void)
 //
 //
 //
-void amSaveScaleAndLoc(void)
+void amSaveScaleAndLoc()
 {
     old_m_x = m_x;
     old_m_y = m_y;
@@ -240,7 +241,7 @@ void amSaveScaleAndLoc(void)
 //
 //
 //
-void amRestoreScaleAndLoc(void)
+void amRestoreScaleAndLoc()
 {
     m_w = old_m_w;
     m_h = old_m_h;
@@ -265,7 +266,7 @@ void amRestoreScaleAndLoc(void)
 //
 // adds a marker at the current location
 //
-void amAddMark(void)
+void amAddMark()
 {
     markpoints[markpointnum].x = m_x + m_w / 2;
     markpoints[markpointnum].y = m_y + m_h / 2;
@@ -276,16 +277,15 @@ void amAddMark(void)
 // Determines bounding box of all vertices,
 // sets global variables controlling zoom range.
 //
-void amFindMinMaxBoundaries(void)
+void amFindMinMaxBoundaries()
 {
-    int i;
     fixed_t a;
     fixed_t b;
 
     min_x = min_y = DOOM_MAXINT;
     max_x = max_y = -DOOM_MAXINT;
 
-    for (i = 0; i < numvertexes; i++)
+    for (int i = 0; i < numvertexes; i++)
     {
         if (vertexes[i].x < min_x)
             min_x = vertexes[i].x;
@@ -314,7 +314,7 @@ void amFindMinMaxBoundaries(void)
 //
 //
 //
-void amChangeWindowLoc(void)
+void amChangeWindowLoc()
 {
     if (m_paninc.x || m_paninc.y)
     {
@@ -342,7 +342,7 @@ void amChangeWindowLoc(void)
 //
 //
 //
-void amInitVariables(void)
+void amInitVariables()
 {
     int pnum;
     static event_t st_notify = {ev_keyup, AM_MSGENTERED, 0, 0};
@@ -385,30 +385,27 @@ void amInitVariables(void)
 //
 //
 //
-void amLoadPics(void)
+void amLoadPics()
 {
-    int i;
     char namebuf[9];
 
-    for (i = 0; i < 10; i++)
+    for (int i = 0; i < 10; i++)
     {
         doom_concat(doom_strcpy(namebuf, "AMMNUM"), doom_itoa(i, 10));
-        marknums[i] = (patch_t*) (W_CacheLumpName(namebuf, PU_STATIC));
+        marknums[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
     }
 }
 
-void amUnloadPics(void)
+void amUnloadPics()
 {
     // Nothing to unload any more: Doom::WadFile owns the lumps and they are
     // permanent (Wad/WadFile.h). This used to hand each patch back to the zone
     // as PU_CACHE, meaning "purge me if you need the space".
 }
 
-void amClearMarks(void)
+void amClearMarks()
 {
-    int i;
-
-    for (i = 0; i < AM_NUMMARKPOINTS; i++)
+    for (int i = 0; i < AM_NUMMARKPOINTS; i++)
         markpoints[i].x = -1; // means empty
     markpointnum = 0;
 }
@@ -417,7 +414,7 @@ void amClearMarks(void)
 // should be called at the start of every level
 // right now, i figure it out myself
 //
-void amLevelInit(void)
+void amLevelInit()
 {
     leveljuststarted = 0;
 
@@ -428,7 +425,7 @@ void amLevelInit(void)
     amClearMarks();
 
     amFindMinMaxBoundaries();
-    scale_mtof = FixedDiv(min_scale_mtof, (int) (0.7 * FRACUNIT));
+    scale_mtof = FixedDiv(min_scale_mtof, static_cast<int>(0.7 * FRACUNIT));
     if (scale_mtof > max_scale_mtof)
         scale_mtof = min_scale_mtof;
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
@@ -437,9 +434,9 @@ void amLevelInit(void)
 //
 //
 //
-void amStop(void)
+void amStop()
 {
-    static event_t st_notify = {(evtype_t) (0), ev_keyup, AM_MSGEXITED, 0};
+    static event_t st_notify = {static_cast<evtype_t>(0), ev_keyup, AM_MSGEXITED, 0};
 
     amUnloadPics();
     automapactive = false;
@@ -450,7 +447,7 @@ void amStop(void)
 //
 //
 //
-void amStart(void)
+void amStart()
 {
     static int lastlevel = -1, lastepisode = -1;
 
@@ -470,7 +467,7 @@ void amStart(void)
 //
 // set the window scale to the maximum size
 //
-void amMinOutWindowScale(void)
+void amMinOutWindowScale()
 {
     scale_mtof = min_scale_mtof;
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
@@ -480,7 +477,7 @@ void amMinOutWindowScale(void)
 //
 // set the window scale to the minimum size
 //
-void amMaxOutWindowScale(void)
+void amMaxOutWindowScale()
 {
     scale_mtof = max_scale_mtof;
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
@@ -563,12 +560,13 @@ doom_boolean amResponder(event_t* ev)
             case AM_FOLLOWKEY:
                 followplayer = !followplayer;
                 f_oldloc.x = DOOM_MAXINT;
-                am_plr->message =
-                    (char*) (followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF);
+                am_plr->message = const_cast<char*>(followplayer ? AMSTR_FOLLOWON
+                                                                 : AMSTR_FOLLOWOFF);
                 break;
             case AM_GRIDKEY:
                 grid = !grid;
-                am_plr->message = (char*) (grid ? AMSTR_GRIDON : AMSTR_GRIDOFF);
+                am_plr->message =
+                    const_cast<char*>(grid ? AMSTR_GRIDON : AMSTR_GRIDOFF);
                 break;
             case AM_MARKKEY:
                 doom_strcpy(buffer, AMSTR_MARKEDSPOT);
@@ -627,7 +625,7 @@ doom_boolean amResponder(event_t* ev)
 //
 // Zooming
 //
-void amChangeWindowScale(void)
+void amChangeWindowScale()
 {
     // Change the scaling multipliers
     scale_mtof = FixedMul(scale_mtof, mtof_zoommul);
@@ -644,7 +642,7 @@ void amChangeWindowScale(void)
 //
 //
 //
-void amDoFollowPlayer(void)
+void amDoFollowPlayer()
 {
     if (f_oldloc.x != am_plr->mo->x || f_oldloc.y != am_plr->mo->y)
     {
@@ -660,7 +658,7 @@ void amDoFollowPlayer(void)
 //
 //
 //
-void amUpdateLightLev(void)
+void amUpdateLightLev()
 {
     static int nexttic = 0;
     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
@@ -680,7 +678,7 @@ void amUpdateLightLev(void)
 //
 // Updates on Game Tick
 //
-void amTicker(void)
+void amTicker()
 {
     if (!automapactive)
         return;
@@ -980,12 +978,11 @@ void amDrawGrid(int color)
 // Determines visible lines, draws them.
 // This is LineDef based, not LineSeg based.
 //
-void amDrawWalls(void)
+void amDrawWalls()
 {
-    int i;
     static mline_t l;
 
-    for (i = 0; i < numlines; i++)
+    for (int i = 0; i < numlines; i++)
     {
         l.a.x = lines[i].v1->x;
         l.a.y = lines[i].v1->y;
@@ -1061,10 +1058,9 @@ void amDrawLineCharacter(mline_t* lineguy,
                          fixed_t x,
                          fixed_t y)
 {
-    int i;
     mline_t l;
 
-    for (i = 0; i < lineguylines; i++)
+    for (int i = 0; i < lineguylines; i++)
     {
         l.a.x = lineguy[i].a.x;
         l.a.y = lineguy[i].a.y;
@@ -1100,9 +1096,8 @@ void amDrawLineCharacter(mline_t* lineguy,
     }
 }
 
-void amDrawPlayers(void)
+void amDrawPlayers()
 {
-    int i;
     player_t* p;
     static int their_colors[] = {GREENS, GRAYS, BROWNS, REDS};
     int their_color = -1;
@@ -1129,7 +1124,7 @@ void amDrawPlayers(void)
         return;
     }
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
     {
         their_color++;
         p = &players[i];
@@ -1152,10 +1147,9 @@ void amDrawPlayers(void)
 
 void amDrawThings(int colors)
 {
-    int i;
     mobj_t* t;
 
-    for (i = 0; i < numsectors; i++)
+    for (int i = 0; i < numsectors; i++)
     {
         t = sectors[i].thinglist;
         while (t)
@@ -1172,11 +1166,11 @@ void amDrawThings(int colors)
     }
 }
 
-void amDrawMarks(void)
+void amDrawMarks()
 {
-    int i, fx, fy, w, h;
+    int fx, fy, w, h;
 
-    for (i = 0; i < AM_NUMMARKPOINTS; i++)
+    for (int i = 0; i < AM_NUMMARKPOINTS; i++)
     {
         if (markpoints[i].x != -1)
         {
@@ -1197,7 +1191,7 @@ void amDrawCrosshair(int color)
     fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
 }
 
-void amDrawer(void)
+void amDrawer()
 {
     if (!automapactive)
         return;

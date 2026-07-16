@@ -5,11 +5,11 @@
 namespace Doom
 {
 // The thinker list and the per-tic ticker; p_tick.cpp keeps the vanilla names.
-void initThinkers(void);
+void initThinkers();
 void addThinker(thinker_t* thinker);
 void removeThinker(thinker_t* thinker);
-void runThinkers(void);
-void ticker(void);
+void runThinkers();
+void ticker();
 
 // Level-scoped allocation for mobjs and the thinker specials - what the zone's
 // PU_LEVEL / PU_LEVSPEC tags used to serve. Every block is tracked in an intrusive
@@ -20,5 +20,5 @@ void ticker(void);
 // releases one block (the lazy per-tic free and P_UnArchive's clear).
 void* levelAlloc(int size);
 void levelFree(void* block);
-void freeLevelAllocations(void);
+void freeLevelAllocations();
 } // namespace Doom

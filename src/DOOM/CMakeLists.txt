@@ -25,6 +25,12 @@ add_library(DOOM::engine ALIAS doom-engine)
 
 target_compile_features(doom-engine PUBLIC cxx_std_20)
 
+# eacp's EA::Vector / EA::Array, used by the rewritten engine code. Header-only
+# and INTERFACE-only; added at the root ahead of this subdirectory. PUBLIC so the
+# rewritten headers that expose these types (Sim/Level.h, Math/Trig.h, ...) carry
+# the include path to the app and the tests.
+target_link_libraries(doom-engine PUBLIC ea_data_structures)
+
 # The engine reaches its host through function pointers, and DOOM.cpp carries a
 # default implementation of each, gated on these. A host that wants its own
 # (audio, say) sets the pointer after doom_init instead.

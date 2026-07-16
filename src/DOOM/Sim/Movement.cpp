@@ -139,7 +139,8 @@ doom_boolean checkThing(mobj_t* thing)
         clip.tmthing->flags &= ~MF_SKULLFLY;
         clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = 0;
 
-        P_SetMobjState(clip.tmthing, (statenum_t) (clip.tmthing->info->spawnstate));
+        P_SetMobjState(clip.tmthing,
+                       static_cast<statenum_t>(clip.tmthing->info->spawnstate));
 
         return false; // stop moving
     }
@@ -312,7 +313,7 @@ bool tryMove(mobj_t* thing, fixed_t x, fixed_t y)
             if (side != oldside)
             {
                 if (ld->special)
-                    P_CrossSpecialLine((int) (ld - lines), oldside, thing);
+                    P_CrossSpecialLine(static_cast<int>(ld - lines), oldside, thing);
             }
         }
     }

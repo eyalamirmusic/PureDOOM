@@ -10,15 +10,15 @@ namespace Doom
 // the rest are host stubs. i_system.cpp keeps the vanilla I_ names as shims over
 // these; mb_used and emptycmd are file-local to System.cpp.
 void I_Tactile(int on, int off, int total);
-ticcmd_t* I_BaseTiccmd(void);
-int I_GetHeapSize(void);
+ticcmd_t* I_BaseTiccmd();
+int I_GetHeapSize();
 byte* I_ZoneBase(int* size);
-int I_GetTime(void);
-void I_Init(void);
-void I_Quit(void);
+int I_GetTime();
+void I_Init();
+void I_Quit();
 void I_WaitVBL(int count);
-void I_BeginRead(void);
-void I_EndRead(void);
+void I_BeginRead();
+void I_EndRead();
 byte* I_AllocLow(int length);
 void I_Error(const char* error);
 } // namespace Doom

@@ -80,7 +80,7 @@ void explodeMissile(mobj_t* mo)
 {
     mo->momx = mo->momy = mo->momz = 0;
 
-    setMobjState(mo, (statenum_t) (mobjinfo[mo->type].deathstate));
+    setMobjState(mo, static_cast<statenum_t>(mobjinfo[mo->type].deathstate));
 
     mo->tics -= P_Random() & 3;
 
@@ -112,7 +112,7 @@ void xyMovement(mobj_t* mo)
             mo->flags &= ~MF_SKULLFLY;
             mo->momx = mo->momy = mo->momz = 0;
 
-            setMobjState(mo, (statenum_t) (mo->info->spawnstate));
+            setMobjState(mo, static_cast<statenum_t>(mo->info->spawnstate));
         }
         return;
     }
@@ -205,7 +205,8 @@ void xyMovement(mobj_t* mo)
         && (!player || (player->cmd.forwardmove == 0 && player->cmd.sidemove == 0)))
     {
         // if in a walking frame, stop moving
-        if (player && (unsigned) ((player->mo->state - states) - S_PLAY_RUN1) < 4)
+        if (player
+            && static_cast<unsigned>((player->mo->state - states) - S_PLAY_RUN1) < 4)
             setMobjState(player->mo, S_PLAY);
 
         mo->momx = 0;
@@ -440,7 +441,7 @@ mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
     state_t* st;
     mobjinfo_t* info;
 
-    mobj = (mobj_t*) (levelAlloc(sizeof(*mobj)));
+    mobj = static_cast<mobj_t*>(levelAlloc(sizeof(*mobj)));
     doom_memset(mobj, 0, sizeof(*mobj));
     info = &mobjinfo[type];
 
@@ -479,7 +480,7 @@ mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
     else
         mobj->z = z;
 
-    mobj->thinker.function.acp1 = (actionf_p1) P_MobjThinker;
+    mobj->thinker.function.acp1 = reinterpret_cast<actionf_p1>(P_MobjThinker);
 
     P_AddThinker(&mobj->thinker);
 
@@ -510,13 +511,13 @@ void removeMobj(mobj_t* mobj)
     S_StopSound(mobj);
 
     // free block
-    P_RemoveThinker((thinker_t*) mobj);
+    P_RemoveThinker(reinterpret_cast<thinker_t*>(mobj));
 }
 
 //
 // respawnSpecials
 //
-void respawnSpecials(void)
+void respawnSpecials()
 {
     fixed_t x;
     fixed_t y;
@@ -563,7 +564,7 @@ void respawnSpecials(void)
     else
         z = ONFLOORZ;
 
-    mo = spawnMobj(x, y, z, (mobjtype_t) (i));
+    mo = spawnMobj(x, y, z, static_cast<mobjtype_t>(i));
     mo->spawnpoint = *mthing;
     mo->angle = ANG45 * (mthing->angle / 45);
 
@@ -585,8 +586,6 @@ void spawnPlayer(mapthing_t* mthing)
     fixed_t z;
 
     mobj_t* mobj;
-
-    int i;
 
     // not playing?
     if (!playeringame[mthing->type - 1])
@@ -613,7 +612,7 @@ void spawnPlayer(mapthing_t* mthing)
     p->mo = mobj;
     p->playerstate = PST_LIVE;
     p->refire = 0;
-    p->message = 0;
+    p->message = nullptr;
     p->damagecount = 0;
     p->bonuscount = 0;
     p->extralight = 0;
@@ -625,7 +624,7 @@ void spawnPlayer(mapthing_t* mthing)
 
     // give all cards in death match mode
     if (deathmatch)
-        for (i = 0; i < NUMCARDS; i++)
+        for (int i = 0; i < NUMCARDS; i++)
             p->cards[i] = true;
 
     if (mthing->type - 1 == consoleplayer)
@@ -727,7 +726,7 @@ void spawnMapThing(mapthing_t* mthing)
     else
         z = ONFLOORZ;
 
-    mobj = spawnMobj(x, y, z, (mobjtype_t) (i));
+    mobj = spawnMobj(x, y, z, static_cast<mobjtype_t>(i));
     mobj->spawnpoint = *mthing;
 
     if (mobj->tics > 0)

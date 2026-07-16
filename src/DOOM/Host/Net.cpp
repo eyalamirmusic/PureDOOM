@@ -86,14 +86,14 @@ SOCKET insocket;
 struct sockaddr_in sendaddress[MAXNETNODES];
 #endif
 
-void (*netget)(void);
-void (*netsend)(void);
+void (*netget)();
+void (*netsend)();
 
 //
 // UDPsocket
 //
 #if defined(I_NET_ENABLED)
-SOCKET UDPsocket(void)
+SOCKET UDPsocket()
 {
     SOCKET s;
 
@@ -141,7 +141,7 @@ void BindToLocalPort(SOCKET s, int port)
 //
 // PacketSend
 //
-void PacketSend(void)
+void PacketSend()
 {
 #if defined(I_NET_ENABLED)
     int c;
@@ -176,7 +176,7 @@ void PacketSend(void)
 //
 // PacketGet
 //
-void PacketGet(void)
+void PacketGet()
 {
 #if defined(I_NET_ENABLED)
     int i;
@@ -273,7 +273,7 @@ void PacketGet(void)
 #endif
 }
 
-int GetLocalAddress(void)
+int GetLocalAddress()
 {
 #if defined(I_NET_ENABLED)
     char hostname[1024];
@@ -306,7 +306,7 @@ int GetLocalAddress(void)
 //
 // I_InitNetwork
 //
-void I_InitNetwork(void)
+void I_InitNetwork()
 {
 #if defined(I_NET_ENABLED)
 #if defined(DOOM_WIN32)
@@ -322,7 +322,7 @@ void I_InitNetwork(void)
     int i;
     int p;
 
-    doomcom = (doomcom_t*) (doom_malloc(sizeof(*doomcom)));
+    doomcom = static_cast<doomcom_t*>(doom_malloc(sizeof(*doomcom)));
     doom_memset(doomcom, 0, sizeof(*doomcom));
 
     // set up for network
@@ -430,7 +430,7 @@ void I_InitNetwork(void)
 #endif
 }
 
-void I_NetCmd(void)
+void I_NetCmd()
 {
 #if defined(I_NET_ENABLED)
     if (doomcom->command == CMD_SEND)

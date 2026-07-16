@@ -162,7 +162,7 @@ doom_boolean giveWeapon(player_t* player, weapontype_t weapon, doom_boolean drop
         player->pendingweapon = weapon;
 
         if (player == &players[consoleplayer])
-            S_StartSound(0, sfx_wpnup);
+            S_StartSound(nullptr, sfx_wpnup);
         return false;
     }
 
@@ -214,9 +214,7 @@ doom_boolean giveBody(player_t* player, int num)
 //
 doom_boolean giveArmor(player_t* player, int armortype)
 {
-    int hits;
-
-    hits = armortype * 100;
+    int hits = armortype * 100;
     if (player->armorpoints >= hits)
         return false; // don't pick up
 
@@ -288,7 +286,6 @@ doom_boolean givePower(player_t* player, int /*powertype_t*/ power)
 void touchSpecialThing(mobj_t* special, mobj_t* toucher)
 {
     player_t* player;
-    int i;
     fixed_t delta;
     int sound;
 
@@ -533,12 +530,12 @@ void touchSpecialThing(mobj_t* special, mobj_t* toucher)
         case SPR_BPAK:
             if (!player->backpack)
             {
-                for (i = 0; i < NUMAMMO; i++)
+                for (int i = 0; i < NUMAMMO; i++)
                     player->maxammo[i] *= 2;
                 player->backpack = true;
             }
-            for (i = 0; i < NUMAMMO; i++)
-                giveAmmo(player, (ammotype_t) (i), 1);
+            for (int i = 0; i < NUMAMMO; i++)
+                giveAmmo(player, static_cast<ammotype_t>(i), 1);
             player->message = GOTBACKPACK;
             break;
 
@@ -601,7 +598,7 @@ void touchSpecialThing(mobj_t* special, mobj_t* toucher)
     P_RemoveMobj(special);
     player->bonuscount += BONUSADD;
     if (player == &players[consoleplayer])
-        S_StartSound(0, sound);
+        S_StartSound(nullptr, sound);
 }
 
 //
@@ -656,10 +653,10 @@ void killMobj(mobj_t* source, mobj_t* target)
 
     if (target->health < -target->info->spawnhealth && target->info->xdeathstate)
     {
-        P_SetMobjState(target, (statenum_t) (target->info->xdeathstate));
+        P_SetMobjState(target, static_cast<statenum_t>(target->info->xdeathstate));
     }
     else
-        P_SetMobjState(target, (statenum_t) (target->info->deathstate));
+        P_SetMobjState(target, static_cast<statenum_t>(target->info->deathstate));
     target->tics -= P_Random() & 3;
 
     if (target->tics < 1)
@@ -812,7 +809,7 @@ void damageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
     {
         target->flags |= MF_JUSTHIT; // fight back!
 
-        P_SetMobjState(target, (statenum_t) (target->info->painstate));
+        P_SetMobjState(target, static_cast<statenum_t>(target->info->painstate));
     }
 
     target->reactiontime = 0; // we're awake now...
@@ -826,7 +823,7 @@ void damageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
         target->threshold = BASETHRESHOLD;
         if (target->state == &states[target->info->spawnstate]
             && target->info->seestate != S_NULL)
-            P_SetMobjState(target, (statenum_t) (target->info->seestate));
+            P_SetMobjState(target, static_cast<statenum_t>(target->info->seestate));
     }
 }
 } // namespace Doom

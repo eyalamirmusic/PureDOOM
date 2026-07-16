@@ -65,11 +65,11 @@ void spawnFireFlicker(sector_t* sector)
     // Nothing special about it during gameplay.
     sector->special = 0;
 
-    flick = (fireflicker_t*) (levelAlloc(sizeof(*flick)));
+    flick = static_cast<fireflicker_t*>(levelAlloc(sizeof(*flick)));
 
     P_AddThinker(&flick->thinker);
 
-    flick->thinker.function.acp1 = (actionf_p1) T_FireFlicker;
+    flick->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_FireFlicker);
     flick->sector = sector;
     flick->maxlight = sector->lightlevel;
     flick->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel) + 16;
@@ -113,11 +113,11 @@ void spawnLightFlash(sector_t* sector)
     // nothing special about it during gameplay
     sector->special = 0;
 
-    flash = (lightflash_t*) (levelAlloc(sizeof(*flash)));
+    flash = static_cast<lightflash_t*>(levelAlloc(sizeof(*flash)));
 
     P_AddThinker(&flash->thinker);
 
-    flash->thinker.function.acp1 = (actionf_p1) T_LightFlash;
+    flash->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_LightFlash);
     flash->sector = sector;
     flash->maxlight = sector->lightlevel;
 
@@ -160,14 +160,14 @@ void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync)
 {
     strobe_t* flash;
 
-    flash = (strobe_t*) (levelAlloc(sizeof(*flash)));
+    flash = static_cast<strobe_t*>(levelAlloc(sizeof(*flash)));
 
     P_AddThinker(&flash->thinker);
 
     flash->sector = sector;
     flash->darktime = fastOrSlow;
     flash->brighttime = STROBEBRIGHT;
-    flash->thinker.function.acp1 = (actionf_p1) T_StrobeFlash;
+    flash->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_StrobeFlash);
     flash->maxlight = sector->lightlevel;
     flash->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel);
 
@@ -207,8 +207,6 @@ void startLightStrobing(line_t* line)
 //
 void turnTagLightsOff(line_t* line)
 {
-    int i;
-    int j;
     int min;
     sector_t* sector;
     sector_t* tsec;
@@ -216,12 +214,12 @@ void turnTagLightsOff(line_t* line)
 
     sector = sectors;
 
-    for (j = 0; j < numsectors; j++, sector++)
+    for (int j = 0; j < numsectors; j++, sector++)
     {
         if (sector->tag == line->tag)
         {
             min = sector->lightlevel;
-            for (i = 0; i < sector->linecount; i++)
+            for (int i = 0; i < sector->linecount; i++)
             {
                 templine = sector->lines[i];
                 tsec = getNextSector(templine, sector);
@@ -240,15 +238,13 @@ void turnTagLightsOff(line_t* line)
 //
 void lightTurnOn(line_t* line, int bright)
 {
-    int i;
-    int j;
     sector_t* sector;
     sector_t* temp;
     line_t* templine;
 
     sector = sectors;
 
-    for (i = 0; i < numsectors; i++, sector++)
+    for (int i = 0; i < numsectors; i++, sector++)
     {
         if (sector->tag == line->tag)
         {
@@ -257,7 +253,7 @@ void lightTurnOn(line_t* line, int bright)
             // surrounding sector
             if (!bright)
             {
-                for (j = 0; j < sector->linecount; j++)
+                for (int j = 0; j < sector->linecount; j++)
                 {
                     templine = sector->lines[j];
                     temp = getNextSector(templine, sector);
@@ -307,14 +303,14 @@ void spawnGlowingLight(sector_t* sector)
 {
     glow_t* g;
 
-    g = (glow_t*) (levelAlloc(sizeof(*g)));
+    g = static_cast<glow_t*>(levelAlloc(sizeof(*g)));
 
     P_AddThinker(&g->thinker);
 
     g->sector = sector;
     g->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel);
     g->maxlight = sector->lightlevel;
-    g->thinker.function.acp1 = (actionf_p1) T_Glow;
+    g->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_Glow);
     g->direction = -1;
 
     sector->special = 0;

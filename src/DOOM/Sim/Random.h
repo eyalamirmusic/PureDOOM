@@ -1,6 +1,7 @@
 #pragma once
 
-#include <array>
+#include <ea_data_structures/Structures/Array.h>
+
 #include <cstdint>
 
 namespace Doom
@@ -48,7 +49,7 @@ struct Random
 
     void clear() { playIndex = menuIndex = 0; }
 
-    static const std::array<std::uint8_t, tableSize>& table();
+    static const EA::Array<std::uint8_t, tableSize>& table();
 };
 
 // The engine's one instance, for as long as the engine has only one of everything.

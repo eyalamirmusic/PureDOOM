@@ -41,15 +41,15 @@ static fixed_t (&cachedxstep)[SCREENHEIGHT] = planeScratch().cachedxstep;
 static fixed_t (&cachedystep)[SCREENHEIGHT] = planeScratch().cachedystep;
 
 // Forward declarations so call order needs no rearranging.
-void initPlanes(void);
+void initPlanes();
 void mapPlane(int y, int x1, int x2);
-void clearPlanes(void);
+void clearPlanes();
 visplane_t* findPlane(fixed_t height, int picnum, int lightlevel);
 visplane_t* checkPlane(visplane_t* pl, int start, int stop);
 void makeSpans(int x, int t1, int b1, int t2, int b2);
-void drawPlanes(void);
+void drawPlanes();
 
-void initPlanes(void)
+void initPlanes()
 {
     // Doh!
 }
@@ -75,7 +75,8 @@ void mapPlane(int y, int x1, int x2)
     unsigned index;
 
 #ifdef RANGECHECK
-    if (x2 < x1 || x1 < 0 || x2 >= viewwidth || (unsigned) y > (unsigned) viewheight)
+    if (x2 < x1 || x1 < 0 || x2 >= viewwidth
+        || static_cast<unsigned>(y) > static_cast<unsigned>(viewheight))
     {
         //I_Error("Error: mapPlane: %i, %i at %i", x1, x2, y);
 
@@ -132,13 +133,12 @@ void mapPlane(int y, int x1, int x2)
 // clearPlanes
 // At begining of frame.
 //
-void clearPlanes(void)
+void clearPlanes()
 {
-    int i;
     angle_t angle;
 
     // opening / clipping determination
-    for (i = 0; i < viewwidth; i++)
+    for (int i = 0; i < viewwidth; i++)
     {
         floorclip[i] = viewheight;
         ceilingclip[i] = -1;
@@ -291,11 +291,10 @@ void makeSpans(int x, int t1, int b1, int t2, int b2)
 // drawPlanes
 // At the end of each frame.
 //
-void drawPlanes(void)
+void drawPlanes()
 {
     visplane_t* pl;
     int light;
-    int x;
     int stop;
     int angle;
 
@@ -306,7 +305,7 @@ void drawPlanes(void)
         //        ds_p - drawsegs);
 
         doom_strcpy(error_buf, "Error: drawPlanes: drawsegs overflow (");
-        doom_concat(error_buf, doom_itoa((int) (ds_p - drawsegs), 10));
+        doom_concat(error_buf, doom_itoa(static_cast<int>(ds_p - drawsegs), 10));
         doom_concat(error_buf, ")");
         I_Error(error_buf);
     }
@@ -317,7 +316,8 @@ void drawPlanes(void)
         //        lastvisplane - visplanes);
 
         doom_strcpy(error_buf, "Error: drawPlanes: visplane overflow (");
-        doom_concat(error_buf, doom_itoa((int) (lastvisplane - visplanes), 10));
+        doom_concat(error_buf,
+                    doom_itoa(static_cast<int>(lastvisplane - visplanes), 10));
         doom_concat(error_buf, ")");
         I_Error(error_buf);
     }
@@ -328,7 +328,8 @@ void drawPlanes(void)
         //        lastopening - openings);
 
         doom_strcpy(error_buf, "Error: drawPlanes: opening overflow (");
-        doom_concat(error_buf, doom_itoa((int) (lastopening - openings), 10));
+        doom_concat(error_buf,
+                    doom_itoa(static_cast<int>(lastopening - openings), 10));
         doom_concat(error_buf, ")");
         I_Error(error_buf);
     }
@@ -350,7 +351,7 @@ void drawPlanes(void)
             //  by INVUL inverse mapping.
             dc_colormap = colormaps;
             dc_texturemid = skytexturemid;
-            for (x = pl->minx; x <= pl->maxx; x++)
+            for (int x = pl->minx; x <= pl->maxx; x++)
             {
                 dc_yl = pl->top[x];
                 dc_yh = pl->bottom[x];
@@ -367,8 +368,8 @@ void drawPlanes(void)
         }
 
         // regular flat
-        ds_source = (byte*) (W_CacheLumpNum(firstflat + flattranslation[pl->picnum],
-                                            PU_STATIC));
+        ds_source = static_cast<byte*>(
+            W_CacheLumpNum(firstflat + flattranslation[pl->picnum], PU_STATIC));
 
         planeheight = doom_abs(pl->height - viewz);
         light = (pl->lightlevel >> LIGHTSEGSHIFT) + extralight;
@@ -386,7 +387,7 @@ void drawPlanes(void)
 
         stop = pl->maxx + 1;
 
-        for (x = pl->minx; x <= stop; x++)
+        for (int x = pl->minx; x <= stop; x++)
         {
             makeSpans(
                 x, pl->top[x - 1], pl->bottom[x - 1], pl->top[x], pl->bottom[x]);

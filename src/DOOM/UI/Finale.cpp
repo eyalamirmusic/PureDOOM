@@ -47,7 +47,8 @@
 
 // Other subsystems' globals/functions this file reads.
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
-extern patch_t* (&hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
+extern patch_t* (
+    &hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
 void V_DrawPatchFlipped(int x, int y, int scrn, patch_t* patch); // v_video
 
 namespace Doom
@@ -56,11 +57,11 @@ namespace Doom
 #define TEXTSPEED 3
 #define TEXTWAIT 250
 
-typedef struct
+struct castinfo_t
 {
     const char* name;
     mobjtype_t type;
-} castinfo_t;
+};
 
 // The finale's runtime state now lives on the Engine (UI/FinaleState.h, moved by the
 // file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names below are references onto that
@@ -120,7 +121,7 @@ castinfo_t castorder[] = {{CC_ZOMBIE, MT_POSSESSED},
                           {CC_CYBER, MT_CYBORG},
                           {CC_HERO, MT_PLAYER},
 
-                          {0, (mobjtype_t) (0)}};
+                          {0, static_cast<mobjtype_t>(0)}};
 
 static int& castnum = finaleState().castnum;
 static int& casttics = finaleState().casttics;
@@ -134,15 +135,15 @@ static doom_boolean& castattacking = finaleState().castattacking;
 // fStartCast
 //
 
-void fStartCast(void);
-void fCastTicker(void);
+void fStartCast();
+void fCastTicker();
 doom_boolean fCastResponder(event_t* ev);
-void fCastDrawer(void);
+void fCastDrawer();
 
 //
 // fStartFinale
 //
-void fStartFinale(void)
+void fStartFinale()
 {
     gameaction = ga_nothing;
     gamestate = GS_FINALE;
@@ -247,7 +248,7 @@ doom_boolean fResponder(event_t* event)
 //
 // fTicker
 //
-void fTicker(void)
+void fTicker()
 {
     int i;
 
@@ -284,7 +285,7 @@ void fTicker(void)
     {
         finalecount = 0;
         finalestage = 1;
-        wipegamestate = (gamestate_t) (-1); // force a wipe
+        wipegamestate = static_cast<gamestate_t>(-1); // force a wipe
         if (gameepisode == 3)
             S_StartMusic(mus_bunny);
     }
@@ -293,12 +294,12 @@ void fTicker(void)
 //
 // fTextWrite
 //
-void fTextWrite(void)
+void fTextWrite()
 {
     byte* src;
     byte* dest;
 
-    int x, y, w;
+    int w;
     int count;
     const char* ch;
     int c;
@@ -306,12 +307,12 @@ void fTextWrite(void)
     int cy;
 
     // erase the entire screen to a tiled background
-    src = (byte*) (W_CacheLumpName(finaleflat, PU_CACHE));
+    src = static_cast<byte*>(W_CacheLumpName(finaleflat, PU_CACHE));
     dest = screens[0];
 
-    for (y = 0; y < SCREENHEIGHT; y++)
+    for (int y = 0; y < SCREENHEIGHT; y++)
     {
-        for (x = 0; x < SCREENWIDTH / 64; x++)
+        for (int x = 0; x < SCREENWIDTH / 64; x++)
         {
             doom_memcpy(dest, src + ((y & 63) << 6), 64);
             dest += 64;
@@ -365,9 +366,9 @@ void fTextWrite(void)
 // Casting by id Software.
 //   in order of appearance
 //
-void fStartCast(void)
+void fStartCast()
 {
-    wipegamestate = (gamestate_t) (-1); // force a screen wipe
+    wipegamestate = static_cast<gamestate_t>(-1); // force a screen wipe
     castnum = 0;
     caststate = &states[mobjinfo[castorder[castnum].type].seestate];
     casttics = caststate->tics;
@@ -382,7 +383,7 @@ void fStartCast(void)
 //
 // fCastTicker
 //
-void fCastTicker(void)
+void fCastTicker()
 {
     int st;
     int sfx;
@@ -395,7 +396,7 @@ void fCastTicker(void)
         // switch from deathstate to next monster
         castnum++;
         castdeath = false;
-        if (castorder[castnum].name == 0)
+        if (castorder[castnum].name == nullptr)
             castnum = 0;
         if (mobjinfo[castorder[castnum].type].seesound)
             S_StartSound(0, mobjinfo[castorder[castnum].type].seesound);
@@ -593,7 +594,7 @@ void fCastPrint(const char* text)
 //
 // fCastDrawer
 //
-void fCastDrawer(void)
+void fCastDrawer()
 {
     spritedef_t* sprdef;
     spriteframe_t* sprframe;
@@ -602,7 +603,8 @@ void fCastDrawer(void)
     patch_t* patch;
 
     // erase the entire screen to a background
-    V_DrawPatch(0, 0, 0, (patch_t*) (W_CacheLumpName("BOSSBACK", PU_CACHE)));
+    V_DrawPatch(
+        0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("BOSSBACK", PU_CACHE)));
 
     fCastPrint(castorder[castnum].name);
 
@@ -610,9 +612,9 @@ void fCastDrawer(void)
     sprdef = &sprites[caststate->sprite];
     sprframe = &sprdef->spriteframes[caststate->frame & FF_FRAMEMASK];
     lump = sprframe->lump[0];
-    flip = (doom_boolean) sprframe->flip[0];
+    flip = static_cast<doom_boolean>(sprframe->flip[0]);
 
-    patch = (patch_t*) (W_CacheLumpNum(lump + firstspritelump, PU_CACHE));
+    patch = static_cast<patch_t*>(W_CacheLumpNum(lump + firstspritelump, PU_CACHE));
     if (flip)
         V_DrawPatchFlipped(160, 170, 0, patch);
     else
@@ -630,13 +632,14 @@ void fDrawPatchCol(int x, patch_t* patch, int col)
     byte* desttop;
     int count;
 
-    column = (column_t*) ((byte*) patch + LONG(patch->columnofs[col]));
+    column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+                                         + LONG(patch->columnofs[col]));
     desttop = screens[0] + x;
 
     // step through the posts in a column
     while (column->topdelta != 0xff)
     {
-        source = (byte*) column + 3;
+        source = reinterpret_cast<byte*>(column) + 3;
         dest = desttop + column->topdelta * SCREENWIDTH;
         count = column->length;
 
@@ -645,25 +648,25 @@ void fDrawPatchCol(int x, patch_t* patch, int col)
             *dest = *source++;
             dest += SCREENWIDTH;
         }
-        column = (column_t*) ((byte*) column + column->length + 4);
+        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+                                             + column->length + 4);
     }
 }
 
 //
 // fBunnyScroll
 //
-void fBunnyScroll(void)
+void fBunnyScroll()
 {
     int scrolled;
-    int x;
     patch_t* p1;
     patch_t* p2;
     char name[10];
     int stage;
     static int laststage;
 
-    p1 = (patch_t*) (W_CacheLumpName("PFUB2", PU_LEVEL));
-    p2 = (patch_t*) (W_CacheLumpName("PFUB1", PU_LEVEL));
+    p1 = static_cast<patch_t*>(W_CacheLumpName("PFUB2", PU_LEVEL));
+    p2 = static_cast<patch_t*>(W_CacheLumpName("PFUB1", PU_LEVEL));
 
     V_MarkRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
@@ -673,7 +676,7 @@ void fBunnyScroll(void)
     if (scrolled < 0)
         scrolled = 0;
 
-    for (x = 0; x < SCREENWIDTH; x++)
+    for (int x = 0; x < SCREENWIDTH; x++)
     {
         if (x + scrolled < 320)
             fDrawPatchCol(x, p1, x + scrolled);
@@ -688,7 +691,7 @@ void fBunnyScroll(void)
         V_DrawPatch((SCREENWIDTH - 13 * 8) / 2,
                     (SCREENHEIGHT - 8 * 8) / 2,
                     0,
-                    (patch_t*) (W_CacheLumpName("END0", PU_CACHE)));
+                    static_cast<patch_t*>(W_CacheLumpName("END0", PU_CACHE)));
         laststage = 0;
         return;
     }
@@ -708,13 +711,13 @@ void fBunnyScroll(void)
     V_DrawPatch((SCREENWIDTH - 13 * 8) / 2,
                 (SCREENHEIGHT - 8 * 8) / 2,
                 0,
-                (patch_t*) (W_CacheLumpName(name, PU_CACHE)));
+                static_cast<patch_t*>(W_CacheLumpName(name, PU_CACHE)));
 }
 
 //
 // fDrawer
 //
-void fDrawer(void)
+void fDrawer()
 {
     if (finalestage == 2)
     {
@@ -731,21 +734,33 @@ void fDrawer(void)
             case 1:
                 if (gamemode == retail)
                     V_DrawPatch(
-                        0, 0, 0, (patch_t*) (W_CacheLumpName("CREDIT", PU_CACHE)));
+                        0,
+                        0,
+                        0,
+                        static_cast<patch_t*>(W_CacheLumpName("CREDIT", PU_CACHE)));
                 else
                     V_DrawPatch(
-                        0, 0, 0, (patch_t*) (W_CacheLumpName("HELP2", PU_CACHE)));
+                        0,
+                        0,
+                        0,
+                        static_cast<patch_t*>(W_CacheLumpName("HELP2", PU_CACHE)));
                 break;
             case 2:
                 V_DrawPatch(
-                    0, 0, 0, (patch_t*) (W_CacheLumpName("VICTORY2", PU_CACHE)));
+                    0,
+                    0,
+                    0,
+                    static_cast<patch_t*>(W_CacheLumpName("VICTORY2", PU_CACHE)));
                 break;
             case 3:
                 fBunnyScroll();
                 break;
             case 4:
                 V_DrawPatch(
-                    0, 0, 0, (patch_t*) (W_CacheLumpName("ENDPIC", PU_CACHE)));
+                    0,
+                    0,
+                    0,
+                    static_cast<patch_t*>(W_CacheLumpName("ENDPIC", PU_CACHE)));
                 break;
         }
     }

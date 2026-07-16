@@ -68,7 +68,7 @@ int twoSided(int sector, int line)
 sector_t* getNextSector(line_t* line, sector_t* sec)
 {
     if (!(line->flags & ML_TWOSIDED))
-        return 0;
+        return nullptr;
 
     if (line->frontsector == sec)
         return line->backsector;
@@ -85,7 +85,7 @@ namespace Doom
 {
 // anim_t moved to Sim/AnimatedSurfaces.h with the anims/lastanim it types.
 
-typedef struct
+struct animdef_t
 {
     // Not a boolean, despite the name and despite what vanilla called it: the
     // table below ends with {-1}, and P_InitPicAnims walks until it finds that.
@@ -96,7 +96,7 @@ typedef struct
     char endname[9];
     char startname[9];
     int speed;
-} animdef_t;
+};
 
 animdef_t animdefs[] = {{false, "NUKAGE3", "NUKAGE1", 8},
                         {false, "FWATER4", "FWATER1", 8},
@@ -138,7 +138,7 @@ static short& numlinespecials = animatedSurfaces().numlinespecials;
 static line_t* (&linespeciallist)[MAXLINEANIMS] = animatedSurfaces().linespeciallist;
 
 // Forward declarations so call order needs no rearranging.
-void initPicAnims(void);
+void initPicAnims();
 fixed_t findLowestFloorSurrounding(sector_t* sec);
 fixed_t findHighestFloorSurrounding(sector_t* sec);
 fixed_t findNextHighestFloor(sector_t* sec, int currentheight);
@@ -149,17 +149,15 @@ int findMinSurroundingLight(sector_t* sector, int max);
 void crossSpecialLine(int linenum, int side, mobj_t* thing);
 void shootSpecialLine(mobj_t* thing, line_t* line);
 void playerInSpecialSector(player_t* player);
-void updateSpecials(void);
+void updateSpecials();
 int doDonut(line_t* line);
-void spawnSpecials(void);
+void spawnSpecials();
 
-void initPicAnims(void)
+void initPicAnims()
 {
-    int i;
-
     // Init animation
     lastanim = anims;
-    for (i = 0; animdefs[i].istexture != -1; i++)
+    for (int i = 0; animdefs[i].istexture != -1; i++)
     {
         if (animdefs[i].istexture)
         {
@@ -212,12 +210,11 @@ void initPicAnims(void)
 //
 fixed_t findLowestFloorSurrounding(sector_t* sec)
 {
-    int i;
     line_t* check;
     sector_t* other;
     fixed_t floor = sec->floorheight;
 
-    for (i = 0; i < sec->linecount; i++)
+    for (int i = 0; i < sec->linecount; i++)
     {
         check = sec->lines[i];
         other = getNextSector(check, sec);
@@ -238,12 +235,11 @@ fixed_t findLowestFloorSurrounding(sector_t* sec)
 //
 fixed_t findHighestFloorSurrounding(sector_t* sec)
 {
-    int i;
     line_t* check;
     sector_t* other;
     fixed_t floor = -500 * FRACUNIT;
 
-    for (i = 0; i < sec->linecount; i++)
+    for (int i = 0; i < sec->linecount; i++)
     {
         check = sec->lines[i];
         other = getNextSector(check, sec);
@@ -311,12 +307,11 @@ fixed_t findNextHighestFloor(sector_t* sec, int currentheight)
 //
 fixed_t findLowestCeilingSurrounding(sector_t* sec)
 {
-    int i;
     line_t* check;
     sector_t* other;
     fixed_t height = DOOM_MAXINT;
 
-    for (i = 0; i < sec->linecount; i++)
+    for (int i = 0; i < sec->linecount; i++)
     {
         check = sec->lines[i];
         other = getNextSector(check, sec);
@@ -336,12 +331,11 @@ fixed_t findLowestCeilingSurrounding(sector_t* sec)
 //
 fixed_t findHighestCeilingSurrounding(sector_t* sec)
 {
-    int i;
     line_t* check;
     sector_t* other;
     fixed_t height = 0;
 
-    for (i = 0; i < sec->linecount; i++)
+    for (int i = 0; i < sec->linecount; i++)
     {
         check = sec->lines[i];
         other = getNextSector(check, sec);
@@ -361,9 +355,7 @@ fixed_t findHighestCeilingSurrounding(sector_t* sec)
 //
 int findSectorFromLineTag(line_t* line, int start)
 {
-    int i;
-
-    for (i = start + 1; i < numsectors; i++)
+    for (int i = start + 1; i < numsectors; i++)
         if (sectors[i].tag == line->tag)
             return i;
 
@@ -375,13 +367,12 @@ int findSectorFromLineTag(line_t* line, int start)
 //
 int findMinSurroundingLight(sector_t* sector, int max)
 {
-    int i;
     int min;
     line_t* line;
     sector_t* check;
 
     min = max;
-    for (i = 0; i < sector->linecount; i++)
+    for (int i = 0; i < sector->linecount; i++)
     {
         line = sector->lines[i];
         check = getNextSector(line, sector);
@@ -956,7 +947,7 @@ void playerInSpecialSector(player_t* player)
             // SECRET SECTOR
             player->secretcount++;
             player->message = "A secret is revealed!";
-            S_StartSound(0, sfx_getpow);
+            S_StartSound(nullptr, sfx_getpow);
             sector->special = 0;
             break;
 
@@ -989,11 +980,10 @@ void playerInSpecialSector(player_t* player)
 // updateSpecials
 // Animate planes, scroll walls, etc.
 //
-void updateSpecials(void)
+void updateSpecials()
 {
     anim_t* anim;
     int pic;
-    int i;
     line_t* line;
 
     // LEVEL TIMER
@@ -1007,7 +997,7 @@ void updateSpecials(void)
     // ANIMATE FLATS AND TEXTURES GLOBALLY
     for (anim = anims; anim < lastanim; anim++)
     {
-        for (i = anim->basepic; i < anim->basepic + anim->numpics; i++)
+        for (int i = anim->basepic; i < anim->basepic + anim->numpics; i++)
         {
             pic = anim->basepic + ((leveltime / anim->speed + i) % anim->numpics);
             if (anim->istexture)
@@ -1018,7 +1008,7 @@ void updateSpecials(void)
     }
 
     // ANIMATE LINE SPECIALS
-    for (i = 0; i < numlinespecials; i++)
+    for (int i = 0; i < numlinespecials; i++)
     {
         line = linespeciallist[i];
         switch (line->special)
@@ -1031,7 +1021,7 @@ void updateSpecials(void)
     }
 
     // DO BUTTONS
-    for (i = 0; i < MAXBUTTONS; i++)
+    for (int i = 0; i < MAXBUTTONS; i++)
         if (buttonlist[i].btimer)
         {
             buttonlist[i].btimer--;
@@ -1054,7 +1044,8 @@ void updateSpecials(void)
                             buttonlist[i].btexture;
                         break;
                 }
-                S_StartSound((mobj_t*) &buttonlist[i].soundorg, sfx_swtchn);
+                S_StartSound(reinterpret_cast<mobj_t*>(&buttonlist[i].soundorg),
+                             sfx_swtchn);
                 doom_memset(&buttonlist[i], 0, sizeof(button_t));
             }
         }
@@ -1070,7 +1061,6 @@ int doDonut(line_t* line)
     sector_t* s3;
     int secnum;
     int rtn;
-    int i;
     floormove_t* floor;
 
     secnum = -1;
@@ -1085,7 +1075,7 @@ int doDonut(line_t* line)
 
         rtn = 1;
         s2 = getNextSector(s1->lines[0], s1);
-        for (i = 0; i < s2->linecount; i++)
+        for (int i = 0; i < s2->linecount; i++)
         {
             if ((!(s2->lines[i]->flags & ML_TWOSIDED))
                 || (s2->lines[i]->backsector == s1))
@@ -1093,10 +1083,10 @@ int doDonut(line_t* line)
             s3 = s2->lines[i]->backsector;
 
             //        Spawn rising slime
-            floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
+            floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
             P_AddThinker(&floor->thinker);
             s2->specialdata = floor;
-            floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
+            floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
             floor->type = donutRaise;
             floor->crush = false;
             floor->direction = 1;
@@ -1107,10 +1097,10 @@ int doDonut(line_t* line)
             floor->floordestheight = s3->floorheight;
 
             //        Spawn lowering donut-hole
-            floor = (floormove_t*) (levelAlloc(sizeof(*floor)));
+            floor = static_cast<floormove_t*>(levelAlloc(sizeof(*floor)));
             P_AddThinker(&floor->thinker);
             s1->specialdata = floor;
-            floor->thinker.function.acp1 = (actionf_p1) T_MoveFloor;
+            floor->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveFloor);
             floor->type = lowerFloor;
             floor->crush = false;
             floor->direction = -1;
@@ -1135,7 +1125,7 @@ int doDonut(line_t* line)
 //
 
 // Parses command line parameters.
-void spawnSpecials(void)
+void spawnSpecials()
 {
     sector_t* sector;
     int i;
@@ -1153,8 +1143,7 @@ void spawnSpecials(void)
     i = M_CheckParm("-timer");
     if (i && deathmatch)
     {
-        int time;
-        time = doom_atoi(myargv[i + 1]) * 60 * 35;
+        int time = doom_atoi(myargv[i + 1]) * 60 * 35;
         levelTimer = true;
         levelTimeCount = time;
     }
@@ -1240,10 +1229,10 @@ void spawnSpecials(void)
 
     // Init other misc stuff
     for (i = 0; i < MAXCEILINGS; i++)
-        activeceilings[i] = 0;
+        activeceilings[i] = nullptr;
 
     for (i = 0; i < MAXPLATS; i++)
-        activeplats[i] = 0;
+        activeplats[i] = nullptr;
 
     for (i = 0; i < MAXBUTTONS; i++)
         doom_memset(&buttonlist[i], 0, sizeof(button_t));

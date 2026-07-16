@@ -9,7 +9,7 @@ namespace Doom
 int mDrawText(int x, int y, doom_boolean direct, char* string);
 doom_boolean mWriteFile(char const* name, void* source, int length);
 int mReadFile(char const* name, byte** buffer);
-void mSaveDefaults(void);
-void mLoadDefaults(void);
-void mScreenShot(void);
+void mSaveDefaults();
+void mLoadDefaults();
+void mScreenShot();
 } // namespace Doom

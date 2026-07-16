@@ -115,7 +115,7 @@ bool traverseIntercepts(traverser_t func, fixed_t maxfrac)
 {
     Clip& clip = Doom::clip();
 
-    int count = (int) (clip.interceptPtr - clip.intercepts);
+    int count = static_cast<int>(clip.interceptPtr - clip.intercepts);
 
     intercept_t* in = nullptr; // shut up compiler warning
 

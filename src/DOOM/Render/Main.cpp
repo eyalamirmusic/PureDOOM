@@ -41,7 +41,7 @@ namespace Doom
 // file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are references onto that member.
 static int& framecount = renderMainState().framecount;
 static int& setdetail = renderMainState().setdetail;
-void (*transcolfunc)(void);
+void (*transcolfunc)();
 
 // Forward declarations so call order needs no rearranging.
 void addPointToBox(int x, int y, fixed_t* box);
@@ -50,14 +50,14 @@ int pointOnSegSide(fixed_t x, fixed_t y, seg_t* line);
 angle_t pointToAngle(fixed_t x, fixed_t y);
 angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
 fixed_t pointToDist(fixed_t x, fixed_t y);
-void initPointToAngle(void);
+void initPointToAngle();
 fixed_t scaleFromGlobalAngle(angle_t visangle);
-void initTables(void);
-void initTextureMapping(void);
-void initLightTables(void);
+void initTables();
+void initTextureMapping();
+void initLightTables();
 void setViewSize(int blocks, int detail);
-void executeSetViewSize(void);
-void renderInit(void);
+void executeSetViewSize();
+void renderInit();
 subsector_t* pointInSubsector(fixed_t x, fixed_t y);
 void setupFrame(player_t* player);
 void renderPlayerView(player_t* player);
@@ -321,7 +321,7 @@ fixed_t pointToDist(fixed_t x, fixed_t y)
 //
 // initPointToAngle
 //
-void initPointToAngle(void) {}
+void initPointToAngle() {}
 
 //
 // scaleFromGlobalAngle
@@ -367,15 +367,14 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
 //
 // initTables
 //
-void initTables(void) {}
+void initTables() {}
 
 //
 // initTextureMapping
 //
-void initTextureMapping(void)
+void initTextureMapping()
 {
     int i;
-    int x;
     int t;
     fixed_t focallength;
 
@@ -410,7 +409,7 @@ void initTextureMapping(void)
     // Scan viewangletox[] to generate xtoviewangle[]:
     // xtoviewangle will give the smallest view angle
     // that maps to x.
-    for (x = 0; x <= viewwidth; x++)
+    for (int x = 0; x <= viewwidth; x++)
     {
         i = 0;
         while (viewangletox[i] > x)
@@ -439,20 +438,18 @@ void initTextureMapping(void)
 // because the scalelight table changes with view size.
 //
 
-void initLightTables(void)
+void initLightTables()
 {
-    int i;
-    int j;
     int level;
     int startmap;
     int scale;
 
     // Calculate the light levels to use
     //  for each level / distance combination.
-    for (i = 0; i < LIGHTLEVELS; i++)
+    for (int i = 0; i < LIGHTLEVELS; i++)
     {
         startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
-        for (j = 0; j < MAXLIGHTZ; j++)
+        for (int j = 0; j < MAXLIGHTZ; j++)
         {
             scale = FixedDiv((SCREENWIDTH / 2 * FRACUNIT), (j + 1) << LIGHTZSHIFT);
             scale >>= LIGHTSCALESHIFT;
@@ -486,7 +483,7 @@ void setViewSize(int blocks, int detail)
 //
 // executeSetViewSize
 //
-void executeSetViewSize(void)
+void executeSetViewSize()
 {
     fixed_t cosadj;
     fixed_t dy;
@@ -582,7 +579,7 @@ void executeSetViewSize(void)
 //
 // renderInit
 //
-void renderInit(void)
+void renderInit()
 {
     R_InitData();
     doom_print("\nR_InitData");
@@ -635,8 +632,6 @@ subsector_t* pointInSubsector(fixed_t x, fixed_t y)
 //
 void setupFrame(player_t* player)
 {
-    int i;
-
     viewplayer = player;
     viewx = player->mo->x;
     viewy = player->mo->y;
@@ -657,11 +652,11 @@ void setupFrame(player_t* player)
 
         walllights = scalelightfixed;
 
-        for (i = 0; i < MAXLIGHTSCALE; i++)
+        for (int i = 0; i < MAXLIGHTSCALE; i++)
             scalelightfixed[i] = fixedcolormap;
     }
     else
-        fixedcolormap = 0;
+        fixedcolormap = nullptr;
 
     framecount++;
     validcount++;

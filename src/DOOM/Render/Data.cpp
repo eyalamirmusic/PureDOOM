@@ -33,21 +33,21 @@ namespace Doom
 // into the rectangular texture space using origin
 // and possibly other attributes.
 //
-typedef struct
+struct mappatch_t
 {
     short originx;
     short originy;
     short patch;
     short stepdir;
     short colormap;
-} mappatch_t;
+};
 
 //
 // Texture definition.
 // A DOOM wall texture is a list of patches
 // which are to be combined in a predefined order.
 //
-typedef struct
+struct maptexture_t
 {
     char name[8];
     doom_boolean masked;
@@ -57,7 +57,7 @@ typedef struct
     int columndirectory; // [pd] If it's not used, at least make sure it's the right size! Pointers are 8 bytes in x64
     short patchcount;
     mappatch_t patches[1];
-} maptexture_t;
+};
 
 // r_data's own state - the per-texture composite cache, patch/flat bookkeeping and the memory
 // counters - now lives on the Engine (Render/CompositeCache.h, moved by the file-scope-statics
@@ -81,15 +81,15 @@ void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheigh
 void generateComposite(int texnum);
 void generateLookup(int texnum);
 byte* getColumn(int tex, int col);
-void initTextures(void);
-void initFlats(void);
-void initSpriteLumps(void);
-void initColormaps(void);
-void initData(void);
+void initTextures();
+void initFlats();
+void initSpriteLumps();
+void initColormaps();
+void initData();
 int flatNumForName(const char* name);
 int checkTextureNumForName(const char* name);
 int textureNumForName(const char* name);
-void precacheLevel(void);
+void precacheLevel();
 
 void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight)
 {
@@ -99,7 +99,7 @@ void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheigh
 
     while (patch->topdelta != 0xff)
     {
-        source = (byte*) patch + 3;
+        source = reinterpret_cast<byte*>(patch) + 3;
         count = patch->length;
         position = originy + patch->topdelta;
 
@@ -115,7 +115,8 @@ void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheigh
         if (count > 0)
             doom_memcpy(cache + position, source, count);
 
-        patch = (column_t*) ((byte*) patch + patch->length + 4);
+        patch = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+                                            + patch->length + 4);
     }
 }
 
@@ -146,7 +147,7 @@ void generateComposite(int texnum)
     // rather than whatever heap follows (the zone's arena made it deterministic
     // for free; malloc does not). The whole block is zeroed for the same reason -
     // drawColumnInCache fills only the covered columns.
-    block = (byte*) doom_malloc(texturecompositesize[texnum] + 64);
+    block = static_cast<byte*>(doom_malloc(texturecompositesize[texnum] + 64));
     doom_memset(block, 0, texturecompositesize[texnum] + 64);
     texturecomposite[texnum] = block;
 
@@ -158,7 +159,7 @@ void generateComposite(int texnum)
 
     for (i = 0, patch = texture->patches; i < texture->patchcount; i++, patch++)
     {
-        realpatch = (patch_t*) (W_CacheLumpNum(patch->patch, PU_CACHE));
+        realpatch = static_cast<patch_t*>(W_CacheLumpNum(patch->patch, PU_CACHE));
         x1 = patch->originx;
         x2 = x1 + SHORT(realpatch->width);
 
@@ -177,7 +178,8 @@ void generateComposite(int texnum)
                 continue;
 
             patchcol =
-                (column_t*) ((byte*) realpatch + LONG(realpatch->columnofs[x - x1]));
+                reinterpret_cast<column_t*>(reinterpret_cast<byte*>(realpatch)
+                                            + LONG(realpatch->columnofs[x - x1]));
             drawColumnInCache(
                 patchcol, block + colofs[x], patch->originy, texture->height);
         }
@@ -207,7 +209,7 @@ void generateLookup(int texnum)
     texture = textures[texnum];
 
     // Composited texture not created yet.
-    texturecomposite[texnum] = 0;
+    texturecomposite[texnum] = nullptr;
 
     texturecompositesize[texnum] = 0;
     collump = texturecolumnlump[texnum];
@@ -217,13 +219,13 @@ void generateLookup(int texnum)
     //  that are covered by more than one patch.
     // Fill in the lump / offset, so columns
     //  with only a single patch are all done.
-    patchcount = (byte*) doom_malloc(texture->width);
+    patchcount = static_cast<byte*>(doom_malloc(texture->width));
     doom_memset(patchcount, 0, texture->width);
     patch = texture->patches;
 
     for (i = 0, patch = texture->patches; i < texture->patchcount; i++, patch++)
     {
-        realpatch = (patch_t*) (W_CacheLumpNum(patch->patch, PU_CACHE));
+        realpatch = static_cast<patch_t*>(W_CacheLumpNum(patch->patch, PU_CACHE));
         x1 = patch->originx;
         x2 = x1 + SHORT(realpatch->width);
 
@@ -292,7 +294,7 @@ byte* getColumn(int tex, int col)
     ofs = texturecolumnofs[tex][col];
 
     if (lump > 0)
-        return (byte*) W_CacheLumpNum(lump, PU_CACHE) + ofs;
+        return static_cast<byte*>(W_CacheLumpNum(lump, PU_CACHE)) + ofs;
 
     if (!texturecomposite[tex])
         generateComposite(tex);
@@ -305,7 +307,7 @@ byte* getColumn(int tex, int col)
 // Initializes the texture list
 //  with the textures from the world map.
 //
-void initTextures(void)
+void initTextures()
 {
     maptexture_t* mtexture;
     texture_t* texture;
@@ -340,10 +342,11 @@ void initTextures(void)
 
     // Load the patch names from pnames.lmp.
     name[8] = 0;
-    names = (char*) (W_CacheLumpName("PNAMES", PU_STATIC));
-    nummappatches = LONG(*((int*) names));
+    names = static_cast<char*>(W_CacheLumpName("PNAMES", PU_STATIC));
+    nummappatches = LONG(*(reinterpret_cast<int*>(names)));
     name_p = names + 4;
-    patchlookup = (int*) (doom_malloc(nummappatches * sizeof(*patchlookup)));
+    patchlookup =
+        static_cast<int*>(doom_malloc(nummappatches * sizeof(*patchlookup)));
 
     for (i = 0; i < nummappatches; i++)
     {
@@ -354,14 +357,14 @@ void initTextures(void)
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
-    maptex = maptex1 = (int*) (W_CacheLumpName("TEXTURE1", PU_STATIC));
+    maptex = maptex1 = static_cast<int*>(W_CacheLumpName("TEXTURE1", PU_STATIC));
     numtextures1 = LONG(*maptex);
     maxoff = W_LumpLength(W_GetNumForName("TEXTURE1"));
     directory = maptex + 1;
 
     if (W_CheckNumForName("TEXTURE2") != -1)
     {
-        maptex2 = (int*) (W_CacheLumpName("TEXTURE2", PU_STATIC));
+        maptex2 = static_cast<int*>(W_CacheLumpName("TEXTURE2", PU_STATIC));
         numtextures2 = LONG(*maptex2);
         maxoff2 = W_LumpLength(W_GetNumForName("TEXTURE2"));
     }
@@ -373,16 +376,19 @@ void initTextures(void)
     }
     numtextures = numtextures1 + numtextures2;
 
-    textures = (texture_t**) (doom_malloc(numtextures * sizeof(texture_t*)));
-    texturecolumnlump = (short**) (doom_malloc(numtextures * sizeof(short*)));
-    texturecolumnofs =
-        (unsigned short**) (doom_malloc(numtextures * sizeof(unsigned short*)));
-    texturecomposite = (byte**) (doom_malloc(numtextures * sizeof(byte*)));
+    textures =
+        static_cast<texture_t**>(doom_malloc(numtextures * sizeof(texture_t*)));
+    texturecolumnlump =
+        static_cast<short**>(doom_malloc(numtextures * sizeof(short*)));
+    texturecolumnofs = static_cast<unsigned short**>(
+        doom_malloc(numtextures * sizeof(unsigned short*)));
+    texturecomposite = static_cast<byte**>(doom_malloc(numtextures * sizeof(byte*)));
 
-    texturecompositesize = (int*) (doom_malloc(numtextures * sizeof(int)));
+    texturecompositesize = static_cast<int*>(doom_malloc(numtextures * sizeof(int)));
 
-    texturewidthmask = (int*) (doom_malloc(numtextures * sizeof(int)));
-    textureheight = (fixed_t*) (doom_malloc(numtextures * sizeof(fixed_t)));
+    texturewidthmask = static_cast<int*>(doom_malloc(numtextures * sizeof(int)));
+    textureheight =
+        static_cast<fixed_t*>(doom_malloc(numtextures * sizeof(fixed_t)));
 
     // Really complex printing shit...
     temp1 = W_GetNumForName("S_START"); // P_???????
@@ -414,11 +420,12 @@ void initTextures(void)
         if (offset > maxoff)
             I_Error("Error: initTextures: bad texture directory");
 
-        mtexture = (maptexture_t*) ((byte*) maptex + offset);
+        mtexture = reinterpret_cast<maptexture_t*>(reinterpret_cast<byte*>(maptex)
+                                                   + offset);
 
-        texture = textures[i] = (texture_t*) (doom_malloc(
-            sizeof(texture_t)
-            + sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1)));
+        texture = textures[i] = static_cast<texture_t*>(
+            doom_malloc(sizeof(texture_t)
+                        + sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1)));
 
         texture->width = SHORT(mtexture->width);
         texture->height = SHORT(mtexture->height);
@@ -445,9 +452,9 @@ void initTextures(void)
             }
         }
         texturecolumnlump[i] =
-            (short*) (doom_malloc(texture->width * sizeof(short)));
-        texturecolumnofs[i] =
-            (unsigned short*) (doom_malloc(texture->width * sizeof(unsigned short)));
+            static_cast<short*>(doom_malloc(texture->width * sizeof(short)));
+        texturecolumnofs[i] = static_cast<unsigned short*>(
+            doom_malloc(texture->width * sizeof(unsigned short)));
 
         j = 1;
         while (j * 2 <= texture->width)
@@ -462,7 +469,8 @@ void initTextures(void)
         generateLookup(i);
 
     // Create translation table for global animation.
-    texturetranslation = (int*) (doom_malloc((numtextures + 1) * sizeof(int)));
+    texturetranslation =
+        static_cast<int*>(doom_malloc((numtextures + 1) * sizeof(int)));
 
     for (i = 0; i < numtextures; i++)
         texturetranslation[i] = i;
@@ -473,18 +481,16 @@ void initTextures(void)
 //
 // initFlats
 //
-void initFlats(void)
+void initFlats()
 {
-    int i;
-
     firstflat = W_GetNumForName("F_START") + 1;
     lastflat = W_GetNumForName("F_END") - 1;
     numflats = lastflat - firstflat + 1;
 
     // Create translation table for global animation.
-    flattranslation = (int*) (doom_malloc((numflats + 1) * sizeof(int)));
+    flattranslation = static_cast<int*>(doom_malloc((numflats + 1) * sizeof(int)));
 
-    for (i = 0; i < numflats; i++)
+    for (int i = 0; i < numflats; i++)
         flattranslation[i] = i;
 }
 
@@ -494,25 +500,27 @@ void initFlats(void)
 //  so the sprite does not need to be cached completely
 //  just for having the header info ready during rendering.
 //
-void initSpriteLumps(void)
+void initSpriteLumps()
 {
-    int i;
     patch_t* patch;
 
     firstspritelump = W_GetNumForName("S_START") + 1;
     lastspritelump = W_GetNumForName("S_END") - 1;
 
     numspritelumps = lastspritelump - firstspritelump + 1;
-    spritewidth = (fixed_t*) (doom_malloc(numspritelumps * sizeof(fixed_t)));
-    spriteoffset = (fixed_t*) (doom_malloc(numspritelumps * sizeof(fixed_t)));
-    spritetopoffset = (fixed_t*) (doom_malloc(numspritelumps * sizeof(fixed_t)));
+    spritewidth =
+        static_cast<fixed_t*>(doom_malloc(numspritelumps * sizeof(fixed_t)));
+    spriteoffset =
+        static_cast<fixed_t*>(doom_malloc(numspritelumps * sizeof(fixed_t)));
+    spritetopoffset =
+        static_cast<fixed_t*>(doom_malloc(numspritelumps * sizeof(fixed_t)));
 
-    for (i = 0; i < numspritelumps; i++)
+    for (int i = 0; i < numspritelumps; i++)
     {
         if (!(i & 63))
             doom_print(".");
 
-        patch = (patch_t*) (W_CacheLumpNum(firstspritelump + i, PU_CACHE));
+        patch = static_cast<patch_t*>(W_CacheLumpNum(firstspritelump + i, PU_CACHE));
         spritewidth[i] = SHORT(patch->width) << FRACBITS;
         spriteoffset[i] = SHORT(patch->leftoffset) << FRACBITS;
         spritetopoffset[i] = SHORT(patch->topoffset) << FRACBITS;
@@ -522,7 +530,7 @@ void initSpriteLumps(void)
 //
 // initColormaps
 //
-void initColormaps(void)
+void initColormaps()
 {
     int lump, length;
 
@@ -530,7 +538,7 @@ void initColormaps(void)
     //  256 byte align tables.
     lump = W_GetNumForName("COLORMAP");
     length = W_LumpLength(lump) + 255;
-    colormaps = (lighttable_t*) (doom_malloc(length));
+    colormaps = static_cast<lighttable_t*>(doom_malloc(length));
     colormaps = (byte*) (((unsigned long long) colormaps + 255) & ~0xff);
     W_ReadLump(lump, colormaps);
 }
@@ -541,7 +549,7 @@ void initColormaps(void)
 //  that will be used by all views
 // Must be called after W_Init.
 //
-void initData(void)
+void initData()
 {
     initTextures();
     doom_print("\nInitTextures");
@@ -585,13 +593,11 @@ int flatNumForName(const char* name)
 //
 int checkTextureNumForName(const char* name)
 {
-    int i;
-
     // "NoTexture" marker.
     if (name[0] == '-')
         return 0;
 
-    for (i = 0; i < numtextures; i++)
+    for (int i = 0; i < numtextures; i++)
         if (!doom_strncasecmp(textures[i]->name, name, 8))
             return i;
 
@@ -605,9 +611,7 @@ int checkTextureNumForName(const char* name)
 //
 int textureNumForName(const char* name)
 {
-    int i;
-
-    i = checkTextureNumForName(name);
+    int i = checkTextureNumForName(name);
 
     if (i == -1)
     {
@@ -626,7 +630,7 @@ int textureNumForName(const char* name)
 // precacheLevel
 // Preloads all relevant graphics for the level.
 //
-void precacheLevel(void)
+void precacheLevel()
 {
     char* flatpresent;
     char* texturepresent;
@@ -645,7 +649,7 @@ void precacheLevel(void)
         return;
 
     // Precache flats.
-    flatpresent = (char*) (doom_malloc(numflats));
+    flatpresent = static_cast<char*>(doom_malloc(numflats));
     doom_memset(flatpresent, 0, numflats);
 
     for (i = 0; i < numsectors; i++)
@@ -667,7 +671,7 @@ void precacheLevel(void)
     }
 
     // Precache textures.
-    texturepresent = (char*) (doom_malloc(numtextures));
+    texturepresent = static_cast<char*>(doom_malloc(numtextures));
     doom_memset(texturepresent, 0, numtextures);
 
     for (i = 0; i < numsides; i++)
@@ -702,13 +706,13 @@ void precacheLevel(void)
     }
 
     // Precache sprites.
-    spritepresent = (char*) (doom_malloc(numsprites));
+    spritepresent = static_cast<char*>(doom_malloc(numsprites));
     doom_memset(spritepresent, 0, numsprites);
 
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
         if (th->function.acp1 == (actionf_p1) P_MobjThinker)
-            spritepresent[((mobj_t*) th)->sprite] = 1;
+            spritepresent[reinterpret_cast<mobj_t*>(th)->sprite] = 1;
     }
 
     spritememory = 0;

@@ -56,8 +56,9 @@ void moveCeiling(ceiling_t* ceiling)
                     case silentCrushAndRaise:
                         break;
                     default:
-                        S_StartSound((mobj_t*) &ceiling->sector->soundorg,
-                                     sfx_stnmov);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            sfx_stnmov);
                         // ?
                         break;
                 }
@@ -72,8 +73,9 @@ void moveCeiling(ceiling_t* ceiling)
                         break;
 
                     case silentCrushAndRaise:
-                        S_StartSound((mobj_t*) &ceiling->sector->soundorg,
-                                     sfx_pstop);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            sfx_pstop);
                     case fastCrushAndRaise:
                     case crushAndRaise:
                         ceiling->direction = -1;
@@ -101,8 +103,9 @@ void moveCeiling(ceiling_t* ceiling)
                     case silentCrushAndRaise:
                         break;
                     default:
-                        S_StartSound((mobj_t*) &ceiling->sector->soundorg,
-                                     sfx_stnmov);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            sfx_stnmov);
                 }
             }
 
@@ -111,8 +114,9 @@ void moveCeiling(ceiling_t* ceiling)
                 switch (ceiling->type)
                 {
                     case silentCrushAndRaise:
-                        S_StartSound((mobj_t*) &ceiling->sector->soundorg,
-                                     sfx_pstop);
+                        S_StartSound(
+                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            sfx_pstop);
                     case crushAndRaise:
                         ceiling->speed = CEILSPEED;
                     case fastCrushAndRaise:
@@ -182,10 +186,10 @@ int doCeiling(line_t* line, ceiling_e type)
 
         // new door thinker
         rtn = 1;
-        ceiling = (ceiling_t*) (levelAlloc(sizeof(*ceiling)));
+        ceiling = static_cast<ceiling_t*>(levelAlloc(sizeof(*ceiling)));
         P_AddThinker(&ceiling->thinker);
         sec->specialdata = ceiling;
-        ceiling->thinker.function.acp1 = (actionf_p1) T_MoveCeiling;
+        ceiling->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_MoveCeiling);
         ceiling->sector = sec;
         ceiling->crush = false;
 
@@ -232,11 +236,9 @@ int doCeiling(line_t* line, ceiling_e type)
 //
 void addActiveCeiling(ceiling_t* c)
 {
-    int i;
-
-    for (i = 0; i < MAXCEILINGS; i++)
+    for (int i = 0; i < MAXCEILINGS; i++)
     {
-        if (activeceilings[i] == 0)
+        if (activeceilings[i] == nullptr)
         {
             activeceilings[i] = c;
             return;
@@ -249,15 +251,13 @@ void addActiveCeiling(ceiling_t* c)
 //
 void removeActiveCeiling(ceiling_t* c)
 {
-    int i;
-
-    for (i = 0; i < MAXCEILINGS; i++)
+    for (int i = 0; i < MAXCEILINGS; i++)
     {
         if (activeceilings[i] == c)
         {
-            activeceilings[i]->sector->specialdata = 0;
+            activeceilings[i]->sector->specialdata = nullptr;
             P_RemoveThinker(&activeceilings[i]->thinker);
-            activeceilings[i] = 0;
+            activeceilings[i] = nullptr;
             break;
         }
     }
@@ -268,15 +268,14 @@ void removeActiveCeiling(ceiling_t* c)
 //
 void activateInStasisCeiling(line_t* line)
 {
-    int i;
-
-    for (i = 0; i < MAXCEILINGS; i++)
+    for (int i = 0; i < MAXCEILINGS; i++)
     {
         if (activeceilings[i] && (activeceilings[i]->tag == line->tag)
             && (activeceilings[i]->direction == 0))
         {
             activeceilings[i]->direction = activeceilings[i]->olddirection;
-            activeceilings[i]->thinker.function.acp1 = (actionf_p1) T_MoveCeiling;
+            activeceilings[i]->thinker.function.acp1 =
+                reinterpret_cast<actionf_p1>(T_MoveCeiling);
         }
     }
 }
@@ -287,11 +286,10 @@ void activateInStasisCeiling(line_t* line)
 //
 int ceilingCrushStop(line_t* line)
 {
-    int i;
     int rtn;
 
     rtn = 0;
-    for (i = 0; i < MAXCEILINGS; i++)
+    for (int i = 0; i < MAXCEILINGS; i++)
     {
         if (activeceilings[i] && (activeceilings[i]->tag == line->tag)
             && (activeceilings[i]->direction != 0))

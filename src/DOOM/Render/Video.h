@@ -21,5 +21,5 @@ void vDrawPatchRectDirect(
 void vDrawPatchDirect(int x, int y, int scrn, patch_t* patch);
 void vDrawBlock(int x, int y, int scrn, int width, int height, byte* src);
 void vGetBlock(int x, int y, int scrn, int width, int height, byte* dest);
-void vInit(void);
+void vInit();
 } // namespace Doom

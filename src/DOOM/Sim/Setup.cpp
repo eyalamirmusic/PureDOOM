@@ -41,14 +41,13 @@ void loadThings(int lump);
 void loadLineDefs(int lump);
 void loadSideDefs(int lump);
 void loadBlockMap(int lump);
-void groupLines(void);
+void groupLines();
 void setupLevel(int episode, int map, int playermask, skill_t skill);
-void init(void);
+void init();
 
 void loadVertexes(int lump)
 {
     byte* data;
-    int i;
     mapvertex_t* ml;
     vertex_t* li;
 
@@ -63,14 +62,14 @@ void loadVertexes(int lump)
     vertexes = Doom::level().vertexes.data();
 
     // Load data into cache.
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ml = (mapvertex_t*) data;
+    ml = reinterpret_cast<mapvertex_t*>(data);
     li = vertexes;
 
     // Copy and convert vertex coordinates,
     // internal representation as fixed.
-    for (i = 0; i < numvertexes; i++, li++, ml++)
+    for (int i = 0; i < numvertexes; i++, li++, ml++)
     {
         li->x = SHORT(ml->x) << FRACBITS;
         li->y = SHORT(ml->y) << FRACBITS;
@@ -85,7 +84,6 @@ void loadVertexes(int lump)
 void loadSegs(int lump)
 {
     byte* data;
-    int i;
     mapseg_t* ml;
     seg_t* li;
     line_t* ldef;
@@ -95,11 +93,11 @@ void loadSegs(int lump)
     numsegs = W_LumpLength(lump) / sizeof(mapseg_t);
     Doom::level().segs.assign(numsegs, seg_t {});
     segs = Doom::level().segs.data();
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ml = (mapseg_t*) data;
+    ml = reinterpret_cast<mapseg_t*>(data);
     li = segs;
-    for (i = 0; i < numsegs; i++, li++, ml++)
+    for (int i = 0; i < numsegs; i++, li++, ml++)
     {
         li->v1 = &vertexes[SHORT(ml->v1)];
         li->v2 = &vertexes[SHORT(ml->v2)];
@@ -115,7 +113,7 @@ void loadSegs(int lump)
         if (ldef->flags & ML_TWOSIDED)
             li->backsector = sides[ldef->sidenum[side ^ 1]].sector;
         else
-            li->backsector = 0;
+            li->backsector = nullptr;
     }
 }
 
@@ -125,19 +123,18 @@ void loadSegs(int lump)
 void loadSubsectors(int lump)
 {
     byte* data;
-    int i;
     mapsubsector_t* ms;
     subsector_t* ss;
 
     numsubsectors = W_LumpLength(lump) / sizeof(mapsubsector_t);
     Doom::level().subsectors.assign(numsubsectors, subsector_t {});
     subsectors = Doom::level().subsectors.data();
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ms = (mapsubsector_t*) data;
+    ms = reinterpret_cast<mapsubsector_t*>(data);
     ss = subsectors;
 
-    for (i = 0; i < numsubsectors; i++, ss++, ms++)
+    for (int i = 0; i < numsubsectors; i++, ss++, ms++)
     {
         ss->numlines = SHORT(ms->numsegs);
         ss->firstline = SHORT(ms->firstseg);
@@ -150,18 +147,17 @@ void loadSubsectors(int lump)
 void loadSectors(int lump)
 {
     byte* data;
-    int i;
     mapsector_t* ms;
     sector_t* ss;
 
     numsectors = W_LumpLength(lump) / sizeof(mapsector_t);
     Doom::level().sectors.assign(numsectors, sector_t {});
     sectors = Doom::level().sectors.data();
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ms = (mapsector_t*) data;
+    ms = reinterpret_cast<mapsector_t*>(data);
     ss = sectors;
-    for (i = 0; i < numsectors; i++, ss++, ms++)
+    for (int i = 0; i < numsectors; i++, ss++, ms++)
     {
         ss->floorheight = SHORT(ms->floorheight) << FRACBITS;
         ss->ceilingheight = SHORT(ms->ceilingheight) << FRACBITS;
@@ -170,7 +166,7 @@ void loadSectors(int lump)
         ss->lightlevel = SHORT(ms->lightlevel);
         ss->special = SHORT(ms->special);
         ss->tag = SHORT(ms->tag);
-        ss->thinglist = 0;
+        ss->thinglist = nullptr;
     }
 }
 
@@ -180,30 +176,27 @@ void loadSectors(int lump)
 void loadNodes(int lump)
 {
     byte* data;
-    int i;
-    int j;
-    int k;
     mapnode_t* mn;
     node_t* no;
 
     numnodes = W_LumpLength(lump) / sizeof(mapnode_t);
     Doom::level().nodes.assign(numnodes, node_t {});
     nodes = Doom::level().nodes.data();
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    mn = (mapnode_t*) data;
+    mn = reinterpret_cast<mapnode_t*>(data);
     no = nodes;
 
-    for (i = 0; i < numnodes; i++, no++, mn++)
+    for (int i = 0; i < numnodes; i++, no++, mn++)
     {
         no->x = SHORT(mn->x) << FRACBITS;
         no->y = SHORT(mn->y) << FRACBITS;
         no->dx = SHORT(mn->dx) << FRACBITS;
         no->dy = SHORT(mn->dy) << FRACBITS;
-        for (j = 0; j < 2; j++)
+        for (int j = 0; j < 2; j++)
         {
             no->children[j] = SHORT(mn->children[j]);
-            for (k = 0; k < 4; k++)
+            for (int k = 0; k < 4; k++)
                 no->bbox[j][k] = SHORT(mn->bbox[j][k]) << FRACBITS;
         }
     }
@@ -215,16 +208,15 @@ void loadNodes(int lump)
 void loadThings(int lump)
 {
     byte* data;
-    int i;
     mapthing_t* mt;
     int numthings;
     doom_boolean spawn;
 
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
     numthings = W_LumpLength(lump) / sizeof(mapthing_t);
 
-    mt = (mapthing_t*) data;
-    for (i = 0; i < numthings; i++, mt++)
+    mt = reinterpret_cast<mapthing_t*>(data);
+    for (int i = 0; i < numthings; i++, mt++)
     {
         spawn = true;
 
@@ -268,7 +260,6 @@ void loadThings(int lump)
 void loadLineDefs(int lump)
 {
     byte* data;
-    int i;
     maplinedef_t* mld;
     line_t* ld;
     vertex_t* v1;
@@ -277,11 +268,11 @@ void loadLineDefs(int lump)
     numlines = W_LumpLength(lump) / sizeof(maplinedef_t);
     Doom::level().lines.assign(numlines, line_t {});
     lines = Doom::level().lines.data();
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    mld = (maplinedef_t*) data;
+    mld = reinterpret_cast<maplinedef_t*>(data);
     ld = lines;
-    for (i = 0; i < numlines; i++, mld++, ld++)
+    for (int i = 0; i < numlines; i++, mld++, ld++)
     {
         ld->flags = SHORT(mld->flags);
         ld->special = SHORT(mld->special);
@@ -331,12 +322,12 @@ void loadLineDefs(int lump)
         if (ld->sidenum[0] != -1)
             ld->frontsector = sides[ld->sidenum[0]].sector;
         else
-            ld->frontsector = 0;
+            ld->frontsector = nullptr;
 
         if (ld->sidenum[1] != -1)
             ld->backsector = sides[ld->sidenum[1]].sector;
         else
-            ld->backsector = 0;
+            ld->backsector = nullptr;
     }
 }
 
@@ -346,18 +337,17 @@ void loadLineDefs(int lump)
 void loadSideDefs(int lump)
 {
     byte* data;
-    int i;
     mapsidedef_t* msd;
     side_t* sd;
 
     numsides = W_LumpLength(lump) / sizeof(mapsidedef_t);
     Doom::level().sides.assign(numsides, side_t {});
     sides = Doom::level().sides.data();
-    data = (byte*) (W_CacheLumpNum(lump, PU_STATIC));
+    data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    msd = (mapsidedef_t*) data;
+    msd = reinterpret_cast<mapsidedef_t*>(data);
     sd = sides;
-    for (i = 0; i < numsides; i++, msd++, sd++)
+    for (int i = 0; i < numsides; i++, msd++, sd++)
     {
         sd->textureoffset = SHORT(msd->textureoffset) << FRACBITS;
         sd->rowoffset = SHORT(msd->rowoffset) << FRACBITS;
@@ -373,13 +363,12 @@ void loadSideDefs(int lump)
 //
 void loadBlockMap(int lump)
 {
-    int i;
     int count;
 
-    blockmaplump = (short*) (W_CacheLumpNum(lump, PU_LEVEL));
+    blockmaplump = static_cast<short*>(W_CacheLumpNum(lump, PU_LEVEL));
     count = W_LumpLength(lump) / 2;
 
-    for (i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
         blockmaplump[i] = SHORT(blockmaplump[i]);
 
     // Fill the Level's blockmap descriptor from the lump header, then refresh the
@@ -400,7 +389,7 @@ void loadBlockMap(int lump)
 
     // clear out mobj chains. The array is the Level's; the mobjs it will point at
     // are the zone's.
-    Doom::level().blockLinks.assign((std::size_t) (bmapwidth * bmapheight), nullptr);
+    Doom::level().blockLinks.assign(bmapwidth * bmapheight, nullptr);
     blocklinks = Doom::level().blockLinks.data();
 }
 
@@ -409,11 +398,9 @@ void loadBlockMap(int lump)
 // Builds sector line lists and subsector sector numbers.
 // Finds block bounding boxes for sectors.
 //
-void groupLines(void)
+void groupLines()
 {
     line_t** linebuffer;
-    int i;
-    int j;
     int total;
     line_t* li;
     sector_t* sector;
@@ -424,7 +411,7 @@ void groupLines(void)
 
     // look up sector number for each subsector
     ss = subsectors;
-    for (i = 0; i < numsubsectors; i++, ss++)
+    for (int i = 0; i < numsubsectors; i++, ss++)
     {
         seg = &segs[ss->firstline];
         ss->sector = seg->sidedef->sector;
@@ -433,7 +420,7 @@ void groupLines(void)
     // count number of lines in each sector
     li = lines;
     total = 0;
-    for (i = 0; i < numlines; i++, li++)
+    for (int i = 0; i < numlines; i++, li++)
     {
         total++;
         li->frontsector->linecount++;
@@ -448,15 +435,15 @@ void groupLines(void)
     // build line tables for each sector. One flat array carved into per-sector
     // slices, owned by the Level (Sim/Level.h); linebuffer walks it as vanilla's
     // did, and sector->lines points into it.
-    Doom::level().sectorLines.assign((std::size_t) total, nullptr);
+    Doom::level().sectorLines.assign(total, nullptr);
     linebuffer = Doom::level().sectorLines.data();
     sector = sectors;
-    for (i = 0; i < numsectors; i++, sector++)
+    for (int i = 0; i < numsectors; i++, sector++)
     {
         M_ClearBox(bbox);
         sector->lines = linebuffer;
         li = lines;
-        for (j = 0; j < numlines; j++, li++)
+        for (int j = 0; j < numlines; j++, li++)
         {
             if (li->frontsector == sector || li->backsector == sector)
             {
@@ -496,13 +483,12 @@ void groupLines(void)
 //
 void setupLevel(int episode, int map, int, skill_t)
 {
-    int i;
     char lumpname[9];
     int lumpnum;
 
     totalkills = totalitems = totalsecret = wminfo.maxfrags = 0;
     wminfo.partime = 180;
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
     {
         players[i].killcount = players[i].secretcount = players[i].itemcount = 0;
     }
@@ -565,7 +551,7 @@ void setupLevel(int episode, int map, int, skill_t)
     loadNodes(lumpnum + ML_NODES);
     loadSegs(lumpnum + ML_SEGS);
 
-    rejectmatrix = (byte*) (W_CacheLumpNum(lumpnum + ML_REJECT, PU_LEVEL));
+    rejectmatrix = static_cast<byte*>(W_CacheLumpNum(lumpnum + ML_REJECT, PU_LEVEL));
     groupLines();
 
     bodyqueslot = 0;
@@ -575,10 +561,10 @@ void setupLevel(int episode, int map, int, skill_t)
     // if deathmatch, randomly spawn the active players
     if (deathmatch)
     {
-        for (i = 0; i < MAXPLAYERS; i++)
+        for (int i = 0; i < MAXPLAYERS; i++)
             if (playeringame[i])
             {
-                players[i].mo = 0;
+                players[i].mo = nullptr;
                 G_DeathMatchSpawnPlayer(i);
             }
     }
@@ -597,7 +583,7 @@ void setupLevel(int episode, int map, int, skill_t)
 //
 // init
 //
-void init(void)
+void init()
 {
     P_InitSwitchList();
     P_InitPicAnims();

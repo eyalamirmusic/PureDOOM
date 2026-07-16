@@ -47,14 +47,16 @@ void platRaise(plat_t* plat)
                 || plat->type == raiseToNearestAndChange)
             {
                 if (!(leveltime & 7))
-                    S_StartSound((mobj_t*) &plat->sector->soundorg, sfx_stnmov);
+                    S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                                 sfx_stnmov);
             }
 
             if (res == crushed && (!plat->crush))
             {
                 plat->count = plat->wait;
                 plat->status = down;
-                S_StartSound((mobj_t*) &plat->sector->soundorg, sfx_pstart);
+                S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                             sfx_pstart);
             }
             else
             {
@@ -62,7 +64,8 @@ void platRaise(plat_t* plat)
                 {
                     plat->count = plat->wait;
                     plat->status = waiting;
-                    S_StartSound((mobj_t*) &plat->sector->soundorg, sfx_pstop);
+                    S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                                 sfx_pstop);
 
                     switch (plat->type)
                     {
@@ -90,7 +93,8 @@ void platRaise(plat_t* plat)
             {
                 plat->count = plat->wait;
                 plat->status = waiting;
-                S_StartSound((mobj_t*) &plat->sector->soundorg, sfx_pstop);
+                S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                             sfx_pstop);
             }
             break;
 
@@ -101,7 +105,8 @@ void platRaise(plat_t* plat)
                     plat->status = up;
                 else
                     plat->status = down;
-                S_StartSound((mobj_t*) &plat->sector->soundorg, sfx_pstart);
+                S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                             sfx_pstart);
             }
 
         case in_stasis:
@@ -142,13 +147,13 @@ int doPlat(line_t* line, plattype_e type, int amount)
 
         // Find lowest & highest floors around sector
         rtn = 1;
-        plat = (plat_t*) (levelAlloc(sizeof(*plat)));
+        plat = static_cast<plat_t*>(levelAlloc(sizeof(*plat)));
         P_AddThinker(&plat->thinker);
 
         plat->type = type;
         plat->sector = sec;
         plat->sector->specialdata = plat;
-        plat->thinker.function.acp1 = (actionf_p1) T_PlatRaise;
+        plat->thinker.function.acp1 = reinterpret_cast<actionf_p1>(T_PlatRaise);
         plat->crush = false;
         plat->tag = line->tag;
 
@@ -163,7 +168,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 // NO MORE DAMAGE, IF APPLICABLE
                 sec->special = 0;
 
-                S_StartSound((mobj_t*) &sec->soundorg, sfx_stnmov);
+                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_stnmov);
                 break;
 
             case raiseAndChange:
@@ -173,7 +178,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->wait = 0;
                 plat->status = up;
 
-                S_StartSound((mobj_t*) &sec->soundorg, sfx_stnmov);
+                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_stnmov);
                 break;
 
             case downWaitUpStay:
@@ -186,7 +191,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = down;
-                S_StartSound((mobj_t*) &sec->soundorg, sfx_pstart);
+                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
                 break;
 
             case blazeDWUS:
@@ -199,7 +204,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = down;
-                S_StartSound((mobj_t*) &sec->soundorg, sfx_pstart);
+                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
                 break;
 
             case perpetualRaise:
@@ -217,7 +222,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->wait = 35 * PLATWAIT;
                 plat->status = (plat_e) (P_Random() & 1);
 
-                S_StartSound((mobj_t*) &sec->soundorg, sfx_pstart);
+                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
                 break;
         }
         addActivePlat(plat);
@@ -228,22 +233,19 @@ int doPlat(line_t* line, plattype_e type, int amount)
 
 void activateInStasis(int tag)
 {
-    int i;
-
-    for (i = 0; i < MAXPLATS; i++)
+    for (int i = 0; i < MAXPLATS; i++)
         if (activeplats[i] && (activeplats[i])->tag == tag
             && (activeplats[i])->status == in_stasis)
         {
             (activeplats[i])->status = (activeplats[i])->oldstatus;
-            (activeplats[i])->thinker.function.acp1 = (actionf_p1) T_PlatRaise;
+            (activeplats[i])->thinker.function.acp1 =
+                reinterpret_cast<actionf_p1>(T_PlatRaise);
         }
 }
 
 void stopPlat(line_t* line)
 {
-    int j;
-
-    for (j = 0; j < MAXPLATS; j++)
+    for (int j = 0; j < MAXPLATS; j++)
         if (activeplats[j] && ((activeplats[j])->status != in_stasis)
             && ((activeplats[j])->tag == line->tag))
         {
@@ -255,10 +257,8 @@ void stopPlat(line_t* line)
 
 void addActivePlat(plat_t* plat)
 {
-    int i;
-
-    for (i = 0; i < MAXPLATS; i++)
-        if (activeplats[i] == 0)
+    for (int i = 0; i < MAXPLATS; i++)
+        if (activeplats[i] == nullptr)
         {
             activeplats[i] = plat;
             return;
@@ -268,13 +268,12 @@ void addActivePlat(plat_t* plat)
 
 void removeActivePlat(plat_t* plat)
 {
-    int i;
-    for (i = 0; i < MAXPLATS; i++)
+    for (int i = 0; i < MAXPLATS; i++)
         if (plat == activeplats[i])
         {
-            (activeplats[i])->sector->specialdata = 0;
+            (activeplats[i])->sector->specialdata = nullptr;
             P_RemoveThinker(&(activeplats[i])->thinker);
-            activeplats[i] = 0;
+            activeplats[i] = nullptr;
 
             return;
         }

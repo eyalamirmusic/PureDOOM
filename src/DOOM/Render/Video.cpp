@@ -176,8 +176,8 @@ void vCopyRect(int srcx,
 #ifdef RANGECHECK
     if (srcx < 0 || srcx + width > SCREENWIDTH || srcy < 0
         || srcy + height > SCREENHEIGHT || destx < 0 || destx + width > SCREENWIDTH
-        || desty < 0 || desty + height > SCREENHEIGHT || (unsigned) srcscrn > 4
-        || (unsigned) destscrn > 4)
+        || desty < 0 || desty + height > SCREENHEIGHT
+        || static_cast<unsigned>(srcscrn) > 4 || static_cast<unsigned>(destscrn) > 4)
     {
         I_Error("Error: Bad vCopyRect");
     }
@@ -213,7 +213,8 @@ void vDrawPatch(int x, int y, int scrn, patch_t* patch)
     x -= SHORT(patch->leftoffset);
 #ifdef RANGECHECK
     if (x < 0 || x + SHORT(patch->width) > SCREENWIDTH || y < 0
-        || y + SHORT(patch->height) > SCREENHEIGHT || (unsigned) scrn > 4)
+        || y + SHORT(patch->height) > SCREENHEIGHT
+        || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch at %d,%d exceeds LFB\n", x, y);
         doom_print("Patch at ");
@@ -237,12 +238,13 @@ void vDrawPatch(int x, int y, int scrn, patch_t* patch)
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = (column_t*) ((byte*) patch + LONG(patch->columnofs[col]));
+        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+                                             + LONG(patch->columnofs[col]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
         {
-            source = (byte*) column + 3;
+            source = reinterpret_cast<byte*>(column) + 3;
             dest = desttop + column->topdelta * SCREENWIDTH;
             count = column->length;
 
@@ -251,7 +253,8 @@ void vDrawPatch(int x, int y, int scrn, patch_t* patch)
                 *dest = *source++;
                 dest += SCREENWIDTH;
             }
-            column = (column_t*) ((byte*) column + column->length + 4);
+            column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+                                                 + column->length + 4);
         }
     }
 }
@@ -275,7 +278,8 @@ void vDrawPatchFlipped(int x, int y, int scrn, patch_t* patch)
     x -= SHORT(patch->leftoffset);
 #ifdef RANGECHECK
     if (x < 0 || x + SHORT(patch->width) > SCREENWIDTH || y < 0
-        || y + SHORT(patch->height) > SCREENHEIGHT || (unsigned) scrn > 4)
+        || y + SHORT(patch->height) > SCREENHEIGHT
+        || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch origin %d,%d exceeds LFB\n", x, y);
         doom_print("Patch origin ");
@@ -297,12 +301,13 @@ void vDrawPatchFlipped(int x, int y, int scrn, patch_t* patch)
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = (column_t*) ((byte*) patch + LONG(patch->columnofs[w - 1 - col]));
+        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+                                             + LONG(patch->columnofs[w - 1 - col]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
         {
-            source = (byte*) column + 3;
+            source = reinterpret_cast<byte*>(column) + 3;
             dest = desttop + column->topdelta * SCREENWIDTH;
             count = column->length;
 
@@ -311,7 +316,8 @@ void vDrawPatchFlipped(int x, int y, int scrn, patch_t* patch)
                 *dest = *source++;
                 dest += SCREENWIDTH;
             }
-            column = (column_t*) ((byte*) column + column->length + 4);
+            column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+                                                 + column->length + 4);
         }
     }
 }
@@ -331,7 +337,8 @@ void vDrawPatchRectDirect(
     x -= SHORT(patch->leftoffset);
 #ifdef RANGECHECK
     if (x < 0 || x + SHORT(src_w) > SCREENWIDTH || y < 0
-        || y + SHORT(patch->height) > SCREENHEIGHT || (unsigned) scrn > 4)
+        || y + SHORT(patch->height) > SCREENHEIGHT
+        || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch at %d,%d exceeds LFB\n", x, y);
         doom_print("Patch at ");
@@ -355,12 +362,13 @@ void vDrawPatchRectDirect(
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = (column_t*) ((byte*) patch + LONG(patch->columnofs[col + src_x]));
+        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+                                             + LONG(patch->columnofs[col + src_x]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
         {
-            source = (byte*) column + 3;
+            source = reinterpret_cast<byte*>(column) + 3;
             dest = desttop + column->topdelta * SCREENWIDTH;
             count = column->length;
 
@@ -369,7 +377,8 @@ void vDrawPatchRectDirect(
                 *dest = *source++;
                 dest += SCREENWIDTH;
             }
-            column = (column_t*) ((byte*) column + column->length + 4);
+            column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+                                                 + column->length + 4);
         }
     }
 }
@@ -393,7 +402,7 @@ void vDrawBlock(int x, int y, int scrn, int width, int height, byte* src)
 
 #ifdef RANGECHECK
     if (x < 0 || x + width > SCREENWIDTH || y < 0 || y + height > SCREENHEIGHT
-        || (unsigned) scrn > 4)
+        || static_cast<unsigned>(scrn) > 4)
     {
         I_Error("Error: Bad vDrawBlock");
     }
@@ -421,7 +430,7 @@ void vGetBlock(int x, int y, int scrn, int width, int height, byte* dest)
 
 #ifdef RANGECHECK
     if (x < 0 || x + width > SCREENWIDTH || y < 0 || y + height > SCREENHEIGHT
-        || (unsigned) scrn > 4)
+        || static_cast<unsigned>(scrn) > 4)
     {
         I_Error("Error: Bad vDrawBlock");
     }
@@ -440,16 +449,15 @@ void vGetBlock(int x, int y, int scrn, int width, int height, byte* dest)
 //
 // vInit
 //
-void vInit(void)
+void vInit()
 {
-    int i;
     byte* base;
 
     // stick these in low dos memory on PCs
 
     base = I_AllocLow(SCREENWIDTH * SCREENHEIGHT * 4);
 
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
         screens[i] = base + i * SCREENWIDTH * SCREENHEIGHT;
 }
 

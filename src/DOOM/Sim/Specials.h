@@ -7,7 +7,7 @@
 namespace Doom
 {
 // Specials coordinator; p_spec.cpp keeps the vanilla names as shims.
-void initPicAnims(void);
+void initPicAnims();
 fixed_t findLowestFloorSurrounding(sector_t* sec);
 fixed_t findHighestFloorSurrounding(sector_t* sec);
 fixed_t findNextHighestFloor(sector_t* sec, int currentheight);
@@ -18,7 +18,7 @@ int findMinSurroundingLight(sector_t* sector, int max);
 void crossSpecialLine(int linenum, int side, mobj_t* thing);
 void shootSpecialLine(mobj_t* thing, line_t* line);
 void playerInSpecialSector(player_t* player);
-void updateSpecials(void);
+void updateSpecials();
 int doDonut(line_t* line);
-void spawnSpecials(void);
+void spawnSpecials();
 } // namespace Doom

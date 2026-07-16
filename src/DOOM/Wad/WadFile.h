@@ -1,8 +1,9 @@
 #pragma once
 
+#include <ea_data_structures/Structures/Vector.h>
+
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 
 namespace Doom
 {
@@ -42,7 +43,7 @@ public:
     // reloadable (see reload()).
     void addFile(const char* path);
 
-    int count() const { return (int) lumps.size(); }
+    int count() const { return lumps.size(); }
 
     // -1 when there is no such lump, which is a question several callers ask -
     // the engine checks for TEXTURE2 before deciding it is playing DOOM II.
@@ -61,8 +62,8 @@ public:
     // caller may hold this pointer for as long as it likes.
     const std::byte* data(int lump);
 
-    const Lump& info(int lump) const { return lumps[(std::size_t) lump]; }
-    const std::vector<Lump>& directory() const { return lumps; }
+    const Lump& info(int lump) const { return lumps[lump]; }
+    const EA::Vector<Lump>& directory() const { return lumps; }
 
     // Vanilla's `~file` hack: re-read the reloadable file's directory and drop
     // whatever it had cached, so a level can be edited and reloaded without
@@ -75,14 +76,14 @@ private:
     void addDirectory(const char* path, void* handle);
     void openFile(const char* path, bool reloadable);
 
-    std::vector<Lump> lumps;
+    EA::Vector<Lump> lumps;
 
     // One buffer per lump, filled the first time it is asked for and empty until
     // then. Indexed alongside `lumps`, so the two never disagree about how many
     // lumps there are.
-    std::vector<std::vector<std::byte>> cache;
+    EA::Vector<EA::Vector<std::byte>> cache;
 
-    std::vector<void*> handles;
+    EA::Vector<void*> handles;
 
     const char* reloadName = nullptr;
     int reloadLump = 0;

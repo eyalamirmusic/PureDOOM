@@ -20,11 +20,11 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void initThinkers(void);
+void initThinkers();
 void addThinker(thinker_t* thinker);
 void removeThinker(thinker_t* thinker);
-void runThinkers(void);
-void ticker(void);
+void runThinkers();
+void ticker();
 
 // The level-allocation pool. Each block carries a small header linking it into an
 // intrusive list, so a level reset frees every block malloc gave out - live
@@ -38,17 +38,17 @@ static LevelChunk*& levelChunks = levelPool().head;
 
 void* levelAlloc(int size)
 {
-    int total = (int) sizeof(LevelChunk) + size;
-    LevelChunk* chunk = (LevelChunk*) doom_malloc(total);
+    int total = static_cast<int>(sizeof(LevelChunk)) + size;
+    LevelChunk* chunk = static_cast<LevelChunk*>(doom_malloc(total));
     doom_memset(chunk, 0, total);
 
-    chunk->prev = 0;
+    chunk->prev = nullptr;
     chunk->next = levelChunks;
     if (levelChunks)
         levelChunks->prev = chunk;
     levelChunks = chunk;
 
-    return (void*) (chunk + 1);
+    return static_cast<void*>(chunk + 1);
 }
 
 void levelFree(void* block)
@@ -56,7 +56,7 @@ void levelFree(void* block)
     if (!block)
         return;
 
-    LevelChunk* chunk = (LevelChunk*) block - 1;
+    LevelChunk* chunk = static_cast<LevelChunk*>(block) - 1;
     if (chunk->prev)
         chunk->prev->next = chunk->next;
     else
@@ -67,7 +67,7 @@ void levelFree(void* block)
     doom_free(chunk);
 }
 
-void freeLevelAllocations(void)
+void freeLevelAllocations()
 {
     LevelChunk* chunk = levelChunks;
     while (chunk)
@@ -76,10 +76,10 @@ void freeLevelAllocations(void)
         doom_free(chunk);
         chunk = next;
     }
-    levelChunks = 0;
+    levelChunks = nullptr;
 }
 
-void initThinkers(void)
+void initThinkers()
 {
     thinkercap.prev = thinkercap.next = &thinkercap;
 }
@@ -104,20 +104,20 @@ void addThinker(thinker_t* thinker)
 void removeThinker(thinker_t* thinker)
 {
     // FIXME: NOP.
-    thinker->function.acv = (actionf_v) (-1);
+    thinker->function.acv = reinterpret_cast<actionf_v>(-1);
 }
 
 //
 // runThinkers
 //
-void runThinkers(void)
+void runThinkers()
 {
     thinker_t* currentthinker;
 
     currentthinker = thinkercap.next;
     while (currentthinker != &thinkercap)
     {
-        if (currentthinker->function.acv == (actionf_v) (-1))
+        if (currentthinker->function.acv == reinterpret_cast<actionf_v>(-1))
         {
             // Time to remove it. Vanilla advanced by reading currentthinker->next
             // *after* Z_Free, which the zone tolerated because a freed block kept
@@ -145,10 +145,8 @@ void runThinkers(void)
 //
 // ticker
 //
-void ticker(void)
+void ticker()
 {
-    int i;
-
     // run the tic
     if (paused)
         return;
@@ -159,7 +157,7 @@ void ticker(void)
         return;
     }
 
-    for (i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < MAXPLAYERS; i++)
         if (playeringame[i])
             P_PlayerThink(&players[i]);
 

@@ -58,7 +58,7 @@
 //
 // SCREEN SHOTS
 //
-typedef struct
+struct pcx_t
 {
     char manufacturer;
     char version;
@@ -82,7 +82,7 @@ typedef struct
 
     char filler[58];
     unsigned char data; // unbounded
-} pcx_t;
+};
 
 //
 // M_DrawText
@@ -224,7 +224,7 @@ doom_boolean mWriteFile(char const* name, void* source, int length)
 
     handle = doom_open(name, "wb");
 
-    if (handle == 0)
+    if (handle == nullptr)
         return false;
 
     count = doom_write(handle, source, length);
@@ -246,7 +246,7 @@ int mReadFile(char const* name, byte** buffer)
     byte* buf;
 
     handle = doom_open(name, "rb");
-    if (handle == 0)
+    if (handle == nullptr)
     {
         //I_Error("Error: Couldn't read file %s", name);
 
@@ -257,7 +257,7 @@ int mReadFile(char const* name, byte** buffer)
     doom_seek(handle, 0, DOOM_SEEK_END);
     length = doom_tell(handle);
     doom_seek(handle, 0, DOOM_SEEK_SET);
-    buf = (byte*) (doom_malloc(length));
+    buf = static_cast<byte*>((doom_malloc(length)));
     count = doom_read(handle, buf, length);
     doom_close(handle);
 
@@ -290,7 +290,7 @@ static void bindEngineDefault(const char* name, int* location)
         }
 }
 
-static void bindEngineDefaults(void)
+static void bindEngineDefaults()
 {
     Engine& e = engine();
 
@@ -334,16 +334,15 @@ static void bindEngineDefaults(void)
         {"always_run", &e.inputConfig.always_run},
     };
 
-    for (const auto& b : binds)
+    for (const auto& b: binds)
         bindEngineDefault(b.name, b.location);
 }
 
 //
 // mSaveDefaults
 //
-void mSaveDefaults(void)
+void mSaveDefaults()
 {
-    int i;
     int v;
     void* f;
 
@@ -353,7 +352,7 @@ void mSaveDefaults(void)
     if (!f)
         return; // can't write the file, but don't complain
 
-    for (i = 0; i < numdefaults; i++)
+    for (int i = 0; i < numdefaults; i++)
     {
         if (defaults[i].defaultvalue > -0xfff && defaults[i].defaultvalue < 0xfff)
         {
@@ -381,7 +380,7 @@ void mSaveDefaults(void)
 //
 // mLoadDefaults
 //
-void mLoadDefaults(void)
+void mLoadDefaults()
 {
     int i;
     int len;
@@ -401,7 +400,7 @@ void mLoadDefaults(void)
         if (defaults[i].defaultvalue == 0xFFFF)
             *defaults[i].text_location = defaults[i].default_text_value;
         else
-            *defaults[i].location = (int) defaults[i].defaultvalue;
+            *defaults[i].location = static_cast<int>(defaults[i].defaultvalue);
     }
 
     // check for a custom default file
@@ -476,8 +475,8 @@ void mLoadDefaults(void)
                 {
                     // get a string default
                     isstring = true;
-                    len = (int) doom_strlen(strparm);
-                    newstring = (char*) doom_malloc(len);
+                    len = static_cast<int>(doom_strlen(strparm));
+                    newstring = static_cast<char*>(doom_malloc(len));
                     strparm[len - 1] = 0;
                     doom_strcpy(newstring, strparm + 1);
                 }
@@ -512,12 +511,11 @@ void mLoadDefaults(void)
 //
 void WritePCXfile(char* filename, byte* data, int width, int height, byte* palette)
 {
-    int i;
     int length;
     pcx_t* pcx;
     byte* pack;
 
-    pcx = (pcx_t*) (doom_malloc(width * height * 2 + 1000));
+    pcx = static_cast<pcx_t*>((doom_malloc(width * height * 2 + 1000)));
 
     pcx->manufacturer = 0x0a; // PCX id
     pcx->version = 5; // 256 color
@@ -538,7 +536,7 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
     // pack the image
     pack = &pcx->data;
 
-    for (i = 0; i < width * height; i++)
+    for (int i = 0; i < width * height; i++)
     {
         if ((*data & 0xc0) != 0xc0)
             *pack++ = *data++;
@@ -551,11 +549,11 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
 
     // write the palette
     *pack++ = 0x0c; // palette ID byte
-    for (i = 0; i < 768; i++)
+    for (int i = 0; i < 768; i++)
         *pack++ = *palette++;
 
     // write output file
-    length = (int) (pack - (byte*) pcx);
+    length = static_cast<int>(pack - reinterpret_cast<byte*>(pcx));
     mWriteFile(filename, pcx, length);
 
     doom_free(pcx);
@@ -564,7 +562,7 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
 //
 // mScreenShot
 //
-void mScreenShot(void)
+void mScreenShot()
 {
     int i;
     byte* linear;
@@ -582,7 +580,7 @@ void mScreenShot(void)
     {
         lbmname[4] = i / 10 + '0';
         lbmname[5] = i % 10 + '0';
-        if ((f = doom_open(lbmname, "wb")) == 0)
+        if ((f = doom_open(lbmname, "wb")) == nullptr)
             break; // file doesn't exist
         doom_close(f);
     }
@@ -594,7 +592,7 @@ void mScreenShot(void)
                  linear,
                  SCREENWIDTH,
                  SCREENHEIGHT,
-                 (byte*) (W_CacheLumpName("PLAYPAL", PU_CACHE)));
+                 static_cast<byte*>((W_CacheLumpName("PLAYPAL", PU_CACHE))));
 
     players[consoleplayer].message = "screen shot";
 }

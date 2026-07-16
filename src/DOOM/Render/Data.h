@@ -9,13 +9,13 @@ void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheigh
 void generateComposite(int texnum);
 void generateLookup(int texnum);
 byte* getColumn(int tex, int col);
-void initTextures(void);
-void initFlats(void);
-void initSpriteLumps(void);
-void initColormaps(void);
-void initData(void);
+void initTextures();
+void initFlats();
+void initSpriteLumps();
+void initColormaps();
+void initData();
 int flatNumForName(const char* name);
 int checkTextureNumForName(const char* name);
 int textureNumForName(const char* name);
-void precacheLevel(void);
+void precacheLevel();
 } // namespace Doom

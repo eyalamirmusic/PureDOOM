@@ -32,32 +32,24 @@ unsigned char screen_palette[256 * 3];
 
 namespace Doom
 {
-void I_ShutdownGraphics(void)
-{
-}
+void I_ShutdownGraphics() {}
 
 //
 // I_StartFrame
 //
-void I_StartFrame(void)
-{
-}
+void I_StartFrame() {}
 
-void I_GetEvent(void)
-{
-}
+void I_GetEvent() {}
 
 //
 // I_StartTic
 //
-void I_StartTic(void)
-{
-}
+void I_StartTic() {}
 
 //
 // I_UpdateNoBlit
 //
-void I_UpdateNoBlit(void)
+void I_UpdateNoBlit()
 {
     // what is this?
 }
@@ -65,17 +57,15 @@ void I_UpdateNoBlit(void)
 //
 // I_FinishUpdate
 //
-void I_FinishUpdate(void)
+void I_FinishUpdate()
 {
     static int lasttic;
-    int tics;
-    int i;
 
     // draws little dots on the bottom of the screen
     if (devparm)
     {
-        i = I_GetTime();
-        tics = i - lasttic;
+        int i = I_GetTime();
+        int tics = i - lasttic;
         lasttic = i;
         if (tics > 20)
             tics = 20;
@@ -103,8 +93,9 @@ void I_SetPalette(byte* palette)
     doom_memcpy(screen_palette, palette, 256 * 3);
 }
 
-void I_InitGraphics(void)
+void I_InitGraphics()
 {
-    screens[0] = (unsigned char*) doom_malloc(SCREENWIDTH * SCREENHEIGHT);
+    screens[0] =
+        static_cast<unsigned char*>(doom_malloc(SCREENWIDTH * SCREENHEIGHT));
 }
 } // namespace Doom

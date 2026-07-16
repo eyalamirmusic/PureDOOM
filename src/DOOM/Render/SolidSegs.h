@@ -17,11 +17,11 @@ namespace Doom
 // array). newend points into solidsegs but is set at runtime by R_ClearClipSegs, not by a self-
 // referential initializer, so it is safe as a member. Live frame-golden-covered - every frame the
 // demos draw walks the BSP through these.
-typedef struct
+struct cliprange_t
 {
     int first;
     int last;
-} cliprange_t;
+};
 
 struct SolidSegs
 {

@@ -79,7 +79,7 @@ signed short mixbuffer[MIXBUFFERSIZE];
 namespace Doom
 {
 
-typedef struct
+struct mus_header_t
 {
     char ID[4];
     unsigned short scoreLen;
@@ -88,7 +88,7 @@ typedef struct
     unsigned short sec_channels;
     unsigned short instrCnt;
     unsigned short dummy;
-} mus_header_t;
+};
 
 // A quick hack to establish a protocol between
 // synchronous mix buffer updates and asynchronous
@@ -223,7 +223,7 @@ void* getsfx(char* sfxname, int* len)
     *len = paddedsize;
 
     // Return allocated padded data.
-    return (void*) (paddedsfx + 8);
+    return static_cast<void*>(paddedsfx + 8);
 }
 
 //
@@ -373,7 +373,7 @@ void I_SetChannels()
         doom_print("steptablemid[");
         doom_print(doom_itoa(i, 10));
         doom_print("] = ");
-        doom_print(doom_itoa((int)(pow(2.0, (i / 64.0)) * 65536.0), 10));
+        doom_print(doom_itoa(static_cast<int>(pow(2.0, (i / 64.0)) * 65536.0), 10));
         doom_print(";\n");
         //steptablemid[i] = (int)(pow(2.0, (i / 64.0)) * 65536.0);
     }
@@ -727,7 +727,7 @@ int I_SoundIsPlaying(int handle)
 //
 // This function currently supports only 16bit.
 //
-void I_UpdateSound(void)
+void I_UpdateSound()
 {
     [[maybe_unused]] static int song_tick_progress = 0;
 
@@ -842,7 +842,7 @@ void I_UpdateSound(void)
 // Mixing now done synchronous, and
 //  only output be done asynchronous?
 //
-void I_SubmitSound(void) {}
+void I_SubmitSound() {}
 
 void I_UpdateSoundParams([[maybe_unused]] int handle,
                          [[maybe_unused]] int vol,
@@ -855,7 +855,7 @@ void I_UpdateSoundParams([[maybe_unused]] int handle,
     //  and resetting the channel parameters.
 }
 
-void I_ShutdownSound(void)
+void I_ShutdownSound()
 {
     // Wait till all pending sounds are finished.
     int done = 0;
@@ -917,9 +917,9 @@ void I_InitSound()
 //
 // MUSIC API.
 //
-void I_InitMusic(void) {}
+void I_InitMusic() {}
 
-void I_ShutdownMusic(void) {}
+void I_ShutdownMusic() {}
 
 void I_PlaySong([[maybe_unused]] int handle, int looping)
 {
@@ -995,7 +995,7 @@ unsigned long I_TickSong()
 
     if (mus_delay <= 0)
     {
-        int event = (int) mus_data[mus_offset++];
+        int event = static_cast<int>(mus_data[mus_offset++]);
         int type = (event & 0b01110000) >> 4;
         int channel = event & 0b00001111;
 
@@ -1008,23 +1008,23 @@ unsigned long I_TickSong()
         {
             case EVENT_RELEASE_NOTE:
             {
-                int note = (int) mus_data[mus_offset++] & 0b01111111;
+                int note = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 midi_event = (0x00000080 | channel | (note << 8));
                 break;
             }
             case EVENT_PLAY_NOTE:
             {
-                int note_bytes = (int) mus_data[mus_offset++];
+                int note_bytes = static_cast<int>(mus_data[mus_offset++]);
                 int note = note_bytes & 0b01111111;
                 int vol = 127;
                 if (note_bytes & 0b10000000)
-                    vol = (int) mus_data[mus_offset++] & 0b01111111;
+                    vol = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 midi_event = (0x00000090 | channel | (note << 8) | (vol << 16));
                 break;
             }
             case EVENT_PITCH_BEND:
             {
-                int bend_amount = (int) mus_data[mus_offset++] * 64;
+                int bend_amount = static_cast<int>(mus_data[mus_offset++]) * 64;
                 int l = bend_amount & 0b01111111;
                 int m = (bend_amount & 0b1111111110000000) >> 7;
                 midi_event = (0x000000E0 | channel | (l << 8) | (m << 16));
@@ -1032,7 +1032,8 @@ unsigned long I_TickSong()
             }
             case EVENT_SYSTEM_EVENT:
             {
-                int controller = (int) mus_data[mus_offset++] & 0b01111111;
+                int controller =
+                    static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 switch (controller)
                 {
                     case CONTROLLER_EVENT_ALL_SOUNDS_OFF:
@@ -1057,8 +1058,9 @@ unsigned long I_TickSong()
             }
             case EVENT_CONTROLLER:
             {
-                int controller = (int) mus_data[mus_offset++] & 0b01111111;
-                int value = (int) mus_data[mus_offset++] & 0b01111111;
+                int controller =
+                    static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
+                int value = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 switch (controller)
                 {
                     case CONTROLLER_CHANGE_INSTRUMENT:

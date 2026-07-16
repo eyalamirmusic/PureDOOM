@@ -4,7 +4,7 @@
 
 #include "Blockmap.h"
 
-#include <vector>
+#include <ea_data_structures/Structures/Vector.h>
 
 namespace Doom
 {
@@ -28,17 +28,17 @@ namespace Doom
 // vertex, a subsector at a sector) stay valid.
 struct Level
 {
-    std::vector<vertex_t> vertexes;
-    std::vector<seg_t> segs;
-    std::vector<subsector_t> subsectors;
-    std::vector<sector_t> sectors;
-    std::vector<node_t> nodes;
-    std::vector<line_t> lines;
-    std::vector<side_t> sides;
+    EA::Vector<vertex_t> vertexes;
+    EA::Vector<seg_t> segs;
+    EA::Vector<subsector_t> subsectors;
+    EA::Vector<sector_t> sectors;
+    EA::Vector<node_t> nodes;
+    EA::Vector<line_t> lines;
+    EA::Vector<side_t> sides;
 
     // The per-block mobj chain heads. The array is ours; the mobjs it points at
     // are the zone's.
-    std::vector<mobj_t*> blockLinks;
+    EA::Vector<mobj_t*> blockLinks;
 
     // The blockmap descriptor - origin, extent and the lump pointers the iterators
     // read from. Filled by P_LoadBlockMap, which then refreshes the vanilla
@@ -49,7 +49,7 @@ struct Level
     // One flat array of line pointers, carved into per-sector slices that
     // sector_t::lines point into. Vanilla calls this `linebuffer`, a single
     // Z_Malloc in P_GroupLines.
-    std::vector<line_t*> sectorLines;
+    EA::Vector<line_t*> sectorLines;
 };
 
 // The engine's one level, for as long as the engine has one of everything.

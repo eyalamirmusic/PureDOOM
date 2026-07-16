@@ -3,12 +3,12 @@
 namespace Doom
 {
 // Savegame archive/unarchive; p_saveg.cpp keeps the vanilla names as shims.
-void archivePlayers(void);
-void unArchivePlayers(void);
-void archiveWorld(void);
-void unArchiveWorld(void);
-void archiveThinkers(void);
-void unArchiveThinkers(void);
-void archiveSpecials(void);
-void unArchiveSpecials(void);
+void archivePlayers();
+void unArchivePlayers();
+void archiveWorld();
+void unArchiveWorld();
+void archiveThinkers();
+void unArchiveThinkers();
+void archiveSpecials();
+void unArchiveSpecials();
 } // namespace Doom

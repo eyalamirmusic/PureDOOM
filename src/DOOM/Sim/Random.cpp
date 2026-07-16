@@ -8,9 +8,9 @@ namespace Doom
 // Moved here verbatim from m_random.cpp. This table is the simulation's entire
 // supply of chance, and Tests/Sim/PrimitiveTests.cpp checksums it whole.
 // clang-format off
-const std::array<std::uint8_t, Random::tableSize>& Random::table()
+const EA::Array<std::uint8_t, Random::tableSize>& Random::table()
 {
-    static const auto values = std::array<std::uint8_t, tableSize> {{
+    static const auto values = EA::Array<std::uint8_t, tableSize> {
     0,   8, 109, 220, 222, 241, 149, 107,  75, 248, 254, 140,  16,  66 ,
     74,  21, 211,  47,  80, 242, 154,  27, 205, 128, 161,  89,  77,  36 ,
     95, 110,  85,  48, 212, 140, 211, 249,  22,  79, 200,  50,  28, 188 ,
@@ -30,7 +30,7 @@ const std::array<std::uint8_t, Random::tableSize>& Random::table()
     17,  46,  52, 231, 232,  76,  31, 221,  84,  37, 216, 165, 212, 106 ,
     197, 242,  98,  43,  39, 175, 254, 145, 190,  84, 118, 222, 187, 136 ,
     120, 163, 236, 249
-    }};
+    };
 
     return values;
 }

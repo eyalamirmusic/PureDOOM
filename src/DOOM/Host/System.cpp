@@ -34,16 +34,14 @@ namespace Doom
 int mb_used = 6 * (sizeof(void*) / 4);
 ticcmd_t emptycmd;
 
-void I_Tactile(int, int, int)
-{
-}
+void I_Tactile(int, int, int) {}
 
-ticcmd_t* I_BaseTiccmd(void)
+ticcmd_t* I_BaseTiccmd()
 {
     return &emptycmd;
 }
 
-int I_GetHeapSize(void)
+int I_GetHeapSize()
 {
     return mb_used * 1024 * 1024;
 }
@@ -51,30 +49,29 @@ int I_GetHeapSize(void)
 byte* I_ZoneBase(int* size)
 {
     *size = mb_used * 1024 * 1024;
-    return (byte*) doom_malloc(*size);
+    return static_cast<byte*>(doom_malloc(*size));
 }
 
 //
 // I_GetTime
 // returns time in 1/70th second tics
 //
-int I_GetTime(void)
+int I_GetTime()
 {
     int sec, usec;
-    int newtics;
     static int basetime = 0;
 
     doom_gettime(&sec, &usec);
     if (!basetime)
         basetime = sec;
-    newtics = (sec - basetime) * TICRATE + usec * TICRATE / 1000000;
+    int newtics = (sec - basetime) * TICRATE + usec * TICRATE / 1000000;
     return newtics;
 }
 
 //
 // I_Init
 //
-void I_Init(void)
+void I_Init()
 {
     I_InitSound();
 }
@@ -82,7 +79,7 @@ void I_Init(void)
 //
 // I_Quit
 //
-void I_Quit(void)
+void I_Quit()
 {
     D_QuitNetGame();
     I_ShutdownSound();
@@ -107,19 +104,13 @@ void I_WaitVBL(int)
 #endif
 }
 
-void I_BeginRead(void)
-{
-}
+void I_BeginRead() {}
 
-void I_EndRead(void)
-{
-}
+void I_EndRead() {}
 
 byte* I_AllocLow(int length)
 {
-    byte* mem;
-
-    mem = (byte*) doom_malloc(length);
+    byte* mem = static_cast<byte*>(doom_malloc(length));
     doom_memset(mem, 0, length);
     return mem;
 }
