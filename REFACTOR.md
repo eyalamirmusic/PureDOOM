@@ -61,6 +61,31 @@ netcode, utility layer and host boundary are migrated, and the zone allocator is
 deleted**; and **Step 5 has had two whole categories finished this session** on top
 of everything the earlier sweep did (**~90 `Engine` members now**).
 
+**A cross-cutting stylistic/modernization pass has landed** — not a numbered step,
+but a sweep over the code that was *already* in `namespace Doom` (Math/Sim/Render/
+UI/Game/Host/Wad/Engine), turning transcribed-1993-C statements into C++ someone
+wrote. It did six things: `typedef struct {…} T;` → `struct T {…};`; `std::array`/
+`std::vector` → `EA::Array`/`EA::Vector` (which is what wired `ea_data_structures`
+into the build — see Step 3); the `std::size_t` casts those `int`-indexed containers
+made unnecessary, gone; `(void)` empty parameter lists → `()`; pointer→reference
+where a pointer is provably never null and never reseated (done for the two
+self-contained widget libraries `UI/HudWidgets` and `UI/StatusWidgets` and their
+shims — the playsim's pointers are mostly *legitimately* nullable and stayed
+pointers); and the statement-level cleanup — C-casts → `static_cast`/
+`reinterpret_cast`/`const_cast`, `NULL`/pointer-`0` → `nullptr`, C-style loop
+counters localized (`int i; … for (i=…)` → `for (int i = …)`, only where the counter
+does not escape the loop), and declare-then-assign combined. The Render/Sim/Game/UI
+bulk was fanned out to four parallel subagents and verified centrally. **The whole
+transform set is behavior-preserving by the C++ standard**, so a mistake could only
+surface as a compile error or a golden failure, never a silent behaviour change —
+which is why it was safe to parallelise across the golden-pinned engine, and every
+gate held (build clean, 80/80, `Tests/Goldens/` byte-identical, the app links). What
+it deliberately did **not** touch: the load-bearing `doom_boolean`-is-`int` casts
+(`ST_createWidgets`' `(int*) &weaponowned`), `#define`s, code inside inactive `#if`
+blocks, `// clang-format off` regions, `(void) x;` value-discards, and the
+pointer↔integer alignment / `offsetof` / function-pointer idioms (which want
+`reinterpret_cast` and sit at the edge of the rubric).
+
 **The config-backed category is complete.** It was the one bucket blocked all along:
 `Config.cpp`'s static `defaults[]` table captured `&member` at static-init, so turning a
 config global into an `Engine`-member reference made that a dynamic initializer that raced
@@ -444,15 +469,19 @@ is genuinely rewritten**, then it moves — `p_map.cpp` is still `p_map.cpp` whi
 it is still vanilla-shaped, so it stays diffable against the 1993 source you will
 be reading it against.
 
-The engine may use eacp's containers: `EA::Vector` comes from
+The engine uses eacp's containers now: `EA::Vector` and `EA::Array` come from
 `ea_data_structures`, which is header-only, `INTERFACE`-only, C++20 and pulls in
-nothing — no eacp, no graphics. But `CPMAddPackage(eacp)` currently runs inside
+nothing — no eacp, no graphics. `CPMAddPackage(eacp)` runs inside
 `examples/EACP/CMakeLists.txt`, *after* `add_subdirectory(src/DOOM)`, so the
-target does not exist when the engine is configured. Hoist
-`CPMAddPackage(NAME EADataStructures ...)` into the root list ahead of the
-engine; CPM dedupes by name, so eacp's own `find_package` reuses it, and the
-tests keep linking `doom-engine` alone. (Not needed yet — nothing in the core
-wanted a container.)
+target would not exist when the engine is configured; instead
+`CPMAddPackage(NAME EADataStructures ...)` is hoisted into the **root** list ahead
+of the engine, and `doom-engine` links `ea_data_structures` PUBLIC. CPM dedupes by
+name, so eacp's own `find_package` reuses it, and the tests keep linking
+`doom-engine` (plus that one header-only target) alone. **Landed** in the
+stylistic/modernization pass (see the handoff): the trig/random tables became
+`EA::Array`, and `Level`'s geometry and `WadFile`'s directory/lump-cache vectors
+became `EA::Vector` — `int`-indexed, so the `std::size_t` casts at their call sites
+went away with them.
 
 ### Landed
 
@@ -590,8 +619,9 @@ the "fix" of `memset`-ing it changed nothing, which is how it was ruled out.
 throws away whole: `vertexes`, `segs`, `subsectors`, `sectors`, `nodes`, `lines`,
 `sides`, the per-block mobj-chain heads (`blocklinks`), and the flat line-pointer
 buffer `P_GroupLines` carves into per-sector slices (vanilla's `linebuffer`). Each
-is a `std::vector`; the loaders in `p_setup.cpp` `assign` into them and refresh the
-vanilla global to `.data()`. **`assign`, not `resize`** — a shorter second level
+is an `EA::Vector` (a `std::vector` when this landed; migrated to eacp's container
+in the stylistic pass); the loaders in `p_setup.cpp` `assign` into them and refresh
+the vanilla global to `.data()`. **`assign`, not `resize`** — a shorter second level
 must not inherit the first level's tail, and `Z_Malloc` handed back fresh zeroed
 memory every load.
 
