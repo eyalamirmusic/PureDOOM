@@ -15,12 +15,14 @@
 #include "r_local.h"
 
 #include "Render/Planes.h"
+#include "Render/PlaneScratch.h"
 #include "Render/RenderScratch.h"
 
 #define MAXVISPLANES        128
 #define MAXOPENINGS        SCREENWIDTH*64
 
-planefunction_t floorfunc;
+// floorfunc (and the never-defined ceilingfunc_t extern in r_plane.h) were vestigial - defined
+// or declared but never called - and are deleted, the way the parallel ceilingfunc was.
 
 //
 // opening
@@ -31,16 +33,18 @@ planefunction_t floorfunc;
 visplane_t*& floorplane = Doom::renderScratch().floorplane;
 visplane_t*& ceilingplane = Doom::renderScratch().ceilingplane;
 
-// ?
-short* lastopening;
+// The cross-read plane state (lastopening, the clip arrays and the projection tables) is a
+// Doom::PlaneScratch owned by the Engine now (alongside the openings lastopening points into);
+// these are references onto its members (REFACTOR.md, Step 5).
+short*& lastopening = Doom::planeScratch().lastopening;
 
 //
 // Clip values are the solid pixel bounding the range.
 //  floorclip starts out SCREENHEIGHT
 //  ceilingclip starts out -1
 //
-short floorclip[SCREENWIDTH];
-short ceilingclip[SCREENWIDTH];
+short (&floorclip)[SCREENWIDTH] = Doom::planeScratch().floorclip;
+short (&ceilingclip)[SCREENWIDTH] = Doom::planeScratch().ceilingclip;
 
 //
 // spanstart holds the start of a plane span
@@ -51,8 +55,8 @@ short ceilingclip[SCREENWIDTH];
 // texture mapping
 //
 
-fixed_t yslope[SCREENHEIGHT];
-fixed_t distscale[SCREENWIDTH];
+fixed_t (&yslope)[SCREENHEIGHT] = Doom::planeScratch().yslope;
+fixed_t (&distscale)[SCREENWIDTH] = Doom::planeScratch().distscale;
 
 
 

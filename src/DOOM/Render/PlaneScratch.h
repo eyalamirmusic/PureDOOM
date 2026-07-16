@@ -8,9 +8,10 @@ namespace Doom
 {
 // Render/Planes' visplane and span machinery: the pool of visplanes the frame's floors and ceilings
 // are batched into (visplanes / lastvisplane), the per-row silhouette scratch the plane spans are
-// clipped against (openings, and lastopening - which stays in the r_plane shim, being header-externed
-// and read by Render/Segs for masked textures), the span start/stop columns, the light row for the
-// current plane, and the plane-mapping cache R_MapPlane memoises its distance/step maths in.
+// clipped against (openings / lastopening), the span start/stop columns, the light row for the
+// current plane, and the plane-mapping cache R_MapPlane memoises its distance/step maths in - plus the
+// cross-read plane state r_plane.h exports (floorclip / ceilingclip / yslope / distscale / lastopening),
+// which lands here too so lastopening stays in the same cluster as the openings it points into.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // Render/Planes' own namespace-scope private globals, read by no other file. The vanilla names become
@@ -38,6 +39,16 @@ struct PlaneScratch
     fixed_t cacheddistance[SCREENHEIGHT] = {}; // ... distance per row
     fixed_t cachedxstep[SCREENHEIGHT] = {}; // ... x step per row
     fixed_t cachedystep[SCREENHEIGHT] = {}; // ... y step per row
+
+    // The cross-read plane state r_plane.h exports (read by Render/Segs and Render/Main),
+    // bound in the r_plane.cpp shim rather than here. lastopening lives with openings so the
+    // "points into a sibling array, reset by R_ClearPlanes each frame" argument holds within
+    // one cluster (a cross-cluster pointer would dangle on Engine copy).
+    short* lastopening = nullptr;         // next free slot in openings
+    short floorclip[SCREENWIDTH] = {};    // solid pixel bounding the floor, per column
+    short ceilingclip[SCREENWIDTH] = {};  // ... the ceiling, per column
+    fixed_t yslope[SCREENHEIGHT] = {};    // projection y-slope, per row
+    fixed_t distscale[SCREENWIDTH] = {};  // distance scale, per column
 };
 
 // The one PlaneScratch, a view onto the Engine's member - the same pattern as the other clusters.

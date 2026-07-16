@@ -26,19 +26,18 @@
 #include "r_data.h"
 
 
-// Visplane related.
-extern short* lastopening;
+// Visplane related. These are Doom::PlaneScratch members (Engine) now; references onto them
+// (REFACTOR.md, Step 5). floorfunc and the never-defined ceilingfunc_t were vestigial and were
+// deleted (the parallel ceilingfunc went the same way).
+extern short*& lastopening;
 
 typedef void (*planefunction_t) (int top, int bottom);
 
-extern planefunction_t floorfunc;
-extern planefunction_t ceilingfunc_t;
+extern short (&floorclip)[SCREENWIDTH];
+extern short (&ceilingclip)[SCREENWIDTH];
 
-extern short floorclip[SCREENWIDTH];
-extern short ceilingclip[SCREENWIDTH];
-
-extern fixed_t yslope[SCREENHEIGHT];
-extern fixed_t distscale[SCREENWIDTH];
+extern fixed_t (&yslope)[SCREENHEIGHT];
+extern fixed_t (&distscale)[SCREENWIDTH];
 
 void R_InitPlanes(void);
 void R_ClearPlanes(void);
