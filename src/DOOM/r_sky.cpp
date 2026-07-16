@@ -18,11 +18,11 @@
 #include "Game/SkyState.h"
 #include "Render/Sky.h"
 
-// skyflatnum is a Doom::SkyState owned by the Engine now; this is a reference onto it
-// (REFACTOR.md, Step 5).
+// skyflatnum, skytexture and skytexturemid are a Doom::SkyState owned by the Engine now; these
+// are references onto its members (REFACTOR.md, Step 5).
 int& skyflatnum = Doom::skyState().skyflatnum;
-int skytexture;
-int skytexturemid;
+int& skytexture = Doom::skyState().skytexture;
+int& skytexturemid = Doom::skyState().skytexturemid;
 
 void R_InitSkyMap(void)
 {

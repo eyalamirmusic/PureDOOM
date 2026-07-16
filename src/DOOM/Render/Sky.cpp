@@ -8,10 +8,11 @@
 
 #include "Sky.h"
 
-// skytexturemid is a global (declared in r_sky.h, read across the renderer); it is
-// defined in the r_sky.cpp shim. Declared at global scope so initSkyMap writes that
-// one, not a Doom:: copy.
-extern int skytexturemid;
+// skytexturemid is a Doom::SkyState member now (Engine), a reference exported by the
+// r_sky.cpp shim (declared in r_sky.h). Declared at global scope so initSkyMap writes that
+// one, not a Doom:: copy - and as int& to match the definition, or a write through a plain
+// int here would clobber the low half of the reference's pointer.
+extern int& skytexturemid;
 
 namespace Doom
 {

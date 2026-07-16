@@ -266,8 +266,8 @@ extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
 extern const char*& pagename; // Doom::AttractMode (Engine member)
 extern doom_boolean& setsizeneeded;
 
-// The sky texture to be used instead of the F_SKY1 dummy.
-extern int skytexture;
+// The sky texture to be used instead of the F_SKY1 dummy (Doom::SkyState member).
+extern int& skytexture;
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).

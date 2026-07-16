@@ -13,9 +13,15 @@ namespace Doom
 // shim, no namespace); the vanilla name becomes a reference onto this member. Shared by the
 // renderer, the playsim and the app's sky detection, all of which read it through the engine
 // headers unchanged. A reference reads the identical value, so the move is golden-neutral.
+//
+// The two render-side sky parameters join it: skytexture (the wall texture G_DoLoadLevel picks
+// for the current map's sky, read by the renderer and the app's GPU sky) and skytexturemid (the
+// vertical offset R_InitSkyMap sets it to be drawn at). All three are "the sky" and move together.
 struct SkyState
 {
-    int skyflatnum = 0; // lump number of the sky flat (F_SKY1)
+    int skyflatnum = 0;    // lump number of the sky flat (F_SKY1)
+    int skytexture = 0;    // texture number of the current map's sky
+    int skytexturemid = 0; // vertical offset the sky is drawn at
 };
 
 // The one SkyState, a view onto the Engine's member - the same pattern as
