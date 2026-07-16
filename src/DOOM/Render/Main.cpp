@@ -21,6 +21,7 @@
 #include "../r_sky.h"
 
 #include "Main.h"
+#include "RenderMainState.h"
 
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
@@ -35,8 +36,10 @@ extern int& setblocks;
 
 namespace Doom
 {
-int framecount;
-int setdetail;
+// framecount/setdetail now live on the Engine (Render/RenderMainState.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are references onto that member.
+static int& framecount = renderMainState().framecount;
+static int& setdetail = renderMainState().setdetail;
 void (*transcolfunc)(void);
 
 // Forward declarations so call order needs no rearranging.

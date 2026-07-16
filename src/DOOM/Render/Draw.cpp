@@ -17,6 +17,7 @@
 #include "../w_wad.h"
 
 #include "Draw.h"
+#include "DrawTables.h"
 
 // ?
 #define MAXWIDTH 1120
@@ -37,10 +38,11 @@ namespace Doom
 // Conveniently, the frame buffer is a linear one, and we need only the base
 // address, and the total size == width*height*depth/8.
 //
-// These frame-address lookup tables are file-local: only the drawers below use
-// them, through R_InitBuffer.
-byte* ylookup[MAXHEIGHT];
-int columnofs[MAXWIDTH];
+// These frame-address lookup tables (and fuzzpos below) now live on the Engine (Render/DrawTables.h,
+// moved by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto
+// that member; only the drawers use them, through R_InitBuffer.
+static byte* (&ylookup)[MAXHEIGHT] = drawTables().ylookup;
+static int (&columnofs)[MAXWIDTH] = drawTables().columnofs;
 
 //
 // A column is a vertical slice/span from a wall texture that, given the DOOM
@@ -167,7 +169,7 @@ int fuzzoffset[FUZZTABLE] = {
     -FUZZOFF, FUZZOFF,  FUZZOFF,  FUZZOFF,  FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,
     -FUZZOFF, FUZZOFF};
 
-int fuzzpos = 0;
+static int& fuzzpos = drawTables().fuzzpos;
 
 void drawFuzzColumn(void)
 {

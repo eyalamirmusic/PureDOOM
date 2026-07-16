@@ -26,9 +26,13 @@
 #include "../Game/TiccmdInput.h"
 #include "../Game/TimeDemo.h"
 #include "../Render/CompositeCache.h"
+#include "../Render/DrawTables.h"
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
+#include "../Render/RenderMainState.h"
 #include "../Render/RenderScratch.h"
+#include "../Render/SolidSegs.h"
+#include "../Render/SpriteScratch.h"
 #include "../Render/ViewPoint.h"
 #include "../Render/ViewProjection.h"
 #include "../Render/ViewWindow.h"
@@ -95,6 +99,10 @@ struct Engine
     CompositeCache compositeCache;
     RenderScratch renderScratch;
     WallScratch wallScratch;
+    SpriteScratch spriteScratch;
+    DrawTables drawTables;
+    SolidSegs solidSegs;
+    RenderMainState renderMainState;
     LevelStats levelStats;
     LaunchOptions launchOptions;
     GameVersion gameVersion;

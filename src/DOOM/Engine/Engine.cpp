@@ -100,6 +100,26 @@ WallScratch& wallScratch()
     return engine().wallScratch;
 }
 
+SpriteScratch& spriteScratch()
+{
+    return engine().spriteScratch;
+}
+
+DrawTables& drawTables()
+{
+    return engine().drawTables;
+}
+
+SolidSegs& solidSegs()
+{
+    return engine().solidSegs;
+}
+
+RenderMainState& renderMainState()
+{
+    return engine().renderMainState;
+}
+
 RenderScratch& renderScratch()
 {
     return engine().renderScratch;

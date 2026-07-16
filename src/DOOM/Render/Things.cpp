@@ -15,6 +15,7 @@
 #include "../r_local.h"
 #include "../w_wad.h"
 
+#include "SpriteScratch.h"
 #include "Things.h"
 
 #define MINZ (FRACUNIT * 4)
@@ -23,14 +24,16 @@
 namespace Doom
 {
 
-// File-local scratch: no other file reads these.
-lighttable_t** spritelights;
+// File-local scratch, now on the Engine (Render/SpriteScratch.h, moved by the file-scope-statics
+// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; no other file
+// reads these.
+static lighttable_t**& spritelights = spriteScratch().spritelights;
 
-spriteframe_t sprtemp[29];
-int maxframe;
-char* spritename;
+static spriteframe_t (&sprtemp)[29] = spriteScratch().sprtemp;
+static int& maxframe = spriteScratch().maxframe;
+static char*& spritename = spriteScratch().spritename;
 
-vissprite_t overflowsprite;
+static vissprite_t& overflowsprite = spriteScratch().overflowsprite;
 
 // Forward declarations so call order needs no rearranging.
 void installSpriteLump(int lump,

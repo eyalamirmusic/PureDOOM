@@ -14,6 +14,7 @@
 #include "../r_local.h"
 
 #include "BSP.h"
+#include "SolidSegs.h"
 
 // R_StoreWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
 void R_StoreWallRange(int start, int stop);
@@ -22,16 +23,15 @@ void R_StoreWallRange(int start, int stop);
 
 namespace Doom
 {
-typedef struct
-{
-    int first;
-    int last;
-} cliprange_t;
+// cliprange_t and the solidsegs/newend clip ranges now live on the Engine (Render/SolidSegs.h, moved
+// by the file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are references onto that
+// member. The type moved to the header so solidsegs could become a member (an anonymous-struct
+// typedef in the .cpp cannot be named there).
 
 // newend is one past the last valid seg
-cliprange_t* newend;
+static cliprange_t*& newend = solidSegs().newend;
 
-cliprange_t solidsegs[MAXSEGS];
+static cliprange_t (&solidsegs)[MAXSEGS] = solidSegs().solidsegs;
 
 int checkcoord[12][4] = {{3, 0, 2, 1},
                          {3, 0, 2, 0},
