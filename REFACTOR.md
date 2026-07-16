@@ -1738,13 +1738,23 @@ never really C — the tiny data/decl remainders — are gone:
     `UI/Finale`/`Game/Config` read by bare extern, all moved to references-to-array in lockstep) and
     `sttminus` (the status-bar number widget's minus sign, a `Doom::StatusWidgetGraphics` cluster kept
     the widget library's own rather than folded into `StatusBarGraphics`, so `UI/StatusWidgets` stays
-    self-contained). **What genuinely remains of the sweep** is a tail: a few scattered single flags with
-    no cohesive cluster home (`st_statusbaron`, `is_wiping_screen`, `inhelpscreens`) — each belongs to a
-    different subsystem and does not group without a grab-bag, so they wait for their subsystem to want
-    them; and the **function-local
-    `static`s** (the "later function-local pass" — `HU_Responder`'s send state, the status-bar
-    face-drawer's counters, `D_Display`'s frame-diff state, `A_BrainSpit`'s alternating toggle, …),
-    which are a different shape from the file-scope sweep. Beyond the tail, the last thing
+    self-contained). **The function-local pass has now begun** — the golden-covered ones first: the
+    status-bar **face-drawer's counters** (`lastcalc`/`oldhealth`/`lastattackdown`/`priority`, folded
+    into the existing `StatusBarFace` cluster — the same face subsystem, just declared inside its
+    functions), the `w_ready` **n/a-ammo sentinel** (`largeammo`, folded into `StatusBarWidgets`, which
+    the widget's `num` pointer points at), and **`D_Display`'s frame-diff state** (the six-static
+    border/overlay-redraw machine `viewactivestate`/`menuactivestate`/`inhelpscreensstate`/`fullscreen`/
+    `oldgamestate`/`borderdrawcount`, a new cohesive `Doom::DisplayState` cluster). Each is a member with
+    a matching default reached by a local reference in its function — vanilla never resets them, so the
+    persistence is identical in a single-Engine process; all three are live frame-golden-covered and held
+    the goldens byte-identical, with `StateClusterTests` pinning the non-trivial sentinels. **What
+    genuinely remains** is a tail: a few scattered single flags with no cohesive cluster home
+    (`st_statusbaron`, `is_wiping_screen`, `inhelpscreens`) — each belongs to a different subsystem and
+    does not group without a grab-bag, so they wait for their subsystem to want them; and the
+    **function-local `static`s that no shareware demo exercises** (`HU_Responder`'s chat send state,
+    `A_BrainSpit`'s DOOM II boss-brain toggle, the `mypos`-cheat message buffer, …) — behaviour-preserving
+    storage relocations, but off the golden net, so they warrant review rather than an autonomous sweep.
+    Beyond the tail, the last thing
     that *finally* lets the engine be **constructed** rather than booted is flipping `engine()` from a
     function-local-static singleton to an instance threaded through the `doom_*` entry points — a large
     API change, not a mechanical migration, and the real end of Step 5.
