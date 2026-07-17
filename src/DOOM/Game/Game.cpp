@@ -75,6 +75,7 @@
 #include "PendingCommands.h"
 #include "PlayerState.h"
 #include "RefreshFlags.h"
+#include "SaveGameState.h"
 #include "TiccmdInput.h"
 #include "TimeDemo.h"
 
@@ -173,7 +174,7 @@ wbstartstruct_t& wminfo =
 // sweep; this vanilla name is a reference-to-array onto the member (REFACTOR.md, Step 5).
 short (&consistancy)[MAXPLAYERS][BACKUPTICS] = Doom::netState().consistancy;
 
-byte* savebuffer;
+byte*& savebuffer = Doom::saveGameState().buffer;
 
 //
 // controls (have defaults). The config-backed control bindings are a Doom::InputConfig owned by
@@ -256,7 +257,7 @@ int (&cpars)[32] = Doom::parTimes().cpars;
 
 doom_boolean secretexit;
 
-char savename[256];
+char (&savename)[256] = Doom::saveGameState().name;
 
 // The deferred new-game request is a Doom::DeferredNewGame owned by the Engine now; these vanilla
 // names are references onto it (the file-scope-statics sweep - REFACTOR.md, Step 5).

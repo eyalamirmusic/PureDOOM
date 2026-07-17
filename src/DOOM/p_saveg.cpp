@@ -14,10 +14,13 @@
 
 #include "p_local.h"
 
+#include "Game/SaveGameState.h"
 #include "Sim/SaveGame.h"
 
-// The savegame read/write cursor, advanced by g_game around these calls.
-byte* save_p;
+// The savegame read/write cursor, advanced by g_game around these calls. Its storage
+// lives in Doom::SaveGameState (an Engine member) now; this is a reference onto it, so
+// the engine-wide readers (g_game, Sim/SaveGame, the probe) resolve unchanged.
+byte*& save_p = Doom::saveGameState().cursor;
 
 void P_ArchivePlayers(void)
 {

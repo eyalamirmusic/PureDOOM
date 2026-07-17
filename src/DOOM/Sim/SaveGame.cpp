@@ -20,8 +20,11 @@
 
 #include <new> // placement new
 
-// save_p is defined in the shim; g_game and this file share it.
-extern byte* save_p;
+// save_p is a reference onto Doom::SaveGameState's cursor (an Engine member), bound in
+// the p_saveg.cpp shim; g_game, the probe and this file share it. This bare extern must
+// stay a reference in lockstep with p_saveg.h's - a plain `extern byte* save_p` here
+// would write the low half of the reference's pointer and corrupt it.
+extern byte*& save_p;
 
 #define PADSAVEP() save_p += (4 - ((long long) save_p & 3)) & 3
 

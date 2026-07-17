@@ -37,7 +37,9 @@ void P_UnArchiveThinkers(void);
 void P_ArchiveSpecials(void);
 void P_UnArchiveSpecials(void);
 
-extern byte* save_p;
+// a reference onto Doom::SaveGameState's cursor (an Engine member) - the storage moved
+// off this loose global in Step 5
+extern byte*& save_p;
 
 
 #endif

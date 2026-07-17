@@ -25,6 +25,7 @@
 #include "../Game/PendingCommands.h"
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
+#include "../Game/SaveGameState.h"
 #include "../Game/SkyState.h"
 #include "../Game/SoundSettings.h"
 #include "../Game/StartupDefaults.h"
@@ -136,6 +137,7 @@ struct Engine
     GameFlow gameFlow;
     DemoState demoState;
     RefreshFlags refreshFlags;
+    SaveGameState saveGameState;
     OverlayState overlayState;
     NetState netState;
     MapSpawns mapSpawns;

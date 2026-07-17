@@ -195,6 +195,11 @@ RefreshFlags& refreshFlags()
     return engine().refreshFlags;
 }
 
+SaveGameState& saveGameState()
+{
+    return engine().saveGameState;
+}
+
 OverlayState& overlayState()
 {
     return engine().overlayState;
