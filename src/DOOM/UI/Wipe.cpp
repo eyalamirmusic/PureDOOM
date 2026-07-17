@@ -17,6 +17,8 @@
 #include "Wipe.h"
 #include "WipeState.h"
 
+#include <ea_data_structures/Structures/Vector.h>
+
 namespace Doom
 {
 
@@ -29,17 +31,14 @@ static byte*& wipe_scr = wipeState().wipe_scr;
 
 void colMajorXform(short* array, int width, int height)
 {
-    short* dest;
-
-    dest = static_cast<short*>(doom_malloc(width * height * sizeof(short)));
+    // RAII scratch: the transposed copy, released when the function returns.
+    auto dest = EA::Vector<short>(width * height);
 
     for (int y = 0; y < height; y++)
         for (int x = 0; x < width; x++)
             dest[x * height + y] = array[y * width + x];
 
-    doom_memcpy(array, dest, width * height * 2);
-
-    doom_free(dest);
+    doom_memcpy(array, dest.data(), width * height * 2);
 }
 
 int initColorXForm(int width, int height, int ticks)

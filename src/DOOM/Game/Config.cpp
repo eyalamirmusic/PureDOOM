@@ -51,6 +51,8 @@
 #include "SoundSettings.h"
 #include "../Engine/Engine.h"
 
+#include <ea_data_structures/Structures/Vector.h>
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -512,10 +514,12 @@ void mLoadDefaults()
 void WritePCXfile(char* filename, byte* data, int width, int height, byte* palette)
 {
     int length;
-    pcx_t* pcx;
     byte* pack;
 
-    pcx = static_cast<pcx_t*>((doom_malloc(width * height * 2 + 1000)));
+    // RAII scratch: the PCX header + packed image is built into this buffer and
+    // written out, then released on return. pcx is a view onto it.
+    auto pcxbuf = EA::Vector<byte>(width * height * 2 + 1000);
+    auto* pcx = reinterpret_cast<pcx_t*>(pcxbuf.data());
 
     pcx->manufacturer = 0x0a; // PCX id
     pcx->version = 5; // 256 color
@@ -555,8 +559,6 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
     // write output file
     length = static_cast<int>(pack - reinterpret_cast<byte*>(pcx));
     mWriteFile(filename, pcx, length);
-
-    doom_free(pcx);
 }
 
 //
