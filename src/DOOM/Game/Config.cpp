@@ -51,6 +51,7 @@
 #include "SoundSettings.h"
 #include "../Engine/Engine.h"
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 #ifndef O_BINARY
@@ -299,11 +300,13 @@ static void bindEngineDefaults()
     // The member addresses are taken here, at runtime, not in the static defaults[] table -
     // that is the whole point (a static &member captures the address of a reference before the
     // Engine exists). A local table keeps the pairing readable.
-    const struct
+    struct Bind
     {
         const char* name;
         int* location;
-    } binds[] = {
+    };
+
+    const EA::Array<Bind, 30> binds = {
         {"sfx_volume", &e.soundSettings.sfxVolume},
         {"music_volume", &e.soundSettings.musicVolume},
         {"snd_channels", &e.soundSettings.numChannels},
@@ -387,8 +390,8 @@ void mLoadDefaults()
     int i;
     int len;
     void* f;
-    char def[80];
-    char strparm[100];
+    EA::Array<char, 80> def;
+    EA::Array<char, 100> strparm;
     char* newstring;
     int parm;
     doom_boolean isstring;
@@ -477,23 +480,23 @@ void mLoadDefaults()
                 {
                     // get a string default
                     isstring = true;
-                    len = static_cast<int>(doom_strlen(strparm));
+                    len = static_cast<int>(doom_strlen(strparm.data()));
                     newstring = static_cast<char*>(doom_malloc(len));
                     strparm[len - 1] = 0;
-                    doom_strcpy(newstring, strparm + 1);
+                    doom_strcpy(newstring, strparm.data() + 1);
                 }
                 else if (strparm[0] == '0' && strparm[1] == 'x')
                 {
                     //sscanf(strparm + 2, "%x", &parm);
-                    parm = doom_atox(strparm + 2);
+                    parm = doom_atox(strparm.data() + 2);
                 }
                 else
                 {
                     //sscanf(strparm, "%i", &parm);
-                    parm = doom_atoi(strparm);
+                    parm = doom_atoi(strparm.data());
                 }
                 for (i = 0; i < numdefaults; i++)
-                    if (!doom_strcmp(def, defaults[i].name))
+                    if (!doom_strcmp(def.data(), defaults[i].name))
                     {
                         if (!isstring)
                             *defaults[i].location = parm;
@@ -568,7 +571,7 @@ void mScreenShot()
 {
     int i;
     byte* linear;
-    char lbmname[12];
+    EA::Array<char, 12> lbmname;
     void* f;
 
     // munge planar buffer to linear
@@ -576,13 +579,13 @@ void mScreenShot()
     I_ReadScreen(linear);
 
     // find a file name to save it to
-    doom_strcpy(lbmname, "DOOM00.pcx");
+    doom_strcpy(lbmname.data(), "DOOM00.pcx");
 
     for (i = 0; i <= 99; i++)
     {
         lbmname[4] = i / 10 + '0';
         lbmname[5] = i % 10 + '0';
-        if ((f = doom_open(lbmname, "wb")) == nullptr)
+        if ((f = doom_open(lbmname.data(), "wb")) == nullptr)
             break; // file doesn't exist
         doom_close(f);
     }
@@ -590,7 +593,7 @@ void mScreenShot()
         I_Error("Error: mScreenShot: Couldn't create a PCX");
 
     // save the pcx file
-    WritePCXfile(lbmname,
+    WritePCXfile(lbmname.data(),
                  linear,
                  SCREENWIDTH,
                  SCREENHEIGHT,

@@ -36,6 +36,8 @@
 #include "SoundSettings.h"
 #include "SoundState.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 #define S_MAX_VOLUME 127
 
 // when to clip out sounds
@@ -479,7 +481,7 @@ void sStartMusic(int m_id)
 void sChangeMusic(int musicnum, int looping)
 {
     musicinfo_t* music = nullptr;
-    char namebuf[9];
+    EA::Array<char, 9> namebuf;
 
     if ((musicnum <= mus_None) || (musicnum >= NUMMUSIC))
     {
@@ -501,9 +503,9 @@ void sChangeMusic(int musicnum, int looping)
     if (!music->lumpnum)
     {
         //doom_sprintf(namebuf, "d_%s", music->name);
-        doom_strcpy(namebuf, "d_");
-        doom_concat(namebuf, music->name);
-        music->lumpnum = W_GetNumForName(namebuf);
+        doom_strcpy(namebuf.data(), "d_");
+        doom_concat(namebuf.data(), music->name);
+        music->lumpnum = W_GetNumForName(namebuf.data());
     }
 
     // load & it

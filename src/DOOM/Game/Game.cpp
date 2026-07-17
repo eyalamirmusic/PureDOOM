@@ -79,6 +79,8 @@
 #include "TiccmdInput.h"
 #include "TimeDemo.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
 #define MAXPLMOVE (forwardmove[1])
@@ -240,7 +242,7 @@ doom_boolean (&joyarray)[5] = Doom::ticcmdInput().joyarray;
 doom_boolean* joybuttons = &joyarray[1]; // allow [-1]
 
 int savegameslot;
-char savedescription[32];
+EA::Array<char, 32> savedescription;
 
 // The corpse queue (bodyque + bodyqueslot) is a Doom::CorpseQueue owned by the Engine now;
 // these are references onto it, bodyque as a reference-to-array (REFACTOR.md, Step 5).
@@ -729,11 +731,11 @@ void gTicker()
             if (cmd->forwardmove > TURBOTHRESHOLD && !(gametic & 31)
                 && ((gametic >> 5) & 3) == i)
             {
-                static char turbomessage[80];
+                static EA::Array<char, 80> turbomessage;
                 //doom_sprintf(turbomessage, "%s is turbo!", player_names[i]);
-                doom_strcpy(turbomessage, player_names[i]);
-                doom_concat(turbomessage, " is turbo!");
-                players[consoleplayer].message = turbomessage;
+                doom_strcpy(turbomessage.data(), player_names[i]);
+                doom_concat(turbomessage.data(), " is turbo!");
+                players[consoleplayer].message = turbomessage.data();
             }
 
             if (netgame && !netdemo && !(gametic % ticdup))
@@ -777,7 +779,7 @@ void gTicker()
 
                     case BTS_SAVEGAME:
                         if (!savedescription[0])
-                            doom_strcpy(savedescription, "NET GAME");
+                            doom_strcpy(savedescription.data(), "NET GAME");
                         savegameslot =
                             (players[i].cmd.buttons & BTS_SAVEMASK) >> BTS_SAVESHIFT;
                         gameaction = ga_savegame;
@@ -854,12 +856,12 @@ void gPlayerFinishLevel(int player)
 void gPlayerReborn(int player)
 {
     player_t* p;
-    int frags[MAXPLAYERS];
+    EA::Array<int, MAXPLAYERS> frags;
     int killcount;
     int itemcount;
     int secretcount;
 
-    doom_memcpy(frags, players[player].frags, sizeof(frags));
+    doom_memcpy(frags.data(), players[player].frags, sizeof(frags));
     killcount = players[player].killcount;
     itemcount = players[player].itemcount;
     secretcount = players[player].secretcount;
@@ -867,7 +869,7 @@ void gPlayerReborn(int player)
     p = &players[player];
     doom_memset(p, 0, sizeof(*p));
 
-    doom_memcpy(players[player].frags, frags, sizeof(players[player].frags));
+    doom_memcpy(players[player].frags, frags.data(), sizeof(players[player].frags));
     players[player].killcount = killcount;
     players[player].itemcount = itemcount;
     players[player].secretcount = secretcount;
@@ -1217,7 +1219,7 @@ void gLoadGame(char* name)
 void gDoLoadGame()
 {
     int a, b, c;
-    char vcheck[VERSIONSIZE];
+    EA::Array<char, VERSIONSIZE> vcheck;
 
     gameaction = ga_nothing;
 
@@ -1225,12 +1227,12 @@ void gDoLoadGame()
     save_p = savebuffer + SAVESTRINGSIZE;
 
     // skip the description field
-    doom_memset(vcheck, 0, sizeof(vcheck));
+    doom_memset(vcheck.data(), 0, sizeof(vcheck));
     //doom_sprintf(vcheck, "version %i", VERSION);
-    doom_strcpy(vcheck, "version ");
-    doom_concat(vcheck, doom_itoa(VERSION, 10));
+    doom_strcpy(vcheck.data(), "version ");
+    doom_concat(vcheck.data(), doom_itoa(VERSION, 10));
     if (doom_strcmp(reinterpret_cast<const char*>(save_p),
-                    const_cast<const char*>(vcheck)))
+                    const_cast<const char*>(vcheck.data())))
         return; // bad version
     save_p += VERSIONSIZE;
 
@@ -1276,14 +1278,14 @@ void gDoLoadGame()
 void gSaveGame(int slot, char* description)
 {
     savegameslot = slot;
-    doom_strcpy(savedescription, description);
+    doom_strcpy(savedescription.data(), description);
     sendsave = true;
 }
 
 void gDoSaveGame()
 {
-    char name[100];
-    char name2[VERSIONSIZE];
+    EA::Array<char, 100> name;
+    EA::Array<char, VERSIONSIZE> name2;
     char* description;
     int length;
 
@@ -1294,21 +1296,21 @@ void gDoSaveGame()
 #endif
     {
         //doom_sprintf(name, SAVEGAMENAME"%d.dsg", savegameslot);
-        doom_strcpy(name, SAVEGAMENAME);
-        doom_concat(name, doom_itoa(savegameslot, 10));
-        doom_concat(name, ".dsg");
+        doom_strcpy(name.data(), SAVEGAMENAME);
+        doom_concat(name.data(), doom_itoa(savegameslot, 10));
+        doom_concat(name.data(), ".dsg");
     }
-    description = savedescription;
+    description = savedescription.data();
 
     save_p = savebuffer = screens[1] + 0x4000;
 
     doom_memcpy(save_p, description, SAVESTRINGSIZE);
     save_p += SAVESTRINGSIZE;
-    doom_memset(name2, 0, sizeof(name2));
+    doom_memset(name2.data(), 0, sizeof(name2));
     //doom_sprintf(name2, "version %i", VERSION);
-    doom_strcpy(name2, "version ");
-    doom_concat(name2, doom_itoa(VERSION, 10));
-    doom_memcpy(save_p, name2, VERSIONSIZE);
+    doom_strcpy(name2.data(), "version ");
+    doom_concat(name2.data(), doom_itoa(VERSION, 10));
+    doom_memcpy(save_p, name2.data(), VERSIONSIZE);
     save_p += VERSIONSIZE;
 
     *save_p++ = gameskill;
@@ -1330,7 +1332,7 @@ void gDoSaveGame()
     length = static_cast<int>((save_p - savebuffer));
     if (length > SAVEGAMESIZE)
         I_Error("Error: Savegame buffer overrun");
-    M_WriteFile(name, savebuffer, length);
+    M_WriteFile(name.data(), savebuffer, length);
     gameaction = ga_nothing;
     savedescription[0] = 0;
 

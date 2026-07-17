@@ -31,6 +31,8 @@
 
 #include "Sound.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // Needed for calling the actual sound output.
 #define SAMPLECOUNT 512
 #define NUM_CHANNELS 8
@@ -102,7 +104,7 @@ static int mus_delay = 0;
 static doom_boolean mus_loop = false;
 static doom_boolean mus_playing = false;
 static int mus_volume = 127;
-static int mus_channel_volumes[16] = {
+static EA::Array<int, 16> mus_channel_volumes = {
     127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127};
 
 [[maybe_unused]] static int looping = 0;
@@ -114,7 +116,7 @@ static int musicdies = -1;
 //  mixing buffer, and the samplerate of the raw data.
 
 // The actual lengths of all sound effects.
-int lengths[NUMSFX];
+EA::Array<int, NUMSFX> lengths;
 
 // The actual output device.
 int audio_fd;
@@ -124,42 +126,42 @@ int audio_fd;
 // there, then submitted to the audio device.
 
 // The channel step amount...
-unsigned int channelstep[NUM_CHANNELS];
+EA::Array<unsigned int, NUM_CHANNELS> channelstep;
 // ... and a 0.16 bit remainder of last step.
-unsigned int channelstepremainder[NUM_CHANNELS];
+EA::Array<unsigned int, NUM_CHANNELS> channelstepremainder;
 
 // The channel data pointers, start and end.
-unsigned char* channels[NUM_CHANNELS];
-unsigned char* channelsend[NUM_CHANNELS];
+EA::Array<unsigned char*, NUM_CHANNELS> channels;
+EA::Array<unsigned char*, NUM_CHANNELS> channelsend;
 
 // Time/gametic that the channel started playing,
 //  used to determine oldest, which automatically
 //  has lowest priority.
 // In case number of active sounds exceeds
 //  available channels.
-int channelstart[NUM_CHANNELS];
+EA::Array<int, NUM_CHANNELS> channelstart;
 
 // The sound in channel handles,
 //  determined on registration,
 //  might be used to unregister/stop/modify,
 //  currently unused.
-int channelhandles[NUM_CHANNELS];
+EA::Array<int, NUM_CHANNELS> channelhandles;
 
 // SFX id of the playing sound effect.
 // Used to catch duplicates (like chainsaw).
-int channelids[NUM_CHANNELS];
+EA::Array<int, NUM_CHANNELS> channelids;
 
 // Pitch to stepping lookup, unused.
-int steptable[256];
+EA::Array<int, 256> steptable;
 
 // Volume lookups.
-int vol_lookup[128 * 256];
+EA::Array<int, 128 * 256> vol_lookup;
 
 // Hardware left and right channel volume lookup.
-int* channelleftvol_lookup[NUM_CHANNELS];
-int* channelrightvol_lookup[NUM_CHANNELS];
+EA::Array<int*, NUM_CHANNELS> channelleftvol_lookup;
+EA::Array<int*, NUM_CHANNELS> channelrightvol_lookup;
 
-unsigned long queued_midi_msgs[MAX_QUEUED_MIDI_MSGS];
+EA::Array<unsigned long, MAX_QUEUED_MIDI_MSGS> queued_midi_msgs;
 int queue_midi_head = 0;
 int queue_midi_tail = 0;
 
@@ -174,14 +176,14 @@ void* getsfx(char* sfxname, int* len)
     int i;
     int size;
     int paddedsize;
-    char name[20];
+    EA::Array<char, 20> name;
     int sfxlump;
 
     // Get the sound data from the WAD, allocate lump
     //  in zone memory.
     //doom_sprintf(name, "ds%s", sfxname);
-    doom_strcpy(name, "ds");
-    doom_concat(name, sfxname);
+    doom_strcpy(name.data(), "ds");
+    doom_concat(name.data(), sfxname);
 
     // Now, there is a severe problem with the
     //  sound handling, in it is not (yet/anymore)
@@ -193,10 +195,10 @@ void* getsfx(char* sfxname, int* len)
     // I do not do runtime patches to that
     //  variable. Instead, we will use a
     //  default sound for replacement.
-    if (W_CheckNumForName(name) == -1)
+    if (W_CheckNumForName(name.data()) == -1)
         sfxlump = W_GetNumForName("dspistol");
     else
-        sfxlump = W_GetNumForName(name);
+        sfxlump = W_GetNumForName(name.data());
 
     size = W_LumpLength(sfxlump);
 
@@ -357,7 +359,7 @@ void I_SetChannels()
     int i;
     int j;
 
-    int* steptablemid = steptable + 128;
+    int* steptablemid = steptable.data() + 128;
 
     // Okay, reset internal mixing channels to zero.
     /*for (i=0; i<NUM_CHANNELS; i++)
@@ -674,11 +676,11 @@ void I_SetMusicVolume(int volume)
 //
 int I_GetSfxLumpNum(sfxinfo_t* sfx)
 {
-    char namebuf[9];
+    EA::Array<char, 9> namebuf;
     //doom_sprintf(namebuf, "ds%s", sfx->name);
-    doom_strcpy(namebuf, "ds");
-    doom_concat(namebuf, sfx->name);
-    return W_GetNumForName(namebuf);
+    doom_strcpy(namebuf.data(), "ds");
+    doom_concat(namebuf.data(), sfx->name);
+    return W_GetNumForName(namebuf.data());
 }
 
 //

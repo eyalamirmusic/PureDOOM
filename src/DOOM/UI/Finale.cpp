@@ -45,6 +45,8 @@
 #include "Finale.h"
 #include "FinaleState.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // Other subsystems' globals/functions this file reads.
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
 extern patch_t* (
@@ -103,25 +105,25 @@ const char* t6text = T6TEXT;
 static const char*& finaletext = finaleState().finaletext;
 static const char*& finaleflat = finaleState().finaleflat;
 
-castinfo_t castorder[] = {{CC_ZOMBIE, MT_POSSESSED},
-                          {CC_SHOTGUN, MT_SHOTGUY},
-                          {CC_HEAVY, MT_CHAINGUY},
-                          {CC_IMP, MT_TROOP},
-                          {CC_DEMON, MT_SERGEANT},
-                          {CC_LOST, MT_SKULL},
-                          {CC_CACO, MT_HEAD},
-                          {CC_HELL, MT_KNIGHT},
-                          {CC_BARON, MT_BRUISER},
-                          {CC_ARACH, MT_BABY},
-                          {CC_PAIN, MT_PAIN},
-                          {CC_REVEN, MT_UNDEAD},
-                          {CC_MANCU, MT_FATSO},
-                          {CC_ARCH, MT_VILE},
-                          {CC_SPIDER, MT_SPIDER},
-                          {CC_CYBER, MT_CYBORG},
-                          {CC_HERO, MT_PLAYER},
+EA::Array<castinfo_t, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
+                                       {CC_SHOTGUN, MT_SHOTGUY},
+                                       {CC_HEAVY, MT_CHAINGUY},
+                                       {CC_IMP, MT_TROOP},
+                                       {CC_DEMON, MT_SERGEANT},
+                                       {CC_LOST, MT_SKULL},
+                                       {CC_CACO, MT_HEAD},
+                                       {CC_HELL, MT_KNIGHT},
+                                       {CC_BARON, MT_BRUISER},
+                                       {CC_ARACH, MT_BABY},
+                                       {CC_PAIN, MT_PAIN},
+                                       {CC_REVEN, MT_UNDEAD},
+                                       {CC_MANCU, MT_FATSO},
+                                       {CC_ARCH, MT_VILE},
+                                       {CC_SPIDER, MT_SPIDER},
+                                       {CC_CYBER, MT_CYBORG},
+                                       {CC_HERO, MT_PLAYER},
 
-                          {0, static_cast<mobjtype_t>(0)}};
+                                       {0, static_cast<mobjtype_t>(0)}};
 
 static int& castnum = finaleState().castnum;
 static int& casttics = finaleState().casttics;
@@ -661,7 +663,7 @@ void fBunnyScroll()
     int scrolled;
     patch_t* p1;
     patch_t* p2;
-    char name[10];
+    EA::Array<char, 10> name;
     int stage;
     int& laststage = finaleState().laststage;
 
@@ -706,12 +708,12 @@ void fBunnyScroll()
     }
 
     //doom_sprintf(name, "END%i", stage);
-    doom_strcpy(name, "END");
-    doom_concat(name, doom_itoa(stage, 10));
+    doom_strcpy(name.data(), "END");
+    doom_concat(name.data(), doom_itoa(stage, 10));
     V_DrawPatch((SCREENWIDTH - 13 * 8) / 2,
                 (SCREENHEIGHT - 8 * 8) / 2,
                 0,
-                static_cast<patch_t*>(W_CacheLumpName(name, PU_CACHE)));
+                static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_CACHE)));
 }
 
 //

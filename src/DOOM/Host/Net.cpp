@@ -49,6 +49,8 @@
 #include "../Game/NetState.h"
 #include "Net.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // The byte-swap helpers are only reached by the socket packet code, so they are
 // scoped to it: defining them in the single-player build risks clashing with a
 // host header's own ntohl/htonl.
@@ -277,12 +279,12 @@ void PacketGet()
 int GetLocalAddress()
 {
 #if defined(I_NET_ENABLED)
-    char hostname[1024];
+    EA::Array<char, 1024> hostname;
     struct hostent* hostentry; // host information entry
     int v;
 
     // get local address
-    v = gethostname(hostname, sizeof(hostname));
+    v = gethostname(hostname.data(), sizeof(hostname));
     if (v == -1)
     {
         // I_Error("Error: GetLocalAddress : gethostname: errno %d", errno);

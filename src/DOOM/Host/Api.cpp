@@ -16,6 +16,7 @@
 #include "../m_argv.h"
 #include "../m_misc.h"
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 extern byte* screens[5];
@@ -31,8 +32,8 @@ extern signed short mixbuffer[2048];
 static EA::Vector<unsigned char> screen_buffer;
 static EA::Vector<unsigned char> final_screen_buffer;
 static int last_update_time = 0;
-static int button_states[3] = {0};
-static char itoa_buf[20];
+static EA::Array<int, 3> button_states = {0};
+static EA::Array<char, 20> itoa_buf;
 
 char error_buf[260];
 int doom_flags = 0;
@@ -393,7 +394,7 @@ const char* doom_itoa(int k, int radix)
     {
         itoa_buf[0] = '0';
         itoa_buf[1] = '\0';
-        return itoa_buf;
+        return itoa_buf.data();
     }
 
     int idx = k < 0 ? 1 : 0;
@@ -429,14 +430,14 @@ const char* doom_itoa(int k, int radix)
     if (k < 0)
         itoa_buf[0] = '-';
 
-    return itoa_buf;
+    return itoa_buf.data();
 }
 
 const char* doom_ctoa(char c)
 {
     itoa_buf[0] = c;
     itoa_buf[1] = '\0';
-    return itoa_buf;
+    return itoa_buf.data();
 }
 
 const char* doom_ptoa(void* p)
@@ -458,7 +459,7 @@ const char* doom_ptoa(void* p)
     }
 
     itoa_buf[idx] = '\0';
-    return itoa_buf;
+    return itoa_buf.data();
 }
 
 int doom_fprint(void* handle, const char* str)
