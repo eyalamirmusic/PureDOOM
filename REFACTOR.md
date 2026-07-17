@@ -91,14 +91,23 @@ Host-layer runtime statics) or externally blocked (audio).
 Every step held all four `*.hashes`/`*.frames` goldens byte-identical, 80/80 tests, and the
 app building and booting.
 
-**The one remaining Step-5 capstone is construct-not-boot, now unblocked.** With essentially
-all world state a member, reconstructing the `engine()` singleton *in place* (destroy +
-placement-new — the member addresses stay stable, so the reference-aliases survive) makes *a
-fresh Engine a fresh world*: the payoff, without the enormous threading rewrite the literal
-flip would need (which is blocked by the hundreds of static-init reference-aliases — see the
-Step-8 tail). The prerequisite before doing it is a **thorough file-scope-static audit**, so the
-reconstruction knows exactly what does and does not reset (my sweep so far was function-locals +
-the named cross-read globals, not an exhaustive `static`/global scan).
+**What's left of Step 5 is the `engine()` flip — and it should stay deferred, not chased as an
+in-place reset.** The tempting next step looks like "now that all world state is a member,
+reconstruct the `engine()` singleton to get a fresh world." Resist it. That only *looks* achievable
+because the reference-alias architecture forces the Engine to a **fixed address**: the hundreds of
+`extern T& x = engine().cluster.x` bind to member addresses at static-init and can never be
+re-pointed, so any reset must happen in the *same storage* — `engine() = Engine{}` (unsafe:
+`WadFile` has a user destructor closing raw file handles and no matching assignment, a rule-of-three
+violation that would leak the handles) or `~Engine()` + placement-new (works, but is gymnastics that
+exists *only* because the address is pinned). And the payoff is thin: the engine already runs many
+scenarios per process via **level reload** (Step 4 / `ReplayTests`), which is what scenario tests
+actually use — a full in-place re-init buys little over it. The *clean* "constructed Engine" — a
+heap-owned instance you drop and remake (an `OwningPointer<Engine>`, the obvious design) — falls out
+for free the moment the references are gone, because then every function reaches state through an
+`Engine&` it was handed and nothing is bound to a fixed address. So the real end of Step 5 is
+**eliminating the reference-aliases** (the enormous terminal rewrite the literal flip needs), after
+which construction is trivial and needs no placement-new. Until someone takes that on, `engine()`
+stays a singleton and the in-place-reset capstone is deferred as a half-measure not worth its risk.
 
 **A cross-cutting stylistic/modernization pass has landed** — not a numbered step,
 but a sweep over the code that was *already* in `namespace Doom` (Math/Sim/Render/
@@ -162,12 +171,16 @@ found by grepping *every* `extern.*NAME` — headers and `.cpp` bodies alike —
 The UI, the whole renderer and the config-backed set are done; `info.cpp` (the generated
 actor/state LUT), the last real vanilla source, has migrated to `Sim/Info.cpp`, so the
 **flat vanilla list is only the shims**. Step 5's save/thinker-coupled state, function-local
-`static`s and cross-read flags have all since moved in (see the handoff above), so what is
-left of Step 5 is the **construct-not-boot capstone** (in-place `engine()` reconstruction,
-unblocked now that world state is Engine-owned) preceded by a file-scope-static audit; the rest
-is non-world (the `mypos`-cheat scratch, the Host-layer runtime statics) or the deep items below
-(audio, externally blocked — the `doom_config`→`Host` fold itself is done; and the literal
-`engine()` singleton→instance flip, blocked by the reference-alias architecture).
+`static`s and cross-read flags have all since moved in (see the handoff above), so essentially all
+world state is now an `Engine` member. What is left of Step 5 is the `engine()` flip itself — and
+the achievable-looking version of it (an *in-place reconstruction* of the singleton) is a
+**deferred half-measure**, not the next step: it only looks reachable because the reference-aliases
+pin the Engine to a fixed address (so a reset can't just make a new instance), and level reload
+already gives scenario tests a fresh world (Step 4). The clean constructed Engine falls out only once
+the reference-aliases are eliminated — the enormous terminal rewrite the literal
+`engine()` singleton→instance flip needs — after which a heap-owned instance is trivial. The rest is
+non-world (the `mypos`-cheat scratch, the Host-layer runtime statics) or externally blocked (audio;
+the `doom_config`→`Host` fold itself is done).
 
 **The zone is gone.** `z_zone.cpp`/`z_zone.h` are deleted. Mobjs and the thinker
 specials live in a level-scoped malloc pool (`Sim/Tick`: `levelAlloc`/`levelFree`
@@ -1926,19 +1939,27 @@ is the deep, interlocking tail:
     message buffer and similar pure drawing-scratch statics, and — deliberately staying out of the Engine
     — the **Host layer's own runtime statics** (`I_GetTime`'s `basetime`, the sound handle counter, …),
     which are host state, not world. With the cross-read flags in, **essentially all mutable world state
-    is now an `Engine` member**, so the construct-not-boot payoff (in-place reconstruction, addresses
-    stable) is unblocked — the real end of Step 5.
+    is now an `Engine` member.**
 
     Beyond the tail, the last thing that *finally* lets the engine be **constructed** rather than booted
-    is flipping `engine()` from a function-local-static singleton to an instance. **The literal flip —
-    threading an `Engine&` through the `doom_*` entry points and replacing every global `X` with
-    `engine.X` — is blocked by the reference-alias architecture:** the hundreds of vanilla-name references
-    (`extern fixed_t& viewx = engine().viewPoint.viewx`) bind to member *addresses* at static-init, and
-    the storage must exist before `main()`, so a threaded instance would require eliminating all those
-    references first — an enormous terminal rewrite. The achievable payoff — *a fresh Engine is a fresh
-    world* — comes instead from reconstructing the singleton in place (destroy + placement-new, addresses
-    stable so the references survive) once **all** mutable world state is a member, which is what this
-    pass is finishing. That is the real end of Step 5.
+    is flipping `engine()` from a function-local-static singleton to an instance — and the shape of that
+    flip is worth being precise about, because there is a tempting wrong version of it. **The literal
+    flip** — threading an `Engine&` through the `doom_*` entry points and replacing every global `X` with
+    `engine.X` — is **blocked by the reference-alias architecture:** the hundreds of vanilla-name references
+    (`extern fixed_t& viewx = engine().viewPoint.viewx`) bind to member *addresses* at static-init, can
+    never be re-pointed, and the storage must exist before `main()`. That is also why the tempting
+    shortcut — "all world state is a member now, so just **reconstruct the singleton** for a fresh world"
+    — is a **deferred half-measure, not the next step.** Because the address is pinned, a reset cannot make
+    a new instance (a heap `OwningPointer<Engine>` remade elsewhere would strand every reference on the
+    freed object); it must happen in the *same storage*, which means either `engine() = Engine{}` (unsafe:
+    `WadFile` has a user destructor closing raw file handles and no matching assignment — a rule-of-three
+    violation that leaks them) or `~Engine()` + placement-new (works, but is gymnastics that exists only
+    because the address is pinned). And it buys little: the engine already runs many scenarios per process
+    via **level reload** (Step 4 / `ReplayTests`), which is what scenario tests actually use. The *clean*
+    constructed Engine — a heap-owned instance dropped and remade, no placement-new — falls out **for
+    free** once the reference-aliases are gone, because then nothing is bound to a fixed address. So the
+    real end of Step 5 is **eliminating the reference-aliases** (the enormous terminal rewrite), not an
+    in-place reset; until someone takes that on, `engine()` stays a singleton and the reset is deferred.
 
 ## The rules
 

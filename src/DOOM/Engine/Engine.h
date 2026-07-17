@@ -93,11 +93,17 @@ namespace Doom
 // subsystem is rewritten to be a member rather than a scatter of globals
 // (REFACTOR.md, Step 5) - doomstat's 73 externs, r_state's 44, p_local's 27.
 //
-// When the last of them has moved in, the engine can be *constructed* rather than
-// only booted, and doom_init's inability to run twice stops mattering: a fresh
-// Engine is a fresh world. Until then there is one instance (engine()), and the
-// vanilla free functions randomness(), wad() and level() are views onto its
-// members - so a caller that has been rewritten to take an Engine& and one that
+// Moving state in is necessary but not sufficient for constructing the engine rather
+// than booting it. The blocker is not the state - it is that the vanilla names are
+// *references* onto these members (extern T& viewx = engine().viewPoint.viewx), bound
+// at static-init and never re-pointable, which pins this object to a fixed address.
+// So a fresh world cannot come from making a new Engine elsewhere (every reference would
+// dangle); it would need an in-place reset (placement-new), which is a half-measure not
+// worth its risk while level reload already resets the world per scenario (Step 4). The
+// engine becomes cheaply *constructible* only once the references are eliminated and every
+// caller takes an Engine& - the terminal rewrite (REFACTOR.md, the Step-8 tail). Until
+// then there is one instance (engine()), and the vanilla free functions randomness(),
+// wad() and level() are views onto its members - so a caller that takes an Engine& and one that
 // still reaches for the global see the same state.
 struct Engine
 {
