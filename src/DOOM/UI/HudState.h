@@ -4,8 +4,7 @@
 #include "../hu_lib.h" // hu_textline_t
 
 // player_t is used only by pointer here, so a forward declaration is enough.
-struct player_s;
-using player_t = player_s;
+struct player_t;
 
 namespace Doom
 {

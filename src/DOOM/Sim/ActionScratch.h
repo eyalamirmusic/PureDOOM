@@ -6,8 +6,8 @@
 // Forward declarations at global scope (that is where p_mobj.h / r_defs.h declare them) - the
 // scratch holds pointers to these, not their layout. Declaring them inside namespace Doom would make
 // distinct Doom:: types that do not match the vanilla mobj_t / line_t the reference aliases bind to.
-struct mobj_s; // mobj_t
-struct line_s; // line_t
+struct mobj_t; // mobj_t
+struct line_t; // line_t
 
 namespace Doom
 {
@@ -31,24 +31,24 @@ struct ActionScratch
     // P_SlideMove.
     fixed_t bestslidefrac = 0; // closest slide so far along the move
     fixed_t secondslidefrac = 0; // runner-up
-    line_s* bestslideline = nullptr; // the wall slid against
-    line_s* secondslideline = nullptr; // the runner-up wall
-    mobj_s* slidemo = nullptr; // the mobj sliding
+    line_t* bestslideline = nullptr; // the wall slid against
+    line_t* secondslideline = nullptr; // the runner-up wall
+    mobj_t* slidemo = nullptr; // the mobj sliding
     fixed_t tmxmove = 0; // residual x move after the slide
     fixed_t tmymove = 0; // residual y move after the slide
 
     // The hitscan attacks (P_AimLineAttack / P_LineAttack).
     fixed_t aimslope = 0; // vertical slope to the aimed target
-    mobj_s* shootthing = nullptr; // the mobj firing
+    mobj_t* shootthing = nullptr; // the mobj firing
     fixed_t shootz = 0; // z the shot leaves from
     int la_damage = 0; // hitscan damage
 
     // P_UseLines.
-    mobj_s* usething = nullptr; // the mobj pressing use
+    mobj_t* usething = nullptr; // the mobj pressing use
 
     // P_RadiusAttack.
-    mobj_s* bombsource = nullptr; // who set off the blast
-    mobj_s* bombspot = nullptr; // where it went off
+    mobj_t* bombsource = nullptr; // who set off the blast
+    mobj_t* bombspot = nullptr; // where it went off
     int bombdamage = 0; // blast damage at the centre
 
     // P_ChangeSector.

@@ -4,7 +4,7 @@
 
 // Forward declaration at global scope (where r_defs.h declares it) - linespeciallist holds pointers,
 // not layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to line_t.
-struct line_s; // line_t
+struct line_t; // line_t
 
 namespace Doom
 {
@@ -38,7 +38,7 @@ struct AnimatedSurfaces
     anim_t anims[maxAnims] = {}; // the level's animating flats/textures
     anim_t* lastanim = nullptr; // one past the last animation in use
     short numlinespecials = 0; // # of scrolling-texture linedefs
-    line_s* linespeciallist[maxLineAnims] = {}; // those linedefs
+    line_t* linespeciallist[maxLineAnims] = {}; // those linedefs
 };
 
 // The one AnimatedSurfaces, a view onto the Engine's member - the same pattern as the other clusters.

@@ -195,7 +195,7 @@ enum mobjflag_t
 
 
 // Map Object definition.
-typedef struct mobj_s : Doom::Thinker
+struct mobj_t : Doom::Thinker
 {
     // Was `thinker_t thinker;` as the first member; a mobj now *is* a Thinker.
     // Its per-tic action (vanilla's P_MobjThinker) is tick(), defined in Mobj.cpp.
@@ -208,8 +208,8 @@ typedef struct mobj_s : Doom::Thinker
     fixed_t z;
 
     // More list: links in sector (if needed)
-    struct mobj_s* snext;
-    struct mobj_s* sprev;
+    struct mobj_t* snext;
+    struct mobj_t* sprev;
 
     //More drawing info: to determine current sprite.
     angle_t angle;        // orientation
@@ -218,10 +218,10 @@ typedef struct mobj_s : Doom::Thinker
 
     // Interaction info, by BLOCKMAP.
     // Links in blocks (if needed).
-    struct mobj_s* bnext;
-    struct mobj_s* bprev;
+    struct mobj_t* bnext;
+    struct mobj_t* bprev;
 
-    struct subsector_s* subsector;
+    struct subsector_t* subsector;
 
     // The closest interval over all contacted Sectors.
     fixed_t floorz;
@@ -253,7 +253,7 @@ typedef struct mobj_s : Doom::Thinker
 
     // Thing being chased/attacked (or 0),
     // also the originator for missiles.
-    struct mobj_s* target;
+    struct mobj_t* target;
 
     // Reaction time: if non 0, don't attack yet.
     // Used by player to freeze a bit after teleporting.
@@ -265,7 +265,7 @@ typedef struct mobj_s : Doom::Thinker
 
     // Additional info record for player avatars only.
     // Only valid if type == MT_PLAYER
-    struct player_s* player;
+    struct player_t* player;
 
     // Player number last looked for.
     int lastlook;
@@ -274,8 +274,8 @@ typedef struct mobj_s : Doom::Thinker
     mapthing_t spawnpoint;
 
     // Thing being chased/attacked for tracers.
-    struct mobj_s* tracer;
-} mobj_t;
+    struct mobj_t* tracer;
+};
 
 
 

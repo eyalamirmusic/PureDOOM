@@ -3,7 +3,7 @@
 // Forward declaration at global scope (that is where p_mobj.h declares it) - the cluster holds a
 // pointer to it, not its layout, so declaring it inside namespace Doom would make a distinct Doom::
 // type that would not bind to the vanilla mobj_t the reference alias points at.
-struct mobj_s; // mobj_t
+struct mobj_t; // mobj_t
 
 namespace Doom
 {
@@ -19,7 +19,7 @@ namespace Doom
 // confirm it.
 struct SoundTarget
 {
-    mobj_s* soundtarget = nullptr; // the noise source the alert is propagating from
+    mobj_t* soundtarget = nullptr; // the noise source the alert is propagating from
 };
 
 SoundTarget& soundTarget();

@@ -67,7 +67,7 @@ struct vertex_t
 
 
 // Forward of LineDefs, for Sectors.
-struct line_s;
+struct line_t;
 
 // Each sector has a degenmobj_t in its center
 // for sound origin purposes.
@@ -82,12 +82,12 @@ struct line_s;
 // gets no tail-padding reuse, which would push x/y/z 4 bytes later than mobj_t's
 // and make the cast read the wrong words (a silently misplaced, wrongly-inaudible
 // sound). The Thinker part is otherwise unused: this is never a real thinker.
-typedef struct : Doom::Thinker
+struct degenmobj_t : Doom::Thinker
 {
     fixed_t                x;
     fixed_t                y;
     fixed_t                z;
-} degenmobj_t;
+};
 
 //
 // The SECTORS record, at runtime.
@@ -125,7 +125,7 @@ struct sector_t
     void* specialdata;
 
     int linecount;
-    struct line_s** lines;        // [linecount] size
+    struct line_t** lines;        // [linecount] size
 };
 
 
@@ -163,7 +163,7 @@ enum slopetype_t
 };
 
 
-typedef struct line_s
+struct line_t
 {
     // Vertices, from v1 to v2.
     vertex_t* v1;
@@ -199,7 +199,7 @@ typedef struct line_s
 
     // thinker_t for reversable actions
     void* specialdata;
-} line_t;
+};
 
 
 //
@@ -209,12 +209,12 @@ typedef struct line_s
 // indicating the visible walls that define
 // (all or some) sides of a convex BSP leaf.
 //
-typedef struct subsector_s
+struct subsector_t
 {
     sector_t* sector;
     short numlines;
     short firstline;
-} subsector_t;
+};
 
 
 //
@@ -285,7 +285,7 @@ typedef byte lighttable_t;
 //
 // ?
 //
-typedef struct drawseg_s
+struct drawseg_t
 {
     seg_t* curline;
     int x1;
@@ -309,7 +309,7 @@ typedef struct drawseg_s
     short* sprtopclip;
     short* sprbottomclip;
     short* maskedtexturecol;
-} drawseg_t;
+};
 
 
 // Patches.
@@ -331,11 +331,11 @@ struct patch_t
 // A vissprite_t is a thing
 //  that will be drawn during a refresh.
 // I.e. a sprite object that is partly visible.
-typedef struct vissprite_s
+struct vissprite_t
 {
     // Doubly linked list.
-    struct vissprite_s* prev;
-    struct vissprite_s* next;
+    struct vissprite_t* prev;
+    struct vissprite_t* next;
 
     int x1;
     int x2;
@@ -364,7 +364,7 @@ typedef struct vissprite_s
     lighttable_t* colormap;
 
     int mobjflags;
-} vissprite_t;
+};
 
 
 //        

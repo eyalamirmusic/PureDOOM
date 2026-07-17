@@ -78,7 +78,7 @@ int EV_DoDonut(line_t* line);
 //
 // P_LIGHTS
 //
-typedef struct : Doom::Thinker
+struct fireflicker_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::FireFlicker; }
@@ -86,10 +86,10 @@ typedef struct : Doom::Thinker
     int count;
     int maxlight;
     int minlight;
-} fireflicker_t;
+};
 
 
-typedef struct : Doom::Thinker
+struct lightflash_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::LightFlash; }
@@ -99,10 +99,10 @@ typedef struct : Doom::Thinker
     int minlight;
     int maxtime;
     int mintime;
-} lightflash_t;
+};
 
 
-typedef struct : Doom::Thinker
+struct strobe_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::StrobeFlash; }
@@ -112,10 +112,10 @@ typedef struct : Doom::Thinker
     int maxlight;
     int darktime;
     int brighttime;
-} strobe_t;
+};
 
 
-typedef struct : Doom::Thinker
+struct glow_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Glow; }
@@ -123,7 +123,7 @@ typedef struct : Doom::Thinker
     int minlight;
     int maxlight;
     int direction;
-} glow_t;
+};
 
 
 #define GLOWSPEED 8
@@ -216,7 +216,7 @@ enum plattype_e
 };
 
 
-typedef struct : Doom::Thinker
+struct plat_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Plat; }
@@ -231,7 +231,7 @@ typedef struct : Doom::Thinker
     doom_boolean crush;
     int tag;
     plattype_e type;
-} plat_t;
+};
 
 
 #define PLATWAIT 3
@@ -266,7 +266,7 @@ enum vldoor_e
 };
 
 
-typedef struct : Doom::Thinker
+struct vldoor_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Door; }
@@ -284,7 +284,7 @@ typedef struct : Doom::Thinker
     // (keep in case a door going down is reset)
     // when it reaches 0, start going down
     int topcountdown;
-} vldoor_t;
+};
 
 
 #define VDOORSPEED                FRACUNIT*2
@@ -313,7 +313,7 @@ enum ceiling_e
 };
 
 
-typedef struct : Doom::Thinker
+struct ceiling_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Ceiling; }
@@ -330,7 +330,7 @@ typedef struct : Doom::Thinker
     // ID
     int tag;
     int olddirection;
-} ceiling_t;
+};
 
 
 #define CEILSPEED FRACUNIT
@@ -394,7 +394,7 @@ enum stair_e
 };
 
 
-typedef struct : Doom::Thinker
+struct floormove_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Floor; }
@@ -406,7 +406,7 @@ typedef struct : Doom::Thinker
     short texture;
     fixed_t floordestheight;
     fixed_t speed;
-} floormove_t;
+};
 
 
 #define FLOORSPEED FRACUNIT

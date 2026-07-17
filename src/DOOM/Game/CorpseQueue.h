@@ -2,8 +2,7 @@
 
 // mobj_t is used only by pointer here, so a forward declaration is enough - no need to pull
 // the whole mobj definition into everyone who includes the Engine.
-struct mobj_s;
-using mobj_t = mobj_s;
+struct mobj_t;
 
 namespace Doom
 {
