@@ -25,6 +25,8 @@
 #include "CompositeCache.h"
 #include "Data.h"
 
+#include <ea_data_structures/Structures/Vector.h>
+
 namespace Doom
 {
 // Each texture is composed of one or more patches,
@@ -196,7 +198,6 @@ void generateComposite(int texnum)
 void generateLookup(int texnum)
 {
     texture_t* texture;
-    byte* patchcount; // patchcount[texture->width]
     texpatch_t* patch;
     patch_t* realpatch;
     int x;
@@ -219,8 +220,9 @@ void generateLookup(int texnum)
     //  that are covered by more than one patch.
     // Fill in the lump / offset, so columns
     //  with only a single patch are all done.
-    patchcount = static_cast<byte*>(doom_malloc(texture->width));
-    doom_memset(patchcount, 0, texture->width);
+    // RAII scratch: value-initialised to zero and released on every exit, including
+    // the early "column without a patch" return below (which the manual free leaked).
+    auto patchcount = EA::Vector<byte>(texture->width);
     patch = texture->patches;
 
     for (i = 0, patch = texture->patches; i < texture->patchcount; i++, patch++)
@@ -277,8 +279,6 @@ void generateLookup(int texnum)
             texturecompositesize[texnum] += texture->height;
         }
     }
-
-    doom_free(patchcount);
 }
 
 //
@@ -325,8 +325,6 @@ void initTextures()
     char* names;
     char* name_p;
 
-    int* patchlookup;
-
     int nummappatches;
     int offset;
     int maxoff;
@@ -345,8 +343,7 @@ void initTextures()
     names = static_cast<char*>(W_CacheLumpName("PNAMES", PU_STATIC));
     nummappatches = LONG(*(reinterpret_cast<int*>(names)));
     name_p = names + 4;
-    patchlookup =
-        static_cast<int*>(doom_malloc(nummappatches * sizeof(*patchlookup)));
+    auto patchlookup = EA::Vector<int>(nummappatches);
 
     for (i = 0; i < nummappatches; i++)
     {
@@ -474,8 +471,6 @@ void initTextures()
 
     for (i = 0; i < numtextures; i++)
         texturetranslation[i] = i;
-
-    doom_free(patchlookup);
 }
 
 //
@@ -632,10 +627,6 @@ int textureNumForName(const char* name)
 //
 void precacheLevel()
 {
-    char* flatpresent;
-    char* texturepresent;
-    char* spritepresent;
-
     int i;
     int j;
     int k;
@@ -649,8 +640,7 @@ void precacheLevel()
         return;
 
     // Precache flats.
-    flatpresent = static_cast<char*>(doom_malloc(numflats));
-    doom_memset(flatpresent, 0, numflats);
+    auto flatpresent = EA::Vector<char>(numflats);
 
     for (i = 0; i < numsectors; i++)
     {
@@ -671,8 +661,7 @@ void precacheLevel()
     }
 
     // Precache textures.
-    texturepresent = static_cast<char*>(doom_malloc(numtextures));
-    doom_memset(texturepresent, 0, numtextures);
+    auto texturepresent = EA::Vector<char>(numtextures);
 
     for (i = 0; i < numsides; i++)
     {
@@ -706,13 +695,13 @@ void precacheLevel()
     }
 
     // Precache sprites.
-    spritepresent = static_cast<char*>(doom_malloc(numsprites));
-    doom_memset(spritepresent, 0, numsprites);
+    auto spritepresent = EA::Vector<char>(numsprites);
 
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
     {
         if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
-            spritepresent[reinterpret_cast<mobj_t*>(th)->sprite] = 1;
+            spritepresent[static_cast<int>(reinterpret_cast<mobj_t*>(th)->sprite)] =
+                1;
     }
 
     spritememory = 0;
@@ -732,9 +721,5 @@ void precacheLevel()
             }
         }
     }
-
-    doom_free(texturepresent);
-    doom_free(flatpresent);
-    doom_free(spritepresent);
 }
 } // namespace Doom
