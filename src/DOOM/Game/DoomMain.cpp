@@ -63,6 +63,8 @@
 #include "AttractMode.h"
 #include "DoomMain.h"
 #include "ConfigPaths.h"
+
+#include <ea_data_structures/Structures/Array.h>
 #include "DisplayState.h"
 #include "EngineParams.h"
 #include "EventQueue.h"
@@ -148,8 +150,8 @@ const char*& pagename = Doom::attractMode().pagename;
 // forwardmove/sidemove are a Doom::MovementSpeeds owned by the Engine now; these are the vanilla
 // names as references-to-array (int(&)[2] == fixed_t(&)[2]), so -turbo's scaling below writes
 // through to the member (REFACTOR.md, Step 5).
-extern int (&forwardmove)[2]; // g_game (fixed_t; identical type)
-extern int (&sidemove)[2]; // g_game
+extern EA::Array<fixed_t, 2>& forwardmove; // g_game
+extern EA::Array<fixed_t, 2>& sidemove; // g_game
 extern void* statcopy; // g_game
 void D_CheckNetGame();
 void G_BuildTiccmd(ticcmd_t* cmd);

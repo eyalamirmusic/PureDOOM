@@ -59,6 +59,8 @@
 #include "StatusBarState.h"
 #include "StatusBarWidgets.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // st_statusbaron is a reference onto Doom::StatusBarState (an Engine member), bound
 // in the st_stuff.cpp shim: the app (EngineAccess) reads it to decide whether to
 // composite the status-bar strip. This bare extern must stay a reference to match,
@@ -331,43 +333,44 @@ static doom_boolean& st_stopped = statusBarState().st_stopped;
 // Massive bunches of cheat shit
 //  to keep it from being easy to figure them out.
 // Yeah, right...
-unsigned char cheat_mus_seq[] = {0xb2, 0x26, 0xb6, 0xae, 0xea, 1, 0, 0, 0xff};
+EA::Array<unsigned char, 9> cheat_mus_seq = {
+    0xb2, 0x26, 0xb6, 0xae, 0xea, 1, 0, 0, 0xff};
 
-unsigned char cheat_choppers_seq[] = {
+EA::Array<unsigned char, 11> cheat_choppers_seq = {
     0xb2, 0x26, 0xe2, 0x32, 0xf6, 0x2a, 0x2a, 0xa6, 0x6a, 0xea, 0xff // id...
 };
 
-unsigned char cheat_god_seq[] = {
+EA::Array<unsigned char, 6> cheat_god_seq = {
     0xb2, 0x26, 0x26, 0xaa, 0x26, 0xff // iddqd
 };
 
-unsigned char cheat_ammo_seq[] = {
+EA::Array<unsigned char, 6> cheat_ammo_seq = {
     0xb2, 0x26, 0xf2, 0x66, 0xa2, 0xff // idkfa
 };
 
-unsigned char cheat_ammonokey_seq[] = {
+EA::Array<unsigned char, 5> cheat_ammonokey_seq = {
     0xb2, 0x26, 0x66, 0xa2, 0xff // idfa
 };
 
 // Smashing Pumpkins Into Samml Piles Of Putried Debris.
-unsigned char cheat_noclip_seq[] = {0xb2,
-                                    0x26,
-                                    0xea,
-                                    0x2a,
-                                    0xb2, // idspispopd
-                                    0xea,
-                                    0x2a,
-                                    0xf6,
-                                    0x2a,
-                                    0x26,
-                                    0xff};
+EA::Array<unsigned char, 11> cheat_noclip_seq = {0xb2,
+                                                 0x26,
+                                                 0xea,
+                                                 0x2a,
+                                                 0xb2, // idspispopd
+                                                 0xea,
+                                                 0x2a,
+                                                 0xf6,
+                                                 0x2a,
+                                                 0x26,
+                                                 0xff};
 
 //
-unsigned char cheat_commercial_noclip_seq[] = {
+EA::Array<unsigned char, 7> cheat_commercial_noclip_seq = {
     0xb2, 0x26, 0xe2, 0x36, 0xb2, 0x2a, 0xff // idclip
 };
 
-unsigned char cheat_powerup_seq[7][10] = {
+EA::Array<EA::Array<unsigned char, 10>, 7> cheat_powerup_seq = {
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0x6e, 0xff}, // beholdv
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0xea, 0xff}, // beholds
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0xb2, 0xff}, // beholdi
@@ -377,34 +380,34 @@ unsigned char cheat_powerup_seq[7][10] = {
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0xff} // behold
 };
 
-unsigned char cheat_clev_seq[] = {
+EA::Array<unsigned char, 10> cheat_clev_seq = {
     0xb2, 0x26, 0xe2, 0x36, 0xa6, 0x6e, 1, 0, 0, 0xff // idclev
 };
 
 // my position cheat
-unsigned char cheat_mypos_seq[] = {
+EA::Array<unsigned char, 8> cheat_mypos_seq = {
     0xb2, 0x26, 0xb6, 0xba, 0x2a, 0xf6, 0xea, 0xff // idmypos
 };
 
 // Now what?
-cheatseq_t cheat_mus = {cheat_mus_seq, 0};
-cheatseq_t cheat_god = {cheat_god_seq, 0};
-cheatseq_t cheat_ammo = {cheat_ammo_seq, 0};
-cheatseq_t cheat_ammonokey = {cheat_ammonokey_seq, 0};
-cheatseq_t cheat_noclip = {cheat_noclip_seq, 0};
-cheatseq_t cheat_commercial_noclip = {cheat_commercial_noclip_seq, 0};
+cheatseq_t cheat_mus = {cheat_mus_seq.data(), 0};
+cheatseq_t cheat_god = {cheat_god_seq.data(), 0};
+cheatseq_t cheat_ammo = {cheat_ammo_seq.data(), 0};
+cheatseq_t cheat_ammonokey = {cheat_ammonokey_seq.data(), 0};
+cheatseq_t cheat_noclip = {cheat_noclip_seq.data(), 0};
+cheatseq_t cheat_commercial_noclip = {cheat_commercial_noclip_seq.data(), 0};
 
-cheatseq_t cheat_powerup[7] = {{cheat_powerup_seq[0], 0},
-                               {cheat_powerup_seq[1], 0},
-                               {cheat_powerup_seq[2], 0},
-                               {cheat_powerup_seq[3], 0},
-                               {cheat_powerup_seq[4], 0},
-                               {cheat_powerup_seq[5], 0},
-                               {cheat_powerup_seq[6], 0}};
+EA::Array<cheatseq_t, 7> cheat_powerup = {{cheat_powerup_seq[0].data(), 0},
+                                          {cheat_powerup_seq[1].data(), 0},
+                                          {cheat_powerup_seq[2].data(), 0},
+                                          {cheat_powerup_seq[3].data(), 0},
+                                          {cheat_powerup_seq[4].data(), 0},
+                                          {cheat_powerup_seq[5].data(), 0},
+                                          {cheat_powerup_seq[6].data(), 0}};
 
-cheatseq_t cheat_choppers = {cheat_choppers_seq, 0};
-cheatseq_t cheat_clev = {cheat_clev_seq, 0};
-cheatseq_t cheat_mypos = {cheat_mypos_seq, 0};
+cheatseq_t cheat_choppers = {cheat_choppers_seq.data(), 0};
+cheatseq_t cheat_clev = {cheat_clev_seq.data(), 0};
+cheatseq_t cheat_mypos = {cheat_mypos_seq.data(), 0};
 
 void stStop();
 
@@ -503,11 +506,11 @@ doom_boolean stResponder(event_t* ev)
             // 'mus' cheat for changing music
             else if (cht_CheckCheat(&cheat_mus, ev->data1))
             {
-                char buf[3];
+                EA::Array<char, 3> buf;
                 int musnum;
 
                 plyr->message = STSTR_MUS;
-                cht_GetParam(&cheat_mus, buf);
+                cht_GetParam(&cheat_mus, buf.data());
 
                 if (gamemode == commercial)
                 {
@@ -571,30 +574,31 @@ doom_boolean stResponder(event_t* ev)
             // 'mypos' for player position
             else if (cht_CheckCheat(&cheat_mypos, ev->data1))
             {
-                static char buf[ST_MSGWIDTH];
+                static EA::Array<char, ST_MSGWIDTH> buf;
                 //doom_sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
                 //        players[consoleplayer].mo->angle,
                 //        players[consoleplayer].mo->x,
                 //        players[consoleplayer].mo->y);
-                doom_strcpy(buf, "ang=0x");
-                doom_concat(buf, doom_itoa(players[consoleplayer].mo->angle, 16));
-                doom_concat(buf, ";x,y=(0x");
-                doom_concat(buf, doom_itoa(players[consoleplayer].mo->x, 16));
-                doom_concat(buf, ",0x");
-                doom_concat(buf, doom_itoa(players[consoleplayer].mo->y, 16));
-                doom_concat(buf, ")");
-                plyr->message = buf;
+                doom_strcpy(buf.data(), "ang=0x");
+                doom_concat(buf.data(),
+                            doom_itoa(players[consoleplayer].mo->angle, 16));
+                doom_concat(buf.data(), ";x,y=(0x");
+                doom_concat(buf.data(), doom_itoa(players[consoleplayer].mo->x, 16));
+                doom_concat(buf.data(), ",0x");
+                doom_concat(buf.data(), doom_itoa(players[consoleplayer].mo->y, 16));
+                doom_concat(buf.data(), ")");
+                plyr->message = buf.data();
             }
         }
 
         // 'clev' change-level cheat
         if (cht_CheckCheat(&cheat_clev, ev->data1))
         {
-            char buf[3];
+            EA::Array<char, 3> buf;
             int epsd;
             int map;
 
-            cht_GetParam(&cheat_clev, buf);
+            cht_GetParam(&cheat_clev, buf.data());
 
             if (gamemode == commercial)
             {
@@ -1004,20 +1008,20 @@ void stloadGraphics()
 {
     int facenum;
 
-    char namebuf[9];
+    EA::Array<char, 9> namebuf;
 
     // Load the numbers, tall and short
     for (int i = 0; i < 10; i++)
     {
         //doom_sprintf(namebuf, "STTNUM%d", i);
-        doom_strcpy(namebuf, "STTNUM");
-        doom_concat(namebuf, doom_itoa(i, 10));
-        tallnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+        doom_strcpy(namebuf.data(), "STTNUM");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
+        tallnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
 
         //doom_sprintf(namebuf, "STYSNUM%d", i);
-        doom_strcpy(namebuf, "STYSNUM");
-        doom_concat(namebuf, doom_itoa(i, 10));
-        shortnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+        doom_strcpy(namebuf.data(), "STYSNUM");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
+        shortnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
 
     // Load percent key.
@@ -1028,9 +1032,9 @@ void stloadGraphics()
     for (int i = 0; i < NUMCARDS; i++)
     {
         //doom_sprintf(namebuf, "STKEYS%d", i);
-        doom_strcpy(namebuf, "STKEYS");
-        doom_concat(namebuf, doom_itoa(i, 10));
-        keys[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+        doom_strcpy(namebuf.data(), "STKEYS");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
+        keys[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
 
     // arms background
@@ -1040,11 +1044,11 @@ void stloadGraphics()
     for (int i = 0; i < 6; i++)
     {
         //doom_sprintf(namebuf, "STGNUM%d", i + 2);
-        doom_strcpy(namebuf, "STGNUM");
-        doom_concat(namebuf, doom_itoa(i + 2, 10));
+        doom_strcpy(namebuf.data(), "STGNUM");
+        doom_concat(namebuf.data(), doom_itoa(i + 2, 10));
 
         // gray #
-        arms[i][0] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+        arms[i][0] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
 
         // yellow #
         arms[i][1] = shortnum[i + 2];
@@ -1052,9 +1056,9 @@ void stloadGraphics()
 
     // face backgrounds for different color players
     //doom_sprintf(namebuf, "STFB%d", consoleplayer);
-    doom_strcpy(namebuf, "STFB");
-    doom_concat(namebuf, doom_itoa(consoleplayer, 10));
-    faceback = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+    doom_strcpy(namebuf.data(), "STFB");
+    doom_concat(namebuf.data(), doom_itoa(consoleplayer, 10));
+    faceback = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
 
     // status bar background bits
     sbar = static_cast<patch_t*>(W_CacheLumpName("STBAR", PU_STATIC));
@@ -1066,39 +1070,39 @@ void stloadGraphics()
         for (int j = 0; j < ST_NUMSTRAIGHTFACES; j++)
         {
             //doom_sprintf(namebuf, "STFST%d%d", i, j);
-            doom_strcpy(namebuf, "STFST");
-            doom_concat(namebuf, doom_itoa(i, 10));
-            doom_concat(namebuf, doom_itoa(j, 10));
+            doom_strcpy(namebuf.data(), "STFST");
+            doom_concat(namebuf.data(), doom_itoa(i, 10));
+            doom_concat(namebuf.data(), doom_itoa(j, 10));
             faces[facenum++] =
-                static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+                static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         }
         //doom_sprintf(namebuf, "STFTR%d0", i);        // turn right
-        doom_strcpy(namebuf, "STFTR");
-        doom_concat(namebuf, doom_itoa(i, 10));
-        doom_concat(namebuf, "0");
+        doom_strcpy(namebuf.data(), "STFTR");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
+        doom_concat(namebuf.data(), "0");
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFTL%d0", i);        // turn left
-        doom_strcpy(namebuf, "STFTL");
-        doom_concat(namebuf, doom_itoa(i, 10));
-        doom_concat(namebuf, "0");
+        doom_strcpy(namebuf.data(), "STFTL");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
+        doom_concat(namebuf.data(), "0");
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFOUCH%d", i);        // ouch!
-        doom_strcpy(namebuf, "STFOUCH");
-        doom_concat(namebuf, doom_itoa(i, 10));
+        doom_strcpy(namebuf.data(), "STFOUCH");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFEVL%d", i);        // evil grin ;)
-        doom_strcpy(namebuf, "STFEVL");
-        doom_concat(namebuf, doom_itoa(i, 10));
+        doom_strcpy(namebuf.data(), "STFEVL");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFKILL%d", i);        // pissed off
-        doom_strcpy(namebuf, "STFKILL");
-        doom_concat(namebuf, doom_itoa(i, 10));
+        doom_strcpy(namebuf.data(), "STFKILL");
+        doom_concat(namebuf.data(), doom_itoa(i, 10));
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
     faces[facenum++] = static_cast<patch_t*>(W_CacheLumpName("STFGOD0", PU_STATIC));
     faces[facenum++] = static_cast<patch_t*>(W_CacheLumpName("STFDEAD0", PU_STATIC));

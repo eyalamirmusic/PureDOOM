@@ -208,9 +208,9 @@ int& joybspeed = Doom::inputConfig().joybspeed;
 // owned by the Engine now, moved by the file-scope-statics sweep; these vanilla names are
 // references-to-array onto the members (REFACTOR.md, Step 5). forwardmove/sidemove are also scaled
 // by -turbo over in Game/DoomMain.cpp, whose externs move to references in lockstep.
-fixed_t (&forwardmove)[2] = Doom::movementSpeeds().forwardmove;
-fixed_t (&sidemove)[2] = Doom::movementSpeeds().sidemove;
-fixed_t (&angleturn)[3] = Doom::movementSpeeds().angleturn; // + slow turn
+EA::Array<fixed_t, 2>& forwardmove = Doom::movementSpeeds().forwardmove;
+EA::Array<fixed_t, 2>& sidemove = Doom::movementSpeeds().sidemove;
+EA::Array<fixed_t, 3>& angleturn = Doom::movementSpeeds().angleturn; // + slow turn
 
 // The per-tic input accumulators are a Doom::TiccmdInput owned by the Engine now; these
 // vanilla names are references onto it (REFACTOR.md, Step 5, the file-scope-statics sweep). The

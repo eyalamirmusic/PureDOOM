@@ -27,6 +27,8 @@
 #include "Specials.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <ea_data_structures/Structures/Array.h>
+
 #include <new>
 
 #define MAXANIMS 32
@@ -100,7 +102,7 @@ struct animdef_t
     int speed;
 };
 
-animdef_t animdefs[] = {{false, "NUKAGE3", "NUKAGE1", 8},
+EA::Array<animdef_t, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},
                         {false, "FWATER4", "FWATER1", 8},
                         {false, "SWATER4", "SWATER1", 8},
                         {false, "LAVA4", "LAVA1", 8},
@@ -269,7 +271,7 @@ fixed_t findNextHighestFloor(sector_t* sec, int currentheight)
     sector_t* other;
     fixed_t height = currentheight;
 
-    fixed_t heightlist[MAX_ADJOINING_SECTORS];
+    EA::Array<fixed_t, MAX_ADJOINING_SECTORS> heightlist;
 
     for (i = 0, h = 0; i < sec->linecount; i++)
     {

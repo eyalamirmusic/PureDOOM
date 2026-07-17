@@ -31,6 +31,8 @@
 #include "Enemy.h"
 #include "EnemyAI.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 #define MAXSPECIALCROSS 8
 #define FATSPREAD (ANG90 / 8)
 #define SKULLSPEED (20 * FRACUNIT)
@@ -63,20 +65,23 @@ enum dirtype_t
     NUMDIRS
 };
 
-dirtype_t opposite[] = {DI_WEST,
-                        DI_SOUTHWEST,
-                        DI_SOUTH,
-                        DI_SOUTHEAST,
-                        DI_EAST,
-                        DI_NORTHEAST,
-                        DI_NORTH,
-                        DI_NORTHWEST,
-                        DI_NODIR};
+EA::Array<dirtype_t, 9> opposite = {DI_WEST,
+                                    DI_SOUTHWEST,
+                                    DI_SOUTH,
+                                    DI_SOUTHEAST,
+                                    DI_EAST,
+                                    DI_NORTHEAST,
+                                    DI_NORTH,
+                                    DI_NORTHWEST,
+                                    DI_NODIR};
 
-dirtype_t diags[] = {DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
+EA::Array<dirtype_t, 4> diags = {
+    DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
 
-fixed_t xspeed[8] = {FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000, 0, 47000};
-fixed_t yspeed[8] = {0, 47000, FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000};
+EA::Array<fixed_t, 8> xspeed = {
+    FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000, 0, 47000};
+EA::Array<fixed_t, 8> yspeed = {
+    0, 47000, FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000};
 int TRACEANGLE = 0xc000000;
 // The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
@@ -389,7 +394,7 @@ void newChaseDir(mobj_t* actor)
     fixed_t deltax;
     fixed_t deltay;
 
-    dirtype_t d[3];
+    EA::Array<dirtype_t, 3> d;
 
     int tdir;
     dirtype_t olddir;

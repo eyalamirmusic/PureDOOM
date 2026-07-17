@@ -2,6 +2,8 @@
 
 #include "../m_fixed.h" // fixed_t
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The movement-speed lookup tables G_BuildTiccmd applies to the player's input when building a
@@ -23,9 +25,9 @@ namespace Doom
 // (and -turbo is never passed), so the move is golden-neutral.
 struct MovementSpeeds
 {
-    fixed_t forwardmove[2] = {0x19, 0x32}; // walk, run
-    fixed_t sidemove[2] = {0x18, 0x28}; // walk, run
-    fixed_t angleturn[3] = {640, 1280, 320}; // fast, faster, + slow turn
+    EA::Array<fixed_t, 2> forwardmove = {0x19, 0x32}; // walk, run
+    EA::Array<fixed_t, 2> sidemove = {0x18, 0x28}; // walk, run
+    EA::Array<fixed_t, 3> angleturn = {640, 1280, 320}; // fast, faster, + slow turn
 };
 
 // The one MovementSpeeds, a view onto the Engine's member - the same pattern as the other Game/

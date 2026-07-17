@@ -26,6 +26,7 @@
 #include "Data.h"
 #include "GraphicsData.h"
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 namespace Doom
@@ -332,7 +333,7 @@ void initTextures()
     int* maptex2;
     int* maptex1;
 
-    char name[9];
+    EA::Array<char, 9> name;
     char* names;
     char* name_p;
 
@@ -358,8 +359,8 @@ void initTextures()
 
     for (i = 0; i < nummappatches; i++)
     {
-        doom_strncpy(name, name_p + i * 8, 8);
-        patchlookup[i] = W_CheckNumForName(name);
+        doom_strncpy(name.data(), name_p + i * 8, 8);
+        patchlookup[i] = W_CheckNumForName(name.data());
     }
 
     // Load the map texture definitions from textures.lmp.
@@ -608,18 +609,18 @@ void initData()
 int flatNumForName(const char* name)
 {
     int i;
-    char namet[9];
+    EA::Array<char, 9> namet;
 
     i = W_CheckNumForName(name);
 
     if (i == -1)
     {
         namet[8] = 0;
-        doom_memcpy(namet, name, 8);
+        doom_memcpy(namet.data(), name, 8);
         //I_Error("Error: flatNumForName: %s not found", namet);
 
         doom_strcpy(error_buf, "Error: flatNumForName: ");
-        doom_concat(error_buf, namet);
+        doom_concat(error_buf, namet.data());
         doom_concat(error_buf, " not found");
         I_Error(error_buf);
     }
