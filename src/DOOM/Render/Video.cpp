@@ -451,11 +451,14 @@ void vGetBlock(int x, int y, int scrn, int width, int height, byte* dest)
 //
 void vInit()
 {
-    byte* base;
-
     // stick these in low dos memory on PCs
 
-    base = I_AllocLow(SCREENWIDTH * SCREENHEIGHT * 4);
+    // RAII now (Step 9): the base block is a VideoState-owned vector, zero-filled as
+    // I_AllocLow left it, sliced into the screens[] view. screens[0]'s slice is
+    // overwritten by I_InitGraphics, exactly as vanilla left it.
+    auto& workspace = videoState().workspace;
+    workspace.assign(SCREENWIDTH * SCREENHEIGHT * 4, byte(0));
+    byte* base = workspace.data();
 
     for (int i = 0; i < 4; i++)
         screens[i] = base + i * SCREENWIDTH * SCREENHEIGHT;

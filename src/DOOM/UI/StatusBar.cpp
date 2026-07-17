@@ -52,6 +52,7 @@
 #include "../v_video.h" // Needs access to LFB.
 #include "../w_wad.h"
 
+#include "../Render/VideoState.h"
 #include "StatusBar.h"
 #include "StatusBarFace.h"
 #include "StatusBarGraphics.h"
@@ -1313,7 +1314,11 @@ void stInit()
 {
     veryfirsttime = 0;
     stloadData();
-    screens[4] = static_cast<byte*>(doom_malloc(ST_WIDTH * ST_HEIGHT));
+    // RAII now (Step 9): the status bar back-buffer is a VideoState-owned vector;
+    // screens[4] is the raw view onto its data(). stInit runs once at boot.
+    auto& statusBar = videoState().statusBar;
+    statusBar.resize(ST_WIDTH * ST_HEIGHT);
+    screens[4] = statusBar.data();
 }
 
 } // namespace Doom

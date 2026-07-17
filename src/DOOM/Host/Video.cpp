@@ -23,6 +23,7 @@
 #include "../i_video.h"
 #include "../v_video.h"
 
+#include "../Render/VideoState.h"
 #include "Video.h"
 
 // Read by DOOM.cpp, the menu, the status bar, the eacp port (View.h / Common.h /
@@ -95,7 +96,11 @@ void I_SetPalette(byte* palette)
 
 void I_InitGraphics()
 {
-    screens[0] =
-        static_cast<unsigned char*>(doom_malloc(SCREENWIDTH * SCREENHEIGHT));
+    // RAII now (Step 9): the software frame is a VideoState-owned vector; screens[0]
+    // is the raw view onto its data(). This runs after V_Init, so it overwrites
+    // V_Init's screens[0] slice - the framebuffer proper, which the app reads back.
+    auto& frame = videoState().frame;
+    frame.resize(SCREENWIDTH * SCREENHEIGHT);
+    screens[0] = frame.data();
 }
 } // namespace Doom
