@@ -1,14 +1,24 @@
 # The C++ refactor
 
+> ## The goal
+>
+> **Every single source file in `src/DOOM` is clean, modern, RAII C++ in eacp's
+> style — and the simulation behaves *exactly* as it always has.**
+>
+> Not "it compiles as C++." Every file reads as C++ someone *wrote*: RAII ownership
+> end to end (no raw `malloc`/`free`, no `new`/`delete`, no zone — resources freed by
+> destructors), eacp's containers and types (`EA::Vector`/`EA::Array`, `OwningPointer`),
+> real classes with methods, no loose globals, no shim/alias layer, no 1993 C idiom —
+> save the handful of quirks that are load-bearing and pinned by a test. A file is
+> **done** only when it clears that bar; the refactor is **finished** only when *every
+> file does.* The demo/frame goldens hold the "behaves exactly" half at every step.
+
 `src/DOOM` is 43,889 lines of 1993 C across 62 `.c` files: ~684 global data
 symbols, ~1,534 file-scope statics, a 12 MB zone arena that is never handed
 back, and warnings disabled wholesale (`-w`). This fork owns that code, and this
-document is the plan for rewriting **the whole of it** into modern C++ in eacp's
-style — playsim, renderer, WAD, UI, game loop and host boundary alike —
-**without changing what the simulation does.** The goal is not "the code compiles
-as C++": it is code someone *wrote* as C++ — RAII ownership end to end, eacp's
-containers and types, real classes with methods — with nothing of the 1993 C
-idiom left except the few quirks that are load-bearing and pinned by a test.
+document is the plan for rewriting **the whole of it** into the C++ above —
+playsim, renderer, WAD, UI, game loop and host boundary alike — **without changing
+what the simulation does.**
 
 Four principles frame the work:
 
@@ -21,9 +31,14 @@ Four principles frame the work:
   tables and scratch, the host's buffers. State lives in real types with methods;
   the containers are eacp's `EA::Vector`/`EA::Array`; a pointer that *owns* is an
   `OwningPointer`, a pointer that merely *refers* stays raw. A file is not *done*
-  when it compiles under C++ — it is done when it reads as C++ someone wrote, and
-  the flat vanilla list getting shorter is only the first half of that; the second
-  is the RAII/idiom sweep across the code already in `namespace Doom`.
+  when it compiles under C++ — it is done when it reads as C++ someone wrote. That
+  bar has three parts, and a file clears it only on all three: (1) it is rewritten
+  out of vanilla C into `namespace Doom` (the flat list getting shorter); (2) its
+  resources are RAII-owned and its idioms modern (the sweep across the code already
+  in `namespace Doom`); and (3) it reaches state through owners, not the
+  reference-alias *shim* layer — so the shim `.cpp`s and the vanilla-name aliases
+  are themselves retired, not left as a permanent seam. **Every** file, including
+  the headers, ends up on the far side of all three.
 - **The globals go with it.** The ~684 loose globals become members of one
   `Engine` object — one face of the same RAII goal, state with an owner. A
   *consequence* is that the engine can eventually be **constructed** rather than
