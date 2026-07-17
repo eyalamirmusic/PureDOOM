@@ -16,6 +16,8 @@
 #include "../m_argv.h"
 #include "../m_misc.h"
 
+#include <ea_data_structures/Structures/Vector.h>
+
 extern byte* screens[5];
 extern unsigned char screen_palette[256 * 3];
 extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
@@ -23,8 +25,11 @@ extern default_t defaults[];
 extern int numdefaults;
 extern signed short mixbuffer[2048];
 
-static unsigned char* screen_buffer = 0;
-static unsigned char* final_screen_buffer = 0;
+// The host output buffers, RAII-owned (Step 9): the 8-bit palette-index snapshot the
+// embedder reads, and the RGB(A)-expanded frame. Sized once in doom_init and returned
+// to the embedder as raw pointers into data(), which is stable (never resized after).
+static EA::Vector<unsigned char> screen_buffer;
+static EA::Vector<unsigned char> final_screen_buffer;
 static int last_update_time = 0;
 static int button_states[3] = {0};
 static char itoa_buf[20];
@@ -567,9 +572,8 @@ void doom_init(int argc, char** argv, int flags)
     if (!doom_getenv)
         doom_getenv = doom_getenv_impl;
 
-    screen_buffer = (unsigned char*) (doom_malloc(SCREENWIDTH * SCREENHEIGHT));
-    final_screen_buffer =
-        (unsigned char*) (doom_malloc(SCREENWIDTH * SCREENHEIGHT * 4));
+    screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT);
+    final_screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT * 4);
     last_update_time = I_GetTime();
 
     myargc = argc;
@@ -605,7 +609,7 @@ void doom_force_update()
 
 const unsigned char* doom_get_framebuffer(int channels)
 {
-    doom_memcpy(screen_buffer, screens[0], SCREENWIDTH * SCREENHEIGHT);
+    doom_memcpy(screen_buffer.data(), screens[0], SCREENWIDTH * SCREENHEIGHT);
 
     extern doom_boolean& menuactive; // Doom::OverlayState (Engine member)
     extern gamestate_t& gamestate; // Doom::GameFlow (Engine member)
@@ -635,7 +639,7 @@ const unsigned char* doom_get_framebuffer(int channels)
 
     if (channels == 1)
     {
-        return screen_buffer;
+        return screen_buffer.data();
     }
     else if (channels == 3)
     {
@@ -647,7 +651,7 @@ const unsigned char* doom_get_framebuffer(int channels)
             final_screen_buffer[k + 1] = screen_palette[kpal + 1];
             final_screen_buffer[k + 2] = screen_palette[kpal + 2];
         }
-        return final_screen_buffer;
+        return final_screen_buffer.data();
     }
     else if (channels == 4)
     {
@@ -660,7 +664,7 @@ const unsigned char* doom_get_framebuffer(int channels)
             final_screen_buffer[k + 2] = screen_palette[kpal + 2];
             final_screen_buffer[k + 3] = 255;
         }
-        return final_screen_buffer;
+        return final_screen_buffer.data();
     }
     else
     {
