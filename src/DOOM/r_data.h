@@ -27,6 +27,9 @@
 #include "r_defs.h"
 #include "r_state.h"
 
+// texture_t owns its patches in an EA::Vector now (RAII, REFACTOR.md Step 9).
+#include <ea_data_structures/Structures/Vector.h>
+
 
 // Retrieve column data for span blitting.
 // A single patch from a texture definition,
@@ -54,9 +57,12 @@ typedef struct
     short height;
 
     // All the patches[patchcount]
-    //  are drawn back to front into the cached texture.
+    //  are drawn back to front into the cached texture. RAII-owned (Step 9): was a
+    //  trailing flexible-array-member (patches[1] with a variable-length malloc);
+    //  now an owned vector, so a texture_t is fixed-size and frees its own patches.
+    //  Readers index it as before (patches[j], &patches[0]).
     short patchcount;
-    texpatch_t patches[1];
+    EA::Vector<texpatch_t> patches;
 } texture_t;
 
 
@@ -67,9 +73,10 @@ typedef struct
 // no patch covered. Anything that wants the pixels rather than the engine's
 // cached columns (which are post data, not pixels, for exactly those textures)
 // has to compose them the same way.
-// The texture table lives in Doom::GraphicsData (an Engine member) now; a reference
-// onto it (REFACTOR.md, Step 5).
-extern texture_t**& textures;
+// The texture table lives in Doom::GraphicsData (an Engine member) now. It owns the
+// texture_t structs by value; `textures` stays a texture_t** (a view onto a pointer
+// array into that storage) so every `textures[i]->field` reader is unchanged (Step 9).
+extern texture_t** textures;
 
 
 byte* R_GetColumn(int tex, int col);

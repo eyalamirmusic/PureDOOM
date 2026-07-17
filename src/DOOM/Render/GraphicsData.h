@@ -24,9 +24,14 @@ namespace Doom
 struct GraphicsData
 {
     // Wall textures: the composed texture table and its count, each texture's height
-    // (for pegging), and the animation redirect R_UpdateAnimations walks.
+    // (for pegging), and the animation redirect R_UpdateAnimations walks. RAII-owned
+    // (Step 9): textureStorage owns the texture_t structs by value (each owning its
+    // own patches vector); texturePointers is the texture_t* array that the vanilla
+    // name `textures` (a texture_t** view, r_data.cpp) points at, so readers using
+    // textures[i]->field are unchanged. Both sized once by R_InitTextures.
     int numtextures = 0;
-    texture_t** textures = nullptr;
+    EA::Vector<texture_t> textureStorage;
+    EA::Vector<texture_t*> texturePointers;
     EA::Vector<fixed_t>
         textureheight; // RAII-owned (Step 9); r_data's name is a view
     EA::Vector<int>

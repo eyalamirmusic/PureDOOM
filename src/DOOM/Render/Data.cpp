@@ -158,9 +158,10 @@ void generateComposite(int texnum)
     colofs = texturecolumnofs[texnum];
 
     // Composite the columns together.
-    patch = texture->patches;
+    patch = texture->patches.data();
 
-    for (i = 0, patch = texture->patches; i < texture->patchcount; i++, patch++)
+    for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
+         i++, patch++)
     {
         realpatch = static_cast<patch_t*>(W_CacheLumpNum(patch->patch, PU_CACHE));
         x1 = patch->originx;
@@ -224,9 +225,10 @@ void generateLookup(int texnum)
     // RAII scratch: value-initialised to zero and released on every exit, including
     // the early "column without a patch" return below (which the manual free leaked).
     auto patchcount = EA::Vector<byte>(texture->width);
-    patch = texture->patches;
+    patch = texture->patches.data();
 
-    for (i = 0, patch = texture->patches; i < texture->patchcount; i++, patch++)
+    for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
+         i++, patch++)
     {
         realpatch = static_cast<patch_t*>(W_CacheLumpNum(patch->patch, PU_CACHE));
         x1 = patch->originx;
@@ -374,8 +376,15 @@ void initTextures()
     }
     numtextures = numtextures1 + numtextures2;
 
-    textures =
-        static_cast<texture_t**>(doom_malloc(numtextures * sizeof(texture_t*)));
+    // GraphicsData owns the texture structs by value now (RAII, Step 9); `textures`
+    // stays a texture_t** view onto the texturePointers array into that storage, so
+    // every textures[i]->field reader is unchanged. Sized once here (stable after - the
+    // loop below only fills them, never resizes).
+    auto& gd = graphicsData();
+    gd.textureStorage.resize(numtextures);
+    gd.texturePointers.resize(numtextures);
+    textures = gd.texturePointers.data();
+
     texturecolumnlump =
         static_cast<short**>(doom_malloc(numtextures * sizeof(short*)));
     texturecolumnofs = static_cast<unsigned short**>(
@@ -386,9 +395,8 @@ void initTextures()
 
     texturewidthmask = static_cast<int*>(doom_malloc(numtextures * sizeof(int)));
 
-    // GraphicsData owns textureheight and texturetranslation now (Step 9); the vanilla
-    // names are plain-pointer views onto data(), refreshed here after each resize.
-    auto& gd = graphicsData();
+    // textureheight and texturetranslation are GraphicsData-owned too (Step 9); views
+    // onto data() refreshed after each resize.
     gd.textureheight.resize(numtextures);
     textureheight = gd.textureheight.data();
 
@@ -425,13 +433,15 @@ void initTextures()
         mtexture = reinterpret_cast<maptexture_t*>(reinterpret_cast<byte*>(maptex)
                                                    + offset);
 
-        texture = textures[i] = static_cast<texture_t*>(
-            doom_malloc(sizeof(texture_t)
-                        + sizeof(texpatch_t) * (SHORT(mtexture->patchcount) - 1)));
+        // The struct lives in textureStorage now; point the view entry at it and size
+        // its patches vector (RAII, Step 9) instead of the old variable-length malloc.
+        texture = &gd.textureStorage[i];
+        gd.texturePointers[i] = texture;
 
         texture->width = SHORT(mtexture->width);
         texture->height = SHORT(mtexture->height);
         texture->patchcount = SHORT(mtexture->patchcount);
+        texture->patches.resize(texture->patchcount);
 
         doom_memcpy(texture->name, mtexture->name, sizeof(texture->name));
         mpatch = &mtexture->patches[0];
