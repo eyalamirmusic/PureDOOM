@@ -36,6 +36,9 @@
 // SECTORS do store MObjs anyway.
 #include "p_mobj.h"
 
+// spritedef_t owns its frames in an EA::Vector now (RAII, REFACTOR.md Step 9).
+#include <ea_data_structures/Structures/Vector.h>
+
 
 // Silhouette, needed for clipping Segs (mainly)
 // and sprites representing things.
@@ -409,7 +412,10 @@ typedef struct
 typedef struct
 {
     int numframes;
-    spriteframe_t* spriteframes;
+    // The animation frames, RAII-owned (Step 9): was a raw malloc'd spriteframe_t*,
+    // now an owned vector freed with the sprite. Readers index it as before
+    // (spriteframes[frame], &spriteframes[frame]).
+    EA::Vector<spriteframe_t> spriteframes;
 } spritedef_t;
 
 

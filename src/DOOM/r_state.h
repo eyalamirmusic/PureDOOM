@@ -68,7 +68,8 @@ extern int& numspritelumps;
 // Lookup tables for map data.
 //
 extern int& numsprites;
-extern spritedef_t*& sprites;
+// A view onto GraphicsData's owned EA::Vector<spritedef_t> (Step 9).
+extern spritedef_t* sprites;
 
 extern int numvertexes;
 extern vertex_t* vertexes;

@@ -52,8 +52,11 @@ struct GraphicsData
     EA::Vector<fixed_t> spritetopoffset;
 
     // Sprite frames: the per-sprite frame/rotation table R_InitSprites builds.
+    // RAII-owned (Step 9): the sprite table is an EA::Vector of spritedef_ts, each
+    // owning its own frames vector; the vanilla name `sprites` (r_things.cpp) is a
+    // plain-pointer view onto data(), refreshed by R_InitSpriteDefs.
     int numsprites = 0;
-    spritedef_t* sprites = nullptr;
+    EA::Vector<spritedef_t> sprites;
 
     // The COLORMAP lump: the base every light row (see Lighting) indexes into.
     // RAII-owned (Step 9): this vector is the backing buffer, and the vanilla name

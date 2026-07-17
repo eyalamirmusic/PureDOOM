@@ -33,8 +33,10 @@ short (&screenheightarray)[SCREENWIDTH] = Doom::spriteState().screenheightarray;
 
 // Variables used to look up and range check thing_t sprites patches
 //  (read across the renderer and the app). The sprite frame table lives in
-//  Doom::GraphicsData (an Engine member) now; these are references onto it.
-spritedef_t*& sprites = Doom::graphicsData().sprites;
+//  Doom::GraphicsData (an Engine member) now; numsprites is a reference onto it,
+//  and sprites is a plain-pointer view onto its owned EA::Vector, set by
+//  R_InitSpriteDefs after the fill (Step 9).
+spritedef_t* sprites = nullptr;
 int& numsprites = Doom::graphicsData().numsprites;
 
 // The vissprite pool and its sorted list head (read by r_segs).

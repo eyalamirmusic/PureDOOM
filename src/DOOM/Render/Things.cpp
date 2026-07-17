@@ -15,6 +15,7 @@
 #include "../r_local.h"
 #include "../w_wad.h"
 
+#include "GraphicsData.h"
 #include "SpriteScratch.h"
 #include "Things.h"
 
@@ -174,7 +175,12 @@ void initSpriteDefs(char** namelist)
     if (!numsprites)
         return;
 
-    sprites = static_cast<spritedef_t*>(doom_malloc(numsprites * sizeof(*sprites)));
+    // GraphicsData owns the sprite table now (RAII, Step 9); sprites is a plain-pointer
+    // view onto its data(), refreshed after the resize. The resize constructs each
+    // spritedef_t (with an empty frames vector), which the loop below fills.
+    auto& gd = graphicsData();
+    gd.sprites.resize(numsprites);
+    sprites = gd.sprites.data();
 
     start = firstspritelump - 1;
     end = lastspritelump + 1;
@@ -260,12 +266,14 @@ void initSpriteDefs(char** namelist)
             }
         }
 
-        // allocate space for the frames present and copy sprtemp to it
+        // allocate space for the frames present and copy sprtemp to it. The frames
+        // vector is RAII-owned by the spritedef_t now (Step 9); resize then copy the
+        // POD sprtemp entries into its storage, as the malloc + memcpy did.
         sprites[i].numframes = maxframe;
-        sprites[i].spriteframes = static_cast<spriteframe_t*>(
-            doom_malloc(maxframe * sizeof(spriteframe_t)));
-        doom_memcpy(
-            sprites[i].spriteframes, sprtemp, maxframe * sizeof(spriteframe_t));
+        sprites[i].spriteframes.resize(maxframe);
+        doom_memcpy(sprites[i].spriteframes.data(),
+                    sprtemp,
+                    maxframe * sizeof(spriteframe_t));
     }
 }
 
