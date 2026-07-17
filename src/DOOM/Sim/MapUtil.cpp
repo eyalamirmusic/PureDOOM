@@ -145,83 +145,83 @@ bool traverseIntercepts(traverser_t func, fixed_t maxfrac)
 }
 } // namespace
 
-void setThingPosition(mobj_t* thing)
+void setThingPosition(mobj_t& thing)
 {
     // link into subsector
-    subsector_t* ss = R_PointInSubsector(thing->x, thing->y);
-    thing->subsector = ss;
+    subsector_t* ss = R_PointInSubsector(thing.x, thing.y);
+    thing.subsector = ss;
 
-    if (!(thing->flags & MF_NOSECTOR))
+    if (!(thing.flags & MF_NOSECTOR))
     {
         // invisible things don't go into the sector links
         sector_t* sec = ss->sector;
 
-        thing->sprev = nullptr;
-        thing->snext = sec->thinglist;
+        thing.sprev = nullptr;
+        thing.snext = sec->thinglist;
 
         if (sec->thinglist)
-            sec->thinglist->sprev = thing;
+            sec->thinglist->sprev = &thing;
 
-        sec->thinglist = thing;
+        sec->thinglist = &thing;
     }
 
     // link into blockmap
-    if (!(thing->flags & MF_NOBLOCKMAP))
+    if (!(thing.flags & MF_NOBLOCKMAP))
     {
         // inert things don't need to be in the blockmap
         const Blockmap& bmap = level().blockmap;
-        int blockx = bmap.blockX(Fixed {thing->x});
-        int blocky = bmap.blockY(Fixed {thing->y});
+        int blockx = bmap.blockX(Fixed {thing.x});
+        int blocky = bmap.blockY(Fixed {thing.y});
 
         if (bmap.contains(blockx, blocky))
         {
             mobj_t** link = &blocklinks[bmap.index(blockx, blocky)];
-            thing->bprev = nullptr;
-            thing->bnext = *link;
+            thing.bprev = nullptr;
+            thing.bnext = *link;
             if (*link)
-                (*link)->bprev = thing;
+                (*link)->bprev = &thing;
 
-            *link = thing;
+            *link = &thing;
         }
         else
         {
             // thing is off the map
-            thing->bnext = thing->bprev = nullptr;
+            thing.bnext = thing.bprev = nullptr;
         }
     }
 }
 
-void unsetThingPosition(mobj_t* thing)
+void unsetThingPosition(mobj_t& thing)
 {
-    if (!(thing->flags & MF_NOSECTOR))
+    if (!(thing.flags & MF_NOSECTOR))
     {
         // inert things don't need to be in the blockmap?
         // unlink from subsector
-        if (thing->snext)
-            thing->snext->sprev = thing->sprev;
+        if (thing.snext)
+            thing.snext->sprev = thing.sprev;
 
-        if (thing->sprev)
-            thing->sprev->snext = thing->snext;
+        if (thing.sprev)
+            thing.sprev->snext = thing.snext;
         else
-            thing->subsector->sector->thinglist = thing->snext;
+            thing.subsector->sector->thinglist = thing.snext;
     }
 
-    if (!(thing->flags & MF_NOBLOCKMAP))
+    if (!(thing.flags & MF_NOBLOCKMAP))
     {
         // unlink from the blockmap
-        if (thing->bnext)
-            thing->bnext->bprev = thing->bprev;
+        if (thing.bnext)
+            thing.bnext->bprev = thing.bprev;
 
-        if (thing->bprev)
-            thing->bprev->bnext = thing->bnext;
+        if (thing.bprev)
+            thing.bprev->bnext = thing.bnext;
         else
         {
             const Blockmap& bmap = level().blockmap;
-            int blockx = bmap.blockX(Fixed {thing->x});
-            int blocky = bmap.blockY(Fixed {thing->y});
+            int blockx = bmap.blockX(Fixed {thing.x});
+            int blocky = bmap.blockY(Fixed {thing.y});
 
             if (bmap.contains(blockx, blocky))
-                blocklinks[bmap.index(blockx, blocky)] = thing->bnext;
+                blocklinks[bmap.index(blockx, blocky)] = thing.bnext;
         }
     }
 }

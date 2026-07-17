@@ -21,6 +21,6 @@ void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
 subsector_t* pointInSubsector(fixed_t x, fixed_t y);
-void setupFrame(player_t* player);
-void renderPlayerView(player_t* player);
+void setupFrame(player_t& player);
+void renderPlayerView(player_t& player);
 } // namespace Doom

@@ -73,11 +73,11 @@ bool forEachThingInBlock(int x, int y, ThingFunc&& func)
 }
 
 // Link a thing into its subsector's sector list and its blockmap cell (or neither,
-// for MF_NOSECTOR / MF_NOBLOCKMAP), setting thing->subsector from its x,y.
-void setThingPosition(mobj_t* thing);
+// for MF_NOSECTOR / MF_NOBLOCKMAP), setting thing.subsector from its x,y.
+void setThingPosition(mobj_t& thing);
 
 // Unlink a thing from both, ahead of a position change.
-void unsetThingPosition(mobj_t* thing);
+void unsetThingPosition(mobj_t& thing);
 
 // Trace the segment (x1,y1)->(x2,y2) across the blockmap, gathering the lines
 // (PT_ADDLINES) and/or things (PT_ADDTHINGS) it crosses into Clip's intercept list,

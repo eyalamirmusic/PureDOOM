@@ -188,10 +188,10 @@ subsector_t* R_PointInSubsector(fixed_t x, fixed_t y)
 
 void R_SetupFrame(player_t* player)
 {
-    Doom::setupFrame(player);
+    Doom::setupFrame(*player);
 }
 
 void R_RenderPlayerView(player_t* player)
 {
-    Doom::renderPlayerView(player);
+    Doom::renderPlayerView(*player);
 }

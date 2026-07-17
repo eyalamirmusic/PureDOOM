@@ -59,8 +59,8 @@ void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
 subsector_t* pointInSubsector(fixed_t x, fixed_t y);
-void setupFrame(player_t* player);
-void renderPlayerView(player_t* player);
+void setupFrame(player_t& player);
+void renderPlayerView(player_t& player);
 
 void addPointToBox(int x, int y, fixed_t* box)
 {
@@ -630,25 +630,25 @@ subsector_t* pointInSubsector(fixed_t x, fixed_t y)
 //
 // setupFrame
 //
-void setupFrame(player_t* player)
+void setupFrame(player_t& player)
 {
-    viewplayer = player;
-    viewx = player->mo->x;
-    viewy = player->mo->y;
-    viewangle = player->mo->angle;
-    extralight = player->extralight;
+    viewplayer = &player;
+    viewx = player.mo->x;
+    viewy = player.mo->y;
+    viewangle = player.mo->angle;
+    extralight = player.extralight;
 
-    viewz = player->viewz;
+    viewz = player.viewz;
 
     viewsin = finesine[viewangle >> ANGLETOFINESHIFT];
     viewcos = finecosine[viewangle >> ANGLETOFINESHIFT];
 
     sscount = 0;
 
-    if (player->fixedcolormap)
+    if (player.fixedcolormap)
     {
         fixedcolormap =
-            colormaps + player->fixedcolormap * 256 * sizeof(lighttable_t);
+            colormaps + player.fixedcolormap * 256 * sizeof(lighttable_t);
 
         walllights = scalelightfixed;
 
@@ -665,7 +665,7 @@ void setupFrame(player_t* player)
 //
 // R_RenderView
 //
-void renderPlayerView(player_t* player)
+void renderPlayerView(player_t& player)
 {
     setupFrame(player);
 

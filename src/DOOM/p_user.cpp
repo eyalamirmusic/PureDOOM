@@ -28,5 +28,5 @@
 
 void P_PlayerThink(player_t* player)
 {
-    Doom::playerThink(player);
+    Doom::playerThink(*player);
 }

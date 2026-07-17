@@ -180,13 +180,13 @@ void P_LineOpening(line_t* linedef)
 
 void P_UnsetThingPosition(mobj_t* thing)
 {
-    Doom::unsetThingPosition(thing);
+    Doom::unsetThingPosition(*thing);
 }
 
 
 void P_SetThingPosition(mobj_t* thing)
 {
-    Doom::setThingPosition(thing);
+    Doom::setThingPosition(*thing);
 }
 
 
