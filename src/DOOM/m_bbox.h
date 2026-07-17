@@ -19,8 +19,7 @@
 //    
 //-----------------------------------------------------------------------------
 
-#ifndef __M_BBOX__
-#define __M_BBOX__
+#pragma once
 
 
 #include "doomtype.h"
@@ -42,7 +41,6 @@ void M_ClearBox(fixed_t* box);
 void M_AddToBox(fixed_t* box, fixed_t x, fixed_t y);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

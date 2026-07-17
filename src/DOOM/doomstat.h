@@ -24,8 +24,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __D_STATE__
-#define __D_STATE__
+#pragma once
 
 
 // We need globally shared data structures,
@@ -280,7 +279,6 @@ extern ticcmd_t (&netcmds)[MAXPLAYERS][BACKUPTICS];
 extern int& ticdup;
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

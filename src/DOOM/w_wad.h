@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __W_WAD__
-#define __W_WAD__
+#pragma once
 
 
 // The purge tags W_CacheLumpNum/Name still take but ignore: WadFile owns every
@@ -88,7 +87,6 @@ void* W_CacheLumpNum(int lump, int tag);
 void* W_CacheLumpName(const char* name, int tag);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

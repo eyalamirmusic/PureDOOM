@@ -32,8 +32,7 @@
 //    
 //-----------------------------------------------------------------------------
 
-#ifndef __TABLES__
-#define __TABLES__
+#pragma once
 
 
 #ifdef LINUX
@@ -87,7 +86,6 @@ extern const angle_t* tantoangle;
 int SlopeDiv(unsigned num, unsigned den);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

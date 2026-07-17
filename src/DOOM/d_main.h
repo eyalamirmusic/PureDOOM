@@ -21,8 +21,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __D_MAIN__
-#define __D_MAIN__
+#pragma once
 
 
 #include "d_event.h"
@@ -64,4 +63,3 @@ void D_StartTitle(void);
 extern doom_boolean& advancedemo;
 
 
-#endif

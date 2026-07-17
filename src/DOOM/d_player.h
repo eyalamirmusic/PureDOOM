@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __D_PLAYER__
-#define __D_PLAYER__
+#pragma once
 
 
 // The player data structure depends on a number
@@ -201,7 +200,6 @@ typedef struct
 } wbstartstruct_t;
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

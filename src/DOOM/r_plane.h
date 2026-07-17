@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __R_PLANE__
-#define __R_PLANE__
+#pragma once
 
 
 #include "r_data.h"
@@ -48,7 +47,6 @@ visplane_t* R_FindPlane(fixed_t height, int picnum, int lightlevel);
 visplane_t* R_CheckPlane(visplane_t* pl, int start, int stop);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

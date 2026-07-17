@@ -20,8 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __I_SOUND__
-#define __I_SOUND__
+#pragma once
 
 
 #include "doomdef.h"
@@ -101,7 +100,6 @@ void I_UnRegisterSong(int handle);
 unsigned long I_TickSong();
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

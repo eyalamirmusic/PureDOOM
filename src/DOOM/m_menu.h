@@ -19,8 +19,7 @@
 //    
 //-----------------------------------------------------------------------------
 
-#ifndef __M_MENU__
-#define __M_MENU__
+#pragma once
 
 
 #include "d_event.h"
@@ -61,7 +60,6 @@ void M_StartControlPanel(void);
 extern int messageToPrint;
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

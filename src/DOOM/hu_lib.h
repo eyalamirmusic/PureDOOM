@@ -18,8 +18,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __HULIB__
-#define __HULIB__
+#pragma once
 
 
 // We are referring to patches.
@@ -172,7 +171,6 @@ void HUlib_drawIText(hu_itext_t* it);
 void HUlib_eraseIText(hu_itext_t* it);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __P_SAVEG__
-#define __P_SAVEG__
+#pragma once
 
 
 #include "doomtype.h"
@@ -42,7 +41,6 @@ void P_UnArchiveSpecials(void);
 extern byte*& save_p;
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

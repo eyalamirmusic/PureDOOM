@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __R_BSP__
-#define __R_BSP__
+#pragma once
 
 
 #include "r_defs.h"
@@ -63,7 +62,6 @@ void R_ClearDrawSegs(void);
 void R_RenderBSPNode(int bspnum);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

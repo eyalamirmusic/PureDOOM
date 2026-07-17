@@ -21,8 +21,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __STSTUFF_H__
-#define __STSTUFF_H__
+#pragma once
 
 #include "doomtype.h"
 #include "d_event.h"
@@ -73,7 +72,6 @@ typedef enum
 
 doom_boolean ST_Responder(event_t* ev);
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

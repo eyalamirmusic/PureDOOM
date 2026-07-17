@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __R_DRAW__
-#define __R_DRAW__
+#pragma once
 
 
 #include "r_defs.h"
@@ -96,7 +95,6 @@ void R_FillBackScreen(void);
 void R_DrawViewBorder(void);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

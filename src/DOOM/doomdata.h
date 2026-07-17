@@ -21,8 +21,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __DOOMDATA__
-#define __DOOMDATA__
+#pragma once
 
 
 // The most basic types we use, portability.
@@ -206,7 +205,6 @@ typedef struct
 } mapthing_t;
 
 
-#endif // __DOOMDATA__
 
 //-----------------------------------------------------------------------------
 //

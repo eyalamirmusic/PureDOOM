@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __AMMAP_H__
-#define __AMMAP_H__
+#pragma once
 
 
 #include "d_event.h"
@@ -151,7 +150,6 @@ void AM_rotate(fixed_t* x, fixed_t* y, angle_t a);
 void AM_drawMarks(void);
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

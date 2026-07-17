@@ -20,8 +20,7 @@
 //    
 //-----------------------------------------------------------------------------
 
-#ifndef __DOOMTYPE__
-#define __DOOMTYPE__
+#pragma once
 
 
 // An int, and NOT the built-in bool, even though the engine is C++ now.
@@ -61,7 +60,6 @@ typedef unsigned char byte;
 #define DOOM_MINLONG    ((long)0x80000000)
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

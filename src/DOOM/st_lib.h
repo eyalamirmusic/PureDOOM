@@ -19,8 +19,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __STLIB__
-#define __STLIB__
+#pragma once
 
 
 // We are referring to patches.
@@ -180,7 +179,6 @@ void STlib_initBinIcon(st_binicon_t* b,
 
 void STlib_updateBinIcon(st_binicon_t* bi, doom_boolean refresh);
 
-#endif
 
 //-----------------------------------------------------------------------------
 //

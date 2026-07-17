@@ -1,5 +1,4 @@
-#ifndef __DOOM_CONFIG_H__
-#define __DOOM_CONFIG_H__
+#pragma once
 
 
 #if defined(WIN32)
@@ -57,4 +56,3 @@ int doom_atox(const char* str);
 int doom_toupper(int c);
 
 
-#endif

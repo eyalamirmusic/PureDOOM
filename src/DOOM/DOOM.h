@@ -24,8 +24,7 @@
 //-----------------------------------------------------------------------------
 
 
-#ifndef __DOOM_H__
-#define __DOOM_H__
+#pragma once
 
 
 // Sample rate of sound samples from doom
@@ -209,4 +208,3 @@ void doom_mouse_move(int delta_x, int delta_y);
 } // extern "C"
 #endif
 
-#endif

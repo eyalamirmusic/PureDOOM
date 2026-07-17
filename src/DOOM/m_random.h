@@ -19,8 +19,7 @@
 //    
 //-----------------------------------------------------------------------------
 
-#ifndef __M_RANDOM__
-#define __M_RANDOM__
+#pragma once
 
 
 #include "doomtype.h"
@@ -60,7 +59,6 @@ extern int& prndindex;
 extern const unsigned char* rndtable;
 
 
-#endif
 
 //-----------------------------------------------------------------------------
 //
