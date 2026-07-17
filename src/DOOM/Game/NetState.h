@@ -56,6 +56,7 @@ struct NetState
     doomdata_t reboundstore = {};                // the loopback packet
     char exitmsg[80] = {};                       // netgame exit message scratch
     int gametime = 0;                            // I_GetTime at the last TryRunTics
+    int oldentertics = 0;                        // entertic at the last TryRunTics (was a static)
     int frametics[4] = {};                       // per-frame tic counts (rate meter)
     int frameon = 0;                             // rate-meter frame counter
     int frameskip[4] = {};                       // per-frame skip flags (rate meter)

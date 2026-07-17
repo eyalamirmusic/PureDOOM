@@ -663,7 +663,7 @@ void fBunnyScroll()
     patch_t* p2;
     char name[10];
     int stage;
-    static int laststage;
+    int& laststage = finaleState().laststage;
 
     p1 = static_cast<patch_t*>(W_CacheLumpName("PFUB2", PU_LEVEL));
     p2 = static_cast<patch_t*>(W_CacheLumpName("PFUB1", PU_LEVEL));

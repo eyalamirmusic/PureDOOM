@@ -30,6 +30,10 @@ struct EnemyAI
     mobj_s* braintargets[32] = {}; // the boss brain's spawn-cube targets
     int numbraintargets = 0; // # of targets found
     int braintargeton = 0; // the next target to aim a cube at
+
+    // A_BrainSpit's skill parity, toggled every call: on easy skill the brain spits
+    // a cube only every other time (was a function-local static in brainSpit).
+    int brainSpitEasy = 0;
 };
 
 // The one EnemyAI, a view onto the Engine's member - the same pattern as the other clusters

@@ -437,18 +437,18 @@ char huDequeueChatChar()
 
 doom_boolean huResponder(event_t* ev)
 {
-    static char lastmessage[HU_MAXLINELENGTH + 1];
+    char(&lastmessage)[HU_MAXLINELENGTH + 1] = hudChat().lastmessage; // ref-to-array onto member
     char* macromessage;
     doom_boolean eatkey = false;
-    static doom_boolean shiftdown = false;
-    static doom_boolean altdown = false;
+    doom_boolean& shiftdown = hudChat().shiftdown;
+    doom_boolean& altdown = hudChat().altdown;
     unsigned char c;
     int numplayers;
 
     static char destination_keys[MAXPLAYERS] = {
         HUSTR_KEYGREEN, HUSTR_KEYINDIGO, HUSTR_KEYBROWN, HUSTR_KEYRED};
 
-    static int num_nobrainers = 0;
+    int& num_nobrainers = hudChat().num_nobrainers;
 
     numplayers = 0;
     for (int i = 0; i < MAXPLAYERS; i++)

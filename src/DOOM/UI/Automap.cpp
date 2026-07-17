@@ -449,7 +449,8 @@ void amStop()
 //
 void amStart()
 {
-    static int lastlevel = -1, lastepisode = -1;
+    int& lastlevel = automapView().lastlevel;
+    int& lastepisode = automapView().lastepisode;
 
     if (!stopped)
         amStop();
@@ -490,7 +491,7 @@ void amMaxOutWindowScale()
 doom_boolean amResponder(event_t* ev)
 {
     int rc;
-    static int bigstate = 0;
+    int& bigstate = automapView().bigstate;
     static char buffer[20];
 
     rc = false;
@@ -660,10 +661,10 @@ void amDoFollowPlayer()
 //
 void amUpdateLightLev()
 {
-    static int nexttic = 0;
+    int& nexttic = automapView().nexttic;
     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
     static int litelevels[] = {0, 4, 7, 10, 12, 14, 15, 15};
-    static int litelevelscnt = 0;
+    int& litelevelscnt = automapView().litelevelscnt;
 
     // Change light level
     if (amclock > nexttic)

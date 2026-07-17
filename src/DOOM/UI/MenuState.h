@@ -41,6 +41,16 @@ struct MenuState
     int screenSize = 0; // temp for screenblocks (0-9)
     int quickSaveSlot = 0; // M_Init sets -1 (= none picked); zero-init here
 
+    // M_Responder's input debounce, folded in from its function-local statics: the
+    // joystick/mouse repeat timers and the mouse-movement accumulation that turns raw
+    // motion into discrete menu up/down steps.
+    int joywait = 0; // tics until the joystick may repeat
+    int mousewait = 0; // tics until a mouse button may repeat
+    int mousey = 0; // accumulated mouse Y since last step
+    int lasty = 0; // mouse Y at the last step
+    int mousex = 0; // accumulated mouse X since last step
+    int lastx = 0; // mouse X at the last step
+
     // The pop-up message box.
     const char* messageString = nullptr; // the message text
     int messx = 0; // message x

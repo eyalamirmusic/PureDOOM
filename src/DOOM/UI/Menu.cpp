@@ -1538,12 +1538,12 @@ void M_WriteText(int x, int y, const char* string)
 doom_boolean M_Responder(event_t* ev)
 {
     int ch;
-    static int joywait = 0;
-    static int mousewait = 0;
-    static int mousey = 0;
-    static int lasty = 0;
-    static int mousex = 0;
-    static int lastx = 0;
+    int& joywait = menuState().joywait;
+    int& mousewait = menuState().mousewait;
+    int& mousey = menuState().mousey;
+    int& lasty = menuState().lasty;
+    int& mousex = menuState().mousex;
+    int& lastx = menuState().lastx;
 
     ch = -1;
 

@@ -1788,7 +1788,7 @@ void brainSpit(mobj_t* mo)
     mobj_t* targ;
     mobj_t* newmobj;
 
-    static int easy = 0;
+    int& easy = enemyAI().brainSpitEasy;
 
     easy ^= 1;
     if (gameskill <= sk_easy && (!easy))

@@ -725,7 +725,7 @@ void tryRunTics()
     int i;
     int lowtic;
     int entertic;
-    static int oldentertics;
+    int& oldentertics = netState().oldentertics;
     int realtics;
     int availabletics;
     int counts;

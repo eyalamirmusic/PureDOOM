@@ -41,6 +41,10 @@ struct FinaleState
     int castframes = 0; // frames shown in the current cycle
     int castonmelee = 0; // alternate melee/missile attack toggle
     doom_boolean castattacking = false; // in an attack frame
+
+    // The bunny-scroll ending's animation cursor (was a function-local static in
+    // F_BunnyScroll), driving the "end." stamp that appears when scrolling finishes.
+    int laststage = 0;
 };
 
 // The one FinaleState, a view onto the Engine's member - the same pattern as the other clusters
