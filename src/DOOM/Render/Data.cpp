@@ -70,11 +70,16 @@ static int& lastflat = compositeCache().lastflat;
 static int& firstpatch = compositeCache().firstpatch;
 static int& lastpatch = compositeCache().lastpatch;
 static int& numpatches = compositeCache().numpatches;
-static int*& texturewidthmask = compositeCache().texturewidthmask;
-static int*& texturecompositesize = compositeCache().texturecompositesize;
-static short**& texturecolumnlump = compositeCache().texturecolumnlump;
-static unsigned short**& texturecolumnofs = compositeCache().texturecolumnofs;
-static byte**& texturecomposite = compositeCache().texturecomposite;
+// The composition tables are RAII-owned by CompositeCache now (Step 9); these are plain-pointer
+// VIEWS onto the owners' data(), refreshed by initTextures once the vectors are sized (which is
+// before any read - generateLookup runs from initTextures, generateComposite/getColumn at render
+// time). texturecolumnlump/ofs/composite point at the pointer-array views, so name[tex][col] and
+// name[tex] = ... resolve and write through unchanged.
+static int* texturewidthmask = nullptr;
+static int* texturecompositesize = nullptr;
+static short** texturecolumnlump = nullptr;
+static unsigned short** texturecolumnofs = nullptr;
+static byte** texturecomposite = nullptr;
 static int& flatmemory = compositeCache().flatmemory;
 static int& texturememory = compositeCache().texturememory;
 static int& spritememory = compositeCache().spritememory;
@@ -148,10 +153,13 @@ void generateComposite(int texnum)
     // A 64-byte zero tail, as WadFile gives each lump, so the renderer's
     // tutti-frutti over-read past a composited column draws a deterministic zero
     // rather than whatever heap follows (the zone's arena made it deterministic
-    // for free; malloc does not). The whole block is zeroed for the same reason -
-    // drawColumnInCache fills only the covered columns.
-    block = static_cast<byte*>(doom_malloc(texturecompositesize[texnum] + 64));
-    doom_memset(block, 0, texturecompositesize[texnum] + 64);
+    // for free; malloc does not). assign value-initialises the whole block to zero
+    // for the same reason - drawColumnInCache fills only the covered columns. RAII
+    // now (Step 9): the block is a CompositeCache-owned inner vector, freed with the
+    // Engine; the byte** view points at its data().
+    auto& compositeBytes = compositeCache().compositeStorage[texnum];
+    compositeBytes.assign(texturecompositesize[texnum] + 64, byte(0));
+    block = compositeBytes.data();
     texturecomposite[texnum] = block;
 
     collump = texturecolumnlump[texnum];
@@ -385,15 +393,24 @@ void initTextures()
     gd.texturePointers.resize(numtextures);
     textures = gd.texturePointers.data();
 
-    texturecolumnlump =
-        static_cast<short**>(doom_malloc(numtextures * sizeof(short*)));
-    texturecolumnofs = static_cast<unsigned short**>(
-        doom_malloc(numtextures * sizeof(unsigned short*)));
-    texturecomposite = static_cast<byte**>(doom_malloc(numtextures * sizeof(byte*)));
+    // The composition tables are CompositeCache-owned EA::Vectors now (Step 9); size them once
+    // here and point the views at their data(). columnlump/ofs/composite own an inner vector per
+    // texture (filled below / lazily); composite is null-initialised, which getColumn keys on.
+    auto& cc = compositeCache();
+    cc.columnlumpStorage.resize(numtextures);
+    cc.columnlump.resize(numtextures);
+    cc.columnofsStorage.resize(numtextures);
+    cc.columnofs.resize(numtextures);
+    cc.compositeStorage.resize(numtextures);
+    cc.composite.resize(numtextures);
+    cc.texturecompositesize.resize(numtextures);
+    cc.texturewidthmask.resize(numtextures);
 
-    texturecompositesize = static_cast<int*>(doom_malloc(numtextures * sizeof(int)));
-
-    texturewidthmask = static_cast<int*>(doom_malloc(numtextures * sizeof(int)));
+    texturecolumnlump = cc.columnlump.data();
+    texturecolumnofs = cc.columnofs.data();
+    texturecomposite = cc.composite.data();
+    texturecompositesize = cc.texturecompositesize.data();
+    texturewidthmask = cc.texturewidthmask.data();
 
     // textureheight and texturetranslation are GraphicsData-owned too (Step 9); views
     // onto data() refreshed after each resize.
@@ -463,10 +480,10 @@ void initTextures()
                 I_Error(error_buf);
             }
         }
-        texturecolumnlump[i] =
-            static_cast<short*>(doom_malloc(texture->width * sizeof(short)));
-        texturecolumnofs[i] = static_cast<unsigned short*>(
-            doom_malloc(texture->width * sizeof(unsigned short)));
+        cc.columnlumpStorage[i].resize(texture->width);
+        cc.columnofsStorage[i].resize(texture->width);
+        texturecolumnlump[i] = cc.columnlumpStorage[i].data();
+        texturecolumnofs[i] = cc.columnofsStorage[i].data();
 
         j = 1;
         while (j * 2 <= texture->width)
