@@ -50,7 +50,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 5 | The `Engine` object: globals become members | **in progress** — composition root owns `Random`/`WadFile`/`Level`/`Clip`/`ViewPoint`; `Clip` holds all of p_maputl's + p_map's movement/collision scratch (blockmap descriptor on `Level`, intercept list, opening window + trace, the `tm*` clipping state, the aim's `linetarget` and shot's `attackrange`); `ViewPoint` holds the renderer's camera (`viewx`/…/`viewplayer`), `ViewProjection` its screen projection (`centerx`/…/`projection`, the `viewangletox`/`xtoviewangle` tables), `ViewWindow` the view's on-screen geometry (`viewwidth`/…/`viewwindowy`), `Lighting` its light selection (`fixedcolormap`/`extralight`, the `scalelight`/`zlight` tables) and `GraphicsData` its loaded WAD graphics (`textures`/`colormaps`/`sprites`/…, the R_InitData tables) and `RenderScratch` its per-frame BSP scratch (`rw_*`/`sscount`/`floorplane`/`ceilingplane`) — the renderer's own state, now fully off the loose globals; the game state has followed — **all three headers (`doomstat.h`, `r_state.h`, `p_local.h`) are now nearly empty of loose globals**, and the same pattern has reached the other headers too — ~22 cohesive clusters migrated: from `doomstat.h`, `LevelStats`/`LaunchOptions`/`GameVersion`/`GameSession`/`StartupDefaults`/`PlayerState`/`GameFlow`/`DemoState`/`RefreshFlags`/`OverlayState`/`NetState`/`MapSpawns`/`GameClock`/`AmmoLimits`/`IntermissionInfo`/`SkyState`/`CorpseQueue`; from `p_local.h`, `ItemRespawnQueue` and `clipammo` (folded into `AmmoLimits`); from `d_event`/`d_main`, `EventQueue`/`AttractMode` and `gameaction` (folded into `GameFlow`); from `p_spec`, `ActiveSpecials`/`EndLevelTimer` — `r_state.h` was already done (its externs are geometry views onto `Level`). Three vestigial globals were *deleted* rather than migrated (`viewangleoffset`, `linecount`, `loopcount` — all always-zero or dead). What is left loose is the config-backed set (`snd_*Volume`/`mouseSensitivity`, blocked by `Config.cpp`'s static address capture until the config rework — proven, a naive migration segfaulted every test), the deferred `thinkercap` (moves with the `Thinker` rewrite), and a short tail of single scalars (`save_p`, `basedefault`) that move with their subsystems/the config rework. The lone engine-global scalar `validcount` — owned by no subsystem — has moved in as a `Doom::ValidCount` `Engine` member, and DoomMain's boot-path string globals are off the cloud (`wadfiles[]`/`title[]` made file-local `static`, the dead `wadfile[]`/`mapdir[]` deleted). The **file-scope-statics sweep — the last Step-5 phase — is well advanced** — g_game's per-tic input (`TiccmdInput`), its demo buffer (folded into `DemoState`), its deferred new-game params (`DeferredNewGame`), its `consistancy` array (folded into `NetState`), its par-time tables (`ParTimes`), its movement-speed tables (`MovementSpeeds`), the `-timedemo` benchmark (`TimeDemo`) and the pending-command flags (`PendingCommands`) are the first Game-local internal state into the `Engine`, and the sweep has since reached the UI's *file-local* `static`s, **emptying `UI/Hud` and `UI/StatusBar` of data statics**: the HUD (`HudMessage`/`HudChat`/`HudState`) and the status bar (`StatusBarFace`/`StatusBarWidgets`/`StatusBarGraphics`/`StatusBarState`), then the automap's own view state (`AutomapView`), the intermission's residual state (`IntermissionState`), the finale's runtime state (`FinaleState`), the melt's scratch framebuffers (`WipeState`) and the menu's transient interaction state (`MenuState`), and then the renderer's file-local scratch (all of Render: `CompositeCache`/`WallScratch`/`SpriteScratch`/`DrawTables`/`SolidSegs`/`PlaneScratch`/`RenderMainState`) and most of the playsim's (`ActionScratch`/`WeaponScratch`/`SightScratch`/`EnemyAI`/`SwitchList`/`PlayerScratch`/`AnimatedSurfaces`/`LevelPool`), plus doomstat's internal-parameter scalars (`EngineParams`), with a `StateClusterTests` net pinning the golden-neutral tables. **The config-backed category is now complete** — the `doom_config`→`Host` rework's config half landed as a runtime bind: `Config.cpp`'s `defaults[]` no longer captures `&member` at static-init (the race that segfaulted every test) but binds each config-backed entry to its `Engine` member at runtime (`bindEngineDefaults`, called before `mLoadDefaults`/`mSaveDefaults` touch a `location`), and the app reaches them the same way, through `defaults[].location`. On that, the config-backed globals migrated in: `SoundSettings` (`snd_SfxVolume`/`snd_MusicVolume`/`numChannels`), `MenuSettings` (`mouseSensitivity`/`showMessages`/`detailLevel`/`screenblocks`/`usegamma`), `ConfigPaths` (`basedefault`/`defaultfile` — never actually captured), and `InputConfig` (all 22 key/mouse/joy bindings + the device enables + the crosshair/always-run toggles). **And the renderer's cross-read view-globals are now swept** — the state the flat `r_*.cpp` shims still owned and exported through `r_bsp.h`/`r_draw.h`/`r_segs.h`/`r_things.h`/`r_plane.h`/`r_sky.h`: `SkyState` gained `skytexture`/`skytexturemid`, and new clusters landed for `BSPScratch` (the BSP-walk pointers + drawseg pool), `SegState` (the wall-segment texture/mark/light state), `SpriteState` (the vissprite pool + sprite clip window), `DrawState` (the dc_*/ds_* drawer inputs), `VideoState` (`dirtybox`), plus `PlaneScratch` extended with the clip/projection arrays and the dead `floorfunc`/`ceilingfunc_t` deleted; `HudFlags` took the cross-read `chat_on`/`message_dontfuckwithme`. The load-bearing trap throughout: a bare `extern int X;` (not via the header) that *writes* `X` clobbers the low half of the reference's pointer — every cross-file extern must move to `extern T&` in lockstep (caught once as the `0x100640000` `skytexturemid` fault) |
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
-| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list is down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). Left: `info.cpp` and the `states[].action` union (the action-model rewrite it bundles with), plus the `doom_config`→`Host` interface redesign + audio and the ongoing globals-into-`Engine` work |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. Left: the `doom_config`→`Host` interface redesign + audio and the ongoing globals-into-`Engine` work |
 
 ## Where this is — session handoff
 
@@ -120,11 +120,12 @@ so every such extern must move to `extern T&` in lockstep. It bit once, as the `
 `skytexturemid` fault (`Render/Sky.cpp` wrote `100*FRACUNIT` through a plain-`int` extern), and is
 found by grepping *every* `extern.*NAME` — headers and `.cpp` bodies alike — before a migration.
 
-The UI, the whole renderer and the config-backed set are done. The flat vanilla list is still the
-shims plus **one file**, `info.cpp` (the generated actor/state LUT). What is left of Step 5, and why,
-is spelled out in the Step-8 tail — it is now a genuine tail (a handful of scattered single flags, the
-inert netcode bookkeeping, the function-local `static`s, and the save/thinker-coupled state), plus the
-two deep items below.
+The UI, the whole renderer and the config-backed set are done. `info.cpp` (the generated
+actor/state LUT) — the last real vanilla source — **has now migrated to `Sim/Info.cpp`**, so the
+**flat vanilla list is only the shims**. What is left of Step 5, and why, is spelled out in the
+Step-8 tail — it is now a genuine tail (a handful of scattered single flags, the inert netcode
+bookkeeping, the function-local `static`s, and the save/thinker-coupled state), plus the deep
+items below (`doom_config`→`Host` + audio; the `engine()` singleton→instance flip).
 
 **The zone is gone.** `z_zone.cpp`/`z_zone.h` are deleted. Mobjs and the thinker
 specials live in a level-scoped malloc pool (`Sim/Tick`: `levelAlloc`/`levelFree`
@@ -150,16 +151,19 @@ safe:
   is the one simulation path no demo covers, and it is precisely the mobj/special
   byte layout the next step rewrites. It is shown to bite (a corrupted restored
   field fails it). Build any layout change against it.
-- **`thinker_t`→`Thinker`** (a real base with a virtual `tick()`) is the last and
-  deepest step — it makes `mobj_t`/the specials polymorphic, which breaks the
-  memcpy serialisation and the `memset`-over-raw-alloc init (now `doom_memset(0)` in
-  `levelAlloc` and `P_SpawnMobj`), so it needs placement-new at every spawner and a
-  field-wise p_saveg, all held by the net. It is **not** required for "no zone"
-  (done) or for the flat list to empty; the union dispatch is already a clean,
-  golden-pinned choke point, so the payoff is modest and the risk real — deferred on
-  purpose. `info.cpp` migrates with this step (its
-  `states[].action` union is exactly what the virtualisation replaces — converting
-  it before means converting it twice).
+- **`thinker_t`→`Thinker`** (a real base with a virtual `tick()`) **has landed** — the
+  last and deepest playsim step. It made `mobj_t`/the specials polymorphic, which broke
+  the memcpy serialisation and the `memset`-over-raw-alloc init, so it needed
+  placement-new at every spawner and a vtable-preserving p_saveg, all held by the net
+  (Step-8 row). Its *per-object* dispatch union (`thinker_t.function`) is gone.
+- **`info.cpp` and the `states[].action` model have landed on top of it** — a separate
+  union from the thinker's. `info.cpp` moved to `Sim/Info.cpp` (the generated tables
+  verbatim under the strict flags), and `d_think.h`'s three-pointer `actionf_t` union
+  (`acp1`/`acv`/`acp2`, the 1993 "ANSI C with classes" hack) became a single type-erased
+  pointer the two dispatch sites (`setMobjState`, `setPsprite`) cast back to the exact
+  signature — a round-trip conversion, hence well-defined. **With it the flat vanilla
+  list is only the shims.** Goldens byte-identical throughout (every mobj/weapon action
+  the demos fire runs through the two rewritten sites).
 
 **What exists in modern C++** (`src/DOOM/`, `namespace Doom`, `-Wall` + clang-format;
 everything else is still vanilla C compiled as C++ under `-w`):
@@ -237,8 +241,9 @@ goldens — and the append-only probe hash moved from `function.acp1 == P_MobjTh
 to the virtual `kind()` (a change to *how* it finds mobjs, not *what* it mixes).
 
 **What remains overall:** the deep tail of Step 8 — the `thinker_t`→`Thinker`
-virtualisation is **done** (see the Step-8 row), leaving `info.cpp` + the
-`states[].action` union (the action-model rewrite it bundles with) and the
+virtualisation is **done** (see the Step-8 row), and so now is **`info.cpp` +
+the `states[].action` action model** (moved to `Sim/Info.cpp`, the union retired for
+a type-erased pointer), which means the flat vanilla list is *only* shims. Left is the
 `doom_config`→`Host` redesign + audio, plus the
 *finish* of Step 5. Steps 6 and 7 are complete — every `p_*` and `r_*` file is now a
 shim over a `namespace Doom` unit — and Step 5 has migrated ~25 cohesive clusters, so
@@ -1645,8 +1650,9 @@ never really C — the tiny data/decl remainders — are gone:
 - **The ready data tables** — `d_items`→`Sim/Items` (`weaponinfo`) and
   `sounds`→`Game/SoundData` (`S_sfx`/`S_music`), pure externed data with no action
   pointers, so migrate-able now (a localized `#pragma` + `// clang-format off`
-  keeps the 1993 rows verbatim under the strict flags). `info.cpp` stays deferred —
-  its `states[]` holds the action pointers the `Thinker` step rewrites.
+  keeps the 1993 rows verbatim under the strict flags). `info.cpp` stayed deferred at
+  the time — its `states[]` holds the action pointers — and **has since migrated** to
+  `Sim/Info.cpp` (see *Landed — the action model and `info.cpp`* below).
 - **The p_saveg save/load net** (`Tests/Sim/SaveGameTests.cpp` +
   `doomSimSaveLoadPreservesWorld`) — the enabler for everything below. p_saveg's
   archive/unarchive is the one simulation path no demo covers, and it is exactly
@@ -1655,9 +1661,61 @@ never really C — the tiny data/decl remainders — are gone:
   base level and unarchives over it (the `gDoLoadGame` sequence), then requires a
   comprehensive world hash unchanged. Shown to bite.
 
-**Steps 6 and 7 are complete**, Step 8's mechanical migrations are done, and
-**the zone is deleted** — the flat vanilla list is down to the shims plus
-**`info.cpp`** alone. What remains is the deep, interlocking tail:
+### Landed — the action model and `info.cpp`
+
+`info.cpp` (the 4,669-line multigen-generated state/mobjinfo/sprite LUT) was **the last
+real vanilla source** — the only flat file that was not a shim over a `namespace Doom`
+unit. It is now `Sim/Info.cpp`, migrated the way `d_items`→`Sim/Items` and
+`sounds`→`Game/SoundData` were: the tables stay at `::` scope (their `info.h` externs are
+read across the engine and the app), verbatim under a `// clang-format off` guard and a
+localized `#pragma` that quiets the three warnings legitimate data of this shape raises
+under the strict flags — `-Wwritable-strings` (`sprnames` binds literals to `char*`),
+`-Wcast-function-type` (each action is stored via an `(actionf_p1)` cast), and
+`-Wmissing-field-initializers`. **With it the flat vanilla list is only the shims.**
+
+The **action model** it bundled with — `state_t.action`, the function the state machine
+runs when a mobj or weapon enters a state — was `d_think.h`'s three-pointer *union*
+`actionf_t` (`acp1`/`acv`/`acp2`), the 1993 "ANSI C with classes" hack: the generated
+table stores every action in the `acp1` slot via a cast, and the two dispatch sites read
+whichever member matches their context (`Sim/Mobj`'s `setMobjState` reads `acp1` and calls
+with `(mobj_t*)`; `Sim/Weapon`'s `setPsprite` reads `acp2` and calls with
+`(player_t*, pspdef_t*)`) — the same bits, a union pun, and undefined behaviour when the
+call goes through a type the pointer was not created with. This is a **different union
+from the thinker's** (that one was per-object *tick* dispatch, retired in Step 8; this is
+per-state *action*), and it was the only remaining user of the `actionf_*` types.
+
+It became a single type-erased pointer: `struct actionf_t { actionf_p1 fn; }`, with the
+two dispatch sites casting `fn` back to the exact signature at the point of call —
+`reinterpret_cast<void (*)(mobj_t*)>(st->action.fn)(mobj)` and the weapon equivalent.
+That is a *round-trip* conversion (the table stored the function as its own type erased to
+`actionf_p1`; the call restores exactly that type), which is well-defined, unlike the
+union pun. Three things made this small and safe rather than a 967-row table rewrite:
+
+- **The storage type is kept `actionf_p1`** (`void (*)(void*)`), so the generated table's
+  `{(actionf_p1)Func}` / `{0}` initializers aggregate-init the new struct's `fn` member
+  **verbatim** — not one data row changed. Only `d_think.h`, the two call sites, and the
+  file's home moved.
+- **The typed call lives at the two sites, not on the struct.** `pspdef_t` is an
+  anonymous-struct typedef (no tag to forward-declare) that itself holds a `state_t*`, so
+  a `pspdef_t`-typed call method could not sit on `actionf_t` in the early-included
+  `d_think.h` without an include cycle. Casting at the call sites also puts the
+  load-bearing well-definedness where a reviewer sees it. The dead `actionf_v`/`actionf_p2`
+  typedefs, the union, and the unused `think_t` alias were dropped.
+- **`states[]` stays a contiguous array.** `SaveGame` serializes a state as its *index*
+  (`mobj->state - states`, `&states[i]`), never via the action pointer, and the struct is
+  the same size as the union (three same-size pointers → one), so `state_t`'s layout is
+  byte-identical and the save path is untouched.
+
+Verified the usual way: 80/80 tests, **all four `*.hashes`/`*.frames` goldens
+byte-identical**, the app links. This is *live* golden coverage, not an absence — every
+mobj and weapon action the demos fire (combat, pickups, doors, the player's weapon) runs
+through the two rewritten dispatch sites, and the `states[]` checksum test (which
+deliberately skips the address-valued `.action` field) still matches.
+
+**Steps 6 and 7 are complete**, Step 8's mechanical migrations are done, **the zone is
+deleted**, and — with the `Thinker` virtualisation and the `info.cpp`/`states[].action`
+action model now both landed — **the flat vanilla list is only the shims**. What remains
+is the deep, interlocking tail:
 
 - **The zone is gone** (Step 4), in three moves that kept `mobj_t` byte-identical
   (no vtable). The two easy buckets — the renderer's boot-once `PU_STATIC` tables
@@ -1680,14 +1738,18 @@ never really C — the tiny data/decl remainders — are gone:
   `next` — fixed by capturing `next` before the free in the remove case while still
   advancing after the think in the run case (so a mid-tic spawn runs the same tic).
   The vestigial `PU_*` tags moved to `w_wad.h`.
-- **`thinker_t`→`Thinker`** virtualisation and **`info.cpp`** last, together: a
+- **`thinker_t`→`Thinker`** virtualisation and **`info.cpp`** — both **now landed**
+  (the `Thinker` in Step 8; the action model / `info.cpp` on top of it, see *Landed —
+  the action model and `info.cpp`* below). The plan they were built to, kept as record: a
   real base with a virtual `tick()` makes `mobj_t`/the specials polymorphic, which
   breaks the memcpy serialisation and the `memset`-over-raw-alloc init (now
   `doom_memset(0)` in `levelAlloc`/`P_SpawnMobj`), so it needs placement-new at
   every spawner and a field-wise p_saveg, all held by the net. `info.cpp`'s
-  `states[]` action union is exactly what it replaces. Neither is required for "no
-  zone" (done) or for the flat list to empty; the union dispatch is already a clean
-  golden-pinned choke point, so the payoff is modest and the risk real — deferred.
+  `states[]` action union is exactly what the *action-model* half replaced (a
+  *different* union from the thinker's per-object dispatch — one is per-state action,
+  the other per-object tick). Neither was required for "no zone" (done) or for the flat
+  list to empty; each dispatch was already a clean golden-pinned choke point, so the
+  payoff was modest and the risk real — which is why they were left until last.
 
   Concretely, so the next pass can size it: it is **atomic** (nothing compiles or
   passes until it is all done) and touches, by grep, ~52 `function.acp1`/`acv`/`acp2`
@@ -1707,9 +1769,9 @@ never really C — the tiny data/decl remainders — are gone:
   the crux: the clean way is placement-new the object on load (to establish the vtable),
   then copy only the POD data region after the `Thinker` base — a plain memcpy of the
   vtable across two objects of the same dynamic type happens to work in-process but is UB
-  and against the refactor's clean-C++ ethos. It is a focused, review-warranting effort,
-  not a mechanical sweep — which is why it stays deferred even though everything it rests
-  on (the p_saveg net, the level pool, the golden-pinned dispatch) is now in place.
+  and against the refactor's clean-C++ ethos. It was a focused, review-warranting effort,
+  not a mechanical sweep — done last, on exactly that foundation (the p_saveg net, the
+  level pool, the golden-pinned dispatch).
 - **The `doom_config`→`Host` redesign + audio.** The **config half is done** — the thing
   it was really needed for. `Config.cpp` no longer captures option-global addresses at
   static-init; `bindEngineDefaults()` points each config-backed `defaults[]` entry at its
