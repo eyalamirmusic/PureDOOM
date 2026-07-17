@@ -19,19 +19,23 @@
 
 extern char error_buf[260];
 extern int doom_flags;
-extern doom_print_fn doom_print;
-extern doom_malloc_fn doom_malloc;
-extern doom_free_fn doom_free;
-extern doom_open_fn doom_open;
-extern doom_close_fn doom_close;
-extern doom_read_fn doom_read;
-extern doom_write_fn doom_write;
-extern doom_seek_fn doom_seek;
-extern doom_tell_fn doom_tell;
-extern doom_eof_fn doom_eof;
-extern doom_gettime_fn doom_gettime;
-extern doom_exit_fn doom_exit;
-extern doom_getenv_fn doom_getenv;
+
+// The 13 host callbacks are references onto Doom::host()'s members (Host/Host.h) - the
+// storage moved off these loose globals into one Host owner (REFACTOR.md, the
+// doom_config->Host fold). Every reader resolves through the reference unchanged.
+extern doom_print_fn& doom_print;
+extern doom_malloc_fn& doom_malloc;
+extern doom_free_fn& doom_free;
+extern doom_open_fn& doom_open;
+extern doom_close_fn& doom_close;
+extern doom_read_fn& doom_read;
+extern doom_write_fn& doom_write;
+extern doom_seek_fn& doom_seek;
+extern doom_tell_fn& doom_tell;
+extern doom_eof_fn& doom_eof;
+extern doom_gettime_fn& doom_gettime;
+extern doom_exit_fn& doom_exit;
+extern doom_getenv_fn& doom_getenv;
 
 
 const char* doom_itoa(int i, int radix);

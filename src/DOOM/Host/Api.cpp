@@ -6,6 +6,8 @@
 
 #include "../DOOM.h"
 
+#include "Host.h" // Doom::host(), the owner of the 13 callbacks below
+
 #include "../doom_config.h" // the 13 host pointers / helpers we define, for drift
 #include "../d_main.h"
 #include "../doomdef.h"
@@ -29,19 +31,24 @@ static char itoa_buf[20];
 
 char error_buf[260];
 int doom_flags = 0;
-doom_print_fn doom_print = 0;
-doom_malloc_fn doom_malloc = 0;
-doom_free_fn doom_free = 0;
-doom_open_fn doom_open = 0;
-doom_close_fn doom_close = 0;
-doom_read_fn doom_read = 0;
-doom_write_fn doom_write = 0;
-doom_seek_fn doom_seek = 0;
-doom_tell_fn doom_tell = 0;
-doom_eof_fn doom_eof = 0;
-doom_gettime_fn doom_gettime = 0;
-doom_exit_fn doom_exit = 0;
-doom_getenv_fn doom_getenv = 0;
+
+// The 13 host callbacks now live in Doom::host() (Host.h); the vanilla names are
+// references onto its members, so doom_set_* below, doom_init's defaulting, and every
+// call site (doom_print(...), doom_malloc(...)) resolve unchanged. Bound at static-init
+// time, which constructs the host() singleton before main().
+doom_print_fn& doom_print = Doom::host().print;
+doom_malloc_fn& doom_malloc = Doom::host().malloc;
+doom_free_fn& doom_free = Doom::host().free;
+doom_open_fn& doom_open = Doom::host().open;
+doom_close_fn& doom_close = Doom::host().close;
+doom_read_fn& doom_read = Doom::host().read;
+doom_write_fn& doom_write = Doom::host().write;
+doom_seek_fn& doom_seek = Doom::host().seek;
+doom_tell_fn& doom_tell = Doom::host().tell;
+doom_eof_fn& doom_eof = Doom::host().eof;
+doom_gettime_fn& doom_gettime = Doom::host().gettime;
+doom_exit_fn& doom_exit = Doom::host().exit;
+doom_getenv_fn& doom_getenv = Doom::host().getenv;
 
 void D_DoomLoop();
 void D_UpdateWipe();
