@@ -3,20 +3,36 @@
 `src/DOOM` is 43,889 lines of 1993 C across 62 `.c` files: ~684 global data
 symbols, ~1,534 file-scope statics, a 12 MB zone arena that is never handed
 back, and warnings disabled wholesale (`-w`). This fork owns that code, and this
-document is the plan for rewriting it as modern C++ in eacp's style — playsim,
-renderer, WAD, UI and game loop alike — **without changing what the simulation
-does.**
+document is the plan for rewriting **the whole of it** into modern C++ in eacp's
+style — playsim, renderer, WAD, UI, game loop and host boundary alike —
+**without changing what the simulation does.** The goal is not "the code compiles
+as C++": it is code someone *wrote* as C++ — RAII ownership end to end, eacp's
+containers and types, real classes with methods — with nothing of the 1993 C
+idiom left except the few quirks that are load-bearing and pinned by a test.
 
-Three decisions frame the work:
+Four principles frame the work:
 
-- **The whole engine goes.** No permanent C/C++ seam.
-- **The globals go with it.** The end state is an `Engine` object rather than
-  ~684 loose globals. That is not cosmetic — it is what will let the engine be
-  *constructed*, not just booted, so a test owns its world instead of borrowing
-  the process's. (Scenario tests — *load MAP01, place an imp, run 20 tics,
-  assert* — turned out to need less than that: loading a level already resets the
-  simulation cleanly, so the engine runs many scenarios per process today. See
-  Step 4.)
+- **The whole engine goes.** No permanent C/C++ seam; every `.c` becomes real
+  C++, not C a compiler now accepts.
+- **It becomes modern C++, not transcribed C — and RAII owns everything.** Every
+  resource is held by an object that releases it in a destructor, not by a manual
+  `doom_free`, a `Z_FreeTags` or a bare `new`/`malloc`: the WAD's lumps and file
+  handles, the level's geometry, the mobjs and thinker specials, the renderer's
+  tables and scratch, the host's buffers. State lives in real types with methods;
+  the containers are eacp's `EA::Vector`/`EA::Array`; a pointer that *owns* is an
+  `OwningPointer`, a pointer that merely *refers* stays raw. A file is not *done*
+  when it compiles under C++ — it is done when it reads as C++ someone wrote, and
+  the flat vanilla list getting shorter is only the first half of that; the second
+  is the RAII/idiom sweep across the code already in `namespace Doom`.
+- **The globals go with it.** The ~684 loose globals become members of one
+  `Engine` object — one face of the same RAII goal, state with an owner. A
+  *consequence* is that the engine can eventually be **constructed** rather than
+  booted, so a test owns its world outright; but the practical form of that — a
+  fresh world per scenario — is already delivered by level reload (Step 4), so the
+  fully-constructible engine is a nicety the modernization arrives at, not the
+  point of it. (Scenario tests — *load MAP01, place an imp, run 20 tics, assert* —
+  need only the level reset, which the engine has today: it runs many scenarios
+  per process. See Step 4.)
 - **`PureDOOM.h`, `tools/gen_single_header.py`, `examples/SDL` and
   `examples/Tests` are retired.** Nothing builds against them, and they are the
   only reason two files in the engine may not share a file-scope name.
@@ -51,6 +67,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio (engine side built, externally blocked on an eacp audio stream) and the ongoing globals-into-`Engine` work |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — moving the state into the `Engine` (Steps 4–5) made it *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) **retire the ~489 reference-alias shims** (`extern T& viewx = engine().viewPoint.viewx`) so every reader reaches state through an owner/accessor rather than a static-init-bound global alias — which also removes the fixed-address pin, so the Engine becomes cheaply **constructible** (a heap-owned `OwningPointer<Engine>` dropped and remade), not just booted; (b) the **RAII sweep** over the remaining manual `doom_malloc`/`doom_free` owners (the level pool in `Sim/Tick`, the renderer's `PU_STATIC`/scratch buffers, the host's screen buffers) into `EA::Vector`/`OwningPointer`; (c) the **idiom cleanup** over the code already in `namespace Doom` (the cross-cutting stylistic pass began this — see the handoff). Every increment holds the four goldens byte-identical, the same net as always. First landed: `Game/Sound`'s playback state → `SoundState`. Chosen next: strand (a), cluster by cluster |
 
 ## Where this is — session handoff
 
@@ -60,9 +77,14 @@ clean and the suite is green (**80 tests**, ~6s: `ctest --test-dir build`). Step
 netcode, utility layer and host boundary are migrated, the zone allocator is deleted,
 the `thinker_t`→`Thinker` virtualisation has landed, and **`info.cpp` — the last flat
 vanilla source — is now `Sim/Info.cpp`, so the flat vanilla list is *only the shims*.**
-Step 5 is now nearly complete too: **essentially all mutable world state is an `Engine`
-member**, and what is still loose is either *not world* (the `mypos`-cheat scratch, the
-Host-layer runtime statics) or externally blocked (audio).
+Step 5's globals-into-`Engine` strand is nearly done — **essentially all mutable world state is an
+`Engine` member** — but holding the state in the Engine is only half of "modern C++": it is still
+*reached* through ~489 reference-alias shims (`extern T& viewx = engine().viewPoint.viewx`), the
+largest surviving piece of transcribed-C idiom. **Retiring those shims so every reader goes through
+an owner — which also removes the fixed-address pin that keeps the Engine from being *constructed* —
+plus the RAII sweep over the remaining manual `doom_malloc` owners, is the active work now (Step 9,
+the modernization half of the goal).** What is otherwise loose is *not world* (the `mypos`-cheat
+scratch, the Host-layer runtime statics) or externally blocked (audio).
 
 **The most recent session landed, newest last:**
 
@@ -100,23 +122,22 @@ Host-layer runtime statics) or externally blocked (audio).
 Every step held all four `*.hashes`/`*.frames` goldens byte-identical, 80/80 tests, and the
 app building and booting.
 
-**What's left of Step 5 is the `engine()` flip — and it should stay deferred, not chased as an
-in-place reset.** The tempting next step looks like "now that all world state is a member,
-reconstruct the `engine()` singleton to get a fresh world." Resist it. That only *looks* achievable
-because the reference-alias architecture forces the Engine to a **fixed address**: the hundreds of
-`extern T& x = engine().cluster.x` bind to member addresses at static-init and can never be
-re-pointed, so any reset must happen in the *same storage* — `engine() = Engine{}` (unsafe:
+**The `engine()` flip is now Step 9's strand (a), being taken on — not chased as an in-place reset.**
+The tempting shortcut looks like "all world state is a member now, so just reconstruct the `engine()`
+singleton for a fresh world." Resist that shortcut. It only *looks* achievable because the
+reference-alias architecture forces the Engine to a **fixed address**: the ~489
+`extern T& x = engine().cluster.x` aliases bind to member addresses at static-init and can never be
+re-pointed, so any in-place reset must happen in the *same storage* — `engine() = Engine{}` (unsafe:
 `WadFile` has a user destructor closing raw file handles and no matching assignment, a rule-of-three
 violation that would leak the handles) or `~Engine()` + placement-new (works, but is gymnastics that
-exists *only* because the address is pinned). And the payoff is thin: the engine already runs many
-scenarios per process via **level reload** (Step 4 / `ReplayTests`), which is what scenario tests
-actually use — a full in-place re-init buys little over it. The *clean* "constructed Engine" — a
-heap-owned instance you drop and remake (an `OwningPointer<Engine>`, the obvious design) — falls out
-for free the moment the references are gone, because then every function reaches state through an
-`Engine&` it was handed and nothing is bound to a fixed address. So the real end of Step 5 is
-**eliminating the reference-aliases** (the enormous terminal rewrite the literal flip needs), after
-which construction is trivial and needs no placement-new. Until someone takes that on, `engine()`
-stays a singleton and the in-place-reset capstone is deferred as a half-measure not worth its risk.
+exists *only* because the address is pinned). And its payoff is thin on its own: the engine already
+runs many scenarios per process via **level reload** (Step 4 / `ReplayTests`), which is what scenario
+tests actually use. The *clean* "constructed Engine" — a heap-owned instance you drop and remake (an
+`OwningPointer<Engine>`, the obvious design) — falls out **for free** once the references are gone,
+because then every reader reaches state through an owner/accessor and nothing is bound to a fixed
+address. So the constructible engine is not chased as a capstone in its own right; it is what strand
+(a) *arrives at* as a by-product of retiring the alias shims. The modernization is the point; the
+constructible engine is the dividend.
 
 **A cross-cutting stylistic/modernization pass has landed** — not a numbered step,
 but a sweep over the code that was *already* in `namespace Doom` (Math/Sim/Render/
@@ -181,15 +202,16 @@ The UI, the whole renderer and the config-backed set are done; `info.cpp` (the g
 actor/state LUT), the last real vanilla source, has migrated to `Sim/Info.cpp`, so the
 **flat vanilla list is only the shims**. Step 5's save/thinker-coupled state, function-local
 `static`s and cross-read flags have all since moved in (see the handoff above), so essentially all
-world state is now an `Engine` member. What is left of Step 5 is the `engine()` flip itself — and
-the achievable-looking version of it (an *in-place reconstruction* of the singleton) is a
-**deferred half-measure**, not the next step: it only looks reachable because the reference-aliases
-pin the Engine to a fixed address (so a reset can't just make a new instance), and level reload
-already gives scenario tests a fresh world (Step 4). The clean constructed Engine falls out only once
-the reference-aliases are eliminated — the enormous terminal rewrite the literal
-`engine()` singleton→instance flip needs — after which a heap-owned instance is trivial. The rest is
-non-world (the `mypos`-cheat scratch, the Host-layer runtime statics) or externally blocked (audio;
-the `doom_config`→`Host` fold itself is done).
+world state is now an `Engine` member — but *owned* is only half of modern C++; the other half is
+**reached through an owner, not a global alias**, which is **Step 9** (see the progress table and the
+intro's reframed goal). Retiring the ~489 reference-alias shims is the active work; the *in-place
+reconstruction* shortcut (placement-new over the singleton) stays the wrong path — it only looks
+reachable because the aliases pin the Engine to a fixed address, and level reload already gives
+scenario tests a fresh world (Step 4). The clean constructed Engine is not a capstone chased for its
+own sake; it falls out **for free** once the aliases are gone (a heap-owned `OwningPointer<Engine>`),
+so it is the *dividend* of the modernization, not the point of it. The rest is non-world (the
+`mypos`-cheat scratch, the Host-layer runtime statics) or externally blocked (audio; the
+`doom_config`→`Host` fold itself is done).
 
 **The zone is gone.** `z_zone.cpp`/`z_zone.h` are deleted. Mobjs and the thinker
 specials live in a level-scoped malloc pool (`Sim/Tick`: `levelAlloc`/`levelFree`
@@ -1952,25 +1974,25 @@ is the deep, interlocking tail:
     which are host state, not world. With the cross-read flags in, **essentially all mutable world state
     is now an `Engine` member.**
 
-    Beyond the tail, the last thing that *finally* lets the engine be **constructed** rather than booted
-    is flipping `engine()` from a function-local-static singleton to an instance — and the shape of that
-    flip is worth being precise about, because there is a tempting wrong version of it. **The literal
-    flip** — threading an `Engine&` through the `doom_*` entry points and replacing every global `X` with
-    `engine.X` — is **blocked by the reference-alias architecture:** the hundreds of vanilla-name references
-    (`extern fixed_t& viewx = engine().viewPoint.viewx`) bind to member *addresses* at static-init, can
-    never be re-pointed, and the storage must exist before `main()`. That is also why the tempting
-    shortcut — "all world state is a member now, so just **reconstruct the singleton** for a fresh world"
-    — is a **deferred half-measure, not the next step.** Because the address is pinned, a reset cannot make
-    a new instance (a heap `OwningPointer<Engine>` remade elsewhere would strand every reference on the
-    freed object); it must happen in the *same storage*, which means either `engine() = Engine{}` (unsafe:
-    `WadFile` has a user destructor closing raw file handles and no matching assignment — a rule-of-three
-    violation that leaks them) or `~Engine()` + placement-new (works, but is gymnastics that exists only
-    because the address is pinned). And it buys little: the engine already runs many scenarios per process
-    via **level reload** (Step 4 / `ReplayTests`), which is what scenario tests actually use. The *clean*
-    constructed Engine — a heap-owned instance dropped and remade, no placement-new — falls out **for
-    free** once the reference-aliases are gone, because then nothing is bound to a fixed address. So the
-    real end of Step 5 is **eliminating the reference-aliases** (the enormous terminal rewrite), not an
-    in-place reset; until someone takes that on, `engine()` stays a singleton and the reset is deferred.
+    Beyond the tail is **Step 9** — the modernization half of the goal (see the progress table) — and
+    its strand (a), retiring the reference-alias shims, is what *finally* lets the engine be
+    **constructed** rather than booted. The shape of it is worth being precise about, because there is a
+    tempting wrong version. The **clean** end state is that every reader reaches state through an
+    owner/accessor (or an `Engine&` it was handed) rather than a static-init-bound vanilla-name reference
+    (`extern fixed_t& viewx = engine().viewPoint.viewx`) — those references bind to member *addresses*
+    before `main()` and can never be re-pointed, which is the sole reason `engine()` is pinned to a fixed
+    address today. The **tempting shortcut** — "all world state is a member now, so just **reconstruct the
+    singleton** for a fresh world" — is the wrong path, not the next step. Because the address is pinned, a
+    reset cannot make a new instance (a heap `OwningPointer<Engine>` remade elsewhere would strand every
+    reference on the freed object); it would have to happen in the *same storage* — either
+    `engine() = Engine{}` (unsafe: `WadFile` has a user destructor closing raw file handles and no matching
+    assignment — a rule-of-three violation that leaks them) or `~Engine()` + placement-new (works, but is
+    gymnastics that exists only because the address is pinned). And on its own it buys little: the engine
+    already runs many scenarios per process via **level reload** (Step 4 / `ReplayTests`), which is what
+    scenario tests actually use. So the constructible engine is not pursued as a capstone in its own right:
+    the *clean* one — a heap-owned instance dropped and remade, no placement-new — falls out **for free**
+    once strand (a) has retired the aliases, because then nothing is bound to a fixed address. The
+    modernization is the point; the constructible engine is the dividend.
 
 ## The rules
 
