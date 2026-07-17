@@ -385,8 +385,12 @@ void initTextures()
     texturecompositesize = static_cast<int*>(doom_malloc(numtextures * sizeof(int)));
 
     texturewidthmask = static_cast<int*>(doom_malloc(numtextures * sizeof(int)));
-    textureheight =
-        static_cast<fixed_t*>(doom_malloc(numtextures * sizeof(fixed_t)));
+
+    // GraphicsData owns textureheight and texturetranslation now (Step 9); the vanilla
+    // names are plain-pointer views onto data(), refreshed here after each resize.
+    auto& gd = graphicsData();
+    gd.textureheight.resize(numtextures);
+    textureheight = gd.textureheight.data();
 
     // Really complex printing shit...
     temp1 = W_GetNumForName("S_START"); // P_???????
@@ -467,8 +471,8 @@ void initTextures()
         generateLookup(i);
 
     // Create translation table for global animation.
-    texturetranslation =
-        static_cast<int*>(doom_malloc((numtextures + 1) * sizeof(int)));
+    gd.texturetranslation.resize(numtextures + 1);
+    texturetranslation = gd.texturetranslation.data();
 
     for (i = 0; i < numtextures; i++)
         texturetranslation[i] = i;
@@ -483,8 +487,11 @@ void initFlats()
     lastflat = W_GetNumForName("F_END") - 1;
     numflats = lastflat - firstflat + 1;
 
-    // Create translation table for global animation.
-    flattranslation = static_cast<int*>(doom_malloc((numflats + 1) * sizeof(int)));
+    // Create translation table for global animation. GraphicsData owns it (Step 9);
+    // flattranslation is a view onto data() (P_ animation writes through it).
+    auto& gd = graphicsData();
+    gd.flattranslation.resize(numflats + 1);
+    flattranslation = gd.flattranslation.data();
 
     for (int i = 0; i < numflats; i++)
         flattranslation[i] = i;

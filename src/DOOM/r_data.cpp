@@ -32,12 +32,14 @@ int& numspritelumps = Doom::graphicsData().numspritelumps;
 int& numtextures = Doom::graphicsData().numtextures;
 texture_t**& textures = Doom::graphicsData().textures;
 
-// needed for texture pegging
-fixed_t*& textureheight = Doom::graphicsData().textureheight;
+// needed for texture pegging. A view onto GraphicsData's owned EA::Vector (Step 9);
+// initTextures points it at data() after the resize.
+fixed_t* textureheight = nullptr;
 
-// for global animation
-int*& flattranslation = Doom::graphicsData().flattranslation;
-int*& texturetranslation = Doom::graphicsData().texturetranslation;
+// for global animation. Views onto GraphicsData's owned EA::Vectors (Step 9), set to
+// data() by initTextures / initFlats; P_ animation writes through them.
+int* flattranslation = nullptr;
+int* texturetranslation = nullptr;
 
 // needed for pre rendering. Plain-pointer views onto GraphicsData's owned EA::Vectors
 // (Step 9); initSpriteLumps points them at data() after filling the vectors.

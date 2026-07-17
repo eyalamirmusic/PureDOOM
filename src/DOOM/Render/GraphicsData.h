@@ -27,13 +27,16 @@ struct GraphicsData
     // (for pegging), and the animation redirect R_UpdateAnimations walks.
     int numtextures = 0;
     texture_t** textures = nullptr;
-    fixed_t* textureheight = nullptr;
-    int* texturetranslation = nullptr;
+    EA::Vector<fixed_t>
+        textureheight; // RAII-owned (Step 9); r_data's name is a view
+    EA::Vector<int>
+        texturetranslation; // RAII-owned (Step 9); animation writes through the view
 
     // Flats: the first flat lump, the flat count, and the flat animation redirect.
     int firstflat = 0;
     int numflats = 0;
-    int* flattranslation = nullptr;
+    EA::Vector<int>
+        flattranslation; // RAII-owned (Step 9); animation writes through the view
 
     // Sprite lumps: the lump range they occupy, and each lump's width and offsets,
     // measured once so the renderer need not re-read the patch headers. RAII-owned

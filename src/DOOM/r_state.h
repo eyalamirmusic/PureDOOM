@@ -35,8 +35,8 @@
 // The renderer's loaded graphics data lives in Doom::GraphicsData (an Engine member)
 // now; these are references onto it (REFACTOR.md, Step 5).
 
-// needed for texture pegging
-extern fixed_t*& textureheight;
+// needed for texture pegging. A view onto GraphicsData's owned EA::Vector (Step 9).
+extern fixed_t* textureheight;
 
 // needed for pre rendering (fracs). Plain-pointer views onto GraphicsData's owned
 // EA::Vectors (Step 9), refreshed by initSpriteLumps - like vertexes/segs onto Level.
@@ -54,9 +54,9 @@ extern int& viewheight;
 
 extern int& firstflat;
 
-// for global animation
-extern int*& flattranslation;
-extern int*& texturetranslation;
+// for global animation. Views onto GraphicsData's owned EA::Vectors (Step 9).
+extern int* flattranslation;
+extern int* texturetranslation;
 
 // Sprite....
 extern int& firstspritelump;
