@@ -56,10 +56,49 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
 clean and the suite is green (**80 tests**, ~6s: `ctest --test-dir build`). Steps
-0–4 are complete; 6 and 7 are done; 8 is nearly done — **the whole UI, game loop,
-netcode, utility layer and host boundary are migrated, and the zone allocator is
-deleted**; and **Step 5 has had two whole categories finished this session** on top
-of everything the earlier sweep did (**~90 `Engine` members now**).
+0–4 are complete; 6 and 7 are done; **8 is nearly done** — the whole UI, game loop,
+netcode, utility layer and host boundary are migrated, the zone allocator is deleted,
+the `thinker_t`→`Thinker` virtualisation has landed, and **`info.cpp` — the last flat
+vanilla source — is now `Sim/Info.cpp`, so the flat vanilla list is *only the shims*.**
+Step 5 is now nearly complete too: **essentially all mutable world state is an `Engine`
+member**, and what is still loose is either *not world* (the `mypos`-cheat scratch, the
+Host-layer runtime statics) or externally blocked (audio).
+
+**The most recent session landed, newest last:**
+
+- **`info.cpp`→`Sim/Info.cpp`** (the last real vanilla file) with the **`states[].action`
+  function-pointer union retired** for a single type-erased pointer the two dispatch
+  sites (`setMobjState`/`setPsprite`) cast back to the exact signature — a round-trip,
+  hence well-defined. The generated tables stay verbatim under `// clang-format off` + a
+  localized `#pragma`.
+- **`thinkercap`→`Doom::ThinkerList`** and the **savegame state**
+  (`save_p`/`savebuffer`/`savename`)→**`Doom::SaveGameState`** — the two save/thinker-coupled
+  clusters the (now-landed) thinker/p_saveg rewrites had been waiting on.
+- **The 13 host callbacks** (`doom_print`/`doom_malloc`/… from `doom_config.h`) folded into a
+  **`Doom::Host` singleton** (`Host/Host.h`, `host()`), kept deliberately *separate from
+  `engine()`* — embedder-set platform state, not world, so it must survive a fresh `Engine`.
+  The vanilla names became references onto it, so the ~380 call sites and the `doom_set_*`
+  C API are unchanged.
+- **A function-local-statics pass**: the world-state function-locals folded into their
+  existing clusters — `A_BrainSpit`'s toggle→`EnemyAI`, `HU_Responder`'s chat send state→
+  `HudChat`, the automap's animation→`AutomapView`, the bunny-scroll `laststage`→`FinaleState`,
+  `M_Responder`'s input debounce→`MenuState`, `TryRunTics`'s `oldentertics`→`NetState`.
+- **The last three cross-read flags**: `is_wiping_screen`→`GameFlow`, `inhelpscreens`→
+  `OverlayState`, `st_statusbaron`→`StatusBarState`. (The `is_wiping_screen` move first missed
+  a bare extern in `Tests/SimProbe.cpp`, and the **menu frame golden caught it at step 0** — the
+  net doing its job; the lesson, now recorded, is to grep `Tests/` for bare externs too.)
+
+Every step held all four `*.hashes`/`*.frames` goldens byte-identical, 80/80 tests, and the
+app building and booting.
+
+**The one remaining Step-5 capstone is construct-not-boot, now unblocked.** With essentially
+all world state a member, reconstructing the `engine()` singleton *in place* (destroy +
+placement-new — the member addresses stay stable, so the reference-aliases survive) makes *a
+fresh Engine a fresh world*: the payoff, without the enormous threading rewrite the literal
+flip would need (which is blocked by the hundreds of static-init reference-aliases — see the
+Step-8 tail). The prerequisite before doing it is a **thorough file-scope-static audit**, so the
+reconstruction knows exactly what does and does not reset (my sweep so far was function-locals +
+the named cross-read globals, not an exhaustive `static`/global scan).
 
 **A cross-cutting stylistic/modernization pass has landed** — not a numbered step,
 but a sweep over the code that was *already* in `namespace Doom` (Math/Sim/Render/
@@ -120,13 +159,15 @@ so every such extern must move to `extern T&` in lockstep. It bit once, as the `
 `skytexturemid` fault (`Render/Sky.cpp` wrote `100*FRACUNIT` through a plain-`int` extern), and is
 found by grepping *every* `extern.*NAME` — headers and `.cpp` bodies alike — before a migration.
 
-The UI, the whole renderer and the config-backed set are done. `info.cpp` (the generated
-actor/state LUT) — the last real vanilla source — **has now migrated to `Sim/Info.cpp`**, so the
-**flat vanilla list is only the shims**. What is left of Step 5, and why, is spelled out in the
-Step-8 tail — it is now a genuine tail (a handful of scattered single flags, the inert netcode
-bookkeeping, the function-local `static`s, and the save/thinker-coupled state), plus the deep
-items below (audio, externally blocked — the `doom_config`→`Host` fold itself is done; and the
-`engine()` singleton→instance flip).
+The UI, the whole renderer and the config-backed set are done; `info.cpp` (the generated
+actor/state LUT), the last real vanilla source, has migrated to `Sim/Info.cpp`, so the
+**flat vanilla list is only the shims**. Step 5's save/thinker-coupled state, function-local
+`static`s and cross-read flags have all since moved in (see the handoff above), so what is
+left of Step 5 is the **construct-not-boot capstone** (in-place `engine()` reconstruction,
+unblocked now that world state is Engine-owned) preceded by a file-scope-static audit; the rest
+is non-world (the `mypos`-cheat scratch, the Host-layer runtime statics) or the deep items below
+(audio, externally blocked — the `doom_config`→`Host` fold itself is done; and the literal
+`engine()` singleton→instance flip, blocked by the reference-alias architecture).
 
 **The zone is gone.** `z_zone.cpp`/`z_zone.h` are deleted. Mobjs and the thinker
 specials live in a level-scoped malloc pool (`Sim/Tick`: `levelAlloc`/`levelFree`
