@@ -54,13 +54,13 @@
 // --- Globals other subsystems read ------------------------------------------
 //
 // These are the only menu globals anything outside the menu touches, so they
-// stay at file scope rather than moving into namespace Doom below. menuactive
-// and mouseSensitivity are declared in doomstat.h; inhelpscreens gates
-// D_Display's status-bar redraw; messageToPrint (m_menu.h) is read by the eacp
-// overlay capture.
-doom_boolean inhelpscreens;
-// menuactive (with automapactive) is a Doom::OverlayState owned by the Engine now; this is a
-// reference onto it (REFACTOR.md, Step 5).
+// stay at file scope rather than moving into namespace Doom below. mouseSensitivity
+// is declared in doomstat.h; messageToPrint (m_menu.h) is read by the eacp overlay
+// capture.
+// menuactive, automapactive and inhelpscreens (which gates D_Display's border
+// redraw) are a Doom::OverlayState owned by the Engine now; these are references
+// onto it (REFACTOR.md, Step 5).
+doom_boolean& inhelpscreens = Doom::overlayState().inhelpscreens;
 doom_boolean& menuactive = Doom::overlayState().menuactive;
 // The config-backed settings (mouse sensitivity, message toggle, detail, view
 // size) are Engine members now (UI/MenuSettings.h); these are references onto

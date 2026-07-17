@@ -21,6 +21,8 @@ struct OverlayState
 {
     doom_boolean automapactive = 0; // the automap has replaced the view
     doom_boolean menuactive = 0; // the menu is open over the view
+    doom_boolean inhelpscreens = 0; // a full-screen help page is showing (D_Display
+                                    // forces a border redraw when it clears)
 };
 
 // The one OverlayState, a view onto the Engine's member - the same pattern as

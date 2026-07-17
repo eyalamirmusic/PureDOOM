@@ -133,7 +133,7 @@ void R_ExecuteSetViewSize();
 // print title for every printed line - file-local, built and printed only here
 static char title[128];
 
-extern doom_boolean inhelpscreens;
+extern doom_boolean& inhelpscreens; // Doom::OverlayState (Engine member)
 extern doom_boolean& setsizeneeded;
 extern int& showMessages; // config-backed Engine member (UI/MenuSettings.h)
 extern doom_boolean& demorecording; // Doom::DemoState (Engine member)
