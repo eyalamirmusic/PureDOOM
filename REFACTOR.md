@@ -1858,17 +1858,34 @@ is the deep, interlocking tail:
     `oldgamestate`/`borderdrawcount`, a new cohesive `Doom::DisplayState` cluster). Each is a member with
     a matching default reached by a local reference in its function — vanilla never resets them, so the
     persistence is identical in a single-Engine process; all three are live frame-golden-covered and held
-    the goldens byte-identical, with `StateClusterTests` pinning the non-trivial sentinels. **What
-    genuinely remains** is a tail: a few scattered single flags with no cohesive cluster home
-    (`st_statusbaron`, `is_wiping_screen`, `inhelpscreens`) — each belongs to a different subsystem and
-    does not group without a grab-bag, so they wait for their subsystem to want them; and the
-    **function-local `static`s that no shareware demo exercises** (`HU_Responder`'s chat send state,
-    `A_BrainSpit`'s DOOM II boss-brain toggle, the `mypos`-cheat message buffer, …) — behaviour-preserving
-    storage relocations, but off the golden net, so they warrant review rather than an autonomous sweep.
-    Beyond the tail, the last thing
-    that *finally* lets the engine be **constructed** rather than booted is flipping `engine()` from a
-    function-local-static singleton to an instance threaded through the `doom_*` entry points — a large
-    API change, not a mechanical migration, and the real end of Step 5.
+    the goldens byte-identical, with `StateClusterTests` pinning the non-trivial sentinels. **The pass
+    has since taken the world-state function-locals that no shareware demo exercises**, each a member
+    reached by a local reference in its function, folded into the existing cluster of its subsystem:
+    `A_BrainSpit`'s boss-brain skill toggle (`easy` → `EnemyAI`), `HU_Responder`'s send-path state
+    (`lastmessage`/`shiftdown`/`altdown`/`num_nobrainers` → `HudChat`), the automap's animation and
+    level-change detection (`lastlevel`/`lastepisode`/`bigstate`/`nexttic`/`litelevelscnt` →
+    `AutomapView`), the bunny-scroll ending's `laststage` (→ `FinaleState`), `M_Responder`'s mouse/
+    joystick input debounce (`joywait`/`mousewait`/`mousex`/`mousey`/`lastx`/`lasty` → `MenuState`), and
+    `TryRunTics`'s `oldentertics` (→ `NetState`). Off the golden net, so verified by build + 80/80 +
+    app-boot (a reference alias is behaviour-preserving by construction); the immutable tables and pure
+    drawing scratch beside them (`destination_keys`, `litelevels`, the automap's reused `fline_t`/
+    `mline_t` buffers) stay file-local. **What genuinely remains** is a shorter tail: the scattered
+    *cross-read* single flags (`st_statusbaron`, `is_wiping_screen`, `inhelpscreens`), which need their
+    subsystem's lockstep extern moved to a reference before they can migrate; the `mypos`-cheat message
+    buffer and similar drawing-scratch statics; and — deliberately staying out of the Engine — the
+    **Host layer's own runtime statics** (`I_GetTime`'s `basetime`, the sound handle counter, …), which
+    are host state, not world.
+
+    Beyond the tail, the last thing that *finally* lets the engine be **constructed** rather than booted
+    is flipping `engine()` from a function-local-static singleton to an instance. **The literal flip —
+    threading an `Engine&` through the `doom_*` entry points and replacing every global `X` with
+    `engine.X` — is blocked by the reference-alias architecture:** the hundreds of vanilla-name references
+    (`extern fixed_t& viewx = engine().viewPoint.viewx`) bind to member *addresses* at static-init, and
+    the storage must exist before `main()`, so a threaded instance would require eliminating all those
+    references first — an enormous terminal rewrite. The achievable payoff — *a fresh Engine is a fresh
+    world* — comes instead from reconstructing the singleton in place (destroy + placement-new, addresses
+    stable so the references survive) once **all** mutable world state is a member, which is what this
+    pass is finishing. That is the real end of Step 5.
 
 ## The rules
 
