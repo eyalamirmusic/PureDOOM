@@ -38,11 +38,12 @@
 // needed for texture pegging
 extern fixed_t*& textureheight;
 
-// needed for pre rendering (fracs)
-extern fixed_t*& spritewidth;
+// needed for pre rendering (fracs). Plain-pointer views onto GraphicsData's owned
+// EA::Vectors (Step 9), refreshed by initSpriteLumps - like vertexes/segs onto Level.
+extern fixed_t* spritewidth;
 
-extern fixed_t*& spriteoffset;
-extern fixed_t*& spritetopoffset;
+extern fixed_t* spriteoffset;
+extern fixed_t* spritetopoffset;
 
 extern lighttable_t*& colormaps;
 

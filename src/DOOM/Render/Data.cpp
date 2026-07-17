@@ -24,6 +24,7 @@
 #include "../r_data.h"
 #include "CompositeCache.h"
 #include "Data.h"
+#include "GraphicsData.h"
 
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -503,12 +504,17 @@ void initSpriteLumps()
     lastspritelump = W_GetNumForName("S_END") - 1;
 
     numspritelumps = lastspritelump - firstspritelump + 1;
-    spritewidth =
-        static_cast<fixed_t*>(doom_malloc(numspritelumps * sizeof(fixed_t)));
-    spriteoffset =
-        static_cast<fixed_t*>(doom_malloc(numspritelumps * sizeof(fixed_t)));
-    spritetopoffset =
-        static_cast<fixed_t*>(doom_malloc(numspritelumps * sizeof(fixed_t)));
+
+    // GraphicsData owns these now (RAII, Step 9); the vanilla names are plain-pointer
+    // views onto the vectors' data(), refreshed here after the resize - the same
+    // owner/view split as Level's geometry (numvertexes / vertexes).
+    auto& gd = graphicsData();
+    gd.spritewidth.resize(numspritelumps);
+    gd.spriteoffset.resize(numspritelumps);
+    gd.spritetopoffset.resize(numspritelumps);
+    spritewidth = gd.spritewidth.data();
+    spriteoffset = gd.spriteoffset.data();
+    spritetopoffset = gd.spritetopoffset.data();
 
     for (int i = 0; i < numspritelumps; i++)
     {

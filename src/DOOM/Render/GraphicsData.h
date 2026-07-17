@@ -2,6 +2,8 @@
 
 #include "../r_data.h" // texture_t, and spritedef_t / lighttable_t / fixed_t through it
 
+#include <ea_data_structures/Structures/Vector.h>
+
 namespace Doom
 {
 // The graphics the renderer loads from the WAD once at startup and then only reads:
@@ -34,13 +36,17 @@ struct GraphicsData
     int* flattranslation = nullptr;
 
     // Sprite lumps: the lump range they occupy, and each lump's width and offsets,
-    // measured once so the renderer need not re-read the patch headers.
+    // measured once so the renderer need not re-read the patch headers. RAII-owned
+    // (Step 9): the arrays are EA::Vectors here, and the vanilla names (r_data.cpp)
+    // are plain-pointer views onto data(), refreshed by initSpriteLumps after the fill
+    // - the same owner/view split Level's geometry uses. The rest of this cluster is
+    // still raw doom_malloc pointers, pending the same conversion.
     int firstspritelump = 0;
     int lastspritelump = 0;
     int numspritelumps = 0;
-    fixed_t* spritewidth = nullptr;
-    fixed_t* spriteoffset = nullptr;
-    fixed_t* spritetopoffset = nullptr;
+    EA::Vector<fixed_t> spritewidth;
+    EA::Vector<fixed_t> spriteoffset;
+    EA::Vector<fixed_t> spritetopoffset;
 
     // Sprite frames: the per-sprite frame/rotation table R_InitSprites builds.
     int numsprites = 0;

@@ -39,10 +39,11 @@ fixed_t*& textureheight = Doom::graphicsData().textureheight;
 int*& flattranslation = Doom::graphicsData().flattranslation;
 int*& texturetranslation = Doom::graphicsData().texturetranslation;
 
-// needed for pre rendering
-fixed_t*& spritewidth = Doom::graphicsData().spritewidth;
-fixed_t*& spriteoffset = Doom::graphicsData().spriteoffset;
-fixed_t*& spritetopoffset = Doom::graphicsData().spritetopoffset;
+// needed for pre rendering. Plain-pointer views onto GraphicsData's owned EA::Vectors
+// (Step 9); initSpriteLumps points them at data() after filling the vectors.
+fixed_t* spritewidth = nullptr;
+fixed_t* spriteoffset = nullptr;
+fixed_t* spritetopoffset = nullptr;
 
 lighttable_t*& colormaps = Doom::graphicsData().colormaps;
 
