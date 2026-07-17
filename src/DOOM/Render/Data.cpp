@@ -544,10 +544,15 @@ void initColormaps()
 
     // Load in the light tables,
     //  256 byte align tables.
+    // GraphicsData owns the backing buffer now (RAII, Step 9); colormaps is the
+    // 256-byte-aligned view into it, as the original doom_malloc(length) + align was.
     lump = W_GetNumForName("COLORMAP");
     length = W_LumpLength(lump) + 255;
-    colormaps = static_cast<lighttable_t*>(doom_malloc(length));
-    colormaps = (byte*) (((unsigned long long) colormaps + 255) & ~0xff);
+    auto& gd = graphicsData();
+    gd.colormapStorage.resize(length);
+    colormaps = reinterpret_cast<lighttable_t*>(
+        (reinterpret_cast<unsigned long long>(gd.colormapStorage.data()) + 255)
+        & ~0xffULL);
     W_ReadLump(lump, colormaps);
 }
 

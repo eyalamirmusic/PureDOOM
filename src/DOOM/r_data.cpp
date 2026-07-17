@@ -47,7 +47,9 @@ fixed_t* spritewidth = nullptr;
 fixed_t* spriteoffset = nullptr;
 fixed_t* spritetopoffset = nullptr;
 
-lighttable_t*& colormaps = Doom::graphicsData().colormaps;
+// A 256-byte-aligned view into GraphicsData's owned colormapStorage; initColormaps
+// points it at the aligned offset after reading the COLORMAP lump (Step 9).
+lighttable_t* colormaps = nullptr;
 
 
 void R_DrawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight)

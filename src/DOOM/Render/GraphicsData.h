@@ -56,7 +56,11 @@ struct GraphicsData
     spritedef_t* sprites = nullptr;
 
     // The COLORMAP lump: the base every light row (see Lighting) indexes into.
-    lighttable_t* colormaps = nullptr;
+    // RAII-owned (Step 9): this vector is the backing buffer, and the vanilla name
+    // `colormaps` (r_data.cpp) is a 256-byte-aligned VIEW into its data() that
+    // initColormaps sets after reading the lump. The +255 slack for that alignment is
+    // part of this buffer's length, as the original doom_malloc(length + 255) was.
+    EA::Vector<lighttable_t> colormapStorage;
 };
 
 // The one GraphicsData, a view onto the Engine's member - the same pattern as
