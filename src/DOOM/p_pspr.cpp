@@ -32,92 +32,92 @@
 
 void A_WeaponReady(player_t* player, pspdef_t* psp)
 {
-    Doom::weaponReady(player, psp);
+    Doom::weaponReady(*player, *psp);
 }
 
 void A_ReFire(player_t* player, pspdef_t* psp)
 {
-    Doom::reFire(player, psp);
+    Doom::reFire(*player, *psp);
 }
 
 void A_CheckReload(player_t* player, pspdef_t* psp)
 {
-    Doom::checkReload(player, psp);
+    Doom::checkReload(*player, *psp);
 }
 
 void A_Lower(player_t* player, pspdef_t* psp)
 {
-    Doom::lower(player, psp);
+    Doom::lower(*player, *psp);
 }
 
 void A_Raise(player_t* player, pspdef_t* psp)
 {
-    Doom::raise(player, psp);
+    Doom::raise(*player, *psp);
 }
 
 void A_GunFlash(player_t* player, pspdef_t* psp)
 {
-    Doom::gunFlash(player, psp);
+    Doom::gunFlash(*player, *psp);
 }
 
 void A_Punch(player_t* player, pspdef_t* psp)
 {
-    Doom::punch(player, psp);
+    Doom::punch(*player, *psp);
 }
 
 void A_Saw(player_t* player, pspdef_t* psp)
 {
-    Doom::saw(player, psp);
+    Doom::saw(*player, *psp);
 }
 
 void A_FireMissile(player_t* player, pspdef_t* psp)
 {
-    Doom::fireMissile(player, psp);
+    Doom::fireMissile(*player, *psp);
 }
 
 void A_FireBFG(player_t* player, pspdef_t* psp)
 {
-    Doom::fireBFG(player, psp);
+    Doom::fireBFG(*player, *psp);
 }
 
 void A_FirePlasma(player_t* player, pspdef_t* psp)
 {
-    Doom::firePlasma(player, psp);
+    Doom::firePlasma(*player, *psp);
 }
 
 void A_FirePistol(player_t* player, pspdef_t* psp)
 {
-    Doom::firePistol(player, psp);
+    Doom::firePistol(*player, *psp);
 }
 
 void A_FireShotgun(player_t* player, pspdef_t* psp)
 {
-    Doom::fireShotgun(player, psp);
+    Doom::fireShotgun(*player, *psp);
 }
 
 void A_FireShotgun2(player_t* player, pspdef_t* psp)
 {
-    Doom::fireShotgun2(player, psp);
+    Doom::fireShotgun2(*player, *psp);
 }
 
 void A_FireCGun(player_t* player, pspdef_t* psp)
 {
-    Doom::fireCGun(player, psp);
+    Doom::fireCGun(*player, *psp);
 }
 
 void A_Light0(player_t* player, pspdef_t* psp)
 {
-    Doom::light0(player, psp);
+    Doom::light0(*player, *psp);
 }
 
 void A_Light1(player_t* player, pspdef_t* psp)
 {
-    Doom::light1(player, psp);
+    Doom::light1(*player, *psp);
 }
 
 void A_Light2(player_t* player, pspdef_t* psp)
 {
-    Doom::light2(player, psp);
+    Doom::light2(*player, *psp);
 }
 
 void A_BFGSpray(mobj_t* mo)
@@ -127,20 +127,20 @@ void A_BFGSpray(mobj_t* mo)
 
 void A_BFGsound(player_t* player, pspdef_t* psp)
 {
-    Doom::bfgSound(player, psp);
+    Doom::bfgSound(*player, *psp);
 }
 
 void P_SetupPsprites(player_t* player)
 {
-    Doom::setupPsprites(player);
+    Doom::setupPsprites(*player);
 }
 
 void P_MovePsprites(player_t* player)
 {
-    Doom::movePsprites(player);
+    Doom::movePsprites(*player);
 }
 
 void P_DropWeapon(player_t* player)
 {
-    Doom::dropWeapon(player);
+    Doom::dropWeapon(*player);
 }
