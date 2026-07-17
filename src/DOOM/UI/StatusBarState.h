@@ -32,6 +32,10 @@ struct StatusBarState
     doom_boolean st_stopped = true; // ST_Stop has parked the bar
 
     // Which layout is drawn, and the keys shown.
+    doom_boolean st_statusbaron = false; // the main bar is drawn (false = full-screen,
+                                         // no bar). The app reads it to know whether to
+                                         // composite the bar strip, and the STlib widgets
+                                         // bind their "on" pointer to it.
     st_stateenum_t st_gamestate = {}; // automap vs first-person (0 = AutomapState)
     doom_boolean st_notdeathmatch = false; // single-player layout (arms, not frags)
     doom_boolean st_armson = false; // the arms panel is shown (not DM, bar up)

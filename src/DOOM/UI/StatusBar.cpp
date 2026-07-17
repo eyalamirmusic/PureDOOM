@@ -58,10 +58,12 @@
 #include "StatusBarState.h"
 #include "StatusBarWidgets.h"
 
-// st_statusbaron is owned by the st_stuff.cpp shim: the app (EngineAccess) reads
-// it to decide whether to composite the status-bar strip. mapnames (hu_stuff) and
-// doom_flags are other subsystems' globals this file reads.
-extern doom_boolean st_statusbaron;
+// st_statusbaron is a reference onto Doom::StatusBarState (an Engine member), bound
+// in the st_stuff.cpp shim: the app (EngineAccess) reads it to decide whether to
+// composite the status-bar strip. This bare extern must stay a reference to match,
+// or it would read the reference's pointer bits. mapnames (hu_stuff) and doom_flags
+// are other subsystems' globals this file reads.
+extern doom_boolean& st_statusbaron;
 extern char* mapnames[];
 extern int doom_flags;
 

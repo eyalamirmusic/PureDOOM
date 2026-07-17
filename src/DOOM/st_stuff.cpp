@@ -20,11 +20,14 @@
 #include "st_stuff.h"
 
 #include "UI/StatusBar.h"
+#include "UI/StatusBarState.h"
 
 // Whether the left-side main status bar is active. The GPU renderer (EngineAccess)
 // reads it: ST_Drawer draws no bar when it is false, so the compositor must not
-// sample the strip then.
-doom_boolean st_statusbaron;
+// sample the strip then. Storage lives in Doom::StatusBarState (an Engine member)
+// now; this is a reference onto it, so the app extern and UI/StatusBar's resolve
+// unchanged.
+doom_boolean& st_statusbaron = Doom::statusBarState().st_statusbaron;
 
 
 doom_boolean ST_Responder(event_t* ev)

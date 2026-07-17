@@ -39,7 +39,7 @@
 extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
 extern unsigned char screen_palette[256 * 3];
 extern int& screenblocks; // config-backed Engine member (UI/MenuSettings.h)
-extern doom_boolean st_statusbaron;
+extern doom_boolean& st_statusbaron; // Doom::StatusBarState (Engine member)
 
 // Convex subsector cells rarely exceed a handful of corners; the cap only
 // bounds the clipper's scratch space.
