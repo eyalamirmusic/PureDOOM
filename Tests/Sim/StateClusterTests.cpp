@@ -132,5 +132,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&animatedSurfaces() == &engine().animatedSurfaces, "animatedSurfaces()");
     check(&levelPool() == &engine().levelPool, "levelPool()");
     check(&engineParams() == &engine().engineParams, "engineParams()");
+    check(&soundState() == &engine().soundState, "soundState()");
 };
 } // namespace

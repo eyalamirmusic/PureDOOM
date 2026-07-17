@@ -34,6 +34,7 @@
 
 #include "Sound.h"
 #include "SoundSettings.h"
+#include "SoundState.h"
 
 #define S_MAX_VOLUME 127
 
@@ -80,16 +81,14 @@ struct channel_t
     int handle;
 };
 
-// the set of channels available
-static channel_t* channels_s_sound;
-
-// whether songs are mus_paused
-static doom_boolean mus_paused;
-
-// music currently being played
-static musicinfo_t* mus_playing_s_sound = nullptr;
-
-static int nextcleanup;
+// The engine-side sound bookkeeping now lives on the Engine (Game/SoundState.h, moved
+// by the file-scope-statics sweep - REFACTOR.md, Step 5). These were file-local to
+// Game/Sound and read by no other file; the vanilla names become references onto the
+// members, the same as snd_SfxVolume/... just below.
+static channel_t*& channels_s_sound = Doom::soundState().channels;
+static doom_boolean& mus_paused = Doom::soundState().mus_paused;
+static musicinfo_t*& mus_playing_s_sound = Doom::soundState().mus_playing;
+static int& nextcleanup = Doom::soundState().nextcleanup;
 
 // The sfx/music volumes and the channel count are config-backed, and used to
 // resist the Engine migration because Config.cpp's defaults[] captured their

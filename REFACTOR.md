@@ -87,6 +87,15 @@ Host-layer runtime statics) or externally blocked (audio).
   `OverlayState`, `st_statusbaron`→`StatusBarState`. (The `is_wiping_screen` move first missed
   a bare extern in `Tests/SimProbe.cpp`, and the **menu frame golden caught it at step 0** — the
   net doing its job; the lesson, now recorded, is to grep `Tests/` for bare externs too.)
+- **`Game/Sound`'s engine-side playback state**→**`Doom::SoundState`** — the last cohesive
+  cluster the file-scope-statics sweep had left loose: the mixing channels (`channels_s_sound`),
+  the music-paused flag, the currently-playing music, and the next-cleanup tic. These were
+  file-local to `Game/Sound` and read by no other file, so the vanilla names became references
+  onto the members (`channel_t` forward-declared in the header, only a pointer held). This is the
+  *engine* side of sound (which sounds should be heard); the mixing/MIDI runtime in `Host/Sound`
+  stays loose as host state, the same split every Host static keeps. Golden-neutral (sound is not
+  hashed and the frame goldens see the picture, not the channels), so verified by 80/80 + goldens
+  byte-identical + the app linking, with a `StateClusterTests` accessor-identity check added.
 
 Every step held all four `*.hashes`/`*.frames` goldens byte-identical, 80/80 tests, and the
 app building and booting.
@@ -1896,9 +1905,11 @@ is the deep, interlocking tail:
     and the playsim's (`ActionScratch` / `WeaponScratch` / `SightScratch` / `EnemyAI` / `SwitchList` /
     `PlayerScratch` / `AnimatedSurfaces` / `LevelPool`), plus doomstat's internal-parameter scalars
     (`EngineParams`: `debugfile` / `precache` / `singletics`), with a `StateClusterTests` net for the
-    golden-neutral tables. Since then `soundtarget` (`Sim/SoundTarget`) and the whole of `Game/Net`'s
-    private bookkeeping (folded into `NetState`) have moved in too, so **every cohesive cluster is now
-    migrated**. The loaded-once **asset pointers are now in too**: `hu_font` (the heads-up font, a
+    golden-neutral tables. Since then `soundtarget` (`Sim/SoundTarget`), the whole of `Game/Net`'s
+    private bookkeeping (folded into `NetState`), and `Game/Sound`'s engine-side playback state
+    (`Doom::SoundState`: the mixing channels, the music-paused flag, the currently-playing music, the
+    next-cleanup tic — the *engine* side of sound, the mixing/MIDI runtime in `Host/Sound` staying
+    loose as host state) have moved in too, so **every cohesive cluster is now migrated**. The loaded-once **asset pointers are now in too**: `hu_font` (the heads-up font, a
     `Doom::HudFont` cluster — a loose global the `hu_stuff.cpp` shim owned and `UI/Hud`/`UI/Menu`/
     `UI/Finale`/`Game/Config` read by bare extern, all moved to references-to-array in lockstep) and
     `sttminus` (the status-bar number widget's minus sign, a `Doom::StatusWidgetGraphics` cluster kept

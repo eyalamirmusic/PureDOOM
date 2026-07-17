@@ -28,6 +28,7 @@
 #include "../Game/SaveGameState.h"
 #include "../Game/SkyState.h"
 #include "../Game/SoundSettings.h"
+#include "../Game/SoundState.h"
 #include "../Game/StartupDefaults.h"
 #include "../Game/TiccmdInput.h"
 #include "../Game/TimeDemo.h"
@@ -177,6 +178,7 @@ struct Engine
     StatusBarWidgets statusBarWidgets;
     WipeState wipeState;
     SoundSettings soundSettings;
+    SoundState soundState;
     MenuSettings menuSettings;
     ConfigPaths configPaths;
     BSPScratch bspScratch;

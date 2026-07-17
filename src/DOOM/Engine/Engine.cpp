@@ -365,6 +365,11 @@ SoundSettings& soundSettings()
     return engine().soundSettings;
 }
 
+SoundState& soundState()
+{
+    return engine().soundState;
+}
+
 MenuSettings& menuSettings()
 {
     return engine().menuSettings;
