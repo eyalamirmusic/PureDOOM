@@ -46,6 +46,7 @@
 #include "../doomstat.h"
 #include "../i_net.h"
 
+#include "../Game/NetState.h"
 #include "Net.h"
 
 // The byte-swap helpers are only reached by the socket packet code, so they are
@@ -322,8 +323,11 @@ void I_InitNetwork()
     int i;
     int p;
 
-    doomcom = static_cast<doomcom_t*>(doom_malloc(sizeof(*doomcom)));
-    doom_memset(doomcom, 0, sizeof(*doomcom));
+    // RAII now (Step 9): doomcom is the view onto NetState's owned doomcomStorage,
+    // value-initialised here as the old doom_malloc + doom_memset(0) block was.
+    auto& net = Doom::netState();
+    net.doomcomStorage = doomcom_t {};
+    doomcom = &net.doomcomStorage;
 
     // set up for network
     i = M_CheckParm("-dup");

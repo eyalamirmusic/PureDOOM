@@ -27,7 +27,13 @@ namespace Doom
 // these are on the demo path - golden-neutral through the reference all the same.
 struct NetState
 {
-    doomcom_t* doomcom = nullptr; // the driver's shared comms block
+    // The driver's shared comms block. RAII-owned by value now (Step 9) - what was a
+    // boot-once doom_malloc in I_InitNetwork; the vanilla name `doomcom` stays a
+    // doomcom_t* VIEW that I_InitNetwork points at doomcomStorage, so every doomcom->
+    // reader and netbuffer (= &doomcom->data, a stable pointer into the member) is
+    // unchanged. This mirrors reboundstore below, already a doomdata_t held by value.
+    doomcom_t doomcomStorage = {}; // the owned comms block
+    doomcom_t* doomcom = nullptr; // view onto doomcomStorage
     doomdata_t* netbuffer = nullptr; // points inside doomcom
 
     ticcmd_t localcmds[BACKUPTICS] = {}; // this node's commands
