@@ -75,6 +75,11 @@ LevelPool& levelPool()
     return engine().levelPool;
 }
 
+ThinkerList& thinkerList()
+{
+    return engine().thinkerList;
+}
+
 EngineParams& engineParams()
 {
     return engine().engineParams;

@@ -62,6 +62,7 @@
 #include "../Sim/SightScratch.h"
 #include "../Sim/SoundTarget.h"
 #include "../Sim/SwitchList.h"
+#include "../Sim/ThinkerList.h"
 #include "../Sim/ValidCount.h"
 #include "../Sim/WeaponScratch.h"
 #include "../UI/AutomapView.h"
@@ -111,6 +112,7 @@ struct Engine
     PlayerScratch playerScratch;
     AnimatedSurfaces animatedSurfaces;
     LevelPool levelPool;
+    ThinkerList thinkerList;
     EngineParams engineParams;
     ViewPoint viewPoint;
     ViewProjection viewProjection;
