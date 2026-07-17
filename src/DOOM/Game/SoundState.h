@@ -2,11 +2,21 @@
 
 #include "../doomtype.h" // doom_boolean
 #include "../sounds.h" // musicinfo_t (an anonymous-struct typedef, so it cannot be
-// forward-declared - only a pointer is held here regardless)
+// forward-declared - only a pointer is held here regardless); also sfxinfo_t
 
-// channel_t is Game/Sound's own file-local struct (the definition never left the .cpp);
-// only a pointer to it lives here, so a forward declaration is enough.
-struct channel_t;
+#include <ea_data_structures/Structures/Vector.h>
+
+// A mixing channel: which sound occupies it (null = available), the sound's origin and
+// the handle of the sound being played. This was Game/Sound's file-local struct - a
+// forward declaration sufficed while SoundState held only a pointer to the array - but the
+// RAII sweep (Step 9) makes SoundState own the channel array by value (EA::Vector<channel_t>),
+// which needs the complete type here. Still used by no file but Game/Sound.
+struct channel_t
+{
+    sfxinfo_t* sfxinfo; // sound occupying the channel (null = available)
+    void* origin; // origin of the sound
+    int handle; // handle of the sound being played
+};
 
 namespace Doom
 {
@@ -26,9 +36,12 @@ namespace Doom
 // it is golden-neutral, a reference alias being pure storage relocation.
 struct SoundState
 {
-    // the set of mixing channels (numChannels of them, allocated at S_Init);
-    // null when a channel is available
-    ::channel_t* channels = nullptr;
+    // the set of mixing channels (numChannels of them, sized at S_Init); a channel's
+    // sfxinfo is null when it is available. RAII-owned (Step 9) - what was a boot-once
+    // doom_malloc; Game/Sound's vanilla name channels_s_sound is a plain-pointer view
+    // onto data(), refreshed after the resize (the same owner/view split screens[] and
+    // GraphicsData's arrays use).
+    EA::Vector<::channel_t> channels;
 
     doom_boolean mus_paused = false; // whether songs are paused
     ::musicinfo_t* mus_playing = nullptr; // music currently being played
