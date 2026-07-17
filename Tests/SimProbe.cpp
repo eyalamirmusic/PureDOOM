@@ -688,9 +688,10 @@ int doomSimSaveLoadPreservesWorld(void)
 // --- The menu/UI harness (Step 8) -------------------------------------------
 //
 // gamestate is declared in doomstat.h (already included); menuactive lives
-// there too. is_wiping_screen has no header - DOOM.c externs it exactly this
-// way, so this matches the house style rather than reaching around anything.
-extern doom_boolean is_wiping_screen;
+// there too. is_wiping_screen has no header - it is a reference onto
+// Doom::GameFlow's member now (an Engine member), and this bare extern must be a
+// reference to match, or it would read the reference's pointer bits as a bool.
+extern doom_boolean& is_wiping_screen;
 
 void doomSimPostKeyDown(int key)
 {

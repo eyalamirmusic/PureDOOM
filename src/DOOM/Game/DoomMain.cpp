@@ -92,7 +92,7 @@ doom_boolean& fastparm = Doom::launchOptions().fastparm; // checkparm of -fast
 // it (REFACTOR.md, Step 5).
 doom_boolean& singletics = Doom::engineParams().singletics;
 
-doom_boolean is_wiping_screen = false;
+doom_boolean& is_wiping_screen = Doom::gameFlow().is_wiping_screen;
 
 // The new-game defaults are a Doom::StartupDefaults owned by the Engine now; these are
 // references onto it (REFACTOR.md, Step 5).

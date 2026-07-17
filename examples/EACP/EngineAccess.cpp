@@ -36,7 +36,7 @@
 // Engine globals that no header declares. DOOM.c reaches them the same way, so
 // this is the house style rather than a workaround - but they are the natural
 // candidates for a real interface as the engine gets refactored.
-extern doom_boolean is_wiping_screen;
+extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
 extern unsigned char screen_palette[256 * 3];
 extern int& screenblocks; // config-backed Engine member (UI/MenuSettings.h)
 extern doom_boolean st_statusbaron;

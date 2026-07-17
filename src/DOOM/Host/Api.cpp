@@ -18,7 +18,7 @@
 
 extern byte* screens[5];
 extern unsigned char screen_palette[256 * 3];
-extern doom_boolean is_wiping_screen;
+extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
 extern default_t defaults[];
 extern int numdefaults;
 extern signed short mixbuffer[2048];
