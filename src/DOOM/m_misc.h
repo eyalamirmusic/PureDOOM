@@ -28,7 +28,7 @@
 //
 // MISC
 //
-typedef struct
+struct default_t
 {
     char* name;
     int* location;
@@ -37,7 +37,7 @@ typedef struct
     int untranslated; // lousy hack
     char** text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
     char* default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
-} default_t;
+};
 
 
 // A default whose value is text rather than a number: `defaultvalue` is this

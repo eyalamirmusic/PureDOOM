@@ -31,11 +31,11 @@
  + (((a)&16)>>1) + ((a)&32) + (((a)&64)>>5) + (((a)&128)>>7))
 
 
-typedef struct
+struct cheatseq_t
 {
     unsigned char* sequence;
     unsigned char* p;
-} cheatseq_t;
+};
 
 
 int cht_CheckCheat(cheatseq_t* cht, char key);

@@ -34,7 +34,7 @@
 // A single patch from a texture definition,
 // basically a rectangular area within
 // the texture rectangle.
-typedef struct
+struct texpatch_t
 {
     // Block origin (allways UL),
     // which has allready accounted
@@ -42,13 +42,13 @@ typedef struct
     int originx;
     int originy;
     int patch;
-} texpatch_t;
+};
 
 
 // A maptexturedef_t describes a rectangular texture,
 // which is composed of one or more mappatch_t structures
 // that arrange graphic patches.
-typedef struct
+struct texture_t
 {
     // Keep name for switch changing, etc.
     char name[8];
@@ -62,7 +62,7 @@ typedef struct
     //  Readers index it as before (patches[j], &patches[0]).
     short patchcount;
     EA::Vector<texpatch_t> patches;
-} texture_t;
+};
 
 
 // Every wall texture the WAD loaded, and how many.

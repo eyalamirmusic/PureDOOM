@@ -29,7 +29,7 @@
 // and transmitted to other peers (multiplayer).
 // Mainly movements/button commands per game tick,
 // plus a checksum for internal state consistency.
-typedef struct
+struct ticcmd_t
 {
     char forwardmove;   // *2048 for move
     char sidemove;      // *2048 for move
@@ -37,7 +37,7 @@ typedef struct
     short consistancy;  // checks for net game
     byte chatchar;
     byte buttons;
-} ticcmd_t;
+};
 
 
 

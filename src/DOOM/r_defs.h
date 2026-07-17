@@ -59,11 +59,11 @@
 // Note: transformed values not buffered locally,
 // like some DOOM-alikes ("wt", "WebView") did.
 //
-typedef struct
+struct vertex_t
 {
     fixed_t        x;
     fixed_t        y;
-} vertex_t;
+};
 
 
 // Forward of LineDefs, for Sectors.
@@ -93,7 +93,7 @@ typedef struct : Doom::Thinker
 // The SECTORS record, at runtime.
 // Stores things/mobjs.
 //
-typedef struct
+struct sector_t
 {
     fixed_t floorheight;
     fixed_t ceilingheight;
@@ -126,13 +126,13 @@ typedef struct
 
     int linecount;
     struct line_s** lines;        // [linecount] size
-} sector_t;
+};
 
 
 //
 // The SideDef.
 //
-typedef struct
+struct side_t
 {
     // add this to the calculated texture column
     fixed_t textureoffset;
@@ -148,19 +148,19 @@ typedef struct
 
     // Sector the SideDef is facing.
     sector_t* sector;
-} side_t;
+};
 
 
 //
 // Move clipping aid for LineDefs.
 //
-typedef enum
+enum slopetype_t
 {
     ST_HORIZONTAL,
     ST_VERTICAL,
     ST_POSITIVE,
     ST_NEGATIVE
-} slopetype_t;
+};
 
 
 typedef struct line_s
@@ -220,7 +220,7 @@ typedef struct subsector_s
 //
 // The LineSeg.
 //
-typedef struct
+struct seg_t
 {
     vertex_t* v1;
     vertex_t* v2;
@@ -237,13 +237,13 @@ typedef struct
     // backsector is 0 for one sided lines
     sector_t* frontsector;
     sector_t* backsector;
-} seg_t;
+};
 
 
 //
 // BSP node.
 //
-typedef struct
+struct node_t
 {
     // Partition line.
     fixed_t x;
@@ -256,15 +256,15 @@ typedef struct
 
     // If NF_SUBSECTOR its a subsector.
     unsigned short children[2];
-} node_t;
+};
 
 
 // posts are runs of non masked source pixels
-typedef struct
+struct post_t
 {
     byte topdelta;        // -1 is the last post in a column
     byte length;         // length data bytes follows
-} post_t;
+};
 
 // column_t is a list of 0 or more post_t, (byte)-1 terminated
 typedef post_t column_t;
@@ -317,7 +317,7 @@ typedef struct drawseg_s
 // Patches are used for sprites and all masked pictures,
 // and we compose textures from the TEXTURE1/2 lists
 // of patches.
-typedef struct
+struct patch_t
 {
     short width;                // bounding box size 
     short height;
@@ -325,7 +325,7 @@ typedef struct
     short topoffset;        // pixels below the origin 
     int columnofs[8];        // only [width] used
     // the [0] is &columnofs[width] 
-} patch_t;
+};
 
 
 // A vissprite_t is a thing
@@ -382,7 +382,7 @@ typedef struct vissprite_s
 // Some sprites will only have one picture used
 // for all views: NNNNF0
 //
-typedef struct
+struct spriteframe_t
 {
     // If 0, use lump 0 for any position - the sprite is drawn the same from
     // every angle. If 1, the eight rotations are all present.
@@ -401,27 +401,27 @@ typedef struct
 
     // Flip bit (1 = flip) to use for view angles 0-7.
     byte flip[8];
-} spriteframe_t;
+};
 
 
 //
 // A sprite definition:
 //  a number of animation frames.
 //
-typedef struct
+struct spritedef_t
 {
     int numframes;
     // The animation frames, RAII-owned (Step 9): was a raw malloc'd spriteframe_t*,
     // now an owned vector freed with the sprite. Readers index it as before
     // (spriteframes[frame], &spriteframes[frame]).
     EA::Vector<spriteframe_t> spriteframes;
-} spritedef_t;
+};
 
 
 //
 // Now what is a visplane, anyway?
 // 
-typedef struct
+struct visplane_t
 {
     fixed_t height;
     int picnum;
@@ -440,7 +440,7 @@ typedef struct
     // See above.
     byte bottom[SCREENWIDTH];
     byte pad4;
-} visplane_t;
+};
 
 
 

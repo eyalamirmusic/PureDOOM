@@ -39,33 +39,33 @@
 //
 // TYPES
 //
-typedef struct
+struct wadinfo_t
 {
     // Should be "IWAD" or "PWAD".
     char identification[4];
     int numlumps;
     int infotableofs;
-} wadinfo_t;
+};
 
 
-typedef struct
+struct filelump_t
 {
     int filepos;
     int size;
     char name[8];
-} filelump_t;
+};
 
 
 //
 // WADFILE I/O related stuff.
 //
-typedef struct
+struct lumpinfo_t
 {
     char name[8];
     void* handle;
     int position;
     int size;
-} lumpinfo_t;
+};
 
 
 // lumpcache is gone with the zone's lump ownership: Doom::WadFile (Wad/WadFile.h)

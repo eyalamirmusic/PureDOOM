@@ -61,16 +61,16 @@ void AM_Stop(void);
 // the shapes, named. The choices stay AM_Drawer's own.
 //
 
-typedef struct
+struct mpoint_t
 {
     fixed_t x, y;
-} mpoint_t;
+};
 
 
-typedef struct
+struct mline_t
 {
     mpoint_t a, b;
-} mline_t;
+};
 
 
 // The automap's palette. It picks raw colour indices rather than texturing

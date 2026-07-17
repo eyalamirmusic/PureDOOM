@@ -111,12 +111,12 @@ namespace Doom
 #define SHOWNEXTLOCDELAY 4
 //#define SHOWLASTLOCDELAY        SHOWNEXTLOCDELAY
 
-typedef enum
+enum animenum_t
 {
     ANIM_ALWAYS,
     ANIM_RANDOM,
     ANIM_LEVEL
-} animenum_t;
+};
 
 struct point_t
 {

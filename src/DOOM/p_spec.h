@@ -149,30 +149,30 @@ void P_SpawnGlowingLight(sector_t* sector);
 //
 // P_SWITCH
 //
-typedef struct
+struct switchlist_t
 {
     char name1[9];
     char name2[9];
     short episode;
-} switchlist_t;
+};
 
 
-typedef enum
+enum bwhere_e
 {
     top,
     middle,
     bottom
-} bwhere_e;
+};
 
 
-typedef struct
+struct button_t
 {
     line_t* line;
     bwhere_e where;
     int btexture;
     int btimer;
     mobj_t* soundorg;
-} button_t;
+};
 
 
 // max # of wall switches in a level
@@ -197,23 +197,23 @@ void P_InitSwitchList(void);
 //
 // P_PLATS
 //
-typedef enum
+enum plat_e
 {
     up,
     down,
     waiting,
     in_stasis
-} plat_e;
+};
 
 
-typedef enum
+enum plattype_e
 {
     perpetualRaise,
     downWaitUpStay,
     raiseAndChange,
     raiseToNearestAndChange,
     blazeDWUS
-} plattype_e;
+};
 
 
 typedef struct : Doom::Thinker
@@ -253,7 +253,7 @@ void P_ActivateInStasis(int tag);
 //
 // P_DOORS
 //
-typedef enum
+enum vldoor_e
 {
     door_normal,
     close30ThenOpen,
@@ -263,7 +263,7 @@ typedef enum
     blazeRaise,
     blazeOpen,
     blazeClose
-} vldoor_e;
+};
 
 
 typedef struct : Doom::Thinker
@@ -302,7 +302,7 @@ void P_SpawnDoorRaiseIn5Mins(sector_t* sec, int secnum);
 //
 // P_CEILNG
 //
-typedef enum
+enum ceiling_e
 {
     lowerToFloor,
     raiseToHighest,
@@ -310,7 +310,7 @@ typedef enum
     crushAndRaise,
     fastCrushAndRaise,
     silentCrushAndRaise
-} ceiling_e;
+};
 
 
 typedef struct : Doom::Thinker
@@ -352,7 +352,7 @@ void P_ActivateInStasisCeiling(line_t* line);
 //
 // P_FLOOR
 //
-typedef enum
+enum floor_e
 {
     // lower floor to highest surrounding floor
     lowerFloor,
@@ -384,14 +384,14 @@ typedef enum
     raiseFloorTurbo,
     donutRaise,
     raiseFloor512
-} floor_e;
+};
 
 
-typedef enum
+enum stair_e
 {
     build8,        // slowly build by 8
     turbo16        // quickly build by 16
-} stair_e;
+};
 
 
 typedef struct : Doom::Thinker
@@ -412,12 +412,12 @@ typedef struct : Doom::Thinker
 #define FLOORSPEED FRACUNIT
 
 
-typedef enum
+enum result_e
 {
     ok,
     crushed,
     pastdest
-} result_e;
+};
 
 
 result_e T_MovePlane(sector_t* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);

@@ -42,17 +42,17 @@
 #define BACKUPTICS                12
 
 
-typedef enum
+enum command_t
 {
     CMD_SEND = 1,
     CMD_GET = 2
-} command_t;
+};
 
 
 //
 // Network packet data.
 //
-typedef struct
+struct doomdata_t
 {
     // High bit is retransmit request.
     unsigned checksum;
@@ -63,10 +63,10 @@ typedef struct
     byte player;
     byte numtics;
     ticcmd_t cmds[BACKUPTICS];
-} doomdata_t;
+};
 
 
-typedef struct
+struct doomcom_t
 {
     // Supposed to be DOOMCOM_ID?
     long id;
@@ -113,7 +113,7 @@ typedef struct
 
     // The packet data to be sent.
     doomdata_t data;
-} doomcom_t;
+};
 
 
 // Create any new ticcmds and broadcast to other players.

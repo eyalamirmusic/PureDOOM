@@ -28,7 +28,7 @@
 #include "d_think.h"
 
 
-typedef enum
+enum spritenum_t
 {
     SPR_TROO,
     SPR_SHTG,
@@ -169,10 +169,10 @@ typedef enum
     SPR_TLMP,
     SPR_TLP2,
     NUMSPRITES
-} spritenum_t;
+};
 
 
-typedef enum
+enum statenum_t
 {
     S_NULL,
     S_LIGHTDONE,
@@ -1142,10 +1142,10 @@ typedef enum
     S_TECH2LAMP3,
     S_TECH2LAMP4,
     NUMSTATES
-} statenum_t;
+};
 
 
-typedef struct
+struct state_t
 {
     spritenum_t sprite;
     long frame;
@@ -1153,14 +1153,14 @@ typedef struct
     actionf_t action;
     statenum_t nextstate;
     long misc1, misc2;
-} state_t;
+};
 
 
 extern state_t states[NUMSTATES];
 extern char* sprnames[NUMSPRITES + 1];
 
 
-typedef enum
+enum mobjtype_t
 {
     MT_PLAYER,
     MT_POSSESSED,
@@ -1300,10 +1300,10 @@ typedef enum
     MT_MISC85,
     MT_MISC86,
     NUMMOBJTYPES
-} mobjtype_t;
+};
 
 
-typedef struct
+struct mobjinfo_t
 {
     int        doomednum;
     int        spawnstate;
@@ -1328,7 +1328,7 @@ typedef struct
     int        activesound;
     int        flags;
     int        raisestate;
-} mobjinfo_t;
+};
 
 
 extern mobjinfo_t mobjinfo[NUMMOBJTYPES];

@@ -48,12 +48,12 @@
 extern "C" {
 #endif
 
-typedef enum
+enum doom_seek_t
 {
     DOOM_SEEK_CUR = 1,
     DOOM_SEEK_END = 2,
     DOOM_SEEK_SET = 0
-} doom_seek_t;
+};
 
 
 typedef void(*doom_print_fn)(const char* str);
@@ -72,7 +72,7 @@ typedef char*(*doom_getenv_fn)(const char* var);
 
 
 // Doom key mapping
-typedef enum
+enum doom_key_t
 {
     DOOM_KEY_UNKNOWN = -1,
     DOOM_KEY_TAB = 9,
@@ -146,16 +146,16 @@ typedef enum
     DOOM_KEY_F11 = (0x80 + 0x57),
     DOOM_KEY_F12 = (0x80 + 0x58),
     DOOM_KEY_PAUSE = 0xff
-} doom_key_t;
+};
 
 
 // Mouse button mapping
-typedef enum
+enum doom_button_t
 {
     DOOM_LEFT_BUTTON = 0,
     DOOM_RIGHT_BUTTON = 1,
     DOOM_MIDDLE_BUTTON = 2
-} doom_button_t;
+};
 
 
 // For the software renderer. Default is 320x200

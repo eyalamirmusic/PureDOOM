@@ -106,7 +106,7 @@
 //
 // Misc. mobj flags
 //
-typedef enum
+enum mobjflag_t
 {
     // Call P_SpecialThing when touched.
     MF_SPECIAL = 1,
@@ -191,7 +191,7 @@ typedef enum
     MF_TRANSLATION = 0xc000000,
     // Hmm ???.
     MF_TRANSSHIFT = 26
-} mobjflag_t;
+};
 
 
 // Map Object definition.

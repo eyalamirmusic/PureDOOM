@@ -200,11 +200,11 @@ void unArchiveWorld()
 //
 // Thinkers
 //
-typedef enum
+enum thinkerclass_t
 {
     tc_end,
     tc_mobj
-} thinkerclass_t;
+};
 
 // Reconstruct a saved thinker in a fresh level-pool block. placement-new sets the
 // vtable (and the base's prev/next/removed/stopped), then the saved bytes are copied
