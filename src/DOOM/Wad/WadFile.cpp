@@ -5,6 +5,8 @@
 #include "../m_swap.h"
 #include "../w_wad.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 #include <cstring>
 
 namespace Doom
@@ -151,9 +153,9 @@ void WadFile::addSingleLump(const char* path, void* handle)
     doom_seek(handle, 0, DOOM_SEEK_SET);
 
     // The lump is named after the file it came from.
-    char base[9] = {};
-    extractFileBase(path, base);
-    doom_strncpy(lump.name, base, 8);
+    EA::Array<char, 9> base = {};
+    extractFileBase(path, base.data());
+    doom_strncpy(lump.name, base.data(), 8);
 
     lumps.push_back(lump);
 }

@@ -11,11 +11,13 @@
 
 #include "Cheat.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 
 static int firsttime = 1;
-static unsigned char cheat_xlate_table[256];
+static EA::Array<unsigned char, 256> cheat_xlate_table;
 
 //
 // Called in st_stuff module, which handles the input.

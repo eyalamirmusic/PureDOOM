@@ -47,6 +47,8 @@
 #include "Intermission.h"
 #include "IntermissionState.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 
@@ -169,7 +171,7 @@ struct anim_t_wi_stuff
     int state;
 };
 
-static point_t lnodes[NUMEPISODES][NUMMAPS] = {
+static EA::Array<EA::Array<point_t, NUMMAPS>, NUMEPISODES> lnodes = {
     // Episode 0 World Map
     {
         {185, 164}, // location of level 0 (CJ)
@@ -220,7 +222,7 @@ static point_t lnodes[NUMEPISODES][NUMMAPS] = {
 // -Wmissing-field-initializers that legitimate 1993 idiom raises.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-static anim_t_wi_stuff epsd0animinfo[] = {{ANIM_ALWAYS, TICRATE / 3, 3, {224, 104}},
+static EA::Array<anim_t_wi_stuff, 10> epsd0animinfo = {{ANIM_ALWAYS, TICRATE / 3, 3, {224, 104}},
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {184, 160}},
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {112, 136}},
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {72, 112}},
@@ -231,7 +233,7 @@ static anim_t_wi_stuff epsd0animinfo[] = {{ANIM_ALWAYS, TICRATE / 3, 3, {224, 10
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {80, 16}},
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {64, 24}}};
 
-static anim_t_wi_stuff epsd1animinfo[] = {
+static EA::Array<anim_t_wi_stuff, 9> epsd1animinfo = {
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 1},
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 2},
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 3},
@@ -242,7 +244,7 @@ static anim_t_wi_stuff epsd1animinfo[] = {
     {ANIM_LEVEL, TICRATE / 3, 3, {192, 144}, 8},
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 8}};
 
-static anim_t_wi_stuff epsd2animinfo[] = {{ANIM_ALWAYS, TICRATE / 3, 3, {104, 168}},
+static EA::Array<anim_t_wi_stuff, 6> epsd2animinfo = {{ANIM_ALWAYS, TICRATE / 3, 3, {104, 168}},
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {40, 136}},
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {160, 96}},
                                           {ANIM_ALWAYS, TICRATE / 3, 3, {104, 80}},
@@ -250,12 +252,12 @@ static anim_t_wi_stuff epsd2animinfo[] = {{ANIM_ALWAYS, TICRATE / 3, 3, {104, 16
                                           {ANIM_ALWAYS, TICRATE / 4, 3, {40, 0}}};
 #pragma GCC diagnostic pop
 
-static int NUMANIMS[NUMEPISODES] = {sizeof(epsd0animinfo) / sizeof(anim_t_wi_stuff),
-                                    sizeof(epsd1animinfo) / sizeof(anim_t_wi_stuff),
-                                    sizeof(epsd2animinfo) / sizeof(anim_t_wi_stuff)};
+static EA::Array<int, NUMEPISODES> NUMANIMS = {epsd0animinfo.size(),
+                                               epsd1animinfo.size(),
+                                               epsd2animinfo.size()};
 
-static anim_t_wi_stuff* anims_wi_stuff[NUMEPISODES] = {
-    epsd0animinfo, epsd1animinfo, epsd2animinfo};
+static EA::Array<anim_t_wi_stuff*, NUMEPISODES> anims_wi_stuff = {
+    epsd0animinfo.data(), epsd1animinfo.data(), epsd2animinfo.data()};
 
 //
 // GENERAL DATA
@@ -1407,26 +1409,26 @@ void wiTicker()
 
 void wiLoadData()
 {
-    char name[9];
+    EA::Array<char, 9> name;
     anim_t_wi_stuff* a;
 
     if (gamemode == commercial)
-        doom_strcpy(name, "INTERPIC");
+        doom_strcpy(name.data(), "INTERPIC");
     else
     {
         //doom_sprintf(name, "WIMAP%d", wbs->epsd);
-        doom_strcpy(name, "WIMAP");
-        doom_concat(name, doom_itoa(wbs->epsd, 10));
+        doom_strcpy(name.data(), "WIMAP");
+        doom_concat(name.data(), doom_itoa(wbs->epsd, 10));
     }
 
     if (gamemode == retail)
     {
         if (wbs->epsd == 3)
-            doom_strcpy(name, "INTERPIC");
+            doom_strcpy(name.data(), "INTERPIC");
     }
 
     // background
-    bg = static_cast<patch_t*>(W_CacheLumpName(name, PU_CACHE));
+    bg = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_CACHE));
     V_DrawPatch(0, 0, 1, bg);
 
     if (gamemode == commercial)
@@ -1436,11 +1438,11 @@ void wiLoadData()
         for (int i = 0; i < NUMCMAPS; i++)
         {
             //doom_sprintf(name, "CWILV%2.2d", i);
-            doom_strcpy(name, "CWILV");
+            doom_strcpy(name.data(), "CWILV");
             if (i < 10)
-                doom_concat(name, "0");
-            doom_concat(name, doom_itoa(i, 10));
-            lnames[i] = static_cast<patch_t*>(W_CacheLumpName(name, PU_STATIC));
+                doom_concat(name.data(), "0");
+            doom_concat(name.data(), doom_itoa(i, 10));
+            lnames[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
         }
     }
     else
@@ -1449,10 +1451,10 @@ void wiLoadData()
         for (int i = 0; i < NUMMAPS; i++)
         {
             //doom_sprintf(name, "WILV%d%d", wbs->epsd, i);
-            doom_strcpy(name, "WILV");
-            doom_concat(name, doom_itoa(wbs->epsd, 10));
-            doom_concat(name, doom_itoa(i, 10));
-            lnames[i] = static_cast<patch_t*>(W_CacheLumpName(name, PU_STATIC));
+            doom_strcpy(name.data(), "WILV");
+            doom_concat(name.data(), doom_itoa(wbs->epsd, 10));
+            doom_concat(name.data(), doom_itoa(i, 10));
+            lnames[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
         }
 
         // you are here
@@ -1476,16 +1478,16 @@ void wiLoadData()
                     {
                         // animations
                         //doom_sprintf(name, "WIA%d%.2d%.2d", wbs->epsd, j, i);
-                        doom_strcpy(name, "WIA");
-                        doom_concat(name, doom_itoa(wbs->epsd, 10));
+                        doom_strcpy(name.data(), "WIA");
+                        doom_concat(name.data(), doom_itoa(wbs->epsd, 10));
                         if (j < 10)
-                            doom_concat(name, "0");
-                        doom_concat(name, doom_itoa(j, 10));
+                            doom_concat(name.data(), "0");
+                        doom_concat(name.data(), doom_itoa(j, 10));
                         if (i < 10)
-                            doom_concat(name, "0");
-                        doom_concat(name, doom_itoa(i, 10));
+                            doom_concat(name.data(), "0");
+                        doom_concat(name.data(), doom_itoa(i, 10));
                         a->p[i] =
-                            static_cast<patch_t*>(W_CacheLumpName(name, PU_STATIC));
+                            static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
                     }
                     else
                     {
@@ -1504,9 +1506,9 @@ void wiLoadData()
     {
         // numbers 0-9
         //doom_sprintf(name, "WINUM%d", i);
-        doom_strcpy(name, "WINUM");
-        doom_concat(name, doom_itoa(i, 10));
-        num[i] = static_cast<patch_t*>(W_CacheLumpName(name, PU_STATIC));
+        doom_strcpy(name.data(), "WINUM");
+        doom_concat(name.data(), doom_itoa(i, 10));
+        num[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
     }
 
     // percent sign
@@ -1573,15 +1575,15 @@ void wiLoadData()
     {
         // "1,2,3,4"
         //doom_sprintf(name, "STPB%d", i);
-        doom_strcpy(name, "STPB");
-        doom_concat(name, doom_itoa(i, 10));
-        p[i] = static_cast<patch_t*>(W_CacheLumpName(name, PU_STATIC));
+        doom_strcpy(name.data(), "STPB");
+        doom_concat(name.data(), doom_itoa(i, 10));
+        p[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
 
         // "1,2,3,4"
         //doom_sprintf(name, "WIBP%d", i + 1);
-        doom_strcpy(name, "WIBP");
-        doom_concat(name, doom_itoa(i + 1, 10));
-        bp[i] = static_cast<patch_t*>(W_CacheLumpName(name, PU_STATIC));
+        doom_strcpy(name.data(), "WIBP");
+        doom_concat(name.data(), doom_itoa(i + 1, 10));
+        bp[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
     }
 }
 

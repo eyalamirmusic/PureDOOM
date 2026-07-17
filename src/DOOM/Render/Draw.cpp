@@ -20,6 +20,8 @@
 #include "DrawState.h"
 #include "DrawTables.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // ?
 #define MAXWIDTH 1120
 #define MAXHEIGHT 832
@@ -163,7 +165,7 @@ void drawColumnLow()
 //  i.e. spectres and invisible players.
 //
 // The fuzz table and walk position are file-local: only drawFuzzColumn uses them.
-int fuzzoffset[FUZZTABLE] = {
+EA::Array<int, FUZZTABLE> fuzzoffset = {
     FUZZOFF,  -FUZZOFF, FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,  -FUZZOFF, FUZZOFF,
     FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,  FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,
     FUZZOFF,  -FUZZOFF, -FUZZOFF, -FUZZOFF, -FUZZOFF, FUZZOFF,  -FUZZOFF, -FUZZOFF,

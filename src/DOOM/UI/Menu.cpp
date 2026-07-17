@@ -47,6 +47,8 @@
 #include "MenuSettings.h"
 #include "MenuState.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 #define SAVESTRINGSIZE 24
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
@@ -199,7 +201,11 @@ static doom_boolean& messageNeedsInput = menuState().messageNeedsInput;
 
 static void (*&messageRoutine)(int response) = menuState().messageRoutine;
 
-char gammamsg[5][26] = {GAMMALVL0, GAMMALVL1, GAMMALVL2, GAMMALVL3, GAMMALVL4};
+EA::Array<EA::Array<char, 26>, 5> gammamsg = {EA::Array<char, 26>{{GAMMALVL0}},
+                                              EA::Array<char, 26>{{GAMMALVL1}},
+                                              EA::Array<char, 26>{{GAMMALVL2}},
+                                              EA::Array<char, 26>{{GAMMALVL3}},
+                                              EA::Array<char, 26>{{GAMMALVL4}}};
 
 // we are going to be entering a savegame string
 static int& saveStringEnter = menuState().saveStringEnter;
@@ -219,7 +225,8 @@ static short& whichSkull = menuState().whichSkull; // which skull to draw
 
 // graphic name of skulls
 // warning: initializer-string for array of chars is too long
-char skullName[2][/*8*/ 9] = {"M_SKULL1", "M_SKULL2"};
+EA::Array<EA::Array<char, /*8*/ 9>, 2> skullName = {
+    EA::Array<char, 9>{{"M_SKULL1"}}, EA::Array<char, 9>{{"M_SKULL2"}}};
 
 // current menudef
 static menu_t*& currentMenu = menuState().currentMenu;
@@ -233,7 +240,7 @@ static menu_t*& currentMenu = menuState().currentMenu;
 
 // We create new menu text by cutting into existing graphics and pasting them to create the new text.
 // This way we don't ship code with embeded graphics that come from WAD files.
-menu_custom_text_t menu_custom_texts[] = {
+EA::Array<menu_custom_text_t, 4> menu_custom_texts = {
     {"TXT_MMOV",
      {{"M_MSENS", 0, 74, 0, 0}, // Mouse
       {"M_MSENS", 0, 31, 83, 0}, // Mo
@@ -273,10 +280,12 @@ const int custom_texts_count =
 
 static char (&tempstring)[80] = menuState().tempstring;
 static int& epi = menuState().epi;
-char detailNames[2][9] = {"M_GDHIGH", "M_GDLOW"};
-char msgNames[2][9] = {"M_MSGOFF", "M_MSGON"};
+EA::Array<EA::Array<char, 9>, 2> detailNames = {
+    EA::Array<char, 9>{{"M_GDHIGH"}}, EA::Array<char, 9>{{"M_GDLOW"}}};
+EA::Array<EA::Array<char, 9>, 2> msgNames = {
+    EA::Array<char, 9>{{"M_MSGOFF"}}, EA::Array<char, 9>{{"M_MSGON"}}};
 
-int quitsounds[8] = {sfx_pldeth,
+EA::Array<int, 8> quitsounds = {sfx_pldeth,
                      sfx_dmpain,
                      sfx_popain,
                      sfx_slop,
@@ -285,7 +294,7 @@ int quitsounds[8] = {sfx_pldeth,
                      sfx_posit3,
                      sfx_sgtatk};
 
-int quitsounds2[8] = {sfx_vilact,
+EA::Array<int, 8> quitsounds2 = {sfx_vilact,
                       sfx_getpow,
                       sfx_boscub,
                       sfx_slop,
@@ -367,7 +376,7 @@ enum
     main_end
 };
 
-menuitem_t MainMenu[] = {{1, "M_NGAME", M_NewGame, 'n'},
+EA::Array<menuitem_t, 6> MainMenu = {{1, "M_NGAME", M_NewGame, 'n'},
                          {1, "M_OPTION", M_Options, 'o'},
                          {1, "M_LOADG", M_LoadGame, 'l'},
                          {1, "M_SAVEG", M_SaveGame, 's'},
@@ -375,7 +384,7 @@ menuitem_t MainMenu[] = {{1, "M_NGAME", M_NewGame, 'n'},
                          {1, "M_RDTHIS", M_ReadThis, 'r'},
                          {1, "M_QUITG", M_QuitDOOM, 'q'}};
 
-menu_t MainDef = {main_end, 0, MainMenu, M_DrawMainMenu, 97, 64, 0};
+menu_t MainDef = {main_end, 0, MainMenu.data(), M_DrawMainMenu, 97, 64, 0};
 
 //
 // EPISODE SELECT
@@ -389,7 +398,7 @@ enum
     ep_end
 };
 
-menuitem_t EpisodeMenu[] = {{1, "M_EPI1", M_Episode, 'k'},
+EA::Array<menuitem_t, 4> EpisodeMenu = {{1, "M_EPI1", M_Episode, 'k'},
                             {1, "M_EPI2", M_Episode, 't'},
                             {1, "M_EPI3", M_Episode, 'i'},
                             {1, "M_EPI4", M_Episode, 't'}};
@@ -397,7 +406,7 @@ menuitem_t EpisodeMenu[] = {{1, "M_EPI1", M_Episode, 'k'},
 menu_t EpiDef = {
     ep_end, // # of menu items
     &MainDef, // previous menu
-    EpisodeMenu, // menuitem_t ->
+    EpisodeMenu.data(), // menuitem_t ->
     M_DrawEpisode, // drawing routine ->
     48,
     63, // x,y
@@ -417,7 +426,7 @@ enum
     newg_end
 };
 
-menuitem_t NewGameMenu[] = {{1, "M_JKILL", M_ChooseSkill, 'i'},
+EA::Array<menuitem_t, 5> NewGameMenu = {{1, "M_JKILL", M_ChooseSkill, 'i'},
                             {1, "M_ROUGH", M_ChooseSkill, 'h'},
                             {1, "M_HURT", M_ChooseSkill, 'h'},
                             {1, "M_ULTRA", M_ChooseSkill, 'u'},
@@ -426,7 +435,7 @@ menuitem_t NewGameMenu[] = {{1, "M_JKILL", M_ChooseSkill, 'i'},
 menu_t NewDef = {
     newg_end, // # of menu items
     &EpiDef, // previous menu
-    NewGameMenu, // menuitem_t ->
+    NewGameMenu.data(), // menuitem_t ->
     M_DrawNewGame, // drawing routine ->
     48,
     63, // x,y
@@ -452,7 +461,7 @@ enum
     opt_end
 };
 
-menuitem_t OptionsMenuFull[] = {
+EA::Array<menuitem_t, 8> OptionsMenuFull = {
     {1, "M_ENDGAM", M_EndGame, 'e'},
     {1, "M_MESSG", M_ChangeMessages, 'm'},
     {1, "TXT_CROS", M_ChangeCrosshair, 'c'},
@@ -463,7 +472,8 @@ menuitem_t OptionsMenuFull[] = {
     {1, "TXT_MOPT", M_MouseOptions, 'f'},
     {1, "M_SVOL", M_Sound, 's'}};
 
-menu_t OptionsDef = {opt_end, &MainDef, OptionsMenuFull, M_DrawOptions, 60, 37, 0};
+menu_t OptionsDef = {
+    opt_end, &MainDef, OptionsMenuFull.data(), M_DrawOptions, 60, 37, 0};
 
 enum
 {
@@ -478,7 +488,7 @@ enum
     opt_end_no_mouse
 };
 
-menuitem_t OptionsMenuNoMouse[] = {
+EA::Array<menuitem_t, 7> OptionsMenuNoMouse = {
     {1, "M_ENDGAM", M_EndGame, 'e'},
     {1, "M_MESSG", M_ChangeMessages, 'm'},
     {1, "TXT_CROS", M_ChangeCrosshair, 'c'},
@@ -489,7 +499,7 @@ menuitem_t OptionsMenuNoMouse[] = {
     {1, "M_SVOL", M_Sound, 's'}};
 
 menu_t OptionsNoMouseDef = {
-    opt_end_no_mouse, &MainDef, OptionsMenuNoMouse, M_DrawOptions, 60, 37, 0};
+    opt_end_no_mouse, &MainDef, OptionsMenuNoMouse.data(), M_DrawOptions, 60, 37, 0};
 
 enum
 {
@@ -504,7 +514,7 @@ enum
     opt_end_no_sound
 };
 
-menuitem_t OptionsMenuNoSound[] = {
+EA::Array<menuitem_t, 7> OptionsMenuNoSound = {
     {1, "M_ENDGAM", M_EndGame, 'e'},
     {1, "M_MESSG", M_ChangeMessages, 'm'},
     {1, "TXT_CROS", M_ChangeCrosshair, 'c'},
@@ -515,7 +525,7 @@ menuitem_t OptionsMenuNoSound[] = {
     {1, "TXT_MOPT", M_MouseOptions, 'f'}};
 
 menu_t OptionsNoSoundDef = {
-    opt_end_no_sound, &MainDef, OptionsMenuNoSound, M_DrawOptions, 60, 37, 0};
+    opt_end_no_sound, &MainDef, OptionsMenuNoSound.data(), M_DrawOptions, 60, 37, 0};
 
 enum
 {
@@ -529,7 +539,7 @@ enum
     opt_end_no_sound_no_mouse
 };
 
-menuitem_t OptionsMenuNoSoundNoMouse[] = {
+EA::Array<menuitem_t, 6> OptionsMenuNoSoundNoMouse = {
     {1, "M_ENDGAM", M_EndGame, 'e'},
     {1, "M_MESSG", M_ChangeMessages, 'm'},
     {1, "TXT_CROS", M_ChangeCrosshair, 'c'},
@@ -540,7 +550,7 @@ menuitem_t OptionsMenuNoSoundNoMouse[] = {
 
 menu_t OptionsNoSoundNoMouseDef = {opt_end_no_sound_no_mouse,
                                    &MainDef,
-                                   OptionsMenuNoSoundNoMouse,
+                                   OptionsMenuNoSoundNoMouse.data(),
                                    M_DrawOptions,
                                    60,
                                    37,
@@ -557,14 +567,19 @@ enum
     mouse_opt_end
 };
 
-menuitem_t MouseOptionsMenu[] = {
+EA::Array<menuitem_t, 3> MouseOptionsMenu = {
     {1, "TXT_MMOV", M_MouseMove, 'f'},
     {2, "M_MSENS", M_ChangeSensitivity, 'm'},
     {-1, "", 0},
 };
 
-menu_t MouseOptionsDef = {
-    mouse_opt_end, &OptionsDef, MouseOptionsMenu, M_DrawMouseOptions, 60, 70, 0};
+menu_t MouseOptionsDef = {mouse_opt_end,
+                         &OptionsDef,
+                         MouseOptionsMenu.data(),
+                         M_DrawMouseOptions,
+                         60,
+                         70,
+                         0};
 
 //
 // Read This! MENU 1 & 2
@@ -575,9 +590,10 @@ enum
     read1_end
 };
 
-menuitem_t ReadMenu1[] = {{1, "", M_ReadThis2, 0}};
+EA::Array<menuitem_t, 1> ReadMenu1 = {{1, "", M_ReadThis2, 0}};
 
-menu_t ReadDef1 = {read1_end, &MainDef, ReadMenu1, M_DrawReadThis1, 280, 185, 0};
+menu_t ReadDef1 = {
+    read1_end, &MainDef, ReadMenu1.data(), M_DrawReadThis1, 280, 185, 0};
 
 enum
 {
@@ -585,9 +601,10 @@ enum
     read2_end
 };
 
-menuitem_t ReadMenu2[] = {{1, "", M_FinishReadThis, 0}};
+EA::Array<menuitem_t, 1> ReadMenu2 = {{1, "", M_FinishReadThis, 0}};
 
-menu_t ReadDef2 = {read2_end, &ReadDef1, ReadMenu2, M_DrawReadThis2, 330, 175, 0};
+menu_t ReadDef2 = {
+    read2_end, &ReadDef1, ReadMenu2.data(), M_DrawReadThis2, 330, 175, 0};
 
 //
 // SOUND VOLUME MENU
@@ -603,12 +620,13 @@ enum
     sound_end
 };
 
-menuitem_t SoundMenuFull[] = {{2, "M_SFXVOL", M_SfxVol, 's'},
-                              {-1, "", 0},
-                              {2, "M_MUSVOL", M_MusicVol, 'm'},
-                              {-1, "", 0}};
+EA::Array<menuitem_t, 4> SoundMenuFull = {{2, "M_SFXVOL", M_SfxVol, 's'},
+                                          {-1, "", 0},
+                                          {2, "M_MUSVOL", M_MusicVol, 'm'},
+                                          {-1, "", 0}};
 
-menu_t SoundDef = {sound_end, &OptionsDef, SoundMenuFull, M_DrawSound, 80, 64, 0};
+menu_t SoundDef = {
+    sound_end, &OptionsDef, SoundMenuFull.data(), M_DrawSound, 80, 64, 0};
 
 enum
 {
@@ -617,10 +635,11 @@ enum
     sound_end_no_sfx
 };
 
-menuitem_t SoundMenuNoSFX[] = {{2, "M_MUSVOL", M_MusicVol, 'm'}, {-1, "", 0}};
+EA::Array<menuitem_t, 2> SoundMenuNoSFX = {{2, "M_MUSVOL", M_MusicVol, 'm'},
+                                           {-1, "", 0}};
 
 menu_t SoundNoSFXDef = {
-    sound_end_no_sfx, &OptionsDef, SoundMenuNoSFX, M_DrawSound, 80, 64, 0};
+    sound_end_no_sfx, &OptionsDef, SoundMenuNoSFX.data(), M_DrawSound, 80, 64, 0};
 
 enum
 {
@@ -629,10 +648,11 @@ enum
     sound_end_no_music
 };
 
-menuitem_t SoundMenuNoMusic[] = {{2, "M_SFXVOL", M_SfxVol, 's'}, {-1, "", 0}};
+EA::Array<menuitem_t, 2> SoundMenuNoMusic = {{2, "M_SFXVOL", M_SfxVol, 's'},
+                                             {-1, "", 0}};
 
 menu_t SoundNoMusicDef = {
-    sound_end_no_music, &OptionsDef, SoundMenuNoMusic, M_DrawSound, 80, 64, 0};
+    sound_end_no_music, &OptionsDef, SoundMenuNoMusic.data(), M_DrawSound, 80, 64, 0};
 
 //
 // LOAD GAME MENU
@@ -648,26 +668,26 @@ enum
     load_end
 };
 
-menuitem_t DOOM_LoadMenu[] = {{1, "", M_LoadSelect, '1'},
+EA::Array<menuitem_t, 6> DOOM_LoadMenu = {{1, "", M_LoadSelect, '1'},
                               {1, "", M_LoadSelect, '2'},
                               {1, "", M_LoadSelect, '3'},
                               {1, "", M_LoadSelect, '4'},
                               {1, "", M_LoadSelect, '5'},
                               {1, "", M_LoadSelect, '6'}};
 
-menu_t LoadDef = {load_end, &MainDef, DOOM_LoadMenu, M_DrawLoad, 80, 54, 0};
+menu_t LoadDef = {load_end, &MainDef, DOOM_LoadMenu.data(), M_DrawLoad, 80, 54, 0};
 
 //
 // SAVE GAME MENU
 //
-menuitem_t SaveMenu[] = {{1, "", M_SaveSelect, '1'},
+EA::Array<menuitem_t, 6> SaveMenu = {{1, "", M_SaveSelect, '1'},
                          {1, "", M_SaveSelect, '2'},
                          {1, "", M_SaveSelect, '3'},
                          {1, "", M_SaveSelect, '4'},
                          {1, "", M_SaveSelect, '5'},
                          {1, "", M_SaveSelect, '6'}};
 
-menu_t SaveDef = {load_end, &MainDef, SaveMenu, M_DrawSave, 80, 54, 0};
+menu_t SaveDef = {load_end, &MainDef, SaveMenu.data(), M_DrawSave, 80, 54, 0};
 
 #pragma GCC diagnostic pop
 
@@ -679,7 +699,7 @@ void M_DrawCustomMenuText(const char* name, int x, int y)
 {
     for (int i = 0; i < custom_texts_count; ++i)
     {
-        menu_custom_text_t* custom_text = menu_custom_texts + i;
+        menu_custom_text_t* custom_text = menu_custom_texts.data() + i;
         if (doom_strcmp(custom_text->name, name) == 0)
         {
             menu_custom_text_seg_t* seg = custom_text->segs;
@@ -706,7 +726,7 @@ void M_DrawCustomMenuText(const char* name, int x, int y)
 void M_ReadSaveStrings()
 {
     void* handle;
-    char name[256];
+    EA::Array<char, 256> name;
 
     for (int i = 0; i < load_end; i++)
     {
@@ -717,12 +737,12 @@ void M_ReadSaveStrings()
 #endif
         {
             //doom_sprintf(name, SAVEGAMENAME"%d.dsg", i);
-            doom_strcpy(name, SAVEGAMENAME);
-            doom_concat(name, doom_itoa(i, 10));
-            doom_concat(name, ".dsg");
+            doom_strcpy(name.data(), SAVEGAMENAME);
+            doom_concat(name.data(), doom_itoa(i, 10));
+            doom_concat(name.data(), ".dsg");
         }
 
-        handle = doom_open(name, "r");
+        handle = doom_open(name.data(), "r");
         if (handle == nullptr)
         {
             doom_strcpy(&savegamestrings[i][0], EMPTYSTRING);
@@ -778,7 +798,7 @@ void M_DrawSaveLoadBorder(int x, int y)
 //
 void M_LoadSelect(int choice)
 {
-    char name[256];
+    EA::Array<char, 256> name;
 
 #if 0
     if (M_CheckParm("-cdrom"))
@@ -787,11 +807,11 @@ void M_LoadSelect(int choice)
 #endif
     {
         //doom_sprintf(name, SAVEGAMENAME"%d.dsg", choice);
-        doom_strcpy(name, SAVEGAMENAME);
-        doom_concat(name, doom_itoa(choice, 10));
-        doom_concat(name, ".dsg");
+        doom_strcpy(name.data(), SAVEGAMENAME);
+        doom_concat(name.data(), doom_itoa(choice, 10));
+        doom_concat(name.data(), ".dsg");
     }
-    G_LoadGame(name);
+    G_LoadGame(name.data());
     M_ClearMenus();
 }
 
@@ -1168,19 +1188,22 @@ void M_DrawOptions()
         OptionsDef.x + 120,
         OptionsDef.y + LINEHEIGHT * messages,
         0,
-        static_cast<patch_t*>(W_CacheLumpName(msgNames[showMessages], PU_CACHE)));
+        static_cast<patch_t*>(
+            W_CacheLumpName(msgNames[showMessages].data(), PU_CACHE)));
 
     V_DrawPatchDirect(
         OptionsDef.x + 131,
         OptionsDef.y + LINEHEIGHT * crosshair_opt,
         0,
-        static_cast<patch_t*>(W_CacheLumpName(msgNames[crosshair], PU_CACHE)));
+        static_cast<patch_t*>(
+            W_CacheLumpName(msgNames[crosshair].data(), PU_CACHE)));
 
     V_DrawPatchDirect(
         OptionsDef.x + 147,
         OptionsDef.y + LINEHEIGHT * always_run_opt,
         0,
-        static_cast<patch_t*>(W_CacheLumpName(msgNames[always_run], PU_CACHE)));
+        static_cast<patch_t*>(
+            W_CacheLumpName(msgNames[always_run].data(), PU_CACHE)));
 
     M_DrawThermo(
         OptionsDef.x, OptionsDef.y + LINEHEIGHT * (scrnsize + 1), 9, screenSize);
@@ -1194,7 +1217,8 @@ void M_DrawMouseOptions()
         MouseOptionsDef.x + 149,
         MouseOptionsDef.y + LINEHEIGHT * mousemov,
         0,
-        static_cast<patch_t*>(W_CacheLumpName(msgNames[mousemove], PU_CACHE)));
+        static_cast<patch_t*>(
+            W_CacheLumpName(msgNames[mousemove].data(), PU_CACHE)));
 
     M_DrawThermo(MouseOptionsDef.x,
                  MouseOptionsDef.y + LINEHEIGHT * (mousesens + 1),
@@ -1787,7 +1811,7 @@ doom_boolean M_Responder(event_t* ev)
                 usegamma++;
                 if (usegamma > 4)
                     usegamma = 0;
-                players[consoleplayer].message = gammamsg[usegamma];
+                players[consoleplayer].message = gammamsg[usegamma].data();
                 I_SetPalette(
                     static_cast<byte*>(W_CacheLumpName("PLAYPAL", PU_CACHE)));
                 return true;
@@ -1928,7 +1952,7 @@ void M_Drawer()
     static short y;
     short i;
     short max;
-    char string[40];
+    EA::Array<char, 40> string;
     int start;
 
     inhelpscreens = false;
@@ -1943,20 +1967,20 @@ void M_Drawer()
             for (i = 0; i < doom_strlen(messageString + start); i++)
                 if (*(messageString + start + i) == '\n')
                 {
-                    doom_memset(string, 0, 40);
-                    doom_strncpy(string, messageString + start, i);
+                    doom_memset(string.data(), 0, 40);
+                    doom_strncpy(string.data(), messageString + start, i);
                     start += i + 1;
                     break;
                 }
 
             if (i == doom_strlen(messageString + start))
             {
-                doom_strcpy(string, messageString + start);
+                doom_strcpy(string.data(), messageString + start);
                 start += i;
             }
 
-            x = 160 - M_StringWidth(string) / 2;
-            M_WriteText(x, y, string);
+            x = 160 - M_StringWidth(string.data()) / 2;
+            M_WriteText(x, y, string.data());
             y += SHORT(hu_font[0]->height);
         }
         return;
@@ -2010,7 +2034,8 @@ void M_Drawer()
         x + SKULLXOFF,
         currentMenu->y - 5 + itemOn * LINEHEIGHT,
         0,
-        static_cast<patch_t*>(W_CacheLumpName(skullName[whichSkull], PU_CACHE)));
+        static_cast<patch_t*>(
+            W_CacheLumpName(skullName[whichSkull].data(), PU_CACHE)));
 }
 
 //
@@ -2054,32 +2079,32 @@ void M_Init()
                                   ? true
                                   : false;
 
-    OptionsMenu = OptionsMenuFull;
+    OptionsMenu = OptionsMenuFull.data();
     if (hide_mouse && !hide_sound)
     {
-        OptionsMenu = OptionsMenuNoMouse;
+        OptionsMenu = OptionsMenuNoMouse.data();
         doom_memcpy(&OptionsDef, &OptionsNoMouseDef, sizeof(OptionsDef));
     }
     else if (!hide_mouse && hide_sound)
     {
-        OptionsMenu = OptionsMenuNoSound;
+        OptionsMenu = OptionsMenuNoSound.data();
         doom_memcpy(&OptionsDef, &OptionsNoSoundDef, sizeof(OptionsDef));
     }
     else if (hide_mouse && hide_sound)
     {
-        OptionsMenu = OptionsMenuNoSoundNoMouse;
+        OptionsMenu = OptionsMenuNoSoundNoMouse.data();
         doom_memcpy(&OptionsDef, &OptionsNoSoundNoMouseDef, sizeof(OptionsDef));
     }
 
-    SoundMenu = SoundMenuFull;
+    SoundMenu = SoundMenuFull.data();
     if (doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
     {
-        SoundMenu = SoundMenuNoMusic;
+        SoundMenu = SoundMenuNoMusic.data();
         doom_memcpy(&SoundDef, &SoundNoMusicDef, sizeof(SoundDef));
     }
     else if (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
     {
-        SoundMenu = SoundMenuNoSFX;
+        SoundMenu = SoundMenuNoSFX.data();
         doom_memcpy(&SoundDef, &SoundNoSFXDef, sizeof(SoundDef));
     }
 

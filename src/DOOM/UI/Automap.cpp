@@ -46,6 +46,8 @@
 #include "Automap.h"
 #include "AutomapView.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 
@@ -120,7 +122,7 @@ struct islope_t
 //
 
 #define R (FRACUNIT)
-mline_t triangle_guy[] = {
+EA::Array<mline_t, 3> triangle_guy = {
     {{static_cast<fixed_t>(-.867 * R), static_cast<fixed_t>(-.5 * R)},
      {static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}},
     {{static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}, {0, R}},
@@ -188,8 +190,8 @@ static mpoint_t (&markpoints)[AM_NUMMARKPOINTS] =
     automapView().markpoints; // the marks
 static int& markpointnum = automapView().markpointnum; // next point to be assigned
 
-static unsigned char cheat_amap_seq[] = {0xb2, 0x26, 0x26, 0x2e, 0xff};
-static cheatseq_t cheat_amap = {cheat_amap_seq, 0};
+static EA::Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
+static cheatseq_t cheat_amap = {cheat_amap_seq.data(), 0};
 
 static doom_boolean& stopped = automapView().stopped;
 
@@ -387,12 +389,12 @@ void amInitVariables()
 //
 void amLoadPics()
 {
-    char namebuf[9];
+    EA::Array<char, 9> namebuf;
 
     for (int i = 0; i < 10; i++)
     {
-        doom_concat(doom_strcpy(namebuf, "AMMNUM"), doom_itoa(i, 10));
-        marknums[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf, PU_STATIC));
+        doom_concat(doom_strcpy(namebuf.data(), "AMMNUM"), doom_itoa(i, 10));
+        marknums[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
 }
 
@@ -492,7 +494,7 @@ doom_boolean amResponder(event_t* ev)
 {
     int rc;
     int& bigstate = automapView().bigstate;
-    static char buffer[20];
+    static EA::Array<char, 20> buffer;
 
     rc = false;
 
@@ -570,11 +572,11 @@ doom_boolean amResponder(event_t* ev)
                     const_cast<char*>(grid ? AMSTR_GRIDON : AMSTR_GRIDOFF);
                 break;
             case AM_MARKKEY:
-                doom_strcpy(buffer, AMSTR_MARKEDSPOT);
-                doom_concat(buffer, " ");
-                doom_concat(buffer, doom_itoa(markpointnum, 10));
+                doom_strcpy(buffer.data(), AMSTR_MARKEDSPOT);
+                doom_concat(buffer.data(), " ");
+                doom_concat(buffer.data(), doom_itoa(markpointnum, 10));
                 //doom_sprintf(buffer, "%s %d", AMSTR_MARKEDSPOT, markpointnum);
-                am_plr->message = buffer;
+                am_plr->message = buffer.data();
                 amAddMark();
                 break;
             case AM_CLEARMARKKEY:
@@ -663,14 +665,14 @@ void amUpdateLightLev()
 {
     int& nexttic = automapView().nexttic;
     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
-    static int litelevels[] = {0, 4, 7, 10, 12, 14, 15, 15};
+    static EA::Array<int, 8> litelevels = {0, 4, 7, 10, 12, 14, 15, 15};
     int& litelevelscnt = automapView().litelevelscnt;
 
     // Change light level
     if (amclock > nexttic)
     {
         lightlev = litelevels[litelevelscnt++];
-        if (litelevelscnt == sizeof(litelevels) / sizeof(int))
+        if (litelevelscnt == litelevels.size())
             litelevelscnt = 0;
         nexttic = amclock + 6 - (amclock % 6);
     }
@@ -1100,7 +1102,7 @@ void amDrawLineCharacter(mline_t* lineguy,
 void amDrawPlayers()
 {
     player_t* p;
-    static int their_colors[] = {GREENS, GRAYS, BROWNS, REDS};
+    static EA::Array<int, 4> their_colors = {GREENS, GRAYS, BROWNS, REDS};
     int their_color = -1;
     int color;
 

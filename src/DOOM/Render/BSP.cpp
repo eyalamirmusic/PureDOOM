@@ -16,6 +16,8 @@
 #include "BSP.h"
 #include "SolidSegs.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // R_StoreWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
 void R_StoreWallRange(int start, int stop);
 
@@ -33,7 +35,7 @@ static cliprange_t*& newend = solidSegs().newend;
 
 static cliprange_t (&solidsegs)[MAXSEGS] = solidSegs().solidsegs;
 
-int checkcoord[12][4] = {{3, 0, 2, 1},
+EA::Array<EA::Array<int, 4>, 12> checkcoord = {{3, 0, 2, 1},
                          {3, 0, 2, 0},
                          {3, 1, 2, 0},
                          {0},

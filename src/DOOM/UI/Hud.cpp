@@ -40,6 +40,8 @@
 #include "../sounds.h"
 #include "../w_wad.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 #include "Hud.h"
 #include "HudChat.h"
 #include "HudMessage.h"
@@ -107,7 +109,7 @@ static int& tail = hudChat().tail;
 
 const char* shiftxform;
 
-const char french_shiftxform[] = {
+const EA::Array<char, 128> french_shiftxform = {
     0,    1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
     16,   17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
     ' ',  '!', '"', '#', '$', '%', '&',
@@ -143,7 +145,7 @@ const char french_shiftxform[] = {
 
 };
 
-const char english_shiftxform[] = {
+const EA::Array<char, 128> english_shiftxform = {
     0,    1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
     16,   17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
     ' ',  '!', '"', '#', '$', '%', '&',
@@ -177,7 +179,7 @@ const char english_shiftxform[] = {
     'A',  'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
     'Q',  'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '{', '|', '}', '~', 127};
 
-char frenchKeyMap[128] = {
+EA::Array<char, 128> frenchKeyMap = {
     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,   13,  14,  15,
     16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,   29,  30,  31,
     ' ', '!', '"', '#', '$', '%', '&', '%', '(', ')', '*', '+', ';',  '-', ':', '!',
@@ -192,7 +194,7 @@ char frenchKeyMap[128] = {
 // The actual names can be found in DStrings.h.
 //
 
-const char* mapnames2[] = // DOOM 2 map names.
+EA::Array<const char*, 32> mapnames2 = // DOOM 2 map names.
     {HUSTR_1,  HUSTR_2,  HUSTR_3,  HUSTR_4,  HUSTR_5,  HUSTR_6,
      HUSTR_7,  HUSTR_8,  HUSTR_9,  HUSTR_10, HUSTR_11,
 
@@ -202,7 +204,7 @@ const char* mapnames2[] = // DOOM 2 map names.
      HUSTR_21, HUSTR_22, HUSTR_23, HUSTR_24, HUSTR_25, HUSTR_26,
      HUSTR_27, HUSTR_28, HUSTR_29, HUSTR_30, HUSTR_31, HUSTR_32};
 
-const char* mapnamesp[] = // Plutonia WAD map names.
+EA::Array<const char*, 32> mapnamesp = // Plutonia WAD map names.
     {PHUSTR_1,  PHUSTR_2,  PHUSTR_3,  PHUSTR_4,  PHUSTR_5,  PHUSTR_6,
      PHUSTR_7,  PHUSTR_8,  PHUSTR_9,  PHUSTR_10, PHUSTR_11,
 
@@ -212,7 +214,7 @@ const char* mapnamesp[] = // Plutonia WAD map names.
      PHUSTR_21, PHUSTR_22, PHUSTR_23, PHUSTR_24, PHUSTR_25, PHUSTR_26,
      PHUSTR_27, PHUSTR_28, PHUSTR_29, PHUSTR_30, PHUSTR_31, PHUSTR_32};
 
-const char* mapnamest[] = // TNT WAD map names.
+EA::Array<const char*, 32> mapnamest = // TNT WAD map names.
     {THUSTR_1,  THUSTR_2,  THUSTR_3,  THUSTR_4,  THUSTR_5,  THUSTR_6,
      THUSTR_7,  THUSTR_8,  THUSTR_9,  THUSTR_10, THUSTR_11,
 
@@ -230,12 +232,12 @@ char foreignTranslation(unsigned char ch)
 void huInit()
 {
     int j;
-    char buffer[9];
+    EA::Array<char, 9> buffer;
 
     if (french)
-        shiftxform = french_shiftxform;
+        shiftxform = french_shiftxform.data();
     else
-        shiftxform = english_shiftxform;
+        shiftxform = english_shiftxform.data();
 
     // load the heads-up font
     j = HU_FONTSTART;
@@ -243,13 +245,14 @@ void huInit()
     {
         //if (j == 40) __debugbreak();
         //doom_sprintf(buffer, "STCFN%.3d", j++);
-        doom_strcpy(buffer, "STCFN");
+        doom_strcpy(buffer.data(), "STCFN");
         if (j < 100)
-            doom_concat(buffer, "0");
+            doom_concat(buffer.data(), "0");
         if (j < 10)
-            doom_concat(buffer, "0");
-        doom_concat(buffer, doom_itoa(j++, 10));
-        hu_font[i] = static_cast<patch_t*>(W_CacheLumpName(buffer, PU_STATIC));
+            doom_concat(buffer.data(), "0");
+        doom_concat(buffer.data(), doom_itoa(j++, 10));
+        hu_font[i] =
+            static_cast<patch_t*>(W_CacheLumpName(buffer.data(), PU_STATIC));
     }
 }
 
@@ -445,7 +448,7 @@ doom_boolean huResponder(event_t* ev)
     unsigned char c;
     int numplayers;
 
-    static char destination_keys[MAXPLAYERS] = {
+    static EA::Array<char, MAXPLAYERS> destination_keys = {
         HUSTR_KEYGREEN, HUSTR_KEYINDIGO, HUSTR_KEYBROWN, HUSTR_KEYRED};
 
     int& num_nobrainers = hudChat().num_nobrainers;

@@ -23,6 +23,8 @@
 #include "Setup.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 
+#include <ea_data_structures/Structures/Array.h>
+
 // P_SpawnMapThing is Mobj's now (global shim); the things loader calls it.
 void P_SpawnMapThing(mapthing_t* mthing);
 
@@ -406,7 +408,7 @@ void groupLines()
     sector_t* sector;
     subsector_t* ss;
     seg_t* seg;
-    fixed_t bbox[4];
+    EA::Array<fixed_t, 4> bbox;
     int block;
 
     // look up sector number for each subsector
@@ -440,7 +442,7 @@ void groupLines()
     sector = sectors;
     for (int i = 0; i < numsectors; i++, sector++)
     {
-        M_ClearBox(bbox);
+        M_ClearBox(bbox.data());
         sector->lines = linebuffer;
         li = lines;
         for (int j = 0; j < numlines; j++, li++)
@@ -448,8 +450,8 @@ void groupLines()
             if (li->frontsector == sector || li->backsector == sector)
             {
                 *linebuffer++ = li;
-                M_AddToBox(bbox, li->v1->x, li->v1->y);
-                M_AddToBox(bbox, li->v2->x, li->v2->y);
+                M_AddToBox(bbox.data(), li->v1->x, li->v1->y);
+                M_AddToBox(bbox.data(), li->v2->x, li->v2->y);
             }
         }
         if (linebuffer - sector->lines != sector->linecount)
@@ -483,7 +485,7 @@ void groupLines()
 //
 void setupLevel(int episode, int map, int, skill_t)
 {
-    char lumpname[9];
+    EA::Array<char, 9> lumpname;
     int lumpnum;
 
     totalkills = totalitems = totalsecret = wminfo.maxfrags = 0;
@@ -517,14 +519,14 @@ void setupLevel(int episode, int map, int, skill_t)
         if (map < 10)
         {
             //doom_sprintf(lumpname, "map0%i", map);
-            doom_strcpy(lumpname, "map0");
-            doom_concat(lumpname, doom_itoa(map, 10));
+            doom_strcpy(lumpname.data(), "map0");
+            doom_concat(lumpname.data(), doom_itoa(map, 10));
         }
         else
         {
             //doom_sprintf(lumpname, "map%i", map);
-            doom_strcpy(lumpname, "map");
-            doom_concat(lumpname, doom_itoa(map, 10));
+            doom_strcpy(lumpname.data(), "map");
+            doom_concat(lumpname.data(), doom_itoa(map, 10));
         }
     }
     else
@@ -536,7 +538,7 @@ void setupLevel(int episode, int map, int, skill_t)
         lumpname[4] = 0;
     }
 
-    lumpnum = W_GetNumForName(lumpname);
+    lumpnum = W_GetNumForName(lumpname.data());
 
     leveltime = 0;
 

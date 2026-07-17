@@ -133,7 +133,7 @@ gamestate_t& wipegamestate = Doom::gameFlow().wipegamestate;
 void R_ExecuteSetViewSize();
 
 // print title for every printed line - file-local, built and printed only here
-static char title[128];
+static EA::Array<char, 128> title;
 
 extern doom_boolean& inhelpscreens; // Doom::OverlayState (Engine member)
 extern doom_boolean& setsizeneeded;
@@ -374,10 +374,10 @@ void dDoomLoop()
 
     if (M_CheckParm("-debugfile"))
     {
-        char    filename[20];
+        EA::Array<char, 20> filename;
         //doom_sprintf(filename, "debug%i.txt", consoleplayer);
-        doom_print("debug output to: %s\n", filename);
-        debugfile = doom_open(filename, "w");
+        doom_print("debug output to: %s\n", filename.data());
+        debugfile = doom_open(filename.data(), "w");
     }
 
     I_InitGraphics();
@@ -819,7 +819,7 @@ void FindResponseFile()
 void dDoomMain()
 {
     int p;
-    char file[256];
+    EA::Array<char, 256> file;
 
     FindResponseFile();
 
@@ -844,13 +844,13 @@ void dDoomMain()
             //        "The Ultimate DOOM Startup v%i.%i"
             //        "                           ",
             //        VERSION / 100, VERSION % 100);
-            doom_strcpy(title,
+            doom_strcpy(title.data(),
                         "                         "
                         "The Ultimate DOOM Startup v");
-            doom_concat(title, doom_itoa(VERSION / 100, 10));
-            doom_concat(title, ".");
-            doom_concat(title, doom_itoa(VERSION % 100, 10));
-            doom_concat(title, "                           ");
+            doom_concat(title.data(), doom_itoa(VERSION / 100, 10));
+            doom_concat(title.data(), ".");
+            doom_concat(title.data(), doom_itoa(VERSION % 100, 10));
+            doom_concat(title.data(), "                           ");
             break;
         case shareware:
             //doom_sprintf(title,
@@ -858,13 +858,13 @@ void dDoomMain()
             //        "DOOM Shareware Startup v%i.%i"
             //        "                           ",
             //        VERSION / 100, VERSION % 100);
-            doom_strcpy(title,
+            doom_strcpy(title.data(),
                         "                            "
                         "DOOM Shareware Startup v");
-            doom_concat(title, doom_itoa(VERSION / 100, 10));
-            doom_concat(title, ".");
-            doom_concat(title, doom_itoa(VERSION % 100, 10));
-            doom_concat(title, "                           ");
+            doom_concat(title.data(), doom_itoa(VERSION / 100, 10));
+            doom_concat(title.data(), ".");
+            doom_concat(title.data(), doom_itoa(VERSION % 100, 10));
+            doom_concat(title.data(), "                           ");
             break;
         case registered:
             //doom_sprintf(title,
@@ -872,13 +872,13 @@ void dDoomMain()
             //        "DOOM Registered Startup v%i.%i"
             //        "                           ",
             //        VERSION / 100, VERSION % 100);
-            doom_strcpy(title,
+            doom_strcpy(title.data(),
                         "                            "
                         "DOOM Registered Startup v");
-            doom_concat(title, doom_itoa(VERSION / 100, 10));
-            doom_concat(title, ".");
-            doom_concat(title, doom_itoa(VERSION % 100, 10));
-            doom_concat(title, "                           ");
+            doom_concat(title.data(), doom_itoa(VERSION / 100, 10));
+            doom_concat(title.data(), ".");
+            doom_concat(title.data(), doom_itoa(VERSION % 100, 10));
+            doom_concat(title.data(), "                           ");
             break;
         case commercial:
             //doom_sprintf(title,
@@ -886,13 +886,13 @@ void dDoomMain()
             //        "DOOM 2: Hell on Earth v%i.%i"
             //        "                           ",
             //        VERSION / 100, VERSION % 100);
-            doom_strcpy(title,
+            doom_strcpy(title.data(),
                         "                         "
                         "DOOM 2: Hell on Earth v");
-            doom_concat(title, doom_itoa(VERSION / 100, 10));
-            doom_concat(title, ".");
-            doom_concat(title, doom_itoa(VERSION % 100, 10));
-            doom_concat(title, "                           ");
+            doom_concat(title.data(), doom_itoa(VERSION / 100, 10));
+            doom_concat(title.data(), ".");
+            doom_concat(title.data(), doom_itoa(VERSION % 100, 10));
+            doom_concat(title.data(), "                           ");
             break;
             /*FIXME
                    case pack_plut:
@@ -916,18 +916,18 @@ void dDoomMain()
             //        "Public DOOM - v%i.%i"
             //        "                           ",
             //        VERSION / 100, VERSION % 100);
-            doom_strcpy(title,
+            doom_strcpy(title.data(),
                         "                     "
                         "Public DOOM - v");
-            doom_concat(title, doom_itoa(VERSION / 100, 10));
-            doom_concat(title, ".");
-            doom_concat(title, doom_itoa(VERSION % 100, 10));
-            doom_concat(title, "                           ");
+            doom_concat(title.data(), doom_itoa(VERSION / 100, 10));
+            doom_concat(title.data(), ".");
+            doom_concat(title.data(), doom_itoa(VERSION % 100, 10));
+            doom_concat(title.data(), "                           ");
             break;
     }
 
     //doom_print("%s\n", title);
-    doom_print(title);
+    doom_print(title.data());
     doom_print("\n");
 
     if (devparm)
@@ -980,11 +980,11 @@ void dDoomMain()
             case retail:
             case registered:
                 //doom_sprintf(file, "~"DEVMAPS"E%cM%c.wad", myargv[p + 1][0], myargv[p + 2][0]);
-                doom_strcpy(file, "~" DEVMAPS "E");
-                doom_concat(file, doom_ctoa(myargv[p + 1][0]));
-                doom_concat(file, "M");
-                doom_concat(file, doom_ctoa(myargv[p + 2][0]));
-                doom_concat(file, ".wad");
+                doom_strcpy(file.data(), "~" DEVMAPS "E");
+                doom_concat(file.data(), doom_ctoa(myargv[p + 1][0]));
+                doom_concat(file.data(), "M");
+                doom_concat(file.data(), doom_ctoa(myargv[p + 2][0]));
+                doom_concat(file.data(), ".wad");
 
                 //doom_print("Warping to Episode %s, Map %s.\n", myargv[p + 1], myargv[p + 2]);
                 doom_print("Warping to Episode ");
@@ -1000,20 +1000,20 @@ void dDoomMain()
                 if (p < 10)
                 {
                     //doom_sprintf(file, "~"DEVMAPS"cdata/map0%i.wad", p);
-                    doom_strcpy(file, "~" DEVMAPS "cdata/map0");
-                    doom_concat(file, doom_itoa(p, 10));
-                    doom_concat(file, ".wad");
+                    doom_strcpy(file.data(), "~" DEVMAPS "cdata/map0");
+                    doom_concat(file.data(), doom_itoa(p, 10));
+                    doom_concat(file.data(), ".wad");
                 }
                 else
                 {
                     //doom_sprintf(file, "~"DEVMAPS"cdata/map%i.wad", p);
-                    doom_strcpy(file, "~" DEVMAPS "cdata/map");
-                    doom_concat(file, doom_itoa(p, 10));
-                    doom_concat(file, ".wad");
+                    doom_strcpy(file.data(), "~" DEVMAPS "cdata/map");
+                    doom_concat(file.data(), doom_itoa(p, 10));
+                    doom_concat(file.data(), ".wad");
                 }
                 break;
         }
-        dAddFile(file);
+        dAddFile(file.data());
     }
 
     p = M_CheckParm("-file");
@@ -1034,9 +1034,9 @@ void dDoomMain()
     if (p && p < myargc - 1)
     {
         //doom_sprintf(file, "%s.lmp", myargv[p + 1]);
-        doom_strcpy(file, myargv[p + 1]);
-        doom_concat(file, ".lmp");
-        dAddFile(file);
+        doom_strcpy(file.data(), myargv[p + 1]);
+        doom_concat(file.data(), ".lmp");
+        dAddFile(file.data());
         //doom_print("Playing demo %s.lmp.\n", myargv[p + 1]);
         doom_print("Playing demo ");
         doom_print(myargv[p + 1]);
@@ -1109,11 +1109,11 @@ void dDoomMain()
     {
         // These are the lumps that will be checked in IWAD,
         // if any one is not present, execution will be aborted.
-        char name[23][9] = {"e2m1",   "e2m2",   "e2m3",    "e2m4",   "e2m5",
-                            "e2m6",   "e2m7",   "e2m8",    "e2m9",   "e3m1",
-                            "e3m3",   "e3m3",   "e3m4",    "e3m5",   "e3m6",
-                            "e3m7",   "e3m8",   "e3m9",    "dphoof", "bfgga0",
-                            "heada1", "cybra1", "spida1d1"};
+        EA::Array<const char*, 23> name = {
+            "e2m1",   "e2m2",   "e2m3",    "e2m4",   "e2m5",   "e2m6",
+            "e2m7",   "e2m8",   "e2m9",    "e3m1",   "e3m3",   "e3m3",
+            "e3m4",   "e3m5",   "e3m6",    "e3m7",   "e3m8",   "e3m9",
+            "dphoof", "bfgga0", "heada1",  "cybra1", "spida1d1"};
 
         if (gamemode == shareware)
             I_Error("Error: \nYou cannot -file with the shareware "
@@ -1122,8 +1122,8 @@ void dDoomMain()
         // Check for fake IWAD with right name,
         // but w/o all the lumps of the registered version.
         if (gamemode == registered)
-            for (int i = 0; i < 23; i++)
-                if (W_CheckNumForName(name[i]) < 0)
+            for (auto n : name)
+                if (W_CheckNumForName(n) < 0)
                     I_Error("Error: \nThis is not the registered version.");
     }
 
@@ -1236,11 +1236,11 @@ void dDoomMain()
 #endif
         {
             //doom_sprintf(file, SAVEGAMENAME"%c.dsg", myargv[p + 1][0]);
-            doom_strcpy(file, SAVEGAMENAME);
-            doom_concat(file, doom_ctoa(myargv[p + 1][0]));
-            doom_concat(file, ".dsg");
+            doom_strcpy(file.data(), SAVEGAMENAME);
+            doom_concat(file.data(), doom_ctoa(myargv[p + 1][0]));
+            doom_concat(file.data(), ".dsg");
         }
-        G_LoadGame(file);
+        G_LoadGame(file.data());
     }
 
     if (gameaction != ga_loadgame)
@@ -1258,16 +1258,16 @@ void dDoomMain()
 
     if (M_CheckParm("-debugfile"))
     {
-        char filename[20];
+        EA::Array<char, 20> filename;
         //doom_sprintf(filename, "debug%i.txt", consoleplayer);
-        doom_strcpy(filename, "debug");
-        doom_concat(filename, doom_itoa(consoleplayer, 10));
-        doom_concat(filename, ".txt");
+        doom_strcpy(filename.data(), "debug");
+        doom_concat(filename.data(), doom_itoa(consoleplayer, 10));
+        doom_concat(filename.data(), ".txt");
         //doom_print("debug output to: %s\n", filename);
         doom_print("debug output to: ");
-        doom_print(filename);
+        doom_print(filename.data());
         doom_print("\n");
-        debugfile = doom_open(filename, "w");
+        debugfile = doom_open(filename.data(), "w");
     }
 
     I_InitGraphics();

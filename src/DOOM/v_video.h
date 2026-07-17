@@ -40,7 +40,7 @@
 // Screen 1 is an extra buffer.
 extern byte* screens[5];
 extern EA::Array<int, 4>& dirtybox; // Doom::VideoState member (Engine); reference
-extern byte gammatable[5][256];
+extern EA::Array<EA::Array<byte, 256>, 5> gammatable;
 // usegamma is a config-backed Engine member (UI/MenuSettings.h); reference onto it.
 extern int& usegamma;
 
