@@ -105,11 +105,13 @@ void setPsprite(player_t* player, int position, statenum_t stnum)
             psp->sy = state->misc2 << FRACBITS;
         }
 
-        // Call action routine.
-        // Modified handling.
-        if (state->action.acp2)
+        // Call action routine. The action is stored type-erased; a weapon state
+        // carries a (player_t*, pspdef_t*) action, cast back from the erased pointer
+        // here (a round-trip conversion, hence well-defined).
+        if (state->action.fn)
         {
-            state->action.acp2(player, psp);
+            reinterpret_cast<void (*)(player_t*, pspdef_t*)>(state->action.fn)(
+                player, psp);
             if (!psp->state)
                 break;
         }

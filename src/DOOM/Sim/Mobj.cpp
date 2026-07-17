@@ -65,9 +65,11 @@ doom_boolean setMobjState(mobj_t* mobj, statenum_t state)
         mobj->frame = st->frame;
 
         // Modified handling.
-        // Call action functions when the state is set
-        if (st->action.acp1)
-            st->action.acp1(mobj);
+        // Call action functions when the state is set. The action is stored
+        // type-erased; a mobj state carries a (mobj_t*) action, cast back from the
+        // erased pointer here (a round-trip conversion, hence well-defined).
+        if (st->action.fn)
+            reinterpret_cast<void (*)(mobj_t*)>(st->action.fn)(mobj);
 
         state = st->nextstate;
     } while (!mobj->tics);

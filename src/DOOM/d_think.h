@@ -26,34 +26,28 @@
 
 
 //
-// Experimental stuff.
-// To compile this as "ANSI C with classes"
-//  we will need to handle the various
-//  action functions cleanly.
+// A state's action: the free function setMobjState / setPsprite runs when a mobj
+// or weapon enters the state. mobj states are called with (mobj_t*), weapon states
+// with (player_t*, pspdef_t*) - the two shapes never mix for a given state. The
+// pointer is stored type-erased (fn) and cast back to its exact signature at the
+// two call sites, which is a round-trip conversion and therefore well-defined.
 //
-typedef void (*actionf_v)();
+// This retired the 1993 "ANSI C with classes" union of three incompatible
+// function-pointer types (acp1/acv/acp2), whose only purpose was to let one slot
+// hold either shape. The generated states[] table (Sim/Info.cpp) still casts each
+// action to actionf_p1 as it stores it, so that type is kept.
+//
 typedef void (*actionf_p1)(void*);
-typedef void (*actionf_p2)(void*, void*);
 
-typedef union
+struct actionf_t
 {
-    actionf_p1 acp1;
-    actionf_v  acv;
-    actionf_p2 acp2;
-} actionf_t;
-
-
-// Historically, "think_t" is yet another
-//  function pointer to a routine to handle
-//  an actor.
-typedef actionf_t think_t;
+    actionf_p1 fn;
+};
 
 
 // The doubly-linked list node is now a real base class with a virtual tick() -
 // Doom::Thinker (Sim/Thinker.h). thinker_t stays as the vanilla spelling the
-// engine still writes, aliased onto it. The actionf_* union above survives only
-// because state_t.action (info.h) still uses it; the per-object thinker dispatch
-// no longer does.
+// engine still writes, aliased onto it.
 #include "Sim/Thinker.h"
 using thinker_t = Doom::Thinker;
 
