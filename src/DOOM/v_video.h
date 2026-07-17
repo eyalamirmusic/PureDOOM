@@ -27,6 +27,8 @@
 #include "doomdef.h"
 #include "r_data.h" // Needed because we are refering to patches.
 
+#include <ea_data_structures/Structures/Array.h>
+
 //
 // VIDEO
 //
@@ -37,7 +39,7 @@
 // Screen 0 is the screen updated by I_Update screen.
 // Screen 1 is an extra buffer.
 extern byte* screens[5];
-extern int (&dirtybox)[4]; // Doom::VideoState member (Engine); reference
+extern EA::Array<int, 4>& dirtybox; // Doom::VideoState member (Engine); reference
 extern byte gammatable[5][256];
 // usegamma is a config-backed Engine member (UI/MenuSettings.h); reference onto it.
 extern int& usegamma;

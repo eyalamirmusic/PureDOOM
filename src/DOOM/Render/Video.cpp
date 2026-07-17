@@ -50,7 +50,7 @@
 byte* screens[5];
 
 // dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
-int (&dirtybox)[4] = Doom::videoState().dirtybox;
+EA::Array<int, 4>& dirtybox = Doom::videoState().dirtybox;
 
 // Now where did these came from?
 byte gammatable[5][256] = {
@@ -154,8 +154,8 @@ namespace Doom
 //
 void vMarkRect(int x, int y, int width, int height)
 {
-    M_AddToBox(dirtybox, x, y);
-    M_AddToBox(dirtybox, x + width - 1, y + height - 1);
+    M_AddToBox(dirtybox.data(), x, y);
+    M_AddToBox(dirtybox.data(), x + width - 1, y + height - 1);
 }
 
 //

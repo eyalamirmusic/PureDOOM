@@ -19,6 +19,8 @@
 #include "SpriteScratch.h"
 #include "Things.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 #define MINZ (FRACUNIT * 4)
 #define BASEYCENTER 100
 
@@ -813,8 +815,8 @@ void sortVisSprites()
 void drawSprite(vissprite_t* spr)
 {
     drawseg_t* ds;
-    short clipbot[SCREENWIDTH];
-    short cliptop[SCREENWIDTH];
+    EA::Array<short, SCREENWIDTH> clipbot;
+    EA::Array<short, SCREENWIDTH> cliptop;
     int x;
     int r1;
     int r2;
@@ -911,8 +913,8 @@ void drawSprite(vissprite_t* spr)
             cliptop[x] = -1;
     }
 
-    mfloorclip = clipbot;
-    mceilingclip = cliptop;
+    mfloorclip = clipbot.data();
+    mceilingclip = cliptop.data();
     drawVisSprite(spr);
 }
 

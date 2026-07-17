@@ -2,6 +2,7 @@
 
 #include "../doomtype.h" // byte
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 namespace Doom
@@ -25,7 +26,8 @@ namespace Doom
 // (screens[4], ST_Init). Each is filled by the drawers, so the frame goldens pin them exactly.
 struct VideoState
 {
-    int dirtybox[4] = {}; // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP of the drawn region
+    EA::Array<int, 4> dirtybox =
+        {}; // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP of the drawn region
 
     EA::Vector<byte> frame; // screens[0]: the software framebuffer
     EA::Vector<byte> workspace; // the V_Init base block sliced into screens[0..3]
