@@ -1869,19 +1869,24 @@ is the deep, interlocking tail:
     `TryRunTics`'s `oldentertics` (→ `NetState`). Off the golden net, so verified by build + 80/80 +
     app-boot (a reference alias is behaviour-preserving by construction); the immutable tables and pure
     drawing scratch beside them (`destination_keys`, `litelevels`, the automap's reused `fline_t`/
-    `mline_t` buffers) stay file-local. One of the *cross-read* single flags has since moved too:
-    **`is_wiping_screen`** (the screen-melt-in-progress flag) folded into **`GameFlow`** beside
-    `wipegamestate`, its four sites — the `Game/DoomMain` definition, the `Host/Api` and app
-    `EngineAccess` externs, and the `SimProbe` extern — all moved to `doom_boolean&` in lockstep. The
-    fourth (in `Tests/`) was missed on the first pass and the **menu frame golden caught it at step 0**
-    (a bare extern read the reference's pointer bits as a bool, so the boot wipe "never finished") — the
-    demo/frame goldens doing exactly their job; the lesson is to grep `Tests/` for bare externs too, not
-    just `src/DOOM` and `examples`. **What genuinely remains** is a shorter tail: the other scattered
-    *cross-read* flags (`st_statusbaron`, `inhelpscreens`), which need their subsystem's lockstep extern
-    moved to a reference before they can migrate; the `mypos`-cheat message
-    buffer and similar drawing-scratch statics; and — deliberately staying out of the Engine — the
-    **Host layer's own runtime statics** (`I_GetTime`'s `basetime`, the sound handle counter, …), which
-    are host state, not world.
+    `mline_t` buffers) stay file-local. **The scattered *cross-read* single flags have since all moved
+    in too**, each into the cross-read cluster of its subsystem: **`is_wiping_screen`** (the screen-melt-
+    in-progress flag) into **`GameFlow`** beside `wipegamestate` — its four sites (the `Game/DoomMain`
+    definition, the `Host/Api` and app `EngineAccess` externs, and the `SimProbe` extern) all moved to
+    `doom_boolean&` in lockstep, the fourth (in `Tests/`) missed on the first pass and the **menu frame
+    golden caught it at step 0** (a bare extern read the reference's pointer bits as a bool, so the boot
+    wipe "never finished") — the goldens doing exactly their job, and the lesson to grep `Tests/` for bare
+    externs too, not just `src/DOOM` and `examples`; **`inhelpscreens`** (a full-screen help page is up)
+    into **`OverlayState`** beside `menuactive`/`automapactive`, golden-covered by the menu replay's help
+    pages; and **`st_statusbaron`** (the main bar is drawn) into **`StatusBarState`**, its four sites the
+    shim definition, the `UI/StatusBar` and app `EngineAccess` externs, and the STlib widgets that cache
+    `&st_statusbaron` (which now yields the member's stable address) — heavily golden-covered, the bar
+    drawing every tic. **What genuinely remains** is a short tail of non-world statics: the `mypos`-cheat
+    message buffer and similar pure drawing-scratch statics, and — deliberately staying out of the Engine
+    — the **Host layer's own runtime statics** (`I_GetTime`'s `basetime`, the sound handle counter, …),
+    which are host state, not world. With the cross-read flags in, **essentially all mutable world state
+    is now an `Engine` member**, so the construct-not-boot payoff (in-place reconstruction, addresses
+    stable) is unblocked — the real end of Step 5.
 
     Beyond the tail, the last thing that *finally* lets the engine be **constructed** rather than booted
     is flipping `engine()` from a function-local-static singleton to an instance. **The literal flip —
