@@ -26,40 +26,40 @@ void T_MoveCeiling(ceiling_t* ceiling);
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void moveCeiling(ceiling_t* ceiling);
+void moveCeiling(ceiling_t& ceiling);
 int doCeiling(line_t* line, ceiling_e type);
 void addActiveCeiling(ceiling_t* c);
 void removeActiveCeiling(ceiling_t* c);
 void activateInStasisCeiling(line_t* line);
 int ceilingCrushStop(line_t* line);
 
-void moveCeiling(ceiling_t* ceiling)
+void moveCeiling(ceiling_t& ceiling)
 {
     result_e res;
 
-    switch (ceiling->direction)
+    switch (ceiling.direction)
     {
         case 0:
             // IN STASIS
             break;
         case 1:
             // UP
-            res = T_MovePlane(ceiling->sector,
-                              ceiling->speed,
-                              ceiling->topheight,
+            res = T_MovePlane(ceiling.sector,
+                              ceiling.speed,
+                              ceiling.topheight,
                               false,
                               1,
-                              ceiling->direction);
+                              ceiling.direction);
 
             if (!(leveltime & 7))
             {
-                switch (ceiling->type)
+                switch (ceiling.type)
                 {
                     case silentCrushAndRaise:
                         break;
                     default:
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                         // ?
                         break;
@@ -68,19 +68,19 @@ void moveCeiling(ceiling_t* ceiling)
 
             if (res == pastdest)
             {
-                switch (ceiling->type)
+                switch (ceiling.type)
                 {
                     case raiseToHighest:
-                        removeActiveCeiling(ceiling);
+                        removeActiveCeiling(&ceiling);
                         break;
 
                     case silentCrushAndRaise:
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case fastCrushAndRaise:
                     case crushAndRaise:
-                        ceiling->direction = -1;
+                        ceiling.direction = -1;
                         break;
 
                     default:
@@ -91,43 +91,43 @@ void moveCeiling(ceiling_t* ceiling)
 
         case -1:
             // DOWN
-            res = T_MovePlane(ceiling->sector,
-                              ceiling->speed,
-                              ceiling->bottomheight,
-                              ceiling->crush,
+            res = T_MovePlane(ceiling.sector,
+                              ceiling.speed,
+                              ceiling.bottomheight,
+                              ceiling.crush,
                               1,
-                              ceiling->direction);
+                              ceiling.direction);
 
             if (!(leveltime & 7))
             {
-                switch (ceiling->type)
+                switch (ceiling.type)
                 {
                     case silentCrushAndRaise:
                         break;
                     default:
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                 }
             }
 
             if (res == pastdest)
             {
-                switch (ceiling->type)
+                switch (ceiling.type)
                 {
                     case silentCrushAndRaise:
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&ceiling->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case crushAndRaise:
-                        ceiling->speed = CEILSPEED;
+                        ceiling.speed = CEILSPEED;
                     case fastCrushAndRaise:
-                        ceiling->direction = 1;
+                        ceiling.direction = 1;
                         break;
 
                     case lowerAndCrush:
                     case lowerToFloor:
-                        removeActiveCeiling(ceiling);
+                        removeActiveCeiling(&ceiling);
                         break;
 
                     default:
@@ -138,12 +138,12 @@ void moveCeiling(ceiling_t* ceiling)
             {
                 if (res == crushed)
                 {
-                    switch (ceiling->type)
+                    switch (ceiling.type)
                     {
                         case silentCrushAndRaise:
                         case crushAndRaise:
                         case lowerAndCrush:
-                            ceiling->speed = CEILSPEED / 8;
+                            ceiling.speed = CEILSPEED / 8;
                             break;
 
                         default:

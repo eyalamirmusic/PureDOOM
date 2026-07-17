@@ -19,7 +19,7 @@
 
 void T_FireFlicker(fireflicker_t* flick)
 {
-    Doom::fireFlicker(flick);
+    Doom::fireFlicker(*flick);
 }
 
 void P_SpawnFireFlicker(sector_t* sector)
@@ -29,7 +29,7 @@ void P_SpawnFireFlicker(sector_t* sector)
 
 void T_LightFlash(lightflash_t* flash)
 {
-    Doom::lightFlash(flash);
+    Doom::lightFlash(*flash);
 }
 
 void P_SpawnLightFlash(sector_t* sector)
@@ -39,7 +39,7 @@ void P_SpawnLightFlash(sector_t* sector)
 
 void T_StrobeFlash(strobe_t* flash)
 {
-    Doom::strobeFlash(flash);
+    Doom::strobeFlash(*flash);
 }
 
 void P_SpawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync)
@@ -64,7 +64,7 @@ void EV_LightTurnOn(line_t* line, int bright)
 
 void T_Glow(glow_t* g)
 {
-    Doom::glow(g);
+    Doom::glow(*g);
 }
 
 void P_SpawnGlowingLight(sector_t* sector)

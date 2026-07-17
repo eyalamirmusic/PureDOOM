@@ -19,12 +19,12 @@
 
 result_e T_MovePlane(sector_t* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction)
 {
-    return Doom::movePlane(sector, speed, dest, crush, floorOrCeiling, direction);
+    return Doom::movePlane(*sector, speed, dest, crush, floorOrCeiling, direction);
 }
 
 void T_MoveFloor(floormove_t* floor)
 {
-    Doom::moveFloor(floor);
+    Doom::moveFloor(*floor);
 }
 
 int EV_DoFloor(line_t* line, floor_e floortype)

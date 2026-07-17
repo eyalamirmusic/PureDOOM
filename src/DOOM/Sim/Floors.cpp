@@ -28,17 +28,17 @@ void T_MoveFloor(floormove_t* floor);
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-result_e movePlane(sector_t* sector,
+result_e movePlane(sector_t& sector,
                    fixed_t speed,
                    fixed_t dest,
                    doom_boolean crush,
                    int floorOrCeiling,
                    int direction);
-void moveFloor(floormove_t* floor);
+void moveFloor(floormove_t& floor);
 int doFloor(line_t* line, floor_e floortype);
 int buildStairs(line_t* line, stair_e type);
 
-result_e movePlane(sector_t* sector,
+result_e movePlane(sector_t& sector,
                    fixed_t speed,
                    fixed_t dest,
                    doom_boolean crush,
@@ -56,28 +56,28 @@ result_e movePlane(sector_t* sector,
             {
                 case -1:
                     // DOWN
-                    if (sector->floorheight - speed < dest)
+                    if (sector.floorheight - speed < dest)
                     {
-                        lastpos = sector->floorheight;
-                        sector->floorheight = dest;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.floorheight;
+                        sector.floorheight = dest;
+                        flag = P_ChangeSector(&sector, crush);
                         if (flag == true)
                         {
-                            sector->floorheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.floorheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
                     }
                     else
                     {
-                        lastpos = sector->floorheight;
-                        sector->floorheight -= speed;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.floorheight;
+                        sector.floorheight -= speed;
+                        flag = P_ChangeSector(&sector, crush);
                         if (flag == true)
                         {
-                            sector->floorheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.floorheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             return crushed;
                         }
                     }
@@ -85,15 +85,15 @@ result_e movePlane(sector_t* sector,
 
                 case 1:
                     // UP
-                    if (sector->floorheight + speed > dest)
+                    if (sector.floorheight + speed > dest)
                     {
-                        lastpos = sector->floorheight;
-                        sector->floorheight = dest;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.floorheight;
+                        sector.floorheight = dest;
+                        flag = P_ChangeSector(&sector, crush);
                         if (flag == true)
                         {
-                            sector->floorheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.floorheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -101,15 +101,15 @@ result_e movePlane(sector_t* sector,
                     else
                     {
                         // COULD GET CRUSHED
-                        lastpos = sector->floorheight;
-                        sector->floorheight += speed;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.floorheight;
+                        sector.floorheight += speed;
+                        flag = P_ChangeSector(&sector, crush);
                         if (flag == true)
                         {
                             if (crush == true)
                                 return crushed;
-                            sector->floorheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.floorheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             return crushed;
                         }
                     }
@@ -123,16 +123,16 @@ result_e movePlane(sector_t* sector,
             {
                 case -1:
                     // DOWN
-                    if (sector->ceilingheight - speed < dest)
+                    if (sector.ceilingheight - speed < dest)
                     {
-                        lastpos = sector->ceilingheight;
-                        sector->ceilingheight = dest;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.ceilingheight;
+                        sector.ceilingheight = dest;
+                        flag = P_ChangeSector(&sector, crush);
 
                         if (flag == true)
                         {
-                            sector->ceilingheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.ceilingheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -140,16 +140,16 @@ result_e movePlane(sector_t* sector,
                     else
                     {
                         // COULD GET CRUSHED
-                        lastpos = sector->ceilingheight;
-                        sector->ceilingheight -= speed;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.ceilingheight;
+                        sector.ceilingheight -= speed;
+                        flag = P_ChangeSector(&sector, crush);
 
                         if (flag == true)
                         {
                             if (crush == true)
                                 return crushed;
-                            sector->ceilingheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.ceilingheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             return crushed;
                         }
                     }
@@ -157,30 +157,30 @@ result_e movePlane(sector_t* sector,
 
                 case 1:
                     // UP
-                    if (sector->ceilingheight + speed > dest)
+                    if (sector.ceilingheight + speed > dest)
                     {
-                        lastpos = sector->ceilingheight;
-                        sector->ceilingheight = dest;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.ceilingheight;
+                        sector.ceilingheight = dest;
+                        flag = P_ChangeSector(&sector, crush);
                         if (flag == true)
                         {
-                            sector->ceilingheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.ceilingheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
                     }
                     else
                     {
-                        lastpos = sector->ceilingheight;
-                        sector->ceilingheight += speed;
-                        flag = P_ChangeSector(sector, crush);
+                        lastpos = sector.ceilingheight;
+                        sector.ceilingheight += speed;
+                        flag = P_ChangeSector(&sector, crush);
                         // UNUSED
 #if 0
                         if (flag == true)
                         {
-                            sector->ceilingheight = lastpos;
-                            P_ChangeSector(sector, crush);
+                            sector.ceilingheight = lastpos;
+                            P_ChangeSector(&sector, crush);
                             return crushed;
                         }
 #endif
@@ -196,50 +196,50 @@ result_e movePlane(sector_t* sector,
 //
 // MOVE A FLOOR TO IT'S DESTINATION (UP OR DOWN)
 //
-void moveFloor(floormove_t* floor)
+void moveFloor(floormove_t& floor)
 {
     result_e res;
 
-    res = movePlane(floor->sector,
-                    floor->speed,
-                    floor->floordestheight,
-                    floor->crush,
+    res = movePlane(*floor.sector,
+                    floor.speed,
+                    floor.floordestheight,
+                    floor.crush,
                     0,
-                    floor->direction);
+                    floor.direction);
 
     if (!(leveltime & 7))
-        S_StartSound(reinterpret_cast<mobj_t*>(&floor->sector->soundorg),
+        S_StartSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg),
                      sfx_stnmov);
 
     if (res == pastdest)
     {
-        floor->sector->specialdata = nullptr;
+        floor.sector->specialdata = nullptr;
 
-        if (floor->direction == 1)
+        if (floor.direction == 1)
         {
-            switch (floor->type)
+            switch (floor.type)
             {
                 case donutRaise:
-                    floor->sector->special = floor->newspecial;
-                    floor->sector->floorpic = floor->texture;
+                    floor.sector->special = floor.newspecial;
+                    floor.sector->floorpic = floor.texture;
                 default:
                     break;
             }
         }
-        else if (floor->direction == -1)
+        else if (floor.direction == -1)
         {
-            switch (floor->type)
+            switch (floor.type)
             {
                 case lowerAndChange:
-                    floor->sector->special = floor->newspecial;
-                    floor->sector->floorpic = floor->texture;
+                    floor.sector->special = floor.newspecial;
+                    floor.sector->floorpic = floor.texture;
                 default:
                     break;
             }
         }
-        P_RemoveThinker(floor);
+        P_RemoveThinker(&floor);
 
-        S_StartSound(reinterpret_cast<mobj_t*>(&floor->sector->soundorg), sfx_pstop);
+        S_StartSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg), sfx_pstop);
     }
 }
 

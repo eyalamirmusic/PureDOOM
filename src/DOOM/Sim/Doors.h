@@ -7,7 +7,7 @@
 namespace Doom
 {
 // Door thinker and handlers; p_doors.cpp keeps the vanilla names as shims.
-void verticalDoor(vldoor_t* door);
+void verticalDoor(vldoor_t& door);
 int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing);
 int doDoor(line_t* line, vldoor_e type);
 void verticalDoor(line_t* line, mobj_t* thing);

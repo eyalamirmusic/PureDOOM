@@ -27,33 +27,33 @@ void T_Glow(glow_t* g);
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void fireFlicker(fireflicker_t* flick);
+void fireFlicker(fireflicker_t& flick);
 void spawnFireFlicker(sector_t* sector);
-void lightFlash(lightflash_t* flash);
+void lightFlash(lightflash_t& flash);
 void spawnLightFlash(sector_t* sector);
-void strobeFlash(strobe_t* flash);
+void strobeFlash(strobe_t& flash);
 void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync);
 void startLightStrobing(line_t* line);
 void turnTagLightsOff(line_t* line);
 void lightTurnOn(line_t* line, int bright);
-void glow(glow_t* g);
+void glow(glow_t& g);
 void spawnGlowingLight(sector_t* sector);
 
-void fireFlicker(fireflicker_t* flick)
+void fireFlicker(fireflicker_t& flick)
 {
     int amount;
 
-    if (--flick->count)
+    if (--flick.count)
         return;
 
     amount = (P_Random() & 3) * 16;
 
-    if (flick->sector->lightlevel - amount < flick->minlight)
-        flick->sector->lightlevel = flick->minlight;
+    if (flick.sector->lightlevel - amount < flick.minlight)
+        flick.sector->lightlevel = flick.minlight;
     else
-        flick->sector->lightlevel = flick->maxlight - amount;
+        flick.sector->lightlevel = flick.maxlight - amount;
 
-    flick->count = 4;
+    flick.count = 4;
 }
 
 //
@@ -85,20 +85,20 @@ void spawnFireFlicker(sector_t* sector)
 // lightFlash
 // Do flashing lights.
 //
-void lightFlash(lightflash_t* flash)
+void lightFlash(lightflash_t& flash)
 {
-    if (--flash->count)
+    if (--flash.count)
         return;
 
-    if (flash->sector->lightlevel == flash->maxlight)
+    if (flash.sector->lightlevel == flash.maxlight)
     {
-        flash->sector->lightlevel = flash->minlight;
-        flash->count = (P_Random() & flash->mintime) + 1;
+        flash.sector->lightlevel = flash.minlight;
+        flash.count = (P_Random() & flash.mintime) + 1;
     }
     else
     {
-        flash->sector->lightlevel = flash->maxlight;
-        flash->count = (P_Random() & flash->maxtime) + 1;
+        flash.sector->lightlevel = flash.maxlight;
+        flash.count = (P_Random() & flash.maxtime) + 1;
     }
 }
 
@@ -134,20 +134,20 @@ void spawnLightFlash(sector_t* sector)
 //
 // strobeFlash
 //
-void strobeFlash(strobe_t* flash)
+void strobeFlash(strobe_t& flash)
 {
-    if (--flash->count)
+    if (--flash.count)
         return;
 
-    if (flash->sector->lightlevel == flash->minlight)
+    if (flash.sector->lightlevel == flash.minlight)
     {
-        flash->sector->lightlevel = flash->maxlight;
-        flash->count = flash->brighttime;
+        flash.sector->lightlevel = flash.maxlight;
+        flash.count = flash.brighttime;
     }
     else
     {
-        flash->sector->lightlevel = flash->minlight;
-        flash->count = flash->darktime;
+        flash.sector->lightlevel = flash.minlight;
+        flash.count = flash.darktime;
     }
 }
 
@@ -272,27 +272,27 @@ void lightTurnOn(line_t* line, int bright)
 //
 // Spawn glowing light
 //
-void glow(glow_t* g)
+void glow(glow_t& g)
 {
-    switch (g->direction)
+    switch (g.direction)
     {
         case -1:
             // DOWN
-            g->sector->lightlevel -= GLOWSPEED;
-            if (g->sector->lightlevel <= g->minlight)
+            g.sector->lightlevel -= GLOWSPEED;
+            if (g.sector->lightlevel <= g.minlight)
             {
-                g->sector->lightlevel += GLOWSPEED;
-                g->direction = 1;
+                g.sector->lightlevel += GLOWSPEED;
+                g.direction = 1;
             }
             break;
 
         case 1:
             // UP
-            g->sector->lightlevel += GLOWSPEED;
-            if (g->sector->lightlevel >= g->maxlight)
+            g.sector->lightlevel += GLOWSPEED;
+            if (g.sector->lightlevel >= g.maxlight)
             {
-                g->sector->lightlevel -= GLOWSPEED;
-                g->direction = -1;
+                g.sector->lightlevel -= GLOWSPEED;
+                g.direction = -1;
             }
             break;
     }

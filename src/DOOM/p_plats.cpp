@@ -24,7 +24,7 @@ plat_t* (&activeplats)[MAXPLATS] = Doom::activeSpecials().activeplats;
 
 void T_PlatRaise(plat_t* plat)
 {
-    Doom::platRaise(plat);
+    Doom::platRaise(*plat);
 }
 
 int EV_DoPlat(line_t* line, plattype_e type, int amount)

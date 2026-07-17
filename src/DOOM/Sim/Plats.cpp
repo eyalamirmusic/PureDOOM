@@ -28,57 +28,57 @@ void T_PlatRaise(plat_t* plat);
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void platRaise(plat_t* plat);
+void platRaise(plat_t& plat);
 int doPlat(line_t* line, plattype_e type, int amount);
 void activateInStasis(int tag);
 void stopPlat(line_t* line);
 void addActivePlat(plat_t* plat);
 void removeActivePlat(plat_t* plat);
 
-void platRaise(plat_t* plat)
+void platRaise(plat_t& plat)
 {
     result_e res;
 
-    switch (plat->status)
+    switch (plat.status)
     {
         case up:
             res = T_MovePlane(
-                plat->sector, plat->speed, plat->high, plat->crush, 0, 1);
+                plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
 
-            if (plat->type == raiseAndChange
-                || plat->type == raiseToNearestAndChange)
+            if (plat.type == raiseAndChange
+                || plat.type == raiseToNearestAndChange)
             {
                 if (!(leveltime & 7))
-                    S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                    S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                                  sfx_stnmov);
             }
 
-            if (res == crushed && (!plat->crush))
+            if (res == crushed && (!plat.crush))
             {
-                plat->count = plat->wait;
-                plat->status = down;
-                S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                plat.count = plat.wait;
+                plat.status = down;
+                S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                              sfx_pstart);
             }
             else
             {
                 if (res == pastdest)
                 {
-                    plat->count = plat->wait;
-                    plat->status = waiting;
-                    S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                    plat.count = plat.wait;
+                    plat.status = waiting;
+                    S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                                  sfx_pstop);
 
-                    switch (plat->type)
+                    switch (plat.type)
                     {
                         case blazeDWUS:
                         case downWaitUpStay:
-                            removeActivePlat(plat);
+                            removeActivePlat(&plat);
                             break;
 
                         case raiseAndChange:
                         case raiseToNearestAndChange:
-                            removeActivePlat(plat);
+                            removeActivePlat(&plat);
                             break;
 
                         default:
@@ -89,25 +89,25 @@ void platRaise(plat_t* plat)
             break;
 
         case down:
-            res = T_MovePlane(plat->sector, plat->speed, plat->low, false, 0, -1);
+            res = T_MovePlane(plat.sector, plat.speed, plat.low, false, 0, -1);
 
             if (res == pastdest)
             {
-                plat->count = plat->wait;
-                plat->status = waiting;
-                S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                plat.count = plat.wait;
+                plat.status = waiting;
+                S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                              sfx_pstop);
             }
             break;
 
         case waiting:
-            if (!--plat->count)
+            if (!--plat.count)
             {
-                if (plat->sector->floorheight == plat->low)
-                    plat->status = up;
+                if (plat.sector->floorheight == plat.low)
+                    plat.status = up;
                 else
-                    plat->status = down;
-                S_StartSound(reinterpret_cast<mobj_t*>(&plat->sector->soundorg),
+                    plat.status = down;
+                S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                              sfx_pstart);
             }
 

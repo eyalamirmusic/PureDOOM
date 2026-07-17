@@ -19,7 +19,7 @@
 
 void T_VerticalDoor(vldoor_t* door)
 {
-    Doom::verticalDoor(door);
+    Doom::verticalDoor(*door);
 }
 
 int EV_DoLockedDoor(line_t* line, vldoor_e type, mobj_t* thing)

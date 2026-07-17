@@ -27,43 +27,43 @@ void T_VerticalDoor(vldoor_t* door);
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void verticalDoor(vldoor_t* door);
+void verticalDoor(vldoor_t& door);
 int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing);
 int doDoor(line_t* line, vldoor_e type);
 void verticalDoor(line_t* line, mobj_t* thing);
 void spawnDoorCloseIn30(sector_t* sec);
 void spawnDoorRaiseIn5Mins(sector_t* sec, int secnum);
 
-void verticalDoor(vldoor_t* door)
+void verticalDoor(vldoor_t& door)
 {
     result_e res;
 
-    switch (door->direction)
+    switch (door.direction)
     {
         case 0:
             // WAITING
-            if (!--door->topcountdown)
+            if (!--door.topcountdown)
             {
-                switch (door->type)
+                switch (door.type)
                 {
                     case blazeRaise:
-                        door->direction = -1; // time to go back down
+                        door.direction = -1; // time to go back down
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
                             sfx_bdcls);
                         break;
 
                     case door_normal:
-                        door->direction = -1; // time to go back down
+                        door.direction = -1; // time to go back down
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
                             sfx_dorcls);
                         break;
 
                     case close30ThenOpen:
-                        door->direction = 1;
+                        door.direction = 1;
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
 
@@ -75,15 +75,15 @@ void verticalDoor(vldoor_t* door)
 
         case 2:
             //  INITIAL WAIT
-            if (!--door->topcountdown)
+            if (!--door.topcountdown)
             {
-                switch (door->type)
+                switch (door.type)
                 {
                     case raiseIn5Mins:
-                        door->direction = 1;
-                        door->type = door_normal;
+                        door.direction = 1;
+                        door.type = door_normal;
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
 
@@ -95,34 +95,34 @@ void verticalDoor(vldoor_t* door)
 
         case -1:
             // DOWN
-            res = T_MovePlane(door->sector,
-                              door->speed,
-                              door->sector->floorheight,
+            res = T_MovePlane(door.sector,
+                              door.speed,
+                              door.sector->floorheight,
                               false,
                               1,
-                              door->direction);
+                              door.direction);
             if (res == pastdest)
             {
-                switch (door->type)
+                switch (door.type)
                 {
                     case blazeRaise:
                     case blazeClose:
-                        door->sector->specialdata = nullptr;
-                        P_RemoveThinker(door); // unlink and free
+                        door.sector->specialdata = nullptr;
+                        P_RemoveThinker(&door); // unlink and free
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
                             sfx_bdcls);
                         break;
 
                     case door_normal:
                     case door_close:
-                        door->sector->specialdata = nullptr;
-                        P_RemoveThinker(door); // unlink and free
+                        door.sector->specialdata = nullptr;
+                        P_RemoveThinker(&door); // unlink and free
                         break;
 
                     case close30ThenOpen:
-                        door->direction = 0;
-                        door->topcountdown = 35 * 30;
+                        door.direction = 0;
+                        door.topcountdown = 35 * 30;
                         break;
 
                     default:
@@ -131,16 +131,16 @@ void verticalDoor(vldoor_t* door)
             }
             else if (res == crushed)
             {
-                switch (door->type)
+                switch (door.type)
                 {
                     case blazeClose:
                     case door_close: // DO NOT GO BACK UP!
                         break;
 
                     default:
-                        door->direction = 1;
+                        door.direction = 1;
                         S_StartSound(
-                            reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
                 }
@@ -149,28 +149,28 @@ void verticalDoor(vldoor_t* door)
 
         case 1:
             // UP
-            res = T_MovePlane(door->sector,
-                              door->speed,
-                              door->topheight,
+            res = T_MovePlane(door.sector,
+                              door.speed,
+                              door.topheight,
                               false,
                               1,
-                              door->direction);
+                              door.direction);
 
             if (res == pastdest)
             {
-                switch (door->type)
+                switch (door.type)
                 {
                     case blazeRaise:
                     case door_normal:
-                        door->direction = 0; // wait at top
-                        door->topcountdown = door->topwait;
+                        door.direction = 0; // wait at top
+                        door.topcountdown = door.topwait;
                         break;
 
                     case close30ThenOpen:
                     case blazeOpen:
                     case door_open:
-                        door->sector->specialdata = nullptr;
-                        P_RemoveThinker(door); // unlink and free
+                        door.sector->specialdata = nullptr;
+                        P_RemoveThinker(&door); // unlink and free
                         break;
 
                     default:

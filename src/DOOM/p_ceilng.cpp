@@ -24,7 +24,7 @@ ceiling_t* (&activeceilings)[MAXCEILINGS] = Doom::activeSpecials().activeceiling
 
 void T_MoveCeiling(ceiling_t* ceiling)
 {
-    Doom::moveCeiling(ceiling);
+    Doom::moveCeiling(*ceiling);
 }
 
 int EV_DoCeiling(line_t* line, ceiling_e type)
