@@ -17,6 +17,7 @@
 #include "../w_wad.h"
 
 #include "Draw.h"
+#include "DrawState.h"
 #include "DrawTables.h"
 
 // ?
@@ -294,9 +295,14 @@ void drawTranslatedColumn()
 //
 void initTranslationTables()
 {
-    translationtables = static_cast<byte*>(doom_malloc(256 * 3 + 255));
-    translationtables =
-        (byte*) (((unsigned long long) translationtables + 255) & ~255);
+    // DrawState owns the backing buffer now (RAII, Step 9); translationtables is the
+    // 256-byte-aligned view into it, as the original doom_malloc + align was.
+    auto& ds = drawState();
+    ds.translationTableStorage.resize(256 * 3 + 255);
+    translationtables = reinterpret_cast<byte*>(
+        (reinterpret_cast<unsigned long long>(ds.translationTableStorage.data())
+         + 255)
+        & ~255ULL);
 
     // translate just the 16 green colors
     for (int i = 0; i < 256; i++)

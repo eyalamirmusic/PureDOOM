@@ -1,8 +1,10 @@
 #pragma once
 
 #include "../doomtype.h" // byte
-#include "../m_fixed.h"  // fixed_t
-#include "../r_defs.h"   // lighttable_t
+#include "../m_fixed.h" // fixed_t
+#include "../r_defs.h" // lighttable_t
+
+#include <ea_data_structures/Structures/Vector.h>
 
 namespace Doom
 {
@@ -22,24 +24,29 @@ namespace Doom
 struct DrawState
 {
     lighttable_t* dc_colormap = nullptr; // colormap row for the current column
-    int dc_x = 0;                        // screen column being drawn
-    int dc_yl = 0;                       // column top (inclusive)
-    int dc_yh = 0;                       // column bottom (inclusive)
-    fixed_t dc_iscale = 0;               // inverse scale (texels per pixel)
-    fixed_t dc_texturemid = 0;           // texture vertical anchor
-    byte* dc_source = nullptr;           // the column's source texels
-    byte* dc_translation = nullptr;      // colour-translation row for sprites
-    byte* translationtables = nullptr;   // the three player-colour translation tables
+    int dc_x = 0; // screen column being drawn
+    int dc_yl = 0; // column top (inclusive)
+    int dc_yh = 0; // column bottom (inclusive)
+    fixed_t dc_iscale = 0; // inverse scale (texels per pixel)
+    fixed_t dc_texturemid = 0; // texture vertical anchor
+    byte* dc_source = nullptr; // the column's source texels
+    byte* dc_translation = nullptr; // colour-translation row for sprites
 
-    int ds_y = 0;                        // screen row of the current span
-    int ds_x1 = 0;                       // span start column
-    int ds_x2 = 0;                       // span stop column
+    // The three player-colour translation tables, built once. RAII-owned (Step 9):
+    // this vector is the backing buffer and the vanilla name `translationtables`
+    // (r_draw.cpp) is a 256-byte-aligned view into its data(), set by
+    // R_InitTranslationTables. dc_translation indexes a colour row of that view.
+    EA::Vector<byte> translationTableStorage;
+
+    int ds_y = 0; // screen row of the current span
+    int ds_x1 = 0; // span start column
+    int ds_x2 = 0; // span stop column
     lighttable_t* ds_colormap = nullptr; // colormap row for the span
-    fixed_t ds_xfrac = 0;                // texture x position
-    fixed_t ds_yfrac = 0;                // texture y position
-    fixed_t ds_xstep = 0;                // texture x step per pixel
-    fixed_t ds_ystep = 0;                // texture y step per pixel
-    byte* ds_source = nullptr;           // the flat's source texels
+    fixed_t ds_xfrac = 0; // texture x position
+    fixed_t ds_yfrac = 0; // texture y position
+    fixed_t ds_xstep = 0; // texture x step per pixel
+    fixed_t ds_ystep = 0; // texture y step per pixel
+    byte* ds_source = nullptr; // the flat's source texels
 };
 
 DrawState& drawState();

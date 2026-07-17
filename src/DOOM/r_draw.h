@@ -70,7 +70,8 @@ extern fixed_t& ds_ystep;
 // start of a 64*64 tile image
 extern byte*& ds_source;
 
-extern byte*& translationtables;
+// A 256-byte-aligned view onto DrawState's owned translationTableStorage (Step 9).
+extern byte* translationtables;
 extern byte*& dc_translation;
 
 

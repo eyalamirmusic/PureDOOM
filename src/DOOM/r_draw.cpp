@@ -52,7 +52,9 @@ byte*& dc_source = Doom::drawState().dc_source;
 
 // Translation tables for player-sprite recolouring (read by r_things).
 byte*& dc_translation = Doom::drawState().dc_translation;
-byte*& translationtables = Doom::drawState().translationtables;
+// A 256-byte-aligned view into DrawState's owned translationTableStorage;
+// R_InitTranslationTables points it at the aligned offset (Step 9).
+byte* translationtables = nullptr;
 
 //
 // R_DrawSpan input: r_plane fills these in, the span drawers read them.
