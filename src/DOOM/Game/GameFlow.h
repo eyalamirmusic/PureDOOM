@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../d_event.h" // gameaction_t
-#include "../doomdef.h" // gamestate_t
+#include "../doomdef.h" // GameState
 
 namespace Doom
 {
@@ -28,9 +28,9 @@ struct GameFlow
 {
     gameaction_t gameaction =
         ga_nothing; // the deferred action Doom::gameTicker runs each tic
-    gamestate_t gamestate =
+    GameState gamestate =
         GS_LEVEL; // which screen we are on (vanilla zero-inits this)
-    gamestate_t wipegamestate =
+    GameState wipegamestate =
         GS_DEMOSCREEN; // the last drawn frame's state; -1 forces a wipe
 
     // A screen melt is currently animating: Doom::displayFrame raises it, doom_update drains

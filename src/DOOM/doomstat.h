@@ -52,16 +52,16 @@ extern doom_boolean& devparm;        // DEBUG: launched with -devparm
 //
 // The loaded game's identity lives in Doom::GameVersion (an Engine member) now; these
 // are references onto it (REFACTOR.md, Step 5).
-extern GameMode_t& gamemode;
-extern GameMission_t& gamemission;
+extern Doom::GameMode& gamemode;
+extern Doom::GameMission& gamemission;
 
 // Set if homebrew PWAD stuff has been added.
 extern doom_boolean& modifiedgame;
 
 
 // -------------------------------------------
-// Language.
-extern Language_t& language;
+// Doom::Language.
+extern Doom::Language& language;
 
 
 // -------------------------------------------
@@ -70,7 +70,7 @@ extern Language_t& language;
 
 // Defaults for menu, methinks. They live in Doom::StartupDefaults (an Engine member) now;
 // these are references onto it (REFACTOR.md, Step 5).
-extern skill_t& startskill;
+extern Doom::Skill& startskill;
 extern int& startepisode;
 extern int& startmap;
 
@@ -80,7 +80,7 @@ extern doom_boolean& autostart;
 // references onto it (REFACTOR.md, Step 5).
 
 // Selected by user.
-extern skill_t& gameskill;
+extern Doom::Skill& gameskill;
 extern int& gameepisode;
 extern int& gamemap;
 
@@ -180,7 +180,7 @@ extern doom_boolean& singledemo;
 
 // gamestate and wipegamestate live in Doom::GameFlow (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
-extern gamestate_t& gamestate;
+extern Doom::GameState& gamestate;
 
 
 //-----------------------------
@@ -218,7 +218,7 @@ extern Doom::IntermissionStart& wminfo;
 // LUT of ammunition limits for each kind. This doubles with BackPack powerup item.
 // In Doom::AmmoLimits (an Engine member) now; a reference-to-array onto it, also declared in
 // p_local.h (REFACTOR.md, Step 5).
-extern int (&maxammo)[NUMAMMO];
+extern int (&maxammo)[Doom::NUMAMMO];
 
 
 //-----------------------------------------
@@ -236,7 +236,7 @@ extern doom_boolean& precache;
 
 // wipegamestate can be set to -1
 // to force a wipe on the next draw (in Doom::GameFlow now; see gamestate above)
-extern gamestate_t& wipegamestate;
+extern Doom::GameState& wipegamestate;
 
 // mouseSensitivity is config-backed and owned by the Engine's MenuSettings cluster
 // (UI/MenuSettings.h) now; this is a reference onto that member.

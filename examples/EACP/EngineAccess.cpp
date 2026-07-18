@@ -184,7 +184,7 @@ void eacpDoomSnapshotTic()
 {
     int i;
 
-    if (gamestate != GS_LEVEL || sectors == 0 || numsectors <= 0)
+    if (gamestate != Doom::GS_LEVEL || sectors == 0 || numsectors <= 0)
         return;
 
     if (eacpSnapshotSectors != numsectors)
@@ -212,7 +212,7 @@ void eacpDoomSnapshotTic()
 
 int eacpDoomViewActive()
 {
-    return gamestate == GS_LEVEL && gametic;
+    return gamestate == Doom::GS_LEVEL && gametic;
 }
 
 int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
@@ -290,7 +290,7 @@ void eacpDoomRevealAutomap()
 {
     Doom::Player* player = &players[displayplayer];
 
-    if (gamestate != GS_LEVEL || !gametic || !automapactive || player->mo == 0)
+    if (gamestate != Doom::GS_LEVEL || !gametic || !automapactive || player->mo == 0)
         return;
 
     R_SetupFrame(player);
@@ -330,7 +330,7 @@ static unsigned char eacpMenuMask[EACP_SCREEN_PIXELS];
 // order - and so what the menu darkens along with the world.
 static void eacpDrawUnderLayers()
 {
-    if (gamestate != GS_LEVEL || !gametic)
+    if (gamestate != Doom::GS_LEVEL || !gametic)
         return;
 
     if (automapactive)
@@ -1509,13 +1509,13 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 
     eacpEnsureTextureData();
 
-    if (!eacpTexturesReady || gamestate != GS_LEVEL || player->mo == 0)
+    if (!eacpTexturesReady || gamestate != Doom::GS_LEVEL || player->mo == 0)
         return;
 
     for (i = 0; i < Doom::NUMPSPRITES && i < EACP_DOOM_HUD_SPRITES; ++i)
     {
         Doom::PspDef* weapon = &player->psprites[i];
-        state_t* state = weapon->state;
+        Doom::State* state = weapon->state;
         Doom::SpriteDef* definition;
         Doom::SpriteFrame* frame;
         int lump;
@@ -1644,7 +1644,7 @@ int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
     eacpAlpha = alpha < 0.0f ? 0.0f : (alpha > 1.0f ? 1.0f : alpha);
     eacpEnsureTextureData();
 
-    if (gamestate != GS_LEVEL || vertices == 0 || draws == 0 || camera == 0
+    if (gamestate != Doom::GS_LEVEL || vertices == 0 || draws == 0 || camera == 0
         || textureCount <= 0 || lines == 0 || !eacpTexturesReady)
         return 0;
 
@@ -1847,7 +1847,7 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
             else if (cheating)
                 eacpAutomapLine(em, ax, ay, bx, by, TSWALLCOLORS + lightlev);
         }
-        else if (am_plr != 0 && am_plr->powers[pw_allmap])
+        else if (am_plr != 0 && am_plr->powers[Doom::pw_allmap])
         {
             if (!(line->flags & LINE_NEVERSEE))
                 eacpAutomapLine(em, ax, ay, bx, by, GRAYS + 3);
@@ -1941,7 +1941,7 @@ int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
 {
     EacpAutomapEmitter em;
 
-    if (!automapactive || gamestate != GS_LEVEL || camera == 0 || vertices == 0
+    if (!automapactive || gamestate != Doom::GS_LEVEL || camera == 0 || vertices == 0
         || lines == 0)
         return 0;
 

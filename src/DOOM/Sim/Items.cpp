@@ -27,6 +27,11 @@
 
 // clang-format off
 
+// The weapon table below is kept verbatim from the 1993 source, so it names
+// am_*/S_* unqualified. Those enums live in namespace Doom now; this brings
+// them into scope without touching the table.
+using namespace Doom;
+
 
 //
 // PSPRITE ACTIONS for waepons.
@@ -40,7 +45,7 @@
 // atkstate, i.e. attack/fire/hit frame
 // flashstate, muzzle flash
 //
-weaponinfo_t weaponinfo[NUMWEAPONS] =
+weaponinfo_t weaponinfo[Doom::NUMWEAPONS] =
 {
     {
         // fist

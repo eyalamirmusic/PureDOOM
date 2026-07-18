@@ -55,7 +55,7 @@ namespace Doom
 // Returns false if the ammo can't be picked up at all
 //
 
-doom_boolean giveAmmo(Player* player, ammotype_t ammo, int num)
+doom_boolean giveAmmo(Player* player, AmmoType ammo, int num)
 {
     int oldammo;
 
@@ -146,7 +146,7 @@ doom_boolean giveAmmo(Player* player, ammotype_t ammo, int num)
 // giveWeapon
 // The weapon name may have a MF_DROPPED flag ored in.
 //
-doom_boolean giveWeapon(Player* player, weapontype_t weapon, doom_boolean dropped)
+doom_boolean giveWeapon(Player* player, WeaponType weapon, doom_boolean dropped)
 {
     doom_boolean gaveammo;
     doom_boolean gaveweapon;
@@ -232,7 +232,7 @@ doom_boolean giveArmor(Player* player, int armortype)
 //
 // giveCard
 //
-void giveCard(Player* player, card_t card)
+void giveCard(Player* player, Card card)
 {
     if (player->cards[card])
         return;
@@ -244,7 +244,7 @@ void giveCard(Player* player, card_t card)
 //
 // givePower
 //
-doom_boolean givePower(Player* player, int /*powertype_t*/ power)
+doom_boolean givePower(Player* player, int /*PowerType*/ power)
 {
     if (power == pw_invulnerability)
     {
@@ -540,7 +540,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
                 player->backpack = true;
             }
             for (int i = 0; i < NUMAMMO; i++)
-                giveAmmo(player, static_cast<ammotype_t>(i), 1);
+                giveAmmo(player, static_cast<AmmoType>(i), 1);
             player->message = GOTBACKPACK;
             break;
 
@@ -611,7 +611,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
 //
 void killMobj(Mobj* source, Mobj* target)
 {
-    mobjtype_t item;
+    MobjType item;
     Mobj* mo;
 
     target->flags &= ~(MF_SHOOTABLE | MF_FLOAT | MF_SKULLFLY);
@@ -658,10 +658,10 @@ void killMobj(Mobj* source, Mobj* target)
 
     if (target->health < -target->info->spawnhealth && target->info->xdeathstate)
     {
-        Doom::setMobjState(target, static_cast<statenum_t>(target->info->xdeathstate));
+        Doom::setMobjState(target, static_cast<StateNum>(target->info->xdeathstate));
     }
     else
-        Doom::setMobjState(target, static_cast<statenum_t>(target->info->deathstate));
+        Doom::setMobjState(target, static_cast<StateNum>(target->info->deathstate));
     target->tics -= P_Random() & 3;
 
     if (target->tics < 1)
@@ -814,7 +814,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
     {
         target->flags |= MF_JUSTHIT; // fight back!
 
-        Doom::setMobjState(target, static_cast<statenum_t>(target->info->painstate));
+        Doom::setMobjState(target, static_cast<StateNum>(target->info->painstate));
     }
 
     target->reactiontime = 0; // we're awake now...
@@ -828,7 +828,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         target->threshold = BASETHRESHOLD;
         if (target->state == &states[target->info->spawnstate]
             && target->info->seestate != S_NULL)
-            Doom::setMobjState(target, static_cast<statenum_t>(target->info->seestate));
+            Doom::setMobjState(target, static_cast<StateNum>(target->info->seestate));
     }
 }
 } // namespace Doom

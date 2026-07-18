@@ -109,10 +109,10 @@ struct Player
 
     // Frags, kills of other players.
     int frags[MAXPLAYERS];
-    weapontype_t readyweapon;
+    WeaponType readyweapon;
 
     // Is wp_nochange if not changing.
-    weapontype_t pendingweapon;
+    WeaponType pendingweapon;
 
     doom_boolean weaponowned[NUMWEAPONS];
     int ammo[NUMAMMO];

@@ -66,7 +66,7 @@ void archivePlayers()
             if (dest->psprites[j].state)
             {
                 dest->psprites[j].state =
-                    reinterpret_cast<state_t*>(dest->psprites[j].state - states);
+                    reinterpret_cast<State*>(dest->psprites[j].state - states);
             }
         }
     }
@@ -248,7 +248,7 @@ void archiveThinkers()
             mobj = reinterpret_cast<Mobj*>(save_p);
             doom_memcpy(mobj, th, sizeof(*mobj));
             save_p += sizeof(*mobj);
-            mobj->state = reinterpret_cast<state_t*>(mobj->state - states);
+            mobj->state = reinterpret_cast<State*>(mobj->state - states);
 
             if (mobj->player)
                 mobj->player =

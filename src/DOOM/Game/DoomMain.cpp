@@ -117,7 +117,7 @@ doom_boolean& is_wiping_screen = Doom::gameFlow().is_wiping_screen;
 
 // The new-game defaults are a Doom::StartupDefaults owned by the Engine now; these are
 // references onto it (REFACTOR.md, Step 5).
-skill_t& startskill = Doom::startupDefaults().startskill;
+Doom::Skill& startskill = Doom::startupDefaults().startskill;
 int& startepisode = Doom::startupDefaults().startepisode;
 int& startmap = Doom::startupDefaults().startmap;
 doom_boolean& autostart = Doom::startupDefaults().autostart;
@@ -148,7 +148,7 @@ int& eventtail = Doom::eventQueue().eventtail;
 
 // wipegamestate (with gamestate) is a Doom::GameFlow owned by the Engine now; this is a
 // reference onto it. It can be set to -1 to force a wipe on the next draw.
-gamestate_t& wipegamestate = Doom::gameFlow().wipegamestate;
+Doom::GameState& wipegamestate = Doom::gameFlow().wipegamestate;
 void Doom::executeSetViewSize();
 
 // print title for every printed line - file-local, built and printed only here
@@ -231,7 +231,7 @@ void displayFrame()
     doom_boolean& menuactivestate = ds.menuactivestate;
     doom_boolean& inhelpscreensstate = ds.inhelpscreensstate;
     doom_boolean& fullscreen = ds.fullscreen;
-    gamestate_t& oldgamestate = ds.oldgamestate;
+    GameState& oldgamestate = ds.oldgamestate;
     int& borderdrawcount = ds.borderdrawcount;
     int y;
     doom_boolean wipe;
@@ -246,7 +246,7 @@ void displayFrame()
     if (setsizeneeded)
     {
         Doom::executeSetViewSize();
-        oldgamestate = static_cast<gamestate_t>((-1)); // force background redraw
+        oldgamestate = static_cast<GameState>((-1)); // force background redraw
         borderdrawcount = 3;
     }
 
@@ -1071,7 +1071,7 @@ void doomMain()
     p = Doom::checkParm("-skill");
     if (p && p < myargc - 1)
     {
-        startskill = static_cast<skill_t>((myargv[p + 1][0] - '1'));
+        startskill = static_cast<Skill>((myargv[p + 1][0] - '1'));
         autostart = true;
     }
 

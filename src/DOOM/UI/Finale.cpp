@@ -50,7 +50,7 @@
 
 // Other subsystems' globals/functions this file reads.
 #include "../Game/Sound.h"
-extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
+extern Doom::GameState& wipegamestate; // Doom::GameFlow (Engine member)
 extern Doom::Patch* (
     &hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
 void Doom::drawPatchFlipped(int x, int y, int scrn, Doom::Patch* patch); // v_video
@@ -64,7 +64,7 @@ namespace Doom
 struct castinfo_t
 {
     const char* name;
-    mobjtype_t type;
+    MobjType type;
 };
 
 // The finale's runtime state now lives on the Engine (UI/FinaleState.h, moved by the
@@ -125,11 +125,11 @@ EA::Array<castinfo_t, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
                                        {CC_CYBER, MT_CYBORG},
                                        {CC_HERO, MT_PLAYER},
 
-                                       {0, static_cast<mobjtype_t>(0)}};
+                                       {0, static_cast<MobjType>(0)}};
 
 static int& castnum = finaleState().castnum;
 static int& casttics = finaleState().casttics;
-static state_t*& caststate = finaleState().caststate;
+static State*& caststate = finaleState().caststate;
 static doom_boolean& castdeath = finaleState().castdeath;
 static int& castframes = finaleState().castframes;
 static int& castonmelee = finaleState().castonmelee;
@@ -289,7 +289,7 @@ void finaleTicker()
     {
         finalecount = 0;
         finalestage = 1;
-        wipegamestate = static_cast<gamestate_t>(-1); // force a wipe
+        wipegamestate = static_cast<GameState>(-1); // force a wipe
         if (gameepisode == 3)
             Doom::startMusic(mus_bunny);
     }
@@ -372,7 +372,7 @@ void fTextWrite()
 //
 void fStartCast()
 {
-    wipegamestate = static_cast<gamestate_t>(-1); // force a screen wipe
+    wipegamestate = static_cast<GameState>(-1); // force a screen wipe
     castnum = 0;
     caststate = &states[mobjinfo[castorder[castnum].type].seestate];
     casttics = caststate->tics;

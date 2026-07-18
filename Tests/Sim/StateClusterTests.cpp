@@ -70,7 +70,7 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
           "StatusBarGraphics face count and null patches");
     check(StatusBarWidgets {}.largeammo == 1994,
           "StatusBarWidgets largeammo n/a sentinel");
-    check(DisplayState {}.oldgamestate == (gamestate_t) (-1)
+    check(DisplayState {}.oldgamestate == (GameState) (-1)
               && DisplayState {}.borderdrawcount == 0,
           "DisplayState frame-diff defaults");
     check(StatusBarState {}.veryfirsttime == 1

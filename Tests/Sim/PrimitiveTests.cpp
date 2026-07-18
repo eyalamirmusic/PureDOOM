@@ -419,7 +419,7 @@ auto tStateTableIsIntact = test("Info/stateTableIsIntact") = []
 {
     auto sum = Checksum {};
 
-    for (auto i = 0; i < NUMSTATES; ++i)
+    for (auto i = 0; i < Doom::NUMSTATES; ++i)
     {
         const auto& state = states[i];
 
@@ -434,7 +434,7 @@ auto tMobjInfoTableIsIntact = test("Info/mobjInfoTableIsIntact") = []
 {
     auto sum = Checksum {};
 
-    for (auto i = 0; i < NUMMOBJTYPES; ++i)
+    for (auto i = 0; i < Doom::NUMMOBJTYPES; ++i)
     {
         const auto& info = mobjinfo[i];
 

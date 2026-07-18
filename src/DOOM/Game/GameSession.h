@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // skill_t
+#include "../doomdef.h" // Skill
 #include "../doomtype.h" // doom_boolean
 
 namespace Doom
@@ -20,7 +20,7 @@ namespace Doom
 // golden-neutral.
 struct GameSession
 {
-    skill_t gameskill = sk_baby; // the skill being played (vanilla zero-inits this)
+    Skill gameskill = sk_baby; // the skill being played (vanilla zero-inits this)
     int gameepisode = 0; // the episode being played
     int gamemap = 0; // the map being played
 

@@ -2,14 +2,14 @@
 
 #include "../d_event.h" // event_t
 #include "../d_ticcmd.h" // Ticcmd
-#include "../doomdef.h" // skill_t
+#include "../doomdef.h" // Skill
 
 namespace Doom
 {
 // The game controller; g_game.cpp keeps the vanilla G_ names as shims.
 void deathMatchSpawnPlayer(int playernum);
-void initNewGame(skill_t skill, int episode, int map);
-void deferInitNew(skill_t skill, int episode, int map);
+void initNewGame(Skill skill, int episode, int map);
+void deferInitNew(Skill skill, int episode, int map);
 void deferPlayDemo(const char* demo);
 void loadGame(char* name);
 void doLoadGame();

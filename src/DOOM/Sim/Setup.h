@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // skill_t
+#include "../doomdef.h" // Skill
 
 namespace Doom
 {
@@ -15,6 +15,6 @@ void loadLineDefs(int lump);
 void loadSideDefs(int lump);
 void loadBlockMap(int lump);
 void groupLines();
-void setupLevel(int episode, int map, int playermask, skill_t skill);
+void setupLevel(int episode, int map, int playermask, Skill skill);
 void init();
 } // namespace Doom

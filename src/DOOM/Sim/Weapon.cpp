@@ -84,10 +84,10 @@ void bfgSound(Player& player, PspDef& psp);
 void setupPsprites(Player& player);
 void movePsprites(Player& player);
 
-void setPsprite(Player* player, int position, statenum_t stnum)
+void setPsprite(Player* player, int position, StateNum stnum)
 {
     PspDef* psp;
-    state_t* state;
+    State* state;
 
     psp = &player->psprites[position];
 
@@ -136,7 +136,7 @@ void setPsprite(Player* player, int position, statenum_t stnum)
 //
 void bringUpWeapon(Player* player)
 {
-    statenum_t newstate;
+    StateNum newstate;
 
     if (player->pendingweapon == wp_nochange)
         player->pendingweapon = player->readyweapon;
@@ -144,7 +144,7 @@ void bringUpWeapon(Player* player)
     if (player->pendingweapon == wp_chainsaw)
         Doom::startSound(player->mo, sfx_sawup);
 
-    newstate = static_cast<statenum_t>(weaponinfo[player->pendingweapon].upstate);
+    newstate = static_cast<StateNum>(weaponinfo[player->pendingweapon].upstate);
 
     player->pendingweapon = wp_nochange;
     player->psprites[ps_weapon].sy = WEAPONBOTTOM;
@@ -159,7 +159,7 @@ void bringUpWeapon(Player* player)
 //
 doom_boolean checkAmmo(Player* player)
 {
-    ammotype_t ammo;
+    AmmoType ammo;
     int count;
 
     ammo = weaponinfo[player->readyweapon].ammo;
@@ -227,7 +227,7 @@ doom_boolean checkAmmo(Player* player)
     // Now set appropriate weapon overlay.
     setPsprite(player,
                ps_weapon,
-               static_cast<statenum_t>(weaponinfo[player->readyweapon].downstate));
+               static_cast<StateNum>(weaponinfo[player->readyweapon].downstate));
 
     return false;
 }
@@ -237,13 +237,13 @@ doom_boolean checkAmmo(Player* player)
 //
 void fireWeapon(Player* player)
 {
-    statenum_t newstate;
+    StateNum newstate;
 
     if (!checkAmmo(player))
         return;
 
     Doom::setMobjState(player->mo, S_PLAY_ATK1);
-    newstate = static_cast<statenum_t>(weaponinfo[player->readyweapon].atkstate);
+    newstate = static_cast<StateNum>(weaponinfo[player->readyweapon].atkstate);
     setPsprite(player, ps_weapon, newstate);
     Doom::noiseAlert(player->mo, *player->mo);
 
@@ -261,7 +261,7 @@ void dropWeapon(Player& player)
 {
     setPsprite(&player,
                ps_weapon,
-               static_cast<statenum_t>(weaponinfo[player.readyweapon].downstate));
+               static_cast<StateNum>(weaponinfo[player.readyweapon].downstate));
 }
 
 //
@@ -273,7 +273,7 @@ void dropWeapon(Player& player)
 //
 void weaponReady(Player& player, PspDef& psp)
 {
-    statenum_t newstate;
+    StateNum newstate;
     int angle;
 
     // get out of attack state
@@ -295,7 +295,7 @@ void weaponReady(Player& player, PspDef& psp)
         // change weapon
         //  (pending weapon should allready be validated)
         newstate =
-            static_cast<statenum_t>(weaponinfo[player.readyweapon].downstate);
+            static_cast<StateNum>(weaponinfo[player.readyweapon].downstate);
         setPsprite(&player, ps_weapon, newstate);
         return;
     }
@@ -390,7 +390,7 @@ void lower(Player& player, PspDef& psp)
 //
 void raise(Player& player, PspDef& psp)
 {
-    statenum_t newstate;
+    StateNum newstate;
 
     psp.sy -= RAISESPEED;
 
@@ -401,7 +401,7 @@ void raise(Player& player, PspDef& psp)
 
     // The weapon has been raised all the way,
     //  so change to the ready state.
-    newstate = static_cast<statenum_t>(weaponinfo[player.readyweapon].readystate);
+    newstate = static_cast<StateNum>(weaponinfo[player.readyweapon].readystate);
 
     setPsprite(&player, ps_weapon, newstate);
 }
@@ -414,7 +414,7 @@ void gunFlash(Player& player, PspDef&)
     Doom::setMobjState(player.mo, S_PLAY_ATK2);
     setPsprite(&player,
                ps_flash,
-               static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate));
+               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
 }
 
 //
@@ -520,7 +520,7 @@ void firePlasma(Player& player, PspDef&)
 
     setPsprite(&player,
                ps_flash,
-               static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate
+               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate
                                        + (P_Random() & 1)));
 
     Doom::spawnPlayerMissile(player.mo, MT_PLASMA);
@@ -580,7 +580,7 @@ void firePistol(Player& player, PspDef&)
 
     setPsprite(&player,
                ps_flash,
-               static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate));
+               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
 
     computeBulletSlope(player.mo);
     gunShot(player.mo, !player.refire);
@@ -598,7 +598,7 @@ void fireShotgun(Player& player, PspDef&)
 
     setPsprite(&player,
                ps_flash,
-               static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate));
+               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
 
     computeBulletSlope(player.mo);
 
@@ -621,7 +621,7 @@ void fireShotgun2(Player& player, PspDef&)
 
     setPsprite(&player,
                ps_flash,
-               static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate));
+               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
 
     computeBulletSlope(player.mo);
 
@@ -653,7 +653,7 @@ void fireCGun(Player& player, PspDef& psp)
 
     setPsprite(&player,
                ps_flash,
-               static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate
+               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate
                                        + psp.state - &states[S_CHAIN1]));
 
     computeBulletSlope(player.mo);
@@ -743,7 +743,7 @@ void setupPsprites(Player& player)
 void movePsprites(Player& player)
 {
     PspDef* psp;
-    state_t* state;
+    State* state;
 
     psp = &player.psprites[0];
     for (int i = 0; i < NUMPSPRITES; i++, psp++)

@@ -53,15 +53,15 @@ extern fixed_t& attackrange;
 namespace Doom
 {
 
-doom_boolean setMobjState(Mobj* mobj, statenum_t state)
+doom_boolean setMobjState(Mobj* mobj, StateNum state)
 {
-    state_t* st;
+    State* st;
 
     do
     {
         if (state == S_NULL)
         {
-            mobj->state = (state_t*) S_NULL;
+            mobj->state = (State*) S_NULL;
             removeMobj(mobj);
             return false;
         }
@@ -92,7 +92,7 @@ void explodeMissile(Mobj* mo)
 {
     mo->momx = mo->momy = mo->momz = 0;
 
-    setMobjState(mo, static_cast<statenum_t>(mobjinfo[mo->type].deathstate));
+    setMobjState(mo, static_cast<StateNum>(mobjinfo[mo->type].deathstate));
 
     mo->tics -= P_Random() & 3;
 
@@ -124,7 +124,7 @@ void xyMovement(Mobj* mo)
             mo->flags &= ~MF_SKULLFLY;
             mo->momx = mo->momy = mo->momz = 0;
 
-            setMobjState(mo, static_cast<statenum_t>(mo->info->spawnstate));
+            setMobjState(mo, static_cast<StateNum>(mo->info->spawnstate));
         }
         return;
     }
@@ -447,11 +447,11 @@ void mobjThinker(Mobj* mobj)
 //
 // spawnMobj
 //
-Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
+Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
 {
     Mobj* mobj;
-    state_t* st;
-    mobjinfo_t* info;
+    State* st;
+    MobjInfo* info;
 
     mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
     info = &mobjinfo[type];
@@ -573,7 +573,7 @@ void respawnSpecials()
     else
         z = ONFLOORZ;
 
-    mo = spawnMobj(x, y, z, static_cast<mobjtype_t>(i));
+    mo = spawnMobj(x, y, z, static_cast<MobjType>(i));
     mo->spawnpoint = *mthing;
     mo->angle = ANG45 * (mthing->angle / 45);
 
@@ -735,7 +735,7 @@ void spawnMapThing(mapthing_t* mthing)
     else
         z = ONFLOORZ;
 
-    mobj = spawnMobj(x, y, z, static_cast<mobjtype_t>(i));
+    mobj = spawnMobj(x, y, z, static_cast<MobjType>(i));
     mobj->spawnpoint = *mthing;
 
     if (mobj->tics > 0)
@@ -820,7 +820,7 @@ void checkMissileSpawn(Mobj* th)
 //
 // spawnMissile
 //
-Mobj* spawnMissile(Mobj* source, Mobj* dest, mobjtype_t type)
+Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 {
     Mobj* th;
     angle_t an;
@@ -859,7 +859,7 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, mobjtype_t type)
 // spawnPlayerMissile
 // Tries to aim at a nearby monster
 //
-void spawnPlayerMissile(Mobj* source, mobjtype_t type)
+void spawnPlayerMissile(Mobj* source, MobjType type)
 {
     Mobj* th;
     angle_t an;

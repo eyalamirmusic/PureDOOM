@@ -28,7 +28,9 @@
 #include "d_think.h"
 
 
-enum spritenum_t
+namespace Doom
+{
+enum SpriteNum
 {
     SPR_TROO,
     SPR_SHTG,
@@ -170,9 +172,12 @@ enum spritenum_t
     SPR_TLP2,
     NUMSPRITES
 };
+} // namespace Doom
 
 
-enum statenum_t
+namespace Doom
+{
+enum StateNum
 {
     S_NULL,
     S_LIGHTDONE,
@@ -1143,24 +1148,30 @@ enum statenum_t
     S_TECH2LAMP4,
     NUMSTATES
 };
+} // namespace Doom
 
 
-struct state_t
+namespace Doom
 {
-    spritenum_t sprite;
+struct State
+{
+    SpriteNum sprite;
     long frame;
     long tics;
     actionf_t action;
-    statenum_t nextstate;
+    StateNum nextstate;
     long misc1, misc2;
 };
+} // namespace Doom
 
 
-extern state_t states[NUMSTATES];
-extern char* sprnames[NUMSPRITES + 1];
+extern Doom::State states[Doom::NUMSTATES];
+extern char* sprnames[Doom::NUMSPRITES + 1];
 
 
-enum mobjtype_t
+namespace Doom
+{
+enum MobjType
 {
     MT_PLAYER,
     MT_POSSESSED,
@@ -1301,9 +1312,12 @@ enum mobjtype_t
     MT_MISC86,
     NUMMOBJTYPES
 };
+} // namespace Doom
 
 
-struct mobjinfo_t
+namespace Doom
+{
+struct MobjInfo
 {
     int        doomednum;
     int        spawnstate;
@@ -1329,9 +1343,10 @@ struct mobjinfo_t
     int        flags;
     int        raisestate;
 };
+} // namespace Doom
 
 
-extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
+extern Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES];
 
 
 

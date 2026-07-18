@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // skill_t
+#include "../doomdef.h" // Skill
 
 namespace Doom
 {
@@ -17,7 +17,7 @@ namespace Doom
 // stays the screen/wipe/action state.)
 struct DeferredNewGame
 {
-    skill_t d_skill = sk_baby; // pending skill (vanilla zero-inits this)
+    Skill d_skill = sk_baby; // pending skill (vanilla zero-inits this)
     int d_episode = 0; // pending episode
     int d_map = 0; // pending map
 };

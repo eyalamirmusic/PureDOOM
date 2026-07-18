@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // skill_t
+#include "../doomdef.h" // Skill
 #include "../doomtype.h" // doom_boolean
 
 namespace Doom
@@ -16,7 +16,7 @@ namespace Doom
 // onto the members. None is hashed, so the move is golden-neutral like the rest.
 struct StartupDefaults
 {
-    skill_t startskill = sk_baby; // default skill (vanilla zero-inits this)
+    Skill startskill = sk_baby; // default skill (vanilla zero-inits this)
     int startepisode = 0; // default episode
     int startmap = 0; // default map
 

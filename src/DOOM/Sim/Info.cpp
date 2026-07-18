@@ -56,7 +56,7 @@ using namespace Doom;
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 
-char* sprnames[NUMSPRITES + 1] = {
+char* sprnames[Doom::NUMSPRITES + 1] = {
     "TROO","SHTG","PUNG","PISG","PISF","SHTF","SHT2","CHGG","CHGF","MISG",
     "MISF","SAWG","PLSG","PLSF","BFGG","BFGF","BLUD","PUFF","BAL1","BAL2",
     "PLSS","PLSE","MISL","BFS1","BFE1","BFE2","TFOG","IFOG","PLAY","POSS",
@@ -74,7 +74,7 @@ char* sprnames[NUMSPRITES + 1] = {
 };
 
 
-state_t states[NUMSTATES] = {
+Doom::State states[Doom::NUMSTATES] = {
     {SPR_TROO,0,-1,{0},S_NULL,0,0}, // S_NULL
     {SPR_SHTG,4,0,{(actionf_p1)Doom::Actions::light0},S_NULL,0,0}, // S_LIGHTDONE
     {SPR_PUNG,0,1,{(actionf_p1)Doom::Actions::weaponReady},S_PUNCH,0,0}, // S_PUNCH
@@ -1045,7 +1045,7 @@ state_t states[NUMSTATES] = {
 };
 
 
-mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
+Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
 
     { // MT_PLAYER
         -1, // doomednum

@@ -677,7 +677,7 @@ seeyou:
             Doom::startSound(&actor, sound);
     }
 
-    Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
+    Doom::setMobjState(&actor, static_cast<StateNum>(actor.info->seestate));
 }
 
 //
@@ -721,7 +721,7 @@ void chase(Mobj& actor)
         if (lookForPlayers(actor, true))
             return; // got a new target
 
-        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->spawnstate));
+        Doom::setMobjState(&actor, static_cast<StateNum>(actor.info->spawnstate));
         return;
     }
 
@@ -740,7 +740,7 @@ void chase(Mobj& actor)
         if (actor.info->attacksound)
             Doom::startSound(&actor, actor.info->attacksound);
 
-        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->meleestate));
+        Doom::setMobjState(&actor, static_cast<StateNum>(actor.info->meleestate));
         return;
     }
 
@@ -755,7 +755,7 @@ void chase(Mobj& actor)
         if (!checkMissileRange(actor))
             goto nomissile;
 
-        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->missilestate));
+        Doom::setMobjState(&actor, static_cast<StateNum>(actor.info->missilestate));
         actor.flags |= MF_JUSTATTACKED;
         return;
     }
@@ -875,7 +875,7 @@ void cPosRefire(Mobj& actor)
     if (!actor.target || actor.target->health <= 0
         || !Doom::checkSight(&actor, actor.target))
     {
-        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
+        Doom::setMobjState(&actor, static_cast<StateNum>(actor.info->seestate));
     }
 }
 
@@ -890,7 +890,7 @@ void spidRefire(Mobj& actor)
     if (!actor.target || actor.target->health <= 0
         || !Doom::checkSight(&actor, actor.target))
     {
-        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
+        Doom::setMobjState(&actor, static_cast<StateNum>(actor.info->seestate));
     }
 }
 
@@ -1149,7 +1149,7 @@ void vileChase(Mobj& actor)
     int yl;
     int yh;
 
-    mobjinfo_t* info;
+    MobjInfo* info;
     Mobj* temp;
 
     if (actor.movedir != DI_NODIR)
@@ -1184,7 +1184,7 @@ void vileChase(Mobj& actor)
                     info = corpsehit->info;
 
                     Doom::setMobjState(corpsehit,
-                                   static_cast<statenum_t>(info->raisestate));
+                                   static_cast<StateNum>(info->raisestate));
                     corpsehit->height <<= 2;
                     corpsehit->flags = info->flags;
                     corpsehit->health = info->spawnhealth;
@@ -1838,7 +1838,7 @@ void spawnFly(Mobj& mo)
     Mobj* fog;
     Mobj* targ;
     int r;
-    mobjtype_t type;
+    MobjType type;
 
     if (--mo.reactiontime)
         return; // still flying
@@ -1879,7 +1879,7 @@ void spawnFly(Mobj& mo)
 
     newmobj = Doom::spawnMobj(targ->x, targ->y, targ->z, type);
     if (lookForPlayers(*newmobj, true))
-        Doom::setMobjState(newmobj, static_cast<statenum_t>(newmobj->info->seestate));
+        Doom::setMobjState(newmobj, static_cast<StateNum>(newmobj->info->seestate));
 
     // telefrag anything in this spot
     Doom::teleportMove(newmobj, newmobj->x, newmobj->y);

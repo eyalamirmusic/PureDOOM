@@ -26,7 +26,7 @@
 
 
 // All important printed strings.
-// Language selection (message strings).
+// Doom::Language selection (message strings).
 // Use -DFRENCH etc.
 
 #ifdef FRENCH

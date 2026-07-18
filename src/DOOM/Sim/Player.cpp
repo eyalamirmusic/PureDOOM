@@ -210,7 +210,7 @@ void deathThink(Player& player)
 void playerThink(Player& player)
 {
     Ticcmd* cmd;
-    weapontype_t newweapon;
+    WeaponType newweapon;
 
     // fixme: do this in the cheat code
     if (player.cheats & CF_NOCLIP)
@@ -258,7 +258,7 @@ void playerThink(Player& player)
         // The actual changing of the weapon is done
         //  when the weapon psprite can do it
         //  (read: not in the middle of an attack).
-        newweapon = static_cast<weapontype_t>((cmd->buttons & BT_WEAPONMASK)
+        newweapon = static_cast<WeaponType>((cmd->buttons & BT_WEAPONMASK)
                                               >> BT_WEAPONSHIFT);
 
         if (newweapon == wp_fist && player.weaponowned[wp_chainsaw]

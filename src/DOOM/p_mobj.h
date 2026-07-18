@@ -58,7 +58,7 @@ struct SubSector;
 // The sprite, frame, and angle elements determine which Doom::Patch
 // is used to draw the sprite if it is visible.
 // The sprite and frame values are allmost allways set
-// from state_t structures.
+// from Doom::State structures.
 // The statescr.exe utility generates the states.h and states.c
 // files that contain the sprite/frame numbers from the
 // statescr.txt source file.
@@ -225,7 +225,7 @@ struct Mobj : Doom::Thinker
 
     //More drawing info: to determine current sprite.
     angle_t angle;        // orientation
-    spritenum_t sprite;        // used to find Doom::Patch and flip value
+    SpriteNum sprite;        // used to find Doom::Patch and flip value
     int frame;        // might be ORed with FF_FULLBRIGHT
 
     // Interaction info, by BLOCKMAP.
@@ -251,11 +251,11 @@ struct Mobj : Doom::Thinker
     // If == validcount, already checked.
     int validcount;
 
-    mobjtype_t type;
-    mobjinfo_t* info; // &mobjinfo[mobj->type]
+    MobjType type;
+    MobjInfo* info; // &mobjinfo[mobj->type]
 
     int tics; // state tic counter
-    state_t* state;
+    State* state;
     int flags;
     int health;
 

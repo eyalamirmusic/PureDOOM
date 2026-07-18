@@ -117,11 +117,11 @@ void Doom::executeSetViewSize();
 // gameaction, gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; these
 // (and the extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
 gameaction_t& gameaction = Doom::gameFlow().gameaction;
-gamestate_t& gamestate = Doom::gameFlow().gamestate;
+Doom::GameState& gamestate = Doom::gameFlow().gamestate;
 
 // The current game's rules are a Doom::GameSession owned by the Engine now; these (and
 // netgame/deathmatch below) are references onto it (REFACTOR.md, Step 5).
-skill_t& gameskill = Doom::gameSession().gameskill;
+Doom::Skill& gameskill = Doom::gameSession().gameskill;
 doom_boolean& respawnmonsters = Doom::gameSession().respawnmonsters;
 int& gameepisode = Doom::gameSession().gameepisode;
 int& gamemap = Doom::gameSession().gamemap;
@@ -282,13 +282,13 @@ char (&savename)[256] = Doom::saveGameState().name;
 
 // The deferred new-game request is a Doom::DeferredNewGame owned by the Engine now; these vanilla
 // names are references onto it (the file-scope-statics sweep - REFACTOR.md, Step 5).
-skill_t& d_skill = Doom::deferredNewGame().d_skill;
+Doom::Skill& d_skill = Doom::deferredNewGame().d_skill;
 int& d_episode = Doom::deferredNewGame().d_episode;
 int& d_map = Doom::deferredNewGame().d_map;
 
 const char* defdemoname;
 
-extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
+extern Doom::GameState& wipegamestate; // Doom::GameFlow (Engine member)
 extern const char*& pagename; // Doom::AttractMode (Engine member)
 extern doom_boolean& setsizeneeded;
 
@@ -308,7 +308,7 @@ doom_boolean checkDemoStatus();
 void gReadDemoTiccmd(Ticcmd* cmd);
 void gWriteDemoTiccmd(Ticcmd* cmd);
 void playerReborn(int player);
-void initNewGame(skill_t skill, int episode, int map);
+void initNewGame(Skill skill, int episode, int map);
 void gDoReborn(int playernum);
 void gDoLoadLevel();
 void gDoNewGame();
@@ -555,7 +555,7 @@ void gDoLoadLevel()
     levelstarttic = gametic; // for time calculation
 
     if (wipegamestate == GS_LEVEL)
-        wipegamestate = static_cast<gamestate_t>((-1)); // force a wipe
+        wipegamestate = static_cast<GameState>((-1)); // force a wipe
 
     gamestate = GS_LEVEL;
 
@@ -1255,7 +1255,7 @@ void doLoadGame()
         return; // bad version
     save_p += VERSIONSIZE;
 
-    gameskill = static_cast<skill_t>((*save_p++));
+    gameskill = static_cast<Skill>((*save_p++));
     gameepisode = *save_p++;
     gamemap = *save_p++;
     for (int i = 0; i < MAXPLAYERS; i++)
@@ -1367,7 +1367,7 @@ void gDoSaveGame()
 // consoleplayer, displayplayer, playeringame[] should be set.
 //
 
-void deferInitNew(skill_t skill, int episode, int map)
+void deferInitNew(Skill skill, int episode, int map)
 {
     d_skill = skill;
     d_episode = episode;
@@ -1390,7 +1390,7 @@ void gDoNewGame()
     gameaction = ga_nothing;
 }
 
-void initNewGame(skill_t skill, int episode, int map)
+void initNewGame(Skill skill, int episode, int map)
 {
     if (paused)
     {
@@ -1585,7 +1585,7 @@ void deferPlayDemo(const char* name)
 
 void gDoPlayDemo()
 {
-    skill_t skill;
+    Skill skill;
     int episode, map;
 
     gameaction = ga_nothing;
@@ -1605,7 +1605,7 @@ void gDoPlayDemo()
         return;
     }
 
-    skill = static_cast<skill_t>((*demo_p++));
+    skill = static_cast<Skill>((*demo_p++));
     episode = *demo_p++;
     map = *demo_p++;
     deathmatch = *demo_p++;

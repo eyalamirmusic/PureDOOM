@@ -52,7 +52,7 @@ void loadLineDefs(int lump);
 void loadSideDefs(int lump);
 void loadBlockMap(int lump);
 void groupLines();
-void setupLevel(int episode, int map, int playermask, skill_t skill);
+void setupLevel(int episode, int map, int playermask, Skill skill);
 void init();
 
 void loadVertexes(int lump)
@@ -491,7 +491,7 @@ void groupLines()
 //
 // setupLevel
 //
-void setupLevel(int episode, int map, int, skill_t)
+void setupLevel(int episode, int map, int, Skill)
 {
     EA::Array<char, 9> lumpname;
     int lumpnum;

@@ -129,7 +129,7 @@ int doomSimBootToTitle()
 
 int doomSimInLevel()
 {
-    return demoplayback && gamestate == GS_LEVEL;
+    return demoplayback && gamestate == Doom::GS_LEVEL;
 }
 
 // The demo is deferred, so it is not playing on the tic that queues it. "Not
@@ -391,7 +391,7 @@ int doomSimLoadLevel(int episode, int map, int skill)
 
     // Doom::initNewGame runs the whole load synchronously (G_DoLoadLevel -> Doom::setupLevel),
     // unlike Doom::deferInitNew which only queues it for the next tic.
-    Doom::initNewGame((skill_t) skill, episode, map);
+    Doom::initNewGame((Doom::Skill) skill, episode, map);
 
     // Handle 0 is always the player, so a scenario can move it without spawning
     // anything. It is null only if the map had no player-1 start.
@@ -410,7 +410,7 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
     if (setjmp(simAbort))
         return -1;
 
-    Doom::Mobj* mobj = Doom::spawnMobj(x, y, z, (mobjtype_t) type);
+    Doom::Mobj* mobj = Doom::spawnMobj(x, y, z, (Doom::MobjType) type);
 
     if (!mobj)
         return -1;
@@ -524,7 +524,7 @@ void doomSimSetThingPosition(int handle)
 
 int doomSimTypeBarrel()
 {
-    return MT_BARREL;
+    return Doom::MT_BARREL;
 }
 
 int doomSimOnFloorZ()

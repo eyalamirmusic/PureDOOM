@@ -144,7 +144,7 @@ doom_boolean checkThing(Mobj* thing)
         clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = 0;
 
         Doom::setMobjState(clip.tmthing,
-                       static_cast<statenum_t>(clip.tmthing->info->spawnstate));
+                       static_cast<StateNum>(clip.tmthing->info->spawnstate));
 
         return false; // stop moving
     }

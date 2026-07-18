@@ -169,7 +169,7 @@ extern "C"
 
     // Named constants, so a scenario test stays free of DOOM's enums (info.h,
     // p_mobj.h). Add more here as scenarios need them.
-    int doomSimTypeBarrel(); // MT_BARREL: solid, shootable, radius 10
+    int doomSimTypeBarrel(); // Doom::MT_BARREL: solid, shootable, radius 10
     int doomSimOnFloorZ(); // ONFLOORZ, the "rest on the floor" spawn z
     int doomSimFlagNoClip(); // MF_NOCLIP
 
@@ -217,7 +217,7 @@ extern "C"
     // before it starts hashing - the golden pins the menu, not the entry wipe.
     int doomSimIsWiping();
 
-    // The current gamestate as a small int (GS_LEVEL=0 .. GS_DEMOSCREEN=3), so
+    // The current gamestate as a small int (Doom::GS_LEVEL=0 .. Doom::GS_DEMOSCREEN=3), so
     // the harness can assert the background stayed the title screen for the whole
     // script (the attract loop would otherwise advance to a demo after ~170
     // tics), and whether the menu is currently open.

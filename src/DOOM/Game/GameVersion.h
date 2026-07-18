@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // GameMode_t, GameMission_t, Language_t
+#include "../doomdef.h" // GameMode, GameMission, Language
 #include "../doomtype.h" // doom_boolean
 
 namespace Doom
@@ -17,11 +17,11 @@ namespace Doom
 // these members. None is hashed, so the move is golden-neutral like the rest.
 struct GameVersion
 {
-    GameMode_t gamemode =
+    GameMode gamemode =
         indetermined; // shareware / registered / retail / commercial
-    GameMission_t gamemission = doom; // which mission pack
+    GameMission gamemission = doom; // which mission pack
 
-    Language_t language = english; // string-table language
+    Language language = english; // string-table language
 
     doom_boolean modifiedgame = 0; // a PWAD has modified the game
 };

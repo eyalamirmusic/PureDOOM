@@ -39,7 +39,9 @@ enum
 
 // Game mode handling - identify IWAD version
 //  to handle IWAD dependend animations etc.
-enum GameMode_t
+namespace Doom
+{
+enum GameMode
 {
     shareware,      // DOOM 1 shareware, E1, M9
     registered,     // DOOM 1 registered, E3, M27
@@ -48,10 +50,13 @@ enum GameMode_t
     retail,         // DOOM 1 retail, E4, M36
     indetermined    // Well, no IWAD found.
 };
+} // namespace Doom
 
 
 // Mission packs - might be useful for TC stuff?
-enum GameMission_t
+namespace Doom
+{
+enum GameMission
 {
     doom,       // DOOM 1
     doom2,      // DOOM 2
@@ -59,16 +64,20 @@ enum GameMission_t
     pack_plut,  // Plutonia pack
     none
 };
+} // namespace Doom
 
 
 // Identify language to use, software localization.
-enum Language_t
+namespace Doom
+{
+enum Language
 {
     english,
     french,
     german,
     unknown
 };
+} // namespace Doom
 
 
 // If rangecheck is undefined,
@@ -98,7 +107,7 @@ enum Language_t
 // The maximum number of players, multiplayer/networking.
 #define MAXPLAYERS 4
 
-// State updates, number of tics / second.
+// Doom::State updates, number of tics / second.
 #if defined(DOOM_FAST_TICK)
 #define TICKMUL 2
 #else
@@ -110,20 +119,23 @@ enum Language_t
 // The current state of the game: whether we are
 // playing, gazing at the intermission screen,
 // the game final animation, or a demo. 
-enum gamestate_t
+namespace Doom
+{
+enum GameState
 {
     GS_LEVEL,
     GS_INTERMISSION,
     GS_FINALE,
     GS_DEMOSCREEN
 };
+} // namespace Doom
 
 
 //
 // Difficulty/skill settings/filters.
 //
 
-// Skill flags.
+// Doom::Skill flags.
 #define MTF_EASY    1
 #define MTF_NORMAL  2
 #define MTF_HARD    4
@@ -132,7 +144,9 @@ enum gamestate_t
 #define MTF_AMBUSH  8
 
 
-enum skill_t
+namespace Doom
+{
+enum Skill
 {
     sk_baby,
     sk_easy,
@@ -140,12 +154,15 @@ enum skill_t
     sk_hard,
     sk_nightmare
 };
+} // namespace Doom
 
 
 //
 // Key cards.
 //
-enum card_t
+namespace Doom
+{
+enum Card
 {
     it_bluecard,
     it_yellowcard,
@@ -155,12 +172,15 @@ enum card_t
     it_redskull,
     NUMCARDS
 };
+} // namespace Doom
 
 
 // The defined weapons,
 // including a marker indicating
 // user has not changed weapon.
-enum weapontype_t
+namespace Doom
+{
+enum WeaponType
 {
     wp_fist,
     wp_pistol,
@@ -175,10 +195,13 @@ enum weapontype_t
     // No pending weapon change.
     wp_nochange
 };
+} // namespace Doom
 
 
 // Ammunition types defined.
-enum ammotype_t
+namespace Doom
+{
+enum AmmoType
 {
     am_clip,    // Pistol / chaingun ammo.
     am_shell,   // Shotgun / double barreled shotgun.
@@ -187,10 +210,13 @@ enum ammotype_t
     NUMAMMO,
     am_noammo   // Unlimited for chainsaw / fist.        
 };
+} // namespace Doom
 
 
 // Power up artifacts.
-enum powertype_t
+namespace Doom
+{
+enum PowerType
 {
     pw_invulnerability,
     pw_strength,
@@ -200,6 +226,7 @@ enum powertype_t
     pw_infrared,
     NUMPOWERS
 };
+} // namespace Doom
 
 
 //
@@ -207,13 +234,16 @@ enum powertype_t
 //  how many seconds till expiration,
 //  assuming TICRATE is 35 ticks/second.
 //
-enum powerduration_t
+namespace Doom
+{
+enum PowerDuration
 {
     INVULNTICS = (30 * TICRATE),
     INVISTICS = (60 * TICRATE),
     INFRATICS = (120 * TICRATE),
     IRONTICS = (60 * TICRATE)
 };
+} // namespace Doom
 
 
 //

@@ -217,8 +217,8 @@ extern Doom::Mobj** blocklinks; // for thing chains
 //
 // P_INTER
 //
-extern int (&maxammo)[NUMAMMO]; // Doom::AmmoLimits (Engine member)
-extern int (&clipammo)[NUMAMMO]; // Doom::AmmoLimits (Engine member)
+extern int (&maxammo)[Doom::NUMAMMO]; // Doom::AmmoLimits (Engine member)
+extern int (&clipammo)[Doom::NUMAMMO]; // Doom::AmmoLimits (Engine member)
 
 
 
