@@ -9,6 +9,7 @@
 #include "Level.h"
 #include "MapGeometry.h"
 
+#include "../Math/BBox.h"
 namespace Doom
 {
 // Vanilla p_maputl, in full: the blockmap iterators, thing-position linking, the

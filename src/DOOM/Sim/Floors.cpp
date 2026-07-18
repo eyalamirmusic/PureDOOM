@@ -1,6 +1,6 @@
 // Rewritten out of vanilla p_floor into namespace Doom.
 //
-// Floor movement: T_MovePlane (the shared height-mover the ceiling, plat and door
+// Floor movement: movePlane (the shared height-mover the ceiling, plat and door
 // thinkers all call), the moveFloor thinker, and the EV_ floor/stairs handlers.
 // T_MovePlane stays global because other specials call it. p_floor.cpp shims every
 // name. Golden-neutral - the demos lower floors and build stairs.

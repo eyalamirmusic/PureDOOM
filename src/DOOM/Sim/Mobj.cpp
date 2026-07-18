@@ -44,6 +44,7 @@
 #include "MapUtil.h"
 #include "Movement.h"
 #include "Weapon.h"
+#include "Random.h"
 #define STOPSPEED 0x1000
 #define FRICTION 0xe800
 
@@ -96,7 +97,7 @@ void explodeMissile(Mobj* mo)
 
     setMobjState(mo, static_cast<StateNum>(mobjinfo[mo->type].deathstate));
 
-    mo->tics -= P_Random() & 3;
+    mo->tics -= Doom::randomness().forPlay() & 3;
 
     if (mo->tics < 1)
         mo->tics = 1;
@@ -441,7 +442,7 @@ void mobjThinker(Mobj* mobj)
         if (leveltime & 31)
             return;
 
-        if (P_Random() > 4)
+        if (Doom::randomness().forPlay() > 4)
             return;
 
         nightmareRespawn(mobj);
@@ -472,7 +473,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     if (gameskill != sk_nightmare)
         mobj->reactiontime = info->reactiontime;
 
-    mobj->lastlook = P_Random() % MAXPLAYERS;
+    mobj->lastlook = Doom::randomness().forPlay() % MAXPLAYERS;
     // do not set the state with setMobjState,
     // because action routines can not be called yet
     st = &states[info->spawnstate];
@@ -743,7 +744,7 @@ void spawnMapThing(MapThing* mthing)
     mobj->spawnpoint = *mthing;
 
     if (mobj->tics > 0)
-        mobj->tics = 1 + (P_Random() % mobj->tics);
+        mobj->tics = 1 + (Doom::randomness().forPlay() % mobj->tics);
     if (mobj->flags & MF_COUNTKILL)
         totalkills++;
     if (mobj->flags & MF_COUNTITEM)
@@ -765,11 +766,11 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 {
     Mobj* th;
 
-    z += ((P_Random() - P_Random()) << 10);
+    z += ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 10);
 
     th = spawnMobj(x, y, z, MT_PUFF);
     th->momz = FRACUNIT;
-    th->tics -= P_Random() & 3;
+    th->tics -= Doom::randomness().forPlay() & 3;
 
     if (th->tics < 1)
         th->tics = 1;
@@ -786,10 +787,10 @@ void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 {
     Mobj* th;
 
-    z += ((P_Random() - P_Random()) << 10);
+    z += ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 10);
     th = spawnMobj(x, y, z, MT_BLOOD);
     th->momz = FRACUNIT * 2;
-    th->tics -= P_Random() & 3;
+    th->tics -= Doom::randomness().forPlay() & 3;
 
     if (th->tics < 1)
         th->tics = 1;
@@ -807,7 +808,7 @@ void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 //
 void checkMissileSpawn(Mobj* th)
 {
-    th->tics -= P_Random() & 3;
+    th->tics -= Doom::randomness().forPlay() & 3;
     if (th->tics < 1)
         th->tics = 1;
 
@@ -840,7 +841,7 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 
     // fuzzy player
     if (dest->flags & MF_SHADOW)
-        an += (P_Random() - P_Random()) << 20;
+        an += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20;
 
     th->angle = an;
     an >>= ANGLETOFINESHIFT;

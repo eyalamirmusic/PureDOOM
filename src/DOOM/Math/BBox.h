@@ -59,4 +59,24 @@ struct BBox
             top = y;
     }
 };
+
+// The vanilla index names for a bare fixed_t[4] box, and the bridge onto BBox.
+//
+// Vanilla passes boxes around as a fixed_t[4] indexed by these, and half the engine
+// still holds them that way - a sector's bbox, a linedef's, the blockmap's. (The
+// element type is spelled std::int32_t rather than the vanilla fixed_t so Math/ stays
+// free of the vanilla headers; they are the same type.) BBox has
+// the same four numbers in the same order (asserted in BBox.cpp), so the bridge can
+// reinterpret rather than copy. Scaffolding: it goes when the last fixed_t[4] does.
+enum
+{
+    BOXTOP,
+    BOXBOTTOM,
+    BOXLEFT,
+    BOXRIGHT
+};
+
+BBox& asBBox(std::int32_t* box);
+void clearBox(std::int32_t* box);
+void addToBox(std::int32_t* box, std::int32_t x, std::int32_t y);
 } // namespace Doom

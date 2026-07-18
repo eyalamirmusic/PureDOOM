@@ -10,7 +10,6 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../i_system.h"
-#include "../m_bbox.h"
 #include "../r_local.h"
 
 #include "BSP.h"
@@ -24,6 +23,7 @@
 #include "Segs.h"
 #include "../Host/System.h"
 #include "Main.h"
+#include "../Math/BBox.h"
 void Doom::storeWallRange(int start, int stop);
 
 #define MAXSEGS 32

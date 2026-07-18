@@ -15,7 +15,6 @@
 
 #include "../d_net.h"
 #include "../doomstat.h"
-#include "../m_bbox.h"
 #include "../r_draw.h"
 #include "../r_local.h"
 #include "../r_sky.h"
@@ -31,6 +30,7 @@
 #include "Planes.h"
 #include "Sky.h"
 #include "Things.h"
+#include "../Math/BBox.h"
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
 extern Doom::LightTable**& walllights; // Doom::SegState member (Engine); reference

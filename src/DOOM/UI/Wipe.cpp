@@ -21,6 +21,7 @@
 #include <ea_data_structures/Structures/Vector.h>
 
 #include "../Host/Video.h"
+#include "../Sim/Random.h"
 namespace Doom
 {
 
@@ -115,10 +116,10 @@ int initMelt(int width, int height, int ticks)
     // setup initial column positions
     // (wipe_melt_offsets<0 => not ready to scroll yet)
     wipe_melt_offsets = static_cast<int*>(doom_malloc(width * sizeof(int)));
-    wipe_melt_offsets[0] = -(M_Random() % 16);
+    wipe_melt_offsets[0] = -(Doom::randomness().forMenu() % 16);
     for (int i = 1; i < width; i++)
     {
-        r = (M_Random() % 3) - 1;
+        r = (Doom::randomness().forMenu() % 3) - 1;
         wipe_melt_offsets[i] = wipe_melt_offsets[i - 1] + r;
         if (wipe_melt_offsets[i] > 0)
             wipe_melt_offsets[i] = 0;

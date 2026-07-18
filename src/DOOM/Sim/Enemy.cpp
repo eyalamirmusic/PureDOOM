@@ -48,6 +48,7 @@
 #include "Sight.h"
 #include "Switches.h"
 #include "Weapon.h"
+#include "Random.h"
 #define MAXSPECIALCROSS 8
 #define FATSPREAD (ANG90 / 8)
 #define SKULLSPEED (20 * FRACUNIT)
@@ -307,7 +308,7 @@ doom_boolean checkMissileRange(Mobj& actor)
     if (actor.type == MT_CYBORG && dist > 160)
         dist = 160;
 
-    if (P_Random() < dist)
+    if (Doom::randomness().forPlay() < dist)
         return false;
 
     return true;
@@ -401,7 +402,7 @@ doom_boolean tryWalk(Mobj& actor)
         return false;
     }
 
-    actor.movecount = P_Random() & 15;
+    actor.movecount = Doom::randomness().forPlay() & 15;
     return true;
 }
 
@@ -449,7 +450,7 @@ void newChaseDir(Mobj& actor)
     }
 
     // try other directions
-    if (P_Random() > 200 || doom_abs(deltay) > doom_abs(deltax))
+    if (Doom::randomness().forPlay() > 200 || doom_abs(deltay) > doom_abs(deltax))
     {
         tdir = d[1];
         d[1] = d[2];
@@ -490,7 +491,7 @@ void newChaseDir(Mobj& actor)
     }
 
     // randomly determine direction of search
-    if (P_Random() & 1)
+    if (Doom::randomness().forPlay() & 1)
     {
         for (tdir = DI_EAST; tdir <= DI_SOUTHEAST; tdir++)
         {
@@ -659,12 +660,12 @@ seeyou:
             case sfx_posit1:
             case sfx_posit2:
             case sfx_posit3:
-                sound = sfx_posit1 + P_Random() % 3;
+                sound = sfx_posit1 + Doom::randomness().forPlay() % 3;
                 break;
 
             case sfx_bgsit1:
             case sfx_bgsit2:
-                sound = sfx_bgsit1 + P_Random() % 2;
+                sound = sfx_bgsit1 + Doom::randomness().forPlay() % 2;
                 break;
 
             default:
@@ -780,7 +781,7 @@ nomissile:
     }
 
     // make active sound
-    if (actor.info->activesound && P_Random() < 3)
+    if (actor.info->activesound && Doom::randomness().forPlay() < 3)
     {
         Doom::startSound(&actor, actor.info->activesound);
     }
@@ -800,7 +801,7 @@ void faceTarget(Mobj& actor)
         Doom::pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
 
     if (actor.target->flags & MF_SHADOW)
-        actor.angle += (P_Random() - P_Random()) << 21;
+        actor.angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 21;
 }
 
 //
@@ -820,8 +821,8 @@ void posAttack(Mobj& actor)
     slope = Doom::aimLineAttack(&actor, angle, MISSILERANGE);
 
     Doom::startSound(&actor, sfx_pistol);
-    angle += (P_Random() - P_Random()) << 20;
-    damage = ((P_Random() % 5) + 1) * 3;
+    angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20;
+    damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
@@ -842,8 +843,8 @@ void sPosAttack(Mobj& actor)
 
     for (int i = 0; i < 3; i++)
     {
-        angle = bangle + ((P_Random() - P_Random()) << 20);
-        damage = ((P_Random() % 5) + 1) * 3;
+        angle = bangle + ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20);
+        damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
         Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
     }
 }
@@ -863,8 +864,8 @@ void cPosAttack(Mobj& actor)
     bangle = actor.angle;
     slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE);
 
-    angle = bangle + ((P_Random() - P_Random()) << 20);
-    damage = ((P_Random() % 5) + 1) * 3;
+    angle = bangle + ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20);
+    damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
@@ -873,7 +874,7 @@ void cPosRefire(Mobj& actor)
     // keep firing unless target got out of sight
     faceTarget(actor);
 
-    if (P_Random() < 40)
+    if (Doom::randomness().forPlay() < 40)
         return;
 
     if (!actor.target || actor.target->health <= 0
@@ -888,7 +889,7 @@ void spidRefire(Mobj& actor)
     // keep firing unless target got out of sight
     faceTarget(actor);
 
-    if (P_Random() < 10)
+    if (Doom::randomness().forPlay() < 10)
         return;
 
     if (!actor.target || actor.target->health <= 0
@@ -923,7 +924,7 @@ void troopAttack(Mobj& actor)
     if (checkMeleeRange(actor))
     {
         Doom::startSound(&actor, sfx_claw);
-        damage = (P_Random() % 8 + 1) * 3;
+        damage = (Doom::randomness().forPlay() % 8 + 1) * 3;
         Doom::damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
@@ -942,7 +943,7 @@ void sargAttack(Mobj& actor)
     faceTarget(actor);
     if (checkMeleeRange(actor))
     {
-        damage = ((P_Random() % 10) + 1) * 4;
+        damage = ((Doom::randomness().forPlay() % 10) + 1) * 4;
         Doom::damageMobj(actor.target, &actor, &actor, damage);
     }
 }
@@ -957,7 +958,7 @@ void headAttack(Mobj& actor)
     faceTarget(actor);
     if (checkMeleeRange(actor))
     {
-        damage = (P_Random() % 6 + 1) * 10;
+        damage = (Doom::randomness().forPlay() % 6 + 1) * 10;
         Doom::damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
@@ -985,7 +986,7 @@ void bruisAttack(Mobj& actor)
     if (checkMeleeRange(actor))
     {
         Doom::startSound(&actor, sfx_claw);
-        damage = (P_Random() % 8 + 1) * 10;
+        damage = (Doom::randomness().forPlay() % 8 + 1) * 10;
         Doom::damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
@@ -1032,7 +1033,7 @@ void tracer(Mobj& actor)
         actor.x - actor.momx, actor.y - actor.momy, actor.z, MT_SMOKE);
 
     th->momz = FRACUNIT;
-    th->tics -= P_Random() & 3;
+    th->tics -= Doom::randomness().forPlay() & 3;
     if (th->tics < 1)
         th->tics = 1;
 
@@ -1100,7 +1101,7 @@ void skelFist(Mobj& actor)
 
     if (checkMeleeRange(actor))
     {
-        damage = ((P_Random() % 10) + 1) * 6;
+        damage = ((Doom::randomness().forPlay() % 10) + 1) * 6;
         Doom::startSound(&actor, sfx_skepch);
         Doom::damageMobj(actor.target, &actor, &actor, damage);
     }
@@ -1490,12 +1491,12 @@ void scream(Mobj& actor)
         case sfx_podth1:
         case sfx_podth2:
         case sfx_podth3:
-            sound = sfx_podth1 + P_Random() % 3;
+            sound = sfx_podth1 + Doom::randomness().forPlay() % 3;
             break;
 
         case sfx_bgdth1:
         case sfx_bgdth2:
-            sound = sfx_bgdth1 + P_Random() % 2;
+            sound = sfx_bgdth1 + Doom::randomness().forPlay() % 2;
             break;
 
         default:
@@ -1766,13 +1767,13 @@ void brainScream(Mobj& mo)
          x += FRACUNIT * 8)
     {
         y = mo.y - 320 * FRACUNIT;
-        z = 128 + P_Random() * 2 * FRACUNIT;
+        z = 128 + Doom::randomness().forPlay() * 2 * FRACUNIT;
         th = Doom::spawnMobj(x, y, z, MT_ROCKET);
-        th->momz = P_Random() * 512;
+        th->momz = Doom::randomness().forPlay() * 512;
 
         Doom::setMobjState(th, S_BRAINEXPLODE1);
 
-        th->tics -= P_Random() & 7;
+        th->tics -= Doom::randomness().forPlay() & 7;
         if (th->tics < 1)
             th->tics = 1;
     }
@@ -1787,15 +1788,15 @@ void brainExplode(Mobj& mo)
     int z;
     Mobj* th;
 
-    x = mo.x + (P_Random() - P_Random()) * 2048;
+    x = mo.x + (Doom::randomness().forPlay() - Doom::randomness().forPlay()) * 2048;
     y = mo.y;
-    z = 128 + P_Random() * 2 * FRACUNIT;
+    z = 128 + Doom::randomness().forPlay() * 2 * FRACUNIT;
     th = Doom::spawnMobj(x, y, z, MT_ROCKET);
-    th->momz = P_Random() * 512;
+    th->momz = Doom::randomness().forPlay() * 512;
 
     Doom::setMobjState(th, S_BRAINEXPLODE1);
 
-    th->tics -= P_Random() & 7;
+    th->tics -= Doom::randomness().forPlay() & 7;
     if (th->tics < 1)
         th->tics = 1;
 }
@@ -1854,7 +1855,7 @@ void spawnFly(Mobj& mo)
     Doom::startSound(fog, sfx_telept);
 
     // Randomly select monster to spawn.
-    r = P_Random();
+    r = Doom::randomness().forPlay();
 
     // Probability distribution (kind of :),
     // decreasing likelihood.

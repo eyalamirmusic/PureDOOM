@@ -2,10 +2,10 @@
 
 #include "MapGeometry.h"
 
-#include "../m_bbox.h" // BOXTOP, BOXBOTTOM, BOXLEFT, BOXRIGHT
 
 #include "Clip.h"
 #include "../Render/Main.h"
+#include "../Math/BBox.h"
 namespace Doom
 {
 DivLine makeDivLine(const Line& line)

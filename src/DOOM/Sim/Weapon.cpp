@@ -35,6 +35,7 @@
 #include "Interaction.h"
 #include "MapAction.h"
 #include "Mobj.h"
+#include "Random.h"
 #define LOWERSPEED (FRACUNIT * 6)
 #define RAISESPEED (FRACUNIT * 6)
 
@@ -430,13 +431,13 @@ void punch(Player& player, PspDef&)
     int damage;
     int slope;
 
-    damage = (P_Random() % 10 + 1) << 1;
+    damage = (Doom::randomness().forPlay() % 10 + 1) << 1;
 
     if (player.powers[pw_strength])
         damage *= 10;
 
     angle = player.mo->angle;
-    angle += (P_Random() - P_Random()) << 18;
+    angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
     slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE);
     Doom::lineAttack(player.mo, angle, MELEERANGE, slope, damage);
 
@@ -458,9 +459,9 @@ void saw(Player& player, PspDef&)
     int damage;
     int slope;
 
-    damage = 2 * (P_Random() % 10 + 1);
+    damage = 2 * (Doom::randomness().forPlay() % 10 + 1);
     angle = player.mo->angle;
-    angle += (P_Random() - P_Random()) << 18;
+    angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
 
     // use meleerange + 1 se the puff doesn't skip the flash
     slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE + 1);
@@ -521,7 +522,7 @@ void firePlasma(Player& player, PspDef&)
     setPsprite(&player,
                ps_flash,
                static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate
-                                       + (P_Random() & 1)));
+                                       + (Doom::randomness().forPlay() & 1)));
 
     Doom::spawnPlayerMissile(player.mo, MT_PLASMA);
 }
@@ -559,11 +560,11 @@ void gunShot(Mobj* mo, doom_boolean accurate)
     angle_t angle;
     int damage;
 
-    damage = 5 * (P_Random() % 3 + 1);
+    damage = 5 * (Doom::randomness().forPlay() % 3 + 1);
     angle = mo->angle;
 
     if (!accurate)
-        angle += (P_Random() - P_Random()) << 18;
+        angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
 
     Doom::lineAttack(mo, angle, MISSILERANGE, bulletslope, damage);
 }
@@ -627,13 +628,13 @@ void fireShotgun2(Player& player, PspDef&)
 
     for (int i = 0; i < 20; i++)
     {
-        damage = 5 * (P_Random() % 3 + 1);
+        damage = 5 * (Doom::randomness().forPlay() % 3 + 1);
         angle = player.mo->angle;
-        angle += (P_Random() - P_Random()) << 19;
+        angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 19;
         Doom::lineAttack(player.mo,
                      angle,
                      MISSILERANGE,
-                     bulletslope + ((P_Random() - P_Random()) << 5),
+                     bulletslope + ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 5),
                      damage);
     }
 }
@@ -707,7 +708,7 @@ void bfgSpray(Mobj* mo)
 
         damage = 0;
         for (int j = 0; j < 15; j++)
-            damage += (P_Random() & 7) + 1;
+            damage += (Doom::randomness().forPlay() & 7) + 1;
 
         Doom::damageMobj(linetarget, mo->target, mo->target, damage);
     }

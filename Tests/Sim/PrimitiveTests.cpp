@@ -25,6 +25,7 @@
 #include <cstdint>
 
 #include <DOOM/Render/Main.h>
+#include <DOOM/Sim/Random.h>
 using namespace nano;
 
 namespace
@@ -141,11 +142,11 @@ auto tFixedRoundTripLosesAlmostNothing = test("Fixed/mulAndDivRoundTrip") = []
 
 auto tRandomIsInRange = test("Random/inRange") = []
 {
-    M_ClearRandom();
+    Doom::randomness().clear();
 
     for (auto i = 0; i < 1000; ++i)
     {
-        auto value = P_Random();
+        auto value = Doom::randomness().forPlay();
         check(value >= 0 && value <= 255);
     }
 };
@@ -155,25 +156,25 @@ auto tRandomIsInRange = test("Random/inRange") = []
 // save game, depends on this exact walk.
 auto tRandomSequenceIsFixed = test("Random/sequenceIsTheTable") = []
 {
-    M_ClearRandom();
+    Doom::randomness().clear();
 
-    check(P_Random() == 8);
-    check(P_Random() == 109);
-    check(P_Random() == 220);
-    check(P_Random() == 222);
-    check(P_Random() == 241);
-    check(P_Random() == 149);
-    check(P_Random() == 107);
-    check(P_Random() == 75);
+    check(Doom::randomness().forPlay() == 8);
+    check(Doom::randomness().forPlay() == 109);
+    check(Doom::randomness().forPlay() == 220);
+    check(Doom::randomness().forPlay() == 222);
+    check(Doom::randomness().forPlay() == 241);
+    check(Doom::randomness().forPlay() == 149);
+    check(Doom::randomness().forPlay() == 107);
+    check(Doom::randomness().forPlay() == 75);
 };
 
 // P_Random starts at index 1, not 0: it increments before it reads.
 auto tRandomAdvancesBeforeReading = test("Random/advancesBeforeReading") = []
 {
-    M_ClearRandom();
+    Doom::randomness().clear();
     check(prndindex == 0);
 
-    P_Random();
+    Doom::randomness().forPlay();
     check(prndindex == 1);
     check(rndtable[1] == 8);
 };
@@ -181,33 +182,33 @@ auto tRandomAdvancesBeforeReading = test("Random/advancesBeforeReading") = []
 // The index wraps at 256 and the sequence repeats exactly.
 auto tRandomWraps = test("Random/wrapsAfter256") = []
 {
-    M_ClearRandom();
+    Doom::randomness().clear();
 
     auto first = int {};
     for (auto i = 0; i < 256; ++i)
         if (i == 0)
-            first = P_Random();
+            first = Doom::randomness().forPlay();
         else
-            P_Random();
+            Doom::randomness().forPlay();
 
     check(prndindex == 0);
-    check(P_Random() == first);
+    check(Doom::randomness().forPlay() == first);
 };
 
 // The two sequences are independent, which is the whole point of having two: the
 // menu and the sounds may vary freely without moving the world.
 auto tRandomSequencesAreIndependent = test("Random/playAndMenuAreIndependent") = []
 {
-    M_ClearRandom();
+    Doom::randomness().clear();
 
-    P_Random();
-    P_Random();
-    P_Random();
+    Doom::randomness().forPlay();
+    Doom::randomness().forPlay();
+    Doom::randomness().forPlay();
 
     check(prndindex == 3);
     check(rndindex == 0);
 
-    M_Random();
+    Doom::randomness().forMenu();
 
     check(prndindex == 3);
     check(rndindex == 1);
@@ -215,9 +216,9 @@ auto tRandomSequencesAreIndependent = test("Random/playAndMenuAreIndependent") =
 
 auto tClearRandomResetsBoth = test("Random/clearResetsBoth") = []
 {
-    P_Random();
-    M_Random();
-    M_ClearRandom();
+    Doom::randomness().forPlay();
+    Doom::randomness().forMenu();
+    Doom::randomness().clear();
 
     check(prndindex == 0);
     check(rndindex == 0);

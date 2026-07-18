@@ -25,15 +25,9 @@
 #include "doomtype.h"
 
 
-// Returns a number from 0 to 255,
-// from a lookup table.
-int M_Random();
-
-// As M_Random, but used only by the play simulation.
-int P_Random();
-
-// Fix randoms for demos.
-void M_ClearRandom();
+// The two random sources are Doom::Random methods now, reached through
+// Doom::randomness() - forMenu() (was M_Random), forPlay() (was P_Random, the
+// one the simulation walks) and clear() (was M_ClearRandom).
 
 
 // DOOM is not random at all: it walks a fixed 256-entry table with an index, and

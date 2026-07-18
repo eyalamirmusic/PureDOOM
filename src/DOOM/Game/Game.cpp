@@ -100,6 +100,7 @@
 #include "../Sim/Mobj.h"
 #include "../Sim/Movement.h"
 #include "Sound.h"
+#include "../Sim/Random.h"
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
 #define MAXPLMOVE (forwardmove[1])
@@ -980,7 +981,7 @@ void deathMatchSpawnPlayer(int playernum)
 
     for (int j = 0; j < 20; j++)
     {
-        i = P_Random() % selections;
+        i = Doom::randomness().forPlay() % selections;
         if (checkSpot(playernum, &deathmatchstarts[i]))
         {
             deathmatchstarts[i].type = playernum + 1;
@@ -1429,7 +1430,7 @@ void initNewGame(Skill skill, int episode, int map)
     if ((map > 9) && (gamemode != commercial))
         map = 9;
 
-    M_ClearRandom();
+    Doom::randomness().clear();
 
     if (skill == sk_nightmare || respawnparm)
         respawnmonsters = true;

@@ -5,6 +5,7 @@
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
+#include "../Math/BBox.h"
 namespace Doom
 {
 // Render/Video's dirty-rectangle accumulator: Doom::markRect grows dirtybox to cover every region

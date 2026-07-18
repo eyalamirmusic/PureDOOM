@@ -13,7 +13,6 @@
 #include "../doomstat.h"
 #include "../g_game.h"
 #include "../i_system.h"
-#include "../m_bbox.h"
 #include "../m_swap.h"
 #include "../p_local.h"
 #include "../s_sound.h"
@@ -34,6 +33,7 @@
 #include "../Host/System.h"
 #include "Mobj.h"
 #include "Switches.h"
+#include "../Math/BBox.h"
 void Doom::spawnMapThing(Doom::MapThing* mthing);
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
@@ -450,7 +450,7 @@ void groupLines()
     sector = sectors;
     for (int i = 0; i < numsectors; i++, sector++)
     {
-        M_ClearBox(bbox.data());
+        Doom::clearBox(bbox.data());
         sector->lines = linebuffer;
         li = lines;
         for (int j = 0; j < numlines; j++, li++)
@@ -458,8 +458,8 @@ void groupLines()
             if (li->frontsector == sector || li->backsector == sector)
             {
                 *linebuffer++ = li;
-                M_AddToBox(bbox.data(), li->v1->x, li->v1->y);
-                M_AddToBox(bbox.data(), li->v2->x, li->v2->y);
+                Doom::addToBox(bbox.data(), li->v1->x, li->v1->y);
+                Doom::addToBox(bbox.data(), li->v2->x, li->v2->y);
             }
         }
         if (linebuffer - sector->lines != sector->linecount)

@@ -419,7 +419,6 @@ enum MoveResult
 } // namespace Doom
 
 
-Doom::MoveResult T_MovePlane(Doom::Sector* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);
 
 //
 // P_TELEPT

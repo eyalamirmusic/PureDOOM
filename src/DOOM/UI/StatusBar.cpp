@@ -74,6 +74,7 @@
 #include "../Render/Main.h"
 // are other subsystems' globals this file reads.
 #include "../Sim/Interaction.h"
+#include "../Sim/Random.h"
 extern doom_boolean& st_statusbaron;
 extern char* mapnames[];
 extern int doom_flags;
@@ -885,7 +886,7 @@ void updateWidgets()
 void statusBarTicker()
 {
     st_clock++;
-    st_randomnumber = M_Random();
+    st_randomnumber = Doom::randomness().forMenu();
     updateWidgets();
     st_oldhealth = plyr->health;
 }

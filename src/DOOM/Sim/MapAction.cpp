@@ -3,7 +3,6 @@
 #include "../doom_config.h" // doom_abs
 #include "../doomstat.h" // leveltime
 #include "../i_system.h"
-#include "../m_bbox.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_state.h" // skyflatnum
@@ -23,6 +22,8 @@
 #include "Mobj.h"
 #include "Sight.h"
 #include "Switches.h"
+#include "Random.h"
+#include "../Math/BBox.h"
 namespace Doom
 {
 namespace
@@ -495,8 +496,8 @@ doom_boolean changeSectorThing(Mobj* thing)
         // spray blood in a random direction
         mo = Doom::spawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
 
-        mo->momx = (P_Random() - P_Random()) << 12;
-        mo->momy = (P_Random() - P_Random()) << 12;
+        mo->momx = (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12;
+        mo->momy = (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12;
     }
 
     // keep checking (crush other things)

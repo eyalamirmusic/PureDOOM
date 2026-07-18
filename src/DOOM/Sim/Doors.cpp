@@ -22,6 +22,7 @@
 
 #include "../Game/Sound.h"
 
+#include "Floors.h"
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
@@ -93,7 +94,7 @@ void verticalDoor(Door& door)
 
         case -1:
             // DOWN
-            res = T_MovePlane(door.sector,
+            res = Doom::movePlane(*door.sector,
                               door.speed,
                               door.sector->floorheight,
                               false,
@@ -147,7 +148,7 @@ void verticalDoor(Door& door)
 
         case 1:
             // UP
-            res = T_MovePlane(door.sector,
+            res = Doom::movePlane(*door.sector,
                               door.speed,
                               door.topheight,
                               false,

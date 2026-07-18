@@ -44,6 +44,7 @@
 #include "Floors.h"
 #include "Interaction.h"
 #include "Switches.h"
+#include "Random.h"
 #define MAXANIMS 32
 #define MAXLINEANIMS 64
 #define MAX_ADJOINING_SECTORS 20
@@ -953,7 +954,7 @@ void playerInSpecialSector(Player* player)
             // SUPER HELLSLIME DAMAGE
         case 4:
             // STROBE HURT
-            if (!player->powers[pw_ironfeet] || (P_Random() < 5))
+            if (!player->powers[pw_ironfeet] || (Doom::randomness().forPlay() < 5))
             {
                 if (!(leveltime & 0x1f))
                     Doom::damageMobj(player->mo, 0, 0, 20);

@@ -21,6 +21,7 @@
 
 #include "../Game/Sound.h"
 
+#include "Floors.h"
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
@@ -42,7 +43,7 @@ void moveCeiling(Ceiling& ceiling)
             break;
         case 1:
             // UP
-            res = T_MovePlane(ceiling.sector,
+            res = Doom::movePlane(*ceiling.sector,
                               ceiling.speed,
                               ceiling.topheight,
                               false,
@@ -89,7 +90,7 @@ void moveCeiling(Ceiling& ceiling)
 
         case -1:
             // DOWN
-            res = T_MovePlane(ceiling.sector,
+            res = Doom::movePlane(*ceiling.sector,
                               ceiling.speed,
                               ceiling.bottomheight,
                               ceiling.crush,

@@ -40,6 +40,7 @@
 #include "../Render/Main.h"
 #include "Mobj.h"
 #include "Weapon.h"
+#include "Random.h"
 #define BONUSADD 6
 
 namespace Doom
@@ -663,7 +664,7 @@ void killMobj(Mobj* source, Mobj* target)
     }
     else
         Doom::setMobjState(target, static_cast<StateNum>(target->info->deathstate));
-    target->tics -= P_Random() & 3;
+    target->tics -= Doom::randomness().forPlay() & 3;
 
     if (target->tics < 1)
         target->tics = 1;
@@ -743,7 +744,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
 
         // make fall forwards sometimes
         if (damage < 40 && damage > target->health
-            && target->z - inflictor->z > 64 * FRACUNIT && (P_Random() & 1))
+            && target->z - inflictor->z > 64 * FRACUNIT && (Doom::randomness().forPlay() & 1))
         {
             ang += ANG180;
             thrust *= 4;
@@ -811,7 +812,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         return;
     }
 
-    if ((P_Random() < target->info->painchance) && !(target->flags & MF_SKULLFLY))
+    if ((Doom::randomness().forPlay() < target->info->painchance) && !(target->flags & MF_SKULLFLY))
     {
         target->flags |= MF_JUSTHIT; // fight back!
 

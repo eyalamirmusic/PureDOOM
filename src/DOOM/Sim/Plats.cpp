@@ -24,6 +24,8 @@
 #include "../Game/Sound.h"
 #include "../Host/System.h"
 
+#include "Floors.h"
+#include "Random.h"
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
@@ -41,8 +43,7 @@ void platRaise(Plat& plat)
     switch (plat.status)
     {
         case up:
-            res = T_MovePlane(
-                plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
+            res = Doom::movePlane(*plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
 
             if (plat.type == raiseAndChange
                 || plat.type == raiseToNearestAndChange)
@@ -88,7 +89,7 @@ void platRaise(Plat& plat)
             break;
 
         case down:
-            res = T_MovePlane(plat.sector, plat.speed, plat.low, false, 0, -1);
+            res = Doom::movePlane(*plat.sector, plat.speed, plat.low, false, 0, -1);
 
             if (res == pastdest)
             {
@@ -220,7 +221,7 @@ int doPlat(Line* line, PlatType type, int amount)
                     plat->high = sec->floorheight;
 
                 plat->wait = 35 * PLATWAIT;
-                plat->status = (PlatState) (P_Random() & 1);
+                plat->status = (PlatState) (Doom::randomness().forPlay() & 1);
 
                 Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;

@@ -19,7 +19,6 @@
 // the old one, which is the claim the shims make and the only thing that can
 // check it.
 #include <DOOM/doomtype.h>
-#include <DOOM/m_bbox.h>
 #include <DOOM/m_fixed.h>
 #include <DOOM/m_random.h>
 
@@ -203,7 +202,7 @@ auto tBBoxAddIsElseIf = test("BBox/addIsElseIfAndNotMinMax") = []
 auto tBBoxMatchesVanilla = test("BBox/matchesVanillaAddToBox") = []
 {
     fixed_t vanilla[4];
-    M_ClearBox(vanilla);
+    Doom::clearBox(vanilla);
 
     auto box = BBox::empty();
 
@@ -211,7 +210,7 @@ auto tBBoxMatchesVanilla = test("BBox/matchesVanillaAddToBox") = []
 
     for (const auto& p: points)
     {
-        M_AddToBox(vanilla, Fixed::fromInt(p[0]).raw, Fixed::fromInt(p[1]).raw);
+        Doom::addToBox(vanilla, Fixed::fromInt(p[0]).raw, Fixed::fromInt(p[1]).raw);
         box.add(Fixed::fromInt(p[0]), Fixed::fromInt(p[1]));
     }
 
@@ -278,12 +277,12 @@ auto tRandomWraps = test("Random/wrapsAfter256") = []
 // rewritten caller and a vanilla one share one supply of chance.
 auto tLegacyNamesAliasTheObject = test("Random/vanillaNamesAliasTheObject") = []
 {
-    M_ClearRandom();
+    Doom::randomness().clear();
 
     check(&prndindex == &randomness().playIndex);
     check(&rndindex == &randomness().menuIndex);
 
-    P_Random();
+    Doom::randomness().forPlay();
 
     check(prndindex == 1);
     check(randomness().playIndex == 1);

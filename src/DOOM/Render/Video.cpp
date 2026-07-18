@@ -37,7 +37,6 @@
 #include "../doomdata.h"
 #include "../doomdef.h"
 #include "../i_system.h"
-#include "../m_bbox.h"
 #include "../m_swap.h"
 #include "../r_local.h"
 #include "../v_video.h"
@@ -48,6 +47,7 @@
 
 // Each screen is [SCREENWIDTH*SCREENHEIGHT];
 #include "../Host/System.h"
+#include "../Math/BBox.h"
 byte* screens[5];
 
 // dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
@@ -155,8 +155,8 @@ namespace Doom
 //
 void markRect(int x, int y, int width, int height)
 {
-    M_AddToBox(dirtybox.data(), x, y);
-    M_AddToBox(dirtybox.data(), x + width - 1, y + height - 1);
+    Doom::addToBox(dirtybox.data(), x, y);
+    Doom::addToBox(dirtybox.data(), x + width - 1, y + height - 1);
 }
 
 //

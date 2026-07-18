@@ -2,7 +2,6 @@
 
 #include "../doom_config.h" // doom_abs
 #include "../doomstat.h" // gamemap
-#include "../m_bbox.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_state.h" // validcount, lines
@@ -15,6 +14,8 @@
 #include "../Render/Main.h"
 #include "Interaction.h"
 #include "Mobj.h"
+#include "Random.h"
+#include "../Math/BBox.h"
 namespace Doom
 {
 namespace
@@ -136,7 +137,7 @@ doom_boolean checkThing(Mobj* thing)
     // check for skulls slamming into things
     if (clip.tmthing->flags & MF_SKULLFLY)
     {
-        int damage = ((P_Random() % 8) + 1) * clip.tmthing->info->damage;
+        int damage = ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
 
         Doom::damageMobj(thing, clip.tmthing, clip.tmthing, damage);
 
@@ -184,7 +185,7 @@ doom_boolean checkThing(Mobj* thing)
         }
 
         // damage / explode
-        int damage = ((P_Random() % 8) + 1) * clip.tmthing->info->damage;
+        int damage = ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
         Doom::damageMobj(thing, clip.tmthing, clip.tmthing->target, damage);
 
         // don't traverse any more
