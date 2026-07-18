@@ -2,10 +2,61 @@
 
 #include "MapGeometry.h"
 
+#include "../m_bbox.h" // BOXTOP, BOXBOTTOM, BOXLEFT, BOXRIGHT
+
 #include "Clip.h"
 #include "../Render/Main.h"
 namespace Doom
 {
+DivLine makeDivLine(const Line& line)
+{
+    return {{Fixed {line.v1->x}, Fixed {line.v1->y}},
+            {Fixed {line.dx}, Fixed {line.dy}}};
+}
+
+int lineSide(Vec2 point, const Line& line)
+{
+    return pointOnLineSide(point,
+                           {Fixed {line.v1->x}, Fixed {line.v1->y}},
+                           {Fixed {line.dx}, Fixed {line.dy}});
+}
+
+int boxLineSide(const fixed_t* box, const Line& line)
+{
+    return boxOnLineSide(Fixed {box[BOXTOP]},
+                         Fixed {box[BOXBOTTOM]},
+                         Fixed {box[BOXLEFT]},
+                         Fixed {box[BOXRIGHT]},
+                         {Fixed {line.v1->x}, Fixed {line.v1->y}},
+                         {Fixed {line.dx}, Fixed {line.dy}},
+                         line.slopetype);
+}
+
+void updateLineOpening(const Line& linedef)
+{
+    Clip& clip = Doom::clip();
+
+    if (linedef.sidenum[1] == -1)
+    {
+        // single sided line
+        clip.openrange = 0;
+        return;
+    }
+
+    const Sector& front = *linedef.frontsector;
+    const Sector& back = *linedef.backsector;
+
+    const Opening opening = lineOpening(Fixed {front.floorheight},
+                                        Fixed {front.ceilingheight},
+                                        Fixed {back.floorheight},
+                                        Fixed {back.ceilingheight});
+
+    clip.opentop = opening.top.raw;
+    clip.openbottom = opening.bottom.raw;
+    clip.lowfloor = opening.lowFloor.raw;
+    clip.openrange = opening.range.raw;
+}
+
 namespace
 {
 // PIT_AddLineIntercepts: a line the trace crosses is added to the intercept list.
@@ -13,31 +64,30 @@ namespace
 doom_boolean addLineIntercept(Line* ld)
 {
     Clip& clip = Doom::clip();
-    divline_t& trace = clip.trace;
+    const DivLine& trace = clip.trace;
 
     int s1;
     int s2;
 
     // avoid precision problems with two routines
-    if (trace.dx > FRACUNIT * 16 || trace.dy > FRACUNIT * 16
-        || trace.dx < -FRACUNIT * 16 || trace.dy < -FRACUNIT * 16)
+    if (trace.delta.x.raw > FRACUNIT * 16 || trace.delta.y.raw > FRACUNIT * 16
+        || trace.delta.x.raw < -FRACUNIT * 16 || trace.delta.y.raw < -FRACUNIT * 16)
     {
-        s1 = P_PointOnDivlineSide(ld->v1->x, ld->v1->y, &trace);
-        s2 = P_PointOnDivlineSide(ld->v2->x, ld->v2->y, &trace);
+        s1 = pointOnDivlineSide({Fixed {ld->v1->x}, Fixed {ld->v1->y}}, trace);
+        s2 = pointOnDivlineSide({Fixed {ld->v2->x}, Fixed {ld->v2->y}}, trace);
     }
     else
     {
-        s1 = P_PointOnLineSide(trace.x, trace.y, ld);
-        s2 = P_PointOnLineSide(trace.x + trace.dx, trace.y + trace.dy, ld);
+        s1 = lineSide(trace.origin, *ld);
+        s2 = lineSide(trace.origin + trace.delta, *ld);
     }
 
     if (s1 == s2)
         return true; // line isn't crossed
 
     // hit the line
-    divline_t dl;
-    P_MakeDivline(ld, &dl);
-    fixed_t frac = P_InterceptVector(&trace, &dl);
+    DivLine dl = makeDivLine(*ld);
+    fixed_t frac = interceptVector(trace, dl).raw;
 
     if (frac < 0)
         return true; // behind source
@@ -59,9 +109,9 @@ doom_boolean addLineIntercept(Line* ld)
 doom_boolean addThingIntercept(Mobj* thing)
 {
     Clip& clip = Doom::clip();
-    divline_t& trace = clip.trace;
+    const DivLine& trace = clip.trace;
 
-    doom_boolean tracepositive = (trace.dx ^ trace.dy) > 0;
+    doom_boolean tracepositive = (trace.delta.x.raw ^ trace.delta.y.raw) > 0;
 
     fixed_t x1;
     fixed_t y1;
@@ -86,19 +136,15 @@ doom_boolean addThingIntercept(Mobj* thing)
         y2 = thing->y + thing->radius;
     }
 
-    int s1 = P_PointOnDivlineSide(x1, y1, &trace);
-    int s2 = P_PointOnDivlineSide(x2, y2, &trace);
+    int s1 = pointOnDivlineSide({Fixed {x1}, Fixed {y1}}, trace);
+    int s2 = pointOnDivlineSide({Fixed {x2}, Fixed {y2}}, trace);
 
     if (s1 == s2)
         return true; // line isn't crossed
 
-    divline_t dl;
-    dl.x = x1;
-    dl.y = y1;
-    dl.dx = x2 - x1;
-    dl.dy = y2 - y1;
+    const DivLine dl {{Fixed {x1}, Fixed {y1}}, {Fixed {x2 - x1}, Fixed {y2 - y1}}};
 
-    fixed_t frac = P_InterceptVector(&trace, &dl);
+    fixed_t frac = interceptVector(trace, dl).raw;
 
     if (frac < 0)
         return true; // behind source
@@ -244,10 +290,8 @@ bool pathTraverse(
     if (((y1 - bmaporgy) & (MAPBLOCKSIZE - 1)) == 0)
         y1 += FRACUNIT; // don't side exactly on a line
 
-    clip.trace.x = x1;
-    clip.trace.y = y1;
-    clip.trace.dx = x2 - x1;
-    clip.trace.dy = y2 - y1;
+    clip.trace.origin = {Fixed {x1}, Fixed {y1}};
+    clip.trace.delta = {Fixed {x2 - x1}, Fixed {y2 - y1}};
 
     x1 -= bmaporgx;
     y1 -= bmaporgy;

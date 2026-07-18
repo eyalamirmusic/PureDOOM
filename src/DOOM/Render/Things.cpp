@@ -13,7 +13,7 @@
 #include "../i_system.h"
 #include "../m_swap.h"
 #include "../r_local.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include "GraphicsData.h"
 #include "SpriteScratch.h"
@@ -206,22 +206,24 @@ void initSpriteDefs(char** namelist)
         //  filling in the frames for whatever is found
         for (l = start + 1; l < end; l++)
         {
-            if (*reinterpret_cast<int*>(lumpinfo[l].name) == intname)
+            const Lump& entry = Doom::wad().info(l);
+
+            if (*reinterpret_cast<const int*>(entry.name) == intname)
             {
-                frame = lumpinfo[l].name[4] - 'A';
-                rotation = lumpinfo[l].name[5] - '0';
+                frame = entry.name[4] - 'A';
+                rotation = entry.name[5] - '0';
 
                 if (modifiedgame)
-                    patched = W_GetNumForName(lumpinfo[l].name);
+                    patched = Doom::wad().number(entry.name);
                 else
                     patched = l;
 
                 installSpriteLump(patched, frame, rotation, false);
 
-                if (lumpinfo[l].name[6])
+                if (entry.name[6])
                 {
-                    frame = lumpinfo[l].name[6] - 'A';
-                    rotation = lumpinfo[l].name[7] - '0';
+                    frame = entry.name[6] - 'A';
+                    rotation = entry.name[7] - '0';
                     installSpriteLump(l, frame, rotation, true);
                 }
             }
@@ -380,7 +382,7 @@ void drawVisSprite(VisSprite* vis)
     Patch* patch;
 
     patch = static_cast<Patch*>(
-        W_CacheLumpNum(vis->patch + firstspritelump, PU_CACHE));
+        Doom::cacheLumpNum(vis->patch + firstspritelump));
 
     dc_colormap = vis->colormap;
 

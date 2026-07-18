@@ -37,7 +37,7 @@
 #include <DOOM/st_stuff.h>
 #include <DOOM/tables.h>
 #include <DOOM/v_video.h>
-#include <DOOM/w_wad.h>
+#include <DOOM/Wad/WadFile.h>
 
 // Engine globals that no header declares. DOOM.c reaches them the same way, so
 #include <DOOM/UI/Menu.h>
@@ -345,7 +345,7 @@ static void eacpDrawUnderLayers()
         Doom::drawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
                           y,
                           0,
-                          (Doom::Patch*) W_CacheLumpName("M_PAUSE", PU_CACHE));
+                          (Doom::Patch*) Doom::cacheLumpName("M_PAUSE"));
     }
 }
 
@@ -538,7 +538,7 @@ static void eacpDecodeWall(
     for (i = 0; i < texture->patchcount; ++i)
     {
         Doom::TexPatch* piece = &texture->patches[i];
-        Doom::Patch* patch = (Doom::Patch*) W_CacheLumpNum(piece->patch, PU_CACHE);
+        Doom::Patch* patch = (Doom::Patch*) Doom::cacheLumpNum(piece->patch);
 
         eacpBlitPatch(
             patch, piece->originx, piece->originy, indices, alpha, width, height);
@@ -595,7 +595,7 @@ static void eacpEnsureTextureData()
 
     for (i = 0; i < numspritelumps; ++i)
     {
-        Doom::Patch* patch = (Doom::Patch*) W_CacheLumpNum(firstspritelump + i, PU_CACHE);
+        Doom::Patch* patch = (Doom::Patch*) Doom::cacheLumpNum(firstspritelump + i);
         eacpSpriteHeights[i] = patch->height;
     }
 
@@ -659,7 +659,7 @@ void eacpDoomGetTexturePixels(int id, unsigned char* out)
     if (id >= numtextures && id < eacpSpriteBase())
     {
         byte* flat =
-            (byte*) W_CacheLumpNum(firstflat + (id - numtextures), PU_CACHE);
+            (byte*) Doom::cacheLumpNum(firstflat + (id - numtextures));
         doom_memcpy(out, flat, EACP_FLAT_SIZE * EACP_FLAT_SIZE);
         return;
     }
@@ -680,8 +680,8 @@ void eacpDoomGetTexturePixels(int id, unsigned char* out)
     }
     else
     {
-        Doom::Patch* patch = (Doom::Patch*) W_CacheLumpNum(
-            firstspritelump + (id - eacpSpriteBase()), PU_CACHE);
+        Doom::Patch* patch = (Doom::Patch*) Doom::cacheLumpNum(
+            firstspritelump + (id - eacpSpriteBase()));
 
         doom_memset(indices, 0, count);
         doom_memset(alpha, 0, count);

@@ -41,6 +41,7 @@
 #include "../Host/System.h"
 #include "../Render/Main.h"
 #include "MapAction.h"
+#include "MapUtil.h"
 #include "Movement.h"
 #define STOPSPEED 0x1000
 #define FRICTION 0xe800
@@ -255,7 +256,9 @@ void zMovement(Mobj* mo)
         // float down towards target if too close
         if (!(mo->flags & MF_SKULLFLY) && !(mo->flags & MF_INFLOAT))
         {
-            dist = P_AproxDistance(mo->x - mo->target->x, mo->y - mo->target->y);
+            dist = approxDistance(Fixed {mo->x - mo->target->x},
+                                  Fixed {mo->y - mo->target->y})
+                       .raw;
 
             delta = (mo->target->z + (mo->height >> 1)) - mo->z;
 
@@ -479,7 +482,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     mobj->frame = st->frame;
 
     // set subsector and/or block links
-    P_SetThingPosition(mobj);
+    setThingPosition(*mobj);
 
     mobj->floorz = mobj->subsector->sector->floorheight;
     mobj->ceilingz = mobj->subsector->sector->ceilingheight;
@@ -514,7 +517,7 @@ void removeMobj(Mobj* mobj)
     }
 
     // unlink from sector and block lists
-    P_UnsetThingPosition(mobj);
+    unsetThingPosition(*mobj);
 
     // stop any playing sound
     Doom::stopSound(mobj);
@@ -843,7 +846,8 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
     th->momx = FixedMul(th->info->speed, finecosine[an]);
     th->momy = FixedMul(th->info->speed, finesine[an]);
 
-    dist = P_AproxDistance(dest->x - source->x, dest->y - source->y);
+    dist =
+        approxDistance(Fixed {dest->x - source->x}, Fixed {dest->y - source->y}).raw;
     dist = dist / th->info->speed;
 
     if (dist < 1)

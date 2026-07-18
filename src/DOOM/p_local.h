@@ -113,15 +113,13 @@ extern int& iquetail;
 //
 // P_MAPUTL
 //
-struct divline_t
-{
-    fixed_t x;
-    fixed_t y;
-    fixed_t dx;
-    fixed_t dy;
-};
-
-
+// The utilities themselves are Doom::* now - the pure geometry in
+// Sim/MapGeometry.h (the side tests, the distance estimate, the line opening) and
+// the stateful half in Sim/MapUtil.h (the blockmap iterators, thing linking, path
+// traversal). Vanilla's divline_t went with them: it is Doom::DivLine, the same
+// four numbers as an origin and a delta. What is left here is the intercept
+// list's shape and the traversal flags, which the files that include p_local.h
+// still name.
 namespace Doom
 {
 struct Intercept
@@ -145,42 +143,9 @@ struct Intercept
 typedef doom_boolean(*Traverser) (Doom::Intercept* in);
 
 
-fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
-int P_PointOnLineSide(fixed_t x, fixed_t y, Doom::Line* line);
-int P_PointOnDivlineSide(fixed_t x, fixed_t y, divline_t* line);
-void P_MakeDivline(Doom::Line* li, divline_t* dl);
-fixed_t P_InterceptVector(divline_t* v2, divline_t* v1);
-int P_BoxOnLineSide(fixed_t* tmbox, Doom::Line* ld);
-
-
-// References into Doom::Clip (Sim/Clip.h), reached through Doom::clip() - the same
-// vanilla-name-over-owning-object shim rndindex/prndindex use. The clipping code
-// still reads these as globals; they become clip().opentop directly once p_map /
-// p_sight / p_enemy are rewritten to take an Engine&.
-extern fixed_t& opentop;
-extern fixed_t& openbottom;
-extern fixed_t& openrange;
-extern fixed_t& lowfloor;
-
-
-void P_LineOpening(Doom::Line* linedef);
-
-
-doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean(*func)(Doom::Line*));
-doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean(*func)(Doom::Mobj*));
-
-
 #define PT_ADDLINES     1
 #define PT_ADDTHINGS    2
 #define PT_EARLYOUT     4
-
-
-extern divline_t& trace;
-
-
-doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, doom_boolean(*trav) (Doom::Intercept*));
-void P_UnsetThingPosition(Doom::Mobj* thing);
-void P_SetThingPosition(Doom::Mobj* thing);
 
 
 //

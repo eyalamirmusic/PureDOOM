@@ -5,8 +5,10 @@
 
 namespace Doom
 {
-// A directed line segment: an origin and a delta. Vanilla's divline_t is the same
-// four numbers, and the sight, shooting and path-traversal code still holds one.
+// A directed line segment: an origin and a delta. This is vanilla's divline_t -
+// the same four numbers, and now the only spelling of them; the sight, shooting
+// and path-traversal code holds one of these directly (Clip::trace,
+// SightScratch::strace), so no cast bridges the two any more.
 struct DivLine
 {
     Vec2 origin;

@@ -15,7 +15,7 @@
 #include <DOOM/p_saveg.h>
 #include <DOOM/tables.h>
 #include <DOOM/v_video.h>
-#include <DOOM/w_wad.h>
+#include <DOOM/Wad/WadFile.h>
 
 #include <DOOM/Sim/Level.h>
 #include <DOOM/r_state.h>
@@ -30,6 +30,7 @@
 // the eacp port both reach it exactly this way, so this is the house style
 #include <DOOM/Sim/Mobj.h>
 // rather than a workaround.
+#include <DOOM/Sim/MapUtil.h>
 #include <DOOM/Sim/Movement.h>
 extern unsigned char screen_palette[256 * 3];
 
@@ -257,7 +258,7 @@ unsigned long long doomSimFrameHash()
 
 int doomSimLumpCount()
 {
-    return numlumps;
+    return Doom::wad().count();
 }
 
 void doomSimLumpName(int lump, char* nameOut)
@@ -266,19 +267,19 @@ void doomSimLumpName(int lump, char* nameOut)
 
     // A lump name is eight bytes and is only null-terminated if it is shorter.
     for (i = 0; i < 8; ++i)
-        nameOut[i] = lumpinfo[lump].name[i];
+        nameOut[i] = Doom::wad().info(lump).name[i];
 
     nameOut[8] = '\0';
 }
 
 int doomSimLumpSize(int lump)
 {
-    return W_LumpLength(lump);
+    return Doom::wad().length(lump);
 }
 
 unsigned long long doomSimLumpHash(int lump)
 {
-    int size = W_LumpLength(lump);
+    int size = Doom::wad().length(lump);
 
     simHash = 1469598103934665603ULL;
 
@@ -286,7 +287,7 @@ unsigned long long doomSimLumpHash(int lump)
     // them, and asking the zone for a zero-byte block to read nothing into is
     // not worth finding out about.
     if (size > 0)
-        simMix(W_CacheLumpNum(lump, PU_CACHE), size);
+        simMix(Doom::cacheLumpNum(lump), size);
 
     return simHash;
 }
@@ -477,9 +478,9 @@ void doomSimSetMobjFlags(int handle, int flags)
         mobj->flags = flags;
 }
 
-// P_BlockThingsIterator takes a bare function pointer, so the count rides a file
-// static rather than a lambda capture. One process per test (NanoTest), and the
-// probe is single-threaded, so the static is safe.
+// The counter rides a file static rather than a lambda capture, so the callback
+// stays a plain function. One process per test (NanoTest), and the probe is
+// single-threaded, so the static is safe.
 static int simBlockThingCount;
 
 static doom_boolean simCountThing(Doom::Mobj*)
@@ -502,7 +503,7 @@ int doomSimThingsInBlockOf(int handle)
     int blocky = (mobj->y - bmaporgy) >> MAPBLOCKSHIFT;
 
     simBlockThingCount = 0;
-    P_BlockThingsIterator(blockx, blocky, simCountThing);
+    Doom::forEachThingInBlock(blockx, blocky, simCountThing);
     return simBlockThingCount;
 }
 
@@ -511,7 +512,7 @@ void doomSimUnsetThingPosition(int handle)
     Doom::Mobj* mobj = simMobj(handle);
 
     if (mobj)
-        P_UnsetThingPosition(mobj);
+        Doom::unsetThingPosition(*mobj);
 }
 
 void doomSimSetThingPosition(int handle)
@@ -519,7 +520,7 @@ void doomSimSetThingPosition(int handle)
     Doom::Mobj* mobj = simMobj(handle);
 
     if (mobj)
-        P_SetThingPosition(mobj);
+        Doom::setThingPosition(*mobj);
 }
 
 int doomSimTypeBarrel()
@@ -551,7 +552,7 @@ int doomSimFlagNoClip()
 // append-only, and it covers only the mobjs and the player, not the sectors,
 // lines and sides Doom::archiveWorld round-trips. This one walks everything the
 // archive serializes - and only the scalar fields it restores exactly, never the
-// pointers (target, subsector, the blockmap/sector links) that P_SetThingPosition
+// pointers (target, subsector, the blockmap/sector links) that Doom::setThingPosition
 // legitimately recomputes on load and would differ between two world instances.
 // The random indices and leveltime ride outside the archive, so they are left
 // out of the hash rather than restored.
@@ -660,7 +661,7 @@ int doomSimSaveLoadPreservesWorld()
 
     unsigned long long before = simWorldHash();
 
-    // Archive the live world, exactly the P_Archive* sequence gDoSaveGame runs.
+    // Archive the live world, exactly the P_Archive* sequence doSaveGame runs.
     save_p = saveScratch;
     Doom::archivePlayers();
     Doom::archiveWorld();

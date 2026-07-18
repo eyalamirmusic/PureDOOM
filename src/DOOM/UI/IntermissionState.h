@@ -13,7 +13,7 @@ namespace Doom
 // the "you are here" pointer play out. Three loosely-related threads: the timing/state machine
 // (the current IntermissionPhase `state`, the `acceleratestage` skip flag, the `cnt`/`bcnt` counters, the
 // per-stage `dm_state`/`ng_state`/`sp_state`, and the animated count-up accumulators `cnt_*`), the
-// passed-in scoreboard data (`wbs`/`plrs`/`me`), and the patches `wiLoadData` reads from the WAD
+// passed-in scoreboard data (`wbs`/`plrs`/`me`), and the patches `loadIntermissionData` reads from the WAD
 // once and the drawers then paint from (`bg`, `num`, `kills`, the player faces, ...) plus the
 // malloc'd `lnames` pointer array.
 //
@@ -64,9 +64,9 @@ struct IntermissionState
     int dm_totals[MAXPLAYERS] = {};
     int dofrags = 0; // netgame has frags to show
 
-    int NUMCMAPS = 0; // # of commercial levels (set in wiLoadData)
+    int NUMCMAPS = 0; // # of commercial levels (set in loadIntermissionData)
 
-    // Graphics loaded once by wiLoadData, read-only after.
+    // Graphics loaded once by loadIntermissionData, read-only after.
     Patch* bg = nullptr; // background (map of levels)
     Patch* yah[2] = {}; // "you are here" (two blink frames)
     Patch* splat = nullptr; // splat on completed levels
@@ -91,7 +91,8 @@ struct IntermissionState
     Patch* bstar = nullptr; // your dead face
     Patch* p[MAXPLAYERS] = {}; // "red P[1..MAXPLAYERS]"
     Patch* bp[MAXPLAYERS] = {}; // "gray P[1..MAXPLAYERS]"
-    Patch** lnames = nullptr; // per-level name graphics (malloc'd by wiLoadData)
+    Patch** lnames =
+        nullptr; // per-level name graphics (malloc'd by loadIntermissionData)
 };
 
 // The one IntermissionState, a view onto the Engine's member - the same pattern as the other

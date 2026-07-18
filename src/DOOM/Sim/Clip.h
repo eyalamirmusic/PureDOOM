@@ -2,34 +2,35 @@
 
 #include "../p_local.h"
 
+#include "MapGeometry.h" // DivLine
+
 namespace Doom
 {
-// The transient movement/collision scratch p_maputl builds and the clipping code
-// reads back. Two clusters:
+// The transient movement/collision scratch Sim/MapUtil builds and the clipping
+// code reads back. Two clusters:
 //
-//   - P_PathTraverse's intercept list: the lines and things a trace crosses, the
-//     pointer into it, the early-out flag PIT_AddLineIntercepts honours, and the
-//     trace itself (the directed segment being walked). Rebuilt from scratch on
-//     every traverse.
-//   - P_LineOpening's vertical window: the gap a two-sided line leaves (opentop /
-//     openbottom / openrange) plus the lower of the two floors (lowfloor). Written
-//     as each line is contacted, read by the mover in p_map/p_enemy.
+//   - pathTraverse's intercept list: the lines and things a trace crosses, the
+//     pointer into it, the early-out flag the line-intercept callback honours, and
+//     the trace itself (the directed segment being walked). Rebuilt from scratch
+//     on every traverse.
+//   - updateLineOpening's vertical window: the gap a two-sided line leaves
+//     (opentop / openbottom / openrange) plus the lower of the two floors
+//     (lowfloor). Written as each line is contacted, read by the mover in
+//     Sim/Movement, Sim/MapAction and Sim/Enemy.
 //
 // None of it is hashed - a demo's world is mobj fields, not this scratch - so
-// gathering it here is golden-neutral. The vanilla names (opentop, trace, ...) are
-// references onto these members while p_map/p_sight/p_enemy still read them as
-// globals; they resolve to clip().<member> directly once those files take an
-// Engine&.
+// gathering it here is golden-neutral. Every reader reaches it through clip()
+// now; the vanilla-named references onto these members went with p_maputl.cpp.
 struct Clip
 {
     Intercept intercepts[MAXINTERCEPTS];
     Intercept* interceptPtr = nullptr;
     doom_boolean earlyOut = false;
 
-    // P_PathTraverse's trace, read back by the shooting code in p_map.
-    divline_t trace = {};
+    // pathTraverse's trace, read back by the shooting code in MapAction.
+    DivLine trace = {};
 
-    // P_LineOpening's window.
+    // updateLineOpening's window.
     fixed_t opentop = 0;
     fixed_t openbottom = 0;
     fixed_t openrange = 0;

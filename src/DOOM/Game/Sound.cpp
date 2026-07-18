@@ -27,7 +27,7 @@
 #include "../sounds.h"
 #include "../s_sound.h"
 #include "../m_random.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 #include "../doomdef.h"
 #include "../p_local.h"
 #include "../doomstat.h"
@@ -109,10 +109,9 @@ namespace Doom
 //
 // Prototypes
 //
-int sgetChannel(void* origin, SfxInfo* sfxinfo);
-int sAdjustSoundParams(
-    Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch);
-void sStopChannel(int cnum);
+int getChannel(void* origin, SfxInfo* sfxinfo);
+int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch);
+void stopChannel(int cnum);
 
 //
 // Initializes sound stuff, including volume
@@ -167,7 +166,7 @@ void startLevelSound()
     //  (trust me - a good idea)
     for (int cnum = 0; cnum < numChannels; cnum++)
         if (channels_s_sound[cnum].sfxinfo)
-            sStopChannel(cnum);
+            stopChannel(cnum);
 
     // start new music for the level
     mus_paused = 0;
@@ -250,7 +249,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     //  and if not, modify the params
     if (origin && origin != players[consoleplayer].mo)
     {
-        rc = sAdjustSoundParams(
+        rc = adjustSoundParams(
             players[consoleplayer].mo, origin, &volume, &sep, &pitch);
 
         if (origin->x == players[consoleplayer].mo->x
@@ -291,7 +290,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     stopSound(origin);
 
     // try to find a channel
-    cnum = sgetChannel(origin, sfx);
+    cnum = getChannel(origin, sfx);
 
     if (cnum < 0)
         return;
@@ -313,7 +312,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
         doom_print("startSoundAtVolume: 16bit and not pre-cached - wtf?\n");
 
         // DOS remains, 8bit handling
-        //sfx->data = (void *) W_CacheLumpNum(sfx->lumpnum, PU_MUSIC);
+        //sfx->data = (void *) Doom::cacheLumpNum(sfx->lumpnum);
         // fprintf( stderr,
         //             "startSoundAtVolume: loading %d (lump %d) : 0x%x\n",
         //       sfx_id, sfx->lumpnum, (int)sfx->data );
@@ -327,11 +326,11 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     // Assigns the handle to one of the channels in the
     //  mix/output buffer.
     channels_s_sound[cnum].handle = startSoundHost(sfx_id,
-                                                 /*sfx->data,*/
-                                                 volume,
-                                                 sep,
-                                                 pitch,
-                                                 priority);
+                                                   /*sfx->data,*/
+                                                   volume,
+                                                   sep,
+                                                   pitch,
+                                                   priority);
 }
 
 void startSound(void* origin, int sfx_id)
@@ -346,7 +345,7 @@ void stopSound(void* origin)
         if (channels_s_sound[cnum].sfxinfo
             && channels_s_sound[cnum].origin == origin)
         {
-            sStopChannel(cnum);
+            stopChannel(cnum);
             break;
         }
     }
@@ -407,7 +406,7 @@ void updateSounds(void* listener_p)
                     volume += sfx->volume;
                     if (volume < 1)
                     {
-                        sStopChannel(cnum);
+                        stopChannel(cnum);
                         continue;
                     }
                     else if (volume > snd_SfxVolume)
@@ -420,15 +419,15 @@ void updateSounds(void* listener_p)
                 //  or modify their params
                 if (c->origin && listener_p != c->origin)
                 {
-                    audible = sAdjustSoundParams(listener,
-                                                 static_cast<Mobj*>((c->origin)),
-                                                 &volume,
-                                                 &sep,
-                                                 &pitch);
+                    audible = adjustSoundParams(listener,
+                                                static_cast<Mobj*>((c->origin)),
+                                                &volume,
+                                                &sep,
+                                                &pitch);
 
                     if (!audible)
                     {
-                        sStopChannel(cnum);
+                        stopChannel(cnum);
                     }
                     else
                         updateSoundParams(c->handle, volume, sep, pitch);
@@ -438,7 +437,7 @@ void updateSounds(void* listener_p)
             {
                 // if channel is allocated but sound has stopped,
                 //  free it
-                sStopChannel(cnum);
+                stopChannel(cnum);
             }
         }
     }
@@ -508,11 +507,11 @@ void changeMusic(int musicnum, int looping)
         //doom_sprintf(namebuf, "d_%s", music->name);
         doom_strcpy(namebuf.data(), "d_");
         doom_concat(namebuf.data(), music->name);
-        music->lumpnum = W_GetNumForName(namebuf.data());
+        music->lumpnum = Doom::wad().number(namebuf.data());
     }
 
     // load & it
-    music->data = (void*) W_CacheLumpNum(music->lumpnum, PU_MUSIC);
+    music->data = (void*) Doom::cacheLumpNum(music->lumpnum);
     music->handle = registerSong(music->data);
 
     // play it
@@ -536,7 +535,7 @@ void stopMusic()
     }
 }
 
-void sStopChannel(int cnum)
+void stopChannel(int cnum)
 {
     SoundChannel& c = channels_s_sound[cnum];
 
@@ -575,8 +574,7 @@ void sStopChannel(int cnum)
 // If the sound is not audible, returns a 0.
 // Otherwise, modifies parameters and returns 1.
 //
-int sAdjustSoundParams(
-    Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch)
+int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch)
 {
     fixed_t approx_dist;
     fixed_t adx;
@@ -637,10 +635,10 @@ int sAdjustSoundParams(
 }
 
 //
-// sgetChannel :
+// getChannel :
 // If none available, return -1.  Otherwise channel #.
 //
-int sgetChannel(void* origin, SfxInfo* sfxinfo)
+int getChannel(void* origin, SfxInfo* sfxinfo)
 {
     // channel number to use
     int cnum;
@@ -654,7 +652,7 @@ int sgetChannel(void* origin, SfxInfo* sfxinfo)
             break;
         else if (origin && channels_s_sound[cnum].origin == origin)
         {
-            sStopChannel(cnum);
+            stopChannel(cnum);
             break;
         }
     }
@@ -675,7 +673,7 @@ int sgetChannel(void* origin, SfxInfo* sfxinfo)
         else
         {
             // Otherwise, kick out lower priority.
-            sStopChannel(cnum);
+            stopChannel(cnum);
         }
     }
 

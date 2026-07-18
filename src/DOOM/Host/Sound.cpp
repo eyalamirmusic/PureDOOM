@@ -25,7 +25,7 @@
 
 #include "../i_system.h"
 #include "../i_sound.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 #include "../doomdef.h"
 #include "../doomstat.h" // gametic, snd_SfxVolume / snd_MusicVolume
 
@@ -196,14 +196,14 @@ void* getsfx(char* sfxname, int* len)
     // I do not do runtime patches to that
     //  variable. Instead, we will use a
     //  default sound for replacement.
-    if (W_CheckNumForName(name.data()) == -1)
-        sfxlump = W_GetNumForName("dspistol");
+    if (Doom::wad().find(name.data()) == -1)
+        sfxlump = Doom::wad().number("dspistol");
     else
-        sfxlump = W_GetNumForName(name.data());
+        sfxlump = Doom::wad().number(name.data());
 
-    size = W_LumpLength(sfxlump);
+    size = Doom::wad().length(sfxlump);
 
-    sfx = (unsigned char*) W_CacheLumpNum(sfxlump, PU_STATIC);
+    sfx = (unsigned char*) Doom::cacheLumpNum(sfxlump);
 
     // Pads the sound effect out to the mixing buffer size.
     // The original realloc would interfere with zone memory.
@@ -647,7 +647,7 @@ void setChannels()
             vol_lookup[i * 256 + j] = (i * (j - 128) * 256) / 127;
 }
 
-void I_SetSfxVolume(int volume)
+void setSfxVolumeHost(int volume)
 {
     // Identical to DOS.
     // Basically, this should propagate
@@ -681,7 +681,7 @@ int sfxLumpNum(SfxInfo* sfx)
     //doom_sprintf(namebuf, "ds%s", sfx->name);
     doom_strcpy(namebuf.data(), "ds");
     doom_concat(namebuf.data(), sfx->name);
-    return W_GetNumForName(namebuf.data());
+    return Doom::wad().number(namebuf.data());
 }
 
 //
@@ -696,7 +696,8 @@ int sfxLumpNum(SfxInfo* sfx)
 // Pitching (that is, increased speed of playback)
 //  is set, but currently not used by mixing.
 //
-int startSoundHost(int id, int vol, int sep, int pitch, [[maybe_unused]] int priority)
+int startSoundHost(
+    int id, int vol, int sep, int pitch, [[maybe_unused]] int priority)
 {
     // Returns a handle (not used).
     id = addsfx(id, vol, steptable[pitch], sep);
@@ -848,9 +849,9 @@ void updateSound()
 void submitSound() {}
 
 void updateSoundParams([[maybe_unused]] int handle,
-                         [[maybe_unused]] int vol,
-                         [[maybe_unused]] int sep,
-                         [[maybe_unused]] int pitch)
+                       [[maybe_unused]] int vol,
+                       [[maybe_unused]] int sep,
+                       [[maybe_unused]] int pitch)
 {
     // I fail too see that this is used.
     // Would be using the handle to identify
@@ -980,7 +981,7 @@ int registerSong(void* data)
 }
 
 // Is the song playing?
-int I_QrySongPlaying([[maybe_unused]] int handle)
+int querySongPlaying([[maybe_unused]] int handle)
 {
     return mus_playing;
 }

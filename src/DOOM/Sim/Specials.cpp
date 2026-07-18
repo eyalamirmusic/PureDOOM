@@ -21,7 +21,7 @@
 #include "../r_state.h"
 #include "../s_sound.h"
 #include "../sounds.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include "AnimatedSurfaces.h"
 #include "Specials.h"
@@ -187,7 +187,7 @@ void initPicAnims()
         }
         else
         {
-            if (W_CheckNumForName(animdefs[i].startname) == -1)
+            if (Doom::wad().find(animdefs[i].startname) == -1)
                 continue;
 
             lastanim->picnum = Doom::flatNumForName(animdefs[i].endname);

@@ -83,7 +83,7 @@ extern "C"
     unsigned long long doomSimFrameHash();
 
     // The WAD directory as the reader sees it, so that tearing the zone
-    // allocator out from under W_CacheLumpNum has something to answer to. The
+    // allocator out from under Doom::cacheLumpNum has something to answer to. The
     // hash is over the lump's bytes.
     int doomSimLumpCount();
     void doomSimLumpName(int lump, char* nameOut);
@@ -159,8 +159,8 @@ extern "C"
 
     // The stateful map-utility functions, exposed so a scenario can pin them with
     // locality rather than only through the collision they feed. A thing is linked
-    // into a blockmap cell (P_SetThingPosition) and found there by the iterator
-    // (P_BlockThingsIterator); unlinking it (P_UnsetThingPosition) takes it back
+    // into a blockmap cell (Doom::setThingPosition) and found there by the iterator
+    // (Doom::forEachThingInBlock); unlinking it (Doom::unsetThingPosition) takes it back
     // out. doomSimThingsInBlockOf counts what the iterator finds in the cell that
     // holds a handle's mobj, so a test reads the link/unlink as a count that moves.
     int doomSimThingsInBlockOf(int handle);

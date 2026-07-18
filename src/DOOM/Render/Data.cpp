@@ -17,7 +17,7 @@
 #include "../p_local.h"
 #include "../r_local.h"
 #include "../r_sky.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include <alloca.h>
 
@@ -173,7 +173,7 @@ void generateComposite(int texnum)
     for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
          i++, patch++)
     {
-        realpatch = static_cast<Patch*>(W_CacheLumpNum(patch->patch, PU_CACHE));
+        realpatch = static_cast<Patch*>(Doom::cacheLumpNum(patch->patch));
         x1 = patch->originx;
         x2 = x1 + SHORT(realpatch->width);
 
@@ -240,7 +240,7 @@ void generateLookup(int texnum)
     for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
          i++, patch++)
     {
-        realpatch = static_cast<Patch*>(W_CacheLumpNum(patch->patch, PU_CACHE));
+        realpatch = static_cast<Patch*>(Doom::cacheLumpNum(patch->patch));
         x1 = patch->originx;
         x2 = x1 + SHORT(realpatch->width);
 
@@ -307,7 +307,7 @@ byte* getColumn(int tex, int col)
     ofs = texturecolumnofs[tex][col];
 
     if (lump > 0)
-        return static_cast<byte*>(W_CacheLumpNum(lump, PU_CACHE)) + ofs;
+        return static_cast<byte*>(Doom::cacheLumpNum(lump)) + ofs;
 
     if (!texturecomposite[tex])
         generateComposite(tex);
@@ -353,7 +353,7 @@ void initTextures()
 
     // Load the patch names from pnames.lmp.
     name[8] = 0;
-    names = static_cast<char*>(W_CacheLumpName("PNAMES", PU_STATIC));
+    names = static_cast<char*>(Doom::cacheLumpName("PNAMES"));
     nummappatches = LONG(*(reinterpret_cast<int*>(names)));
     name_p = names + 4;
     auto patchlookup = EA::Vector<int>(nummappatches);
@@ -361,22 +361,22 @@ void initTextures()
     for (i = 0; i < nummappatches; i++)
     {
         doom_strncpy(name.data(), name_p + i * 8, 8);
-        patchlookup[i] = W_CheckNumForName(name.data());
+        patchlookup[i] = Doom::wad().find(name.data());
     }
 
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
-    maptex = maptex1 = static_cast<int*>(W_CacheLumpName("TEXTURE1", PU_STATIC));
+    maptex = maptex1 = static_cast<int*>(Doom::cacheLumpName("TEXTURE1"));
     numtextures1 = LONG(*maptex);
-    maxoff = W_LumpLength(W_GetNumForName("TEXTURE1"));
+    maxoff = Doom::wad().length(Doom::wad().number("TEXTURE1"));
     directory = maptex + 1;
 
-    if (W_CheckNumForName("TEXTURE2") != -1)
+    if (Doom::wad().find("TEXTURE2") != -1)
     {
-        maptex2 = static_cast<int*>(W_CacheLumpName("TEXTURE2", PU_STATIC));
+        maptex2 = static_cast<int*>(Doom::cacheLumpName("TEXTURE2"));
         numtextures2 = LONG(*maptex2);
-        maxoff2 = W_LumpLength(W_GetNumForName("TEXTURE2"));
+        maxoff2 = Doom::wad().length(Doom::wad().number("TEXTURE2"));
     }
     else
     {
@@ -420,8 +420,8 @@ void initTextures()
     textureheight = gd.textureheight.data();
 
     // Really complex printing shit...
-    temp1 = W_GetNumForName("S_START"); // P_???????
-    temp2 = W_GetNumForName("S_END") - 1;
+    temp1 = Doom::wad().number("S_START"); // P_???????
+    temp2 = Doom::wad().number("S_END") - 1;
     temp3 = ((temp2 - temp1 + 63) / 64) + ((numtextures + 63) / 64);
     doom_print("[");
     for (i = 0; i < temp3; i++)
@@ -512,8 +512,8 @@ void initTextures()
 //
 void initFlats()
 {
-    firstflat = W_GetNumForName("F_START") + 1;
-    lastflat = W_GetNumForName("F_END") - 1;
+    firstflat = Doom::wad().number("F_START") + 1;
+    lastflat = Doom::wad().number("F_END") - 1;
     numflats = lastflat - firstflat + 1;
 
     // Create translation table for global animation. GraphicsData owns it (Step 9);
@@ -536,8 +536,8 @@ void initSpriteLumps()
 {
     Patch* patch;
 
-    firstspritelump = W_GetNumForName("S_START") + 1;
-    lastspritelump = W_GetNumForName("S_END") - 1;
+    firstspritelump = Doom::wad().number("S_START") + 1;
+    lastspritelump = Doom::wad().number("S_END") - 1;
 
     numspritelumps = lastspritelump - firstspritelump + 1;
 
@@ -557,7 +557,7 @@ void initSpriteLumps()
         if (!(i & 63))
             doom_print(".");
 
-        patch = static_cast<Patch*>(W_CacheLumpNum(firstspritelump + i, PU_CACHE));
+        patch = static_cast<Patch*>(Doom::cacheLumpNum(firstspritelump + i));
         spritewidth[i] = SHORT(patch->width) << FRACBITS;
         spriteoffset[i] = SHORT(patch->leftoffset) << FRACBITS;
         spritetopoffset[i] = SHORT(patch->topoffset) << FRACBITS;
@@ -575,14 +575,14 @@ void initColormaps()
     //  256 byte align tables.
     // GraphicsData owns the backing buffer now (RAII, Step 9); colormaps is the
     // 256-byte-aligned view into it, as the original doom_malloc(length) + align was.
-    lump = W_GetNumForName("COLORMAP");
-    length = W_LumpLength(lump) + 255;
+    lump = Doom::wad().number("COLORMAP");
+    length = Doom::wad().length(lump) + 255;
     auto& gd = graphicsData();
     gd.colormapStorage.resize(length);
     colormaps = reinterpret_cast<LightTable*>(
         (reinterpret_cast<unsigned long long>(gd.colormapStorage.data()) + 255)
         & ~0xffULL);
-    W_ReadLump(lump, colormaps);
+    Doom::wad().read(lump, colormaps);
 }
 
 //
@@ -612,7 +612,7 @@ int flatNumForName(const char* name)
     int i;
     EA::Array<char, 9> namet;
 
-    i = W_CheckNumForName(name);
+    i = Doom::wad().find(name);
 
     if (i == -1)
     {
@@ -702,8 +702,8 @@ void precacheLevel()
         if (flatpresent[i])
         {
             lump = firstflat + i;
-            flatmemory += lumpinfo[lump].size;
-            W_CacheLumpNum(lump, PU_CACHE);
+            flatmemory += Doom::wad().info(lump).size;
+            Doom::cacheLumpNum(lump);
         }
     }
 
@@ -736,8 +736,8 @@ void precacheLevel()
         for (j = 0; j < texture->patchcount; j++)
         {
             lump = texture->patches[j].patch;
-            texturememory += lumpinfo[lump].size;
-            W_CacheLumpNum(lump, PU_CACHE);
+            texturememory += Doom::wad().info(lump).size;
+            Doom::cacheLumpNum(lump);
         }
     }
 
@@ -763,8 +763,8 @@ void precacheLevel()
             for (k = 0; k < 8; k++)
             {
                 lump = firstspritelump + sf->lump[k];
-                spritememory += lumpinfo[lump].size;
-                W_CacheLumpNum(lump, PU_CACHE);
+                spritememory += Doom::wad().info(lump).size;
+                Doom::cacheLumpNum(lump);
             }
         }
     }

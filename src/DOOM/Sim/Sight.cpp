@@ -19,7 +19,7 @@ namespace
 // (Sim/SightScratch.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla
 // names are references onto that member (sightcounts as a reference-to-array).
 fixed_t& sightzstart = sightScratch().sightzstart; // eye z of looker
-divline_t& strace = sightScratch().strace; // from t1 to t2
+DivLine& strace = sightScratch().strace; // from t1 to t2
 fixed_t& t2x = sightScratch().t2x;
 fixed_t& t2y = sightScratch().t2y;
 
@@ -29,40 +29,45 @@ int (&sightcounts)[2] = sightScratch().sightcounts;
 // P_DivlineSide
 // Returns side 0 (front), 1 (back), or 2 (on).
 //
-int divlineSide(fixed_t x, fixed_t y, divline_t* node)
+// A third answer is what makes this the sight check's own side test rather than
+// MapGeometry's pointOnDivlineSide: "on the line" has to be distinguishable here,
+// because a sight line that runs exactly along a partition must cross both sides.
+// The `x == node.origin.y` in the horizontal branch is vanilla's own typo and is
+// load-bearing - every recorded demo's monster wake-ups went through it.
+int divlineSide(fixed_t x, fixed_t y, const DivLine& node)
 {
     fixed_t dx;
     fixed_t dy;
     fixed_t left;
     fixed_t right;
 
-    if (!node->dx)
+    if (!node.delta.x.raw)
     {
-        if (x == node->x)
+        if (x == node.origin.x.raw)
             return 2;
 
-        if (x <= node->x)
-            return node->dy > 0;
+        if (x <= node.origin.x.raw)
+            return node.delta.y.raw > 0;
 
-        return node->dy < 0;
+        return node.delta.y.raw < 0;
     }
 
-    if (!node->dy)
+    if (!node.delta.y.raw)
     {
-        if (x == node->y)
+        if (x == node.origin.y.raw)
             return 2;
 
-        if (y <= node->y)
-            return node->dx < 0;
+        if (y <= node.origin.y.raw)
+            return node.delta.x.raw < 0;
 
-        return node->dx > 0;
+        return node.delta.x.raw > 0;
     }
 
-    dx = (x - node->x);
-    dy = (y - node->y);
+    dx = (x - node.origin.x.raw);
+    dy = (y - node.origin.y.raw);
 
-    left = (node->dy >> FRACBITS) * (dx >> FRACBITS);
-    right = (dy >> FRACBITS) * (node->dx >> FRACBITS);
+    left = (node.delta.y.raw >> FRACBITS) * (dx >> FRACBITS);
+    right = (dy >> FRACBITS) * (node.delta.x.raw >> FRACBITS);
 
     if (right < left)
         return 0; // front side
@@ -77,19 +82,20 @@ int divlineSide(fixed_t x, fixed_t y, divline_t* node)
 // Returns the fractional intercept point along the first divline. This is only
 // called by the addthings and addlines traversers.
 //
-fixed_t interceptVector2(divline_t* v2, divline_t* v1)
+fixed_t interceptVector2(const DivLine& v2, const DivLine& v1)
 {
     fixed_t frac;
     fixed_t num;
     fixed_t den;
 
-    den = FixedMul(v1->dy >> 8, v2->dx) - FixedMul(v1->dx >> 8, v2->dy);
+    den = FixedMul(v1.delta.y.raw >> 8, v2.delta.x.raw)
+          - FixedMul(v1.delta.x.raw >> 8, v2.delta.y.raw);
 
     if (den == 0)
         return 0;
 
-    num = FixedMul((v1->x - v2->x) >> 8, v1->dy)
-          + FixedMul((v2->y - v1->y) >> 8, v1->dx);
+    num = FixedMul((v1.origin.x.raw - v2.origin.x.raw) >> 8, v1.delta.y.raw)
+          + FixedMul((v2.origin.y.raw - v1.origin.y.raw) >> 8, v1.delta.x.raw);
     frac = FixedDiv(num, den);
 
     return frac;
@@ -113,7 +119,7 @@ doom_boolean crossSubsector(int num)
     Sector* back;
     fixed_t opentop;
     fixed_t openbottom;
-    divline_t divl;
+    DivLine divl;
     Vertex* v1;
     Vertex* v2;
     fixed_t frac;
@@ -148,19 +154,17 @@ doom_boolean crossSubsector(int num)
 
         v1 = line->v1;
         v2 = line->v2;
-        s1 = divlineSide(v1->x, v1->y, &strace);
-        s2 = divlineSide(v2->x, v2->y, &strace);
+        s1 = divlineSide(v1->x, v1->y, strace);
+        s2 = divlineSide(v2->x, v2->y, strace);
 
         // line isn't crossed?
         if (s1 == s2)
             continue;
 
-        divl.x = v1->x;
-        divl.y = v1->y;
-        divl.dx = v2->x - v1->x;
-        divl.dy = v2->y - v1->y;
-        s1 = divlineSide(strace.x, strace.y, &divl);
-        s2 = divlineSide(t2x, t2y, &divl);
+        divl.origin = {Fixed {v1->x}, Fixed {v1->y}};
+        divl.delta = {Fixed {v2->x - v1->x}, Fixed {v2->y - v1->y}};
+        s1 = divlineSide(strace.origin.x.raw, strace.origin.y.raw, divl);
+        s2 = divlineSide(t2x, t2y, divl);
 
         // line isn't crossed?
         if (s1 == s2)
@@ -197,7 +201,7 @@ doom_boolean crossSubsector(int num)
         if (openbottom >= opentop)
             return false; // stop
 
-        frac = interceptVector2(&strace, &divl);
+        frac = interceptVector2(strace, divl);
 
         if (front->floorheight != back->floorheight)
         {
@@ -240,8 +244,14 @@ doom_boolean crossBSPNode(int bspnum)
 
     bsp = &nodes[bspnum];
 
+    // The node's partition line, which vanilla read by casting the node itself to
+    // a divline_t - its first four fields are the same four numbers. Named now
+    // that DivLine is a real type, at no cost: the same four loads either way.
+    const DivLine partition {{Fixed {bsp->x}, Fixed {bsp->y}},
+                             {Fixed {bsp->dx}, Fixed {bsp->dy}}};
+
     // decide which side the start point is on
-    side = divlineSide(strace.x, strace.y, reinterpret_cast<divline_t*>(bsp));
+    side = divlineSide(strace.origin.x.raw, strace.origin.y.raw, partition);
     if (side == 2)
         side = 0; // an "on" should cross both sides
 
@@ -250,7 +260,7 @@ doom_boolean crossBSPNode(int bspnum)
         return false;
 
     // the partition plane is crossed here
-    if (side == divlineSide(t2x, t2y, reinterpret_cast<divline_t*>(bsp)))
+    if (side == divlineSide(t2x, t2y, partition))
     {
         // the line doesn't touch the other side
         return true;
@@ -298,12 +308,10 @@ bool checkSight(Mobj* t1, Mobj* t2)
     clip.topslope = (t2->z + t2->height) - sightzstart;
     clip.bottomslope = (t2->z) - sightzstart;
 
-    strace.x = t1->x;
-    strace.y = t1->y;
+    strace.origin = {Fixed {t1->x}, Fixed {t1->y}};
     t2x = t2->x;
     t2y = t2->y;
-    strace.dx = t2->x - t1->x;
-    strace.dy = t2->y - t1->y;
+    strace.delta = {Fixed {t2->x - t1->x}, Fixed {t2->y - t1->y}};
 
     // the head node is the last node output
     return crossBSPNode(numnodes - 1);

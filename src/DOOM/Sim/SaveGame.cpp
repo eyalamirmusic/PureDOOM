@@ -24,6 +24,7 @@
 #include "../Host/System.h"
 
 // save_p is a reference onto Doom::SaveGameState's cursor (an Engine member), bound in
+#include "MapUtil.h"
 #include "Mobj.h"
 // the p_saveg.cpp shim; g_game, the probe and this file share it. This bare extern must
 // stay a reference in lockstep with p_saveg.h's - a plain `extern byte* save_p` here
@@ -308,7 +309,7 @@ void unArchiveThinkers()
                         &players[reinterpret_cast<long long>(mobj->player) - 1];
                     mobj->player->mo = mobj;
                 }
-                P_SetThingPosition(mobj);
+                setThingPosition(*mobj);
                 mobj->info = &mobjinfo[mobj->type];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;

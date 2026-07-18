@@ -20,7 +20,7 @@
 #include <DOOM/r_main.h>
 #include <DOOM/tables.h>
 
-fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
+#include <DOOM/Sim/MapGeometry.h>
 
 #include <cstdint>
 
@@ -311,16 +311,19 @@ auto tSlopeDivStaysInTable = test("Tables/slopeDivStaysInTable") = []
 // it. It is not a bug to be fixed: the monsters' behaviour is tuned to it.
 auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
 {
-    check(P_AproxDistance(3 * one, 0) == 3 * one);
-    check(P_AproxDistance(0, 3 * one) == 3 * one);
-    check(P_AproxDistance(-3 * one, 0) == 3 * one);
+    auto distance = [](fixed_t dx, fixed_t dy)
+    { return Doom::approxDistance(Doom::Fixed {dx}, Doom::Fixed {dy}).raw; };
+
+    check(distance(3 * one, 0) == 3 * one);
+    check(distance(0, 3 * one) == 3 * one);
+    check(distance(-3 * one, 0) == 3 * one);
 
     // The diagonal: dx + dy - min/2, not the hypotenuse. A true 3-4-5 triangle
     // would give 5; this gives 3 + 4 - 3/2 = 5.5.
-    check(P_AproxDistance(4 * one, 3 * one) == 4 * one + 3 * one - (3 * one) / 2);
+    check(distance(4 * one, 3 * one) == 4 * one + 3 * one - (3 * one) / 2);
 
     // Which is to say it is deliberately wrong, and must stay wrong.
-    check(P_AproxDistance(4 * one, 3 * one) != 5 * one);
+    check(distance(4 * one, 3 * one) != 5 * one);
 };
 
 // Doom::pointToAngle inherits the trig table's half-bucket offset, so it lands one

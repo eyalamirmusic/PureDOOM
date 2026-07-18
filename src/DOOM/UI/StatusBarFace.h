@@ -19,9 +19,9 @@ namespace Doom
 //
 // The last four are the face drawer's own function-local statics (the "later function-local pass"),
 // distinct from the file-scope statics above but the same face subsystem, so they join the cluster:
-// lastcalc/oldhealth cache the pain-offset computation in stcalcPainOffset (recomputed only when
+// lastcalc/oldhealth cache the pain-offset computation in calcPainOffset (recomputed only when
 // health changes), and lastattackdown/priority carry the expression state machine across tics in
-// stupdateFaceWidget. Vanilla never resets them (they are function-local), so they are members with
+// updateFaceWidget. Vanilla never resets them (they are function-local), so they are members with
 // matching defaults reached by a local reference in each function - identical persistence in a
 // single-Engine process.
 struct StatusBarFace
@@ -33,10 +33,10 @@ struct StatusBarFace
     int st_faceindex = 0; // the face patch currently shown (w_faces binds to it)
     int st_randomnumber = 0; // a per-tic M_Random the straight face varies with
 
-    int lastcalc = 0; // stcalcPainOffset: the cached pain offset
-    int oldhealth = -1; // stcalcPainOffset: the health it was cached for
-    int lastattackdown = -1; // stupdateFaceWidget: the attack-button ouch latch
-    int priority = 0; // stupdateFaceWidget: the current expression's precedence
+    int lastcalc = 0; // calcPainOffset: the cached pain offset
+    int oldhealth = -1; // calcPainOffset: the health it was cached for
+    int lastattackdown = -1; // updateFaceWidget: the attack-button ouch latch
+    int priority = 0; // updateFaceWidget: the current expression's precedence
 };
 
 // The one StatusBarFace, a view onto the Engine's member - the same pattern as the other clusters

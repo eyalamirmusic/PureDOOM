@@ -1,13 +1,13 @@
 // The WAD directory as the reader sees it.
 //
-// Nothing in the demo tests can tell you whether W_CacheLumpNum handed back the
+// Nothing in the demo tests can tell you whether Doom::cacheLumpNum handed back the
 // right bytes - a corrupt lump would desync the simulation, but so would a
 // thousand other things, and the demo would only say "tic 48". This says
 // "SW18_7, 4096 bytes, wrong".
 //
 // It exists for Step 4 of REFACTOR.md, which takes the zone allocator out from
 // under the lump cache. That is the one refactor with no other net: PU_CACHE,
-// the purge rover and the **user back-pointers are exactly what W_CacheLumpNum
+// the purge rover and the **user back-pointers are exactly what Doom::cacheLumpNum
 // is built on, and replacing them with real ownership is the kind of change that
 // can hand back plausible-looking rubbish.
 
@@ -64,7 +64,7 @@ void writeGoldenDirectory(const Directory& directory)
 {
     auto file = std::ofstream {lumpsPath()};
 
-    file << "# doom1.wad as W_CacheLumpNum hands it over: name, bytes, hash.\n"
+    file << "# doom1.wad as Doom::cacheLumpNum hands it over: name, bytes, hash.\n"
          << "# Re-record with DOOM_UPDATE_GOLDENS=1, and only on purpose.\n";
 
     for (const auto& lump: directory)

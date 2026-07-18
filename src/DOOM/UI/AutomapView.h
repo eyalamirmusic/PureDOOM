@@ -20,7 +20,7 @@ namespace Doom
 // become references onto these members (the arrays as references-to-array). The automap is not
 // frame-golden-covered (no demo opens it), but a reference alias is pure storage relocation - the
 // compiler binds each name to its same-named member - so this is behaviour-preserving by
-// construction, and verified by build + app-link. AM_LevelInit / AM_initVariables reset the view
+// construction, and verified by build + app-link. levelInit / initAutomapVariables reset the view
 // before it is drawn, so the defaults matter little, but they reproduce vanilla's initializers.
 // (The "iddt" cheat sequence stays a file-local static: its CheatSequence holds a pointer to its own
 // byte array, which does not survive being a copyable struct member; it is an m_cheat concern.)
@@ -28,7 +28,7 @@ struct AutomapView
 {
     static constexpr int numMarkPoints = 10; // AM_NUMMARKPOINTS in UI/Automap
 
-    int leveljuststarted = 1; // kluge until AM_LevelInit runs
+    int leveljuststarted = 1; // kluge until levelInit runs
     int finit_width = SCREENWIDTH; // the automap frame's width
     int finit_height = SCREENHEIGHT - 32; // ... and height (above the status bar)
 
@@ -36,11 +36,13 @@ struct AutomapView
     int amclock = 0; // the automap's own tic clock
 
     // Animation / level-change detection, folded in from function-local statics:
-    int lastlevel = -1; // amStart: last map, to re-init on change
-    int lastepisode = -1; // amStart: last episode
-    int bigstate = 0; // Doom::automapResponder: the "big" (zoomed-out overview) toggle
+    int lastlevel = -1; // startAutomap: last map, to re-init on change
+    int lastepisode = -1; // startAutomap: last episode
+    int bigstate =
+        0; // Doom::automapResponder: the "big" (zoomed-out overview) toggle
     int nexttic = 0; // Doom::automapTicker: next tic the fuse animation advances
-    int litelevelscnt = 0; // Doom::automapTicker: cursor into the fuse brightness ramp
+    int litelevelscnt =
+        0; // Doom::automapTicker: cursor into the fuse brightness ramp
 
     MapPoint m_paninc = {}; // window pan per tic (map coords)
     fixed_t mtof_zoommul = 0; // window zoom per tic (map -> frame)

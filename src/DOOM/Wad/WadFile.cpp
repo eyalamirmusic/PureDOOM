@@ -3,7 +3,6 @@
 #include "../doom_config.h"
 #include "../i_system.h"
 #include "../m_swap.h"
-#include "../w_wad.h"
 
 #include <ea_data_structures/Structures/Array.h>
 
@@ -316,5 +315,24 @@ void WadFile::reload()
         // caller re-reads.
         cache[lump].clear();
     }
+}
+
+void initWadFiles(char** filenames)
+{
+    for (; *filenames; ++filenames)
+        wad().addFile(*filenames);
+
+    if (wad().count() == 0)
+        fatalError("Error: initWadFiles: no files found");
+}
+
+void* cacheLumpNum(int lump)
+{
+    return const_cast<std::byte*>(wad().data(lump));
+}
+
+void* cacheLumpName(const char* name)
+{
+    return cacheLumpNum(wad().number(name));
 }
 } // namespace Doom

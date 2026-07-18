@@ -40,7 +40,7 @@
 #include "../doomstat.h"
 #include "../dstrings.h"
 #include "../sounds.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 #include "../s_sound.h"
 #include "../v_video.h"
 #include "../f_finale.h"
@@ -93,7 +93,7 @@
 #include "Sound.h"
 #define MAXARGVS 100
 
-// The boot-time WAD list, file-local: Doom::addWadFile appends to it and W_InitMultipleFiles
+// The boot-time WAD list, file-local: Doom::addWadFile appends to it and Doom::initWadFiles
 // consumes it, and nothing outside this file reads it (its d_main.h extern is gone).
 static char* wadfiles[MAXWADFILES];
 
@@ -203,7 +203,7 @@ void processEvents()
     Event* ev;
 
     // IF STORE DEMO, DO NOT ACCEPT INPUT
-    if ((gamemode == commercial) && (W_CheckNumForName("map01") < 0))
+    if ((gamemode == commercial) && (Doom::wad().find("map01") < 0))
         return;
 
     for (; eventtail != eventhead;)
@@ -303,7 +303,7 @@ void displayFrame()
 
     // clean up border stuff
     if (gamestate != oldgamestate && gamestate != GS_LEVEL)
-        setPalette(static_cast<byte*>((W_CacheLumpName("PLAYPAL", PU_CACHE))));
+        setPalette(static_cast<byte*>((Doom::cacheLumpName("PLAYPAL"))));
 
     // see if the border needs to be initially drawn
     if (gamestate == GS_LEVEL && oldgamestate != GS_LEVEL)
@@ -336,11 +336,10 @@ void displayFrame()
             y = 4;
         else
             y = viewwindowy + 4;
-        Doom::drawPatchDirect(
-            viewwindowx + (scaledviewwidth - 68) / 2,
-            y,
-            0,
-            static_cast<Patch*>((W_CacheLumpName("M_PAUSE", PU_CACHE))));
+        Doom::drawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
+                              y,
+                              0,
+                              static_cast<Patch*>((Doom::cacheLumpName("M_PAUSE"))));
     }
 
     // menus go directly to the screen
@@ -460,8 +459,7 @@ void pageTicker()
 //
 void drawPage()
 {
-    Doom::drawPatch(
-        0, 0, 0, static_cast<Patch*>((W_CacheLumpName(pagename, PU_CACHE))));
+    Doom::drawPatch(0, 0, 0, static_cast<Patch*>((Doom::cacheLumpName(pagename))));
 }
 
 //
@@ -1121,7 +1119,7 @@ void doomMain()
     Doom::loadDefaults(); // load before initing other systems
 
     doom_print("W_Init: Init WADfiles.\n");
-    W_InitMultipleFiles(wadfiles);
+    Doom::initWadFiles(wadfiles);
 
     // Check for -file in shareware
     if (modifiedgame)
@@ -1142,7 +1140,7 @@ void doomMain()
         // but w/o all the lumps of the registered version.
         if (gamemode == registered)
             for (auto n : name)
-                if (W_CheckNumForName(n) < 0)
+                if (Doom::wad().find(n) < 0)
                     fatalError("Error: \nThis is not the registered version.");
     }
 

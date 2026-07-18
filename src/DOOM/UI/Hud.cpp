@@ -38,7 +38,7 @@
 #include "../m_swap.h"
 #include "../s_sound.h"
 #include "../sounds.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include <ea_data_structures/Structures/Array.h>
 
@@ -253,12 +253,11 @@ void initHud()
         if (j < 10)
             doom_concat(buffer.data(), "0");
         doom_concat(buffer.data(), doom_itoa(j++, 10));
-        hu_font[i] =
-            static_cast<Patch*>(W_CacheLumpName(buffer.data(), PU_STATIC));
+        hu_font[i] = static_cast<Patch*>(Doom::cacheLumpName(buffer.data()));
     }
 }
 
-void huStop()
+void stopHud()
 {
     headsupactive = false;
 }
@@ -268,7 +267,7 @@ void startHud()
     const char* s;
 
     if (headsupactive)
-        huStop();
+        stopHud();
 
     plr = &players[consoleplayer];
     message_on = false;
@@ -410,7 +409,7 @@ void hudTicker()
     }
 }
 
-void huQueueChatChar(char c)
+void queueChatChar(char c)
 {
     if (((head + 1) & (QUEUESIZE - 1)) == tail)
     {
@@ -442,7 +441,8 @@ char dequeueChatChar()
 
 doom_boolean hudResponder(Event* ev)
 {
-    char(&lastmessage)[HU_MAXLINELENGTH + 1] = hudChat().lastmessage; // ref-to-array onto member
+    char (&lastmessage)[HU_MAXLINELENGTH + 1] =
+        hudChat().lastmessage; // ref-to-array onto member
     char* macromessage;
     doom_boolean eatkey = false;
     doom_boolean& shiftdown = hudChat().shiftdown;
@@ -485,7 +485,7 @@ doom_boolean hudResponder(Event* ev)
         {
             eatkey = chat_on = true;
             Doom::resetIText(w_chat);
-            huQueueChatChar(HU_BROADCAST);
+            queueChatChar(HU_BROADCAST);
         }
         else if (netgame && numplayers > 2)
         {
@@ -497,7 +497,7 @@ doom_boolean hudResponder(Event* ev)
                     {
                         eatkey = chat_on = true;
                         Doom::resetIText(w_chat);
-                        huQueueChatChar(i + 1);
+                        queueChatChar(i + 1);
                         break;
                     }
                     else if (i == consoleplayer)
@@ -530,12 +530,12 @@ doom_boolean hudResponder(Event* ev)
             macromessage = chat_macros[c];
 
             // kill last message with a '\n'
-            huQueueChatChar(KEY_ENTER); // DEBUG!!!
+            queueChatChar(KEY_ENTER); // DEBUG!!!
 
             // send the macro message
             while (*macromessage)
-                huQueueChatChar(*macromessage++);
-            huQueueChatChar(KEY_ENTER);
+                queueChatChar(*macromessage++);
+            queueChatChar(KEY_ENTER);
 
             // leave chat mode and notify that it was sent
             chat_on = false;
@@ -552,7 +552,7 @@ doom_boolean hudResponder(Event* ev)
             eatkey = Doom::keyInIText(w_chat, c);
             if (eatkey)
             {
-                huQueueChatChar(c);
+                queueChatChar(c);
             }
             if (c == KEY_ENTER)
             {

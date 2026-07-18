@@ -40,7 +40,7 @@
 #include "../s_sound.h" // Functions.
 #include "../sounds.h" // Data.
 #include "../v_video.h" // Functions.
-#include "../w_wad.h" // Functions.
+#include "../Wad/WadFile.h"
 
 #include "Finale.h"
 #include "FinaleState.h"
@@ -136,13 +136,13 @@ static int& castonmelee = finaleState().castonmelee;
 static doom_boolean& castattacking = finaleState().castattacking;
 
 //
-// fStartCast
+// startCast
 //
 
-void fStartCast();
-void fCastTicker();
-doom_boolean fCastResponder(Event* ev);
-void fCastDrawer();
+void startCast();
+void castTicker();
+doom_boolean castResponder(Event* ev);
+void castDrawer();
 
 //
 // startFinale
@@ -244,7 +244,7 @@ void startFinale()
 doom_boolean finaleResponder(Event* event)
 {
     if (finalestage == 2)
-        return fCastResponder(event);
+        return castResponder(event);
 
     return false;
 }
@@ -267,7 +267,7 @@ void finaleTicker()
         if (i < MAXPLAYERS)
         {
             if (gamemap == 30)
-                fStartCast();
+                startCast();
             else
                 gameaction = ga_worlddone;
         }
@@ -278,7 +278,7 @@ void finaleTicker()
 
     if (finalestage == 2)
     {
-        fCastTicker();
+        castTicker();
         return;
     }
 
@@ -296,9 +296,9 @@ void finaleTicker()
 }
 
 //
-// fTextWrite
+// textWrite
 //
-void fTextWrite()
+void textWrite()
 {
     byte* src;
     byte* dest;
@@ -311,7 +311,7 @@ void fTextWrite()
     int cy;
 
     // erase the entire screen to a tiled background
-    src = static_cast<byte*>(W_CacheLumpName(finaleflat, PU_CACHE));
+    src = static_cast<byte*>(Doom::cacheLumpName(finaleflat));
     dest = screens[0];
 
     for (int y = 0; y < SCREENHEIGHT; y++)
@@ -370,7 +370,7 @@ void fTextWrite()
 // Casting by id Software.
 //   in order of appearance
 //
-void fStartCast()
+void startCast()
 {
     wipegamestate = static_cast<GameState>(-1); // force a screen wipe
     castnum = 0;
@@ -385,9 +385,9 @@ void fStartCast()
 }
 
 //
-// fCastTicker
+// castTicker
 //
-void fCastTicker()
+void castTicker()
 {
     int st;
     int sfx;
@@ -524,9 +524,9 @@ void fCastTicker()
 }
 
 //
-// fCastResponder
+// castResponder
 //
-doom_boolean fCastResponder(Event* ev)
+doom_boolean castResponder(Event* ev)
 {
     if (ev->type != ev_keydown)
         return false;
@@ -546,7 +546,7 @@ doom_boolean fCastResponder(Event* ev)
     return true;
 }
 
-void fCastPrint(const char* text)
+void castPrint(const char* text)
 {
     const char* ch;
     int c;
@@ -596,9 +596,9 @@ void fCastPrint(const char* text)
 }
 
 //
-// fCastDrawer
+// castDrawer
 //
-void fCastDrawer()
+void castDrawer()
 {
     SpriteDef* sprdef;
     SpriteFrame* sprframe;
@@ -607,10 +607,9 @@ void fCastDrawer()
     Patch* patch;
 
     // erase the entire screen to a background
-    Doom::drawPatch(
-        0, 0, 0, static_cast<Patch*>(W_CacheLumpName("BOSSBACK", PU_CACHE)));
+    Doom::drawPatch(0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("BOSSBACK")));
 
-    fCastPrint(castorder[castnum].name);
+    castPrint(castorder[castnum].name);
 
     // draw the current frame in the middle of the screen
     sprdef = &sprites[caststate->sprite];
@@ -618,7 +617,7 @@ void fCastDrawer()
     lump = sprframe->lump[0];
     flip = static_cast<doom_boolean>(sprframe->flip[0]);
 
-    patch = static_cast<Patch*>(W_CacheLumpNum(lump + firstspritelump, PU_CACHE));
+    patch = static_cast<Patch*>(Doom::cacheLumpNum(lump + firstspritelump));
     if (flip)
         Doom::drawPatchFlipped(160, 170, 0, patch);
     else
@@ -626,9 +625,9 @@ void fCastDrawer()
 }
 
 //
-// fDrawPatchCol
+// drawPatchCol
 //
-void fDrawPatchCol(int x, Patch* patch, int col)
+void drawPatchCol(int x, Patch* patch, int col)
 {
     Column* column;
     byte* source;
@@ -637,7 +636,7 @@ void fDrawPatchCol(int x, Patch* patch, int col)
     int count;
 
     column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                         + LONG(patch->columnofs[col]));
+                                       + LONG(patch->columnofs[col]));
     desttop = screens[0] + x;
 
     // step through the posts in a column
@@ -653,14 +652,14 @@ void fDrawPatchCol(int x, Patch* patch, int col)
             dest += SCREENWIDTH;
         }
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
-                                             + column->length + 4);
+                                           + column->length + 4);
     }
 }
 
 //
-// fBunnyScroll
+// bunnyScroll
 //
-void fBunnyScroll()
+void bunnyScroll()
 {
     int scrolled;
     Patch* p1;
@@ -669,8 +668,8 @@ void fBunnyScroll()
     int stage;
     int& laststage = finaleState().laststage;
 
-    p1 = static_cast<Patch*>(W_CacheLumpName("PFUB2", PU_LEVEL));
-    p2 = static_cast<Patch*>(W_CacheLumpName("PFUB1", PU_LEVEL));
+    p1 = static_cast<Patch*>(Doom::cacheLumpName("PFUB2"));
+    p2 = static_cast<Patch*>(Doom::cacheLumpName("PFUB1"));
 
     Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
@@ -683,9 +682,9 @@ void fBunnyScroll()
     for (int x = 0; x < SCREENWIDTH; x++)
     {
         if (x + scrolled < 320)
-            fDrawPatchCol(x, p1, x + scrolled);
+            drawPatchCol(x, p1, x + scrolled);
         else
-            fDrawPatchCol(x, p2, x + scrolled - 320);
+            drawPatchCol(x, p2, x + scrolled - 320);
     }
 
     if (finalecount < 1130)
@@ -693,9 +692,9 @@ void fBunnyScroll()
     if (finalecount < 1180)
     {
         Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
-                    (SCREENHEIGHT - 8 * 8) / 2,
-                    0,
-                    static_cast<Patch*>(W_CacheLumpName("END0", PU_CACHE)));
+                        (SCREENHEIGHT - 8 * 8) / 2,
+                        0,
+                        static_cast<Patch*>(Doom::cacheLumpName("END0")));
         laststage = 0;
         return;
     }
@@ -713,9 +712,9 @@ void fBunnyScroll()
     doom_strcpy(name.data(), "END");
     doom_concat(name.data(), doom_itoa(stage, 10));
     Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
-                (SCREENHEIGHT - 8 * 8) / 2,
-                0,
-                static_cast<Patch*>(W_CacheLumpName(name.data(), PU_CACHE)));
+                    (SCREENHEIGHT - 8 * 8) / 2,
+                    0,
+                    static_cast<Patch*>(Doom::cacheLumpName(name.data())));
 }
 
 //
@@ -725,12 +724,12 @@ void drawFinale()
 {
     if (finalestage == 2)
     {
-        fCastDrawer();
+        castDrawer();
         return;
     }
 
     if (!finalestage)
-        fTextWrite();
+        textWrite();
     else
     {
         switch (gameepisode)
@@ -738,33 +737,21 @@ void drawFinale()
             case 1:
                 if (gamemode == retail)
                     Doom::drawPatch(
-                        0,
-                        0,
-                        0,
-                        static_cast<Patch*>(W_CacheLumpName("CREDIT", PU_CACHE)));
+                        0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("CREDIT")));
                 else
                     Doom::drawPatch(
-                        0,
-                        0,
-                        0,
-                        static_cast<Patch*>(W_CacheLumpName("HELP2", PU_CACHE)));
+                        0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("HELP2")));
                 break;
             case 2:
                 Doom::drawPatch(
-                    0,
-                    0,
-                    0,
-                    static_cast<Patch*>(W_CacheLumpName("VICTORY2", PU_CACHE)));
+                    0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("VICTORY2")));
                 break;
             case 3:
-                fBunnyScroll();
+                bunnyScroll();
                 break;
             case 4:
                 Doom::drawPatch(
-                    0,
-                    0,
-                    0,
-                    static_cast<Patch*>(W_CacheLumpName("ENDPIC", PU_CACHE)));
+                    0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("ENDPIC")));
                 break;
         }
     }

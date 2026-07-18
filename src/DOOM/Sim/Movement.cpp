@@ -62,7 +62,7 @@ doom_boolean checkLine(Line* ld)
         || clip.tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
         return true;
 
-    if (P_BoxOnLineSide(clip.tmbbox, ld) != -1)
+    if (boxLineSide(clip.tmbbox, *ld) != -1)
         return true;
 
     // A line has been hit.
@@ -86,7 +86,7 @@ doom_boolean checkLine(Line* ld)
     }
 
     // set openrange, opentop, openbottom
-    P_LineOpening(ld);
+    updateLineOpening(*ld);
 
     // adjust floor / ceiling heights
     if (clip.opentop < clip.tmceilingz)
@@ -294,7 +294,7 @@ bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
     }
 
     // the move is ok, so link the thing into its new position
-    P_UnsetThingPosition(thing);
+    unsetThingPosition(*thing);
 
     fixed_t oldx = thing->x;
     fixed_t oldy = thing->y;
@@ -303,7 +303,7 @@ bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
     thing->x = x;
     thing->y = y;
 
-    P_SetThingPosition(thing);
+    setThingPosition(*thing);
 
     // if any special lines were hit, do the effect
     if (!(thing->flags & (MF_TELEPORT | MF_NOCLIP)))
@@ -312,8 +312,8 @@ bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
         {
             // see if the line was crossed
             Line* ld = clip.spechit[clip.numspechit];
-            int side = P_PointOnLineSide(thing->x, thing->y, ld);
-            int oldside = P_PointOnLineSide(oldx, oldy, ld);
+            int side = lineSide({Fixed {thing->x}, Fixed {thing->y}}, *ld);
+            int oldside = lineSide({Fixed {oldx}, Fixed {oldy}}, *ld);
             if (side != oldside)
             {
                 if (ld->special)
@@ -364,14 +364,14 @@ bool teleportMove(Mobj* thing, fixed_t x, fixed_t y)
                 return false;
 
     // the move is ok, so link the thing into its new position
-    P_UnsetThingPosition(thing);
+    unsetThingPosition(*thing);
 
     thing->floorz = clip.tmfloorz;
     thing->ceilingz = clip.tmceilingz;
     thing->x = x;
     thing->y = y;
 
-    P_SetThingPosition(thing);
+    setThingPosition(*thing);
 
     return true;
 }

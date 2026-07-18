@@ -7,12 +7,11 @@
 
 namespace Doom
 {
-// One entry of a WAD's directory. Laid out exactly as vanilla's LumpInfo,
-// because r_things reads sprite names straight out of the directory (it parses
-// TROOA1 into a frame and a rotation) and r_data adds up lump sizes, and both
-// still hold it as a bare array. m_bbox's BBox does the same trick, and for the
-// same reason: layout compatibility is what lets a rewritten owner sit under
-// callers that have not been rewritten yet.
+// One entry of a WAD's directory: vanilla's lumpinfo_t, and the only one now -
+// the `lumpinfo` / `numlumps` view onto it went with w_wad.cpp. Render/Things
+// still reads sprite names straight out of the directory (it parses TROOA1 into a
+// frame and a rotation) and Render/Data adds up lump sizes; both ask info() for
+// the entry rather than indexing a parallel array.
 struct Lump
 {
     char name[8]; // eight bytes, and NOT null-terminated when it fills them
@@ -91,4 +90,17 @@ private:
 
 // The engine's one WAD, for as long as the engine has one of everything.
 WadFile& wad();
+
+// The boot-time WAD list: add every file in turn, and refuse to go on if the lot
+// of them yielded no lumps at all. Doom::addWadFile builds the list this consumes;
+// nothing else calls it.
+void initWadFiles(char** filenames);
+
+// A lump's bytes, cached and owned. Vanilla's W_CacheLumpNum / W_CacheLumpName
+// took a purge tag as well; there is nothing to purge now that WadFile owns every
+// lump for the life of the process, so there is no tag. Still `void*` because each
+// caller casts it to the structure it knows is in there - a Patch, the palette, a
+// column of a composite texture.
+void* cacheLumpNum(int lump);
+void* cacheLumpName(const char* name);
 } // namespace Doom

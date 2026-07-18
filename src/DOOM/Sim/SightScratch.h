@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../m_fixed.h" // fixed_t
-#include "../p_local.h" // divline_t
+
+#include "MapGeometry.h" // DivLine
 
 namespace Doom
 {
@@ -18,7 +19,7 @@ namespace Doom
 struct SightScratch
 {
     fixed_t sightzstart = 0; // eye z of the looker
-    divline_t strace = {}; // the trace from looker (t1) to target (t2)
+    DivLine strace = {}; // the trace from looker (t1) to target (t2)
     fixed_t t2x = 0; // target x
     fixed_t t2y = 0; // target y
     int sightcounts[2] = {}; // [0] reject-matrix skips, [1] real tests

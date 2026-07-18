@@ -70,8 +70,9 @@ apparatus:
   simulation reaches both and neither can run code the other is not.
 
   It is **C++20 as of Step 2 of `REFACTOR.md`**, and there is no C left anywhere
-  in the repository — but the flat files are still 1993 C that a compiler now
-  accepts, not C++ anyone wrote.
+  in the repository. The flat files are no longer 1993 C either: all the logic has
+  moved into the subdirectories, and what is left of them is the reference-alias
+  data layer described below.
 
   **The subdirectories are the rewrite.** `Math/` (`Fixed`, `Angle`, `Trig`,
   `BBox`, `Vec2`), `Sim/` (`Random`, `Level`, `MapGeometry`), `Wad/` (`WadFile`)
@@ -84,17 +85,35 @@ apparatus:
   someone rewrites it. Both are set per-file in `src/DOOM/CMakeLists.txt`, so the
   line moves as the work does.
 
-  The vanilla API is still there — `FixedMul`, `finesine`, `P_Random`,
-  `prndindex`, `W_CacheLumpNum`, `vertexes`, `numsegs` — because most of the engine
-  still calls it. But `m_fixed.cpp`, `tables.cpp`, `m_bbox.cpp`, `m_random.cpp`,
-  `w_wad.cpp` and the geometry loaders in `p_setup.cpp` are now **shims/views over
-  owning objects**, not the owners: one copy of the arithmetic, one copy of the
-  tables, one supply of chance, one owner of the lumps, one owner of the level
-  geometry. `rndindex`/`prndindex` are *references* into `Doom::Random`;
-  `vertexes`/`numsegs`/`sectors`/… are pointer-and-count *views* onto
-  `Doom::Level`'s vectors, refreshed by each loader after it fills its vector.
-  That is deliberate — it puts the new types on the critical path of every demo
-  the suite replays, which is the only thing that can test them.
+  **The vanilla *function* API is gone.** `R_DrawPlanes`, `P_TryMove`, `D_Display`,
+  `I_Error`, `W_CacheLumpNum`, `EV_DoDoor`, `HUlib_drawSText` and the other ~440
+  prefixed names were retired: every call site calls the namespaced function
+  (`Doom::drawPlanes`, `Doom::tryMove`, `Doom::displayFrame`, `Doom::fatalError`,
+  `Doom::cacheLumpNum`, …). Where the namespaced name still carried the prefix as an
+  initialism — `Doom::dDisplay`, `Doom::amTicker`, `Doom::I_Error` — it was renamed
+  too; retiring the shim alone would only have moved the prefix, not removed it.
+  Two families are pinned *by address* and therefore keep an adapter, though not a
+  prefixed one: the 75 state actions are `Doom::Actions::look`-style forwards in
+  `Sim/Actions.{h,cpp}` (because `Sim/Info.cpp`'s `states[]` stores them and every
+  entry needs one pointer shape), and the drawer function pointers
+  (`colfunc`/`spanfunc`) stay raw pointers because they are the per-column inner loop.
+
+  **The vanilla *types* are gone too** — all 107 are PascalCase in `namespace Doom`:
+  `mobj_t`→`Doom::Mobj`, `line_t`→`Doom::Line`, `sector_t`→`Doom::Sector`,
+  `player_t`→`Doom::Player`, `vldoor_t`→`Doom::Door`, and so on. Four exceptions are
+  deliberate: `doom_key_t`/`doom_button_t`/`doom_seek_t` are the public `extern "C"`
+  API, and **`fixed_t`/`angle_t` stay raw typedefs** because `Doom::Fixed`/`Doom::Angle`
+  already exist as *strong* types — moving 862 uses onto them changes arithmetic, so it
+  is a semantic migration with its own verification, not a rename.
+
+  What *does* remain of the shim layer is **data**: ~104 reference aliases
+  (`fixed_t& viewx = engine().viewPoint.viewx`) in the flat `r_*.cpp`/`p_*.cpp` files,
+  plus the pointer-and-count views. `rndindex`/`prndindex` are *references* into
+  `Doom::Random`; `vertexes`/`numsegs`/`sectors`/… are *views* onto `Doom::Level`'s
+  vectors, refreshed by each loader after it fills its vector. That is deliberate — it
+  puts the new types on the critical path of every demo the suite replays, which is the
+  only thing that can test them. Retiring those aliases is Step 9 strand (a), and it is
+  what finally lets the `Engine` be constructed rather than booted.
 
   Those three owners live inside one `Doom::Engine` now (`Engine/Engine.h`), and
   `randomness()`/`wad()`/`level()` are accessors into the single `engine()`

@@ -12,7 +12,7 @@
 #include "../i_system.h"
 #include "../r_local.h"
 #include "../r_sky.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include "PlaneScratch.h"
 #include "Planes.h"
@@ -371,7 +371,7 @@ void drawPlanes()
 
         // regular flat
         ds_source = static_cast<byte*>(
-            W_CacheLumpNum(firstflat + flattranslation[pl->picnum], PU_STATIC));
+            Doom::cacheLumpNum(firstflat + flattranslation[pl->picnum]));
 
         planeheight = doom_abs(pl->height - viewz);
         light = (pl->lightlevel >> LIGHTSEGSHIFT) + extralight;

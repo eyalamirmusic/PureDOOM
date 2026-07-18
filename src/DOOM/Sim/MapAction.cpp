@@ -74,7 +74,7 @@ void hitSlideLine(Line* ld)
         return;
     }
 
-    side = P_PointOnLineSide(slidemo->x, slidemo->y, ld);
+    side = lineSide({Fixed {slidemo->x}, Fixed {slidemo->y}}, *ld);
 
     lineangle = Doom::pointToAngle2(0, 0, ld->dx, ld->dy);
 
@@ -90,7 +90,7 @@ void hitSlideLine(Line* ld)
     lineangle >>= ANGLETOFINESHIFT;
     deltaangle >>= ANGLETOFINESHIFT;
 
-    movelen = P_AproxDistance(tmxmove, tmymove);
+    movelen = approxDistance(Fixed {tmxmove}, Fixed {tmymove}).raw;
     newlen = FixedMul(movelen, finecosine[deltaangle]);
 
     tmxmove = FixedMul(newlen, finecosine[lineangle]);
@@ -113,7 +113,7 @@ doom_boolean slideTraverse(Intercept* in)
 
     if (!(li->flags & ML_TWOSIDED))
     {
-        if (P_PointOnLineSide(slidemo->x, slidemo->y, li))
+        if (lineSide({Fixed {slidemo->x}, Fixed {slidemo->y}}, *li))
         {
             // don't hit the back side
             return true;
@@ -122,7 +122,7 @@ doom_boolean slideTraverse(Intercept* in)
     }
 
     // set openrange, opentop, openbottom
-    P_LineOpening(li);
+    updateLineOpening(*li);
 
     if (clip.openrange < slidemo->height)
         goto isblocking; // doesn't fit
@@ -182,7 +182,7 @@ doom_boolean aimTraverse(Intercept* in)
 
         // Crosses a two sided line. A two sided line will restrict the possible
         // target ranges.
-        P_LineOpening(li);
+        updateLineOpening(*li);
 
         if (clip.openbottom >= clip.opentop)
             return false; // stop
@@ -274,7 +274,7 @@ doom_boolean shootTraverse(Intercept* in)
             goto hitline;
 
         // crosses a two sided line
-        P_LineOpening(li);
+        updateLineOpening(*li);
 
         dist = FixedMul(clip.attackrange, in->frac);
 
@@ -299,8 +299,8 @@ doom_boolean shootTraverse(Intercept* in)
     hitline:
         // position a bit closer
         frac = in->frac - FixedDiv(4 * FRACUNIT, clip.attackrange);
-        x = clip.trace.x + FixedMul(clip.trace.dx, frac);
-        y = clip.trace.y + FixedMul(clip.trace.dy, frac);
+        x = clip.trace.origin.x.raw + FixedMul(clip.trace.delta.x.raw, frac);
+        y = clip.trace.origin.y.raw + FixedMul(clip.trace.delta.y.raw, frac);
         z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
 
         if (li->frontsector->ceilingpic == skyflatnum)
@@ -345,8 +345,8 @@ doom_boolean shootTraverse(Intercept* in)
     // position a bit closer
     frac = in->frac - FixedDiv(10 * FRACUNIT, clip.attackrange);
 
-    x = clip.trace.x + FixedMul(clip.trace.dx, frac);
-    y = clip.trace.y + FixedMul(clip.trace.dy, frac);
+    x = clip.trace.origin.x.raw + FixedMul(clip.trace.delta.x.raw, frac);
+    y = clip.trace.origin.y.raw + FixedMul(clip.trace.delta.y.raw, frac);
     z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
 
     // Spawn bullet puffs or blod spots, depending on target type.
@@ -375,7 +375,7 @@ doom_boolean useTraverse(Intercept* in)
 
     if (!in->d.line->special)
     {
-        P_LineOpening(in->d.line);
+        updateLineOpening(*in->d.line);
         if (clip.openrange <= 0)
         {
             Doom::startSound(usething, sfx_noway);
@@ -388,7 +388,7 @@ doom_boolean useTraverse(Intercept* in)
     }
 
     side = 0;
-    if (P_PointOnLineSide(usething->x, usething->y, in->d.line) == 1)
+    if (lineSide({Fixed {usething->x}, Fixed {usething->y}}, *in->d.line) == 1)
         side = 1;
 
     Doom::useSpecialLine(usething, in->d.line, side);

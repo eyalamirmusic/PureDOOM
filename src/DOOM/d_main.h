@@ -31,7 +31,7 @@
 
 
 // wadfiles[] is file-local to Game/DoomMain.cpp (a static there) - the boot-time WAD
-// list D_AddFile builds and W_InitMultipleFiles consumes, read by no other file.
+// list D_AddFile builds and Doom::initWadFiles consumes, read by no other file.
 
 
 

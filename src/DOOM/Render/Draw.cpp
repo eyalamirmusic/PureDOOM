@@ -14,7 +14,7 @@
 #include "../i_system.h"
 #include "../r_local.h"
 #include "../v_video.h" // Needs access to LFB, Doom::drawPatch, Doom::markRect.
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include "Draw.h"
 #include "DrawState.h"
@@ -493,7 +493,7 @@ void fillBackScreen()
     else
         name = name1;
 
-    src = static_cast<byte*>(W_CacheLumpName(name, PU_CACHE));
+    src = static_cast<byte*>(Doom::cacheLumpName(name));
     dest = screens[1];
 
     for (y = 0; y < SCREENHEIGHT - SBARHEIGHT; y++)
@@ -511,19 +511,19 @@ void fillBackScreen()
         }
     }
 
-    patch = static_cast<Patch*>(W_CacheLumpName("brdr_t", PU_CACHE));
+    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_t"));
 
     for (x = 0; x < scaledviewwidth; x += 8)
         Doom::drawPatch(viewwindowx + x, viewwindowy - 8, 1, patch);
-    patch = static_cast<Patch*>(W_CacheLumpName("brdr_b", PU_CACHE));
+    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_b"));
 
     for (x = 0; x < scaledviewwidth; x += 8)
         Doom::drawPatch(viewwindowx + x, viewwindowy + viewheight, 1, patch);
-    patch = static_cast<Patch*>(W_CacheLumpName("brdr_l", PU_CACHE));
+    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_l"));
 
     for (y = 0; y < viewheight; y += 8)
         Doom::drawPatch(viewwindowx - 8, viewwindowy + y, 1, patch);
-    patch = static_cast<Patch*>(W_CacheLumpName("brdr_r", PU_CACHE));
+    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_r"));
 
     for (y = 0; y < viewheight; y += 8)
         Doom::drawPatch(viewwindowx + scaledviewwidth, viewwindowy + y, 1, patch);
@@ -532,22 +532,22 @@ void fillBackScreen()
     Doom::drawPatch(viewwindowx - 8,
                 viewwindowy - 8,
                 1,
-                static_cast<Patch*>(W_CacheLumpName("brdr_tl", PU_CACHE)));
+                static_cast<Patch*>(Doom::cacheLumpName("brdr_tl")));
 
     Doom::drawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy - 8,
                 1,
-                static_cast<Patch*>(W_CacheLumpName("brdr_tr", PU_CACHE)));
+                static_cast<Patch*>(Doom::cacheLumpName("brdr_tr")));
 
     Doom::drawPatch(viewwindowx - 8,
                 viewwindowy + viewheight,
                 1,
-                static_cast<Patch*>(W_CacheLumpName("brdr_bl", PU_CACHE)));
+                static_cast<Patch*>(Doom::cacheLumpName("brdr_bl")));
 
     Doom::drawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy + viewheight,
                 1,
-                static_cast<Patch*>(W_CacheLumpName("brdr_br", PU_CACHE)));
+                static_cast<Patch*>(Doom::cacheLumpName("brdr_br")));
 }
 
 //

@@ -54,7 +54,7 @@
 #include "../sounds.h"
 #include "../st_stuff.h"
 #include "../v_video.h" // Needs access to LFB.
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 #include "../wi_stuff.h"
 #include "../g_game.h"
 
@@ -305,20 +305,20 @@ namespace Doom
 
 // Forward declarations so call order needs no rearranging.
 doom_boolean checkDemoStatus();
-void gReadDemoTiccmd(Ticcmd* cmd);
-void gWriteDemoTiccmd(Ticcmd* cmd);
+void readDemoTiccmd(Ticcmd* cmd);
+void writeDemoTiccmd(Ticcmd* cmd);
 void playerReborn(int player);
 void initNewGame(Skill skill, int episode, int map);
-void gDoReborn(int playernum);
-void gDoLoadLevel();
-void gDoNewGame();
+void doReborn(int playernum);
+void doLoadLevel();
+void doNewGame();
 void doLoadGame();
-void gDoPlayDemo();
-void gDoCompleted();
-void gDoWorldDone();
-void gDoSaveGame();
+void doPlayDemo();
+void doCompleted();
+void doWorldDone();
+void doSaveGame();
 
-int gCmdChecksum(Ticcmd* cmd)
+int cmdChecksum(Ticcmd* cmd)
 {
     int sum = 0;
 
@@ -528,9 +528,9 @@ void buildTiccmd(Ticcmd* cmd)
 }
 
 //
-// gDoLoadLevel
+// doLoadLevel
 //
-void gDoLoadLevel()
+void doLoadLevel()
 {
     // Set the sky map.
     // First thing, we have a dummy sky texture name,
@@ -689,7 +689,7 @@ void gameTicker()
     // do player reborns if needed
     for (int i = 0; i < MAXPLAYERS; i++)
         if (playeringame[i] && players[i].playerstate == PST_REBORN)
-            gDoReborn(i);
+            doReborn(i);
 
     // do things to change the game state
     while (gameaction != ga_nothing)
@@ -697,28 +697,28 @@ void gameTicker()
         switch (gameaction)
         {
             case ga_loadlevel:
-                gDoLoadLevel();
+                doLoadLevel();
                 break;
             case ga_newgame:
-                gDoNewGame();
+                doNewGame();
                 break;
             case ga_loadgame:
                 doLoadGame();
                 break;
             case ga_savegame:
-                gDoSaveGame();
+                doSaveGame();
                 break;
             case ga_playdemo:
-                gDoPlayDemo();
+                doPlayDemo();
                 break;
             case ga_completed:
-                gDoCompleted();
+                doCompleted();
                 break;
             case ga_victory:
                 Doom::startFinale();
                 break;
             case ga_worlddone:
-                gDoWorldDone();
+                doWorldDone();
                 break;
             case ga_screenshot:
                 Doom::writeScreenshot();
@@ -742,9 +742,9 @@ void gameTicker()
             doom_memcpy(cmd, &netcmds[i][buf], sizeof(Ticcmd));
 
             if (demoplayback)
-                gReadDemoTiccmd(cmd);
+                readDemoTiccmd(cmd);
             if (demorecording)
-                gWriteDemoTiccmd(cmd);
+                writeDemoTiccmd(cmd);
 
             // check for turbo cheats
             if (cmd->forwardmove > TURBOTHRESHOLD && !(gametic & 31)
@@ -838,21 +838,21 @@ void gameTicker()
 //
 
 //
-// gInitPlayer
+// initPlayer
 // Called at the start.
 // Called by the game initialization functions.
 //
-void gInitPlayer(int player)
+void initPlayer(int player)
 {
     // clear everything else to defaults
     playerReborn(player);
 }
 
 //
-// gPlayerFinishLevel
+// playerFinishLevel
 // Can when a player completes a level.
 //
-void gPlayerFinishLevel(int player)
+void playerFinishLevel(int player)
 {
     Player* p;
 
@@ -906,13 +906,13 @@ void playerReborn(int player)
 }
 
 //
-// gCheckSpot
+// checkSpot
 // Returns false if the player cannot be respawned
 // at the given MapThing spot
 // because something is occupying it
 //
 
-doom_boolean gCheckSpot(int playernum, MapThing* mthing)
+doom_boolean checkSpot(int playernum, MapThing* mthing)
 {
     fixed_t x;
     fixed_t y;
@@ -947,9 +947,9 @@ doom_boolean gCheckSpot(int playernum, MapThing* mthing)
     an = (ANG45 * (mthing->angle / 45)) >> ANGLETOFINESHIFT;
 
     mo = Doom::spawnMobj(x + 20 * finecosine[an],
-                     y + 20 * finesine[an],
-                     ss->sector->floorheight,
-                     MT_TFOG);
+                         y + 20 * finesine[an],
+                         ss->sector->floorheight,
+                         MT_TFOG);
 
     if (players[consoleplayer].viewz != 1)
         Doom::startSound(mo, sfx_telept); // don't start sound on first frame
@@ -981,7 +981,7 @@ void deathMatchSpawnPlayer(int playernum)
     for (int j = 0; j < 20; j++)
     {
         i = P_Random() % selections;
-        if (gCheckSpot(playernum, &deathmatchstarts[i]))
+        if (checkSpot(playernum, &deathmatchstarts[i]))
         {
             deathmatchstarts[i].type = playernum + 1;
             Doom::spawnPlayer(&deathmatchstarts[i]);
@@ -994,9 +994,9 @@ void deathMatchSpawnPlayer(int playernum)
 }
 
 //
-// gDoReborn
+// doReborn
 //
-void gDoReborn(int playernum)
+void doReborn(int playernum)
 {
     if (!netgame)
     {
@@ -1017,7 +1017,7 @@ void gDoReborn(int playernum)
             return;
         }
 
-        if (gCheckSpot(playernum, &playerstarts[playernum]))
+        if (checkSpot(playernum, &playerstarts[playernum]))
         {
             Doom::spawnPlayer(&playerstarts[playernum]);
             return;
@@ -1026,7 +1026,7 @@ void gDoReborn(int playernum)
         // try to spawn at one of the other players spots
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (gCheckSpot(playernum, &playerstarts[i]))
+            if (checkSpot(playernum, &playerstarts[i]))
             {
                 playerstarts[i].type = playernum + 1; // fake as other player
                 Doom::spawnPlayer(&playerstarts[i]);
@@ -1045,7 +1045,7 @@ void takeScreenshot()
 }
 
 //
-// gDoCompleted
+// doCompleted
 //
 void exitLevel()
 {
@@ -1057,20 +1057,20 @@ void exitLevel()
 void secretExitLevel()
 {
     // IF NO WOLF3D LEVELS, NO SECRET EXIT!
-    if ((gamemode == commercial) && (W_CheckNumForName("map31") < 0))
+    if ((gamemode == commercial) && (Doom::wad().find("map31") < 0))
         secretexit = false;
     else
         secretexit = true;
     gameaction = ga_completed;
 }
 
-void gDoCompleted()
+void doCompleted()
 {
     gameaction = ga_nothing;
 
     for (int i = 0; i < MAXPLAYERS; i++)
         if (playeringame[i])
-            gPlayerFinishLevel(i); // take away cards and stuff
+            playerFinishLevel(i); // take away cards and stuff
 
     if (automapactive)
         Doom::stopAutomap();
@@ -1215,11 +1215,11 @@ void worldDone()
     }
 }
 
-void gDoWorldDone()
+void doWorldDone()
 {
     gamestate = GS_LEVEL;
     gamemap = wminfo.next + 1;
-    gDoLoadLevel();
+    doLoadLevel();
     gameaction = ga_nothing;
     viewactive = true;
 }
@@ -1301,7 +1301,7 @@ void saveGame(int slot, char* description)
     sendsave = true;
 }
 
-void gDoSaveGame()
+void doSaveGame()
 {
     EA::Array<char, 100> name;
     EA::Array<char, VERSIONSIZE> name2;
@@ -1375,7 +1375,7 @@ void deferInitNew(Skill skill, int episode, int map)
     gameaction = ga_newgame;
 }
 
-void gDoNewGame()
+void doNewGame()
 {
     demoplayback = false;
     netdemo = false;
@@ -1494,14 +1494,14 @@ void initNewGame(Skill skill, int episode, int map)
                 break;
         }
 
-    gDoLoadLevel();
+    doLoadLevel();
 }
 
 //
 // DEMO RECORDING
 //
 
-void gReadDemoTiccmd(Ticcmd* cmd)
+void readDemoTiccmd(Ticcmd* cmd)
 {
     if (*demo_p == DEMOMARKER)
     {
@@ -1515,7 +1515,7 @@ void gReadDemoTiccmd(Ticcmd* cmd)
     cmd->buttons = static_cast<unsigned char>(*demo_p++);
 }
 
-void gWriteDemoTiccmd(Ticcmd* cmd)
+void writeDemoTiccmd(Ticcmd* cmd)
 {
     if (gamekeydown['q']) // press q to end demo recording
         checkDemoStatus();
@@ -1531,7 +1531,7 @@ void gWriteDemoTiccmd(Ticcmd* cmd)
         return;
     }
 
-    gReadDemoTiccmd(cmd); // make SURE it is exactly the same
+    readDemoTiccmd(cmd); // make SURE it is exactly the same
 }
 
 //
@@ -1583,14 +1583,13 @@ void deferPlayDemo(const char* name)
     gameaction = ga_playdemo;
 }
 
-void gDoPlayDemo()
+void doPlayDemo()
 {
     Skill skill;
     int episode, map;
 
     gameaction = ga_nothing;
-    demobuffer = demo_p =
-        static_cast<byte*>((W_CacheLumpName(defdemoname, PU_STATIC)));
+    demobuffer = demo_p = static_cast<byte*>((Doom::cacheLumpName(defdemoname)));
     byte demo_version = *demo_p++;
     if (demo_version != VERSION
         && demo_version != 109) // Demos seem to run fine with version 109
@@ -1694,7 +1693,8 @@ doom_boolean checkDemoStatus()
     if (demorecording)
     {
         *demo_p++ = DEMOMARKER;
-        Doom::writeFile(demoname, demobuffer, static_cast<int>((demo_p - demobuffer)));
+        Doom::writeFile(
+            demoname, demobuffer, static_cast<int>((demo_p - demobuffer)));
         doom_free(demobuffer);
         demorecording = false;
         //fatalError("Error: Demo %s recorded", demoname);

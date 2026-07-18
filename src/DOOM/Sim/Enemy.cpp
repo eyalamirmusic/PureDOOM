@@ -42,6 +42,7 @@
 #include "Floors.h"
 #include "Interaction.h"
 #include "MapAction.h"
+#include "MapUtil.h"
 #include "Mobj.h"
 #include "Movement.h"
 #include "Sight.h"
@@ -194,9 +195,9 @@ void recursiveSound(Sector* sec, int soundblocks)
         if (!(check->flags & ML_TWOSIDED))
             continue;
 
-        P_LineOpening(check);
+        updateLineOpening(*check);
 
-        if (openrange <= 0)
+        if (clip().openrange <= 0)
             continue; // closed door
 
         if (sides[check->sidenum[0]].sector == sec)
@@ -238,7 +239,7 @@ doom_boolean checkMeleeRange(Mobj& actor)
         return false;
 
     pl = actor.target;
-    dist = P_AproxDistance(pl->x - actor.x, pl->y - actor.y);
+    dist = approxDistance(Fixed {pl->x - actor.x}, Fixed {pl->y - actor.y}).raw;
 
     if (dist >= MELEERANGE - 20 * FRACUNIT + pl->info->radius)
         return false;
@@ -271,7 +272,9 @@ doom_boolean checkMissileRange(Mobj& actor)
         return false; // do not attack yet
 
     // OPTIMIZE: get this from a global checksight
-    dist = P_AproxDistance(actor.x - actor.target->x, actor.y - actor.target->y)
+    dist = approxDistance(Fixed {actor.x - actor.target->x},
+                          Fixed {actor.y - actor.target->y})
+               .raw
            - 64 * FRACUNIT;
 
     if (!actor.info->meleestate)
@@ -566,8 +569,9 @@ doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround)
 
             if (an > ANG90 && an < ANG270)
             {
-                dist = P_AproxDistance(player->mo->x - actor.x,
-                                       player->mo->y - actor.y);
+                dist = approxDistance(Fixed {player->mo->x - actor.x},
+                                      Fixed {player->mo->y - actor.y})
+                           .raw;
                 // if real close, react anyway
                 if (dist > MELEERANGE)
                     continue; // behind back
@@ -1062,7 +1066,7 @@ void tracer(Mobj& actor)
     actor.momy = FixedMul(actor.info->speed, finesine[exact]);
 
     // change slope
-    dist = P_AproxDistance(dest->x - actor.x, dest->y - actor.y);
+    dist = approxDistance(Fixed {dest->x - actor.x}, Fixed {dest->y - actor.y}).raw;
 
     dist = dist / actor.info->speed;
 
@@ -1171,7 +1175,7 @@ void vileChase(Mobj& actor)
                 // Call vileCheck to check
                 // whether object is a corpse
                 // that canbe raised.
-                if (!P_BlockThingsIterator(bx, by, vileCheck))
+                if (!forEachThingInBlock(bx, by, vileCheck))
                 {
                     // got one!
                     temp = actor.target;
@@ -1239,11 +1243,11 @@ void fire(Mobj& actor)
 
     an = dest->angle >> ANGLETOFINESHIFT;
 
-    P_UnsetThingPosition(&actor);
+    unsetThingPosition(actor);
     actor.x = dest->x + FixedMul(24 * FRACUNIT, finecosine[an]);
     actor.y = dest->y + FixedMul(24 * FRACUNIT, finesine[an]);
     actor.z = dest->z;
-    P_SetThingPosition(&actor);
+    setThingPosition(actor);
 }
 
 //
@@ -1387,7 +1391,7 @@ void skullAttack(Mobj& actor)
     an = actor.angle >> ANGLETOFINESHIFT;
     actor.momx = FixedMul(SKULLSPEED, finecosine[an]);
     actor.momy = FixedMul(SKULLSPEED, finesine[an]);
-    dist = P_AproxDistance(dest->x - actor.x, dest->y - actor.y);
+    dist = approxDistance(Fixed {dest->x - actor.x}, Fixed {dest->y - actor.y}).raw;
     dist = dist / SKULLSPEED;
 
     if (dist < 1)

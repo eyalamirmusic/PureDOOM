@@ -16,7 +16,7 @@
 #include "../st_lib.h"
 #include "../st_stuff.h"
 #include "../v_video.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include "StatusWidgets.h"
 #include "StatusWidgetGraphics.h"
@@ -35,7 +35,7 @@ void drawNum(StatusNumber& n);
 
 void initStatusWidgets()
 {
-    sttminus = static_cast<Patch*>(W_CacheLumpName("STTMINUS", PU_STATIC));
+    sttminus = static_cast<Patch*>(Doom::cacheLumpName("STTMINUS"));
 }
 
 void initNum(StatusNumber& n,

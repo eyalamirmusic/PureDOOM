@@ -45,7 +45,7 @@
 #include "../m_misc.h"
 #include "../m_swap.h"
 #include "../v_video.h"
-#include "../w_wad.h"
+#include "../Wad/WadFile.h"
 
 #include "Config.h"
 #include "SoundSettings.h"
@@ -603,7 +603,7 @@ void writeScreenshot()
                  linear,
                  SCREENWIDTH,
                  SCREENHEIGHT,
-                 static_cast<byte*>((W_CacheLumpName("PLAYPAL", PU_CACHE))));
+                 static_cast<byte*>((Doom::cacheLumpName("PLAYPAL"))));
 
     players[consoleplayer].message = "screen shot";
 }
