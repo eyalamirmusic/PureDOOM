@@ -117,7 +117,7 @@ namespace Doom
 #define SHOWNEXTLOCDELAY 4
 //#define SHOWLASTLOCDELAY        SHOWNEXTLOCDELAY
 
-enum animenum_t
+enum AnimEnum
 {
     ANIM_ALWAYS,
     ANIM_RANDOM,
@@ -136,7 +136,7 @@ struct Point
 //
 struct anim_t_wi_stuff
 {
-    animenum_t type;
+    AnimEnum type;
 
     // period in tics between animations
     int period;

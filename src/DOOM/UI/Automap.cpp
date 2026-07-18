@@ -103,17 +103,17 @@ namespace Doom
 #define CXMTOF(x) (f_x + MTOF((x) - m_x))
 #define CYMTOF(y) (f_y + (f_h - MTOF((y) - m_y)))
 
-struct fpoint_t
+struct FPoint
 {
     int x, y;
 };
 
 struct FLine
 {
-    fpoint_t a, b;
+    FPoint a, b;
 };
 
-struct islope_t
+struct ISlope
 {
     fixed_t slp, islp;
 };
@@ -201,7 +201,7 @@ static doom_boolean& stopped = automapView().stopped;
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so
 // that it can be used with the brain-dead drawing stuff.
-void getIslope(MapLine* ml, islope_t* is)
+void getIslope(MapLine* ml, ISlope* is)
 {
     int dx, dy;
 
@@ -735,7 +735,7 @@ doom_boolean clipMline(MapLine* ml, FLine* fl)
     int outcode2 = 0;
     int outside;
 
-    fpoint_t tmp;
+    FPoint tmp;
     int dx;
     int dy;
 

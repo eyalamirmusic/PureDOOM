@@ -30,7 +30,6 @@
 // deleted (the parallel ceilingfunc went the same way).
 extern short*& lastopening;
 
-typedef void (*planefunction_t) (int top, int bottom);
 
 extern short (&floorclip)[SCREENWIDTH];
 extern short (&ceilingclip)[SCREENWIDTH];

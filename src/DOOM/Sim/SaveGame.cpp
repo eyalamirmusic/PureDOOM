@@ -205,7 +205,7 @@ void unArchiveWorld()
 //
 // Thinkers
 //
-enum thinkerclass_t
+enum ThinkerClass
 {
     tc_end,
     tc_mobj

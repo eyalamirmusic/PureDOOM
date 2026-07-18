@@ -103,7 +103,7 @@ namespace Doom
 {
 // SurfaceAnim moved to Sim/AnimatedSurfaces.h with the anims/lastanim it types.
 
-struct animdef_t
+struct AnimDef
 {
     // Not a boolean, despite the name and despite what vanilla called it: the
     // table below ends with {-1}, and Doom::initPicAnims walks until it finds that.
@@ -116,7 +116,7 @@ struct animdef_t
     int speed;
 };
 
-EA::Array<animdef_t, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},
+EA::Array<AnimDef, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},
                         {false, "FWATER4", "FWATER1", 8},
                         {false, "SWATER4", "SWATER1", 8},
                         {false, "LAVA4", "LAVA1", 8},

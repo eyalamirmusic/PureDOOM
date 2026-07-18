@@ -53,7 +53,6 @@ extern Doom::LightTable** vscalelight;
 extern Doom::LightTable** dscalelight;
 
 
-typedef void (*drawfunc_t) (int start, int stop);
 
 
 // BSP?

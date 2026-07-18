@@ -67,7 +67,7 @@
 //
 // SCREEN SHOTS
 //
-struct pcx_t
+struct PcxHeader
 {
     char manufacturer;
     char version;
@@ -528,7 +528,7 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
     // RAII scratch: the PCX header + packed image is built into this buffer and
     // written out, then released on return. pcx is a view onto it.
     auto pcxbuf = EA::Vector<byte>(width * height * 2 + 1000);
-    auto* pcx = reinterpret_cast<pcx_t*>(pcxbuf.data());
+    auto* pcx = reinterpret_cast<PcxHeader*>(pcxbuf.data());
 
     pcx->manufacturer = 0x0a; // PCX id
     pcx->version = 5; // 256 color

@@ -61,7 +61,7 @@ namespace Doom
 #define TEXTSPEED 3
 #define TEXTWAIT 250
 
-struct castinfo_t
+struct CastInfo
 {
     const char* name;
     MobjType type;
@@ -107,7 +107,7 @@ const char* t6text = T6TEXT;
 static const char*& finaletext = finaleState().finaletext;
 static const char*& finaleflat = finaleState().finaleflat;
 
-EA::Array<castinfo_t, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
+EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
                                        {CC_SHOTGUN, MT_SHOTGUY},
                                        {CC_HEAVY, MT_CHAINGUY},
                                        {CC_IMP, MT_TROOP},
