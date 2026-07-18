@@ -39,6 +39,7 @@
 #include "../Host/System.h"
 #include "../Render/Main.h"
 #include "Mobj.h"
+#include "Weapon.h"
 #define BONUSADD 6
 
 namespace Doom
@@ -646,7 +647,7 @@ void killMobj(Mobj* source, Mobj* target)
 
         target->flags &= ~MF_SOLID;
         target->player->playerstate = PST_DEAD;
-        P_DropWeapon(target->player);
+        dropWeapon(*target->player);
 
         if (target->player == &players[consoleplayer] && automapactive)
         {

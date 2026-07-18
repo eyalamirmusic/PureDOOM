@@ -19,6 +19,7 @@
 // can store their address.
 #include "Mobj.h"
 
+#include "Player.h"
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
@@ -174,7 +175,7 @@ void ticker()
 
     for (int i = 0; i < MAXPLAYERS; i++)
         if (playeringame[i])
-            P_PlayerThink(&players[i]);
+            playerThink(players[i]);
 
     runThinkers();
     Doom::updateSpecials();

@@ -43,6 +43,7 @@
 #include "MapAction.h"
 #include "MapUtil.h"
 #include "Movement.h"
+#include "Weapon.h"
 #define STOPSPEED 0x1000
 #define FRICTION 0xe800
 
@@ -632,7 +633,7 @@ void spawnPlayer(MapThing* mthing)
     p->viewheight = VIEWHEIGHT;
 
     // setup gun psprite
-    P_SetupPsprites(p);
+    setupPsprites(*p);
 
     // give all cards in death match mode
     if (deathmatch)

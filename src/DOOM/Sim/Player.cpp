@@ -30,6 +30,7 @@
 #include "../Render/Main.h"
 #include "MapAction.h"
 #include "Mobj.h"
+#include "Weapon.h"
 #define INVERSECOLORMAP 32
 
 // 16 pixels of bob
@@ -163,7 +164,7 @@ void deathThink(Player& player)
     angle_t angle;
     angle_t delta;
 
-    P_MovePsprites(&player);
+    movePsprites(player);
 
     // fall to the ground
     if (player.viewheight > 6 * FRACUNIT)
@@ -299,7 +300,7 @@ void playerThink(Player& player)
         player.usedown = false;
 
     // cycle psprites
-    P_MovePsprites(&player);
+    movePsprites(player);
 
     // Counters, time dependend power ups.
 

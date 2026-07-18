@@ -74,15 +74,11 @@ extern Doom::Thinker& thinkercap;
 //
 // P_PSPR
 //
-void P_SetupPsprites(Doom::Player* curplayer);
-void P_MovePsprites(Doom::Player* curplayer);
-void P_DropWeapon(Doom::Player* player);
 
 
 //
 // P_USER
 //
-void P_PlayerThink(Doom::Player* player);
 
 
 //

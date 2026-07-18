@@ -296,7 +296,7 @@ void displayFrame()
 
     // draw the view directly
     if (gamestate == GS_LEVEL && !automapactive && gametic)
-        R_RenderPlayerView(&players[displayplayer]);
+        Doom::renderPlayerView(players[displayplayer]);
 
     if (gamestate == GS_LEVEL && gametic)
         Doom::drawHud();

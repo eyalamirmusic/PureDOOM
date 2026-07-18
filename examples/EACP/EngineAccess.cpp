@@ -293,7 +293,7 @@ void eacpDoomRevealAutomap()
     if (gamestate != Doom::GS_LEVEL || !gametic || !automapactive || player->mo == 0)
         return;
 
-    R_SetupFrame(player);
+    Doom::setupFrame(*player);
     Doom::clearClipSegs();
     Doom::clearDrawSegs();
     Doom::clearPlanes();

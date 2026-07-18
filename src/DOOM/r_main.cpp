@@ -126,12 +126,4 @@ void (*spanfunc)();
 
 
 
-void R_SetupFrame(Doom::Player* player)
-{
-    Doom::setupFrame(*player);
-}
 
-void R_RenderPlayerView(Doom::Player* player)
-{
-    Doom::renderPlayerView(*player);
-}

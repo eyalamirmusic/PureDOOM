@@ -105,7 +105,6 @@ extern void (*spanfunc)();
 // Places the camera and picks the light tables for a frame, from the player's
 // position and their fixedcolormap (the invulnerability sphere and the light-amp
 // visor lock the view to one COLORMAP row, overriding light and distance both).
-void R_SetupFrame(Doom::Player* player);
 
 // How fast light falls off with distance in the scale-light table. Anything
 // reproducing DOOM's shading has to use the same number or the banding differs.
@@ -117,7 +116,6 @@ void R_SetupFrame(Doom::Player* player);
 //
 
 // Called by G_Drawer.
-void R_RenderPlayerView(Doom::Player* player);
 
 // Called by startup code.
 
