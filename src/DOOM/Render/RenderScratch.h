@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h" // visplane_t
+#include "../r_defs.h" // VisPlane
 #include "../tables.h" // angle_t
 
 namespace Doom
@@ -30,8 +30,8 @@ struct RenderScratch
     int sscount = 0;
 
     // The visplanes the current subsector draws its floor and ceiling into.
-    visplane_t* floorplane = nullptr;
-    visplane_t* ceilingplane = nullptr;
+    VisPlane* floorplane = nullptr;
+    VisPlane* ceilingplane = nullptr;
 };
 
 // The one RenderScratch, a view onto the Engine's member - the same pattern as

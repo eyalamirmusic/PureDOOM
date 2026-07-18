@@ -7,13 +7,13 @@
 namespace Doom
 {
 // Floor thinkers and handlers; p_floor.cpp keeps the vanilla names as shims.
-result_e movePlane(sector_t& sector,
+result_e movePlane(Sector& sector,
                    fixed_t speed,
                    fixed_t dest,
                    doom_boolean crush,
                    int floorOrCeiling,
                    int direction);
 void moveFloor(floormove_t& floor);
-int doFloor(line_t* line, floor_e floortype);
-int buildStairs(line_t* line, stair_e type);
+int doFloor(Line* line, floor_e floortype);
+int buildStairs(Line* line, stair_e type);
 } // namespace Doom

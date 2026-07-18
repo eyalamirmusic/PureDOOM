@@ -35,7 +35,7 @@
 // SECTORS do store MObjs anyway.
 #include "p_mobj.h"
 
-// spritedef_t owns its frames in an EA::Vector now (RAII, REFACTOR.md Step 9).
+// Doom::SpriteDef owns its frames in an EA::Vector now (RAII, REFACTOR.md Step 9).
 #include <ea_data_structures/Structures/Vector.h>
 
 
@@ -59,17 +59,23 @@
 // Note: transformed values not buffered locally,
 // like some DOOM-alikes ("wt", "WebView") did.
 //
-struct vertex_t
+namespace Doom
+{
+struct Vertex
 {
     fixed_t        x;
     fixed_t        y;
 };
+} // namespace Doom
 
 
 // Forward of LineDefs, for Sectors.
-struct line_t;
+namespace Doom
+{
+struct Line;
+} // namespace Doom
 
-// Each sector has a degenmobj_t in its center
+// Each sector has a Doom::DegenMobj in its center
 // for sound origin purposes.
 // I suppose this does not handle sound from
 // moving objects (doppler), because
@@ -82,18 +88,23 @@ struct line_t;
 // gets no tail-padding reuse, which would push x/y/z 4 bytes later than mobj_t's
 // and make the cast read the wrong words (a silently misplaced, wrongly-inaudible
 // sound). The Thinker part is otherwise unused: this is never a real thinker.
-struct degenmobj_t : Doom::Thinker
+namespace Doom
+{
+struct DegenMobj : Doom::Thinker
 {
     fixed_t                x;
     fixed_t                y;
     fixed_t                z;
 };
+} // namespace Doom
 
 //
 // The SECTORS record, at runtime.
 // Stores things/mobjs.
 //
-struct sector_t
+namespace Doom
+{
+struct Sector
 {
     fixed_t floorheight;
     fixed_t ceilingheight;
@@ -113,7 +124,7 @@ struct sector_t
     int blockbox[4];
 
     // origin for any sounds played by the sector
-    degenmobj_t soundorg;
+    DegenMobj soundorg;
 
     // if == validcount, already checked
     int validcount;
@@ -125,14 +136,17 @@ struct sector_t
     void* specialdata;
 
     int linecount;
-    struct line_t** lines;        // [linecount] size
+    struct Line** lines;        // [linecount] size
 };
+} // namespace Doom
 
 
 //
 // The SideDef.
 //
-struct side_t
+namespace Doom
+{
+struct Side
 {
     // add this to the calculated texture column
     fixed_t textureoffset;
@@ -147,27 +161,33 @@ struct side_t
     short midtexture;
 
     // Sector the SideDef is facing.
-    sector_t* sector;
+    Sector* sector;
 };
+} // namespace Doom
 
 
 //
 // Move clipping aid for LineDefs.
 //
-enum slopetype_t
+namespace Doom
+{
+enum SlopeType
 {
     ST_HORIZONTAL,
     ST_VERTICAL,
     ST_POSITIVE,
     ST_NEGATIVE
 };
+} // namespace Doom
 
 
-struct line_t
+namespace Doom
+{
+struct Line
 {
     // Vertices, from v1 to v2.
-    vertex_t* v1;
-    vertex_t* v2;
+    Doom::Vertex* v1;
+    Doom::Vertex* v2;
 
     // Precalculated v2 - v1 for side checking.
     fixed_t dx;
@@ -187,12 +207,12 @@ struct line_t
     fixed_t bbox[4];
 
     // To aid move clipping.
-    slopetype_t slopetype;
+    SlopeType slopetype;
 
     // Front and back sector.
     // Note: redundant? Can be retrieved from SideDefs.
-    sector_t* frontsector;
-    sector_t* backsector;
+    Sector* frontsector;
+    Sector* backsector;
 
     // if == validcount, already checked
     int validcount;
@@ -200,50 +220,59 @@ struct line_t
     // thinker_t for reversable actions
     void* specialdata;
 };
+} // namespace Doom
 
 
 //
-// A SubSector.
-// References a Sector.
+// A Doom::SubSector.
+// References a Doom::Sector.
 // Basically, this is a list of LineSegs,
 // indicating the visible walls that define
 // (all or some) sides of a convex BSP leaf.
 //
-struct subsector_t
+namespace Doom
 {
-    sector_t* sector;
+struct SubSector
+{
+    Sector* sector;
     short numlines;
     short firstline;
 };
+} // namespace Doom
 
 
 //
 // The LineSeg.
 //
-struct seg_t
+namespace Doom
 {
-    vertex_t* v1;
-    vertex_t* v2;
+struct Seg
+{
+    Doom::Vertex* v1;
+    Doom::Vertex* v2;
 
     fixed_t offset;
 
     angle_t angle;
 
-    side_t* sidedef;
-    line_t* linedef;
+    Side* sidedef;
+    Line* linedef;
 
     // Sector references.
     // Could be retrieved from linedef, too.
     // backsector is 0 for one sided lines
-    sector_t* frontsector;
-    sector_t* backsector;
+    Sector* frontsector;
+    Sector* backsector;
 };
+} // namespace Doom
 
 
 //
 // BSP node.
 //
-struct node_t
+namespace Doom
+{
+struct Node
 {
     // Partition line.
     fixed_t x;
@@ -257,17 +286,21 @@ struct node_t
     // If NF_SUBSECTOR its a subsector.
     unsigned short children[2];
 };
+} // namespace Doom
 
 
 // posts are runs of non masked source pixels
-struct post_t
+namespace Doom
+{
+struct Post
 {
     byte topdelta;        // -1 is the last post in a column
     byte length;         // length data bytes follows
 };
+} // namespace Doom
 
-// column_t is a list of 0 or more post_t, (byte)-1 terminated
-typedef post_t column_t;
+// column_t is a list of 0 or more Doom::Post, (byte)-1 terminated
+typedef Doom::Post column_t;
 
 
 //
@@ -285,9 +318,11 @@ typedef byte lighttable_t;
 //
 // ?
 //
-struct drawseg_t
+namespace Doom
 {
-    seg_t* curline;
+struct DrawSeg
+{
+    Seg* curline;
     int x1;
     int x2;
 
@@ -310,6 +345,7 @@ struct drawseg_t
     short* sprbottomclip;
     short* maskedtexturecol;
 };
+} // namespace Doom
 
 
 // Patches.
@@ -317,7 +353,9 @@ struct drawseg_t
 // Patches are used for sprites and all masked pictures,
 // and we compose textures from the TEXTURE1/2 lists
 // of patches.
-struct patch_t
+namespace Doom
+{
+struct Patch
 {
     short width;                // bounding box size 
     short height;
@@ -326,16 +364,19 @@ struct patch_t
     int columnofs[8];        // only [width] used
     // the [0] is &columnofs[width] 
 };
+} // namespace Doom
 
 
-// A vissprite_t is a thing
+// A Doom::VisSprite is a thing
 //  that will be drawn during a refresh.
 // I.e. a sprite object that is partly visible.
-struct vissprite_t
+namespace Doom
+{
+struct VisSprite
 {
     // Doubly linked list.
-    struct vissprite_t* prev;
-    struct vissprite_t* next;
+    struct VisSprite* prev;
+    struct VisSprite* next;
 
     int x1;
     int x2;
@@ -365,6 +406,7 @@ struct vissprite_t
 
     int mobjflags;
 };
+} // namespace Doom
 
 
 //        
@@ -374,7 +416,7 @@ struct vissprite_t
 //  x indicating the rotation, x = 0, 1-7.
 // The sprite and frame specified by a thing_t
 //  is range checked at run time.
-// A sprite is a patch_t that is assumed to represent
+// A sprite is a Doom::Patch that is assumed to represent
 //  a three dimensional object and may have multiple
 //  rotations pre drawn.
 // Horizontal flipping is used to save space,
@@ -382,7 +424,9 @@ struct vissprite_t
 // Some sprites will only have one picture used
 // for all views: NNNNF0
 //
-struct spriteframe_t
+namespace Doom
+{
+struct SpriteFrame
 {
     // If 0, use lump 0 for any position - the sprite is drawn the same from
     // every angle. If 1, the eight rotations are all present.
@@ -402,26 +446,32 @@ struct spriteframe_t
     // Flip bit (1 = flip) to use for view angles 0-7.
     byte flip[8];
 };
+} // namespace Doom
 
 
 //
 // A sprite definition:
 //  a number of animation frames.
 //
-struct spritedef_t
+namespace Doom
+{
+struct SpriteDef
 {
     int numframes;
-    // The animation frames, RAII-owned (Step 9): was a raw malloc'd spriteframe_t*,
+    // The animation frames, RAII-owned (Step 9): was a raw malloc'd SpriteFrame*,
     // now an owned vector freed with the sprite. Readers index it as before
     // (spriteframes[frame], &spriteframes[frame]).
-    EA::Vector<spriteframe_t> spriteframes;
+    EA::Vector<SpriteFrame> spriteframes;
 };
+} // namespace Doom
 
 
 //
 // Now what is a visplane, anyway?
 // 
-struct visplane_t
+namespace Doom
+{
+struct VisPlane
 {
     fixed_t height;
     int picnum;
@@ -441,6 +491,7 @@ struct visplane_t
     byte bottom[SCREENWIDTH];
     byte pad4;
 };
+} // namespace Doom
 
 
 

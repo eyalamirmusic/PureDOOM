@@ -339,7 +339,7 @@ void nightmareRespawn(mobj_t* mobj)
     fixed_t x;
     fixed_t y;
     fixed_t z;
-    subsector_t* ss;
+    SubSector* ss;
     mobj_t* mo;
     mapthing_t* mthing;
 
@@ -532,7 +532,7 @@ void respawnSpecials()
     fixed_t y;
     fixed_t z;
 
-    subsector_t* ss;
+    SubSector* ss;
     mobj_t* mo;
     mapthing_t* mthing;
 

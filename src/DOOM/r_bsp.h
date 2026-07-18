@@ -27,11 +27,11 @@
 
 // The BSP traversal pointers and the drawseg pool below are Doom::BSPScratch members
 // (Engine); these are references onto them (REFACTOR.md, Step 5).
-extern seg_t*& curline;
-extern side_t*& sidedef;
-extern line_t*& linedef;
-extern sector_t*& frontsector;
-extern sector_t*& backsector;
+extern Doom::Seg*& curline;
+extern Doom::Side*& sidedef;
+extern Doom::Line*& linedef;
+extern Doom::Sector*& frontsector;
+extern Doom::Sector*& backsector;
 
 // rw_x/rw_stopx/segtextured/markfloor/markceiling are Doom::SegState members (Engine); references.
 extern int& rw_x;
@@ -45,8 +45,8 @@ extern doom_boolean& markceiling;
 
 extern doom_boolean skymap;
 
-extern drawseg_t (&drawsegs)[MAXDRAWSEGS];
-extern drawseg_t*& ds_p;
+extern Doom::DrawSeg (&drawsegs)[MAXDRAWSEGS];
+extern Doom::DrawSeg*& ds_p;
 
 extern lighttable_t** hscalelight;
 extern lighttable_t** vscalelight;

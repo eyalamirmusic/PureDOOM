@@ -59,7 +59,7 @@ void loadVertexes(int lump)
 {
     byte* data;
     mapvertex_t* ml;
-    vertex_t* li;
+    Vertex* li;
 
     // Determine number of lumps:
     //  total lump length / vertex record length.
@@ -68,7 +68,7 @@ void loadVertexes(int lump)
     // Owned by the Level now (Sim/Level.h); vertexes is a view onto its vector.
     // assign, not resize, so a shorter second level does not inherit the first
     // level's tail - Z_Malloc handed back fresh zeroed memory every load.
-    Doom::level().vertexes.assign(numvertexes, vertex_t {});
+    Doom::level().vertexes.assign(numvertexes, Vertex {});
     vertexes = Doom::level().vertexes.data();
 
     // Load data into cache.
@@ -95,13 +95,13 @@ void loadSegs(int lump)
 {
     byte* data;
     mapseg_t* ml;
-    seg_t* li;
-    line_t* ldef;
+    Seg* li;
+    Line* ldef;
     int linedef;
     int side;
 
     numsegs = W_LumpLength(lump) / sizeof(mapseg_t);
-    Doom::level().segs.assign(numsegs, seg_t {});
+    Doom::level().segs.assign(numsegs, Seg {});
     segs = Doom::level().segs.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
@@ -134,10 +134,10 @@ void loadSubsectors(int lump)
 {
     byte* data;
     mapsubsector_t* ms;
-    subsector_t* ss;
+    SubSector* ss;
 
     numsubsectors = W_LumpLength(lump) / sizeof(mapsubsector_t);
-    Doom::level().subsectors.assign(numsubsectors, subsector_t {});
+    Doom::level().subsectors.assign(numsubsectors, SubSector {});
     subsectors = Doom::level().subsectors.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
@@ -158,10 +158,10 @@ void loadSectors(int lump)
 {
     byte* data;
     mapsector_t* ms;
-    sector_t* ss;
+    Sector* ss;
 
     numsectors = W_LumpLength(lump) / sizeof(mapsector_t);
-    Doom::level().sectors.assign(numsectors, sector_t {});
+    Doom::level().sectors.assign(numsectors, Sector {});
     sectors = Doom::level().sectors.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
@@ -187,10 +187,10 @@ void loadNodes(int lump)
 {
     byte* data;
     mapnode_t* mn;
-    node_t* no;
+    Node* no;
 
     numnodes = W_LumpLength(lump) / sizeof(mapnode_t);
-    Doom::level().nodes.assign(numnodes, node_t {});
+    Doom::level().nodes.assign(numnodes, Node {});
     nodes = Doom::level().nodes.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
@@ -271,12 +271,12 @@ void loadLineDefs(int lump)
 {
     byte* data;
     maplinedef_t* mld;
-    line_t* ld;
-    vertex_t* v1;
-    vertex_t* v2;
+    Line* ld;
+    Vertex* v1;
+    Vertex* v2;
 
     numlines = W_LumpLength(lump) / sizeof(maplinedef_t);
-    Doom::level().lines.assign(numlines, line_t {});
+    Doom::level().lines.assign(numlines, Line {});
     lines = Doom::level().lines.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
@@ -348,10 +348,10 @@ void loadSideDefs(int lump)
 {
     byte* data;
     mapsidedef_t* msd;
-    side_t* sd;
+    Side* sd;
 
     numsides = W_LumpLength(lump) / sizeof(mapsidedef_t);
-    Doom::level().sides.assign(numsides, side_t {});
+    Doom::level().sides.assign(numsides, Side {});
     sides = Doom::level().sides.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
@@ -410,12 +410,12 @@ void loadBlockMap(int lump)
 //
 void groupLines()
 {
-    line_t** linebuffer;
+    Line** linebuffer;
     int total;
-    line_t* li;
-    sector_t* sector;
-    subsector_t* ss;
-    seg_t* seg;
+    Line* li;
+    Sector* sector;
+    SubSector* ss;
+    Seg* seg;
     EA::Array<fixed_t, 4> bbox;
     int block;
 
@@ -465,7 +465,7 @@ void groupLines()
         if (linebuffer - sector->lines != sector->linecount)
             fatalError("Error: groupLines: miscounted");
 
-        // set the degenmobj_t to the middle of the bounding box
+        // set the DegenMobj to the middle of the bounding box
         sector->soundorg.x = (bbox[BOXRIGHT] + bbox[BOXLEFT]) / 2;
         sector->soundorg.y = (bbox[BOXTOP] + bbox[BOXBOTTOM]) / 2;
 

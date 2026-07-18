@@ -157,7 +157,7 @@ struct anim_t_wi_stuff
     int data2;
 
     // actual graphics for frames of animations
-    patch_t* p[3];
+    Patch* p[3];
 
     // following must be initialized to zero before use!
 
@@ -315,61 +315,61 @@ static int& NUMCMAPS = intermissionState().NUMCMAPS;
 //
 
 // background (map of levels).
-static patch_t*& bg = intermissionState().bg;
+static Patch*& bg = intermissionState().bg;
 
 // You Are Here graphic
-static patch_t* (&yah)[2] = intermissionState().yah;
+static Patch* (&yah)[2] = intermissionState().yah;
 
 // splat
-static patch_t*& splat = intermissionState().splat;
+static Patch*& splat = intermissionState().splat;
 
 // %, : graphics
-static patch_t*& percent = intermissionState().percent;
-static patch_t*& colon = intermissionState().colon;
+static Patch*& percent = intermissionState().percent;
+static Patch*& colon = intermissionState().colon;
 
 // 0-9 graphic
-static patch_t* (&num)[10] = intermissionState().num;
+static Patch* (&num)[10] = intermissionState().num;
 
 // minus sign
-static patch_t*& wiminus = intermissionState().wiminus;
+static Patch*& wiminus = intermissionState().wiminus;
 
 // "Finished!" graphics
-static patch_t*& finished = intermissionState().finished;
+static Patch*& finished = intermissionState().finished;
 
 // "Entering" graphic
-static patch_t*& entering = intermissionState().entering;
+static Patch*& entering = intermissionState().entering;
 
 // "secret"
-static patch_t*& sp_secret = intermissionState().sp_secret;
+static Patch*& sp_secret = intermissionState().sp_secret;
 
 // "Kills", "Scrt", "Items", "Frags"
-static patch_t*& kills = intermissionState().kills;
-static patch_t*& secret = intermissionState().secret;
-static patch_t*& items = intermissionState().items;
-static patch_t*& frags = intermissionState().frags;
+static Patch*& kills = intermissionState().kills;
+static Patch*& secret = intermissionState().secret;
+static Patch*& items = intermissionState().items;
+static Patch*& frags = intermissionState().frags;
 
 // Time sucks.
-static patch_t*& time_patch = intermissionState().time_patch;
-static patch_t*& par = intermissionState().par;
-static patch_t*& sucks = intermissionState().sucks;
+static Patch*& time_patch = intermissionState().time_patch;
+static Patch*& par = intermissionState().par;
+static Patch*& sucks = intermissionState().sucks;
 
 // "killers", "victims"
-static patch_t*& killers = intermissionState().killers;
-static patch_t*& victims = intermissionState().victims;
+static Patch*& killers = intermissionState().killers;
+static Patch*& victims = intermissionState().victims;
 
 // "Total", your face, your dead face
-static patch_t*& total = intermissionState().total;
-static patch_t*& star = intermissionState().star;
-static patch_t*& bstar = intermissionState().bstar;
+static Patch*& total = intermissionState().total;
+static Patch*& star = intermissionState().star;
+static Patch*& bstar = intermissionState().bstar;
 
 // "red P[1..MAXPLAYERS]"
-static patch_t* (&p)[MAXPLAYERS] = intermissionState().p;
+static Patch* (&p)[MAXPLAYERS] = intermissionState().p;
 
 // "gray P[1..MAXPLAYERS]"
-static patch_t* (&bp)[MAXPLAYERS] = intermissionState().bp;
+static Patch* (&bp)[MAXPLAYERS] = intermissionState().bp;
 
 // Name graphics of each level (centered)
-static patch_t**& lnames = intermissionState().lnames;
+static Patch**& lnames = intermissionState().lnames;
 
 static doom_boolean& snl_pointeron = intermissionState().snl_pointeron;
 static int& dm_state = intermissionState().dm_state;
@@ -431,7 +431,7 @@ void wiDrawEL()
                 lnames[wbs->next]);
 }
 
-void wiDrawOnLnode(int n, patch_t* c[])
+void wiDrawOnLnode(int n, Patch* c[])
 {
     int i;
     int left;
@@ -1431,13 +1431,13 @@ void wiLoadData()
     }
 
     // background
-    bg = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_CACHE));
+    bg = static_cast<Patch*>(W_CacheLumpName(name.data(), PU_CACHE));
     Doom::drawPatch(0, 0, 1, bg);
 
     if (gamemode == commercial)
     {
         NUMCMAPS = 32;
-        lnames = static_cast<patch_t**>(doom_malloc(sizeof(patch_t*) * NUMCMAPS));
+        lnames = static_cast<Patch**>(doom_malloc(sizeof(Patch*) * NUMCMAPS));
         for (int i = 0; i < NUMCMAPS; i++)
         {
             //doom_sprintf(name, "CWILV%2.2d", i);
@@ -1445,29 +1445,29 @@ void wiLoadData()
             if (i < 10)
                 doom_concat(name.data(), "0");
             doom_concat(name.data(), doom_itoa(i, 10));
-            lnames[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
+            lnames[i] = static_cast<Patch*>(W_CacheLumpName(name.data(), PU_STATIC));
         }
     }
     else
     {
-        lnames = static_cast<patch_t**>(doom_malloc(sizeof(patch_t*) * NUMMAPS));
+        lnames = static_cast<Patch**>(doom_malloc(sizeof(Patch*) * NUMMAPS));
         for (int i = 0; i < NUMMAPS; i++)
         {
             //doom_sprintf(name, "WILV%d%d", wbs->epsd, i);
             doom_strcpy(name.data(), "WILV");
             doom_concat(name.data(), doom_itoa(wbs->epsd, 10));
             doom_concat(name.data(), doom_itoa(i, 10));
-            lnames[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
+            lnames[i] = static_cast<Patch*>(W_CacheLumpName(name.data(), PU_STATIC));
         }
 
         // you are here
-        yah[0] = static_cast<patch_t*>(W_CacheLumpName("WIURH0", PU_STATIC));
+        yah[0] = static_cast<Patch*>(W_CacheLumpName("WIURH0", PU_STATIC));
 
         // you are here (alt.)
-        yah[1] = static_cast<patch_t*>(W_CacheLumpName("WIURH1", PU_STATIC));
+        yah[1] = static_cast<Patch*>(W_CacheLumpName("WIURH1", PU_STATIC));
 
         // splat
-        splat = static_cast<patch_t*>(W_CacheLumpName("WISPLAT", PU_STATIC));
+        splat = static_cast<Patch*>(W_CacheLumpName("WISPLAT", PU_STATIC));
 
         if (wbs->epsd < 3)
         {
@@ -1490,7 +1490,7 @@ void wiLoadData()
                             doom_concat(name.data(), "0");
                         doom_concat(name.data(), doom_itoa(i, 10));
                         a->p[i] =
-                            static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
+                            static_cast<Patch*>(W_CacheLumpName(name.data(), PU_STATIC));
                     }
                     else
                     {
@@ -1503,7 +1503,7 @@ void wiLoadData()
     }
 
     // More hacks on minus sign.
-    wiminus = static_cast<patch_t*>(W_CacheLumpName("WIMINUS", PU_STATIC));
+    wiminus = static_cast<Patch*>(W_CacheLumpName("WIMINUS", PU_STATIC));
 
     for (int i = 0; i < 10; i++)
     {
@@ -1511,68 +1511,68 @@ void wiLoadData()
         //doom_sprintf(name, "WINUM%d", i);
         doom_strcpy(name.data(), "WINUM");
         doom_concat(name.data(), doom_itoa(i, 10));
-        num[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
+        num[i] = static_cast<Patch*>(W_CacheLumpName(name.data(), PU_STATIC));
     }
 
     // percent sign
-    percent = static_cast<patch_t*>(W_CacheLumpName("WIPCNT", PU_STATIC));
+    percent = static_cast<Patch*>(W_CacheLumpName("WIPCNT", PU_STATIC));
 
     // "finished"
-    finished = static_cast<patch_t*>(W_CacheLumpName("WIF", PU_STATIC));
+    finished = static_cast<Patch*>(W_CacheLumpName("WIF", PU_STATIC));
 
     // "entering"
-    entering = static_cast<patch_t*>(W_CacheLumpName("WIENTER", PU_STATIC));
+    entering = static_cast<Patch*>(W_CacheLumpName("WIENTER", PU_STATIC));
 
     // "kills"
-    kills = static_cast<patch_t*>(W_CacheLumpName("WIOSTK", PU_STATIC));
+    kills = static_cast<Patch*>(W_CacheLumpName("WIOSTK", PU_STATIC));
 
     // "scrt"
-    secret = static_cast<patch_t*>(W_CacheLumpName("WIOSTS", PU_STATIC));
+    secret = static_cast<Patch*>(W_CacheLumpName("WIOSTS", PU_STATIC));
 
     // "secret"
-    sp_secret = static_cast<patch_t*>(W_CacheLumpName("WISCRT2", PU_STATIC));
+    sp_secret = static_cast<Patch*>(W_CacheLumpName("WISCRT2", PU_STATIC));
 
     // Yuck.
     if (french)
     {
         // "items"
         if (netgame && !deathmatch)
-            items = static_cast<patch_t*>(W_CacheLumpName("WIOBJ", PU_STATIC));
+            items = static_cast<Patch*>(W_CacheLumpName("WIOBJ", PU_STATIC));
         else
-            items = static_cast<patch_t*>(W_CacheLumpName("WIOSTI", PU_STATIC));
+            items = static_cast<Patch*>(W_CacheLumpName("WIOSTI", PU_STATIC));
     }
     else
-        items = static_cast<patch_t*>(W_CacheLumpName("WIOSTI", PU_STATIC));
+        items = static_cast<Patch*>(W_CacheLumpName("WIOSTI", PU_STATIC));
 
     // "frgs"
-    frags = static_cast<patch_t*>(W_CacheLumpName("WIFRGS", PU_STATIC));
+    frags = static_cast<Patch*>(W_CacheLumpName("WIFRGS", PU_STATIC));
 
     // ":"
-    colon = static_cast<patch_t*>(W_CacheLumpName("WICOLON", PU_STATIC));
+    colon = static_cast<Patch*>(W_CacheLumpName("WICOLON", PU_STATIC));
 
     // "time"
-    time_patch = static_cast<patch_t*>(W_CacheLumpName("WITIME", PU_STATIC));
+    time_patch = static_cast<Patch*>(W_CacheLumpName("WITIME", PU_STATIC));
 
     // "sucks"
-    sucks = static_cast<patch_t*>(W_CacheLumpName("WISUCKS", PU_STATIC));
+    sucks = static_cast<Patch*>(W_CacheLumpName("WISUCKS", PU_STATIC));
 
     // "par"
-    par = static_cast<patch_t*>(W_CacheLumpName("WIPAR", PU_STATIC));
+    par = static_cast<Patch*>(W_CacheLumpName("WIPAR", PU_STATIC));
 
     // "killers" (vertical)
-    killers = static_cast<patch_t*>(W_CacheLumpName("WIKILRS", PU_STATIC));
+    killers = static_cast<Patch*>(W_CacheLumpName("WIKILRS", PU_STATIC));
 
     // "victims" (horiz)
-    victims = static_cast<patch_t*>(W_CacheLumpName("WIVCTMS", PU_STATIC));
+    victims = static_cast<Patch*>(W_CacheLumpName("WIVCTMS", PU_STATIC));
 
     // "total"
-    total = static_cast<patch_t*>(W_CacheLumpName("WIMSTT", PU_STATIC));
+    total = static_cast<Patch*>(W_CacheLumpName("WIMSTT", PU_STATIC));
 
     // your face
-    star = static_cast<patch_t*>(W_CacheLumpName("STFST01", PU_STATIC));
+    star = static_cast<Patch*>(W_CacheLumpName("STFST01", PU_STATIC));
 
     // dead face
-    bstar = static_cast<patch_t*>(W_CacheLumpName("STFDEAD0", PU_STATIC));
+    bstar = static_cast<Patch*>(W_CacheLumpName("STFDEAD0", PU_STATIC));
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -1580,13 +1580,13 @@ void wiLoadData()
         //doom_sprintf(name, "STPB%d", i);
         doom_strcpy(name.data(), "STPB");
         doom_concat(name.data(), doom_itoa(i, 10));
-        p[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
+        p[i] = static_cast<Patch*>(W_CacheLumpName(name.data(), PU_STATIC));
 
         // "1,2,3,4"
         //doom_sprintf(name, "WIBP%d", i + 1);
         doom_strcpy(name.data(), "WIBP");
         doom_concat(name.data(), doom_itoa(i + 1, 10));
-        bp[i] = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_STATIC));
+        bp[i] = static_cast<Patch*>(W_CacheLumpName(name.data(), PU_STATIC));
     }
 }
 

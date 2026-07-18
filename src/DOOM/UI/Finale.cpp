@@ -51,9 +51,9 @@
 // Other subsystems' globals/functions this file reads.
 #include "../Game/Sound.h"
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
-extern patch_t* (
+extern Doom::Patch* (
     &hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
-void Doom::drawPatchFlipped(int x, int y, int scrn, patch_t* patch); // v_video
+void Doom::drawPatchFlipped(int x, int y, int scrn, Doom::Patch* patch); // v_video
 
 namespace Doom
 {
@@ -600,15 +600,15 @@ void fCastPrint(const char* text)
 //
 void fCastDrawer()
 {
-    spritedef_t* sprdef;
-    spriteframe_t* sprframe;
+    SpriteDef* sprdef;
+    SpriteFrame* sprframe;
     int lump;
     doom_boolean flip;
-    patch_t* patch;
+    Patch* patch;
 
     // erase the entire screen to a background
     Doom::drawPatch(
-        0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("BOSSBACK", PU_CACHE)));
+        0, 0, 0, static_cast<Patch*>(W_CacheLumpName("BOSSBACK", PU_CACHE)));
 
     fCastPrint(castorder[castnum].name);
 
@@ -618,7 +618,7 @@ void fCastDrawer()
     lump = sprframe->lump[0];
     flip = static_cast<doom_boolean>(sprframe->flip[0]);
 
-    patch = static_cast<patch_t*>(W_CacheLumpNum(lump + firstspritelump, PU_CACHE));
+    patch = static_cast<Patch*>(W_CacheLumpNum(lump + firstspritelump, PU_CACHE));
     if (flip)
         Doom::drawPatchFlipped(160, 170, 0, patch);
     else
@@ -628,7 +628,7 @@ void fCastDrawer()
 //
 // fDrawPatchCol
 //
-void fDrawPatchCol(int x, patch_t* patch, int col)
+void fDrawPatchCol(int x, Patch* patch, int col)
 {
     column_t* column;
     byte* source;
@@ -663,14 +663,14 @@ void fDrawPatchCol(int x, patch_t* patch, int col)
 void fBunnyScroll()
 {
     int scrolled;
-    patch_t* p1;
-    patch_t* p2;
+    Patch* p1;
+    Patch* p2;
     EA::Array<char, 10> name;
     int stage;
     int& laststage = finaleState().laststage;
 
-    p1 = static_cast<patch_t*>(W_CacheLumpName("PFUB2", PU_LEVEL));
-    p2 = static_cast<patch_t*>(W_CacheLumpName("PFUB1", PU_LEVEL));
+    p1 = static_cast<Patch*>(W_CacheLumpName("PFUB2", PU_LEVEL));
+    p2 = static_cast<Patch*>(W_CacheLumpName("PFUB1", PU_LEVEL));
 
     Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
@@ -695,7 +695,7 @@ void fBunnyScroll()
         Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
                     (SCREENHEIGHT - 8 * 8) / 2,
                     0,
-                    static_cast<patch_t*>(W_CacheLumpName("END0", PU_CACHE)));
+                    static_cast<Patch*>(W_CacheLumpName("END0", PU_CACHE)));
         laststage = 0;
         return;
     }
@@ -715,7 +715,7 @@ void fBunnyScroll()
     Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
                 (SCREENHEIGHT - 8 * 8) / 2,
                 0,
-                static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_CACHE)));
+                static_cast<Patch*>(W_CacheLumpName(name.data(), PU_CACHE)));
 }
 
 //
@@ -741,20 +741,20 @@ void drawFinale()
                         0,
                         0,
                         0,
-                        static_cast<patch_t*>(W_CacheLumpName("CREDIT", PU_CACHE)));
+                        static_cast<Patch*>(W_CacheLumpName("CREDIT", PU_CACHE)));
                 else
                     Doom::drawPatch(
                         0,
                         0,
                         0,
-                        static_cast<patch_t*>(W_CacheLumpName("HELP2", PU_CACHE)));
+                        static_cast<Patch*>(W_CacheLumpName("HELP2", PU_CACHE)));
                 break;
             case 2:
                 Doom::drawPatch(
                     0,
                     0,
                     0,
-                    static_cast<patch_t*>(W_CacheLumpName("VICTORY2", PU_CACHE)));
+                    static_cast<Patch*>(W_CacheLumpName("VICTORY2", PU_CACHE)));
                 break;
             case 3:
                 fBunnyScroll();
@@ -764,7 +764,7 @@ void drawFinale()
                     0,
                     0,
                     0,
-                    static_cast<patch_t*>(W_CacheLumpName("ENDPIC", PU_CACHE)));
+                    static_cast<Patch*>(W_CacheLumpName("ENDPIC", PU_CACHE)));
                 break;
         }
     }

@@ -158,7 +158,7 @@ static float eacpMix(float from, float to, float amount)
 // move a door or a lift has them making, rather than where the last tic left
 // them. The walls that meet them are drawn from the same numbers, so nothing
 // tears.
-static float eacpFloorHeight(sector_t* sector)
+static float eacpFloorHeight(Doom::Sector* sector)
 {
     float now = eacpFixedToFloat(sector->floorheight);
     int index = (int) (sector - sectors);
@@ -169,7 +169,7 @@ static float eacpFloorHeight(sector_t* sector)
     return eacpMix(eacpPreviousFloor[index], now, eacpAlpha);
 }
 
-static float eacpCeilingHeight(sector_t* sector)
+static float eacpCeilingHeight(Doom::Sector* sector)
 {
     float now = eacpFixedToFloat(sector->ceilingheight);
     int index = (int) (sector - sectors);
@@ -345,7 +345,7 @@ static void eacpDrawUnderLayers()
         Doom::drawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
                           y,
                           0,
-                          (patch_t*) W_CacheLumpName("M_PAUSE", PU_CACHE));
+                          (Doom::Patch*) W_CacheLumpName("M_PAUSE", PU_CACHE));
     }
 }
 
@@ -484,7 +484,7 @@ static int eacpSpriteBase()
 // with the gaps between the runs left transparent. Composing from the patches
 // (as Doom::generateComposite does) rather than reading the engine's cached columns
 // is what makes a masked texture's holes come out as holes.
-static void eacpBlitPatch(patch_t* patch,
+static void eacpBlitPatch(Doom::Patch* patch,
                           int originX,
                           int originY,
                           unsigned char* indices,
@@ -538,7 +538,7 @@ static void eacpDecodeWall(
     for (i = 0; i < texture->patchcount; ++i)
     {
         texpatch_t* piece = &texture->patches[i];
-        patch_t* patch = (patch_t*) W_CacheLumpNum(piece->patch, PU_CACHE);
+        Doom::Patch* patch = (Doom::Patch*) W_CacheLumpNum(piece->patch, PU_CACHE);
 
         eacpBlitPatch(
             patch, piece->originx, piece->originy, indices, alpha, width, height);
@@ -595,7 +595,7 @@ static void eacpEnsureTextureData()
 
     for (i = 0; i < numspritelumps; ++i)
     {
-        patch_t* patch = (patch_t*) W_CacheLumpNum(firstspritelump + i, PU_CACHE);
+        Doom::Patch* patch = (Doom::Patch*) W_CacheLumpNum(firstspritelump + i, PU_CACHE);
         eacpSpriteHeights[i] = patch->height;
     }
 
@@ -680,7 +680,7 @@ void eacpDoomGetTexturePixels(int id, unsigned char* out)
     }
     else
     {
-        patch_t* patch = (patch_t*) W_CacheLumpNum(
+        Doom::Patch* patch = (Doom::Patch*) W_CacheLumpNum(
             firstspritelump + (id - eacpSpriteBase()), PU_CACHE);
 
         doom_memset(indices, 0, count);
@@ -848,7 +848,7 @@ static void eacpStoreSubsector(int index, const EacpPoint* poly, int count)
 
     for (i = 0; i < subsectors[index].numlines && currentCount >= 3; ++i)
     {
-        seg_t* seg = &segs[subsectors[index].firstline + i];
+        Doom::Seg* seg = &segs[subsectors[index].firstline + i];
 
         double x = eacpFixedToDouble(seg->v1->x);
         double y = eacpFixedToDouble(seg->v1->y);
@@ -884,7 +884,7 @@ static void eacpDescend(int nodenum, const EacpPoint* poly, int count)
 {
     EacpPoint clipped[EACP_MAX_POLY_VERTICES];
     int clippedCount;
-    node_t* node;
+    Doom::Node* node;
     double x, y, dx, dy;
 
     if (count < 3)
@@ -1068,13 +1068,13 @@ static void eacpEmitWallQuad(EacpEmitter* em,
     eacpEmitVertex(em, textureId, ax, top, az, u1, vTop, light);
 }
 
-static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
+static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s)
 {
-    side_t* side;
-    sector_t* front;
-    sector_t* back;
-    vertex_t* v1;
-    vertex_t* v2;
+    Doom::Side* side;
+    Doom::Sector* front;
+    Doom::Sector* back;
+    Doom::Vertex* v1;
+    Doom::Vertex* v2;
     double x1, y1, x2, y2;
     float length;
     float frontFloor, frontCeiling;
@@ -1267,8 +1267,8 @@ static void eacpEmitLineSide(EacpEmitter* em, line_t* line, int index, int s)
 static void eacpEmitSprite(
     EacpEmitter* em, mobj_t* thing, mobj_t* viewer, double rightX, double rightY)
 {
-    spritedef_t* definition;
-    spriteframe_t* frame;
+    Doom::SpriteDef* definition;
+    Doom::SpriteFrame* frame;
     int rotation = 0;
     int lump;
     int flip;
@@ -1516,8 +1516,8 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
     {
         pspdef_t* weapon = &player->psprites[i];
         state_t* state = weapon->state;
-        spritedef_t* definition;
-        spriteframe_t* frame;
+        Doom::SpriteDef* definition;
+        Doom::SpriteFrame* frame;
         int lump;
 
         if (state == 0 || state->sprite < 0 || state->sprite >= numsprites)
@@ -1584,7 +1584,7 @@ static void
 
 static void eacpEmitSubsector(EacpEmitter* em, int index)
 {
-    sector_t* sector = subsectors[index].sector;
+    Doom::Sector* sector = subsectors[index].sector;
     EacpLight light;
 
     if (eacpPolyCount[index] < 3 || sector == 0)
@@ -1816,7 +1816,7 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
 
     for (i = 0; i < numlines; i++)
     {
-        line_t* line = &lines[i];
+        Doom::Line* line = &lines[i];
         fixed_t ax = line->v1->x;
         fixed_t ay = line->v1->y;
         fixed_t bx = line->v2->x;

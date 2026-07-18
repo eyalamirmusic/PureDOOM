@@ -19,7 +19,7 @@
 #include "doomdef.h"
 #include "dstrings.h" // Data.
 #include "hu_stuff.h"
-#include "r_defs.h" // patch_t
+#include "r_defs.h" // Patch
 
 #include "UI/Hud.h"
 #include "UI/HudFlags.h"
@@ -30,7 +30,7 @@
 // reference-to-array too (a plain array extern would read the reference's hidden pointer as the
 // first glyph and fault). The reference-to-array binding self-checks HU_FONTSIZE against the
 // cluster's fontSize - a drift won't compile.
-patch_t* (&hu_font)[HU_FONTSIZE] = Doom::hudFont().hu_font;
+Doom::Patch* (&hu_font)[HU_FONTSIZE] = Doom::hudFont().hu_font;
 
 // The two cross-read HUD flags (chat input open; a forced message locks the line)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.

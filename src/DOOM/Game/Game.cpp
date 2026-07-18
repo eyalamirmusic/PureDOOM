@@ -916,7 +916,7 @@ doom_boolean gCheckSpot(int playernum, mapthing_t* mthing)
 {
     fixed_t x;
     fixed_t y;
-    subsector_t* ss;
+    SubSector* ss;
     unsigned an;
     mobj_t* mo;
 

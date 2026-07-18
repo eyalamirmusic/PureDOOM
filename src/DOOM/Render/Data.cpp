@@ -141,7 +141,7 @@ void generateComposite(int texnum)
     byte* block;
     texture_t* texture;
     texpatch_t* patch;
-    patch_t* realpatch;
+    Patch* realpatch;
     int x;
     int x1;
     int x2;
@@ -173,7 +173,7 @@ void generateComposite(int texnum)
     for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
          i++, patch++)
     {
-        realpatch = static_cast<patch_t*>(W_CacheLumpNum(patch->patch, PU_CACHE));
+        realpatch = static_cast<Patch*>(W_CacheLumpNum(patch->patch, PU_CACHE));
         x1 = patch->originx;
         x2 = x1 + SHORT(realpatch->width);
 
@@ -211,7 +211,7 @@ void generateLookup(int texnum)
 {
     texture_t* texture;
     texpatch_t* patch;
-    patch_t* realpatch;
+    Patch* realpatch;
     int x;
     int x1;
     int x2;
@@ -240,7 +240,7 @@ void generateLookup(int texnum)
     for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
          i++, patch++)
     {
-        realpatch = static_cast<patch_t*>(W_CacheLumpNum(patch->patch, PU_CACHE));
+        realpatch = static_cast<Patch*>(W_CacheLumpNum(patch->patch, PU_CACHE));
         x1 = patch->originx;
         x2 = x1 + SHORT(realpatch->width);
 
@@ -534,7 +534,7 @@ void initFlats()
 //
 void initSpriteLumps()
 {
-    patch_t* patch;
+    Patch* patch;
 
     firstspritelump = W_GetNumForName("S_START") + 1;
     lastspritelump = W_GetNumForName("S_END") - 1;
@@ -557,7 +557,7 @@ void initSpriteLumps()
         if (!(i & 63))
             doom_print(".");
 
-        patch = static_cast<patch_t*>(W_CacheLumpNum(firstspritelump + i, PU_CACHE));
+        patch = static_cast<Patch*>(W_CacheLumpNum(firstspritelump + i, PU_CACHE));
         spritewidth[i] = SHORT(patch->width) << FRACBITS;
         spriteoffset[i] = SHORT(patch->leftoffset) << FRACBITS;
         spritetopoffset[i] = SHORT(patch->topoffset) << FRACBITS;
@@ -681,7 +681,7 @@ void precacheLevel()
 
     texture_t* texture;
     thinker_t* th;
-    spriteframe_t* sf;
+    SpriteFrame* sf;
 
     if (demoplayback)
         return;

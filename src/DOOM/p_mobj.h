@@ -39,6 +39,13 @@
 #include "info.h"
 
 
+// Held only by pointer here; r_defs.h has the definition.
+namespace Doom
+{
+struct SubSector;
+} // namespace Doom
+
+
 //
 // NOTES: mobj_t
 //
@@ -48,7 +55,7 @@
 //
 // The refresh uses the next and prev links to follow
 // lists of things in sectors as they are being drawn.
-// The sprite, frame, and angle elements determine which patch_t
+// The sprite, frame, and angle elements determine which Doom::Patch
 // is used to draw the sprite if it is visible.
 // The sprite and frame values are allmost allways set
 // from state_t structures.
@@ -74,8 +81,8 @@
 //
 // Every mobj_t is linked into a single sector
 // based on its origin coordinates.
-// The subsector_t is found with Doom::pointInSubsector(x,y),
-// and the sector_t can be found with subsector->sector.
+// The Doom::SubSector is found with Doom::pointInSubsector(x,y),
+// and the Doom::Sector can be found with subsector->sector.
 // The sector links are only used by the rendering code,
 // the play simulation does not care about them at all.
 //
@@ -87,13 +94,13 @@
 // but only as the instigator (missiles will run into other
 // things, but nothing can run into a missile).
 // Each block in the grid is 128*128 units, and knows about
-// every line_t that it contains a piece of, and every
+// every Doom::Line that it contains a piece of, and every
 // interactable mobj_t that has its origin contained.  
 //
-// A valid mobj_t is a mobj_t that has the proper subsector_t
+// A valid mobj_t is a mobj_t that has the proper Doom::SubSector
 // filled in for its xy coordinates and is linked into the
 // sector from which the subsector was made, or has the
-// MF_NOSECTOR flag set (the subsector_t needs to be valid
+// MF_NOSECTOR flag set (the Doom::SubSector needs to be valid
 // even if MF_NOSECTOR is set), and is linked into a blockmap
 // block or has the MF_NOBLOCKMAP flag set.
 // Links should only be modified by the P_[Un]SetThingPosition()
@@ -213,7 +220,7 @@ struct mobj_t : Doom::Thinker
 
     //More drawing info: to determine current sprite.
     angle_t angle;        // orientation
-    spritenum_t sprite;        // used to find patch_t and flip value
+    spritenum_t sprite;        // used to find Doom::Patch and flip value
     int frame;        // might be ORed with FF_FULLBRIGHT
 
     // Interaction info, by BLOCKMAP.
@@ -221,7 +228,7 @@ struct mobj_t : Doom::Thinker
     struct mobj_t* bnext;
     struct mobj_t* bprev;
 
-    struct subsector_t* subsector;
+    Doom::SubSector* subsector;
 
     // The closest interval over all contacted Sectors.
     fixed_t floorz;

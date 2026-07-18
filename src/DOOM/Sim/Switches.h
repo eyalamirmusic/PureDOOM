@@ -8,7 +8,7 @@ namespace Doom
 {
 // Switch/button handling; p_switch.cpp keeps the vanilla names as shims.
 void initSwitchList();
-void startButton(line_t* line, bwhere_e w, int texture, int time);
-void changeSwitchTexture(line_t* line, int useAgain);
-doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side);
+void startButton(Line* line, bwhere_e w, int texture, int time);
+void changeSwitchTexture(Line* line, int useAgain);
+doom_boolean useSpecialLine(mobj_t* thing, Line* line, int side);
 } // namespace Doom

@@ -28,13 +28,13 @@ namespace Doom
 // vertex, a subsector at a sector) stay valid.
 struct Level
 {
-    EA::Vector<vertex_t> vertexes;
-    EA::Vector<seg_t> segs;
-    EA::Vector<subsector_t> subsectors;
-    EA::Vector<sector_t> sectors;
-    EA::Vector<node_t> nodes;
-    EA::Vector<line_t> lines;
-    EA::Vector<side_t> sides;
+    EA::Vector<Vertex> vertexes;
+    EA::Vector<Seg> segs;
+    EA::Vector<SubSector> subsectors;
+    EA::Vector<Sector> sectors;
+    EA::Vector<Node> nodes;
+    EA::Vector<Line> lines;
+    EA::Vector<Side> sides;
 
     // The per-block mobj chain heads. The array is ours; the mobjs it points at
     // are the zone's.
@@ -47,9 +47,9 @@ struct Level
     Blockmap blockmap;
 
     // One flat array of line pointers, carved into per-sector slices that
-    // sector_t::lines point into. Vanilla calls this `linebuffer`, a single
+    // Sector::lines point into. Vanilla calls this `linebuffer`, a single
     // Z_Malloc in Doom::groupLines.
-    EA::Vector<line_t*> sectorLines;
+    EA::Vector<Line*> sectorLines;
 };
 
 // The engine's one level, for as long as the engine has one of everything.

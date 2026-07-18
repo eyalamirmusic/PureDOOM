@@ -91,7 +91,7 @@ int messageToPrint; // 1 = message to be printed
 extern int doom_flags;
 // hu_font is a Doom::HudFont member (Engine); a reference onto it, so this extern is a
 // reference-to-array (a plain array extern would misread the reference's pointer).
-extern patch_t* (&hu_font)[HU_FONTSIZE];
+extern Doom::Patch* (&hu_font)[HU_FONTSIZE];
 // chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
 extern doom_boolean& message_dontfuckwithme;
 extern doom_boolean& chat_on; // in heads-up code
@@ -717,7 +717,7 @@ void M_DrawCustomMenuText(const char* name, int x, int y)
                 Doom::drawPatchRectDirect(x + seg->offx,
                                       y,
                                       0,
-                                      static_cast<patch_t*>(lump),
+                                      static_cast<Patch*>(lump),
                                       seg->x,
                                       seg->w);
                 ++seg;
@@ -769,7 +769,7 @@ void M_ReadSaveStrings()
 void M_DrawLoad()
 {
     Doom::drawPatchDirect(
-        72, 28, 0, static_cast<patch_t*>(W_CacheLumpName("M_LOADG", PU_CACHE)));
+        72, 28, 0, static_cast<Patch*>(W_CacheLumpName("M_LOADG", PU_CACHE)));
     for (int i = 0; i < load_end; i++)
     {
         M_DrawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
@@ -785,7 +785,7 @@ void M_DrawSaveLoadBorder(int x, int y)
     Doom::drawPatchDirect(x - 8,
                       y + 7,
                       0,
-                      static_cast<patch_t*>(W_CacheLumpName("M_LSLEFT", PU_CACHE)));
+                      static_cast<Patch*>(W_CacheLumpName("M_LSLEFT", PU_CACHE)));
 
     for (int i = 0; i < 24; i++)
     {
@@ -793,12 +793,12 @@ void M_DrawSaveLoadBorder(int x, int y)
             x,
             y + 7,
             0,
-            static_cast<patch_t*>(W_CacheLumpName("M_LSCNTR", PU_CACHE)));
+            static_cast<Patch*>(W_CacheLumpName("M_LSCNTR", PU_CACHE)));
         x += 8;
     }
 
     Doom::drawPatchDirect(
-        x, y + 7, 0, static_cast<patch_t*>(W_CacheLumpName("M_LSRGHT", PU_CACHE)));
+        x, y + 7, 0, static_cast<Patch*>(W_CacheLumpName("M_LSRGHT", PU_CACHE)));
 }
 
 //
@@ -846,7 +846,7 @@ void M_DrawSave()
     int i;
 
     Doom::drawPatchDirect(
-        72, 28, 0, static_cast<patch_t*>(W_CacheLumpName("M_SAVEG", PU_CACHE)));
+        72, 28, 0, static_cast<Patch*>(W_CacheLumpName("M_SAVEG", PU_CACHE)));
     for (i = 0; i < load_end; i++)
     {
         M_DrawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
@@ -987,13 +987,13 @@ void M_DrawReadThis1()
     {
         case commercial:
             Doom::drawPatchDirect(
-                0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("HELP", PU_CACHE)));
+                0, 0, 0, static_cast<Patch*>(W_CacheLumpName("HELP", PU_CACHE)));
             break;
         case shareware:
         case registered:
         case retail:
             Doom::drawPatchDirect(
-                0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("HELP1", PU_CACHE)));
+                0, 0, 0, static_cast<Patch*>(W_CacheLumpName("HELP1", PU_CACHE)));
             break;
         default:
             break;
@@ -1013,12 +1013,12 @@ void M_DrawReadThis2()
         case commercial:
             // This hack keeps us from having to change menus.
             Doom::drawPatchDirect(
-                0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("CREDIT", PU_CACHE)));
+                0, 0, 0, static_cast<Patch*>(W_CacheLumpName("CREDIT", PU_CACHE)));
             break;
         case shareware:
         case registered:
             Doom::drawPatchDirect(
-                0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("HELP2", PU_CACHE)));
+                0, 0, 0, static_cast<Patch*>(W_CacheLumpName("HELP2", PU_CACHE)));
             break;
         default:
             break;
@@ -1032,7 +1032,7 @@ void M_DrawReadThis2()
 void M_DrawSound()
 {
     Doom::drawPatchDirect(
-        60, 38, 0, static_cast<patch_t*>(W_CacheLumpName("M_SVOL", PU_CACHE)));
+        60, 38, 0, static_cast<Patch*>(W_CacheLumpName("M_SVOL", PU_CACHE)));
 
     if (!(doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
     {
@@ -1103,7 +1103,7 @@ void M_MusicVol(int choice)
 void M_DrawMainMenu()
 {
     Doom::drawPatchDirect(
-        94, 2, 0, static_cast<patch_t*>(W_CacheLumpName("M_DOOM", PU_CACHE)));
+        94, 2, 0, static_cast<Patch*>(W_CacheLumpName("M_DOOM", PU_CACHE)));
 }
 
 //
@@ -1112,9 +1112,9 @@ void M_DrawMainMenu()
 void M_DrawNewGame()
 {
     Doom::drawPatchDirect(
-        96, 14, 0, static_cast<patch_t*>(W_CacheLumpName("M_NEWG", PU_CACHE)));
+        96, 14, 0, static_cast<Patch*>(W_CacheLumpName("M_NEWG", PU_CACHE)));
     Doom::drawPatchDirect(
-        54, 38, 0, static_cast<patch_t*>(W_CacheLumpName("M_SKILL", PU_CACHE)));
+        54, 38, 0, static_cast<Patch*>(W_CacheLumpName("M_SKILL", PU_CACHE)));
 }
 
 void M_NewGame(int)
@@ -1137,7 +1137,7 @@ void M_NewGame(int)
 void M_DrawEpisode()
 {
     Doom::drawPatchDirect(
-        54, 38, 0, static_cast<patch_t*>(W_CacheLumpName("M_EPISOD", PU_CACHE)));
+        54, 38, 0, static_cast<Patch*>(W_CacheLumpName("M_EPISOD", PU_CACHE)));
 }
 
 void M_VerifyNightmare(int ch)
@@ -1187,7 +1187,7 @@ void M_Episode(int choice)
 void M_DrawOptions()
 {
     Doom::drawPatchDirect(
-        108, 15, 0, static_cast<patch_t*>(W_CacheLumpName("M_OPTTTL", PU_CACHE)));
+        108, 15, 0, static_cast<Patch*>(W_CacheLumpName("M_OPTTTL", PU_CACHE)));
 
     //Doom::drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
     //                W_CacheLumpName(detailNames[detailLevel],PU_CACHE)); // Details do nothing?
@@ -1196,21 +1196,21 @@ void M_DrawOptions()
         OptionsDef.x + 120,
         OptionsDef.y + LINEHEIGHT * messages,
         0,
-        static_cast<patch_t*>(
+        static_cast<Patch*>(
             W_CacheLumpName(msgNames[showMessages].data(), PU_CACHE)));
 
     Doom::drawPatchDirect(
         OptionsDef.x + 131,
         OptionsDef.y + LINEHEIGHT * crosshair_opt,
         0,
-        static_cast<patch_t*>(
+        static_cast<Patch*>(
             W_CacheLumpName(msgNames[crosshair].data(), PU_CACHE)));
 
     Doom::drawPatchDirect(
         OptionsDef.x + 147,
         OptionsDef.y + LINEHEIGHT * always_run_opt,
         0,
-        static_cast<patch_t*>(
+        static_cast<Patch*>(
             W_CacheLumpName(msgNames[always_run].data(), PU_CACHE)));
 
     M_DrawThermo(
@@ -1225,7 +1225,7 @@ void M_DrawMouseOptions()
         MouseOptionsDef.x + 149,
         MouseOptionsDef.y + LINEHEIGHT * mousemov,
         0,
-        static_cast<patch_t*>(
+        static_cast<Patch*>(
             W_CacheLumpName(msgNames[mousemove].data(), PU_CACHE)));
 
     M_DrawThermo(MouseOptionsDef.x,
@@ -1432,21 +1432,21 @@ void M_DrawThermo(int x, int y, int thermWidth, int thermDot)
 
     xx = x;
     Doom::drawPatchDirect(
-        xx, y, 0, static_cast<patch_t*>(W_CacheLumpName("M_THERML", PU_CACHE)));
+        xx, y, 0, static_cast<Patch*>(W_CacheLumpName("M_THERML", PU_CACHE)));
     xx += 8;
     for (int i = 0; i < thermWidth; i++)
     {
         Doom::drawPatchDirect(
-            xx, y, 0, static_cast<patch_t*>(W_CacheLumpName("M_THERMM", PU_CACHE)));
+            xx, y, 0, static_cast<Patch*>(W_CacheLumpName("M_THERMM", PU_CACHE)));
         xx += 8;
     }
     Doom::drawPatchDirect(
-        xx, y, 0, static_cast<patch_t*>(W_CacheLumpName("M_THERMR", PU_CACHE)));
+        xx, y, 0, static_cast<Patch*>(W_CacheLumpName("M_THERMR", PU_CACHE)));
 
     Doom::drawPatchDirect((x + 8) + thermDot * 8,
                       y,
                       0,
-                      static_cast<patch_t*>(W_CacheLumpName("M_THERMO", PU_CACHE)));
+                      static_cast<Patch*>(W_CacheLumpName("M_THERMO", PU_CACHE)));
 }
 
 void M_DrawEmptyCell(menu_t* menu, int item)
@@ -1454,7 +1454,7 @@ void M_DrawEmptyCell(menu_t* menu, int item)
     Doom::drawPatchDirect(menu->x - 10,
                       menu->y + item * LINEHEIGHT - 1,
                       0,
-                      static_cast<patch_t*>(W_CacheLumpName("M_CELL1", PU_CACHE)));
+                      static_cast<Patch*>(W_CacheLumpName("M_CELL1", PU_CACHE)));
 }
 
 void M_DrawSelCell(menu_t* menu, int item)
@@ -1462,7 +1462,7 @@ void M_DrawSelCell(menu_t* menu, int item)
     Doom::drawPatchDirect(menu->x - 10,
                       menu->y + item * LINEHEIGHT - 1,
                       0,
-                      static_cast<patch_t*>(W_CacheLumpName("M_CELL2", PU_CACHE)));
+                      static_cast<Patch*>(W_CacheLumpName("M_CELL2", PU_CACHE)));
 }
 
 void M_StartMessage(const char* string, void* routine, doom_boolean input)
@@ -2030,7 +2030,7 @@ void drawMenu()
                 Doom::drawPatchDirect(x,
                                   y,
                                   0,
-                                  static_cast<patch_t*>(
+                                  static_cast<Patch*>(
                                       W_CacheLumpName(menuitem->name, PU_CACHE)));
             }
         }
@@ -2042,7 +2042,7 @@ void drawMenu()
         x + SKULLXOFF,
         currentMenu->y - 5 + itemOn * LINEHEIGHT,
         0,
-        static_cast<patch_t*>(
+        static_cast<Patch*>(
             W_CacheLumpName(skullName[whichSkull].data(), PU_CACHE)));
 }
 

@@ -26,11 +26,11 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void verticalDoor(vldoor_t& door);
-int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing);
-int doDoor(line_t* line, vldoor_e type);
-void verticalDoor(line_t* line, mobj_t* thing);
-void spawnDoorCloseIn30(sector_t* sec);
-void spawnDoorRaiseIn5Mins(sector_t* sec, int secnum);
+int doLockedDoor(Line* line, vldoor_e type, mobj_t* thing);
+int doDoor(Line* line, vldoor_e type);
+void verticalDoor(Line* line, mobj_t* thing);
+void spawnDoorCloseIn30(Sector* sec);
+void spawnDoorRaiseIn5Mins(Sector* sec, int secnum);
 
 void verticalDoor(vldoor_t& door)
 {
@@ -183,7 +183,7 @@ void verticalDoor(vldoor_t& door)
 // doLockedDoor
 // Move a locked door up/down
 //
-int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing)
+int doLockedDoor(Line* line, vldoor_e type, mobj_t* thing)
 {
     player_t* p;
 
@@ -234,10 +234,10 @@ int doLockedDoor(line_t* line, vldoor_e type, mobj_t* thing)
     return doDoor(line, type);
 }
 
-int doDoor(line_t* line, vldoor_e type)
+int doDoor(Line* line, vldoor_e type)
 {
     int secnum, rtn;
-    sector_t* sec;
+    Sector* sec;
     vldoor_t* door;
 
     secnum = -1;
@@ -318,10 +318,10 @@ int doDoor(line_t* line, vldoor_e type)
 //
 // verticalDoor : open a door manually, no tag value
 //
-void verticalDoor(line_t* line, mobj_t* thing)
+void verticalDoor(Line* line, mobj_t* thing)
 {
     player_t* player;
-    sector_t* sec;
+    Sector* sec;
     vldoor_t* door;
     int side;
 
@@ -461,7 +461,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
 //
 // Spawn a door that closes after 30 seconds
 //
-void spawnDoorCloseIn30(sector_t* sec)
+void spawnDoorCloseIn30(Sector* sec)
 {
     vldoor_t* door;
 
@@ -482,7 +482,7 @@ void spawnDoorCloseIn30(sector_t* sec)
 //
 // Spawn a door that opens after 5 minutes
 //
-void spawnDoorRaiseIn5Mins(sector_t* sec, int)
+void spawnDoorRaiseIn5Mins(Sector* sec, int)
 {
     vldoor_t* door;
 

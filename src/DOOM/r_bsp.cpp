@@ -22,20 +22,20 @@
 
 // The BSP traversal pointers and the drawseg pool are a Doom::BSPScratch owned by the Engine
 // now; these are references onto its members (REFACTOR.md, Step 5).
-seg_t*& curline = Doom::bspScratch().curline;
+Doom::Seg*& curline = Doom::bspScratch().curline;
 
-side_t*& sidedef = Doom::bspScratch().sidedef;
+Doom::Side*& sidedef = Doom::bspScratch().sidedef;
 
-line_t*& linedef = Doom::bspScratch().linedef;
+Doom::Line*& linedef = Doom::bspScratch().linedef;
 
-sector_t*& frontsector = Doom::bspScratch().frontsector;
+Doom::Sector*& frontsector = Doom::bspScratch().frontsector;
 
-sector_t*& backsector = Doom::bspScratch().backsector;
+Doom::Sector*& backsector = Doom::bspScratch().backsector;
 
 
-drawseg_t (&drawsegs)[MAXDRAWSEGS] = Doom::bspScratch().drawsegs;
+Doom::DrawSeg (&drawsegs)[MAXDRAWSEGS] = Doom::bspScratch().drawsegs;
 
-drawseg_t*& ds_p = Doom::bspScratch().ds_p;
+Doom::DrawSeg*& ds_p = Doom::bspScratch().ds_p;
 
 
 

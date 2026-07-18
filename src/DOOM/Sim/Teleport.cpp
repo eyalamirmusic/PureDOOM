@@ -14,14 +14,14 @@
 namespace Doom
 {
 
-int teleport(line_t* line, int side, mobj_t* thing)
+int teleport(Line* line, int side, mobj_t* thing)
 {
     int tag;
     mobj_t* m;
     mobj_t* fog;
     unsigned an;
     thinker_t* thinker;
-    sector_t* sector;
+    Sector* sector;
     fixed_t oldx;
     fixed_t oldy;
     fixed_t oldz;

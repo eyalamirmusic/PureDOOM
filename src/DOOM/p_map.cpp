@@ -50,8 +50,8 @@
 doom_boolean& floatok = Doom::clip().floatok;
 fixed_t& tmfloorz = Doom::clip().tmfloorz;
 fixed_t& tmceilingz = Doom::clip().tmceilingz;
-line_t*& ceilingline = Doom::clip().ceilingline;
-line_t** spechit = Doom::clip().spechit;
+Doom::Line*& ceilingline = Doom::clip().ceilingline;
+Doom::Line** spechit = Doom::clip().spechit;
 int& numspechit = Doom::clip().numspechit;
 
 // linetarget (the aim's hit) and attackrange (the shot's range) are read by p_mobj

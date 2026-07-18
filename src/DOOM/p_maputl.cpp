@@ -77,7 +77,7 @@ fixed_t P_AproxDistance(fixed_t dx, fixed_t dy)
 // P_PointOnLineSide
 // Returns 0 or 1
 //
-int P_PointOnLineSide(fixed_t x, fixed_t y, line_t* line)
+int P_PointOnLineSide(fixed_t x, fixed_t y, Doom::Line* line)
 {
     return Doom::pointOnLineSide({Doom::Fixed {x}, Doom::Fixed {y}},
                                  {Doom::Fixed {line->v1->x}, Doom::Fixed {line->v1->y}},
@@ -90,7 +90,7 @@ int P_PointOnLineSide(fixed_t x, fixed_t y, line_t* line)
 // Considers the line to be infinite
 // Returns side 0 or 1, -1 if box crosses the line.
 //
-int P_BoxOnLineSide(fixed_t* tmbox, line_t* ld)
+int P_BoxOnLineSide(fixed_t* tmbox, Doom::Line* ld)
 {
     return Doom::boxOnLineSide(Doom::Fixed {tmbox[BOXTOP]},
                                Doom::Fixed {tmbox[BOXBOTTOM]},
@@ -116,7 +116,7 @@ int P_PointOnDivlineSide(fixed_t x, fixed_t y, divline_t* line)
 //
 // P_MakeDivline
 //
-void P_MakeDivline(line_t* li, divline_t* dl)
+void P_MakeDivline(Doom::Line* li, divline_t* dl)
 {
     dl->x = li->v1->x;
     dl->y = li->v1->y;
@@ -146,10 +146,10 @@ fixed_t P_InterceptVector(divline_t* v2, divline_t* v1)
 // through a two sided line.
 // OPTIMIZE: keep this precalculated
 //
-void P_LineOpening(line_t* linedef)
+void P_LineOpening(Doom::Line* linedef)
 {
-    sector_t* front;
-    sector_t* back;
+    Doom::Sector* front;
+    Doom::Sector* back;
 
     if (linedef->sidenum[1] == -1)
     {
@@ -190,7 +190,7 @@ void P_SetThingPosition(mobj_t* thing)
 }
 
 
-doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean (*func)(line_t*))
+doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean (*func)(Doom::Line*))
 {
     return Doom::forEachLineInBlock(x, y, func);
 }

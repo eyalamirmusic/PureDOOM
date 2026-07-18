@@ -8,9 +8,9 @@ namespace Doom
 {
 // Ceiling thinker and handlers; p_ceilng.cpp keeps the vanilla names as shims.
 void moveCeiling(ceiling_t& ceiling);
-int doCeiling(line_t* line, ceiling_e type);
+int doCeiling(Line* line, ceiling_e type);
 void addActiveCeiling(ceiling_t* c);
 void removeActiveCeiling(ceiling_t* c);
-void activateInStasisCeiling(line_t* line);
-int ceilingCrushStop(line_t* line);
+void activateInStasisCeiling(Line* line);
+int ceilingCrushStop(Line* line);
 } // namespace Doom

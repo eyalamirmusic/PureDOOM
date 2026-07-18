@@ -109,9 +109,9 @@ void unArchivePlayers()
 void archiveWorld()
 {
     int i;
-    sector_t* sec;
-    line_t* li;
-    side_t* si;
+    Sector* sec;
+    Line* li;
+    Side* si;
     short* put;
 
     put = reinterpret_cast<short*>(save_p);
@@ -158,9 +158,9 @@ void archiveWorld()
 void unArchiveWorld()
 {
     int i;
-    sector_t* sec;
-    line_t* li;
-    side_t* si;
+    Sector* sec;
+    Line* li;
+    Side* si;
     short* get;
 
     get = reinterpret_cast<short*>(save_p);
@@ -346,13 +346,13 @@ enum
 //
 // Things to handle:
 //
-// T_MoveCeiling, (ceiling_t: sector_t * swizzle), - active list
-// T_VerticalDoor, (vldoor_t: sector_t * swizzle),
-// T_MoveFloor, (floormove_t: sector_t * swizzle),
-// T_LightFlash, (lightflash_t: sector_t * swizzle),
-// T_StrobeFlash, (strobe_t: sector_t *),
-// T_Glow, (glow_t: sector_t *),
-// T_PlatRaise, (plat_t: sector_t *), - active list
+// T_MoveCeiling, (ceiling_t: Sector * swizzle), - active list
+// T_VerticalDoor, (vldoor_t: Sector * swizzle),
+// T_MoveFloor, (floormove_t: Sector * swizzle),
+// T_LightFlash, (lightflash_t: Sector * swizzle),
+// T_StrobeFlash, (strobe_t: Sector *),
+// T_Glow, (glow_t: Sector *),
+// T_PlatRaise, (plat_t: Sector *), - active list
 //
 void archiveSpecials()
 {
@@ -385,7 +385,7 @@ void archiveSpecials()
                 doom_memcpy(ceiling, th, sizeof(*ceiling));
                 save_p += sizeof(*ceiling);
                 ceiling->sector =
-                    reinterpret_cast<sector_t*>(ceiling->sector - sectors);
+                    reinterpret_cast<Sector*>(ceiling->sector - sectors);
             }
             continue;
         }
@@ -397,7 +397,7 @@ void archiveSpecials()
             ceiling = reinterpret_cast<ceiling_t*>(save_p);
             doom_memcpy(ceiling, th, sizeof(*ceiling));
             save_p += sizeof(*ceiling);
-            ceiling->sector = reinterpret_cast<sector_t*>(ceiling->sector - sectors);
+            ceiling->sector = reinterpret_cast<Sector*>(ceiling->sector - sectors);
             continue;
         }
 
@@ -408,7 +408,7 @@ void archiveSpecials()
             door = reinterpret_cast<vldoor_t*>(save_p);
             doom_memcpy(door, th, sizeof(*door));
             save_p += sizeof(*door);
-            door->sector = reinterpret_cast<sector_t*>(door->sector - sectors);
+            door->sector = reinterpret_cast<Sector*>(door->sector - sectors);
             continue;
         }
 
@@ -419,7 +419,7 @@ void archiveSpecials()
             floor = reinterpret_cast<floormove_t*>(save_p);
             doom_memcpy(floor, th, sizeof(*floor));
             save_p += sizeof(*floor);
-            floor->sector = reinterpret_cast<sector_t*>(floor->sector - sectors);
+            floor->sector = reinterpret_cast<Sector*>(floor->sector - sectors);
             continue;
         }
 
@@ -430,7 +430,7 @@ void archiveSpecials()
             plat = reinterpret_cast<plat_t*>(save_p);
             doom_memcpy(plat, th, sizeof(*plat));
             save_p += sizeof(*plat);
-            plat->sector = reinterpret_cast<sector_t*>(plat->sector - sectors);
+            plat->sector = reinterpret_cast<Sector*>(plat->sector - sectors);
             continue;
         }
 
@@ -441,7 +441,7 @@ void archiveSpecials()
             flash = reinterpret_cast<lightflash_t*>(save_p);
             doom_memcpy(flash, th, sizeof(*flash));
             save_p += sizeof(*flash);
-            flash->sector = reinterpret_cast<sector_t*>(flash->sector - sectors);
+            flash->sector = reinterpret_cast<Sector*>(flash->sector - sectors);
             continue;
         }
 
@@ -452,7 +452,7 @@ void archiveSpecials()
             strobe = reinterpret_cast<strobe_t*>(save_p);
             doom_memcpy(strobe, th, sizeof(*strobe));
             save_p += sizeof(*strobe);
-            strobe->sector = reinterpret_cast<sector_t*>(strobe->sector - sectors);
+            strobe->sector = reinterpret_cast<Sector*>(strobe->sector - sectors);
             continue;
         }
 
@@ -463,7 +463,7 @@ void archiveSpecials()
             glow = reinterpret_cast<glow_t*>(save_p);
             doom_memcpy(glow, th, sizeof(*glow));
             save_p += sizeof(*glow);
-            glow->sector = reinterpret_cast<sector_t*>(glow->sector - sectors);
+            glow->sector = reinterpret_cast<Sector*>(glow->sector - sectors);
             continue;
         }
     }

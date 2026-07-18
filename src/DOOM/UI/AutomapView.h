@@ -3,7 +3,7 @@
 #include "../am_map.h" // mpoint_t (and fixed_t through it)
 #include "../doomdef.h" // SCREENWIDTH, SCREENHEIGHT
 #include "../doomtype.h" // byte, doom_boolean
-#include "../r_defs.h" // patch_t
+#include "../r_defs.h" // Patch
 
 namespace Doom
 {
@@ -60,7 +60,7 @@ struct AutomapView
 
     fixed_t scale_ftom = 0; // frame -> map scale (1 / scale_mtof)
 
-    patch_t* marknums[10] = {}; // the 0-9 mark-number patches
+    Patch* marknums[10] = {}; // the 0-9 mark-number patches
     mpoint_t markpoints[numMarkPoints] = {}; // the placed marks
     int markpointnum = 0; // the next mark slot
 

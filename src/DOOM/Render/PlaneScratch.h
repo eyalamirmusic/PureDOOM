@@ -2,7 +2,7 @@
 
 #include "../doomdef.h" // SCREENWIDTH, SCREENHEIGHT
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h" // visplane_t, lighttable_t
+#include "../r_defs.h" // VisPlane, lighttable_t
 
 namespace Doom
 {
@@ -26,8 +26,8 @@ struct PlaneScratch
     static constexpr int maxOpenings =
         SCREENWIDTH * 64; // MAXOPENINGS in Render/Planes
 
-    visplane_t visplanes[maxVisplanes] = {}; // the frame's floor/ceiling planes
-    visplane_t* lastvisplane = nullptr; // one past the last used plane
+    VisPlane visplanes[maxVisplanes] = {}; // the frame's floor/ceiling planes
+    VisPlane* lastvisplane = nullptr; // one past the last used plane
     short openings[maxOpenings] = {}; // per-column silhouette clip scratch
     int spanstart[SCREENHEIGHT] = {}; // current span's start column, per row
     int spanstop[SCREENHEIGHT] = {}; // current span's stop column, per row

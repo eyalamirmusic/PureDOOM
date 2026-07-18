@@ -63,11 +63,11 @@ static fixed_t& bottomfrac = wallScratch().bottomfrac;
 static fixed_t& bottomstep = wallScratch().bottomstep;
 
 // Forward declarations so call order needs no rearranging.
-void renderMaskedSegRange(drawseg_t* ds, int x1, int x2);
+void renderMaskedSegRange(DrawSeg* ds, int x1, int x2);
 void renderSegLoop();
 void storeWallRange(int start, int stop);
 
-void renderMaskedSegRange(drawseg_t* ds, int x1, int x2)
+void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
 {
     unsigned index;
     column_t* col;

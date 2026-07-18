@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_local.h" // mobj_t, player_t, angle_t, fixed_t, sector_t
+#include "../p_local.h" // mobj_t, player_t, angle_t, fixed_t, Sector
 
 namespace Doom
 {
@@ -39,5 +39,5 @@ void radiusAttack(mobj_t* spot, mobj_t* source, int damage);
 
 // After a sector changed height, re-clip every thing touching it; crush those that
 // no longer fit if `crunch`. Returns true if anything did not fit.
-bool changeSector(sector_t* sector, doom_boolean crunch);
+bool changeSector(Sector* sector, doom_boolean crunch);
 } // namespace Doom

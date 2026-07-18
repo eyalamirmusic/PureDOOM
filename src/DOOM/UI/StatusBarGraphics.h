@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomdef.h" // NUMCARDS
-#include "../r_defs.h" // patch_t
+#include "../r_defs.h" // Patch
 
 namespace Doom
 {
@@ -22,15 +22,15 @@ struct StatusBarGraphics
     // reference-to-array binding there self-checks this against the macro - a drift won't compile.
     static constexpr int numFaces = (3 + 2 + 3) * 5 + 2;
 
-    patch_t* sbar = nullptr; // main bar, left half
-    patch_t* armsbg = nullptr; // main bar, right half (arms panel)
-    patch_t* tallnum[10] = {}; // 0-9, the tall health/armor/ammo digits
-    patch_t* tallpercent = nullptr; // the tall % sign
-    patch_t* shortnum[10] = {}; // 0-9, the small yellow arms-count digits
-    patch_t* keys[NUMCARDS] = {}; // the key-card and skull icons
-    patch_t* arms[6][2] = {}; // the six weapons' on/off ownership glyphs
-    patch_t* faces[numFaces] = {}; // the animated-face patches
-    patch_t* faceback = nullptr; // the face backdrop (deathmatch)
+    Patch* sbar = nullptr; // main bar, left half
+    Patch* armsbg = nullptr; // main bar, right half (arms panel)
+    Patch* tallnum[10] = {}; // 0-9, the tall health/armor/ammo digits
+    Patch* tallpercent = nullptr; // the tall % sign
+    Patch* shortnum[10] = {}; // 0-9, the small yellow arms-count digits
+    Patch* keys[NUMCARDS] = {}; // the key-card and skull icons
+    Patch* arms[6][2] = {}; // the six weapons' on/off ownership glyphs
+    Patch* faces[numFaces] = {}; // the animated-face patches
+    Patch* faceback = nullptr; // the face backdrop (deathmatch)
 };
 
 // The one StatusBarGraphics, a view onto the Engine's member - the same pattern as the other

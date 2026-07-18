@@ -26,17 +26,17 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-result_e movePlane(sector_t& sector,
+result_e movePlane(Sector& sector,
                    fixed_t speed,
                    fixed_t dest,
                    doom_boolean crush,
                    int floorOrCeiling,
                    int direction);
 void moveFloor(floormove_t& floor);
-int doFloor(line_t* line, floor_e floortype);
-int buildStairs(line_t* line, stair_e type);
+int doFloor(Line* line, floor_e floortype);
+int buildStairs(Line* line, stair_e type);
 
-result_e movePlane(sector_t& sector,
+result_e movePlane(Sector& sector,
                    fixed_t speed,
                    fixed_t dest,
                    doom_boolean crush,
@@ -244,11 +244,11 @@ void moveFloor(floormove_t& floor)
 //
 // HANDLE FLOOR TYPES
 //
-int doFloor(line_t* line, floor_e floortype)
+int doFloor(Line* line, floor_e floortype)
 {
     int secnum;
     int rtn;
-    sector_t* sec;
+    Sector* sec;
     floormove_t* floor;
 
     secnum = -1;
@@ -348,7 +348,7 @@ int doFloor(line_t* line, floor_e floortype)
             case raiseToTexture:
             {
                 int minsize = DOOM_MAXINT;
-                side_t* side;
+                Side* side;
 
                 floor->direction = 1;
                 floor->sector = sec;
@@ -417,7 +417,7 @@ int doFloor(line_t* line, floor_e floortype)
 //
 // BUILD A STAIRCASE!
 //
-int buildStairs(line_t* line, stair_e type)
+int buildStairs(Line* line, stair_e type)
 {
     int secnum;
     int height;
@@ -426,8 +426,8 @@ int buildStairs(line_t* line, stair_e type)
     int ok;
     int rtn;
 
-    sector_t* sec;
-    sector_t* tsec;
+    Sector* sec;
+    Sector* tsec;
 
     floormove_t* floor;
 

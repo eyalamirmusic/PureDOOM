@@ -56,7 +56,7 @@
 // extern is a reference - and must be, since recursiveSound writes it (a plain-mobj_t*
 // extern that wrote it would clobber the reference's pointer). spechit is Clip's.
 extern mobj_t*& soundtarget;
-extern line_t** spechit;
+extern Doom::Line** spechit;
 extern int& numspechit;
 
 namespace Doom
@@ -108,7 +108,7 @@ static int& numbraintargets = enemyAI().numbraintargets;
 static int& braintargeton = enemyAI().braintargeton;
 
 // Forward declarations so the file's own call order needs no rearranging.
-void recursiveSound(sector_t* sec, int soundblocks);
+void recursiveSound(Sector* sec, int soundblocks);
 void noiseAlert(mobj_t* target, mobj_t& emmiter);
 doom_boolean checkMeleeRange(mobj_t& actor);
 doom_boolean checkMissileRange(mobj_t& actor);
@@ -173,10 +173,10 @@ void spawnSound(mobj_t& mo);
 void spawnFly(mobj_t& mo);
 void playerScream(mobj_t& mo);
 
-void recursiveSound(sector_t* sec, int soundblocks)
+void recursiveSound(Sector* sec, int soundblocks)
 {
-    line_t* check;
-    sector_t* other;
+    Line* check;
+    Sector* other;
 
     // wake up all monsters in this sector
     if (sec->validcount == validcount && sec->soundtraversed <= soundblocks + 1)
@@ -320,7 +320,7 @@ doom_boolean move(mobj_t& actor)
     fixed_t tryx;
     fixed_t tryy;
 
-    line_t* ld;
+    Line* ld;
 
     // warning: 'catch', 'throw', and 'try'
     // are all C++ reserved words
@@ -590,7 +590,7 @@ void keenDie(mobj_t& mo)
 {
     thinker_t* th;
     mobj_t* mo2;
-    line_t junk;
+    Line junk;
 
     fall(mo);
 
@@ -1546,7 +1546,7 @@ void bossDeath(mobj_t& mo)
 {
     thinker_t* th;
     mobj_t* mo2;
-    line_t junk;
+    Line junk;
     int i;
 
     if (gamemode == commercial)

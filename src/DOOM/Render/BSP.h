@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // seg_t, node_t, drawseg_t
+#include "../r_defs.h" // Seg, Node, DrawSeg
 
 namespace Doom
 {
@@ -9,7 +9,7 @@ void clearDrawSegs();
 void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
 void clearClipSegs();
-void addLine(seg_t* line);
+void addLine(Seg* line);
 doom_boolean checkBBox(fixed_t* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);

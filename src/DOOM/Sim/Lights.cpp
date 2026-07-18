@@ -1,6 +1,6 @@
 // Rewritten out of vanilla p_lights into namespace Doom.
 //
-// Sector light effects: the fire flicker, the random and strobe flashes and the
+// Doom::Sector light effects: the fire flicker, the random and strobe flashes and the
 // glow, plus their spawners and the EV_ line handlers. p_lights.cpp shims every
 // name. Golden-neutral.
 
@@ -21,16 +21,16 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void fireFlicker(fireflicker_t& flick);
-void spawnFireFlicker(sector_t* sector);
+void spawnFireFlicker(Sector* sector);
 void lightFlash(lightflash_t& flash);
-void spawnLightFlash(sector_t* sector);
+void spawnLightFlash(Sector* sector);
 void strobeFlash(strobe_t& flash);
-void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync);
-void startLightStrobing(line_t* line);
-void turnTagLightsOff(line_t* line);
-void lightTurnOn(line_t* line, int bright);
+void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync);
+void startLightStrobing(Line* line);
+void turnTagLightsOff(Line* line);
+void lightTurnOn(Line* line, int bright);
 void glow(glow_t& g);
-void spawnGlowingLight(sector_t* sector);
+void spawnGlowingLight(Sector* sector);
 
 void fireFlicker(fireflicker_t& flick)
 {
@@ -52,7 +52,7 @@ void fireFlicker(fireflicker_t& flick)
 //
 // spawnFireFlicker
 //
-void spawnFireFlicker(sector_t* sector)
+void spawnFireFlicker(Sector* sector)
 {
     fireflicker_t* flick;
 
@@ -100,7 +100,7 @@ void lightFlash(lightflash_t& flash)
 // After the map has been loaded, scan each sector
 // for specials that spawn thinkers
 //
-void spawnLightFlash(sector_t* sector)
+void spawnLightFlash(Sector* sector)
 {
     lightflash_t* flash;
 
@@ -149,7 +149,7 @@ void strobeFlash(strobe_t& flash)
 // After the map has been loaded, scan each sector
 // for specials that spawn thinkers
 //
-void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync)
+void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync)
 {
     strobe_t* flash;
 
@@ -178,10 +178,10 @@ void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync)
 //
 // Start strobing lights (usually from a trigger)
 //
-void startLightStrobing(line_t* line)
+void startLightStrobing(Line* line)
 {
     int secnum;
-    sector_t* sec;
+    Sector* sec;
 
     secnum = -1;
     while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
@@ -197,12 +197,12 @@ void startLightStrobing(line_t* line)
 //
 // TURN LINE'S TAG LIGHTS OFF
 //
-void turnTagLightsOff(line_t* line)
+void turnTagLightsOff(Line* line)
 {
     int min;
-    sector_t* sector;
-    sector_t* tsec;
-    line_t* templine;
+    Sector* sector;
+    Sector* tsec;
+    Line* templine;
 
     sector = sectors;
 
@@ -228,11 +228,11 @@ void turnTagLightsOff(line_t* line)
 //
 // TURN LINE'S TAG LIGHTS ON
 //
-void lightTurnOn(line_t* line, int bright)
+void lightTurnOn(Line* line, int bright)
 {
-    sector_t* sector;
-    sector_t* temp;
-    line_t* templine;
+    Sector* sector;
+    Sector* temp;
+    Line* templine;
 
     sector = sectors;
 
@@ -291,7 +291,7 @@ void glow(glow_t& g)
     }
 }
 
-void spawnGlowingLight(sector_t* sector)
+void spawnGlowingLight(Sector* sector)
 {
     glow_t* g;
 

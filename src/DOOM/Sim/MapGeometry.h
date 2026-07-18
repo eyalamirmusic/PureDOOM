@@ -41,7 +41,7 @@ inline int pointOnLineSide(Vec2 point, Vec2 lineStart, Vec2 lineDelta)
 // front, 1 behind, -1 if the box straddles the line. This is what PIT_CheckLine
 // asks to reject lines a mover's box cannot touch before the exact test.
 //
-// `slopeType` is the linedef's precomputed orientation (vanilla's slopetype_t:
+// `slopeType` is the linedef's precomputed orientation (vanilla's SlopeType:
 // 0 ST_HORIZONTAL, 1 ST_VERTICAL, 2 ST_POSITIVE, 3 ST_NEGATIVE); the axis-aligned
 // cases answer from a single edge comparison and skip the cross product, and the
 // two diagonal cases test the box corners that face the line's direction. The box

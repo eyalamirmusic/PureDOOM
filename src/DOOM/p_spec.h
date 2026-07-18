@@ -51,9 +51,9 @@ extern int& levelTimeCount;
 // when needed
 
 int twoSided(int sector, int line);
-sector_t* getSector(int currentSector, int line, int side);
-side_t* getSide(int currentSector, int line, int side);
-sector_t* getNextSector(line_t* line, sector_t* sec);
+Doom::Sector* getSector(int currentSector, int line, int side);
+Doom::Side* getSide(int currentSector, int line, int side);
+Doom::Sector* getNextSector(Doom::Line* line, Doom::Sector* sec);
 
 //
 // SPECIAL
@@ -67,7 +67,7 @@ struct fireflicker_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::FireFlicker; }
-    sector_t* sector;
+    Doom::Sector* sector;
     int count;
     int maxlight;
     int minlight;
@@ -78,7 +78,7 @@ struct lightflash_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::LightFlash; }
-    sector_t* sector;
+    Doom::Sector* sector;
     int count;
     int maxlight;
     int minlight;
@@ -91,7 +91,7 @@ struct strobe_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::StrobeFlash; }
-    sector_t* sector;
+    Doom::Sector* sector;
     int count;
     int minlight;
     int maxlight;
@@ -104,7 +104,7 @@ struct glow_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Glow; }
-    sector_t* sector;
+    Doom::Sector* sector;
     int minlight;
     int maxlight;
     int direction;
@@ -138,7 +138,7 @@ enum bwhere_e
 
 struct button_t
 {
-    line_t* line;
+    Doom::Line* line;
     bwhere_e where;
     int btexture;
     int btimer;
@@ -189,7 +189,7 @@ struct plat_t : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Plat; }
-    sector_t* sector;
+    Doom::Sector* sector;
     fixed_t speed;
     fixed_t low;
     fixed_t high;
@@ -232,7 +232,7 @@ struct vldoor_t : Doom::Thinker
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Door; }
     vldoor_e type;
-    sector_t* sector;
+    Doom::Sector* sector;
     fixed_t topheight;
     fixed_t speed;
 
@@ -271,7 +271,7 @@ struct ceiling_t : Doom::Thinker
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Ceiling; }
     ceiling_e type;
-    sector_t* sector;
+    Doom::Sector* sector;
     fixed_t bottomheight;
     fixed_t topheight;
     fixed_t speed;
@@ -345,7 +345,7 @@ struct floormove_t : Doom::Thinker
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Floor; }
     floor_e type;
     doom_boolean crush;
-    sector_t* sector;
+    Doom::Sector* sector;
     int direction;
     int newspecial;
     short texture;
@@ -365,7 +365,7 @@ enum result_e
 };
 
 
-result_e T_MovePlane(sector_t* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);
+result_e T_MovePlane(Doom::Sector* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);
 
 //
 // P_TELEPT

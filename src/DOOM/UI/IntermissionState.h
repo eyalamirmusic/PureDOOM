@@ -3,7 +3,7 @@
 #include "../d_player.h" // wbstartstruct_t, wbplayerstruct_t
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
-#include "../r_defs.h" // patch_t
+#include "../r_defs.h" // Patch
 #include "../wi_stuff.h" // stateenum_t
 
 namespace Doom
@@ -67,31 +67,31 @@ struct IntermissionState
     int NUMCMAPS = 0; // # of commercial levels (set in wiLoadData)
 
     // Graphics loaded once by wiLoadData, read-only after.
-    patch_t* bg = nullptr; // background (map of levels)
-    patch_t* yah[2] = {}; // "you are here" (two blink frames)
-    patch_t* splat = nullptr; // splat on completed levels
-    patch_t* percent = nullptr; // %
-    patch_t* colon = nullptr; // :
-    patch_t* num[10] = {}; // 0-9
-    patch_t* wiminus = nullptr; // minus sign
-    patch_t* finished = nullptr; // "Finished!"
-    patch_t* entering = nullptr; // "Entering"
-    patch_t* sp_secret = nullptr; // "secret"
-    patch_t* kills = nullptr; // "Kills"
-    patch_t* secret = nullptr; // "Scrt"
-    patch_t* items = nullptr; // "Items"
-    patch_t* frags = nullptr; // "Frags"
-    patch_t* time_patch = nullptr; // "Time"
-    patch_t* par = nullptr; // "Par"
-    patch_t* sucks = nullptr; // "sucks" (time overflow)
-    patch_t* killers = nullptr; // "killers" (vertical)
-    patch_t* victims = nullptr; // "victims" (horizontal)
-    patch_t* total = nullptr; // "Total"
-    patch_t* star = nullptr; // your face
-    patch_t* bstar = nullptr; // your dead face
-    patch_t* p[MAXPLAYERS] = {}; // "red P[1..MAXPLAYERS]"
-    patch_t* bp[MAXPLAYERS] = {}; // "gray P[1..MAXPLAYERS]"
-    patch_t** lnames = nullptr; // per-level name graphics (malloc'd by wiLoadData)
+    Patch* bg = nullptr; // background (map of levels)
+    Patch* yah[2] = {}; // "you are here" (two blink frames)
+    Patch* splat = nullptr; // splat on completed levels
+    Patch* percent = nullptr; // %
+    Patch* colon = nullptr; // :
+    Patch* num[10] = {}; // 0-9
+    Patch* wiminus = nullptr; // minus sign
+    Patch* finished = nullptr; // "Finished!"
+    Patch* entering = nullptr; // "Entering"
+    Patch* sp_secret = nullptr; // "secret"
+    Patch* kills = nullptr; // "Kills"
+    Patch* secret = nullptr; // "Scrt"
+    Patch* items = nullptr; // "Items"
+    Patch* frags = nullptr; // "Frags"
+    Patch* time_patch = nullptr; // "Time"
+    Patch* par = nullptr; // "Par"
+    Patch* sucks = nullptr; // "sucks" (time overflow)
+    Patch* killers = nullptr; // "killers" (vertical)
+    Patch* victims = nullptr; // "victims" (horizontal)
+    Patch* total = nullptr; // "Total"
+    Patch* star = nullptr; // your face
+    Patch* bstar = nullptr; // your dead face
+    Patch* p[MAXPLAYERS] = {}; // "red P[1..MAXPLAYERS]"
+    Patch* bp[MAXPLAYERS] = {}; // "gray P[1..MAXPLAYERS]"
+    Patch** lnames = nullptr; // per-level name graphics (malloc'd by wiLoadData)
 };
 
 // The one IntermissionState, a view onto the Engine's member - the same pattern as the other

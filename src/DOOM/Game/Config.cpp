@@ -99,7 +99,7 @@ struct pcx_t
 // Doom::initHud must have been called to init the font
 //
 // hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (Doom::startHud writes it).
-extern patch_t* (&hu_font)[HU_FONTSIZE];
+extern Doom::Patch* (&hu_font)[HU_FONTSIZE];
 
 //
 // DEFAULTS

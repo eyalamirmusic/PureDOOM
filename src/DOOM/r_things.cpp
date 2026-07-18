@@ -36,13 +36,13 @@ short (&screenheightarray)[SCREENWIDTH] = Doom::spriteState().screenheightarray;
 //  Doom::GraphicsData (an Engine member) now; numsprites is a reference onto it,
 //  and sprites is a plain-pointer view onto its owned EA::Vector, set by
 //  R_InitSpriteDefs after the fill (Step 9).
-spritedef_t* sprites = nullptr;
+Doom::SpriteDef* sprites = nullptr;
 int& numsprites = Doom::graphicsData().numsprites;
 
 // The vissprite pool and its sorted list head (read by r_segs).
-vissprite_t (&vissprites)[MAXVISSPRITES] = Doom::spriteState().vissprites;
-vissprite_t*& vissprite_p = Doom::spriteState().vissprite_p;
-vissprite_t& vsprsortedhead = Doom::spriteState().vsprsortedhead;
+Doom::VisSprite (&vissprites)[MAXVISSPRITES] = Doom::spriteState().vissprites;
+Doom::VisSprite*& vissprite_p = Doom::spriteState().vissprite_p;
+Doom::VisSprite& vsprsortedhead = Doom::spriteState().vsprsortedhead;
 
 // The masked-column clip windows and sprite scale (read by r_segs).
 short*& mfloorclip = Doom::spriteState().mfloorclip;

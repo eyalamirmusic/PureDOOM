@@ -57,7 +57,7 @@ void clearDrawSegs();
 void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
 void clearClipSegs();
-void addLine(seg_t* line);
+void addLine(Seg* line);
 doom_boolean checkBBox(fixed_t* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);
@@ -218,7 +218,7 @@ void clearClipSegs()
 // Clips the given segment
 // and adds any visible pieces to the line list.
 //
-void addLine(seg_t* line)
+void addLine(Seg* line)
 {
     int x1;
     int x2;
@@ -451,8 +451,8 @@ doom_boolean checkBBox(fixed_t* bspcoord)
 void subsector(int num)
 {
     int count;
-    seg_t* line;
-    subsector_t* sub;
+    Seg* line;
+    SubSector* sub;
 
 #ifdef RANGECHECK
     if (num >= numsubsectors)
@@ -509,7 +509,7 @@ void subsector(int num)
 // Just call with BSP root.
 void renderBSPNode(int bspnum)
 {
-    node_t* bsp;
+    Node* bsp;
     int side;
 
     // Found a subsector?

@@ -25,11 +25,11 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void moveCeiling(ceiling_t& ceiling);
-int doCeiling(line_t* line, ceiling_e type);
+int doCeiling(Line* line, ceiling_e type);
 void addActiveCeiling(ceiling_t* c);
 void removeActiveCeiling(ceiling_t* c);
-void activateInStasisCeiling(line_t* line);
-int ceilingCrushStop(line_t* line);
+void activateInStasisCeiling(Line* line);
+int ceilingCrushStop(Line* line);
 
 void moveCeiling(ceiling_t& ceiling)
 {
@@ -157,11 +157,11 @@ void moveCeiling(ceiling_t& ceiling)
 // doCeiling
 // Move a ceiling up/down and all around!
 //
-int doCeiling(line_t* line, ceiling_e type)
+int doCeiling(Line* line, ceiling_e type)
 {
     int secnum;
     int rtn;
-    sector_t* sec;
+    Sector* sec;
     ceiling_t* ceiling;
 
     secnum = -1;
@@ -265,7 +265,7 @@ void removeActiveCeiling(ceiling_t* c)
 //
 // Restart a ceiling that's in-stasis
 //
-void activateInStasisCeiling(line_t* line)
+void activateInStasisCeiling(Line* line)
 {
     for (int i = 0; i < MAXCEILINGS; i++)
     {
@@ -282,7 +282,7 @@ void activateInStasisCeiling(line_t* line)
 // ceilingCrushStop
 // Stop a ceiling from crushing!
 //
-int ceilingCrushStop(line_t* line)
+int ceilingCrushStop(Line* line)
 {
     int rtn;
 

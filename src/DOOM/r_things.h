@@ -29,9 +29,9 @@
 
 
 // These are Doom::SpriteState members (Engine) now; references onto them (REFACTOR.md, Step 5).
-extern vissprite_t (&vissprites)[MAXVISSPRITES];
-extern vissprite_t*& vissprite_p;
-extern vissprite_t& vsprsortedhead;
+extern Doom::VisSprite (&vissprites)[MAXVISSPRITES];
+extern Doom::VisSprite*& vissprite_p;
+extern Doom::VisSprite& vsprsortedhead;
 
 // Constant arrays used for psprite clipping
 // and initializing clipping.

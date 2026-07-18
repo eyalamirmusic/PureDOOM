@@ -93,9 +93,9 @@ static int& numswitches = switchList().numswitches;
 
 // Forward declarations so the file's own call order needs no rearranging.
 void initSwitchList();
-void startButton(line_t* line, bwhere_e w, int texture, int time);
-void changeSwitchTexture(line_t* line, int useAgain);
-doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side);
+void startButton(Line* line, bwhere_e w, int texture, int time);
+void changeSwitchTexture(Line* line, int useAgain);
+doom_boolean useSpecialLine(mobj_t* thing, Line* line, int side);
 
 void initSwitchList()
 {
@@ -128,7 +128,7 @@ void initSwitchList()
 //
 // Start a button counting down till it turns off.
 //
-void startButton(line_t* line, bwhere_e w, int texture, int time)
+void startButton(Line* line, bwhere_e w, int texture, int time)
 {
     // See if button is already pressed
     for (int i = 0; i < MAXBUTTONS; i++)
@@ -160,7 +160,7 @@ void startButton(line_t* line, bwhere_e w, int texture, int time)
 // Function that changes wall texture.
 // Tell it if switch is ok to use again (1=yes, it's a button).
 //
-void changeSwitchTexture(line_t* line, int useAgain)
+void changeSwitchTexture(Line* line, int useAgain)
 {
     int texTop;
     int texMid;
@@ -226,7 +226,7 @@ void changeSwitchTexture(line_t* line, int useAgain)
 // Called when a thing uses a special line.
 // Only the front sides of lines are usable.
 //
-doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
+doom_boolean useSpecialLine(mobj_t* thing, Line* line, int side)
 {
     // Err...
     // Use the back sides of VERY SPECIAL lines...

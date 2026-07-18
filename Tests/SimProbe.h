@@ -200,7 +200,7 @@ extern "C"
     // doomSimBoot.
     int doomSimBootToTitle();
 
-    // Post a synthetic key event, exactly as the host's doom_key_down/up do. The
+    // Doom::Post a synthetic key event, exactly as the host's doom_key_down/up do. The
     // key is a doom_key_t value from DOOM/DOOM.h - the public host API a menu is
     // driven through, so the menu test names its keys from that header.
     void doomSimPostKeyDown(int key);

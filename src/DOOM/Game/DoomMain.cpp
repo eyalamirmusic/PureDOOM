@@ -340,7 +340,7 @@ void displayFrame()
             viewwindowx + (scaledviewwidth - 68) / 2,
             y,
             0,
-            static_cast<patch_t*>((W_CacheLumpName("M_PAUSE", PU_CACHE))));
+            static_cast<Patch*>((W_CacheLumpName("M_PAUSE", PU_CACHE))));
     }
 
     // menus go directly to the screen
@@ -461,7 +461,7 @@ void pageTicker()
 void drawPage()
 {
     Doom::drawPatch(
-        0, 0, 0, static_cast<patch_t*>((W_CacheLumpName(pagename, PU_CACHE))));
+        0, 0, 0, static_cast<Patch*>((W_CacheLumpName(pagename, PU_CACHE))));
 }
 
 //

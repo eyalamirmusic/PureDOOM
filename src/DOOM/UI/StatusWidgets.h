@@ -10,7 +10,7 @@ void initStatusWidgets();
 void initNum(st_number_t& n,
              int x,
              int y,
-             patch_t** pl,
+             Patch** pl,
              int* num,
              doom_boolean* on,
              int width);
@@ -18,15 +18,15 @@ void updateNum(st_number_t& n, doom_boolean refresh);
 void initPercent(st_percent_t& p,
                  int x,
                  int y,
-                 patch_t** pl,
+                 Patch** pl,
                  int* num,
                  doom_boolean* on,
-                 patch_t* percent);
+                 Patch* percent);
 void updatePercent(st_percent_t& per, int refresh);
 void initMultIcon(
-    st_multicon_t& i, int x, int y, patch_t** il, int* inum, doom_boolean* on);
+    st_multicon_t& i, int x, int y, Patch** il, int* inum, doom_boolean* on);
 void updateMultIcon(st_multicon_t& mi, doom_boolean refresh);
 void initBinIcon(
-    st_binicon_t& b, int x, int y, patch_t* i, doom_boolean* val, doom_boolean* on);
+    st_binicon_t& b, int x, int y, Patch* i, doom_boolean* val, doom_boolean* on);
 void updateBinIcon(st_binicon_t& bi, doom_boolean refresh);
 } // namespace Doom

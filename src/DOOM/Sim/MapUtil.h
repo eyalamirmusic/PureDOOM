@@ -21,7 +21,7 @@ namespace Doom
 // golden-neutral, and the demos prove it by replaying every collision, sight line
 // and gunshot through it.
 
-// Walk the lines in one blockmap cell, calling func(line_t*) for each line not
+// Walk the lines in one blockmap cell, calling func(Line*) for each line not
 // already seen this validcount, and stop early the moment func returns false.
 //
 // The template takes any callable, which is the point: a rewritten caller passes a
@@ -40,7 +40,7 @@ bool forEachLineInBlock(int x, int y, LineFunc&& func)
     for (short* list = bmap.lump + bmap.offsets[bmap.index(x, y)]; *list != -1;
          ++list)
     {
-        line_t* ld = &lines[*list];
+        Line* ld = &lines[*list];
 
         if (ld->validcount == validcount)
             continue; // already checked from another cell

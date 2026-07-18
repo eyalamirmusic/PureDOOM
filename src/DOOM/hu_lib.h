@@ -41,7 +41,7 @@
 // Typedefs of widgets
 //
 
-// Text Line widget
+// Text Doom::Line widget
 //  (parent of Scrolling Text and Input Text widgets)
 struct hu_textline_t
 {
@@ -49,7 +49,7 @@ struct hu_textline_t
     int x;
     int y;
 
-    patch_t** f;                        // font
+    Doom::Patch** f;                        // font
     int sc;                        // start character
     char l[HU_MAXLINELENGTH + 1];        // line of text
     int len;                              // current line length
@@ -60,7 +60,7 @@ struct hu_textline_t
 
 
 // Scrolling Text window widget
-//  (child of Text Line widget)
+//  (child of Text Doom::Line widget)
 struct hu_stext_t
 {
     hu_textline_t l[HU_MAXLINES];        // text lines to draw
@@ -73,8 +73,8 @@ struct hu_stext_t
 };
 
 
-// Input Text Line widget
-//  (child of Text Line widget)
+// Input Text Doom::Line widget
+//  (child of Text Doom::Line widget)
 struct hu_itext_t
 {
     hu_textline_t l;                // text line to input on

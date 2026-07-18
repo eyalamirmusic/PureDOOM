@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // patch_t
+#include "../r_defs.h" // Patch
 
 namespace Doom
 {
@@ -14,11 +14,11 @@ void copyRect(int srcx,
                int destx,
                int desty,
                int destscrn);
-void drawPatch(int x, int y, int scrn, patch_t* patch);
-void drawPatchFlipped(int x, int y, int scrn, patch_t* patch);
+void drawPatch(int x, int y, int scrn, Patch* patch);
+void drawPatchFlipped(int x, int y, int scrn, Patch* patch);
 void drawPatchRectDirect(
-    int x, int y, int scrn, patch_t* patch, int src_x, int src_w);
-void drawPatchDirect(int x, int y, int scrn, patch_t* patch);
+    int x, int y, int scrn, Patch* patch, int src_x, int src_w);
+void drawPatchDirect(int x, int y, int scrn, Patch* patch);
 void drawBlock(int x, int y, int scrn, int width, int height, byte* src);
 void getBlock(int x, int y, int scrn, int width, int height, byte* dest);
 void initVideo();

@@ -129,7 +129,7 @@ struct intercept_t
     union
     {
         mobj_t* thing;
-        line_t* line;
+        Doom::Line* line;
     } d;
 };
 
@@ -143,11 +143,11 @@ typedef doom_boolean(*traverser_t) (intercept_t* in);
 
 
 fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
-int P_PointOnLineSide(fixed_t x, fixed_t y, line_t* line);
+int P_PointOnLineSide(fixed_t x, fixed_t y, Doom::Line* line);
 int P_PointOnDivlineSide(fixed_t x, fixed_t y, divline_t* line);
-void P_MakeDivline(line_t* li, divline_t* dl);
+void P_MakeDivline(Doom::Line* li, divline_t* dl);
 fixed_t P_InterceptVector(divline_t* v2, divline_t* v1);
-int P_BoxOnLineSide(fixed_t* tmbox, line_t* ld);
+int P_BoxOnLineSide(fixed_t* tmbox, Doom::Line* ld);
 
 
 // References into Doom::Clip (Sim/Clip.h), reached through Doom::clip() - the same
@@ -160,10 +160,10 @@ extern fixed_t& openrange;
 extern fixed_t& lowfloor;
 
 
-void P_LineOpening(line_t* linedef);
+void P_LineOpening(Doom::Line* linedef);
 
 
-doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean(*func)(line_t*));
+doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean(*func)(Doom::Line*));
 doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean(*func)(mobj_t*));
 
 
@@ -191,7 +191,7 @@ extern doom_boolean& floatok;
 extern fixed_t& tmfloorz;
 extern fixed_t& tmceilingz;
 
-extern line_t*& ceilingline;
+extern Doom::Line*& ceilingline;
 
 
 

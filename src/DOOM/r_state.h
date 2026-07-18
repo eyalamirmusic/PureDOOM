@@ -67,29 +67,29 @@ extern int& numspritelumps;
 // Lookup tables for map data.
 //
 extern int& numsprites;
-// A view onto GraphicsData's owned EA::Vector<spritedef_t> (Step 9).
-extern spritedef_t* sprites;
+// A view onto GraphicsData's owned EA::Vector<Doom::SpriteDef> (Step 9).
+extern Doom::SpriteDef* sprites;
 
 extern int numvertexes;
-extern vertex_t* vertexes;
+extern Doom::Vertex* vertexes;
 
 extern int numsegs;
-extern seg_t* segs;
+extern Doom::Seg* segs;
 
 extern int numsectors;
-extern sector_t* sectors;
+extern Doom::Sector* sectors;
 
 extern int numsubsectors;
-extern subsector_t* subsectors;
+extern Doom::SubSector* subsectors;
 
 extern int numnodes;
-extern node_t* nodes;
+extern Doom::Node* nodes;
 
 extern int numlines;
-extern line_t* lines;
+extern Doom::Line* lines;
 
 extern int numsides;
-extern side_t* sides;
+extern Doom::Side* sides;
 
 //
 // POV data. The storage lives in Doom::ViewPoint (an Engine member); these names are
@@ -122,8 +122,8 @@ extern int& rw_angle1;
 // Segs count?
 extern int& sscount;
 
-extern visplane_t*& floorplane;
-extern visplane_t*& ceilingplane;
+extern Doom::VisPlane*& floorplane;
+extern Doom::VisPlane*& ceilingplane;
 
 
 

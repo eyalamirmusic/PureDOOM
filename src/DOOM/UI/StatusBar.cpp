@@ -302,15 +302,15 @@ static doom_boolean& st_fragson = statusBarState().st_fragson; // !deathmatch
 // the file-scope-statics sweep; these names are references onto the members, the arrays as
 // references-to-array (REFACTOR.md, Step 5). The faces[ST_NUMFACES] binding self-checks the
 // member's numFaces against the macro - a drift won't compile.
-static patch_t*& sbar = statusBarGraphics().sbar; // main bar left
-static patch_t* (&tallnum)[10] = statusBarGraphics().tallnum; // 0-9, tall numbers
-static patch_t*& tallpercent = statusBarGraphics().tallpercent; // tall % sign
-static patch_t* (&shortnum)[10] = statusBarGraphics().shortnum; // 0-9, short yellow
-static patch_t* (&keys)[NUMCARDS] = statusBarGraphics().keys; // key-cards, skulls
-static patch_t* (&faces)[ST_NUMFACES] = statusBarGraphics().faces; // face patches
-static patch_t*& faceback = statusBarGraphics().faceback; // face background
-static patch_t*& armsbg = statusBarGraphics().armsbg; // main bar right
-static patch_t* (&arms)[6][2] = statusBarGraphics().arms; // weapon ownership
+static Patch*& sbar = statusBarGraphics().sbar; // main bar left
+static Patch* (&tallnum)[10] = statusBarGraphics().tallnum; // 0-9, tall numbers
+static Patch*& tallpercent = statusBarGraphics().tallpercent; // tall % sign
+static Patch* (&shortnum)[10] = statusBarGraphics().shortnum; // 0-9, short yellow
+static Patch* (&keys)[NUMCARDS] = statusBarGraphics().keys; // key-cards, skulls
+static Patch* (&faces)[ST_NUMFACES] = statusBarGraphics().faces; // face patches
+static Patch*& faceback = statusBarGraphics().faceback; // face background
+static Patch*& armsbg = statusBarGraphics().armsbg; // main bar right
+static Patch* (&arms)[6][2] = statusBarGraphics().arms; // weapon ownership
 // The STlib widgets are a Doom::StatusBarWidgets owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members, the arrays as
 // references-to-array (REFACTOR.md, Step 5).
@@ -1024,17 +1024,17 @@ void stloadGraphics()
         //doom_sprintf(namebuf, "STTNUM%d", i);
         doom_strcpy(namebuf.data(), "STTNUM");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
-        tallnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+        tallnum[i] = static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
 
         //doom_sprintf(namebuf, "STYSNUM%d", i);
         doom_strcpy(namebuf.data(), "STYSNUM");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
-        shortnum[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+        shortnum[i] = static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
 
     // Load percent key.
     //Note: why not load STMINUS here, too?
-    tallpercent = static_cast<patch_t*>(W_CacheLumpName("STTPRCNT", PU_STATIC));
+    tallpercent = static_cast<Patch*>(W_CacheLumpName("STTPRCNT", PU_STATIC));
 
     // key cards
     for (int i = 0; i < NUMCARDS; i++)
@@ -1042,11 +1042,11 @@ void stloadGraphics()
         //doom_sprintf(namebuf, "STKEYS%d", i);
         doom_strcpy(namebuf.data(), "STKEYS");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
-        keys[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+        keys[i] = static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
 
     // arms background
-    armsbg = static_cast<patch_t*>(W_CacheLumpName("STARMS", PU_STATIC));
+    armsbg = static_cast<Patch*>(W_CacheLumpName("STARMS", PU_STATIC));
 
     // arms ownership widgets
     for (int i = 0; i < 6; i++)
@@ -1056,7 +1056,7 @@ void stloadGraphics()
         doom_concat(namebuf.data(), doom_itoa(i + 2, 10));
 
         // gray #
-        arms[i][0] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+        arms[i][0] = static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
 
         // yellow #
         arms[i][1] = shortnum[i + 2];
@@ -1066,10 +1066,10 @@ void stloadGraphics()
     //doom_sprintf(namebuf, "STFB%d", consoleplayer);
     doom_strcpy(namebuf.data(), "STFB");
     doom_concat(namebuf.data(), doom_itoa(consoleplayer, 10));
-    faceback = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+    faceback = static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
 
     // status bar background bits
-    sbar = static_cast<patch_t*>(W_CacheLumpName("STBAR", PU_STATIC));
+    sbar = static_cast<Patch*>(W_CacheLumpName("STBAR", PU_STATIC));
 
     // face states
     facenum = 0;
@@ -1082,38 +1082,38 @@ void stloadGraphics()
             doom_concat(namebuf.data(), doom_itoa(i, 10));
             doom_concat(namebuf.data(), doom_itoa(j, 10));
             faces[facenum++] =
-                static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+                static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         }
         //doom_sprintf(namebuf, "STFTR%d0", i);        // turn right
         doom_strcpy(namebuf.data(), "STFTR");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         doom_concat(namebuf.data(), "0");
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+            static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFTL%d0", i);        // turn left
         doom_strcpy(namebuf.data(), "STFTL");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         doom_concat(namebuf.data(), "0");
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+            static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFOUCH%d", i);        // ouch!
         doom_strcpy(namebuf.data(), "STFOUCH");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+            static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFEVL%d", i);        // evil grin ;)
         doom_strcpy(namebuf.data(), "STFEVL");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+            static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
         //doom_sprintf(namebuf, "STFKILL%d", i);        // pissed off
         doom_strcpy(namebuf.data(), "STFKILL");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         faces[facenum++] =
-            static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+            static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
-    faces[facenum++] = static_cast<patch_t*>(W_CacheLumpName("STFGOD0", PU_STATIC));
-    faces[facenum++] = static_cast<patch_t*>(W_CacheLumpName("STFDEAD0", PU_STATIC));
+    faces[facenum++] = static_cast<Patch*>(W_CacheLumpName("STFGOD0", PU_STATIC));
+    faces[facenum++] = static_cast<Patch*>(W_CacheLumpName("STFDEAD0", PU_STATIC));
 }
 
 void stloadData()

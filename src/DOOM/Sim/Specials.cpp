@@ -51,18 +51,18 @@
 // (The vanilla file-scope `anim_t` typedef that sat here was dead - unused at global scope, a
 // leftover of the namespace wrap - and was removed; anim_t now lives in Sim/AnimatedSurfaces.h.)
 
-side_t* getSide(int currentSector, int line, int side)
+Doom::Side* getSide(int currentSector, int line, int side)
 {
     return &sides[(sectors[currentSector].lines[line])->sidenum[side]];
 }
 
 //
 // getSector()
-// Will return a sector_t*
+// Will return a Doom::Sector*
 //  given the number of the current sector,
 //  the line number and the side (0/1) that you want.
 //
-sector_t* getSector(int currentSector, int line, int side)
+Doom::Sector* getSector(int currentSector, int line, int side)
 {
     return sides[(sectors[currentSector].lines[line])->sidenum[side]].sector;
 }
@@ -79,10 +79,10 @@ int twoSided(int sector, int line)
 
 //
 // getNextSector()
-// Return sector_t * of sector next to current.
+// Return Doom::Sector * of sector next to current.
 // 0 if not two-sided line
 //
-sector_t* getNextSector(line_t* line, sector_t* sec)
+Doom::Sector* getNextSector(Doom::Line* line, Doom::Sector* sec)
 {
     if (!(line->flags & ML_TWOSIDED))
         return nullptr;
@@ -152,22 +152,22 @@ static anim_t (&anims)[MAXANIMS] = animatedSurfaces().anims;
 static anim_t*& lastanim = animatedSurfaces().lastanim;
 
 static short& numlinespecials = animatedSurfaces().numlinespecials;
-static line_t* (&linespeciallist)[MAXLINEANIMS] = animatedSurfaces().linespeciallist;
+static Line* (&linespeciallist)[MAXLINEANIMS] = animatedSurfaces().linespeciallist;
 
 // Forward declarations so call order needs no rearranging.
 void initPicAnims();
-fixed_t findLowestFloorSurrounding(sector_t* sec);
-fixed_t findHighestFloorSurrounding(sector_t* sec);
-fixed_t findNextHighestFloor(sector_t* sec, int currentheight);
-fixed_t findLowestCeilingSurrounding(sector_t* sec);
-fixed_t findHighestCeilingSurrounding(sector_t* sec);
-int findSectorFromLineTag(line_t* line, int start);
-int findMinSurroundingLight(sector_t* sector, int max);
+fixed_t findLowestFloorSurrounding(Sector* sec);
+fixed_t findHighestFloorSurrounding(Sector* sec);
+fixed_t findNextHighestFloor(Sector* sec, int currentheight);
+fixed_t findLowestCeilingSurrounding(Sector* sec);
+fixed_t findHighestCeilingSurrounding(Sector* sec);
+int findSectorFromLineTag(Line* line, int start);
+int findMinSurroundingLight(Sector* sector, int max);
 void crossSpecialLine(int linenum, int side, mobj_t* thing);
-void shootSpecialLine(mobj_t* thing, line_t* line);
+void shootSpecialLine(mobj_t* thing, Line* line);
 void playerInSpecialSector(player_t* player);
 void updateSpecials();
-int doDonut(line_t* line);
+int doDonut(Line* line);
 void spawnSpecials();
 
 void initPicAnims()
@@ -221,14 +221,14 @@ void initPicAnims()
 
 //
 // getSide()
-// Will return a side_t*
+// Will return a Side*
 //  given the number of the current sector,
 //  the line number, and the side (0/1) that you want.
 //
-fixed_t findLowestFloorSurrounding(sector_t* sec)
+fixed_t findLowestFloorSurrounding(Sector* sec)
 {
-    line_t* check;
-    sector_t* other;
+    Line* check;
+    Sector* other;
     fixed_t floor = sec->floorheight;
 
     for (int i = 0; i < sec->linecount; i++)
@@ -250,10 +250,10 @@ fixed_t findLowestFloorSurrounding(sector_t* sec)
 // findHighestFloorSurrounding()
 // FIND HIGHEST FLOOR HEIGHT IN SURROUNDING SECTORS
 //
-fixed_t findHighestFloorSurrounding(sector_t* sec)
+fixed_t findHighestFloorSurrounding(Sector* sec)
 {
-    line_t* check;
-    sector_t* other;
+    Line* check;
+    Sector* other;
     fixed_t floor = -500 * FRACUNIT;
 
     for (int i = 0; i < sec->linecount; i++)
@@ -275,13 +275,13 @@ fixed_t findHighestFloorSurrounding(sector_t* sec)
 // findNextHighestFloor
 // FIND NEXT HIGHEST FLOOR IN SURROUNDING SECTORS
 // Note: this should be doable w/o a fixed array.
-fixed_t findNextHighestFloor(sector_t* sec, int currentheight)
+fixed_t findNextHighestFloor(Sector* sec, int currentheight)
 {
     int i;
     int h;
     int min;
-    line_t* check;
-    sector_t* other;
+    Line* check;
+    Sector* other;
     fixed_t height = currentheight;
 
     EA::Array<fixed_t, MAX_ADJOINING_SECTORS> heightlist;
@@ -322,10 +322,10 @@ fixed_t findNextHighestFloor(sector_t* sec, int currentheight)
 //
 // FIND LOWEST CEILING IN THE SURROUNDING SECTORS
 //
-fixed_t findLowestCeilingSurrounding(sector_t* sec)
+fixed_t findLowestCeilingSurrounding(Sector* sec)
 {
-    line_t* check;
-    sector_t* other;
+    Line* check;
+    Sector* other;
     fixed_t height = DOOM_MAXINT;
 
     for (int i = 0; i < sec->linecount; i++)
@@ -346,10 +346,10 @@ fixed_t findLowestCeilingSurrounding(sector_t* sec)
 //
 // FIND HIGHEST CEILING IN THE SURROUNDING SECTORS
 //
-fixed_t findHighestCeilingSurrounding(sector_t* sec)
+fixed_t findHighestCeilingSurrounding(Sector* sec)
 {
-    line_t* check;
-    sector_t* other;
+    Line* check;
+    Sector* other;
     fixed_t height = 0;
 
     for (int i = 0; i < sec->linecount; i++)
@@ -370,7 +370,7 @@ fixed_t findHighestCeilingSurrounding(sector_t* sec)
 //
 // RETURN NEXT SECTOR # THAT LINE TAG REFERS TO
 //
-int findSectorFromLineTag(line_t* line, int start)
+int findSectorFromLineTag(Line* line, int start)
 {
     for (int i = start + 1; i < numsectors; i++)
         if (sectors[i].tag == line->tag)
@@ -382,11 +382,11 @@ int findSectorFromLineTag(line_t* line, int start)
 //
 // Find minimum light from an adjacent sector
 //
-int findMinSurroundingLight(sector_t* sector, int max)
+int findMinSurroundingLight(Sector* sector, int max)
 {
     int min;
-    line_t* line;
-    sector_t* check;
+    Line* line;
+    Sector* check;
 
     min = max;
     for (int i = 0; i < sector->linecount; i++)
@@ -417,7 +417,7 @@ int findMinSurroundingLight(sector_t* sector, int max)
 //
 void crossSpecialLine(int linenum, int side, mobj_t* thing)
 {
-    line_t* line;
+    Line* line;
     int ok;
 
     line = &lines[linenum];
@@ -876,7 +876,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 // shootSpecialLine - IMPACT SPECIALS
 // Called when a thing shoots a special line.
 //
-void shootSpecialLine(mobj_t* thing, line_t* line)
+void shootSpecialLine(mobj_t* thing, Line* line)
 {
     int ok;
 
@@ -924,7 +924,7 @@ void shootSpecialLine(mobj_t* thing, line_t* line)
 //
 void playerInSpecialSector(player_t* player)
 {
-    sector_t* sector;
+    Sector* sector;
 
     sector = player->mo->subsector->sector;
 
@@ -1001,7 +1001,7 @@ void updateSpecials()
 {
     anim_t* anim;
     int pic;
-    line_t* line;
+    Line* line;
 
     // LEVEL TIMER
     if (levelTimer == true)
@@ -1071,11 +1071,11 @@ void updateSpecials()
 //
 // Special Stuff that can not be categorized
 //
-int doDonut(line_t* line)
+int doDonut(Line* line)
 {
-    sector_t* s1;
-    sector_t* s2;
-    sector_t* s3;
+    Sector* s1;
+    Sector* s2;
+    Sector* s3;
     int secnum;
     int rtn;
     floormove_t* floor;
@@ -1142,7 +1142,7 @@ int doDonut(line_t* line)
 // Parses command line parameters.
 void spawnSpecials()
 {
-    sector_t* sector;
+    Sector* sector;
     int i;
 
     // See if -TIMER needs to be used.

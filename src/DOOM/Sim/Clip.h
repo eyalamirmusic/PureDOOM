@@ -54,13 +54,13 @@ struct Clip
 
     // The line that lowered the ceiling, kept so missiles don't explode against
     // sky-hack walls.
-    line_t* ceilingline = nullptr;
+    Line* ceilingline = nullptr;
 
     // Special lines contacted during a move, held until the move is proven valid
     // and then crossed. Not sorted - two specials 8 units apart cross in either
     // order, a vanilla quirk.
     static constexpr int maxSpecialCross = 8;
-    line_t* spechit[maxSpecialCross] = {};
+    Line* spechit[maxSpecialCross] = {};
     int numspechit = 0;
 
     // Hitscan results read outside the attack code: the thing a Doom::aimLineAttack

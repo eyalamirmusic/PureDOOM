@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // lighttable_t, spriteframe_t, vissprite_t
+#include "../r_defs.h" // lighttable_t, SpriteFrame, VisSprite
 
 namespace Doom
 {
@@ -18,10 +18,10 @@ struct SpriteScratch
 {
     lighttable_t** spritelights =
         nullptr; // colormap row for the current sprite's light
-    spriteframe_t sprtemp[29] = {}; // R_InitSpriteDefs working frames
+    SpriteFrame sprtemp[29] = {}; // R_InitSpriteDefs working frames
     int maxframe = 0; // highest frame index seen while installing
     char* spritename = nullptr; // the sprite name being installed
-    vissprite_t overflowsprite = {}; // sink for the (MAXVISSPRITES+1)th sprite
+    VisSprite overflowsprite = {}; // sink for the (MAXVISSPRITES+1)th sprite
 };
 
 // The one SpriteScratch, a view onto the Engine's member - the same pattern as the other clusters

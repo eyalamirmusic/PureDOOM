@@ -27,25 +27,25 @@
 // Store VERTEXES, LINEDEFS, SIDEDEFS, etc.
 //
 int numvertexes;
-vertex_t* vertexes;
+Doom::Vertex* vertexes;
 
 int numsegs;
-seg_t* segs;
+Doom::Seg* segs;
 
 int numsectors;
-sector_t* sectors;
+Doom::Sector* sectors;
 
 int numsubsectors;
-subsector_t* subsectors;
+Doom::SubSector* subsectors;
 
 int numnodes;
-node_t* nodes;
+Doom::Node* nodes;
 
 int numlines;
-line_t* lines;
+Doom::Line* lines;
 
 int numsides;
-side_t* sides;
+Doom::Side* sides;
 
 // BLOCKMAP
 // Created from axis aligned bounding box

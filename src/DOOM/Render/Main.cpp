@@ -53,8 +53,8 @@ void (*transcolfunc)();
 
 // Forward declarations so call order needs no rearranging.
 void addPointToBox(int x, int y, fixed_t* box);
-int pointOnSide(fixed_t x, fixed_t y, node_t* node);
-int pointOnSegSide(fixed_t x, fixed_t y, seg_t* line);
+int pointOnSide(fixed_t x, fixed_t y, Node* node);
+int pointOnSegSide(fixed_t x, fixed_t y, Seg* line);
 angle_t pointToAngle(fixed_t x, fixed_t y);
 angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
 fixed_t pointToDist(fixed_t x, fixed_t y);
@@ -66,7 +66,7 @@ void initLightTables();
 void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
-subsector_t* pointInSubsector(fixed_t x, fixed_t y);
+SubSector* pointInSubsector(fixed_t x, fixed_t y);
 void setupFrame(player_t& player);
 void renderPlayerView(player_t& player);
 
@@ -88,7 +88,7 @@ void addPointToBox(int x, int y, fixed_t* box)
 //  check point against partition plane.
 // Returns side 0 (front) or 1 (back).
 //
-int pointOnSide(fixed_t x, fixed_t y, node_t* node)
+int pointOnSide(fixed_t x, fixed_t y, Node* node)
 {
     fixed_t dx;
     fixed_t dy;
@@ -136,7 +136,7 @@ int pointOnSide(fixed_t x, fixed_t y, node_t* node)
     return 1;
 }
 
-int pointOnSegSide(fixed_t x, fixed_t y, seg_t* line)
+int pointOnSegSide(fixed_t x, fixed_t y, Seg* line)
 {
     fixed_t lx;
     fixed_t ly;
@@ -613,9 +613,9 @@ void renderInit()
 //
 // pointInSubsector
 //
-subsector_t* pointInSubsector(fixed_t x, fixed_t y)
+SubSector* pointInSubsector(fixed_t x, fixed_t y)
 {
-    node_t* node;
+    Node* node;
     int side;
     int nodenum;
 

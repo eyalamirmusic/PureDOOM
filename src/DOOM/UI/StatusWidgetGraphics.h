@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // patch_t
+#include "../r_defs.h" // Patch
 
 namespace Doom
 {
@@ -17,7 +17,7 @@ namespace Doom
 // frame-golden-covered - the bar's number widgets draw into screens[0] every tic.
 struct StatusWidgetGraphics
 {
-    patch_t* sttminus = nullptr; // the STTMINUS lump, drawn before a negative count
+    Patch* sttminus = nullptr; // the STTMINUS lump, drawn before a negative count
 };
 
 // The one StatusWidgetGraphics, a view onto the Engine's member - the same pattern as the other

@@ -11,7 +11,7 @@ namespace Doom
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // Render/Draw's own namespace-scope private globals, read by no other file (every apparent cross-read
-// of "columnofs" is the patch_t::columnofs struct member). The vanilla names become references onto
+// of "columnofs" is the Patch::columnofs struct member). The vanilla names become references onto
 // the members (the tables as references-to-array). Live frame-golden-covered - every column and span
 // the demos draw is addressed through these.
 struct DrawTables

@@ -2,7 +2,7 @@
 
 #include "../doomdef.h" // SCREENWIDTH
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h"   // vissprite_t
+#include "../r_defs.h"   // VisSprite
 
 namespace Doom
 {
@@ -30,9 +30,9 @@ struct SpriteState
     short negonearray[SCREENWIDTH] = {};       // all -1 (a "no clip" top)
     short screenheightarray[SCREENWIDTH] = {}; // all SCREENHEIGHT (a "no clip" bottom)
 
-    vissprite_t vissprites[maxVisSprites] = {}; // the frame's gathered sprites
-    vissprite_t* vissprite_p = nullptr;         // one past the last gathered
-    vissprite_t vsprsortedhead = {};            // sentinel head of the sorted list
+    VisSprite vissprites[maxVisSprites] = {}; // the frame's gathered sprites
+    VisSprite* vissprite_p = nullptr;         // one past the last gathered
+    VisSprite vsprsortedhead = {};            // sentinel head of the sorted list
 
     short* mfloorclip = nullptr;   // per-column floor clip for the current sprite
     short* mceilingclip = nullptr; // per-column ceiling clip for the current sprite

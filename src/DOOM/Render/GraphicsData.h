@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_data.h" // texture_t, and spritedef_t / lighttable_t / fixed_t through it
+#include "../r_data.h" // texture_t, and SpriteDef / lighttable_t / fixed_t through it
 
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -61,7 +61,7 @@ struct GraphicsData
     // owning its own frames vector; the vanilla name `sprites` (r_things.cpp) is a
     // plain-pointer view onto data(), refreshed by R_InitSpriteDefs.
     int numsprites = 0;
-    EA::Vector<spritedef_t> sprites;
+    EA::Vector<SpriteDef> sprites;
 
     // The COLORMAP lump: the base every light row (see Lighting) indexes into.
     // RAII-owned (Step 9): this vector is the backing buffer, and the vanilla name

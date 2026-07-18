@@ -28,9 +28,9 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void platRaise(plat_t& plat);
-int doPlat(line_t* line, plattype_e type, int amount);
+int doPlat(Line* line, plattype_e type, int amount);
 void activateInStasis(int tag);
-void stopPlat(line_t* line);
+void stopPlat(Line* line);
 void addActivePlat(plat_t* plat);
 void removeActivePlat(plat_t* plat);
 
@@ -119,12 +119,12 @@ void platRaise(plat_t& plat)
 // Do Platforms
 //  "amount" is only used for SOME platforms.
 //
-int doPlat(line_t* line, plattype_e type, int amount)
+int doPlat(Line* line, plattype_e type, int amount)
 {
     plat_t* plat;
     int secnum;
     int rtn;
-    sector_t* sec;
+    Sector* sec;
 
     secnum = -1;
     rtn = 0;
@@ -242,7 +242,7 @@ void activateInStasis(int tag)
         }
 }
 
-void stopPlat(line_t* line)
+void stopPlat(Line* line)
 {
     for (int j = 0; j < MAXPLATS; j++)
         if (activeplats[j] && ((activeplats[j])->status != in_stasis)

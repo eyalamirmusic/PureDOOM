@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // patch_t
+#include "../r_defs.h" // Patch
 
 namespace Doom
 {
@@ -24,7 +24,7 @@ struct HudFont
     // ST_NUMFACES).
     static constexpr int fontSize = '_' - '!' + 1;
 
-    patch_t* hu_font[fontSize] = {}; // the cached '!'..'_' glyph patches
+    Patch* hu_font[fontSize] = {}; // the cached '!'..'_' glyph patches
 };
 
 // The one HudFont, a view onto the Engine's member - the same pattern as the other clusters

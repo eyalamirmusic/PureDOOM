@@ -33,7 +33,7 @@ void clearTextLine(hu_textline_t& t)
     t.needsupdate = true;
 }
 
-void initTextLine(hu_textline_t& t, int x, int y, patch_t** f, int sc)
+void initTextLine(hu_textline_t& t, int x, int y, Patch** f, int sc)
 {
     t.x = x;
     t.y = y;
@@ -138,7 +138,7 @@ void initSText(hu_stext_t& s,
                int x,
                int y,
                int h,
-               patch_t** font,
+               Patch** font,
                int startchar,
                doom_boolean* on)
 {
@@ -211,7 +211,7 @@ void eraseSText(hu_stext_t& s)
 }
 
 void initIText(
-    hu_itext_t& it, int x, int y, patch_t** font, int startchar, doom_boolean* on)
+    hu_itext_t& it, int x, int y, Patch** font, int startchar, doom_boolean* on)
 {
     it.lm = 0; // default left margin is start of text
     it.on = on;

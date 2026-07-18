@@ -188,7 +188,7 @@ static mpoint_t& f_oldloc = automapView().f_oldloc;
 // used by MTOF/FTOM to scale between map and frame-buffer coords (=1/scale_mtof)
 static fixed_t& scale_ftom = automapView().scale_ftom;
 
-static patch_t* (&marknums)[10] = automapView().marknums; // mark-number patches
+static Patch* (&marknums)[10] = automapView().marknums; // mark-number patches
 static mpoint_t (&markpoints)[AM_NUMMARKPOINTS] =
     automapView().markpoints; // the marks
 static int& markpointnum = automapView().markpointnum; // next point to be assigned
@@ -397,7 +397,7 @@ void amLoadPics()
     for (int i = 0; i < 10; i++)
     {
         doom_concat(doom_strcpy(namebuf.data(), "AMMNUM"), doom_itoa(i, 10));
-        marknums[i] = static_cast<patch_t*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
+        marknums[i] = static_cast<Patch*>(W_CacheLumpName(namebuf.data(), PU_STATIC));
     }
 }
 

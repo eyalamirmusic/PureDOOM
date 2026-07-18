@@ -36,11 +36,11 @@ namespace Doom
 // reads these.
 static lighttable_t**& spritelights = spriteScratch().spritelights;
 
-static spriteframe_t (&sprtemp)[29] = spriteScratch().sprtemp;
+static SpriteFrame (&sprtemp)[29] = spriteScratch().sprtemp;
 static int& maxframe = spriteScratch().maxframe;
 static char*& spritename = spriteScratch().spritename;
 
-static vissprite_t& overflowsprite = spriteScratch().overflowsprite;
+static VisSprite& overflowsprite = spriteScratch().overflowsprite;
 
 // Forward declarations so call order needs no rearranging.
 void installSpriteLump(int lump,
@@ -50,15 +50,15 @@ void installSpriteLump(int lump,
 void initSpriteDefs(char** namelist);
 void initSprites(char** namelist);
 void clearSprites();
-vissprite_t* newVisSprite();
+VisSprite* newVisSprite();
 void drawMaskedColumn(column_t* column);
-void drawVisSprite(vissprite_t* vis);
+void drawVisSprite(VisSprite* vis);
 void projectSprite(mobj_t* thing);
-void addSprites(sector_t* sec);
+void addSprites(Sector* sec);
 void drawPSprite(pspdef_t* psp);
 void drawPlayerSprites();
 void sortVisSprites();
-void drawSprite(vissprite_t* spr);
+void drawSprite(VisSprite* spr);
 void drawMasked();
 
 //
@@ -183,7 +183,7 @@ void initSpriteDefs(char** namelist)
 
     // GraphicsData owns the sprite table now (RAII, Step 9); sprites is a plain-pointer
     // view onto its data(), refreshed after the resize. The resize constructs each
-    // spritedef_t (with an empty frames vector), which the loop below fills.
+    // SpriteDef (with an empty frames vector), which the loop below fills.
     auto& gd = graphicsData();
     gd.sprites.resize(numsprites);
     sprites = gd.sprites.data();
@@ -273,13 +273,13 @@ void initSpriteDefs(char** namelist)
         }
 
         // allocate space for the frames present and copy sprtemp to it. The frames
-        // vector is RAII-owned by the spritedef_t now (Step 9); resize then copy the
+        // vector is RAII-owned by the SpriteDef now (Step 9); resize then copy the
         // POD sprtemp entries into its storage, as the malloc + memcpy did.
         sprites[i].numframes = maxframe;
         sprites[i].spriteframes.resize(maxframe);
         doom_memcpy(sprites[i].spriteframes.data(),
                     sprtemp,
-                    maxframe * sizeof(spriteframe_t));
+                    maxframe * sizeof(SpriteFrame));
     }
 }
 
@@ -313,7 +313,7 @@ void clearSprites()
 //
 // newVisSprite
 //
-vissprite_t* newVisSprite()
+VisSprite* newVisSprite()
 {
     if (vissprite_p == &vissprites[MAXVISSPRITES])
         return &overflowsprite;
@@ -372,14 +372,14 @@ void drawMaskedColumn(column_t* column)
 // drawVisSprite
 //  mfloorclip and mceilingclip should also be set.
 //
-void drawVisSprite(vissprite_t* vis)
+void drawVisSprite(VisSprite* vis)
 {
     column_t* column;
     int texturecolumn;
     fixed_t frac;
-    patch_t* patch;
+    Patch* patch;
 
-    patch = static_cast<patch_t*>(
+    patch = static_cast<Patch*>(
         W_CacheLumpNum(vis->patch + firstspritelump, PU_CACHE));
 
     dc_colormap = vis->colormap;
@@ -439,8 +439,8 @@ void projectSprite(mobj_t* thing)
     int x1;
     int x2;
 
-    spritedef_t* sprdef;
-    spriteframe_t* sprframe;
+    SpriteDef* sprdef;
+    SpriteFrame* sprframe;
     int lump;
 
     unsigned rot;
@@ -448,7 +448,7 @@ void projectSprite(mobj_t* thing)
 
     int index;
 
-    vissprite_t* vis;
+    VisSprite* vis;
 
     angle_t ang;
     fixed_t iscale;
@@ -591,7 +591,7 @@ void projectSprite(mobj_t* thing)
 // addSprites
 // During BSP traversal, this adds sprites by sector.
 //
-void addSprites(sector_t* sec)
+void addSprites(Sector* sec)
 {
     mobj_t* thing;
     int lightnum;
@@ -628,12 +628,12 @@ void drawPSprite(pspdef_t* psp)
     fixed_t tx;
     int x1;
     int x2;
-    spritedef_t* sprdef;
-    spriteframe_t* sprframe;
+    SpriteDef* sprdef;
+    SpriteFrame* sprframe;
     int lump;
     doom_boolean flip;
-    vissprite_t* vis;
-    vissprite_t avis;
+    VisSprite* vis;
+    VisSprite avis;
 
     // decide which patch to use
 #ifdef RANGECHECK
@@ -768,9 +768,9 @@ void drawPlayerSprites()
 void sortVisSprites()
 {
     int count;
-    vissprite_t* ds;
-    vissprite_t* best = nullptr;
-    vissprite_t unsorted;
+    VisSprite* ds;
+    VisSprite* best = nullptr;
+    VisSprite unsorted;
     fixed_t bestscale;
 
     count = static_cast<int>(vissprite_p - vissprites);
@@ -816,9 +816,9 @@ void sortVisSprites()
 //
 // drawSprite
 //
-void drawSprite(vissprite_t* spr)
+void drawSprite(VisSprite* spr)
 {
-    drawseg_t* ds;
+    DrawSeg* ds;
     EA::Array<short, SCREENWIDTH> clipbot;
     EA::Array<short, SCREENWIDTH> cliptop;
     int x;
@@ -927,8 +927,8 @@ void drawSprite(vissprite_t* spr)
 //
 void drawMasked()
 {
-    vissprite_t* spr;
-    drawseg_t* ds;
+    VisSprite* spr;
+    DrawSeg* ds;
 
     sortVisSprites();
 

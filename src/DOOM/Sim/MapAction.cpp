@@ -39,8 +39,8 @@ namespace
 static fixed_t& bestslidefrac = actionScratch().bestslidefrac;
 static fixed_t& secondslidefrac = actionScratch().secondslidefrac;
 
-static line_t*& bestslideline = actionScratch().bestslideline;
-static line_t*& secondslideline = actionScratch().secondslideline;
+static Line*& bestslideline = actionScratch().bestslideline;
+static Line*& secondslideline = actionScratch().secondslideline;
 
 static mobj_t*& slidemo = actionScratch().slidemo;
 
@@ -51,7 +51,7 @@ static fixed_t& tmymove = actionScratch().tmymove;
 // P_HitSlideLine
 // Adjusts the xmove / ymove so that the next move will slide along the wall.
 //
-void hitSlideLine(line_t* ld)
+void hitSlideLine(Line* ld)
 {
     int side;
 
@@ -104,7 +104,7 @@ doom_boolean slideTraverse(intercept_t* in)
 {
     Clip& clip = Doom::clip();
 
-    line_t* li;
+    Line* li;
 
     if (!in->isaline)
         fatalError("Error: PTR_SlideTraverse: not a line?");
@@ -166,7 +166,7 @@ doom_boolean aimTraverse(intercept_t* in)
 {
     Clip& clip = Doom::clip();
 
-    line_t* li;
+    Line* li;
     mobj_t* th;
     fixed_t slope;
     fixed_t thingtopslope;
@@ -254,7 +254,7 @@ doom_boolean shootTraverse(intercept_t* in)
     fixed_t z;
     fixed_t frac;
 
-    line_t* li;
+    Line* li;
 
     mobj_t* th;
 
@@ -725,7 +725,7 @@ void radiusAttack(mobj_t* spot, mobj_t* source, int damage)
 //
 // Doom::changeSector
 //
-bool changeSector(sector_t* sector, doom_boolean crunch)
+bool changeSector(Sector* sector, doom_boolean crunch)
 {
     nofit = false;
     crushchange = crunch;

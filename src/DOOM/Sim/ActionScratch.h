@@ -5,9 +5,12 @@
 
 // Forward declarations at global scope (that is where p_mobj.h / r_defs.h declare them) - the
 // scratch holds pointers to these, not their layout. Declaring them inside namespace Doom would make
-// distinct Doom:: types that do not match the vanilla mobj_t / line_t the reference aliases bind to.
+// distinct Doom:: types that do not match the vanilla mobj_t / Doom::Line the reference aliases bind to.
 struct mobj_t; // mobj_t
-struct line_t; // line_t
+namespace Doom
+{
+struct Line; // Line
+} // namespace Doom
 
 namespace Doom
 {
@@ -31,8 +34,8 @@ struct ActionScratch
     // Doom::slideMove.
     fixed_t bestslidefrac = 0; // closest slide so far along the move
     fixed_t secondslidefrac = 0; // runner-up
-    line_t* bestslideline = nullptr; // the wall slid against
-    line_t* secondslideline = nullptr; // the runner-up wall
+    Line* bestslideline = nullptr; // the wall slid against
+    Line* secondslideline = nullptr; // the runner-up wall
     mobj_t* slidemo = nullptr; // the mobj sliding
     fixed_t tmxmove = 0; // residual x move after the slide
     fixed_t tmymove = 0; // residual y move after the slide

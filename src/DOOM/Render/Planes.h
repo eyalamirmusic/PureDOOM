@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // visplane_t
+#include "../r_defs.h" // VisPlane
 
 namespace Doom
 {
@@ -8,8 +8,8 @@ namespace Doom
 void initPlanes();
 void mapPlane(int y, int x1, int x2);
 void clearPlanes();
-visplane_t* findPlane(fixed_t height, int picnum, int lightlevel);
-visplane_t* checkPlane(visplane_t* pl, int start, int stop);
+VisPlane* findPlane(fixed_t height, int picnum, int lightlevel);
+VisPlane* checkPlane(VisPlane* pl, int start, int stop);
 void makeSpans(int x, int t1, int b1, int t2, int b2);
 void drawPlanes();
 } // namespace Doom

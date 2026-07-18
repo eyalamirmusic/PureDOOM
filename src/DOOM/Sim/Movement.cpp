@@ -52,7 +52,7 @@ doom_boolean stompThing(mobj_t* thing)
 // PIT_CheckLine: a line the mover's box crosses. Blocks the move (return false) if
 // solid or explicitly blocking; otherwise narrows tmfloorz/tmceilingz/tmdropoffz to
 // the opening it leaves and records a special line for later.
-doom_boolean checkLine(line_t* ld)
+doom_boolean checkLine(Line* ld)
 {
     Clip& clip = Doom::clip();
 
@@ -222,7 +222,7 @@ bool checkPosition(mobj_t* thing, fixed_t x, fixed_t y)
     clip.tmbbox[BOXRIGHT] = x + clip.tmthing->radius;
     clip.tmbbox[BOXLEFT] = x - clip.tmthing->radius;
 
-    subsector_t* newsubsec = Doom::pointInSubsector(x, y);
+    SubSector* newsubsec = Doom::pointInSubsector(x, y);
     clip.ceilingline = nullptr;
 
     // The base floor / ceiling is from the subsector that contains the point. Any
@@ -311,7 +311,7 @@ bool tryMove(mobj_t* thing, fixed_t x, fixed_t y)
         while (clip.numspechit--)
         {
             // see if the line was crossed
-            line_t* ld = clip.spechit[clip.numspechit];
+            Line* ld = clip.spechit[clip.numspechit];
             int side = P_PointOnLineSide(thing->x, thing->y, ld);
             int oldside = P_PointOnLineSide(oldx, oldy, ld);
             if (side != oldside)
@@ -341,7 +341,7 @@ bool teleportMove(mobj_t* thing, fixed_t x, fixed_t y)
     clip.tmbbox[BOXRIGHT] = x + clip.tmthing->radius;
     clip.tmbbox[BOXLEFT] = x - clip.tmthing->radius;
 
-    subsector_t* newsubsec = Doom::pointInSubsector(x, y);
+    SubSector* newsubsec = Doom::pointInSubsector(x, y);
     clip.ceilingline = nullptr;
 
     // The base floor/ceiling is from the subsector that contains the point. Any

@@ -475,7 +475,7 @@ void fillBackScreen()
     byte* dest;
     int x;
     int y;
-    patch_t* patch;
+    Patch* patch;
 
     // DOOM border patch.
     char name1[] = "FLOOR7_2";
@@ -511,19 +511,19 @@ void fillBackScreen()
         }
     }
 
-    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_t", PU_CACHE));
+    patch = static_cast<Patch*>(W_CacheLumpName("brdr_t", PU_CACHE));
 
     for (x = 0; x < scaledviewwidth; x += 8)
         Doom::drawPatch(viewwindowx + x, viewwindowy - 8, 1, patch);
-    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_b", PU_CACHE));
+    patch = static_cast<Patch*>(W_CacheLumpName("brdr_b", PU_CACHE));
 
     for (x = 0; x < scaledviewwidth; x += 8)
         Doom::drawPatch(viewwindowx + x, viewwindowy + viewheight, 1, patch);
-    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_l", PU_CACHE));
+    patch = static_cast<Patch*>(W_CacheLumpName("brdr_l", PU_CACHE));
 
     for (y = 0; y < viewheight; y += 8)
         Doom::drawPatch(viewwindowx - 8, viewwindowy + y, 1, patch);
-    patch = static_cast<patch_t*>(W_CacheLumpName("brdr_r", PU_CACHE));
+    patch = static_cast<Patch*>(W_CacheLumpName("brdr_r", PU_CACHE));
 
     for (y = 0; y < viewheight; y += 8)
         Doom::drawPatch(viewwindowx + scaledviewwidth, viewwindowy + y, 1, patch);
@@ -532,22 +532,22 @@ void fillBackScreen()
     Doom::drawPatch(viewwindowx - 8,
                 viewwindowy - 8,
                 1,
-                static_cast<patch_t*>(W_CacheLumpName("brdr_tl", PU_CACHE)));
+                static_cast<Patch*>(W_CacheLumpName("brdr_tl", PU_CACHE)));
 
     Doom::drawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy - 8,
                 1,
-                static_cast<patch_t*>(W_CacheLumpName("brdr_tr", PU_CACHE)));
+                static_cast<Patch*>(W_CacheLumpName("brdr_tr", PU_CACHE)));
 
     Doom::drawPatch(viewwindowx - 8,
                 viewwindowy + viewheight,
                 1,
-                static_cast<patch_t*>(W_CacheLumpName("brdr_bl", PU_CACHE)));
+                static_cast<Patch*>(W_CacheLumpName("brdr_bl", PU_CACHE)));
 
     Doom::drawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy + viewheight,
                 1,
-                static_cast<patch_t*>(W_CacheLumpName("brdr_br", PU_CACHE)));
+                static_cast<Patch*>(W_CacheLumpName("brdr_br", PU_CACHE)));
 }
 
 //

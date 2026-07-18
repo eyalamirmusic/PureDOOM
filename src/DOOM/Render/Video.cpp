@@ -200,7 +200,7 @@ void copyRect(int srcx,
 // drawPatch
 // Masks a column based masked pic to the screen.
 //
-void drawPatch(int x, int y, int scrn, patch_t* patch)
+void drawPatch(int x, int y, int scrn, Patch* patch)
 {
     int count;
     int col;
@@ -265,7 +265,7 @@ void drawPatch(int x, int y, int scrn, patch_t* patch)
 // Masks a column based masked pic to the screen.
 // Flips horizontally, e.g. to mirror face.
 //
-void drawPatchFlipped(int x, int y, int scrn, patch_t* patch)
+void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 {
     int count;
     int col;
@@ -324,7 +324,7 @@ void drawPatchFlipped(int x, int y, int scrn, patch_t* patch)
 }
 
 void drawPatchRectDirect(
-    int x, int y, int scrn, patch_t* patch, int src_x, int src_w)
+    int x, int y, int scrn, Patch* patch, int src_x, int src_w)
 {
     int count;
     int col;
@@ -388,7 +388,7 @@ void drawPatchRectDirect(
 // drawPatchDirect
 // Draws directly to the screen on the pc.
 //
-void drawPatchDirect(int x, int y, int scrn, patch_t* patch)
+void drawPatchDirect(int x, int y, int scrn, Patch* patch)
 {
     drawPatch(x, y, scrn, patch);
 }

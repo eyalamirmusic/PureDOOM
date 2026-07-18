@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../p_mobj.h" // mobj_t
-#include "../r_defs.h" // line_t
+#include "../r_defs.h" // Line
 
 namespace Doom
 {
@@ -9,5 +9,5 @@ namespace Doom
 // sound. Returns 1 if it teleported, 0 otherwise. p_telept.cpp keeps the vanilla
 // name Doom::teleport as a shim (p_spec/p_switch call it). Golden-neutral; the demos
 // walk teleporters.
-int teleport(line_t* line, int side, mobj_t* thing);
+int teleport(Line* line, int side, mobj_t* thing);
 } // namespace Doom

@@ -59,7 +59,7 @@ struct st_number_t
     doom_boolean* on;
 
     // list of patches for 0-9
-    patch_t** p;
+    Doom::Patch** p;
 
     // user data
     int data;
@@ -74,7 +74,7 @@ struct st_percent_t
     st_number_t n;
 
     // percent sign graphic
-    patch_t* p;
+    Doom::Patch* p;
 };
 
 
@@ -96,7 +96,7 @@ struct st_multicon_t
     doom_boolean* on;
 
     // list of icons
-    patch_t** p;
+    Doom::Patch** p;
 
     // user data
     int data;
@@ -121,7 +121,7 @@ struct st_binicon_t
     doom_boolean* on;
 
 
-    patch_t* p; // icon
+    Doom::Patch* p; // icon
     int data;   // user data
 
 };

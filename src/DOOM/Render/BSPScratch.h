@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // seg_t, side_t, line_t, sector_t, drawseg_t
+#include "../r_defs.h" // Seg, Side, Line, Sector, DrawSeg
 
 namespace Doom
 {
@@ -20,13 +20,13 @@ struct BSPScratch
 {
     static constexpr int maxDrawSegs = 256; // MAXDRAWSEGS in r_defs.h
 
-    seg_t* curline = nullptr;        // the seg currently being drawn
-    side_t* sidedef = nullptr;       // its sidedef
-    line_t* linedef = nullptr;       // its linedef
-    sector_t* frontsector = nullptr; // the sector in front of it
-    sector_t* backsector = nullptr;  // the sector behind it (null if one-sided)
-    drawseg_t drawsegs[maxDrawSegs] = {}; // the frame's emitted wall ranges
-    drawseg_t* ds_p = nullptr;       // one past the last emitted drawseg
+    Seg* curline = nullptr;        // the seg currently being drawn
+    Side* sidedef = nullptr;       // its sidedef
+    Line* linedef = nullptr;       // its linedef
+    Sector* frontsector = nullptr; // the sector in front of it
+    Sector* backsector = nullptr;  // the sector behind it (null if one-sided)
+    DrawSeg drawsegs[maxDrawSegs] = {}; // the frame's emitted wall ranges
+    DrawSeg* ds_p = nullptr;       // one past the last emitted drawseg
 };
 
 BSPScratch& bspScratch();

@@ -10,7 +10,7 @@ namespace
 {
 // PIT_AddLineIntercepts: a line the trace crosses is added to the intercept list.
 // A line is crossed when its two endpoints fall on opposite sides of the trace.
-doom_boolean addLineIntercept(line_t* ld)
+doom_boolean addLineIntercept(Line* ld)
 {
     Clip& clip = Doom::clip();
     divline_t& trace = clip.trace;
@@ -150,13 +150,13 @@ bool traverseIntercepts(traverser_t func, fixed_t maxfrac)
 void setThingPosition(mobj_t& thing)
 {
     // link into subsector
-    subsector_t* ss = Doom::pointInSubsector(thing.x, thing.y);
+    SubSector* ss = Doom::pointInSubsector(thing.x, thing.y);
     thing.subsector = ss;
 
     if (!(thing.flags & MF_NOSECTOR))
     {
         // invisible things don't go into the sector links
-        sector_t* sec = ss->sector;
+        Sector* sec = ss->sector;
 
         thing.sprev = nullptr;
         thing.snext = sec->thinglist;

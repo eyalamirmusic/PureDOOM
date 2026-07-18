@@ -30,8 +30,8 @@
 
 // Here comes the obnoxious "visplane". The current subsector's floor/ceiling visplanes
 // live in Doom::RenderScratch (an Engine member) now; these are references onto it.
-visplane_t*& floorplane = Doom::renderScratch().floorplane;
-visplane_t*& ceilingplane = Doom::renderScratch().ceilingplane;
+Doom::VisPlane*& floorplane = Doom::renderScratch().floorplane;
+Doom::VisPlane*& ceilingplane = Doom::renderScratch().ceilingplane;
 
 // The cross-read plane state (lastopening, the clip arrays and the projection tables) is a
 // Doom::PlaneScratch owned by the Engine now (alongside the openings lastopening points into);

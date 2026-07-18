@@ -28,8 +28,8 @@ namespace Doom
 // file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member;
 // read by no other file. (The header-externed lastopening stays in the r_plane shim; the dead
 // vestigial `ceilingfunc` was deleted.)
-static visplane_t (&visplanes)[MAXVISPLANES] = planeScratch().visplanes;
-static visplane_t*& lastvisplane = planeScratch().lastvisplane;
+static VisPlane (&visplanes)[MAXVISPLANES] = planeScratch().visplanes;
+static VisPlane*& lastvisplane = planeScratch().lastvisplane;
 static short (&openings)[MAXOPENINGS] = planeScratch().openings;
 static int (&spanstart)[SCREENHEIGHT] = planeScratch().spanstart;
 static int (&spanstop)[SCREENHEIGHT] = planeScratch().spanstop;
@@ -46,8 +46,8 @@ static fixed_t (&cachedystep)[SCREENHEIGHT] = planeScratch().cachedystep;
 void initPlanes();
 void mapPlane(int y, int x1, int x2);
 void clearPlanes();
-visplane_t* findPlane(fixed_t height, int picnum, int lightlevel);
-visplane_t* checkPlane(visplane_t* pl, int start, int stop);
+VisPlane* findPlane(fixed_t height, int picnum, int lightlevel);
+VisPlane* checkPlane(VisPlane* pl, int start, int stop);
 void makeSpans(int x, int t1, int b1, int t2, int b2);
 void drawPlanes();
 
@@ -163,9 +163,9 @@ void clearPlanes()
 //
 // findPlane
 //
-visplane_t* findPlane(fixed_t height, int picnum, int lightlevel)
+VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
 {
-    visplane_t* check;
+    VisPlane* check;
 
     if (picnum == skyflatnum)
     {
@@ -204,7 +204,7 @@ visplane_t* findPlane(fixed_t height, int picnum, int lightlevel)
 //
 // checkPlane
 //
-visplane_t* checkPlane(visplane_t* pl, int start, int stop)
+VisPlane* checkPlane(VisPlane* pl, int start, int stop)
 {
     int intrl;
     int intrh;
@@ -295,7 +295,7 @@ void makeSpans(int x, int t1, int b1, int t2, int b2)
 //
 void drawPlanes()
 {
-    visplane_t* pl;
+    VisPlane* pl;
     int light;
     int stop;
     int angle;

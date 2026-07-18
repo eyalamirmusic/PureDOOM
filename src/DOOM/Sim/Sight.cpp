@@ -103,19 +103,19 @@ doom_boolean crossSubsector(int num)
 {
     Clip& clip = Doom::clip();
 
-    seg_t* seg;
-    line_t* line;
+    Seg* seg;
+    Line* line;
     int s1;
     int s2;
     int count;
-    subsector_t* sub;
-    sector_t* front;
-    sector_t* back;
+    SubSector* sub;
+    Sector* front;
+    Sector* back;
     fixed_t opentop;
     fixed_t openbottom;
     divline_t divl;
-    vertex_t* v1;
-    vertex_t* v2;
+    Vertex* v1;
+    Vertex* v2;
     fixed_t frac;
     fixed_t slope;
 
@@ -227,7 +227,7 @@ doom_boolean crossSubsector(int num)
 //
 doom_boolean crossBSPNode(int bspnum)
 {
-    node_t* bsp;
+    Node* bsp;
     int side;
 
     if (bspnum & NF_SUBSECTOR)

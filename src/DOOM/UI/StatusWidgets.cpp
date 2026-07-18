@@ -29,19 +29,19 @@ namespace Doom
 // Hack display negative frags: the STTMINUS lump. A Doom::StatusWidgetGraphics member owned by the
 // Engine now; this is a reference onto it (initStatusWidgets writes it, so it must be a reference -
 // a plain pointer would clobber the reference's storage).
-patch_t*& sttminus = statusWidgetGraphics().sttminus;
+Patch*& sttminus = statusWidgetGraphics().sttminus;
 
 void drawNum(st_number_t& n);
 
 void initStatusWidgets()
 {
-    sttminus = static_cast<patch_t*>(W_CacheLumpName("STTMINUS", PU_STATIC));
+    sttminus = static_cast<Patch*>(W_CacheLumpName("STTMINUS", PU_STATIC));
 }
 
 void initNum(st_number_t& n,
              int x,
              int y,
-             patch_t** pl,
+             Patch** pl,
              int* num,
              doom_boolean* on,
              int width)
@@ -126,10 +126,10 @@ void updateNum(st_number_t& n, doom_boolean refresh)
 void initPercent(st_percent_t& p,
                  int x,
                  int y,
-                 patch_t** pl,
+                 Patch** pl,
                  int* num,
                  doom_boolean* on,
-                 patch_t* percent)
+                 Patch* percent)
 {
     initNum(p.n, x, y, pl, num, on, 3);
     p.p = percent;
@@ -144,7 +144,7 @@ void updatePercent(st_percent_t& per, int refresh)
 }
 
 void initMultIcon(
-    st_multicon_t& i, int x, int y, patch_t** il, int* inum, doom_boolean* on)
+    st_multicon_t& i, int x, int y, Patch** il, int* inum, doom_boolean* on)
 {
     i.x = x;
     i.y = y;
@@ -181,7 +181,7 @@ void updateMultIcon(st_multicon_t& mi, doom_boolean refresh)
 }
 
 void initBinIcon(
-    st_binicon_t& b, int x, int y, patch_t* i, doom_boolean* val, doom_boolean* on)
+    st_binicon_t& b, int x, int y, Patch* i, doom_boolean* val, doom_boolean* on)
 {
     b.x = x;
     b.y = y;

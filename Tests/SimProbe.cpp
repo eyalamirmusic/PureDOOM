@@ -585,7 +585,7 @@ static unsigned long long simWorldHash()
     // walks (moving floors/ceilings and switched textures live here).
     for (int i = 0; i < numsectors; i++)
     {
-        sector_t* s = &sectors[i];
+        Doom::Sector* s = &sectors[i];
         simMix(&s->floorheight, sizeof(s->floorheight));
         simMix(&s->ceilingheight, sizeof(s->ceilingheight));
         simMix(&s->floorpic, sizeof(s->floorpic));
@@ -596,14 +596,14 @@ static unsigned long long simWorldHash()
     }
     for (int i = 0; i < numlines; i++)
     {
-        line_t* l = &lines[i];
+        Doom::Line* l = &lines[i];
         simMix(&l->flags, sizeof(l->flags));
         simMix(&l->special, sizeof(l->special));
         simMix(&l->tag, sizeof(l->tag));
     }
     for (int i = 0; i < numsides; i++)
     {
-        side_t* sd = &sides[i];
+        Doom::Side* sd = &sides[i];
         simMix(&sd->textureoffset, sizeof(sd->textureoffset));
         simMix(&sd->rowoffset, sizeof(sd->rowoffset));
         simMix(&sd->toptexture, sizeof(sd->toptexture));
