@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h" // VisPlane
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // VisPlane
 #include "../tables.h" // angle_t
 
 namespace Doom

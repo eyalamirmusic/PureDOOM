@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../doomdef.h" // NUMCARDS
-#include "../r_defs.h" // Patch
+#include "../Sim/MapTypes.h"
+#include "../Render/RenderTypes.h" // Patch
 
 namespace Doom
 {

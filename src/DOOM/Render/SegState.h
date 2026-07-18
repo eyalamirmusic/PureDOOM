@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../r_defs.h"   // LightTable
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h"   // LightTable
 
 namespace Doom
 {

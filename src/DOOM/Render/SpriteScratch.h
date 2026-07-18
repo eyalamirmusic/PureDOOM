@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../r_defs.h" // LightTable, SpriteFrame, VisSprite
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // LightTable, SpriteFrame, VisSprite
 
 namespace Doom
 {

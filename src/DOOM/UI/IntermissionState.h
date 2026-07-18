@@ -3,7 +3,8 @@
 #include "../Game/PlayerTypes.h" // IntermissionStart, IntermissionPlayer
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
-#include "../r_defs.h" // Patch
+#include "../Sim/MapTypes.h"
+#include "../Render/RenderTypes.h" // Patch
 #include "IntermissionTypes.h" // IntermissionPhase
 
 namespace Doom

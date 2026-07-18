@@ -26,7 +26,8 @@
 
 
 #include "MobjTypes.h"
-#include "../r_defs.h"
+#include "MapTypes.h"
+#include "../Render/RenderTypes.h"
 
 
 //

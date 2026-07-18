@@ -14,7 +14,8 @@
 
 #include "p_local.h"
 #include "Sim/MobjTypes.h"
-#include "r_defs.h"
+#include "Sim/MapTypes.h"
+#include "Render/RenderTypes.h"
 
 #include "Game/MapSpawns.h"
 #include "Sim/Setup.h"

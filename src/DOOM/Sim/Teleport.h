@@ -1,7 +1,8 @@
 #pragma once
 
 #include "MobjTypes.h" // Mobj
-#include "../r_defs.h" // Line
+#include "MapTypes.h"
+#include "../Render/RenderTypes.h" // Line
 
 namespace Doom
 {

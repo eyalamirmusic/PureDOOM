@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../r_defs.h" // LightTable
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // LightTable
 
 // The light-selection constants: how many light levels the renderer resolves, and
 // the scale/z table sizes it picks a COLORMAP row from. Were r_main.h.

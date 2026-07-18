@@ -2,7 +2,8 @@
 
 #include "../doomdef.h" // SCREENHEIGHT
 #include "../doomtype.h" // byte
-#include "../r_defs.h" // Patch
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // Patch
 
 #include <ea_data_structures/Structures/Array.h>
 

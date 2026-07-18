@@ -2,7 +2,8 @@
 
 #include "../Game/PlayerTypes.h" // Player (p_spec.h needs it)
 #include "SpecialTypes.h" // FireFlicker, LightFlash, Strobe, Glow
-#include "../r_defs.h"
+#include "MapTypes.h"
+#include "../Render/RenderTypes.h"
 
 namespace Doom
 {

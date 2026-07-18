@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../Game/PlayerTypes.h" // Player
-#include "../r_defs.h" // Node, Seg, SubSector
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // Node, Seg, SubSector
 
 // How fast light falls off with distance in the scale-light table. Anything
 // reproducing DOOM's shading has to use the same number or the banding differs.

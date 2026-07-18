@@ -25,7 +25,8 @@
 
 #include "doomtype.h"
 #include "m_fixed.h"
-#include "r_defs.h"
+#include "Sim/MapTypes.h"
+#include "Render/RenderTypes.h"
 #ifndef __R_LOCAL__
 #endif
 

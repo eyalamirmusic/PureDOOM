@@ -2,7 +2,8 @@
 
 #include "../doomdef.h" // SCREENWIDTH
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h"   // VisSprite
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h"   // VisSprite
 
 namespace Doom
 {

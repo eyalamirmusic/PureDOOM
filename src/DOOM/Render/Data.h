@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../r_defs.h" // Column, byte
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // Column, byte
 
 // The composed-texture types. Were r_data.h.
 namespace Doom

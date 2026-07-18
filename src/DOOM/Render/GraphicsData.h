@@ -8,7 +8,8 @@
 #include "../Render/Data.h"
 // loader after it fills its vector. Were r_state.h.
 #include "../m_fixed.h"
-#include "../r_defs.h"
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h"
 extern fixed_t* textureheight;
 extern fixed_t* spritewidth;
 extern fixed_t* spriteoffset;

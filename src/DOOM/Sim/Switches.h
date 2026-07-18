@@ -2,7 +2,8 @@
 
 #include "../Game/PlayerTypes.h" // Player
 #include "SpecialTypes.h" // ButtonWhere
-#include "../r_defs.h"
+#include "MapTypes.h"
+#include "../Render/RenderTypes.h"
 
 namespace Doom
 {

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../r_defs.h" // Seg, Side, Line, Sector, DrawSeg
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // Seg, Side, Line, Sector, DrawSeg
 
 namespace Doom
 {

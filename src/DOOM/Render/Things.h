@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../r_defs.h" // Column, Sector
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // Column, Sector
 
 // The vissprite pool's size. Was r_things.h.
 #define MAXVISSPRITES 128

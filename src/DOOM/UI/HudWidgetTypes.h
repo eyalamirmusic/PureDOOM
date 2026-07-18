@@ -22,7 +22,8 @@
 
 
 // We are referring to patches.
-#include "../r_defs.h"
+#include "../Sim/MapTypes.h"
+#include "../Render/RenderTypes.h"
 
 
 // background and foreground screen numbers

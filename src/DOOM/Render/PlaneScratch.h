@@ -2,7 +2,8 @@
 
 #include "../doomdef.h" // SCREENWIDTH, SCREENHEIGHT
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h" // VisPlane, LightTable
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // VisPlane, LightTable
 
 namespace Doom
 {

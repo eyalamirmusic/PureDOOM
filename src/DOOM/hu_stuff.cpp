@@ -19,7 +19,8 @@
 #include "doomdef.h"
 #include "dstrings.h" // Data.
 #include "hu_stuff.h"
-#include "r_defs.h" // Patch
+#include "Sim/MapTypes.h"
+#include "Render/RenderTypes.h" // Patch
 
 #include "UI/Hud.h"
 #include "UI/HudFlags.h"

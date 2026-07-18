@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../r_defs.h" // VisPlane
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // VisPlane
 
 namespace Doom
 {

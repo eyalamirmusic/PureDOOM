@@ -2,7 +2,8 @@
 
 #include "../doomtype.h" // byte
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h" // LightTable
+#include "../Sim/MapTypes.h"
+#include "RenderTypes.h" // LightTable
 
 #include <ea_data_structures/Structures/Vector.h>
 

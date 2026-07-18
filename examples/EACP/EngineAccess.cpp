@@ -33,7 +33,8 @@
 #include <DOOM/m_misc.h>
 #include <DOOM/p_local.h>
 #include <DOOM/Sim/WeaponTypes.h>
-#include <DOOM/r_defs.h>
+#include <DOOM/Sim/MapTypes.h>
+#include <DOOM/Render/RenderTypes.h>
 #include <DOOM/UI/StatusBarTypes.h>
 #include <DOOM/tables.h>
 #include <DOOM/Game/GameClock.h>

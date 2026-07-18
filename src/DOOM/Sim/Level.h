@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../r_defs.h"
+#include "MapTypes.h"
+#include "../Render/RenderTypes.h"
 
 #include "Blockmap.h"
 
