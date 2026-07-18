@@ -1,4 +1,5 @@
 #include "SimProbe.h"
+#include <DOOM/Render/Video.h>
 
 #include <DOOM/Game/AttractMode.h>
 #include <DOOM/Game/DemoState.h>
@@ -22,11 +23,9 @@
 #include <DOOM/p_local.h>
 #include <DOOM/p_mobj.h>
 #include <DOOM/tables.h>
-#include <DOOM/v_video.h>
 #include <DOOM/Wad/WadFile.h>
 
 #include <DOOM/Sim/Level.h>
-#include <DOOM/r_state.h>
 
 #include <setjmp.h>
 #include <stdio.h>

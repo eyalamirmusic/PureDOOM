@@ -12,7 +12,6 @@
 
 #include "../doomstat.h"
 #include "../p_local.h"
-#include "../r_state.h"
 
 #include "../Game/PlayerState.h"
 #include "../Game/SaveGameState.h"

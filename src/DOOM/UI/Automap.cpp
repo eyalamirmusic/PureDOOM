@@ -30,6 +30,7 @@
 // No demo opens the automap, so this is a faithful transcription.
 
 #include "../doom_config.h"
+#include "../Sim/Level.h"
 
 #include "../am_map.h"
 #include "../doomdef.h"
@@ -37,9 +38,7 @@
 #include "../dstrings.h" // Data.
 #include "../m_cheat.h"
 #include "../p_local.h"
-#include "../r_state.h" // State.
 #include "../st_stuff.h"
-#include "../v_video.h" // Needs access to LFB, Doom::markRect.
 #include "../Game/DemoState.h"
 #include "../Game/GameSession.h"
 #include "../Game/OverlayState.h"

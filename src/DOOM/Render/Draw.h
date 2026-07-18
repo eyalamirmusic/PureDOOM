@@ -1,5 +1,11 @@
 #pragma once
 
+
+
+#include "../doomtype.h"
+// The palette-remap tables the multiplayer player colours are drawn through; an
+// aligned view onto DrawState's owned buffer. Was r_draw.h.
+extern byte* translationtables;
 namespace Doom
 {
 // Column / span blitting and the view buffer setup; r_draw.cpp keeps the vanilla

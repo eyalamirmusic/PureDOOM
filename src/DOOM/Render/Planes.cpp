@@ -9,8 +9,6 @@
 
 #include "../doomdef.h"
 #include "../doomstat.h"
-#include "../r_local.h"
-#include "../r_sky.h"
 #include "../Wad/WadFile.h"
 
 #include "../Game/SkyState.h"
@@ -28,6 +26,8 @@
 
 #include "Data.h"
 #include "../Host/System.h"
+#include "../Render/Main.h"
+#include "../Render/Sky.h"
 #define MAXVISPLANES 128
 #define MAXOPENINGS SCREENWIDTH * 64
 

@@ -13,7 +13,6 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "r_local.h"
 
 #include "Render/Data.h"
 #include "Render/GraphicsData.h"

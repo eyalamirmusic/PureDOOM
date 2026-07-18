@@ -6,6 +6,24 @@
 
 #include <ea_data_structures/Structures/Vector.h>
 
+
+// Pointer-and-count views onto the Level vectors, refreshed by each loader after
+// it fills its vector - the owner/view split the geometry has always used. Were
+// r_state.h.
+extern int numvertexes;
+extern Doom::Vertex* vertexes;
+extern int numsegs;
+extern Doom::Seg* segs;
+extern int numsectors;
+extern Doom::Sector* sectors;
+extern int numsubsectors;
+extern Doom::SubSector* subsectors;
+extern int numnodes;
+extern Doom::Node* nodes;
+extern int numlines;
+extern Doom::Line* lines;
+extern int numsides;
+extern Doom::Side* sides;
 namespace Doom
 {
 // A level's static geometry: the arrays that are built once when the level loads

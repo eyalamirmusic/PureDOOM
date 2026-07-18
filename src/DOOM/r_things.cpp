@@ -13,7 +13,6 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "r_local.h"
 
 #include "Render/GraphicsData.h"
 #include "Render/SpriteState.h"

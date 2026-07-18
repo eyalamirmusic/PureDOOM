@@ -43,11 +43,8 @@
 #include "../m_misc.h"
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../r_data.h" // SKY handling - still the wrong place.
-#include "../r_sky.h"
 #include "../sounds.h"
 #include "../st_stuff.h"
-#include "../v_video.h" // Needs access to LFB.
 #include "../Wad/WadFile.h"
 #include "../wi_stuff.h"
 
@@ -102,6 +99,8 @@
 #include "../Sim/Movement.h"
 #include "Sound.h"
 #include "../Sim/Random.h"
+#include "../Render/Sky.h"
+#include "../Render/Video.h"
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
 #define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1])

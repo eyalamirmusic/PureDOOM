@@ -35,9 +35,7 @@
 #include "../doomstat.h"
 #include "../m_random.h"
 #include "../m_swap.h"
-#include "../r_local.h"
 #include "../sounds.h" // Data.
-#include "../v_video.h" // Needs access to LFB.
 #include "../Wad/WadFile.h"
 #include "../wi_stuff.h"
 

@@ -3,7 +3,6 @@
 #include "../doom_config.h" // doom_abs
 #include "../doomdef.h"
 #include "../p_local.h"
-#include "../r_state.h"
 
 #include "Clip.h"
 #include "Level.h"

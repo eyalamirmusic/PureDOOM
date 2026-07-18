@@ -22,8 +22,11 @@
 #pragma once
 
 
+
+#include "doomtype.h"
+#include "m_fixed.h"
+#include "r_defs.h"
 #ifndef __R_LOCAL__
-#include "r_local.h"
 #endif
 
 

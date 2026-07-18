@@ -41,7 +41,6 @@
 #include "../dstrings.h"
 #include "../sounds.h"
 #include "../Wad/WadFile.h"
-#include "../v_video.h"
 #include "../f_wipe.h"
 #include "../m_argv.h"
 #include "../m_misc.h"
@@ -50,7 +49,6 @@
 #include "../wi_stuff.h"
 #include "../st_stuff.h"
 #include "../am_map.h"
-#include "../r_local.h"
 #include "../d_main.h"
 
 #include "AttractMode.h"

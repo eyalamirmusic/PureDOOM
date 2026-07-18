@@ -12,7 +12,6 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "r_local.h"
 
 #include "Render/Lighting.h"
 #include "Render/Main.h"

@@ -4,7 +4,6 @@
 #include "../doomstat.h" // leveltime
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../r_state.h" // skyflatnum
 
 #include "../Game/LevelStats.h"
 #include "../Game/SkyState.h"

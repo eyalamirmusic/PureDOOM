@@ -15,9 +15,6 @@
 
 #include "../d_net.h"
 #include "../doomstat.h"
-#include "../r_draw.h"
-#include "../r_local.h"
-#include "../r_sky.h"
 
 #include "Main.h"
 #include "RenderMainState.h"
@@ -41,6 +38,8 @@
 #include "ViewWindow.h"
 #include "../Math/BBox.h"
 #include "../UI/MenuSettings.h"
+#include "../Render/GraphicsData.h"
+#include "../Sim/Level.h"
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
 // menuSettings().detailLevel/menuSettings().screenblocks are config-backed Engine members (UI/MenuSettings.h); references.

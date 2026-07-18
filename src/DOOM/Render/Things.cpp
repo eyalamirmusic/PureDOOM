@@ -11,7 +11,6 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../m_swap.h"
-#include "../r_local.h"
 #include "../Wad/WadFile.h"
 
 #include "../Sim/ValidCount.h"

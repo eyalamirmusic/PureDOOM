@@ -23,13 +23,12 @@
 //-----------------------------------------------------------------------------
 
 #include "../doom_config.h"
+#include "../Render/GraphicsData.h"
 
 #include "../doomdef.h"
 #include "../dstrings.h"
 #include "../d_main.h"
-#include "../v_video.h"
 #include "../Wad/WadFile.h"
-#include "../r_local.h"
 #include "../hu_stuff.h"
 #include "../m_argv.h"
 #include "../m_swap.h"

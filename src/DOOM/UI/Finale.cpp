@@ -35,9 +35,7 @@
 #include "../dstrings.h" // Data.
 #include "../hu_stuff.h"
 #include "../m_swap.h" // Functions.
-#include "../r_state.h"
 #include "../sounds.h" // Data.
-#include "../v_video.h" // Functions.
 #include "../Game/GameFlow.h"
 #include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"

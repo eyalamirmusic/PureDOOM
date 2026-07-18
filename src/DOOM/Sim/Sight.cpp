@@ -1,9 +1,9 @@
 #include "Sight.h"
+#include "Level.h"
 
 #include "../doom_config.h" // error_buf, doom_itoa (RANGECHECK)
 #include "../doomdef.h"
 #include "../p_local.h"
-#include "../r_state.h" // sectors, segs, nodes, rejectmatrix, validcount
 
 #include "Clip.h"
 #include "SightScratch.h"

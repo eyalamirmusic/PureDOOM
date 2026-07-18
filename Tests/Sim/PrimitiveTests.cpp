@@ -17,7 +17,6 @@
 #include <DOOM/info.h>
 #include <DOOM/m_fixed.h>
 #include <DOOM/m_random.h>
-#include <DOOM/r_main.h>
 #include <DOOM/tables.h>
 
 #include <DOOM/Sim/MapGeometry.h>

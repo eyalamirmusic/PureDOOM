@@ -1,9 +1,22 @@
 #pragma once
 
-#include "../r_data.h" // Texture, and SpriteDef / LightTable / fixed_t through it
 
 #include <ea_data_structures/Structures/Vector.h>
 
+
+// Plain-pointer views onto the GraphicsData vectors above, refreshed by each
+#include "../Render/Data.h"
+// loader after it fills its vector. Were r_state.h.
+#include "../m_fixed.h"
+#include "../r_defs.h"
+extern fixed_t* textureheight;
+extern fixed_t* spritewidth;
+extern fixed_t* spriteoffset;
+extern fixed_t* spritetopoffset;
+extern Doom::LightTable* colormaps;
+extern int* flattranslation;
+extern int* texturetranslation;
+extern Doom::SpriteDef* sprites;
 namespace Doom
 {
 // The graphics the renderer loads from the WAD once at startup and then only reads:

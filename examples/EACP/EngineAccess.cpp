@@ -3,6 +3,7 @@
 // Nothing DOOM-typed leaks out through EngineAccess.h.
 
 #include "EngineAccess.h"
+#include <DOOM/Sim/Level.h>
 
 #include <DOOM/Game/OverlayState.h>
 #include <DOOM/Game/SkyState.h>
@@ -32,16 +33,9 @@
 #include <DOOM/m_misc.h>
 #include <DOOM/p_local.h>
 #include <DOOM/p_pspr.h>
-#include <DOOM/r_bsp.h>
-#include <DOOM/r_data.h>
 #include <DOOM/r_defs.h>
-#include <DOOM/r_main.h>
-#include <DOOM/r_sky.h>
-#include <DOOM/r_state.h>
-#include <DOOM/r_things.h>
 #include <DOOM/st_stuff.h>
 #include <DOOM/tables.h>
-#include <DOOM/v_video.h>
 #include <DOOM/Game/GameClock.h>
 #include <DOOM/Game/GameFlow.h>
 #include <DOOM/Game/GameSession.h>

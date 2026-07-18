@@ -1,7 +1,16 @@
 #pragma once
 
 #include "../r_defs.h" // LightTable
-#include "../r_main.h" // LIGHTLEVELS, MAXLIGHTSCALE, MAXLIGHTZ
+
+// The light-selection constants: how many light levels the renderer resolves, and
+// the scale/z table sizes it picks a COLORMAP row from. Were r_main.h.
+#define LIGHTLEVELS 16
+#define LIGHTSEGSHIFT 4
+#define MAXLIGHTSCALE 48
+#define LIGHTSCALESHIFT 12
+#define MAXLIGHTZ 128
+#define LIGHTZSHIFT 20
+#define NUMCOLORMAPS 32
 
 namespace Doom
 {

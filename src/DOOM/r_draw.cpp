@@ -14,7 +14,6 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "r_local.h"
 
 #include "Render/Draw.h"
 #include "Render/DrawState.h"

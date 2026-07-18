@@ -1,6 +1,15 @@
 #pragma once
 
+#include "../doomdef.h" // SCREENHEIGHT
+#include "../doomtype.h" // byte
 #include "../r_defs.h" // Patch
+
+#include <ea_data_structures/Structures/Array.h>
+
+// Was v_video.h.
+#define CENTERY (SCREENHEIGHT / 2)
+extern byte* screens[5];
+extern EA::Array<EA::Array<byte, 256>, 5> gammatable;
 
 namespace Doom
 {

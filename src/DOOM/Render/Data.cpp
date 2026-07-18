@@ -14,15 +14,12 @@
 #include "../doomstat.h"
 #include "../m_swap.h"
 #include "../p_local.h"
-#include "../r_local.h"
-#include "../r_sky.h"
 #include "../Wad/WadFile.h"
 
 #include <alloca.h>
 
 #include "../Game/SkyState.h"
 #include "../Sim/ThinkerList.h"
-#include "../r_data.h"
 #include "CompositeCache.h"
 #include "Data.h"
 #include "GraphicsData.h"
@@ -32,6 +29,7 @@
 
 #include "../Host/System.h"
 #include "../Game/DemoState.h"
+#include "../Sim/Level.h"
 namespace Doom
 {
 // Each texture is composed of one or more patches,

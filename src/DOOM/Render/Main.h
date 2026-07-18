@@ -3,6 +3,19 @@
 #include "../d_player.h" // Player
 #include "../r_defs.h" // Node, Seg, SubSector
 
+// How fast light falls off with distance in the scale-light table. Anything
+// reproducing DOOM's shading has to use the same number or the banding differs.
+// Was r_main.h.
+#define DISTMAP 2
+
+// The column/span drawers the renderer switches between for detail mode and for
+// the fuzz effect. Raw function pointers on purpose: these are called once per
+// column and once per span, the hottest loop in the engine. Were r_main.h.
+extern void (*colfunc)();
+extern void (*basecolfunc)();
+extern void (*fuzzcolfunc)();
+extern void (*spanfunc)();
+
 namespace Doom
 {
 // Renderer main/setup; r_main.cpp keeps the vanilla R_ names as shims.

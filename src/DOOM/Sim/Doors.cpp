@@ -10,7 +10,6 @@
 #include "../doomstat.h"
 #include "../dstrings.h"
 #include "../p_local.h"
-#include "../r_state.h"
 #include "../sounds.h"
 
 #include "Doors.h"
@@ -22,6 +21,7 @@
 #include "../Game/Sound.h"
 
 #include "Floors.h"
+#include "../Sim/Level.h"
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.

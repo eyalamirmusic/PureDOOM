@@ -9,14 +9,14 @@
 // and open exits.
 
 #include "../doom_config.h"
+#include "Level.h"
+#include "../Render/GraphicsData.h"
 
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../m_argv.h"
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../r_local.h"
-#include "../r_state.h"
 #include "../sounds.h"
 #include "../Wad/WadFile.h"
 

@@ -10,7 +10,6 @@
 
 #include "../doomdef.h"
 #include "../m_random.h"
-#include "../v_video.h"
 
 #include "../f_wipe.h" // the shim's globals (wipe_scr_start / offsets / running)
 #include "Wipe.h"

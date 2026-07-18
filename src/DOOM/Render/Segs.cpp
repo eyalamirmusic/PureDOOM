@@ -9,7 +9,6 @@
 
 #include "../doomdef.h"
 #include "../doomstat.h"
-#include "../r_local.h"
 
 #include "../Game/SkyState.h"
 
@@ -31,6 +30,7 @@
 #include "Things.h"
 #include "../Host/System.h"
 #include "Main.h"
+#include "../Render/GraphicsData.h"
 #define HEIGHTBITS 12
 #define HEIGHTUNIT (1 << HEIGHTBITS)
 

@@ -42,7 +42,6 @@
 #include "../m_argv.h"
 #include "../m_misc.h"
 #include "../m_swap.h"
-#include "../v_video.h"
 #include "../Wad/WadFile.h"
 
 #include "Config.h"

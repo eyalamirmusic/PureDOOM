@@ -11,8 +11,6 @@
 
 #include "../doomdef.h"
 #include "../doomstat.h" // State.
-#include "../r_local.h"
-#include "../v_video.h" // Needs access to LFB, Doom::drawPatch, Doom::markRect.
 #include "../Wad/WadFile.h"
 
 #include "Draw.h"
@@ -27,6 +25,7 @@
 // ?
 #include "../Host/System.h"
 #include "../Game/GameVersion.h"
+#include "../Render/GraphicsData.h"
 #define MAXWIDTH 1120
 #define MAXHEIGHT 832
 

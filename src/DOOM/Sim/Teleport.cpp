@@ -1,10 +1,11 @@
 #include "Teleport.h"
+#include "Level.h"
+#include "../d_player.h"
 
 #include "../doom_config.h"
 
 #include "../doomdef.h"
 #include "../p_local.h"
-#include "../r_state.h"
 #include "../sounds.h"
 
 #include "../Game/Sound.h"

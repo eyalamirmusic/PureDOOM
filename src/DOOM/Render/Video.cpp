@@ -37,8 +37,6 @@
 #include "../doomdata.h"
 #include "../doomdef.h"
 #include "../m_swap.h"
-#include "../r_local.h"
-#include "../v_video.h"
 
 #include "Video.h"
 #include "VideoState.h"

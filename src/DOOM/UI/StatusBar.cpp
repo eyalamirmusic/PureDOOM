@@ -40,11 +40,9 @@
 #include "../m_cheat.h"
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../r_local.h"
 #include "../sounds.h"
 #include "../st_lib.h"
 #include "../st_stuff.h"
-#include "../v_video.h" // Needs access to LFB.
 #include "../Wad/WadFile.h"
 
 #include "../Render/VideoState.h"

@@ -9,7 +9,6 @@
 #include "../doomdef.h"
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../r_state.h"
 
 #include "Lights.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
@@ -18,6 +17,7 @@
 #include <new>
 
 #include "Random.h"
+#include "../Sim/Level.h"
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.

@@ -11,9 +11,6 @@
 #include "../doomdef.h"
 #include "../hu_lib.h"
 #include "../m_swap.h"
-#include "../r_draw.h"
-#include "../r_local.h"
-#include "../v_video.h"
 
 #include "HudWidgets.h"
 
