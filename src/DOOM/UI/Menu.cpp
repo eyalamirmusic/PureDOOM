@@ -43,6 +43,9 @@
 
 #include "../Game/OverlayState.h"
 
+#include "../Game/OverlayState.h"
+#include "HudFlags.h"
+#include "HudFont.h"
 #include "Menu.h"
 #include "MenuSettings.h"
 #include "MenuState.h"
@@ -90,12 +93,6 @@ int messageToPrint; // 1 = message to be printed
 // out). screens (v_video.h) and colormaps (r_state.h) already come in through
 // headers; screen_palette has no header, so it is declared here.
 extern int doom_flags;
-// hu_font is a Doom::HudFont member (Engine); a reference onto it, so this extern is a
-// reference-to-array (a plain array extern would misread the reference's pointer).
-extern Doom::Patch* (&hu_font)[HU_FONTSIZE];
-// chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
-extern doom_boolean& message_dontfuckwithme;
-extern doom_boolean& chat_on; // in heads-up code
 // mousemove/crosshair/always_run are Doom::InputConfig members (Engine); references onto them.
 extern int& mousemove;
 extern int& crosshair;
@@ -1239,7 +1236,7 @@ void changeMessages(int)
     else
         players[consoleplayer].message = MSGON;
 
-    message_dontfuckwithme = true;
+    hudFlags().message_dontfuckwithme = true;
 }
 
 //
@@ -1254,7 +1251,7 @@ void changeCrosshair(int)
     else
         players[consoleplayer].message = CROSSON;
 
-    message_dontfuckwithme = true;
+    hudFlags().message_dontfuckwithme = true;
 }
 
 //
@@ -1269,7 +1266,7 @@ void changeAlwaysRun(int)
     else
         players[consoleplayer].message = ALWAYSRUNON;
 
-    message_dontfuckwithme = true;
+    hudFlags().message_dontfuckwithme = true;
 }
 
 //
@@ -1487,7 +1484,7 @@ int stringWidth(const char* string)
         if (c < 0 || c >= HU_FONTSIZE)
             w += 4;
         else
-            w += SHORT(hu_font[c]->width);
+            w += SHORT(hudFont().hu_font[c]->width);
     }
 
     return w;
@@ -1499,7 +1496,7 @@ int stringWidth(const char* string)
 int stringHeight(const char* string)
 {
     int h;
-    int height = SHORT(hu_font[0]->height);
+    int height = SHORT(hudFont().hu_font[0]->height);
 
     h = height;
     for (int i = 0; i < doom_strlen(string); i++)
@@ -1514,6 +1511,8 @@ int stringHeight(const char* string)
 //
 void writeText(int x, int y, const char* string)
 {
+    auto& font = hudFont();
+
     int w;
     const char* ch;
     int c;
@@ -1543,10 +1542,10 @@ void writeText(int x, int y, const char* string)
             continue;
         }
 
-        w = SHORT(hu_font[c]->width);
+        w = SHORT(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        Doom::drawPatchDirect(cx, cy, 0, hu_font[c]);
+        Doom::drawPatchDirect(cx, cy, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -1726,14 +1725,14 @@ doom_boolean menuResponder(Event* ev)
         switch (ch)
         {
             case KEY_MINUS: // Screen size down
-                if (automapactive || chat_on)
+                if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(0);
                 Doom::startSound(0, sfx_stnmov);
                 return true;
 
             case KEY_EQUALS: // Screen size up
-                if (automapactive || chat_on)
+                if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(1);
                 Doom::startSound(0, sfx_stnmov);
@@ -1978,7 +1977,7 @@ void drawMenu()
 
             x = 160 - stringWidth(string.data()) / 2;
             writeText(x, y, string.data());
-            y += SHORT(hu_font[0]->height);
+            y += SHORT(hudFont().hu_font[0]->height);
         }
         return;
     }

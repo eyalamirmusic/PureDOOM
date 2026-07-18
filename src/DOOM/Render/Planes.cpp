@@ -14,8 +14,18 @@
 #include "../r_sky.h"
 #include "../Wad/WadFile.h"
 
+#include "../Game/SkyState.h"
+
+#include "BSPScratch.h"
+#include "DrawState.h"
+#include "GraphicsData.h"
+#include "Lighting.h"
 #include "PlaneScratch.h"
 #include "Planes.h"
+#include "SpriteState.h"
+#include "ViewPoint.h"
+#include "ViewProjection.h"
+#include "ViewWindow.h"
 
 #include "Data.h"
 #include "../Host/System.h"
@@ -71,14 +81,21 @@ void initPlanes()
 //
 void mapPlane(int y, int x1, int x2)
 {
+    auto& draw = drawState();
+    auto& plane = planeScratch();
+    auto& pt = viewPoint();
+    auto& lights = lighting();
+
     angle_t angle;
     fixed_t distance;
     fixed_t length;
     unsigned index;
 
 #ifdef RANGECHECK
-    if (x2 < x1 || x1 < 0 || x2 >= viewwidth
-        || static_cast<unsigned>(y) > static_cast<unsigned>(viewheight))
+    auto& view = viewWindow();
+
+    if (x2 < x1 || x1 < 0 || x2 >= view.viewwidth
+        || static_cast<unsigned>(y) > static_cast<unsigned>(view.viewheight))
     {
         //fatalError("Error: mapPlane: %i, %i at %i", x1, x2, y);
 
@@ -95,24 +112,24 @@ void mapPlane(int y, int x1, int x2)
     if (planeheight != cachedheight[y])
     {
         cachedheight[y] = planeheight;
-        distance = cacheddistance[y] = FixedMul(planeheight, yslope[y]);
-        ds_xstep = cachedxstep[y] = FixedMul(distance, basexscale);
-        ds_ystep = cachedystep[y] = FixedMul(distance, baseyscale);
+        distance = cacheddistance[y] = FixedMul(planeheight, plane.yslope[y]);
+        draw.ds_xstep = cachedxstep[y] = FixedMul(distance, basexscale);
+        draw.ds_ystep = cachedystep[y] = FixedMul(distance, baseyscale);
     }
     else
     {
         distance = cacheddistance[y];
-        ds_xstep = cachedxstep[y];
-        ds_ystep = cachedystep[y];
+        draw.ds_xstep = cachedxstep[y];
+        draw.ds_ystep = cachedystep[y];
     }
 
-    length = FixedMul(distance, distscale[x1]);
-    angle = (viewangle + xtoviewangle[x1]) >> ANGLETOFINESHIFT;
-    ds_xfrac = viewx + FixedMul(finecosine[angle], length);
-    ds_yfrac = -viewy - FixedMul(finesine[angle], length);
+    length = FixedMul(distance, plane.distscale[x1]);
+    angle = (pt.viewangle + viewProjection().xtoviewangle[x1]) >> ANGLETOFINESHIFT;
+    draw.ds_xfrac = pt.viewx + FixedMul(finecosine[angle], length);
+    draw.ds_yfrac = -pt.viewy - FixedMul(finesine[angle], length);
 
-    if (fixedcolormap)
-        ds_colormap = fixedcolormap;
+    if (lights.fixedcolormap)
+        draw.ds_colormap = lights.fixedcolormap;
     else
     {
         index = distance >> LIGHTZSHIFT;
@@ -120,12 +137,12 @@ void mapPlane(int y, int x1, int x2)
         if (index >= MAXLIGHTZ)
             index = MAXLIGHTZ - 1;
 
-        ds_colormap = planezlight[index];
+        draw.ds_colormap = planezlight[index];
     }
 
-    ds_y = y;
-    ds_x1 = x1;
-    ds_x2 = x2;
+    draw.ds_y = y;
+    draw.ds_x1 = x1;
+    draw.ds_x2 = x2;
 
     // high or low detail
     spanfunc();
@@ -137,27 +154,31 @@ void mapPlane(int y, int x1, int x2)
 //
 void clearPlanes()
 {
+    auto& plane = planeScratch();
+    auto& view = viewWindow();
+    auto& proj = viewProjection();
+
     angle_t angle;
 
     // opening / clipping determination
-    for (int i = 0; i < viewwidth; i++)
+    for (int i = 0; i < view.viewwidth; i++)
     {
-        floorclip[i] = viewheight;
-        ceilingclip[i] = -1;
+        plane.floorclip[i] = view.viewheight;
+        plane.ceilingclip[i] = -1;
     }
 
     lastvisplane = visplanes;
-    lastopening = openings;
+    plane.lastopening = openings;
 
     // texture calculation
     doom_memset(cachedheight, 0, sizeof(cachedheight));
 
     // left to right mapping
-    angle = (viewangle - ANG90) >> ANGLETOFINESHIFT;
+    angle = (viewPoint().viewangle - ANG90) >> ANGLETOFINESHIFT;
 
     // scale will be unit scale at SCREENWIDTH/2 distance
-    basexscale = FixedDiv(finecosine[angle], centerxfrac);
-    baseyscale = -FixedDiv(finesine[angle], centerxfrac);
+    basexscale = FixedDiv(finecosine[angle], proj.centerxfrac);
+    baseyscale = -FixedDiv(finesine[angle], proj.centerxfrac);
 }
 
 //
@@ -167,7 +188,7 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
 {
     VisPlane* check;
 
-    if (picnum == skyflatnum)
+    if (picnum == skyState().skyflatnum)
     {
         height = 0; // all skys map together
         lightlevel = 0;
@@ -295,19 +316,28 @@ void makeSpans(int x, int t1, int b1, int t2, int b2)
 //
 void drawPlanes()
 {
+    auto& draw = drawState();
+    auto& sky = skyState();
+    auto& pt = viewPoint();
+    auto& proj = viewProjection();
+    auto& lights = lighting();
+
     VisPlane* pl;
     int light;
     int stop;
     int angle;
 
 #ifdef RANGECHECK
-    if (ds_p - drawsegs > MAXDRAWSEGS)
+    auto& bsp = bspScratch();
+
+    if (bsp.ds_p - bsp.drawsegs > MAXDRAWSEGS)
     {
         //fatalError("Error: drawPlanes: drawsegs overflow (%i)",
         //        ds_p - drawsegs);
 
         doom_strcpy(error_buf, "Error: drawPlanes: drawsegs overflow (");
-        doom_concat(error_buf, doom_itoa(static_cast<int>(ds_p - drawsegs), 10));
+        doom_concat(error_buf,
+                    doom_itoa(static_cast<int>(bsp.ds_p - bsp.drawsegs), 10));
         doom_concat(error_buf, ")");
         fatalError(error_buf);
     }
@@ -324,14 +354,15 @@ void drawPlanes()
         fatalError(error_buf);
     }
 
-    if (lastopening - openings > MAXOPENINGS)
+    if (planeScratch().lastopening - openings > MAXOPENINGS)
     {
         //fatalError("Error: drawPlanes: opening overflow (%i)",
         //        lastopening - openings);
 
         doom_strcpy(error_buf, "Error: drawPlanes: opening overflow (");
-        doom_concat(error_buf,
-                    doom_itoa(static_cast<int>(lastopening - openings), 10));
+        doom_concat(
+            error_buf,
+            doom_itoa(static_cast<int>(planeScratch().lastopening - openings), 10));
         doom_concat(error_buf, ")");
         fatalError(error_buf);
     }
@@ -343,26 +374,26 @@ void drawPlanes()
             continue;
 
         // sky flat
-        if (pl->picnum == skyflatnum)
+        if (pl->picnum == sky.skyflatnum)
         {
-            dc_iscale = pspriteiscale >> detailshift;
+            draw.dc_iscale = spriteState().pspriteiscale >> viewWindow().detailshift;
 
             // Sky is allways drawn full bright,
             //  i.e. colormaps[0] is used.
             // Because of this hack, sky is not affected
             //  by INVUL inverse mapping.
-            dc_colormap = colormaps;
-            dc_texturemid = skytexturemid;
+            draw.dc_colormap = colormaps;
+            draw.dc_texturemid = sky.skytexturemid;
             for (int x = pl->minx; x <= pl->maxx; x++)
             {
-                dc_yl = pl->top[x];
-                dc_yh = pl->bottom[x];
+                draw.dc_yl = pl->top[x];
+                draw.dc_yh = pl->bottom[x];
 
-                if (dc_yl <= dc_yh)
+                if (draw.dc_yl <= draw.dc_yh)
                 {
-                    angle = (viewangle + xtoviewangle[x]) >> ANGLETOSKYSHIFT;
-                    dc_x = x;
-                    dc_source = Doom::getColumn(skytexture, angle);
+                    angle = (pt.viewangle + proj.xtoviewangle[x]) >> ANGLETOSKYSHIFT;
+                    draw.dc_x = x;
+                    draw.dc_source = Doom::getColumn(sky.skytexture, angle);
                     colfunc();
                 }
             }
@@ -370,11 +401,11 @@ void drawPlanes()
         }
 
         // regular flat
-        ds_source = static_cast<byte*>(
-            Doom::cacheLumpNum(firstflat + flattranslation[pl->picnum]));
+        draw.ds_source = static_cast<byte*>(Doom::cacheLumpNum(
+            graphicsData().firstflat + flattranslation[pl->picnum]));
 
-        planeheight = doom_abs(pl->height - viewz);
-        light = (pl->lightlevel >> LIGHTSEGSHIFT) + extralight;
+        planeheight = doom_abs(pl->height - pt.viewz);
+        light = (pl->lightlevel >> LIGHTSEGSHIFT) + lights.extralight;
 
         if (light >= LIGHTLEVELS)
             light = LIGHTLEVELS - 1;
@@ -382,7 +413,7 @@ void drawPlanes()
         if (light < 0)
             light = 0;
 
-        planezlight = zlight[light];
+        planezlight = lights.zlight[light];
 
         pl->top[pl->maxx + 1] = 0xff;
         pl->top[pl->minx - 1] = 0xff;

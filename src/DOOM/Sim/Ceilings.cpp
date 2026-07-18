@@ -19,8 +19,10 @@
 
 #include <new>
 
+#include "../Game/LevelStats.h"
 #include "../Game/Sound.h"
 
+#include "ActiveSpecials.h"
 #include "Floors.h"
 namespace Doom
 {
@@ -36,6 +38,8 @@ void moveCeiling(Ceiling& ceiling)
 {
     MoveResult res;
 
+    auto& stats = levelStats();
+
     switch (ceiling.direction)
     {
         case 0:
@@ -50,7 +54,7 @@ void moveCeiling(Ceiling& ceiling)
                               1,
                               ceiling.direction);
 
-            if (!(leveltime & 7))
+            if (!(stats.leveltime & 7))
             {
                 switch (ceiling.type)
                 {
@@ -97,7 +101,7 @@ void moveCeiling(Ceiling& ceiling)
                               1,
                               ceiling.direction);
 
-            if (!(leveltime & 7))
+            if (!(stats.leveltime & 7))
             {
                 switch (ceiling.type)
                 {
@@ -236,11 +240,12 @@ int doCeiling(Line* line, CeilingType type)
 //
 void addActiveCeiling(Ceiling* c)
 {
+    auto& specials = activeSpecials();
     for (int i = 0; i < MAXCEILINGS; i++)
     {
-        if (activeceilings[i] == nullptr)
+        if (specials.activeceilings[i] == nullptr)
         {
-            activeceilings[i] = c;
+            specials.activeceilings[i] = c;
             return;
         }
     }
@@ -251,13 +256,14 @@ void addActiveCeiling(Ceiling* c)
 //
 void removeActiveCeiling(Ceiling* c)
 {
+    auto& specials = activeSpecials();
     for (int i = 0; i < MAXCEILINGS; i++)
     {
-        if (activeceilings[i] == c)
+        if (specials.activeceilings[i] == c)
         {
-            activeceilings[i]->sector->specialdata = nullptr;
-            Doom::removeThinker(activeceilings[i]);
-            activeceilings[i] = nullptr;
+            specials.activeceilings[i]->sector->specialdata = nullptr;
+            Doom::removeThinker(specials.activeceilings[i]);
+            specials.activeceilings[i] = nullptr;
             break;
         }
     }
@@ -268,13 +274,16 @@ void removeActiveCeiling(Ceiling* c)
 //
 void activateInStasisCeiling(Line* line)
 {
+    auto& specials = activeSpecials();
     for (int i = 0; i < MAXCEILINGS; i++)
     {
-        if (activeceilings[i] && (activeceilings[i]->tag == line->tag)
-            && (activeceilings[i]->direction == 0))
+        if (specials.activeceilings[i]
+            && (specials.activeceilings[i]->tag == line->tag)
+            && (specials.activeceilings[i]->direction == 0))
         {
-            activeceilings[i]->direction = activeceilings[i]->olddirection;
-            activeceilings[i]->stopped = false;
+            specials.activeceilings[i]->direction =
+                specials.activeceilings[i]->olddirection;
+            specials.activeceilings[i]->stopped = false;
         }
     }
 }
@@ -288,14 +297,17 @@ int ceilingCrushStop(Line* line)
     int rtn;
 
     rtn = 0;
+    auto& specials = activeSpecials();
     for (int i = 0; i < MAXCEILINGS; i++)
     {
-        if (activeceilings[i] && (activeceilings[i]->tag == line->tag)
-            && (activeceilings[i]->direction != 0))
+        if (specials.activeceilings[i]
+            && (specials.activeceilings[i]->tag == line->tag)
+            && (specials.activeceilings[i]->direction != 0))
         {
-            activeceilings[i]->olddirection = activeceilings[i]->direction;
-            activeceilings[i]->stopped = true;
-            activeceilings[i]->direction = 0; // in-stasis
+            specials.activeceilings[i]->olddirection =
+                specials.activeceilings[i]->direction;
+            specials.activeceilings[i]->stopped = true;
+            specials.activeceilings[i]->direction = 0; // in-stasis
             rtn = 1;
         }
     }

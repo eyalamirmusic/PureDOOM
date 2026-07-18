@@ -172,10 +172,10 @@ auto tRandomSequenceIsFixed = test("Random/sequenceIsTheTable") = []
 auto tRandomAdvancesBeforeReading = test("Random/advancesBeforeReading") = []
 {
     Doom::randomness().clear();
-    check(prndindex == 0);
+    check(Doom::randomness().playIndex == 0);
 
     Doom::randomness().forPlay();
-    check(prndindex == 1);
+    check(Doom::randomness().playIndex == 1);
     check(rndtable[1] == 8);
 };
 
@@ -191,7 +191,7 @@ auto tRandomWraps = test("Random/wrapsAfter256") = []
         else
             Doom::randomness().forPlay();
 
-    check(prndindex == 0);
+    check(Doom::randomness().playIndex == 0);
     check(Doom::randomness().forPlay() == first);
 };
 
@@ -205,13 +205,13 @@ auto tRandomSequencesAreIndependent = test("Random/playAndMenuAreIndependent") =
     Doom::randomness().forPlay();
     Doom::randomness().forPlay();
 
-    check(prndindex == 3);
-    check(rndindex == 0);
+    check(Doom::randomness().playIndex == 3);
+    check(Doom::randomness().menuIndex == 0);
 
     Doom::randomness().forMenu();
 
-    check(prndindex == 3);
-    check(rndindex == 1);
+    check(Doom::randomness().playIndex == 3);
+    check(Doom::randomness().menuIndex == 1);
 };
 
 auto tClearRandomResetsBoth = test("Random/clearResetsBoth") = []
@@ -220,8 +220,8 @@ auto tClearRandomResetsBoth = test("Random/clearResetsBoth") = []
     Doom::randomness().forMenu();
     Doom::randomness().clear();
 
-    check(prndindex == 0);
-    check(rndindex == 0);
+    check(Doom::randomness().playIndex == 0);
+    check(Doom::randomness().menuIndex == 0);
 };
 
 // ---------------------------------------------------------------------------

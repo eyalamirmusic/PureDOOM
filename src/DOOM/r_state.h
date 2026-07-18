@@ -48,25 +48,17 @@ extern fixed_t* spritetopoffset;
 extern Doom::LightTable* colormaps;
 
 // View window geometry: references onto Doom::ViewWindow (an Engine member).
-extern int& viewwidth;
-extern int& scaledviewwidth;
-extern int& viewheight;
 
-extern int& firstflat;
 
 // for global animation. Views onto GraphicsData's owned EA::Vectors (Step 9).
 extern int* flattranslation;
 extern int* texturetranslation;
 
 // Sprite....
-extern int& firstspritelump;
-extern int& lastspritelump;
-extern int& numspritelumps;
 
 //
 // Lookup tables for map data.
 //
-extern int& numsprites;
 // A view onto GraphicsData's owned EA::Vector<Doom::SpriteDef> (Step 9).
 extern Doom::SpriteDef* sprites;
 
@@ -96,34 +88,20 @@ extern Doom::Side* sides;
 // references onto it while the renderer still reads them as globals (REFACTOR.md,
 // Step 5). They resolve to viewPoint().<member> once each reader takes an Engine&.
 //
-extern fixed_t& viewx;
-extern fixed_t& viewy;
-extern fixed_t& viewz;
 
-extern angle_t& viewangle;
-extern Doom::Player*& viewplayer;
 
 // The screen projection also lives in Doom::ViewProjection (an Engine member); these
 // are references onto it, the two tables as references-to-array so their type and every
 // indexed read are unchanged.
-extern angle_t& clipangle;
 
-extern int (&viewangletox)[FINEANGLES / 2];
-extern angle_t (&xtoviewangle)[SCREENWIDTH + 1];
 
 // The frame's transient render scratch lives in Doom::RenderScratch (an Engine member)
 // now; these are references onto it (REFACTOR.md, Step 5).
-extern fixed_t& rw_distance;
-extern angle_t& rw_normalangle;
 
 // angle to line origin
-extern int& rw_angle1;
 
 // Segs count?
-extern int& sscount;
 
-extern Doom::VisPlane*& floorplane;
-extern Doom::VisPlane*& ceilingplane;
 
 
 

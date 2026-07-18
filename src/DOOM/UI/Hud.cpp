@@ -42,28 +42,26 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include "../Game/OverlayState.h"
 #include "Hud.h"
 #include "HudChat.h"
+#include "HudFlags.h"
+#include "HudFont.h"
 #include "HudMessage.h"
 #include "HudState.h"
 #include "HudWidgets.h"
 
-// Globals owned by the hu_stuff.cpp shim (read by other files through their own
 #include "../Game/Sound.h"
-// externs): the HUD font, the config-persisted chat macros, the player names,
-// the level-name tables (st_stuff reads mapnames), and the two message flags.
+
+// Globals owned by the hu_stuff.cpp shim (read by other files through their own
+// externs): the config-persisted chat macros, the player names and the level-name
+// tables (st_stuff reads mapnames).
 extern char* chat_macros[];
 extern char* player_names[];
-// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (Doom::startHud writes it).
-extern Doom::Patch* (&hu_font)[HU_FONTSIZE];
-// chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
-extern doom_boolean& chat_on;
-extern doom_boolean& message_dontfuckwithme;
 extern char* mapnames[];
 
 // Other subsystems' globals this file reads.
 extern int& showMessages; // config-backed Engine member (UI/MenuSettings.h)
-extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
 
 //
 // Locally used constants, shortcuts.
@@ -74,10 +72,11 @@ extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
 #define HU_TITLET (mapnamest[gamemap - 1])
 #define HU_TITLEHEIGHT 1
 #define HU_TITLEX 0
-#define HU_TITLEY (167 - SHORT(hu_font[0]->height))
+#define HU_TITLEY (167 - SHORT(Doom::hudFont().hu_font[0]->height))
 #define HU_INPUTTOGGLE 't'
 #define HU_INPUTX HU_MSGX
-#define HU_INPUTY (HU_MSGY + HU_MSGHEIGHT * (SHORT(hu_font[0]->height) + 1))
+#define HU_INPUTY                                                                   \
+    (HU_MSGY + HU_MSGHEIGHT * (SHORT(Doom::hudFont().hu_font[0]->height) + 1))
 #define HU_INPUTWIDTH 64
 #define HU_INPUTHEIGHT 1
 #define QUEUESIZE 128
@@ -233,6 +232,8 @@ char foreignTranslation(unsigned char ch)
 
 void initHud()
 {
+    auto& font = hudFont();
+
     int j;
     EA::Array<char, 9> buffer;
 
@@ -253,7 +254,7 @@ void initHud()
         if (j < 10)
             doom_concat(buffer.data(), "0");
         doom_concat(buffer.data(), doom_itoa(j++, 10));
-        hu_font[i] = static_cast<Patch*>(Doom::cacheLumpName(buffer.data()));
+        font.hu_font[i] = static_cast<Patch*>(Doom::cacheLumpName(buffer.data()));
     }
 }
 
@@ -264,6 +265,9 @@ void stopHud()
 
 void startHud()
 {
+    auto& font = hudFont();
+    auto& hud = hudFlags();
+
     const char* s;
 
     if (headsupactive)
@@ -271,21 +275,21 @@ void startHud()
 
     plr = &players[consoleplayer];
     message_on = false;
-    message_dontfuckwithme = false;
+    hud.message_dontfuckwithme = false;
     message_nottobefuckedwith = false;
-    chat_on = false;
+    hud.chat_on = false;
 
     // create the message widget
     Doom::initSText(w_message,
                     HU_MSGX,
                     HU_MSGY,
                     HU_MSGHEIGHT,
-                    hu_font,
+                    font.hu_font,
                     HU_FONTSTART,
                     &message_on);
 
     // create the map title widget
-    Doom::initTextLine(w_title, HU_TITLEX, HU_TITLEY, hu_font, HU_FONTSTART);
+    Doom::initTextLine(w_title, HU_TITLEX, HU_TITLEY, font.hu_font, HU_FONTSTART);
 
     switch (gamemode)
     {
@@ -314,7 +318,8 @@ void startHud()
         Doom::addCharToTextLine(w_title, *(s++));
 
     // create the chat widget
-    Doom::initIText(w_chat, HU_INPUTX, HU_INPUTY, hu_font, HU_FONTSTART, &chat_on);
+    Doom::initIText(
+        w_chat, HU_INPUTX, HU_INPUTY, font.hu_font, HU_FONTSTART, &hud.chat_on);
 
     // create the inputbuffer widgets
     for (int i = 0; i < MAXPLAYERS; i++)
@@ -327,7 +332,7 @@ void drawHud()
 {
     Doom::drawSText(w_message);
     Doom::drawIText(w_chat);
-    if (automapactive)
+    if (overlayState().automapactive)
         Doom::drawTextLine(w_title, false);
 }
 
@@ -340,6 +345,8 @@ void eraseHud()
 
 void hudTicker()
 {
+    auto& hud = hudFlags();
+
     int rc;
     char c;
 
@@ -350,18 +357,18 @@ void hudTicker()
         message_nottobefuckedwith = false;
     }
 
-    if (showMessages || message_dontfuckwithme)
+    if (showMessages || hud.message_dontfuckwithme)
     {
         // display message if necessary
         if ((plr->message && !message_nottobefuckedwith)
-            || (plr->message && message_dontfuckwithme))
+            || (plr->message && hud.message_dontfuckwithme))
         {
             Doom::addMessageToSText(w_message, 0, plr->message);
             plr->message = nullptr;
             message_on = true;
             message_counter = HU_MSGTIMEOUT;
-            message_nottobefuckedwith = message_dontfuckwithme;
-            message_dontfuckwithme = 0;
+            message_nottobefuckedwith = hud.message_dontfuckwithme;
+            hud.message_dontfuckwithme = 0;
         }
 
     } // else message_on = false;
@@ -441,6 +448,8 @@ char dequeueChatChar()
 
 doom_boolean hudResponder(Event* ev)
 {
+    auto& hud = hudFlags();
+
     char (&lastmessage)[HU_MAXLINELENGTH + 1] =
         hudChat().lastmessage; // ref-to-array onto member
     char* macromessage;
@@ -473,7 +482,7 @@ doom_boolean hudResponder(Event* ev)
     if (ev->type != ev_keydown)
         return false;
 
-    if (!chat_on)
+    if (!hud.chat_on)
     {
         if (ev->data1 == HU_MSGREFRESH)
         {
@@ -483,7 +492,7 @@ doom_boolean hudResponder(Event* ev)
         }
         else if (netgame && ev->data1 == HU_INPUTTOGGLE)
         {
-            eatkey = chat_on = true;
+            eatkey = hud.chat_on = true;
             Doom::resetIText(w_chat);
             queueChatChar(HU_BROADCAST);
         }
@@ -495,7 +504,7 @@ doom_boolean hudResponder(Event* ev)
                 {
                     if (playeringame[i] && i != consoleplayer)
                     {
-                        eatkey = chat_on = true;
+                        eatkey = hud.chat_on = true;
                         Doom::resetIText(w_chat);
                         queueChatChar(i + 1);
                         break;
@@ -538,7 +547,7 @@ doom_boolean hudResponder(Event* ev)
             queueChatChar(KEY_ENTER);
 
             // leave chat mode and notify that it was sent
-            chat_on = false;
+            hud.chat_on = false;
             doom_strcpy(lastmessage, chat_macros[c]);
             plr->message = lastmessage;
             eatkey = true;
@@ -556,7 +565,7 @@ doom_boolean hudResponder(Event* ev)
             }
             if (c == KEY_ENTER)
             {
-                chat_on = false;
+                hud.chat_on = false;
                 if (w_chat.l.len)
                 {
                     doom_strcpy(lastmessage, w_chat.l.l);
@@ -564,7 +573,7 @@ doom_boolean hudResponder(Event* ev)
                 }
             }
             else if (c == KEY_ESCAPE)
-                chat_on = false;
+                hud.chat_on = false;
         }
     }
 

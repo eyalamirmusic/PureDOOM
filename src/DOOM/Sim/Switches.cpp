@@ -18,6 +18,7 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
+#include "ActiveSpecials.h"
 #include "SwitchList.h"
 #include "Switches.h"
 
@@ -130,10 +131,12 @@ void initSwitchList()
 //
 void startButton(Line* line, ButtonWhere w, int texture, int time)
 {
+    auto& specials = activeSpecials();
+
     // See if button is already pressed
     for (int i = 0; i < MAXBUTTONS; i++)
     {
-        if (buttonlist[i].btimer && buttonlist[i].line == line)
+        if (specials.buttonlist[i].btimer && specials.buttonlist[i].line == line)
         {
             return;
         }
@@ -141,13 +144,13 @@ void startButton(Line* line, ButtonWhere w, int texture, int time)
 
     for (int i = 0; i < MAXBUTTONS; i++)
     {
-        if (!buttonlist[i].btimer)
+        if (!specials.buttonlist[i].btimer)
         {
-            buttonlist[i].line = line;
-            buttonlist[i].where = w;
-            buttonlist[i].btexture = texture;
-            buttonlist[i].btimer = time;
-            buttonlist[i].soundorg =
+            specials.buttonlist[i].line = line;
+            specials.buttonlist[i].where = w;
+            specials.buttonlist[i].btexture = texture;
+            specials.buttonlist[i].btimer = time;
+            specials.buttonlist[i].soundorg =
                 reinterpret_cast<Mobj*>(&line->frontsector->soundorg);
             return;
         }
@@ -167,6 +170,8 @@ void changeSwitchTexture(Line* line, int useAgain)
     int texBot;
     int sound;
 
+    auto& specials = activeSpecials();
+
     if (!useAgain)
         line->special = 0;
 
@@ -184,7 +189,7 @@ void changeSwitchTexture(Line* line, int useAgain)
     {
         if (switchlist[i] == texTop)
         {
-            Doom::startSound(buttonlist->soundorg, sound);
+            Doom::startSound(specials.buttonlist->soundorg, sound);
             sides[line->sidenum[0]].toptexture = switchlist[i ^ 1];
 
             if (useAgain)
@@ -196,7 +201,7 @@ void changeSwitchTexture(Line* line, int useAgain)
         {
             if (switchlist[i] == texMid)
             {
-                Doom::startSound(buttonlist->soundorg, sound);
+                Doom::startSound(specials.buttonlist->soundorg, sound);
                 sides[line->sidenum[0]].midtexture = switchlist[i ^ 1];
 
                 if (useAgain)
@@ -208,7 +213,7 @@ void changeSwitchTexture(Line* line, int useAgain)
             {
                 if (switchlist[i] == texBot)
                 {
-                    Doom::startSound(buttonlist->soundorg, sound);
+                    Doom::startSound(specials.buttonlist->soundorg, sound);
                     sides[line->sidenum[0]].bottomtexture = switchlist[i ^ 1];
 
                     if (useAgain)

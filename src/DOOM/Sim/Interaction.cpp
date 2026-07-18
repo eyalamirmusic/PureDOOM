@@ -32,6 +32,8 @@
 #include "../p_local.h"
 #include "../s_sound.h"
 
+#include "../Game/AmmoLimits.h"
+#include "../Game/OverlayState.h"
 #include "Interaction.h"
 
 #include "../UI/Automap.h"
@@ -61,6 +63,8 @@ doom_boolean giveAmmo(Player* player, AmmoType ammo, int num)
 {
     int oldammo;
 
+    auto& ammoLimit = ammoLimits();
+
     if (ammo == am_noammo)
         return false;
 
@@ -77,9 +81,9 @@ doom_boolean giveAmmo(Player* player, AmmoType ammo, int num)
         return false;
 
     if (num)
-        num *= clipammo[ammo];
+        num *= ammoLimit.clipammo[ammo];
     else
-        num = clipammo[ammo] / 2;
+        num = ammoLimit.clipammo[ammo] / 2;
 
     if (gameskill == sk_baby || gameskill == sk_nightmare)
     {
@@ -650,7 +654,8 @@ void killMobj(Mobj* source, Mobj* target)
         target->player->playerstate = PST_DEAD;
         dropWeapon(*target->player);
 
-        if (target->player == &players[consoleplayer] && automapactive)
+        if (target->player == &players[consoleplayer]
+            && overlayState().automapactive)
         {
             // don't die in auto map,
             // switch view prior to dying

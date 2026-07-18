@@ -21,8 +21,10 @@
 
 #include <new>
 
+#include "../Game/LevelStats.h"
 #include "../Game/Sound.h"
 #include "../Host/System.h"
+#include "ActiveSpecials.h"
 
 #include "Floors.h"
 #include "Random.h"
@@ -48,7 +50,7 @@ void platRaise(Plat& plat)
             if (plat.type == raiseAndChange
                 || plat.type == raiseToNearestAndChange)
             {
-                if (!(leveltime & 7))
+                if (!(levelStats().leveltime & 7))
                     Doom::startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                                  sfx_stnmov);
             }
@@ -234,33 +236,39 @@ int doPlat(Line* line, PlatType type, int amount)
 
 void activateInStasis(int tag)
 {
+    auto& specials = activeSpecials();
     for (int i = 0; i < MAXPLATS; i++)
-        if (activeplats[i] && (activeplats[i])->tag == tag
-            && (activeplats[i])->status == in_stasis)
+        if (specials.activeplats[i] && (specials.activeplats[i])->tag == tag
+            && (specials.activeplats[i])->status == in_stasis)
         {
-            (activeplats[i])->status = (activeplats[i])->oldstatus;
-            (activeplats[i])->stopped = false;
+            (specials.activeplats[i])->status =
+                (specials.activeplats[i])->oldstatus;
+            (specials.activeplats[i])->stopped = false;
         }
 }
 
 void stopPlat(Line* line)
 {
+    auto& specials = activeSpecials();
     for (int j = 0; j < MAXPLATS; j++)
-        if (activeplats[j] && ((activeplats[j])->status != in_stasis)
-            && ((activeplats[j])->tag == line->tag))
+        if (specials.activeplats[j]
+            && ((specials.activeplats[j])->status != in_stasis)
+            && ((specials.activeplats[j])->tag == line->tag))
         {
-            (activeplats[j])->oldstatus = (activeplats[j])->status;
-            (activeplats[j])->status = in_stasis;
-            (activeplats[j])->stopped = true;
+            (specials.activeplats[j])->oldstatus =
+                (specials.activeplats[j])->status;
+            (specials.activeplats[j])->status = in_stasis;
+            (specials.activeplats[j])->stopped = true;
         }
 }
 
 void addActivePlat(Plat* plat)
 {
+    auto& specials = activeSpecials();
     for (int i = 0; i < MAXPLATS; i++)
-        if (activeplats[i] == nullptr)
+        if (specials.activeplats[i] == nullptr)
         {
-            activeplats[i] = plat;
+            specials.activeplats[i] = plat;
             return;
         }
     fatalError("Error: addActivePlat: no more plats!");
@@ -268,12 +276,13 @@ void addActivePlat(Plat* plat)
 
 void removeActivePlat(Plat* plat)
 {
+    auto& specials = activeSpecials();
     for (int i = 0; i < MAXPLATS; i++)
-        if (plat == activeplats[i])
+        if (plat == specials.activeplats[i])
         {
-            (activeplats[i])->sector->specialdata = nullptr;
-            Doom::removeThinker(activeplats[i]);
-            activeplats[i] = nullptr;
+            (specials.activeplats[i])->sector->specialdata = nullptr;
+            Doom::removeThinker(specials.activeplats[i]);
+            specials.activeplats[i] = nullptr;
 
             return;
         }

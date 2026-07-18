@@ -30,12 +30,9 @@
 // reference-to-array too (a plain array extern would read the reference's hidden pointer as the
 // first glyph and fault). The reference-to-array binding self-checks HU_FONTSIZE against the
 // cluster's fontSize - a drift won't compile.
-Doom::Patch* (&hu_font)[HU_FONTSIZE] = Doom::hudFont().hu_font;
 
 // The two cross-read HUD flags (chat input open; a forced message locks the line)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.
-doom_boolean& chat_on = Doom::hudFlags().chat_on;
-doom_boolean& message_dontfuckwithme = Doom::hudFlags().message_dontfuckwithme;
 
 // The chat macros (m_misc persists them in the config).
 char* chat_macros[] = {

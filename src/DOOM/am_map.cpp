@@ -89,7 +89,6 @@ int lightlev; // used for funky strobing effect
 
 // automapactive (with menuactive) is a Doom::OverlayState owned by the Engine now; this is a
 // reference onto it (REFACTOR.md, Step 5).
-doom_boolean& automapactive = Doom::overlayState().automapactive;
 
 
 

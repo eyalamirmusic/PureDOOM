@@ -20,6 +20,7 @@
 
 #include <new>
 
+#include "../Game/LevelStats.h"
 #include "../Game/Sound.h"
 #include "MapAction.h"
 
@@ -205,7 +206,7 @@ void moveFloor(FloorMove& floor)
                     0,
                     floor.direction);
 
-    if (!(leveltime & 7))
+    if (!(levelStats().leveltime & 7))
         Doom::startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
                      sfx_stnmov);
 

@@ -17,6 +17,8 @@
 #include "../m_misc.h"
 
 #include "../Game/DoomMain.h"
+#include "../Game/OverlayState.h"
+#include "../Render/ViewWindow.h"
 #include "Sound.h"
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
@@ -613,15 +615,14 @@ const unsigned char* doom_get_framebuffer(int channels)
 
     extern doom_boolean& menuactive; // Doom::OverlayState (Engine member)
     extern Doom::GameState& gamestate; // Doom::GameFlow (Engine member)
-    extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
     extern int& crosshair; // Doom::InputConfig (Engine member)
 
     // Draw crosshair
-    if (crosshair && !menuactive && gamestate == Doom::GS_LEVEL && !automapactive)
+    if (crosshair && !menuactive && gamestate == Doom::GS_LEVEL
+        && !Doom::overlayState().automapactive)
     {
         int y;
-        extern int& setblocks;
-        if (setblocks == 11)
+        if (Doom::viewWindow().setblocks == 11)
             y = SCREENHEIGHT / 2 + 8;
         else
             y = SCREENHEIGHT / 2 - 8;

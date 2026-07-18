@@ -21,15 +21,9 @@
 // The renderer's loaded graphics data (textures, flats, sprite lumps, colormaps) is a
 // Doom::GraphicsData owned by the Engine now; these vanilla names are references onto it.
 // R_InitData fills the members once at startup; they are read-only after.
-int& firstflat = Doom::graphicsData().firstflat;
-int& numflats = Doom::graphicsData().numflats;
 
 
-int& firstspritelump = Doom::graphicsData().firstspritelump;
-int& lastspritelump = Doom::graphicsData().lastspritelump;
-int& numspritelumps = Doom::graphicsData().numspritelumps;
 
-int& numtextures = Doom::graphicsData().numtextures;
 // A Doom::Texture** view onto GraphicsData's owned texturePointers array (Step 9);
 // R_InitTextures points it at data() after the resize.
 Doom::Texture** textures = nullptr;

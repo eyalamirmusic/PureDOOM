@@ -30,7 +30,6 @@
 
 // a reference onto Doom::SaveGameState's cursor (an Engine member) - the storage moved
 // off this loose global in Step 5
-extern byte*& save_p;
 
 
 

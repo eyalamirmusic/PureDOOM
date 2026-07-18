@@ -273,18 +273,10 @@ auto tRandomWraps = test("Random/wrapsAfter256") = []
     check(rng.forPlay() == first);
 };
 
-// The legacy names are the same four bytes as the object's, which is what lets a
-// rewritten caller and a vanilla one share one supply of chance.
-auto tLegacyNamesAliasTheObject = test("Random/vanillaNamesAliasTheObject") = []
-{
-    Doom::randomness().clear();
-
-    check(&prndindex == &randomness().playIndex);
-    check(&rndindex == &randomness().menuIndex);
-
-    Doom::randomness().forPlay();
-
-    check(prndindex == 1);
-    check(randomness().playIndex == 1);
-};
+// (Random/vanillaNamesAliasTheObject lived here. It asserted that the vanilla
+// names prndindex/rndindex were bound to Doom::Random's members - the whole point
+// of the reference-alias layer. That layer is retired, so there is no aliasing
+// left to assert; converting the test would have made it compare
+// &randomness().playIndex with itself. The behaviour it also covered, that
+// forPlay() advances playIndex, is asserted by Random/indexAdvances above.)
 } // namespace

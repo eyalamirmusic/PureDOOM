@@ -8,6 +8,7 @@
 
 #include "Clip.h"
 #include "SightScratch.h"
+#include "ValidCount.h"
 
 #include "../Host/System.h"
 namespace Doom
@@ -136,6 +137,8 @@ doom_boolean crossSubsector(int num)
     }
 #endif
 
+    auto& vc = validCount();
+
     sub = &subsectors[num];
 
     // check lines
@@ -147,10 +150,10 @@ doom_boolean crossSubsector(int num)
         line = seg->linedef;
 
         // allready checked other side?
-        if (line->validcount == validcount)
+        if (line->validcount == vc.validcount)
             continue;
 
-        line->validcount = validcount;
+        line->validcount = vc.validcount;
 
         v1 = line->v1;
         v2 = line->v2;
@@ -302,7 +305,7 @@ bool checkSight(Mobj* t1, Mobj* t2)
     // An unobstructed LOS is possible. Now look from eyes of t1 to any part of t2.
     sightcounts[1]++;
 
-    validcount++;
+    validCount().validcount++;
 
     sightzstart = t1->z + t1->height - (t1->height >> 2);
     clip.topslope = (t2->z + t2->height) - sightzstart;

@@ -8,6 +8,7 @@
 #include "Clip.h"
 #include "Level.h"
 #include "MapGeometry.h"
+#include "ValidCount.h"
 
 #include "../Math/BBox.h"
 namespace Doom
@@ -58,15 +59,17 @@ bool forEachLineInBlock(int x, int y, LineFunc&& func)
     if (!bmap.contains(x, y))
         return true;
 
+    auto& vc = validCount();
+
     for (short* list = bmap.lump + bmap.offsets[bmap.index(x, y)]; *list != -1;
          ++list)
     {
         Line* ld = &lines[*list];
 
-        if (ld->validcount == validcount)
+        if (ld->validcount == vc.validcount)
             continue; // already checked from another cell
 
-        ld->validcount = validcount;
+        ld->validcount = vc.validcount;
 
         if (!func(ld))
             return false;

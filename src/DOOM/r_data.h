@@ -97,8 +97,6 @@ extern Doom::Texture** textures;
 
 // How many wall textures and flats the WAD loaded. Composed lazily, so these are
 // the id space anything walking the graphics has to work in.
-extern int& numtextures;
-extern int& numflats;
 
 
 

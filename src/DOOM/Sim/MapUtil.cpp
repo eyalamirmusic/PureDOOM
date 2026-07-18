@@ -4,6 +4,7 @@
 
 
 #include "Clip.h"
+#include "ValidCount.h"
 #include "../Render/Main.h"
 #include "../Math/BBox.h"
 namespace Doom
@@ -281,7 +282,7 @@ bool pathTraverse(
 
     clip.earlyOut = flags & PT_EARLYOUT;
 
-    validcount++;
+    validCount().validcount++;
     clip.interceptPtr = clip.intercepts;
 
     if (((x1 - bmaporgx) & (MAPBLOCKSIZE - 1)) == 0)

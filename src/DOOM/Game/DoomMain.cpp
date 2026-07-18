@@ -88,7 +88,9 @@
 #include "../UI/Menu.h"
 #include "../Host/Video.h"
 #include "../Host/System.h"
+#include "../Game/OverlayState.h"
 #include "../Render/Main.h"
+#include "../Render/ViewWindow.h"
 #include "Game.h"
 #include "Sound.h"
 #define MAXARGVS 100
@@ -155,7 +157,6 @@ void Doom::executeSetViewSize();
 static EA::Array<char, 128> title;
 
 extern doom_boolean& inhelpscreens; // Doom::OverlayState (Engine member)
-extern doom_boolean& setsizeneeded;
 extern int& showMessages; // config-backed Engine member (UI/MenuSettings.h)
 extern doom_boolean& demorecording; // Doom::DemoState (Engine member)
 
@@ -223,6 +224,9 @@ void processEvents()
 //
 void displayFrame()
 {
+    auto& view = viewWindow();
+    auto& overlay = overlayState();
+
     // The frame-diff state machine: a Doom::DisplayState owned by the Engine now, reached by local
     // references (formerly displayFrame's own function-local statics, never reset - identical
     // persistence).
@@ -243,7 +247,7 @@ void displayFrame()
     redrawsbar = false;
 
     // change the view size if needed
-    if (setsizeneeded)
+    if (view.setsizeneeded)
     {
         Doom::executeSetViewSize();
         oldgamestate = static_cast<GameState>((-1)); // force background redraw
@@ -268,14 +272,14 @@ void displayFrame()
         case GS_LEVEL:
             if (!gametic)
                 break;
-            if (automapactive)
+            if (overlay.automapactive)
                 Doom::drawAutomap();
-            if (wipe || (viewheight != 200 && fullscreen))
+            if (wipe || (view.viewheight != 200 && fullscreen))
                 redrawsbar = true;
             if (inhelpscreensstate && !inhelpscreens)
                 redrawsbar = true; // just put away the help screen
-            Doom::drawStatusBar(viewheight == 200, redrawsbar);
-            fullscreen = viewheight == 200;
+            Doom::drawStatusBar(view.viewheight == 200, redrawsbar);
+            fullscreen = view.viewheight == 200;
             break;
 
         case GS_INTERMISSION:
@@ -295,7 +299,7 @@ void displayFrame()
     updateNoBlit();
 
     // draw the view directly
-    if (gamestate == GS_LEVEL && !automapactive && gametic)
+    if (gamestate == GS_LEVEL && !overlay.automapactive && gametic)
         Doom::renderPlayerView(players[displayplayer]);
 
     if (gamestate == GS_LEVEL && gametic)
@@ -313,7 +317,8 @@ void displayFrame()
     }
 
     // see if the border needs to be updated to the screen
-    if (gamestate == GS_LEVEL && !automapactive && scaledviewwidth != 320)
+    if (gamestate == GS_LEVEL && !overlay.automapactive
+        && view.scaledviewwidth != 320)
     {
         if (menuactive || menuactivestate || !viewactivestate)
             borderdrawcount = 3;
@@ -332,11 +337,11 @@ void displayFrame()
     // draw pause pic
     if (paused)
     {
-        if (automapactive)
+        if (overlay.automapactive)
             y = 4;
         else
-            y = viewwindowy + 4;
-        Doom::drawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
+            y = view.viewwindowy + 4;
+        Doom::drawPatchDirect(view.viewwindowx + (view.scaledviewwidth - 68) / 2,
                               y,
                               0,
                               static_cast<Patch*>((Doom::cacheLumpName("M_PAUSE"))));

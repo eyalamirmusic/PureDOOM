@@ -29,6 +29,10 @@
 #include "../sounds.h"
 #include "../st_stuff.h"
 
+#include "../Game/LevelStats.h"
+#include "../Game/MapSpawns.h"
+#include "../Game/SkyState.h"
+#include "Clip.h"
 #include "Mobj.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 #include "../UI/Hud.h"
@@ -45,13 +49,13 @@
 #include "Movement.h"
 #include "Weapon.h"
 #include "Random.h"
+#include "ItemRespawnQueue.h"
 #define STOPSPEED 0x1000
 #define FRICTION 0xe800
 
 // Defined in g_game (reset a player's state on respawn) and in Clip (the shot range,
 // read by xyMovement's melee check).
 void Doom::playerReborn(int player);
-extern fixed_t& attackrange;
 
 namespace Doom
 {
@@ -119,6 +123,8 @@ void xyMovement(Mobj* mo)
     fixed_t xmove;
     fixed_t ymove;
 
+    auto& c = clip();
+
     if (!mo->momx && !mo->momy)
     {
         if (mo->flags & MF_SKULLFLY)
@@ -173,8 +179,9 @@ void xyMovement(Mobj* mo)
             else if (mo->flags & MF_MISSILE)
             {
                 // explode a missile
-                if (ceilingline && ceilingline->backsector
-                    && ceilingline->backsector->ceilingpic == skyflatnum)
+                if (c.ceilingline && c.ceilingline->backsector
+                    && c.ceilingline->backsector->ceilingpic
+                           == skyState().skyflatnum)
                 {
                     // Hack to prevent missiles exploding
                     // against the sky.
@@ -439,7 +446,7 @@ void mobjThinker(Mobj* mobj)
         if (mobj->movecount < 12 * 35)
             return;
 
-        if (leveltime & 31)
+        if (levelStats().leveltime & 31)
             return;
 
         if (Doom::randomness().forPlay() > 4)
@@ -509,13 +516,15 @@ void removeMobj(Mobj* mobj)
     if ((mobj->flags & MF_SPECIAL) && !(mobj->flags & MF_DROPPED)
         && (mobj->type != MT_INV) && (mobj->type != MT_INS))
     {
-        itemrespawnque[iquehead] = mobj->spawnpoint;
-        itemrespawntime[iquehead] = leveltime;
-        iquehead = (iquehead + 1) & (ITEMQUESIZE - 1);
+        auto& queue = itemRespawnQueue();
+
+        queue.itemrespawnque[queue.iquehead] = mobj->spawnpoint;
+        queue.itemrespawntime[queue.iquehead] = levelStats().leveltime;
+        queue.iquehead = (queue.iquehead + 1) & (ITEMQUESIZE - 1);
 
         // lose one off the end?
-        if (iquehead == iquetail)
-            iquetail = (iquetail + 1) & (ITEMQUESIZE - 1);
+        if (queue.iquehead == queue.iquetail)
+            queue.iquetail = (queue.iquetail + 1) & (ITEMQUESIZE - 1);
     }
 
     // unlink from sector and block lists
@@ -547,15 +556,18 @@ void respawnSpecials()
     if (deathmatch != 2)
         return; //
 
+    auto& queue = itemRespawnQueue();
+
     // nothing left to respawn?
-    if (iquehead == iquetail)
+    if (queue.iquehead == queue.iquetail)
         return;
 
     // wait at least 30 seconds
-    if (leveltime - itemrespawntime[iquetail] < 30 * 35)
+    if (levelStats().leveltime - queue.itemrespawntime[queue.iquetail]
+        < 30 * 35)
         return;
 
-    mthing = &itemrespawnque[iquetail];
+    mthing = &queue.itemrespawnque[queue.iquetail];
 
     x = mthing->x << FRACBITS;
     y = mthing->y << FRACBITS;
@@ -583,7 +595,7 @@ void respawnSpecials()
     mo->angle = ANG45 * (mthing->angle / 45);
 
     // pull it from the que
-    iquetail = (iquetail + 1) & (ITEMQUESIZE - 1);
+    queue.iquetail = (queue.iquetail + 1) & (ITEMQUESIZE - 1);
 }
 
 //
@@ -664,13 +676,15 @@ void spawnMapThing(MapThing* mthing)
     fixed_t y;
     fixed_t z;
 
+    auto& spawns = mapSpawns();
+
     // count deathmatch start positions
     if (mthing->type == 11)
     {
-        if (deathmatch_p < &deathmatchstarts[10])
+        if (spawns.deathmatch_p < &spawns.deathmatchstarts[10])
         {
-            doom_memcpy(deathmatch_p, mthing, sizeof(*mthing));
-            deathmatch_p++;
+            doom_memcpy(spawns.deathmatch_p, mthing, sizeof(*mthing));
+            spawns.deathmatch_p++;
         }
         return;
     }
@@ -679,7 +693,7 @@ void spawnMapThing(MapThing* mthing)
     if (mthing->type <= 4)
     {
         // save spots for respawning in network games
-        playerstarts[mthing->type - 1] = *mthing;
+        spawns.playerstarts[mthing->type - 1] = *mthing;
         if (!deathmatch)
             spawnPlayer(mthing);
 
@@ -776,7 +790,7 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
         th->tics = 1;
 
     // don't make punches spark on the wall
-    if (attackrange == MELEERANGE)
+    if (clip().attackrange == MELEERANGE)
         setMobjState(th, S_PUFF3);
 }
 
@@ -875,22 +889,24 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
     fixed_t z;
     fixed_t slope;
 
+    auto& c = clip();
+
     // see which target is to be aimed at
     an = source->angle;
     slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
 
-    if (!linetarget)
+    if (!c.linetarget)
     {
         an += 1 << 26;
         slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
 
-        if (!linetarget)
+        if (!c.linetarget)
         {
             an -= 2 << 26;
             slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
         }
 
-        if (!linetarget)
+        if (!c.linetarget)
         {
             an = source->angle;
             slope = 0;

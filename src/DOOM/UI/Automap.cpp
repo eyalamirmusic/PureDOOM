@@ -41,6 +41,7 @@
 #include "../r_state.h" // State.
 #include "../st_stuff.h"
 #include "../v_video.h" // Needs access to LFB, Doom::markRect.
+#include "../Game/OverlayState.h"
 #include "../Wad/WadFile.h"
 
 #include "Automap.h"
@@ -352,7 +353,7 @@ void initAutomapVariables()
     int pnum;
     static Event st_notify = {ev_keyup, AM_MSGENTERED, 0, 0};
 
-    automapactive = true;
+    overlayState().automapactive = true;
     fb = screens[0];
 
     f_oldloc.x = DOOM_MAXINT;
@@ -444,7 +445,7 @@ void stopAutomap()
     static Event st_notify = {static_cast<EventType>(0), ev_keyup, AM_MSGEXITED, 0};
 
     unloadPics();
-    automapactive = false;
+    overlayState().automapactive = false;
     Doom::statusBarResponder(&st_notify);
     stopped = true;
 }
@@ -501,7 +502,7 @@ doom_boolean automapResponder(Event* ev)
 
     rc = false;
 
-    if (!automapactive)
+    if (!overlayState().automapactive)
     {
         if (ev->type == ev_keydown && ev->data1 == AM_STARTKEY)
         {
@@ -686,7 +687,7 @@ void updateLightLev()
 //
 void automapTicker()
 {
-    if (!automapactive)
+    if (!overlayState().automapactive)
         return;
 
     amclock++;
@@ -1199,7 +1200,7 @@ void amDrawCrosshair(int color)
 
 void drawAutomap()
 {
-    if (!automapactive)
+    if (!overlayState().automapactive)
         return;
 
     clearFB(BACKGROUND);

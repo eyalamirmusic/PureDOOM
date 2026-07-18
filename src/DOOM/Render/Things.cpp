@@ -15,9 +15,17 @@
 #include "../r_local.h"
 #include "../Wad/WadFile.h"
 
+#include "../Sim/ValidCount.h"
+#include "BSPScratch.h"
+#include "DrawState.h"
 #include "GraphicsData.h"
+#include "Lighting.h"
 #include "SpriteScratch.h"
+#include "SpriteState.h"
 #include "Things.h"
+#include "ViewPoint.h"
+#include "ViewProjection.h"
+#include "ViewWindow.h"
 
 #include "Segs.h"
 #include <ea_data_structures/Structures/Array.h>
@@ -70,6 +78,8 @@ void installSpriteLump(int lump,
                        unsigned rotation,
                        doom_boolean flipped)
 {
+    auto& gd = graphicsData();
+
     if (frame >= 29 || rotation > 8)
     {
         doom_strcpy(error_buf,
@@ -107,7 +117,7 @@ void installSpriteLump(int lump,
         sprtemp[frame].rotate = false;
         for (int r = 0; r < 8; r++)
         {
-            sprtemp[frame].lump[r] = lump - firstspritelump;
+            sprtemp[frame].lump[r] = lump - gd.firstspritelump;
             sprtemp[frame].flip[r] = static_cast<byte>(flipped);
         }
         return;
@@ -140,7 +150,7 @@ void installSpriteLump(int lump,
         fatalError(error_buf);
     }
 
-    sprtemp[frame].lump[rotation] = lump - firstspritelump;
+    sprtemp[frame].lump[rotation] = lump - gd.firstspritelump;
     sprtemp[frame].flip[rotation] = static_cast<byte>(flipped);
 }
 
@@ -171,30 +181,31 @@ void initSpriteDefs(char** namelist)
     int end;
     int patched;
 
+    auto& gd = graphicsData();
+
     // count the number of sprite names
     check = namelist;
     while (*check != nullptr)
         check++;
 
-    numsprites = static_cast<int>(check - namelist);
+    gd.numsprites = static_cast<int>(check - namelist);
 
-    if (!numsprites)
+    if (!gd.numsprites)
         return;
 
     // GraphicsData owns the sprite table now (RAII, Step 9); sprites is a plain-pointer
     // view onto its data(), refreshed after the resize. The resize constructs each
     // SpriteDef (with an empty frames vector), which the loop below fills.
-    auto& gd = graphicsData();
-    gd.sprites.resize(numsprites);
+    gd.sprites.resize(gd.numsprites);
     sprites = gd.sprites.data();
 
-    start = firstspritelump - 1;
-    end = lastspritelump + 1;
+    start = gd.firstspritelump - 1;
+    end = gd.lastspritelump + 1;
 
     // scan all the lump names for each of the names,
     //  noting the highest frame letter.
     // Just compare 4 characters as ints
-    for (i = 0; i < numsprites; i++)
+    for (i = 0; i < gd.numsprites; i++)
     {
         spritename = namelist[i];
         doom_memset(sprtemp, -1, sizeof(sprtemp));
@@ -295,9 +306,11 @@ void initSpriteDefs(char** namelist)
 //
 void initSprites(char** namelist)
 {
+    auto& sprState = spriteState();
+
     for (int i = 0; i < SCREENWIDTH; i++)
     {
-        negonearray[i] = -1;
+        sprState.negonearray[i] = -1;
     }
 
     initSpriteDefs(namelist);
@@ -309,7 +322,9 @@ void initSprites(char** namelist)
 //
 void clearSprites()
 {
-    vissprite_p = vissprites;
+    auto& sprState = spriteState();
+
+    sprState.vissprite_p = sprState.vissprites;
 }
 
 //
@@ -317,11 +332,13 @@ void clearSprites()
 //
 VisSprite* newVisSprite()
 {
-    if (vissprite_p == &vissprites[MAXVISSPRITES])
+    auto& sprState = spriteState();
+
+    if (sprState.vissprite_p == &sprState.vissprites[MAXVISSPRITES])
         return &overflowsprite;
 
-    vissprite_p++;
-    return vissprite_p - 1;
+    sprState.vissprite_p++;
+    return sprState.vissprite_p - 1;
 }
 
 //
@@ -336,27 +353,30 @@ void drawMaskedColumn(Column* column)
     int bottomscreen;
     fixed_t basetexturemid;
 
-    basetexturemid = dc_texturemid;
+    auto& draw = drawState();
+    auto& sprState = spriteState();
+
+    basetexturemid = draw.dc_texturemid;
 
     for (; column->topdelta != 0xff;)
     {
         // calculate unclipped screen coordinates
         //  for post
-        topscreen = sprtopscreen + spryscale * column->topdelta;
-        bottomscreen = topscreen + spryscale * column->length;
+        topscreen = sprState.sprtopscreen + sprState.spryscale * column->topdelta;
+        bottomscreen = topscreen + sprState.spryscale * column->length;
 
-        dc_yl = (topscreen + FRACUNIT - 1) >> FRACBITS;
-        dc_yh = (bottomscreen - 1) >> FRACBITS;
+        draw.dc_yl = (topscreen + FRACUNIT - 1) >> FRACBITS;
+        draw.dc_yh = (bottomscreen - 1) >> FRACBITS;
 
-        if (dc_yh >= mfloorclip[dc_x])
-            dc_yh = mfloorclip[dc_x] - 1;
-        if (dc_yl <= mceilingclip[dc_x])
-            dc_yl = mceilingclip[dc_x] + 1;
+        if (draw.dc_yh >= sprState.mfloorclip[draw.dc_x])
+            draw.dc_yh = sprState.mfloorclip[draw.dc_x] - 1;
+        if (draw.dc_yl <= sprState.mceilingclip[draw.dc_x])
+            draw.dc_yl = sprState.mceilingclip[draw.dc_x] + 1;
 
-        if (dc_yl <= dc_yh)
+        if (draw.dc_yl <= draw.dc_yh)
         {
-            dc_source = reinterpret_cast<byte*>(column) + 3;
-            dc_texturemid = basetexturemid - (column->topdelta << FRACBITS);
+            draw.dc_source = reinterpret_cast<byte*>(column) + 3;
+            draw.dc_texturemid = basetexturemid - (column->topdelta << FRACBITS);
             // dc_source = (byte *)column + 3 - column->topdelta;
 
             // Drawn by either Doom::drawColumn
@@ -367,7 +387,7 @@ void drawMaskedColumn(Column* column)
                                              + column->length + 4);
     }
 
-    dc_texturemid = basetexturemid;
+    draw.dc_texturemid = basetexturemid;
 }
 
 //
@@ -381,12 +401,15 @@ void drawVisSprite(VisSprite* vis)
     fixed_t frac;
     Patch* patch;
 
+    auto& draw = drawState();
+    auto& sprState = spriteState();
+
     patch = static_cast<Patch*>(
-        Doom::cacheLumpNum(vis->patch + firstspritelump));
+        Doom::cacheLumpNum(vis->patch + graphicsData().firstspritelump));
 
-    dc_colormap = vis->colormap;
+    draw.dc_colormap = vis->colormap;
 
-    if (!dc_colormap)
+    if (!draw.dc_colormap)
     {
         // 0 colormap = shadow draw
         colfunc = fuzzcolfunc;
@@ -394,18 +417,20 @@ void drawVisSprite(VisSprite* vis)
     else if (vis->mobjflags & MF_TRANSLATION)
     {
         colfunc = Doom::drawTranslatedColumn;
-        dc_translation =
+        draw.dc_translation =
             translationtables - 256
             + ((vis->mobjflags & MF_TRANSLATION) >> (MF_TRANSSHIFT - 8));
     }
 
-    dc_iscale = doom_abs(vis->xiscale) >> detailshift;
-    dc_texturemid = vis->texturemid;
+    draw.dc_iscale = doom_abs(vis->xiscale) >> viewWindow().detailshift;
+    draw.dc_texturemid = vis->texturemid;
     frac = vis->startfrac;
-    spryscale = vis->scale;
-    sprtopscreen = centeryfrac - FixedMul(dc_texturemid, spryscale);
+    sprState.spryscale = vis->scale;
+    sprState.sprtopscreen = viewProjection().centeryfrac
+                            - FixedMul(draw.dc_texturemid, sprState.spryscale);
 
-    for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale)
+    for (draw.dc_x = vis->x1; draw.dc_x <= vis->x2;
+         draw.dc_x++, frac += vis->xiscale)
     {
         texturecolumn = frac >> FRACBITS;
 #ifdef RANGECHECK
@@ -455,12 +480,17 @@ void projectSprite(Mobj* thing)
     angle_t ang;
     fixed_t iscale;
 
-    // transform the origin point
-    tr_x = thing->x - viewx;
-    tr_y = thing->y - viewy;
+    auto& pt = viewPoint();
+    auto& proj = viewProjection();
+    auto& view = viewWindow();
+    auto& lights = lighting();
 
-    gxt = FixedMul(tr_x, viewcos);
-    gyt = -FixedMul(tr_y, viewsin);
+    // transform the origin point
+    tr_x = thing->x - pt.viewx;
+    tr_y = thing->y - pt.viewy;
+
+    gxt = FixedMul(tr_x, pt.viewcos);
+    gyt = -FixedMul(tr_y, pt.viewsin);
 
     tz = gxt - gyt;
 
@@ -468,10 +498,10 @@ void projectSprite(Mobj* thing)
     if (tz < MINZ)
         return;
 
-    xscale = FixedDiv(projection, tz);
+    xscale = FixedDiv(proj.projection, tz);
 
-    gxt = -FixedMul(tr_x, viewsin);
-    gyt = FixedMul(tr_y, viewcos);
+    gxt = -FixedMul(tr_x, pt.viewsin);
+    gyt = FixedMul(tr_y, pt.viewcos);
     tx = -(gyt + gxt);
 
     // too far off the side?
@@ -480,7 +510,8 @@ void projectSprite(Mobj* thing)
 
     // decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
-    if (static_cast<unsigned>(thing->sprite) >= static_cast<unsigned>(numsprites))
+    if (static_cast<unsigned>(thing->sprite)
+        >= static_cast<unsigned>(graphicsData().numsprites))
     {
         doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
         doom_concat(error_buf, doom_itoa(thing->sprite, 10));
@@ -519,14 +550,14 @@ void projectSprite(Mobj* thing)
 
     // calculate edges of the shape
     tx -= spriteoffset[lump];
-    x1 = (centerxfrac + FixedMul(tx, xscale)) >> FRACBITS;
+    x1 = (proj.centerxfrac + FixedMul(tx, xscale)) >> FRACBITS;
 
     // off the right side?
-    if (x1 > viewwidth)
+    if (x1 > view.viewwidth)
         return;
 
     tx += spritewidth[lump];
-    x2 = ((centerxfrac + FixedMul(tx, xscale)) >> FRACBITS) - 1;
+    x2 = ((proj.centerxfrac + FixedMul(tx, xscale)) >> FRACBITS) - 1;
 
     // off the left side
     if (x2 < 0)
@@ -535,14 +566,14 @@ void projectSprite(Mobj* thing)
     // store information in a vissprite
     vis = newVisSprite();
     vis->mobjflags = thing->flags;
-    vis->scale = xscale << detailshift;
+    vis->scale = xscale << view.detailshift;
     vis->gx = thing->x;
     vis->gy = thing->y;
     vis->gz = thing->z;
     vis->gzt = thing->z + spritetopoffset[lump];
-    vis->texturemid = vis->gzt - viewz;
+    vis->texturemid = vis->gzt - pt.viewz;
     vis->x1 = x1 < 0 ? 0 : x1;
-    vis->x2 = x2 >= viewwidth ? viewwidth - 1 : x2;
+    vis->x2 = x2 >= view.viewwidth ? view.viewwidth - 1 : x2;
     iscale = FixedDiv(FRACUNIT, xscale);
 
     if (flip)
@@ -566,10 +597,10 @@ void projectSprite(Mobj* thing)
         // shadow draw
         vis->colormap = nullptr;
     }
-    else if (fixedcolormap)
+    else if (lights.fixedcolormap)
     {
         // fixed map
-        vis->colormap = fixedcolormap;
+        vis->colormap = lights.fixedcolormap;
     }
     else if (thing->frame & FF_FULLBRIGHT)
     {
@@ -580,7 +611,7 @@ void projectSprite(Mobj* thing)
     else
     {
         // diminished light
-        index = xscale >> (LIGHTSCALESHIFT - detailshift);
+        index = xscale >> (LIGHTSCALESHIFT - view.detailshift);
 
         if (index >= MAXLIGHTSCALE)
             index = MAXLIGHTSCALE - 1;
@@ -598,24 +629,27 @@ void addSprites(Sector* sec)
     Mobj* thing;
     int lightnum;
 
+    auto& valid = validCount();
+    auto& lights = lighting();
+
     // BSP is traversed by subsector.
     // A sector might have been split into several
     //  subsectors during BSP building.
     // Thus we check whether its already added.
-    if (sec->validcount == validcount)
+    if (sec->validcount == valid.validcount)
         return;
 
     // Well, now it will be done.
-    sec->validcount = validcount;
+    sec->validcount = valid.validcount;
 
-    lightnum = (sec->lightlevel >> LIGHTSEGSHIFT) + extralight;
+    lightnum = (sec->lightlevel >> LIGHTSEGSHIFT) + lights.extralight;
 
     if (lightnum < 0)
-        spritelights = scalelight[0];
+        spritelights = lights.scalelight[0];
     else if (lightnum >= LIGHTLEVELS)
-        spritelights = scalelight[LIGHTLEVELS - 1];
+        spritelights = lights.scalelight[LIGHTLEVELS - 1];
     else
-        spritelights = scalelight[lightnum];
+        spritelights = lights.scalelight[lightnum];
 
     // Handle all things in sector.
     for (thing = sec->thinglist; thing; thing = thing->snext)
@@ -637,10 +671,16 @@ void drawPSprite(PspDef* psp)
     VisSprite* vis;
     VisSprite avis;
 
+    auto& pt = viewPoint();
+    auto& proj = viewProjection();
+    auto& view = viewWindow();
+    auto& lights = lighting();
+    auto& sprState = spriteState();
+
     // decide which patch to use
 #ifdef RANGECHECK
     if (static_cast<unsigned>(psp->state->sprite)
-        >= static_cast<unsigned>(numsprites))
+        >= static_cast<unsigned>(graphicsData().numsprites))
     {
         doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
         doom_concat(error_buf, doom_itoa(psp->state->sprite, 10));
@@ -669,14 +709,14 @@ void drawPSprite(PspDef* psp)
     tx = psp->sx - 160 * FRACUNIT;
 
     tx -= spriteoffset[lump];
-    x1 = (centerxfrac + FixedMul(tx, pspritescale)) >> FRACBITS;
+    x1 = (proj.centerxfrac + FixedMul(tx, sprState.pspritescale)) >> FRACBITS;
 
     // off the right side
-    if (x1 > viewwidth)
+    if (x1 > view.viewwidth)
         return;
 
     tx += spritewidth[lump];
-    x2 = ((centerxfrac + FixedMul(tx, pspritescale)) >> FRACBITS) - 1;
+    x2 = ((proj.centerxfrac + FixedMul(tx, sprState.pspritescale)) >> FRACBITS) - 1;
 
     // off the left side
     if (x2 < 0)
@@ -688,17 +728,17 @@ void drawPSprite(PspDef* psp)
     vis->texturemid =
         (BASEYCENTER << FRACBITS) + FRACUNIT / 2 - (psp->sy - spritetopoffset[lump]);
     vis->x1 = x1 < 0 ? 0 : x1;
-    vis->x2 = x2 >= viewwidth ? viewwidth - 1 : x2;
-    vis->scale = pspritescale << detailshift;
+    vis->x2 = x2 >= view.viewwidth ? view.viewwidth - 1 : x2;
+    vis->scale = sprState.pspritescale << view.detailshift;
 
     if (flip)
     {
-        vis->xiscale = -pspriteiscale;
+        vis->xiscale = -sprState.pspriteiscale;
         vis->startfrac = spritewidth[lump] - 1;
     }
     else
     {
-        vis->xiscale = pspriteiscale;
+        vis->xiscale = sprState.pspriteiscale;
         vis->startfrac = 0;
     }
 
@@ -707,16 +747,16 @@ void drawPSprite(PspDef* psp)
 
     vis->patch = lump;
 
-    if (viewplayer->powers[pw_invisibility] > 4 * 32
-        || viewplayer->powers[pw_invisibility] & 8)
+    if (pt.viewplayer->powers[pw_invisibility] > 4 * 32
+        || pt.viewplayer->powers[pw_invisibility] & 8)
     {
         // shadow draw
         vis->colormap = nullptr;
     }
-    else if (fixedcolormap)
+    else if (lights.fixedcolormap)
     {
         // fixed color
-        vis->colormap = fixedcolormap;
+        vis->colormap = lights.fixedcolormap;
     }
     else if (psp->state->frame & FF_FULLBRIGHT)
     {
@@ -741,23 +781,27 @@ void drawPlayerSprites()
     int lightnum;
     PspDef* psp;
 
+    auto& pt = viewPoint();
+    auto& lights = lighting();
+    auto& sprState = spriteState();
+
     // get light level
-    lightnum = (viewplayer->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT)
-               + extralight;
+    lightnum = (pt.viewplayer->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT)
+               + lights.extralight;
 
     if (lightnum < 0)
-        spritelights = scalelight[0];
+        spritelights = lights.scalelight[0];
     else if (lightnum >= LIGHTLEVELS)
-        spritelights = scalelight[LIGHTLEVELS - 1];
+        spritelights = lights.scalelight[LIGHTLEVELS - 1];
     else
-        spritelights = scalelight[lightnum];
+        spritelights = lights.scalelight[lightnum];
 
     // clip to screen bounds
-    mfloorclip = screenheightarray;
-    mceilingclip = negonearray;
+    sprState.mfloorclip = sprState.screenheightarray;
+    sprState.mceilingclip = sprState.negonearray;
 
     // add all active psprites
-    for (i = 0, psp = viewplayer->psprites; i < NUMPSPRITES; i++, psp++)
+    for (i = 0, psp = pt.viewplayer->psprites; i < NUMPSPRITES; i++, psp++)
     {
         if (psp->state)
             drawPSprite(psp);
@@ -775,26 +819,29 @@ void sortVisSprites()
     VisSprite unsorted;
     fixed_t bestscale;
 
-    count = static_cast<int>(vissprite_p - vissprites);
+    auto& sprState = spriteState();
+
+    count = static_cast<int>(sprState.vissprite_p - sprState.vissprites);
 
     unsorted.next = unsorted.prev = &unsorted;
 
     if (!count)
         return;
 
-    for (ds = vissprites; ds < vissprite_p; ds++)
+    for (ds = sprState.vissprites; ds < sprState.vissprite_p; ds++)
     {
         ds->next = ds + 1;
         ds->prev = ds - 1;
     }
 
-    vissprites[0].prev = &unsorted;
-    unsorted.next = &vissprites[0];
-    (vissprite_p - 1)->next = &unsorted;
-    unsorted.prev = vissprite_p - 1;
+    sprState.vissprites[0].prev = &unsorted;
+    unsorted.next = &sprState.vissprites[0];
+    (sprState.vissprite_p - 1)->next = &unsorted;
+    unsorted.prev = sprState.vissprite_p - 1;
 
     // pull the vissprites out by scale
-    vsprsortedhead.next = vsprsortedhead.prev = &vsprsortedhead;
+    sprState.vsprsortedhead.next = sprState.vsprsortedhead.prev =
+        &sprState.vsprsortedhead;
     for (int i = 0; i < count; i++)
     {
         bestscale = DOOM_MAXINT;
@@ -808,10 +855,10 @@ void sortVisSprites()
         }
         best->next->prev = best->prev;
         best->prev->next = best->next;
-        best->next = &vsprsortedhead;
-        best->prev = vsprsortedhead.prev;
-        vsprsortedhead.prev->next = best;
-        vsprsortedhead.prev = best;
+        best->next = &sprState.vsprsortedhead;
+        best->prev = sprState.vsprsortedhead.prev;
+        sprState.vsprsortedhead.prev->next = best;
+        sprState.vsprsortedhead.prev = best;
     }
 }
 
@@ -830,13 +877,17 @@ void drawSprite(VisSprite* spr)
     fixed_t lowscale;
     int silhouette;
 
+    auto& bsp = bspScratch();
+    auto& sprState = spriteState();
+    auto& view = viewWindow();
+
     for (x = spr->x1; x <= spr->x2; x++)
         clipbot[x] = cliptop[x] = -2;
 
     // Scan drawsegs from end to start for obscuring segs.
     // The first drawseg that has a greater scale
     //  is the clip seg.
-    for (ds = ds_p - 1; ds >= drawsegs; ds--)
+    for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs; ds--)
     {
         // determine if the drawseg obscures the sprite
         if (ds->x1 > spr->x2 || ds->x2 < spr->x1
@@ -913,14 +964,14 @@ void drawSprite(VisSprite* spr)
     for (x = spr->x1; x <= spr->x2; x++)
     {
         if (clipbot[x] == -2)
-            clipbot[x] = viewheight;
+            clipbot[x] = view.viewheight;
 
         if (cliptop[x] == -2)
             cliptop[x] = -1;
     }
 
-    mfloorclip = clipbot.data();
-    mceilingclip = cliptop.data();
+    sprState.mfloorclip = clipbot.data();
+    sprState.mceilingclip = cliptop.data();
     drawVisSprite(spr);
 }
 
@@ -932,19 +983,23 @@ void drawMasked()
     VisSprite* spr;
     DrawSeg* ds;
 
+    auto& bsp = bspScratch();
+    auto& sprState = spriteState();
+
     sortVisSprites();
 
-    if (vissprite_p > vissprites)
+    if (sprState.vissprite_p > sprState.vissprites)
     {
         // draw all vissprites back to front
-        for (spr = vsprsortedhead.next; spr != &vsprsortedhead; spr = spr->next)
+        for (spr = sprState.vsprsortedhead.next; spr != &sprState.vsprsortedhead;
+             spr = spr->next)
         {
             drawSprite(spr);
         }
     }
 
     // render any remaining masked mid textures
-    for (ds = ds_p - 1; ds >= drawsegs; ds--)
+    for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs; ds--)
         if (ds->maskedtexturecol)
             Doom::renderMaskedSegRange(ds, ds->x1, ds->x2);
 

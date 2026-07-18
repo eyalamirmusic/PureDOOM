@@ -19,6 +19,8 @@
 #include "Draw.h"
 #include "DrawState.h"
 #include "DrawTables.h"
+#include "ViewProjection.h"
+#include "ViewWindow.h"
 
 #include "Video.h"
 #include <ea_data_structures/Structures/Array.h>
@@ -57,27 +59,29 @@ static int (&columnofs)[MAXWIDTH] = drawTables().columnofs;
 //
 void drawColumn()
 {
+    auto& draw = drawState();
+
     int count;
     byte* dest;
     fixed_t frac;
     fixed_t fracstep;
 
-    count = dc_yh - dc_yl;
+    count = draw.dc_yh - draw.dc_yl;
 
     // Zero length, column does not exceed a pixel.
     if (count < 0)
         return;
 
 #ifdef RANGECHECK
-    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
-        || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
+        || draw.dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
-        doom_concat(error_buf, doom_itoa(dc_yl, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
         doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(dc_yh, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
         doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(dc_x, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
         fatalError(error_buf);
     }
 #endif
@@ -85,12 +89,12 @@ void drawColumn()
     // Framebuffer destination address.
     // Use ylookup LUT to avoid multiply with ScreenWidth.
     // Use columnofs LUT for subwindows?
-    dest = ylookup[dc_yl] + columnofs[dc_x];
+    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
 
     // Determine scaling,
     //  which is the only mapping to be done.
-    fracstep = dc_iscale;
-    frac = dc_texturemid + (dc_yl - centery) * fracstep;
+    fracstep = draw.dc_iscale;
+    frac = draw.dc_texturemid + (draw.dc_yl - viewProjection().centery) * fracstep;
 
     // Inner loop that does the actual texture mapping,
     //  e.g. a DDA-lile scaling.
@@ -99,7 +103,7 @@ void drawColumn()
     {
         // Re-map color indices from wall texture column
         //  using a lighting/special effects LUT.
-        *dest = dc_colormap[dc_source[(frac >> FRACBITS) & 127]];
+        *dest = draw.dc_colormap[draw.dc_source[(frac >> FRACBITS) & 127]];
 
         dest += SCREENWIDTH;
         frac += fracstep;
@@ -109,44 +113,46 @@ void drawColumn()
 
 void drawColumnLow()
 {
+    auto& draw = drawState();
+
     int count;
     byte* dest;
     byte* dest2;
     fixed_t frac;
     fixed_t fracstep;
 
-    count = dc_yh - dc_yl;
+    count = draw.dc_yh - draw.dc_yl;
 
     // Zero length.
     if (count < 0)
         return;
 
 #ifdef RANGECHECK
-    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
-        || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
+        || draw.dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
-        doom_concat(error_buf, doom_itoa(dc_yl, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
         doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(dc_yh, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
         doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(dc_x, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
         fatalError(error_buf);
     }
 #endif
     // Blocky mode, need to multiply by 2.
-    dc_x <<= 1;
+    draw.dc_x <<= 1;
 
-    dest = ylookup[dc_yl] + columnofs[dc_x];
-    dest2 = ylookup[dc_yl] + columnofs[dc_x + 1];
+    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
+    dest2 = ylookup[draw.dc_yl] + columnofs[draw.dc_x + 1];
 
-    fracstep = dc_iscale;
-    frac = dc_texturemid + (dc_yl - centery) * fracstep;
+    fracstep = draw.dc_iscale;
+    frac = draw.dc_texturemid + (draw.dc_yl - viewProjection().centery) * fracstep;
 
     do
     {
         // Hack. Does not work corretly.
-        *dest2 = *dest = dc_colormap[dc_source[(frac >> FRACBITS) & 127]];
+        *dest2 = *dest = draw.dc_colormap[draw.dc_source[(frac >> FRACBITS) & 127]];
         dest += SCREENWIDTH;
         dest2 += SCREENWIDTH;
         frac += fracstep;
@@ -180,39 +186,42 @@ static int& fuzzpos = drawTables().fuzzpos;
 
 void drawFuzzColumn()
 {
+    auto& draw = drawState();
+    auto& view = viewWindow();
+
     int count;
     byte* dest;
 
     // Adjust borders. Low...
-    if (!dc_yl)
-        dc_yl = 1;
+    if (!draw.dc_yl)
+        draw.dc_yl = 1;
 
     // .. and high.
-    if (dc_yh == viewheight - 1)
-        dc_yh = viewheight - 2;
+    if (draw.dc_yh == view.viewheight - 1)
+        draw.dc_yh = view.viewheight - 2;
 
-    count = dc_yh - dc_yl;
+    count = draw.dc_yh - draw.dc_yl;
 
     // Zero length.
     if (count < 0)
         return;
 
 #ifdef RANGECHECK
-    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
-        || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
+        || draw.dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: Doom::drawFuzzColumn: ");
-        doom_concat(error_buf, doom_itoa(dc_yl, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
         doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(dc_yh, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
         doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(dc_x, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
         fatalError(error_buf);
     }
 #endif
 
     // Does not work with blocky mode.
-    dest = ylookup[dc_yl] + columnofs[dc_x];
+    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
 
     // Looks like an attempt at dithering,
     //  using the colormap #6 (of 0-31, a bit
@@ -245,35 +254,37 @@ void drawFuzzColumn()
 //
 void drawTranslatedColumn()
 {
+    auto& draw = drawState();
+
     int count;
     byte* dest;
     fixed_t frac;
     fixed_t fracstep;
 
-    count = dc_yh - dc_yl;
+    count = draw.dc_yh - draw.dc_yl;
     if (count < 0)
         return;
 
 #ifdef RANGECHECK
-    if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
-        || dc_yh >= SCREENHEIGHT)
+    if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
+        || draw.dc_yh >= SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
-        doom_concat(error_buf, doom_itoa(dc_yl, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
         doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(dc_yh, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
         doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(dc_x, 10));
+        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
         fatalError(error_buf);
     }
 #endif
 
     // FIXME. As above.
-    dest = ylookup[dc_yl] + columnofs[dc_x];
+    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
 
     // Looks familiar.
-    fracstep = dc_iscale;
-    frac = dc_texturemid + (dc_yl - centery) * fracstep;
+    fracstep = draw.dc_iscale;
+    frac = draw.dc_texturemid + (draw.dc_yl - viewProjection().centery) * fracstep;
 
     // Here we do an additional index re-mapping.
     do
@@ -283,7 +294,8 @@ void drawTranslatedColumn()
         //  used with PLAY sprites.
         // Thus the "green" ramp of the player 0 sprite
         //  is mapped to gray, red, black/indigo.
-        *dest = dc_colormap[dc_translation[dc_source[frac >> FRACBITS]]];
+        *dest =
+            draw.dc_colormap[draw.dc_translation[draw.dc_source[frac >> FRACBITS]]];
         dest += SCREENWIDTH;
 
         frac += fracstep;
@@ -341,6 +353,8 @@ void initTranslationTables()
 //
 void drawSpan()
 {
+    auto& draw = drawState();
+
     fixed_t xfrac;
     fixed_t yfrac;
     byte* dest;
@@ -348,26 +362,26 @@ void drawSpan()
     int spot;
 
 #ifdef RANGECHECK
-    if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH
-        || static_cast<unsigned>(ds_y) > SCREENHEIGHT)
+    if (draw.ds_x2 < draw.ds_x1 || draw.ds_x1 < 0 || draw.ds_x2 >= SCREENWIDTH
+        || static_cast<unsigned>(draw.ds_y) > SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: Doom::drawSpan: ");
-        doom_concat(error_buf, doom_itoa(ds_x1, 10));
+        doom_concat(error_buf, doom_itoa(draw.ds_x1, 10));
         doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(ds_x2, 10));
+        doom_concat(error_buf, doom_itoa(draw.ds_x2, 10));
         doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(ds_y, 10));
+        doom_concat(error_buf, doom_itoa(draw.ds_y, 10));
         fatalError(error_buf);
     }
 #endif
 
-    xfrac = ds_xfrac;
-    yfrac = ds_yfrac;
+    xfrac = draw.ds_xfrac;
+    yfrac = draw.ds_yfrac;
 
-    dest = ylookup[ds_y] + columnofs[ds_x1];
+    dest = ylookup[draw.ds_y] + columnofs[draw.ds_x1];
 
     // We do not check for zero spans here?
-    count = ds_x2 - ds_x1;
+    count = draw.ds_x2 - draw.ds_x1;
 
     do
     {
@@ -376,11 +390,11 @@ void drawSpan()
 
         // Lookup pixel from flat texture tile,
         //  re-index using light/colormap.
-        *dest++ = ds_colormap[ds_source[spot]];
+        *dest++ = draw.ds_colormap[draw.ds_source[spot]];
 
         // Next step in u,v.
-        xfrac += ds_xstep;
-        yfrac += ds_ystep;
+        xfrac += draw.ds_xstep;
+        yfrac += draw.ds_ystep;
 
     } while (count--);
 }
@@ -390,6 +404,8 @@ void drawSpan()
 //
 void drawSpanLow()
 {
+    auto& draw = drawState();
+
     fixed_t xfrac;
     fixed_t yfrac;
     byte* dest;
@@ -397,39 +413,39 @@ void drawSpanLow()
     int spot;
 
 #ifdef RANGECHECK
-    if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH
-        || static_cast<unsigned>(ds_y) > SCREENHEIGHT)
+    if (draw.ds_x2 < draw.ds_x1 || draw.ds_x1 < 0 || draw.ds_x2 >= SCREENWIDTH
+        || static_cast<unsigned>(draw.ds_y) > SCREENHEIGHT)
     {
         doom_strcpy(error_buf, "Error: Doom::drawSpan: ");
-        doom_concat(error_buf, doom_itoa(ds_x1, 10));
+        doom_concat(error_buf, doom_itoa(draw.ds_x1, 10));
         doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(ds_x2, 10));
+        doom_concat(error_buf, doom_itoa(draw.ds_x2, 10));
         doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(ds_y, 10));
+        doom_concat(error_buf, doom_itoa(draw.ds_y, 10));
         fatalError(error_buf);
     }
 #endif
 
-    xfrac = ds_xfrac;
-    yfrac = ds_yfrac;
+    xfrac = draw.ds_xfrac;
+    yfrac = draw.ds_yfrac;
 
     // Blocky mode, need to multiply by 2.
-    ds_x1 <<= 1;
-    ds_x2 <<= 1;
+    draw.ds_x1 <<= 1;
+    draw.ds_x2 <<= 1;
 
-    dest = ylookup[ds_y] + columnofs[ds_x1];
+    dest = ylookup[draw.ds_y] + columnofs[draw.ds_x1];
 
-    count = ds_x2 - ds_x1;
+    count = draw.ds_x2 - draw.ds_x1;
     do
     {
         spot = ((yfrac >> (16 - 6)) & (63 * 64)) + ((xfrac >> 16) & 63);
         // Lowres/blocky mode does it twice,
         //  while scale is adjusted appropriately.
-        *dest++ = ds_colormap[ds_source[spot]];
-        *dest++ = ds_colormap[ds_source[spot]];
+        *dest++ = draw.ds_colormap[draw.ds_source[spot]];
+        *dest++ = draw.ds_colormap[draw.ds_source[spot]];
 
-        xfrac += ds_xstep;
-        yfrac += ds_ystep;
+        xfrac += draw.ds_xstep;
+        yfrac += draw.ds_ystep;
 
     } while (count--);
 }
@@ -443,24 +459,26 @@ void drawSpanLow()
 //
 void initBuffer(int width, int height)
 {
+    auto& view = viewWindow();
+
     // Handle resize,
     //  e.g. smaller view windows
     //  with border and/or status bar.
-    viewwindowx = (SCREENWIDTH - width) >> 1;
+    view.viewwindowx = (SCREENWIDTH - width) >> 1;
 
     // Column offset. For windows.
     for (int i = 0; i < width; i++)
-        columnofs[i] = viewwindowx + i;
+        columnofs[i] = view.viewwindowx + i;
 
     // Samw with base row offset.
     if (width == SCREENWIDTH)
-        viewwindowy = 0;
+        view.viewwindowy = 0;
     else
-        viewwindowy = (SCREENHEIGHT - SBARHEIGHT - height) >> 1;
+        view.viewwindowy = (SCREENHEIGHT - SBARHEIGHT - height) >> 1;
 
     // Preclaculate all row offsets.
     for (int i = 0; i < height; i++)
-        ylookup[i] = screens[0] + (i + viewwindowy) * SCREENWIDTH;
+        ylookup[i] = screens[0] + (i + view.viewwindowy) * SCREENWIDTH;
 }
 
 //
@@ -471,6 +489,8 @@ void initBuffer(int width, int height)
 //
 void fillBackScreen()
 {
+    auto& view = viewWindow();
+
     byte* src;
     byte* dest;
     int x;
@@ -485,7 +505,7 @@ void fillBackScreen()
 
     char* name;
 
-    if (scaledviewwidth == 320)
+    if (view.scaledviewwidth == 320)
         return;
 
     if (gamemode == commercial)
@@ -513,41 +533,43 @@ void fillBackScreen()
 
     patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_t"));
 
-    for (x = 0; x < scaledviewwidth; x += 8)
-        Doom::drawPatch(viewwindowx + x, viewwindowy - 8, 1, patch);
+    for (x = 0; x < view.scaledviewwidth; x += 8)
+        Doom::drawPatch(view.viewwindowx + x, view.viewwindowy - 8, 1, patch);
     patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_b"));
 
-    for (x = 0; x < scaledviewwidth; x += 8)
-        Doom::drawPatch(viewwindowx + x, viewwindowy + viewheight, 1, patch);
+    for (x = 0; x < view.scaledviewwidth; x += 8)
+        Doom::drawPatch(
+            view.viewwindowx + x, view.viewwindowy + view.viewheight, 1, patch);
     patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_l"));
 
-    for (y = 0; y < viewheight; y += 8)
-        Doom::drawPatch(viewwindowx - 8, viewwindowy + y, 1, patch);
+    for (y = 0; y < view.viewheight; y += 8)
+        Doom::drawPatch(view.viewwindowx - 8, view.viewwindowy + y, 1, patch);
     patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_r"));
 
-    for (y = 0; y < viewheight; y += 8)
-        Doom::drawPatch(viewwindowx + scaledviewwidth, viewwindowy + y, 1, patch);
+    for (y = 0; y < view.viewheight; y += 8)
+        Doom::drawPatch(
+            view.viewwindowx + view.scaledviewwidth, view.viewwindowy + y, 1, patch);
 
     // Draw beveled edge.
-    Doom::drawPatch(viewwindowx - 8,
-                viewwindowy - 8,
-                1,
-                static_cast<Patch*>(Doom::cacheLumpName("brdr_tl")));
+    Doom::drawPatch(view.viewwindowx - 8,
+                    view.viewwindowy - 8,
+                    1,
+                    static_cast<Patch*>(Doom::cacheLumpName("brdr_tl")));
 
-    Doom::drawPatch(viewwindowx + scaledviewwidth,
-                viewwindowy - 8,
-                1,
-                static_cast<Patch*>(Doom::cacheLumpName("brdr_tr")));
+    Doom::drawPatch(view.viewwindowx + view.scaledviewwidth,
+                    view.viewwindowy - 8,
+                    1,
+                    static_cast<Patch*>(Doom::cacheLumpName("brdr_tr")));
 
-    Doom::drawPatch(viewwindowx - 8,
-                viewwindowy + viewheight,
-                1,
-                static_cast<Patch*>(Doom::cacheLumpName("brdr_bl")));
+    Doom::drawPatch(view.viewwindowx - 8,
+                    view.viewwindowy + view.viewheight,
+                    1,
+                    static_cast<Patch*>(Doom::cacheLumpName("brdr_bl")));
 
-    Doom::drawPatch(viewwindowx + scaledviewwidth,
-                viewwindowy + viewheight,
-                1,
-                static_cast<Patch*>(Doom::cacheLumpName("brdr_br")));
+    Doom::drawPatch(view.viewwindowx + view.scaledviewwidth,
+                    view.viewwindowy + view.viewheight,
+                    1,
+                    static_cast<Patch*>(Doom::cacheLumpName("brdr_br")));
 }
 
 //
@@ -570,29 +592,31 @@ void videoErase(unsigned ofs, int count)
 //
 void drawViewBorder()
 {
+    auto& view = viewWindow();
+
     int top;
     int side;
     int ofs;
     int i;
 
-    if (scaledviewwidth == SCREENWIDTH)
+    if (view.scaledviewwidth == SCREENWIDTH)
         return;
 
-    top = ((SCREENHEIGHT - SBARHEIGHT) - viewheight) / 2;
-    side = (SCREENWIDTH - scaledviewwidth) / 2;
+    top = ((SCREENHEIGHT - SBARHEIGHT) - view.viewheight) / 2;
+    side = (SCREENWIDTH - view.scaledviewwidth) / 2;
 
     // copy top and one line of left side
     videoErase(0, top * SCREENWIDTH + side);
 
     // copy one line of right side and bottom
-    ofs = (viewheight + top) * SCREENWIDTH - side;
+    ofs = (view.viewheight + top) * SCREENWIDTH - side;
     videoErase(ofs, top * SCREENWIDTH + side);
 
     // copy sides using wraparound
     ofs = top * SCREENWIDTH + SCREENWIDTH - side;
     side <<= 1;
 
-    for (i = 1; i < viewheight; i++)
+    for (i = 1; i < view.viewheight; i++)
     {
         videoErase(ofs, side);
         ofs += SCREENWIDTH;

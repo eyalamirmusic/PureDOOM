@@ -29,8 +29,12 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
+#include "Clip.h"
 #include "Enemy.h"
 #include "EnemyAI.h"
+#include "SoundTarget.h"
+#include "ThinkerList.h"
+#include "ValidCount.h"
 
 #include <ea_data_structures/Structures/Array.h>
 
@@ -53,13 +57,6 @@
 #define FATSPREAD (ANG90 / 8)
 #define SKULLSPEED (20 * FRACUNIT)
 
-// closeShotgun2 calls the weapon refire; soundtarget and spechit/numspechit are
-// globals the AI shares. soundtarget is a Doom::SoundTarget member (Engine) now, so this
-// extern is a reference - and must be, since recursiveSound writes it (a plain-Doom::Mobj*
-// extern that wrote it would clobber the reference's pointer). spechit is Clip's.
-extern Doom::Mobj*& soundtarget;
-extern Doom::Line** spechit;
-extern int& numspechit;
 
 namespace Doom
 {
@@ -180,15 +177,18 @@ void recursiveSound(Sector* sec, int soundblocks)
     Line* check;
     Sector* other;
 
+    auto& vc = validCount();
+
     // wake up all monsters in this sector
-    if (sec->validcount == validcount && sec->soundtraversed <= soundblocks + 1)
+    if (sec->validcount == vc.validcount
+        && sec->soundtraversed <= soundblocks + 1)
     {
         return; // already flooded
     }
 
-    sec->validcount = validcount;
+    sec->validcount = vc.validcount;
     sec->soundtraversed = soundblocks + 1;
-    sec->soundtarget = soundtarget;
+    sec->soundtarget = soundTarget().soundtarget;
 
     for (int i = 0; i < sec->linecount; i++)
     {
@@ -223,8 +223,8 @@ void recursiveSound(Sector* sec, int soundblocks)
 //
 void noiseAlert(Mobj* target, Mobj& emmiter)
 {
-    soundtarget = target;
-    validcount++;
+    soundTarget().soundtarget = target;
+    validCount().validcount++;
     recursiveSound(emmiter.subsector->sector, 0);
 }
 
@@ -331,6 +331,8 @@ doom_boolean move(Mobj& actor)
     doom_boolean try_ok;
     doom_boolean good;
 
+    auto& c = clip();
+
     if (actor.movedir == DI_NODIR)
         return false;
 
@@ -345,10 +347,10 @@ doom_boolean move(Mobj& actor)
     if (!try_ok)
     {
         // open any specials
-        if (actor.flags & MF_FLOAT && floatok)
+        if (actor.flags & MF_FLOAT && c.floatok)
         {
             // must adjust height
-            if (actor.z < tmfloorz)
+            if (actor.z < c.tmfloorz)
                 actor.z += FLOATSPEED;
             else
                 actor.z -= FLOATSPEED;
@@ -357,14 +359,14 @@ doom_boolean move(Mobj& actor)
             return true;
         }
 
-        if (!numspechit)
+        if (!c.numspechit)
             return false;
 
         actor.movedir = DI_NODIR;
         good = false;
-        while (numspechit--)
+        while (c.numspechit--)
         {
-            ld = spechit[numspechit];
+            ld = c.spechit[c.numspechit];
             // if the special is not a door
             // that can be opened,
             // return false
@@ -597,11 +599,13 @@ void keenDie(Mobj& mo)
     Mobj* mo2;
     Line junk;
 
+    auto& thinkers = thinkerList();
+
     fall(mo);
 
     // scan the remaining thinkers
     // to see if all Keens are dead
-    for (th = thinkercap.next; th != &thinkercap; th = th->next)
+    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         if (th->kind() != Doom::ThinkerKind::Mobj || th->removed)
             continue;
@@ -1416,11 +1420,13 @@ void painShootSkull(Mobj& actor, angle_t angle)
     int count;
     Doom::Thinker* currentthinker;
 
+    auto& thinkers = thinkerList();
+
     // count total number of skull currently on the level
     count = 0;
 
-    currentthinker = thinkercap.next;
-    while (currentthinker != &thinkercap)
+    currentthinker = thinkers.cap.next;
+    while (currentthinker != &thinkers.cap)
     {
         if (currentthinker->kind() == Doom::ThinkerKind::Mobj
             && !currentthinker->removed
@@ -1554,6 +1560,8 @@ void bossDeath(Mobj& mo)
     Line junk;
     int i;
 
+    auto& thinkers = thinkerList();
+
     if (gamemode == commercial)
     {
         if (gamemap != 7)
@@ -1627,7 +1635,7 @@ void bossDeath(Mobj& mo)
 
     // scan the remaining thinkers to see
     // if all bosses are dead
-    for (th = thinkercap.next; th != &thinkercap; th = th->next)
+    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         if (th->kind() != Doom::ThinkerKind::Mobj || th->removed)
             continue;
@@ -1730,12 +1738,15 @@ void brainAwake(Mobj&)
     Doom::Thinker* thinker;
     Mobj* m;
 
+    auto& thinkers = thinkerList();
+
     // find all the target spots
     numbraintargets = 0;
     braintargeton = 0;
 
-    thinker = thinkercap.next;
-    for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
+    thinker = thinkers.cap.next;
+    for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
+         thinker = thinker->next)
     {
         if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
             continue; // not a mobj

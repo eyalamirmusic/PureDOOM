@@ -11,6 +11,7 @@
 #include "../Game/Sound.h"
 #include "Mobj.h"
 #include "Movement.h"
+#include "ThinkerList.h"
 namespace Doom
 {
 
@@ -26,6 +27,8 @@ int teleport(Line* line, int side, Mobj* thing)
     fixed_t oldy;
     fixed_t oldz;
 
+    auto& thinkers = thinkerList();
+
     // don't teleport missiles
     if (thing->flags & MF_MISSILE)
         return 0;
@@ -40,8 +43,8 @@ int teleport(Line* line, int side, Mobj* thing)
     {
         if (sectors[i].tag == tag)
         {
-            thinker = thinkercap.next;
-            for (thinker = thinkercap.next; thinker != &thinkercap;
+            thinker = thinkers.cap.next;
+            for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
                  thinker = thinker->next)
             {
                 // not a mobj

@@ -29,23 +29,12 @@
 
 
 // These are Doom::SpriteState members (Engine) now; references onto them (REFACTOR.md, Step 5).
-extern Doom::VisSprite (&vissprites)[MAXVISSPRITES];
-extern Doom::VisSprite*& vissprite_p;
-extern Doom::VisSprite& vsprsortedhead;
 
 // Constant arrays used for psprite clipping
 // and initializing clipping.
-extern short (&negonearray)[SCREENWIDTH];
-extern short (&screenheightarray)[SCREENWIDTH];
 
 // vars for R_DrawMaskedColumn
-extern short*& mfloorclip;
-extern short*& mceilingclip;
-extern fixed_t& spryscale;
-extern fixed_t& sprtopscreen;
 
-extern fixed_t& pspritescale;
-extern fixed_t& pspriteiscale;
 
 
 

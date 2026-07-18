@@ -64,18 +64,15 @@
 #include "StatusWidgets.h"
 #include <ea_data_structures/Structures/Array.h>
 
-// st_statusbaron is a reference onto Doom::StatusBarState (an Engine member), bound
-#include "../Host/Video.h"
-// in the st_stuff.cpp shim: the app (EngineAccess) reads it to decide whether to
 #include "../Game/Game.h"
-// composite the status-bar strip. This bare extern must stay a reference to match,
+#include "../Game/OverlayState.h"
 #include "../Game/Sound.h"
-// or it would read the reference's pointer bits. mapnames (hu_stuff) and doom_flags
+#include "../Host/Video.h"
 #include "../Render/Main.h"
-// are other subsystems' globals this file reads.
 #include "../Sim/Interaction.h"
 #include "../Sim/Random.h"
-extern doom_boolean& st_statusbaron;
+
+// mapnames (hu_stuff) and doom_flags are other subsystems' globals this file reads.
 extern char* mapnames[];
 extern int doom_flags;
 
@@ -428,7 +425,7 @@ void stopStatusBar();
 
 void refreshBackground()
 {
-    if (st_statusbaron)
+    if (statusBarState().st_statusbaron)
     {
         Doom::drawPatch(ST_X, 0, STLIB_BG, sbar);
 
@@ -837,6 +834,8 @@ void updateFaceWidget()
 
 void updateWidgets()
 {
+    auto& bar = statusBarState();
+
     // The "n/a" ammo sentinel: a Doom::StatusBarWidgets member (Engine) now, reached by a local
     // reference (w_ready.num takes its address, so the member's stable address is what it needs).
     int& largeammo = statusBarWidgets().largeammo;
@@ -864,10 +863,10 @@ void updateWidgets()
     st_notdeathmatch = !deathmatch;
 
     // used by w_arms[] widgets
-    st_armson = st_statusbaron && !deathmatch;
+    st_armson = bar.st_statusbaron && !deathmatch;
 
     // used by w_frags widget
-    st_fragson = deathmatch && st_statusbaron;
+    st_fragson = deathmatch && bar.st_statusbaron;
     st_fragscount = 0;
 
     for (int i = 0; i < MAXPLAYERS; i++)
@@ -944,11 +943,13 @@ void doPaletteStuff()
 
 void drawWidgets(doom_boolean refresh)
 {
+    auto& bar = statusBarState();
+
     // used by w_arms[] widgets
-    st_armson = st_statusbaron && !deathmatch;
+    st_armson = bar.st_statusbaron && !deathmatch;
 
     // used by w_frags widget
-    st_fragson = deathmatch && st_statusbaron;
+    st_fragson = deathmatch && bar.st_statusbaron;
 
     Doom::updateNum(w_ready, refresh);
 
@@ -993,7 +994,7 @@ void diffDraw()
 
 void drawStatusBar(doom_boolean fullscreen, doom_boolean refresh)
 {
-    st_statusbaron = (!fullscreen) || automapactive;
+    statusBarState().st_statusbaron = (!fullscreen) || overlayState().automapactive;
     st_firsttime = st_firsttime || refresh;
 
     // Do red-/gold-shifts from damage/items
@@ -1140,7 +1141,7 @@ void initStatusBarData()
     st_chatstate = StartChatState;
     st_gamestate = FirstPersonState;
 
-    st_statusbaron = true;
+    statusBarState().st_statusbaron = true;
     st_oldchat = st_chat = false;
     st_cursoron = false;
 
@@ -1160,13 +1161,15 @@ void initStatusBarData()
 
 void createWidgets()
 {
+    auto& bar = statusBarState();
+
     // ready weapon ammo
     Doom::initNum(w_ready,
                   ST_AMMOX,
                   ST_AMMOY,
                   tallnum,
                   &plyr->ammo[weaponinfo[plyr->readyweapon].ammo],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_AMMOWIDTH);
 
     // the last weapon type
@@ -1178,7 +1181,7 @@ void createWidgets()
                       ST_HEALTHY,
                       tallnum,
                       &plyr->health,
-                      &st_statusbaron,
+                      &bar.st_statusbaron,
                       tallpercent);
 
     // arms background
@@ -1187,7 +1190,7 @@ void createWidgets()
                       ST_ARMSBGY,
                       armsbg,
                       &st_notdeathmatch,
-                      &st_statusbaron);
+                      &bar.st_statusbaron);
 
     // weapons owned
     for (int i = 0; i < 6; i++)
@@ -1211,7 +1214,7 @@ void createWidgets()
 
     // faces
     Doom::initMultIcon(
-        w_faces, ST_FACESX, ST_FACESY, faces, &st_faceindex, &st_statusbaron);
+        w_faces, ST_FACESX, ST_FACESY, faces, &st_faceindex, &bar.st_statusbaron);
 
     // armor percentage - should be colored later
     Doom::initPercent(w_armor,
@@ -1219,18 +1222,18 @@ void createWidgets()
                       ST_ARMORY,
                       tallnum,
                       &plyr->armorpoints,
-                      &st_statusbaron,
+                      &bar.st_statusbaron,
                       tallpercent);
 
     // keyboxes 0-2
     Doom::initMultIcon(
-        w_keyboxes[0], ST_KEY0X, ST_KEY0Y, keys, &keyboxes[0], &st_statusbaron);
+        w_keyboxes[0], ST_KEY0X, ST_KEY0Y, keys, &keyboxes[0], &bar.st_statusbaron);
 
     Doom::initMultIcon(
-        w_keyboxes[1], ST_KEY1X, ST_KEY1Y, keys, &keyboxes[1], &st_statusbaron);
+        w_keyboxes[1], ST_KEY1X, ST_KEY1Y, keys, &keyboxes[1], &bar.st_statusbaron);
 
     Doom::initMultIcon(
-        w_keyboxes[2], ST_KEY2X, ST_KEY2Y, keys, &keyboxes[2], &st_statusbaron);
+        w_keyboxes[2], ST_KEY2X, ST_KEY2Y, keys, &keyboxes[2], &bar.st_statusbaron);
 
     // ammo count (all four kinds)
     Doom::initNum(w_ammo[0],
@@ -1238,7 +1241,7 @@ void createWidgets()
                   ST_AMMO0Y,
                   shortnum,
                   &plyr->ammo[0],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_AMMO0WIDTH);
 
     Doom::initNum(w_ammo[1],
@@ -1246,7 +1249,7 @@ void createWidgets()
                   ST_AMMO1Y,
                   shortnum,
                   &plyr->ammo[1],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_AMMO1WIDTH);
 
     Doom::initNum(w_ammo[2],
@@ -1254,7 +1257,7 @@ void createWidgets()
                   ST_AMMO2Y,
                   shortnum,
                   &plyr->ammo[2],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_AMMO2WIDTH);
 
     Doom::initNum(w_ammo[3],
@@ -1262,7 +1265,7 @@ void createWidgets()
                   ST_AMMO3Y,
                   shortnum,
                   &plyr->ammo[3],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_AMMO3WIDTH);
 
     // max ammo count (all four kinds)
@@ -1271,7 +1274,7 @@ void createWidgets()
                   ST_MAXAMMO0Y,
                   shortnum,
                   &plyr->maxammo[0],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_MAXAMMO0WIDTH);
 
     Doom::initNum(w_maxammo[1],
@@ -1279,7 +1282,7 @@ void createWidgets()
                   ST_MAXAMMO1Y,
                   shortnum,
                   &plyr->maxammo[1],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_MAXAMMO1WIDTH);
 
     Doom::initNum(w_maxammo[2],
@@ -1287,7 +1290,7 @@ void createWidgets()
                   ST_MAXAMMO2Y,
                   shortnum,
                   &plyr->maxammo[2],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_MAXAMMO2WIDTH);
 
     Doom::initNum(w_maxammo[3],
@@ -1295,7 +1298,7 @@ void createWidgets()
                   ST_MAXAMMO3Y,
                   shortnum,
                   &plyr->maxammo[3],
-                  &st_statusbaron,
+                  &bar.st_statusbaron,
                   ST_MAXAMMO3WIDTH);
 }
 

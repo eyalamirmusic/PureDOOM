@@ -118,7 +118,6 @@ extern int& snd_MusicVolume;   // maximum volume for music
 
 // automapactive/menuactive live in Doom::OverlayState (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
-extern doom_boolean& automapactive;  // In AutoMap mode?
 extern doom_boolean& menuactive;     // Menu overlayed?
 
 // paused/viewactive/nodrawers/noblit live in Doom::RefreshFlags (an Engine member) now;
@@ -132,11 +131,6 @@ extern doom_boolean& noblit;
 
 // The view window geometry lives in Doom::ViewWindow (an Engine member) now; these
 // are references onto it (REFACTOR.md, Step 5).
-extern int& viewwindowx;
-extern int& viewwindowy;
-extern int& viewheight;
-extern int& viewwidth;
-extern int& scaledviewwidth;
 
 
 // This one is related to the 3-screen display mode.
@@ -160,7 +154,6 @@ extern int& totalsecret;
 
 // Timer, for scores.
 extern int& levelstarttic;   // gametic at level start
-extern int& leveltime;       // tics in game play for par
 
 
 // --------------------------------------
@@ -205,10 +198,7 @@ extern doom_boolean (&playeringame)[MAXPLAYERS];
 // Doom::Player spawn spots. These live in Doom::MapSpawns (an Engine member) now; the references
 // onto it are references-to-array for the two arrays (REFACTOR.md, Step 5).
 #define MAX_DM_STARTS 10
-extern Doom::MapThing (&deathmatchstarts)[MAX_DM_STARTS];
-extern Doom::MapThing*& deathmatch_p;
 
-extern Doom::MapThing (&playerstarts)[MAXPLAYERS];
 
 // Intermission stats. Parameters for world map / intermission. In Doom::IntermissionInfo
 // (an Engine member) now; a reference onto it (REFACTOR.md, Step 5).
@@ -218,7 +208,6 @@ extern Doom::IntermissionStart& wminfo;
 // LUT of ammunition limits for each kind. This doubles with BackPack powerup item.
 // In Doom::AmmoLimits (an Engine member) now; a reference-to-array onto it, also declared in
 // p_local.h (REFACTOR.md, Step 5).
-extern int (&maxammo)[Doom::NUMAMMO];
 
 
 //-----------------------------------------
@@ -253,7 +242,6 @@ extern int& bodyqueslot;
 // Needed to store the number of the dummy sky flat. Used for rendering, as well as tracking
 // projectiles etc. In Doom::SkyState (an Engine member) now; a reference onto it
 // (REFACTOR.md, Step 5).
-extern int& skyflatnum;
 
 
 // Netgame stuff (buffers and pointers, i.e. indices). Lives in Doom::NetState (an Engine

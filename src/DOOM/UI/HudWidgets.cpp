@@ -18,8 +18,9 @@
 #include "HudWidgets.h"
 
 #include "../Render/Draw.h"
+#include "../Game/OverlayState.h"
 #include "../Render/Video.h"
-extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
+#include "../Render/ViewWindow.h"
 
 namespace Doom
 {
@@ -105,6 +106,8 @@ void drawTextLine(HudTextLine& l, doom_boolean drawcursor)
 // sorta called by Doom::eraseHud and just better darn get things straight
 void eraseTextLine(HudTextLine& l)
 {
+    auto& view = viewWindow();
+
     int lh;
     int y;
     int yoffset;
@@ -113,18 +116,19 @@ void eraseTextLine(HudTextLine& l)
     // and the text must either need updating or refreshing
     // (because of a recent change back from the automap)
 
-    if (!automapactive && viewwindowx && l.needsupdate)
+    if (!overlayState().automapactive && view.viewwindowx && l.needsupdate)
     {
         lh = SHORT(l.f[0]->height) + 1;
         for (y = l.y, yoffset = y * SCREENWIDTH; y < l.y + lh;
              y++, yoffset += SCREENWIDTH)
         {
-            if (y < viewwindowy || y >= viewwindowy + viewheight)
+            if (y < view.viewwindowy || y >= view.viewwindowy + view.viewheight)
                 Doom::videoErase(yoffset, SCREENWIDTH); // erase entire line
             else
             {
-                Doom::videoErase(yoffset, viewwindowx); // erase left border
-                Doom::videoErase(yoffset + viewwindowx + viewwidth, viewwindowx);
+                Doom::videoErase(yoffset, view.viewwindowx); // erase left border
+                Doom::videoErase(yoffset + view.viewwindowx + view.viewwidth,
+                                 view.viewwindowx);
                 // erase right border
             }
         }

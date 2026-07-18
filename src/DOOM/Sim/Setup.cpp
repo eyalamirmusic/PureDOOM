@@ -18,6 +18,8 @@
 #include "../s_sound.h"
 #include "../Wad/WadFile.h"
 
+#include "../Game/LevelStats.h"
+#include "../Game/MapSpawns.h"
 #include "Level.h"
 #include "Setup.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
@@ -34,6 +36,7 @@
 #include "Mobj.h"
 #include "Switches.h"
 #include "../Math/BBox.h"
+#include "ItemRespawnQueue.h"
 void Doom::spawnMapThing(Doom::MapThing* mthing);
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
@@ -548,7 +551,7 @@ void setupLevel(int episode, int map, int, Skill)
 
     lumpnum = Doom::wad().number(lumpname.data());
 
-    leveltime = 0;
+    levelStats().leveltime = 0;
 
     // note: most of this ordering is important
     loadBlockMap(lumpnum + ML_BLOCKMAP);
@@ -565,7 +568,8 @@ void setupLevel(int episode, int map, int, Skill)
     groupLines();
 
     bodyqueslot = 0;
-    deathmatch_p = deathmatchstarts;
+    auto& spawns = mapSpawns();
+    spawns.deathmatch_p = spawns.deathmatchstarts;
     loadThings(lumpnum + ML_THINGS);
 
     // if deathmatch, randomly spawn the active players
@@ -580,7 +584,7 @@ void setupLevel(int episode, int map, int, Skill)
     }
 
     // clear special respawning que
-    iquehead = iquetail = 0;
+    itemRespawnQueue().iquehead = itemRespawnQueue().iquetail = 0;
 
     // set up world state
     Doom::spawnSpecials();

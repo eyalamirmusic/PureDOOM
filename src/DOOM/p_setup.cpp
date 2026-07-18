@@ -77,9 +77,6 @@ byte* rejectmatrix;
 
 // The map's spawn spots are a Doom::MapSpawns owned by the Engine now; these are references
 // onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
-Doom::MapThing (&deathmatchstarts)[MAX_DEATHMATCH_STARTS] = Doom::mapSpawns().deathmatchstarts;
-Doom::MapThing*& deathmatch_p = Doom::mapSpawns().deathmatch_p;
-Doom::MapThing (&playerstarts)[MAXPLAYERS] = Doom::mapSpawns().playerstarts;
 
 
 

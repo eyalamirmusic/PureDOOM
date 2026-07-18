@@ -26,6 +26,8 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
+#include "../Game/LevelStats.h"
+#include "Clip.h"
 #include "Weapon.h"
 #include "WeaponScratch.h"
 
@@ -317,7 +319,7 @@ void weaponReady(Player& player, PspDef& psp)
         player.attackdown = false;
 
     // bob the weapon based on movement speed
-    angle = (128 * leveltime) & FINEMASK;
+    angle = (128 * levelStats().leveltime) & FINEMASK;
     psp.sx = FRACUNIT + FixedMul(player.bob, finecosine[angle]);
     angle &= FINEANGLES / 2 - 1;
     psp.sy = WEAPONTOP + FixedMul(player.bob, finesine[angle]);
@@ -431,6 +433,8 @@ void punch(Player& player, PspDef&)
     int damage;
     int slope;
 
+    auto& c = clip();
+
     damage = (Doom::randomness().forPlay() % 10 + 1) << 1;
 
     if (player.powers[pw_strength])
@@ -442,11 +446,11 @@ void punch(Player& player, PspDef&)
     Doom::lineAttack(player.mo, angle, MELEERANGE, slope, damage);
 
     // turn to face target
-    if (linetarget)
+    if (c.linetarget)
     {
         Doom::startSound(player.mo, sfx_punch);
         player.mo->angle = Doom::pointToAngle2(
-            player.mo->x, player.mo->y, linetarget->x, linetarget->y);
+            player.mo->x, player.mo->y, c.linetarget->x, c.linetarget->y);
     }
 }
 
@@ -459,6 +463,8 @@ void saw(Player& player, PspDef&)
     int damage;
     int slope;
 
+    auto& c = clip();
+
     damage = 2 * (Doom::randomness().forPlay() % 10 + 1);
     angle = player.mo->angle;
     angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
@@ -467,7 +473,7 @@ void saw(Player& player, PspDef&)
     slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE + 1);
     Doom::lineAttack(player.mo, angle, MELEERANGE + 1, slope, damage);
 
-    if (!linetarget)
+    if (!c.linetarget)
     {
         Doom::startSound(player.mo, sfx_sawful);
         return;
@@ -475,8 +481,8 @@ void saw(Player& player, PspDef&)
     Doom::startSound(player.mo, sfx_sawhit);
 
     // turn to face target
-    angle =
-        Doom::pointToAngle2(player.mo->x, player.mo->y, linetarget->x, linetarget->y);
+    angle = Doom::pointToAngle2(
+        player.mo->x, player.mo->y, c.linetarget->x, c.linetarget->y);
     if (angle - player.mo->angle > ANG180)
     {
         if (angle - player.mo->angle < static_cast<angle_t>(-ANG90 / 20))
@@ -536,15 +542,17 @@ void computeBulletSlope(Mobj* mo)
 {
     angle_t an;
 
+    auto& c = clip();
+
     // see which target is to be aimed at
     an = mo->angle;
     bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
 
-    if (!linetarget)
+    if (!c.linetarget)
     {
         an += 1 << 26;
         bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
-        if (!linetarget)
+        if (!c.linetarget)
         {
             an -= 2 << 26;
             bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
@@ -689,6 +697,8 @@ void bfgSpray(Mobj* mo)
     int damage;
     angle_t an;
 
+    auto& c = clip();
+
     // offset angles from its attack angle
     for (int i = 0; i < 40; i++)
     {
@@ -698,19 +708,19 @@ void bfgSpray(Mobj* mo)
         //  of the missile
         Doom::aimLineAttack(mo->target, an, 16 * 64 * FRACUNIT);
 
-        if (!linetarget)
+        if (!c.linetarget)
             continue;
 
-        Doom::spawnMobj(linetarget->x,
-                    linetarget->y,
-                    linetarget->z + (linetarget->height >> 2),
+        Doom::spawnMobj(c.linetarget->x,
+                    c.linetarget->y,
+                    c.linetarget->z + (c.linetarget->height >> 2),
                     MT_EXTRABFG);
 
         damage = 0;
         for (int j = 0; j < 15; j++)
             damage += (Doom::randomness().forPlay() & 7) + 1;
 
-        Doom::damageMobj(linetarget, mo->target, mo->target, damage);
+        Doom::damageMobj(c.linetarget, mo->target, mo->target, damage);
     }
 }
 

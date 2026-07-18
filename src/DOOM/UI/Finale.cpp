@@ -40,10 +40,13 @@
 #include "../s_sound.h" // Functions.
 #include "../sounds.h" // Data.
 #include "../v_video.h" // Functions.
+#include "../Game/OverlayState.h"
+#include "../Render/GraphicsData.h"
 #include "../Wad/WadFile.h"
 
 #include "Finale.h"
 #include "FinaleState.h"
+#include "HudFont.h"
 
 #include "../Render/Video.h"
 #include <ea_data_structures/Structures/Array.h>
@@ -51,8 +54,6 @@
 // Other subsystems' globals/functions this file reads.
 #include "../Game/Sound.h"
 extern Doom::GameState& wipegamestate; // Doom::GameFlow (Engine member)
-extern Doom::Patch* (
-    &hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
 void Doom::drawPatchFlipped(int x, int y, int scrn, Doom::Patch* patch); // v_video
 
 namespace Doom
@@ -152,7 +153,7 @@ void startFinale()
     gameaction = ga_nothing;
     gamestate = GS_FINALE;
     viewactive = false;
-    automapactive = false;
+    overlayState().automapactive = false;
 
     // Okay - IWAD dependend stuff.
     // This has been changed severly, and
@@ -300,6 +301,8 @@ void finaleTicker()
 //
 void textWrite()
 {
+    auto& font = hudFont();
+
     byte* src;
     byte* dest;
 
@@ -357,10 +360,10 @@ void textWrite()
             continue;
         }
 
-        w = SHORT(hu_font[c]->width);
+        w = SHORT(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        Doom::drawPatch(cx, cy, 0, hu_font[c]);
+        Doom::drawPatch(cx, cy, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -548,6 +551,8 @@ doom_boolean castResponder(Event* ev)
 
 void castPrint(const char* text)
 {
+    auto& font = hudFont();
+
     const char* ch;
     int c;
     int cx;
@@ -570,7 +575,7 @@ void castPrint(const char* text)
             continue;
         }
 
-        w = SHORT(hu_font[c]->width);
+        w = SHORT(font.hu_font[c]->width);
         width += w;
     }
 
@@ -589,8 +594,8 @@ void castPrint(const char* text)
             continue;
         }
 
-        w = SHORT(hu_font[c]->width);
-        Doom::drawPatch(cx, 180, 0, hu_font[c]);
+        w = SHORT(font.hu_font[c]->width);
+        Doom::drawPatch(cx, 180, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -617,7 +622,8 @@ void castDrawer()
     lump = sprframe->lump[0];
     flip = static_cast<doom_boolean>(sprframe->flip[0]);
 
-    patch = static_cast<Patch*>(Doom::cacheLumpNum(lump + firstspritelump));
+    patch = static_cast<Patch*>(
+        Doom::cacheLumpNum(lump + graphicsData().firstspritelump));
     if (flip)
         Doom::drawPatchFlipped(160, 170, 0, patch);
     else

@@ -24,24 +24,27 @@
 
 #include "../Game/Net.h"
 #include "../Math/Trig.h"
+#include "../Sim/ValidCount.h"
 #include "BSP.h"
 #include "Data.h"
 #include "Draw.h"
+#include "Lighting.h"
+#include "PlaneScratch.h"
 #include "Planes.h"
+#include "RenderScratch.h"
+#include "SegState.h"
 #include "Sky.h"
+#include "SpriteState.h"
 #include "Things.h"
+#include "ViewPoint.h"
+#include "ViewProjection.h"
+#include "ViewWindow.h"
 #include "../Math/BBox.h"
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
-extern Doom::LightTable**& walllights; // Doom::SegState member (Engine); reference
 // detailLevel/screenblocks are config-backed Engine members (UI/MenuSettings.h); references.
 extern int& detailLevel;
 extern int& screenblocks;
-
-// setsizeneeded/setblocks live in the r_main.cpp shim (d_main, g_game and DOOM.cpp
-// switch them through a local extern); declared here so the setup code can too.
-extern int& setsizeneeded;
-extern int& setblocks;
 
 namespace Doom
 {
@@ -205,8 +208,10 @@ int pointOnSegSide(fixed_t x, fixed_t y, Seg* line)
 
 angle_t pointToAngle(fixed_t x, fixed_t y)
 {
-    x -= viewx;
-    y -= viewy;
+    auto& pt = viewPoint();
+
+    x -= pt.viewx;
+    y -= pt.viewy;
 
     if ((!x) && (!y))
         return 0;
@@ -294,8 +299,10 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
 
 angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2)
 {
-    viewx = x1;
-    viewy = y1;
+    auto& pt = viewPoint();
+
+    pt.viewx = x1;
+    pt.viewy = y1;
 
     return pointToAngle(x2, y2);
 }
@@ -308,8 +315,10 @@ fixed_t pointToDist(fixed_t x, fixed_t y)
     fixed_t temp;
     fixed_t dist;
 
-    dx = doom_abs(x - viewx);
-    dy = doom_abs(y - viewy);
+    auto& pt = viewPoint();
+
+    dx = doom_abs(x - pt.viewx);
+    dy = doom_abs(y - pt.viewy);
 
     if (dy > dx)
     {
@@ -348,14 +357,16 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
     fixed_t num;
     int den;
 
-    anglea = ANG90 + (visangle - viewangle);
-    angleb = ANG90 + (visangle - rw_normalangle);
+    auto& scratch = renderScratch();
+
+    anglea = ANG90 + (visangle - viewPoint().viewangle);
+    angleb = ANG90 + (visangle - scratch.rw_normalangle);
 
     // both sines are allways positive
     sinea = finesine[anglea >> ANGLETOFINESHIFT];
     sineb = finesine[angleb >> ANGLETOFINESHIFT];
-    num = FixedMul(projection, sineb) << detailshift;
-    den = FixedMul(rw_distance, sinea);
+    num = FixedMul(viewProjection().projection, sineb) << viewWindow().detailshift;
+    den = FixedMul(scratch.rw_distance, sinea);
 
     if (den > num >> 16)
     {
@@ -386,6 +397,9 @@ void initTextureMapping()
     int t;
     fixed_t focallength;
 
+    auto& proj = viewProjection();
+    auto& view = viewWindow();
+
     // Use tangent table to generate viewangletox:
     // viewangletox will give the next greatest x
     // after the view angle.
@@ -393,51 +407,51 @@ void initTextureMapping()
     // Calc focallength
     // so FIELDOFVIEW angles covers SCREENWIDTH.
     focallength =
-        FixedDiv(centerxfrac, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
+        FixedDiv(proj.centerxfrac, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
 
     for (i = 0; i < FINEANGLES / 2; i++)
     {
         if (finetangent[i] > FRACUNIT * 2)
             t = -1;
         else if (finetangent[i] < -FRACUNIT * 2)
-            t = viewwidth + 1;
+            t = view.viewwidth + 1;
         else
         {
             t = FixedMul(finetangent[i], focallength);
-            t = (centerxfrac - t + FRACUNIT - 1) >> FRACBITS;
+            t = (proj.centerxfrac - t + FRACUNIT - 1) >> FRACBITS;
 
             if (t < -1)
                 t = -1;
-            else if (t > viewwidth + 1)
-                t = viewwidth + 1;
+            else if (t > view.viewwidth + 1)
+                t = view.viewwidth + 1;
         }
-        viewangletox[i] = t;
+        proj.viewangletox[i] = t;
     }
 
     // Scan viewangletox[] to generate xtoviewangle[]:
     // xtoviewangle will give the smallest view angle
     // that maps to x.
-    for (int x = 0; x <= viewwidth; x++)
+    for (int x = 0; x <= view.viewwidth; x++)
     {
         i = 0;
-        while (viewangletox[i] > x)
+        while (proj.viewangletox[i] > x)
             i++;
-        xtoviewangle[x] = (i << ANGLETOFINESHIFT) - ANG90;
+        proj.xtoviewangle[x] = (i << ANGLETOFINESHIFT) - ANG90;
     }
 
     // Take out the fencepost cases from viewangletox.
     for (i = 0; i < FINEANGLES / 2; i++)
     {
         t = FixedMul(finetangent[i], focallength);
-        t = centerx - t;
+        t = proj.centerx - t;
 
-        if (viewangletox[i] == -1)
-            viewangletox[i] = 0;
-        else if (viewangletox[i] == viewwidth + 1)
-            viewangletox[i] = viewwidth;
+        if (proj.viewangletox[i] == -1)
+            proj.viewangletox[i] = 0;
+        else if (proj.viewangletox[i] == view.viewwidth + 1)
+            proj.viewangletox[i] = view.viewwidth;
     }
 
-    clipangle = xtoviewangle[0];
+    proj.clipangle = proj.xtoviewangle[0];
 }
 
 //
@@ -451,6 +465,8 @@ void initLightTables()
     int level;
     int startmap;
     int scale;
+
+    auto& lights = lighting();
 
     // Calculate the light levels to use
     //  for each level / distance combination.
@@ -469,7 +485,7 @@ void initLightTables()
             if (level >= NUMCOLORMAPS)
                 level = NUMCOLORMAPS - 1;
 
-            zlight[i][j] = colormaps + level * 256;
+            lights.zlight[i][j] = colormaps + level * 256;
         }
     }
 }
@@ -483,8 +499,10 @@ void initLightTables()
 
 void setViewSize(int blocks, int detail)
 {
-    setsizeneeded = true;
-    setblocks = blocks;
+    auto& view = viewWindow();
+
+    view.setsizeneeded = true;
+    view.setblocks = blocks;
     setdetail = detail;
 }
 
@@ -500,29 +518,35 @@ void executeSetViewSize()
     int level;
     int startmap;
 
-    setsizeneeded = false;
+    auto& view = viewWindow();
+    auto& proj = viewProjection();
+    auto& sprites = spriteState();
+    auto& plane = planeScratch();
+    auto& lights = lighting();
 
-    if (setblocks == 11)
+    view.setsizeneeded = false;
+
+    if (view.setblocks == 11)
     {
-        scaledviewwidth = SCREENWIDTH;
-        viewheight = SCREENHEIGHT;
+        view.scaledviewwidth = SCREENWIDTH;
+        view.viewheight = SCREENHEIGHT;
     }
     else
     {
-        scaledviewwidth = setblocks * 32;
-        viewheight = (setblocks * 168 / 10) & ~7;
+        view.scaledviewwidth = view.setblocks * 32;
+        view.viewheight = (view.setblocks * 168 / 10) & ~7;
     }
 
-    detailshift = setdetail;
-    viewwidth = scaledviewwidth >> detailshift;
+    view.detailshift = setdetail;
+    view.viewwidth = view.scaledviewwidth >> view.detailshift;
 
-    centery = viewheight / 2;
-    centerx = viewwidth / 2;
-    centerxfrac = centerx << FRACBITS;
-    centeryfrac = centery << FRACBITS;
-    projection = centerxfrac;
+    proj.centery = view.viewheight / 2;
+    proj.centerx = view.viewwidth / 2;
+    proj.centerxfrac = proj.centerx << FRACBITS;
+    proj.centeryfrac = proj.centery << FRACBITS;
+    proj.projection = proj.centerxfrac;
 
-    if (!detailshift)
+    if (!view.detailshift)
     {
         colfunc = basecolfunc = Doom::drawColumn;
         fuzzcolfunc = Doom::drawFuzzColumn;
@@ -537,30 +561,31 @@ void executeSetViewSize()
         spanfunc = Doom::drawSpanLow;
     }
 
-    Doom::initBuffer(scaledviewwidth, viewheight);
+    Doom::initBuffer(view.scaledviewwidth, view.viewheight);
 
     initTextureMapping();
 
     // psprite scales
-    pspritescale = FRACUNIT * viewwidth / SCREENWIDTH;
-    pspriteiscale = FRACUNIT * SCREENWIDTH / viewwidth;
+    sprites.pspritescale = FRACUNIT * view.viewwidth / SCREENWIDTH;
+    sprites.pspriteiscale = FRACUNIT * SCREENWIDTH / view.viewwidth;
 
     // thing clipping
-    for (i = 0; i < viewwidth; i++)
-        screenheightarray[i] = viewheight;
+    for (i = 0; i < view.viewwidth; i++)
+        sprites.screenheightarray[i] = view.viewheight;
 
     // planes
-    for (i = 0; i < viewheight; i++)
+    for (i = 0; i < view.viewheight; i++)
     {
-        dy = ((i - viewheight / 2) << FRACBITS) + FRACUNIT / 2;
+        dy = ((i - view.viewheight / 2) << FRACBITS) + FRACUNIT / 2;
         dy = doom_abs(dy);
-        yslope[i] = FixedDiv((viewwidth << detailshift) / 2 * FRACUNIT, dy);
+        plane.yslope[i] =
+            FixedDiv((view.viewwidth << view.detailshift) / 2 * FRACUNIT, dy);
     }
 
-    for (i = 0; i < viewwidth; i++)
+    for (i = 0; i < view.viewwidth; i++)
     {
-        cosadj = doom_abs(finecosine[xtoviewangle[i] >> ANGLETOFINESHIFT]);
-        distscale[i] = FixedDiv(FRACUNIT, cosadj);
+        cosadj = doom_abs(finecosine[proj.xtoviewangle[i] >> ANGLETOFINESHIFT]);
+        plane.distscale[i] = FixedDiv(FRACUNIT, cosadj);
     }
 
     // Calculate the light levels to use
@@ -571,7 +596,8 @@ void executeSetViewSize()
         for (j = 0; j < MAXLIGHTSCALE; j++)
         {
             level =
-                startmap - j * SCREENWIDTH / (viewwidth << detailshift) / DISTMAP;
+                startmap
+                - j * SCREENWIDTH / (view.viewwidth << view.detailshift) / DISTMAP;
 
             if (level < 0)
                 level = 0;
@@ -579,7 +605,7 @@ void executeSetViewSize()
             if (level >= NUMCOLORMAPS)
                 level = NUMCOLORMAPS - 1;
 
-            scalelight[i][j] = colormaps + level * 256;
+            lights.scalelight[i][j] = colormaps + level * 256;
         }
     }
 }
@@ -640,34 +666,37 @@ SubSector* pointInSubsector(fixed_t x, fixed_t y)
 //
 void setupFrame(Player& player)
 {
-    viewplayer = &player;
-    viewx = player.mo->x;
-    viewy = player.mo->y;
-    viewangle = player.mo->angle;
-    extralight = player.extralight;
+    auto& pt = viewPoint();
+    auto& lights = lighting();
 
-    viewz = player.viewz;
+    pt.viewplayer = &player;
+    pt.viewx = player.mo->x;
+    pt.viewy = player.mo->y;
+    pt.viewangle = player.mo->angle;
+    lights.extralight = player.extralight;
 
-    viewsin = finesine[viewangle >> ANGLETOFINESHIFT];
-    viewcos = finecosine[viewangle >> ANGLETOFINESHIFT];
+    pt.viewz = player.viewz;
 
-    sscount = 0;
+    pt.viewsin = finesine[pt.viewangle >> ANGLETOFINESHIFT];
+    pt.viewcos = finecosine[pt.viewangle >> ANGLETOFINESHIFT];
+
+    renderScratch().sscount = 0;
 
     if (player.fixedcolormap)
     {
-        fixedcolormap =
+        lights.fixedcolormap =
             colormaps + player.fixedcolormap * 256 * sizeof(LightTable);
 
-        walllights = scalelightfixed;
+        segState().walllights = lights.scalelightfixed;
 
         for (int i = 0; i < MAXLIGHTSCALE; i++)
-            scalelightfixed[i] = fixedcolormap;
+            lights.scalelightfixed[i] = lights.fixedcolormap;
     }
     else
-        fixedcolormap = nullptr;
+        lights.fixedcolormap = nullptr;
 
     framecount++;
-    validcount++;
+    validCount().validcount++;
 }
 
 //

@@ -22,6 +22,7 @@
 #include "../doomstat.h"
 #include "../p_local.h"
 
+#include "../Game/LevelStats.h"
 #include "Player.h"
 #include "PlayerScratch.h"
 
@@ -95,7 +96,7 @@ void calcHeight(Player& player)
         return;
     }
 
-    angle = (FINEANGLES / 20 * leveltime) & FINEMASK;
+    angle = (FINEANGLES / 20 * levelStats().leveltime) & FINEMASK;
     bob = FixedMul(player.bob / 2, finesine[angle]);
 
     // move viewheight

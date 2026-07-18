@@ -23,7 +23,10 @@
 #include "../sounds.h"
 #include "../Wad/WadFile.h"
 
+#include "../Game/LevelStats.h"
+#include "ActiveSpecials.h"
 #include "AnimatedSurfaces.h"
+#include "EndLevelTimer.h"
 #include "Specials.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 #include "../Game/Args.h"
@@ -927,6 +930,8 @@ void playerInSpecialSector(Player* player)
 {
     Sector* sector;
 
+    auto& stats = levelStats();
+
     sector = player->mo->subsector->sector;
 
     // Falling, not all the way down yet?
@@ -939,14 +944,14 @@ void playerInSpecialSector(Player* player)
         case 5:
             // HELLSLIME DAMAGE
             if (!player->powers[pw_ironfeet])
-                if (!(leveltime & 0x1f))
+                if (!(stats.leveltime & 0x1f))
                     Doom::damageMobj(player->mo, 0, 0, 10);
             break;
 
         case 7:
             // NUKAGE DAMAGE
             if (!player->powers[pw_ironfeet])
-                if (!(leveltime & 0x1f))
+                if (!(stats.leveltime & 0x1f))
                     Doom::damageMobj(player->mo, 0, 0, 5);
             break;
 
@@ -956,7 +961,7 @@ void playerInSpecialSector(Player* player)
             // STROBE HURT
             if (!player->powers[pw_ironfeet] || (Doom::randomness().forPlay() < 5))
             {
-                if (!(leveltime & 0x1f))
+                if (!(stats.leveltime & 0x1f))
                     Doom::damageMobj(player->mo, 0, 0, 20);
             }
             break;
@@ -973,7 +978,7 @@ void playerInSpecialSector(Player* player)
             // EXIT SUPER DAMAGE! (for E1M8 finale)
             player->cheats &= ~CF_GODMODE;
 
-            if (!(leveltime & 0x1f))
+            if (!(stats.leveltime & 0x1f))
                 Doom::damageMobj(player->mo, 0, 0, 20);
 
             if (player->health <= 10)
@@ -1004,11 +1009,14 @@ void updateSpecials()
     int pic;
     Line* line;
 
+    auto& timer = endLevelTimer();
+    auto& specials = activeSpecials();
+
     // LEVEL TIMER
-    if (levelTimer == true)
+    if (timer.levelTimer == true)
     {
-        levelTimeCount--;
-        if (!levelTimeCount)
+        timer.levelTimeCount--;
+        if (!timer.levelTimeCount)
             Doom::exitLevel();
     }
 
@@ -1017,7 +1025,8 @@ void updateSpecials()
     {
         for (int i = anim->basepic; i < anim->basepic + anim->numpics; i++)
         {
-            pic = anim->basepic + ((leveltime / anim->speed + i) % anim->numpics);
+            pic = anim->basepic
+                  + ((levelStats().leveltime / anim->speed + i) % anim->numpics);
             if (anim->istexture)
                 texturetranslation[i] = pic;
             else
@@ -1040,31 +1049,32 @@ void updateSpecials()
 
     // DO BUTTONS
     for (int i = 0; i < MAXBUTTONS; i++)
-        if (buttonlist[i].btimer)
+        if (specials.buttonlist[i].btimer)
         {
-            buttonlist[i].btimer--;
-            if (!buttonlist[i].btimer)
+            specials.buttonlist[i].btimer--;
+            if (!specials.buttonlist[i].btimer)
             {
-                switch (buttonlist[i].where)
+                switch (specials.buttonlist[i].where)
                 {
                     case top:
-                        sides[buttonlist[i].line->sidenum[0]].toptexture =
-                            buttonlist[i].btexture;
+                        sides[specials.buttonlist[i].line->sidenum[0]].toptexture =
+                            specials.buttonlist[i].btexture;
                         break;
 
                     case middle:
-                        sides[buttonlist[i].line->sidenum[0]].midtexture =
-                            buttonlist[i].btexture;
+                        sides[specials.buttonlist[i].line->sidenum[0]].midtexture =
+                            specials.buttonlist[i].btexture;
                         break;
 
                     case bottom:
-                        sides[buttonlist[i].line->sidenum[0]].bottomtexture =
-                            buttonlist[i].btexture;
+                        sides[specials.buttonlist[i].line->sidenum[0]].bottomtexture =
+                            specials.buttonlist[i].btexture;
                         break;
                 }
-                Doom::startSound(reinterpret_cast<Mobj*>(&buttonlist[i].soundorg),
-                             sfx_swtchn);
-                doom_memset(&buttonlist[i], 0, sizeof(Button));
+                Doom::startSound(
+                    reinterpret_cast<Mobj*>(&specials.buttonlist[i].soundorg),
+                    sfx_swtchn);
+                doom_memset(&specials.buttonlist[i], 0, sizeof(Button));
             }
         }
 }
@@ -1146,22 +1156,25 @@ void spawnSpecials()
     Sector* sector;
     int i;
 
+    auto& timer = endLevelTimer();
+    auto& specials = activeSpecials();
+
     // See if -TIMER needs to be used.
-    levelTimer = false;
+    timer.levelTimer = false;
 
     i = Doom::checkParm("-avg");
     if (i && deathmatch)
     {
-        levelTimer = true;
-        levelTimeCount = 20 * 60 * 35;
+        timer.levelTimer = true;
+        timer.levelTimeCount = 20 * 60 * 35;
     }
 
     i = Doom::checkParm("-timer");
     if (i && deathmatch)
     {
         int time = doom_atoi(myargv[i + 1]) * 60 * 35;
-        levelTimer = true;
-        levelTimeCount = time;
+        timer.levelTimer = true;
+        timer.levelTimeCount = time;
     }
 
     //        Init special SECTORs.
@@ -1245,12 +1258,12 @@ void spawnSpecials()
 
     // Init other misc stuff
     for (i = 0; i < MAXCEILINGS; i++)
-        activeceilings[i] = nullptr;
+        specials.activeceilings[i] = nullptr;
 
     for (i = 0; i < MAXPLATS; i++)
-        activeplats[i] = nullptr;
+        specials.activeplats[i] = nullptr;
 
     for (i = 0; i < MAXBUTTONS; i++)
-        doom_memset(&buttonlist[i], 0, sizeof(Button));
+        doom_memset(&specials.buttonlist[i], 0, sizeof(Button));
 }
 } // namespace Doom

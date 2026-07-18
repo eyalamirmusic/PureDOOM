@@ -28,8 +28,6 @@
 #define ANGLETOSKYSHIFT 22
 
 // skytexture/skytexturemid are Doom::SkyState members (Engine); references onto them.
-extern int& skytexture;
-extern int& skytexturemid;
 
 // Called whenever the view size changes.
 

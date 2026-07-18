@@ -66,7 +66,6 @@
 
 // both the head and tail of the thinker list; a reference onto Doom::ThinkerList's cap
 // (an Engine member) - the storage moved off this loose global in Step 5
-extern Doom::Thinker& thinkercap;
 
 
 
@@ -93,10 +92,6 @@ extern Doom::Thinker& thinkercap;
 
 // The item respawn queue lives in Doom::ItemRespawnQueue (an Engine member) now; these are
 // references onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
-extern Doom::MapThing (&itemrespawnque)[ITEMQUESIZE];
-extern int (&itemrespawntime)[ITEMQUESIZE];
-extern int& iquehead;
-extern int& iquetail;
 
 
 
@@ -151,16 +146,11 @@ typedef doom_boolean(*Traverser) (Doom::Intercept* in);
 // If "floatok" true, move would be ok if within "tmfloorz - tmceilingz".
 // These are references into Doom::Clip now (see Sim/Movement.h); p_enemy reads
 // floatok/tmfloorz, p_mobj reads ceilingline.
-extern doom_boolean& floatok;
-extern fixed_t& tmfloorz;
-extern fixed_t& tmceilingz;
-
-extern Doom::Line*& ceilingline;
 
 
 
 
-extern Doom::Mobj*& linetarget; // who got hit (or 0); a reference into Doom::Clip
+
 
 
 
@@ -181,8 +171,6 @@ extern Doom::Mobj** blocklinks; // for thing chains
 //
 // P_INTER
 //
-extern int (&maxammo)[Doom::NUMAMMO]; // Doom::AmmoLimits (Engine member)
-extern int (&clipammo)[Doom::NUMAMMO]; // Doom::AmmoLimits (Engine member)
 
 
 

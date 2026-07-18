@@ -4,7 +4,7 @@
 // and the active specials. Thinkers are identified on write and restored on read by
 // their function pointer, which is why the T_* thinker functions and Doom::mobjThinker
 // stay global shims - this code compares against and stores those exact addresses.
-// p_saveg.cpp shims the eight vanilla names and owns the save_p cursor. Not covered
+// p_saveg.cpp shims the eight vanilla names and owns the save.cursor cursor. Not covered
 // by the demos (no save in a demo); migrated copy-for-copy so the byte layout is
 // unchanged.
 
@@ -15,7 +15,9 @@
 #include "../p_local.h"
 #include "../r_state.h"
 
+#include "../Game/SaveGameState.h"
 #include "SaveGame.h"
+#include "ThinkerList.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
 #include "Ceilings.h"
 
@@ -23,15 +25,14 @@
 #include <new> // placement new
 #include "../Host/System.h"
 
-// save_p is a reference onto Doom::SaveGameState's cursor (an Engine member), bound in
+// save.cursor is a reference onto Doom::SaveGameState's cursor (an Engine member), bound in
 #include "MapUtil.h"
 #include "Mobj.h"
 // the p_saveg.cpp shim; g_game, the probe and this file share it. This bare extern must
-// stay a reference in lockstep with p_saveg.h's - a plain `extern byte* save_p` here
+// stay a reference in lockstep with p_saveg.h's - a plain `extern byte* save.cursor` here
 // would write the low half of the reference's pointer and corrupt it.
-extern byte*& save_p;
 
-#define PADSAVEP() save_p += (4 - ((long long) save_p & 3)) & 3
+#define PADSAVEP(p) p += (4 - ((long long) p & 3)) & 3
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -52,16 +53,18 @@ void archivePlayers()
 {
     Player* dest;
 
+    auto& save = saveGameState();
+
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (!playeringame[i])
             continue;
 
-        PADSAVEP();
+        PADSAVEP(save.cursor);
 
-        dest = reinterpret_cast<Player*>(save_p);
+        dest = reinterpret_cast<Player*>(save.cursor);
         doom_memcpy(dest, &players[i], sizeof(Player));
-        save_p += sizeof(Player);
+        save.cursor += sizeof(Player);
         for (int j = 0; j < NUMPSPRITES; j++)
         {
             if (dest->psprites[j].state)
@@ -78,15 +81,17 @@ void archivePlayers()
 //
 void unArchivePlayers()
 {
+    auto& save = saveGameState();
+
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (!playeringame[i])
             continue;
 
-        PADSAVEP();
+        PADSAVEP(save.cursor);
 
-        doom_memcpy(&players[i], save_p, sizeof(Player));
-        save_p += sizeof(Player);
+        doom_memcpy(&players[i], save.cursor, sizeof(Player));
+        save.cursor += sizeof(Player);
 
         // will be set when unarc thinker
         players[i].mo = nullptr;
@@ -115,7 +120,9 @@ void archiveWorld()
     Side* si;
     short* put;
 
-    put = reinterpret_cast<short*>(save_p);
+    auto& save = saveGameState();
+
+    put = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
@@ -150,7 +157,7 @@ void archiveWorld()
         }
     }
 
-    save_p = reinterpret_cast<byte*>(put);
+    save.cursor = reinterpret_cast<byte*>(put);
 }
 
 //
@@ -164,7 +171,9 @@ void unArchiveWorld()
     Side* si;
     short* get;
 
-    get = reinterpret_cast<short*>(save_p);
+    auto& save = saveGameState();
+
+    get = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
@@ -199,7 +208,7 @@ void unArchiveWorld()
         }
     }
 
-    save_p = reinterpret_cast<byte*>(get);
+    save.cursor = reinterpret_cast<byte*>(get);
 }
 
 //
@@ -221,11 +230,12 @@ enum ThinkerClass
 template <typename T>
 static T* unarchiveThinker()
 {
+    auto& save = saveGameState();
     T* obj = new (levelAlloc(sizeof(T))) T {};
     void* vtable = *reinterpret_cast<void**>(obj);
-    doom_memcpy(obj, save_p, sizeof(T));
+    doom_memcpy(obj, save.cursor, sizeof(T));
     *reinterpret_cast<void**>(obj) = vtable;
-    save_p += sizeof(T);
+    save.cursor += sizeof(T);
     return obj;
 }
 
@@ -237,18 +247,21 @@ void archiveThinkers()
     Doom::Thinker* th;
     Mobj* mobj;
 
+    auto& save = saveGameState();
+    auto& thinkers = thinkerList();
+
     // save off the current thinkers
-    for (th = thinkercap.next; th != &thinkercap; th = th->next)
+    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         // A removed-but-not-yet-freed mobj is skipped, as vanilla did (its function
         // was the -1 sentinel, matching no archived type).
         if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
         {
-            *save_p++ = tc_mobj;
-            PADSAVEP();
-            mobj = reinterpret_cast<Mobj*>(save_p);
+            *save.cursor++ = tc_mobj;
+            PADSAVEP(save.cursor);
+            mobj = reinterpret_cast<Mobj*>(save.cursor);
             doom_memcpy(mobj, th, sizeof(*mobj));
-            save_p += sizeof(*mobj);
+            save.cursor += sizeof(*mobj);
             mobj->state = reinterpret_cast<State*>(mobj->state - states);
 
             if (mobj->player)
@@ -261,7 +274,7 @@ void archiveThinkers()
     }
 
     // add a terminating marker
-    *save_p++ = tc_end;
+    *save.cursor++ = tc_end;
 }
 
 //
@@ -274,9 +287,12 @@ void unArchiveThinkers()
     Doom::Thinker* next;
     Mobj* mobj;
 
+    auto& save = saveGameState();
+    auto& thinkers = thinkerList();
+
     // remove all the current thinkers
-    currentthinker = thinkercap.next;
-    while (currentthinker != &thinkercap)
+    currentthinker = thinkers.cap.next;
+    while (currentthinker != &thinkers.cap)
     {
         next = currentthinker->next;
 
@@ -292,14 +308,14 @@ void unArchiveThinkers()
     // read in saved thinkers
     while (1)
     {
-        tclass = *save_p++;
+        tclass = *save.cursor++;
         switch (tclass)
         {
             case tc_end:
                 return; // end of list
 
             case tc_mobj:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 mobj = unarchiveThinker<Mobj>();
                 mobj->state = &states[reinterpret_cast<long long>(mobj->state)];
                 mobj->target = nullptr;
@@ -366,8 +382,11 @@ void archiveSpecials()
     Strobe* strobe;
     Glow* glow;
 
+    auto& save = saveGameState();
+    auto& thinkers = thinkerList();
+
     // save off the current thinkers
-    for (th = thinkercap.next; th != &thinkercap; th = th->next)
+    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         // Skip a removed-but-not-yet-freed thinker (vanilla's -1 function matched
         // no type).
@@ -380,11 +399,11 @@ void archiveSpecials()
         {
             if (th->kind() == Doom::ThinkerKind::Ceiling)
             {
-                *save_p++ = tc_ceiling;
-                PADSAVEP();
-                ceiling = reinterpret_cast<Ceiling*>(save_p);
+                *save.cursor++ = tc_ceiling;
+                PADSAVEP(save.cursor);
+                ceiling = reinterpret_cast<Ceiling*>(save.cursor);
                 doom_memcpy(ceiling, th, sizeof(*ceiling));
-                save_p += sizeof(*ceiling);
+                save.cursor += sizeof(*ceiling);
                 ceiling->sector =
                     reinterpret_cast<Sector*>(ceiling->sector - sectors);
             }
@@ -393,84 +412,84 @@ void archiveSpecials()
 
         if (th->kind() == Doom::ThinkerKind::Ceiling)
         {
-            *save_p++ = tc_ceiling;
-            PADSAVEP();
-            ceiling = reinterpret_cast<Ceiling*>(save_p);
+            *save.cursor++ = tc_ceiling;
+            PADSAVEP(save.cursor);
+            ceiling = reinterpret_cast<Ceiling*>(save.cursor);
             doom_memcpy(ceiling, th, sizeof(*ceiling));
-            save_p += sizeof(*ceiling);
+            save.cursor += sizeof(*ceiling);
             ceiling->sector = reinterpret_cast<Sector*>(ceiling->sector - sectors);
             continue;
         }
 
         if (th->kind() == Doom::ThinkerKind::Door)
         {
-            *save_p++ = tc_door;
-            PADSAVEP();
-            door = reinterpret_cast<Door*>(save_p);
+            *save.cursor++ = tc_door;
+            PADSAVEP(save.cursor);
+            door = reinterpret_cast<Door*>(save.cursor);
             doom_memcpy(door, th, sizeof(*door));
-            save_p += sizeof(*door);
+            save.cursor += sizeof(*door);
             door->sector = reinterpret_cast<Sector*>(door->sector - sectors);
             continue;
         }
 
         if (th->kind() == Doom::ThinkerKind::Floor)
         {
-            *save_p++ = tc_floor;
-            PADSAVEP();
-            floor = reinterpret_cast<FloorMove*>(save_p);
+            *save.cursor++ = tc_floor;
+            PADSAVEP(save.cursor);
+            floor = reinterpret_cast<FloorMove*>(save.cursor);
             doom_memcpy(floor, th, sizeof(*floor));
-            save_p += sizeof(*floor);
+            save.cursor += sizeof(*floor);
             floor->sector = reinterpret_cast<Sector*>(floor->sector - sectors);
             continue;
         }
 
         if (th->kind() == Doom::ThinkerKind::Plat)
         {
-            *save_p++ = tc_plat;
-            PADSAVEP();
-            plat = reinterpret_cast<Plat*>(save_p);
+            *save.cursor++ = tc_plat;
+            PADSAVEP(save.cursor);
+            plat = reinterpret_cast<Plat*>(save.cursor);
             doom_memcpy(plat, th, sizeof(*plat));
-            save_p += sizeof(*plat);
+            save.cursor += sizeof(*plat);
             plat->sector = reinterpret_cast<Sector*>(plat->sector - sectors);
             continue;
         }
 
         if (th->kind() == Doom::ThinkerKind::LightFlash)
         {
-            *save_p++ = tc_flash;
-            PADSAVEP();
-            flash = reinterpret_cast<LightFlash*>(save_p);
+            *save.cursor++ = tc_flash;
+            PADSAVEP(save.cursor);
+            flash = reinterpret_cast<LightFlash*>(save.cursor);
             doom_memcpy(flash, th, sizeof(*flash));
-            save_p += sizeof(*flash);
+            save.cursor += sizeof(*flash);
             flash->sector = reinterpret_cast<Sector*>(flash->sector - sectors);
             continue;
         }
 
         if (th->kind() == Doom::ThinkerKind::StrobeFlash)
         {
-            *save_p++ = tc_strobe;
-            PADSAVEP();
-            strobe = reinterpret_cast<Strobe*>(save_p);
+            *save.cursor++ = tc_strobe;
+            PADSAVEP(save.cursor);
+            strobe = reinterpret_cast<Strobe*>(save.cursor);
             doom_memcpy(strobe, th, sizeof(*strobe));
-            save_p += sizeof(*strobe);
+            save.cursor += sizeof(*strobe);
             strobe->sector = reinterpret_cast<Sector*>(strobe->sector - sectors);
             continue;
         }
 
         if (th->kind() == Doom::ThinkerKind::Glow)
         {
-            *save_p++ = tc_glow;
-            PADSAVEP();
-            glow = reinterpret_cast<Glow*>(save_p);
+            *save.cursor++ = tc_glow;
+            PADSAVEP(save.cursor);
+            glow = reinterpret_cast<Glow*>(save.cursor);
             doom_memcpy(glow, th, sizeof(*glow));
-            save_p += sizeof(*glow);
+            save.cursor += sizeof(*glow);
             glow->sector = reinterpret_cast<Sector*>(glow->sector - sectors);
             continue;
         }
     }
 
     // add a terminating marker
-    *save_p++ = tc_endspecials;
+    *save.cursor++ = tc_endspecials;
 }
 
 //
@@ -487,17 +506,19 @@ void unArchiveSpecials()
     Strobe* strobe;
     Glow* glow;
 
+    auto& save = saveGameState();
+
     // read in saved thinkers
     while (1)
     {
-        tclass = *save_p++;
+        tclass = *save.cursor++;
         switch (tclass)
         {
             case tc_endspecials:
                 return; // end of list
 
             case tc_ceiling:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 ceiling = unarchiveThinker<Ceiling>();
                 ceiling->sector =
                     &sectors[reinterpret_cast<long long>(ceiling->sector)];
@@ -508,7 +529,7 @@ void unArchiveSpecials()
                 break;
 
             case tc_door:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 door = unarchiveThinker<Door>();
                 door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
@@ -516,7 +537,7 @@ void unArchiveSpecials()
                 break;
 
             case tc_floor:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 floor = unarchiveThinker<FloorMove>();
                 floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
@@ -524,7 +545,7 @@ void unArchiveSpecials()
                 break;
 
             case tc_plat:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 plat = unarchiveThinker<Plat>();
                 plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
@@ -534,14 +555,14 @@ void unArchiveSpecials()
                 break;
 
             case tc_flash:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 flash = unarchiveThinker<LightFlash>();
                 flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
                 Doom::addThinker(flash);
                 break;
 
             case tc_strobe:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 strobe = unarchiveThinker<Strobe>();
                 strobe->sector =
                     &sectors[reinterpret_cast<long long>(strobe->sector)];
@@ -549,7 +570,7 @@ void unArchiveSpecials()
                 break;
 
             case tc_glow:
-                PADSAVEP();
+                PADSAVEP(save.cursor);
                 glow = unarchiveThinker<Glow>();
                 glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];
                 Doom::addThinker(glow);

@@ -7,6 +7,7 @@
 #include "../r_state.h" // validcount, lines
 
 #include "Clip.h"
+#include "ValidCount.h"
 #include "Level.h"
 #include "MapUtil.h"
 
@@ -231,7 +232,7 @@ bool checkPosition(Mobj* thing, fixed_t x, fixed_t y)
     clip.tmfloorz = clip.tmdropoffz = newsubsec->sector->floorheight;
     clip.tmceilingz = newsubsec->sector->ceilingheight;
 
-    validcount++;
+    validCount().validcount++;
     clip.numspechit = 0;
 
     if (clip.tmflags & MF_NOCLIP)
@@ -350,7 +351,7 @@ bool teleportMove(Mobj* thing, fixed_t x, fixed_t y)
     clip.tmfloorz = clip.tmdropoffz = newsubsec->sector->floorheight;
     clip.tmceilingz = newsubsec->sector->ceilingheight;
 
-    validcount++;
+    validCount().validcount++;
     clip.numspechit = 0;
 
     // stomp on any things contacted

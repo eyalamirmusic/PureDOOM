@@ -25,11 +25,6 @@
 // storage is a Doom::ViewWindow owned by the Engine now; these vanilla names are
 // references onto it.
 //
-int& viewwidth = Doom::viewWindow().viewwidth;
-int& scaledviewwidth = Doom::viewWindow().scaledviewwidth;
-int& viewheight = Doom::viewWindow().viewheight;
-int& viewwindowx = Doom::viewWindow().viewwindowx;
-int& viewwindowy = Doom::viewWindow().viewwindowy;
 
 //
 // The column/span drawer inputs are a Doom::DrawState owned by the Engine now; these are
@@ -40,18 +35,10 @@ int& viewwindowy = Doom::viewWindow().viewwindowy;
 // R_DrawColumn input: the caller (r_segs/r_plane/r_things) fills these in, the
 // column drawers in Render/Draw.cpp read them.
 //
-Doom::LightTable*& dc_colormap = Doom::drawState().dc_colormap;
-int& dc_x = Doom::drawState().dc_x;
-int& dc_yl = Doom::drawState().dc_yl;
-int& dc_yh = Doom::drawState().dc_yh;
-fixed_t& dc_iscale = Doom::drawState().dc_iscale;
-fixed_t& dc_texturemid = Doom::drawState().dc_texturemid;
 
 // first pixel in a column (possibly virtual)
-byte*& dc_source = Doom::drawState().dc_source;
 
 // Translation tables for player-sprite recolouring (read by r_things).
-byte*& dc_translation = Doom::drawState().dc_translation;
 // A 256-byte-aligned view into DrawState's owned translationTableStorage;
 // R_InitTranslationTables points it at the aligned offset (Step 9).
 byte* translationtables = nullptr;
@@ -59,19 +46,10 @@ byte* translationtables = nullptr;
 //
 // R_DrawSpan input: r_plane fills these in, the span drawers read them.
 //
-int& ds_y = Doom::drawState().ds_y;
-int& ds_x1 = Doom::drawState().ds_x1;
-int& ds_x2 = Doom::drawState().ds_x2;
 
-Doom::LightTable*& ds_colormap = Doom::drawState().ds_colormap;
 
-fixed_t& ds_xfrac = Doom::drawState().ds_xfrac;
-fixed_t& ds_yfrac = Doom::drawState().ds_yfrac;
-fixed_t& ds_xstep = Doom::drawState().ds_xstep;
-fixed_t& ds_ystep = Doom::drawState().ds_ystep;
 
 // start of a 64*64 tile image
-byte*& ds_source = Doom::drawState().ds_source;
 
 
 

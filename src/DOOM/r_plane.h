@@ -28,14 +28,9 @@
 // Visplane related. These are Doom::PlaneScratch members (Engine) now; references onto them
 // (REFACTOR.md, Step 5). floorfunc and the never-defined ceilingfunc_t were vestigial and were
 // deleted (the parallel ceilingfunc went the same way).
-extern short*& lastopening;
 
 
-extern short (&floorclip)[SCREENWIDTH];
-extern short (&ceilingclip)[SCREENWIDTH];
 
-extern fixed_t (&yslope)[SCREENHEIGHT];
-extern fixed_t (&distscale)[SCREENWIDTH];
 
 
 

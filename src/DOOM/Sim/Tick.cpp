@@ -11,7 +11,9 @@
 #include "../doomstat.h"
 #include "../p_local.h"
 
+#include "../Game/LevelStats.h"
 #include "LevelPool.h"
+#include "ThinkerList.h"
 #include "Tick.h"
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
@@ -96,7 +98,8 @@ void freeLevelAllocations()
 
 void initThinkers()
 {
-    thinkercap.prev = thinkercap.next = &thinkercap;
+    auto& thinkers = thinkerList();
+    thinkers.cap.prev = thinkers.cap.next = &thinkers.cap;
 }
 
 //
@@ -105,10 +108,11 @@ void initThinkers()
 //
 void addThinker(Doom::Thinker* thinker)
 {
-    thinkercap.prev->next = thinker;
-    thinker->next = &thinkercap;
-    thinker->prev = thinkercap.prev;
-    thinkercap.prev = thinker;
+    auto& thinkers = thinkerList();
+    thinkers.cap.prev->next = thinker;
+    thinker->next = &thinkers.cap;
+    thinker->prev = thinkers.cap.prev;
+    thinkers.cap.prev = thinker;
 }
 
 //
@@ -128,8 +132,9 @@ void removeThinker(Doom::Thinker* thinker)
 //
 void runThinkers()
 {
-    Doom::Thinker* currentthinker = thinkercap.next;
-    while (currentthinker != &thinkercap)
+    auto& thinkers = thinkerList();
+    Doom::Thinker* currentthinker = thinkers.cap.next;
+    while (currentthinker != &thinkers.cap)
     {
         if (currentthinker->removed)
         {
@@ -182,6 +187,6 @@ void ticker()
     Doom::respawnSpecials();
 
     // for par times
-    leveltime++;
+    levelStats().leveltime++;
 }
 } // namespace Doom

@@ -12,8 +12,6 @@
 #include "doom_config.h"
 #include "m_random.h"
 
-int& rndindex = Doom::randomness().menuIndex;
-int& prndindex = Doom::randomness().playIndex;
 
 const unsigned char* rndtable = Doom::Random::table().data();
 

@@ -98,8 +98,6 @@ struct PcxHeader
 // Returns the final X coordinate
 // Doom::initHud must have been called to init the font
 //
-// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (Doom::startHud writes it).
-extern Doom::Patch* (&hu_font)[HU_FONTSIZE];
 
 //
 // DEFAULTS
@@ -107,9 +105,6 @@ extern Doom::Patch* (&hu_font)[HU_FONTSIZE];
 // The keyboard/mouse/joystick bindings are Doom::InputConfig members (Engine) now, so their
 // defaults[] entries are bound to those members at runtime by bindEngineDefaults() rather than
 // capturing their addresses here at static-init. Config.cpp no longer needs to name them.
-
-extern int& viewwidth;
-extern int& viewheight;
 
 // mouseSensitivity / showMessages / detailLevel / screenblocks are Engine members now
 // (UI/MenuSettings.h), reached through references (doomstat.h / their owner files). Like the
@@ -197,6 +192,8 @@ namespace Doom
 
 int drawText(int x, int y, doom_boolean direct, char* string)
 {
+    auto& font = hudFont();
+
     int c;
     int w;
 
@@ -210,13 +207,13 @@ int drawText(int x, int y, doom_boolean direct, char* string)
             continue;
         }
 
-        w = SHORT(hu_font[c]->width);
+        w = SHORT(font.hu_font[c]->width);
         if (x + w > SCREENWIDTH)
             break;
         if (direct)
-            Doom::drawPatchDirect(x, y, 0, hu_font[c]);
+            Doom::drawPatchDirect(x, y, 0, font.hu_font[c]);
         else
-            Doom::drawPatch(x, y, 0, hu_font[c]);
+            Doom::drawPatch(x, y, 0, font.hu_font[c]);
         x += w;
     }
 

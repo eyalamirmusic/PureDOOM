@@ -1,7 +1,11 @@
 #include "SimProbe.h"
 
+#include <DOOM/Game/LevelStats.h>
+#include <DOOM/Game/SaveGameState.h>
 #include <DOOM/Sim/Level.h>
+#include <DOOM/Sim/Random.h>
 #include <DOOM/Sim/SaveGame.h>
+#include <DOOM/Sim/ThinkerList.h>
 #include <DOOM/Sim/Setup.h>
 #include <DOOM/DOOM.h>
 
@@ -187,19 +191,22 @@ static int simIsMobj(Doom::Thinker* thinker)
 
 unsigned long long doomSimStateHash()
 {
+    auto& rnd = Doom::randomness();
+    auto& thinkers = Doom::thinkerList();
+
     Doom::Thinker* thinker;
     Doom::Player* player = &players[0];
     int count = 0;
 
     simHash = 1469598103934665603ULL;
 
-    // prndindex, not rndindex: P_Random is the simulation's sequence and
+    // playIndex, not menuIndex: P_Random is the simulation's sequence and
     // M_Random is not. Hashing the wrong one would watch the menu instead of
-    // the game. Both go in - rndindex costs nothing - but prndindex is the one
+    // the game. Both go in - menuIndex costs nothing - but playIndex is the one
     // that means anything here.
-    simMix(&prndindex, sizeof(prndindex));
-    simMix(&rndindex, sizeof(rndindex));
-    simMix(&leveltime, sizeof(leveltime));
+    simMix(&rnd.playIndex, sizeof(rnd.playIndex));
+    simMix(&rnd.menuIndex, sizeof(rnd.menuIndex));
+    simMix(&Doom::levelStats().leveltime, sizeof(Doom::levelStats().leveltime));
 
     simMix(&player->health, sizeof(player->health));
     simMix(&player->armorpoints, sizeof(player->armorpoints));
@@ -217,7 +224,7 @@ unsigned long long doomSimStateHash()
         simMix(&player->mo->momz, sizeof(fixed_t));
     }
 
-    for (thinker = thinkercap.next; thinker && thinker != &thinkercap;
+    for (thinker = thinkers.cap.next; thinker && thinker != &thinkers.cap;
          thinker = thinker->next)
     {
         Doom::Mobj* mobj = (Doom::Mobj*) thinker;
@@ -295,12 +302,12 @@ unsigned long long doomSimLumpHash(int lump)
 // The simulation's random index, which is P_Random's.
 int doomSimRndIndex()
 {
-    return prndindex;
+    return Doom::randomness().playIndex;
 }
 
 int doomSimLevelTime()
 {
-    return leveltime;
+    return Doom::levelStats().leveltime;
 }
 
 int doomSimPlayerHealth()
@@ -329,10 +336,12 @@ int doomSimPlayerAngleDegrees()
 
 int doomSimMobjCount()
 {
+    auto& thinkers = Doom::thinkerList();
+
     Doom::Thinker* thinker;
     int count = 0;
 
-    for (thinker = thinkercap.next; thinker && thinker != &thinkercap;
+    for (thinker = thinkers.cap.next; thinker && thinker != &thinkers.cap;
          thinker = thinker->next)
         if (simIsMobj(thinker))
             ++count;
@@ -558,6 +567,8 @@ int doomSimFlagNoClip()
 // out of the hash rather than restored.
 static unsigned long long simWorldHash()
 {
+    auto& thinkers = Doom::thinkerList();
+
     simHash = 1469598103934665603ULL;
 
     // Players - the scalar state Doom::archivePlayers/Doom::unArchivePlayers round-trip
@@ -618,7 +629,8 @@ static unsigned long long simWorldHash()
     // through the sector state they drive.
     int mobjCount = 0;
     int thinkerCount = 0;
-    for (Doom::Thinker* th = thinkercap.next; th && th != &thinkercap; th = th->next)
+    for (Doom::Thinker* th = thinkers.cap.next; th && th != &thinkers.cap;
+         th = th->next)
     {
         ++thinkerCount;
         if (!simIsMobj(th))
@@ -650,6 +662,8 @@ static unsigned long long simWorldHash()
 
 int doomSimSaveLoadPreservesWorld()
 {
+    auto& save = Doom::saveGameState();
+
     static byte saveScratch[0x2c000]; // SAVEGAMESIZE
 
     if (setjmp(simAbort))
@@ -662,7 +676,7 @@ int doomSimSaveLoadPreservesWorld()
     unsigned long long before = simWorldHash();
 
     // Archive the live world, exactly the P_Archive* sequence doSaveGame runs.
-    save_p = saveScratch;
+    save.cursor = saveScratch;
     Doom::archivePlayers();
     Doom::archiveWorld();
     Doom::archiveThinkers();
@@ -677,7 +691,7 @@ int doomSimSaveLoadPreservesWorld()
         return 0;
 
     // Unarchive over the fresh world.
-    save_p = saveScratch;
+    save.cursor = saveScratch;
     Doom::unArchivePlayers();
     Doom::unArchiveWorld();
     Doom::unArchiveThinkers();

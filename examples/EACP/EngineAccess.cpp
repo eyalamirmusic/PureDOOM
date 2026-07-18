@@ -4,8 +4,14 @@
 
 #include "EngineAccess.h"
 
+#include <DOOM/Game/OverlayState.h>
+#include <DOOM/Game/SkyState.h>
 #include <DOOM/Render/BSP.h>
+#include <DOOM/Render/GraphicsData.h>
+#include <DOOM/Render/Lighting.h>
 #include <DOOM/Render/Planes.h>
+#include <DOOM/Render/ViewWindow.h>
+#include <DOOM/Sim/ThinkerList.h>
 #include <DOOM/Render/Things.h>
 #include <DOOM/Render/Video.h>
 #include <DOOM/UI/Automap.h>
@@ -47,7 +53,6 @@
 extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
 extern unsigned char screen_palette[256 * 3];
 extern int& screenblocks; // config-backed Engine member (UI/MenuSettings.h)
-extern doom_boolean& st_statusbaron; // Doom::StatusBarState (Engine member)
 
 // Convex subsector cells rarely exceed a handful of corners; the cap only
 // bounds the clipper's scratch space.
@@ -270,7 +275,7 @@ int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
 
 int eacpDoomAutomapActive()
 {
-    return automapactive ? 1 : 0;
+    return Doom::overlayState().automapactive ? 1 : 0;
 }
 
 int eacpDoomStatusBarVisible()
@@ -278,7 +283,8 @@ int eacpDoomStatusBarVisible()
     // Doom::drawStatusBar's own st_statusbaron, which is private to it: Doom::displayFrame asks for
     // a bar-less frame once the view fills all 200 rows, and the automap keeps
     // the bar whatever the screen size says.
-    return viewheight != SCREENHEIGHT || automapactive;
+    return Doom::viewWindow().viewheight != SCREENHEIGHT
+           || Doom::overlayState().automapactive;
 }
 
 float eacpDoomViewRows()
@@ -290,7 +296,8 @@ void eacpDoomRevealAutomap()
 {
     Doom::Player* player = &players[displayplayer];
 
-    if (gamestate != Doom::GS_LEVEL || !gametic || !automapactive || player->mo == 0)
+    if (gamestate != Doom::GS_LEVEL || !gametic
+        || !Doom::overlayState().automapactive || player->mo == 0)
         return;
 
     Doom::setupFrame(*player);
@@ -330,22 +337,25 @@ static unsigned char eacpMenuMask[EACP_SCREEN_PIXELS];
 // order - and so what the menu darkens along with the world.
 static void eacpDrawUnderLayers()
 {
+    auto& overlay = Doom::overlayState();
+    auto& view = Doom::viewWindow();
+
     if (gamestate != Doom::GS_LEVEL || !gametic)
         return;
 
-    if (automapactive)
+    if (overlay.automapactive)
         Doom::drawAutomapMarks();
 
     Doom::drawHud();
 
     if (paused)
     {
-        int y = automapactive ? 4 : viewwindowy + 4;
+        int y = overlay.automapactive ? 4 : view.viewwindowy + 4;
 
-        Doom::drawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
-                          y,
-                          0,
-                          (Doom::Patch*) Doom::cacheLumpName("M_PAUSE"));
+        Doom::drawPatchDirect(view.viewwindowx + (view.scaledviewwidth - 68) / 2,
+                              y,
+                              0,
+                              (Doom::Patch*) Doom::cacheLumpName("M_PAUSE"));
     }
 }
 
@@ -476,7 +486,9 @@ EacpDoomCamera eacpDoomGetCamera()
 
 static int eacpSpriteBase()
 {
-    return numtextures + numflats;
+    auto& gfx = Doom::graphicsData();
+
+    return gfx.numtextures + gfx.numflats;
 }
 
 // Draws a patch's posts into an index image and its coverage into an alpha
@@ -579,23 +591,27 @@ static int eacpWallIsMasked(int id)
 // single pixel.
 static void eacpEnsureTextureData()
 {
+    auto& gfx = Doom::graphicsData();
+
     int i;
 
-    if (eacpTexturesReady || numtextures <= 0 || textures == 0)
+    if (eacpTexturesReady || gfx.numtextures <= 0 || textures == 0)
         return;
 
-    eacpWallMasked = (unsigned char*) doom_malloc(numtextures);
-    eacpSpriteHeights = (short*) doom_malloc(numspritelumps * (int) sizeof(short));
+    eacpWallMasked = (unsigned char*) doom_malloc(gfx.numtextures);
+    eacpSpriteHeights =
+        (short*) doom_malloc(gfx.numspritelumps * (int) sizeof(short));
 
     if (eacpWallMasked == 0 || eacpSpriteHeights == 0)
         return;
 
-    for (i = 0; i < numtextures; ++i)
+    for (i = 0; i < gfx.numtextures; ++i)
         eacpWallMasked[i] = (unsigned char) eacpWallIsMasked(i);
 
-    for (i = 0; i < numspritelumps; ++i)
+    for (i = 0; i < gfx.numspritelumps; ++i)
     {
-        Doom::Patch* patch = (Doom::Patch*) Doom::cacheLumpNum(firstspritelump + i);
+        Doom::Patch* patch =
+            (Doom::Patch*) Doom::cacheLumpNum(gfx.firstspritelump + i);
         eacpSpriteHeights[i] = patch->height;
     }
 
@@ -604,10 +620,12 @@ static void eacpEnsureTextureData()
 
 int eacpDoomGetTextureCount()
 {
-    if (numtextures <= 0 || textures == 0)
+    auto& gfx = Doom::graphicsData();
+
+    if (gfx.numtextures <= 0 || textures == 0)
         return 0;
 
-    return numtextures + numflats + numspritelumps;
+    return gfx.numtextures + gfx.numflats + gfx.numspritelumps;
 }
 
 EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
@@ -622,7 +640,7 @@ EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
     if (!eacpTexturesReady || id < 0 || id >= eacpDoomGetTextureCount())
         return info;
 
-    if (id < numtextures)
+    if (id < Doom::graphicsData().numtextures)
     {
         info.width = textures[id]->width;
         info.height = textures[id]->height;
@@ -647,6 +665,8 @@ EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
 
 void eacpDoomGetTexturePixels(int id, unsigned char* out)
 {
+    auto& gfx = Doom::graphicsData();
+
     EacpDoomTextureInfo info = eacpDoomGetTextureInfo(id);
     int count = info.width * info.height;
     unsigned char* indices;
@@ -656,10 +676,10 @@ void eacpDoomGetTexturePixels(int id, unsigned char* out)
     if (out == 0 || count <= 0)
         return;
 
-    if (id >= numtextures && id < eacpSpriteBase())
+    if (id >= gfx.numtextures && id < eacpSpriteBase())
     {
         byte* flat =
-            (byte*) Doom::cacheLumpNum(firstflat + (id - numtextures));
+            (byte*) Doom::cacheLumpNum(gfx.firstflat + (id - gfx.numtextures));
         doom_memcpy(out, flat, EACP_FLAT_SIZE * EACP_FLAT_SIZE);
         return;
     }
@@ -674,14 +694,14 @@ void eacpDoomGetTexturePixels(int id, unsigned char* out)
         return;
     }
 
-    if (id < numtextures)
+    if (id < gfx.numtextures)
     {
         eacpDecodeWall(id, indices, alpha, info.width, info.height);
     }
     else
     {
         Doom::Patch* patch = (Doom::Patch*) Doom::cacheLumpNum(
-            firstspritelump + (id - eacpSpriteBase()));
+            gfx.firstspritelump + (id - eacpSpriteBase()));
 
         doom_memset(indices, 0, count);
         doom_memset(alpha, 0, count);
@@ -759,7 +779,8 @@ static EacpLight eacpSectorLight(int lightlevel, int contrast)
     if (eacpFixedRow())
         return eacpFixedLight(eacpFixedRow());
 
-    lightnum = (lightlevel >> LIGHTSEGSHIFT) + extralight + contrast;
+    lightnum =
+        (lightlevel >> LIGHTSEGSHIFT) + Doom::lighting().extralight + contrast;
 
     if (lightnum < 0)
         lightnum = 0;
@@ -1070,6 +1091,8 @@ static void eacpEmitWallQuad(EacpEmitter* em,
 
 static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s)
 {
+    auto& sky = Doom::skyState();
+
     Doom::Side* side;
     Doom::Sector* front;
     Doom::Sector* back;
@@ -1182,7 +1205,8 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
         // Between two sky ceilings the step is invisible sky (the classic sky
         // hack), not an upper wall.
         if (side->toptexture > 0 && backCeiling < frontCeiling
-            && !(front->ceilingpic == skyflatnum && back->ceilingpic == skyflatnum))
+            && !(front->ceilingpic == sky.skyflatnum
+                 && back->ceilingpic == sky.skyflatnum))
         {
             int texture = texturetranslation[side->toptexture];
             float textureWidth = (float) textures[texture]->width;
@@ -1267,6 +1291,8 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
 static void eacpEmitSprite(
     EacpEmitter* em, Doom::Mobj* thing, Doom::Mobj* viewer, double rightX, double rightY)
 {
+    auto& gfx = Doom::graphicsData();
+
     Doom::SpriteDef* definition;
     Doom::SpriteFrame* frame;
     int rotation = 0;
@@ -1277,7 +1303,7 @@ static void eacpEmitSprite(
     float width, height, top, bottom;
     float u0, u1;
 
-    if (thing == viewer || thing->sprite < 0 || thing->sprite >= numsprites)
+    if (thing == viewer || thing->sprite < 0 || thing->sprite >= gfx.numsprites)
         return;
 
     definition = &sprites[thing->sprite];
@@ -1298,7 +1324,7 @@ static void eacpEmitSprite(
     lump = frame->lump[rotation];
     flip = frame->flip[rotation];
 
-    if (lump < 0 || lump >= numspritelumps)
+    if (lump < 0 || lump >= gfx.numspritelumps)
         return;
 
     width = (float) (spritewidth[lump] >> FRACBITS);
@@ -1361,6 +1387,8 @@ static angle_t eacpAngleFromRadians(float radians)
 static void
     eacpEmitSprites(EacpEmitter* em, Doom::Mobj* viewer, const EacpDoomCamera* camera)
 {
+    auto& thinkers = Doom::thinkerList();
+
     Doom::Thinker* thinker;
 
     // The view plane's right axis, the one DOOM measures a sprite's width
@@ -1370,7 +1398,8 @@ static void
     double rightX = eacpFixedToDouble(finesine[facing >> ANGLETOFINESHIFT]);
     double rightY = -eacpFixedToDouble(finecosine[facing >> ANGLETOFINESHIFT]);
 
-    for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
+    for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
+         thinker = thinker->next)
     {
         // A mobj is a Thinker whose virtual kind() is Doom::Mobj (was the function.acp1 ==
         // Doom::mobjThinker identity, before Doom::Thinker became a real Doom::Thinker);
@@ -1388,6 +1417,8 @@ static void
 // parallax, and its texture repeats four times around, as the engine's does.
 static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
 {
+    auto& sky = Doom::skyState();
+
     int texture;
     int i;
     double camX, camY;
@@ -1399,10 +1430,10 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
     // whose words those are. Row 0 at any distance, and through any powerup.
     EacpLight light = eacpFixedLight(0);
 
-    if (skytexture <= 0 || skytexture >= numtextures)
+    if (sky.skytexture <= 0 || sky.skytexture >= Doom::graphicsData().numtextures)
         return;
 
-    texture = texturetranslation[skytexture];
+    texture = texturetranslation[sky.skytexture];
 
     camX = camera->x;
     camY = camera->y;
@@ -1460,7 +1491,9 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
 // above light level 240 and close to it well below that.
 static float eacpWeaponBrightening()
 {
-    int width = viewwidth << detailshift;
+    auto& view = Doom::viewWindow();
+
+    int width = view.viewwidth << view.detailshift;
 
     if (width <= 0)
         return 0.0f;
@@ -1498,6 +1531,8 @@ static float eacpWeaponRowShift()
 
 void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 {
+    auto& gfx = Doom::graphicsData();
+
     Doom::Player* player = &players[displayplayer];
     int i;
 
@@ -1520,7 +1555,7 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
         Doom::SpriteFrame* frame;
         int lump;
 
-        if (state == 0 || state->sprite < 0 || state->sprite >= numsprites)
+        if (state == 0 || state->sprite < 0 || state->sprite >= gfx.numsprites)
             continue;
 
         definition = &sprites[state->sprite];
@@ -1531,7 +1566,7 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
         frame = &definition->spriteframes[state->frame & FF_FRAMEMASK];
         lump = frame->lump[0];
 
-        if (lump < 0 || lump >= numspritelumps)
+        if (lump < 0 || lump >= gfx.numspritelumps)
             continue;
 
         out[i].textureId = eacpSpriteBase() + lump;
@@ -1551,7 +1586,7 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 static void
     eacpEmitFlat(EacpEmitter* em, int index, int flat, float height, EacpLight light)
 {
-    int textureId = numtextures + flattranslation[flat];
+    int textureId = Doom::graphicsData().numtextures + flattranslation[flat];
     const float* poly = &eacpPolyVertices[eacpPolyStart[index] * 2];
     int count = eacpPolyCount[index];
     int i;
@@ -1584,6 +1619,8 @@ static void
 
 static void eacpEmitSubsector(EacpEmitter* em, int index)
 {
+    auto& sky = Doom::skyState();
+
     Doom::Sector* sector = subsectors[index].sector;
     EacpLight light;
 
@@ -1595,10 +1632,10 @@ static void eacpEmitSubsector(EacpEmitter* em, int index)
     // Either way round, a sky flat is a hole onto the sky rather than a surface:
     // Doom::drawPlanes paints the sky wherever it finds one, and a floor is as free
     // to carry it as a ceiling.
-    if (sector->floorpic != skyflatnum)
+    if (sector->floorpic != sky.skyflatnum)
         eacpEmitFlat(em, index, sector->floorpic, eacpFloorHeight(sector), light);
 
-    if (sector->ceilingpic != skyflatnum)
+    if (sector->ceilingpic != sky.skyflatnum)
         eacpEmitFlat(
             em, index, sector->ceilingpic, eacpCeilingHeight(sector), light);
 }
@@ -1941,8 +1978,8 @@ int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
 {
     EacpAutomapEmitter em;
 
-    if (!automapactive || gamestate != Doom::GS_LEVEL || camera == 0 || vertices == 0
-        || lines == 0)
+    if (!Doom::overlayState().automapactive || gamestate != Doom::GS_LEVEL
+        || camera == 0 || vertices == 0 || lines == 0)
         return 0;
 
     em.vertices = vertices;

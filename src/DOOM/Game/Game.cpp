@@ -73,13 +73,18 @@
 #include "NetState.h"
 #include "ParTimes.h"
 #include "PendingCommands.h"
+#include "AmmoLimits.h"
+#include "MapSpawns.h"
+#include "OverlayState.h"
 #include "PlayerState.h"
 #include "RefreshFlags.h"
 #include "SaveGameState.h"
 #include "TiccmdInput.h"
+#include "SkyState.h"
 #include "TimeDemo.h"
 
 #include "../Render/Data.h"
+#include "../Render/ViewWindow.h"
 #include "../Render/Draw.h"
 #include "../Sim/SaveGame.h"
 #include "../Sim/Setup.h"
@@ -291,10 +296,6 @@ const char* defdemoname;
 
 extern Doom::GameState& wipegamestate; // Doom::GameFlow (Engine member)
 extern const char*& pagename; // Doom::AttractMode (Engine member)
-extern doom_boolean& setsizeneeded;
-
-// The sky texture to be used instead of the F_SKY1 dummy (Doom::SkyState member).
-extern int& skytexture;
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
@@ -533,12 +534,14 @@ void buildTiccmd(Ticcmd* cmd)
 //
 void doLoadLevel()
 {
+    auto& sky = skyState();
+
     // Set the sky map.
     // First thing, we have a dummy sky texture name,
     //  a flat. The data is in the WAD only because
     //  we look for an actual index, instead of simply
     //  setting one.
-    skyflatnum = Doom::flatNumForName(SKYFLATNAME);
+    sky.skyflatnum = Doom::flatNumForName(SKYFLATNAME);
 
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
@@ -546,11 +549,11 @@ void doLoadLevel()
         || (static_cast<int>(gamemode) == static_cast<int>(pack_tnt))
         || (static_cast<int>(gamemode) == static_cast<int>(pack_plut)))
     {
-        skytexture = Doom::textureNumForName("SKY3");
+        sky.skytexture = Doom::textureNumForName("SKY3");
         if (gamemap < 12)
-            skytexture = Doom::textureNumForName("SKY1");
+            sky.skytexture = Doom::textureNumForName("SKY1");
         else if (gamemap < 21)
-            skytexture = Doom::textureNumForName("SKY2");
+            sky.skytexture = Doom::textureNumForName("SKY2");
     }
 
     levelstarttic = gametic; // for time calculation
@@ -775,7 +778,7 @@ void gameTicker()
                 if (players[i].mo)
                     consistancy[i][buf] = players[i].mo->x;
                 else
-                    consistancy[i][buf] = rndindex;
+                    consistancy[i][buf] = randomness().menuIndex;
             }
         }
     }
@@ -875,6 +878,8 @@ void playerFinishLevel(int player)
 //
 void playerReborn(int player)
 {
+    auto& ammo = ammoLimits();
+
     Player* p;
     EA::Array<int, MAXPLAYERS> frags;
     int killcount;
@@ -903,7 +908,7 @@ void playerReborn(int player)
     p->ammo[am_clip] = 50;
 
     for (int i = 0; i < NUMAMMO; i++)
-        p->maxammo[i] = maxammo[i];
+        p->maxammo[i] = ammo.maxammo[i];
 }
 
 //
@@ -965,10 +970,12 @@ doom_boolean checkSpot(int playernum, MapThing* mthing)
 //
 void deathMatchSpawnPlayer(int playernum)
 {
+    auto& spawns = mapSpawns();
+
     int i;
     int selections;
 
-    selections = static_cast<int>((deathmatch_p - deathmatchstarts));
+    selections = static_cast<int>((spawns.deathmatch_p - spawns.deathmatchstarts));
     if (selections < 4)
     {
         //fatalError("Error: Only %i deathmatch spots, 4 required", selections);
@@ -982,16 +989,16 @@ void deathMatchSpawnPlayer(int playernum)
     for (int j = 0; j < 20; j++)
     {
         i = Doom::randomness().forPlay() % selections;
-        if (checkSpot(playernum, &deathmatchstarts[i]))
+        if (checkSpot(playernum, &spawns.deathmatchstarts[i]))
         {
-            deathmatchstarts[i].type = playernum + 1;
-            Doom::spawnPlayer(&deathmatchstarts[i]);
+            spawns.deathmatchstarts[i].type = playernum + 1;
+            Doom::spawnPlayer(&spawns.deathmatchstarts[i]);
             return;
         }
     }
 
     // no good spot, so the player will probably get stuck
-    Doom::spawnPlayer(&playerstarts[playernum]);
+    Doom::spawnPlayer(&spawns.playerstarts[playernum]);
 }
 
 //
@@ -999,6 +1006,8 @@ void deathMatchSpawnPlayer(int playernum)
 //
 void doReborn(int playernum)
 {
+    auto& spawns = mapSpawns();
+
     if (!netgame)
     {
         // reload the level from scratch
@@ -1018,25 +1027,25 @@ void doReborn(int playernum)
             return;
         }
 
-        if (checkSpot(playernum, &playerstarts[playernum]))
+        if (checkSpot(playernum, &spawns.playerstarts[playernum]))
         {
-            Doom::spawnPlayer(&playerstarts[playernum]);
+            Doom::spawnPlayer(&spawns.playerstarts[playernum]);
             return;
         }
 
         // try to spawn at one of the other players spots
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (checkSpot(playernum, &playerstarts[i]))
+            if (checkSpot(playernum, &spawns.playerstarts[i]))
             {
-                playerstarts[i].type = playernum + 1; // fake as other player
-                Doom::spawnPlayer(&playerstarts[i]);
-                playerstarts[i].type = i + 1; // restore
+                spawns.playerstarts[i].type = playernum + 1; // fake as other player
+                Doom::spawnPlayer(&spawns.playerstarts[i]);
+                spawns.playerstarts[i].type = i + 1; // restore
                 return;
             }
             // he's going to be inside something.  Too bad.
         }
-        Doom::spawnPlayer(&playerstarts[playernum]);
+        Doom::spawnPlayer(&spawns.playerstarts[playernum]);
     }
 }
 
@@ -1067,13 +1076,15 @@ void secretExitLevel()
 
 void doCompleted()
 {
+    auto& overlay = overlayState();
+
     gameaction = ga_nothing;
 
     for (int i = 0; i < MAXPLAYERS; i++)
         if (playeringame[i])
             playerFinishLevel(i); // take away cards and stuff
 
-    if (automapactive)
+    if (overlay.automapactive)
         Doom::stopAutomap();
 
     if (gamemode != commercial)
@@ -1173,14 +1184,14 @@ void doCompleted()
         wminfo.plyr[i].skills = players[i].killcount;
         wminfo.plyr[i].sitems = players[i].itemcount;
         wminfo.plyr[i].ssecret = players[i].secretcount;
-        wminfo.plyr[i].stime = leveltime;
+        wminfo.plyr[i].stime = levelStats().leveltime;
         doom_memcpy(
             wminfo.plyr[i].frags, players[i].frags, sizeof(wminfo.plyr[i].frags));
     }
 
     gamestate = GS_INTERMISSION;
     viewactive = false;
-    automapactive = false;
+    overlay.automapactive = false;
 
     if (statcopy)
         doom_memcpy(statcopy, &wminfo, sizeof(wminfo));
@@ -1238,38 +1249,40 @@ void loadGame(char* name)
 
 void doLoadGame()
 {
+    auto& save = saveGameState();
+
     int a, b, c;
     EA::Array<char, VERSIONSIZE> vcheck;
 
     gameaction = ga_nothing;
 
     Doom::readFile(savename, &savebuffer);
-    save_p = savebuffer + SAVESTRINGSIZE;
+    save.cursor = savebuffer + SAVESTRINGSIZE;
 
     // skip the description field
     doom_memset(vcheck.data(), 0, sizeof(vcheck));
     //doom_sprintf(vcheck, "version %i", VERSION);
     doom_strcpy(vcheck.data(), "version ");
     doom_concat(vcheck.data(), doom_itoa(VERSION, 10));
-    if (doom_strcmp(reinterpret_cast<const char*>(save_p),
+    if (doom_strcmp(reinterpret_cast<const char*>(save.cursor),
                     const_cast<const char*>(vcheck.data())))
         return; // bad version
-    save_p += VERSIONSIZE;
+    save.cursor += VERSIONSIZE;
 
-    gameskill = static_cast<Skill>((*save_p++));
-    gameepisode = *save_p++;
-    gamemap = *save_p++;
+    gameskill = static_cast<Skill>((*save.cursor++));
+    gameepisode = *save.cursor++;
+    gamemap = *save.cursor++;
     for (int i = 0; i < MAXPLAYERS; i++)
-        playeringame[i] = *save_p++;
+        playeringame[i] = *save.cursor++;
 
     // load a base level
     initNewGame(gameskill, gameepisode, gamemap);
 
     // get the times
-    a = *save_p++;
-    b = *save_p++;
-    c = *save_p++;
-    leveltime = (a << 16) + (b << 8) + c;
+    a = *save.cursor++;
+    b = *save.cursor++;
+    c = *save.cursor++;
+    levelStats().leveltime = (a << 16) + (b << 8) + c;
 
     // dearchive all the modifications
     Doom::unArchivePlayers();
@@ -1277,13 +1290,13 @@ void doLoadGame()
     Doom::unArchiveThinkers();
     Doom::unArchiveSpecials();
 
-    if (*save_p != 0x1d)
+    if (*save.cursor != 0x1d)
         fatalError("Error: Bad savegame");
 
     // done
     doom_free(savebuffer);
 
-    if (setsizeneeded)
+    if (viewWindow().setsizeneeded)
         Doom::executeSetViewSize();
 
     // draw the pattern into the back screen
@@ -1304,6 +1317,9 @@ void saveGame(int slot, char* description)
 
 void doSaveGame()
 {
+    auto& save = saveGameState();
+    auto& stats = levelStats();
+
     EA::Array<char, 100> name;
     EA::Array<char, VERSIONSIZE> name2;
     char* description;
@@ -1322,34 +1338,34 @@ void doSaveGame()
     }
     description = savedescription.data();
 
-    save_p = savebuffer = screens[1] + 0x4000;
+    save.cursor = savebuffer = screens[1] + 0x4000;
 
-    doom_memcpy(save_p, description, SAVESTRINGSIZE);
-    save_p += SAVESTRINGSIZE;
+    doom_memcpy(save.cursor, description, SAVESTRINGSIZE);
+    save.cursor += SAVESTRINGSIZE;
     doom_memset(name2.data(), 0, sizeof(name2));
     //doom_sprintf(name2, "version %i", VERSION);
     doom_strcpy(name2.data(), "version ");
     doom_concat(name2.data(), doom_itoa(VERSION, 10));
-    doom_memcpy(save_p, name2.data(), VERSIONSIZE);
-    save_p += VERSIONSIZE;
+    doom_memcpy(save.cursor, name2.data(), VERSIONSIZE);
+    save.cursor += VERSIONSIZE;
 
-    *save_p++ = gameskill;
-    *save_p++ = gameepisode;
-    *save_p++ = gamemap;
+    *save.cursor++ = gameskill;
+    *save.cursor++ = gameepisode;
+    *save.cursor++ = gamemap;
     for (int i = 0; i < MAXPLAYERS; i++)
-        *save_p++ = playeringame[i];
-    *save_p++ = leveltime >> 16;
-    *save_p++ = leveltime >> 8;
-    *save_p++ = leveltime;
+        *save.cursor++ = playeringame[i];
+    *save.cursor++ = stats.leveltime >> 16;
+    *save.cursor++ = stats.leveltime >> 8;
+    *save.cursor++ = stats.leveltime;
 
     Doom::archivePlayers();
     Doom::archiveWorld();
     Doom::archiveThinkers();
     Doom::archiveSpecials();
 
-    *save_p++ = 0x1d; // consistancy marker
+    *save.cursor++ = 0x1d; // consistancy marker
 
-    length = static_cast<int>((save_p - savebuffer));
+    length = static_cast<int>((save.cursor - savebuffer));
     if (length > SAVEGAMESIZE)
         fatalError("Error: Savegame buffer overrun");
     Doom::writeFile(name.data(), savebuffer, length);
@@ -1393,6 +1409,8 @@ void doNewGame()
 
 void initNewGame(Skill skill, int episode, int map)
 {
+    auto& sky = skyState();
+
     if (paused)
     {
         paused = false;
@@ -1461,7 +1479,7 @@ void initNewGame(Skill skill, int episode, int map)
     usergame = true; // will be set false if a demo
     paused = false;
     demoplayback = false;
-    automapactive = false;
+    overlayState().automapactive = false;
     viewactive = true;
     gameepisode = episode;
     gamemap = map;
@@ -1472,26 +1490,26 @@ void initNewGame(Skill skill, int episode, int map)
     // set the sky map for the episode
     if (gamemode == commercial)
     {
-        skytexture = Doom::textureNumForName("SKY3");
+        sky.skytexture = Doom::textureNumForName("SKY3");
         if (gamemap < 12)
-            skytexture = Doom::textureNumForName("SKY1");
+            sky.skytexture = Doom::textureNumForName("SKY1");
         else if (gamemap < 21)
-            skytexture = Doom::textureNumForName("SKY2");
+            sky.skytexture = Doom::textureNumForName("SKY2");
     }
     else
         switch (episode)
         {
             case 1:
-                skytexture = Doom::textureNumForName("SKY1");
+                sky.skytexture = Doom::textureNumForName("SKY1");
                 break;
             case 2:
-                skytexture = Doom::textureNumForName("SKY2");
+                sky.skytexture = Doom::textureNumForName("SKY2");
                 break;
             case 3:
-                skytexture = Doom::textureNumForName("SKY3");
+                sky.skytexture = Doom::textureNumForName("SKY3");
                 break;
             case 4: // Special Edition sky
-                skytexture = Doom::textureNumForName("SKY4");
+                sky.skytexture = Doom::textureNumForName("SKY4");
                 break;
         }
 

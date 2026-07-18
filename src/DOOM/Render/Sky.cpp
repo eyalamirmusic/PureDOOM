@@ -6,18 +6,13 @@
 
 #include "../m_fixed.h" // FRACUNIT
 
+#include "../Game/SkyState.h"
 #include "Sky.h"
-
-// skytexturemid is a Doom::SkyState member now (Engine), a reference exported by the
-// r_sky.cpp shim (declared in r_sky.h). Declared at global scope so initSkyMap writes that
-// one, not a Doom:: copy - and as int& to match the definition, or a write through a plain
-// int here would clobber the low half of the reference's pointer.
-extern int& skytexturemid;
 
 namespace Doom
 {
 void initSkyMap()
 {
-    skytexturemid = 100 * FRACUNIT;
+    skyState().skytexturemid = 100 * FRACUNIT;
 }
 } // namespace Doom

@@ -21,6 +21,8 @@
 
 #include <alloca.h>
 
+#include "../Game/SkyState.h"
+#include "../Sim/ThinkerList.h"
 #include "../r_data.h"
 #include "CompositeCache.h"
 #include "Data.h"
@@ -351,6 +353,8 @@ void initTextures()
     int temp2;
     int temp3;
 
+    auto& gd = graphicsData();
+
     // Load the patch names from pnames.lmp.
     name[8] = 0;
     names = static_cast<char*>(Doom::cacheLumpName("PNAMES"));
@@ -384,29 +388,28 @@ void initTextures()
         numtextures2 = 0;
         maxoff2 = 0;
     }
-    numtextures = numtextures1 + numtextures2;
+    gd.numtextures = numtextures1 + numtextures2;
 
     // GraphicsData owns the texture structs by value now (RAII, Step 9); `textures`
     // stays a Texture** view onto the texturePointers array into that storage, so
     // every textures[i]->field reader is unchanged. Sized once here (stable after - the
     // loop below only fills them, never resizes).
-    auto& gd = graphicsData();
-    gd.textureStorage.resize(numtextures);
-    gd.texturePointers.resize(numtextures);
+    gd.textureStorage.resize(gd.numtextures);
+    gd.texturePointers.resize(gd.numtextures);
     textures = gd.texturePointers.data();
 
     // The composition tables are CompositeCache-owned EA::Vectors now (Step 9); size them once
     // here and point the views at their data(). columnlump/ofs/composite own an inner vector per
     // texture (filled below / lazily); composite is null-initialised, which getColumn keys on.
     auto& cc = compositeCache();
-    cc.columnlumpStorage.resize(numtextures);
-    cc.columnlump.resize(numtextures);
-    cc.columnofsStorage.resize(numtextures);
-    cc.columnofs.resize(numtextures);
-    cc.compositeStorage.resize(numtextures);
-    cc.composite.resize(numtextures);
-    cc.texturecompositesize.resize(numtextures);
-    cc.texturewidthmask.resize(numtextures);
+    cc.columnlumpStorage.resize(gd.numtextures);
+    cc.columnlump.resize(gd.numtextures);
+    cc.columnofsStorage.resize(gd.numtextures);
+    cc.columnofs.resize(gd.numtextures);
+    cc.compositeStorage.resize(gd.numtextures);
+    cc.composite.resize(gd.numtextures);
+    cc.texturecompositesize.resize(gd.numtextures);
+    cc.texturewidthmask.resize(gd.numtextures);
 
     texturecolumnlump = cc.columnlump.data();
     texturecolumnofs = cc.columnofs.data();
@@ -416,13 +419,13 @@ void initTextures()
 
     // textureheight and texturetranslation are GraphicsData-owned too (Step 9); views
     // onto data() refreshed after each resize.
-    gd.textureheight.resize(numtextures);
+    gd.textureheight.resize(gd.numtextures);
     textureheight = gd.textureheight.data();
 
     // Really complex printing shit...
     temp1 = Doom::wad().number("S_START"); // P_???????
     temp2 = Doom::wad().number("S_END") - 1;
-    temp3 = ((temp2 - temp1 + 63) / 64) + ((numtextures + 63) / 64);
+    temp3 = ((temp2 - temp1 + 63) / 64) + ((gd.numtextures + 63) / 64);
     doom_print("[");
     for (i = 0; i < temp3; i++)
         doom_print(" ");
@@ -431,7 +434,7 @@ void initTextures()
         doom_print("\x8");
     doom_print("\x8\x8\x8\x8\x8\x8\x8\x8\x8\x8");
 
-    for (i = 0; i < numtextures; i++, directory++)
+    for (i = 0; i < gd.numtextures; i++, directory++)
     {
         if (!(i & 63))
             doom_print(".");
@@ -496,14 +499,14 @@ void initTextures()
     }
 
     // Precalculate whatever possible.
-    for (i = 0; i < numtextures; i++)
+    for (i = 0; i < gd.numtextures; i++)
         generateLookup(i);
 
     // Create translation table for global animation.
-    gd.texturetranslation.resize(numtextures + 1);
+    gd.texturetranslation.resize(gd.numtextures + 1);
     texturetranslation = gd.texturetranslation.data();
 
-    for (i = 0; i < numtextures; i++)
+    for (i = 0; i < gd.numtextures; i++)
         texturetranslation[i] = i;
 }
 
@@ -512,17 +515,18 @@ void initTextures()
 //
 void initFlats()
 {
-    firstflat = Doom::wad().number("F_START") + 1;
+    auto& gd = graphicsData();
+
+    gd.firstflat = Doom::wad().number("F_START") + 1;
     lastflat = Doom::wad().number("F_END") - 1;
-    numflats = lastflat - firstflat + 1;
+    gd.numflats = lastflat - gd.firstflat + 1;
 
     // Create translation table for global animation. GraphicsData owns it (Step 9);
     // flattranslation is a view onto data() (P_ animation writes through it).
-    auto& gd = graphicsData();
-    gd.flattranslation.resize(numflats + 1);
+    gd.flattranslation.resize(gd.numflats + 1);
     flattranslation = gd.flattranslation.data();
 
-    for (int i = 0; i < numflats; i++)
+    for (int i = 0; i < gd.numflats; i++)
         flattranslation[i] = i;
 }
 
@@ -536,28 +540,29 @@ void initSpriteLumps()
 {
     Patch* patch;
 
-    firstspritelump = Doom::wad().number("S_START") + 1;
-    lastspritelump = Doom::wad().number("S_END") - 1;
+    auto& gd = graphicsData();
 
-    numspritelumps = lastspritelump - firstspritelump + 1;
+    gd.firstspritelump = Doom::wad().number("S_START") + 1;
+    gd.lastspritelump = Doom::wad().number("S_END") - 1;
+
+    gd.numspritelumps = gd.lastspritelump - gd.firstspritelump + 1;
 
     // GraphicsData owns these now (RAII, Step 9); the vanilla names are plain-pointer
     // views onto the vectors' data(), refreshed here after the resize - the same
     // owner/view split as Level's geometry (numvertexes / vertexes).
-    auto& gd = graphicsData();
-    gd.spritewidth.resize(numspritelumps);
-    gd.spriteoffset.resize(numspritelumps);
-    gd.spritetopoffset.resize(numspritelumps);
+    gd.spritewidth.resize(gd.numspritelumps);
+    gd.spriteoffset.resize(gd.numspritelumps);
+    gd.spritetopoffset.resize(gd.numspritelumps);
     spritewidth = gd.spritewidth.data();
     spriteoffset = gd.spriteoffset.data();
     spritetopoffset = gd.spritetopoffset.data();
 
-    for (int i = 0; i < numspritelumps; i++)
+    for (int i = 0; i < gd.numspritelumps; i++)
     {
         if (!(i & 63))
             doom_print(".");
 
-        patch = static_cast<Patch*>(Doom::cacheLumpNum(firstspritelump + i));
+        patch = static_cast<Patch*>(Doom::cacheLumpNum(gd.firstspritelump + i));
         spritewidth[i] = SHORT(patch->width) << FRACBITS;
         spriteoffset[i] = SHORT(patch->leftoffset) << FRACBITS;
         spritetopoffset[i] = SHORT(patch->topoffset) << FRACBITS;
@@ -625,7 +630,7 @@ int flatNumForName(const char* name)
         doom_concat(error_buf, " not found");
         fatalError(error_buf);
     }
-    return i - firstflat;
+    return i - graphicsData().firstflat;
 }
 
 //
@@ -639,7 +644,9 @@ int checkTextureNumForName(const char* name)
     if (name[0] == '-')
         return 0;
 
-    for (int i = 0; i < numtextures; i++)
+    auto& gd = graphicsData();
+
+    for (int i = 0; i < gd.numtextures; i++)
         if (!doom_strncasecmp(textures[i]->name, name, 8))
             return i;
 
@@ -686,8 +693,10 @@ void precacheLevel()
     if (demoplayback)
         return;
 
+    auto& gd = graphicsData();
+
     // Precache flats.
-    auto flatpresent = EA::Vector<char>(numflats);
+    auto flatpresent = EA::Vector<char>(gd.numflats);
 
     for (i = 0; i < numsectors; i++)
     {
@@ -697,18 +706,18 @@ void precacheLevel()
 
     flatmemory = 0;
 
-    for (i = 0; i < numflats; i++)
+    for (i = 0; i < gd.numflats; i++)
     {
         if (flatpresent[i])
         {
-            lump = firstflat + i;
+            lump = gd.firstflat + i;
             flatmemory += Doom::wad().info(lump).size;
             Doom::cacheLumpNum(lump);
         }
     }
 
     // Precache textures.
-    auto texturepresent = EA::Vector<char>(numtextures);
+    auto texturepresent = EA::Vector<char>(gd.numtextures);
 
     for (i = 0; i < numsides; i++)
     {
@@ -723,10 +732,10 @@ void precacheLevel()
     //  while the sky texture is stored like
     //  a wall texture, with an episode dependend
     //  name.
-    texturepresent[skytexture] = 1;
+    texturepresent[skyState().skytexture] = 1;
 
     texturememory = 0;
-    for (i = 0; i < numtextures; i++)
+    for (i = 0; i < gd.numtextures; i++)
     {
         if (!texturepresent[i])
             continue;
@@ -742,9 +751,11 @@ void precacheLevel()
     }
 
     // Precache sprites.
-    auto spritepresent = EA::Vector<char>(numsprites);
+    auto spritepresent = EA::Vector<char>(gd.numsprites);
 
-    for (th = thinkercap.next; th != &thinkercap; th = th->next)
+    auto& cap = thinkerList().cap;
+
+    for (th = cap.next; th != &cap; th = th->next)
     {
         if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
             spritepresent[static_cast<int>(reinterpret_cast<Mobj*>(th)->sprite)] =
@@ -752,7 +763,7 @@ void precacheLevel()
     }
 
     spritememory = 0;
-    for (i = 0; i < numsprites; i++)
+    for (i = 0; i < gd.numsprites; i++)
     {
         if (!spritepresent[i])
             continue;
@@ -762,7 +773,7 @@ void precacheLevel()
             sf = &sprites[i].spriteframes[j];
             for (k = 0; k < 8; k++)
             {
-                lump = firstspritelump + sf->lump[k];
+                lump = gd.firstspritelump + sf->lump[k];
                 spritememory += Doom::wad().info(lump).size;
                 Doom::cacheLumpNum(lump);
             }

@@ -34,8 +34,6 @@
 //
 // The end-level timer is a Doom::EndLevelTimer owned by the Engine now; these are references
 // onto its members (REFACTOR.md, Step 5).
-extern doom_boolean& levelTimer;
-extern int& levelTimeCount;
 
 
 // Define values for map objects
@@ -179,7 +177,6 @@ struct Button
 
 // The active-special registries are a Doom::ActiveSpecials owned by the Engine now; these
 // (and activeplats/activeceilings below) are references onto its members (REFACTOR.md, Step 5).
-extern Doom::Button (&buttonlist)[MAXBUTTONS];
 
 
 
@@ -238,7 +235,6 @@ struct Plat : Doom::Thinker
 #define MAXPLATS 30
 
 
-extern Doom::Plat* (&activeplats)[MAXPLATS];
 
 
 //
@@ -333,7 +329,6 @@ struct Ceiling : Doom::Thinker
 #define MAXCEILINGS 30
 
 
-extern Doom::Ceiling* (&activeceilings)[MAXCEILINGS];
 
 
 //

@@ -12,8 +12,14 @@
 #include "../i_system.h"
 #include "../r_local.h"
 
+#include "../Game/SkyState.h"
 #include "BSP.h"
+#include "BSPScratch.h"
+#include "RenderScratch.h"
 #include "SolidSegs.h"
+#include "ViewPoint.h"
+#include "ViewProjection.h"
+#include "ViewWindow.h"
 
 #include "Planes.h"
 #include "Things.h"
@@ -64,7 +70,9 @@ void renderBSPNode(int bspnum);
 
 void clearDrawSegs()
 {
-    ds_p = drawsegs;
+    auto& bsp = bspScratch();
+
+    bsp.ds_p = bsp.drawsegs;
 }
 
 //
@@ -208,7 +216,7 @@ void clearClipSegs()
 {
     solidsegs[0].first = -0x7fffffff;
     solidsegs[0].last = -1;
-    solidsegs[1].first = viewwidth;
+    solidsegs[1].first = viewWindow().viewwidth;
     solidsegs[1].last = 0x7fffffff;
     newend = solidsegs + 2;
 }
@@ -227,7 +235,11 @@ void addLine(Seg* line)
     angle_t span;
     angle_t tspan;
 
-    curline = line;
+    auto& bsp = bspScratch();
+    auto& pt = viewPoint();
+    auto& proj = viewProjection();
+
+    bsp.curline = line;
 
     // OPTIMIZE: quickly reject orthogonal back sides.
     angle1 = Doom::pointToAngle(line->v1->x, line->v1->y);
@@ -242,25 +254,25 @@ void addLine(Seg* line)
         return;
 
     // Global angle needed by segcalc.
-    rw_angle1 = angle1;
-    angle1 -= viewangle;
-    angle2 -= viewangle;
+    renderScratch().rw_angle1 = angle1;
+    angle1 -= pt.viewangle;
+    angle2 -= pt.viewangle;
 
-    tspan = angle1 + clipangle;
-    if (tspan > 2 * clipangle)
+    tspan = angle1 + proj.clipangle;
+    if (tspan > 2 * proj.clipangle)
     {
-        tspan -= 2 * clipangle;
+        tspan -= 2 * proj.clipangle;
 
         // Totally off the left edge?
         if (tspan >= span)
             return;
 
-        angle1 = clipangle;
+        angle1 = proj.clipangle;
     }
-    tspan = clipangle - angle2;
-    if (tspan > 2 * clipangle)
+    tspan = proj.clipangle - angle2;
+    if (tspan > 2 * proj.clipangle)
     {
-        tspan -= 2 * clipangle;
+        tspan -= 2 * proj.clipangle;
 
         // Totally off the left edge?
         if (tspan >= span)
@@ -269,7 +281,7 @@ void addLine(Seg* line)
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
-        angle2 = -clipangle;
+        angle2 = -proj.clipangle;
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -279,27 +291,27 @@ void addLine(Seg* line)
     // but not necessarily visible.
     angle1 = (angle1 + ANG90) >> ANGLETOFINESHIFT;
     angle2 = (angle2 + ANG90) >> ANGLETOFINESHIFT;
-    x1 = viewangletox[angle1];
-    x2 = viewangletox[angle2];
+    x1 = proj.viewangletox[angle1];
+    x2 = proj.viewangletox[angle2];
 
     // Does not cross a pixel?
     if (x1 == x2)
         return;
 
-    backsector = line->backsector;
+    bsp.backsector = line->backsector;
 
     // Single sided line?
-    if (!backsector)
+    if (!bsp.backsector)
         goto clipsolid;
 
     // Closed door.
-    if (backsector->ceilingheight <= frontsector->floorheight
-        || backsector->floorheight >= frontsector->ceilingheight)
+    if (bsp.backsector->ceilingheight <= bsp.frontsector->floorheight
+        || bsp.backsector->floorheight >= bsp.frontsector->ceilingheight)
         goto clipsolid;
 
     // Window.
-    if (backsector->ceilingheight != frontsector->ceilingheight
-        || backsector->floorheight != frontsector->floorheight)
+    if (bsp.backsector->ceilingheight != bsp.frontsector->ceilingheight
+        || bsp.backsector->floorheight != bsp.frontsector->floorheight)
         goto clippass;
 
     // Reject empty lines used for triggers
@@ -307,10 +319,10 @@ void addLine(Seg* line)
     // Identical floor and ceiling on both sides,
     // identical light levels on both sides,
     // and no middle texture.
-    if (backsector->ceilingpic == frontsector->ceilingpic
-        && backsector->floorpic == frontsector->floorpic
-        && backsector->lightlevel == frontsector->lightlevel
-        && curline->sidedef->midtexture == 0)
+    if (bsp.backsector->ceilingpic == bsp.frontsector->ceilingpic
+        && bsp.backsector->floorpic == bsp.frontsector->floorpic
+        && bsp.backsector->lightlevel == bsp.frontsector->lightlevel
+        && bsp.curline->sidedef->midtexture == 0)
     {
         return;
     }
@@ -350,18 +362,21 @@ doom_boolean checkBBox(fixed_t* bspcoord)
     int sx1;
     int sx2;
 
+    auto& pt = viewPoint();
+    auto& proj = viewProjection();
+
     // Find the corners of the box
     // that define the edges from current viewpoint.
-    if (viewx <= bspcoord[BOXLEFT])
+    if (pt.viewx <= bspcoord[BOXLEFT])
         boxx = 0;
-    else if (viewx < bspcoord[BOXRIGHT])
+    else if (pt.viewx < bspcoord[BOXRIGHT])
         boxx = 1;
     else
         boxx = 2;
 
-    if (viewy >= bspcoord[BOXTOP])
+    if (pt.viewy >= bspcoord[BOXTOP])
         boxy = 0;
-    else if (viewy > bspcoord[BOXBOTTOM])
+    else if (pt.viewy > bspcoord[BOXBOTTOM])
         boxy = 1;
     else
         boxy = 2;
@@ -376,8 +391,8 @@ doom_boolean checkBBox(fixed_t* bspcoord)
     y2 = bspcoord[checkcoord[boxpos][3]];
 
     // check clip list for an open space
-    angle1 = Doom::pointToAngle(x1, y1) - viewangle;
-    angle2 = Doom::pointToAngle(x2, y2) - viewangle;
+    angle1 = Doom::pointToAngle(x1, y1) - pt.viewangle;
+    angle2 = Doom::pointToAngle(x2, y2) - pt.viewangle;
 
     span = angle1 - angle2;
 
@@ -385,22 +400,22 @@ doom_boolean checkBBox(fixed_t* bspcoord)
     if (span >= ANG180)
         return true;
 
-    tspan = angle1 + clipangle;
+    tspan = angle1 + proj.clipangle;
 
-    if (tspan > 2 * clipangle)
+    if (tspan > 2 * proj.clipangle)
     {
-        tspan -= 2 * clipangle;
+        tspan -= 2 * proj.clipangle;
 
         // Totally off the left edge?
         if (tspan >= span)
             return false;
 
-        angle1 = clipangle;
+        angle1 = proj.clipangle;
     }
-    tspan = clipangle - angle2;
-    if (tspan > 2 * clipangle)
+    tspan = proj.clipangle - angle2;
+    if (tspan > 2 * proj.clipangle)
     {
-        tspan -= 2 * clipangle;
+        tspan -= 2 * proj.clipangle;
 
         // Totally off the left edge?
         if (tspan >= span)
@@ -410,7 +425,7 @@ doom_boolean checkBBox(fixed_t* bspcoord)
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
-        angle2 = -clipangle;
+        angle2 = -proj.clipangle;
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -421,8 +436,8 @@ doom_boolean checkBBox(fixed_t* bspcoord)
     //  (adjacent pixels are touching).
     angle1 = (angle1 + ANG90) >> ANGLETOFINESHIFT;
     angle2 = (angle2 + ANG90) >> ANGLETOFINESHIFT;
-    sx1 = viewangletox[angle1];
-    sx2 = viewangletox[angle2];
+    sx1 = proj.viewangletox[angle1];
+    sx2 = proj.viewangletox[angle2];
 
     // Does not cross a pixel.
     if (sx1 == sx2)
@@ -469,31 +484,36 @@ void subsector(int num)
     }
 #endif
 
-    sscount++;
+    auto& bsp = bspScratch();
+    auto& scratch = renderScratch();
+    auto& pt = viewPoint();
+
+    scratch.sscount++;
     sub = &subsectors[num];
-    frontsector = sub->sector;
+    bsp.frontsector = sub->sector;
     count = sub->numlines;
     line = &segs[sub->firstline];
 
-    if (frontsector->floorheight < viewz)
+    if (bsp.frontsector->floorheight < pt.viewz)
     {
-        floorplane = Doom::findPlane(frontsector->floorheight,
-                                 frontsector->floorpic,
-                                 frontsector->lightlevel);
+        scratch.floorplane = Doom::findPlane(bsp.frontsector->floorheight,
+                                             bsp.frontsector->floorpic,
+                                             bsp.frontsector->lightlevel);
     }
     else
-        floorplane = nullptr;
+        scratch.floorplane = nullptr;
 
-    if (frontsector->ceilingheight > viewz || frontsector->ceilingpic == skyflatnum)
+    if (bsp.frontsector->ceilingheight > pt.viewz
+        || bsp.frontsector->ceilingpic == skyState().skyflatnum)
     {
-        ceilingplane = Doom::findPlane(frontsector->ceilingheight,
-                                   frontsector->ceilingpic,
-                                   frontsector->lightlevel);
+        scratch.ceilingplane = Doom::findPlane(bsp.frontsector->ceilingheight,
+                                               bsp.frontsector->ceilingpic,
+                                               bsp.frontsector->lightlevel);
     }
     else
-        ceilingplane = nullptr;
+        scratch.ceilingplane = nullptr;
 
-    Doom::addSprites(frontsector);
+    Doom::addSprites(bsp.frontsector);
 
     while (count--)
     {
@@ -525,7 +545,8 @@ void renderBSPNode(int bspnum)
     bsp = &nodes[bspnum];
 
     // Decide which side the view point is on.
-    side = Doom::pointOnSide(viewx, viewy, bsp);
+    auto& pt = viewPoint();
+    side = Doom::pointOnSide(pt.viewx, pt.viewy, bsp);
 
     // Recursively divide front space.
     renderBSPNode(bsp->children[side]);

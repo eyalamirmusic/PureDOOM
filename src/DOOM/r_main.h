@@ -29,25 +29,13 @@
 // POV related. viewcos/viewsin live in Doom::ViewPoint now (see r_state.h); these
 // are references onto it.
 //
-extern fixed_t& viewcos;
-extern fixed_t& viewsin;
 
 // The view window geometry lives in Doom::ViewWindow now (see r_state.h); references.
-extern int& viewwidth;
-extern int& viewheight;
-extern int& viewwindowx;
-extern int& viewwindowy;
 
 // The screen projection lives in Doom::ViewProjection now (see r_state.h); these are
 // references onto it.
-extern int& centerx;
-extern int& centery;
 
-extern fixed_t& centerxfrac;
-extern fixed_t& centeryfrac;
-extern fixed_t& projection;
 
-extern int& validcount; // Doom::ValidCount (Engine member), reference onto it
 
 
 //
@@ -69,12 +57,7 @@ extern int& validcount; // Doom::ValidCount (Engine member), reference onto it
 // The light selection lives in Doom::Lighting (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5), the tables as references-to-array so their
 // type and every indexed read are unchanged.
-extern Doom::LightTable* (&scalelight)[LIGHTLEVELS][MAXLIGHTSCALE];
-extern Doom::LightTable* (&scalelightfixed)[MAXLIGHTSCALE];
-extern Doom::LightTable* (&zlight)[LIGHTLEVELS][MAXLIGHTZ];
 
-extern int& extralight;
-extern Doom::LightTable*& fixedcolormap;
 
 
 // Number of diminishing brightness levels.
@@ -85,7 +68,6 @@ extern Doom::LightTable*& fixedcolormap;
 // Blocky/low detail mode.
 //B remove this?
 //  0 = high, 1 = low. Lives in Doom::ViewWindow now (see r_state.h); a reference onto it.
-extern int& detailshift;
 
 
 //

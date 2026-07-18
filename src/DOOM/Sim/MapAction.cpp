@@ -6,6 +6,9 @@
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_state.h" // skyflatnum
+
+#include "../Game/LevelStats.h"
+#include "../Game/SkyState.h"
 #include "../s_sound.h"
 #include "../sounds.h"
 
@@ -264,6 +267,8 @@ doom_boolean shootTraverse(Intercept* in)
     fixed_t thingtopslope;
     fixed_t thingbottomslope;
 
+    auto& sky = skyState();
+
     if (in->isaline)
     {
         li = in->d.line;
@@ -304,14 +309,14 @@ doom_boolean shootTraverse(Intercept* in)
         y = clip.trace.origin.y.raw + FixedMul(clip.trace.delta.y.raw, frac);
         z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
 
-        if (li->frontsector->ceilingpic == skyflatnum)
+        if (li->frontsector->ceilingpic == sky.skyflatnum)
         {
             // don't shoot the sky!
             if (z > li->frontsector->ceilingheight)
                 return false;
 
             // it's a sky hack wall
-            if (li->backsector && li->backsector->ceilingpic == skyflatnum)
+            if (li->backsector && li->backsector->ceilingpic == sky.skyflatnum)
                 return false;
         }
 
@@ -489,7 +494,7 @@ doom_boolean changeSectorThing(Mobj* thing)
 
     nofit = true;
 
-    if (crushchange && !(leveltime & 3))
+    if (crushchange && !(levelStats().leveltime & 3))
     {
         Doom::damageMobj(thing, nullptr, nullptr, 10);
 
