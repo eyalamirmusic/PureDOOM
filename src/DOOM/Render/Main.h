@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // Player
+#include "../Game/PlayerTypes.h" // Player
 #include "../r_defs.h" // Node, Seg, SubSector
 
 // How fast light falls off with distance in the scale-light table. Anything

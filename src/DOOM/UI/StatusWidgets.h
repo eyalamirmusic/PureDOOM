@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../st_lib.h" // StatusNumber / StatusPercent / StatusMultIcon / StatusBinIcon
+#include "StatusWidgetTypes.h" // StatusNumber / StatusPercent / StatusMultIcon / StatusBinIcon
 
 namespace Doom
 {

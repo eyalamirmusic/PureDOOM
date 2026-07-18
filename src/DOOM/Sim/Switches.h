@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_player.h" // Player
-#include "../p_spec.h" // ButtonWhere
+#include "../Game/PlayerTypes.h" // Player
+#include "SpecialTypes.h" // ButtonWhere
 #include "../r_defs.h"
 
 namespace Doom

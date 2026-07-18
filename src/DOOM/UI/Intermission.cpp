@@ -37,7 +37,7 @@
 #include "../m_swap.h"
 #include "../sounds.h" // Data.
 #include "../Wad/WadFile.h"
-#include "../wi_stuff.h"
+#include "IntermissionTypes.h"
 
 #include "Intermission.h"
 #include "IntermissionState.h"

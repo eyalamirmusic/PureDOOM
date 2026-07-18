@@ -31,9 +31,9 @@
 
 // We rely on the thinker data struct
 // to handle sound origins in sectors.
-#include "d_think.h"
+#include "Sim/ActionFunc.h"
 // SECTORS do store MObjs anyway.
-#include "p_mobj.h"
+#include "Sim/MobjTypes.h"
 
 // Doom::SpriteDef owns its frames in an EA::Vector now (RAII, REFACTOR.md Step 9).
 #include <ea_data_structures/Structures/Vector.h>

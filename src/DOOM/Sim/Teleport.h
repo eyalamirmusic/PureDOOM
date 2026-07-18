@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_mobj.h" // Mobj
+#include "MobjTypes.h" // Mobj
 #include "../r_defs.h" // Line
 
 namespace Doom

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../m_cheat.h" // CheatSequence
+#include "CheatTypes.h" // CheatSequence
 
 namespace Doom
 {

@@ -3,7 +3,7 @@
 
 
 #include "../doomtype.h"
-#include "../d_ticcmd.h"
+#include "../Game/Ticcmd.h"
 namespace Doom
 {
 // The engine's system seam: timing (currentTic), the zone's backing allocation

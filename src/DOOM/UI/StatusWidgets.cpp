@@ -11,8 +11,8 @@
 
 #include "../doomdef.h"
 #include "../m_swap.h"
-#include "../st_lib.h"
-#include "../st_stuff.h"
+#include "StatusWidgetTypes.h"
+#include "StatusBarTypes.h"
 #include "../Wad/WadFile.h"
 
 #include "StatusWidgets.h"

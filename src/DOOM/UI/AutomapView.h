@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../am_map.h" // MapPoint (and fixed_t through it)
+#include "AutomapTypes.h" // MapPoint (and fixed_t through it)
 #include "../doomdef.h" // SCREENWIDTH, SCREENHEIGHT
 #include "../doomtype.h" // byte, doom_boolean
 #include "../r_defs.h" // Patch

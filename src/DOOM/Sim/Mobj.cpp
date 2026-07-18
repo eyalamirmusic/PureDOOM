@@ -25,7 +25,7 @@
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../sounds.h"
-#include "../st_stuff.h"
+#include "../UI/StatusBarTypes.h"
 
 #include "../Game/GameSession.h"
 #include "../Game/LaunchOptions.h"

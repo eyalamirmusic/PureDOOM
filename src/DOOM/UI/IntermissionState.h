@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../d_player.h" // IntermissionStart, IntermissionPlayer
+#include "../Game/PlayerTypes.h" // IntermissionStart, IntermissionPlayer
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "../r_defs.h" // Patch
-#include "../wi_stuff.h" // IntermissionPhase
+#include "IntermissionTypes.h" // IntermissionPhase
 
 namespace Doom
 {

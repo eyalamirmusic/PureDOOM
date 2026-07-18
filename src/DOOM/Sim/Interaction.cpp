@@ -26,7 +26,7 @@
 
 #include "../doomstat.h"
 
-#include "../am_map.h"
+#include "../UI/AutomapTypes.h"
 #include "../m_random.h"
 #include "../p_local.h"
 

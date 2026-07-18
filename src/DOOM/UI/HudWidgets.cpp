@@ -9,7 +9,7 @@
 #include "../doom_config.h"
 
 #include "../doomdef.h"
-#include "../hu_lib.h"
+#include "HudWidgetTypes.h"
 #include "../m_swap.h"
 
 #include "HudWidgets.h"

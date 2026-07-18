@@ -20,21 +20,21 @@
 #include <DOOM/DOOM.h>
 #include <DOOM/doom_config.h>
 
-#include <DOOM/am_map.h>
-#include <DOOM/d_player.h>
+#include <DOOM/UI/AutomapTypes.h>
+#include <DOOM/Game/PlayerTypes.h>
 #include <DOOM/doomdef.h>
 #include <DOOM/doomstat.h>
 #include <DOOM/doomtype.h>
 #include <DOOM/f_wipe.h>
 #include <DOOM/hu_stuff.h>
-#include <DOOM/info.h>
+#include <DOOM/Sim/Info.h>
 #include <DOOM/m_fixed.h>
 #include <DOOM/m_menu.h>
 #include <DOOM/m_misc.h>
 #include <DOOM/p_local.h>
-#include <DOOM/p_pspr.h>
+#include <DOOM/Sim/WeaponTypes.h>
 #include <DOOM/r_defs.h>
-#include <DOOM/st_stuff.h>
+#include <DOOM/UI/StatusBarTypes.h>
 #include <DOOM/tables.h>
 #include <DOOM/Game/GameClock.h>
 #include <DOOM/Game/GameFlow.h>

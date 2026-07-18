@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // Player
+#include "PlayerTypes.h" // Player
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 

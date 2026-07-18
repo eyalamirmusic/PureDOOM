@@ -33,7 +33,7 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../dstrings.h" // Data.
-#include "../hu_lib.h"
+#include "HudWidgetTypes.h"
 #include "../hu_stuff.h"
 #include "../m_swap.h"
 #include "../sounds.h"

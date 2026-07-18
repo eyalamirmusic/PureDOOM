@@ -14,7 +14,7 @@
 // these are C++ declarations of C++ functions and wrapping them would ask the
 // linker for symbols that do not exist.
 #include <DOOM/doomtype.h>
-#include <DOOM/info.h>
+#include <DOOM/Sim/Info.h>
 #include <DOOM/m_fixed.h>
 #include <DOOM/m_random.h>
 #include <DOOM/tables.h>

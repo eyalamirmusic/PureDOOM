@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../hu_lib.h" // HudTextLine / HudScrollingText / HudInputText, Patch
+#include "HudWidgetTypes.h" // HudTextLine / HudScrollingText / HudInputText, Patch
 
 namespace Doom
 {

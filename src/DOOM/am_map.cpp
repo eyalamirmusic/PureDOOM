@@ -20,7 +20,7 @@
 #include "doomdef.h"
 #include "doomstat.h" // automapactive
 #include "p_local.h"  // PLAYERRADIUS
-#include "am_map.h"
+#include "UI/AutomapTypes.h"
 
 #include "Game/OverlayState.h"
 #include "UI/Automap.h"

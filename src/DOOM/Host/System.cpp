@@ -16,7 +16,7 @@
 
 #include "../doom_config.h"
 
-#include "../d_net.h"
+#include "../Game/NetTypes.h"
 #include "../doomdef.h"
 #include "../m_misc.h"
 

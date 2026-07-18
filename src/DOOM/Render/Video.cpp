@@ -34,7 +34,7 @@
 
 #include "../doom_config.h"
 
-#include "../doomdata.h"
+#include "../Wad/MapFormat.h"
 #include "../doomdef.h"
 #include "../m_swap.h"
 

@@ -13,7 +13,7 @@
 
 #include "../doomdef.h"
 
-#include "../d_net.h"
+#include "../Game/NetTypes.h"
 #include "../doomstat.h"
 
 #include "Main.h"

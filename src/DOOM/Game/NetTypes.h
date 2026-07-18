@@ -22,7 +22,7 @@
 #pragma once
 
 
-#include "d_player.h"
+#include "PlayerTypes.h"
 
 
 //

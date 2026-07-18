@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // Event
+#include "../Game/Event.h" // Event
 #include "../m_fixed.h" // fixed_t
 #include "../tables.h" // angle_t
 

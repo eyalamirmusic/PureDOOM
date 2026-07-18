@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // Event
+#include "../Game/Event.h" // Event
 
 namespace Doom
 {

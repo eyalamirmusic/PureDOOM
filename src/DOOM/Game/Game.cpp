@@ -32,7 +32,7 @@
 
 #include "../doom_config.h"
 
-#include "../am_map.h"
+#include "../UI/AutomapTypes.h"
 #include "../d_main.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
@@ -44,9 +44,9 @@
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../sounds.h"
-#include "../st_stuff.h"
+#include "../UI/StatusBarTypes.h"
 #include "../Wad/WadFile.h"
-#include "../wi_stuff.h"
+#include "../UI/IntermissionTypes.h"
 
 #include "CorpseQueue.h"
 #include "DeferredNewGame.h"

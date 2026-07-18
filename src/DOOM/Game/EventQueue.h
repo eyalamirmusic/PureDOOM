@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // Event, MAXEVENTS
+#include "Event.h" // Event, MAXEVENTS
 #include "DoomMain.h"
 
 namespace Doom

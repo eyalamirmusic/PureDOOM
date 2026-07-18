@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_net.h" // DoomCom, NetPacket, BACKUPTICS, MAXNETNODES
-#include "../d_ticcmd.h" // Ticcmd
+#include "NetTypes.h" // DoomCom, NetPacket, BACKUPTICS, MAXNETNODES
+#include "Ticcmd.h" // Ticcmd
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "Net.h"

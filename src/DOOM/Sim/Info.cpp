@@ -28,14 +28,14 @@
 
 #include "../sounds.h" // Data.
 #include "../m_fixed.h" // Data.
-#include "../info.h"
-#include "../p_mobj.h"
+#include "Info.h"
+#include "MobjTypes.h"
 
 // The Doom::Actions:: adapters below (Sim/Actions.h) are declared with their real
 // signatures. As C, `void A_Look();` meant "takes unspecified arguments" and linked
 // against A_Look(Doom::Mobj*); as C++ it means "takes none", and would not.
-#include "../d_player.h"
-#include "../p_pspr.h"
+#include "../Game/PlayerTypes.h"
+#include "WeaponTypes.h"
 #include "Actions.h"
 
 // The thing frame/state and mobjinfo tables below are 1993 data verbatim,

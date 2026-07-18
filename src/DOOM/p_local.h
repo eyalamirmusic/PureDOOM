@@ -181,7 +181,7 @@ extern Doom::Mobj** blocklinks; // for thing chains
 //
 // P_SPEC
 //
-#include "p_spec.h"
+#include "Sim/SpecialTypes.h"
 
 
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // Player
+#include "../Game/PlayerTypes.h" // Player
 
 namespace Doom
 {

@@ -40,7 +40,7 @@
 #define IPPORT_USERRESERVED 5000
 #endif
 
-#include "../d_net.h"
+#include "../Game/NetTypes.h"
 #include "../m_argv.h"
 #include "../doomstat.h"
 

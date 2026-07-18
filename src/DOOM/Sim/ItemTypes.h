@@ -15,61 +15,32 @@
 // for more details.
 //
 // DESCRIPTION:
-//        Status bar code.
-//        Does the face/direction indicator animatin.
-//        Does palette indicators as well (red pain/berserk, bright pickup)
+//        Items: key cards, artifacts, weapon, ammunition.
 //
 //-----------------------------------------------------------------------------
 
 #pragma once
 
-#include "doomtype.h"
-#include "d_event.h"
 
-// Size of statusbar.
-// Now sensitive for scaling.
-#define ST_HEIGHT (32 * SCREEN_MUL)
-#define ST_WIDTH SCREENWIDTH
-#define ST_Y (SCREENHEIGHT - ST_HEIGHT)
+#include "../doomdef.h"
 
 
-//
-// STATUS BAR
-//
-
-// Called by main loop.
-
-// Called by main loop.
-
-// Called by main loop.
-
-// Called when the console player is spawned on each level.
-
-// Called by startup code.
-
-
-// States for status bar code.
+// Weapon info: sprite frames, ammunition use.
 namespace Doom
 {
-enum StatusBarMode
+struct WeaponInfo
 {
-    AutomapState,
-    FirstPersonState
+    Doom::AmmoType ammo;
+    int upstate;
+    int downstate;
+    int readystate;
+    int atkstate;
+    int flashstate;
 };
 } // namespace Doom
 
 
-// States for the chat code.
-namespace Doom
-{
-enum ChatState
-{
-    StartChatState,
-    WaitDestState,
-    GetChatState
-};
-} // namespace Doom
-
+extern Doom::WeaponInfo weaponinfo[Doom::NUMWEAPONS];
 
 
 

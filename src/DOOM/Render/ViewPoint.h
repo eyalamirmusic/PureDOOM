@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // Player, and fixed_t / angle_t through it.
+#include "../Game/PlayerTypes.h" // Player, and fixed_t / angle_t through it.
 #include "../m_fixed.h"
 #include "../tables.h"
 

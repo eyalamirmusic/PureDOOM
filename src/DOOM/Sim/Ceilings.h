@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_player.h" // Player (p_spec.h needs it)
-#include "../p_spec.h" // Ceiling, CeilingType
+#include "../Game/PlayerTypes.h" // Player (p_spec.h needs it)
+#include "SpecialTypes.h" // Ceiling, CeilingType
 #include "../r_defs.h"
 
 namespace Doom

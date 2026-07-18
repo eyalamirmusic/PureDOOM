@@ -18,10 +18,10 @@
 
 #include <DOOM/doomstat.h>
 #include <DOOM/d_main.h>
-#include <DOOM/info.h>
+#include <DOOM/Sim/Info.h>
 #include <DOOM/m_random.h>
 #include <DOOM/p_local.h>
-#include <DOOM/p_mobj.h>
+#include <DOOM/Sim/MobjTypes.h>
 #include <DOOM/tables.h>
 #include <DOOM/Wad/WadFile.h>
 

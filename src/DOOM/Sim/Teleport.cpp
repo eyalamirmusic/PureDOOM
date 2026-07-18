@@ -1,6 +1,6 @@
 #include "Teleport.h"
 #include "Level.h"
-#include "../d_player.h"
+#include "../Game/PlayerTypes.h"
 
 #include "../doom_config.h"
 

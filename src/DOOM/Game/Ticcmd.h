@@ -15,28 +15,30 @@
 // for more details.
 //
 // DESCRIPTION:
-//        Typedefs related to to textures etc.,
-//         isolated here to make it easier separating modules.
-//    
+//        System specific interface stuff.
+//
 //-----------------------------------------------------------------------------
 
 #pragma once
 
 
-#include "doomtype.h"
+#include "../doomtype.h"
 
 
-//
-// Flats?
-//
-// a pic is an unmasked block of pixels
+// The data sampled per tick (single player)
+// and transmitted to other peers (multiplayer).
+// Mainly movements/button commands per game tick,
+// plus a checksum for internal state consistency.
 namespace Doom
 {
-struct Pic
+struct Ticcmd
 {
-    byte width;
-    byte height;
-    byte data;
+    char forwardmove;   // *2048 for move
+    char sidemove;      // *2048 for move
+    short angleturn;    // <<16 for angle delta
+    short consistancy;  // checks for net game
+    byte chatchar;
+    byte buttons;
 };
 } // namespace Doom
 

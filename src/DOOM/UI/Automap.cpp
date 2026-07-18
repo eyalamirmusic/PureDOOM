@@ -32,13 +32,13 @@
 #include "../doom_config.h"
 #include "../Sim/Level.h"
 
-#include "../am_map.h"
+#include "AutomapTypes.h"
 #include "../doomdef.h"
 #include "../doomstat.h" // State (automapactive, viewactive).
 #include "../dstrings.h" // Data.
-#include "../m_cheat.h"
+#include "CheatTypes.h"
 #include "../p_local.h"
-#include "../st_stuff.h"
+#include "StatusBarTypes.h"
 #include "../Game/DemoState.h"
 #include "../Game/GameSession.h"
 #include "../Game/OverlayState.h"

@@ -33,16 +33,16 @@
 
 #include "../doom_config.h"
 
-#include "../am_map.h"
+#include "AutomapTypes.h"
 #include "../doomdef.h"
 #include "../doomstat.h" // State.
 #include "../dstrings.h" // Data.
-#include "../m_cheat.h"
+#include "CheatTypes.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../sounds.h"
-#include "../st_lib.h"
-#include "../st_stuff.h"
+#include "StatusWidgetTypes.h"
+#include "StatusBarTypes.h"
 #include "../Wad/WadFile.h"
 
 #include "../Render/VideoState.h"

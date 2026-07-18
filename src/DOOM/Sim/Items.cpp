@@ -22,8 +22,8 @@
 
 #include "../doom_config.h"
 
-#include "../info.h" // We are referring to sprite numbers.
-#include "../d_items.h"
+#include "Info.h" // We are referring to sprite numbers.
+#include "ItemTypes.h"
 
 // clang-format off
 

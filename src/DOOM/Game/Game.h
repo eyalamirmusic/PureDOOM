@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_event.h" // Event
-#include "../d_ticcmd.h" // Ticcmd
+#include "Event.h" // Event
+#include "Ticcmd.h" // Ticcmd
 #include "../doomdef.h" // Skill
 
 namespace Doom

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // IntermissionStart
+#include "../Game/PlayerTypes.h" // IntermissionStart
 
 namespace Doom
 {

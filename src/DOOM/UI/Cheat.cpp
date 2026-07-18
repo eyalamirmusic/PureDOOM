@@ -7,7 +7,7 @@
 
 #include "../doom_config.h"
 
-#include "../m_cheat.h"
+#include "CheatTypes.h"
 
 #include "Cheat.h"
 

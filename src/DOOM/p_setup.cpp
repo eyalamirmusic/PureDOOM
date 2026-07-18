@@ -13,7 +13,7 @@
 //-----------------------------------------------------------------------------
 
 #include "p_local.h"
-#include "p_mobj.h"
+#include "Sim/MobjTypes.h"
 #include "r_defs.h"
 
 #include "Game/MapSpawns.h"

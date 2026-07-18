@@ -8,7 +8,7 @@
 // take the concrete type and so are only declared after it.
 
 #include "../p_local.h" // Doom::mobjThinker, Mobj
-#include "../p_spec.h" // the specials
+#include "SpecialTypes.h" // the specials
 #include "Ceilings.h" // Doom::moveCeiling
 #include "Doors.h" // Doom::verticalDoor
 #include "Floors.h" // Doom::moveFloor

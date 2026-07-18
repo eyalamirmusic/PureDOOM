@@ -25,8 +25,8 @@
 #pragma once
 
 
-#include "p_mobj.h"
-#include "r_defs.h"
+#include "MobjTypes.h"
+#include "../r_defs.h"
 
 
 //

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_player.h" // Player, PspDef
-#include "../p_mobj.h" // Mobj, Sector, angle_t
+#include "../Game/PlayerTypes.h" // Player, PspDef
+#include "MobjTypes.h" // Mobj, Sector, angle_t
 
 namespace Doom
 {

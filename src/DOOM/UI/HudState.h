@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../hu_lib.h" // HudTextLine
+#include "HudWidgetTypes.h" // HudTextLine
 
 // Doom::Player is used only by pointer here, so a forward declaration is enough.
 namespace Doom

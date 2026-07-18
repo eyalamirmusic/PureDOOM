@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_think.h" // Doom::Thinker
+#include "ActionFunc.h" // Doom::Thinker
 
 namespace Doom
 {

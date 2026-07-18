@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdata.h" // MapThing
+#include "../Wad/MapFormat.h" // MapThing
 #include "../p_local.h" // ITEMQUESIZE
 
 namespace Doom

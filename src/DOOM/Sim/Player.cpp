@@ -17,7 +17,7 @@
 
 #include "../doom_config.h"
 
-#include "../d_event.h"
+#include "../Game/Event.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../p_local.h"

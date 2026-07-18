@@ -22,11 +22,11 @@
 #pragma once
 
 
-#include "d_event.h"
-#include "d_player.h"
-#include "doomdata.h"
-#include "m_fixed.h"
-#include "tables.h"
+#include "Game/Event.h"
+#include "../Game/PlayerTypes.h"
+#include "Wad/MapFormat.h"
+#include "../m_fixed.h"
+#include "../tables.h"
 
 
 // Used by ST StatusBar stuff.

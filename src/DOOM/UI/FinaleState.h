@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../info.h" // State
+#include "../Sim/Info.h" // State
 
 namespace Doom
 {

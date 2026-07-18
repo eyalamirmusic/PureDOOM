@@ -15,33 +15,31 @@
 // for more details.
 //
 // DESCRIPTION:
-//        Items: key cards, artifacts, weapon, ammunition.
+//  Intermission.
 //
 //-----------------------------------------------------------------------------
 
 #pragma once
 
+#include "../doomdef.h"
 
-#include "doomdef.h"
-
-
-// Weapon info: sprite frames, ammunition use.
+// States for the intermission
 namespace Doom
 {
-struct WeaponInfo
+enum IntermissionPhase
 {
-    Doom::AmmoType ammo;
-    int upstate;
-    int downstate;
-    int readystate;
-    int atkstate;
-    int flashstate;
+    NoState = -1,
+    StatCount,
+    ShowNextLoc
 };
 } // namespace Doom
 
+// Called by main loop, animate the intermission.
 
-extern Doom::WeaponInfo weaponinfo[Doom::NUMWEAPONS];
+// Called by main loop,
+// draws the intermission directly into the screen buffer.
 
+// Setup for an intermission screen.
 
 
 //-----------------------------------------------------------------------------

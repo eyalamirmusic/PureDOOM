@@ -15,32 +15,61 @@
 // for more details.
 //
 // DESCRIPTION:
-//        System specific interface stuff.
+//        Status bar code.
+//        Does the face/direction indicator animatin.
+//        Does palette indicators as well (red pain/berserk, bright pickup)
 //
 //-----------------------------------------------------------------------------
 
 #pragma once
 
+#include "../doomtype.h"
+#include "Game/Event.h"
 
-#include "doomtype.h"
+// Size of statusbar.
+// Now sensitive for scaling.
+#define ST_HEIGHT (32 * SCREEN_MUL)
+#define ST_WIDTH SCREENWIDTH
+#define ST_Y (SCREENHEIGHT - ST_HEIGHT)
 
 
-// The data sampled per tick (single player)
-// and transmitted to other peers (multiplayer).
-// Mainly movements/button commands per game tick,
-// plus a checksum for internal state consistency.
+//
+// STATUS BAR
+//
+
+// Called by main loop.
+
+// Called by main loop.
+
+// Called by main loop.
+
+// Called when the console player is spawned on each level.
+
+// Called by startup code.
+
+
+// States for status bar code.
 namespace Doom
 {
-struct Ticcmd
+enum StatusBarMode
 {
-    char forwardmove;   // *2048 for move
-    char sidemove;      // *2048 for move
-    short angleturn;    // <<16 for angle delta
-    short consistancy;  // checks for net game
-    byte chatchar;
-    byte buttons;
+    AutomapState,
+    FirstPersonState
 };
 } // namespace Doom
+
+
+// States for the chat code.
+namespace Doom
+{
+enum ChatState
+{
+    StartChatState,
+    WaitDestState,
+    GetChatState
+};
+} // namespace Doom
+
 
 
 

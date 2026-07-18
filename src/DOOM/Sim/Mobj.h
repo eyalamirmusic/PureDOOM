@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_mobj.h" // Mobj, MapThing, StateNum, MobjType
+#include "MobjTypes.h" // Mobj, MapThing, StateNum, MobjType
 
 namespace Doom
 {

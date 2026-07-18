@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_player.h" // Player (p_spec.h needs it)
-#include "../p_spec.h" // FloorMove, FloorType, StairType, MoveResult
+#include "../Game/PlayerTypes.h" // Player (p_spec.h needs it)
+#include "SpecialTypes.h" // FloorMove, FloorType, StairType, MoveResult
 #include "../r_defs.h"
 
 namespace Doom

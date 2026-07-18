@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_spec.h" // Plat, Ceiling, Button, MAXPLATS, MAXCEILINGS, MAXBUTTONS
+#include "SpecialTypes.h" // Plat, Ceiling, Button, MAXPLATS, MAXCEILINGS, MAXBUTTONS
 
 namespace Doom
 {

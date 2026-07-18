@@ -25,7 +25,7 @@
 
 
 // Needed for action function pointer handling.
-#include "d_think.h"
+#include "ActionFunc.h"
 
 
 namespace Doom

@@ -46,9 +46,9 @@
 #include "../m_misc.h"
 #include "../m_menu.h"
 #include "../hu_stuff.h"
-#include "../wi_stuff.h"
-#include "../st_stuff.h"
-#include "../am_map.h"
+#include "../UI/IntermissionTypes.h"
+#include "../UI/StatusBarTypes.h"
+#include "../UI/AutomapTypes.h"
 #include "../d_main.h"
 
 #include "AttractMode.h"

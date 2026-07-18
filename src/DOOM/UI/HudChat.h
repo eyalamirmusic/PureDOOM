@@ -2,7 +2,7 @@
 
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
-#include "../hu_lib.h" // HudInputText
+#include "HudWidgetTypes.h" // HudInputText
 
 namespace Doom
 {

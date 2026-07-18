@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_player.h" // Player (p_spec.h needs it)
-#include "../p_spec.h" // FireFlicker, LightFlash, Strobe, Glow
+#include "../Game/PlayerTypes.h" // Player (p_spec.h needs it)
+#include "SpecialTypes.h" // FireFlicker, LightFlash, Strobe, Glow
 #include "../r_defs.h"
 
 namespace Doom
