@@ -33,7 +33,7 @@ inline constexpr int menuSaveStringSize = 24;
 //    tables, the custom-text segments) stays file-local - fixed constants, not per-run state;
 //  - the self-referential menu-definition apparatus - every *Menu[] / *Def table (their prevMenu
 //    pointers cross-link the tables and lastOn is written as the user navigates) and the
-//    OptionsMenu / SoundMenu variant selectors (whose menuitem_t element type is an anonymous-struct
+//    OptionsMenu / SoundMenu variant selectors (whose MenuItem element type is an anonymous-struct
 //    typedef that cannot be forward-declared) - stays file-local, the same self-referential trap the
 //    intermission's animation tables and the automap cheat hit.
 struct MenuState

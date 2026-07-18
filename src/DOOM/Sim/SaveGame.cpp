@@ -233,7 +233,7 @@ static T* unarchiveThinker()
 //
 void archiveThinkers()
 {
-    thinker_t* th;
+    Doom::Thinker* th;
     Mobj* mobj;
 
     // save off the current thinkers
@@ -269,8 +269,8 @@ void archiveThinkers()
 void unArchiveThinkers()
 {
     byte tclass;
-    thinker_t* currentthinker;
-    thinker_t* next;
+    Doom::Thinker* currentthinker;
+    Doom::Thinker* next;
     Mobj* mobj;
 
     // remove all the current thinkers
@@ -356,7 +356,7 @@ enum
 //
 void archiveSpecials()
 {
-    thinker_t* th;
+    Doom::Thinker* th;
     Ceiling* ceiling;
     Door* door;
     FloorMove* floor;

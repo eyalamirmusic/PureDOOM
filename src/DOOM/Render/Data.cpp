@@ -38,7 +38,7 @@ namespace Doom
 // into the rectangular texture space using origin
 // and possibly other attributes.
 //
-struct mappatch_t
+struct MapPatch
 {
     short originx;
     short originy;
@@ -52,7 +52,7 @@ struct mappatch_t
 // A DOOM wall texture is a list of patches
 // which are to be combined in a predefined order.
 //
-struct maptexture_t
+struct MapTexture
 {
     char name[8];
     doom_boolean masked;
@@ -61,7 +61,7 @@ struct maptexture_t
     //void **columndirectory; // OBSOLETE
     int columndirectory; // [pd] If it's not used, at least make sure it's the right size! Pointers are 8 bytes in x64
     short patchcount;
-    mappatch_t patches[1];
+    MapPatch patches[1];
 };
 
 // r_data's own state - the per-texture composite cache, patch/flat bookkeeping and the memory
@@ -87,7 +87,7 @@ static int& texturememory = compositeCache().texturememory;
 static int& spritememory = compositeCache().spritememory;
 
 // Forward declarations so call order needs no rearranging.
-void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight);
+void drawColumnInCache(Column* patch, byte* cache, int originy, int cacheheight);
 void generateComposite(int texnum);
 void generateLookup(int texnum);
 byte* getColumn(int tex, int col);
@@ -101,7 +101,7 @@ int checkTextureNumForName(const char* name);
 int textureNumForName(const char* name);
 void precacheLevel();
 
-void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight)
+void drawColumnInCache(Column* patch, byte* cache, int originy, int cacheheight)
 {
     int count;
     int position;
@@ -125,7 +125,7 @@ void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheigh
         if (count > 0)
             doom_memcpy(cache + position, source, count);
 
-        patch = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+        patch = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
                                             + patch->length + 4);
     }
 }
@@ -146,7 +146,7 @@ void generateComposite(int texnum)
     int x1;
     int x2;
     int i;
-    column_t* patchcol;
+    Column* patchcol;
     short* collump;
     unsigned short* colofs;
 
@@ -192,7 +192,7 @@ void generateComposite(int texnum)
                 continue;
 
             patchcol =
-                reinterpret_cast<column_t*>(reinterpret_cast<byte*>(realpatch)
+                reinterpret_cast<Column*>(reinterpret_cast<byte*>(realpatch)
                                             + LONG(realpatch->columnofs[x - x1]));
             drawColumnInCache(
                 patchcol, block + colofs[x], patch->originy, texture->height);
@@ -322,9 +322,9 @@ byte* getColumn(int tex, int col)
 //
 void initTextures()
 {
-    maptexture_t* mtexture;
+    MapTexture* mtexture;
     Texture* texture;
-    mappatch_t* mpatch;
+    MapPatch* mpatch;
     TexPatch* patch;
 
     int i;
@@ -449,7 +449,7 @@ void initTextures()
         if (offset > maxoff)
             fatalError("Error: initTextures: bad texture directory");
 
-        mtexture = reinterpret_cast<maptexture_t*>(reinterpret_cast<byte*>(maptex)
+        mtexture = reinterpret_cast<MapTexture*>(reinterpret_cast<byte*>(maptex)
                                                    + offset);
 
         // The struct lives in textureStorage now; point the view entry at it and size
@@ -579,7 +579,7 @@ void initColormaps()
     length = W_LumpLength(lump) + 255;
     auto& gd = graphicsData();
     gd.colormapStorage.resize(length);
-    colormaps = reinterpret_cast<lighttable_t*>(
+    colormaps = reinterpret_cast<LightTable*>(
         (reinterpret_cast<unsigned long long>(gd.colormapStorage.data()) + 255)
         & ~0xffULL);
     W_ReadLump(lump, colormaps);
@@ -680,7 +680,7 @@ void precacheLevel()
     int lump;
 
     Texture* texture;
-    thinker_t* th;
+    Doom::Thinker* th;
     SpriteFrame* sf;
 
     if (demoplayback)

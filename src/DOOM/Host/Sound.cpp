@@ -82,7 +82,7 @@ signed short mixbuffer[MIXBUFFERSIZE];
 namespace Doom
 {
 
-struct mus_header_t
+struct MusHeader
 {
     char ID[4];
     unsigned short scoreLen;
@@ -99,7 +99,7 @@ struct mus_header_t
 [[maybe_unused]] static int flag = 0;
 
 static unsigned char* mus_data = 0;
-static mus_header_t mus_header;
+static MusHeader mus_header;
 static int mus_offset = 0;
 static int mus_delay = 0;
 static doom_boolean mus_loop = false;
@@ -967,7 +967,7 @@ void unregisterSong(int handle)
 
 int registerSong(void* data)
 {
-    doom_memcpy(&mus_header, data, sizeof(mus_header_t));
+    doom_memcpy(&mus_header, data, sizeof(MusHeader));
     if (doom_strncmp(mus_header.ID, "MUS", 3) != 0 || mus_header.ID[3] != 0x1A)
         return 0;
 

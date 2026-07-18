@@ -84,7 +84,7 @@ struct Line;
 // A sector's sound origin. The sound code casts it to Doom::Mobj* and reads x/y off
 // it, so x/y/z must sit at the same offsets as Doom::Mobj's. Doom::Mobj inherits
 // Doom::Thinker and its first field reuses the base's tail padding, so this must
-// inherit it the same way rather than hold a `thinker_t thinker` member - a member
+// inherit it the same way rather than hold a `Doom::Thinker thinker` member - a member
 // gets no tail-padding reuse, which would push x/y/z 4 bytes later than Doom::Mobj's
 // and make the cast read the wrong words (a silently misplaced, wrongly-inaudible
 // sound). The Thinker part is otherwise unused: this is never a real thinker.
@@ -132,7 +132,7 @@ struct Sector
     // list of mobjs in sector
     Mobj* thinglist;
 
-    // thinker_t for reversable actions
+    // Doom::Thinker for reversable actions
     void* specialdata;
 
     int linecount;
@@ -217,7 +217,7 @@ struct Line
     // if == validcount, already checked
     int validcount;
 
-    // thinker_t for reversable actions
+    // Doom::Thinker for reversable actions
     void* specialdata;
 };
 } // namespace Doom
@@ -299,8 +299,11 @@ struct Post
 };
 } // namespace Doom
 
-// column_t is a list of 0 or more Doom::Post, (byte)-1 terminated
-typedef Doom::Post column_t;
+namespace Doom
+{
+// A Column is a list of 0 or more Post, (byte)-1 terminated
+using Column = Post;
+} // namespace Doom
 
 
 //
@@ -312,7 +315,10 @@ typedef Doom::Post column_t;
 //  precalculating 24bpp lightmap/colormap LUT.
 //  from darkening PLAYPAL to all black.
 // Could even us emore than 32 levels.
-typedef byte lighttable_t;
+namespace Doom
+{
+using LightTable = byte;
+} // namespace Doom
 
 
 //
@@ -402,7 +408,7 @@ struct VisSprite
 
     // for color translation and shadow draw,
     //  maxbright frames as well
-    lighttable_t* colormap;
+    LightTable* colormap;
 
     int mobjflags;
 };

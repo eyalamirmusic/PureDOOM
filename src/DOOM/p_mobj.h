@@ -26,7 +26,7 @@
 #include "tables.h"
 #include "m_fixed.h"
 
-// We need the thinker_t stuff.
+// We need the Doom::Thinker stuff.
 #include "d_think.h"
 
 // We need the WAD data structure for Map things,
@@ -209,7 +209,7 @@ namespace Doom
 {
 struct Mobj : Doom::Thinker
 {
-    // Was `thinker_t thinker;` as the first member; a mobj now *is* a Thinker.
+    // Was `Doom::Thinker thinker;` as the first member; a mobj now *is* a Thinker.
     // Its per-tic action (vanilla's P_MobjThinker) is tick(), defined in Mobj.cpp.
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Mobj; }

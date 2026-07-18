@@ -45,7 +45,7 @@ extern fixed_t* spriteoffset;
 extern fixed_t* spritetopoffset;
 
 // A 256-byte-aligned view onto GraphicsData's owned colormapStorage (Step 9).
-extern lighttable_t* colormaps;
+extern Doom::LightTable* colormaps;
 
 // View window geometry: references onto Doom::ViewWindow (an Engine member).
 extern int& viewwidth;

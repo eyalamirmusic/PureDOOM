@@ -177,7 +177,7 @@ extern "C"
     // fresh base level and unarchives over it - the exact p_saveg round trip
     // gDoLoadGame runs - and returns 1 iff the world hash is unchanged. The one
     // simulation path no demo golden covers, and precisely the mobj/special byte
-    // layout the thinker_t->Thinker step rewrites: the net that must exist before
+    // layout the Doom::Thinker->Thinker step rewrites: the net that must exist before
     // it. Requires a level to be loaded (doomSimLoadLevel) with the world set up.
     int doomSimSaveLoadPreservesWorld();
 

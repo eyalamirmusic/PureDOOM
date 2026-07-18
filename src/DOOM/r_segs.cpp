@@ -57,7 +57,7 @@ int& rw_stopx = Doom::segState().rw_stopx;
 fixed_t& rw_distance = Doom::renderScratch().rw_distance;
 
 
-lighttable_t**& walllights = Doom::segState().walllights;
+Doom::LightTable**& walllights = Doom::segState().walllights;
 
 
 short*& maskedtexturecol = Doom::segState().maskedtexturecol;

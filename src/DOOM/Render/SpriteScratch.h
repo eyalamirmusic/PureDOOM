@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_defs.h" // lighttable_t, SpriteFrame, VisSprite
+#include "../r_defs.h" // LightTable, SpriteFrame, VisSprite
 
 namespace Doom
 {
@@ -16,7 +16,7 @@ namespace Doom
 // sprite the demos draw goes through spritelights and the vissprite pool.
 struct SpriteScratch
 {
-    lighttable_t** spritelights =
+    LightTable** spritelights =
         nullptr; // colormap row for the current sprite's light
     SpriteFrame sprtemp[29] = {}; // R_InitSpriteDefs working frames
     int maxframe = 0; // highest frame index seen while installing

@@ -520,7 +520,7 @@ void removeMobj(Mobj* mobj)
     Doom::stopSound(mobj);
 
     // free block
-    Doom::removeThinker(reinterpret_cast<thinker_t*>(mobj));
+    Doom::removeThinker(reinterpret_cast<Doom::Thinker*>(mobj));
 }
 
 //

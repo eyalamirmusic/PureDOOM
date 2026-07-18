@@ -7,7 +7,7 @@
 // terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//        Column / span drawing. Rewritten in Render/Draw.{h,cpp}; this keeps the
+//        Doom::Column / span drawing. Rewritten in Render/Draw.{h,cpp}; this keeps the
 //        R_ names as shims (r_main stores their addresses in the drawer pointers)
 //        and owns the view geometry and the drawer input state (dc_*, ds_*) the
 //        other renderer files fill in.
@@ -40,7 +40,7 @@ int& viewwindowy = Doom::viewWindow().viewwindowy;
 // R_DrawColumn input: the caller (r_segs/r_plane/r_things) fills these in, the
 // column drawers in Render/Draw.cpp read them.
 //
-lighttable_t*& dc_colormap = Doom::drawState().dc_colormap;
+Doom::LightTable*& dc_colormap = Doom::drawState().dc_colormap;
 int& dc_x = Doom::drawState().dc_x;
 int& dc_yl = Doom::drawState().dc_yl;
 int& dc_yh = Doom::drawState().dc_yh;
@@ -63,7 +63,7 @@ int& ds_y = Doom::drawState().ds_y;
 int& ds_x1 = Doom::drawState().ds_x1;
 int& ds_x2 = Doom::drawState().ds_x2;
 
-lighttable_t*& ds_colormap = Doom::drawState().ds_colormap;
+Doom::LightTable*& ds_colormap = Doom::drawState().ds_colormap;
 
 fixed_t& ds_xfrac = Doom::drawState().ds_xfrac;
 fixed_t& ds_yfrac = Doom::drawState().ds_yfrac;

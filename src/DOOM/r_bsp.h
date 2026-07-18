@@ -48,9 +48,9 @@ extern doom_boolean skymap;
 extern Doom::DrawSeg (&drawsegs)[MAXDRAWSEGS];
 extern Doom::DrawSeg*& ds_p;
 
-extern lighttable_t** hscalelight;
-extern lighttable_t** vscalelight;
-extern lighttable_t** dscalelight;
+extern Doom::LightTable** hscalelight;
+extern Doom::LightTable** vscalelight;
+extern Doom::LightTable** dscalelight;
 
 
 typedef void (*drawfunc_t) (int start, int stop);

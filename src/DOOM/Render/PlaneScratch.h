@@ -2,7 +2,7 @@
 
 #include "../doomdef.h" // SCREENWIDTH, SCREENHEIGHT
 #include "../m_fixed.h" // fixed_t
-#include "../r_defs.h" // VisPlane, lighttable_t
+#include "../r_defs.h" // VisPlane, LightTable
 
 namespace Doom
 {
@@ -31,7 +31,7 @@ struct PlaneScratch
     short openings[maxOpenings] = {}; // per-column silhouette clip scratch
     int spanstart[SCREENHEIGHT] = {}; // current span's start column, per row
     int spanstop[SCREENHEIGHT] = {}; // current span's stop column, per row
-    lighttable_t** planezlight = nullptr; // light row for the current plane
+    LightTable** planezlight = nullptr; // light row for the current plane
     fixed_t planeheight = 0; // height of the plane being mapped
     fixed_t basexscale = 0; // base horizontal texture scale
     fixed_t baseyscale = 0; // base vertical texture scale

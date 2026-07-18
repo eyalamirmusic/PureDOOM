@@ -34,7 +34,7 @@ namespace Doom
 // File-local scratch, now on the Engine (Render/SpriteScratch.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; no other file
 // reads these.
-static lighttable_t**& spritelights = spriteScratch().spritelights;
+static LightTable**& spritelights = spriteScratch().spritelights;
 
 static SpriteFrame (&sprtemp)[29] = spriteScratch().sprtemp;
 static int& maxframe = spriteScratch().maxframe;
@@ -51,7 +51,7 @@ void initSpriteDefs(char** namelist);
 void initSprites(char** namelist);
 void clearSprites();
 VisSprite* newVisSprite();
-void drawMaskedColumn(column_t* column);
+void drawMaskedColumn(Column* column);
 void drawVisSprite(VisSprite* vis);
 void projectSprite(Mobj* thing);
 void addSprites(Sector* sec);
@@ -328,7 +328,7 @@ VisSprite* newVisSprite()
 // Masked means: partly transparent, i.e. stored
 //  in posts/runs of opaque pixels.
 //
-void drawMaskedColumn(column_t* column)
+void drawMaskedColumn(Column* column)
 {
     int topscreen;
     int bottomscreen;
@@ -361,7 +361,7 @@ void drawMaskedColumn(column_t* column)
             //  or (SHADOW) Doom::drawFuzzColumn.
             colfunc();
         }
-        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
                                              + column->length + 4);
     }
 
@@ -374,7 +374,7 @@ void drawMaskedColumn(column_t* column)
 //
 void drawVisSprite(VisSprite* vis)
 {
-    column_t* column;
+    Column* column;
     int texturecolumn;
     fixed_t frac;
     Patch* patch;
@@ -410,7 +410,7 @@ void drawVisSprite(VisSprite* vis)
         if (texturecolumn < 0 || texturecolumn >= SHORT(patch->width))
             fatalError("Error: R_DrawSpriteRange: bad texturecolumn");
 #endif
-        column = reinterpret_cast<column_t*>(
+        column = reinterpret_cast<Column*>(
             reinterpret_cast<byte*>(patch) + LONG(patch->columnofs[texturecolumn]));
         drawMaskedColumn(column);
     }

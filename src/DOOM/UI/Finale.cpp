@@ -630,13 +630,13 @@ void fCastDrawer()
 //
 void fDrawPatchCol(int x, Patch* patch, int col)
 {
-    column_t* column;
+    Column* column;
     byte* source;
     byte* dest;
     byte* desttop;
     int count;
 
-    column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+    column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
                                          + LONG(patch->columnofs[col]));
     desttop = screens[0] + x;
 
@@ -652,7 +652,7 @@ void fDrawPatchCol(int x, Patch* patch, int col)
             *dest = *source++;
             dest += SCREENWIDTH;
         }
-        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
                                              + column->length + 4);
     }
 }

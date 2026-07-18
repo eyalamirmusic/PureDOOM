@@ -497,12 +497,12 @@ static void eacpBlitPatch(Doom::Patch* patch,
     for (x = 0; x < patch->width; ++x)
     {
         int destX = originX + x;
-        column_t* column;
+        Doom::Column* column;
 
         if (destX < 0 || destX >= width)
             continue;
 
-        column = (column_t*) ((byte*) patch + patch->columnofs[x]);
+        column = (Doom::Column*) ((byte*) patch + patch->columnofs[x]);
 
         while (column->topdelta != 0xff)
         {
@@ -521,7 +521,7 @@ static void eacpBlitPatch(Doom::Patch* patch,
                 alpha[destY * width + destX] = 255;
             }
 
-            column = (column_t*) ((byte*) column + column->length + 4);
+            column = (Doom::Column*) ((byte*) column + column->length + 4);
         }
     }
 }
@@ -1361,7 +1361,7 @@ static angle_t eacpAngleFromRadians(float radians)
 static void
     eacpEmitSprites(EacpEmitter* em, Doom::Mobj* viewer, const EacpDoomCamera* camera)
 {
-    thinker_t* thinker;
+    Doom::Thinker* thinker;
 
     // The view plane's right axis, the one DOOM measures a sprite's width
     // along, so the billboards stay square-on to the camera being drawn.
@@ -1373,7 +1373,7 @@ static void
     for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
     {
         // A mobj is a Thinker whose virtual kind() is Doom::Mobj (was the function.acp1 ==
-        // Doom::mobjThinker identity, before thinker_t became a real Doom::Thinker);
+        // Doom::mobjThinker identity, before Doom::Thinker became a real Doom::Thinker);
         // skip a removed-but-not-yet-freed one, as the engine's own scans do.
         if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
             continue;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_data.h" // Texture, and SpriteDef / lighttable_t / fixed_t through it
+#include "../r_data.h" // Texture, and SpriteDef / LightTable / fixed_t through it
 
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -68,7 +68,7 @@ struct GraphicsData
     // `colormaps` (r_data.cpp) is a 256-byte-aligned VIEW into its data() that
     // initColormaps sets after reading the lump. The +255 slack for that alignment is
     // part of this buffer's length, as the original doom_malloc(length + 255) was.
-    EA::Vector<lighttable_t> colormapStorage;
+    EA::Vector<LightTable> colormapStorage;
 };
 
 // The one GraphicsData, a view onto the Engine's member - the same pattern as

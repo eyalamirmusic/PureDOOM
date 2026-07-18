@@ -29,7 +29,7 @@
 extern int& toptexture;
 extern int& bottomtexture;
 extern int& midtexture;
-extern lighttable_t**& walllights;
+extern Doom::LightTable**& walllights;
 extern short*& maskedtexturecol;
 
 namespace Doom
@@ -70,7 +70,7 @@ void storeWallRange(int start, int stop);
 void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
 {
     unsigned index;
-    column_t* col;
+    Column* col;
     int lightnum;
     int texnum;
 
@@ -144,7 +144,7 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
             dc_iscale = 0xffffffffu / static_cast<unsigned>(spryscale);
 
             // draw the texture
-            col = (column_t*) ((byte*) Doom::getColumn(texnum, maskedtexturecol[dc_x])
+            col = (Column*) ((byte*) Doom::getColumn(texnum, maskedtexturecol[dc_x])
                                - 3);
 
             Doom::drawMaskedColumn(col);

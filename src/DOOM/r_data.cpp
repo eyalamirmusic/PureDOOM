@@ -51,7 +51,7 @@ fixed_t* spritetopoffset = nullptr;
 
 // A 256-byte-aligned view into GraphicsData's owned colormapStorage; initColormaps
 // points it at the aligned offset after reading the COLORMAP lump (Step 9).
-lighttable_t* colormaps = nullptr;
+Doom::LightTable* colormaps = nullptr;
 
 
 

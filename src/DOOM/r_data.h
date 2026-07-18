@@ -49,7 +49,7 @@ struct TexPatch
 
 
 // A maptexturedef_t describes a rectangular texture,
-// which is composed of one or more mappatch_t structures
+// which is composed of one or more Doom::MapPatch structures
 // that arrange graphic patches.
 namespace Doom
 {

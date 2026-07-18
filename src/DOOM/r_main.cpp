@@ -29,7 +29,7 @@ int& validcount = Doom::validCount().validcount;
 // The light selection is a Doom::Lighting owned by the Engine now; these vanilla names
 // are references onto it. fixedcolormap/extralight are set per frame by R_SetupFrame,
 // the scalelight/zlight tables built once by R_InitLightTables.
-lighttable_t*& fixedcolormap = Doom::lighting().fixedcolormap;
+Doom::LightTable*& fixedcolormap = Doom::lighting().fixedcolormap;
 
 // The screen projection is a Doom::ViewProjection owned by the Engine now; these
 // vanilla names are references onto it. R_ExecuteSetViewSize (Render/Main.cpp) writes
@@ -84,9 +84,9 @@ angle_t (&xtoviewangle)[SCREENWIDTH + 1] = Doom::viewProjection().xtoviewangle;
 
 // References-to-array onto Doom::Lighting, so the type and every indexed read (the
 // walllights = scalelight[light] row assignment included) are unchanged.
-lighttable_t* (&scalelight)[LIGHTLEVELS][MAXLIGHTSCALE] = Doom::lighting().scalelight;
-lighttable_t* (&scalelightfixed)[MAXLIGHTSCALE] = Doom::lighting().scalelightfixed;
-lighttable_t* (&zlight)[LIGHTLEVELS][MAXLIGHTZ] = Doom::lighting().zlight;
+Doom::LightTable* (&scalelight)[LIGHTLEVELS][MAXLIGHTSCALE] = Doom::lighting().scalelight;
+Doom::LightTable* (&scalelightfixed)[MAXLIGHTSCALE] = Doom::lighting().scalelightfixed;
+Doom::LightTable* (&zlight)[LIGHTLEVELS][MAXLIGHTZ] = Doom::lighting().zlight;
 
 // bumped light from gun blasts
 int& extralight = Doom::lighting().extralight;

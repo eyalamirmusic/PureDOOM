@@ -22,7 +22,7 @@
 // head) in Doom::ThinkerList, both Engine members now; these are references onto them, so
 // the engine-wide readers of either resolve unchanged.
 int& leveltime = Doom::levelStats().leveltime;
-thinker_t& thinkercap = Doom::thinkerList().cap;
+Doom::Thinker& thinkercap = Doom::thinkerList().cap;
 
 
 

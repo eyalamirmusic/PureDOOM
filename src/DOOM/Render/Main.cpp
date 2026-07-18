@@ -33,7 +33,7 @@
 #include "Things.h"
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
-extern lighttable_t**& walllights; // Doom::SegState member (Engine); reference
+extern Doom::LightTable**& walllights; // Doom::SegState member (Engine); reference
 // detailLevel/screenblocks are config-backed Engine members (UI/MenuSettings.h); references.
 extern int& detailLevel;
 extern int& screenblocks;
@@ -656,7 +656,7 @@ void setupFrame(Player& player)
     if (player.fixedcolormap)
     {
         fixedcolormap =
-            colormaps + player.fixedcolormap * 256 * sizeof(lighttable_t);
+            colormaps + player.fixedcolormap * 256 * sizeof(LightTable);
 
         walllights = scalelightfixed;
 

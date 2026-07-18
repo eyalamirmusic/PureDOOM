@@ -20,7 +20,7 @@ int teleport(Line* line, int side, Mobj* thing)
     Mobj* m;
     Mobj* fog;
     unsigned an;
-    thinker_t* thinker;
+    Doom::Thinker* thinker;
     Sector* sector;
     fixed_t oldx;
     fixed_t oldy;

@@ -108,7 +108,7 @@ struct fpoint_t
     int x, y;
 };
 
-struct fline_t
+struct FLine
 {
     fpoint_t a, b;
 };
@@ -721,7 +721,7 @@ void amClearFB(int color)
 // faster reject and precalculated slopes.  If the speed is needed,
 // use a hash algorithm to handle  the common cases.
 //
-doom_boolean amClipMline(MapLine* ml, fline_t* fl)
+doom_boolean amClipMline(MapLine* ml, FLine* fl)
 {
     enum
     {
@@ -850,7 +850,7 @@ doom_boolean amClipMline(MapLine* ml, fline_t* fl)
 //
 // Classic Bresenham w/ whatever optimizations needed for speed
 //
-void amDrawFline(fline_t* fl, int color)
+void amDrawFline(FLine* fl, int color)
 {
     int x;
     int y;
@@ -930,7 +930,7 @@ void amDrawFline(fline_t* fl, int color)
 //
 void amDrawMline(MapLine* ml, int color)
 {
-    static fline_t fl;
+    static FLine fl;
 
     if (amClipMline(ml, &fl))
         amDrawFline(&fl, color); // draws it on frame buffer using fb coords

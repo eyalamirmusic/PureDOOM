@@ -64,7 +64,7 @@ namespace Doom
 // P_NewChaseDir movement LUTs and the transient targets the AI threads through its
 // state actions (the vile's corpse, the fat/brain spit targets). All file-local;
 // soundtarget alone is shared (now a Doom::SoundTarget Engine member, reached above).
-enum dirtype_t
+enum DirType
 {
     DI_EAST,
     DI_NORTHEAST,
@@ -78,7 +78,7 @@ enum dirtype_t
     NUMDIRS
 };
 
-EA::Array<dirtype_t, 9> opposite = {DI_WEST,
+EA::Array<DirType, 9> opposite = {DI_WEST,
                                     DI_SOUTHWEST,
                                     DI_SOUTH,
                                     DI_SOUTHEAST,
@@ -88,7 +88,7 @@ EA::Array<dirtype_t, 9> opposite = {DI_WEST,
                                     DI_NORTHWEST,
                                     DI_NODIR};
 
-EA::Array<dirtype_t, 4> diags = {
+EA::Array<DirType, 4> diags = {
     DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
 
 EA::Array<fixed_t, 8> xspeed = {
@@ -407,17 +407,17 @@ void newChaseDir(Mobj& actor)
     fixed_t deltax;
     fixed_t deltay;
 
-    EA::Array<dirtype_t, 3> d;
+    EA::Array<DirType, 3> d;
 
     int tdir;
-    dirtype_t olddir;
+    DirType olddir;
 
-    dirtype_t turnaround;
+    DirType turnaround;
 
     if (!actor.target)
         fatalError("Error: newChaseDir: called with no target");
 
-    olddir = static_cast<dirtype_t>(actor.movedir);
+    olddir = static_cast<DirType>(actor.movedir);
     turnaround = opposite[olddir];
 
     deltax = actor.target->x - actor.x;
@@ -450,7 +450,7 @@ void newChaseDir(Mobj& actor)
     {
         tdir = d[1];
         d[1] = d[2];
-        d[2] = static_cast<dirtype_t>(tdir);
+        d[2] = static_cast<DirType>(tdir);
     }
 
     if (d[1] == turnaround)
@@ -588,7 +588,7 @@ doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround)
 //
 void keenDie(Mobj& mo)
 {
-    thinker_t* th;
+    Doom::Thinker* th;
     Mobj* mo2;
     Line junk;
 
@@ -1409,7 +1409,7 @@ void painShootSkull(Mobj& actor, angle_t angle)
     angle_t an;
     int prestep;
     int count;
-    thinker_t* currentthinker;
+    Doom::Thinker* currentthinker;
 
     // count total number of skull currently on the level
     count = 0;
@@ -1544,7 +1544,7 @@ void explode(Mobj& thingy)
 //
 void bossDeath(Mobj& mo)
 {
-    thinker_t* th;
+    Doom::Thinker* th;
     Mobj* mo2;
     Line junk;
     int i;
@@ -1722,7 +1722,7 @@ void closeShotgun2(Player* player, PspDef* psp)
 
 void brainAwake(Mobj&)
 {
-    thinker_t* thinker;
+    Doom::Thinker* thinker;
     Mobj* m;
 
     // find all the target spots

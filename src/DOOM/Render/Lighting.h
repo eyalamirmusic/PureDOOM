@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../r_defs.h" // lighttable_t
+#include "../r_defs.h" // LightTable
 #include "../r_main.h" // LIGHTLEVELS, MAXLIGHTSCALE, MAXLIGHTZ
 
 namespace Doom
 {
 // The renderer's light selection. Doom::initLightTables builds the diminishing-light
 // lookups once - scalelight indexed by light level and on-screen scale, zlight by
-// light level and distance, each cell a COLORMAP row (a lighttable_t* into the
+// light level and distance, each cell a COLORMAP row (a LightTable* into the
 // colormaps lump) - and R_SetupFrame sets the per-frame part: fixedcolormap, the one
 // row a powerup locks the whole view to (the invulnerability sphere's inverse map, the
 // light-amp visor's brightest row; 0 when no powerup is active), and extralight, the
@@ -24,15 +24,15 @@ namespace Doom
 struct Lighting
 {
     // The one row a powerup locks the view to, 0 when none is active.
-    lighttable_t* fixedcolormap = nullptr;
+    LightTable* fixedcolormap = nullptr;
 
     // The muzzle-flash brightness bump R_SetupFrame reads off the player.
     int extralight = 0;
 
     // The diminishing-light lookups Doom::initLightTables builds.
-    lighttable_t* scalelight[LIGHTLEVELS][MAXLIGHTSCALE] = {};
-    lighttable_t* scalelightfixed[MAXLIGHTSCALE] = {};
-    lighttable_t* zlight[LIGHTLEVELS][MAXLIGHTZ] = {};
+    LightTable* scalelight[LIGHTLEVELS][MAXLIGHTSCALE] = {};
+    LightTable* scalelightfixed[MAXLIGHTSCALE] = {};
+    LightTable* zlight[LIGHTLEVELS][MAXLIGHTZ] = {};
 };
 
 // The one Lighting, a view onto the Engine's member - the same pattern as

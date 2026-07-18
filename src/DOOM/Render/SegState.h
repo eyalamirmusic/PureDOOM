@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../r_defs.h"   // lighttable_t
+#include "../r_defs.h"   // LightTable
 
 namespace Doom
 {
@@ -29,7 +29,7 @@ struct SegState
     int rw_x = 0;     // current column being drawn
     int rw_stopx = 0; // one past the last column
 
-    lighttable_t** walllights = nullptr; // light row (a scalelight/zlight row) for the seg
+    LightTable** walllights = nullptr; // light row (a scalelight/zlight row) for the seg
     short* maskedtexturecol = nullptr;   // per-column offsets into the masked middle texture
 };
 

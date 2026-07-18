@@ -204,7 +204,7 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
 {
     int count;
     int col;
-    column_t* column;
+    Column* column;
     byte* desttop;
     byte* dest;
     byte* source;
@@ -239,7 +239,7 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
                                              + LONG(patch->columnofs[col]));
 
         // step through the posts in a column
@@ -254,7 +254,7 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
                 *dest = *source++;
                 dest += SCREENWIDTH;
             }
-            column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+            column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
                                                  + column->length + 4);
         }
     }
@@ -269,7 +269,7 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 {
     int count;
     int col;
-    column_t* column;
+    Column* column;
     byte* desttop;
     byte* dest;
     byte* source;
@@ -302,7 +302,7 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
                                              + LONG(patch->columnofs[w - 1 - col]));
 
         // step through the posts in a column
@@ -317,7 +317,7 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
                 *dest = *source++;
                 dest += SCREENWIDTH;
             }
-            column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+            column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
                                                  + column->length + 4);
         }
     }
@@ -328,7 +328,7 @@ void drawPatchRectDirect(
 {
     int count;
     int col;
-    column_t* column;
+    Column* column;
     byte* desttop;
     byte* dest;
     byte* source;
@@ -363,7 +363,7 @@ void drawPatchRectDirect(
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(patch)
+        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
                                              + LONG(patch->columnofs[col + src_x]));
 
         // step through the posts in a column
@@ -378,7 +378,7 @@ void drawPatchRectDirect(
                 *dest = *source++;
                 dest += SCREENWIDTH;
             }
-            column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
+            column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
                                                  + column->length + 4);
         }
     }

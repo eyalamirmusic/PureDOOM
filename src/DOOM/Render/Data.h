@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../r_defs.h" // column_t, byte
+#include "../r_defs.h" // Column, byte
 
 namespace Doom
 {
 // Renderer data; r_data.cpp keeps the vanilla R_ names as shims.
-void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight);
+void drawColumnInCache(Column* patch, byte* cache, int originy, int cacheheight);
 void generateComposite(int texnum);
 void generateLookup(int texnum);
 byte* getColumn(int tex, int col);

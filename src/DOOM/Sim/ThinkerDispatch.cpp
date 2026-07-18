@@ -2,7 +2,7 @@
 //
 // Each forwards to the namespaced thinker routine (Doom::mobjThinker for a mobj,
 // the Doom::* functions for the specials) - the same routine Doom::runThinkers used
-// to reach through the old `thinker_t.function` union. They are defined together, at
+// to reach through the old `Doom::Thinker.function` union. They are defined together, at
 // global scope, because the types they belong to (Doom::Mobj and the p_spec.h
 // specials) live in the global namespace, and out of line because those routines
 // take the concrete type and so are only declared after it.

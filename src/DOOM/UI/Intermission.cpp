@@ -123,7 +123,7 @@ enum animenum_t
     ANIM_LEVEL
 };
 
-struct point_t
+struct Point
 {
     int x;
     int y;
@@ -144,7 +144,7 @@ struct anim_t_wi_stuff
     int nanims;
 
     // location of animation
-    point_t loc;
+    Point loc;
 
     // ALWAYS: n/a,
     // RANDOM: period deviation (<256),
@@ -174,7 +174,7 @@ struct anim_t_wi_stuff
     int state;
 };
 
-static EA::Array<EA::Array<point_t, NUMMAPS>, NUMEPISODES> lnodes = {
+static EA::Array<EA::Array<Point, NUMMAPS>, NUMEPISODES> lnodes = {
     // Episode 0 World Map
     {
         {185, 164}, // location of level 0 (CJ)

@@ -48,10 +48,9 @@ struct ActionFunc
 
 
 // The doubly-linked list node is now a real base class with a virtual tick() -
-// Doom::Thinker (Sim/Thinker.h). thinker_t stays as the vanilla spelling the
+// Doom::Thinker (Sim/Thinker.h). Doom::Thinker stays as the vanilla spelling the
 // engine still writes, aliased onto it.
 #include "Sim/Thinker.h"
-using thinker_t = Doom::Thinker;
 
 
 

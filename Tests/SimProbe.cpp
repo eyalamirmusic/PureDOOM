@@ -177,16 +177,16 @@ static void simMix(const void* bytes, int count)
     }
 }
 
-static int simIsMobj(thinker_t* thinker)
+static int simIsMobj(Doom::Thinker* thinker)
 {
     // How the probe finds mobjs, not what it mixes: the thinker's virtual kind()
-    // replaces the old function-pointer identity test (thinker_t -> Thinker).
+    // replaces the old function-pointer identity test (Doom::Thinker -> Thinker).
     return thinker->kind() == Doom::ThinkerKind::Mobj && !thinker->removed;
 }
 
 unsigned long long doomSimStateHash()
 {
-    thinker_t* thinker;
+    Doom::Thinker* thinker;
     Doom::Player* player = &players[0];
     int count = 0;
 
@@ -328,7 +328,7 @@ int doomSimPlayerAngleDegrees()
 
 int doomSimMobjCount()
 {
-    thinker_t* thinker;
+    Doom::Thinker* thinker;
     int count = 0;
 
     for (thinker = thinkercap.next; thinker && thinker != &thinkercap;
@@ -541,7 +541,7 @@ int doomSimFlagNoClip()
 //
 // p_saveg's archive/unarchive is the one simulation path the goldens do not
 // watch: no demo saves or loads, so Doom::archiveThinkers / Doom::unArchiveThinkers and
-// the whole mobj/special byte layout ride unpinned. The thinker_t -> Thinker
+// the whole mobj/special byte layout ride unpinned. The Doom::Thinker -> Thinker
 // virtualisation and the mobj/special zone-ownership change both rewrite exactly
 // that layout, so this builds the missing net first (the Step-0 move): archive
 // the live world, reload a fresh base level and unarchive over it - precisely
@@ -617,7 +617,7 @@ static unsigned long long simWorldHash()
     // through the sector state they drive.
     int mobjCount = 0;
     int thinkerCount = 0;
-    for (thinker_t* th = thinkercap.next; th && th != &thinkercap; th = th->next)
+    for (Doom::Thinker* th = thinkercap.next; th && th != &thinkercap; th = th->next)
     {
         ++thinkerCount;
         if (!simIsMobj(th))

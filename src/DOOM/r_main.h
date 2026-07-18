@@ -69,12 +69,12 @@ extern int& validcount; // Doom::ValidCount (Engine member), reference onto it
 // The light selection lives in Doom::Lighting (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5), the tables as references-to-array so their
 // type and every indexed read are unchanged.
-extern lighttable_t* (&scalelight)[LIGHTLEVELS][MAXLIGHTSCALE];
-extern lighttable_t* (&scalelightfixed)[MAXLIGHTSCALE];
-extern lighttable_t* (&zlight)[LIGHTLEVELS][MAXLIGHTZ];
+extern Doom::LightTable* (&scalelight)[LIGHTLEVELS][MAXLIGHTSCALE];
+extern Doom::LightTable* (&scalelightfixed)[MAXLIGHTSCALE];
+extern Doom::LightTable* (&zlight)[LIGHTLEVELS][MAXLIGHTZ];
 
 extern int& extralight;
-extern lighttable_t*& fixedcolormap;
+extern Doom::LightTable*& fixedcolormap;
 
 
 // Number of diminishing brightness levels.

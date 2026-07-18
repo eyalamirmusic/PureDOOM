@@ -66,7 +66,7 @@
 
 // both the head and tail of the thinker list; a reference onto Doom::ThinkerList's cap
 // (an Engine member) - the storage moved off this loose global in Step 5
-extern thinker_t& thinkercap;
+extern Doom::Thinker& thinkercap;
 
 
 
