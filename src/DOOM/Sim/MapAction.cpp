@@ -15,6 +15,7 @@
 #include "MapUtil.h"
 #include "Movement.h"
 
+#include "Specials.h"
 namespace Doom
 {
 namespace
@@ -260,7 +261,7 @@ doom_boolean shootTraverse(intercept_t* in)
         li = in->d.line;
 
         if (li->special)
-            P_ShootSpecialLine(shootthing, li);
+            Doom::shootSpecialLine(shootthing, li);
 
         if (!(li->flags & ML_TWOSIDED))
             goto hitline;

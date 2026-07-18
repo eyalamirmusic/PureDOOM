@@ -7,16 +7,16 @@ namespace Doom
 // DOOM startup + the main game loop; d_main.cpp keeps the vanilla D_ names as
 // shims. The core state d_main owns is defined at file scope in DoomMain.cpp
 // (above its namespace).
-void dPostEvent(event_t* ev);
-void dProcessEvents();
-void dDisplay();
-void dUpdateWipe();
-void dDoomLoop();
-void dPageTicker();
-void dPageDrawer();
-void dAdvanceDemo();
-void dDoAdvanceDemo();
-void dStartTitle();
-void dAddFile(const char* file);
-void dDoomMain();
+void postEvent(event_t* ev);
+void processEvents();
+void displayFrame();
+void updateWipe();
+void doomLoop();
+void pageTicker();
+void drawPage();
+void advanceDemo();
+void doAdvanceDemo();
+void startTitle();
+void addWadFile(const char* file);
+void doomMain();
 } // namespace Doom

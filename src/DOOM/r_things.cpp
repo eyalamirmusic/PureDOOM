@@ -51,32 +51,8 @@ fixed_t& spryscale = Doom::spriteState().spryscale;
 fixed_t& sprtopscreen = Doom::spriteState().sprtopscreen;
 
 
-void R_DrawMaskedColumn(column_t* column)
-{
-    Doom::drawMaskedColumn(column);
-}
 
-void R_SortVisSprites()
-{
-    Doom::sortVisSprites();
-}
 
-void R_AddSprites(sector_t* sec)
-{
-    Doom::addSprites(sec);
-}
 
-void R_InitSprites(char** namelist)
-{
-    Doom::initSprites(namelist);
-}
 
-void R_ClearSprites()
-{
-    Doom::clearSprites();
-}
 
-void R_DrawMasked()
-{
-    Doom::drawMasked();
-}

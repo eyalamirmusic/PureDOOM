@@ -16,10 +16,13 @@
 #include "BSP.h"
 #include "SolidSegs.h"
 
+#include "Planes.h"
+#include "Things.h"
 #include <ea_data_structures/Structures/Array.h>
 
-// R_StoreWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
-void R_StoreWallRange(int start, int stop);
+// Doom::storeWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
+#include "Segs.h"
+void Doom::storeWallRange(int start, int stop);
 
 #define MAXSEGS 32
 
@@ -85,7 +88,7 @@ void clipSolidWallSegment(int first, int last)
         {
             // Post is entirely visible (above start),
             //  so insert a new clippost.
-            R_StoreWallRange(first, last);
+            Doom::storeWallRange(first, last);
             next = newend;
             newend++;
 
@@ -100,7 +103,7 @@ void clipSolidWallSegment(int first, int last)
         }
 
         // There is a fragment above *start.
-        R_StoreWallRange(first, start->first - 1);
+        Doom::storeWallRange(first, start->first - 1);
         // Now adjust the clip size.
         start->first = first;
     }
@@ -113,7 +116,7 @@ void clipSolidWallSegment(int first, int last)
     while (last >= (next + 1)->first - 1)
     {
         // There is a fragment between two posts.
-        R_StoreWallRange(next->last + 1, (next + 1)->first - 1);
+        Doom::storeWallRange(next->last + 1, (next + 1)->first - 1);
         next++;
 
         if (last <= next->last)
@@ -126,7 +129,7 @@ void clipSolidWallSegment(int first, int last)
     }
 
     // There is a fragment after *next.
-    R_StoreWallRange(next->last + 1, last);
+    Doom::storeWallRange(next->last + 1, last);
     // Adjust the clip size.
     start->last = last;
 
@@ -170,12 +173,12 @@ void clipPassWallSegment(int first, int last)
         if (last < start->first - 1)
         {
             // Post is entirely visible (above start).
-            R_StoreWallRange(first, last);
+            Doom::storeWallRange(first, last);
             return;
         }
 
         // There is a fragment above *start.
-        R_StoreWallRange(first, start->first - 1);
+        Doom::storeWallRange(first, start->first - 1);
     }
 
     // Bottom contained in start?
@@ -185,7 +188,7 @@ void clipPassWallSegment(int first, int last)
     while (last >= (start + 1)->first - 1)
     {
         // There is a fragment between two posts.
-        R_StoreWallRange(start->last + 1, (start + 1)->first - 1);
+        Doom::storeWallRange(start->last + 1, (start + 1)->first - 1);
         start++;
 
         if (last <= start->last)
@@ -193,7 +196,7 @@ void clipPassWallSegment(int first, int last)
     }
 
     // There is a fragment after *next.
-    R_StoreWallRange(start->last + 1, last);
+    Doom::storeWallRange(start->last + 1, last);
 }
 
 //
@@ -472,7 +475,7 @@ void subsector(int num)
 
     if (frontsector->floorheight < viewz)
     {
-        floorplane = R_FindPlane(frontsector->floorheight,
+        floorplane = Doom::findPlane(frontsector->floorheight,
                                  frontsector->floorpic,
                                  frontsector->lightlevel);
     }
@@ -481,14 +484,14 @@ void subsector(int num)
 
     if (frontsector->ceilingheight > viewz || frontsector->ceilingpic == skyflatnum)
     {
-        ceilingplane = R_FindPlane(frontsector->ceilingheight,
+        ceilingplane = Doom::findPlane(frontsector->ceilingheight,
                                    frontsector->ceilingpic,
                                    frontsector->lightlevel);
     }
     else
         ceilingplane = nullptr;
 
-    R_AddSprites(frontsector);
+    Doom::addSprites(frontsector);
 
     while (count--)
     {

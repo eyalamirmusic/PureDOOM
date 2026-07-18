@@ -27,27 +27,7 @@ void T_MoveCeiling(ceiling_t* ceiling)
     Doom::moveCeiling(*ceiling);
 }
 
-int EV_DoCeiling(line_t* line, ceiling_e type)
-{
-    return Doom::doCeiling(line, type);
-}
 
-void P_AddActiveCeiling(ceiling_t* c)
-{
-    Doom::addActiveCeiling(c);
-}
 
-void P_RemoveActiveCeiling(ceiling_t* c)
-{
-    Doom::removeActiveCeiling(c);
-}
 
-void P_ActivateInStasisCeiling(line_t* line)
-{
-    Doom::activateInStasisCeiling(line);
-}
 
-int EV_CeilingCrushStop(line_t* line)
-{
-    return Doom::ceilingCrushStop(line);
-}

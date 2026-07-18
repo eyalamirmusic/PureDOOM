@@ -7,10 +7,10 @@
 namespace Doom
 {
 // The automap; am_map.cpp keeps the vanilla AM_ names as shims.
-doom_boolean amResponder(event_t* ev);
-void amTicker();
-void amDrawer();
-void amStop();
-void amRotate(fixed_t* x, fixed_t* y, angle_t a);
-void amDrawMarks();
+doom_boolean automapResponder(event_t* ev);
+void automapTicker();
+void drawAutomap();
+void stopAutomap();
+void rotateAutomapPoint(fixed_t* x, fixed_t* y, angle_t a);
+void drawAutomapMarks();
 } // namespace Doom

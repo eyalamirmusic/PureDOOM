@@ -17,7 +17,9 @@
 
 #include "SaveGame.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Ceilings.h"
 
+#include "Plats.h"
 #include <new> // placement new
 
 // save_p is a reference onto Doom::SaveGameState's cursor (an Engine member), bound in
@@ -282,7 +284,7 @@ void unArchiveThinkers()
 
         currentthinker = next;
     }
-    P_InitThinkers();
+    Doom::initThinkers();
 
     // read in saved thinkers
     while (1)
@@ -308,7 +310,7 @@ void unArchiveThinkers()
                 mobj->info = &mobjinfo[mobj->type];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;
-                P_AddThinker(mobj);
+                Doom::addThinker(mobj);
                 break;
 
             default:
@@ -498,8 +500,8 @@ void unArchiveSpecials()
                     &sectors[reinterpret_cast<long long>(ceiling->sector)];
                 ceiling->sector->specialdata = ceiling;
 
-                P_AddThinker(ceiling);
-                P_AddActiveCeiling(ceiling);
+                Doom::addThinker(ceiling);
+                Doom::addActiveCeiling(ceiling);
                 break;
 
             case tc_door:
@@ -507,7 +509,7 @@ void unArchiveSpecials()
                 door = unarchiveThinker<vldoor_t>();
                 door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
-                P_AddThinker(door);
+                Doom::addThinker(door);
                 break;
 
             case tc_floor:
@@ -515,7 +517,7 @@ void unArchiveSpecials()
                 floor = unarchiveThinker<floormove_t>();
                 floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
-                P_AddThinker(floor);
+                Doom::addThinker(floor);
                 break;
 
             case tc_plat:
@@ -524,15 +526,15 @@ void unArchiveSpecials()
                 plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
 
-                P_AddThinker(plat);
-                P_AddActivePlat(plat);
+                Doom::addThinker(plat);
+                Doom::addActivePlat(plat);
                 break;
 
             case tc_flash:
                 PADSAVEP();
                 flash = unarchiveThinker<lightflash_t>();
                 flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
-                P_AddThinker(flash);
+                Doom::addThinker(flash);
                 break;
 
             case tc_strobe:
@@ -540,14 +542,14 @@ void unArchiveSpecials()
                 strobe = unarchiveThinker<strobe_t>();
                 strobe->sector =
                     &sectors[reinterpret_cast<long long>(strobe->sector)];
-                P_AddThinker(strobe);
+                Doom::addThinker(strobe);
                 break;
 
             case tc_glow:
                 PADSAVEP();
                 glow = unarchiveThinker<glow_t>();
                 glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];
-                P_AddThinker(glow);
+                Doom::addThinker(glow);
                 break;
 
             default:

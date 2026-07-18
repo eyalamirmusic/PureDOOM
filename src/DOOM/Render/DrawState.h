@@ -35,7 +35,7 @@ struct DrawState
     // The three player-colour translation tables, built once. RAII-owned (Step 9):
     // this vector is the backing buffer and the vanilla name `translationtables`
     // (r_draw.cpp) is a 256-byte-aligned view into its data(), set by
-    // R_InitTranslationTables. dc_translation indexes a colour row of that view.
+    // Doom::initTranslationTables. dc_translation indexes a colour row of that view.
     EA::Vector<byte> translationTableStorage;
 
     int ds_y = 0; // screen row of the current span

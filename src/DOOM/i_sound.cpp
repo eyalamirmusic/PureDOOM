@@ -20,102 +20,102 @@
 
 #include "Host/Sound.h"
 
-void I_InitSound()
+void initSoundHost()
 {
-    Doom::I_InitSound();
+    Doom::initSoundHost();
 }
 
-void I_UpdateSound()
+void updateSound()
 {
-    Doom::I_UpdateSound();
+    Doom::updateSound();
 }
 
-void I_SubmitSound()
+void submitSound()
 {
-    Doom::I_SubmitSound();
+    Doom::submitSound();
 }
 
-void I_ShutdownSound()
+void shutdownSoundHost()
 {
-    Doom::I_ShutdownSound();
+    Doom::shutdownSoundHost();
 }
 
-void I_SetChannels()
+void setChannels()
 {
-    Doom::I_SetChannels();
+    Doom::setChannels();
 }
 
-int I_GetSfxLumpNum(sfxinfo_t* sfxinfo)
+int sfxLumpNum(sfxinfo_t* sfxinfo)
 {
-    return Doom::I_GetSfxLumpNum(sfxinfo);
+    return Doom::sfxLumpNum(sfxinfo);
 }
 
-int I_StartSound(int id, int vol, int sep, int pitch, int priority)
+int startSoundHost(int id, int vol, int sep, int pitch, int priority)
 {
-    return Doom::I_StartSound(id, vol, sep, pitch, priority);
+    return Doom::startSoundHost(id, vol, sep, pitch, priority);
 }
 
-void I_StopSound(int handle)
+void stopSoundHost(int handle)
 {
-    Doom::I_StopSound(handle);
+    Doom::stopSoundHost(handle);
 }
 
-int I_SoundIsPlaying(int handle)
+int soundIsPlaying(int handle)
 {
-    return Doom::I_SoundIsPlaying(handle);
+    return Doom::soundIsPlaying(handle);
 }
 
-void I_UpdateSoundParams(int handle, int vol, int sep, int pitch)
+void updateSoundParams(int handle, int vol, int sep, int pitch)
 {
-    Doom::I_UpdateSoundParams(handle, vol, sep, pitch);
+    Doom::updateSoundParams(handle, vol, sep, pitch);
 }
 
-void I_InitMusic()
+void initMusic()
 {
-    Doom::I_InitMusic();
+    Doom::initMusic();
 }
 
-void I_ShutdownMusic()
+void shutdownMusic()
 {
-    Doom::I_ShutdownMusic();
+    Doom::shutdownMusic();
 }
 
-void I_SetMusicVolume(int volume)
+void setMusicVolume(int volume)
 {
-    Doom::I_SetMusicVolume(volume);
+    Doom::setMusicVolume(volume);
 }
 
-void I_PauseSong(int handle)
+void pauseSong(int handle)
 {
-    Doom::I_PauseSong(handle);
+    Doom::pauseSong(handle);
 }
 
-void I_ResumeSong(int handle)
+void resumeSong(int handle)
 {
-    Doom::I_ResumeSong(handle);
+    Doom::resumeSong(handle);
 }
 
-int I_RegisterSong(void* data)
+int registerSong(void* data)
 {
-    return Doom::I_RegisterSong(data);
+    return Doom::registerSong(data);
 }
 
-void I_PlaySong(int handle, int looping)
+void playSong(int handle, int looping)
 {
-    Doom::I_PlaySong(handle, looping);
+    Doom::playSong(handle, looping);
 }
 
-void I_StopSong(int handle)
+void stopSong(int handle)
 {
-    Doom::I_StopSong(handle);
+    Doom::stopSong(handle);
 }
 
-void I_UnRegisterSong(int handle)
+void unregisterSong(int handle)
 {
-    Doom::I_UnRegisterSong(handle);
+    Doom::unregisterSong(handle);
 }
 
-unsigned long I_TickSong()
+unsigned long tickSong()
 {
-    return Doom::I_TickSong();
+    return Doom::tickSong();
 }

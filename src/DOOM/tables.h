@@ -83,7 +83,6 @@ extern const angle_t* tantoangle;
 
 // Utility function,
 //  called by R_PointToAngle.
-int SlopeDiv(unsigned num, unsigned den);
 
 
 

@@ -25,7 +25,7 @@
 // Rewritten out of vanilla d_net into namespace Doom.
 //
 // The netcode and the tic run loop. d_net.cpp shims netUpdate / tryRunTics /
-// dCheckNetGame / dQuitNetGame. The net buffers and tic counters (netcmds,
+// checkNetGame / quitNetGame. The net buffers and tic counters (netcmds,
 // maketic, ticdup, ... read by g_game and the loop) stay at file scope here,
 // above the namespace. PureDOOM runs singletics; netUpdate's no-command-on-
 // singletics behaviour is load-bearing (CLAUDE.md) and preserved verbatim. The
@@ -46,9 +46,13 @@
 #include "Net.h"
 
 //
+#include "DoomMain.h"
 // NETWORKING
+#include "../Host/Video.h"
 //
+#include "../UI/Menu.h"
 // gametic is the tic about to (or currently being) run
+#include "../Host/Net.h"
 // maketic is the tick that hasn't had control made for it yet
 // nettics[] has the maketics for all players
 //
@@ -100,9 +104,9 @@ int& oldnettics = Doom::netState().oldnettics;
 
 extern doom_boolean& advancedemo; // Doom::AttractMode (Engine member)
 
-void D_ProcessEvents();
+void Doom::processEvents();
 void G_BuildTiccmd(ticcmd_t* cmd);
-void D_DoAdvanceDemo();
+void Doom::doAdvanceDemo();
 
 namespace Doom
 {
@@ -218,7 +222,7 @@ void hSendPacket(int node, int flags)
         doom_fprint(debugfile, "\n");
     }
 
-    I_NetCmd();
+    netCommand();
 }
 
 //
@@ -242,7 +246,7 @@ doom_boolean hGetPacket()
         return false;
 
     doomcom->command = CMD_GET;
-    I_NetCmd();
+    netCommand();
 
     if (doomcom->remotenode == -1)
         return false;
@@ -474,17 +478,17 @@ void netUpdate()
     gameticdiv = gametic / ticdup;
     for (int i = 0; i < newtics; i++)
     {
-        I_StartTic();
-        D_ProcessEvents();
+        startTic();
+        Doom::processEvents();
 
-        // [pd] A singletic update is synchronous: D_DoomLoop builds the tic's
+        // [pd] A singletic update is synchronous: Doom::doomLoop builds the tic's
         // command and runs it in the same breath, advancing maketic and gametic
         // together. Building another one here would consume the input that
         // command is about to read, and would advance maketic with no gametic to
-        // match it -- and this runs from D_Display and R_RenderPlayerView too,
+        // match it -- and this runs from Doom::displayFrame and R_RenderPlayerView too,
         // which vanilla called to keep the netcode fed while a slow frame
         // rendered. maketic therefore climbed until it jammed against the cap
-        // below and stayed there, and since D_DoomLoop writes the command to
+        // below and stayed there, and since Doom::doomLoop writes the command to
         // netcmds[maketic] while G_Ticker reads netcmds[gametic], every command
         // was executed five tics (143ms) after it was built. Events are still
         // drained above; there is simply no second command to build.
@@ -543,9 +547,9 @@ void checkAbort()
 
     stoptic = I_GetTime() + 2;
     while (I_GetTime() < stoptic)
-        I_StartTic();
+        startTic();
 
-    I_StartTic();
+    startTic();
     for (; eventtail != eventhead;)
     {
         ev = &events[eventtail];
@@ -635,10 +639,10 @@ void dArbitrateNetStart()
 }
 
 //
-// dCheckNetGame
+// checkNetGame
 // Works out player numbers among the net participants
 //
-void dCheckNetGame()
+void checkNetGame()
 {
     for (int i = 0; i < MAXNETNODES; i++)
     {
@@ -648,8 +652,8 @@ void dCheckNetGame()
         resendto[i] = 0; // which tic to start sending
     }
 
-    // I_InitNetwork sets doomcom and netgame
-    I_InitNetwork();
+    // initNetwork sets doomcom and netgame
+    initNetwork();
     if (doomcom->id != DOOMCOM_ID)
         I_Error("Error: Doomcom buffer invalid!");
 
@@ -693,11 +697,11 @@ void dCheckNetGame()
 }
 
 //
-// dQuitNetGame
+// quitNetGame
 // Called before quitting to leave a net game
 // without hanging the other players
 //
-void dQuitNetGame()
+void quitNetGame()
 {
     if (debugfile)
         doom_close(debugfile);
@@ -820,7 +824,7 @@ void tryRunTics()
         // don't stay in here forever -- give the menu a chance to work
         if (I_GetTime() / ticdup - entertic >= 20)
         {
-            M_Ticker();
+            menuTicker();
             return;
         }
     }
@@ -833,8 +837,8 @@ void tryRunTics()
             if (gametic / ticdup > lowtic)
                 I_Error("Error: gametic>lowtic");
             if (advancedemo)
-                D_DoAdvanceDemo();
-            M_Ticker();
+                Doom::doAdvanceDemo();
+            menuTicker();
             G_Ticker();
             gametic++;
 

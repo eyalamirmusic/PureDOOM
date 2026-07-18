@@ -47,8 +47,12 @@
 #include "MenuSettings.h"
 #include "MenuState.h"
 
+#include "../Game/Args.h"
+#include "../Game/DoomMain.h"
+#include "../Render/Video.h"
 #include <ea_data_structures/Structures/Array.h>
 
+#include "../Host/Video.h"
 #define SAVESTRINGSIZE 24
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
@@ -59,7 +63,7 @@
 // stay at file scope rather than moving into namespace Doom below. mouseSensitivity
 // is declared in doomstat.h; messageToPrint (m_menu.h) is read by the eacp overlay
 // capture.
-// menuactive, automapactive and inhelpscreens (which gates D_Display's border
+// menuactive, automapactive and inhelpscreens (which gates Doom::displayFrame's border
 // redraw) are a Doom::OverlayState owned by the Engine now; these are references
 // onto it (REFACTOR.md, Step 5).
 doom_boolean& inhelpscreens = Doom::overlayState().inhelpscreens;
@@ -356,7 +360,7 @@ void M_DrawSelCell(menu_t* menu, int item);
 void M_WriteText(int x, int y, const char* string);
 int M_StringWidth(const char* string);
 int M_StringHeight(const char* string);
-void M_StartControlPanel();
+void startControlPanel();
 void M_StartMessage(const char* string, void* routine, doom_boolean input);
 void M_StopMessage();
 void M_ClearMenus();
@@ -706,7 +710,7 @@ void M_DrawCustomMenuText(const char* name, int x, int y)
             while (seg->lump)
             {
                 void* lump = W_CacheLumpName(seg->lump, PU_CACHE);
-                V_DrawPatchRectDirect(x + seg->offx,
+                Doom::drawPatchRectDirect(x + seg->offx,
                                       y,
                                       0,
                                       static_cast<patch_t*>(lump),
@@ -731,7 +735,7 @@ void M_ReadSaveStrings()
     for (int i = 0; i < load_end; i++)
     {
 #if 0
-        if (M_CheckParm("-cdrom"))
+        if (Doom::checkParm("-cdrom"))
             //doom_sprintf(name, "c:\\doomdata\\" SAVEGAMENAME "%d.dsg", i);
         else
 #endif
@@ -760,7 +764,7 @@ void M_ReadSaveStrings()
 //
 void M_DrawLoad()
 {
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         72, 28, 0, static_cast<patch_t*>(W_CacheLumpName("M_LOADG", PU_CACHE)));
     for (int i = 0; i < load_end; i++)
     {
@@ -774,14 +778,14 @@ void M_DrawLoad()
 //
 void M_DrawSaveLoadBorder(int x, int y)
 {
-    V_DrawPatchDirect(x - 8,
+    Doom::drawPatchDirect(x - 8,
                       y + 7,
                       0,
                       static_cast<patch_t*>(W_CacheLumpName("M_LSLEFT", PU_CACHE)));
 
     for (int i = 0; i < 24; i++)
     {
-        V_DrawPatchDirect(
+        Doom::drawPatchDirect(
             x,
             y + 7,
             0,
@@ -789,7 +793,7 @@ void M_DrawSaveLoadBorder(int x, int y)
         x += 8;
     }
 
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         x, y + 7, 0, static_cast<patch_t*>(W_CacheLumpName("M_LSRGHT", PU_CACHE)));
 }
 
@@ -801,7 +805,7 @@ void M_LoadSelect(int choice)
     EA::Array<char, 256> name;
 
 #if 0
-    if (M_CheckParm("-cdrom"))
+    if (Doom::checkParm("-cdrom"))
         //doom_sprintf(name, "c:\\doomdata\\"SAVEGAMENAME"%d.dsg", choice);
     else
 #endif
@@ -837,7 +841,7 @@ void M_DrawSave()
 {
     int i;
 
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         72, 28, 0, static_cast<patch_t*>(W_CacheLumpName("M_SAVEG", PU_CACHE)));
     for (i = 0; i < load_end; i++)
     {
@@ -853,7 +857,7 @@ void M_DrawSave()
 }
 
 //
-// M_Responder calls this when user is finished
+// menuResponder calls this when user is finished
 //
 void M_DoSave(int slot)
 {
@@ -866,7 +870,7 @@ void M_DoSave(int slot)
 }
 
 //
-// User wants to save. Start string input for M_Responder
+// User wants to save. Start string input for menuResponder
 //
 void M_SaveSelect(int choice)
 {
@@ -923,7 +927,7 @@ void M_QuickSave()
 
     if (quickSaveSlot < 0)
     {
-        M_StartControlPanel();
+        startControlPanel();
         M_ReadSaveStrings();
         M_SetupNextMenu(&SaveDef);
         quickSaveSlot = -2; // means to pick a slot now
@@ -978,13 +982,13 @@ void M_DrawReadThis1()
     switch (gamemode)
     {
         case commercial:
-            V_DrawPatchDirect(
+            Doom::drawPatchDirect(
                 0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("HELP", PU_CACHE)));
             break;
         case shareware:
         case registered:
         case retail:
-            V_DrawPatchDirect(
+            Doom::drawPatchDirect(
                 0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("HELP1", PU_CACHE)));
             break;
         default:
@@ -1004,12 +1008,12 @@ void M_DrawReadThis2()
         case retail:
         case commercial:
             // This hack keeps us from having to change menus.
-            V_DrawPatchDirect(
+            Doom::drawPatchDirect(
                 0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("CREDIT", PU_CACHE)));
             break;
         case shareware:
         case registered:
-            V_DrawPatchDirect(
+            Doom::drawPatchDirect(
                 0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("HELP2", PU_CACHE)));
             break;
         default:
@@ -1023,7 +1027,7 @@ void M_DrawReadThis2()
 //
 void M_DrawSound()
 {
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         60, 38, 0, static_cast<patch_t*>(W_CacheLumpName("M_SVOL", PU_CACHE)));
 
     if (!(doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
@@ -1094,7 +1098,7 @@ void M_MusicVol(int choice)
 //
 void M_DrawMainMenu()
 {
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         94, 2, 0, static_cast<patch_t*>(W_CacheLumpName("M_DOOM", PU_CACHE)));
 }
 
@@ -1103,9 +1107,9 @@ void M_DrawMainMenu()
 //
 void M_DrawNewGame()
 {
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         96, 14, 0, static_cast<patch_t*>(W_CacheLumpName("M_NEWG", PU_CACHE)));
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         54, 38, 0, static_cast<patch_t*>(W_CacheLumpName("M_SKILL", PU_CACHE)));
 }
 
@@ -1128,7 +1132,7 @@ void M_NewGame(int)
 //
 void M_DrawEpisode()
 {
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         54, 38, 0, static_cast<patch_t*>(W_CacheLumpName("M_EPISOD", PU_CACHE)));
 }
 
@@ -1178,27 +1182,27 @@ void M_Episode(int choice)
 //
 void M_DrawOptions()
 {
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         108, 15, 0, static_cast<patch_t*>(W_CacheLumpName("M_OPTTTL", PU_CACHE)));
 
-    //V_DrawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
+    //Doom::drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
     //                W_CacheLumpName(detailNames[detailLevel],PU_CACHE)); // Details do nothing?
 
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         OptionsDef.x + 120,
         OptionsDef.y + LINEHEIGHT * messages,
         0,
         static_cast<patch_t*>(
             W_CacheLumpName(msgNames[showMessages].data(), PU_CACHE)));
 
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         OptionsDef.x + 131,
         OptionsDef.y + LINEHEIGHT * crosshair_opt,
         0,
         static_cast<patch_t*>(
             W_CacheLumpName(msgNames[crosshair].data(), PU_CACHE)));
 
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         OptionsDef.x + 147,
         OptionsDef.y + LINEHEIGHT * always_run_opt,
         0,
@@ -1213,7 +1217,7 @@ void M_DrawMouseOptions()
 {
     M_DrawCustomMenuText("TXT_MOPT", 74, 45);
 
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         MouseOptionsDef.x + 149,
         MouseOptionsDef.y + LINEHEIGHT * mousemov,
         0,
@@ -1286,7 +1290,7 @@ void M_EndGameResponse(int ch)
 
     currentMenu->lastOn = itemOn;
     M_ClearMenus();
-    D_StartTitle();
+    Doom::startTitle();
 }
 
 void M_EndGame(int)
@@ -1423,19 +1427,19 @@ void M_DrawThermo(int x, int y, int thermWidth, int thermDot)
     int xx;
 
     xx = x;
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         xx, y, 0, static_cast<patch_t*>(W_CacheLumpName("M_THERML", PU_CACHE)));
     xx += 8;
     for (int i = 0; i < thermWidth; i++)
     {
-        V_DrawPatchDirect(
+        Doom::drawPatchDirect(
             xx, y, 0, static_cast<patch_t*>(W_CacheLumpName("M_THERMM", PU_CACHE)));
         xx += 8;
     }
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         xx, y, 0, static_cast<patch_t*>(W_CacheLumpName("M_THERMR", PU_CACHE)));
 
-    V_DrawPatchDirect((x + 8) + thermDot * 8,
+    Doom::drawPatchDirect((x + 8) + thermDot * 8,
                       y,
                       0,
                       static_cast<patch_t*>(W_CacheLumpName("M_THERMO", PU_CACHE)));
@@ -1443,7 +1447,7 @@ void M_DrawThermo(int x, int y, int thermWidth, int thermDot)
 
 void M_DrawEmptyCell(menu_t* menu, int item)
 {
-    V_DrawPatchDirect(menu->x - 10,
+    Doom::drawPatchDirect(menu->x - 10,
                       menu->y + item * LINEHEIGHT - 1,
                       0,
                       static_cast<patch_t*>(W_CacheLumpName("M_CELL1", PU_CACHE)));
@@ -1451,7 +1455,7 @@ void M_DrawEmptyCell(menu_t* menu, int item)
 
 void M_DrawSelCell(menu_t* menu, int item)
 {
-    V_DrawPatchDirect(menu->x - 10,
+    Doom::drawPatchDirect(menu->x - 10,
                       menu->y + item * LINEHEIGHT - 1,
                       0,
                       static_cast<patch_t*>(W_CacheLumpName("M_CELL2", PU_CACHE)));
@@ -1547,7 +1551,7 @@ void M_WriteText(int x, int y, const char* string)
         w = SHORT(hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        V_DrawPatchDirect(cx, cy, 0, hu_font[c]);
+        Doom::drawPatchDirect(cx, cy, 0, hu_font[c]);
         cx += w;
     }
 }
@@ -1557,9 +1561,9 @@ void M_WriteText(int x, int y, const char* string)
 //
 
 //
-// M_Responder
+// menuResponder
 //
-doom_boolean M_Responder(event_t* ev)
+doom_boolean menuResponder(event_t* ev)
 {
     int ch;
     int& joywait = menuState().joywait;
@@ -1742,7 +1746,7 @@ doom_boolean M_Responder(event_t* ev)
                 return true;
 
             case KEY_F1: // Help key
-                M_StartControlPanel();
+                startControlPanel();
 
                 if (gamemode == retail)
                     currentMenu = &ReadDef2;
@@ -1754,19 +1758,19 @@ doom_boolean M_Responder(event_t* ev)
                 return true;
 
             case KEY_F2: // Save
-                M_StartControlPanel();
+                startControlPanel();
                 S_StartSound(0, sfx_swtchn);
                 M_SaveGame(0);
                 return true;
 
             case KEY_F3: // Load
-                M_StartControlPanel();
+                startControlPanel();
                 S_StartSound(0, sfx_swtchn);
                 M_LoadGame(0);
                 return true;
 
             case KEY_F4: // Sound Volume
-                M_StartControlPanel();
+                startControlPanel();
                 currentMenu = &SoundDef;
                 itemOn = sfx_vol;
                 S_StartSound(0, sfx_swtchn);
@@ -1812,7 +1816,7 @@ doom_boolean M_Responder(event_t* ev)
                 if (usegamma > 4)
                     usegamma = 0;
                 players[consoleplayer].message = gammamsg[usegamma].data();
-                I_SetPalette(
+                setPalette(
                     static_cast<byte*>(W_CacheLumpName("PLAYPAL", PU_CACHE)));
                 return true;
         }
@@ -1822,7 +1826,7 @@ doom_boolean M_Responder(event_t* ev)
     {
         if (ch == KEY_ESCAPE)
         {
-            M_StartControlPanel();
+            startControlPanel();
             S_StartSound(0, sfx_swtchn);
             return true;
         }
@@ -1928,9 +1932,9 @@ doom_boolean M_Responder(event_t* ev)
 }
 
 //
-// M_StartControlPanel
+// startControlPanel
 //
-void M_StartControlPanel()
+void startControlPanel()
 {
     // intro might call this repeatedly
     if (menuactive)
@@ -1942,11 +1946,11 @@ void M_StartControlPanel()
 }
 
 //
-// M_Drawer
+// drawMenu
 // Called after the view has been rendered,
 // but before it has been blitted.
 //
-void M_Drawer()
+void drawMenu()
 {
     static short x;
     static short y;
@@ -2019,7 +2023,7 @@ void M_Drawer()
             }
             else
             {
-                V_DrawPatchDirect(x,
+                Doom::drawPatchDirect(x,
                                   y,
                                   0,
                                   static_cast<patch_t*>(
@@ -2030,7 +2034,7 @@ void M_Drawer()
     }
 
     // DRAW SKULL
-    V_DrawPatchDirect(
+    Doom::drawPatchDirect(
         x + SKULLXOFF,
         currentMenu->y - 5 + itemOn * LINEHEIGHT,
         0,
@@ -2056,9 +2060,9 @@ void M_SetupNextMenu(menu_t* menudef)
 }
 
 //
-// M_Ticker
+// menuTicker
 //
-void M_Ticker()
+void menuTicker()
 {
     if (--skullAnimCounter <= 0)
     {
@@ -2068,9 +2072,9 @@ void M_Ticker()
 }
 
 //
-// M_Init
+// initMenu
 //
-void M_Init()
+void initMenu()
 {
     doom_boolean hide_mouse =
         (doom_flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;

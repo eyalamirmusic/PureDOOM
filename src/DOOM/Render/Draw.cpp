@@ -13,13 +13,14 @@
 #include "../doomstat.h" // State.
 #include "../i_system.h"
 #include "../r_local.h"
-#include "../v_video.h" // Needs access to LFB, V_DrawPatch, V_MarkRect.
+#include "../v_video.h" // Needs access to LFB, Doom::drawPatch, Doom::markRect.
 #include "../w_wad.h"
 
 #include "Draw.h"
 #include "DrawState.h"
 #include "DrawTables.h"
 
+#include "Video.h"
 #include <ea_data_structures/Structures/Array.h>
 
 // ?
@@ -43,7 +44,7 @@ namespace Doom
 //
 // These frame-address lookup tables (and fuzzpos below) now live on the Engine (Render/DrawTables.h,
 // moved by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto
-// that member; only the drawers use them, through R_InitBuffer.
+// that member; only the drawers use them, through Doom::initBuffer.
 static byte* (&ylookup)[MAXHEIGHT] = drawTables().ylookup;
 static int (&columnofs)[MAXWIDTH] = drawTables().columnofs;
 
@@ -70,7 +71,7 @@ void drawColumn()
     if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
         || dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: R_DrawColumn: ");
+        doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
         doom_concat(error_buf, " to ");
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
@@ -123,7 +124,7 @@ void drawColumnLow()
     if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
         || dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: R_DrawColumn: ");
+        doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
         doom_concat(error_buf, " to ");
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
@@ -199,7 +200,7 @@ void drawFuzzColumn()
     if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
         || dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: R_DrawFuzzColumn: ");
+        doom_strcpy(error_buf, "Error: Doom::drawFuzzColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
         doom_concat(error_buf, " to ");
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
@@ -233,7 +234,7 @@ void drawFuzzColumn()
 }
 
 //
-// R_DrawTranslatedColumn
+// Doom::drawTranslatedColumn
 // Used to draw player sprites
 //  with the green colorramp mapped to others.
 // Could be used with different translation
@@ -256,7 +257,7 @@ void drawTranslatedColumn()
     if (static_cast<unsigned>(dc_x) >= SCREENWIDTH || dc_yl < 0
         || dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: R_DrawColumn: ");
+        doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
         doom_concat(error_buf, doom_itoa(dc_yl, 10));
         doom_concat(error_buf, " to ");
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
@@ -289,7 +290,7 @@ void drawTranslatedColumn()
 }
 
 //
-// R_InitTranslationTables
+// Doom::initTranslationTables
 // Creates the translation tables to map
 // the green color ramp to gray, brown, red.
 // Assumes a given structure of the PLAYPAL.
@@ -326,7 +327,7 @@ void initTranslationTables()
 }
 
 //
-// R_DrawSpan
+// Doom::drawSpan
 // With DOOM style restrictions on view orientation,
 // the floors and ceilings consist of horizontal slices
 // or spans with constant z depth.
@@ -349,7 +350,7 @@ void drawSpan()
     if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH
         || static_cast<unsigned>(ds_y) > SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: R_DrawSpan: ");
+        doom_strcpy(error_buf, "Error: Doom::drawSpan: ");
         doom_concat(error_buf, doom_itoa(ds_x1, 10));
         doom_concat(error_buf, " to ");
         doom_concat(error_buf, doom_itoa(ds_x2, 10));
@@ -398,7 +399,7 @@ void drawSpanLow()
     if (ds_x2 < ds_x1 || ds_x1 < 0 || ds_x2 >= SCREENWIDTH
         || static_cast<unsigned>(ds_y) > SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: R_DrawSpan: ");
+        doom_strcpy(error_buf, "Error: Doom::drawSpan: ");
         doom_concat(error_buf, doom_itoa(ds_x1, 10));
         doom_concat(error_buf, " to ");
         doom_concat(error_buf, doom_itoa(ds_x2, 10));
@@ -433,7 +434,7 @@ void drawSpanLow()
 }
 
 //
-// R_InitBuffer
+// Doom::initBuffer
 // Creats lookup tables that avoid
 //  multiplies and other hazzles
 //  for getting the framebuffer address
@@ -462,7 +463,7 @@ void initBuffer(int width, int height)
 }
 
 //
-// R_FillBackScreen
+// Doom::fillBackScreen
 // Fills the back screen with a pattern
 //  for variable screen sizes
 // Also draws a beveled edge.
@@ -512,37 +513,37 @@ void fillBackScreen()
     patch = static_cast<patch_t*>(W_CacheLumpName("brdr_t", PU_CACHE));
 
     for (x = 0; x < scaledviewwidth; x += 8)
-        V_DrawPatch(viewwindowx + x, viewwindowy - 8, 1, patch);
+        Doom::drawPatch(viewwindowx + x, viewwindowy - 8, 1, patch);
     patch = static_cast<patch_t*>(W_CacheLumpName("brdr_b", PU_CACHE));
 
     for (x = 0; x < scaledviewwidth; x += 8)
-        V_DrawPatch(viewwindowx + x, viewwindowy + viewheight, 1, patch);
+        Doom::drawPatch(viewwindowx + x, viewwindowy + viewheight, 1, patch);
     patch = static_cast<patch_t*>(W_CacheLumpName("brdr_l", PU_CACHE));
 
     for (y = 0; y < viewheight; y += 8)
-        V_DrawPatch(viewwindowx - 8, viewwindowy + y, 1, patch);
+        Doom::drawPatch(viewwindowx - 8, viewwindowy + y, 1, patch);
     patch = static_cast<patch_t*>(W_CacheLumpName("brdr_r", PU_CACHE));
 
     for (y = 0; y < viewheight; y += 8)
-        V_DrawPatch(viewwindowx + scaledviewwidth, viewwindowy + y, 1, patch);
+        Doom::drawPatch(viewwindowx + scaledviewwidth, viewwindowy + y, 1, patch);
 
     // Draw beveled edge.
-    V_DrawPatch(viewwindowx - 8,
+    Doom::drawPatch(viewwindowx - 8,
                 viewwindowy - 8,
                 1,
                 static_cast<patch_t*>(W_CacheLumpName("brdr_tl", PU_CACHE)));
 
-    V_DrawPatch(viewwindowx + scaledviewwidth,
+    Doom::drawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy - 8,
                 1,
                 static_cast<patch_t*>(W_CacheLumpName("brdr_tr", PU_CACHE)));
 
-    V_DrawPatch(viewwindowx - 8,
+    Doom::drawPatch(viewwindowx - 8,
                 viewwindowy + viewheight,
                 1,
                 static_cast<patch_t*>(W_CacheLumpName("brdr_bl", PU_CACHE)));
 
-    V_DrawPatch(viewwindowx + scaledviewwidth,
+    Doom::drawPatch(viewwindowx + scaledviewwidth,
                 viewwindowy + viewheight,
                 1,
                 static_cast<patch_t*>(W_CacheLumpName("brdr_br", PU_CACHE)));
@@ -562,7 +563,7 @@ void videoErase(unsigned ofs, int count)
 }
 
 //
-// R_DrawViewBorder
+// Doom::drawViewBorder
 // Draws the border around the view
 //  for different size windows?
 //
@@ -597,7 +598,7 @@ void drawViewBorder()
     }
 
     // ?
-    V_MarkRect(0, 0, SCREENWIDTH, SCREENHEIGHT - SBARHEIGHT);
+    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT - SBARHEIGHT);
 }
 
 } // namespace Doom

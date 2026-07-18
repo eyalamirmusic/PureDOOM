@@ -31,15 +31,11 @@
 //
 
 // Called by main loop.
-doom_boolean F_Responder(event_t* ev);
 
 // Called by main loop.
-void F_Ticker();
 
 // Called by main loop.
-void F_Drawer();
 
-void F_StartFinale();
 
 
 

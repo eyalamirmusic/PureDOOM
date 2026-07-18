@@ -79,8 +79,22 @@
 #include "TiccmdInput.h"
 #include "TimeDemo.h"
 
+#include "../Render/Data.h"
+#include "../Render/Draw.h"
+#include "../Sim/SaveGame.h"
+#include "../Sim/Setup.h"
+#include "../Sim/Tick.h"
+#include "../UI/Automap.h"
+#include "../UI/Finale.h"
+#include "../UI/Hud.h"
+#include "../UI/Intermission.h"
+#include "../UI/StatusBar.h"
+#include "Args.h"
+#include "DoomMain.h"
+#include "../UI/Menu.h"
 #include <ea_data_structures/Structures/Array.h>
 
+#include "Config.h"
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
 #define MAXPLMOVE (forwardmove[1])
@@ -399,7 +413,7 @@ void gBuildTiccmd(ticcmd_t* cmd)
         side -= sidemove[speed];
 
     // buttons
-    cmd->chatchar = HU_dequeueChatChar();
+    cmd->chatchar = Doom::dequeueChatChar();
 
     if (gamekeydown[key_fire] || mousebuttons[mousebfire] || joybuttons[joybfire])
         cmd->buttons |= BT_ATTACK;
@@ -518,7 +532,7 @@ void gDoLoadLevel()
     //  a flat. The data is in the WAD only because
     //  we look for an actual index, instead of simply
     //  setting one.
-    skyflatnum = R_FlatNumForName(SKYFLATNAME);
+    skyflatnum = Doom::flatNumForName(SKYFLATNAME);
 
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
@@ -526,11 +540,11 @@ void gDoLoadLevel()
         || (static_cast<int>(gamemode) == static_cast<int>(pack_tnt))
         || (static_cast<int>(gamemode) == static_cast<int>(pack_plut)))
     {
-        skytexture = R_TextureNumForName("SKY3");
+        skytexture = Doom::textureNumForName("SKY3");
         if (gamemap < 12)
-            skytexture = R_TextureNumForName("SKY1");
+            skytexture = Doom::textureNumForName("SKY1");
         else if (gamemap < 21)
-            skytexture = R_TextureNumForName("SKY2");
+            skytexture = Doom::textureNumForName("SKY2");
     }
 
     levelstarttic = gametic; // for time calculation
@@ -547,7 +561,7 @@ void gDoLoadLevel()
         doom_memset(players[i].frags, 0, sizeof(players[i].frags));
     }
 
-    P_SetupLevel(gameepisode, gamemap, 0, gameskill);
+    Doom::setupLevel(gameepisode, gamemap, 0, gameskill);
     displayplayer = consoleplayer; // view the guy you are playing
     starttime = I_GetTime();
     gameaction = ga_nothing;
@@ -588,7 +602,7 @@ doom_boolean gResponder(event_t* ev)
         if (ev->type == ev_keydown || (ev->type == ev_mouse && ev->data1)
             || (ev->type == ev_joystick && ev->data1))
         {
-            M_StartControlPanel();
+            startControlPanel();
             return true;
         }
         return false;
@@ -603,17 +617,17 @@ doom_boolean gResponder(event_t* ev)
             return true;
         }
 #endif
-        if (HU_Responder(ev))
+        if (Doom::hudResponder(ev))
             return true; // chat ate the event
-        if (ST_Responder(ev))
+        if (Doom::statusBarResponder(ev))
             return true; // status window ate it
-        if (AM_Responder(ev))
+        if (Doom::automapResponder(ev))
             return true; // automap ate it
     }
 
     if (gamestate == GS_FINALE)
     {
-        if (F_Responder(ev))
+        if (Doom::finaleResponder(ev))
             return true; // finale ate the event
     }
 
@@ -696,13 +710,13 @@ void gTicker()
                 gDoCompleted();
                 break;
             case ga_victory:
-                F_StartFinale();
+                Doom::startFinale();
                 break;
             case ga_worlddone:
                 gDoWorldDone();
                 break;
             case ga_screenshot:
-                M_ScreenShot();
+                Doom::writeScreenshot();
                 gameaction = ga_nothing;
                 break;
             case ga_nothing:
@@ -793,22 +807,22 @@ void gTicker()
     switch (gamestate)
     {
         case GS_LEVEL:
-            P_Ticker();
-            ST_Ticker();
-            AM_Ticker();
-            HU_Ticker();
+            Doom::ticker();
+            Doom::statusBarTicker();
+            Doom::automapTicker();
+            Doom::hudTicker();
             break;
 
         case GS_INTERMISSION:
-            WI_Ticker();
+            Doom::intermissionTicker();
             break;
 
         case GS_FINALE:
-            F_Ticker();
+            Doom::finaleTicker();
             break;
 
         case GS_DEMOSCREEN:
-            D_PageTicker();
+            Doom::pageTicker();
             break;
     }
 }
@@ -1054,7 +1068,7 @@ void gDoCompleted()
             gPlayerFinishLevel(i); // take away cards and stuff
 
     if (automapactive)
-        AM_Stop();
+        Doom::stopAutomap();
 
     if (gamemode != commercial)
         switch (gamemap)
@@ -1165,7 +1179,7 @@ void gDoCompleted()
     if (statcopy)
         doom_memcpy(statcopy, &wminfo, sizeof(wminfo));
 
-    WI_Start(&wminfo);
+    Doom::startIntermission(&wminfo);
 }
 
 //
@@ -1190,7 +1204,7 @@ void gWorldDone()
             case 11:
             case 20:
             case 30:
-                F_StartFinale();
+                Doom::startFinale();
                 break;
         }
     }
@@ -1223,7 +1237,7 @@ void gDoLoadGame()
 
     gameaction = ga_nothing;
 
-    M_ReadFile(savename, &savebuffer);
+    Doom::readFile(savename, &savebuffer);
     save_p = savebuffer + SAVESTRINGSIZE;
 
     // skip the description field
@@ -1252,10 +1266,10 @@ void gDoLoadGame()
     leveltime = (a << 16) + (b << 8) + c;
 
     // dearchive all the modifications
-    P_UnArchivePlayers();
-    P_UnArchiveWorld();
-    P_UnArchiveThinkers();
-    P_UnArchiveSpecials();
+    Doom::unArchivePlayers();
+    Doom::unArchiveWorld();
+    Doom::unArchiveThinkers();
+    Doom::unArchiveSpecials();
 
     if (*save_p != 0x1d)
         I_Error("Error: Bad savegame");
@@ -1267,7 +1281,7 @@ void gDoLoadGame()
         R_ExecuteSetViewSize();
 
     // draw the pattern into the back screen
-    R_FillBackScreen();
+    Doom::fillBackScreen();
 }
 
 //
@@ -1290,7 +1304,7 @@ void gDoSaveGame()
     int length;
 
 #if 0
-    if (M_CheckParm("-cdrom"))
+    if (Doom::checkParm("-cdrom"))
         doom_sprintf(name, "c:\\doomdata\\"SAVEGAMENAME"%d.dsg", savegameslot);
     else
 #endif
@@ -1322,24 +1336,24 @@ void gDoSaveGame()
     *save_p++ = leveltime >> 8;
     *save_p++ = leveltime;
 
-    P_ArchivePlayers();
-    P_ArchiveWorld();
-    P_ArchiveThinkers();
-    P_ArchiveSpecials();
+    Doom::archivePlayers();
+    Doom::archiveWorld();
+    Doom::archiveThinkers();
+    Doom::archiveSpecials();
 
     *save_p++ = 0x1d; // consistancy marker
 
     length = static_cast<int>((save_p - savebuffer));
     if (length > SAVEGAMESIZE)
         I_Error("Error: Savegame buffer overrun");
-    M_WriteFile(name.data(), savebuffer, length);
+    Doom::writeFile(name.data(), savebuffer, length);
     gameaction = ga_nothing;
     savedescription[0] = 0;
 
     players[consoleplayer].message = GGSAVED;
 
     // draw the pattern into the back screen
-    R_FillBackScreen();
+    Doom::fillBackScreen();
 }
 
 //
@@ -1452,26 +1466,26 @@ void gInitNew(skill_t skill, int episode, int map)
     // set the sky map for the episode
     if (gamemode == commercial)
     {
-        skytexture = R_TextureNumForName("SKY3");
+        skytexture = Doom::textureNumForName("SKY3");
         if (gamemap < 12)
-            skytexture = R_TextureNumForName("SKY1");
+            skytexture = Doom::textureNumForName("SKY1");
         else if (gamemap < 21)
-            skytexture = R_TextureNumForName("SKY2");
+            skytexture = Doom::textureNumForName("SKY2");
     }
     else
         switch (episode)
         {
             case 1:
-                skytexture = R_TextureNumForName("SKY1");
+                skytexture = Doom::textureNumForName("SKY1");
                 break;
             case 2:
-                skytexture = R_TextureNumForName("SKY2");
+                skytexture = Doom::textureNumForName("SKY2");
                 break;
             case 3:
-                skytexture = R_TextureNumForName("SKY3");
+                skytexture = Doom::textureNumForName("SKY3");
                 break;
             case 4: // Special Edition sky
-                skytexture = R_TextureNumForName("SKY4");
+                skytexture = Doom::textureNumForName("SKY4");
                 break;
         }
 
@@ -1527,7 +1541,7 @@ void gRecordDemo(char* name)
     doom_strcpy(demoname, name);
     doom_concat(demoname, ".lmp");
     maxsize = 0x20000;
-    i = M_CheckParm("-maxdemo");
+    i = Doom::checkParm("-maxdemo");
     if (i && i < myargc - 1)
         maxsize = doom_atoi(myargv[i + 1]) * 1024;
     demobuffer = static_cast<byte*>((doom_malloc(maxsize)));
@@ -1617,8 +1631,8 @@ void gDoPlayDemo()
 //
 void gTimeDemo(char* name)
 {
-    nodrawers = M_CheckParm("-nodraw");
-    noblit = M_CheckParm("-noblit");
+    nodrawers = Doom::checkParm("-nodraw");
+    noblit = Doom::checkParm("-noblit");
     timingdemo = true;
     singletics = true;
 
@@ -1668,14 +1682,14 @@ doom_boolean gCheckDemoStatus()
         fastparm = false;
         nomonsters = false;
         consoleplayer = 0;
-        D_AdvanceDemo();
+        Doom::advanceDemo();
         return true;
     }
 
     if (demorecording)
     {
         *demo_p++ = DEMOMARKER;
-        M_WriteFile(demoname, demobuffer, static_cast<int>((demo_p - demobuffer)));
+        Doom::writeFile(demoname, demobuffer, static_cast<int>((demo_p - demobuffer)));
         doom_free(demobuffer);
         demorecording = false;
         //I_Error("Error: Demo %s recorded", demoname);

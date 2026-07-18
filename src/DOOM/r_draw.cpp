@@ -74,57 +74,13 @@ fixed_t& ds_ystep = Doom::drawState().ds_ystep;
 byte*& ds_source = Doom::drawState().ds_source;
 
 
-void R_DrawColumn()
-{
-    Doom::drawColumn();
-}
 
-void R_DrawColumnLow()
-{
-    Doom::drawColumnLow();
-}
 
-void R_DrawFuzzColumn()
-{
-    Doom::drawFuzzColumn();
-}
 
-void R_DrawTranslatedColumn()
-{
-    Doom::drawTranslatedColumn();
-}
 
-void R_InitTranslationTables()
-{
-    Doom::initTranslationTables();
-}
 
-void R_DrawSpan()
-{
-    Doom::drawSpan();
-}
 
-void R_DrawSpanLow()
-{
-    Doom::drawSpanLow();
-}
 
-void R_InitBuffer(int width, int height)
-{
-    Doom::initBuffer(width, height);
-}
 
-void R_FillBackScreen()
-{
-    Doom::fillBackScreen();
-}
 
-void R_VideoErase(unsigned ofs, int count)
-{
-    Doom::videoErase(ofs, count);
-}
 
-void R_DrawViewBorder()
-{
-    Doom::drawViewBorder();
-}

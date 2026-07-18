@@ -8,7 +8,7 @@ namespace Doom
 // neither gameplay rules, display flags, nor config-backed settings: debugfile (the -debugfile
 // output handle the netcode writes packet traces to, 0 when unset), precache (load every lump's
 // graphics at level load rather than lazily), and singletics (run the loop one built-and-run tic per
-// iteration with no adaptive timing - always true in PureDOOM, and load-bearing: NetUpdate builds no
+// iteration with no adaptive timing - always true in PureDOOM, and load-bearing: Doom::netUpdate builds no
 // command under it, the fix for the five-tic input lag, see CLAUDE.md).
 //
 // REFACTOR.md had deferred these as too scattered to bucket; they are migrated here because
@@ -19,7 +19,7 @@ namespace Doom
 // members, and none has its address captured by Config.cpp's defaults[] (the trap that blocks the
 // sound volumes), so the static-init reference binding is safe.
 //
-// singletics is live simulation-golden-covered (NetUpdate/D_DoomLoop read it every tic); precache is
+// singletics is live simulation-golden-covered (Doom::netUpdate/Doom::doomLoop read it every tic); precache is
 // golden-neutral (preloading changes only *when* a lump is read, not the pixels), so its load-bearing
 // `true` default is pinned by StateClusterTests instead.
 struct EngineParams

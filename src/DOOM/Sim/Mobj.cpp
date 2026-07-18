@@ -31,7 +31,9 @@
 
 #include "Mobj.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "../UI/Hud.h"
 
+#include "../UI/StatusBar.h"
 #include <new>
 
 #define STOPSPEED 0x1000
@@ -483,7 +485,7 @@ mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
     else
         mobj->z = z;
 
-    P_AddThinker(mobj);
+    Doom::addThinker(mobj);
 
     return mobj;
 }
@@ -512,7 +514,7 @@ void removeMobj(mobj_t* mobj)
     S_StopSound(mobj);
 
     // free block
-    P_RemoveThinker(reinterpret_cast<thinker_t*>(mobj));
+    Doom::removeThinker(reinterpret_cast<thinker_t*>(mobj));
 }
 
 //
@@ -631,9 +633,9 @@ void spawnPlayer(mapthing_t* mthing)
     if (mthing->type - 1 == consoleplayer)
     {
         // wake up the status bar
-        ST_Start();
+        Doom::startStatusBar();
         // wake up the heads up text
-        HU_Start();
+        Doom::startHud();
     }
 }
 

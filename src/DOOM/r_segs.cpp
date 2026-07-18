@@ -68,17 +68,5 @@ short*& maskedtexturecol = Doom::segState().maskedtexturecol;
 // R_RenderMaskedSegRange
 //
 
-void R_RenderMaskedSegRange(drawseg_t* ds, int x1, int x2)
-{
-    Doom::renderMaskedSegRange(ds, x1, x2);
-}
 
-void R_RenderSegLoop()
-{
-    Doom::renderSegLoop();
-}
 
-void R_StoreWallRange(int start, int stop)
-{
-    Doom::storeWallRange(start, stop);
-}

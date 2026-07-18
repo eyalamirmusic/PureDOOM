@@ -27,6 +27,10 @@
 #include "System.h"
 
 // In Doom::DemoState (an Engine member); read by I_Error to flush a demo before it aborts.
+#include "../Game/Config.h"
+#include "../Game/Net.h"
+#include "Sound.h"
+#include "Video.h"
 extern doom_boolean& demorecording;
 
 namespace Doom
@@ -73,7 +77,7 @@ int I_GetTime()
 //
 void I_Init()
 {
-    I_InitSound();
+    initSoundHost();
 }
 
 //
@@ -81,11 +85,11 @@ void I_Init()
 //
 void I_Quit()
 {
-    D_QuitNetGame();
-    I_ShutdownSound();
-    I_ShutdownMusic();
-    M_SaveDefaults();
-    I_ShutdownGraphics();
+    Doom::quitNetGame();
+    shutdownSoundHost();
+    shutdownMusic();
+    Doom::saveDefaults();
+    shutdownGraphics();
     doom_exit(0);
 }
 
@@ -129,8 +133,8 @@ void I_Error(const char* error)
     if (demorecording)
         G_CheckDemoStatus();
 
-    D_QuitNetGame();
-    I_ShutdownGraphics();
+    Doom::quitNetGame();
+    shutdownGraphics();
 
     doom_exit(-1);
 }

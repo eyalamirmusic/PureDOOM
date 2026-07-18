@@ -38,9 +38,9 @@ struct AutomapView
     // Animation / level-change detection, folded in from function-local statics:
     int lastlevel = -1; // amStart: last map, to re-init on change
     int lastepisode = -1; // amStart: last episode
-    int bigstate = 0; // AM_Responder: the "big" (zoomed-out overview) toggle
-    int nexttic = 0; // AM_Ticker: next tic the fuse animation advances
-    int litelevelscnt = 0; // AM_Ticker: cursor into the fuse brightness ramp
+    int bigstate = 0; // Doom::automapResponder: the "big" (zoomed-out overview) toggle
+    int nexttic = 0; // Doom::automapTicker: next tic the fuse animation advances
+    int litelevelscnt = 0; // Doom::automapTicker: cursor into the fuse brightness ramp
 
     mpoint_t m_paninc = {}; // window pan per tic (map coords)
     fixed_t mtof_zoommul = 0; // window zoom per tic (map -> frame)

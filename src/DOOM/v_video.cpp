@@ -22,49 +22,11 @@
 
 #include "Render/Video.h"
 
-void V_MarkRect(int x, int y, int width, int height)
-{
-    Doom::vMarkRect(x, y, width, height);
-}
 
-void V_CopyRect(int srcx, int srcy, int srcscrn, int width, int height, int destx,
-                int desty, int destscrn)
-{
-    Doom::vCopyRect(srcx, srcy, srcscrn, width, height, destx, desty, destscrn);
-}
 
-void V_DrawPatch(int x, int y, int scrn, patch_t* patch)
-{
-    Doom::vDrawPatch(x, y, scrn, patch);
-}
 
-void V_DrawPatchFlipped(int x, int y, int scrn, patch_t* patch)
-{
-    Doom::vDrawPatchFlipped(x, y, scrn, patch);
-}
 
-void V_DrawPatchRectDirect(int x, int y, int scrn, patch_t* patch, int src_x,
-                           int src_w)
-{
-    Doom::vDrawPatchRectDirect(x, y, scrn, patch, src_x, src_w);
-}
 
-void V_DrawPatchDirect(int x, int y, int scrn, patch_t* patch)
-{
-    Doom::vDrawPatchDirect(x, y, scrn, patch);
-}
 
-void V_DrawBlock(int x, int y, int scrn, int width, int height, byte* src)
-{
-    Doom::vDrawBlock(x, y, scrn, width, height, src);
-}
 
-void V_GetBlock(int x, int y, int scrn, int width, int height, byte* dest)
-{
-    Doom::vGetBlock(x, y, scrn, width, height, dest);
-}
 
-void V_Init()
-{
-    Doom::vInit();
-}

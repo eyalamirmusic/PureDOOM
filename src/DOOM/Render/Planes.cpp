@@ -17,6 +17,7 @@
 #include "PlaneScratch.h"
 #include "Planes.h"
 
+#include "Data.h"
 #define MAXVISPLANES 128
 #define MAXOPENINGS SCREENWIDTH * 64
 
@@ -360,7 +361,7 @@ void drawPlanes()
                 {
                     angle = (viewangle + xtoviewangle[x]) >> ANGLETOSKYSHIFT;
                     dc_x = x;
-                    dc_source = R_GetColumn(skytexture, angle);
+                    dc_source = Doom::getColumn(skytexture, angle);
                     colfunc();
                 }
             }

@@ -25,23 +25,17 @@
 #include "doomtype.h"
 
 
-// Called by D_DoomMain,
+// Called by Doom::doomMain,
 // determines the hardware configuration
 // and sets up the video mode
-void I_InitGraphics();
 
-void I_ShutdownGraphics();
 
 // Takes full 8 bit values.
-void I_SetPalette(byte* palette);
 
-void I_UpdateNoBlit();
-void I_FinishUpdate();
 
 // Wait for vertical retrace or pause a bit.
 void I_WaitVBL(int count);
 
-void I_ReadScreen(byte* scr);
 
 void I_BeginRead();
 void I_EndRead();

@@ -130,7 +130,7 @@ void R_RenderPlayerView(player_t* player);
 // Called by startup code.
 void R_Init();
 
-// Called by M_Responder.
+// Called by Doom::menuResponder.
 void R_SetViewSize(int blocks, int detail);
 
 

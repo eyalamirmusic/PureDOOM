@@ -93,7 +93,6 @@ struct hu_itext_t
 //
 
 // initializes heads-up widget library
-void HUlib_init();
 
 //
 // textline code

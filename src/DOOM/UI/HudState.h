@@ -9,9 +9,9 @@ struct player_t;
 namespace Doom
 {
 // What is left of UI/Hud's own file-scope state once the message line and the chat moved out
-// (HudMessage / HudChat): the console player the HUD reads from (plr, refreshed at HU_Start), the
+// (HudMessage / HudChat): the console player the HUD reads from (plr, refreshed at Doom::startHud), the
 // level-title text line drawn for a few seconds on entry (w_title), and headsupactive, the flag
-// HU_Start/HU_Stop raise and drop so the HUD is set up exactly once per level. None is read by any
+// Doom::startHud/HU_Stop raise and drop so the HUD is set up exactly once per level. None is read by any
 // other file.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names

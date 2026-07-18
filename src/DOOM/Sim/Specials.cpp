@@ -2,7 +2,7 @@
 //
 // The specials coordinator: animated flats/textures, the surrounding-sector height
 // and light queries the movers use, line-special cross/shoot dispatch, per-sector
-// player damage/secret, the once-a-tic P_UpdateSpecials and level-spawn setup.
+// player damage/secret, the once-a-tic Doom::updateSpecials and level-spawn setup.
 // getSide/getSector/twoSided/getNextSector stay at global scope (p_spec.h API);
 // every P_/EV_ entry is shimmed by p_spec.cpp; the animation state is file-local and
 // levelTimer stays global. Golden-neutral - the demos scroll skies, damage in slime
@@ -26,7 +26,13 @@
 #include "AnimatedSurfaces.h"
 #include "Specials.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "../Game/Args.h"
 
+#include "../Render/Data.h"
+#include "Ceilings.h"
+#include "Lights.h"
+#include "Plats.h"
+#include "Teleport.h"
 #include <ea_data_structures/Structures/Array.h>
 
 #include <new>
@@ -81,7 +87,7 @@ sector_t* getNextSector(line_t* line, sector_t* sec)
 }
 
 //
-// P_FindLowestFloorSurrounding()
+// Doom::findLowestFloorSurrounding()
 // FIND LOWEST FLOOR HEIGHT IN SURROUNDING SECTORS
 //
 
@@ -92,7 +98,7 @@ namespace Doom
 struct animdef_t
 {
     // Not a boolean, despite the name and despite what vanilla called it: the
-    // table below ends with {-1}, and P_InitPicAnims walks until it finds that.
+    // table below ends with {-1}, and Doom::initPicAnims walks until it finds that.
     // Compiled as C this was an int-sized enum and -1 fitted. As a C++ bool the
     // terminator would quietly become `true`, never be recognised, and the loop
     // would run off the end of the array.
@@ -166,19 +172,19 @@ void initPicAnims()
         if (animdefs[i].istexture)
         {
             // different episode ?
-            if (R_CheckTextureNumForName(animdefs[i].startname) == -1)
+            if (Doom::checkTextureNumForName(animdefs[i].startname) == -1)
                 continue;
 
-            lastanim->picnum = R_TextureNumForName(animdefs[i].endname);
-            lastanim->basepic = R_TextureNumForName(animdefs[i].startname);
+            lastanim->picnum = Doom::textureNumForName(animdefs[i].endname);
+            lastanim->basepic = Doom::textureNumForName(animdefs[i].startname);
         }
         else
         {
             if (W_CheckNumForName(animdefs[i].startname) == -1)
                 continue;
 
-            lastanim->picnum = R_FlatNumForName(animdefs[i].endname);
-            lastanim->basepic = R_FlatNumForName(animdefs[i].startname);
+            lastanim->picnum = Doom::flatNumForName(animdefs[i].endname);
+            lastanim->basepic = Doom::flatNumForName(animdefs[i].startname);
         }
 
         lastanim->istexture = animdefs[i].istexture;
@@ -476,7 +482,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 6:
             // Fast Ceiling Crush & Raise
-            EV_DoCeiling(line, fastCrushAndRaise);
+            Doom::doCeiling(line, fastCrushAndRaise);
             line->special = 0;
             break;
 
@@ -488,19 +494,19 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 10:
             // PlatDownWaitUp
-            EV_DoPlat(line, downWaitUpStay, 0);
+            Doom::doPlat(line, downWaitUpStay, 0);
             line->special = 0;
             break;
 
         case 12:
             // Light Turn On - brightest near
-            EV_LightTurnOn(line, 0);
+            Doom::lightTurnOn(line, 0);
             line->special = 0;
             break;
 
         case 13:
             // Light Turn On 255
-            EV_LightTurnOn(line, 255);
+            Doom::lightTurnOn(line, 255);
             line->special = 0;
             break;
 
@@ -512,7 +518,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 17:
             // Start Light Strobing
-            EV_StartLightStrobing(line);
+            Doom::startLightStrobing(line);
             line->special = 0;
             break;
 
@@ -524,13 +530,13 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 22:
             // Raise floor to nearest height and change texture
-            EV_DoPlat(line, raiseToNearestAndChange, 0);
+            Doom::doPlat(line, raiseToNearestAndChange, 0);
             line->special = 0;
             break;
 
         case 25:
             // Ceiling Crush and Raise
-            EV_DoCeiling(line, crushAndRaise);
+            Doom::doCeiling(line, crushAndRaise);
             line->special = 0;
             break;
 
@@ -543,7 +549,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 35:
             // Lights Very Dark
-            EV_LightTurnOn(line, 35);
+            Doom::lightTurnOn(line, 35);
             line->special = 0;
             break;
 
@@ -567,20 +573,20 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 39:
             // TELEPORT!
-            EV_Teleport(line, side, thing);
+            Doom::teleport(line, side, thing);
             line->special = 0;
             break;
 
         case 40:
             // RaiseCeilingLowerFloor
-            EV_DoCeiling(line, raiseToHighest);
+            Doom::doCeiling(line, raiseToHighest);
             EV_DoFloor(line, lowerFloorToLowest);
             line->special = 0;
             break;
 
         case 44:
             // Ceiling Crush
-            EV_DoCeiling(line, lowerAndCrush);
+            Doom::doCeiling(line, lowerAndCrush);
             line->special = 0;
             break;
 
@@ -591,13 +597,13 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 53:
             // Perpetual Platform Raise
-            EV_DoPlat(line, perpetualRaise, 0);
+            Doom::doPlat(line, perpetualRaise, 0);
             line->special = 0;
             break;
 
         case 54:
             // Platform Stop
-            EV_StopPlat(line);
+            Doom::stopPlat(line);
             line->special = 0;
             break;
 
@@ -609,7 +615,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 57:
             // Ceiling Crush Stop
-            EV_CeilingCrushStop(line);
+            Doom::ceilingCrushStop(line);
             line->special = 0;
             break;
 
@@ -627,7 +633,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 104:
             // Turn lights off in sector(tag)
-            EV_TurnTagLightsOff(line);
+            Doom::turnTagLightsOff(line);
             line->special = 0;
             break;
 
@@ -663,7 +669,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 121:
             // Blazing PlatDownWaitUpStay
-            EV_DoPlat(line, blazeDWUS, 0);
+            Doom::doPlat(line, blazeDWUS, 0);
             line->special = 0;
             break;
 
@@ -676,7 +682,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
             // TELEPORT MonsterONLY
             if (!thing->player)
             {
-                EV_Teleport(line, side, thing);
+                Doom::teleport(line, side, thing);
                 line->special = 0;
             }
             break;
@@ -689,24 +695,24 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 141:
             // Silent Ceiling Crush & Raise
-            EV_DoCeiling(line, silentCrushAndRaise);
+            Doom::doCeiling(line, silentCrushAndRaise);
             line->special = 0;
             break;
 
             // RETRIGGERS.  All from here till end.
         case 72:
             // Ceiling Crush
-            EV_DoCeiling(line, lowerAndCrush);
+            Doom::doCeiling(line, lowerAndCrush);
             break;
 
         case 73:
             // Ceiling Crush and Raise
-            EV_DoCeiling(line, crushAndRaise);
+            Doom::doCeiling(line, crushAndRaise);
             break;
 
         case 74:
             // Ceiling Crush Stop
-            EV_CeilingCrushStop(line);
+            Doom::ceilingCrushStop(line);
             break;
 
         case 75:
@@ -721,22 +727,22 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 77:
             // Fast Ceiling Crush & Raise
-            EV_DoCeiling(line, fastCrushAndRaise);
+            Doom::doCeiling(line, fastCrushAndRaise);
             break;
 
         case 79:
             // Lights Very Dark
-            EV_LightTurnOn(line, 35);
+            Doom::lightTurnOn(line, 35);
             break;
 
         case 80:
             // Light Turn On - brightest near
-            EV_LightTurnOn(line, 0);
+            Doom::lightTurnOn(line, 0);
             break;
 
         case 81:
             // Light Turn On 255
-            EV_LightTurnOn(line, 255);
+            Doom::lightTurnOn(line, 255);
             break;
 
         case 82:
@@ -761,17 +767,17 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 87:
             // Perpetual Platform Raise
-            EV_DoPlat(line, perpetualRaise, 0);
+            Doom::doPlat(line, perpetualRaise, 0);
             break;
 
         case 88:
             // PlatDownWaitUp
-            EV_DoPlat(line, downWaitUpStay, 0);
+            Doom::doPlat(line, downWaitUpStay, 0);
             break;
 
         case 89:
             // Platform Stop
-            EV_StopPlat(line);
+            Doom::stopPlat(line);
             break;
 
         case 90:
@@ -802,7 +808,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
         case 95:
             // Raise floor to nearest height
             // and change texture.
-            EV_DoPlat(line, raiseToNearestAndChange, 0);
+            Doom::doPlat(line, raiseToNearestAndChange, 0);
             break;
 
         case 96:
@@ -813,7 +819,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 97:
             // TELEPORT!
-            EV_Teleport(line, side, thing);
+            Doom::teleport(line, side, thing);
             break;
 
         case 98:
@@ -838,13 +844,13 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 120:
             // Blazing PlatDownWaitUpStay.
-            EV_DoPlat(line, blazeDWUS, 0);
+            Doom::doPlat(line, blazeDWUS, 0);
             break;
 
         case 126:
             // TELEPORT MonsterONLY.
             if (!thing->player)
-                EV_Teleport(line, side, thing);
+                Doom::teleport(line, side, thing);
             break;
 
         case 128:
@@ -898,7 +904,7 @@ void shootSpecialLine(mobj_t* thing, line_t* line)
 
         case 47:
             // RAISE FLOOR NEAR AND CHANGE
-            EV_DoPlat(line, raiseToNearestAndChange, 0);
+            Doom::doPlat(line, raiseToNearestAndChange, 0);
             P_ChangeSwitchTexture(line, 0);
             break;
     }
@@ -1088,7 +1094,7 @@ int doDonut(line_t* line)
 
             //        Spawn rising slime
             floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
-            P_AddThinker(floor);
+            Doom::addThinker(floor);
             s2->specialdata = floor;
             floor->type = donutRaise;
             floor->crush = false;
@@ -1101,7 +1107,7 @@ int doDonut(line_t* line)
 
             //        Spawn lowering donut-hole
             floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
-            P_AddThinker(floor);
+            Doom::addThinker(floor);
             s1->specialdata = floor;
             floor->type = lowerFloor;
             floor->crush = false;
@@ -1135,14 +1141,14 @@ void spawnSpecials()
     // See if -TIMER needs to be used.
     levelTimer = false;
 
-    i = M_CheckParm("-avg");
+    i = Doom::checkParm("-avg");
     if (i && deathmatch)
     {
         levelTimer = true;
         levelTimeCount = 20 * 60 * 35;
     }
 
-    i = M_CheckParm("-timer");
+    i = Doom::checkParm("-timer");
     if (i && deathmatch)
     {
         int time = doom_atoi(myargv[i + 1]) * 60 * 35;
@@ -1161,28 +1167,28 @@ void spawnSpecials()
         {
             case 1:
                 // FLICKERING LIGHTS
-                P_SpawnLightFlash(sector);
+                Doom::spawnLightFlash(sector);
                 break;
 
             case 2:
                 // STROBE FAST
-                P_SpawnStrobeFlash(sector, FASTDARK, 0);
+                Doom::spawnStrobeFlash(sector, FASTDARK, 0);
                 break;
 
             case 3:
                 // STROBE SLOW
-                P_SpawnStrobeFlash(sector, SLOWDARK, 0);
+                Doom::spawnStrobeFlash(sector, SLOWDARK, 0);
                 break;
 
             case 4:
                 // STROBE FAST/DEATH SLIME
-                P_SpawnStrobeFlash(sector, FASTDARK, 0);
+                Doom::spawnStrobeFlash(sector, FASTDARK, 0);
                 sector->special = 4;
                 break;
 
             case 8:
                 // GLOWING LIGHT
-                P_SpawnGlowingLight(sector);
+                Doom::spawnGlowingLight(sector);
                 break;
             case 9:
                 // SECRET SECTOR
@@ -1196,12 +1202,12 @@ void spawnSpecials()
 
             case 12:
                 // SYNC STROBE SLOW
-                P_SpawnStrobeFlash(sector, SLOWDARK, 1);
+                Doom::spawnStrobeFlash(sector, SLOWDARK, 1);
                 break;
 
             case 13:
                 // SYNC STROBE FAST
-                P_SpawnStrobeFlash(sector, FASTDARK, 1);
+                Doom::spawnStrobeFlash(sector, FASTDARK, 1);
                 break;
 
             case 14:
@@ -1210,7 +1216,7 @@ void spawnSpecials()
                 break;
 
             case 17:
-                P_SpawnFireFlicker(sector);
+                Doom::spawnFireFlicker(sector);
                 break;
         }
     }

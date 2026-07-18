@@ -14,6 +14,7 @@
 
 #include "Lights.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Specials.h"
 
 #include <new>
 
@@ -69,11 +70,11 @@ void spawnFireFlicker(sector_t* sector)
 
     flick = new (levelAlloc(sizeof(*flick))) fireflicker_t {};
 
-    P_AddThinker(flick);
+    Doom::addThinker(flick);
 
     flick->sector = sector;
     flick->maxlight = sector->lightlevel;
-    flick->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel) + 16;
+    flick->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel) + 16;
     flick->count = 4;
 }
 
@@ -116,12 +117,12 @@ void spawnLightFlash(sector_t* sector)
 
     flash = new (levelAlloc(sizeof(*flash))) lightflash_t {};
 
-    P_AddThinker(flash);
+    Doom::addThinker(flash);
 
     flash->sector = sector;
     flash->maxlight = sector->lightlevel;
 
-    flash->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel);
+    flash->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel);
     flash->maxtime = 64;
     flash->mintime = 7;
     flash->count = (P_Random() & flash->maxtime) + 1;
@@ -162,13 +163,13 @@ void spawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync)
 
     flash = new (levelAlloc(sizeof(*flash))) strobe_t {};
 
-    P_AddThinker(flash);
+    Doom::addThinker(flash);
 
     flash->sector = sector;
     flash->darktime = fastOrSlow;
     flash->brighttime = STROBEBRIGHT;
     flash->maxlight = sector->lightlevel;
-    flash->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel);
+    flash->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel);
 
     if (flash->minlight == flash->maxlight)
         flash->minlight = 0;
@@ -191,7 +192,7 @@ void startLightStrobing(line_t* line)
     sector_t* sec;
 
     secnum = -1;
-    while ((secnum = P_FindSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
         if (sec->specialdata)
@@ -304,10 +305,10 @@ void spawnGlowingLight(sector_t* sector)
 
     g = new (levelAlloc(sizeof(*g))) glow_t {};
 
-    P_AddThinker(g);
+    Doom::addThinker(g);
 
     g->sector = sector;
-    g->minlight = P_FindMinSurroundingLight(sector, sector->lightlevel);
+    g->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel);
     g->maxlight = sector->lightlevel;
     g->direction = -1;
 

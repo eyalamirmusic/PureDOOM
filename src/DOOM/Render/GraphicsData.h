@@ -8,9 +8,9 @@ namespace Doom
 {
 // The graphics the renderer loads from the WAD once at startup and then only reads:
 // the composed wall textures and their heights, the flats, the sprite lumps and their
-// pre-measured dimensions, the sprite frame table, and the COLORMAP. R_InitData builds
-// all of it (R_InitTextures / R_InitFlats / R_InitSpriteLumps / R_InitColormaps, and
-// R_InitSprites for the frame table), the wall/plane/sprite drawers read it every
+// pre-measured dimensions, the sprite frame table, and the COLORMAP. Doom::initData builds
+// all of it (Doom::initTextures / Doom::initFlats / Doom::initSpriteLumps / Doom::initColormaps, and
+// Doom::initSprites for the frame table), the wall/plane/sprite drawers read it every
 // column, and the GPU port uploads straight from it.
 //
 // The fifth scalar cluster off the loose globals into the Engine (REFACTOR.md, Step 5),
@@ -28,7 +28,7 @@ struct GraphicsData
     // (Step 9): textureStorage owns the texture_t structs by value (each owning its
     // own patches vector); texturePointers is the texture_t* array that the vanilla
     // name `textures` (a texture_t** view, r_data.cpp) points at, so readers using
-    // textures[i]->field are unchanged. Both sized once by R_InitTextures.
+    // textures[i]->field are unchanged. Both sized once by Doom::initTextures.
     int numtextures = 0;
     EA::Vector<texture_t> textureStorage;
     EA::Vector<texture_t*> texturePointers;
@@ -56,7 +56,7 @@ struct GraphicsData
     EA::Vector<fixed_t> spriteoffset;
     EA::Vector<fixed_t> spritetopoffset;
 
-    // Sprite frames: the per-sprite frame/rotation table R_InitSprites builds.
+    // Sprite frames: the per-sprite frame/rotation table Doom::initSprites builds.
     // RAII-owned (Step 9): the sprite table is an EA::Vector of spritedef_ts, each
     // owning its own frames vector; the vanilla name `sprites` (r_things.cpp) is a
     // plain-pointer view onto data(), refreshed by R_InitSpriteDefs.

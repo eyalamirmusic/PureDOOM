@@ -6,12 +6,12 @@
 
 namespace Doom
 {
-// The renderer's texture-composition working data - what R_InitData / R_GenerateComposite build and
-// R_GetColumn reads: the PNAMES patch-directory bounds (firstpatch / lastpatch / numpatches) and the
+// The renderer's texture-composition working data - what Doom::initData / Doom::generateComposite build and
+// Doom::getColumn reads: the PNAMES patch-directory bounds (firstpatch / lastpatch / numpatches) and the
 // last flat, and the per-composed-texture column cache (texturewidthmask, texturecompositesize, the
 // texturecolumnlump / texturecolumnofs column tables, and texturecomposite itself, the lazily
-// generated column bytes), plus the flat/texture/sprite memory counters R_PrecacheLevel tallies.
-// Distinct from GraphicsData (the loaded-once WAD graphics, read-only after R_InitData): this is the
+// generated column bytes), plus the flat/texture/sprite memory counters Doom::precacheLevel tallies.
+// Distinct from GraphicsData (the loaded-once WAD graphics, read-only after Doom::initData): this is the
 // composition machinery over them, generated lazily and mutated as columns are first drawn.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were

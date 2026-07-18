@@ -15,15 +15,15 @@ namespace Doom
 // flash. None is read by any other file.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names
-// become references onto these members (keyboxes as a reference-to-array). ST_Start / ST_initData
+// become references onto these members (keyboxes as a reference-to-array). Doom::startStatusBar / ST_initData
 // reset most of these before use, so the defaults matter little, but they reproduce vanilla's
 // zero/one/true initializers exactly. The bar is drawn into screens[0] every tic, so this is
 // frame-golden-covered.
 struct StatusBarState
 {
     // Lifecycle and timing.
-    player_t* plyr = nullptr; // the console player, refreshed at ST_Start
-    doom_boolean st_firsttime = false; // ST_Start just ran (force a full redraw)
+    player_t* plyr = nullptr; // the console player, refreshed at Doom::startStatusBar
+    doom_boolean st_firsttime = false; // Doom::startStatusBar just ran (force a full redraw)
     int veryfirsttime = 1; // gate for the one-time ST_initData
     int lu_palette = 0; // the PLAYPAL lump number
     unsigned int st_clock = 0; // the tic clock the face animation counts on

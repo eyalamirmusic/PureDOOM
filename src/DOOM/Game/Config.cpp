@@ -26,11 +26,11 @@
 
 // Rewritten out of vanilla m_misc into namespace Doom.
 //
-// Config load/save, the raw file I/O, the screenshot writer and M_DrawText.
+// Config load/save, the raw file I/O, the screenshot writer and Doom::drawText.
 // m_misc.cpp shims the M_ names. The defaults[] table (binding config keys to
 // the engine's option globals) stays at file scope here, above the namespace,
 // alongside the externs the still-loose entries take addresses of; defaultfile
-// is a reference onto its Engine member (Game/ConfigPaths.h). mLoadDefaults reads
+// is a reference onto its Engine member (Game/ConfigPaths.h). loadDefaults reads
 // the test config, so the frame goldens pin it.
 
 #include "../doom_config.h"
@@ -51,9 +51,14 @@
 #include "SoundSettings.h"
 #include "../Engine/Engine.h"
 
+#include "../Render/Video.h"
+#include "Args.h"
+#include "ConfigPaths.h"
+#include "InputConfig.h"
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
+#include "../Host/Video.h"
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -88,11 +93,11 @@ struct pcx_t
 };
 
 //
-// M_DrawText
+// Doom::drawText
 // Returns the final X coordinate
-// HU_Init must have been called to init the font
+// Doom::initHud must have been called to init the font
 //
-// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (HU_Start writes it).
+// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (Doom::startHud writes it).
 extern patch_t* (&hu_font)[HU_FONTSIZE];
 
 //
@@ -189,7 +194,7 @@ char*& defaultfile = Doom::configPaths().defaultfile;
 namespace Doom
 {
 
-int mDrawText(int x, int y, doom_boolean direct, char* string)
+int drawText(int x, int y, doom_boolean direct, char* string)
 {
     int c;
     int w;
@@ -208,9 +213,9 @@ int mDrawText(int x, int y, doom_boolean direct, char* string)
         if (x + w > SCREENWIDTH)
             break;
         if (direct)
-            V_DrawPatchDirect(x, y, 0, hu_font[c]);
+            Doom::drawPatchDirect(x, y, 0, hu_font[c]);
         else
-            V_DrawPatch(x, y, 0, hu_font[c]);
+            Doom::drawPatch(x, y, 0, hu_font[c]);
         x += w;
     }
 
@@ -218,9 +223,9 @@ int mDrawText(int x, int y, doom_boolean direct, char* string)
 }
 
 //
-// mWriteFile
+// writeFile
 //
-doom_boolean mWriteFile(char const* name, void* source, int length)
+doom_boolean writeFile(char const* name, void* source, int length)
 {
     void* handle;
     int count;
@@ -240,9 +245,9 @@ doom_boolean mWriteFile(char const* name, void* source, int length)
 }
 
 //
-// mReadFile
+// readFile
 //
-int mReadFile(char const* name, byte** buffer)
+int readFile(char const* name, byte** buffer)
 {
     void* handle;
     int count, length;
@@ -282,7 +287,7 @@ int mReadFile(char const* name, byte** buffer)
 // static table initializer, because those members are reached through references
 // bound at dynamic-init time: a static &member would race that binding across
 // translation units (it segfaulted every test when tried). Idempotent, so both
-// mLoadDefaults and mSaveDefaults call it before touching a location pointer.
+// loadDefaults and saveDefaults call it before touching a location pointer.
 static void bindEngineDefault(const char* name, int* location)
 {
     for (int i = 0; i < numdefaults; i++)
@@ -344,9 +349,9 @@ static void bindEngineDefaults()
 }
 
 //
-// mSaveDefaults
+// saveDefaults
 //
-void mSaveDefaults()
+void saveDefaults()
 {
     int v;
     void* f;
@@ -383,9 +388,9 @@ void mSaveDefaults()
 }
 
 //
-// mLoadDefaults
+// loadDefaults
 //
-void mLoadDefaults()
+void loadDefaults()
 {
     int i;
     int len;
@@ -409,7 +414,7 @@ void mLoadDefaults()
     }
 
     // check for a custom default file
-    i = M_CheckParm("-config");
+    i = Doom::checkParm("-config");
     if (i && i < myargc - 1)
     {
         defaultfile = myargv[i + 1];
@@ -561,13 +566,13 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
 
     // write output file
     length = static_cast<int>(pack - reinterpret_cast<byte*>(pcx));
-    mWriteFile(filename, pcx, length);
+    writeFile(filename, pcx, length);
 }
 
 //
-// mScreenShot
+// writeScreenshot
 //
-void mScreenShot()
+void writeScreenshot()
 {
     int i;
     byte* linear;
@@ -576,7 +581,7 @@ void mScreenShot()
 
     // munge planar buffer to linear
     linear = screens[2];
-    I_ReadScreen(linear);
+    readScreen(linear);
 
     // find a file name to save it to
     doom_strcpy(lbmname.data(), "DOOM00.pcx");
@@ -590,7 +595,7 @@ void mScreenShot()
         doom_close(f);
     }
     if (i == 100)
-        I_Error("Error: mScreenShot: Couldn't create a PCX");
+        I_Error("Error: writeScreenshot: Couldn't create a PCX");
 
     // save the pcx file
     WritePCXfile(lbmname.data(),

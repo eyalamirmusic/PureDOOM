@@ -1,8 +1,8 @@
 // p_saveg, tested directly - the one simulation path the demo goldens do not
 // watch.
 //
-// A demo is input; nothing in a .lmp saves or loads a game, so P_ArchiveThinkers
-// / P_UnArchiveThinkers and the whole mobj/special byte layout ride through the
+// A demo is input; nothing in a .lmp saves or loads a game, so Doom::archiveThinkers
+// / Doom::unArchiveThinkers and the whole mobj/special byte layout ride through the
 // suite unpinned. That layout is exactly what the thinker_t -> Thinker
 // virtualisation and the mobj/special zone-ownership change will rewrite: a vtable
 // on mobj_t shifts every offset the archive memcpy's, and no golden would notice.
@@ -29,10 +29,10 @@ constexpr int skillMedium = 2;
 
 // A freshly loaded E1M1 is already a rich world for this: dozens of things (the
 // player, the monsters, the barrels and pickups, each in a spawn state) plus the
-// sector light specials P_SpawnSpecials starts at load - so P_ArchiveThinkers,
-// P_ArchiveWorld and P_ArchiveSpecials all have real content to round-trip. A
+// sector light specials Doom::spawnSpecials starts at load - so Doom::archiveThinkers,
+// Doom::archiveWorld and Doom::archiveSpecials all have real content to round-trip. A
 // barrel spawned on top adds a mobj created after load, not one the map placed,
-// which is the case a naive "re-run P_SetupLevel" restore would get wrong.
+// which is the case a naive "re-run Doom::setupLevel" restore would get wrong.
 auto tSaveLoadPreservesTheWorld = test("Sim/saveLoadPreservesTheWorld") = []
 {
     check(doomSimBoot(0) != 0, "the engine booted headless");

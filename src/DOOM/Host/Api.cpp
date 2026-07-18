@@ -16,6 +16,8 @@
 #include "../m_argv.h"
 #include "../m_misc.h"
 
+#include "../Game/DoomMain.h"
+#include "Sound.h"
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -56,10 +58,10 @@ doom_gettime_fn& doom_gettime = Doom::host().gettime;
 doom_exit_fn& doom_exit = Doom::host().exit;
 doom_getenv_fn& doom_getenv = Doom::host().getenv;
 
-void D_DoomLoop();
-void D_UpdateWipe();
-void I_UpdateSound();
-unsigned long I_TickSong();
+void Doom::doomLoop();
+void Doom::updateWipe();
+void updateSound();
+unsigned long tickSong();
 
 #if defined(DOOM_IMPLEMENT_PRINT)
 #include <stdio.h>
@@ -581,7 +583,7 @@ void doom_init(int argc, char** argv, int flags)
     myargv = argv;
     doom_flags = flags;
 
-    D_DoomMain();
+    Doom::doomMain();
 }
 
 void doom_update()
@@ -592,9 +594,9 @@ void doom_update()
     while (delta_time-- > 0)
     {
         if (is_wiping_screen)
-            D_UpdateWipe();
+            Doom::updateWipe();
         else
-            D_DoomLoop();
+            Doom::doomLoop();
     }
 
     last_update_time = now;
@@ -603,9 +605,9 @@ void doom_update()
 void doom_force_update()
 {
     if (is_wiping_screen)
-        D_UpdateWipe();
+        Doom::updateWipe();
     else
-        D_DoomLoop();
+        Doom::doomLoop();
 }
 
 const unsigned char* doom_get_framebuffer(int channels)
@@ -675,12 +677,12 @@ const unsigned char* doom_get_framebuffer(int channels)
 
 unsigned long doom_tick_midi()
 {
-    return I_TickSong();
+    return tickSong();
 }
 
 short* doom_get_sound_buffer()
 {
-    I_UpdateSound();
+    updateSound();
     return mixbuffer;
 }
 
@@ -689,7 +691,7 @@ void doom_key_down(doom_key_t key)
     event_t event;
     event.type = ev_keydown;
     event.data1 = static_cast<int>(key);
-    D_PostEvent(&event);
+    Doom::postEvent(&event);
 }
 
 void doom_key_up(doom_key_t key)
@@ -697,7 +699,7 @@ void doom_key_up(doom_key_t key)
     event_t event;
     event.type = ev_keyup;
     event.data1 = static_cast<int>(key);
-    D_PostEvent(&event);
+    Doom::postEvent(&event);
 }
 
 void doom_button_down(doom_button_t button)
@@ -709,7 +711,7 @@ void doom_button_down(doom_button_t button)
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = event.data3 = 0;
-    D_PostEvent(&event);
+    Doom::postEvent(&event);
 }
 
 void doom_button_up(doom_button_t button)
@@ -725,7 +727,7 @@ void doom_button_up(doom_button_t button)
                   ^ (button_states[1] ? 2 : 0) ^ (button_states[2] ? 4 : 0);
 
     event.data2 = event.data3 = 0;
-    D_PostEvent(&event);
+    Doom::postEvent(&event);
 }
 
 void doom_mouse_move(int delta_x, int delta_y)
@@ -740,6 +742,6 @@ void doom_mouse_move(int delta_x, int delta_y)
 
     if (event.data2 || event.data3)
     {
-        D_PostEvent(&event);
+        Doom::postEvent(&event);
     }
 }

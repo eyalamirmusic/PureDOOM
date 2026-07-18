@@ -59,9 +59,13 @@
 #include "StatusBarState.h"
 #include "StatusBarWidgets.h"
 
+#include "../Render/Video.h"
+#include "Cheat.h"
+#include "StatusWidgets.h"
 #include <ea_data_structures/Structures/Array.h>
 
 // st_statusbaron is a reference onto Doom::StatusBarState (an Engine member), bound
+#include "../Host/Video.h"
 // in the st_stuff.cpp shim: the app (EngineAccess) reads it to decide whether to
 // composite the status-bar strip. This bare extern must stay a reference to match,
 // or it would read the reference's pointer bits. mapnames (hu_stuff) and doom_flags
@@ -273,8 +277,8 @@ namespace Doom
 // Step 5). keyboxes, st_fragscount, st_palette and st_stopped follow below, at their own sites.
 static player_t*& plyr = statusBarState().plyr; // main player in game
 static doom_boolean& st_firsttime =
-    statusBarState().st_firsttime; // stStart() just called
-static int& veryfirsttime = statusBarState().veryfirsttime; // execute stInit() once
+    statusBarState().st_firsttime; // startStatusBar() just called
+static int& veryfirsttime = statusBarState().veryfirsttime; // execute initStatusBar() once
 static int& lu_palette = statusBarState().lu_palette; // lump number for PLAYPAL
 static unsigned int& st_clock = statusBarState().st_clock; // used for timing
 static int& st_msgcounter = statusBarState().st_msgcounter; // messages go away
@@ -419,18 +423,18 @@ void strefreshBackground()
 {
     if (st_statusbaron)
     {
-        V_DrawPatch(ST_X, 0, STLIB_BG, sbar);
+        Doom::drawPatch(ST_X, 0, STLIB_BG, sbar);
 
         if (netgame)
-            V_DrawPatch(ST_FX, 0, STLIB_BG, faceback);
+            Doom::drawPatch(ST_FX, 0, STLIB_BG, faceback);
 
-        V_CopyRect(ST_X, 0, STLIB_BG, ST_WIDTH, ST_HEIGHT, ST_X, ST_Y, STLIB_FG);
+        Doom::copyRect(ST_X, 0, STLIB_BG, ST_WIDTH, ST_HEIGHT, ST_X, ST_Y, STLIB_FG);
     }
 }
 
 // Respond to keyboard input events,
 //  intercept cheats.
-doom_boolean stResponder(event_t* ev)
+doom_boolean statusBarResponder(event_t* ev)
 {
     // Filter automap on/off.
     if (ev->type == ev_keyup && ((ev->data1 & 0xffff0000) == AM_MSGHEADER))
@@ -458,7 +462,7 @@ doom_boolean stResponder(event_t* ev)
             // if (gameskill != sk_nightmare) {
 
             // 'dqd' cheat for toggleable god mode
-            if (cht_CheckCheat(&cheat_god, ev->data1))
+            if (Doom::checkCheat(&cheat_god, ev->data1))
             {
                 plyr->cheats ^= CF_GODMODE;
                 if (plyr->cheats & CF_GODMODE)
@@ -473,7 +477,7 @@ doom_boolean stResponder(event_t* ev)
                     plyr->message = STSTR_DQDOFF;
             }
             // 'fa' cheat for killer fucking arsenal
-            else if (cht_CheckCheat(&cheat_ammonokey, ev->data1))
+            else if (Doom::checkCheat(&cheat_ammonokey, ev->data1))
             {
                 plyr->armorpoints = 200;
                 plyr->armortype = 2;
@@ -487,7 +491,7 @@ doom_boolean stResponder(event_t* ev)
                 plyr->message = STSTR_FAADDED;
             }
             // 'kfa' cheat for key full ammo
-            else if (cht_CheckCheat(&cheat_ammo, ev->data1))
+            else if (Doom::checkCheat(&cheat_ammo, ev->data1))
             {
                 plyr->armorpoints = 200;
                 plyr->armortype = 2;
@@ -504,13 +508,13 @@ doom_boolean stResponder(event_t* ev)
                 plyr->message = STSTR_KFAADDED;
             }
             // 'mus' cheat for changing music
-            else if (cht_CheckCheat(&cheat_mus, ev->data1))
+            else if (Doom::checkCheat(&cheat_mus, ev->data1))
             {
                 EA::Array<char, 3> buf;
                 int musnum;
 
                 plyr->message = STSTR_MUS;
-                cht_GetParam(&cheat_mus, buf.data());
+                Doom::getParam(&cheat_mus, buf.data());
 
                 if (gamemode == commercial)
                 {
@@ -533,8 +537,8 @@ doom_boolean stResponder(event_t* ev)
             }
             // Simplified, accepting both "noclip" and "idspispopd".
             // no clipping mode cheat
-            else if (cht_CheckCheat(&cheat_noclip, ev->data1)
-                     || cht_CheckCheat(&cheat_commercial_noclip, ev->data1))
+            else if (Doom::checkCheat(&cheat_noclip, ev->data1)
+                     || Doom::checkCheat(&cheat_commercial_noclip, ev->data1))
             {
                 plyr->cheats ^= CF_NOCLIP;
 
@@ -546,7 +550,7 @@ doom_boolean stResponder(event_t* ev)
             // 'behold?' power-up cheats
             for (int i = 0; i < 6; i++)
             {
-                if (cht_CheckCheat(&cheat_powerup[i], ev->data1))
+                if (Doom::checkCheat(&cheat_powerup[i], ev->data1))
                 {
                     if (!plyr->powers[i])
                         P_GivePower(plyr, i);
@@ -560,19 +564,19 @@ doom_boolean stResponder(event_t* ev)
             }
 
             // 'behold' power-up menu
-            if (cht_CheckCheat(&cheat_powerup[6], ev->data1))
+            if (Doom::checkCheat(&cheat_powerup[6], ev->data1))
             {
                 plyr->message = STSTR_BEHOLD;
             }
             // 'choppers' invulnerability & chainsaw
-            else if (cht_CheckCheat(&cheat_choppers, ev->data1))
+            else if (Doom::checkCheat(&cheat_choppers, ev->data1))
             {
                 plyr->weaponowned[wp_chainsaw] = true;
                 plyr->powers[pw_invulnerability] = true;
                 plyr->message = STSTR_CHOPPERS;
             }
             // 'mypos' for player position
-            else if (cht_CheckCheat(&cheat_mypos, ev->data1))
+            else if (Doom::checkCheat(&cheat_mypos, ev->data1))
             {
                 static EA::Array<char, ST_MSGWIDTH> buf;
                 //doom_sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
@@ -592,13 +596,13 @@ doom_boolean stResponder(event_t* ev)
         }
 
         // 'clev' change-level cheat
-        if (cht_CheckCheat(&cheat_clev, ev->data1))
+        if (Doom::checkCheat(&cheat_clev, ev->data1))
         {
             EA::Array<char, 3> buf;
             int epsd;
             int map;
 
-            cht_GetParam(&cheat_clev, buf.data());
+            Doom::getParam(&cheat_clev, buf.data());
 
             if (gamemode == commercial)
             {
@@ -872,7 +876,7 @@ void stupdateWidgets()
         st_chat = st_oldchat;
 }
 
-void stTicker()
+void statusBarTicker()
 {
     st_clock++;
     st_randomnumber = M_Random();
@@ -928,7 +932,7 @@ void stdoPaletteStuff()
         st_palette = palette;
         pal =
             static_cast<byte*>(W_CacheLumpNum(lu_palette, PU_CACHE)) + palette * 768;
-        I_SetPalette(pal);
+        setPalette(pal);
     }
 }
 
@@ -981,7 +985,7 @@ void stdiffDraw()
     stdrawWidgets(false);
 }
 
-void stDrawer(doom_boolean fullscreen, doom_boolean refresh)
+void drawStatusBar(doom_boolean fullscreen, doom_boolean refresh)
 {
     st_statusbaron = (!fullscreen) || automapactive;
     st_firsttime = st_firsttime || refresh;
@@ -989,7 +993,7 @@ void stDrawer(doom_boolean fullscreen, doom_boolean refresh)
     // Do red-/gold-shifts from damage/items
     stdoPaletteStuff();
 
-    // If just after stStart(), refresh all
+    // If just after startStatusBar(), refresh all
     if (doom_flags & DOOM_FLAG_MENU_DARKEN_BG)
     {
         stdoRefresh();
@@ -1150,7 +1154,7 @@ void stinitData()
     for (int i = 0; i < 3; i++)
         keyboxes[i] = -1;
 
-    STlib_init();
+    Doom::initStatusWidgets();
 }
 
 void stcreateWidgets()
@@ -1294,7 +1298,7 @@ void stcreateWidgets()
                   ST_MAXAMMO3WIDTH);
 }
 
-void stStart()
+void startStatusBar()
 {
     if (!st_stopped)
         stStop();
@@ -1309,17 +1313,17 @@ void stStop()
     if (st_stopped)
         return;
 
-    I_SetPalette(static_cast<byte*>(W_CacheLumpNum(lu_palette, PU_CACHE)));
+    setPalette(static_cast<byte*>(W_CacheLumpNum(lu_palette, PU_CACHE)));
 
     st_stopped = true;
 }
 
-void stInit()
+void initStatusBar()
 {
     veryfirsttime = 0;
     stloadData();
     // RAII now (Step 9): the status bar back-buffer is a VideoState-owned vector;
-    // screens[4] is the raw view onto its data(). stInit runs once at boot.
+    // screens[4] is the raw view onto its data(). initStatusBar runs once at boot.
     auto& statusBar = videoState().statusBar;
     statusBar.resize(ST_WIDTH * ST_HEIGHT);
     screens[4] = statusBar.data();

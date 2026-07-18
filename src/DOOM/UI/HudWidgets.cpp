@@ -16,6 +16,8 @@
 
 #include "HudWidgets.h"
 
+#include "../Render/Draw.h"
+#include "../Render/Video.h"
 extern doom_boolean& automapactive; // Doom::OverlayState (Engine member)
 
 namespace Doom
@@ -81,7 +83,7 @@ void drawTextLine(hu_textline_t& l, doom_boolean drawcursor)
             w = SHORT(l.f[c - l.sc]->width);
             if (x + w > SCREENWIDTH)
                 break;
-            V_DrawPatchDirect(x, l.y, FG, l.f[c - l.sc]);
+            Doom::drawPatchDirect(x, l.y, FG, l.f[c - l.sc]);
             x += w;
         }
         else
@@ -95,11 +97,11 @@ void drawTextLine(hu_textline_t& l, doom_boolean drawcursor)
     // draw the cursor if requested
     if (drawcursor && x + SHORT(l.f['_' - l.sc]->width) <= SCREENWIDTH)
     {
-        V_DrawPatchDirect(x, l.y, FG, l.f['_' - l.sc]);
+        Doom::drawPatchDirect(x, l.y, FG, l.f['_' - l.sc]);
     }
 }
 
-// sorta called by HU_Erase and just better darn get things straight
+// sorta called by Doom::eraseHud and just better darn get things straight
 void eraseTextLine(hu_textline_t& l)
 {
     int lh;
@@ -117,11 +119,11 @@ void eraseTextLine(hu_textline_t& l)
              y++, yoffset += SCREENWIDTH)
         {
             if (y < viewwindowy || y >= viewwindowy + viewheight)
-                R_VideoErase(yoffset, SCREENWIDTH); // erase entire line
+                Doom::videoErase(yoffset, SCREENWIDTH); // erase entire line
             else
             {
-                R_VideoErase(yoffset, viewwindowx); // erase left border
-                R_VideoErase(yoffset + viewwindowx + viewwidth, viewwindowx);
+                Doom::videoErase(yoffset, viewwindowx); // erase left border
+                Doom::videoErase(yoffset + viewwindowx + viewwidth, viewwindowx);
                 // erase right border
             }
         }

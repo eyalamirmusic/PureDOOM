@@ -15,7 +15,7 @@ void ticker();
 // PU_LEVEL / PU_LEVSPEC tags used to serve. Every block is tracked in an intrusive
 // list so freeLevelAllocations can reclaim the whole level at once (the way
 // Z_FreeTags(PU_LEVEL) did), including any that were removed from the thinker list
-// without being individually freed (P_UnArchiveThinkers marks-and-empties). alloc
+// without being individually freed (Doom::unArchiveThinkers marks-and-empties). alloc
 // zeroes, matching the first-load memory the demos recorded; free unlinks and
 // releases one block (the lazy per-tic free and P_UnArchive's clear).
 void* levelAlloc(int size);

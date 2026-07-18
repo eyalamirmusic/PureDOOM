@@ -19,10 +19,6 @@
 
 #include "UI/HudWidgets.h"
 
-void HUlib_init()
-{
-    Doom::initWidgets();
-}
 
 void HUlib_clearTextLine(hu_textline_t* t)
 {

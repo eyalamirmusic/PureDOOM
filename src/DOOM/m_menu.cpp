@@ -22,27 +22,27 @@
 
 #include "UI/Menu.h"
 
-doom_boolean M_Responder(event_t* ev)
+doom_boolean menuResponder(event_t* ev)
 {
-    return Doom::M_Responder(ev);
+    return Doom::menuResponder(ev);
 }
 
-void M_Ticker()
+void menuTicker()
 {
-    Doom::M_Ticker();
+    Doom::menuTicker();
 }
 
-void M_Drawer()
+void drawMenu()
 {
-    Doom::M_Drawer();
+    Doom::drawMenu();
 }
 
-void M_Init()
+void initMenu()
 {
-    Doom::M_Init();
+    Doom::initMenu();
 }
 
-void M_StartControlPanel()
+void startControlPanel()
 {
-    Doom::M_StartControlPanel();
+    Doom::startControlPanel();
 }

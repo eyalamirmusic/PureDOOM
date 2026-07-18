@@ -26,6 +26,7 @@
 #include "PlayerScratch.h"
 
 // Index of the special effects (INVUL inverse) map.
+#include "Specials.h"
 #define INVERSECOLORMAP 32
 
 // 16 pixels of bob
@@ -241,7 +242,7 @@ void playerThink(player_t& player)
     calcHeight(player);
 
     if (player.mo->subsector->sector->special)
-        P_PlayerInSpecialSector(&player);
+        Doom::playerInSpecialSector(&player);
 
     // Check for weapon change.
 

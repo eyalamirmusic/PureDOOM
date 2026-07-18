@@ -19,8 +19,10 @@
 #include "SpriteScratch.h"
 #include "Things.h"
 
+#include "Segs.h"
 #include <ea_data_structures/Structures/Array.h>
 
+#include "Draw.h"
 #define MINZ (FRACUNIT * 4)
 #define BASEYCENTER 100
 
@@ -82,7 +84,7 @@ void installSpriteLump(int lump,
         // the lump should be used for all rotations
         if (sprtemp[frame].rotate == false)
         {
-            doom_strcpy(error_buf, "Error: R_InitSprites: Sprite ");
+            doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
             doom_concat(error_buf, spritename);
             doom_concat(error_buf, " frame ");
             doom_concat(error_buf, doom_ctoa('A' + frame));
@@ -92,7 +94,7 @@ void installSpriteLump(int lump,
 
         if (sprtemp[frame].rotate == true)
         {
-            doom_strcpy(error_buf, "Error: R_InitSprites: Sprite ");
+            doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
             doom_concat(error_buf, spritename);
             doom_concat(error_buf, " frame ");
             doom_concat(error_buf, doom_ctoa('A' + frame));
@@ -112,7 +114,7 @@ void installSpriteLump(int lump,
     // the lump is only used for one rotation
     if (sprtemp[frame].rotate == false)
     {
-        doom_strcpy(error_buf, "Error: R_InitSprites: Sprite ");
+        doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
         doom_concat(error_buf, spritename);
         doom_concat(error_buf, " frame ");
         doom_concat(error_buf, doom_ctoa('A' + frame));
@@ -126,7 +128,7 @@ void installSpriteLump(int lump,
     rotation--;
     if (sprtemp[frame].lump[rotation] != -1)
     {
-        doom_strcpy(error_buf, "Error: R_InitSprites: Sprite ");
+        doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
         doom_concat(error_buf, spritename);
         doom_concat(error_buf, " : ");
         doom_concat(error_buf, doom_ctoa('A' + frame));
@@ -240,7 +242,7 @@ void initSpriteDefs(char** namelist)
                 {
                     // no rotations were found for that frame at all
                     doom_strcpy(error_buf,
-                                "Error: R_InitSprites: No patches found for ");
+                                "Error: Doom::initSprites: No patches found for ");
                     doom_concat(error_buf, namelist[i]);
                     doom_concat(error_buf, " frame ");
                     doom_concat(error_buf, doom_ctoa(frame + 'A'));
@@ -257,7 +259,7 @@ void initSpriteDefs(char** namelist)
                     for (rotation = 0; rotation < 8; rotation++)
                         if (sprtemp[frame].lump[rotation] == -1)
                         {
-                            doom_strcpy(error_buf, "Error: R_InitSprites: Sprite ");
+                            doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
                             doom_concat(error_buf, namelist[i]);
                             doom_concat(error_buf, " frame ");
                             doom_concat(error_buf, doom_ctoa(frame + 'A'));
@@ -353,8 +355,8 @@ void drawMaskedColumn(column_t* column)
             dc_texturemid = basetexturemid - (column->topdelta << FRACBITS);
             // dc_source = (byte *)column + 3 - column->topdelta;
 
-            // Drawn by either R_DrawColumn
-            //  or (SHADOW) R_DrawFuzzColumn.
+            // Drawn by either Doom::drawColumn
+            //  or (SHADOW) Doom::drawFuzzColumn.
             colfunc();
         }
         column = reinterpret_cast<column_t*>(reinterpret_cast<byte*>(column)
@@ -387,7 +389,7 @@ void drawVisSprite(vissprite_t* vis)
     }
     else if (vis->mobjflags & MF_TRANSLATION)
     {
-        colfunc = R_DrawTranslatedColumn;
+        colfunc = Doom::drawTranslatedColumn;
         dc_translation =
             translationtables - 256
             + ((vis->mobjflags & MF_TRANSLATION) >> (MF_TRANSSHIFT - 8));
@@ -860,7 +862,7 @@ void drawSprite(vissprite_t* spr)
         {
             // masked mid texture?
             if (ds->maskedtexturecol)
-                R_RenderMaskedSegRange(ds, r1, r2);
+                Doom::renderMaskedSegRange(ds, r1, r2);
             // seg is behind sprite
             continue;
         }
@@ -940,7 +942,7 @@ void drawMasked()
     // render any remaining masked mid textures
     for (ds = ds_p - 1; ds >= drawsegs; ds--)
         if (ds->maskedtexturecol)
-            R_RenderMaskedSegRange(ds, ds->x1, ds->x2);
+            Doom::renderMaskedSegRange(ds, ds->x1, ds->x2);
 
     // draw the psprites on top of everything
     drawPlayerSprites();

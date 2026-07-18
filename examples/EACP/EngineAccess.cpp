@@ -4,6 +4,12 @@
 
 #include "EngineAccess.h"
 
+#include <DOOM/Render/BSP.h>
+#include <DOOM/Render/Planes.h>
+#include <DOOM/Render/Things.h>
+#include <DOOM/Render/Video.h>
+#include <DOOM/UI/Automap.h>
+#include <DOOM/UI/Hud.h>
 #include <DOOM/DOOM.h>
 #include <DOOM/doom_config.h>
 
@@ -34,6 +40,7 @@
 #include <DOOM/w_wad.h>
 
 // Engine globals that no header declares. DOOM.c reaches them the same way, so
+#include <DOOM/UI/Menu.h>
 // this is the house style rather than a workaround - but they are the natural
 // candidates for a real interface as the engine gets refactored.
 extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
@@ -267,7 +274,7 @@ int eacpDoomAutomapActive()
 
 int eacpDoomStatusBarVisible()
 {
-    // ST_Drawer's own st_statusbaron, which is private to it: D_Display asks for
+    // Doom::drawStatusBar's own st_statusbaron, which is private to it: Doom::displayFrame asks for
     // a bar-less frame once the view fills all 200 rows, and the automap keeps
     // the bar whatever the screen size says.
     return viewheight != SCREENHEIGHT || automapactive;
@@ -286,25 +293,25 @@ void eacpDoomRevealAutomap()
         return;
 
     R_SetupFrame(player);
-    R_ClearClipSegs();
-    R_ClearDrawSegs();
-    R_ClearPlanes();
-    R_ClearSprites();
+    Doom::clearClipSegs();
+    Doom::clearDrawSegs();
+    Doom::clearPlanes();
+    Doom::clearSprites();
 
-    // Marking a line is R_StoreWallRange's doing, and it does it as it draws the
+    // Marking a line is Doom::storeWallRange's doing, and it does it as it draws the
     // wall - so the walls land in the frame the automap has just drawn itself
     // into (the column drawers write through ylookup, which was pointed at
     // screens[0] when the view size was set, and does not follow it anywhere).
     // Drawing the map again puts it back. The GPU path does not read that frame
     // for anything but the status bar, which the view never reaches; the
     // software one reads all of it.
-    R_RenderBSPNode(numnodes - 1);
-    AM_Drawer();
+    Doom::renderBSPNode(numnodes - 1);
+    Doom::drawAutomap();
 }
 
 int eacpDoomDarkenRow()
 {
-    // M_Drawer only reaches its darkening once it is actually showing a menu: a
+    // Doom::drawMenu only reaches its darkening once it is actually showing a menu: a
     // confirmation prompt draws its text and returns before then.
     if (menuactive && !messageToPrint && (doom_flags & DOOM_FLAG_MENU_DARKEN_BG))
         return EACP_DOOM_MENU_DARKEN_ROW;
@@ -318,7 +325,7 @@ static unsigned char eacpUnderMask[EACP_SCREEN_PIXELS];
 static unsigned char eacpMenuIndex[EACP_SCREEN_PIXELS];
 static unsigned char eacpMenuMask[EACP_SCREEN_PIXELS];
 
-// What D_Display draws over the view *before* the menu darkens the frame, in its
+// What Doom::displayFrame draws over the view *before* the menu darkens the frame, in its
 // order - and so what the menu darkens along with the world.
 static void eacpDrawUnderLayers()
 {
@@ -326,15 +333,15 @@ static void eacpDrawUnderLayers()
         return;
 
     if (automapactive)
-        AM_drawMarks();
+        Doom::drawAutomapMarks();
 
-    HU_Drawer();
+    Doom::drawHud();
 
     if (paused)
     {
         int y = automapactive ? 4 : viewwindowy + 4;
 
-        V_DrawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
+        Doom::drawPatchDirect(viewwindowx + (scaledviewwidth - 68) / 2,
                           y,
                           0,
                           (patch_t*) W_CacheLumpName("M_PAUSE", PU_CACHE));
@@ -383,7 +390,7 @@ int eacpDoomBuildOverlay(unsigned char* outRgba)
     doom_flags &= ~DOOM_FLAG_MENU_DARKEN_BG;
 
     eacpCaptureLayer(eacpDrawUnderLayers, eacpUnderIndex, eacpUnderMask);
-    eacpCaptureLayer(M_Drawer, eacpMenuIndex, eacpMenuMask);
+    eacpCaptureLayer(Doom::drawMenu, eacpMenuIndex, eacpMenuMask);
 
     doom_flags = flags;
 
@@ -474,7 +481,7 @@ static int eacpSpriteBase()
 // Draws a patch's posts into an index image and its coverage into an alpha
 // image. This is how DOOM stores every graphic: runs of pixels down a column,
 // with the gaps between the runs left transparent. Composing from the patches
-// (as R_GenerateComposite does) rather than reading the engine's cached columns
+// (as Doom::generateComposite does) rather than reading the engine's cached columns
 // is what makes a masked texture's holes come out as holes.
 static void eacpBlitPatch(patch_t* patch,
                           int originX,
@@ -1387,7 +1394,7 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
     float vTop, vBottom;
 
     // "Sky is allways drawn full bright, i.e. colormaps[0] is used. Because of
-    // this hack, sky is not affected by INVUL inverse mapping" - R_DrawPlanes,
+    // this hack, sky is not affected by INVUL inverse mapping" - Doom::drawPlanes,
     // whose words those are. Row 0 at any distance, and through any powerup.
     EacpLight light = eacpFixedLight(0);
 
@@ -1585,7 +1592,7 @@ static void eacpEmitSubsector(EacpEmitter* em, int index)
     light = eacpSectorLight(sector->lightlevel, 0);
 
     // Either way round, a sky flat is a hole onto the sky rather than a surface:
-    // R_DrawPlanes paints the sky wherever it finds one, and a floor is as free
+    // Doom::drawPlanes paints the sky wherever it finds one, and a floor is as free
     // to carry it as a ceiling.
     if (sector->floorpic != skyflatnum)
         eacpEmitFlat(em, index, sector->floorpic, eacpFloorHeight(sector), light);
@@ -1686,7 +1693,7 @@ int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
 
 // The automap, as geometry rather than as a rasterized frame.
 //
-// What is drawn, and in what colour, is AM_Drawer's own choice, mirrored below:
+// What is drawn, and in what colour, is Doom::drawAutomap's own choice, mirrored below:
 // only its rasterizer (AM_drawFline, a Bresenham walk straight into the 320 x
 // 168 frame) is replaced. The shapes it draws the player and the things with -
 // player_arrow, cheat_player_arrow, thintriangle_guy - and the rotation it puts
@@ -1794,8 +1801,8 @@ static void eacpAutomapLineCharacter(EacpAutomapEmitter* em,
 
         if (angle)
         {
-            AM_rotate(&l.a.x, &l.a.y, angle);
-            AM_rotate(&l.b.x, &l.b.y, angle);
+            Doom::rotateAutomapPoint(&l.a.x, &l.a.y, angle);
+            Doom::rotateAutomapPoint(&l.b.x, &l.b.y, angle);
         }
 
         eacpAutomapLine(em, l.a.x + x, l.a.y + y, l.b.x + x, l.b.y + y, color);

@@ -19,10 +19,6 @@
 
 #include "UI/StatusWidgets.h"
 
-void STlib_init()
-{
-    Doom::initStatusWidgets();
-}
 
 void STlib_initNum(st_number_t* n, int x, int y, patch_t** pl, int* num,
                    doom_boolean* on, int width)

@@ -38,19 +38,14 @@
 //
 
 // Called by main loop.
-doom_boolean ST_Responder(event_t* ev);
 
 // Called by main loop.
-void ST_Ticker();
 
 // Called by main loop.
-void ST_Drawer(doom_boolean fullscreen, doom_boolean refresh);
 
 // Called when the console player is spawned on each level.
-void ST_Start();
 
 // Called by startup code.
-void ST_Init();
 
 
 // States for status bar code.
@@ -70,7 +65,6 @@ enum st_chatstateenum_t
 };
 
 
-doom_boolean ST_Responder(event_t* ev);
 
 
 //-----------------------------------------------------------------------------

@@ -49,6 +49,7 @@
 #include "../Game/NetState.h"
 #include "Net.h"
 
+#include "../Game/Args.h"
 #include <ea_data_structures/Structures/Array.h>
 
 // The byte-swap helpers are only reached by the socket packet code, so they are
@@ -307,9 +308,9 @@ int GetLocalAddress()
 }
 
 //
-// I_InitNetwork
+// initNetwork
 //
-void I_InitNetwork()
+void initNetwork()
 {
 #if defined(I_NET_ENABLED)
 #if defined(DOOM_WIN32)
@@ -332,7 +333,7 @@ void I_InitNetwork()
     doomcom = &net.doomcomStorage;
 
     // set up for network
-    i = M_CheckParm("-dup");
+    i = Doom::checkParm("-dup");
     if (i && i < myargc - 1)
     {
         doomcom->ticdup = myargv[i + 1][0] - '0';
@@ -344,12 +345,12 @@ void I_InitNetwork()
     else
         doomcom->ticdup = 1;
 
-    if (M_CheckParm("-extratic"))
+    if (Doom::checkParm("-extratic"))
         doomcom->extratics = 1;
     else
         doomcom->extratics = 0;
 
-    p = M_CheckParm("-port");
+    p = Doom::checkParm("-port");
     if (p && p < myargc - 1)
     {
         DOOMPORT = doom_atoi(myargv[p + 1]);
@@ -359,7 +360,7 @@ void I_InitNetwork()
         doom_print("\n");
     }
 
-    p = M_CheckParm("-sendport");
+    p = Doom::checkParm("-sendport");
     if (p && p < myargc - 1)
     {
         DOOMPORT_SEND = doom_atoi(myargv[p + 1]);
@@ -371,7 +372,7 @@ void I_InitNetwork()
 
     // parse network game options,
     //  -net <consoleplayer> <host> <host> ...
-    i = M_CheckParm("-net");
+    i = Doom::checkParm("-net");
     if (!i)
     {
         // single player game
@@ -436,7 +437,7 @@ void I_InitNetwork()
 #endif
 }
 
-void I_NetCmd()
+void netCommand()
 {
 #if defined(I_NET_ENABLED)
     if (doomcom->command == CMD_SEND)

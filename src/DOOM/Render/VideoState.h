@@ -7,7 +7,7 @@
 
 namespace Doom
 {
-// Render/Video's dirty-rectangle accumulator: V_MarkRect grows dirtybox to cover every region
+// Render/Video's dirty-rectangle accumulator: Doom::markRect grows dirtybox to cover every region
 // drawn since the last blit (left/bottom/right/top via M_AddToBox). PureDOOM's host reads
 // screens[0] whole, so nothing consumes it today, but it is still written every frame.
 //
@@ -20,17 +20,17 @@ namespace Doom
 // byte*[5] in Render/Video) stays a raw VIEW array pointing at these owners' data(), because
 // it is legitimately reseated - the eacp port swaps screens[0] to its overlay-capture scratch
 // and restores it - so it is a pointer that merely refers, kept raw by the RAII rules. workspace
-// is the one contiguous SCREENWIDTH*SCREENHEIGHT*4 block V_Init sliced into screens[0..3]
-// (screens[0]'s slice is then overwritten by I_InitGraphics, as vanilla left it); frame is the
-// software frame proper (screens[0], I_InitGraphics); statusBar is the status bar back-buffer
-// (screens[4], ST_Init). Each is filled by the drawers, so the frame goldens pin them exactly.
+// is the one contiguous SCREENWIDTH*SCREENHEIGHT*4 block Doom::initVideo sliced into screens[0..3]
+// (screens[0]'s slice is then overwritten by initGraphics, as vanilla left it); frame is the
+// software frame proper (screens[0], initGraphics); statusBar is the status bar back-buffer
+// (screens[4], Doom::initStatusBar). Each is filled by the drawers, so the frame goldens pin them exactly.
 struct VideoState
 {
     EA::Array<int, 4> dirtybox =
         {}; // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP of the drawn region
 
     EA::Vector<byte> frame; // screens[0]: the software framebuffer
-    EA::Vector<byte> workspace; // the V_Init base block sliced into screens[0..3]
+    EA::Vector<byte> workspace; // the Doom::initVideo base block sliced into screens[0..3]
     EA::Vector<byte> statusBar; // screens[4]: the status bar back-buffer
 };
 

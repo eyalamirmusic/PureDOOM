@@ -156,7 +156,7 @@ auto tSlopeDivGivesUp = test("Trig/slopeDivGivesUpOnSmallDenominators") = []
 
 auto tBBoxIsLayoutCompatible = test("BBox/isLayoutCompatibleWithVanilla") = []
 {
-    // P_GroupLines and V_MarkRect still hand it a bare fixed_t[4], and m_bbox.cpp
+    // Doom::groupLines and Doom::markRect still hand it a bare fixed_t[4], and m_bbox.cpp
     // reinterprets one as a BBox. These four are what make that legal.
     static_assert(sizeof(BBox) == 4 * sizeof(fixed_t));
     static_assert(offsetof(BBox, top) == BOXTOP * sizeof(fixed_t));
@@ -174,7 +174,7 @@ auto tBBoxIsLayoutCompatible = test("BBox/isLayoutCompatibleWithVanilla") = []
 // sentinel - a point cannot be both below the minimum and above the maximum in
 // one call. Feed it points in descending x and `right` is never written at all.
 //
-// min/max would be the obvious "correction" and would change what P_GroupLines
+// min/max would be the obvious "correction" and would change what Doom::groupLines
 // computes for a sector's bounding box, which changes what the renderer and
 // P_BlockLinesIterator see. Vanilla's answer is the one the demos were recorded
 // against.

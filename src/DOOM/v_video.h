@@ -46,49 +46,15 @@ extern int& usegamma;
 
 
 // Allocates buffer screens, call before R_Init.
-void V_Init();
 
-void V_CopyRect(int srcx,
-                int srcy,
-                int srcscrn,
-                int width,
-                int height,
-                int destx,
-                int desty,
-                int destscrn);
 
-void V_DrawPatch(int x,
-                 int y,
-                 int scrn,
-                 patch_t* patch);
 
-void V_DrawPatchDirect(int x, 
-                       int y, 
-                       int scrn, 
-                       patch_t* patch);
 
-void V_DrawPatchRectDirect(int x, int y, int scrn, patch_t* patch, int src_x, int src_w);
 
 // Draw a linear block of pixels into the view buffer.
-void V_DrawBlock(int x,
-                 int y,
-                 int scrn,
-                 int width,
-                 int height,
-                 byte* src);
 
 // Reads a linear block of pixels into the view buffer.
-void V_GetBlock(int x,
-                int y,
-                int scrn,
-                int width,
-                int height,
-                byte* dest);
 
-void V_MarkRect(int x,
-                int y,
-                int width,
-                int height);
 
 
 //-----------------------------------------------------------------------------

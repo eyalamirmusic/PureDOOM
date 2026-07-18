@@ -78,21 +78,15 @@ struct texture_t
 extern texture_t** textures;
 
 
-byte* R_GetColumn(int tex, int col);
 
 // I/O, setting up the stuff.
-void R_InitData();
-void R_PrecacheLevel();
 
 // Retrieval.
 // Floor/ceiling opaque texture tiles,
 // lookup by name. For animation?
-int R_FlatNumForName(const char* name);
 
-// Called by P_Ticker for switches and animations,
+// Called by Doom::ticker for switches and animations,
 // returns the texture number for the texture name.
-int R_TextureNumForName(const char* name);
-int R_CheckTextureNumForName(const char* name);
 
 
 // How many wall textures and flats the WAD loaded. Composed lazily, so these are

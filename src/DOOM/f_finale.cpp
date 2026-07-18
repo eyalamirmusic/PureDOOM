@@ -19,22 +19,6 @@
 
 #include "UI/Finale.h"
 
-doom_boolean F_Responder(event_t* ev)
-{
-    return Doom::fResponder(ev);
-}
 
-void F_Ticker()
-{
-    Doom::fTicker();
-}
 
-void F_Drawer()
-{
-    Doom::fDrawer();
-}
 
-void F_StartFinale()
-{
-    Doom::fStartFinale();
-}

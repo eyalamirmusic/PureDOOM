@@ -4,6 +4,7 @@
 #include "../d_ticcmd.h" // ticcmd_t
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
+#include "Net.h"
 
 namespace Doom
 {
@@ -28,8 +29,8 @@ namespace Doom
 struct NetState
 {
     // The driver's shared comms block. RAII-owned by value now (Step 9) - what was a
-    // boot-once doom_malloc in I_InitNetwork; the vanilla name `doomcom` stays a
-    // doomcom_t* VIEW that I_InitNetwork points at doomcomStorage, so every doomcom->
+    // boot-once doom_malloc in initNetwork; the vanilla name `doomcom` stays a
+    // doomcom_t* VIEW that initNetwork points at doomcomStorage, so every doomcom->
     // reader and netbuffer (= &doomcom->data, a stable pointer into the member) is
     // unchanged. This mirrors reboundstore below, already a doomdata_t held by value.
     doomcom_t doomcomStorage = {}; // the owned comms block
@@ -61,8 +62,8 @@ struct NetState
     doom_boolean reboundpacket = false;          // a loopback packet is queued
     doomdata_t reboundstore = {};                // the loopback packet
     char exitmsg[80] = {};                       // netgame exit message scratch
-    int gametime = 0;                            // I_GetTime at the last TryRunTics
-    int oldentertics = 0;                        // entertic at the last TryRunTics (was a static)
+    int gametime = 0;                            // I_GetTime at the last Doom::tryRunTics
+    int oldentertics = 0;                        // entertic at the last Doom::tryRunTics (was a static)
     int frametics[4] = {};                       // per-frame tic counts (rate meter)
     int frameon = 0;                             // rate-meter frame counter
     int frameskip[4] = {};                       // per-frame skip flags (rate meter)

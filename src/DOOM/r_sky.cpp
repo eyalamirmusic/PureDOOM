@@ -24,7 +24,3 @@ int& skyflatnum = Doom::skyState().skyflatnum;
 int& skytexture = Doom::skyState().skytexture;
 int& skytexturemid = Doom::skyState().skytexturemid;
 
-void R_InitSkyMap()
-{
-    Doom::initSkyMap();
-}

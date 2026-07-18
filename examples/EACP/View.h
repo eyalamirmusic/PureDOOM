@@ -208,7 +208,7 @@ struct View final : GPU::GPUView
     // G_Responder assigns the movement rather than adding to it. Handing it one
     // event per platform mouse move - which arrive several times per tic - would
     // throw all but the last of them away, so the whole of the movement goes over
-    // at once, as vanilla's I_StartTic does.
+    // at once, as vanilla's Doom::startTic does.
     void flushMouse()
     {
         auto x = (int) mouseMovement.x;

@@ -15,7 +15,7 @@ namespace Doom
 // four were externed only in p_local.h and defined in p_mobj.cpp (a flat playsim shim); the
 // vanilla names become references onto the members, the two arrays as references-to-array. The
 // demos are single-player, so the deathmatch respawn walk is not exercised (nor hashed) - but
-// P_SetupLevel's `iquehead = iquetail = 0` reset is on the level-load path they all take, and
+// Doom::setupLevel's `iquehead = iquetail = 0` reset is on the level-load path they all take, and
 // the reference bindings are mechanical, so the move is golden-neutral.
 struct ItemRespawnQueue
 {

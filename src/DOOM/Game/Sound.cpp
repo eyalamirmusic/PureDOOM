@@ -38,6 +38,7 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include "../Host/Sound.h"
 #define S_MAX_VOLUME 127
 
 // when to clip out sounds
@@ -124,7 +125,7 @@ void sInit(int sfxVolume, int musicVolume)
     doom_print("\n");
 
     // Whatever these did with DMX, these are rather dummies now.
-    I_SetChannels();
+    setChannels();
 
     sSetSfxVolume(sfxVolume);
     // No music with Linux - another dummy.
@@ -301,7 +302,7 @@ void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
 
     // get lumpnum if necessary
     if (sfx->lumpnum < 0)
-        sfx->lumpnum = I_GetSfxLumpNum(sfx);
+        sfx->lumpnum = sfxLumpNum(sfx);
 
 #ifndef SNDSRV
     // cache data if necessary
@@ -323,7 +324,7 @@ void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
 
     // Assigns the handle to one of the channels in the
     //  mix/output buffer.
-    channels_s_sound[cnum].handle = I_StartSound(sfx_id,
+    channels_s_sound[cnum].handle = startSoundHost(sfx_id,
                                                  /*sfx->data,*/
                                                  volume,
                                                  sep,
@@ -356,7 +357,7 @@ void sPauseSound()
 {
     if (mus_playing_s_sound && !mus_paused)
     {
-        I_PauseSong(mus_playing_s_sound->handle);
+        pauseSong(mus_playing_s_sound->handle);
         mus_paused = true;
     }
 }
@@ -365,7 +366,7 @@ void sResumeSound()
 {
     if (mus_playing_s_sound && mus_paused)
     {
-        I_ResumeSong(mus_playing_s_sound->handle);
+        resumeSong(mus_playing_s_sound->handle);
         mus_paused = false;
     }
 }
@@ -391,7 +392,7 @@ void sUpdateSounds(void* listener_p)
 
         if (c->sfxinfo)
         {
-            if (I_SoundIsPlaying(c->handle))
+            if (soundIsPlaying(c->handle))
             {
                 // initialize parameters
                 volume = snd_SfxVolume;
@@ -428,7 +429,7 @@ void sUpdateSounds(void* listener_p)
                         sStopChannel(cnum);
                     }
                     else
-                        I_UpdateSoundParams(c->handle, volume, sep, pitch);
+                        updateSoundParams(c->handle, volume, sep, pitch);
                 }
             }
             else
@@ -452,8 +453,8 @@ void sSetMusicVolume(int volume)
         I_Error(error_buf);
     }
 
-    I_SetMusicVolume(127);
-    I_SetMusicVolume(volume);
+    setMusicVolume(127);
+    setMusicVolume(volume);
     snd_MusicVolume = volume;
 }
 
@@ -510,10 +511,10 @@ void sChangeMusic(int musicnum, int looping)
 
     // load & it
     music->data = (void*) W_CacheLumpNum(music->lumpnum, PU_MUSIC);
-    music->handle = I_RegisterSong(music->data);
+    music->handle = registerSong(music->data);
 
     // play it
-    I_PlaySong(music->handle, looping);
+    playSong(music->handle, looping);
 
     mus_playing_s_sound = music;
 }
@@ -523,10 +524,10 @@ void sStopMusic()
     if (mus_playing_s_sound)
     {
         if (mus_paused)
-            I_ResumeSong(mus_playing_s_sound->handle);
+            resumeSong(mus_playing_s_sound->handle);
 
-        I_StopSong(mus_playing_s_sound->handle);
-        I_UnRegisterSong(mus_playing_s_sound->handle);
+        stopSong(mus_playing_s_sound->handle);
+        unregisterSong(mus_playing_s_sound->handle);
 
         mus_playing_s_sound->data = nullptr;
         mus_playing_s_sound = nullptr;
@@ -540,13 +541,13 @@ void sStopChannel(int cnum)
     if (c.sfxinfo)
     {
         // stop the sound playing
-        if (I_SoundIsPlaying(c.handle))
+        if (soundIsPlaying(c.handle))
         {
 #ifdef SAWDEBUG
             if (c.sfxinfo == &S_sfx[sfx_sawful])
                 doom_print("stopped\n");
 #endif
-            I_StopSound(c.handle);
+            stopSoundHost(c.handle);
         }
 
         // check to see

@@ -22,10 +22,8 @@
 #pragma once
 
 
-// Called by D_DoomMain.
+// Called by Doom::doomMain.
 
-void I_InitNetwork ();
-void I_NetCmd ();
 
 
 

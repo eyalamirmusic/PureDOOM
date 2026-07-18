@@ -12,11 +12,11 @@ namespace Doom
 // and thrown away whole when the next one does. This is the PU_LEVEL half of the
 // zone allocator's job - the clean half. The other half, mobjs and the thinker
 // specials (doors, lifts, lights), have their own per-object lifecycle
-// (P_RemoveThinker frees them mid-play) and stay on the zone until the playsim is
+// (Doom::removeThinker frees them mid-play) and stay on the zone until the playsim is
 // rewritten.
 //
 // Vanilla loads these with Z_Malloc(..., PU_LEVEL) and frees them all at once with
-// Z_FreeTags at the top of the next P_SetupLevel. A Level frees them by owning
+// Z_FreeTags at the top of the next Doom::setupLevel. A Level frees them by owning
 // them: load a new level and the old vectors are replaced, which is the
 // destructor doing what Z_FreeTags did, but scoped and automatic.
 //
@@ -41,14 +41,14 @@ struct Level
     EA::Vector<mobj_t*> blockLinks;
 
     // The blockmap descriptor - origin, extent and the lump pointers the iterators
-    // read from. Filled by P_LoadBlockMap, which then refreshes the vanilla
+    // read from. Filled by Doom::loadBlockMap, which then refreshes the vanilla
     // bmaporgx/bmapwidth/blockmap globals as views onto it. blockLinks above is the
     // one blockmap array that is ours to allocate; the lump itself is WadFile's.
     Blockmap blockmap;
 
     // One flat array of line pointers, carved into per-sector slices that
     // sector_t::lines point into. Vanilla calls this `linebuffer`, a single
-    // Z_Malloc in P_GroupLines.
+    // Z_Malloc in Doom::groupLines.
     EA::Vector<line_t*> sectorLines;
 };
 

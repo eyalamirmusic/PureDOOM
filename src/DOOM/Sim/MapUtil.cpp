@@ -2,6 +2,7 @@
 
 #include "MapGeometry.h"
 
+#include "Clip.h"
 namespace Doom
 {
 namespace

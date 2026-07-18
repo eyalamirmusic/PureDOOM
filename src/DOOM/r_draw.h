@@ -40,20 +40,15 @@ extern byte*& dc_source;
 // The span blitting interface.
 // Hook in assembler or system specific BLT
 //  here.
-void R_DrawColumn();
-void R_DrawColumnLow();
 
 // The Spectre/Invisibility effect.
-void R_DrawFuzzColumn();
 void R_DrawFuzzColumnLow();
 
 // Draw with color translation tables,
 //  for player sprite rendering,
 //  Green/Red/Blue/Indigo shirts.
-void R_DrawTranslatedColumn();
 void R_DrawTranslatedColumnLow();
 
-void R_VideoErase(unsigned ofs, int count);
 
 extern int& ds_y;
 extern int& ds_x1;
@@ -76,23 +71,17 @@ extern byte*& dc_translation;
 
 // Span blitting for rows, floor/ceiling.
 // No Sepctre effect needed.
-void R_DrawSpan();
 
 // Low resolution mode, 160x200?
-void R_DrawSpanLow();
 
-void R_InitBuffer(int width, int height);
 
 
 // Initialize color translation tables,
 //  for player rendering etc.
-void R_InitTranslationTables();
 
 // Rendering function.
-void R_FillBackScreen();
 
 // If the view size is not full screen, draws a border around it.
-void R_DrawViewBorder();
 
 
 

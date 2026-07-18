@@ -81,62 +81,14 @@ mapthing_t (&deathmatchstarts)[MAX_DEATHMATCH_STARTS] = Doom::mapSpawns().deathm
 mapthing_t*& deathmatch_p = Doom::mapSpawns().deathmatch_p;
 mapthing_t (&playerstarts)[MAXPLAYERS] = Doom::mapSpawns().playerstarts;
 
-void P_LoadVertexes(int lump)
-{
-    Doom::loadVertexes(lump);
-}
 
-void P_LoadSegs(int lump)
-{
-    Doom::loadSegs(lump);
-}
 
-void P_LoadSubsectors(int lump)
-{
-    Doom::loadSubsectors(lump);
-}
 
-void P_LoadSectors(int lump)
-{
-    Doom::loadSectors(lump);
-}
 
-void P_LoadNodes(int lump)
-{
-    Doom::loadNodes(lump);
-}
 
-void P_LoadThings(int lump)
-{
-    Doom::loadThings(lump);
-}
 
-void P_LoadLineDefs(int lump)
-{
-    Doom::loadLineDefs(lump);
-}
 
-void P_LoadSideDefs(int lump)
-{
-    Doom::loadSideDefs(lump);
-}
 
-void P_LoadBlockMap(int lump)
-{
-    Doom::loadBlockMap(lump);
-}
 
-void P_GroupLines()
-{
-    Doom::groupLines();
-}
 
-void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
-{
-    Doom::setupLevel(episode, map, playermask, skill);
-}
 
-void P_Init()
-{
-    Doom::init();
-}

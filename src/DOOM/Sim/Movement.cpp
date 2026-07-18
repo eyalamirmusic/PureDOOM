@@ -11,6 +11,7 @@
 #include "Level.h"
 #include "MapUtil.h"
 
+#include "Specials.h"
 namespace Doom
 {
 namespace
@@ -313,7 +314,7 @@ bool tryMove(mobj_t* thing, fixed_t x, fixed_t y)
             if (side != oldside)
             {
                 if (ld->special)
-                    P_CrossSpecialLine(static_cast<int>(ld - lines), oldside, thing);
+                    Doom::crossSpecialLine(static_cast<int>(ld - lines), oldside, thing);
             }
         }
     }

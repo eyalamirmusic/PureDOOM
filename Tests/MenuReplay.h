@@ -10,8 +10,8 @@
 // The menu is the one part of the engine no demo reaches - nothing in a .lmp
 // opens one - so before m_menu is rewritten it gets the same kind of net the
 // renderer got in Step 0: drive synthetic key events through the real host path
-// (doom_key_down -> D_PostEvent -> M_Responder), let M_Ticker blink the skull
-// and M_Drawer paint, and hash the finished software frame every tic.
+// (doom_key_down -> Doom::postEvent -> Doom::menuResponder), let Doom::menuTicker blink the skull
+// and Doom::drawMenu paint, and hash the finished software frame every tic.
 //
 // The background is the attract-mode title screen (TITLEPIC), a static picture,
 // so the golden pins the menu drawn over it and nothing else. The script walks
@@ -20,13 +20,13 @@
 // pages, load/save, the quit prompt, and the title-screen F-keys - but it never
 // commits: it never starts, loads or saves a game, and it answers the quit and
 // nightmare prompts with "no". So gamestate never leaves GS_DEMOSCREEN and the
-// process is never taken down, while nearly every branch of M_Responder and
-// M_Drawer still runs.
+// process is never taken down, while nearly every branch of Doom::menuResponder and
+// Doom::drawMenu still runs.
 
 namespace DoomTests
 {
 // A step is a key to press this tic, or 0 to let a tic pass with no input (which
-// is how the skull's blink, on an 8-tic M_Ticker cycle, gets into the golden).
+// is how the skull's blink, on an 8-tic Doom::menuTicker cycle, gets into the golden).
 // Keys are doom_key_t values: doom_key_down posts them as event.data1, and the
 // responder compares that against the identical KEY_* codes.
 using MenuScript = std::vector<int>;

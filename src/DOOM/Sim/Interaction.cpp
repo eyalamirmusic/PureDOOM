@@ -34,6 +34,7 @@
 
 #include "Interaction.h"
 
+#include "../UI/Automap.h"
 #define BONUSADD 6
 
 namespace Doom
@@ -647,7 +648,7 @@ void killMobj(mobj_t* source, mobj_t* target)
         {
             // don't die in auto map,
             // switch view prior to dying
-            AM_Stop();
+            Doom::stopAutomap();
         }
     }
 
@@ -662,7 +663,7 @@ void killMobj(mobj_t* source, mobj_t* target)
     if (target->tics < 1)
         target->tics = 1;
 
-    //        I_StartSound (&actor->r, actor->info->deathsound);
+    //        startSoundHost (&actor->r, actor->info->deathsound);
 
     // Drop stuff.
     // This determines the kind of object spawned

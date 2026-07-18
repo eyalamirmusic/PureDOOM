@@ -20,32 +20,8 @@
 
 #include "Game/Config.h"
 
-int M_DrawText(int x, int y, doom_boolean direct, char* string)
-{
-    return Doom::mDrawText(x, y, direct, string);
-}
 
-doom_boolean M_WriteFile(char const* name, void* source, int length)
-{
-    return Doom::mWriteFile(name, source, length);
-}
 
-int M_ReadFile(char const* name, byte** buffer)
-{
-    return Doom::mReadFile(name, buffer);
-}
 
-void M_SaveDefaults()
-{
-    Doom::mSaveDefaults();
-}
 
-void M_LoadDefaults()
-{
-    Doom::mLoadDefaults();
-}
 
-void M_ScreenShot()
-{
-    Doom::mScreenShot();
-}

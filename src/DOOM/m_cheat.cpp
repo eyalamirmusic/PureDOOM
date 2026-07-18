@@ -19,12 +19,4 @@
 
 #include "UI/Cheat.h"
 
-int cht_CheckCheat(cheatseq_t* cht, char key)
-{
-    return Doom::checkCheat(cht, key);
-}
 
-void cht_GetParam(cheatseq_t* cht, char* buffer)
-{
-    Doom::getParam(cht, buffer);
-}

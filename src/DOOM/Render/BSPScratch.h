@@ -5,7 +5,7 @@
 namespace Doom
 {
 // Render/BSP's traversal state: the current seg being drawn and the sidedef, linedef and
-// front/back sectors it belongs to (set as R_Subsector / R_AddLine walk the tree), plus the
+// front/back sectors it belongs to (set as Doom::subsector / Doom::addLine walk the tree), plus the
 // drawseg pool the walk emits - one drawseg per solid or masked wall range (drawsegs), with
 // ds_p one past the last. Render/Segs and Render/Things read the drawsegs back for
 // masked-texture and sprite clipping.
@@ -13,7 +13,7 @@ namespace Doom
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // externed in r_bsp.h and read across the renderer. The vanilla names become references onto
 // the members (drawsegs as a reference-to-array). ds_p points into drawsegs but is reset to it
-// by R_ClearDrawSegs each frame, not by a self-referential initializer, so it is safe as a
+// by Doom::clearDrawSegs each frame, not by a self-referential initializer, so it is safe as a
 // member (the SolidSegs / PlaneScratch precedent). Live frame-golden-covered - every wall the
 // demos draw is emitted through these.
 struct BSPScratch

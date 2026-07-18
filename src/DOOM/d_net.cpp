@@ -19,22 +19,6 @@
 
 #include "Game/Net.h"
 
-void NetUpdate()
-{
-    Doom::netUpdate();
-}
 
-void TryRunTics()
-{
-    Doom::tryRunTics();
-}
 
-void D_CheckNetGame()
-{
-    Doom::dCheckNetGame();
-}
 
-void D_QuitNetGame()
-{
-    Doom::dQuitNetGame();
-}

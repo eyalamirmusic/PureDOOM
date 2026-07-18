@@ -3,8 +3,8 @@
 namespace Doom
 {
 // The config file paths: basedefault is the resolved default location (~/.doomrc,
-// or the DEVDATA path in dev mode) that D_DoomMain fills in at startup, and
-// defaultfile is the file M_LoadDefaults/M_SaveDefaults actually read and write -
+// or the DEVDATA path in dev mode) that Doom::doomMain fills in at startup, and
+// defaultfile is the file Doom::loadDefaults/Doom::saveDefaults actually read and write -
 // either basedefault or the -config override argument.
 //
 // Unlike the option globals in Config.cpp's defaults[] table, neither of these

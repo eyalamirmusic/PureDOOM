@@ -48,13 +48,6 @@
 // HEADS UP TEXT
 //
 
-void HU_Init();
-void HU_Start();
-doom_boolean HU_Responder(event_t* ev);
-void HU_Ticker();
-void HU_Drawer();
-char HU_dequeueChatChar();
-void HU_Erase();
 
 
 

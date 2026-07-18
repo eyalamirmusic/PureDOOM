@@ -22,8 +22,13 @@
 #include "Switches.h"
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
+#include "../Render/Data.h"
 // can store their address.
+#include "Ceilings.h"
 
+#include "Lights.h"
+#include "Plats.h"
+#include "Specials.h"
 namespace Doom
 {
 switchlist_t alphSwitchList[] = {
@@ -109,8 +114,8 @@ void initSwitchList()
 
         if (alphSwitchList[i].episode <= episode)
         {
-            switchlist[index++] = R_TextureNumForName(alphSwitchList[i].name1);
-            switchlist[index++] = R_TextureNumForName(alphSwitchList[i].name2);
+            switchlist[index++] = Doom::textureNumForName(alphSwitchList[i].name1);
+            switchlist[index++] = Doom::textureNumForName(alphSwitchList[i].name2);
         }
     }
 }
@@ -289,7 +294,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 9:
             // Change Donut
-            if (EV_DoDonut(line))
+            if (Doom::doDonut(line))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -301,13 +306,13 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 14:
             // Raise Floor 32 and change texture
-            if (EV_DoPlat(line, raiseAndChange, 32))
+            if (Doom::doPlat(line, raiseAndChange, 32))
                 changeSwitchTexture(line, 0);
             break;
 
         case 15:
             // Raise Floor 24 and change texture
-            if (EV_DoPlat(line, raiseAndChange, 24))
+            if (Doom::doPlat(line, raiseAndChange, 24))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -319,13 +324,13 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 20:
             // Raise Plat next highest floor and change texture
-            if (EV_DoPlat(line, raiseToNearestAndChange, 0))
+            if (Doom::doPlat(line, raiseToNearestAndChange, 0))
                 changeSwitchTexture(line, 0);
             break;
 
         case 21:
             // PlatDownWaitUpStay
-            if (EV_DoPlat(line, downWaitUpStay, 0))
+            if (Doom::doPlat(line, downWaitUpStay, 0))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -343,7 +348,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 41:
             // Lower Ceiling to Floor
-            if (EV_DoCeiling(line, lowerToFloor))
+            if (Doom::doCeiling(line, lowerToFloor))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -355,7 +360,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 49:
             // Ceiling Crush And Raise
-            if (EV_DoCeiling(line, crushAndRaise))
+            if (Doom::doCeiling(line, crushAndRaise))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -415,7 +420,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 122:
             // Blazing PlatDownWaitUpStay
-            if (EV_DoPlat(line, blazeDWUS, 0))
+            if (Doom::doPlat(line, blazeDWUS, 0))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -456,7 +461,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 43:
             // Lower Ceiling to Floor
-            if (EV_DoCeiling(line, lowerToFloor))
+            if (Doom::doCeiling(line, lowerToFloor))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -480,7 +485,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 62:
             // PlatDownWaitUpStay
-            if (EV_DoPlat(line, downWaitUpStay, 1))
+            if (Doom::doPlat(line, downWaitUpStay, 1))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -498,13 +503,13 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 66:
             // Raise Floor 24 and change texture
-            if (EV_DoPlat(line, raiseAndChange, 24))
+            if (Doom::doPlat(line, raiseAndChange, 24))
                 changeSwitchTexture(line, 1);
             break;
 
         case 67:
             // Raise Floor 32 and change texture
-            if (EV_DoPlat(line, raiseAndChange, 32))
+            if (Doom::doPlat(line, raiseAndChange, 32))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -516,7 +521,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 68:
             // Raise Plat to next highest floor and change texture
-            if (EV_DoPlat(line, raiseToNearestAndChange, 0))
+            if (Doom::doPlat(line, raiseToNearestAndChange, 0))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -552,7 +557,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 123:
             // Blazing PlatDownWaitUpStay
-            if (EV_DoPlat(line, blazeDWUS, 0))
+            if (Doom::doPlat(line, blazeDWUS, 0))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -574,13 +579,13 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 138:
             // Light Turn On
-            EV_LightTurnOn(line, 255);
+            Doom::lightTurnOn(line, 255);
             changeSwitchTexture(line, 1);
             break;
 
         case 139:
             // Light Turn Off
-            EV_LightTurnOn(line, 35);
+            Doom::lightTurnOn(line, 35);
             changeSwitchTexture(line, 1);
             break;
     }

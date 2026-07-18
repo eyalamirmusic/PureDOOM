@@ -45,13 +45,14 @@
 #include "Finale.h"
 #include "FinaleState.h"
 
+#include "../Render/Video.h"
 #include <ea_data_structures/Structures/Array.h>
 
 // Other subsystems' globals/functions this file reads.
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
 extern patch_t* (
     &hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
-void V_DrawPatchFlipped(int x, int y, int scrn, patch_t* patch); // v_video
+void Doom::drawPatchFlipped(int x, int y, int scrn, patch_t* patch); // v_video
 
 namespace Doom
 {
@@ -143,9 +144,9 @@ doom_boolean fCastResponder(event_t* ev);
 void fCastDrawer();
 
 //
-// fStartFinale
+// startFinale
 //
-void fStartFinale()
+void startFinale()
 {
     gameaction = ga_nothing;
     gamestate = GS_FINALE;
@@ -239,7 +240,7 @@ void fStartFinale()
     finalecount = 0;
 }
 
-doom_boolean fResponder(event_t* event)
+doom_boolean finaleResponder(event_t* event)
 {
     if (finalestage == 2)
         return fCastResponder(event);
@@ -248,9 +249,9 @@ doom_boolean fResponder(event_t* event)
 }
 
 //
-// fTicker
+// finaleTicker
 //
-void fTicker()
+void finaleTicker()
 {
     int i;
 
@@ -326,7 +327,7 @@ void fTextWrite()
         }
     }
 
-    V_MarkRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
     // draw some of the text onto the screen
     cx = 10;
@@ -358,7 +359,7 @@ void fTextWrite()
         w = SHORT(hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        V_DrawPatch(cx, cy, 0, hu_font[c]);
+        Doom::drawPatch(cx, cy, 0, hu_font[c]);
         cx += w;
     }
 }
@@ -588,7 +589,7 @@ void fCastPrint(const char* text)
         }
 
         w = SHORT(hu_font[c]->width);
-        V_DrawPatch(cx, 180, 0, hu_font[c]);
+        Doom::drawPatch(cx, 180, 0, hu_font[c]);
         cx += w;
     }
 }
@@ -605,7 +606,7 @@ void fCastDrawer()
     patch_t* patch;
 
     // erase the entire screen to a background
-    V_DrawPatch(
+    Doom::drawPatch(
         0, 0, 0, static_cast<patch_t*>(W_CacheLumpName("BOSSBACK", PU_CACHE)));
 
     fCastPrint(castorder[castnum].name);
@@ -618,9 +619,9 @@ void fCastDrawer()
 
     patch = static_cast<patch_t*>(W_CacheLumpNum(lump + firstspritelump, PU_CACHE));
     if (flip)
-        V_DrawPatchFlipped(160, 170, 0, patch);
+        Doom::drawPatchFlipped(160, 170, 0, patch);
     else
-        V_DrawPatch(160, 170, 0, patch);
+        Doom::drawPatch(160, 170, 0, patch);
 }
 
 //
@@ -670,7 +671,7 @@ void fBunnyScroll()
     p1 = static_cast<patch_t*>(W_CacheLumpName("PFUB2", PU_LEVEL));
     p2 = static_cast<patch_t*>(W_CacheLumpName("PFUB1", PU_LEVEL));
 
-    V_MarkRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
     scrolled = 320 - (finalecount - 230) / 2;
     if (scrolled > 320)
@@ -690,7 +691,7 @@ void fBunnyScroll()
         return;
     if (finalecount < 1180)
     {
-        V_DrawPatch((SCREENWIDTH - 13 * 8) / 2,
+        Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
                     (SCREENHEIGHT - 8 * 8) / 2,
                     0,
                     static_cast<patch_t*>(W_CacheLumpName("END0", PU_CACHE)));
@@ -710,16 +711,16 @@ void fBunnyScroll()
     //doom_sprintf(name, "END%i", stage);
     doom_strcpy(name.data(), "END");
     doom_concat(name.data(), doom_itoa(stage, 10));
-    V_DrawPatch((SCREENWIDTH - 13 * 8) / 2,
+    Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
                 (SCREENHEIGHT - 8 * 8) / 2,
                 0,
                 static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_CACHE)));
 }
 
 //
-// fDrawer
+// drawFinale
 //
-void fDrawer()
+void drawFinale()
 {
     if (finalestage == 2)
     {
@@ -735,20 +736,20 @@ void fDrawer()
         {
             case 1:
                 if (gamemode == retail)
-                    V_DrawPatch(
+                    Doom::drawPatch(
                         0,
                         0,
                         0,
                         static_cast<patch_t*>(W_CacheLumpName("CREDIT", PU_CACHE)));
                 else
-                    V_DrawPatch(
+                    Doom::drawPatch(
                         0,
                         0,
                         0,
                         static_cast<patch_t*>(W_CacheLumpName("HELP2", PU_CACHE)));
                 break;
             case 2:
-                V_DrawPatch(
+                Doom::drawPatch(
                     0,
                     0,
                     0,
@@ -758,7 +759,7 @@ void fDrawer()
                 fBunnyScroll();
                 break;
             case 4:
-                V_DrawPatch(
+                Doom::drawPatch(
                     0,
                     0,
                     0,

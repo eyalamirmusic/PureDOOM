@@ -23,6 +23,14 @@
 #include "Main.h"
 #include "RenderMainState.h"
 
+#include "../Game/Net.h"
+#include "../Math/Trig.h"
+#include "BSP.h"
+#include "Data.h"
+#include "Draw.h"
+#include "Planes.h"
+#include "Sky.h"
+#include "Things.h"
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
 extern lighttable_t**& walllights; // Doom::SegState member (Engine); reference
@@ -213,12 +221,12 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 0
-                return tantoangle[SlopeDiv(y, x)];
+                return tantoangle[Doom::slopeDiv(y, x)];
             }
             else
             {
                 // octant 1
-                return ANG90 - 1 - tantoangle[SlopeDiv(x, y)];
+                return ANG90 - 1 - tantoangle[Doom::slopeDiv(x, y)];
             }
         }
         else
@@ -233,7 +241,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
-                return -tantoangle[SlopeDiv(y, x)];
+                return -tantoangle[Doom::slopeDiv(y, x)];
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -241,7 +249,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 7
-                return ANG270 + tantoangle[SlopeDiv(x, y)];
+                return ANG270 + tantoangle[Doom::slopeDiv(x, y)];
             }
         }
     }
@@ -256,12 +264,12 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 3
-                return ANG180 - 1 - tantoangle[SlopeDiv(y, x)];
+                return ANG180 - 1 - tantoangle[Doom::slopeDiv(y, x)];
             }
             else
             {
                 // octant 2
-                return ANG90 + tantoangle[SlopeDiv(x, y)];
+                return ANG90 + tantoangle[Doom::slopeDiv(x, y)];
             }
         }
         else
@@ -272,12 +280,12 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 4
-                return ANG180 + tantoangle[SlopeDiv(y, x)];
+                return ANG180 + tantoangle[Doom::slopeDiv(y, x)];
             }
             else
             {
                 // octant 5
-                return ANG270 - 1 - tantoangle[SlopeDiv(x, y)];
+                return ANG270 - 1 - tantoangle[Doom::slopeDiv(x, y)];
             }
         }
     }
@@ -516,20 +524,20 @@ void executeSetViewSize()
 
     if (!detailshift)
     {
-        colfunc = basecolfunc = R_DrawColumn;
-        fuzzcolfunc = R_DrawFuzzColumn;
-        transcolfunc = R_DrawTranslatedColumn;
-        spanfunc = R_DrawSpan;
+        colfunc = basecolfunc = Doom::drawColumn;
+        fuzzcolfunc = Doom::drawFuzzColumn;
+        transcolfunc = Doom::drawTranslatedColumn;
+        spanfunc = Doom::drawSpan;
     }
     else
     {
-        colfunc = basecolfunc = R_DrawColumnLow;
-        fuzzcolfunc = R_DrawFuzzColumn;
-        transcolfunc = R_DrawTranslatedColumn;
-        spanfunc = R_DrawSpanLow;
+        colfunc = basecolfunc = Doom::drawColumnLow;
+        fuzzcolfunc = Doom::drawFuzzColumn;
+        transcolfunc = Doom::drawTranslatedColumn;
+        spanfunc = Doom::drawSpanLow;
     }
 
-    R_InitBuffer(scaledviewwidth, viewheight);
+    Doom::initBuffer(scaledviewwidth, viewheight);
 
     initTextureMapping();
 
@@ -581,7 +589,7 @@ void executeSetViewSize()
 //
 void renderInit()
 {
-    R_InitData();
+    Doom::initData();
     doom_print("\nR_InitData");
     initPointToAngle();
     doom_print("\nR_InitPointToAngle");
@@ -590,13 +598,13 @@ void renderInit()
     doom_print("\nR_InitTables");
 
     setViewSize(screenblocks, detailLevel);
-    R_InitPlanes();
+    Doom::initPlanes();
     doom_print("\nR_InitPlanes");
     initLightTables();
     doom_print("\nR_InitLightTables");
-    R_InitSkyMap();
+    Doom::initSkyMap();
     doom_print("\nR_InitSkyMap");
-    R_InitTranslationTables();
+    Doom::initTranslationTables();
     doom_print("\nR_InitTranslationsTables");
 
     framecount = 0;
@@ -670,28 +678,28 @@ void renderPlayerView(player_t& player)
     setupFrame(player);
 
     // Clear buffers.
-    R_ClearClipSegs();
-    R_ClearDrawSegs();
-    R_ClearPlanes();
-    R_ClearSprites();
+    Doom::clearClipSegs();
+    Doom::clearDrawSegs();
+    Doom::clearPlanes();
+    Doom::clearSprites();
 
     // check for new console commands.
-    NetUpdate();
+    Doom::netUpdate();
 
     // The head node is the last node output.
-    R_RenderBSPNode(numnodes - 1);
+    Doom::renderBSPNode(numnodes - 1);
 
     // Check for new console commands.
-    NetUpdate();
+    Doom::netUpdate();
 
-    R_DrawPlanes();
-
-    // Check for new console commands.
-    NetUpdate();
-
-    R_DrawMasked();
+    Doom::drawPlanes();
 
     // Check for new console commands.
-    NetUpdate();
+    Doom::netUpdate();
+
+    Doom::drawMasked();
+
+    // Check for new console commands.
+    Doom::netUpdate();
 }
 } // namespace Doom

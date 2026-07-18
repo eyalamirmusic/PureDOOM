@@ -158,7 +158,7 @@ struct player_t
 
 //
 // INTERMISSION
-// Structure passed e.g. to WI_Start(wb)
+// Structure passed e.g. to Doom::startIntermission(wb)
 //
 struct wbplayerstruct_t
 {

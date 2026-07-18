@@ -40,12 +40,15 @@
 #include "../p_local.h"
 #include "../r_state.h" // State.
 #include "../st_stuff.h"
-#include "../v_video.h" // Needs access to LFB, V_MarkRect.
+#include "../v_video.h" // Needs access to LFB, Doom::markRect.
 #include "../w_wad.h"
 
 #include "Automap.h"
 #include "AutomapView.h"
 
+#include "../Render/Video.h"
+#include "Cheat.h"
+#include "StatusBar.h"
 #include <ea_data_structures/Structures/Array.h>
 
 namespace Doom
@@ -381,7 +384,7 @@ void amInitVariables()
     old_m_h = m_h;
 
     // inform the status bar of the change
-    ST_Responder(&st_notify);
+    Doom::statusBarResponder(&st_notify);
 }
 
 //
@@ -436,13 +439,13 @@ void amLevelInit()
 //
 //
 //
-void amStop()
+void stopAutomap()
 {
     static event_t st_notify = {static_cast<evtype_t>(0), ev_keyup, AM_MSGEXITED, 0};
 
     amUnloadPics();
     automapactive = false;
-    ST_Responder(&st_notify);
+    Doom::statusBarResponder(&st_notify);
     stopped = true;
 }
 
@@ -455,7 +458,7 @@ void amStart()
     int& lastepisode = automapView().lastepisode;
 
     if (!stopped)
-        amStop();
+        stopAutomap();
     stopped = false;
     if (lastlevel != gamemap || lastepisode != gameepisode)
     {
@@ -490,7 +493,7 @@ void amMaxOutWindowScale()
 //
 // Handle events (user inputs) in automap mode
 //
-doom_boolean amResponder(event_t* ev)
+doom_boolean automapResponder(event_t* ev)
 {
     int rc;
     int& bigstate = automapView().bigstate;
@@ -548,7 +551,7 @@ doom_boolean amResponder(event_t* ev)
             case AM_ENDKEY:
                 bigstate = 0;
                 viewactive = true;
-                amStop();
+                stopAutomap();
                 break;
             case AM_GOBIGKEY:
                 bigstate = !bigstate;
@@ -586,7 +589,7 @@ doom_boolean amResponder(event_t* ev)
             default:
                 rc = false;
         }
-        if (!deathmatch && cht_CheckCheat(&cheat_amap, ev->data1))
+        if (!deathmatch && Doom::checkCheat(&cheat_amap, ev->data1))
         {
             rc = false;
             cheating = (cheating + 1) % 3;
@@ -681,7 +684,7 @@ void amUpdateLightLev()
 //
 // Updates on Game Tick
 //
-void amTicker()
+void automapTicker()
 {
     if (!automapactive)
         return;
@@ -1040,7 +1043,7 @@ void amDrawWalls()
 // Rotation in 2D.
 // Used to rotate player arrow line character.
 //
-void amRotate(fixed_t* x, fixed_t* y, angle_t a)
+void rotateAutomapPoint(fixed_t* x, fixed_t* y, angle_t a)
 {
     fixed_t tmpx;
 
@@ -1075,7 +1078,7 @@ void amDrawLineCharacter(mline_t* lineguy,
         }
 
         if (angle)
-            amRotate(&l.a.x, &l.a.y, angle);
+            rotateAutomapPoint(&l.a.x, &l.a.y, angle);
 
         l.a.x += x;
         l.a.y += y;
@@ -1090,7 +1093,7 @@ void amDrawLineCharacter(mline_t* lineguy,
         }
 
         if (angle)
-            amRotate(&l.b.x, &l.b.y, angle);
+            rotateAutomapPoint(&l.b.x, &l.b.y, angle);
 
         l.b.x += x;
         l.b.y += y;
@@ -1169,7 +1172,7 @@ void amDrawThings(int colors)
     }
 }
 
-void amDrawMarks()
+void drawAutomapMarks()
 {
     int fx, fy, w, h;
 
@@ -1184,7 +1187,7 @@ void amDrawMarks()
             fx = CXMTOF(markpoints[i].x);
             fy = CYMTOF(markpoints[i].y);
             if (fx >= f_x && fx <= f_w - w && fy >= f_y && fy <= f_h - h)
-                V_DrawPatch(fx, fy, FB, marknums[i]);
+                Doom::drawPatch(fx, fy, FB, marknums[i]);
         }
     }
 }
@@ -1194,7 +1197,7 @@ void amDrawCrosshair(int color)
     fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
 }
 
-void amDrawer()
+void drawAutomap()
 {
     if (!automapactive)
         return;
@@ -1208,9 +1211,9 @@ void amDrawer()
         amDrawThings(THINGCOLORS);
     amDrawCrosshair(XHAIRCOLORS);
 
-    amDrawMarks();
+    drawAutomapMarks();
 
-    V_MarkRect(f_x, f_y, f_w, f_h);
+    Doom::markRect(f_x, f_y, f_w, f_h);
 }
 
 } // namespace Doom

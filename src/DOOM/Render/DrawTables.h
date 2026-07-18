@@ -5,7 +5,7 @@
 namespace Doom
 {
 // Render/Draw's frame-address lookup tables and fuzz cursor: ylookup[y] is the framebuffer address
-// of screen row y and columnofs[x] the byte offset of column x (both filled by R_InitBuffer, so the
+// of screen row y and columnofs[x] the byte offset of column x (both filled by Doom::initBuffer, so the
 // column/span drawers reach a pixel by table lookup instead of a multiply), and fuzzpos is the
 // spectre-fuzz drawer's running index into its distortion table.
 //

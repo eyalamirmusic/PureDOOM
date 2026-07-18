@@ -24,27 +24,7 @@
 int& leveltime = Doom::levelStats().leveltime;
 thinker_t& thinkercap = Doom::thinkerList().cap;
 
-void P_InitThinkers()
-{
-    Doom::initThinkers();
-}
 
-void P_AddThinker(thinker_t* thinker)
-{
-    Doom::addThinker(thinker);
-}
 
-void P_RemoveThinker(thinker_t* thinker)
-{
-    Doom::removeThinker(thinker);
-}
 
-void P_RunThinkers()
-{
-    Doom::runThinkers();
-}
 
-void P_Ticker()
-{
-    Doom::ticker();
-}

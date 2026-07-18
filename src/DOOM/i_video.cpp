@@ -15,52 +15,52 @@
 
 #include "doom_config.h"
 
-#include "i_system.h" // I_StartFrame / I_StartTic / I_GetEvent
+#include "i_system.h" // startFrame / startTic / pollHostEvent
 #include "i_video.h"
 
 #include "Host/Video.h"
 
-void I_ShutdownGraphics()
+void shutdownGraphics()
 {
-    Doom::I_ShutdownGraphics();
+    Doom::shutdownGraphics();
 }
 
-void I_StartFrame()
+void startFrame()
 {
-    Doom::I_StartFrame();
+    Doom::startFrame();
 }
 
-void I_GetEvent()
+void pollHostEvent()
 {
-    Doom::I_GetEvent();
+    Doom::pollHostEvent();
 }
 
-void I_StartTic()
+void startTic()
 {
-    Doom::I_StartTic();
+    Doom::startTic();
 }
 
-void I_UpdateNoBlit()
+void updateNoBlit()
 {
-    Doom::I_UpdateNoBlit();
+    Doom::updateNoBlit();
 }
 
-void I_FinishUpdate()
+void finishUpdate()
 {
-    Doom::I_FinishUpdate();
+    Doom::finishUpdate();
 }
 
-void I_ReadScreen(byte* scr)
+void readScreen(byte* scr)
 {
-    Doom::I_ReadScreen(scr);
+    Doom::readScreen(scr);
 }
 
-void I_SetPalette(byte* palette)
+void setPalette(byte* palette)
 {
-    Doom::I_SetPalette(palette);
+    Doom::setPalette(palette);
 }
 
-void I_InitGraphics()
+void initGraphics()
 {
-    Doom::I_InitGraphics();
+    Doom::initGraphics();
 }

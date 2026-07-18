@@ -17,6 +17,7 @@
 
 #include "Doors.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Specials.h"
 
 #include <new>
 
@@ -108,7 +109,7 @@ void verticalDoor(vldoor_t& door)
                     case blazeRaise:
                     case blazeClose:
                         door.sector->specialdata = nullptr;
-                        P_RemoveThinker(&door); // unlink and free
+                        Doom::removeThinker(&door); // unlink and free
                         S_StartSound(
                             reinterpret_cast<mobj_t*>(&door.sector->soundorg),
                             sfx_bdcls);
@@ -117,7 +118,7 @@ void verticalDoor(vldoor_t& door)
                     case door_normal:
                     case door_close:
                         door.sector->specialdata = nullptr;
-                        P_RemoveThinker(&door); // unlink and free
+                        Doom::removeThinker(&door); // unlink and free
                         break;
 
                     case close30ThenOpen:
@@ -170,7 +171,7 @@ void verticalDoor(vldoor_t& door)
                     case blazeOpen:
                     case door_open:
                         door.sector->specialdata = nullptr;
-                        P_RemoveThinker(&door); // unlink and free
+                        Doom::removeThinker(&door); // unlink and free
                         break;
 
                     default:
@@ -245,7 +246,7 @@ int doDoor(line_t* line, vldoor_e type)
     secnum = -1;
     rtn = 0;
 
-    while ((secnum = P_FindSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
         if (sec->specialdata)
@@ -254,7 +255,7 @@ int doDoor(line_t* line, vldoor_e type)
         // new door thinker
         rtn = 1;
         door = new (levelAlloc(sizeof(*door))) vldoor_t {};
-        P_AddThinker(door);
+        Doom::addThinker(door);
         sec->specialdata = door;
 
         door->sector = sec;
@@ -265,7 +266,7 @@ int doDoor(line_t* line, vldoor_e type)
         switch (type)
         {
             case blazeClose:
-                door->topheight = P_FindLowestCeilingSurrounding(sec);
+                door->topheight = Doom::findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 door->speed = VDOORSPEED * 4;
@@ -274,7 +275,7 @@ int doDoor(line_t* line, vldoor_e type)
                 break;
 
             case door_close:
-                door->topheight = P_FindLowestCeilingSurrounding(sec);
+                door->topheight = Doom::findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 S_StartSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
@@ -291,7 +292,7 @@ int doDoor(line_t* line, vldoor_e type)
             case blazeRaise:
             case blazeOpen:
                 door->direction = 1;
-                door->topheight = P_FindLowestCeilingSurrounding(sec);
+                door->topheight = Doom::findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->speed = VDOORSPEED * 4;
                 if (door->topheight != sec->ceilingheight)
@@ -302,7 +303,7 @@ int doDoor(line_t* line, vldoor_e type)
             case door_normal:
             case door_open:
                 door->direction = 1;
-                door->topheight = P_FindLowestCeilingSurrounding(sec);
+                door->topheight = Doom::findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 if (door->topheight != sec->ceilingheight)
                     S_StartSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
@@ -420,7 +421,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
 
     // new door thinker
     door = new (levelAlloc(sizeof(*door))) vldoor_t {};
-    P_AddThinker(door);
+    Doom::addThinker(door);
     sec->specialdata = door;
     door->sector = sec;
     door->direction = 1;
@@ -456,7 +457,7 @@ void verticalDoor(line_t* line, mobj_t* thing)
     }
 
     // find the top and bottom of the movement range
-    door->topheight = P_FindLowestCeilingSurrounding(sec);
+    door->topheight = Doom::findLowestCeilingSurrounding(sec);
     door->topheight -= 4 * FRACUNIT;
 }
 
@@ -469,7 +470,7 @@ void spawnDoorCloseIn30(sector_t* sec)
 
     door = new (levelAlloc(sizeof(*door))) vldoor_t {};
 
-    P_AddThinker(door);
+    Doom::addThinker(door);
 
     sec->specialdata = door;
     sec->special = 0;
@@ -490,7 +491,7 @@ void spawnDoorRaiseIn5Mins(sector_t* sec, int)
 
     door = new (levelAlloc(sizeof(*door))) vldoor_t {};
 
-    P_AddThinker(door);
+    Doom::addThinker(door);
 
     sec->specialdata = door;
     sec->special = 0;
@@ -499,7 +500,7 @@ void spawnDoorRaiseIn5Mins(sector_t* sec, int)
     door->direction = 2;
     door->type = raiseIn5Mins;
     door->speed = VDOORSPEED;
-    door->topheight = P_FindLowestCeilingSurrounding(sec);
+    door->topheight = Doom::findLowestCeilingSurrounding(sec);
     door->topheight -= 4 * FRACUNIT;
     door->topwait = VDOORWAIT;
     door->topcountdown = 5 * 60 * 35;

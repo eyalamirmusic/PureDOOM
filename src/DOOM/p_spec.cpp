@@ -22,72 +22,16 @@
 doom_boolean& levelTimer = Doom::endLevelTimer().levelTimer;
 int& levelTimeCount = Doom::endLevelTimer().levelTimeCount;
 
-void P_InitPicAnims()
-{
-    Doom::initPicAnims();
-}
 
-fixed_t P_FindLowestFloorSurrounding(sector_t* sec)
-{
-    return Doom::findLowestFloorSurrounding(sec);
-}
 
-fixed_t P_FindHighestFloorSurrounding(sector_t* sec)
-{
-    return Doom::findHighestFloorSurrounding(sec);
-}
 
-fixed_t P_FindNextHighestFloor(sector_t* sec, int currentheight)
-{
-    return Doom::findNextHighestFloor(sec, currentheight);
-}
 
-fixed_t P_FindLowestCeilingSurrounding(sector_t* sec)
-{
-    return Doom::findLowestCeilingSurrounding(sec);
-}
 
-fixed_t P_FindHighestCeilingSurrounding(sector_t* sec)
-{
-    return Doom::findHighestCeilingSurrounding(sec);
-}
 
-int P_FindSectorFromLineTag(line_t* line, int start)
-{
-    return Doom::findSectorFromLineTag(line, start);
-}
 
-int P_FindMinSurroundingLight(sector_t* sector, int max)
-{
-    return Doom::findMinSurroundingLight(sector, max);
-}
 
-void P_CrossSpecialLine(int linenum, int side, mobj_t* thing)
-{
-    Doom::crossSpecialLine(linenum, side, thing);
-}
 
-void P_ShootSpecialLine(mobj_t* thing, line_t* line)
-{
-    Doom::shootSpecialLine(thing, line);
-}
 
-void P_PlayerInSpecialSector(player_t* player)
-{
-    Doom::playerInSpecialSector(player);
-}
 
-void P_UpdateSpecials()
-{
-    Doom::updateSpecials();
-}
 
-int EV_DoDonut(line_t* line)
-{
-    return Doom::doDonut(line);
-}
 
-void P_SpawnSpecials()
-{
-    Doom::spawnSpecials();
-}

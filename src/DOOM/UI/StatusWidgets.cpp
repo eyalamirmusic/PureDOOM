@@ -20,6 +20,7 @@
 #include "StatusWidgets.h"
 #include "StatusWidgetGraphics.h"
 
+#include "../Render/Video.h"
 namespace Doom
 {
 
@@ -88,7 +89,7 @@ void drawNum(st_number_t& n)
     if (n.y - ST_Y < 0)
         I_Error("Error: drawNum: n->y - ST_Y < 0");
 
-    V_CopyRect(x, n.y - ST_Y, STLIB_BG, w * numdigits, h, x, n.y, STLIB_FG);
+    Doom::copyRect(x, n.y - ST_Y, STLIB_BG, w * numdigits, h, x, n.y, STLIB_FG);
 
     // if non-number, do not draw it
     if (num == 1994)
@@ -98,19 +99,19 @@ void drawNum(st_number_t& n)
 
     // in the special case of 0, you draw 0
     if (!num)
-        V_DrawPatch(x - w, n.y, STLIB_FG, n.p[0]);
+        Doom::drawPatch(x - w, n.y, STLIB_FG, n.p[0]);
 
     // draw the new number
     while (num && numdigits--)
     {
         x -= w;
-        V_DrawPatch(x, n.y, STLIB_FG, n.p[num % 10]);
+        Doom::drawPatch(x, n.y, STLIB_FG, n.p[num % 10]);
         num /= 10;
     }
 
     // draw a minus sign if necessary
     if (neg)
-        V_DrawPatch(x - 8, n.y, STLIB_FG, sttminus);
+        Doom::drawPatch(x - 8, n.y, STLIB_FG, sttminus);
 }
 
 void updateNum(st_number_t& n, doom_boolean refresh)
@@ -135,7 +136,7 @@ void initPercent(st_percent_t& p,
 void updatePercent(st_percent_t& per, int refresh)
 {
     if (refresh && *per.n.on)
-        V_DrawPatch(per.n.x, per.n.y, STLIB_FG, per.p);
+        Doom::drawPatch(per.n.x, per.n.y, STLIB_FG, per.p);
 
     updateNum(per.n, refresh);
 }
@@ -170,9 +171,9 @@ void updateMultIcon(st_multicon_t& mi, doom_boolean refresh)
             if (y - ST_Y < 0)
                 I_Error("Error: updateMultIcon: y - ST_Y < 0");
 
-            V_CopyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
+            Doom::copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
         }
-        V_DrawPatch(mi.x, mi.y, STLIB_FG, mi.p[*mi.inum]);
+        Doom::drawPatch(mi.x, mi.y, STLIB_FG, mi.p[*mi.inum]);
         mi.oldinum = *mi.inum;
     }
 }
@@ -206,9 +207,9 @@ void updateBinIcon(st_binicon_t& bi, doom_boolean refresh)
             I_Error("Error: updateBinIcon: y - ST_Y < 0");
 
         if (*bi.val)
-            V_DrawPatch(bi.x, bi.y, STLIB_FG, bi.p);
+            Doom::drawPatch(bi.x, bi.y, STLIB_FG, bi.p);
         else
-            V_CopyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
+            Doom::copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
 
         bi.oldval = *bi.val;
     }

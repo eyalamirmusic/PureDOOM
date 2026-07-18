@@ -17,8 +17,10 @@
 #include "Wipe.h"
 #include "WipeState.h"
 
+#include "../Render/Video.h"
 #include <ea_data_structures/Structures/Vector.h>
 
+#include "../Host/Video.h"
 namespace Doom
 {
 
@@ -196,15 +198,15 @@ int startScreen(int x, int y, int width, int height)
     (void) width;
     (void) height;
     wipe_scr_start = screens[2];
-    I_ReadScreen(wipe_scr_start);
+    readScreen(wipe_scr_start);
     return 0;
 }
 
 int endScreen(int x, int y, int width, int height)
 {
     wipe_scr_end = screens[3];
-    I_ReadScreen(wipe_scr_end);
-    V_DrawBlock(x, y, 0, width, height, wipe_scr_start); // restore start scr.
+    readScreen(wipe_scr_end);
+    Doom::drawBlock(x, y, 0, width, height, wipe_scr_start); // restore start scr.
     return 0;
 }
 
@@ -225,7 +227,7 @@ int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     }
 
     // do a piece of wipe-in
-    V_MarkRect(0, 0, width, height);
+    Doom::markRect(0, 0, width, height);
     rc = (*wipes[wipeno * 3 + 1])(width, height, ticks);
 
     // final stuff

@@ -10,7 +10,7 @@ namespace Doom
 // carrying the current value. r_main.cpp's "increment every time a check is made".
 //
 // It is genuinely engine-global: the renderer bumps it (R_RenderPlayerView,
-// R_AddSprites) and so does the playsim (P_PathTraverse, P_CheckSight,
+// Doom::addSprites) and so does the playsim (P_PathTraverse, P_CheckSight,
 // P_CheckPosition, A_LookForTargets), and neither owns it. So unlike the other
 // Step-5 clusters it is not tied to a subsystem struct - it is the one scalar that
 // belongs to the Engine directly, wrapped here only to keep the accessor pattern

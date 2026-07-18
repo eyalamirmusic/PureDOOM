@@ -27,27 +27,7 @@ void T_PlatRaise(plat_t* plat)
     Doom::platRaise(*plat);
 }
 
-int EV_DoPlat(line_t* line, plattype_e type, int amount)
-{
-    return Doom::doPlat(line, type, amount);
-}
 
-void P_ActivateInStasis(int tag)
-{
-    Doom::activateInStasis(tag);
-}
 
-void EV_StopPlat(line_t* line)
-{
-    Doom::stopPlat(line);
-}
 
-void P_AddActivePlat(plat_t* plat)
-{
-    Doom::addActivePlat(plat);
-}
 
-void P_RemoveActivePlat(plat_t* plat)
-{
-    Doom::removeActivePlat(plat);
-}

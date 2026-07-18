@@ -33,32 +33,32 @@ unsigned char screen_palette[256 * 3];
 
 namespace Doom
 {
-void I_ShutdownGraphics() {}
+void shutdownGraphics() {}
 
 //
-// I_StartFrame
+// startFrame
 //
-void I_StartFrame() {}
+void startFrame() {}
 
-void I_GetEvent() {}
-
-//
-// I_StartTic
-//
-void I_StartTic() {}
+void pollHostEvent() {}
 
 //
-// I_UpdateNoBlit
+// startTic
 //
-void I_UpdateNoBlit()
+void startTic() {}
+
+//
+// updateNoBlit
+//
+void updateNoBlit()
 {
     // what is this?
 }
 
 //
-// I_FinishUpdate
+// finishUpdate
 //
-void I_FinishUpdate()
+void finishUpdate()
 {
     static int lasttic;
 
@@ -79,26 +79,26 @@ void I_FinishUpdate()
 }
 
 //
-// I_ReadScreen
+// readScreen
 //
-void I_ReadScreen(byte* scr)
+void readScreen(byte* scr)
 {
     doom_memcpy(scr, screens[0], SCREENWIDTH * SCREENHEIGHT);
 }
 
 //
-// I_SetPalette
+// setPalette
 //
-void I_SetPalette(byte* palette)
+void setPalette(byte* palette)
 {
     doom_memcpy(screen_palette, palette, 256 * 3);
 }
 
-void I_InitGraphics()
+void initGraphics()
 {
     // RAII now (Step 9): the software frame is a VideoState-owned vector; screens[0]
-    // is the raw view onto its data(). This runs after V_Init, so it overwrites
-    // V_Init's screens[0] slice - the framebuffer proper, which the app reads back.
+    // is the raw view onto its data(). This runs after Doom::initVideo, so it overwrites
+    // Doom::initVideo's screens[0] slice - the framebuffer proper, which the app reads back.
     auto& frame = videoState().frame;
     frame.resize(SCREENWIDTH * SCREENHEIGHT);
     screens[0] = frame.data();

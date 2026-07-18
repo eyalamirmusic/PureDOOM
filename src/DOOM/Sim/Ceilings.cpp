@@ -16,6 +16,7 @@
 
 #include "Ceilings.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Specials.h"
 
 #include <new>
 
@@ -180,7 +181,7 @@ int doCeiling(line_t* line, ceiling_e type)
             break;
     }
 
-    while ((secnum = P_FindSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
         if (sec->specialdata)
@@ -189,7 +190,7 @@ int doCeiling(line_t* line, ceiling_e type)
         // new door thinker
         rtn = 1;
         ceiling = new (levelAlloc(sizeof(*ceiling))) ceiling_t {};
-        P_AddThinker(ceiling);
+        Doom::addThinker(ceiling);
         sec->specialdata = ceiling;
         ceiling->sector = sec;
         ceiling->crush = false;
@@ -218,7 +219,7 @@ int doCeiling(line_t* line, ceiling_e type)
                 break;
 
             case raiseToHighest:
-                ceiling->topheight = P_FindHighestCeilingSurrounding(sec);
+                ceiling->topheight = Doom::findHighestCeilingSurrounding(sec);
                 ceiling->direction = 1;
                 ceiling->speed = CEILSPEED;
                 break;
@@ -257,7 +258,7 @@ void removeActiveCeiling(ceiling_t* c)
         if (activeceilings[i] == c)
         {
             activeceilings[i]->sector->specialdata = nullptr;
-            P_RemoveThinker(activeceilings[i]);
+            Doom::removeThinker(activeceilings[i]);
             activeceilings[i] = nullptr;
             break;
         }

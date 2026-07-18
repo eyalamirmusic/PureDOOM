@@ -17,7 +17,3 @@
 
 #include "Game/Args.h"
 
-int M_CheckParm(const char* check)
-{
-    return Doom::checkParm(check);
-}

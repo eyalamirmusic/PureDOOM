@@ -369,7 +369,7 @@ struct vissprite_t
 
 //        
 // Sprites are patches with a special naming convention
-//  so they can be recognized by R_InitSprites.
+//  so they can be recognized by Doom::initSprites.
 // The base name is NNNNFx or NNNNFxFx, with
 //  x indicating the rotation, x = 0, 1-7.
 // The sprite and frame specified by a thing_t

@@ -18,12 +18,12 @@
 
 #include "Host/Net.h"
 
-void I_InitNetwork()
+void initNetwork()
 {
-    Doom::I_InitNetwork();
+    Doom::initNetwork();
 }
 
-void I_NetCmd()
+void netCommand()
 {
-    Doom::I_NetCmd();
+    Doom::netCommand();
 }

@@ -15,6 +15,9 @@
 #include "Segs.h"
 #include "WallScratch.h"
 
+#include "Data.h"
+#include "Planes.h"
+#include "Things.h"
 #define HEIGHTBITS 12
 #define HEIGHTUNIT (1 << HEIGHTBITS)
 
@@ -139,10 +142,10 @@ void renderMaskedSegRange(drawseg_t* ds, int x1, int x2)
             dc_iscale = 0xffffffffu / static_cast<unsigned>(spryscale);
 
             // draw the texture
-            col = (column_t*) ((byte*) R_GetColumn(texnum, maskedtexturecol[dc_x])
+            col = (column_t*) ((byte*) Doom::getColumn(texnum, maskedtexturecol[dc_x])
                                - 3);
 
-            R_DrawMaskedColumn(col);
+            Doom::drawMaskedColumn(col);
             maskedtexturecol[dc_x] = DOOM_MAXSHORT;
         }
         spryscale += rw_scalestep;
@@ -235,7 +238,7 @@ void renderSegLoop()
             dc_yl = yl;
             dc_yh = yh;
             dc_texturemid = rw_midtexturemid;
-            dc_source = R_GetColumn(midtexture, texturecolumn);
+            dc_source = Doom::getColumn(midtexture, texturecolumn);
             colfunc();
             ceilingclip[rw_x] = viewheight;
             floorclip[rw_x] = -1;
@@ -257,7 +260,7 @@ void renderSegLoop()
                     dc_yl = yl;
                     dc_yh = mid;
                     dc_texturemid = rw_toptexturemid;
-                    dc_source = R_GetColumn(toptexture, texturecolumn);
+                    dc_source = Doom::getColumn(toptexture, texturecolumn);
                     colfunc();
                     ceilingclip[rw_x] = mid;
                 }
@@ -286,7 +289,7 @@ void renderSegLoop()
                     dc_yl = mid;
                     dc_yh = yh;
                     dc_texturemid = rw_bottomtexturemid;
-                    dc_source = R_GetColumn(bottomtexture, texturecolumn);
+                    dc_source = Doom::getColumn(bottomtexture, texturecolumn);
                     colfunc();
                     floorclip[rw_x] = mid;
                 }
@@ -657,10 +660,10 @@ void storeWallRange(int start, int stop)
 
     // render it
     if (markceiling)
-        ceilingplane = R_CheckPlane(ceilingplane, rw_x, rw_stopx - 1);
+        ceilingplane = Doom::checkPlane(ceilingplane, rw_x, rw_stopx - 1);
 
     if (markfloor)
-        floorplane = R_CheckPlane(floorplane, rw_x, rw_stopx - 1);
+        floorplane = Doom::checkPlane(floorplane, rw_x, rw_stopx - 1);
 
     renderSegLoop();
 

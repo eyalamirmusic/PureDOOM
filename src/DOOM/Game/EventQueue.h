@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../d_event.h" // event_t, MAXEVENTS
+#include "DoomMain.h"
 
 namespace Doom
 {
-// The engine's input event ring buffer. The host posts events with D_PostEvent, which writes
-// events[eventhead] and advances eventhead; the game drains them with D_ProcessEvents (and the
-// netcode's NetUpdate does the same drain), reading from eventtail up to eventhead, both indices
+// The engine's input event ring buffer. The host posts events with Doom::postEvent, which writes
+// events[eventhead] and advances eventhead; the game drains them with Doom::processEvents (and the
+// netcode's Doom::netUpdate does the same drain), reading from eventtail up to eventhead, both indices
 // wrapping modulo MAXEVENTS. It is the asynchronous boundary between the platform and the game -
 // keys, mouse and joystick motion arrive here and are dispatched to the responders each tic.
 //

@@ -6,7 +6,7 @@
 
 namespace Doom
 {
-// The per-wall-segment rendering intermediates R_StoreWallRange / R_RenderSegLoop overwrite for each
+// The per-wall-segment rendering intermediates Doom::storeWallRange / Doom::renderSegLoop overwrite for each
 // seg: whether the seg has a masked (see-through) middle texture, the seg's centre angle and texture
 // offset, the scale and its per-column step, the three texture mid heights, the world-space top/
 // bottom/high/low edges, and the running top/bottom fractions and their steps that walk the wall

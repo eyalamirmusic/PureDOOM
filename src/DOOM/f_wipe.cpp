@@ -37,17 +37,5 @@ byte* wipe_scr_start;
 int* wipe_melt_offsets;
 
 
-int wipe_StartScreen(int x, int y, int width, int height)
-{
-    return Doom::startScreen(x, y, width, height);
-}
 
-int wipe_EndScreen(int x, int y, int width, int height)
-{
-    return Doom::endScreen(x, y, width, height);
-}
 
-int wipe_ScreenWipe(int wipeno, int x, int y, int width, int height, int ticks)
-{
-    return Doom::screenWipe(wipeno, x, y, width, height, ticks);
-}

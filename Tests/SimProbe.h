@@ -20,7 +20,7 @@ extern "C"
     //
     // It boots with -config, pointing the engine at Tests/doom-tests.cfg rather
     // than at the developer's ~/.doomrc. That file is not decoration: without
-    // it, M_LoadDefaults reads whatever the developer happens to have, and
+    // it, Doom::loadDefaults reads whatever the developer happens to have, and
     // screenblocks alone (10 in a real config, 9 by default) changes the shape
     // of every rendered frame. The simulation survives that - a demo's input
     // comes from the .lmp, not the config - but doomSimFrameHash does not.
@@ -41,9 +41,9 @@ extern "C"
     //
     // This is the scenario-test enabler, and it is a smaller claim than "boot the
     // engine twice". The engine cannot be re-inited (Z_Init would leak the arena),
-    // but it does not need to be: G_InitNew -> P_SetupLevel already resets the
+    // but it does not need to be: G_InitNew -> Doom::setupLevel already resets the
     // simulation each time a level loads - the geometry (Doom::Level assigns fresh
-    // vectors), the thinkers (P_InitThinkers), the random indices (M_ClearRandom),
+    // vectors), the thinkers (Doom::initThinkers), the random indices (M_ClearRandom),
     // the leftover mobjs and specials (Z_FreeTags). So a second scenario runs on a
     // clean world in the same process. Replaying one demo twice and getting the
     // same tics both times is what proves that reset is clean.
@@ -69,7 +69,7 @@ extern "C"
     // through - which is not a constant, the damage, pickup and invulnerability
     // flashes all being palette swaps.
     //
-    // The demos already render: D_DoomLoop calls D_Display every tic, so the
+    // The demos already render: Doom::doomLoop calls Doom::displayFrame every tic, so the
     // software renderer has been running throughout the existing suite with
     // nobody looking at what it produced. This is that missing assertion, and it
     // is what pins r_*, the status bar and the HUD through the refactor the way
@@ -78,7 +78,7 @@ extern "C"
     // It is deterministic for the same reason the simulation is. The one thing
     // that could have spoiled it - the screen melt - does not: PureDOOM moved
     // the wipe out of vanilla's busy-wait on the wall clock (still visible,
-    // #if 0'd, in D_Display) and into D_UpdateWipe, which advances it by exactly
+    // #if 0'd, in Doom::displayFrame) and into Doom::updateWipe, which advances it by exactly
     // one tic per call.
     unsigned long long doomSimFrameHash();
 
@@ -186,8 +186,8 @@ extern "C"
     // m_menu is the one part of the engine no demo covers - nothing in a .lmp
     // opens a menu - so before it is rewritten it gets its own frame golden, the
     // same way Step 0 gave the renderer one: drive synthetic key events through
-    // the real host path (doom_key_down -> D_PostEvent -> M_Responder), let
-    // M_Ticker and M_Drawer run, and hash the finished software frame.
+    // the real host path (doom_key_down -> Doom::postEvent -> Doom::menuResponder), let
+    // Doom::menuTicker and Doom::drawMenu run, and hash the finished software frame.
     //
     // The background is the attract-mode title screen (TITLEPIC): a static,
     // deterministic picture, so what the golden pins is the menu drawn over it

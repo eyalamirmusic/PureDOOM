@@ -11,7 +11,7 @@ namespace Doom
 // level), cleared to ga_nothing once run. gamestate is which screen the game is on - a level,
 // the intermission, a finale, or the title/demo loop - read all over the loop, the HUD and the
 // status bar to decide what to draw and what input means. wipegamestate is the state the last
-// displayed frame belonged to; D_Display melts the screen whenever the two differ (and
+// displayed frame belonged to; Doom::displayFrame melts the screen whenever the two differ (and
 // G_DoLoadLevel sets it to -1 to force one). doomstat.h's "gamestate", d_event.h's "gameaction"
 // and the "wipegamestate can be set to -1" note.
 //
@@ -33,8 +33,8 @@ struct GameFlow
     gamestate_t wipegamestate =
         GS_DEMOSCREEN; // the last drawn frame's state; -1 forces a wipe
 
-    // A screen melt is currently animating: D_Display raises it, doom_update drains
-    // it via D_UpdateWipe instead of D_DoomLoop, and the eacp compositor reads it.
+    // A screen melt is currently animating: Doom::displayFrame raises it, doom_update drains
+    // it via Doom::updateWipe instead of Doom::doomLoop, and the eacp compositor reads it.
     doom_boolean is_wiping_screen = false;
 };
 

@@ -39,9 +39,9 @@ inline constexpr int menuSaveStringSize = 24;
 struct MenuState
 {
     int screenSize = 0; // temp for screenblocks (0-9)
-    int quickSaveSlot = 0; // M_Init sets -1 (= none picked); zero-init here
+    int quickSaveSlot = 0; // initMenu sets -1 (= none picked); zero-init here
 
-    // M_Responder's input debounce, folded in from its function-local statics: the
+    // menuResponder's input debounce, folded in from its function-local statics: the
     // joystick/mouse repeat timers and the mouse-movement accumulation that turns raw
     // motion into discrete menu up/down steps.
     int joywait = 0; // tics until the joystick may repeat

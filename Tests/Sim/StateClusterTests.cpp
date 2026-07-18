@@ -86,7 +86,7 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
               && IntermissionState {}.snl_pointeron == false
               && IntermissionState {}.bg == nullptr,
           "IntermissionState zero-init state, cleared pointer flag, null patches");
-    // Load-bearing true defaults. singletics drives the singletics loop/NetUpdate quirk (a wrong
+    // Load-bearing true defaults. singletics drives the singletics loop/Doom::netUpdate quirk (a wrong
     // default would desync the demos); precache is golden-neutral (it changes only *when* graphics
     // load, not the pixels), so its default has no golden watching it and is pinned only here.
     check(EngineParams {}.precache == true && EngineParams {}.singletics == true

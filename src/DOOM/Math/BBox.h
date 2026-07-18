@@ -39,9 +39,9 @@ struct BBox
     // box and vanilla moves `left` and leaves `right` at its sentinel, because
     // the point cannot be both below the minimum and above the maximum in one
     // call. Add points in descending x and `right` is never written at all. The
-    // engine gets away with it - P_GroupLines feeds it whole linedefs, and
-    // V_MarkRect feeds it a top-left then a bottom-right - but "gets away with"
-    // is not "does not depend on", and min/max here changes what P_GroupLines
+    // engine gets away with it - Doom::groupLines feeds it whole linedefs, and
+    // Doom::markRect feeds it a top-left then a bottom-right - but "gets away with"
+    // is not "does not depend on", and min/max here changes what Doom::groupLines
     // computes for a sector's bounding box, which changes what the renderer and
     // P_BlockLinesIterator see.
     //

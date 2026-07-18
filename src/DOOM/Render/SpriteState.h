@@ -17,7 +17,7 @@ namespace Doom
 // cross-read counterparts of SpriteScratch (Render/Things' file-local sprite scratch). All are
 // externed in r_things.h; their r_things.cpp definitions and those externs become references onto
 // these members (arrays as references-to-array). vissprite_p points into vissprites but is reset
-// by R_ClearSprites each frame; mfloorclip/mceilingclip are transient per-sprite views into a
+// by Doom::clearSprites each frame; mfloorclip/mceilingclip are transient per-sprite views into a
 // drawseg, always set before use - neither is a self-referential initializer. Live
 // frame-golden-covered - every sprite the demos draw passes through these.
 struct SpriteState

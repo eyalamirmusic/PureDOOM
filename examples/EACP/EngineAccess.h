@@ -15,7 +15,7 @@
 #define EACP_DOOM_SCREEN_WIDTH 320
 #define EACP_DOOM_SCREEN_HEIGHT 200
 
-// The COLORMAP row M_Drawer darkens its background with (DOOM_FLAG_MENU_DARKEN_BG).
+// The COLORMAP row Doom::drawMenu darkens its background with (DOOM_FLAG_MENU_DARKEN_BG).
 #define EACP_DOOM_MENU_DARKEN_ROW 20
 
 // The screen melt slides the outgoing frame down a two-pixel column at a time.
@@ -140,13 +140,13 @@ extern "C"
     // engine has run it; does nothing unless the automap is up.
     //
     // This is the port's one deliberate departure from vanilla. A line is
-    // revealed as a side effect of being drawn - R_StoreWallRange sets ML_MAPPED
-    // as the software renderer lays the wall down - but D_Display skips the render
+    // revealed as a side effect of being drawn - Doom::storeWallRange sets ML_MAPPED
+    // as the software renderer lays the wall down - but Doom::displayFrame skips the render
     // entirely while the automap is up, so vanilla's map stops filling in at the
     // moment you open it and only catches up once you close it again.
     //
     // It walks the BSP the way R_RenderPlayerView would and no further: the planes
-    // and the sprites are never drawn, and the four NetUpdate calls it makes on
+    // and the sprites are never drawn, and the four Doom::netUpdate calls it makes on
     // the way are not wanted here, as they drain the event queue.
     void eacpDoomRevealAutomap();
 

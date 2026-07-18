@@ -9,24 +9,24 @@ namespace Doom
 // are the I_ entry points s_sound / Game/Sound drives. i_sound.cpp keeps the
 // vanilla I_ names as shims over these. The mixing buffer stays ::-scoped in
 // Sound.cpp (DOOM.cpp hands it out); everything else is file-local there.
-void I_InitSound();
-void I_UpdateSound();
-void I_SubmitSound();
-void I_ShutdownSound();
-void I_SetChannels();
-int I_GetSfxLumpNum(sfxinfo_t* sfxinfo);
-int I_StartSound(int id, int vol, int sep, int pitch, int priority);
-void I_StopSound(int handle);
-int I_SoundIsPlaying(int handle);
-void I_UpdateSoundParams(int handle, int vol, int sep, int pitch);
-void I_InitMusic();
-void I_ShutdownMusic();
-void I_SetMusicVolume(int volume);
-void I_PauseSong(int handle);
-void I_ResumeSong(int handle);
-int I_RegisterSong(void* data);
-void I_PlaySong(int handle, int looping);
-void I_StopSong(int handle);
-void I_UnRegisterSong(int handle);
-unsigned long I_TickSong();
+void initSoundHost();
+void updateSound();
+void submitSound();
+void shutdownSoundHost();
+void setChannels();
+int sfxLumpNum(sfxinfo_t* sfxinfo);
+int startSoundHost(int id, int vol, int sep, int pitch, int priority);
+void stopSoundHost(int handle);
+int soundIsPlaying(int handle);
+void updateSoundParams(int handle, int vol, int sep, int pitch);
+void initMusic();
+void shutdownMusic();
+void setMusicVolume(int volume);
+void pauseSong(int handle);
+void resumeSong(int handle);
+int registerSong(void* data);
+void playSong(int handle, int looping);
+void stopSong(int handle);
+void unregisterSong(int handle);
+unsigned long tickSong();
 } // namespace Doom

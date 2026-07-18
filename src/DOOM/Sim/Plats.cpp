@@ -18,6 +18,7 @@
 
 #include "Plats.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Specials.h"
 
 #include <new>
 
@@ -140,7 +141,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
             break;
     }
 
-    while ((secnum = P_FindSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
 
@@ -150,7 +151,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
         // Find lowest & highest floors around sector
         rtn = 1;
         plat = new (levelAlloc(sizeof(*plat))) plat_t {};
-        P_AddThinker(plat);
+        Doom::addThinker(plat);
 
         plat->type = type;
         plat->sector = sec;
@@ -163,7 +164,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
             case raiseToNearestAndChange:
                 plat->speed = PLATSPEED / 2;
                 sec->floorpic = sides[line->sidenum[0]].sector->floorpic;
-                plat->high = P_FindNextHighestFloor(sec, sec->floorheight);
+                plat->high = Doom::findNextHighestFloor(sec, sec->floorheight);
                 plat->wait = 0;
                 plat->status = up;
                 // NO MORE DAMAGE, IF APPLICABLE
@@ -184,7 +185,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
 
             case downWaitUpStay:
                 plat->speed = PLATSPEED * 4;
-                plat->low = P_FindLowestFloorSurrounding(sec);
+                plat->low = Doom::findLowestFloorSurrounding(sec);
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
@@ -197,7 +198,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
 
             case blazeDWUS:
                 plat->speed = PLATSPEED * 8;
-                plat->low = P_FindLowestFloorSurrounding(sec);
+                plat->low = Doom::findLowestFloorSurrounding(sec);
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
@@ -210,12 +211,12 @@ int doPlat(line_t* line, plattype_e type, int amount)
 
             case perpetualRaise:
                 plat->speed = PLATSPEED;
-                plat->low = P_FindLowestFloorSurrounding(sec);
+                plat->low = Doom::findLowestFloorSurrounding(sec);
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
 
-                plat->high = P_FindHighestFloorSurrounding(sec);
+                plat->high = Doom::findHighestFloorSurrounding(sec);
 
                 if (plat->high < sec->floorheight)
                     plat->high = sec->floorheight;
@@ -272,7 +273,7 @@ void removeActivePlat(plat_t* plat)
         if (plat == activeplats[i])
         {
             (activeplats[i])->sector->specialdata = nullptr;
-            P_RemoveThinker(activeplats[i]);
+            Doom::removeThinker(activeplats[i]);
             activeplats[i] = nullptr;
 
             return;

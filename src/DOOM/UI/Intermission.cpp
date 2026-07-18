@@ -47,6 +47,7 @@
 #include "Intermission.h"
 #include "IntermissionState.h"
 
+#include "../Render/Video.h"
 #include <ea_data_structures/Structures/Array.h>
 
 namespace Doom
@@ -384,7 +385,7 @@ static int& sp_state = intermissionState().sp_state;
 void wiSlamBackground()
 {
     doom_memcpy(screens[0], screens[1], SCREENWIDTH * SCREENHEIGHT);
-    V_MarkRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 }
 
 // The ticker is used to detect keys
@@ -400,7 +401,7 @@ void wiDrawLF()
     int y = WI_TITLEY;
 
     // draw <LevelName>
-    V_DrawPatch((SCREENWIDTH - SHORT(lnames[wbs->last]->width)) / 2,
+    Doom::drawPatch((SCREENWIDTH - SHORT(lnames[wbs->last]->width)) / 2,
                 y,
                 FB,
                 lnames[wbs->last]);
@@ -408,7 +409,7 @@ void wiDrawLF()
     // draw "Finished!"
     y += (5 * SHORT(lnames[wbs->last]->height)) / 4;
 
-    V_DrawPatch((SCREENWIDTH - SHORT(finished->width)) / 2, y, FB, finished);
+    Doom::drawPatch((SCREENWIDTH - SHORT(finished->width)) / 2, y, FB, finished);
 }
 
 // Draws "Entering <LevelName>"
@@ -417,12 +418,12 @@ void wiDrawEL()
     int y = WI_TITLEY;
 
     // draw "Entering"
-    V_DrawPatch((SCREENWIDTH - SHORT(entering->width)) / 2, y, FB, entering);
+    Doom::drawPatch((SCREENWIDTH - SHORT(entering->width)) / 2, y, FB, entering);
 
     // draw level
     y += (5 * SHORT(lnames[wbs->next]->height)) / 4;
 
-    V_DrawPatch((SCREENWIDTH - SHORT(lnames[wbs->next]->width)) / 2,
+    Doom::drawPatch((SCREENWIDTH - SHORT(lnames[wbs->next]->width)) / 2,
                 y,
                 FB,
                 lnames[wbs->next]);
@@ -457,7 +458,7 @@ void wiDrawOnLnode(int n, patch_t* c[])
 
     if (fits && i < 2)
     {
-        V_DrawPatch(lnodes[wbs->epsd][n].x, lnodes[wbs->epsd][n].y, FB, c[i]);
+        Doom::drawPatch(lnodes[wbs->epsd][n].x, lnodes[wbs->epsd][n].y, FB, c[i]);
     }
     else
     {
@@ -560,7 +561,7 @@ void wiDrawAnimatedBack()
         a = &anims_wi_stuff[wbs->epsd][i];
 
         if (a->ctr >= 0)
-            V_DrawPatch(a->loc.x, a->loc.y, FB, a->p[a->ctr]);
+            Doom::drawPatch(a->loc.x, a->loc.y, FB, a->p[a->ctr]);
     }
 }
 
@@ -609,13 +610,13 @@ int wiDrawNum(int x, int y, int n, int digits)
     while (digits--)
     {
         x -= fontwidth;
-        V_DrawPatch(x, y, FB, num[n % 10]);
+        Doom::drawPatch(x, y, FB, num[n % 10]);
         n /= 10;
     }
 
     // draw a minus sign if necessary
     if (neg)
-        V_DrawPatch(x -= 8, y, FB, wiminus);
+        Doom::drawPatch(x -= 8, y, FB, wiminus);
 
     return x;
 }
@@ -625,7 +626,7 @@ void wiDrawPercent(int x, int y, int p)
     if (p < 0)
         return;
 
-    V_DrawPatch(x, y, FB, percent);
+    Doom::drawPatch(x, y, FB, percent);
     wiDrawNum(x, y, p, -1);
 }
 
@@ -653,14 +654,14 @@ void wiDrawTime(int x, int y, int t)
 
             // draw
             if (div == 60 || t / div)
-                V_DrawPatch(x, y, FB, colon);
+                Doom::drawPatch(x, y, FB, colon);
 
         } while (t / div);
     }
     else
     {
         // "sucks"
-        V_DrawPatch(x - SHORT(sucks->width), y, FB, sucks);
+        Doom::drawPatch(x - SHORT(sucks->width), y, FB, sucks);
     }
 }
 
@@ -898,13 +899,13 @@ void wiDrawDeathmatchStats()
     wiDrawLF();
 
     // draw stat titles (top line)
-    V_DrawPatch(DM_TOTALSX - SHORT(total->width) / 2,
+    Doom::drawPatch(DM_TOTALSX - SHORT(total->width) / 2,
                 DM_MATRIXY - WI_SPACINGY + 10,
                 FB,
                 total);
 
-    V_DrawPatch(DM_KILLERSX, DM_KILLERSY, FB, killers);
-    V_DrawPatch(DM_VICTIMSX, DM_VICTIMSY, FB, victims);
+    Doom::drawPatch(DM_KILLERSX, DM_KILLERSY, FB, killers);
+    Doom::drawPatch(DM_VICTIMSX, DM_VICTIMSY, FB, victims);
 
     // draw P?
     x = DM_MATRIXX + DM_SPACINGX;
@@ -914,24 +915,24 @@ void wiDrawDeathmatchStats()
     {
         if (playeringame[i])
         {
-            V_DrawPatch(
+            Doom::drawPatch(
                 x - SHORT(p[i]->width) / 2, DM_MATRIXY - WI_SPACINGY, FB, p[i]);
 
-            V_DrawPatch(DM_MATRIXX - SHORT(p[i]->width) / 2, y, FB, p[i]);
+            Doom::drawPatch(DM_MATRIXX - SHORT(p[i]->width) / 2, y, FB, p[i]);
 
             if (i == me)
             {
-                V_DrawPatch(
+                Doom::drawPatch(
                     x - SHORT(p[i]->width) / 2, DM_MATRIXY - WI_SPACINGY, FB, bstar);
 
-                V_DrawPatch(DM_MATRIXX - SHORT(p[i]->width) / 2, y, FB, star);
+                Doom::drawPatch(DM_MATRIXX - SHORT(p[i]->width) / 2, y, FB, star);
             }
         }
         else
         {
-            // V_DrawPatch(x-SHORT(bp[i]->width)/2,
+            // Doom::drawPatch(x-SHORT(bp[i]->width)/2,
             //   DM_MATRIXY - WI_SPACINGY, FB, bp[i]);
-            // V_DrawPatch(DM_MATRIXX-SHORT(bp[i]->width)/2,
+            // Doom::drawPatch(DM_MATRIXX-SHORT(bp[i]->width)/2,
             //   y, FB, bp[i]);
         }
         x += DM_SPACINGX;
@@ -1149,16 +1150,16 @@ void wiDrawNetgameStats()
     wiDrawLF();
 
     // draw stat titles (top line)
-    V_DrawPatch(NG_STATSX + NG_SPACINGX - SHORT(kills->width), NG_STATSY, FB, kills);
+    Doom::drawPatch(NG_STATSX + NG_SPACINGX - SHORT(kills->width), NG_STATSY, FB, kills);
 
-    V_DrawPatch(
+    Doom::drawPatch(
         NG_STATSX + 2 * NG_SPACINGX - SHORT(items->width), NG_STATSY, FB, items);
 
-    V_DrawPatch(
+    Doom::drawPatch(
         NG_STATSX + 3 * NG_SPACINGX - SHORT(secret->width), NG_STATSY, FB, secret);
 
     if (dofrags)
-        V_DrawPatch(
+        Doom::drawPatch(
             NG_STATSX + 4 * NG_SPACINGX - SHORT(frags->width), NG_STATSY, FB, frags);
 
     // draw stats
@@ -1170,10 +1171,10 @@ void wiDrawNetgameStats()
             continue;
 
         x = NG_STATSX;
-        V_DrawPatch(x - SHORT(p[i]->width), y, FB, p[i]);
+        Doom::drawPatch(x - SHORT(p[i]->width), y, FB, p[i]);
 
         if (i == me)
-            V_DrawPatch(x - SHORT(p[i]->width), y, FB, star);
+            Doom::drawPatch(x - SHORT(p[i]->width), y, FB, star);
 
         x += NG_SPACINGX;
         wiDrawPercent(x - pwidth, y + 10, cnt_kills[i]);
@@ -1320,21 +1321,21 @@ void wiDrawStats()
 
     wiDrawLF();
 
-    V_DrawPatch(SP_STATSX, SP_STATSY, FB, kills);
+    Doom::drawPatch(SP_STATSX, SP_STATSY, FB, kills);
     wiDrawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY, cnt_kills[0]);
 
-    V_DrawPatch(SP_STATSX, SP_STATSY + lh, FB, items);
+    Doom::drawPatch(SP_STATSX, SP_STATSY + lh, FB, items);
     wiDrawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY + lh, cnt_items[0]);
 
-    V_DrawPatch(SP_STATSX, SP_STATSY + 2 * lh, FB, sp_secret);
+    Doom::drawPatch(SP_STATSX, SP_STATSY + 2 * lh, FB, sp_secret);
     wiDrawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY + 2 * lh, cnt_secret[0]);
 
-    V_DrawPatch(SP_TIMEX, SP_TIMEY, FB, time_patch);
+    Doom::drawPatch(SP_TIMEX, SP_TIMEY, FB, time_patch);
     wiDrawTime(SCREENWIDTH / 2 - SP_TIMEX, SP_TIMEY, cnt_time);
 
     if (wbs->epsd < 3)
     {
-        V_DrawPatch(SCREENWIDTH / 2 + SP_TIMEX, SP_TIMEY, FB, par);
+        Doom::drawPatch(SCREENWIDTH / 2 + SP_TIMEX, SP_TIMEY, FB, par);
         wiDrawTime(SCREENWIDTH - SP_TIMEX, SP_TIMEY, cnt_par);
     }
 }
@@ -1370,7 +1371,7 @@ void wiCheckForAccelerate()
 }
 
 // Updates stuff each tick
-void wiTicker()
+void intermissionTicker()
 {
     // counter for general background animation
     bcnt++;
@@ -1429,7 +1430,7 @@ void wiLoadData()
 
     // background
     bg = static_cast<patch_t*>(W_CacheLumpName(name.data(), PU_CACHE));
-    V_DrawPatch(0, 0, 1, bg);
+    Doom::drawPatch(0, 0, 1, bg);
 
     if (gamemode == commercial)
     {
@@ -1599,7 +1600,7 @@ void wiUnloadData()
     doom_free(lnames);
 }
 
-void wiDrawer()
+void drawIntermission()
 {
     switch (state)
     {
@@ -1663,7 +1664,7 @@ void wiInitVariables(wbstartstruct_t* wbstartstruct)
             wbs->epsd -= 3;
 }
 
-void wiStart(wbstartstruct_t* wbstartstruct)
+void startIntermission(wbstartstruct_t* wbstartstruct)
 {
     wiInitVariables(wbstartstruct);
     wiLoadData();

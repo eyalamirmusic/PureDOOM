@@ -1,7 +1,7 @@
 // The virtual tick() bodies for the polymorphic thinker types.
 //
 // Each forwards to the vanilla-named thinker routine (P_MobjThinker for a mobj,
-// the T_* functions for the specials) - the same routine P_RunThinkers used to
+// the T_* functions for the specials) - the same routine Doom::runThinkers used to
 // reach through the old `thinker_t.function` union. They are defined together, at
 // global scope, because the types they belong to (mobj_t and the p_spec.h
 // specials) live in the global namespace, and out of line because those routines

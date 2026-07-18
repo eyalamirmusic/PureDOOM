@@ -20,17 +20,5 @@
 
 #include "UI/Intermission.h"
 
-void WI_Ticker()
-{
-    Doom::wiTicker();
-}
 
-void WI_Drawer()
-{
-    Doom::wiDrawer();
-}
 
-void WI_Start(wbstartstruct_t* wbstartstruct)
-{
-    Doom::wiStart(wbstartstruct);
-}

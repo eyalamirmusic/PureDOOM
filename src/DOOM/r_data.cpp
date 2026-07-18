@@ -54,67 +54,15 @@ fixed_t* spritetopoffset = nullptr;
 lighttable_t* colormaps = nullptr;
 
 
-void R_DrawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheight)
-{
-    Doom::drawColumnInCache(patch, cache, originy, cacheheight);
-}
 
-void R_GenerateComposite(int texnum)
-{
-    Doom::generateComposite(texnum);
-}
 
-void R_GenerateLookup(int texnum)
-{
-    Doom::generateLookup(texnum);
-}
 
-byte* R_GetColumn(int tex, int col)
-{
-    return Doom::getColumn(tex, col);
-}
 
-void R_InitTextures()
-{
-    Doom::initTextures();
-}
 
-void R_InitFlats()
-{
-    Doom::initFlats();
-}
 
-void R_InitSpriteLumps()
-{
-    Doom::initSpriteLumps();
-}
 
-void R_InitColormaps()
-{
-    Doom::initColormaps();
-}
 
-void R_InitData()
-{
-    Doom::initData();
-}
 
-int R_FlatNumForName(const char* name)
-{
-    return Doom::flatNumForName(name);
-}
 
-int R_CheckTextureNumForName(const char* name)
-{
-    return Doom::checkTextureNumForName(name);
-}
 
-int R_TextureNumForName(const char* name)
-{
-    return Doom::textureNumForName(name);
-}
 
-void R_PrecacheLevel()
-{
-    Doom::precacheLevel();
-}

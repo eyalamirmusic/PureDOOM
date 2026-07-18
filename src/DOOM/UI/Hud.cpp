@@ -52,7 +52,7 @@
 // the level-name tables (st_stuff reads mapnames), and the two message flags.
 extern char* chat_macros[];
 extern char* player_names[];
-// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (HU_Start writes it).
+// hu_font is a Doom::HudFont member (Engine); a reference-to-array onto it (Doom::startHud writes it).
 extern patch_t* (&hu_font)[HU_FONTSIZE];
 // chat_on/message_dontfuckwithme are Doom::HudFlags members (Engine); references onto them.
 extern doom_boolean& chat_on;
@@ -229,7 +229,7 @@ char foreignTranslation(unsigned char ch)
     return ch < 128 ? frenchKeyMap[ch] : ch;
 }
 
-void huInit()
+void initHud()
 {
     int j;
     EA::Array<char, 9> buffer;
@@ -261,7 +261,7 @@ void huStop()
     headsupactive = false;
 }
 
-void huStart()
+void startHud()
 {
     const char* s;
 
@@ -322,7 +322,7 @@ void huStart()
     headsupactive = true;
 }
 
-void huDrawer()
+void drawHud()
 {
     HUlib_drawSText(&w_message);
     HUlib_drawIText(&w_chat);
@@ -330,14 +330,14 @@ void huDrawer()
         HUlib_drawTextLine(&w_title, false);
 }
 
-void huErase()
+void eraseHud()
 {
     HUlib_eraseSText(&w_message);
     HUlib_eraseIText(&w_chat);
     HUlib_eraseTextLine(&w_title);
 }
 
-void huTicker()
+void hudTicker()
 {
     int rc;
     char c;
@@ -421,7 +421,7 @@ void huQueueChatChar(char c)
     }
 }
 
-char huDequeueChatChar()
+char dequeueChatChar()
 {
     char c;
 
@@ -438,7 +438,7 @@ char huDequeueChatChar()
     return c;
 }
 
-doom_boolean huResponder(event_t* ev)
+doom_boolean hudResponder(event_t* ev)
 {
     char(&lastmessage)[HU_MAXLINELENGTH + 1] = hudChat().lastmessage; // ref-to-array onto member
     char* macromessage;

@@ -21,7 +21,3 @@ const fixed_t* finecosine = Doom::fineSineTable.data() + FINEANGLES / 4;
 const fixed_t* finetangent = Doom::fineTangentTable.data();
 const angle_t* tantoangle = Doom::tanToAngleTable.data();
 
-int SlopeDiv(unsigned num, unsigned den)
-{
-    return Doom::slopeDiv(num, den);
-}

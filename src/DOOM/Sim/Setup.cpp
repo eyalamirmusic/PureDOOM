@@ -3,7 +3,7 @@
 // Level loading: parse each map lump into Doom::Level's vectors and refresh the
 // geometry view-globals the renderer and playsim index, build the blockmap
 // descriptor and per-sector line lists, spawn the things, and set up a fresh level.
-// p_setup.cpp shims P_SetupLevel and P_Init and owns the view-global storage; the
+// p_setup.cpp shims Doom::setupLevel and Doom::init and owns the view-global storage; the
 // per-lump loaders are file-local. Golden-neutral - every demo loads its level
 // through this, and LevelTests pins the view invariant.
 
@@ -22,7 +22,10 @@
 #include "Level.h"
 #include "Setup.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "../Render/Data.h"
 
+#include "../Render/Things.h"
+#include "Specials.h"
 #include <ea_data_structures/Structures/Array.h>
 
 // P_SpawnMapThing is Mobj's now (global shim); the things loader calls it.
@@ -163,8 +166,8 @@ void loadSectors(int lump)
     {
         ss->floorheight = SHORT(ms->floorheight) << FRACBITS;
         ss->ceilingheight = SHORT(ms->ceilingheight) << FRACBITS;
-        ss->floorpic = R_FlatNumForName(ms->floorpic);
-        ss->ceilingpic = R_FlatNumForName(ms->ceilingpic);
+        ss->floorpic = Doom::flatNumForName(ms->floorpic);
+        ss->ceilingpic = Doom::flatNumForName(ms->ceilingpic);
         ss->lightlevel = SHORT(ms->lightlevel);
         ss->special = SHORT(ms->special);
         ss->tag = SHORT(ms->tag);
@@ -353,9 +356,9 @@ void loadSideDefs(int lump)
     {
         sd->textureoffset = SHORT(msd->textureoffset) << FRACBITS;
         sd->rowoffset = SHORT(msd->rowoffset) << FRACBITS;
-        sd->toptexture = R_TextureNumForName(msd->toptexture);
-        sd->bottomtexture = R_TextureNumForName(msd->bottomtexture);
-        sd->midtexture = R_TextureNumForName(msd->midtexture);
+        sd->toptexture = Doom::textureNumForName(msd->toptexture);
+        sd->bottomtexture = Doom::textureNumForName(msd->bottomtexture);
+        sd->midtexture = Doom::textureNumForName(msd->midtexture);
         sd->sector = &sectors[SHORT(msd->sector)];
     }
 }
@@ -504,11 +507,11 @@ void setupLevel(int episode, int map, int, skill_t)
 
     // Free the previous level's mobjs and thinker specials - what
     // Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1) reclaimed when they lived in the
-    // zone. Must run before P_InitThinkers empties the thinker list.
+    // zone. Must run before Doom::initThinkers empties the thinker list.
     freeLevelAllocations();
 
     // UNUSED W_Profile ();
-    P_InitThinkers();
+    Doom::initThinkers();
 
     // if working with a devlopment map, reload it
     W_Reload();
@@ -575,11 +578,11 @@ void setupLevel(int episode, int map, int, skill_t)
     iquehead = iquetail = 0;
 
     // set up world state
-    P_SpawnSpecials();
+    Doom::spawnSpecials();
 
     // preload graphics
     if (precache)
-        R_PrecacheLevel();
+        Doom::precacheLevel();
 }
 
 //
@@ -588,7 +591,7 @@ void setupLevel(int episode, int map, int, skill_t)
 void init()
 {
     P_InitSwitchList();
-    P_InitPicAnims();
-    R_InitSprites(sprnames);
+    Doom::initPicAnims();
+    Doom::initSprites(sprnames);
 }
 } // namespace Doom

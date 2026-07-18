@@ -10,6 +10,7 @@
 #include "../Common.h"
 
 // No extern "C" here any more: the engine is C++ as of Step 2 of REFACTOR.md, so
+#include <DOOM/Math/Trig.h>
 // these are C++ declarations of C++ functions and wrapping them would ask the
 // linker for symbols that do not exist.
 #include <DOOM/doomtype.h>
@@ -273,30 +274,30 @@ auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []
     check(tantoangle[0] == 0);
 };
 
-// SlopeDiv gives up rather than divide by anything under 512 - it answers
+// Doom::slopeDiv gives up rather than divide by anything under 512 - it answers
 // SLOPERANGE, the steepest slope it can name, whatever the numerator. So
-// SlopeDiv(0, 1) is 2048 and not 0, which reads as a bug and is not one: the
+// Doom::slopeDiv(0, 1) is 2048 and not 0, which reads as a bug and is not one: the
 // result indexes tantoangle, the guard is what keeps the index in the table, and
 // R_PointToAngle only ever calls it with a denominator it has already made large.
 auto tSlopeDivGivesUpOnSmallDenominators =
     test("Tables/slopeDivGivesUpOnSmallDenominators") = []
 {
-    check(SlopeDiv(0, 1) == SLOPERANGE);
-    check(SlopeDiv(1, 1) == SLOPERANGE);
-    check(SlopeDiv(0, 511) == SLOPERANGE);
+    check(Doom::slopeDiv(0, 1) == SLOPERANGE);
+    check(Doom::slopeDiv(1, 1) == SLOPERANGE);
+    check(Doom::slopeDiv(0, 511) == SLOPERANGE);
 
     // At 512 it starts actually dividing.
-    check(SlopeDiv(0, 512) == 0);
+    check(Doom::slopeDiv(0, 512) == 0);
 };
 
 auto tSlopeDivStaysInTable = test("Tables/slopeDivStaysInTable") = []
 {
     // Whatever it is handed, the answer must index tantoangle, whose last entry
     // is SLOPERANGE. Anything past that reads off the end of the table.
-    check(SlopeDiv(1000000, 512) == SLOPERANGE);
-    check(SlopeDiv(1, 1000000) == 0);
-    check(SlopeDiv(1000000, 1000000) <= SLOPERANGE);
-    check(SlopeDiv(0, 1000000) <= SLOPERANGE);
+    check(Doom::slopeDiv(1000000, 512) == SLOPERANGE);
+    check(Doom::slopeDiv(1, 1000000) == 0);
+    check(Doom::slopeDiv(1000000, 1000000) <= SLOPERANGE);
+    check(Doom::slopeDiv(0, 1000000) <= SLOPERANGE);
 };
 
 // ---------------------------------------------------------------------------

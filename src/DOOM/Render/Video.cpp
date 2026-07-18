@@ -150,18 +150,18 @@ namespace Doom
 {
 
 //
-// vMarkRect
+// markRect
 //
-void vMarkRect(int x, int y, int width, int height)
+void markRect(int x, int y, int width, int height)
 {
     M_AddToBox(dirtybox.data(), x, y);
     M_AddToBox(dirtybox.data(), x + width - 1, y + height - 1);
 }
 
 //
-// vCopyRect
+// copyRect
 //
-void vCopyRect(int srcx,
+void copyRect(int srcx,
                int srcy,
                int srcscrn,
                int width,
@@ -179,10 +179,10 @@ void vCopyRect(int srcx,
         || desty < 0 || desty + height > SCREENHEIGHT
         || static_cast<unsigned>(srcscrn) > 4 || static_cast<unsigned>(destscrn) > 4)
     {
-        I_Error("Error: Bad vCopyRect");
+        I_Error("Error: Bad copyRect");
     }
 #endif
-    vMarkRect(destx, desty, width, height);
+    markRect(destx, desty, width, height);
 
     src = screens[srcscrn] + SCREENWIDTH * srcy + srcx;
     dest = screens[destscrn] + SCREENWIDTH * desty + destx;
@@ -196,10 +196,10 @@ void vCopyRect(int srcx,
 }
 
 //
-// vDrawPatch
+// drawPatch
 // Masks a column based masked pic to the screen.
 //
-void vDrawPatch(int x, int y, int scrn, patch_t* patch)
+void drawPatch(int x, int y, int scrn, patch_t* patch)
 {
     int count;
     int col;
@@ -223,13 +223,13 @@ void vDrawPatch(int x, int y, int scrn, patch_t* patch)
         doom_print(doom_itoa(y, 10));
         doom_print(" exceeds LFB\n");
         // No I_Error abort - what is up with TNT.WAD?
-        doom_print("vDrawPatch: bad patch (ignored)\n");
+        doom_print("drawPatch: bad patch (ignored)\n");
         return;
     }
 #endif
 
     if (!scrn)
-        vMarkRect(x, y, SHORT(patch->width), SHORT(patch->height));
+        markRect(x, y, SHORT(patch->width), SHORT(patch->height));
 
     col = 0;
     desttop = screens[scrn] + y * SCREENWIDTH + x;
@@ -260,11 +260,11 @@ void vDrawPatch(int x, int y, int scrn, patch_t* patch)
 }
 
 //
-// vDrawPatchFlipped
+// drawPatchFlipped
 // Masks a column based masked pic to the screen.
 // Flips horizontally, e.g. to mirror face.
 //
-void vDrawPatchFlipped(int x, int y, int scrn, patch_t* patch)
+void drawPatchFlipped(int x, int y, int scrn, patch_t* patch)
 {
     int count;
     int col;
@@ -287,12 +287,12 @@ void vDrawPatchFlipped(int x, int y, int scrn, patch_t* patch)
         doom_print(",");
         doom_print(doom_itoa(y, 10));
         doom_print(" exceeds LFB\n");
-        I_Error("Error: Bad vDrawPatch in vDrawPatchFlipped");
+        I_Error("Error: Bad drawPatch in drawPatchFlipped");
     }
 #endif
 
     if (!scrn)
-        vMarkRect(x, y, SHORT(patch->width), SHORT(patch->height));
+        markRect(x, y, SHORT(patch->width), SHORT(patch->height));
 
     col = 0;
     desttop = screens[scrn] + y * SCREENWIDTH + x;
@@ -322,7 +322,7 @@ void vDrawPatchFlipped(int x, int y, int scrn, patch_t* patch)
     }
 }
 
-void vDrawPatchRectDirect(
+void drawPatchRectDirect(
     int x, int y, int scrn, patch_t* patch, int src_x, int src_w)
 {
     int count;
@@ -347,13 +347,13 @@ void vDrawPatchRectDirect(
         doom_print(doom_itoa(y, 10));
         doom_print(" exceeds LFB\n");
         // No I_Error abort - what is up with TNT.WAD?
-        doom_print("vDrawPatch: bad patch (ignored)\n");
+        doom_print("drawPatch: bad patch (ignored)\n");
         return;
     }
 #endif
 
     if (!scrn)
-        vMarkRect(x, y, SHORT(src_w), SHORT(patch->height));
+        markRect(x, y, SHORT(src_w), SHORT(patch->height));
 
     col = 0;
     desttop = screens[scrn] + y * SCREENWIDTH + x;
@@ -384,19 +384,19 @@ void vDrawPatchRectDirect(
 }
 
 //
-// vDrawPatchDirect
+// drawPatchDirect
 // Draws directly to the screen on the pc.
 //
-void vDrawPatchDirect(int x, int y, int scrn, patch_t* patch)
+void drawPatchDirect(int x, int y, int scrn, patch_t* patch)
 {
-    vDrawPatch(x, y, scrn, patch);
+    drawPatch(x, y, scrn, patch);
 }
 
 //
-// vDrawBlock
+// drawBlock
 // Draw a linear block of pixels into the view buffer.
 //
-void vDrawBlock(int x, int y, int scrn, int width, int height, byte* src)
+void drawBlock(int x, int y, int scrn, int width, int height, byte* src)
 {
     byte* dest;
 
@@ -404,11 +404,11 @@ void vDrawBlock(int x, int y, int scrn, int width, int height, byte* src)
     if (x < 0 || x + width > SCREENWIDTH || y < 0 || y + height > SCREENHEIGHT
         || static_cast<unsigned>(scrn) > 4)
     {
-        I_Error("Error: Bad vDrawBlock");
+        I_Error("Error: Bad drawBlock");
     }
 #endif
 
-    vMarkRect(x, y, width, height);
+    markRect(x, y, width, height);
 
     dest = screens[scrn] + y * SCREENWIDTH + x;
 
@@ -421,10 +421,10 @@ void vDrawBlock(int x, int y, int scrn, int width, int height, byte* src)
 }
 
 //
-// vGetBlock
+// getBlock
 // Gets a linear block of pixels from the view buffer.
 //
-void vGetBlock(int x, int y, int scrn, int width, int height, byte* dest)
+void getBlock(int x, int y, int scrn, int width, int height, byte* dest)
 {
     byte* src;
 
@@ -432,7 +432,7 @@ void vGetBlock(int x, int y, int scrn, int width, int height, byte* dest)
     if (x < 0 || x + width > SCREENWIDTH || y < 0 || y + height > SCREENHEIGHT
         || static_cast<unsigned>(scrn) > 4)
     {
-        I_Error("Error: Bad vDrawBlock");
+        I_Error("Error: Bad drawBlock");
     }
 #endif
 
@@ -447,15 +447,15 @@ void vGetBlock(int x, int y, int scrn, int width, int height, byte* dest)
 }
 
 //
-// vInit
+// initVideo
 //
-void vInit()
+void initVideo()
 {
     // stick these in low dos memory on PCs
 
     // RAII now (Step 9): the base block is a VideoState-owned vector, zero-filled as
     // I_AllocLow left it, sliced into the screens[] view. screens[0]'s slice is
-    // overwritten by I_InitGraphics, exactly as vanilla left it.
+    // overwritten by initGraphics, exactly as vanilla left it.
     auto& workspace = videoState().workspace;
     workspace.assign(SCREENWIDTH * SCREENHEIGHT * 4, byte(0));
     byte* base = workspace.data();

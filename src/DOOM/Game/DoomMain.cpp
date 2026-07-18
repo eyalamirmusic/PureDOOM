@@ -17,7 +17,7 @@
 // $Log:$
 //
 // DESCRIPTION:
-//        DOOM main program (dDoomMain) and game loop (dDoomLoop),
+//        DOOM main program (doomMain) and game loop (doomLoop),
 //        plus functions to determine game mode (shareware, registered),
 //        parse command line parameters, configure game parameters (turbo),
 //        and call the startup functions.
@@ -72,9 +72,24 @@
 #include "LaunchOptions.h"
 #include "StartupDefaults.h"
 
+#include "../Render/Draw.h"
+#include "../Render/Video.h"
+#include "../Sim/Setup.h"
+#include "../UI/Automap.h"
+#include "../UI/Finale.h"
+#include "../UI/Hud.h"
+#include "../UI/Intermission.h"
+#include "../UI/StatusBar.h"
+#include "../UI/Wipe.h"
+#include "Args.h"
+#include "Config.h"
+#include "Net.h"
+#include "../Host/Sound.h"
+#include "../UI/Menu.h"
+#include "../Host/Video.h"
 #define MAXARGVS 100
 
-// The boot-time WAD list, file-local: D_AddFile appends to it and W_InitMultipleFiles
+// The boot-time WAD list, file-local: Doom::addWadFile appends to it and W_InitMultipleFiles
 // consumes it, and nothing outside this file reads it (its d_main.h extern is gone).
 static char* wadfiles[MAXWADFILES];
 
@@ -153,22 +168,22 @@ const char*& pagename = Doom::attractMode().pagename;
 extern EA::Array<fixed_t, 2>& forwardmove; // g_game
 extern EA::Array<fixed_t, 2>& sidemove; // g_game
 extern void* statcopy; // g_game
-void D_CheckNetGame();
+void Doom::checkNetGame();
 void G_BuildTiccmd(ticcmd_t* cmd);
 
 namespace Doom
 {
 
 // Forward declarations so call order needs no rearranging.
-void dDoomLoop();
-void dProcessEvents();
-void dDoAdvanceDemo();
+void doomLoop();
+void processEvents();
+void doAdvanceDemo();
 
 //
-// dPostEvent
+// postEvent
 // Called by the I/O functions when input is detected
 //
-void dPostEvent(event_t* ev)
+void postEvent(event_t* ev)
 {
     events[eventhead] = *ev;
     eventhead++;
@@ -176,10 +191,10 @@ void dPostEvent(event_t* ev)
 }
 
 //
-// dProcessEvents
+// processEvents
 // Send all the events of the given timestamp down the responder chain
 //
-void dProcessEvents()
+void processEvents()
 {
     event_t* ev;
 
@@ -190,7 +205,7 @@ void dProcessEvents()
     for (; eventtail != eventhead;)
     {
         ev = &events[eventtail];
-        if (!M_Responder(ev))
+        if (!menuResponder(ev))
             G_Responder(ev);
         // else menu ate the event
         eventtail++;
@@ -199,13 +214,13 @@ void dProcessEvents()
 }
 
 //
-// dDisplay
+// displayFrame
 //  draw current display, possibly wiping it from the previous
 //
-void dDisplay()
+void displayFrame()
 {
     // The frame-diff state machine: a Doom::DisplayState owned by the Engine now, reached by local
-    // references (formerly dDisplay's own function-local statics, never reset - identical
+    // references (formerly displayFrame's own function-local statics, never reset - identical
     // persistence).
     DisplayState& ds = displayState();
     doom_boolean& viewactivestate = ds.viewactivestate;
@@ -235,13 +250,13 @@ void dDisplay()
     if (gamestate != wipegamestate)
     {
         wipe = true;
-        wipe_StartScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
+        Doom::startScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
     }
     else
         wipe = false;
 
     if (gamestate == GS_LEVEL && gametic)
-        HU_Erase();
+        Doom::eraseHud();
 
     // do buffered drawing
     switch (gamestate)
@@ -250,47 +265,47 @@ void dDisplay()
             if (!gametic)
                 break;
             if (automapactive)
-                AM_Drawer();
+                Doom::drawAutomap();
             if (wipe || (viewheight != 200 && fullscreen))
                 redrawsbar = true;
             if (inhelpscreensstate && !inhelpscreens)
                 redrawsbar = true; // just put away the help screen
-            ST_Drawer(viewheight == 200, redrawsbar);
+            Doom::drawStatusBar(viewheight == 200, redrawsbar);
             fullscreen = viewheight == 200;
             break;
 
         case GS_INTERMISSION:
-            WI_Drawer();
+            Doom::drawIntermission();
             break;
 
         case GS_FINALE:
-            F_Drawer();
+            Doom::drawFinale();
             break;
 
         case GS_DEMOSCREEN:
-            dPageDrawer();
+            drawPage();
             break;
     }
 
     // draw buffered stuff to screen
-    I_UpdateNoBlit();
+    updateNoBlit();
 
     // draw the view directly
     if (gamestate == GS_LEVEL && !automapactive && gametic)
         R_RenderPlayerView(&players[displayplayer]);
 
     if (gamestate == GS_LEVEL && gametic)
-        HU_Drawer();
+        Doom::drawHud();
 
     // clean up border stuff
     if (gamestate != oldgamestate && gamestate != GS_LEVEL)
-        I_SetPalette(static_cast<byte*>((W_CacheLumpName("PLAYPAL", PU_CACHE))));
+        setPalette(static_cast<byte*>((W_CacheLumpName("PLAYPAL", PU_CACHE))));
 
     // see if the border needs to be initially drawn
     if (gamestate == GS_LEVEL && oldgamestate != GS_LEVEL)
     {
         viewactivestate = false; // view was not active
-        R_FillBackScreen(); // draw the pattern into the back screen
+        Doom::fillBackScreen(); // draw the pattern into the back screen
     }
 
     // see if the border needs to be updated to the screen
@@ -300,7 +315,7 @@ void dDisplay()
             borderdrawcount = 3;
         if (borderdrawcount)
         {
-            R_DrawViewBorder(); // erase old menu stuff
+            Doom::drawViewBorder(); // erase old menu stuff
             borderdrawcount--;
         }
     }
@@ -317,7 +332,7 @@ void dDisplay()
             y = 4;
         else
             y = viewwindowy + 4;
-        V_DrawPatchDirect(
+        Doom::drawPatchDirect(
             viewwindowx + (scaledviewwidth - 68) / 2,
             y,
             0,
@@ -325,21 +340,21 @@ void dDisplay()
     }
 
     // menus go directly to the screen
-    M_Drawer(); // menu is drawn even on top of everything
-    NetUpdate(); // send out any new accumulation
+    drawMenu(); // menu is drawn even on top of everything
+    Doom::netUpdate(); // send out any new accumulation
 
     // normal update
     is_wiping_screen = wipe;
     if (!wipe)
     {
-        I_FinishUpdate(); // page flip or blit buffer
+        finishUpdate(); // page flip or blit buffer
         return;
     }
 
     // wipe update
-    wipe_EndScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    Doom::endScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
-#if 0 // [pd] Moved to dUpdateWipe
+#if 0 // [pd] Moved to updateWipe
     do
     {
         do
@@ -348,31 +363,31 @@ void dDisplay()
             tics = nowtime - wipestart;
         } while (!tics);
         wipestart = nowtime;
-        done = wipe_ScreenWipe(wipe_Melt
+        done = Doom::screenWipe(wipe_Melt
                                , 0, 0, SCREENWIDTH, SCREENHEIGHT, tics);
-        I_UpdateNoBlit();
-        M_Drawer();                            // menu is drawn even on top of wipes
-        I_FinishUpdate();                      // page flip or blit buffer
+        updateNoBlit();
+        drawMenu();                            // menu is drawn even on top of wipes
+        finishUpdate();                      // page flip or blit buffer
     } while (!done);
 #endif
 }
 
 //
-//  dDoomLoop
+//  doomLoop
 //
-void dUpdateWipe()
+void updateWipe()
 {
-    if (wipe_ScreenWipe(wipe_Melt, 0, 0, SCREENWIDTH, SCREENHEIGHT, 1))
+    if (Doom::screenWipe(wipe_Melt, 0, 0, SCREENWIDTH, SCREENHEIGHT, 1))
         is_wiping_screen = false;
 }
 
-void dDoomLoop()
+void doomLoop()
 {
-#if 0 // [pd] Moved to dDoomMain()
+#if 0 // [pd] Moved to doomMain()
     if (demorecording)
         G_BeginRecording();
 
-    if (M_CheckParm("-debugfile"))
+    if (Doom::checkParm("-debugfile"))
     {
         EA::Array<char, 20> filename;
         //doom_sprintf(filename, "debug%i.txt", consoleplayer);
@@ -380,44 +395,44 @@ void dDoomLoop()
         debugfile = doom_open(filename.data(), "w");
     }
 
-    I_InitGraphics();
+    initGraphics();
 #endif
 
     // while (1)
     {
         // frame syncronous IO operations
-        I_StartFrame();
+        startFrame();
 
         // process one or more tics
         if (singletics)
         {
-            I_StartTic();
-            dProcessEvents();
+            startTic();
+            processEvents();
             G_BuildTiccmd(&netcmds[consoleplayer][maketic % BACKUPTICS]);
             if (advancedemo)
-                dDoAdvanceDemo();
-            M_Ticker();
+                doAdvanceDemo();
+            menuTicker();
             G_Ticker();
             gametic++;
             maketic++;
         }
         else
         {
-            TryRunTics(); // will run at least one tic
+            Doom::tryRunTics(); // will run at least one tic
         }
 
         S_UpdateSounds(players[consoleplayer].mo); // move positional sounds
 
         // Update display, next frame, with current state.
-        dDisplay();
+        displayFrame();
 
 #if 0 // [pd] Sound is queried by the application's audio thread.
         // Sound mixing for the buffer is snychronous.
-        I_UpdateSound();
+        updateSound();
 
         // Synchronous sound output is explicitly called.
         // Update sound output.
-        I_SubmitSound();
+        submitSound();
 #endif
     }
 }
@@ -427,29 +442,29 @@ void dDoomLoop()
 //
 
 //
-// dPageTicker
+// pageTicker
 // Handles timing for warped projection
 //
-void dPageTicker()
+void pageTicker()
 {
     if (--pagetic < 0)
-        dAdvanceDemo();
+        advanceDemo();
 }
 
 //
-// dPageDrawer
+// drawPage
 //
-void dPageDrawer()
+void drawPage()
 {
-    V_DrawPatch(
+    Doom::drawPatch(
         0, 0, 0, static_cast<patch_t*>((W_CacheLumpName(pagename, PU_CACHE))));
 }
 
 //
-// dAdvanceDemo
+// advanceDemo
 // Called after each demo or intro demosequence finishes
 //
-void dAdvanceDemo()
+void advanceDemo()
 {
     advancedemo = true;
 }
@@ -458,7 +473,7 @@ void dAdvanceDemo()
 // This cycles through the demo sequences.
 // FIXME - version dependend demo numbers?
 //
-void dDoAdvanceDemo()
+void doAdvanceDemo()
 {
     players[consoleplayer].playerstate = PST_LIVE; // not reborn
     advancedemo = false;
@@ -525,19 +540,19 @@ void dDoAdvanceDemo()
 }
 
 //
-// dStartTitle
+// startTitle
 //
-void dStartTitle()
+void startTitle()
 {
     gameaction = ga_nothing;
     demosequence = -1;
-    dAdvanceDemo();
+    advanceDemo();
 }
 
 //
-// dAddFile
+// addWadFile
 //
-void dAddFile(const char* file)
+void addWadFile(const char* file)
 {
     int numwadfiles;
     char* newfile;
@@ -631,43 +646,43 @@ void IdentifyVersion()
     doom_strcpy(basedefault, home);
     doom_concat(basedefault, "/.doomrc");
 
-    if (M_CheckParm("-shdev"))
+    if (Doom::checkParm("-shdev"))
     {
         gamemode = shareware;
         devparm = true;
-        dAddFile(DEVDATA "doom1.wad");
-        dAddFile(DEVMAPS "data_se/texture1.lmp");
-        dAddFile(DEVMAPS "data_se/pnames.lmp");
+        addWadFile(DEVDATA "doom1.wad");
+        addWadFile(DEVMAPS "data_se/texture1.lmp");
+        addWadFile(DEVMAPS "data_se/pnames.lmp");
         doom_strcpy(basedefault, DEVDATA "default.cfg");
         return;
     }
 
-    if (M_CheckParm("-regdev"))
+    if (Doom::checkParm("-regdev"))
     {
         gamemode = registered;
         devparm = true;
-        dAddFile(DEVDATA "doom.wad");
-        dAddFile(DEVMAPS "data_se/texture1.lmp");
-        dAddFile(DEVMAPS "data_se/texture2.lmp");
-        dAddFile(DEVMAPS "data_se/pnames.lmp");
+        addWadFile(DEVDATA "doom.wad");
+        addWadFile(DEVMAPS "data_se/texture1.lmp");
+        addWadFile(DEVMAPS "data_se/texture2.lmp");
+        addWadFile(DEVMAPS "data_se/pnames.lmp");
         doom_strcpy(basedefault, DEVDATA "default.cfg");
         return;
     }
 
-    if (M_CheckParm("-comdev"))
+    if (Doom::checkParm("-comdev"))
     {
         gamemode = commercial;
         devparm = true;
         /* I don't bother
         if(plutonia)
-            dAddFile (DEVDATA"plutonia.wad");
+            addWadFile (DEVDATA"plutonia.wad");
         else if(tnt)
-            dAddFile (DEVDATA"tnt.wad");
+            addWadFile (DEVDATA"tnt.wad");
         else*/
-        dAddFile(DEVDATA "doom2.wad");
+        addWadFile(DEVDATA "doom2.wad");
 
-        dAddFile(DEVMAPS "cdata/texture1.lmp");
-        dAddFile(DEVMAPS "cdata/pnames.lmp");
+        addWadFile(DEVMAPS "cdata/texture1.lmp");
+        addWadFile(DEVMAPS "cdata/pnames.lmp");
         doom_strcpy(basedefault, DEVDATA "default.cfg");
         return;
     }
@@ -681,7 +696,7 @@ void IdentifyVersion()
         // Let's handle languages in config files, okay?
         language = french;
         doom_print("French version\n");
-        dAddFile(doom2fwad);
+        addWadFile(doom2fwad);
         return;
     }
 
@@ -689,7 +704,7 @@ void IdentifyVersion()
     {
         doom_close(f);
         gamemode = commercial;
-        dAddFile(doom2wad);
+        addWadFile(doom2wad);
         return;
     }
 
@@ -697,7 +712,7 @@ void IdentifyVersion()
     {
         doom_close(f);
         gamemode = commercial;
-        dAddFile(plutoniawad);
+        addWadFile(plutoniawad);
         return;
     }
 
@@ -705,7 +720,7 @@ void IdentifyVersion()
     {
         doom_close(f);
         gamemode = commercial;
-        dAddFile(tntwad);
+        addWadFile(tntwad);
         return;
     }
 
@@ -713,7 +728,7 @@ void IdentifyVersion()
     {
         doom_close(f);
         gamemode = retail;
-        dAddFile(doomuwad);
+        addWadFile(doomuwad);
         return;
     }
 
@@ -721,7 +736,7 @@ void IdentifyVersion()
     {
         doom_close(f);
         gamemode = registered;
-        dAddFile(doomwad);
+        addWadFile(doomwad);
         return;
     }
 
@@ -729,7 +744,7 @@ void IdentifyVersion()
     {
         doom_close(f);
         gamemode = shareware;
-        dAddFile(doom1wad);
+        addWadFile(doom1wad);
         return;
     }
 
@@ -814,9 +829,9 @@ void FindResponseFile()
 }
 
 //
-// dDoomMain
+// doomMain
 //
-void dDoomMain()
+void doomMain()
 {
     int p;
     EA::Array<char, 256> file;
@@ -827,13 +842,13 @@ void dDoomMain()
 
     modifiedgame = false;
 
-    nomonsters = M_CheckParm("-nomonsters");
-    respawnparm = M_CheckParm("-respawn");
-    fastparm = M_CheckParm("-fast");
-    devparm = M_CheckParm("-devparm");
-    if (M_CheckParm("-altdeath"))
+    nomonsters = Doom::checkParm("-nomonsters");
+    respawnparm = Doom::checkParm("-respawn");
+    fastparm = Doom::checkParm("-fast");
+    devparm = Doom::checkParm("-devparm");
+    if (Doom::checkParm("-altdeath"))
         deathmatch = 2;
-    else if (M_CheckParm("-deathmatch"))
+    else if (Doom::checkParm("-deathmatch"))
         deathmatch = 1;
 
     switch (gamemode)
@@ -934,7 +949,7 @@ void dDoomMain()
         doom_print(D_DEVSTR);
 
 #if 0 // [pd] Ignore cdrom
-    if (M_CheckParm("-cdrom"))
+    if (Doom::checkParm("-cdrom"))
     {
         doom_print(D_CDROM);
         mkdir("c:\\doomdata", 0);
@@ -943,7 +958,7 @@ void dDoomMain()
 #endif
 
     // turbo option
-    if ((p = M_CheckParm("-turbo")))
+    if ((p = Doom::checkParm("-turbo")))
     {
         int scale = 200;
 
@@ -968,7 +983,7 @@ void dDoomMain()
     //
     // convenience hack to allow -wart e m to add a wad file
     // prepend a tilde to the filename so wadfile will be reloadable
-    p = M_CheckParm("-wart");
+    p = Doom::checkParm("-wart");
     if (p)
     {
         myargv[p][4] = 'p'; // big hack, change to -warp
@@ -1013,30 +1028,30 @@ void dDoomMain()
                 }
                 break;
         }
-        dAddFile(file.data());
+        addWadFile(file.data());
     }
 
-    p = M_CheckParm("-file");
+    p = Doom::checkParm("-file");
     if (p)
     {
         // the parms after p are wadfile/lump names,
         // until end of parms or another - preceded parm
         modifiedgame = true; // homebrew levels
         while (++p != myargc && myargv[p][0] != '-')
-            dAddFile(myargv[p]);
+            addWadFile(myargv[p]);
     }
 
-    p = M_CheckParm("-playdemo");
+    p = Doom::checkParm("-playdemo");
 
     if (!p)
-        p = M_CheckParm("-timedemo");
+        p = Doom::checkParm("-timedemo");
 
     if (p && p < myargc - 1)
     {
         //doom_sprintf(file, "%s.lmp", myargv[p + 1]);
         doom_strcpy(file.data(), myargv[p + 1]);
         doom_concat(file.data(), ".lmp");
-        dAddFile(file.data());
+        addWadFile(file.data());
         //doom_print("Playing demo %s.lmp.\n", myargv[p + 1]);
         doom_print("Playing demo ");
         doom_print(myargv[p + 1]);
@@ -1049,14 +1064,14 @@ void dDoomMain()
     startmap = 1;
     autostart = false;
 
-    p = M_CheckParm("-skill");
+    p = Doom::checkParm("-skill");
     if (p && p < myargc - 1)
     {
         startskill = static_cast<skill_t>((myargv[p + 1][0] - '1'));
         autostart = true;
     }
 
-    p = M_CheckParm("-episode");
+    p = Doom::checkParm("-episode");
     if (p && p < myargc - 1)
     {
         startepisode = myargv[p + 1][0] - '0';
@@ -1064,7 +1079,7 @@ void dDoomMain()
         autostart = true;
     }
 
-    p = M_CheckParm("-timer");
+    p = Doom::checkParm("-timer");
     if (p && p < myargc - 1 && deathmatch)
     {
         int time = doom_atoi(myargv[p + 1]);
@@ -1077,11 +1092,11 @@ void dDoomMain()
         doom_print(".\n");
     }
 
-    p = M_CheckParm("-avg");
+    p = Doom::checkParm("-avg");
     if (p && p < myargc - 1 && deathmatch)
         doom_print("Austin Virtual Gaming: Levels will end after 20 minutes\n");
 
-    p = M_CheckParm("-warp");
+    p = Doom::checkParm("-warp");
     if (p && p < myargc - 1)
     {
         if (gamemode == commercial)
@@ -1095,11 +1110,11 @@ void dDoomMain()
     }
 
     // init subsystems
-    doom_print("V_Init: allocate screens.\n");
-    V_Init();
+    doom_print("Doom::initVideo: allocate screens.\n");
+    Doom::initVideo();
 
-    doom_print("M_LoadDefaults: Load system defaults.\n");
-    M_LoadDefaults(); // load before initing other systems
+    doom_print("Doom::loadDefaults: Load system defaults.\n");
+    Doom::loadDefaults(); // load before initing other systems
 
     doom_print("W_Init: Init WADfiles.\n");
     W_InitMultipleFiles(wadfiles);
@@ -1165,33 +1180,33 @@ void dDoomMain()
             break;
     }
 
-    doom_print("M_Init: Init miscellaneous info.\n");
-    M_Init();
+    doom_print("initMenu: Init miscellaneous info.\n");
+    initMenu();
 
     doom_print("R_Init: Init DOOM refresh daemon - ");
     R_Init();
 
     doom_print("\nP_Init: Init Playloop state.\n");
-    P_Init();
+    Doom::init();
 
     doom_print("I_Init: Setting up machine state.\n");
     I_Init();
 
-    doom_print("D_CheckNetGame: Checking network game status.\n");
-    D_CheckNetGame();
+    doom_print("Doom::checkNetGame: Checking network game status.\n");
+    Doom::checkNetGame();
 
     doom_print("S_Init: Setting up sound.\n");
     S_Init(snd_SfxVolume /* *8 */, snd_MusicVolume /* *8*/);
 
-    doom_print("HU_Init: Setting up heads up display.\n");
-    HU_Init();
+    doom_print("Doom::initHud: Setting up heads up display.\n");
+    Doom::initHud();
 
-    doom_print("ST_Init: Init status bar.\n");
-    ST_Init();
+    doom_print("Doom::initStatusBar: Init status bar.\n");
+    Doom::initStatusBar();
 
     // check for a driver that wants intermission stats
 #if 0 // [pd] Unsure how to test this
-    p = M_CheckParm("-statcopy");
+    p = Doom::checkParm("-statcopy");
     if (p && p < myargc - 1)
     {
         // for statistics driver
@@ -1201,7 +1216,7 @@ void dDoomMain()
 #endif
 
     // start the apropriate game based on parms
-    p = M_CheckParm("-record");
+    p = Doom::checkParm("-record");
 
     if (p && p < myargc - 1)
     {
@@ -1209,26 +1224,26 @@ void dDoomMain()
         autostart = true;
     }
 
-    p = M_CheckParm("-playdemo");
+    p = Doom::checkParm("-playdemo");
     if (p && p < myargc - 1)
     {
         singledemo = true; // quit after one demo
         G_DeferedPlayDemo(myargv[p + 1]);
-        dDoomLoop(); // never returns
+        doomLoop(); // never returns
     }
 
-    p = M_CheckParm("-timedemo");
+    p = Doom::checkParm("-timedemo");
     if (p && p < myargc - 1)
     {
         G_TimeDemo(myargv[p + 1]);
-        dDoomLoop(); // never returns
+        doomLoop(); // never returns
     }
 
-    p = M_CheckParm("-loadgame");
+    p = Doom::checkParm("-loadgame");
     if (p && p < myargc - 1)
     {
 #if 0 // [pd] We don't support the cdrom flag
-        if (M_CheckParm("-cdrom"))
+        if (Doom::checkParm("-cdrom"))
         {
             //doom_sprintf(file, "c:\\doomdata\\"SAVEGAMENAME"%c.dsg", myargv[p + 1][0]);
         }
@@ -1248,15 +1263,15 @@ void dDoomMain()
         if (autostart || netgame)
             G_InitNew(startskill, startepisode, startmap);
         else
-            dStartTitle(); // start up intro loop
+            startTitle(); // start up intro loop
     }
 
-    // dDoomLoop (); // never returns [ddps] Called by app
+    // doomLoop (); // never returns [ddps] Called by app
 
     if (demorecording)
         G_BeginRecording();
 
-    if (M_CheckParm("-debugfile"))
+    if (Doom::checkParm("-debugfile"))
     {
         EA::Array<char, 20> filename;
         //doom_sprintf(filename, "debug%i.txt", consoleplayer);
@@ -1270,7 +1285,7 @@ void dDoomMain()
         debugfile = doom_open(filename.data(), "w");
     }
 
-    I_InitGraphics();
+    initGraphics();
 }
 
 } // namespace Doom

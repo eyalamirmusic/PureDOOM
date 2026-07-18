@@ -8,7 +8,7 @@ namespace Doom
 // picked-up key, a chat line). w_message is the scrolling-text widget it is drawn through;
 // message_on says a message is currently showing (the widget binds to it), message_counter is the
 // tics left before it clears (HU_MSGTIMEOUT on each new message), and message_nottobefuckedwith
-// marks a message that a lower-priority one may not overwrite. HU_Ticker pulls plr->message into
+// marks a message that a lower-priority one may not overwrite. Doom::hudTicker pulls plr->message into
 // the widget, times it out, and the chat responder posts received chat here too.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5) - the first UI

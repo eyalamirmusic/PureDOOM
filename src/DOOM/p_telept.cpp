@@ -16,7 +16,3 @@
 
 #include "Sim/Teleport.h"
 
-int EV_Teleport(line_t* line, int side, mobj_t* thing)
-{
-    return Doom::teleport(line, side, thing);
-}

@@ -17,8 +17,8 @@ namespace Doom
 // read by g_game, the probe and Sim/SaveGame - both externs move to a reference in
 // lockstep, or a bare one clobbers the reference's pointer), buffer and name g_game's
 // own file-scope. The vanilla names become references onto these members. cursor is live
-// test-covered (the probe sets it and walks it through P_ArchiveThinkers /
-// P_UnArchiveThinkers); buffer and name are exercised by the app's save/load, and a
+// test-covered (the probe sets it and walks it through Doom::archiveThinkers /
+// Doom::unArchiveThinkers); buffer and name are exercised by the app's save/load, and a
 // reference-alias is pure storage relocation regardless.
 struct SaveGameState
 {

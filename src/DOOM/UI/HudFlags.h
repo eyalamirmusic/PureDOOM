@@ -10,7 +10,7 @@ namespace Doom
 // which holds UI/Hud's file-local four (plr, w_title, headsupactive) that no other file reads.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5). Externed in
-// UI/Hud and UI/Menu, and written by HU_Ticker/HU_Responder, so their hu_stuff.cpp definitions
+// UI/Hud and UI/Menu, and written by Doom::hudTicker/Doom::hudResponder, so their hu_stuff.cpp definitions
 // and every extern become references onto these members (a plain extern that wrote one would
 // clobber the reference's storage). Live golden-covered - the HUD draws every tic.
 struct HudFlags

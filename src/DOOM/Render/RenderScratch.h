@@ -8,8 +8,8 @@ namespace Doom
 {
 // The transient state of the frame in progress, overwritten continuously as the BSP is
 // walked and never persisted: the current wall segment's projection (rw_distance and
-// the angles R_StoreWallRange derives, read back by the seg loop), the floor and ceiling
-// visplanes the current subsector is drawing into (R_Subsector picks them, the plane
+// the angles Doom::storeWallRange derives, read back by the seg loop), the floor and ceiling
+// visplanes the current subsector is drawing into (Doom::subsector picks them, the plane
 // code fills them), and the subsector counter. It is pure scratch - every reader writes
 // it just before, so its value between frames means nothing.
 //

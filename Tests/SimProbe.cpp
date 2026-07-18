@@ -1,5 +1,8 @@
 #include "SimProbe.h"
 
+#include <DOOM/Sim/Level.h>
+#include <DOOM/Sim/SaveGame.h>
+#include <DOOM/Sim/Setup.h>
 #include <DOOM/DOOM.h>
 
 #include <DOOM/doomstat.h>
@@ -46,13 +49,13 @@ static void simOnPrint(const char* text)
 }
 
 // The engine does not copy its argv - doom_init keeps the pointer, and
-// M_CheckParm walks it for the rest of the run. P_SpawnSpecials asks for "-avg"
+// Doom::checkParm walks it for the rest of the run. Doom::spawnSpecials asks for "-avg"
 // on every level load, which is long after the function that booted the engine
 // has returned, so the array has to outlive it. Static, therefore, and not on
 // doomSimBoot's stack.
 //
 // It went unnoticed until this file passed a second argument: with argc at 1,
-// M_CheckParm's loop never dereferenced myargv at all, and the dangling pointer
+// Doom::checkParm's loop never dereferenced myargv at all, and the dangling pointer
 // was harmless.
 static char simProgram[] = "doom-tests";
 static char simConfigFlag[] = "-config";
@@ -90,8 +93,8 @@ static int simBootInternal(const char* demoLump, int keepAttract)
 
     doom_init((int) (sizeof(simArgv) / sizeof(simArgv[0])), simArgv, 0);
 
-    // doom_init ends in D_StartTitle, which raises the attract loop's flag. Left
-    // alone, D_DoAdvanceDemo runs on the very first tic, clears gameaction and
+    // doom_init ends in Doom::startTitle, which raises the attract loop's flag. Left
+    // alone, Doom::doAdvanceDemo runs on the very first tic, clears gameaction and
     // starts the title sequence - which then plays demo1, the credits, demo2 and
     // so on. A demo boot lowers the flag so the game runs only the demo we hand
     // it; a title boot (keepAttract) leaves it up, so the first tic brings up
@@ -100,7 +103,7 @@ static int simBootInternal(const char* demoLump, int keepAttract)
         advancedemo = false;
 
     // Deliberately NOT -playdemo. That sets `singledemo`, which ends the demo
-    // through I_Quit - and I_Quit calls M_SaveDefaults, which would have every
+    // through I_Quit - and I_Quit calls Doom::saveDefaults, which would have every
     // test run scribble on the config. Deferring the demo by hand lets the
     // engine retire it the ordinary way, by clearing demoplayback, and touches
     // nothing outside the process.
@@ -379,11 +382,11 @@ int doomSimLoadLevel(int episode, int map, int skill)
     netgame = false;
     playeringame[0] = true;
 
-    // The old level's mobjs are about to be freed by P_SetupLevel (the level
+    // The old level's mobjs are about to be freed by Doom::setupLevel (the level
     // allocation pool is released whole), so every handle into them dies here.
     simMobjs.clear();
 
-    // G_InitNew runs the whole load synchronously (G_DoLoadLevel -> P_SetupLevel),
+    // G_InitNew runs the whole load synchronously (G_DoLoadLevel -> Doom::setupLevel),
     // unlike G_DeferedInitNew which only queues it for the next tic.
     G_InitNew((skill_t) skill, episode, map);
 
@@ -534,7 +537,7 @@ int doomSimFlagNoClip()
 // --- The save/load serialization net (pre-Thinker) --------------------------
 //
 // p_saveg's archive/unarchive is the one simulation path the goldens do not
-// watch: no demo saves or loads, so P_ArchiveThinkers / P_UnArchiveThinkers and
+// watch: no demo saves or loads, so Doom::archiveThinkers / Doom::unArchiveThinkers and
 // the whole mobj/special byte layout ride unpinned. The thinker_t -> Thinker
 // virtualisation and the mobj/special zone-ownership change both rewrite exactly
 // that layout, so this builds the missing net first (the Step-0 move): archive
@@ -543,7 +546,7 @@ int doomSimFlagNoClip()
 //
 // This uses its own hash, not doomSimStateHash: that one is golden-compared and
 // append-only, and it covers only the mobjs and the player, not the sectors,
-// lines and sides P_ArchiveWorld round-trips. This one walks everything the
+// lines and sides Doom::archiveWorld round-trips. This one walks everything the
 // archive serializes - and only the scalar fields it restores exactly, never the
 // pointers (target, subsector, the blockmap/sector links) that P_SetThingPosition
 // legitimately recomputes on load and would differ between two world instances.
@@ -553,7 +556,7 @@ static unsigned long long simWorldHash()
 {
     simHash = 1469598103934665603ULL;
 
-    // Players - the scalar state P_ArchivePlayers/P_UnArchivePlayers round-trip
+    // Players - the scalar state Doom::archivePlayers/Doom::unArchivePlayers round-trip
     // (pointers like mo/attacker/message are fixed up or nulled on load).
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -575,7 +578,7 @@ static unsigned long long simWorldHash()
         simMix(&p->secretcount, sizeof(p->secretcount));
     }
 
-    // The world - sectors, lines and sides, exactly the fields P_ArchiveWorld
+    // The world - sectors, lines and sides, exactly the fields Doom::archiveWorld
     // walks (moving floors/ceilings and switched textures live here).
     for (int i = 0; i < numsectors; i++)
     {
@@ -605,9 +608,9 @@ static unsigned long long simWorldHash()
         simMix(&sd->midtexture, sizeof(sd->midtexture));
     }
 
-    // Every thinker: each mobj by the scalar fields P_ArchiveThinkers restores,
+    // Every thinker: each mobj by the scalar fields Doom::archiveThinkers restores,
     // plus a total thinker count so a wrong number of specials from
-    // P_UnArchiveSpecials shows up even though the specials are hashed only
+    // Doom::unArchiveSpecials shows up even though the specials are hashed only
     // through the sector state they drive.
     int mobjCount = 0;
     int thinkerCount = 0;
@@ -656,10 +659,10 @@ int doomSimSaveLoadPreservesWorld()
 
     // Archive the live world, exactly the P_Archive* sequence gDoSaveGame runs.
     save_p = saveScratch;
-    P_ArchivePlayers();
-    P_ArchiveWorld();
-    P_ArchiveThinkers();
-    P_ArchiveSpecials();
+    Doom::archivePlayers();
+    Doom::archiveWorld();
+    Doom::archiveThinkers();
+    Doom::archiveSpecials();
 
     // Reload a fresh base level (gDoLoadGame's gInitNew), which wipes the world
     // the unarchive then rebuilds. doomSimLoadLevel re-arms simAbort on the way
@@ -671,10 +674,10 @@ int doomSimSaveLoadPreservesWorld()
 
     // Unarchive over the fresh world.
     save_p = saveScratch;
-    P_UnArchivePlayers();
-    P_UnArchiveWorld();
-    P_UnArchiveThinkers();
-    P_UnArchiveSpecials();
+    Doom::unArchivePlayers();
+    Doom::unArchiveWorld();
+    Doom::unArchiveThinkers();
+    Doom::unArchiveSpecials();
 
     // The fresh player doomSimLoadLevel registered as handle 0 was just freed and
     // rebuilt by the unarchive; point the registry at the restored one.

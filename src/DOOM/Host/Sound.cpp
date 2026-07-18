@@ -351,7 +351,7 @@ int addsfx(int sfxid, int volume, int step, int seperation)
 // version.
 // See soundserver initdata().
 //
-void I_SetChannels()
+void setChannels()
 {
     // Init internal lookups (raw data, mixing buffer, channels).
     // This function sets up internal lookups used during
@@ -657,7 +657,7 @@ void I_SetSfxVolume(int volume)
 }
 
 // MUSIC API - dummy. Some code from DOS version.
-void I_SetMusicVolume(int volume)
+void setMusicVolume(int volume)
 {
     snd_MusicVolume = volume;
     mus_volume = snd_MusicVolume * 8;
@@ -674,7 +674,7 @@ void I_SetMusicVolume(int volume)
 // Retrieve the raw data lump index
 //  for a given SFX name.
 //
-int I_GetSfxLumpNum(sfxinfo_t* sfx)
+int sfxLumpNum(sfxinfo_t* sfx)
 {
     EA::Array<char, 9> namebuf;
     //doom_sprintf(namebuf, "ds%s", sfx->name);
@@ -695,14 +695,14 @@ int I_GetSfxLumpNum(sfxinfo_t* sfx)
 // Pitching (that is, increased speed of playback)
 //  is set, but currently not used by mixing.
 //
-int I_StartSound(int id, int vol, int sep, int pitch, [[maybe_unused]] int priority)
+int startSoundHost(int id, int vol, int sep, int pitch, [[maybe_unused]] int priority)
 {
     // Returns a handle (not used).
     id = addsfx(id, vol, steptable[pitch], sep);
     return id;
 }
 
-void I_StopSound([[maybe_unused]] int handle)
+void stopSoundHost([[maybe_unused]] int handle)
 {
     // You need the handle returned by StartSound.
     // Would be looping all channels,
@@ -710,7 +710,7 @@ void I_StopSound([[maybe_unused]] int handle)
     //  an setting the channel to zero.
 }
 
-int I_SoundIsPlaying(int handle)
+int soundIsPlaying(int handle)
 {
     // Ouch.
     return gametic < handle;
@@ -729,7 +729,7 @@ int I_SoundIsPlaying(int handle)
 //
 // This function currently supports only 16bit.
 //
-void I_UpdateSound()
+void updateSound()
 {
     [[maybe_unused]] static int song_tick_progress = 0;
 
@@ -844,9 +844,9 @@ void I_UpdateSound()
 // Mixing now done synchronous, and
 //  only output be done asynchronous?
 //
-void I_SubmitSound() {}
+void submitSound() {}
 
-void I_UpdateSoundParams([[maybe_unused]] int handle,
+void updateSoundParams([[maybe_unused]] int handle,
                          [[maybe_unused]] int vol,
                          [[maybe_unused]] int sep,
                          [[maybe_unused]] int pitch)
@@ -857,14 +857,14 @@ void I_UpdateSoundParams([[maybe_unused]] int handle,
     //  and resetting the channel parameters.
 }
 
-void I_ShutdownSound()
+void shutdownSoundHost()
 {
     // Wait till all pending sounds are finished.
     int done = 0;
     int i;
 
     // FIXME (below).
-    doom_print("I_ShutdownSound: NOT finishing pending sounds\n");
+    doom_print("shutdownSoundHost: NOT finishing pending sounds\n");
 
     while (!done)
     {
@@ -880,15 +880,15 @@ void I_ShutdownSound()
     return;
 }
 
-void I_InitSound()
+void initSoundHost()
 {
     int i;
 
     // Secure and configure sound device first.
-    doom_print("I_InitSound: ");
+    doom_print("initSoundHost: ");
 
     // Initialize external data (all sounds) at start, keep static.
-    doom_print("I_InitSound: ");
+    doom_print("initSoundHost: ");
 
     for (i = 1; i < NUMSFX; i++)
     {
@@ -913,17 +913,17 @@ void I_InitSound()
         mixbuffer[i] = 0;
 
     // Finished initialization.
-    doom_print("I_InitSound: sound module ready\n");
+    doom_print("initSoundHost: sound module ready\n");
 }
 
 //
 // MUSIC API.
 //
-void I_InitMusic() {}
+void initMusic() {}
 
-void I_ShutdownMusic() {}
+void shutdownMusic() {}
 
-void I_PlaySong([[maybe_unused]] int handle, int looping)
+void playSong([[maybe_unused]] int handle, int looping)
 {
     musicdies = gametic + TICRATE * 30;
 
@@ -931,12 +931,12 @@ void I_PlaySong([[maybe_unused]] int handle, int looping)
     mus_playing = true;
 }
 
-void I_PauseSong([[maybe_unused]] int handle)
+void pauseSong([[maybe_unused]] int handle)
 {
     mus_playing = false;
 }
 
-void I_ResumeSong([[maybe_unused]] int handle)
+void resumeSong([[maybe_unused]] int handle)
 {
     if (mus_data)
         mus_playing = true;
@@ -949,7 +949,7 @@ static void reset_all_channels()
             0b10110000 | i | (123 << 8);
 }
 
-void I_StopSong([[maybe_unused]] int handle)
+void stopSong([[maybe_unused]] int handle)
 {
     mus_data = 0;
     mus_delay = 0;
@@ -959,12 +959,12 @@ void I_StopSong([[maybe_unused]] int handle)
     reset_all_channels();
 }
 
-void I_UnRegisterSong(int handle)
+void unregisterSong(int handle)
 {
-    I_StopSong(handle);
+    stopSong(handle);
 }
 
-int I_RegisterSong(void* data)
+int registerSong(void* data)
 {
     doom_memcpy(&mus_header, data, sizeof(mus_header_t));
     if (doom_strncmp(mus_header.ID, "MUS", 3) != 0 || mus_header.ID[3] != 0x1A)
@@ -984,7 +984,7 @@ int I_QrySongPlaying([[maybe_unused]] int handle)
     return mus_playing;
 }
 
-unsigned long I_TickSong()
+unsigned long tickSong()
 {
     unsigned long midi_event = 0;
 

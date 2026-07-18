@@ -34,23 +34,21 @@ void I_Init();
 // for the zone management.
 byte* I_ZoneBase(int* size);
 
-// Called by D_DoomLoop,
+// Called by Doom::doomLoop,
 // returns current time in tics.
 int I_GetTime();
 
-// Called by D_DoomLoop,
+// Called by Doom::doomLoop,
 // called before processing any tics in a frame
 // (just after displaying a frame).
 // Time consuming syncronous operations
 // are performed here (joystick reading).
-// Can call D_PostEvent.
-void I_StartFrame();
+// Can call Doom::postEvent.
 
-// Called by D_DoomLoop,
+// Called by Doom::doomLoop,
 // called before processing each tic in a frame.
 // Quick syncronous operations are performed here.
-// Can call D_PostEvent.
-void I_StartTic();
+// Can call Doom::postEvent.
 
 // Asynchronous interrupt functions should maintain private queues
 // that are read by the synchronous functions
@@ -62,7 +60,7 @@ void I_StartTic();
 // for normal input.
 ticcmd_t* I_BaseTiccmd();
 
-// Called by M_Responder when quit is selected.
+// Called by Doom::menuResponder when quit is selected.
 // Clean exit, displays sell blurb.
 void I_Quit();
 

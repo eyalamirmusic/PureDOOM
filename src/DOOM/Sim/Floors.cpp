@@ -18,6 +18,7 @@
 
 #include "Floors.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Specials.h"
 
 #include <new>
 
@@ -237,7 +238,7 @@ void moveFloor(floormove_t& floor)
                     break;
             }
         }
-        P_RemoveThinker(&floor);
+        Doom::removeThinker(&floor);
 
         S_StartSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg), sfx_pstop);
     }
@@ -255,7 +256,7 @@ int doFloor(line_t* line, floor_e floortype)
 
     secnum = -1;
     rtn = 0;
-    while ((secnum = P_FindSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
 
@@ -266,7 +267,7 @@ int doFloor(line_t* line, floor_e floortype)
         // new floor thinker
         rtn = 1;
         floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
-        P_AddThinker(floor);
+        Doom::addThinker(floor);
         sec->specialdata = floor;
         floor->type = floortype;
         floor->crush = false;
@@ -277,21 +278,21 @@ int doFloor(line_t* line, floor_e floortype)
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = P_FindHighestFloorSurrounding(sec);
+                floor->floordestheight = Doom::findHighestFloorSurrounding(sec);
                 break;
 
             case lowerFloorToLowest:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = P_FindLowestFloorSurrounding(sec);
+                floor->floordestheight = Doom::findLowestFloorSurrounding(sec);
                 break;
 
             case turboLower:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
-                floor->floordestheight = P_FindHighestFloorSurrounding(sec);
+                floor->floordestheight = Doom::findHighestFloorSurrounding(sec);
                 if (floor->floordestheight != sec->floorheight)
                     floor->floordestheight += 8 * FRACUNIT;
                 break;
@@ -302,7 +303,7 @@ int doFloor(line_t* line, floor_e floortype)
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = P_FindLowestCeilingSurrounding(sec);
+                floor->floordestheight = Doom::findLowestCeilingSurrounding(sec);
                 if (floor->floordestheight > sec->ceilingheight)
                     floor->floordestheight = sec->ceilingheight;
                 floor->floordestheight -=
@@ -314,7 +315,7 @@ int doFloor(line_t* line, floor_e floortype)
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
                 floor->floordestheight =
-                    P_FindNextHighestFloor(sec, sec->floorheight);
+                    Doom::findNextHighestFloor(sec, sec->floorheight);
                 break;
 
             case raiseFloorToNearest:
@@ -322,7 +323,7 @@ int doFloor(line_t* line, floor_e floortype)
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight =
-                    P_FindNextHighestFloor(sec, sec->floorheight);
+                    Doom::findNextHighestFloor(sec, sec->floorheight);
                 break;
 
             case raiseFloor24:
@@ -377,7 +378,7 @@ int doFloor(line_t* line, floor_e floortype)
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = P_FindLowestFloorSurrounding(sec);
+                floor->floordestheight = Doom::findLowestFloorSurrounding(sec);
                 floor->texture = sec->floorpic;
 
                 for (int i = 0; i < sec->linecount; i++)
@@ -438,7 +439,7 @@ int buildStairs(line_t* line, stair_e type)
 
     secnum = -1;
     rtn = 0;
-    while ((secnum = P_FindSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
 
@@ -449,7 +450,7 @@ int buildStairs(line_t* line, stair_e type)
         // new floor thinker
         rtn = 1;
         floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
-        P_AddThinker(floor);
+        Doom::addThinker(floor);
         sec->specialdata = floor;
         floor->direction = 1;
         floor->sector = sec;
@@ -502,7 +503,7 @@ int buildStairs(line_t* line, stair_e type)
                 secnum = newsecnum;
                 floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
 
-                P_AddThinker(floor);
+                Doom::addThinker(floor);
 
                 sec->specialdata = floor;
                 floor->direction = 1;

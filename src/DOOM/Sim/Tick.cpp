@@ -1,6 +1,6 @@
 // Rewritten out of vanilla p_tick into namespace Doom.
 //
-// The thinker list (init/add/remove/run) and the per-tic P_Ticker that thinks each
+// The thinker list (init/add/remove/run) and the per-tic Doom::ticker that thinks each
 // player and runs the thinkers, specials and respawns. The run loop dispatches
 // through the thinker function-pointer union, so the T_/P_MobjThinker addresses it
 // stores stay global. p_tick.cpp shims the vanilla names and owns leveltime and
@@ -15,6 +15,7 @@
 #include "Tick.h"
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
+#include "Specials.h"
 // can store their address.
 
 namespace Doom
@@ -175,7 +176,7 @@ void ticker()
             P_PlayerThink(&players[i]);
 
     runThinkers();
-    P_UpdateSpecials();
+    Doom::updateSpecials();
     P_RespawnSpecials();
 
     // for par times

@@ -43,36 +43,22 @@ extern int& levelTimeCount;
 
 
 // at game start
-void P_InitPicAnims();
 
 // at map load
-void P_SpawnSpecials();
 
 // every tic
-void P_UpdateSpecials();
 
 // when needed
 doom_boolean P_UseSpecialLine(mobj_t* thing, line_t* line, int side);
 
-void P_ShootSpecialLine(mobj_t* thing, line_t* line);
-void P_CrossSpecialLine(int linenum, int side, mobj_t* thing);
-void P_PlayerInSpecialSector(player_t* player);
 int twoSided(int sector, int line);
 sector_t* getSector(int currentSector, int line, int side);
 side_t* getSide(int currentSector, int line, int side);
-fixed_t P_FindLowestFloorSurrounding(sector_t* sec);
-fixed_t P_FindHighestFloorSurrounding(sector_t* sec);
-fixed_t P_FindNextHighestFloor(sector_t* sec, int currentheight);
-fixed_t P_FindLowestCeilingSurrounding(sector_t* sec);
-fixed_t P_FindHighestCeilingSurrounding(sector_t* sec);
-int P_FindSectorFromLineTag(line_t* line, int start);
-int P_FindMinSurroundingLight(sector_t* sector, int max);
 sector_t* getNextSector(line_t* line, sector_t* sec);
 
 //
 // SPECIAL
 //
-int EV_DoDonut(line_t* line);
 
 
 //
@@ -131,19 +117,12 @@ struct glow_t : Doom::Thinker
 #define FASTDARK 15
 #define SLOWDARK 35
 
-void P_SpawnFireFlicker(sector_t* sector);
 void T_LightFlash(lightflash_t* flash);
-void P_SpawnLightFlash(sector_t* sector);
 void T_StrobeFlash(strobe_t* flash);
 
-void P_SpawnStrobeFlash(sector_t* sector, int fastOrSlow, int inSync);
-void EV_StartLightStrobing(line_t* line);
-void EV_TurnTagLightsOff(line_t* line);
 
-void EV_LightTurnOn(line_t* line, int bright);
 
 void T_Glow(glow_t* g);
-void P_SpawnGlowingLight(sector_t* sector);
 
 
 //
@@ -243,11 +222,6 @@ extern plat_t* (&activeplats)[MAXPLATS];
 
 
 void T_PlatRaise(plat_t* plat);
-int EV_DoPlat(line_t* line, plattype_e type, int amount);
-void P_AddActivePlat(plat_t* plat);
-void P_RemoveActivePlat(plat_t* plat);
-void EV_StopPlat(line_t* line);
-void P_ActivateInStasis(int tag);
 
 
 //
@@ -341,12 +315,7 @@ struct ceiling_t : Doom::Thinker
 extern ceiling_t* (&activeceilings)[MAXCEILINGS];
 
 
-int EV_DoCeiling(line_t* line, ceiling_e type);
 void T_MoveCeiling(ceiling_t* ceiling);
-void P_AddActiveCeiling(ceiling_t* c);
-void P_RemoveActiveCeiling(ceiling_t* c);
-int EV_CeilingCrushStop(line_t* line);
-void P_ActivateInStasisCeiling(line_t* line);
 
 
 //
@@ -428,7 +397,6 @@ void T_MoveFloor(floormove_t* floor);
 //
 // P_TELEPT
 //
-int EV_Teleport(line_t* line, int side, mobj_t* thing);
 
 
 

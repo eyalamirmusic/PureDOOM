@@ -22,62 +22,14 @@
 
 #include "Game/DoomMain.h"
 
-void D_PostEvent(event_t* ev)
-{
-    Doom::dPostEvent(ev);
-}
 
-void D_ProcessEvents()
-{
-    Doom::dProcessEvents();
-}
 
-void D_Display()
-{
-    Doom::dDisplay();
-}
 
-void D_UpdateWipe()
-{
-    Doom::dUpdateWipe();
-}
 
-void D_DoomLoop()
-{
-    Doom::dDoomLoop();
-}
 
-void D_PageTicker()
-{
-    Doom::dPageTicker();
-}
 
-void D_PageDrawer()
-{
-    Doom::dPageDrawer();
-}
 
-void D_AdvanceDemo()
-{
-    Doom::dAdvanceDemo();
-}
 
-void D_DoAdvanceDemo()
-{
-    Doom::dDoAdvanceDemo();
-}
 
-void D_StartTitle()
-{
-    Doom::dStartTitle();
-}
 
-void D_AddFile(const char* file)
-{
-    Doom::dAddFile(file);
-}
 
-void D_DoomMain()
-{
-    Doom::dDoomMain();
-}

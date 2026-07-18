@@ -12,7 +12,7 @@ namespace Doom
 // faster, and a slow-turn value used for the first few tics of a key press). MAXPLMOVE is
 // forwardmove[1], the run speed, which also caps the combined forward/side move.
 //
-// forwardmove/sidemove are not purely fixed reference data: D_DoomLoop's -turbo handling scales
+// forwardmove/sidemove are not purely fixed reference data: Doom::doomLoop's -turbo handling scales
 // both at startup (forwardmove[i] = forwardmove[i] * scale / 100), so they are genuine per-session
 // state. That write lives in Game/DoomMain.cpp, which is why forwardmove/sidemove are the only two
 // of the three read outside g_game - their DoomMain externs move to references-to-array in lockstep

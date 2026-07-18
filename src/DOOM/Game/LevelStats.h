@@ -2,7 +2,7 @@
 
 namespace Doom
 {
-// The current level's progress. P_SetupLevel counts the map's monsters, items and secret
+// The current level's progress. Doom::setupLevel counts the map's monsters, items and secret
 // sectors into the totals; the playsim bumps them as the player kills, picks up and finds
 // (each is what the intermission tallies against the map's totals). levelstarttic records
 // the gametic the level began at, and leveltime the tics elapsed in it - the level clock

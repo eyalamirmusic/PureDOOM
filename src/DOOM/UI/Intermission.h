@@ -5,7 +5,7 @@
 namespace Doom
 {
 // Level-completion intermission; wi_stuff.cpp keeps the vanilla WI_ names as shims.
-void wiTicker();
-void wiDrawer();
-void wiStart(wbstartstruct_t* wbstartstruct);
+void intermissionTicker();
+void drawIntermission();
+void startIntermission(wbstartstruct_t* wbstartstruct);
 } // namespace Doom

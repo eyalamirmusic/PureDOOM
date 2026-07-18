@@ -17,6 +17,7 @@
 #include "Render/BSP.h"
 #include "Render/BSPScratch.h"
 
+#include "Render/Segs.h"
 #define MAXSEGS 32
 
 // The BSP traversal pointers and the drawseg pool are a Doom::BSPScratch owned by the Engine
@@ -38,7 +39,7 @@ drawseg_t*& ds_p = Doom::bspScratch().ds_p;
 
 
 
-void R_StoreWallRange(int start, int stop);
+void Doom::storeWallRange(int start, int stop);
 
 
 
@@ -46,42 +47,10 @@ void R_StoreWallRange(int start, int stop);
 // R_ClearDrawSegs
 //
 
-void R_ClearDrawSegs()
-{
-    Doom::clearDrawSegs();
-}
 
-void R_ClipSolidWallSegment(int first, int last)
-{
-    Doom::clipSolidWallSegment(first, last);
-}
 
-void R_ClipPassWallSegment(int first, int last)
-{
-    Doom::clipPassWallSegment(first, last);
-}
 
-void R_ClearClipSegs()
-{
-    Doom::clearClipSegs();
-}
 
-void R_AddLine(seg_t* line)
-{
-    Doom::addLine(line);
-}
 
-doom_boolean R_CheckBBox(fixed_t* bspcoord)
-{
-    return Doom::checkBBox(bspcoord);
-}
 
-void R_Subsector(int num)
-{
-    Doom::subsector(num);
-}
 
-void R_RenderBSPNode(int bspnum)
-{
-    Doom::renderBSPNode(bspnum);
-}
