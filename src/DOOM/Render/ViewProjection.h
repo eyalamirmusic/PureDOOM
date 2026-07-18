@@ -6,10 +6,10 @@
 
 namespace Doom
 {
-// How the 3D view projects onto the screen. R_ExecuteSetViewSize computes it once
+// How the 3D view projects onto the screen. Doom::executeSetViewSize computes it once
 // whenever the view size changes (the menu's screen-size slider, or startup) and the
 // renderer reads it back on every seg and sprite: the screen centre in pixels and in
-// fixed point, the projection scale, and the angle<->column tables R_InitTextureMapping
+// fixed point, the projection scale, and the angle<->column tables Doom::initTextureMapping
 // builds (viewangletox maps a view angle to its screen column, xtoviewangle the
 // reverse, and clipangle is the field-of-view edge, xtoviewangle[0]).
 //
@@ -33,7 +33,7 @@ struct ViewProjection
     // The field-of-view edge angle (xtoviewangle[0]), clipped against per seg.
     angle_t clipangle = 0;
 
-    // R_InitTextureMapping's angle<->column maps.
+    // Doom::initTextureMapping's angle<->column maps.
     int viewangletox[FINEANGLES / 2] = {};
     angle_t xtoviewangle[SCREENWIDTH + 1] = {};
 };

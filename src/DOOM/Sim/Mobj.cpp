@@ -10,7 +10,7 @@
 //        Moving object handling. Spawn functions, the mobj thinker, missiles.
 //
 // Rewritten into namespace Doom out of vanilla p_mobj; p_mobj.cpp keeps the vanilla
-// names as shims and the item-respawn queue globals. P_MobjThinker in particular
+// names as shims and the item-respawn queue globals. Doom::mobjThinker in particular
 // stays a global shim: p_saveg and the sim probe identify mobjs by comparing a
 // thinker's function pointer to it, so spawnMobj below stores that global address,
 // not this file's mobjThinker.
@@ -36,12 +36,18 @@
 #include "../UI/StatusBar.h"
 #include <new>
 
+#include "../Game/Game.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
+#include "MapAction.h"
+#include "Movement.h"
 #define STOPSPEED 0x1000
 #define FRICTION 0xe800
 
 // Defined in g_game (reset a player's state on respawn) and in Clip (the shot range,
 // read by xyMovement's melee check).
-void G_PlayerReborn(int player);
+void Doom::playerReborn(int player);
 extern fixed_t& attackrange;
 
 namespace Doom
@@ -96,7 +102,7 @@ void explodeMissile(mobj_t* mo)
     mo->flags &= ~MF_MISSILE;
 
     if (mo->info->deathsound)
-        S_StartSound(mo, mo->info->deathsound);
+        Doom::startSound(mo, mo->info->deathsound);
 }
 
 //
@@ -154,12 +160,12 @@ void xyMovement(mobj_t* mo)
             xmove = ymove = 0;
         }
 
-        if (!P_TryMove(mo, ptryx, ptryy))
+        if (!Doom::tryMove(mo, ptryx, ptryy))
         {
             // blocked move
             if (mo->player)
             { // try to slide along it
-                P_SlideMove(mo);
+                Doom::slideMove(mo);
             }
             else if (mo->flags & MF_MISSILE)
             {
@@ -283,7 +289,7 @@ void zMovement(mobj_t* mo)
                 // after hitting the ground (hard),
                 // and utter appropriate sound.
                 mo->player->deltaviewheight = mo->momz >> 3;
-                S_StartSound(mo, sfx_oof);
+                Doom::startSound(mo, sfx_oof);
             }
             mo->momz = 0;
         }
@@ -341,21 +347,21 @@ void nightmareRespawn(mobj_t* mobj)
     y = mobj->spawnpoint.y << FRACBITS;
 
     // somthing is occupying it's position?
-    if (!P_CheckPosition(mobj, x, y))
+    if (!Doom::checkPosition(mobj, x, y))
         return; // no respwan
 
     // spawn a teleport fog at old spot
     // because of removal of the body?
     mo = spawnMobj(mobj->x, mobj->y, mobj->subsector->sector->floorheight, MT_TFOG);
     // initiate teleport sound
-    S_StartSound(mo, sfx_telept);
+    Doom::startSound(mo, sfx_telept);
 
     // spawn a teleport fog at the new spot
-    ss = R_PointInSubsector(x, y);
+    ss = Doom::pointInSubsector(x, y);
 
     mo = spawnMobj(x, y, ss->sector->floorheight, MT_TFOG);
 
-    S_StartSound(mo, sfx_telept);
+    Doom::startSound(mo, sfx_telept);
 
     // spawn the new monster
     mthing = &mobj->spawnpoint;
@@ -511,7 +517,7 @@ void removeMobj(mobj_t* mobj)
     P_UnsetThingPosition(mobj);
 
     // stop any playing sound
-    S_StopSound(mobj);
+    Doom::stopSound(mobj);
 
     // free block
     Doom::removeThinker(reinterpret_cast<thinker_t*>(mobj));
@@ -550,9 +556,9 @@ void respawnSpecials()
     y = mthing->y << FRACBITS;
 
     // spawn a teleport fog at the new spot
-    ss = R_PointInSubsector(x, y);
+    ss = Doom::pointInSubsector(x, y);
     mo = spawnMobj(x, y, ss->sector->floorheight, MT_IFOG);
-    S_StartSound(mo, sfx_itmbk);
+    Doom::startSound(mo, sfx_itmbk);
 
     // find which type to spawn
     for (i = 0; i < NUMMOBJTYPES; i++)
@@ -597,7 +603,7 @@ void spawnPlayer(mapthing_t* mthing)
     p = &players[mthing->type - 1];
 
     if (p->playerstate == PST_REBORN)
-        G_PlayerReborn(mthing->type - 1);
+        Doom::playerReborn(mthing->type - 1);
 
     x = mthing->x << FRACBITS;
     y = mthing->y << FRACBITS;
@@ -696,7 +702,7 @@ void spawnMapThing(mapthing_t* mthing)
 
     if (i == NUMMOBJTYPES)
     {
-        //I_Error("Error: spawnMapThing: Unknown type %i at (%i, %i)",
+        //fatalError("Error: spawnMapThing: Unknown type %i at (%i, %i)",
         //        mthing->type,
         //        mthing->x, mthing->y);
 
@@ -707,7 +713,7 @@ void spawnMapThing(mapthing_t* mthing)
         doom_concat(error_buf, ", ");
         doom_concat(error_buf, doom_itoa(mthing->y, 10));
         doom_concat(error_buf, ")");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     // don't spawn keycards and players in deathmatch
@@ -807,7 +813,7 @@ void checkMissileSpawn(mobj_t* th)
     th->y += (th->momy >> 1);
     th->z += (th->momz >> 1);
 
-    if (!P_TryMove(th, th->x, th->y))
+    if (!Doom::tryMove(th, th->x, th->y))
         explodeMissile(th);
 }
 
@@ -823,10 +829,10 @@ mobj_t* spawnMissile(mobj_t* source, mobj_t* dest, mobjtype_t type)
     th = spawnMobj(source->x, source->y, source->z + 4 * 8 * FRACUNIT, type);
 
     if (th->info->seesound)
-        S_StartSound(th, th->info->seesound);
+        Doom::startSound(th, th->info->seesound);
 
     th->target = source; // where it came from
-    an = R_PointToAngle2(source->x, source->y, dest->x, dest->y);
+    an = Doom::pointToAngle2(source->x, source->y, dest->x, dest->y);
 
     // fuzzy player
     if (dest->flags & MF_SHADOW)
@@ -865,17 +871,17 @@ void spawnPlayerMissile(mobj_t* source, mobjtype_t type)
 
     // see which target is to be aimed at
     an = source->angle;
-    slope = P_AimLineAttack(source, an, 16 * 64 * FRACUNIT);
+    slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
 
     if (!linetarget)
     {
         an += 1 << 26;
-        slope = P_AimLineAttack(source, an, 16 * 64 * FRACUNIT);
+        slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
 
         if (!linetarget)
         {
             an -= 2 << 26;
-            slope = P_AimLineAttack(source, an, 16 * 64 * FRACUNIT);
+            slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
         }
 
         if (!linetarget)
@@ -892,7 +898,7 @@ void spawnPlayerMissile(mobj_t* source, mobjtype_t type)
     th = spawnMobj(x, y, z, type);
 
     if (th->info->seesound)
-        S_StartSound(th, th->info->seesound);
+        Doom::startSound(th, th->info->seesound);
 
     th->target = source;
     th->angle = an;

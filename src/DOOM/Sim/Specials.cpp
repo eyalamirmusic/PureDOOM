@@ -37,6 +37,13 @@
 
 #include <new>
 
+#include "../Game/Game.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "Doors.h"
+#include "Floors.h"
+#include "Interaction.h"
+#include "Switches.h"
 #define MAXANIMS 32
 #define MAXLINEANIMS 64
 #define MAX_ADJOINING_SECTORS 20
@@ -192,7 +199,7 @@ void initPicAnims()
 
         if (lastanim->numpics < 2)
         {
-            //I_Error("Error: initPicAnims: bad cycle from %s to %s",
+            //fatalError("Error: initPicAnims: bad cycle from %s to %s",
             //        animdefs[i].startname,
             //        animdefs[i].endname);
 
@@ -200,7 +207,7 @@ void initPicAnims()
             doom_concat(error_buf, animdefs[i].startname);
             doom_concat(error_buf, " to ");
             doom_concat(error_buf, animdefs[i].endname);
-            I_Error(error_buf);
+            fatalError(error_buf);
         }
 
         lastanim->speed = animdefs[i].speed;
@@ -458,25 +465,25 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
         // All from here to RETRIGGERS.
         case 2:
             // Open Door
-            EV_DoDoor(line, door_open);
+            Doom::doDoor(line, door_open);
             line->special = 0;
             break;
 
         case 3:
             // Close Door
-            EV_DoDoor(line, door_close);
+            Doom::doDoor(line, door_close);
             line->special = 0;
             break;
 
         case 4:
             // Raise Door
-            EV_DoDoor(line, door_normal);
+            Doom::doDoor(line, door_normal);
             line->special = 0;
             break;
 
         case 5:
             // Raise Floor
-            EV_DoFloor(line, raiseFloor);
+            Doom::doFloor(line, raiseFloor);
             line->special = 0;
             break;
 
@@ -488,7 +495,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 8:
             // Build Stairs
-            EV_BuildStairs(line, build8);
+            Doom::buildStairs(line, build8);
             line->special = 0;
             break;
 
@@ -512,7 +519,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 16:
             // Close Door 30
-            EV_DoDoor(line, close30ThenOpen);
+            Doom::doDoor(line, close30ThenOpen);
             line->special = 0;
             break;
 
@@ -524,7 +531,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 19:
             // Lower Floor
-            EV_DoFloor(line, lowerFloor);
+            Doom::doFloor(line, lowerFloor);
             line->special = 0;
             break;
 
@@ -543,7 +550,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
         case 30:
             // Raise floor to shortest texture height
             //  on either side of lines.
-            EV_DoFloor(line, raiseToTexture);
+            Doom::doFloor(line, raiseToTexture);
             line->special = 0;
             break;
 
@@ -555,19 +562,19 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 36:
             // Lower Floor (TURBO)
-            EV_DoFloor(line, turboLower);
+            Doom::doFloor(line, turboLower);
             line->special = 0;
             break;
 
         case 37:
             // LowerAndChange
-            EV_DoFloor(line, lowerAndChange);
+            Doom::doFloor(line, lowerAndChange);
             line->special = 0;
             break;
 
         case 38:
             // Lower Floor To Lowest
-            EV_DoFloor(line, lowerFloorToLowest);
+            Doom::doFloor(line, lowerFloorToLowest);
             line->special = 0;
             break;
 
@@ -580,7 +587,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
         case 40:
             // RaiseCeilingLowerFloor
             Doom::doCeiling(line, raiseToHighest);
-            EV_DoFloor(line, lowerFloorToLowest);
+            Doom::doFloor(line, lowerFloorToLowest);
             line->special = 0;
             break;
 
@@ -592,7 +599,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 52:
             // EXIT!
-            G_ExitLevel();
+            Doom::exitLevel();
             break;
 
         case 53:
@@ -609,7 +616,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 56:
             // Raise Floor Crush
-            EV_DoFloor(line, raiseFloorCrush);
+            Doom::doFloor(line, raiseFloorCrush);
             line->special = 0;
             break;
 
@@ -621,13 +628,13 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 58:
             // Raise Floor 24
-            EV_DoFloor(line, raiseFloor24);
+            Doom::doFloor(line, raiseFloor24);
             line->special = 0;
             break;
 
         case 59:
             // Raise Floor 24 And Change
-            EV_DoFloor(line, raiseFloor24AndChange);
+            Doom::doFloor(line, raiseFloor24AndChange);
             line->special = 0;
             break;
 
@@ -639,31 +646,31 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 108:
             // Blazing Door Raise (faster than TURBO!)
-            EV_DoDoor(line, blazeRaise);
+            Doom::doDoor(line, blazeRaise);
             line->special = 0;
             break;
 
         case 109:
             // Blazing Door Open (faster than TURBO!)
-            EV_DoDoor(line, blazeOpen);
+            Doom::doDoor(line, blazeOpen);
             line->special = 0;
             break;
 
         case 100:
             // Build Stairs Turbo 16
-            EV_BuildStairs(line, turbo16);
+            Doom::buildStairs(line, turbo16);
             line->special = 0;
             break;
 
         case 110:
             // Blazing Door Close (faster than TURBO!)
-            EV_DoDoor(line, blazeClose);
+            Doom::doDoor(line, blazeClose);
             line->special = 0;
             break;
 
         case 119:
             // Raise floor to nearest surr. floor
-            EV_DoFloor(line, raiseFloorToNearest);
+            Doom::doFloor(line, raiseFloorToNearest);
             line->special = 0;
             break;
 
@@ -675,7 +682,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 124:
             // Secret EXIT
-            G_SecretExitLevel();
+            Doom::secretExitLevel();
             break;
 
         case 125:
@@ -689,7 +696,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 130:
             // Raise Floor Turbo
-            EV_DoFloor(line, raiseFloorTurbo);
+            Doom::doFloor(line, raiseFloorTurbo);
             line->special = 0;
             break;
 
@@ -717,12 +724,12 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 75:
             // Close Door
-            EV_DoDoor(line, door_close);
+            Doom::doDoor(line, door_close);
             break;
 
         case 76:
             // Close Door 30
-            EV_DoDoor(line, close30ThenOpen);
+            Doom::doDoor(line, close30ThenOpen);
             break;
 
         case 77:
@@ -747,22 +754,22 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 82:
             // Lower Floor To Lowest
-            EV_DoFloor(line, lowerFloorToLowest);
+            Doom::doFloor(line, lowerFloorToLowest);
             break;
 
         case 83:
             // Lower Floor
-            EV_DoFloor(line, lowerFloor);
+            Doom::doFloor(line, lowerFloor);
             break;
 
         case 84:
             // LowerAndChange
-            EV_DoFloor(line, lowerAndChange);
+            Doom::doFloor(line, lowerAndChange);
             break;
 
         case 86:
             // Open Door
-            EV_DoDoor(line, door_open);
+            Doom::doDoor(line, door_open);
             break;
 
         case 87:
@@ -782,27 +789,27 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 90:
             // Raise Door
-            EV_DoDoor(line, door_normal);
+            Doom::doDoor(line, door_normal);
             break;
 
         case 91:
             // Raise Floor
-            EV_DoFloor(line, raiseFloor);
+            Doom::doFloor(line, raiseFloor);
             break;
 
         case 92:
             // Raise Floor 24
-            EV_DoFloor(line, raiseFloor24);
+            Doom::doFloor(line, raiseFloor24);
             break;
 
         case 93:
             // Raise Floor 24 And Change
-            EV_DoFloor(line, raiseFloor24AndChange);
+            Doom::doFloor(line, raiseFloor24AndChange);
             break;
 
         case 94:
             // Raise Floor Crush
-            EV_DoFloor(line, raiseFloorCrush);
+            Doom::doFloor(line, raiseFloorCrush);
             break;
 
         case 95:
@@ -814,7 +821,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
         case 96:
             // Raise floor to shortest texture height
             // on either side of lines.
-            EV_DoFloor(line, raiseToTexture);
+            Doom::doFloor(line, raiseToTexture);
             break;
 
         case 97:
@@ -824,22 +831,22 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 98:
             // Lower Floor (TURBO)
-            EV_DoFloor(line, turboLower);
+            Doom::doFloor(line, turboLower);
             break;
 
         case 105:
             // Blazing Door Raise (faster than TURBO!)
-            EV_DoDoor(line, blazeRaise);
+            Doom::doDoor(line, blazeRaise);
             break;
 
         case 106:
             // Blazing Door Open (faster than TURBO!)
-            EV_DoDoor(line, blazeOpen);
+            Doom::doDoor(line, blazeOpen);
             break;
 
         case 107:
             // Blazing Door Close (faster than TURBO!)
-            EV_DoDoor(line, blazeClose);
+            Doom::doDoor(line, blazeClose);
             break;
 
         case 120:
@@ -855,12 +862,12 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 
         case 128:
             // Raise To Nearest Floor
-            EV_DoFloor(line, raiseFloorToNearest);
+            Doom::doFloor(line, raiseFloorToNearest);
             break;
 
         case 129:
             // Raise Floor Turbo
-            EV_DoFloor(line, raiseFloorTurbo);
+            Doom::doFloor(line, raiseFloorTurbo);
             break;
     }
 }
@@ -892,20 +899,20 @@ void shootSpecialLine(mobj_t* thing, line_t* line)
     {
         case 24:
             // RAISE FLOOR
-            EV_DoFloor(line, raiseFloor);
-            P_ChangeSwitchTexture(line, 0);
+            Doom::doFloor(line, raiseFloor);
+            Doom::changeSwitchTexture(line, 0);
             break;
 
         case 46:
             // OPEN DOOR
-            EV_DoDoor(line, door_open);
-            P_ChangeSwitchTexture(line, 1);
+            Doom::doDoor(line, door_open);
+            Doom::changeSwitchTexture(line, 1);
             break;
 
         case 47:
             // RAISE FLOOR NEAR AND CHANGE
             Doom::doPlat(line, raiseToNearestAndChange, 0);
-            P_ChangeSwitchTexture(line, 0);
+            Doom::changeSwitchTexture(line, 0);
             break;
     }
 }
@@ -932,14 +939,14 @@ void playerInSpecialSector(player_t* player)
             // HELLSLIME DAMAGE
             if (!player->powers[pw_ironfeet])
                 if (!(leveltime & 0x1f))
-                    P_DamageMobj(player->mo, 0, 0, 10);
+                    Doom::damageMobj(player->mo, 0, 0, 10);
             break;
 
         case 7:
             // NUKAGE DAMAGE
             if (!player->powers[pw_ironfeet])
                 if (!(leveltime & 0x1f))
-                    P_DamageMobj(player->mo, 0, 0, 5);
+                    Doom::damageMobj(player->mo, 0, 0, 5);
             break;
 
         case 16:
@@ -949,7 +956,7 @@ void playerInSpecialSector(player_t* player)
             if (!player->powers[pw_ironfeet] || (P_Random() < 5))
             {
                 if (!(leveltime & 0x1f))
-                    P_DamageMobj(player->mo, 0, 0, 20);
+                    Doom::damageMobj(player->mo, 0, 0, 20);
             }
             break;
 
@@ -957,7 +964,7 @@ void playerInSpecialSector(player_t* player)
             // SECRET SECTOR
             player->secretcount++;
             player->message = "A secret is revealed!";
-            S_StartSound(nullptr, sfx_getpow);
+            Doom::startSound(nullptr, sfx_getpow);
             sector->special = 0;
             break;
 
@@ -966,21 +973,21 @@ void playerInSpecialSector(player_t* player)
             player->cheats &= ~CF_GODMODE;
 
             if (!(leveltime & 0x1f))
-                P_DamageMobj(player->mo, 0, 0, 20);
+                Doom::damageMobj(player->mo, 0, 0, 20);
 
             if (player->health <= 10)
-                G_ExitLevel();
+                Doom::exitLevel();
             break;
 
         default:
         {
-            //I_Error("Error: playerInSpecialSector: "
+            //fatalError("Error: playerInSpecialSector: "
             //        "unknown special %i",
             //        sector->special);
 
             doom_strcpy(error_buf, "Error: playerInSpecialSector: unknown special ");
             doom_concat(error_buf, doom_itoa(sector->special, 10));
-            I_Error(error_buf);
+            fatalError(error_buf);
             break;
         }
     };
@@ -1001,7 +1008,7 @@ void updateSpecials()
     {
         levelTimeCount--;
         if (!levelTimeCount)
-            G_ExitLevel();
+            Doom::exitLevel();
     }
 
     // ANIMATE FLATS AND TEXTURES GLOBALLY
@@ -1054,7 +1061,7 @@ void updateSpecials()
                             buttonlist[i].btexture;
                         break;
                 }
-                S_StartSound(reinterpret_cast<mobj_t*>(&buttonlist[i].soundorg),
+                Doom::startSound(reinterpret_cast<mobj_t*>(&buttonlist[i].soundorg),
                              sfx_swtchn);
                 doom_memset(&buttonlist[i], 0, sizeof(button_t));
             }
@@ -1197,7 +1204,7 @@ void spawnSpecials()
 
             case 10:
                 // DOOR CLOSE IN 30 SECONDS
-                P_SpawnDoorCloseIn30(sector);
+                Doom::spawnDoorCloseIn30(sector);
                 break;
 
             case 12:
@@ -1212,7 +1219,7 @@ void spawnSpecials()
 
             case 14:
                 // DOOR RAISE IN 5 MINUTES
-                P_SpawnDoorRaiseIn5Mins(sector, i);
+                Doom::spawnDoorRaiseIn5Mins(sector, i);
                 break;
 
             case 17:

@@ -7,7 +7,7 @@ namespace Doom
 // The rest of vanilla p_map, past the movement core in Sim/Movement: sliding a
 // blocked move along a wall, hitscan aiming and firing, using a line in front of
 // the player, splash damage, and re-clipping things after a sector moves. p_map.cpp
-// keeps the vanilla names (P_SlideMove, P_LineAttack, ...) as shims forwarding here.
+// keeps the vanilla names (Doom::slideMove, Doom::lineAttack, ...) as shims forwarding here.
 //
 // The scratch these share with their P_PathTraverse / blockmap callbacks is
 // file-local to MapAction.cpp (the callbacks are function pointers, so the state

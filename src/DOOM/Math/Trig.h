@@ -78,7 +78,7 @@ inline Angle tanToAngle(int slope)
 // It gives up on any denominator under 512 and answers slopeRange - the steepest
 // slope it can name - whatever the numerator, so slopeDiv(0, 1) is 2048 and not
 // 0. That reads as a bug and is not one: the result indexes tanToAngleTable, the
-// guard is what keeps the index inside it, and R_PointToAngle only ever calls it
+// guard is what keeps the index inside it, and Doom::pointToAngle only ever calls it
 // with a denominator it has already made large.
 int slopeDiv(unsigned num, unsigned den);
 } // namespace Doom

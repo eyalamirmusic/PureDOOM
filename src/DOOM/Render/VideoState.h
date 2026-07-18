@@ -16,7 +16,7 @@ namespace Doom
 // member (a reference-to-array). The gamma table stays in the shim (const data).
 //
 // The software renderer's framebuffers are RAII-owned here now (Step 9) - what were three
-// boot-once, never-freed doom_malloc / I_AllocLow blocks. The vanilla name screens[] (a
+// boot-once, never-freed doom_malloc / allocLow blocks. The vanilla name screens[] (a
 // byte*[5] in Render/Video) stays a raw VIEW array pointing at these owners' data(), because
 // it is legitimately reseated - the eacp port swaps screens[0] to its overlay-capture scratch
 // and restores it - so it is a pointer that merely refers, kept raw by the RAII rules. workspace

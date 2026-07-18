@@ -24,6 +24,7 @@
 #include <ea_data_structures/Structures/Array.h>
 
 // ?
+#include "../Host/System.h"
 #define MAXWIDTH 1120
 #define MAXHEIGHT 832
 
@@ -77,7 +78,7 @@ void drawColumn()
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
         doom_concat(error_buf, " at ");
         doom_concat(error_buf, doom_itoa(dc_x, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 
@@ -130,7 +131,7 @@ void drawColumnLow()
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
         doom_concat(error_buf, " at ");
         doom_concat(error_buf, doom_itoa(dc_x, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
     // Blocky mode, need to multiply by 2.
@@ -206,7 +207,7 @@ void drawFuzzColumn()
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
         doom_concat(error_buf, " at ");
         doom_concat(error_buf, doom_itoa(dc_x, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 
@@ -263,7 +264,7 @@ void drawTranslatedColumn()
         doom_concat(error_buf, doom_itoa(dc_yh, 10));
         doom_concat(error_buf, " at ");
         doom_concat(error_buf, doom_itoa(dc_x, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 
@@ -356,7 +357,7 @@ void drawSpan()
         doom_concat(error_buf, doom_itoa(ds_x2, 10));
         doom_concat(error_buf, " at ");
         doom_concat(error_buf, doom_itoa(ds_y, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 
@@ -405,7 +406,7 @@ void drawSpanLow()
         doom_concat(error_buf, doom_itoa(ds_x2, 10));
         doom_concat(error_buf, " at ");
         doom_concat(error_buf, doom_itoa(ds_y, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 

@@ -19,7 +19,7 @@ namespace Doom
 // reaches them - one demo-subsystem owner (REFACTOR.md, Step 5). All were defined in
 // Game/Game.cpp above its namespace (a state owner); the vanilla names become references onto
 // the members (demoname/the buffer pointers as references-to-array and reference-to-pointer).
-// demorecording carries extra file-scope externs (Game/DoomMain.cpp, Host/System.cpp's I_Error
+// demorecording carries extra file-scope externs (Game/DoomMain.cpp, Host/System.cpp's fatalError
 // demo flush), updated to references in step. None of the fields is hashed, so the move is
 // golden-neutral - and the demo replays drive demobuffer/demo_p end to end, confirming it.
 struct DemoState

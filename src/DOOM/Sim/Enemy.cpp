@@ -10,9 +10,9 @@
 //        Enemy thinking, AI. Action pointers for the states/definitions.
 //
 // Rewritten into namespace Doom out of vanilla p_enemy; p_enemy.cpp keeps the
-// vanilla A_*/P_NoiseAlert names as shims (info.cpp's state table references the A_*
+// vanilla A_*/Doom::noiseAlert names as shims (info.cpp's state table references the A_*
 // by address). The AI scratch is file-local; soundtarget stays global (p_saveg
-// archives it), and the thinker-identity comparison keeps the global P_MobjThinker.
+// archives it), and the thinker-identity comparison keeps the global Doom::mobjThinker.
 //
 //-----------------------------------------------------------------------------
 
@@ -33,6 +33,18 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include "../Game/Game.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
+#include "Doors.h"
+#include "Floors.h"
+#include "Interaction.h"
+#include "MapAction.h"
+#include "Mobj.h"
+#include "Movement.h"
+#include "Sight.h"
+#include "Switches.h"
 #define MAXSPECIALCROSS 8
 #define FATSPREAD (ANG90 / 8)
 #define SKULLSPEED (20 * FRACUNIT)
@@ -230,7 +242,7 @@ doom_boolean checkMeleeRange(mobj_t& actor)
     if (dist >= MELEERANGE - 20 * FRACUNIT + pl->info->radius)
         return false;
 
-    if (!P_CheckSight(&actor, actor.target))
+    if (!Doom::checkSight(&actor, actor.target))
         return false;
 
     return true;
@@ -243,7 +255,7 @@ doom_boolean checkMissileRange(mobj_t& actor)
 {
     fixed_t dist;
 
-    if (!P_CheckSight(&actor, actor.target))
+    if (!Doom::checkSight(&actor, actor.target))
         return false;
 
     if (actor.flags & MF_JUSTHIT)
@@ -318,12 +330,12 @@ doom_boolean move(mobj_t& actor)
         return false;
 
     if (static_cast<unsigned>(actor.movedir) >= 8)
-        I_Error("Error: Weird actor->movedir!");
+        fatalError("Error: Weird actor->movedir!");
 
     tryx = actor.x + actor.info->speed * xspeed[actor.movedir];
     tryy = actor.y + actor.info->speed * yspeed[actor.movedir];
 
-    try_ok = P_TryMove(&actor, tryx, tryy);
+    try_ok = Doom::tryMove(&actor, tryx, tryy);
 
     if (!try_ok)
     {
@@ -351,7 +363,7 @@ doom_boolean move(mobj_t& actor)
             // if the special is not a door
             // that can be opened,
             // return false
-            if (P_UseSpecialLine(&actor, ld, 0))
+            if (Doom::useSpecialLine(&actor, ld, 0))
                 good = true;
         }
         return good;
@@ -402,7 +414,7 @@ void newChaseDir(mobj_t& actor)
     dirtype_t turnaround;
 
     if (!actor.target)
-        I_Error("Error: newChaseDir: called with no target");
+        fatalError("Error: newChaseDir: called with no target");
 
     olddir = static_cast<dirtype_t>(actor.movedir);
     turnaround = opposite[olddir];
@@ -543,12 +555,12 @@ doom_boolean lookForPlayers(mobj_t& actor, doom_boolean allaround)
         if (player->health <= 0)
             continue; // dead
 
-        if (!P_CheckSight(&actor, player->mo))
+        if (!Doom::checkSight(&actor, player->mo))
             continue; // out of sight
 
         if (!allaround)
         {
-            an = R_PointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
+            an = Doom::pointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
                  - actor.angle;
 
             if (an > ANG90 && an < ANG270)
@@ -597,7 +609,7 @@ void keenDie(mobj_t& mo)
     }
 
     junk.tag = 666;
-    EV_DoDoor(&junk, door_open);
+    Doom::doDoor(&junk, door_open);
 }
 
 //
@@ -621,7 +633,7 @@ void look(mobj_t& actor)
 
         if (actor.flags & MF_AMBUSH)
         {
-            if (P_CheckSight(&actor, actor.target))
+            if (Doom::checkSight(&actor, actor.target))
                 goto seeyou;
         }
         else
@@ -658,13 +670,13 @@ seeyou:
         if (actor.type == MT_SPIDER || actor.type == MT_CYBORG)
         {
             // full volume
-            S_StartSound(0, sound);
+            Doom::startSound(0, sound);
         }
         else
-            S_StartSound(&actor, sound);
+            Doom::startSound(&actor, sound);
     }
 
-    P_SetMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
+    Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
 }
 
 //
@@ -708,7 +720,7 @@ void chase(mobj_t& actor)
         if (lookForPlayers(actor, true))
             return; // got a new target
 
-        P_SetMobjState(&actor, static_cast<statenum_t>(actor.info->spawnstate));
+        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->spawnstate));
         return;
     }
 
@@ -725,9 +737,9 @@ void chase(mobj_t& actor)
     if (actor.info->meleestate && checkMeleeRange(actor))
     {
         if (actor.info->attacksound)
-            S_StartSound(&actor, actor.info->attacksound);
+            Doom::startSound(&actor, actor.info->attacksound);
 
-        P_SetMobjState(&actor, static_cast<statenum_t>(actor.info->meleestate));
+        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->meleestate));
         return;
     }
 
@@ -742,7 +754,7 @@ void chase(mobj_t& actor)
         if (!checkMissileRange(actor))
             goto nomissile;
 
-        P_SetMobjState(&actor, static_cast<statenum_t>(actor.info->missilestate));
+        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->missilestate));
         actor.flags |= MF_JUSTATTACKED;
         return;
     }
@@ -750,7 +762,7 @@ void chase(mobj_t& actor)
     // ?
 nomissile:
     // possibly choose another target
-    if (netgame && !actor.threshold && !P_CheckSight(&actor, actor.target))
+    if (netgame && !actor.threshold && !Doom::checkSight(&actor, actor.target))
     {
         if (lookForPlayers(actor, true))
             return; // got a new target
@@ -765,7 +777,7 @@ nomissile:
     // make active sound
     if (actor.info->activesound && P_Random() < 3)
     {
-        S_StartSound(&actor, actor.info->activesound);
+        Doom::startSound(&actor, actor.info->activesound);
     }
 }
 
@@ -780,7 +792,7 @@ void faceTarget(mobj_t& actor)
     actor.flags &= ~MF_AMBUSH;
 
     actor.angle =
-        R_PointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
+        Doom::pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
 
     if (actor.target->flags & MF_SHADOW)
         actor.angle += (P_Random() - P_Random()) << 21;
@@ -800,12 +812,12 @@ void posAttack(mobj_t& actor)
 
     faceTarget(actor);
     angle = actor.angle;
-    slope = P_AimLineAttack(&actor, angle, MISSILERANGE);
+    slope = Doom::aimLineAttack(&actor, angle, MISSILERANGE);
 
-    S_StartSound(&actor, sfx_pistol);
+    Doom::startSound(&actor, sfx_pistol);
     angle += (P_Random() - P_Random()) << 20;
     damage = ((P_Random() % 5) + 1) * 3;
-    P_LineAttack(&actor, angle, MISSILERANGE, slope, damage);
+    Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
 void sPosAttack(mobj_t& actor)
@@ -818,16 +830,16 @@ void sPosAttack(mobj_t& actor)
     if (!actor.target)
         return;
 
-    S_StartSound(&actor, sfx_shotgn);
+    Doom::startSound(&actor, sfx_shotgn);
     faceTarget(actor);
     bangle = actor.angle;
-    slope = P_AimLineAttack(&actor, bangle, MISSILERANGE);
+    slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE);
 
     for (int i = 0; i < 3; i++)
     {
         angle = bangle + ((P_Random() - P_Random()) << 20);
         damage = ((P_Random() % 5) + 1) * 3;
-        P_LineAttack(&actor, angle, MISSILERANGE, slope, damage);
+        Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
     }
 }
 
@@ -841,14 +853,14 @@ void cPosAttack(mobj_t& actor)
     if (!actor.target)
         return;
 
-    S_StartSound(&actor, sfx_shotgn);
+    Doom::startSound(&actor, sfx_shotgn);
     faceTarget(actor);
     bangle = actor.angle;
-    slope = P_AimLineAttack(&actor, bangle, MISSILERANGE);
+    slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE);
 
     angle = bangle + ((P_Random() - P_Random()) << 20);
     damage = ((P_Random() % 5) + 1) * 3;
-    P_LineAttack(&actor, angle, MISSILERANGE, slope, damage);
+    Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
 void cPosRefire(mobj_t& actor)
@@ -860,9 +872,9 @@ void cPosRefire(mobj_t& actor)
         return;
 
     if (!actor.target || actor.target->health <= 0
-        || !P_CheckSight(&actor, actor.target))
+        || !Doom::checkSight(&actor, actor.target))
     {
-        P_SetMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
+        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
     }
 }
 
@@ -875,9 +887,9 @@ void spidRefire(mobj_t& actor)
         return;
 
     if (!actor.target || actor.target->health <= 0
-        || !P_CheckSight(&actor, actor.target))
+        || !Doom::checkSight(&actor, actor.target))
     {
-        P_SetMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
+        Doom::setMobjState(&actor, static_cast<statenum_t>(actor.info->seestate));
     }
 }
 
@@ -889,7 +901,7 @@ void bspiAttack(mobj_t& actor)
     faceTarget(actor);
 
     // launch a missile
-    P_SpawnMissile(&actor, actor.target, MT_ARACHPLAZ);
+    Doom::spawnMissile(&actor, actor.target, MT_ARACHPLAZ);
 }
 
 //
@@ -905,14 +917,14 @@ void troopAttack(mobj_t& actor)
     faceTarget(actor);
     if (checkMeleeRange(actor))
     {
-        S_StartSound(&actor, sfx_claw);
+        Doom::startSound(&actor, sfx_claw);
         damage = (P_Random() % 8 + 1) * 3;
-        P_DamageMobj(actor.target, &actor, &actor, damage);
+        Doom::damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
 
     // launch a missile
-    P_SpawnMissile(&actor, actor.target, MT_TROOPSHOT);
+    Doom::spawnMissile(&actor, actor.target, MT_TROOPSHOT);
 }
 
 void sargAttack(mobj_t& actor)
@@ -926,7 +938,7 @@ void sargAttack(mobj_t& actor)
     if (checkMeleeRange(actor))
     {
         damage = ((P_Random() % 10) + 1) * 4;
-        P_DamageMobj(actor.target, &actor, &actor, damage);
+        Doom::damageMobj(actor.target, &actor, &actor, damage);
     }
 }
 
@@ -941,12 +953,12 @@ void headAttack(mobj_t& actor)
     if (checkMeleeRange(actor))
     {
         damage = (P_Random() % 6 + 1) * 10;
-        P_DamageMobj(actor.target, &actor, &actor, damage);
+        Doom::damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
 
     // launch a missile
-    P_SpawnMissile(&actor, actor.target, MT_HEADSHOT);
+    Doom::spawnMissile(&actor, actor.target, MT_HEADSHOT);
 }
 
 void cyberAttack(mobj_t& actor)
@@ -955,7 +967,7 @@ void cyberAttack(mobj_t& actor)
         return;
 
     faceTarget(actor);
-    P_SpawnMissile(&actor, actor.target, MT_ROCKET);
+    Doom::spawnMissile(&actor, actor.target, MT_ROCKET);
 }
 
 void bruisAttack(mobj_t& actor)
@@ -967,14 +979,14 @@ void bruisAttack(mobj_t& actor)
 
     if (checkMeleeRange(actor))
     {
-        S_StartSound(&actor, sfx_claw);
+        Doom::startSound(&actor, sfx_claw);
         damage = (P_Random() % 8 + 1) * 10;
-        P_DamageMobj(actor.target, &actor, &actor, damage);
+        Doom::damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
 
     // launch a missile
-    P_SpawnMissile(&actor, actor.target, MT_BRUISERSHOT);
+    Doom::spawnMissile(&actor, actor.target, MT_BRUISERSHOT);
 }
 
 //
@@ -989,7 +1001,7 @@ void skelMissile(mobj_t& actor)
 
     faceTarget(actor);
     actor.z += 16 * FRACUNIT; // so missile spawns higher
-    mo = P_SpawnMissile(&actor, actor.target, MT_TRACER);
+    mo = Doom::spawnMissile(&actor, actor.target, MT_TRACER);
     actor.z -= 16 * FRACUNIT; // back to normal
 
     mo->x += mo->momx;
@@ -1009,9 +1021,9 @@ void tracer(mobj_t& actor)
         return;
 
     // spawn a puff of smoke behind the rocket
-    P_SpawnPuff(actor.x, actor.y, actor.z);
+    Doom::spawnPuff(actor.x, actor.y, actor.z);
 
-    th = P_SpawnMobj(
+    th = Doom::spawnMobj(
         actor.x - actor.momx, actor.y - actor.momy, actor.z, MT_SMOKE);
 
     th->momz = FRACUNIT;
@@ -1026,7 +1038,7 @@ void tracer(mobj_t& actor)
         return;
 
     // change angle
-    exact = R_PointToAngle2(actor.x, actor.y, dest->x, dest->y);
+    exact = Doom::pointToAngle2(actor.x, actor.y, dest->x, dest->y);
 
     if (exact != actor.angle)
     {
@@ -1069,7 +1081,7 @@ void skelWhoosh(mobj_t& actor)
         return;
 
     faceTarget(actor);
-    S_StartSound(&actor, sfx_skeswg);
+    Doom::startSound(&actor, sfx_skeswg);
 }
 
 void skelFist(mobj_t& actor)
@@ -1084,8 +1096,8 @@ void skelFist(mobj_t& actor)
     if (checkMeleeRange(actor))
     {
         damage = ((P_Random() % 10) + 1) * 6;
-        S_StartSound(&actor, sfx_skepch);
-        P_DamageMobj(actor.target, &actor, &actor, damage);
+        Doom::startSound(&actor, sfx_skepch);
+        Doom::damageMobj(actor.target, &actor, &actor, damage);
     }
 }
 
@@ -1116,7 +1128,7 @@ doom_boolean vileCheck(mobj_t* thing)
     corpsehit = thing;
     corpsehit->momx = corpsehit->momy = 0;
     corpsehit->height <<= 2;
-    check = P_CheckPosition(corpsehit, corpsehit->x, corpsehit->y);
+    check = Doom::checkPosition(corpsehit, corpsehit->x, corpsehit->y);
     corpsehit->height >>= 2;
 
     if (!check)
@@ -1166,11 +1178,11 @@ void vileChase(mobj_t& actor)
                     faceTarget(actor);
                     actor.target = temp;
 
-                    P_SetMobjState(&actor, S_VILE_HEAL1);
-                    S_StartSound(corpsehit, sfx_slop);
+                    Doom::setMobjState(&actor, S_VILE_HEAL1);
+                    Doom::startSound(corpsehit, sfx_slop);
                     info = corpsehit->info;
 
-                    P_SetMobjState(corpsehit,
+                    Doom::setMobjState(corpsehit,
                                    static_cast<statenum_t>(info->raisestate));
                     corpsehit->height <<= 2;
                     corpsehit->flags = info->flags;
@@ -1192,7 +1204,7 @@ void vileChase(mobj_t& actor)
 //
 void vileStart(mobj_t& actor)
 {
-    S_StartSound(&actor, sfx_vilatk);
+    Doom::startSound(&actor, sfx_vilatk);
 }
 
 //
@@ -1201,13 +1213,13 @@ void vileStart(mobj_t& actor)
 //
 void startFire(mobj_t& actor)
 {
-    S_StartSound(&actor, sfx_flamst);
+    Doom::startSound(&actor, sfx_flamst);
     fire(actor);
 }
 
 void fireCrackle(mobj_t& actor)
 {
-    S_StartSound(&actor, sfx_flame);
+    Doom::startSound(&actor, sfx_flame);
     fire(actor);
 }
 
@@ -1221,7 +1233,7 @@ void fire(mobj_t& actor)
         return;
 
     // don't move it if the vile lost sight
-    if (!P_CheckSight(actor.target, dest))
+    if (!Doom::checkSight(actor.target, dest))
         return;
 
     an = dest->angle >> ANGLETOFINESHIFT;
@@ -1246,7 +1258,7 @@ void vileTarget(mobj_t& actor)
 
     faceTarget(actor);
 
-    fog = P_SpawnMobj(actor.target->x, actor.target->x, actor.target->z, MT_FIRE);
+    fog = Doom::spawnMobj(actor.target->x, actor.target->x, actor.target->z, MT_FIRE);
 
     actor.tracer = fog;
     fog->target = &actor;
@@ -1267,11 +1279,11 @@ void vileAttack(mobj_t& actor)
 
     faceTarget(actor);
 
-    if (!P_CheckSight(&actor, actor.target))
+    if (!Doom::checkSight(&actor, actor.target))
         return;
 
-    S_StartSound(&actor, sfx_barexp);
-    P_DamageMobj(actor.target, &actor, &actor, 20);
+    Doom::startSound(&actor, sfx_barexp);
+    Doom::damageMobj(actor.target, &actor, &actor, 20);
     actor.target->momz = 1000 * FRACUNIT / actor.target->info->mass;
 
     an = actor.angle >> ANGLETOFINESHIFT;
@@ -1284,7 +1296,7 @@ void vileAttack(mobj_t& actor)
     // move the fire between the vile and the player
     fire->x = actor.target->x - FixedMul(24 * FRACUNIT, finecosine[an]);
     fire->y = actor.target->y - FixedMul(24 * FRACUNIT, finesine[an]);
-    P_RadiusAttack(fire, &actor, 70);
+    Doom::radiusAttack(fire, &actor, 70);
 }
 
 //
@@ -1296,7 +1308,7 @@ void vileAttack(mobj_t& actor)
 void fatRaise(mobj_t& actor)
 {
     faceTarget(actor);
-    S_StartSound(&actor, sfx_manatk);
+    Doom::startSound(&actor, sfx_manatk);
 }
 
 void fatAttack1(mobj_t& actor)
@@ -1307,9 +1319,9 @@ void fatAttack1(mobj_t& actor)
     faceTarget(actor);
     // Change direction  to ...
     actor.angle += FATSPREAD;
-    P_SpawnMissile(&actor, actor.target, MT_FATSHOT);
+    Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
 
-    mo = P_SpawnMissile(&actor, actor.target, MT_FATSHOT);
+    mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle += FATSPREAD;
     an = mo->angle >> ANGLETOFINESHIFT;
     mo->momx = FixedMul(mo->info->speed, finecosine[an]);
@@ -1324,9 +1336,9 @@ void fatAttack2(mobj_t& actor)
     faceTarget(actor);
     // Now here choose opposite deviation.
     actor.angle -= FATSPREAD;
-    P_SpawnMissile(&actor, actor.target, MT_FATSHOT);
+    Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
 
-    mo = P_SpawnMissile(&actor, actor.target, MT_FATSHOT);
+    mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD * 2;
     an = mo->angle >> ANGLETOFINESHIFT;
     mo->momx = FixedMul(mo->info->speed, finecosine[an]);
@@ -1340,13 +1352,13 @@ void fatAttack3(mobj_t& actor)
 
     faceTarget(actor);
 
-    mo = P_SpawnMissile(&actor, actor.target, MT_FATSHOT);
+    mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD / 2;
     an = mo->angle >> ANGLETOFINESHIFT;
     mo->momx = FixedMul(mo->info->speed, finecosine[an]);
     mo->momy = FixedMul(mo->info->speed, finesine[an]);
 
-    mo = P_SpawnMissile(&actor, actor.target, MT_FATSHOT);
+    mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle += FATSPREAD / 2;
     an = mo->angle >> ANGLETOFINESHIFT;
     mo->momx = FixedMul(mo->info->speed, finecosine[an]);
@@ -1369,7 +1381,7 @@ void skullAttack(mobj_t& actor)
     dest = actor.target;
     actor.flags |= MF_SKULLFLY;
 
-    S_StartSound(&actor, actor.info->attacksound);
+    Doom::startSound(&actor, actor.info->attacksound);
     faceTarget(actor);
     an = actor.angle >> ANGLETOFINESHIFT;
     actor.momx = FixedMul(SKULLSPEED, finecosine[an]);
@@ -1426,13 +1438,13 @@ void painShootSkull(mobj_t& actor, angle_t angle)
     y = actor.y + FixedMul(prestep, finesine[an]);
     z = actor.z + 8 * FRACUNIT;
 
-    newmobj = P_SpawnMobj(x, y, z, MT_SKULL);
+    newmobj = Doom::spawnMobj(x, y, z, MT_SKULL);
 
     // Check for movements.
-    if (!P_TryMove(newmobj, newmobj->x, newmobj->y))
+    if (!Doom::tryMove(newmobj, newmobj->x, newmobj->y))
     {
         // kill it immediately
-        P_DamageMobj(newmobj, &actor, &actor, 10000);
+        Doom::damageMobj(newmobj, &actor, &actor, 10000);
         return;
     }
 
@@ -1490,21 +1502,21 @@ void scream(mobj_t& actor)
     if (actor.type == MT_SPIDER || actor.type == MT_CYBORG)
     {
         // full volume
-        S_StartSound(0, sound);
+        Doom::startSound(0, sound);
     }
     else
-        S_StartSound(&actor, sound);
+        Doom::startSound(&actor, sound);
 }
 
 void xScream(mobj_t& actor)
 {
-    S_StartSound(&actor, sfx_slop);
+    Doom::startSound(&actor, sfx_slop);
 }
 
 void pain(mobj_t& actor)
 {
     if (actor.info->painsound)
-        S_StartSound(&actor, actor.info->painsound);
+        Doom::startSound(&actor, actor.info->painsound);
 }
 
 void fall(mobj_t& actor)
@@ -1521,7 +1533,7 @@ void fall(mobj_t& actor)
 //
 void explode(mobj_t& thingy)
 {
-    P_RadiusAttack(&thingy, thingy.target, 128);
+    Doom::radiusAttack(&thingy, thingy.target, 128);
 }
 
 //
@@ -1630,14 +1642,14 @@ void bossDeath(mobj_t& mo)
             if (mo.type == MT_FATSO)
             {
                 junk.tag = 666;
-                EV_DoFloor(&junk, lowerFloorToLowest);
+                Doom::doFloor(&junk, lowerFloorToLowest);
                 return;
             }
 
             if (mo.type == MT_BABY)
             {
                 junk.tag = 667;
-                EV_DoFloor(&junk, raiseToTexture);
+                Doom::doFloor(&junk, raiseToTexture);
                 return;
             }
         }
@@ -1648,7 +1660,7 @@ void bossDeath(mobj_t& mo)
         {
             case 1:
                 junk.tag = 666;
-                EV_DoFloor(&junk, lowerFloorToLowest);
+                Doom::doFloor(&junk, lowerFloorToLowest);
                 return;
                 break;
 
@@ -1657,53 +1669,53 @@ void bossDeath(mobj_t& mo)
                 {
                     case 6:
                         junk.tag = 666;
-                        EV_DoDoor(&junk, blazeOpen);
+                        Doom::doDoor(&junk, blazeOpen);
                         return;
                         break;
 
                     case 8:
                         junk.tag = 666;
-                        EV_DoFloor(&junk, lowerFloorToLowest);
+                        Doom::doFloor(&junk, lowerFloorToLowest);
                         return;
                         break;
                 }
         }
     }
 
-    G_ExitLevel();
+    Doom::exitLevel();
 }
 
 void hoof(mobj_t& mo)
 {
-    S_StartSound(&mo, sfx_hoof);
+    Doom::startSound(&mo, sfx_hoof);
     chase(mo);
 }
 
 void metal(mobj_t& mo)
 {
-    S_StartSound(&mo, sfx_metal);
+    Doom::startSound(&mo, sfx_metal);
     chase(mo);
 }
 
 void babyMetal(mobj_t& mo)
 {
-    S_StartSound(&mo, sfx_bspwlk);
+    Doom::startSound(&mo, sfx_bspwlk);
     chase(mo);
 }
 
 void openShotgun2(player_t* player, pspdef_t*)
 {
-    S_StartSound(player->mo, sfx_dbopn);
+    Doom::startSound(player->mo, sfx_dbopn);
 }
 
 void loadShotgun2(player_t* player, pspdef_t*)
 {
-    S_StartSound(player->mo, sfx_dbload);
+    Doom::startSound(player->mo, sfx_dbload);
 }
 
 void closeShotgun2(player_t* player, pspdef_t* psp)
 {
-    S_StartSound(player->mo, sfx_dbcls);
+    Doom::startSound(player->mo, sfx_dbcls);
     A_ReFire(player, psp);
 }
 
@@ -1731,12 +1743,12 @@ void brainAwake(mobj_t&)
         }
     }
 
-    S_StartSound(0, sfx_bossit);
+    Doom::startSound(0, sfx_bossit);
 }
 
 void brainPain(mobj_t&)
 {
-    S_StartSound(0, sfx_bospn);
+    Doom::startSound(0, sfx_bospn);
 }
 
 void brainScream(mobj_t& mo)
@@ -1750,17 +1762,17 @@ void brainScream(mobj_t& mo)
     {
         y = mo.y - 320 * FRACUNIT;
         z = 128 + P_Random() * 2 * FRACUNIT;
-        th = P_SpawnMobj(x, y, z, MT_ROCKET);
+        th = Doom::spawnMobj(x, y, z, MT_ROCKET);
         th->momz = P_Random() * 512;
 
-        P_SetMobjState(th, S_BRAINEXPLODE1);
+        Doom::setMobjState(th, S_BRAINEXPLODE1);
 
         th->tics -= P_Random() & 7;
         if (th->tics < 1)
             th->tics = 1;
     }
 
-    S_StartSound(0, sfx_bosdth);
+    Doom::startSound(0, sfx_bosdth);
 }
 
 void brainExplode(mobj_t& mo)
@@ -1773,10 +1785,10 @@ void brainExplode(mobj_t& mo)
     x = mo.x + (P_Random() - P_Random()) * 2048;
     y = mo.y;
     z = 128 + P_Random() * 2 * FRACUNIT;
-    th = P_SpawnMobj(x, y, z, MT_ROCKET);
+    th = Doom::spawnMobj(x, y, z, MT_ROCKET);
     th->momz = P_Random() * 512;
 
-    P_SetMobjState(th, S_BRAINEXPLODE1);
+    Doom::setMobjState(th, S_BRAINEXPLODE1);
 
     th->tics -= P_Random() & 7;
     if (th->tics < 1)
@@ -1785,7 +1797,7 @@ void brainExplode(mobj_t& mo)
 
 void brainDie(mobj_t&)
 {
-    G_ExitLevel();
+    Doom::exitLevel();
 }
 
 void brainSpit(mobj_t& mo)
@@ -1804,18 +1816,18 @@ void brainSpit(mobj_t& mo)
     braintargeton = (braintargeton + 1) % numbraintargets;
 
     // spawn brain missile
-    newmobj = P_SpawnMissile(&mo, targ, MT_SPAWNSHOT);
+    newmobj = Doom::spawnMissile(&mo, targ, MT_SPAWNSHOT);
     newmobj->target = targ;
     newmobj->reactiontime =
         ((targ->y - mo.y) / newmobj->momy) / newmobj->state->tics;
 
-    S_StartSound(0, sfx_bospit);
+    Doom::startSound(0, sfx_bospit);
 }
 
 // travelling cube sound
 void spawnSound(mobj_t& mo)
 {
-    S_StartSound(&mo, sfx_boscub);
+    Doom::startSound(&mo, sfx_boscub);
     spawnFly(mo);
 }
 
@@ -1833,8 +1845,8 @@ void spawnFly(mobj_t& mo)
     targ = mo.target;
 
     // First spawn teleport fog.
-    fog = P_SpawnMobj(targ->x, targ->y, targ->z, MT_SPAWNFIRE);
-    S_StartSound(fog, sfx_telept);
+    fog = Doom::spawnMobj(targ->x, targ->y, targ->z, MT_SPAWNFIRE);
+    Doom::startSound(fog, sfx_telept);
 
     // Randomly select monster to spawn.
     r = P_Random();
@@ -1864,15 +1876,15 @@ void spawnFly(mobj_t& mo)
     else
         type = MT_BRUISER;
 
-    newmobj = P_SpawnMobj(targ->x, targ->y, targ->z, type);
+    newmobj = Doom::spawnMobj(targ->x, targ->y, targ->z, type);
     if (lookForPlayers(*newmobj, true))
-        P_SetMobjState(newmobj, static_cast<statenum_t>(newmobj->info->seestate));
+        Doom::setMobjState(newmobj, static_cast<statenum_t>(newmobj->info->seestate));
 
     // telefrag anything in this spot
-    P_TeleportMove(newmobj, newmobj->x, newmobj->y);
+    Doom::teleportMove(newmobj, newmobj->x, newmobj->y);
 
     // remove self (i.e., cube).
-    P_RemoveMobj(&mo);
+    Doom::removeMobj(&mo);
 }
 
 void playerScream(mobj_t& mo)
@@ -1887,6 +1899,6 @@ void playerScream(mobj_t& mo)
         sound = sfx_pdiehi;
     }
 
-    S_StartSound(&mo, sound);
+    Doom::startSound(&mo, sound);
 }
 } // namespace Doom

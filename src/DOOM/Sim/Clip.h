@@ -35,7 +35,7 @@ struct Clip
     fixed_t openrange = 0;
     fixed_t lowfloor = 0;
 
-    // P_CheckPosition / P_TryMove clipping state (vanilla's tm*). The mover being
+    // Doom::checkPosition / Doom::tryMove clipping state (vanilla's tm*). The mover being
     // clipped, its flags and centre, and the bounding box its radius sweeps.
     mobj_t* tmthing = nullptr;
     int tmflags = 0;
@@ -63,7 +63,7 @@ struct Clip
     line_t* spechit[maxSpecialCross] = {};
     int numspechit = 0;
 
-    // Hitscan results read outside the attack code: the thing a P_AimLineAttack
+    // Hitscan results read outside the attack code: the thing a Doom::aimLineAttack
     // locked onto (0 if none), and the range of the shot in progress. p_mobj and
     // p_pspr read both; the rest of the attack scratch is file-local to MapAction.
     mobj_t* linetarget = nullptr;

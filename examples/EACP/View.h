@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <optional>
 
+#include <DOOM/Game/DoomMain.h>
+#include <DOOM/UI/Automap.h>
 namespace PureDoom
 {
 // A fresh level or a teleport moves the camera somewhere else entirely, and
@@ -205,7 +207,7 @@ struct View final : GPU::GPUView
     float pendingTurn() const { return turnFor(mouseMovement.x); }
 
     // DOOM reads the mouse once a tic and the last event it saw wins:
-    // G_Responder assigns the movement rather than adding to it. Handing it one
+    // Doom::gameResponder assigns the movement rather than adding to it. Handing it one
     // event per platform mouse move - which arrive several times per tic - would
     // throw all but the last of them away, so the whole of the movement goes over
     // at once, as vanilla's Doom::startTic does.

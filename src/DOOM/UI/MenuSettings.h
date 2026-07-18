@@ -3,7 +3,7 @@
 namespace Doom
 {
 // The menu-adjustable, config-persisted user preferences: the mouse sensitivity
-// G_BuildTiccmd scales the aim by, the screen-message toggle, and the two that
+// Doom::buildTiccmd scales the aim by, the screen-message toggle, and the two that
 // shape the rendered frame - the detail level and the view size (screenblocks).
 //
 // These are config-backed, and stayed loose globals through the earlier sweep

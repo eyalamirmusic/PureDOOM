@@ -7,7 +7,7 @@
 // terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//        DOOM system seam - timing, zone backing, startup/teardown, I_Error.
+//        DOOM system seam - timing, zone backing, startup/teardown, fatalError.
 //        Rewritten in Host/System.{h,cpp}; this keeps the vanilla I_ names as
 //        shims. mb_used / emptycmd are file-local to System.cpp, so there is
 //        nothing to own here.
@@ -20,62 +20,62 @@
 
 #include "Host/System.h"
 
-void I_Tactile(int on, int off, int total)
+void tactileFeedback(int on, int off, int total)
 {
-    Doom::I_Tactile(on, off, total);
+    Doom::tactileFeedback(on, off, total);
 }
 
-ticcmd_t* I_BaseTiccmd()
+ticcmd_t* baseTiccmd()
 {
-    return Doom::I_BaseTiccmd();
+    return Doom::baseTiccmd();
 }
 
-int I_GetHeapSize()
+int heapSize()
 {
-    return Doom::I_GetHeapSize();
+    return Doom::heapSize();
 }
 
-byte* I_ZoneBase(int* size)
+byte* zoneBase(int* size)
 {
-    return Doom::I_ZoneBase(size);
+    return Doom::zoneBase(size);
 }
 
-int I_GetTime()
+int currentTic()
 {
-    return Doom::I_GetTime();
+    return Doom::currentTic();
 }
 
-void I_Init()
+void initHost()
 {
-    Doom::I_Init();
+    Doom::initHost();
 }
 
-void I_Quit()
+void quitGame()
 {
-    Doom::I_Quit();
+    Doom::quitGame();
 }
 
-void I_WaitVBL(int count)
+void waitVBlank(int count)
 {
-    Doom::I_WaitVBL(count);
+    Doom::waitVBlank(count);
 }
 
-void I_BeginRead()
+void beginRead()
 {
-    Doom::I_BeginRead();
+    Doom::beginRead();
 }
 
-void I_EndRead()
+void endRead()
 {
-    Doom::I_EndRead();
+    Doom::endRead();
 }
 
-byte* I_AllocLow(int length)
+byte* allocLow(int length)
 {
-    return Doom::I_AllocLow(length);
+    return Doom::allocLow(length);
 }
 
-void I_Error(const char* error)
+void fatalError(const char* error)
 {
-    Doom::I_Error(error);
+    Doom::fatalError(error);
 }

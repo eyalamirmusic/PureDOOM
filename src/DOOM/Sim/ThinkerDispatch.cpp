@@ -1,14 +1,15 @@
 // The virtual tick() bodies for the polymorphic thinker types.
 //
-// Each forwards to the vanilla-named thinker routine (P_MobjThinker for a mobj,
+// Each forwards to the vanilla-named thinker routine (Doom::mobjThinker for a mobj,
 // the T_* functions for the specials) - the same routine Doom::runThinkers used to
 // reach through the old `thinker_t.function` union. They are defined together, at
 // global scope, because the types they belong to (mobj_t and the p_spec.h
 // specials) live in the global namespace, and out of line because those routines
 // take the concrete type and so are only declared after it.
 
-#include "../p_local.h" // P_MobjThinker, mobj_t
+#include "../p_local.h" // Doom::mobjThinker, mobj_t
 #include "../p_spec.h" // the specials and their T_* thinkers
+#include "Mobj.h"
 
 // T_FireFlicker has no shared-header declaration (p_saveg never serialises a
 // fireflicker, so nothing outside Lights.cpp needed it); declare it to reach it.
@@ -16,7 +17,7 @@ void T_FireFlicker(fireflicker_t* flick);
 
 void mobj_t::tick()
 {
-    P_MobjThinker(this);
+    Doom::mobjThinker(this);
 }
 void vldoor_t::tick()
 {

@@ -21,22 +21,6 @@
 // of the Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
 button_t (&buttonlist)[MAXBUTTONS] = Doom::activeSpecials().buttonlist;
 
-void P_InitSwitchList()
-{
-    Doom::initSwitchList();
-}
 
-void P_StartButton(line_t* line, bwhere_e w, int texture, int time)
-{
-    Doom::startButton(line, w, texture, time);
-}
 
-void P_ChangeSwitchTexture(line_t* line, int useAgain)
-{
-    Doom::changeSwitchTexture(line, useAgain);
-}
 
-doom_boolean P_UseSpecialLine(mobj_t* thing, line_t* line, int side)
-{
-    return Doom::useSpecialLine(thing, line, side);
-}

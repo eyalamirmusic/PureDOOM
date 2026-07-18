@@ -4,15 +4,15 @@
 
 namespace Doom
 {
-// How big the 3D view is and where it sits. The menu asks for a size with R_SetViewSize,
+// How big the 3D view is and where it sits. The menu asks for a size with Doom::setViewSize,
 // which stashes the request (setsizeneeded raised, setblocks the screen-blocks it wants)
-// and defers the work; R_ExecuteSetViewSize then derives the region the view fills - its
+// and defers the work; Doom::executeSetViewSize then derives the region the view fills - its
 // width and height in pixels, the width before the low-detail halving (scaledviewwidth),
 // the top-left corner it is drawn from (viewwindowx / viewwindowy) - and the applied
 // detail shift (0 = high, 1 = low). The renderer sizes its column and span tables from
 // it, the status bar and HUD position against it, and the app queries it to know whether
 // the view fills the screen. (setdetail, the requested detail, stays file-local to
-// Render/Main - R_SetViewSize and R_ExecuteSetViewSize are the only code that touches it.)
+// Render/Main - Doom::setViewSize and Doom::executeSetViewSize are the only code that touches it.)
 //
 // The third scalar cluster off the loose globals into the Engine (REFACTOR.md, Step 5),
 // later extended with the sizing request (setsizeneeded / setblocks / detailshift). Its
@@ -31,7 +31,7 @@ struct ViewWindow
     int viewwindowx = 0;
     int viewwindowy = 0;
 
-    // The pending sizing request R_SetViewSize stashes for R_ExecuteSetViewSize.
+    // The pending sizing request Doom::setViewSize stashes for Doom::executeSetViewSize.
     doom_boolean setsizeneeded = false;
     int setblocks = 0;
 

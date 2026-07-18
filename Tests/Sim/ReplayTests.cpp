@@ -3,7 +3,7 @@
 // The suite has always booted a fresh process per test, because doom_init cannot
 // run twice - Z_Init would leak the 12 MB arena. That is still true. But it turns
 // out the engine never needed re-initialising to run a second scenario: loading a
-// level (G_InitNew -> Doom::setupLevel) resets the whole simulation, and since Step 4
+// level (Doom::initNewGame -> Doom::setupLevel) resets the whole simulation, and since Step 4
 // gave the geometry to Doom::Level (which assigns fresh vectors each load) that
 // reset is clean.
 //

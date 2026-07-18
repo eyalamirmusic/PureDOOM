@@ -49,7 +49,6 @@ extern int& levelTimeCount;
 // every tic
 
 // when needed
-doom_boolean P_UseSpecialLine(mobj_t* thing, line_t* line, int side);
 
 int twoSided(int sector, int line);
 sector_t* getSector(int currentSector, int line, int side);
@@ -169,8 +168,6 @@ struct button_t
 extern button_t (&buttonlist)[MAXBUTTONS];
 
 
-void P_ChangeSwitchTexture(line_t* line, int useAgain);
-void P_InitSwitchList();
 
 
 //
@@ -265,12 +262,7 @@ struct vldoor_t : Doom::Thinker
 #define VDOORWAIT                150
 
 
-void EV_VerticalDoor(line_t* line, mobj_t* thing);
-int EV_DoDoor(line_t* line, vldoor_e type);
-int EV_DoLockedDoor(line_t* line, vldoor_e type, mobj_t* thing);
 void T_VerticalDoor(vldoor_t* door);
-void P_SpawnDoorCloseIn30(sector_t* sec);
-void P_SpawnDoorRaiseIn5Mins(sector_t* sec, int secnum);
 
 
 //
@@ -390,8 +382,6 @@ enum result_e
 
 
 result_e T_MovePlane(sector_t* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);
-int EV_BuildStairs(line_t* line, stair_e type);
-int EV_DoFloor(line_t* line, floor_e floortype);
 void T_MoveFloor(floormove_t* floor);
 
 //

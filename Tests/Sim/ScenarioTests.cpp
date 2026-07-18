@@ -1,9 +1,9 @@
 // The playsim, tested directly rather than through a demo.
 //
-// The demos are the real safety net for P_TryMove and P_CheckPosition: they run
+// The demos are the real safety net for Doom::tryMove and Doom::checkPosition: they run
 // thousands of collisions through them under recorded input, and a wrong answer
 // desyncs the world within tics. What the demos cannot give is locality. When
-// demo1 diverges at tic 48 the tic hash says "the world moved", not "P_TryMove
+// demo1 diverges at tic 48 the tic hash says "the world moved", not "Doom::tryMove
 // let the player walk through a wall". These scenarios do: each pins one
 // collision fact in isolation, so the rewrite of p_map has somewhere to fail
 // loudly and locally before the demos even get involved.
@@ -18,7 +18,7 @@
 // thing dropped onto a spot the player legally occupies MUST make that spot
 // illegal, and MF_NOCLIP MUST make it legal again, whatever the surrounding
 // walls are. Only the "a legal move commits" case leans on the level, and it
-// leans lightly: it discovers a clear neighbour by asking P_CheckPosition rather
+// leans lightly: it discovers a clear neighbour by asking Doom::checkPosition rather
 // than assuming one.
 
 #include "../Common.h"
@@ -79,7 +79,7 @@ auto tThingBlocksAndNoClipBypasses =
           "clearing MF_NOCLIP restores the block");
 };
 
-// A blocked P_TryMove must answer false and must leave the thing where it was.
+// A blocked Doom::tryMove must answer false and must leave the thing where it was.
 // This is the invariant a rewrite is most likely to break subtly - answering
 // correctly but committing the move anyway, or vice versa. Geometry-free again:
 // the barrel sits 40 units east (past the 26-unit combined radius, so the player
@@ -109,11 +109,11 @@ auto tBlockedTryMoveDoesNotMove = test("Sim/scenarioBlockedTryMoveDoesNotMove") 
           "a blocked move left the player exactly where it was");
 };
 
-// A legal P_TryMove must answer true and commit the new position. Here the level
+// A legal Doom::tryMove must answer true and commit the new position. Here the level
 // does enter in, but only to supply a spot known to be clear: a clear neighbour
-// is discovered by asking P_CheckPosition, not assumed. Four units is small
-// enough to stay inside the start sector, where a spot P_CheckPosition accepts
-// P_TryMove also accepts (no step, no drop-off, the same ceiling-floor gap the
+// is discovered by asking Doom::checkPosition, not assumed. Four units is small
+// enough to stay inside the start sector, where a spot Doom::checkPosition accepts
+// Doom::tryMove also accepts (no step, no drop-off, the same ceiling-floor gap the
 // player already fits). The round trip back to the start proves the commit was a
 // real move and not a no-op.
 auto tLegalTryMoveCommits = test("Sim/scenarioLegalTryMoveCommits") = []

@@ -203,6 +203,7 @@ void doom_exit_impl(int code) {}
 
 #if defined(DOOM_IMPLEMENT_GETENV)
 #include <stdlib.h>
+#include "System.h"
 char* doom_getenv_impl(const char* var)
 {
     return getenv(var);
@@ -577,7 +578,7 @@ void doom_init(int argc, char** argv, int flags)
 
     screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT);
     final_screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT * 4);
-    last_update_time = I_GetTime();
+    last_update_time = Doom::currentTic();
 
     myargc = argc;
     myargv = argv;
@@ -588,7 +589,7 @@ void doom_init(int argc, char** argv, int flags)
 
 void doom_update()
 {
-    int now = I_GetTime();
+    int now = Doom::currentTic();
     int delta_time = now - last_update_time;
 
     while (delta_time-- > 0)

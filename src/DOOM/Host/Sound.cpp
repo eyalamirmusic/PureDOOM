@@ -34,6 +34,7 @@
 #include <ea_data_structures/Structures/Array.h>
 
 // Needed for calling the actual sound output.
+#include "System.h"
 #define SAMPLECOUNT 512
 #define NUM_CHANNELS 8
 // It is 2 for 16bit, and 2 for two channels.
@@ -324,10 +325,10 @@ int addsfx(int sfxid, int volume, int step, int seperation)
 
     // Sanity check, clamp volume.
     if (rightvol < 0 || rightvol > 127)
-        I_Error("Error: rightvol out of bounds");
+        fatalError("Error: rightvol out of bounds");
 
     if (leftvol < 0 || leftvol > 127)
-        I_Error("Error: leftvol out of bounds");
+        fatalError("Error: leftvol out of bounds");
 
     // Get the proper lookup table piece
     //  for this volume level???
@@ -344,7 +345,7 @@ int addsfx(int sfxid, int volume, int step, int seperation)
 
 //
 // SFX API
-// Note: this was called by S_Init.
+// Note: this was called by Doom::initSound.
 // However, whatever they did in the
 // old DPMS based DOS version, this
 // were simply dummies in the Linux

@@ -101,10 +101,6 @@ extern void (*spanfunc)();
 
 //
 // Utility functions.
-int R_PointOnSide(fixed_t x, fixed_t y, node_t* node);
-int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t* line);
-angle_t R_PointToAngle(fixed_t x, fixed_t y);
-angle_t R_PointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
 
 // Places the camera and picks the light tables for a frame, from the player's
 // position and their fixedcolormap (the invulnerability sphere and the light-amp
@@ -114,10 +110,6 @@ void R_SetupFrame(player_t* player);
 // How fast light falls off with distance in the scale-light table. Anything
 // reproducing DOOM's shading has to use the same number or the banding differs.
 #define DISTMAP 2
-fixed_t R_PointToDist(fixed_t x, fixed_t y);
-fixed_t R_ScaleFromGlobalAngle(angle_t visangle);
-subsector_t* R_PointInSubsector(fixed_t x, fixed_t y);
-void R_AddPointToBox(int x, int y, fixed_t* box);
 
 
 //
@@ -128,10 +120,8 @@ void R_AddPointToBox(int x, int y, fixed_t* box);
 void R_RenderPlayerView(player_t* player);
 
 // Called by startup code.
-void R_Init();
 
 // Called by Doom::menuResponder.
-void R_SetViewSize(int blocks, int detail);
 
 
 //-----------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 
 #include <cstring>
 
+#include "../Host/System.h"
 namespace Doom
 {
 namespace
@@ -51,7 +52,7 @@ void extractFileBase(const char* path, char* destination)
     while (*source && *source != '.')
     {
         if (++length == 9)
-            I_Error("Error: Filename base of  >8 chars");
+            fatalError("Error: Filename base of  >8 chars");
 
         *destination++ = static_cast<char>(doom_toupper(*source++));
     }
@@ -81,7 +82,7 @@ void fail(const char* what, const char* detail)
 {
     doom_strcpy(error_buf, what);
     doom_concat(error_buf, detail);
-    I_Error(error_buf);
+    fatalError(error_buf);
 }
 
 bool endsInWad(const char* path)

@@ -302,7 +302,3 @@ void A_PlayerScream(mobj_t* mo)
     Doom::playerScream(*mo);
 }
 
-void P_NoiseAlert(mobj_t* target, mobj_t* emmiter)
-{
-    Doom::noiseAlert(target, *emmiter);
-}

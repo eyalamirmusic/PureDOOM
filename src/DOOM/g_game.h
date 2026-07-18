@@ -29,43 +29,26 @@
 //
 // GAME
 //
-void G_DeathMatchSpawnPlayer(int playernum);
 
-void G_InitNew(skill_t skill, int episode, int map);
 
 // Can be called by the startup code or Doom::menuResponder.
 // A normal game starts at map 1,
 // but a warp test can start elsewhere
-void G_DeferedInitNew(skill_t skill, int episode, int map);
 
-void G_DeferedPlayDemo(const char* demo);
 
 // Can be called by the startup code or Doom::menuResponder,
 // calls Doom::setupLevel or W_EnterWorld.
-void G_LoadGame(char* name);
 
-void G_DoLoadGame();
 
 // Called by Doom::menuResponder.
-void G_SaveGame(int slot, char* description);
 
 // Only called by startup code.
-void G_RecordDemo(char* name);
 
-void G_BeginRecording();
 
-void G_TimeDemo(char* name);
-doom_boolean G_CheckDemoStatus();
 
-void G_ExitLevel();
-void G_SecretExitLevel();
 
-void G_WorldDone();
 
-void G_Ticker();
-doom_boolean G_Responder(event_t* ev);
 
-void G_ScreenShot();
 
 
 

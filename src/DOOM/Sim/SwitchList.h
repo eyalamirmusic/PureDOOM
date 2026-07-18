@@ -2,7 +2,7 @@
 
 namespace Doom
 {
-// The wall-switch texture table P_InitSwitchList builds from the WAD and P_ChangeSwitchTexture
+// The wall-switch texture table Doom::initSwitchList builds from the WAD and Doom::changeSwitchTexture
 // looks a pressed switch up in: switchlist holds the on/off texture-number pairs (a switch flips
 // between switchlist[i] and switchlist[i^1]) terminated by a -1, and numswitches counts the pairs.
 //

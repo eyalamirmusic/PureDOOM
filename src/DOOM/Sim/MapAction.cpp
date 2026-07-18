@@ -16,6 +16,13 @@
 #include "Movement.h"
 
 #include "Specials.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
+#include "Interaction.h"
+#include "Mobj.h"
+#include "Sight.h"
+#include "Switches.h"
 namespace Doom
 {
 namespace
@@ -69,12 +76,12 @@ void hitSlideLine(line_t* ld)
 
     side = P_PointOnLineSide(slidemo->x, slidemo->y, ld);
 
-    lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy);
+    lineangle = Doom::pointToAngle2(0, 0, ld->dx, ld->dy);
 
     if (side == 1)
         lineangle += ANG180;
 
-    moveangle = R_PointToAngle2(0, 0, tmxmove, tmymove);
+    moveangle = Doom::pointToAngle2(0, 0, tmxmove, tmymove);
     deltaangle = moveangle - lineangle;
 
     if (deltaangle > ANG180)
@@ -100,7 +107,7 @@ doom_boolean slideTraverse(intercept_t* in)
     line_t* li;
 
     if (!in->isaline)
-        I_Error("Error: PTR_SlideTraverse: not a line?");
+        fatalError("Error: PTR_SlideTraverse: not a line?");
 
     li = in->d.line;
 
@@ -308,7 +315,7 @@ doom_boolean shootTraverse(intercept_t* in)
         }
 
         // Spawn bullet puffs.
-        P_SpawnPuff(x, y, z);
+        Doom::spawnPuff(x, y, z);
 
         // don't go any farther
         return false;
@@ -344,12 +351,12 @@ doom_boolean shootTraverse(intercept_t* in)
 
     // Spawn bullet puffs or blod spots, depending on target type.
     if (in->d.thing->flags & MF_NOBLOOD)
-        P_SpawnPuff(x, y, z);
+        Doom::spawnPuff(x, y, z);
     else
-        P_SpawnBlood(x, y, z, la_damage);
+        Doom::spawnBlood(x, y, z, la_damage);
 
     if (la_damage)
-        P_DamageMobj(th, shootthing, shootthing, la_damage);
+        Doom::damageMobj(th, shootthing, shootthing, la_damage);
 
     // don't go any farther
     return false;
@@ -371,7 +378,7 @@ doom_boolean useTraverse(intercept_t* in)
         P_LineOpening(in->d.line);
         if (clip.openrange <= 0)
         {
-            S_StartSound(usething, sfx_noway);
+            Doom::startSound(usething, sfx_noway);
 
             // can't use through a wall
             return false;
@@ -384,7 +391,7 @@ doom_boolean useTraverse(intercept_t* in)
     if (P_PointOnLineSide(usething->x, usething->y, in->d.line) == 1)
         side = 1;
 
-    P_UseSpecialLine(usething, in->d.line, side);
+    Doom::useSpecialLine(usething, in->d.line, side);
 
     // can't use for than one special line in a row
     return false;
@@ -426,10 +433,10 @@ doom_boolean radiusAttackThing(mobj_t* thing)
     if (dist >= bombdamage)
         return true; // out of range
 
-    if (P_CheckSight(thing, bombspot))
+    if (Doom::checkSight(thing, bombspot))
     {
         // must be in direct path
-        P_DamageMobj(thing, bombspot, bombsource, bombdamage - dist);
+        Doom::damageMobj(thing, bombspot, bombsource, bombdamage - dist);
     }
 
     return true;
@@ -454,7 +461,7 @@ doom_boolean changeSectorThing(mobj_t* thing)
     // crunch bodies to giblets
     if (thing->health <= 0)
     {
-        P_SetMobjState(thing, S_GIBS);
+        Doom::setMobjState(thing, S_GIBS);
 
         thing->flags &= ~MF_SOLID;
         thing->height = 0;
@@ -467,7 +474,7 @@ doom_boolean changeSectorThing(mobj_t* thing)
     // crunch dropped items
     if (thing->flags & MF_DROPPED)
     {
-        P_RemoveMobj(thing);
+        Doom::removeMobj(thing);
 
         // keep checking
         return true;
@@ -483,10 +490,10 @@ doom_boolean changeSectorThing(mobj_t* thing)
 
     if (crushchange && !(leveltime & 3))
     {
-        P_DamageMobj(thing, nullptr, nullptr, 10);
+        Doom::damageMobj(thing, nullptr, nullptr, 10);
 
         // spray blood in a random direction
-        mo = P_SpawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
+        mo = Doom::spawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
 
         mo->momx = (P_Random() - P_Random()) << 12;
         mo->momy = (P_Random() - P_Random()) << 12;
@@ -498,7 +505,7 @@ doom_boolean changeSectorThing(mobj_t* thing)
 } // namespace
 
 //
-// P_SlideMove
+// Doom::slideMove
 // The momx / momy move is bad, so try to slide along a wall. Find the first line
 // hit, move flush to it, and slide along it. This is a kludgy mess.
 //
@@ -609,7 +616,7 @@ retry:
 }
 
 //
-// P_AimLineAttack
+// Doom::aimLineAttack
 //
 fixed_t aimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance)
 {
@@ -641,7 +648,7 @@ fixed_t aimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance)
 }
 
 //
-// P_LineAttack
+// Doom::lineAttack
 // If damage == 0, it is just a test trace that will leave linetarget set.
 //
 void lineAttack(
@@ -665,7 +672,7 @@ void lineAttack(
 }
 
 //
-// P_UseLines
+// Doom::useLines
 // Looks for special lines in front of the player to activate.
 //
 void useLines(player_t* player)
@@ -689,7 +696,7 @@ void useLines(player_t* player)
 }
 
 //
-// P_RadiusAttack
+// Doom::radiusAttack
 // Source is the creature that caused the explosion at spot.
 //
 void radiusAttack(mobj_t* spot, mobj_t* source, int damage)
@@ -716,7 +723,7 @@ void radiusAttack(mobj_t* spot, mobj_t* source, int damage)
 }
 
 //
-// P_ChangeSector
+// Doom::changeSector
 //
 bool changeSector(sector_t* sector, doom_boolean crunch)
 {

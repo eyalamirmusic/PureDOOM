@@ -23,6 +23,8 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include "Draw.h"
+#include "../Host/System.h"
+#include "Main.h"
 #define MINZ (FRACUNIT * 4)
 #define BASEYCENTER 100
 
@@ -73,7 +75,7 @@ void installSpriteLump(int lump,
         doom_strcpy(error_buf,
                     "Error: R_InstallSpriteLump: Bad frame characters in lump ");
         doom_concat(error_buf, doom_itoa(lump, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     if (static_cast<int>(frame) > maxframe)
@@ -89,7 +91,7 @@ void installSpriteLump(int lump,
             doom_concat(error_buf, " frame ");
             doom_concat(error_buf, doom_ctoa('A' + frame));
             doom_concat(error_buf, " has multip rot=0 lump");
-            I_Error(error_buf);
+            fatalError(error_buf);
         }
 
         if (sprtemp[frame].rotate == true)
@@ -99,7 +101,7 @@ void installSpriteLump(int lump,
             doom_concat(error_buf, " frame ");
             doom_concat(error_buf, doom_ctoa('A' + frame));
             doom_concat(error_buf, " has rotations ");
-            I_Error(error_buf);
+            fatalError(error_buf);
         }
 
         sprtemp[frame].rotate = false;
@@ -119,7 +121,7 @@ void installSpriteLump(int lump,
         doom_concat(error_buf, " frame ");
         doom_concat(error_buf, doom_ctoa('A' + frame));
         doom_concat(error_buf, " has rotations ");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     sprtemp[frame].rotate = true;
@@ -135,7 +137,7 @@ void installSpriteLump(int lump,
         doom_concat(error_buf, " : ");
         doom_concat(error_buf, doom_ctoa('1' + rotation));
         doom_concat(error_buf, " ");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     sprtemp[frame].lump[rotation] = lump - firstspritelump;
@@ -246,7 +248,7 @@ void initSpriteDefs(char** namelist)
                     doom_concat(error_buf, namelist[i]);
                     doom_concat(error_buf, " frame ");
                     doom_concat(error_buf, doom_ctoa(frame + 'A'));
-                    I_Error(error_buf);
+                    fatalError(error_buf);
                     break;
                 }
 
@@ -264,7 +266,7 @@ void initSpriteDefs(char** namelist)
                             doom_concat(error_buf, " frame ");
                             doom_concat(error_buf, doom_ctoa(frame + 'A'));
                             doom_concat(error_buf, " is missing rotations");
-                            I_Error(error_buf);
+                            fatalError(error_buf);
                         }
                     break;
             }
@@ -406,7 +408,7 @@ void drawVisSprite(vissprite_t* vis)
         texturecolumn = frac >> FRACBITS;
 #ifdef RANGECHECK
         if (texturecolumn < 0 || texturecolumn >= SHORT(patch->width))
-            I_Error("Error: R_DrawSpriteRange: bad texturecolumn");
+            fatalError("Error: R_DrawSpriteRange: bad texturecolumn");
 #endif
         column = reinterpret_cast<column_t*>(
             reinterpret_cast<byte*>(patch) + LONG(patch->columnofs[texturecolumn]));
@@ -481,7 +483,7 @@ void projectSprite(mobj_t* thing)
         doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
         doom_concat(error_buf, doom_itoa(thing->sprite, 10));
         doom_concat(error_buf, " ");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
     sprdef = &sprites[thing->sprite];
@@ -493,7 +495,7 @@ void projectSprite(mobj_t* thing)
         doom_concat(error_buf, " : ");
         doom_concat(error_buf, doom_itoa(thing->frame, 10));
         doom_concat(error_buf, " ");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
     sprframe = &sprdef->spriteframes[thing->frame & FF_FRAMEMASK];
@@ -501,7 +503,7 @@ void projectSprite(mobj_t* thing)
     if (sprframe->rotate)
     {
         // choose a different rotation based on player view
-        ang = R_PointToAngle(thing->x, thing->y);
+        ang = Doom::pointToAngle(thing->x, thing->y);
         rot = (ang - thing->angle + static_cast<unsigned>(ANG45 / 2) * 9) >> 29;
         lump = sprframe->lump[rot];
         flip = static_cast<doom_boolean>(sprframe->flip[rot]);
@@ -641,7 +643,7 @@ void drawPSprite(pspdef_t* psp)
         doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
         doom_concat(error_buf, doom_itoa(psp->state->sprite, 10));
         doom_concat(error_buf, " ");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
     sprdef = &sprites[psp->state->sprite];
@@ -653,7 +655,7 @@ void drawPSprite(pspdef_t* psp)
         doom_concat(error_buf, " : ");
         doom_concat(error_buf, doom_itoa(psp->state->frame, 10));
         doom_concat(error_buf, " ");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
     sprframe = &sprdef->spriteframes[psp->state->frame & FF_FRAMEMASK];
@@ -858,7 +860,7 @@ void drawSprite(vissprite_t* spr)
 
         if (scale < spr->scale
             || (lowscale < spr->scale
-                && !R_PointOnSegSide(spr->gx, spr->gy, ds->curline)))
+                && !Doom::pointOnSegSide(spr->gx, spr->gy, ds->curline)))
         {
             // masked mid texture?
             if (ds->maskedtexturecol)

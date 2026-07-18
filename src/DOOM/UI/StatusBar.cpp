@@ -67,9 +67,13 @@
 // st_statusbaron is a reference onto Doom::StatusBarState (an Engine member), bound
 #include "../Host/Video.h"
 // in the st_stuff.cpp shim: the app (EngineAccess) reads it to decide whether to
+#include "../Game/Game.h"
 // composite the status-bar strip. This bare extern must stay a reference to match,
+#include "../Game/Sound.h"
 // or it would read the reference's pointer bits. mapnames (hu_stuff) and doom_flags
+#include "../Render/Main.h"
 // are other subsystems' globals this file reads.
+#include "../Sim/Interaction.h"
 extern doom_boolean& st_statusbaron;
 extern char* mapnames[];
 extern int doom_flags;
@@ -523,7 +527,7 @@ doom_boolean statusBarResponder(event_t* ev)
                     if (((buf[0] - '0') * 10 + buf[1] - '0') > 35)
                         plyr->message = STSTR_NOMUS;
                     else
-                        S_ChangeMusic(musnum, 1);
+                        Doom::changeMusic(musnum, 1);
                 }
                 else
                 {
@@ -532,7 +536,7 @@ doom_boolean statusBarResponder(event_t* ev)
                     if (((buf[0] - '1') * 9 + buf[1] - '1') > 31)
                         plyr->message = STSTR_NOMUS;
                     else
-                        S_ChangeMusic(musnum, 1);
+                        Doom::changeMusic(musnum, 1);
                 }
             }
             // Simplified, accepting both "noclip" and "idspispopd".
@@ -553,7 +557,7 @@ doom_boolean statusBarResponder(event_t* ev)
                 if (Doom::checkCheat(&cheat_powerup[i], ev->data1))
                 {
                     if (!plyr->powers[i])
-                        P_GivePower(plyr, i);
+                        Doom::givePower(plyr, i);
                     else if (i != pw_strength)
                         plyr->powers[i] = 1;
                     else
@@ -637,7 +641,7 @@ doom_boolean statusBarResponder(event_t* ev)
 
             // So be it.
             plyr->message = STSTR_CLEV;
-            G_DeferedInitNew(gameskill, epsd, map);
+            Doom::deferInitNew(gameskill, epsd, map);
         }
     }
     return false;
@@ -728,7 +732,7 @@ void stupdateFaceWidget()
             }
             else
             {
-                badguyangle = R_PointToAngle2(
+                badguyangle = Doom::pointToAngle2(
                     plyr->mo->x, plyr->mo->y, plyr->attacker->x, plyr->attacker->y);
 
                 if (badguyangle > plyr->mo->angle)

@@ -43,19 +43,7 @@ int (&maxammo)[NUMAMMO] = Doom::ammoLimits().maxammo;
 int (&clipammo)[NUMAMMO] = Doom::ammoLimits().clipammo;
 
 
-void P_TouchSpecialThing(mobj_t* special, mobj_t* toucher)
-{
-    Doom::touchSpecialThing(special, toucher);
-}
 
 
-void P_DamageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
-{
-    Doom::damageMobj(target, inflictor, source, damage);
-}
 
 
-doom_boolean P_GivePower(player_t* player, int power)
-{
-    return Doom::givePower(player, power);
-}

@@ -23,7 +23,9 @@
 #include <new>
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
+#include "../Game/Sound.h"
 // can store their address.
+#include "MapAction.h"
 void T_MoveFloor(floormove_t* floor);
 
 namespace Doom
@@ -61,11 +63,11 @@ result_e movePlane(sector_t& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight = dest;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -74,11 +76,11 @@ result_e movePlane(sector_t& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight -= speed;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             return crushed;
                         }
                     }
@@ -90,11 +92,11 @@ result_e movePlane(sector_t& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight = dest;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -104,13 +106,13 @@ result_e movePlane(sector_t& sector,
                         // COULD GET CRUSHED
                         lastpos = sector.floorheight;
                         sector.floorheight += speed;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
                         if (flag == true)
                         {
                             if (crush == true)
                                 return crushed;
                             sector.floorheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             return crushed;
                         }
                     }
@@ -128,12 +130,12 @@ result_e movePlane(sector_t& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight = dest;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
 
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -143,14 +145,14 @@ result_e movePlane(sector_t& sector,
                         // COULD GET CRUSHED
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight -= speed;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
 
                         if (flag == true)
                         {
                             if (crush == true)
                                 return crushed;
                             sector.ceilingheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             return crushed;
                         }
                     }
@@ -162,11 +164,11 @@ result_e movePlane(sector_t& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight = dest;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -175,13 +177,13 @@ result_e movePlane(sector_t& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight += speed;
-                        flag = P_ChangeSector(&sector, crush);
+                        flag = Doom::changeSector(&sector, crush);
                         // UNUSED
 #if 0
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            P_ChangeSector(&sector, crush);
+                            Doom::changeSector(&sector, crush);
                             return crushed;
                         }
 #endif
@@ -209,7 +211,7 @@ void moveFloor(floormove_t& floor)
                     floor.direction);
 
     if (!(leveltime & 7))
-        S_StartSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg),
+        Doom::startSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg),
                      sfx_stnmov);
 
     if (res == pastdest)
@@ -240,7 +242,7 @@ void moveFloor(floormove_t& floor)
         }
         Doom::removeThinker(&floor);
 
-        S_StartSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg), sfx_pstop);
+        Doom::startSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg), sfx_pstop);
     }
 }
 

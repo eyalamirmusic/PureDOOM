@@ -7,7 +7,7 @@ struct mobj_t; // mobj_t
 
 namespace Doom
 {
-// The last thing that made noise, propagated to nearby monsters as P_NoiseAlert / P_RecursiveSound
+// The last thing that made noise, propagated to nearby monsters as Doom::noiseAlert / P_RecursiveSound
 // walk outward from it (each sector's own soundtarget member is then set to this). Vanilla kept it a
 // global so the recursion could read it without threading it through every call.
 //

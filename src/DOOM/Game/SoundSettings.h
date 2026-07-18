@@ -3,7 +3,7 @@
 namespace Doom
 {
 // The machine-independent sound parameters the config persists: the sfx/music
-// volumes (0-15) the mixer scales by and the channel count S_Init sizes its
+// volumes (0-15) the mixer scales by and the channel count Doom::initSound sizes its
 // channel array to.
 //
 // These are config-backed - Game/Config.cpp's defaults[] table used to capture

@@ -35,7 +35,7 @@ auto tParTimes = test("StateClusters/parTimesMatchVanilla") = []
     check(p.cpars[31] == 30, "MAP32 par is 30");
 };
 
-// The ticcmd movement-speed tables G_BuildTiccmd indexes. Golden-neutral (demo playback overrides
+// The ticcmd movement-speed tables Doom::buildTiccmd indexes. Golden-neutral (demo playback overrides
 // the command it builds) but load-bearing - a wrong walk/run speed would change every live game.
 auto tMovementSpeeds = test("StateClusters/movementSpeedsMatchVanilla") = []
 {

@@ -87,6 +87,10 @@
 #include "../Host/Sound.h"
 #include "../UI/Menu.h"
 #include "../Host/Video.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
+#include "Game.h"
+#include "Sound.h"
 #define MAXARGVS 100
 
 // The boot-time WAD list, file-local: Doom::addWadFile appends to it and W_InitMultipleFiles
@@ -145,7 +149,7 @@ int& eventtail = Doom::eventQueue().eventtail;
 // wipegamestate (with gamestate) is a Doom::GameFlow owned by the Engine now; this is a
 // reference onto it. It can be set to -1 to force a wipe on the next draw.
 gamestate_t& wipegamestate = Doom::gameFlow().wipegamestate;
-void R_ExecuteSetViewSize();
+void Doom::executeSetViewSize();
 
 // print title for every printed line - file-local, built and printed only here
 static EA::Array<char, 128> title;
@@ -169,7 +173,7 @@ extern EA::Array<fixed_t, 2>& forwardmove; // g_game
 extern EA::Array<fixed_t, 2>& sidemove; // g_game
 extern void* statcopy; // g_game
 void Doom::checkNetGame();
-void G_BuildTiccmd(ticcmd_t* cmd);
+void Doom::buildTiccmd(ticcmd_t* cmd);
 
 namespace Doom
 {
@@ -206,7 +210,7 @@ void processEvents()
     {
         ev = &events[eventtail];
         if (!menuResponder(ev))
-            G_Responder(ev);
+            Doom::gameResponder(ev);
         // else menu ate the event
         eventtail++;
         eventtail = (eventtail) & (MAXEVENTS - 1);
@@ -241,7 +245,7 @@ void displayFrame()
     // change the view size if needed
     if (setsizeneeded)
     {
-        R_ExecuteSetViewSize();
+        Doom::executeSetViewSize();
         oldgamestate = static_cast<gamestate_t>((-1)); // force background redraw
         borderdrawcount = 3;
     }
@@ -359,7 +363,7 @@ void displayFrame()
     {
         do
         {
-            nowtime = I_GetTime();
+            nowtime = currentTic();
             tics = nowtime - wipestart;
         } while (!tics);
         wipestart = nowtime;
@@ -385,7 +389,7 @@ void doomLoop()
 {
 #if 0 // [pd] Moved to doomMain()
     if (demorecording)
-        G_BeginRecording();
+        Doom::beginRecording();
 
     if (Doom::checkParm("-debugfile"))
     {
@@ -408,11 +412,11 @@ void doomLoop()
         {
             startTic();
             processEvents();
-            G_BuildTiccmd(&netcmds[consoleplayer][maketic % BACKUPTICS]);
+            Doom::buildTiccmd(&netcmds[consoleplayer][maketic % BACKUPTICS]);
             if (advancedemo)
                 doAdvanceDemo();
             menuTicker();
-            G_Ticker();
+            Doom::gameTicker();
             gametic++;
             maketic++;
         }
@@ -421,7 +425,7 @@ void doomLoop()
             Doom::tryRunTics(); // will run at least one tic
         }
 
-        S_UpdateSounds(players[consoleplayer].mo); // move positional sounds
+        Doom::updateSounds(players[consoleplayer].mo); // move positional sounds
 
         // Update display, next frame, with current state.
         displayFrame();
@@ -496,12 +500,12 @@ void doAdvanceDemo()
             gamestate = GS_DEMOSCREEN;
             pagename = "TITLEPIC";
             if (gamemode == commercial)
-                S_StartMusic(mus_dm2ttl);
+                Doom::startMusic(mus_dm2ttl);
             else
-                S_StartMusic(mus_intro);
+                Doom::startMusic(mus_intro);
             break;
         case 1:
-            G_DeferedPlayDemo("demo1");
+            Doom::deferPlayDemo("demo1");
             break;
         case 2:
             pagetic = 200;
@@ -509,7 +513,7 @@ void doAdvanceDemo()
             pagename = "CREDIT";
             break;
         case 3:
-            G_DeferedPlayDemo("demo2");
+            Doom::deferPlayDemo("demo2");
             break;
         case 4:
             gamestate = GS_DEMOSCREEN;
@@ -517,7 +521,7 @@ void doAdvanceDemo()
             {
                 pagetic = 35 * 11;
                 pagename = "TITLEPIC";
-                S_StartMusic(mus_dm2ttl);
+                Doom::startMusic(mus_dm2ttl);
             }
             else
             {
@@ -530,11 +534,11 @@ void doAdvanceDemo()
             }
             break;
         case 5:
-            G_DeferedPlayDemo("demo3");
+            Doom::deferPlayDemo("demo3");
             break;
             // THE DEFINITIVE DOOM Special Edition demo
         case 6:
-            G_DeferedPlayDemo("demo4");
+            Doom::deferPlayDemo("demo4");
             break;
     }
 }
@@ -638,7 +642,7 @@ void IdentifyVersion()
 #if !defined(DOOM_WIN32)
     home = doom_getenv("HOME");
     if (!home)
-        I_Error("Error: Please set $HOME to your home directory");
+        fatalError("Error: Please set $HOME to your home directory");
 #else
     home = ".";
 #endif
@@ -1131,7 +1135,7 @@ void doomMain()
             "dphoof", "bfgga0", "heada1",  "cybra1", "spida1d1"};
 
         if (gamemode == shareware)
-            I_Error("Error: \nYou cannot -file with the shareware "
+            fatalError("Error: \nYou cannot -file with the shareware "
                     "version. Register!");
 
         // Check for fake IWAD with right name,
@@ -1139,7 +1143,7 @@ void doomMain()
         if (gamemode == registered)
             for (auto n : name)
                 if (W_CheckNumForName(n) < 0)
-                    I_Error("Error: \nThis is not the registered version.");
+                    fatalError("Error: \nThis is not the registered version.");
     }
 
     // Iff additonal PWAD files are used, print modified banner
@@ -1183,20 +1187,20 @@ void doomMain()
     doom_print("initMenu: Init miscellaneous info.\n");
     initMenu();
 
-    doom_print("R_Init: Init DOOM refresh daemon - ");
-    R_Init();
+    doom_print("Doom::renderInit: Init DOOM refresh daemon - ");
+    Doom::renderInit();
 
     doom_print("\nP_Init: Init Playloop state.\n");
     Doom::init();
 
-    doom_print("I_Init: Setting up machine state.\n");
-    I_Init();
+    doom_print("initHost: Setting up machine state.\n");
+    initHost();
 
     doom_print("Doom::checkNetGame: Checking network game status.\n");
     Doom::checkNetGame();
 
-    doom_print("S_Init: Setting up sound.\n");
-    S_Init(snd_SfxVolume /* *8 */, snd_MusicVolume /* *8*/);
+    doom_print("Doom::initSound: Setting up sound.\n");
+    Doom::initSound(snd_SfxVolume /* *8 */, snd_MusicVolume /* *8*/);
 
     doom_print("Doom::initHud: Setting up heads up display.\n");
     Doom::initHud();
@@ -1220,7 +1224,7 @@ void doomMain()
 
     if (p && p < myargc - 1)
     {
-        G_RecordDemo(myargv[p + 1]);
+        Doom::recordDemo(myargv[p + 1]);
         autostart = true;
     }
 
@@ -1228,14 +1232,14 @@ void doomMain()
     if (p && p < myargc - 1)
     {
         singledemo = true; // quit after one demo
-        G_DeferedPlayDemo(myargv[p + 1]);
+        Doom::deferPlayDemo(myargv[p + 1]);
         doomLoop(); // never returns
     }
 
     p = Doom::checkParm("-timedemo");
     if (p && p < myargc - 1)
     {
-        G_TimeDemo(myargv[p + 1]);
+        Doom::startTimeDemo(myargv[p + 1]);
         doomLoop(); // never returns
     }
 
@@ -1255,13 +1259,13 @@ void doomMain()
             doom_concat(file.data(), doom_ctoa(myargv[p + 1][0]));
             doom_concat(file.data(), ".dsg");
         }
-        G_LoadGame(file.data());
+        Doom::loadGame(file.data());
     }
 
     if (gameaction != ga_loadgame)
     {
         if (autostart || netgame)
-            G_InitNew(startskill, startepisode, startmap);
+            Doom::initNewGame(startskill, startepisode, startmap);
         else
             startTitle(); // start up intro loop
     }
@@ -1269,7 +1273,7 @@ void doomMain()
     // doomLoop (); // never returns [ddps] Called by app
 
     if (demorecording)
-        G_BeginRecording();
+        Doom::beginRecording();
 
     if (Doom::checkParm("-debugfile"))
     {

@@ -50,6 +50,8 @@
 #include "../Render/Video.h"
 #include <ea_data_structures/Structures/Array.h>
 
+#include "../Game/Game.h"
+#include "../Game/Sound.h"
 namespace Doom
 {
 
@@ -685,7 +687,7 @@ void wiUpdateNoState()
     if (!--cnt)
     {
         wiEnd();
-        G_WorldDone();
+        Doom::worldDone();
     }
 }
 
@@ -816,14 +818,14 @@ void wiUpdateDeathmatchStats()
             }
         }
 
-        S_StartSound(0, sfx_barexp);
+        Doom::startSound(0, sfx_barexp);
         dm_state = 4;
     }
 
     if (dm_state == 2)
     {
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -860,7 +862,7 @@ void wiUpdateDeathmatchStats()
         }
         if (!stillticking)
         {
-            S_StartSound(0, sfx_barexp);
+            Doom::startSound(0, sfx_barexp);
             dm_state++;
         }
     }
@@ -868,7 +870,7 @@ void wiUpdateDeathmatchStats()
     {
         if (acceleratestage)
         {
-            S_StartSound(0, sfx_slop);
+            Doom::startSound(0, sfx_slop);
 
             if (gamemode == commercial)
                 wiInitNoState();
@@ -1009,14 +1011,14 @@ void wiUpdateNetgameStats()
             if (dofrags)
                 cnt_frags[i] = wiFragSum(i);
         }
-        S_StartSound(0, sfx_barexp);
+        Doom::startSound(0, sfx_barexp);
         ng_state = 10;
     }
 
     if (ng_state == 2)
     {
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -1035,14 +1037,14 @@ void wiUpdateNetgameStats()
 
         if (!stillticking)
         {
-            S_StartSound(0, sfx_barexp);
+            Doom::startSound(0, sfx_barexp);
             ng_state++;
         }
     }
     else if (ng_state == 4)
     {
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -1059,14 +1061,14 @@ void wiUpdateNetgameStats()
         }
         if (!stillticking)
         {
-            S_StartSound(0, sfx_barexp);
+            Doom::startSound(0, sfx_barexp);
             ng_state++;
         }
     }
     else if (ng_state == 6)
     {
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -1085,14 +1087,14 @@ void wiUpdateNetgameStats()
 
         if (!stillticking)
         {
-            S_StartSound(0, sfx_barexp);
+            Doom::startSound(0, sfx_barexp);
             ng_state += 1 + 2 * !dofrags;
         }
     }
     else if (ng_state == 8)
     {
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -1111,7 +1113,7 @@ void wiUpdateNetgameStats()
 
         if (!stillticking)
         {
-            S_StartSound(0, sfx_pldeth);
+            Doom::startSound(0, sfx_pldeth);
             ng_state++;
         }
     }
@@ -1119,7 +1121,7 @@ void wiUpdateNetgameStats()
     {
         if (acceleratestage)
         {
-            S_StartSound(0, sfx_sgcock);
+            Doom::startSound(0, sfx_sgcock);
             if (gamemode == commercial)
                 wiInitNoState();
             else
@@ -1215,7 +1217,7 @@ void wiUpdateStats()
         cnt_secret[0] = (plrs[me].ssecret * 100) / wbs->maxsecret;
         cnt_time = plrs[me].stime / TICRATE;
         cnt_par = wbs->partime / TICRATE;
-        S_StartSound(0, sfx_barexp);
+        Doom::startSound(0, sfx_barexp);
         sp_state = 10;
     }
 
@@ -1224,12 +1226,12 @@ void wiUpdateStats()
         cnt_kills[0] += 2;
 
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         if (cnt_kills[0] >= (plrs[me].skills * 100) / wbs->maxkills)
         {
             cnt_kills[0] = (plrs[me].skills * 100) / wbs->maxkills;
-            S_StartSound(0, sfx_barexp);
+            Doom::startSound(0, sfx_barexp);
             sp_state++;
         }
     }
@@ -1238,12 +1240,12 @@ void wiUpdateStats()
         cnt_items[0] += 2;
 
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         if (cnt_items[0] >= (plrs[me].sitems * 100) / wbs->maxitems)
         {
             cnt_items[0] = (plrs[me].sitems * 100) / wbs->maxitems;
-            S_StartSound(0, sfx_barexp);
+            Doom::startSound(0, sfx_barexp);
             sp_state++;
         }
     }
@@ -1252,12 +1254,12 @@ void wiUpdateStats()
         cnt_secret[0] += 2;
 
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         if (cnt_secret[0] >= (plrs[me].ssecret * 100) / wbs->maxsecret)
         {
             cnt_secret[0] = (plrs[me].ssecret * 100) / wbs->maxsecret;
-            S_StartSound(0, sfx_barexp);
+            Doom::startSound(0, sfx_barexp);
             sp_state++;
         }
     }
@@ -1265,7 +1267,7 @@ void wiUpdateStats()
     else if (sp_state == 8)
     {
         if (!(bcnt & 3))
-            S_StartSound(0, sfx_pistol);
+            Doom::startSound(0, sfx_pistol);
 
         cnt_time += 3;
 
@@ -1280,7 +1282,7 @@ void wiUpdateStats()
 
             if (cnt_time >= plrs[me].stime / TICRATE)
             {
-                S_StartSound(0, sfx_barexp);
+                Doom::startSound(0, sfx_barexp);
                 sp_state++;
             }
         }
@@ -1289,7 +1291,7 @@ void wiUpdateStats()
     {
         if (acceleratestage)
         {
-            S_StartSound(0, sfx_sgcock);
+            Doom::startSound(0, sfx_sgcock);
 
             if (gamemode == commercial)
                 wiInitNoState();
@@ -1380,9 +1382,9 @@ void intermissionTicker()
     {
         // intermission music
         if (gamemode == commercial)
-            S_ChangeMusic(mus_dm2int, true);
+            Doom::changeMusic(mus_dm2int, true);
         else
-            S_ChangeMusic(mus_inter, true);
+            Doom::changeMusic(mus_inter, true);
     }
 
     wiCheckForAccelerate();

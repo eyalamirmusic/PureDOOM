@@ -11,7 +11,7 @@
 //        Handling interactions (i.e., collisions): pickups, damage, death.
 //
 // Rewritten into namespace Doom out of vanilla p_inter; p_inter.cpp keeps the
-// vanilla names (P_TouchSpecialThing, P_DamageMobj, P_GivePower) as shims and the
+// vanilla names (Doom::touchSpecialThing, Doom::damageMobj, Doom::givePower) as shims and the
 // maxammo/clipammo data tables. The give-* helpers stay Doom:: functions here,
 // called only within this file. No mutable module state, so nothing moved to Clip.
 //
@@ -35,6 +35,10 @@
 #include "Interaction.h"
 
 #include "../UI/Automap.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
+#include "Mobj.h"
 #define BONUSADD 6
 
 namespace Doom
@@ -60,11 +64,11 @@ doom_boolean giveAmmo(player_t* player, ammotype_t ammo, int num)
 
     if (ammo < 0 || ammo > NUMAMMO)
     {
-        //I_Error ("giveAmmo: bad type %i", ammo);
+        //fatalError ("giveAmmo: bad type %i", ammo);
 
         doom_strcpy(error_buf, "giveAmmo: bad type ");
         doom_concat(error_buf, doom_itoa(ammo, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     if (player->ammo[ammo] == player->maxammo[ammo])
@@ -163,7 +167,7 @@ doom_boolean giveWeapon(player_t* player, weapontype_t weapon, doom_boolean drop
         player->pendingweapon = weapon;
 
         if (player == &players[consoleplayer])
-            S_StartSound(nullptr, sfx_wpnup);
+            Doom::startSound(nullptr, sfx_wpnup);
         return false;
     }
 
@@ -591,15 +595,15 @@ void touchSpecialThing(mobj_t* special, mobj_t* toucher)
             break;
 
         default:
-            I_Error("P_SpecialThing: Unknown gettable thing");
+            fatalError("P_SpecialThing: Unknown gettable thing");
     }
 
     if (special->flags & MF_COUNTITEM)
         player->itemcount++;
-    P_RemoveMobj(special);
+    Doom::removeMobj(special);
     player->bonuscount += BONUSADD;
     if (player == &players[consoleplayer])
-        S_StartSound(nullptr, sound);
+        Doom::startSound(nullptr, sound);
 }
 
 //
@@ -654,10 +658,10 @@ void killMobj(mobj_t* source, mobj_t* target)
 
     if (target->health < -target->info->spawnhealth && target->info->xdeathstate)
     {
-        P_SetMobjState(target, static_cast<statenum_t>(target->info->xdeathstate));
+        Doom::setMobjState(target, static_cast<statenum_t>(target->info->xdeathstate));
     }
     else
-        P_SetMobjState(target, static_cast<statenum_t>(target->info->deathstate));
+        Doom::setMobjState(target, static_cast<statenum_t>(target->info->deathstate));
     target->tics -= P_Random() & 3;
 
     if (target->tics < 1)
@@ -687,7 +691,7 @@ void killMobj(mobj_t* source, mobj_t* target)
             return;
     }
 
-    mo = P_SpawnMobj(target->x, target->y, ONFLOORZ, item);
+    mo = Doom::spawnMobj(target->x, target->y, ONFLOORZ, item);
     mo->flags |= MF_DROPPED; // special versions of items
 }
 
@@ -732,7 +736,7 @@ void damageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
         && (!source || !source->player
             || source->player->readyweapon != wp_chainsaw))
     {
-        ang = R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y);
+        ang = Doom::pointToAngle2(inflictor->x, inflictor->y, target->x, target->y);
 
         thrust = damage * (FRACUNIT >> 3) * 100 / target->info->mass;
 
@@ -795,7 +799,7 @@ void damageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
         temp = damage < 100 ? damage : 100;
 
         if (player == &players[consoleplayer])
-            I_Tactile(40, 10, 40 + temp * 2);
+            tactileFeedback(40, 10, 40 + temp * 2);
     }
 
     // do the damage
@@ -810,7 +814,7 @@ void damageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
     {
         target->flags |= MF_JUSTHIT; // fight back!
 
-        P_SetMobjState(target, static_cast<statenum_t>(target->info->painstate));
+        Doom::setMobjState(target, static_cast<statenum_t>(target->info->painstate));
     }
 
     target->reactiontime = 0; // we're awake now...
@@ -824,7 +828,7 @@ void damageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
         target->threshold = BASETHRESHOLD;
         if (target->state == &states[target->info->spawnstate]
             && target->info->seestate != S_NULL)
-            P_SetMobjState(target, static_cast<statenum_t>(target->info->seestate));
+            Doom::setMobjState(target, static_cast<statenum_t>(target->info->seestate));
     }
 }
 } // namespace Doom

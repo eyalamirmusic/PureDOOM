@@ -2,7 +2,7 @@
 
 namespace Doom
 {
-// The config-backed control settings: the keyboard bindings G_Responder tests (movement, strafe,
+// The config-backed control settings: the keyboard bindings Doom::gameResponder tests (movement, strafe,
 // fire, use, strafe-modifier, run), the mouse and joystick button/axis bindings, the device
 // enables (usemouse/usejoystick), the always-run and crosshair toggles. All are persisted to the
 // config and adjusted only from outside the game (the config file, or the app's key setup).

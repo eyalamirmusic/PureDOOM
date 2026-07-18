@@ -9,6 +9,7 @@
 #include "Clip.h"
 #include "SightScratch.h"
 
+#include "../Host/System.h"
 namespace Doom
 {
 namespace
@@ -125,7 +126,7 @@ doom_boolean crossSubsector(int num)
         doom_concat(error_buf, doom_itoa(num, 10));
         doom_concat(error_buf, " with numss = ");
         doom_concat(error_buf, doom_itoa(numsubsectors, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 

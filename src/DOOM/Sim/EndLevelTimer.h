@@ -7,7 +7,7 @@ namespace Doom
 // The deathmatch end-level timer (the -timer / -avg options). When Doom::spawnSpecials sees -avg
 // it arms a 20-minute countdown, or -timer <minutes> an arbitrary one; either way only in
 // deathmatch. levelTimer is whether the countdown is running, levelTimeCount the tics left -
-// Doom::updateSpecials decrements it each tic and calls G_ExitLevel when it reaches zero. p_spec.h's
+// Doom::updateSpecials decrements it each tic and calls Doom::exitLevel when it reaches zero. p_spec.h's
 // "End-level timer (-TIMER option)".
 //
 // A p_spec cluster moved off the loose globals into the Engine (REFACTOR.md, Step 5). Both were
@@ -19,7 +19,7 @@ namespace Doom
 struct EndLevelTimer
 {
     doom_boolean levelTimer = false; // is the -timer/-avg countdown running
-    int levelTimeCount = 0; // tics remaining until G_ExitLevel
+    int levelTimeCount = 0; // tics remaining until Doom::exitLevel
 };
 
 // The one EndLevelTimer, a view onto the Engine's member - the same pattern as

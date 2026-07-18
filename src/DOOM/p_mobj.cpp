@@ -40,57 +40,13 @@ int& iquehead = Doom::itemRespawnQueue().iquehead;
 int& iquetail = Doom::itemRespawnQueue().iquetail;
 
 
-doom_boolean P_SetMobjState(mobj_t* mobj, statenum_t state)
-{
-    return Doom::setMobjState(mobj, state);
-}
 
-void P_MobjThinker(mobj_t* mobj)
-{
-    Doom::mobjThinker(mobj);
-}
 
-mobj_t* P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
-{
-    return Doom::spawnMobj(x, y, z, type);
-}
 
-void P_RemoveMobj(mobj_t* mobj)
-{
-    Doom::removeMobj(mobj);
-}
 
-void P_RespawnSpecials()
-{
-    Doom::respawnSpecials();
-}
 
-void P_SpawnPlayer(mapthing_t* mthing)
-{
-    Doom::spawnPlayer(mthing);
-}
 
-void P_SpawnMapThing(mapthing_t* mthing)
-{
-    Doom::spawnMapThing(mthing);
-}
 
-void P_SpawnPuff(fixed_t x, fixed_t y, fixed_t z)
-{
-    Doom::spawnPuff(x, y, z);
-}
 
-void P_SpawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
-{
-    Doom::spawnBlood(x, y, z, damage);
-}
 
-mobj_t* P_SpawnMissile(mobj_t* source, mobj_t* dest, mobjtype_t type)
-{
-    return Doom::spawnMissile(source, dest, type);
-}
 
-void P_SpawnPlayerMissile(mobj_t* source, mobjtype_t type)
-{
-    Doom::spawnPlayerMissile(source, type);
-}

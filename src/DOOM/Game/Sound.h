@@ -3,17 +3,17 @@
 namespace Doom
 {
 // Sound / music control; s_sound.cpp keeps the vanilla S_ names as shims.
-void sInit(int sfxVolume, int musicVolume);
-void sStart();
-void sStartSound(void* origin, int sound_id);
-void sStartSoundAtVolume(void* origin, int sound_id, int volume);
-void sStopSound(void* origin);
-void sStartMusic(int music_id);
-void sChangeMusic(int music_id, int looping);
-void sStopMusic();
-void sPauseSound();
-void sResumeSound();
-void sUpdateSounds(void* listener);
-void sSetMusicVolume(int volume);
-void sSetSfxVolume(int volume);
+void initSound(int sfxVolume, int musicVolume);
+void startLevelSound();
+void startSound(void* origin, int sound_id);
+void startSoundAtVolume(void* origin, int sound_id, int volume);
+void stopSound(void* origin);
+void startMusic(int music_id);
+void changeMusic(int music_id, int looping);
+void stopMusic();
+void pauseSound();
+void resumeSound();
+void updateSounds(void* listener);
+void setMusicVolumeLevel(int volume);
+void setSfxVolume(int volume);
 } // namespace Doom

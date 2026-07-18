@@ -9,7 +9,7 @@
 // So the net has to exist before those steps do - the Step-0 move once more.
 //
 // The assertion is a round trip: build a distinctive world, archive it, reload a
-// fresh base level and unarchive over it (precisely gDoLoadGame's sequence), and
+// fresh base level and unarchive over it (precisely doLoadGame's sequence), and
 // require the world - sectors, lines, sides, every mobj and the player - to come
 // back byte-for-byte in its meaningful, restored fields. It is sharp for the same
 // reason the demos are: a single serialized field read at the wrong offset moves

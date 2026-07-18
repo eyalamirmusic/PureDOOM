@@ -4,9 +4,9 @@
 
 namespace Doom
 {
-// The raw input state a tic's command is built from. G_Responder accumulates it as events
+// The raw input state a tic's command is built from. Doom::gameResponder accumulates it as events
 // arrive - which keys are held (gamekeydown), the mouse and joystick buttons, the mouse and
-// joystick movement since the last tic - and G_BuildTiccmd reads it once a tic to produce the
+// joystick movement since the last tic - and Doom::buildTiccmd reads it once a tic to produce the
 // ticcmd, zeroing the mouse deltas as it consumes them. turnheld counts how long a turn key
 // has been held, for accelerative turning; the dclick* fields detect the double-clicks that
 // stand in for use/strafe on a two-button mouse.
@@ -32,7 +32,7 @@ struct TiccmdInput
 
     doom_boolean mousearray[4] = {}; // mouse button state (mousebuttons views &[1])
 
-    // mouse movement accumulated since the last ticcmd (G_Responder assigns, G_BuildTiccmd
+    // mouse movement accumulated since the last ticcmd (Doom::gameResponder assigns, Doom::buildTiccmd
     // consumes and zeroes once a tic)
     int mousex = 0;
     int mousey = 0;

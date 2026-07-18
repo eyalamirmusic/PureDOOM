@@ -22,6 +22,8 @@
 
 // Doom::storeWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
 #include "Segs.h"
+#include "../Host/System.h"
+#include "Main.h"
 void Doom::storeWallRange(int start, int stop);
 
 #define MAXSEGS 32
@@ -228,8 +230,8 @@ void addLine(seg_t* line)
     curline = line;
 
     // OPTIMIZE: quickly reject orthogonal back sides.
-    angle1 = R_PointToAngle(line->v1->x, line->v1->y);
-    angle2 = R_PointToAngle(line->v2->x, line->v2->y);
+    angle1 = Doom::pointToAngle(line->v1->x, line->v1->y);
+    angle2 = Doom::pointToAngle(line->v2->x, line->v2->y);
 
     // Clip to view edges.
     // OPTIMIZE: make constant out of 2*clipangle (FIELDOFVIEW).
@@ -374,8 +376,8 @@ doom_boolean checkBBox(fixed_t* bspcoord)
     y2 = bspcoord[checkcoord[boxpos][3]];
 
     // check clip list for an open space
-    angle1 = R_PointToAngle(x1, y1) - viewangle;
-    angle2 = R_PointToAngle(x2, y2) - viewangle;
+    angle1 = Doom::pointToAngle(x1, y1) - viewangle;
+    angle2 = Doom::pointToAngle(x2, y2) - viewangle;
 
     span = angle1 - angle2;
 
@@ -455,7 +457,7 @@ void subsector(int num)
 #ifdef RANGECHECK
     if (num >= numsubsectors)
     {
-        //I_Error("Error: subsector: ss %i with numss = %i",
+        //fatalError("Error: subsector: ss %i with numss = %i",
         //        num,
         //        numsubsectors);
 
@@ -463,7 +465,7 @@ void subsector(int num)
         doom_concat(error_buf, doom_itoa(num, 10));
         doom_concat(error_buf, " with numss = ");
         doom_concat(error_buf, doom_itoa(numsubsectors, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 
@@ -523,7 +525,7 @@ void renderBSPNode(int bspnum)
     bsp = &nodes[bspnum];
 
     // Decide which side the view point is on.
-    side = R_PointOnSide(viewx, viewy, bsp);
+    side = Doom::pointOnSide(viewx, viewy, bsp);
 
     // Recursively divide front space.
     renderBSPNode(bsp->children[side]);

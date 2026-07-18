@@ -5,7 +5,7 @@
 
 namespace Doom
 {
-// The renderer's light selection. R_InitLightTables builds the diminishing-light
+// The renderer's light selection. Doom::initLightTables builds the diminishing-light
 // lookups once - scalelight indexed by light level and on-screen scale, zlight by
 // light level and distance, each cell a COLORMAP row (a lighttable_t* into the
 // colormaps lump) - and R_SetupFrame sets the per-frame part: fixedcolormap, the one
@@ -29,7 +29,7 @@ struct Lighting
     // The muzzle-flash brightness bump R_SetupFrame reads off the player.
     int extralight = 0;
 
-    // The diminishing-light lookups R_InitLightTables builds.
+    // The diminishing-light lookups Doom::initLightTables builds.
     lighttable_t* scalelight[LIGHTLEVELS][MAXLIGHTSCALE] = {};
     lighttable_t* scalelightfixed[MAXLIGHTSCALE] = {};
     lighttable_t* zlight[LIGHTLEVELS][MAXLIGHTZ] = {};

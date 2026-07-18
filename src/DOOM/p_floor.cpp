@@ -27,12 +27,4 @@ void T_MoveFloor(floormove_t* floor)
     Doom::moveFloor(*floor);
 }
 
-int EV_DoFloor(line_t* line, floor_e floortype)
-{
-    return Doom::doFloor(line, floortype);
-}
 
-int EV_BuildStairs(line_t* line, stair_e type)
-{
-    return Doom::buildStairs(line, type);
-}

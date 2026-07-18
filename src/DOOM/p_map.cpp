@@ -68,10 +68,6 @@ fixed_t& attackrange = Doom::clip().attackrange;
 //
 // P_TeleportMove
 //
-doom_boolean P_TeleportMove(mobj_t* thing, fixed_t x, fixed_t y)
-{
-    return Doom::teleportMove(thing, x, y);
-}
 
 
 //
@@ -108,10 +104,6 @@ doom_boolean P_TeleportMove(mobj_t* thing, fixed_t x, fixed_t y)
 //  speciallines[]
 //  numspeciallines
 //
-doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y)
-{
-    return Doom::checkPosition(thing, x, y);
-}
 
 
 //
@@ -119,10 +111,6 @@ doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y)
 // Attempt to move to a new position,
 // crossing special lines unless MF_TELEPORT is set.
 //
-doom_boolean P_TryMove(mobj_t* thing, fixed_t x, fixed_t y)
-{
-    return Doom::tryMove(thing, x, y);
-}
 
 
 //
@@ -135,10 +123,6 @@ doom_boolean P_TryMove(mobj_t* thing, fixed_t x, fixed_t y)
 // the z will be set to the lowest value
 // and false will be returned.
 //
-doom_boolean P_ThingHeightClip(mobj_t* thing)
-{
-    return Doom::thingHeightClip(thing);
-}
 
 
 //
@@ -148,37 +132,13 @@ doom_boolean P_ThingHeightClip(mobj_t* thing)
 // aim's linetarget and the shot's attackrange (above) are read from other files.
 //
 
-void P_SlideMove(mobj_t* mo)
-{
-    Doom::slideMove(mo);
-}
 
 
-fixed_t P_AimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance)
-{
-    return Doom::aimLineAttack(t1, angle, distance);
-}
 
 
-void P_LineAttack(mobj_t* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
-{
-    Doom::lineAttack(t1, angle, distance, slope, damage);
-}
 
 
-void P_UseLines(player_t* player)
-{
-    Doom::useLines(player);
-}
 
 
-void P_RadiusAttack(mobj_t* spot, mobj_t* source, int damage)
-{
-    Doom::radiusAttack(spot, source, damage);
-}
 
 
-doom_boolean P_ChangeSector(sector_t* sector, doom_boolean crunch)
-{
-    return Doom::changeSector(sector, crunch);
-}

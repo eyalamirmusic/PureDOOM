@@ -6,7 +6,7 @@
 namespace Doom
 {
 // Enemy AI: the action functions info.cpp's state table drives, plus the noise
-// alert P_NoiseAlert weapons trigger. p_enemy.cpp keeps the vanilla names as shims.
+// alert Doom::noiseAlert weapons trigger. p_enemy.cpp keeps the vanilla names as shims.
 // Covered by the demos (a level's worth of monsters chasing, attacking, dying) and
 // golden-neutral.
 void keenDie(mobj_t& mo);

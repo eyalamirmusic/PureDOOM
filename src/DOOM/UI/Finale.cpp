@@ -49,6 +49,7 @@
 #include <ea_data_structures/Structures/Array.h>
 
 // Other subsystems' globals/functions this file reads.
+#include "../Game/Sound.h"
 extern gamestate_t& wipegamestate; // Doom::GameFlow (Engine member)
 extern patch_t* (
     &hu_font)[HU_FONTSIZE]; // Doom::HudFont (Engine member); reference-to-array
@@ -163,7 +164,7 @@ void startFinale()
         case registered:
         case retail:
         {
-            S_ChangeMusic(mus_victor, true);
+            Doom::changeMusic(mus_victor, true);
 
             switch (gameepisode)
             {
@@ -193,7 +194,7 @@ void startFinale()
         // DOOM II and missions packs with E1, M34
         case commercial:
         {
-            S_ChangeMusic(mus_read_m, true);
+            Doom::changeMusic(mus_read_m, true);
 
             switch (gamemap)
             {
@@ -230,7 +231,7 @@ void startFinale()
 
         // Indeterminate.
         default:
-            S_ChangeMusic(mus_read_m, true);
+            Doom::changeMusic(mus_read_m, true);
             finaleflat = "F_SKY1"; // Not used anywhere else.
             finaletext = c1text; // FIXME - other text, music?
             break;
@@ -290,7 +291,7 @@ void finaleTicker()
         finalestage = 1;
         wipegamestate = static_cast<gamestate_t>(-1); // force a wipe
         if (gameepisode == 3)
-            S_StartMusic(mus_bunny);
+            Doom::startMusic(mus_bunny);
     }
 }
 
@@ -380,7 +381,7 @@ void fStartCast()
     castframes = 0;
     castonmelee = 0;
     castattacking = false;
-    S_ChangeMusic(mus_evil, true);
+    Doom::changeMusic(mus_evil, true);
 }
 
 //
@@ -402,7 +403,7 @@ void fCastTicker()
         if (castorder[castnum].name == nullptr)
             castnum = 0;
         if (mobjinfo[castorder[castnum].type].seesound)
-            S_StartSound(0, mobjinfo[castorder[castnum].type].seesound);
+            Doom::startSound(0, mobjinfo[castorder[castnum].type].seesound);
         caststate = &states[mobjinfo[castorder[castnum].type].seestate];
         castframes = 0;
     }
@@ -484,7 +485,7 @@ void fCastTicker()
         }
 
         if (sfx)
-            S_StartSound(0, sfx);
+            Doom::startSound(0, sfx);
     }
 
     if (castframes == 12)
@@ -540,7 +541,7 @@ doom_boolean fCastResponder(event_t* ev)
     castframes = 0;
     castattacking = false;
     if (mobjinfo[castorder[castnum].type].deathsound)
-        S_StartSound(0, mobjinfo[castorder[castnum].type].deathsound);
+        Doom::startSound(0, mobjinfo[castorder[castnum].type].deathsound);
 
     return true;
 }
@@ -704,7 +705,7 @@ void fBunnyScroll()
         stage = 6;
     if (stage > laststage)
     {
-        S_StartSound(0, sfx_pistol);
+        Doom::startSound(0, sfx_pistol);
         laststage = stage;
     }
 

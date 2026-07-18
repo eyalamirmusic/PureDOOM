@@ -27,6 +27,9 @@
 
 // Index of the special effects (INVUL inverse) map.
 #include "Specials.h"
+#include "../Render/Main.h"
+#include "MapAction.h"
+#include "Mobj.h"
 #define INVERSECOLORMAP 32
 
 // 16 pixels of bob
@@ -146,7 +149,7 @@ void movePlayer(player_t& player)
 
     if ((cmd->forwardmove || cmd->sidemove) && player.mo->state == &states[S_PLAY])
     {
-        P_SetMobjState(player.mo, S_PLAY_RUN1);
+        Doom::setMobjState(player.mo, S_PLAY_RUN1);
     }
 }
 
@@ -175,7 +178,7 @@ void deathThink(player_t& player)
 
     if (player.attacker && player.attacker != player.mo)
     {
-        angle = R_PointToAngle2(
+        angle = Doom::pointToAngle2(
             player.mo->x, player.mo->y, player.attacker->x, player.attacker->y);
 
         delta = angle - player.mo->angle;
@@ -288,7 +291,7 @@ void playerThink(player_t& player)
     {
         if (!player.usedown)
         {
-            P_UseLines(&player);
+            Doom::useLines(&player);
             player.usedown = true;
         }
     }

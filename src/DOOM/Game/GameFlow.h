@@ -6,7 +6,7 @@
 namespace Doom
 {
 // The top-level game state, the pending action that drives it, and the wipe that guards its
-// transitions - the game-flow triple g_game owns. gameaction is the deferred action G_Ticker
+// transitions - the game-flow triple g_game owns. gameaction is the deferred action Doom::gameTicker
 // dispatches at the top of each tic (load a level, start a game, run a demo, complete the
 // level), cleared to ga_nothing once run. gamestate is which screen the game is on - a level,
 // the intermission, a finale, or the title/demo loop - read all over the loop, the HUD and the
@@ -27,7 +27,7 @@ namespace Doom
 struct GameFlow
 {
     gameaction_t gameaction =
-        ga_nothing; // the deferred action G_Ticker runs each tic
+        ga_nothing; // the deferred action Doom::gameTicker runs each tic
     gamestate_t gamestate =
         GS_LEVEL; // which screen we are on (vanilla zero-inits this)
     gamestate_t wipegamestate =

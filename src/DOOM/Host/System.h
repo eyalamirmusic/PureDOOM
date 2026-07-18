@@ -4,21 +4,21 @@
 
 namespace Doom
 {
-// The engine's system seam: timing (I_GetTime), the zone's backing allocation
-// (I_ZoneBase / I_GetHeapSize), startup and teardown (I_Init / I_Quit) and the
-// fatal path (I_Error, which the tests catch by way of doom_set_exit). Most of
+// The engine's system seam: timing (currentTic), the zone's backing allocation
+// (zoneBase / heapSize), startup and teardown (initHost / quitGame) and the
+// fatal path (fatalError, which the tests catch by way of doom_set_exit). Most of
 // the rest are host stubs. i_system.cpp keeps the vanilla I_ names as shims over
 // these; mb_used and emptycmd are file-local to System.cpp.
-void I_Tactile(int on, int off, int total);
-ticcmd_t* I_BaseTiccmd();
-int I_GetHeapSize();
-byte* I_ZoneBase(int* size);
-int I_GetTime();
-void I_Init();
-void I_Quit();
-void I_WaitVBL(int count);
-void I_BeginRead();
-void I_EndRead();
-byte* I_AllocLow(int length);
-void I_Error(const char* error);
+void tactileFeedback(int on, int off, int total);
+ticcmd_t* baseTiccmd();
+int heapSize();
+byte* zoneBase(int* size);
+int currentTic();
+void initHost();
+void quitGame();
+void waitVBlank(int count);
+void beginRead();
+void endRead();
+byte* allocLow(int length);
+void fatalError(const char* error);
 } // namespace Doom

@@ -5,7 +5,7 @@ namespace Doom
 // The base of everything that acts once a tic: mobjs and the moving-sector
 // specials (doors, lifts, crushers, lights). Vanilla threaded these on a doubly
 // linked list whose node carried a function pointer - `thinker_t.function` - that
-// Doom::runThinkers called each tic, and that p_saveg compared against `P_MobjThinker`
+// Doom::runThinkers called each tic, and that p_saveg compared against `Doom::mobjThinker`
 // / the `T_*` addresses to tell one kind of thinker from another. That union is
 // gone: dispatch is a virtual `tick()`, and the type is a virtual `kind()`.
 //

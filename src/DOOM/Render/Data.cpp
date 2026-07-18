@@ -29,6 +29,7 @@
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
+#include "../Host/System.h"
 namespace Doom
 {
 // Each texture is composed of one or more patches,
@@ -269,7 +270,7 @@ void generateLookup(int texnum)
             doom_print(")\n");
             return;
         }
-        // I_Error ("generateLookup: column without a patch");
+        // fatalError ("generateLookup: column without a patch");
 
         if (patchcount[x] > 1)
         {
@@ -279,13 +280,13 @@ void generateLookup(int texnum)
 
             if (texturecompositesize[texnum] > 0x10000 - texture->height)
             {
-                //I_Error("Error: generateLookup: texture %i is >64k",
+                //fatalError("Error: generateLookup: texture %i is >64k",
                 //        texnum);
 
                 doom_strcpy(error_buf, "Error: generateLookup: texture ");
                 doom_concat(error_buf, doom_itoa(texnum, 10));
                 doom_concat(error_buf, " is >64k");
-                I_Error(error_buf);
+                fatalError(error_buf);
             }
 
             texturecompositesize[texnum] += texture->height;
@@ -446,7 +447,7 @@ void initTextures()
         offset = LONG(*directory);
 
         if (offset > maxoff)
-            I_Error("Error: initTextures: bad texture directory");
+            fatalError("Error: initTextures: bad texture directory");
 
         mtexture = reinterpret_cast<maptexture_t*>(reinterpret_cast<byte*>(maptex)
                                                    + offset);
@@ -472,13 +473,13 @@ void initTextures()
             patch->patch = patchlookup[SHORT(mpatch->patch)];
             if (patch->patch == -1)
             {
-                //I_Error("Error: initTextures: Missing patch in texture %s",
+                //fatalError("Error: initTextures: Missing patch in texture %s",
                 //        texture->name);
 
                 doom_strcpy(error_buf,
                             "Error: initTextures: Missing patch in texture ");
                 doom_concat(error_buf, texture->name);
-                I_Error(error_buf);
+                fatalError(error_buf);
             }
         }
         cc.columnlumpStorage[i].resize(texture->width);
@@ -617,12 +618,12 @@ int flatNumForName(const char* name)
     {
         namet[8] = 0;
         doom_memcpy(namet.data(), name, 8);
-        //I_Error("Error: flatNumForName: %s not found", namet);
+        //fatalError("Error: flatNumForName: %s not found", namet);
 
         doom_strcpy(error_buf, "Error: flatNumForName: ");
         doom_concat(error_buf, namet.data());
         doom_concat(error_buf, " not found");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
     return i - firstflat;
 }
@@ -656,13 +657,13 @@ int textureNumForName(const char* name)
 
     if (i == -1)
     {
-        //I_Error("Error: textureNumForName: %s not found",
+        //fatalError("Error: textureNumForName: %s not found",
         //        name);
 
         doom_strcpy(error_buf, "Error: textureNumForName: ");
         doom_concat(error_buf, name);
         doom_concat(error_buf, " not found");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
     return i;
 }

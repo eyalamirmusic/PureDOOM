@@ -21,6 +21,7 @@
 #include "StatusWidgetGraphics.h"
 
 #include "../Render/Video.h"
+#include "../Host/System.h"
 namespace Doom
 {
 
@@ -87,7 +88,7 @@ void drawNum(st_number_t& n)
     x = n.x - numdigits * w;
 
     if (n.y - ST_Y < 0)
-        I_Error("Error: drawNum: n->y - ST_Y < 0");
+        fatalError("Error: drawNum: n->y - ST_Y < 0");
 
     Doom::copyRect(x, n.y - ST_Y, STLIB_BG, w * numdigits, h, x, n.y, STLIB_FG);
 
@@ -169,7 +170,7 @@ void updateMultIcon(st_multicon_t& mi, doom_boolean refresh)
             h = SHORT(mi.p[mi.oldinum]->height);
 
             if (y - ST_Y < 0)
-                I_Error("Error: updateMultIcon: y - ST_Y < 0");
+                fatalError("Error: updateMultIcon: y - ST_Y < 0");
 
             Doom::copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
         }
@@ -204,7 +205,7 @@ void updateBinIcon(st_binicon_t& bi, doom_boolean refresh)
         h = SHORT(bi.p->height);
 
         if (y - ST_Y < 0)
-            I_Error("Error: updateBinIcon: y - ST_Y < 0");
+            fatalError("Error: updateBinIcon: y - ST_Y < 0");
 
         if (*bi.val)
             Doom::drawPatch(bi.x, bi.y, STLIB_FG, bi.p);

@@ -21,6 +21,7 @@
 #include <new>
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
+#include "../Game/Sound.h"
 // can store their address.
 void T_MoveCeiling(ceiling_t* ceiling);
 
@@ -59,7 +60,7 @@ void moveCeiling(ceiling_t& ceiling)
                     case silentCrushAndRaise:
                         break;
                     default:
-                        S_StartSound(
+                        Doom::startSound(
                             reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                         // ?
@@ -76,7 +77,7 @@ void moveCeiling(ceiling_t& ceiling)
                         break;
 
                     case silentCrushAndRaise:
-                        S_StartSound(
+                        Doom::startSound(
                             reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case fastCrushAndRaise:
@@ -106,7 +107,7 @@ void moveCeiling(ceiling_t& ceiling)
                     case silentCrushAndRaise:
                         break;
                     default:
-                        S_StartSound(
+                        Doom::startSound(
                             reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                 }
@@ -117,7 +118,7 @@ void moveCeiling(ceiling_t& ceiling)
                 switch (ceiling.type)
                 {
                     case silentCrushAndRaise:
-                        S_StartSound(
+                        Doom::startSound(
                             reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case crushAndRaise:

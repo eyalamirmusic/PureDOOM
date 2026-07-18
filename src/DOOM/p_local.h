@@ -103,21 +103,11 @@ extern int& iquehead;
 extern int& iquetail;
 
 
-void P_RespawnSpecials();
-mobj_t* P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
-void P_RemoveMobj(mobj_t* th);
-doom_boolean P_SetMobjState(mobj_t* mobj, statenum_t state);
-void P_MobjThinker(mobj_t* mobj);
-void P_SpawnPuff(fixed_t x, fixed_t y, fixed_t z);
-void P_SpawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage);
-mobj_t* P_SpawnMissile(mobj_t* source, mobj_t* dest, mobjtype_t type);
-void P_SpawnPlayerMissile(mobj_t* source, mobjtype_t type);
 
 
 //
 // P_ENEMY
 //
-void P_NoiseAlert(mobj_t* target, mobj_t* emmiter);
 
 
 //
@@ -204,21 +194,11 @@ extern fixed_t& tmceilingz;
 extern line_t*& ceilingline;
 
 
-doom_boolean P_CheckPosition(mobj_t* thing, fixed_t x, fixed_t y);
-doom_boolean P_TryMove(mobj_t* thing, fixed_t x, fixed_t y);
-doom_boolean P_TeleportMove(mobj_t* thing, fixed_t x, fixed_t y);
-void P_SlideMove(mobj_t* mo);
-doom_boolean P_CheckSight(mobj_t* t1, mobj_t* t2);
-void P_UseLines(player_t* player);
-doom_boolean P_ChangeSector(sector_t* sector, doom_boolean crunch);
 
 
 extern mobj_t*& linetarget; // who got hit (or 0); a reference into Doom::Clip
 
 
-fixed_t P_AimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance);
-void P_LineAttack(mobj_t* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage);
-void P_RadiusAttack(mobj_t* spot, mobj_t* source, int damage);
 
 
 //
@@ -241,8 +221,6 @@ extern int (&maxammo)[NUMAMMO]; // Doom::AmmoLimits (Engine member)
 extern int (&clipammo)[NUMAMMO]; // Doom::AmmoLimits (Engine member)
 
 
-void P_TouchSpecialThing(mobj_t* special, mobj_t* toucher);
-void P_DamageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage);
 
 
 //

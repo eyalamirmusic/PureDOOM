@@ -392,7 +392,7 @@ struct spriteframe_t
     // relies on the third state - it tests `== false` and `== true` separately,
     // and a frame that is still -1 must match neither. As a C++ bool the -1 would
     // read back as true, every sprite with rotations would look like a frame that
-    // already had a rot=0 lump, and the engine would I_Error on the very first
+    // already had a rot=0 lump, and the engine would Doom::fatalError on the very first
     // one it loaded (TROO frame I).
     int rotate;
 

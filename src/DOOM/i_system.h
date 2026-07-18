@@ -27,16 +27,13 @@
 
 
 // Called by DoomMain.
-void I_Init();
 
 // Called by startup code
 // to get the ammount of memory to malloc
 // for the zone management.
-byte* I_ZoneBase(int* size);
 
 // Called by Doom::doomLoop,
 // returns current time in tics.
-int I_GetTime();
 
 // Called by Doom::doomLoop,
 // called before processing any tics in a frame
@@ -58,19 +55,14 @@ int I_GetTime();
 // or calls a loadable driver to build it.
 // This ticcmd will then be modified by the gameloop
 // for normal input.
-ticcmd_t* I_BaseTiccmd();
 
 // Called by Doom::menuResponder when quit is selected.
 // Clean exit, displays sell blurb.
-void I_Quit();
 
 // Allocates from low memory under dos,
 // just mallocs under unix
-byte* I_AllocLow(int length);
 
-void I_Tactile(int on, int off, int total);
 
-void I_Error(const char* error);
 
 
 

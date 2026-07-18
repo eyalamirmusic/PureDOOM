@@ -7,7 +7,7 @@ namespace Doom
 // The movement-clipping core of vanilla p_map: does a mobj fit at a position, and
 // the commit of a move if it does. The clipping state it reads and writes lives in
 // Clip (Sim/Clip.h) - tmthing, the tm bounding box, tmfloorz/tmceilingz, the spechit
-// list. p_map.cpp keeps the vanilla names (P_CheckPosition, P_TryMove, ...) as shims
+// list. p_map.cpp keeps the vanilla names (Doom::checkPosition, Doom::tryMove, ...) as shims
 // forwarding here, and the externally-read results (floatok, tmfloorz, ceilingline,
 // spechit, numspechit) stay as references onto Clip for p_enemy/p_mobj until those
 // files are rewritten.

@@ -18,6 +18,8 @@
 #include "Data.h"
 #include "Planes.h"
 #include "Things.h"
+#include "../Host/System.h"
+#include "Main.h"
 #define HEIGHTBITS 12
 #define HEIGHTUNIT (1 << HEIGHTBITS)
 
@@ -337,13 +339,13 @@ void storeWallRange(int start, int stop)
 #ifdef RANGECHECK
     if (start >= viewwidth || start > stop)
     {
-        //I_Error("Error: Bad R_RenderWallRange: %i to %i", start, stop);
+        //fatalError("Error: Bad R_RenderWallRange: %i to %i", start, stop);
 
         doom_strcpy(error_buf, "Error: Bad R_RenderWallRange: ");
         doom_concat(error_buf, doom_itoa(start, 10));
         doom_concat(error_buf, " to ");
         doom_concat(error_buf, doom_itoa(stop, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 
@@ -363,7 +365,7 @@ void storeWallRange(int start, int stop)
         offsetangle = ANG90;
 
     distangle = ANG90 - offsetangle;
-    hyp = R_PointToDist(curline->v1->x, curline->v1->y);
+    hyp = Doom::pointToDist(curline->v1->x, curline->v1->y);
     sineval = finesine[distangle >> ANGLETOFINESHIFT];
     rw_distance = FixedMul(hyp, sineval);
 
@@ -374,11 +376,11 @@ void storeWallRange(int start, int stop)
 
     // calculate scale at both ends and step
     ds_p->scale1 = rw_scale =
-        R_ScaleFromGlobalAngle(viewangle + xtoviewangle[start]);
+        Doom::scaleFromGlobalAngle(viewangle + xtoviewangle[start]);
 
     if (stop > start)
     {
-        ds_p->scale2 = R_ScaleFromGlobalAngle(viewangle + xtoviewangle[stop]);
+        ds_p->scale2 = Doom::scaleFromGlobalAngle(viewangle + xtoviewangle[stop]);
         ds_p->scalestep = rw_scalestep = (ds_p->scale2 - rw_scale) / (stop - start);
     }
     else

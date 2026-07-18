@@ -47,6 +47,7 @@
 #include "../UI/MenuSettings.h"
 
 // Each screen is [SCREENWIDTH*SCREENHEIGHT];
+#include "../Host/System.h"
 byte* screens[5];
 
 // dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
@@ -179,7 +180,7 @@ void copyRect(int srcx,
         || desty < 0 || desty + height > SCREENHEIGHT
         || static_cast<unsigned>(srcscrn) > 4 || static_cast<unsigned>(destscrn) > 4)
     {
-        I_Error("Error: Bad copyRect");
+        fatalError("Error: Bad copyRect");
     }
 #endif
     markRect(destx, desty, width, height);
@@ -222,7 +223,7 @@ void drawPatch(int x, int y, int scrn, patch_t* patch)
         doom_print(",");
         doom_print(doom_itoa(y, 10));
         doom_print(" exceeds LFB\n");
-        // No I_Error abort - what is up with TNT.WAD?
+        // No fatalError abort - what is up with TNT.WAD?
         doom_print("drawPatch: bad patch (ignored)\n");
         return;
     }
@@ -287,7 +288,7 @@ void drawPatchFlipped(int x, int y, int scrn, patch_t* patch)
         doom_print(",");
         doom_print(doom_itoa(y, 10));
         doom_print(" exceeds LFB\n");
-        I_Error("Error: Bad drawPatch in drawPatchFlipped");
+        fatalError("Error: Bad drawPatch in drawPatchFlipped");
     }
 #endif
 
@@ -346,7 +347,7 @@ void drawPatchRectDirect(
         doom_print(",");
         doom_print(doom_itoa(y, 10));
         doom_print(" exceeds LFB\n");
-        // No I_Error abort - what is up with TNT.WAD?
+        // No fatalError abort - what is up with TNT.WAD?
         doom_print("drawPatch: bad patch (ignored)\n");
         return;
     }
@@ -404,7 +405,7 @@ void drawBlock(int x, int y, int scrn, int width, int height, byte* src)
     if (x < 0 || x + width > SCREENWIDTH || y < 0 || y + height > SCREENHEIGHT
         || static_cast<unsigned>(scrn) > 4)
     {
-        I_Error("Error: Bad drawBlock");
+        fatalError("Error: Bad drawBlock");
     }
 #endif
 
@@ -432,7 +433,7 @@ void getBlock(int x, int y, int scrn, int width, int height, byte* dest)
     if (x < 0 || x + width > SCREENWIDTH || y < 0 || y + height > SCREENHEIGHT
         || static_cast<unsigned>(scrn) > 4)
     {
-        I_Error("Error: Bad drawBlock");
+        fatalError("Error: Bad drawBlock");
     }
 #endif
 
@@ -454,7 +455,7 @@ void initVideo()
     // stick these in low dos memory on PCs
 
     // RAII now (Step 9): the base block is a VideoState-owned vector, zero-filled as
-    // I_AllocLow left it, sliced into the screens[] view. screens[0]'s slice is
+    // allocLow left it, sliced into the screens[] view. screens[0]'s slice is
     // overwritten by initGraphics, exactly as vanilla left it.
     auto& workspace = videoState().workspace;
     workspace.assign(SCREENWIDTH * SCREENHEIGHT * 4, byte(0));

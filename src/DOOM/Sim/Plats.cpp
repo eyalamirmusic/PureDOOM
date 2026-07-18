@@ -23,7 +23,9 @@
 #include <new>
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
+#include "../Game/Sound.h"
 // can store their address.
+#include "../Host/System.h"
 void T_PlatRaise(plat_t* plat);
 
 namespace Doom
@@ -50,7 +52,7 @@ void platRaise(plat_t& plat)
                 || plat.type == raiseToNearestAndChange)
             {
                 if (!(leveltime & 7))
-                    S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
+                    Doom::startSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                                  sfx_stnmov);
             }
 
@@ -58,7 +60,7 @@ void platRaise(plat_t& plat)
             {
                 plat.count = plat.wait;
                 plat.status = down;
-                S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
+                Doom::startSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                              sfx_pstart);
             }
             else
@@ -67,7 +69,7 @@ void platRaise(plat_t& plat)
                 {
                     plat.count = plat.wait;
                     plat.status = waiting;
-                    S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
+                    Doom::startSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                                  sfx_pstop);
 
                     switch (plat.type)
@@ -96,7 +98,7 @@ void platRaise(plat_t& plat)
             {
                 plat.count = plat.wait;
                 plat.status = waiting;
-                S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
+                Doom::startSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                              sfx_pstop);
             }
             break;
@@ -108,7 +110,7 @@ void platRaise(plat_t& plat)
                     plat.status = up;
                 else
                     plat.status = down;
-                S_StartSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
+                Doom::startSound(reinterpret_cast<mobj_t*>(&plat.sector->soundorg),
                              sfx_pstart);
             }
 
@@ -170,7 +172,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 // NO MORE DAMAGE, IF APPLICABLE
                 sec->special = 0;
 
-                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_stnmov);
+                Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_stnmov);
                 break;
 
             case raiseAndChange:
@@ -180,7 +182,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->wait = 0;
                 plat->status = up;
 
-                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_stnmov);
+                Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_stnmov);
                 break;
 
             case downWaitUpStay:
@@ -193,7 +195,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = down;
-                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
+                Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
                 break;
 
             case blazeDWUS:
@@ -206,7 +208,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = down;
-                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
+                Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
                 break;
 
             case perpetualRaise:
@@ -224,7 +226,7 @@ int doPlat(line_t* line, plattype_e type, int amount)
                 plat->wait = 35 * PLATWAIT;
                 plat->status = (plat_e) (P_Random() & 1);
 
-                S_StartSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
+                Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_pstart);
                 break;
         }
         addActivePlat(plat);
@@ -264,7 +266,7 @@ void addActivePlat(plat_t* plat)
             activeplats[i] = plat;
             return;
         }
-    I_Error("Error: addActivePlat: no more plats!");
+    fatalError("Error: addActivePlat: no more plats!");
 }
 
 void removeActivePlat(plat_t* plat)
@@ -278,6 +280,6 @@ void removeActivePlat(plat_t* plat)
 
             return;
         }
-    I_Error("Error: removeActivePlat: can't find plat!");
+    fatalError("Error: removeActivePlat: can't find plat!");
 }
 } // namespace Doom

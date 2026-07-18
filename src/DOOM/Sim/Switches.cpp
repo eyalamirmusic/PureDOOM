@@ -2,7 +2,7 @@
 //
 // Wall switches and the buttons they arm: build the switch texture-pair list,
 // start a button's timed return, flip a switch's texture, and use a special line.
-// P_UseSpecialLine is called by the map-action use code and P_ChangeSwitchTexture
+// Doom::useSpecialLine is called by the map-action use code and Doom::changeSwitchTexture
 // by the door/floor/lift specials, so p_switch.cpp shims every name; the switch data
 // is file-local and buttonlist stays global (p_spec ticks it). Golden-neutral - the
 // demos flip switches.
@@ -29,6 +29,11 @@
 #include "Lights.h"
 #include "Plats.h"
 #include "Specials.h"
+#include "../Game/Game.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "Doors.h"
+#include "Floors.h"
 namespace Doom
 {
 switchlist_t alphSwitchList[] = {
@@ -148,7 +153,7 @@ void startButton(line_t* line, bwhere_e w, int texture, int time)
         }
     }
 
-    I_Error("Error: startButton: no button slots left!");
+    fatalError("Error: startButton: no button slots left!");
 }
 
 //
@@ -179,7 +184,7 @@ void changeSwitchTexture(line_t* line, int useAgain)
     {
         if (switchlist[i] == texTop)
         {
-            S_StartSound(buttonlist->soundorg, sound);
+            Doom::startSound(buttonlist->soundorg, sound);
             sides[line->sidenum[0]].toptexture = switchlist[i ^ 1];
 
             if (useAgain)
@@ -191,7 +196,7 @@ void changeSwitchTexture(line_t* line, int useAgain)
         {
             if (switchlist[i] == texMid)
             {
-                S_StartSound(buttonlist->soundorg, sound);
+                Doom::startSound(buttonlist->soundorg, sound);
                 sides[line->sidenum[0]].midtexture = switchlist[i ^ 1];
 
                 if (useAgain)
@@ -203,7 +208,7 @@ void changeSwitchTexture(line_t* line, int useAgain)
             {
                 if (switchlist[i] == texBot)
                 {
-                    S_StartSound(buttonlist->soundorg, sound);
+                    Doom::startSound(buttonlist->soundorg, sound);
                     sides[line->sidenum[0]].bottomtexture = switchlist[i ^ 1];
 
                     if (useAgain)
@@ -277,7 +282,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 117: // Blazing door raise
         case 118: // Blazing door open
-            EV_VerticalDoor(line, thing);
+            Doom::verticalDoor(line, thing);
             break;
 
             //UNUSED - Door Slide Open&Close
@@ -288,7 +293,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
             // SWITCHES
         case 7:
             // Build Stairs
-            if (EV_BuildStairs(line, build8))
+            if (Doom::buildStairs(line, build8))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -301,7 +306,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
         case 11:
             // Exit level
             changeSwitchTexture(line, 0);
-            G_ExitLevel();
+            Doom::exitLevel();
             break;
 
         case 14:
@@ -318,7 +323,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 18:
             // Raise Floor to next highest floor
-            if (EV_DoFloor(line, raiseFloorToNearest))
+            if (Doom::doFloor(line, raiseFloorToNearest))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -336,13 +341,13 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 23:
             // Lower Floor to Lowest
-            if (EV_DoFloor(line, lowerFloorToLowest))
+            if (Doom::doFloor(line, lowerFloorToLowest))
                 changeSwitchTexture(line, 0);
             break;
 
         case 29:
             // Raise Door
-            if (EV_DoDoor(line, door_normal))
+            if (Doom::doDoor(line, door_normal))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -354,7 +359,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 71:
             // Turbo Lower Floor
-            if (EV_DoFloor(line, turboLower))
+            if (Doom::doFloor(line, turboLower))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -366,55 +371,55 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 50:
             // Close Door
-            if (EV_DoDoor(line, door_close))
+            if (Doom::doDoor(line, door_close))
                 changeSwitchTexture(line, 0);
             break;
 
         case 51:
             // Secret EXIT
             changeSwitchTexture(line, 0);
-            G_SecretExitLevel();
+            Doom::secretExitLevel();
             break;
 
         case 55:
             // Raise Floor Crush
-            if (EV_DoFloor(line, raiseFloorCrush))
+            if (Doom::doFloor(line, raiseFloorCrush))
                 changeSwitchTexture(line, 0);
             break;
 
         case 101:
             // Raise Floor
-            if (EV_DoFloor(line, raiseFloor))
+            if (Doom::doFloor(line, raiseFloor))
                 changeSwitchTexture(line, 0);
             break;
 
         case 102:
             // Lower Floor to Surrounding floor height
-            if (EV_DoFloor(line, lowerFloor))
+            if (Doom::doFloor(line, lowerFloor))
                 changeSwitchTexture(line, 0);
             break;
 
         case 103:
             // Open Door
-            if (EV_DoDoor(line, door_open))
+            if (Doom::doDoor(line, door_open))
                 changeSwitchTexture(line, 0);
             break;
 
         case 111:
             // Blazing Door Raise (faster than TURBO!)
-            if (EV_DoDoor(line, blazeRaise))
+            if (Doom::doDoor(line, blazeRaise))
                 changeSwitchTexture(line, 0);
             break;
 
         case 112:
             // Blazing Door Open (faster than TURBO!)
-            if (EV_DoDoor(line, blazeOpen))
+            if (Doom::doDoor(line, blazeOpen))
                 changeSwitchTexture(line, 0);
             break;
 
         case 113:
             // Blazing Door Close (faster than TURBO!)
-            if (EV_DoDoor(line, blazeClose))
+            if (Doom::doDoor(line, blazeClose))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -426,13 +431,13 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 127:
             // Build Stairs Turbo 16
-            if (EV_BuildStairs(line, turbo16))
+            if (Doom::buildStairs(line, turbo16))
                 changeSwitchTexture(line, 0);
             break;
 
         case 131:
             // Raise Floor Turbo
-            if (EV_DoFloor(line, raiseFloorTurbo))
+            if (Doom::doFloor(line, raiseFloorTurbo))
                 changeSwitchTexture(line, 0);
             break;
 
@@ -442,20 +447,20 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
             // BlzOpenDoor RED
         case 137:
             // BlzOpenDoor YELLOW
-            if (EV_DoLockedDoor(line, blazeOpen, thing))
+            if (Doom::doLockedDoor(line, blazeOpen, thing))
                 changeSwitchTexture(line, 0);
             break;
 
         case 140:
             // Raise Floor 512
-            if (EV_DoFloor(line, raiseFloor512))
+            if (Doom::doFloor(line, raiseFloor512))
                 changeSwitchTexture(line, 0);
             break;
 
             // BUTTONS
         case 42:
             // Close Door
-            if (EV_DoDoor(line, door_close))
+            if (Doom::doDoor(line, door_close))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -467,19 +472,19 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 45:
             // Lower Floor to Surrounding floor height
-            if (EV_DoFloor(line, lowerFloor))
+            if (Doom::doFloor(line, lowerFloor))
                 changeSwitchTexture(line, 1);
             break;
 
         case 60:
             // Lower Floor to Lowest
-            if (EV_DoFloor(line, lowerFloorToLowest))
+            if (Doom::doFloor(line, lowerFloorToLowest))
                 changeSwitchTexture(line, 1);
             break;
 
         case 61:
             // Open Door
-            if (EV_DoDoor(line, door_open))
+            if (Doom::doDoor(line, door_open))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -491,13 +496,13 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 63:
             // Raise Door
-            if (EV_DoDoor(line, door_normal))
+            if (Doom::doDoor(line, door_normal))
                 changeSwitchTexture(line, 1);
             break;
 
         case 64:
             // Raise Floor to ceiling
-            if (EV_DoFloor(line, raiseFloor))
+            if (Doom::doFloor(line, raiseFloor))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -515,7 +520,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 65:
             // Raise Floor Crush
-            if (EV_DoFloor(line, raiseFloorCrush))
+            if (Doom::doFloor(line, raiseFloorCrush))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -527,31 +532,31 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 69:
             // Raise Floor to next highest floor
-            if (EV_DoFloor(line, raiseFloorToNearest))
+            if (Doom::doFloor(line, raiseFloorToNearest))
                 changeSwitchTexture(line, 1);
             break;
 
         case 70:
             // Turbo Lower Floor
-            if (EV_DoFloor(line, turboLower))
+            if (Doom::doFloor(line, turboLower))
                 changeSwitchTexture(line, 1);
             break;
 
         case 114:
             // Blazing Door Raise (faster than TURBO!)
-            if (EV_DoDoor(line, blazeRaise))
+            if (Doom::doDoor(line, blazeRaise))
                 changeSwitchTexture(line, 1);
             break;
 
         case 115:
             // Blazing Door Open (faster than TURBO!)
-            if (EV_DoDoor(line, blazeOpen))
+            if (Doom::doDoor(line, blazeOpen))
                 changeSwitchTexture(line, 1);
             break;
 
         case 116:
             // Blazing Door Close (faster than TURBO!)
-            if (EV_DoDoor(line, blazeClose))
+            if (Doom::doDoor(line, blazeClose))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -563,7 +568,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
 
         case 132:
             // Raise Floor Turbo
-            if (EV_DoFloor(line, raiseFloorTurbo))
+            if (Doom::doFloor(line, raiseFloorTurbo))
                 changeSwitchTexture(line, 1);
             break;
 
@@ -573,7 +578,7 @@ doom_boolean useSpecialLine(mobj_t* thing, line_t* line, int side)
             // BlzOpenDoor RED
         case 136:
             // BlzOpenDoor YELLOW
-            if (EV_DoLockedDoor(line, blazeOpen, thing))
+            if (Doom::doLockedDoor(line, blazeOpen, thing))
                 changeSwitchTexture(line, 1);
             break;
 

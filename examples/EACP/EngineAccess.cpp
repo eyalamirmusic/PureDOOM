@@ -42,6 +42,7 @@
 // Engine globals that no header declares. DOOM.c reaches them the same way, so
 #include <DOOM/UI/Menu.h>
 // this is the house style rather than a workaround - but they are the natural
+#include <DOOM/Render/Main.h>
 // candidates for a real interface as the engine gets refactored.
 extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
 extern unsigned char screen_palette[256 * 3];
@@ -437,7 +438,7 @@ double eacpDoomTicTime()
 
     doom_gettime(&sec, &usec);
 
-    // I_GetTime's own expression, kept fractional instead of truncated, so this
+    // Doom::currentTic's own expression, kept fractional instead of truncated, so this
     // steps from one tic to the next at exactly the moment the engine does. It
     // omits the engine's private start-of-run offset, which only shifts the
     // count by a whole number of tics and so changes neither the steps nor the
@@ -782,7 +783,7 @@ static EacpLight eacpFullbrightLight()
 }
 
 // Sutherland-Hodgman against one half-plane. The side test matches the
-// engine's own R_PointOnSide: a point is in front of a directed line when
+// engine's own Doom::pointOnSide: a point is in front of a directed line when
 // dy * (px - x) - dx * (py - y) is positive.
 static void eacpClipToLine(const EacpPoint* in,
                            int inCount,
@@ -1290,7 +1291,7 @@ static void eacpEmitSprite(
     // angle the thing is seen from.
     if (frame->rotate)
     {
-        angle_t seen = R_PointToAngle2(viewer->x, viewer->y, thing->x, thing->y);
+        angle_t seen = Doom::pointToAngle2(viewer->x, viewer->y, thing->x, thing->y);
         rotation = (seen - thing->angle + (unsigned) (ANG45 / 2) * 9) >> 29;
     }
 
@@ -1372,7 +1373,7 @@ static void
     for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
     {
         // A mobj is a Thinker whose virtual kind() is Mobj (was the function.acp1 ==
-        // P_MobjThinker identity, before thinker_t became a real Doom::Thinker);
+        // Doom::mobjThinker identity, before thinker_t became a real Doom::Thinker);
         // skip a removed-but-not-yet-freed one, as the engine's own scans do.
         if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
             continue;

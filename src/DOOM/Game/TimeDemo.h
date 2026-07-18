@@ -4,9 +4,9 @@
 
 namespace Doom
 {
-// The -timedemo benchmark state. G_TimeDemo raises timingdemo and plays a demo flat out; starttime
-// is the wall clock (I_GetTime) captured at level start in G_DoLoadLevel, and when the demo ends
-// G_CheckDemoStatus - if timingdemo - reports the frame rate from the elapsed tics (endtime minus
+// The -timedemo benchmark state. Doom::startTimeDemo raises timingdemo and plays a demo flat out; starttime
+// is the wall clock (currentTic) captured at level start in G_DoLoadLevel, and when the demo ends
+// Doom::checkDemoStatus - if timingdemo - reports the frame rate from the elapsed tics (endtime minus
 // starttime) and exits. starttime is written on every level load but read only on that path.
 // g_game's own file-scope state, read by no other file.
 //
@@ -16,7 +16,7 @@ namespace Doom
 struct TimeDemo
 {
     doom_boolean timingdemo = false; // report fps and exit when the demo ends
-    int starttime = 0; // I_GetTime at level start, the report's reference point
+    int starttime = 0; // currentTic at level start, the report's reference point
 };
 
 // The one TimeDemo, a view onto the Engine's member - the same pattern as the other Game/

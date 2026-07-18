@@ -54,7 +54,9 @@
 // gametic is the tic about to (or currently being) run
 #include "../Host/Net.h"
 // maketic is the tick that hasn't had control made for it yet
+#include "../Host/System.h"
 // nettics[] has the maketics for all players
+#include "Game.h"
 //
 // a gametic cannot be run until nettics[] > gametic for all players
 //
@@ -105,7 +107,7 @@ int& oldnettics = Doom::netState().oldnettics;
 extern doom_boolean& advancedemo; // Doom::AttractMode (Engine member)
 
 void Doom::processEvents();
-void G_BuildTiccmd(ticcmd_t* cmd);
+void Doom::buildTiccmd(ticcmd_t* cmd);
 void Doom::doAdvanceDemo();
 
 namespace Doom
@@ -155,12 +157,12 @@ int expandTics(int low)
     if (delta < -64)
         return (maketic & ~0xff) + 256 + low;
 
-    //I_Error("Error: expandTics: strange value %i at maketic %i", low, maketic);
+    //fatalError("Error: expandTics: strange value %i at maketic %i", low, maketic);
     doom_strcpy(error_buf, "Error: expandTics: strange value ");
     doom_concat(error_buf, doom_itoa(low, 10));
     doom_concat(error_buf, " at maketic ");
     doom_concat(error_buf, doom_itoa(maketic, 10));
-    I_Error(error_buf);
+    fatalError(error_buf);
     return 0;
 }
 
@@ -182,7 +184,7 @@ void hSendPacket(int node, int flags)
         return;
 
     if (!netgame)
-        I_Error("Error: Tried to transmit to another node");
+        fatalError("Error: Tried to transmit to another node");
 
     doomcom->command = CMD_SEND;
     doomcom->remotenode = node;
@@ -354,13 +356,13 @@ void getPackets()
             exitmsg[7] += netconsole;
             players[consoleplayer].message = exitmsg;
             if (demorecording)
-                G_CheckDemoStatus();
+                Doom::checkDemoStatus();
             continue;
         }
 
         // check for a remote game kill
         if (netbuffer->checksum & NCMD_KILL)
-            I_Error("Error: Killed by network driver");
+            fatalError("Error: Killed by network driver");
 
         nodeforplayer[netconsole] = netnode;
 
@@ -454,7 +456,7 @@ void netUpdate()
     int gameticdiv;
 
     // check time
-    nowtime = I_GetTime() / ticdup;
+    nowtime = currentTic() / ticdup;
     newtics = nowtime - gametime;
     gametime = nowtime;
 
@@ -489,7 +491,7 @@ void netUpdate()
         // which vanilla called to keep the netcode fed while a slow frame
         // rendered. maketic therefore climbed until it jammed against the cap
         // below and stayed there, and since Doom::doomLoop writes the command to
-        // netcmds[maketic] while G_Ticker reads netcmds[gametic], every command
+        // netcmds[maketic] while Doom::gameTicker reads netcmds[gametic], every command
         // was executed five tics (143ms) after it was built. Events are still
         // drained above; there is simply no second command to build.
         if (singletics)
@@ -499,7 +501,7 @@ void netUpdate()
             break; // can't hold any more
 
         //doom_print ("mk:%i ",maketic);
-        G_BuildTiccmd(&localcmds[maketic % BACKUPTICS]);
+        Doom::buildTiccmd(&localcmds[maketic % BACKUPTICS]);
         maketic++;
     }
 
@@ -513,7 +515,7 @@ void netUpdate()
             netbuffer->starttic = realstart = resendto[i];
             netbuffer->numtics = maketic - realstart;
             if (netbuffer->numtics > BACKUPTICS)
-                I_Error("Error: netUpdate: netbuffer->numtics > BACKUPTICS");
+                fatalError("Error: netUpdate: netbuffer->numtics > BACKUPTICS");
 
             resendto[i] = maketic - doomcom->extratics;
 
@@ -545,8 +547,8 @@ void checkAbort()
     event_t* ev;
     int stoptic;
 
-    stoptic = I_GetTime() + 2;
-    while (I_GetTime() < stoptic)
+    stoptic = currentTic() + 2;
+    while (currentTic() < stoptic)
         startTic();
 
     startTic();
@@ -554,7 +556,7 @@ void checkAbort()
     {
         ev = &events[eventtail];
         if (ev->type == ev_keydown && ev->data1 == KEY_ESCAPE)
-            I_Error("Error: Network game synchronization aborted.");
+            fatalError("Error: Network game synchronization aborted.");
     }
 
     eventtail++;
@@ -584,7 +586,7 @@ void dArbitrateNetStart()
             if (netbuffer->checksum & NCMD_SETUP)
             {
                 if (netbuffer->player != VERSION)
-                    I_Error(
+                    fatalError(
                         "Error: Different DOOM versions cannot play a net game!");
                 startskill = static_cast<skill_t>((netbuffer->retransmitfrom & 15));
                 deathmatch = (netbuffer->retransmitfrom & 0xc0) >> 6;
@@ -655,7 +657,7 @@ void checkNetGame()
     // initNetwork sets doomcom and netgame
     initNetwork();
     if (doomcom->id != DOOMCOM_ID)
-        I_Error("Error: Doomcom buffer invalid!");
+        fatalError("Error: Doomcom buffer invalid!");
 
     netbuffer = &doomcom->data;
     consoleplayer = displayplayer = doomcom->consoleplayer;
@@ -717,7 +719,7 @@ void quitNetGame()
         for (int j = 1; j < doomcom->numnodes; j++)
             if (nodeingame[j])
                 hSendPacket(j, NCMD_EXIT);
-        I_WaitVBL(1);
+        waitVBlank(1);
     }
 }
 
@@ -735,7 +737,7 @@ void tryRunTics()
     int counts;
 
     // get real tics
-    entertic = I_GetTime() / ticdup;
+    entertic = currentTic() / ticdup;
     realtics = entertic - oldentertics;
     oldentertics = entertic;
 
@@ -819,10 +821,10 @@ void tryRunTics()
                 lowtic = nettics[i];
 
         if (lowtic < gametic / ticdup)
-            I_Error("Error: tryRunTics: lowtic < gametic");
+            fatalError("Error: tryRunTics: lowtic < gametic");
 
         // don't stay in here forever -- give the menu a chance to work
-        if (I_GetTime() / ticdup - entertic >= 20)
+        if (currentTic() / ticdup - entertic >= 20)
         {
             menuTicker();
             return;
@@ -835,11 +837,11 @@ void tryRunTics()
         for (i = 0; i < ticdup; i++)
         {
             if (gametic / ticdup > lowtic)
-                I_Error("Error: gametic>lowtic");
+                fatalError("Error: gametic>lowtic");
             if (advancedemo)
                 Doom::doAdvanceDemo();
             menuTicker();
-            G_Ticker();
+            Doom::gameTicker();
             gametic++;
 
             // modify command for duplicated tics

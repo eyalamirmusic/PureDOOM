@@ -2,6 +2,7 @@
 
 #include "../i_system.h"
 
+#include "../Host/System.h"
 namespace Doom
 {
 Fixed fixedDivUnchecked(Fixed a, Fixed b)
@@ -9,7 +10,7 @@ Fixed fixedDivUnchecked(Fixed a, Fixed b)
     auto quotient = ((double) a.raw) / ((double) b.raw) * (double) fracUnit;
 
     if (quotient >= 2147483648.0 || quotient < -2147483648.0)
-        I_Error("Error: FixedDiv: divide by zero");
+        fatalError("Error: FixedDiv: divide by zero");
 
     return Fixed {(std::int32_t) quotient};
 }

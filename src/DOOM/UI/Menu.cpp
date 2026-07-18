@@ -53,6 +53,10 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include "../Host/Video.h"
+#include "../Game/Game.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
 #define SAVESTRINGSIZE 24
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
@@ -815,7 +819,7 @@ void M_LoadSelect(int choice)
         doom_concat(name.data(), doom_itoa(choice, 10));
         doom_concat(name.data(), ".dsg");
     }
-    G_LoadGame(name.data());
+    Doom::loadGame(name.data());
     M_ClearMenus();
 }
 
@@ -861,7 +865,7 @@ void M_DrawSave()
 //
 void M_DoSave(int slot)
 {
-    G_SaveGame(slot, savegamestrings[slot]);
+    Doom::saveGame(slot, savegamestrings[slot]);
     M_ClearMenus();
 
     // PICK QUICKSAVE SLOT YET?
@@ -910,7 +914,7 @@ void M_QuickSaveResponse(int ch)
     if (ch == 'y')
     {
         M_DoSave(quickSaveSlot);
-        S_StartSound(0, sfx_swtchx);
+        Doom::startSound(0, sfx_swtchx);
     }
 }
 
@@ -918,7 +922,7 @@ void M_QuickSave()
 {
     if (!usergame)
     {
-        S_StartSound(0, sfx_oof);
+        Doom::startSound(0, sfx_oof);
         return;
     }
 
@@ -948,7 +952,7 @@ void M_QuickLoadResponse(int ch)
     if (ch == 'y')
     {
         M_LoadSelect(quickSaveSlot);
-        S_StartSound(0, sfx_swtchx);
+        Doom::startSound(0, sfx_swtchx);
     }
 }
 
@@ -1073,7 +1077,7 @@ void M_SfxVol(int choice)
             break;
     }
 
-    S_SetSfxVolume(snd_SfxVolume /* *8 */);
+    Doom::setSfxVolume(snd_SfxVolume /* *8 */);
 }
 
 void M_MusicVol(int choice)
@@ -1090,7 +1094,7 @@ void M_MusicVol(int choice)
             break;
     }
 
-    S_SetMusicVolume(snd_MusicVolume /* *8 */);
+    Doom::setMusicVolumeLevel(snd_MusicVolume /* *8 */);
 }
 
 //
@@ -1141,7 +1145,7 @@ void M_VerifyNightmare(int ch)
     if (ch != 'y')
         return;
 
-    G_DeferedInitNew(static_cast<skill_t>(nightmare), epi + 1, 1);
+    Doom::deferInitNew(static_cast<skill_t>(nightmare), epi + 1, 1);
     M_ClearMenus();
 }
 
@@ -1153,7 +1157,7 @@ void M_ChooseSkill(int choice)
         return;
     }
 
-    G_DeferedInitNew(static_cast<skill_t>(choice), epi + 1, 1);
+    Doom::deferInitNew(static_cast<skill_t>(choice), epi + 1, 1);
     M_ClearMenus();
 }
 
@@ -1297,7 +1301,7 @@ void M_EndGame(int)
 {
     if (!usergame)
     {
-        S_StartSound(0, sfx_oof);
+        Doom::startSound(0, sfx_oof);
         return;
     }
 
@@ -1338,12 +1342,12 @@ void M_QuitResponse(int ch)
     if (!netgame)
     {
         if (gamemode == commercial)
-            S_StartSound(0, quitsounds2[(gametic >> 2) & 7]);
+            Doom::startSound(0, quitsounds2[(gametic >> 2) & 7]);
         else
-            S_StartSound(0, quitsounds[(gametic >> 2) & 7]);
-        I_WaitVBL(105);
+            Doom::startSound(0, quitsounds[(gametic >> 2) & 7]);
+        waitVBlank(105);
     }
-    I_Quit();
+    quitGame();
 }
 
 void M_QuitDOOM(int)
@@ -1416,7 +1420,7 @@ void M_SizeDisplay(int choice)
             break;
     }
 
-    R_SetViewSize(screenblocks, detailLevel);
+    Doom::setViewSize(screenblocks, detailLevel);
 }
 
 //
@@ -1575,56 +1579,56 @@ doom_boolean menuResponder(event_t* ev)
 
     ch = -1;
 
-    if (ev->type == ev_joystick && joywait < I_GetTime())
+    if (ev->type == ev_joystick && joywait < currentTic())
     {
         if (ev->data3 == -1)
         {
             ch = KEY_UPARROW;
-            joywait = I_GetTime() + 5;
+            joywait = currentTic() + 5;
         }
         else if (ev->data3 == 1)
         {
             ch = KEY_DOWNARROW;
-            joywait = I_GetTime() + 5;
+            joywait = currentTic() + 5;
         }
 
         if (ev->data2 == -1)
         {
             ch = KEY_LEFTARROW;
-            joywait = I_GetTime() + 2;
+            joywait = currentTic() + 2;
         }
         else if (ev->data2 == 1)
         {
             ch = KEY_RIGHTARROW;
-            joywait = I_GetTime() + 2;
+            joywait = currentTic() + 2;
         }
 
         if (ev->data1 & 1)
         {
             ch = KEY_ENTER;
-            joywait = I_GetTime() + 5;
+            joywait = currentTic() + 5;
         }
         if (ev->data1 & 2)
         {
             ch = KEY_BACKSPACE;
-            joywait = I_GetTime() + 5;
+            joywait = currentTic() + 5;
         }
     }
     else
     {
-        if (ev->type == ev_mouse && mousewait < I_GetTime())
+        if (ev->type == ev_mouse && mousewait < currentTic())
         {
             mousey += ev->data3;
             if (mousey < lasty - 30)
             {
                 ch = KEY_DOWNARROW;
-                mousewait = I_GetTime() + 5;
+                mousewait = currentTic() + 5;
                 mousey = lasty -= 30;
             }
             else if (mousey > lasty + 30)
             {
                 ch = KEY_UPARROW;
-                mousewait = I_GetTime() + 5;
+                mousewait = currentTic() + 5;
                 mousey = lasty += 30;
             }
 
@@ -1632,26 +1636,26 @@ doom_boolean menuResponder(event_t* ev)
             if (mousex < lastx - 30)
             {
                 ch = KEY_LEFTARROW;
-                mousewait = I_GetTime() + 5;
+                mousewait = currentTic() + 5;
                 mousex = lastx -= 30;
             }
             else if (mousex > lastx + 30)
             {
                 ch = KEY_RIGHTARROW;
-                mousewait = I_GetTime() + 5;
+                mousewait = currentTic() + 5;
                 mousex = lastx += 30;
             }
 
             if (ev->data1 & 1)
             {
                 ch = KEY_ENTER;
-                mousewait = I_GetTime() + 15;
+                mousewait = currentTic() + 15;
             }
 
             if (ev->data1 & 2)
             {
                 ch = KEY_BACKSPACE;
-                mousewait = I_GetTime() + 15;
+                mousewait = currentTic() + 15;
             }
         }
         else if (ev->type == ev_keydown)
@@ -1717,13 +1721,13 @@ doom_boolean menuResponder(event_t* ev)
             messageRoutine(ch);
 
         menuactive = false;
-        S_StartSound(0, sfx_swtchx);
+        Doom::startSound(0, sfx_swtchx);
         return true;
     }
 
     if (devparm && ch == KEY_F1)
     {
-        G_ScreenShot();
+        Doom::takeScreenshot();
         return true;
     }
 
@@ -1735,14 +1739,14 @@ doom_boolean menuResponder(event_t* ev)
                 if (automapactive || chat_on)
                     return false;
                 M_SizeDisplay(0);
-                S_StartSound(0, sfx_stnmov);
+                Doom::startSound(0, sfx_stnmov);
                 return true;
 
             case KEY_EQUALS: // Screen size up
                 if (automapactive || chat_on)
                     return false;
                 M_SizeDisplay(1);
-                S_StartSound(0, sfx_stnmov);
+                Doom::startSound(0, sfx_stnmov);
                 return true;
 
             case KEY_F1: // Help key
@@ -1754,18 +1758,18 @@ doom_boolean menuResponder(event_t* ev)
                     currentMenu = &ReadDef1;
 
                 itemOn = 0;
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 return true;
 
             case KEY_F2: // Save
                 startControlPanel();
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 M_SaveGame(0);
                 return true;
 
             case KEY_F3: // Load
                 startControlPanel();
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 M_LoadGame(0);
                 return true;
 
@@ -1773,41 +1777,41 @@ doom_boolean menuResponder(event_t* ev)
                 startControlPanel();
                 currentMenu = &SoundDef;
                 itemOn = sfx_vol;
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 return true;
 
                 // case KEY_F5:            // Detail toggle
                 //     M_ChangeDetail(0);
-                //     S_StartSound(0, sfx_swtchn);
+                //     Doom::startSound(0, sfx_swtchn);
                 //     return true;
 
             case KEY_F5: // Crosshair toggle
                 M_ChangeCrosshair(0);
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 return true;
 
             case KEY_F6: // Quicksave
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 M_QuickSave();
                 return true;
 
             case KEY_F7: // End game
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 M_EndGame(0);
                 return true;
 
             case KEY_F8: // Toggle messages
                 M_ChangeMessages(0);
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 return true;
 
             case KEY_F9: // Quickload
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 M_QuickLoad();
                 return true;
 
             case KEY_F10: // Quit DOOM
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
                 M_QuitDOOM(0);
                 return true;
 
@@ -1827,7 +1831,7 @@ doom_boolean menuResponder(event_t* ev)
         if (ch == KEY_ESCAPE)
         {
             startControlPanel();
-            S_StartSound(0, sfx_swtchn);
+            Doom::startSound(0, sfx_swtchn);
             return true;
         }
         return false;
@@ -1843,7 +1847,7 @@ doom_boolean menuResponder(event_t* ev)
                     itemOn = 0;
                 else
                     itemOn++;
-                S_StartSound(0, sfx_pstop);
+                Doom::startSound(0, sfx_pstop);
             } while (currentMenu->menuitems[itemOn].status == -1);
             return true;
 
@@ -1854,7 +1858,7 @@ doom_boolean menuResponder(event_t* ev)
                     itemOn = currentMenu->numitems - 1;
                 else
                     itemOn--;
-                S_StartSound(0, sfx_pstop);
+                Doom::startSound(0, sfx_pstop);
             } while (currentMenu->menuitems[itemOn].status == -1);
             return true;
 
@@ -1862,7 +1866,7 @@ doom_boolean menuResponder(event_t* ev)
             if (currentMenu->menuitems[itemOn].routine
                 && currentMenu->menuitems[itemOn].status == 2)
             {
-                S_StartSound(0, sfx_stnmov);
+                Doom::startSound(0, sfx_stnmov);
                 currentMenu->menuitems[itemOn].routine(0);
             }
             return true;
@@ -1871,7 +1875,7 @@ doom_boolean menuResponder(event_t* ev)
             if (currentMenu->menuitems[itemOn].routine
                 && currentMenu->menuitems[itemOn].status == 2)
             {
-                S_StartSound(0, sfx_stnmov);
+                Doom::startSound(0, sfx_stnmov);
                 currentMenu->menuitems[itemOn].routine(1);
             }
             return true;
@@ -1884,12 +1888,12 @@ doom_boolean menuResponder(event_t* ev)
                 if (currentMenu->menuitems[itemOn].status == 2)
                 {
                     currentMenu->menuitems[itemOn].routine(1); // right arrow
-                    S_StartSound(0, sfx_stnmov);
+                    Doom::startSound(0, sfx_stnmov);
                 }
                 else
                 {
                     currentMenu->menuitems[itemOn].routine(itemOn);
-                    S_StartSound(0, sfx_pistol);
+                    Doom::startSound(0, sfx_pistol);
                 }
             }
             return true;
@@ -1897,7 +1901,7 @@ doom_boolean menuResponder(event_t* ev)
         case KEY_ESCAPE:
             currentMenu->lastOn = itemOn;
             M_ClearMenus();
-            S_StartSound(0, sfx_swtchx);
+            Doom::startSound(0, sfx_swtchx);
             return true;
 
         case KEY_BACKSPACE:
@@ -1906,7 +1910,7 @@ doom_boolean menuResponder(event_t* ev)
             {
                 currentMenu = currentMenu->prevMenu;
                 itemOn = currentMenu->lastOn;
-                S_StartSound(0, sfx_swtchn);
+                Doom::startSound(0, sfx_swtchn);
             }
             return true;
 
@@ -1915,14 +1919,14 @@ doom_boolean menuResponder(event_t* ev)
                 if (currentMenu->menuitems[i].alphaKey == ch)
                 {
                     itemOn = i;
-                    S_StartSound(0, sfx_pstop);
+                    Doom::startSound(0, sfx_pstop);
                     return true;
                 }
             for (int i = 0; i <= itemOn; i++)
                 if (currentMenu->menuitems[i].alphaKey == ch)
                 {
                     itemOn = i;
-                    S_StartSound(0, sfx_pstop);
+                    Doom::startSound(0, sfx_pstop);
                     return true;
                 }
             break;

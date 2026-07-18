@@ -26,11 +26,12 @@
 
 #include "System.h"
 
-// In Doom::DemoState (an Engine member); read by I_Error to flush a demo before it aborts.
+// In Doom::DemoState (an Engine member); read by fatalError to flush a demo before it aborts.
 #include "../Game/Config.h"
 #include "../Game/Net.h"
 #include "Sound.h"
 #include "Video.h"
+#include "../Game/Game.h"
 extern doom_boolean& demorecording;
 
 namespace Doom
@@ -38,29 +39,29 @@ namespace Doom
 int mb_used = 6 * (sizeof(void*) / 4);
 ticcmd_t emptycmd;
 
-void I_Tactile(int, int, int) {}
+void tactileFeedback(int, int, int) {}
 
-ticcmd_t* I_BaseTiccmd()
+ticcmd_t* baseTiccmd()
 {
     return &emptycmd;
 }
 
-int I_GetHeapSize()
+int heapSize()
 {
     return mb_used * 1024 * 1024;
 }
 
-byte* I_ZoneBase(int* size)
+byte* zoneBase(int* size)
 {
     *size = mb_used * 1024 * 1024;
     return static_cast<byte*>(doom_malloc(*size));
 }
 
 //
-// I_GetTime
+// currentTic
 // returns time in 1/70th second tics
 //
-int I_GetTime()
+int currentTic()
 {
     int sec, usec;
     static int basetime = 0;
@@ -73,17 +74,17 @@ int I_GetTime()
 }
 
 //
-// I_Init
+// initHost
 //
-void I_Init()
+void initHost()
 {
     initSoundHost();
 }
 
 //
-// I_Quit
+// quitGame
 //
-void I_Quit()
+void quitGame()
 {
     Doom::quitNetGame();
     shutdownSoundHost();
@@ -93,7 +94,7 @@ void I_Quit()
     doom_exit(0);
 }
 
-void I_WaitVBL(int)
+void waitVBlank(int)
 {
 #if 0 // [pd] Never sleep in main thread
 #ifdef SGI
@@ -108,11 +109,11 @@ void I_WaitVBL(int)
 #endif
 }
 
-void I_BeginRead() {}
+void beginRead() {}
 
-void I_EndRead() {}
+void endRead() {}
 
-byte* I_AllocLow(int length)
+byte* allocLow(int length)
 {
     byte* mem = static_cast<byte*>(doom_malloc(length));
     doom_memset(mem, 0, length);
@@ -120,9 +121,9 @@ byte* I_AllocLow(int length)
 }
 
 //
-// I_Error
+// fatalError
 //
-void I_Error(const char* error)
+void fatalError(const char* error)
 {
     // Message first.
     if (error)
@@ -131,7 +132,7 @@ void I_Error(const char* error)
 
     // Shutdown. Here might be other errors.
     if (demorecording)
-        G_CheckDemoStatus();
+        Doom::checkDemoStatus();
 
     Doom::quitNetGame();
     shutdownGraphics();

@@ -41,7 +41,7 @@ extern "C"
     //
     // This is the scenario-test enabler, and it is a smaller claim than "boot the
     // engine twice". The engine cannot be re-inited (Z_Init would leak the arena),
-    // but it does not need to be: G_InitNew -> Doom::setupLevel already resets the
+    // but it does not need to be: Doom::initNewGame -> Doom::setupLevel already resets the
     // simulation each time a level loads - the geometry (Doom::Level assigns fresh
     // vectors), the thinkers (Doom::initThinkers), the random indices (M_ClearRandom),
     // the leftover mobjs and specials (Z_FreeTags). So a second scenario runs on a
@@ -109,7 +109,7 @@ extern "C"
 
     // --- The scenario harness (Step 6) ---------------------------------------
     //
-    // The demos exercise P_TryMove and P_CheckPosition thousands of times, but
+    // The demos exercise Doom::tryMove and Doom::checkPosition thousands of times, but
     // only in aggregate: when one desyncs, the tic hash says the world moved, not
     // which playsim call answered wrong. These drive the playsim directly - load a
     // level, place a thing, ask whether a spot is legal, try to move onto it - so a
@@ -127,7 +127,7 @@ extern "C"
     // and read a thing to the exact unit rather than the truncated whole units the
     // human-readable player probes above report.
 
-    // Loads episode/map at the given skill directly (G_InitNew), no demo, and
+    // Loads episode/map at the given skill directly (Doom::initNewGame), no demo, and
     // forces single-player so the player mobj spawns. Returns 1 on success, 0 if
     // the engine aborted. Must be called after doomSimBoot(0).
     int doomSimLoadLevel(int episode, int map, int skill);
@@ -140,7 +140,7 @@ extern "C"
     // handle (>= 0), or -1 if the spawn aborted.
     int doomSimSpawnMobj(int type, int x, int y, int z);
 
-    // P_CheckPosition (does the thing fit at (x, y)?) and P_TryMove (fit, then
+    // Doom::checkPosition (does the thing fit at (x, y)?) and Doom::tryMove (fit, then
     // commit the move and cross any special lines) for a handle's mobj. Both
     // return 1 if the answer was yes, 0 if no or the handle was bad. TryMove
     // leaves the mobj where it was when it answers 0.
@@ -209,7 +209,7 @@ extern "C"
     // Run one tic unconditionally (doom_force_update), with no demo bookkeeping.
     // While a screen melt is in flight this advances the melt instead of the
     // game loop, exactly as the host does. Returns 1 normally, 0 if the engine
-    // aborted (e.g. a menu action reached I_Quit).
+    // aborted (e.g. a menu action reached Doom::quitGame).
     int doomSimStepTic();
 
     // Whether a screen melt is animating right now. The title screen arrives

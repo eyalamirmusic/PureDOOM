@@ -2,7 +2,7 @@
 // vanilla globals - vertexes, numsegs, sectors, ... - are views onto it.
 //
 // The demos already exercise the geometry exhaustively: every rendered frame and
-// every P_TryMove reads it, and those are bit-identical, so the data is right.
+// every Doom::tryMove reads it, and those are bit-identical, so the data is right.
 // What the demos cannot see is the *view invariant* - that the globals still
 // point at the Level's vectors after a load. A future loader that resizes a
 // vector and forgets to refresh its global would reallocate the storage and leave

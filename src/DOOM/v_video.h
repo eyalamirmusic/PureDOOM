@@ -45,7 +45,7 @@ extern EA::Array<EA::Array<byte, 256>, 5> gammatable;
 extern int& usegamma;
 
 
-// Allocates buffer screens, call before R_Init.
+// Allocates buffer screens, call before Doom::renderInit.
 
 
 

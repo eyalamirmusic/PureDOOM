@@ -53,6 +53,7 @@
 #include <ea_data_structures/Structures/Array.h>
 
 // The byte-swap helpers are only reached by the socket packet code, so they are
+#include "System.h"
 // scoped to it: defining them in the single-player build risks clashing with a
 // host header's own ntohl/htonl.
 #if defined(I_NET_ENABLED)
@@ -105,11 +106,11 @@ SOCKET UDPsocket()
     s = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (s < 0)
     {
-        // I_Error("Error: can't create socket: %s", strerror(errno));
+        // fatalError("Error: can't create socket: %s", strerror(errno));
 
         doom_strcpy(error_buf, "Error: can't create socket: ");
         doom_concat(error_buf, strerror(errno));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     return s;
@@ -133,11 +134,11 @@ void BindToLocalPort(SOCKET s, int port)
     v = bind(s, (void*) &address, sizeof(address));
     if (v == -1)
     {
-        // I_Error("Error: BindToPort: bind: %s", strerror(errno));
+        // fatalError("Error: BindToPort: bind: %s", strerror(errno));
 
         doom_strcpy(error_buf, "Error: BindToPort: bind: ");
         doom_concat(error_buf, strerror(errno));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 }
 #endif
@@ -206,20 +207,20 @@ void PacketGet()
         int r = WSAGetLastError();
         if (r != WSAEWOULDBLOCK)
         {
-            // I_Error("Error: GetPacket: %i", r);
+            // fatalError("Error: GetPacket: %i", r);
 
             doom_strcpy(error_buf, "Error: GetPacket: ");
             doom_concat(error_buf, doom_itoa(r, 10));
-            I_Error(error_buf);
+            fatalError(error_buf);
         }
 #else
         if (errno != EWOULDBLOCK)
         {
-            // I_Error("Error: GetPacket: %s", strerror(errno));
+            // fatalError("Error: GetPacket: %s", strerror(errno));
 
             doom_strcpy(error_buf, "Error: GetPacket: ");
             doom_concat(error_buf, strerror(errno));
-            I_Error(error_buf);
+            fatalError(error_buf);
         }
 #endif
         doomcom->remotenode = -1; // no packet
@@ -288,17 +289,17 @@ int GetLocalAddress()
     v = gethostname(hostname.data(), sizeof(hostname));
     if (v == -1)
     {
-        // I_Error("Error: GetLocalAddress : gethostname: errno %d", errno);
+        // fatalError("Error: GetLocalAddress : gethostname: errno %d", errno);
 
         doom_strcpy(error_buf, "Error: GetLocalAddress : gethostname: errno ");
         doom_concat(error_buf, strerror(errno));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     hostentry = gethostbyname(hostname);
     if (!hostentry)
     {
-        I_Error("Error: GetLocalAddress : gethostbyname: couldn't get local host");
+        fatalError("Error: GetLocalAddress : gethostbyname: couldn't get local host");
     }
 
     return *(int*) hostentry->h_addr_list[0];
@@ -409,11 +410,11 @@ void initNetwork()
             hostentry = gethostbyname(myargv[i]);
             if (!hostentry)
             {
-                // I_Error("Error: gethostbyname: couldn't find %s", myargv[i]);
+                // fatalError("Error: gethostbyname: couldn't find %s", myargv[i]);
 
                 doom_strcpy(error_buf, "Error: gethostbyname: couldn't find ");
                 doom_concat(error_buf, myargv[i]);
-                I_Error(error_buf);
+                fatalError(error_buf);
             }
             sendaddress[doomcom->numnodes].sin_addr.s_addr =
                 *(int*) hostentry->h_addr_list[0];
@@ -450,11 +451,11 @@ void netCommand()
     }
     else
     {
-        // I_Error("Error: Bad net cmd: %i\n", doomcom->command);
+        // fatalError("Error: Bad net cmd: %i\n", doomcom->command);
 
         doom_strcpy(error_buf, "Error: Bad net cmd: ");
         doom_concat(error_buf, doom_itoa(doomcom->command, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 }

@@ -3,6 +3,7 @@
 #include "MapGeometry.h"
 
 #include "Clip.h"
+#include "../Render/Main.h"
 namespace Doom
 {
 namespace
@@ -149,7 +150,7 @@ bool traverseIntercepts(traverser_t func, fixed_t maxfrac)
 void setThingPosition(mobj_t& thing)
 {
     // link into subsector
-    subsector_t* ss = R_PointInSubsector(thing.x, thing.y);
+    subsector_t* ss = Doom::pointInSubsector(thing.x, thing.y);
     thing.subsector = ss;
 
     if (!(thing.flags & MF_NOSECTOR))

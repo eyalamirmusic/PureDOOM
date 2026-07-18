@@ -29,6 +29,12 @@
 #include "Weapon.h"
 #include "WeaponScratch.h"
 
+#include "../Game/Sound.h"
+#include "../Render/Main.h"
+#include "Enemy.h"
+#include "Interaction.h"
+#include "MapAction.h"
+#include "Mobj.h"
 #define LOWERSPEED (FRACUNIT * 6)
 #define RAISESPEED (FRACUNIT * 6)
 
@@ -136,7 +142,7 @@ void bringUpWeapon(player_t* player)
         player->pendingweapon = player->readyweapon;
 
     if (player->pendingweapon == wp_chainsaw)
-        S_StartSound(player->mo, sfx_sawup);
+        Doom::startSound(player->mo, sfx_sawup);
 
     newstate = static_cast<statenum_t>(weaponinfo[player->pendingweapon].upstate);
 
@@ -236,10 +242,10 @@ void fireWeapon(player_t* player)
     if (!checkAmmo(player))
         return;
 
-    P_SetMobjState(player->mo, S_PLAY_ATK1);
+    Doom::setMobjState(player->mo, S_PLAY_ATK1);
     newstate = static_cast<statenum_t>(weaponinfo[player->readyweapon].atkstate);
     setPsprite(player, ps_weapon, newstate);
-    P_NoiseAlert(player->mo, player->mo);
+    Doom::noiseAlert(player->mo, *player->mo);
 
     // [pd] Stop gun bobbing when shooting
     pspdef_t* psp = &player->psprites[ps_weapon];
@@ -274,12 +280,12 @@ void weaponReady(player_t& player, pspdef_t& psp)
     if (player.mo->state == &states[S_PLAY_ATK1]
         || player.mo->state == &states[S_PLAY_ATK2])
     {
-        P_SetMobjState(player.mo, S_PLAY);
+        Doom::setMobjState(player.mo, S_PLAY);
     }
 
     if (player.readyweapon == wp_chainsaw && psp.state == &states[S_SAW])
     {
-        S_StartSound(player.mo, sfx_sawidl);
+        Doom::startSound(player.mo, sfx_sawidl);
     }
 
     // check for change
@@ -405,7 +411,7 @@ void raise(player_t& player, pspdef_t& psp)
 //
 void gunFlash(player_t& player, pspdef_t&)
 {
-    P_SetMobjState(player.mo, S_PLAY_ATK2);
+    Doom::setMobjState(player.mo, S_PLAY_ATK2);
     setPsprite(&player,
                ps_flash,
                static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate));
@@ -431,14 +437,14 @@ void punch(player_t& player, pspdef_t&)
 
     angle = player.mo->angle;
     angle += (P_Random() - P_Random()) << 18;
-    slope = P_AimLineAttack(player.mo, angle, MELEERANGE);
-    P_LineAttack(player.mo, angle, MELEERANGE, slope, damage);
+    slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE);
+    Doom::lineAttack(player.mo, angle, MELEERANGE, slope, damage);
 
     // turn to face target
     if (linetarget)
     {
-        S_StartSound(player.mo, sfx_punch);
-        player.mo->angle = R_PointToAngle2(
+        Doom::startSound(player.mo, sfx_punch);
+        player.mo->angle = Doom::pointToAngle2(
             player.mo->x, player.mo->y, linetarget->x, linetarget->y);
     }
 }
@@ -457,19 +463,19 @@ void saw(player_t& player, pspdef_t&)
     angle += (P_Random() - P_Random()) << 18;
 
     // use meleerange + 1 se the puff doesn't skip the flash
-    slope = P_AimLineAttack(player.mo, angle, MELEERANGE + 1);
-    P_LineAttack(player.mo, angle, MELEERANGE + 1, slope, damage);
+    slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE + 1);
+    Doom::lineAttack(player.mo, angle, MELEERANGE + 1, slope, damage);
 
     if (!linetarget)
     {
-        S_StartSound(player.mo, sfx_sawful);
+        Doom::startSound(player.mo, sfx_sawful);
         return;
     }
-    S_StartSound(player.mo, sfx_sawhit);
+    Doom::startSound(player.mo, sfx_sawhit);
 
     // turn to face target
     angle =
-        R_PointToAngle2(player.mo->x, player.mo->y, linetarget->x, linetarget->y);
+        Doom::pointToAngle2(player.mo->x, player.mo->y, linetarget->x, linetarget->y);
     if (angle - player.mo->angle > ANG180)
     {
         if (angle - player.mo->angle < static_cast<angle_t>(-ANG90 / 20))
@@ -493,7 +499,7 @@ void saw(player_t& player, pspdef_t&)
 void fireMissile(player_t& player, pspdef_t&)
 {
     player.ammo[weaponinfo[player.readyweapon].ammo]--;
-    P_SpawnPlayerMissile(player.mo, MT_ROCKET);
+    Doom::spawnPlayerMissile(player.mo, MT_ROCKET);
 }
 
 //
@@ -502,7 +508,7 @@ void fireMissile(player_t& player, pspdef_t&)
 void fireBFG(player_t& player, pspdef_t&)
 {
     player.ammo[weaponinfo[player.readyweapon].ammo] -= BFGCELLS;
-    P_SpawnPlayerMissile(player.mo, MT_BFG);
+    Doom::spawnPlayerMissile(player.mo, MT_BFG);
 }
 
 //
@@ -517,7 +523,7 @@ void firePlasma(player_t& player, pspdef_t&)
                static_cast<statenum_t>(weaponinfo[player.readyweapon].flashstate
                                        + (P_Random() & 1)));
 
-    P_SpawnPlayerMissile(player.mo, MT_PLASMA);
+    Doom::spawnPlayerMissile(player.mo, MT_PLASMA);
 }
 
 //
@@ -531,16 +537,16 @@ void computeBulletSlope(mobj_t* mo)
 
     // see which target is to be aimed at
     an = mo->angle;
-    bulletslope = P_AimLineAttack(mo, an, 16 * 64 * FRACUNIT);
+    bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
 
     if (!linetarget)
     {
         an += 1 << 26;
-        bulletslope = P_AimLineAttack(mo, an, 16 * 64 * FRACUNIT);
+        bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
         if (!linetarget)
         {
             an -= 2 << 26;
-            bulletslope = P_AimLineAttack(mo, an, 16 * 64 * FRACUNIT);
+            bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
         }
     }
 }
@@ -559,7 +565,7 @@ void gunShot(mobj_t* mo, doom_boolean accurate)
     if (!accurate)
         angle += (P_Random() - P_Random()) << 18;
 
-    P_LineAttack(mo, angle, MISSILERANGE, bulletslope, damage);
+    Doom::lineAttack(mo, angle, MISSILERANGE, bulletslope, damage);
 }
 
 //
@@ -567,9 +573,9 @@ void gunShot(mobj_t* mo, doom_boolean accurate)
 //
 void firePistol(player_t& player, pspdef_t&)
 {
-    S_StartSound(player.mo, sfx_pistol);
+    Doom::startSound(player.mo, sfx_pistol);
 
-    P_SetMobjState(player.mo, S_PLAY_ATK2);
+    Doom::setMobjState(player.mo, S_PLAY_ATK2);
     player.ammo[weaponinfo[player.readyweapon].ammo]--;
 
     setPsprite(&player,
@@ -585,8 +591,8 @@ void firePistol(player_t& player, pspdef_t&)
 //
 void fireShotgun(player_t& player, pspdef_t&)
 {
-    S_StartSound(player.mo, sfx_shotgn);
-    P_SetMobjState(player.mo, S_PLAY_ATK2);
+    Doom::startSound(player.mo, sfx_shotgn);
+    Doom::setMobjState(player.mo, S_PLAY_ATK2);
 
     player.ammo[weaponinfo[player.readyweapon].ammo]--;
 
@@ -608,8 +614,8 @@ void fireShotgun2(player_t& player, pspdef_t&)
     angle_t angle;
     int damage;
 
-    S_StartSound(player.mo, sfx_dshtgn);
-    P_SetMobjState(player.mo, S_PLAY_ATK2);
+    Doom::startSound(player.mo, sfx_dshtgn);
+    Doom::setMobjState(player.mo, S_PLAY_ATK2);
 
     player.ammo[weaponinfo[player.readyweapon].ammo] -= 2;
 
@@ -624,7 +630,7 @@ void fireShotgun2(player_t& player, pspdef_t&)
         damage = 5 * (P_Random() % 3 + 1);
         angle = player.mo->angle;
         angle += (P_Random() - P_Random()) << 19;
-        P_LineAttack(player.mo,
+        Doom::lineAttack(player.mo,
                      angle,
                      MISSILERANGE,
                      bulletslope + ((P_Random() - P_Random()) << 5),
@@ -637,12 +643,12 @@ void fireShotgun2(player_t& player, pspdef_t&)
 //
 void fireCGun(player_t& player, pspdef_t& psp)
 {
-    S_StartSound(player.mo, sfx_pistol);
+    Doom::startSound(player.mo, sfx_pistol);
 
     if (!player.ammo[weaponinfo[player.readyweapon].ammo])
         return;
 
-    P_SetMobjState(player.mo, S_PLAY_ATK2);
+    Doom::setMobjState(player.mo, S_PLAY_ATK2);
     player.ammo[weaponinfo[player.readyweapon].ammo]--;
 
     setPsprite(&player,
@@ -689,12 +695,12 @@ void bfgSpray(mobj_t* mo)
 
         // mo->target is the originator (player)
         //  of the missile
-        P_AimLineAttack(mo->target, an, 16 * 64 * FRACUNIT);
+        Doom::aimLineAttack(mo->target, an, 16 * 64 * FRACUNIT);
 
         if (!linetarget)
             continue;
 
-        P_SpawnMobj(linetarget->x,
+        Doom::spawnMobj(linetarget->x,
                     linetarget->y,
                     linetarget->z + (linetarget->height >> 2),
                     MT_EXTRABFG);
@@ -703,7 +709,7 @@ void bfgSpray(mobj_t* mo)
         for (int j = 0; j < 15; j++)
             damage += (P_Random() & 7) + 1;
 
-        P_DamageMobj(linetarget, mo->target, mo->target, damage);
+        Doom::damageMobj(linetarget, mo->target, mo->target, damage);
     }
 }
 
@@ -712,7 +718,7 @@ void bfgSpray(mobj_t* mo)
 //
 void bfgSound(player_t& player, pspdef_t&)
 {
-    S_StartSound(player.mo, sfx_bfg);
+    Doom::startSound(player.mo, sfx_bfg);
 }
 
 //

@@ -22,6 +22,7 @@
 #include "m_swap.h"
 #include "w_wad.h"
 
+#include "Host/System.h"
 lumpinfo_t* lumpinfo;
 int numlumps;
 
@@ -57,7 +58,7 @@ void W_InitMultipleFiles(char** filenames)
     refreshDirectoryView();
 
     if (numlumps == 0)
-        I_Error("Error: W_InitFiles: no files found");
+        Doom::fatalError("Error: W_InitFiles: no files found");
 }
 
 void W_InitFile(char* filename)

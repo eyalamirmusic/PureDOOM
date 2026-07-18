@@ -27,6 +27,7 @@
 #include "Video.h"
 
 // Read by DOOM.cpp, the menu, the status bar, the eacp port (View.h / Common.h /
+#include "System.h"
 // EngineAccess) and the frame hash, so it stays at file scope rather than moving
 // into namespace Doom below.
 unsigned char screen_palette[256 * 3];
@@ -65,7 +66,7 @@ void finishUpdate()
     // draws little dots on the bottom of the screen
     if (devparm)
     {
-        int i = I_GetTime();
+        int i = currentTic();
         int tics = i - lasttic;
         lasttic = i;
         if (tics > 20)

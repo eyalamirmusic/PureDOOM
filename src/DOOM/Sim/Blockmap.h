@@ -12,7 +12,7 @@ namespace Doom
 // This owns the descriptor - the grid's origin and extent, and the lump pointers
 // the iterators read a cell's contents from - so the block-index arithmetic lives,
 // and is tested, in one place rather than being re-derived at every call site
-// (P_SetThingPosition, the iterators, P_CheckPosition, P_PathTraverse, the radius
+// (P_SetThingPosition, the iterators, Doom::checkPosition, P_PathTraverse, the radius
 // specials). The arithmetic is vanilla's exactly: a cell coordinate is
 // (world - origin) >> MAPBLOCKSHIFT, and the shift folds the /128 and the 16.16
 // fixed point into one, so it is a signed arithmetic shift and negatives floor the

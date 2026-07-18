@@ -26,11 +26,14 @@
 #include <vector>
 
 // The live palette. i_video.c defines it and no header declares it; DOOM.c and
+#include <DOOM/Game/Game.h>
 // the eacp port both reach it exactly this way, so this is the house style
+#include <DOOM/Sim/Mobj.h>
 // rather than a workaround.
+#include <DOOM/Sim/Movement.h>
 extern unsigned char screen_palette[256 * 3];
 
-// I_Error reports through doom_exit, which by default takes the process with
+// Doom::fatalError reports through doom_exit, which by default takes the process with
 // it. A test wants the failure, not the corpse, so the engine is entered under
 // a setjmp and an abort unwinds back out to the caller.
 static jmp_buf simAbort;
@@ -103,12 +106,12 @@ static int simBootInternal(const char* demoLump, int keepAttract)
         advancedemo = false;
 
     // Deliberately NOT -playdemo. That sets `singledemo`, which ends the demo
-    // through I_Quit - and I_Quit calls Doom::saveDefaults, which would have every
+    // through Doom::quitGame - and Doom::quitGame calls Doom::saveDefaults, which would have every
     // test run scribble on the config. Deferring the demo by hand lets the
     // engine retire it the ordinary way, by clearing demoplayback, and touches
     // nothing outside the process.
     if (demoLump)
-        G_DeferedPlayDemo((char*) demoLump);
+        Doom::deferPlayDemo((char*) demoLump);
 
     simBooted = 1;
     return 1;
@@ -151,13 +154,13 @@ int doomSimRunTic()
 
 void doomSimReplayDemo(const char* demoLump)
 {
-    // The previous demo has ended (G_CheckDemoStatus cleared demoplayback and
+    // The previous demo has ended (Doom::checkDemoStatus cleared demoplayback and
     // advanced the attract loop), so this is a fresh start. Lower advancedemo
     // again for the same reason doomSimBoot does, and forget that the last demo
     // ran so doomSimRunTic's "finished" test starts over.
     simDemoStarted = 0;
     advancedemo = false;
-    G_DeferedPlayDemo((char*) demoLump);
+    Doom::deferPlayDemo((char*) demoLump);
 }
 
 static unsigned long long simHash;
@@ -386,9 +389,9 @@ int doomSimLoadLevel(int episode, int map, int skill)
     // allocation pool is released whole), so every handle into them dies here.
     simMobjs.clear();
 
-    // G_InitNew runs the whole load synchronously (G_DoLoadLevel -> Doom::setupLevel),
-    // unlike G_DeferedInitNew which only queues it for the next tic.
-    G_InitNew((skill_t) skill, episode, map);
+    // Doom::initNewGame runs the whole load synchronously (G_DoLoadLevel -> Doom::setupLevel),
+    // unlike Doom::deferInitNew which only queues it for the next tic.
+    Doom::initNewGame((skill_t) skill, episode, map);
 
     // Handle 0 is always the player, so a scenario can move it without spawning
     // anything. It is null only if the map had no player-1 start.
@@ -407,7 +410,7 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
     if (setjmp(simAbort))
         return -1;
 
-    mobj_t* mobj = P_SpawnMobj(x, y, z, (mobjtype_t) type);
+    mobj_t* mobj = Doom::spawnMobj(x, y, z, (mobjtype_t) type);
 
     if (!mobj)
         return -1;
@@ -426,7 +429,7 @@ int doomSimCheckPosition(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return P_CheckPosition(mobj, x, y) ? 1 : 0;
+    return Doom::checkPosition(mobj, x, y) ? 1 : 0;
 }
 
 int doomSimTryMove(int handle, int x, int y)
@@ -439,7 +442,7 @@ int doomSimTryMove(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return P_TryMove(mobj, x, y) ? 1 : 0;
+    return Doom::tryMove(mobj, x, y) ? 1 : 0;
 }
 
 int doomSimMobjX(int handle)

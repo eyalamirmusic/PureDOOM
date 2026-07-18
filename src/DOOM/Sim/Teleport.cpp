@@ -8,6 +8,9 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
+#include "../Game/Sound.h"
+#include "Mobj.h"
+#include "Movement.h"
 namespace Doom
 {
 
@@ -60,7 +63,7 @@ int teleport(line_t* line, int side, mobj_t* thing)
                 oldy = thing->y;
                 oldz = thing->z;
 
-                if (!P_TeleportMove(thing, m->x, m->y))
+                if (!Doom::teleportMove(thing, m->x, m->y))
                     return 0;
 
                 thing->z = thing->floorz; //fixme: not needed?
@@ -68,16 +71,16 @@ int teleport(line_t* line, int side, mobj_t* thing)
                     thing->player->viewz = thing->z + thing->player->viewheight;
 
                 // spawn teleport fog at source and destination
-                fog = P_SpawnMobj(oldx, oldy, oldz, MT_TFOG);
-                S_StartSound(fog, sfx_telept);
+                fog = Doom::spawnMobj(oldx, oldy, oldz, MT_TFOG);
+                Doom::startSound(fog, sfx_telept);
                 an = m->angle >> ANGLETOFINESHIFT;
-                fog = P_SpawnMobj(m->x + 20 * finecosine[an],
+                fog = Doom::spawnMobj(m->x + 20 * finecosine[an],
                                   m->y + 20 * finesine[an],
                                   thing->z,
                                   MT_TFOG);
 
                 // emit sound, where?
-                S_StartSound(fog, sfx_telept);
+                Doom::startSound(fog, sfx_telept);
 
                 // don't move for a bit
                 if (thing->player)

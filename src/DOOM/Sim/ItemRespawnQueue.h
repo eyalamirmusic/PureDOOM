@@ -6,8 +6,8 @@
 namespace Doom
 {
 // The ring of picked-up items waiting to respawn, used only in deathmatch. When an item is
-// collected, P_RemoveMobj records its map thing in itemrespawnque and the leveltime in
-// itemrespawntime; P_RespawnSpecials walks the ring from iquetail, and once an entry has aged
+// collected, Doom::removeMobj records its map thing in itemrespawnque and the leveltime in
+// itemrespawntime; Doom::respawnSpecials walks the ring from iquetail, and once an entry has aged
 // past its respawn delay it spawns the item back and advances the tail. iquehead is the append
 // cursor, both indices wrapping modulo ITEMQUESIZE. p_local.h's item-respawn queue.
 //

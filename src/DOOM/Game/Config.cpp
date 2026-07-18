@@ -59,6 +59,7 @@
 #include <ea_data_structures/Structures/Vector.h>
 
 #include "../Host/Video.h"
+#include "../Host/System.h"
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -256,11 +257,11 @@ int readFile(char const* name, byte** buffer)
     handle = doom_open(name, "rb");
     if (handle == nullptr)
     {
-        //I_Error("Error: Couldn't read file %s", name);
+        //fatalError("Error: Couldn't read file %s", name);
 
         doom_strcpy(error_buf, "Error: Couldn't read file ");
         doom_concat(error_buf, name);
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
     doom_seek(handle, 0, DOOM_SEEK_END);
     length = doom_tell(handle);
@@ -271,11 +272,11 @@ int readFile(char const* name, byte** buffer)
 
     if (count < length)
     {
-        //I_Error("Error: Couldn't read file %s", name);
+        //fatalError("Error: Couldn't read file %s", name);
 
         doom_strcpy(error_buf, "Error: Couldn't read file ");
         doom_concat(error_buf, name);
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     *buffer = buf;
@@ -595,7 +596,7 @@ void writeScreenshot()
         doom_close(f);
     }
     if (i == 100)
-        I_Error("Error: writeScreenshot: Couldn't create a PCX");
+        fatalError("Error: writeScreenshot: Couldn't create a PCX");
 
     // save the pcx file
     WritePCXfile(lbmname.data(),

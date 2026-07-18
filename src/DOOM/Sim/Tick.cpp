@@ -2,7 +2,7 @@
 //
 // The thinker list (init/add/remove/run) and the per-tic Doom::ticker that thinks each
 // player and runs the thinkers, specials and respawns. The run loop dispatches
-// through the thinker function-pointer union, so the T_/P_MobjThinker addresses it
+// through the thinker function-pointer union, so the T_/Doom::mobjThinker addresses it
 // stores stay global. p_tick.cpp shims the vanilla names and owns leveltime and
 // thinkercap. Golden-neutral - this is the heartbeat every demo tic runs through.
 
@@ -17,6 +17,7 @@
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 #include "Specials.h"
 // can store their address.
+#include "Mobj.h"
 
 namespace Doom
 {
@@ -177,7 +178,7 @@ void ticker()
 
     runThinkers();
     Doom::updateSpecials();
-    P_RespawnSpecials();
+    Doom::respawnSpecials();
 
     // for par times
     leveltime++;

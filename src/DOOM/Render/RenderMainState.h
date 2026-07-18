@@ -3,8 +3,8 @@
 namespace Doom
 {
 // Render/Main's two residual scalars: framecount, bumped once per R_RenderPlayerView (a rendered-
-// frame tally), and setdetail, the pending detail-mode change R_SetViewSize stashes from the menu
-// for R_ExecuteSetViewSize to apply. (The drawer dispatch pointers colfunc/spanfunc/transcolfunc
+// frame tally), and setdetail, the pending detail-mode change Doom::setViewSize stashes from the menu
+// for Doom::executeSetViewSize to apply. (The drawer dispatch pointers colfunc/spanfunc/transcolfunc
 // stay in the shim - they are the renderer's shared drawer selection, not Render/Main's own state.)
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were

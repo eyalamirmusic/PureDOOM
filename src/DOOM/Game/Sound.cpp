@@ -39,6 +39,8 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include "../Host/Sound.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
 #define S_MAX_VOLUME 127
 
 // when to clip out sounds
@@ -80,7 +82,7 @@
 // Game/Sound and read by no other file; the vanilla names become references onto the
 // members, the same as snd_SfxVolume/... just below. channels_s_sound is now a
 // plain-pointer VIEW onto SoundState's owned channels vector (RAII, Step 9), refreshed by
-// sInit after the resize, rather than a reference to a pointer member.
+// initSound after the resize, rather than a reference to a pointer member.
 static channel_t* channels_s_sound = nullptr;
 static doom_boolean& mus_paused = Doom::soundState().mus_paused;
 static musicinfo_t*& mus_playing_s_sound = Doom::soundState().mus_playing;
@@ -117,19 +119,19 @@ void sStopChannel(int cnum);
 // Sets channels, SFX and music volume,
 //  allocates channel buffer, sets S_sfx lookup.
 //
-void sInit(int sfxVolume, int musicVolume)
+void initSound(int sfxVolume, int musicVolume)
 {
-    //doom_print("sInit: default sfx volume %d\n", sfxVolume);
-    doom_print("sInit: default sfx volume ");
+    //doom_print("initSound: default sfx volume %d\n", sfxVolume);
+    doom_print("initSound: default sfx volume ");
     doom_print(doom_itoa(sfxVolume, 10));
     doom_print("\n");
 
     // Whatever these did with DMX, these are rather dummies now.
     setChannels();
 
-    sSetSfxVolume(sfxVolume);
+    setSfxVolume(sfxVolume);
     // No music with Linux - another dummy.
-    sSetMusicVolume(musicVolume);
+    setMusicVolumeLevel(musicVolume);
 
     // Allocating the internal channels for mixing
     // (the maximum numer of sounds rendered
@@ -157,7 +159,7 @@ void sInit(int sfxVolume, int musicVolume)
 // Kills playing sounds at start of level,
 //  determines music if any, changes music.
 //
-void sStart()
+void startLevelSound()
 {
     int mnum;
 
@@ -198,12 +200,12 @@ void sStart()
     //  if (commercial && mnum > mus_e3m9)
     //      mnum -= mus_e3m9;
 
-    sChangeMusic(mnum, true);
+    changeMusic(mnum, true);
 
     nextcleanup = 15;
 }
 
-void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
+void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
 {
     int rc;
     int sep;
@@ -217,10 +219,10 @@ void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
     // check for bogus sound #
     if (sfx_id < 1 || sfx_id > NUMSFX)
     {
-        //I_Error("Error: Bad sfx #: %d", sfx_id);
+        //fatalError("Error: Bad sfx #: %d", sfx_id);
         doom_strcpy(error_buf, "Error: Bad sfx #: ");
         doom_concat(error_buf, doom_itoa(sfx_id, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     sfx = &S_sfx[sfx_id];
@@ -286,7 +288,7 @@ void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
     }
 
     // kill old sound
-    sStopSound(origin);
+    stopSound(origin);
 
     // try to find a channel
     cnum = sgetChannel(origin, sfx);
@@ -308,12 +310,12 @@ void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
     // cache data if necessary
     if (!sfx->data)
     {
-        doom_print("sStartSoundAtVolume: 16bit and not pre-cached - wtf?\n");
+        doom_print("startSoundAtVolume: 16bit and not pre-cached - wtf?\n");
 
         // DOS remains, 8bit handling
         //sfx->data = (void *) W_CacheLumpNum(sfx->lumpnum, PU_MUSIC);
         // fprintf( stderr,
-        //             "sStartSoundAtVolume: loading %d (lump %d) : 0x%x\n",
+        //             "startSoundAtVolume: loading %d (lump %d) : 0x%x\n",
         //       sfx_id, sfx->lumpnum, (int)sfx->data );
     }
 #endif
@@ -332,12 +334,12 @@ void sStartSoundAtVolume(void* origin_p, int sfx_id, int volume)
                                                  priority);
 }
 
-void sStartSound(void* origin, int sfx_id)
+void startSound(void* origin, int sfx_id)
 {
-    sStartSoundAtVolume(origin, sfx_id, snd_SfxVolume);
+    startSoundAtVolume(origin, sfx_id, snd_SfxVolume);
 }
 
-void sStopSound(void* origin)
+void stopSound(void* origin)
 {
     for (int cnum = 0; cnum < numChannels; cnum++)
     {
@@ -353,7 +355,7 @@ void sStopSound(void* origin)
 //
 // Stop and resume music, during game PAUSE.
 //
-void sPauseSound()
+void pauseSound()
 {
     if (mus_playing_s_sound && !mus_paused)
     {
@@ -362,7 +364,7 @@ void sPauseSound()
     }
 }
 
-void sResumeSound()
+void resumeSound()
 {
     if (mus_playing_s_sound && mus_paused)
     {
@@ -374,7 +376,7 @@ void sResumeSound()
 //
 // Updates music & sounds
 //
-void sUpdateSounds(void* listener_p)
+void updateSounds(void* listener_p)
 {
     int audible;
     int volume;
@@ -442,15 +444,15 @@ void sUpdateSounds(void* listener_p)
     }
 }
 
-void sSetMusicVolume(int volume)
+void setMusicVolumeLevel(int volume)
 {
     if (volume < 0 || volume > 127)
     {
-        //I_Error("Error: Attempt to set music volume at %d",
+        //fatalError("Error: Attempt to set music volume at %d",
         //        volume);
         doom_strcpy(error_buf, "Error: Attempt to set music volume at ");
         doom_concat(error_buf, doom_itoa(volume, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     setMusicVolume(127);
@@ -458,14 +460,14 @@ void sSetMusicVolume(int volume)
     snd_MusicVolume = volume;
 }
 
-void sSetSfxVolume(int volume)
+void setSfxVolume(int volume)
 {
     if (volume < 0 || volume > 127)
     {
-        //I_Error("Error: Attempt to set sfx volume at %d", volume);
+        //fatalError("Error: Attempt to set sfx volume at %d", volume);
         doom_strcpy(error_buf, "Error: Attempt to set sfx volume at ");
         doom_concat(error_buf, doom_itoa(volume, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     snd_SfxVolume = volume;
@@ -474,22 +476,22 @@ void sSetSfxVolume(int volume)
 //
 // Starts some music with the music id found in sounds.h.
 //
-void sStartMusic(int m_id)
+void startMusic(int m_id)
 {
-    sChangeMusic(m_id, false);
+    changeMusic(m_id, false);
 }
 
-void sChangeMusic(int musicnum, int looping)
+void changeMusic(int musicnum, int looping)
 {
     musicinfo_t* music = nullptr;
     EA::Array<char, 9> namebuf;
 
     if ((musicnum <= mus_None) || (musicnum >= NUMMUSIC))
     {
-        //I_Error("Error: Bad music number %d", musicnum);
+        //fatalError("Error: Bad music number %d", musicnum);
         doom_strcpy(error_buf, "Error: Bad music number ");
         doom_concat(error_buf, doom_itoa(musicnum, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
     else
         music = &S_music[musicnum];
@@ -498,7 +500,7 @@ void sChangeMusic(int musicnum, int looping)
         return;
 
     // shutdown old music
-    sStopMusic();
+    stopMusic();
 
     // get lumpnum if neccessary
     if (!music->lumpnum)
@@ -519,7 +521,7 @@ void sChangeMusic(int musicnum, int looping)
     mus_playing_s_sound = music;
 }
 
-void sStopMusic()
+void stopMusic()
 {
     if (mus_playing_s_sound)
     {
@@ -597,7 +599,7 @@ int sAdjustSoundParams(
     }
 
     // angle of source to listener
-    angle = R_PointToAngle2(listener->x, listener->y, source->x, source->y);
+    angle = Doom::pointToAngle2(listener->x, listener->y, source->x, source->y);
 
     if (angle > listener->angle)
         angle = angle - listener->angle;

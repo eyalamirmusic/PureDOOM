@@ -6,7 +6,7 @@
 namespace Doom
 {
 // Interactions: a player touching a pickup, one thing damaging another, and death.
-// The vanilla names (P_TouchSpecialThing, P_DamageMobj, P_GivePower) forward here
+// The vanilla names (Doom::touchSpecialThing, Doom::damageMobj, Doom::givePower) forward here
 // from p_inter.cpp; the give-* helpers are internal to Interaction.cpp. Covered by
 // the demos' combat (damage, death, thrust) and golden-neutral.
 

@@ -24,6 +24,7 @@ fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
 
 #include <cstdint>
 
+#include <DOOM/Render/Main.h>
 using namespace nano;
 
 namespace
@@ -266,7 +267,7 @@ auto tFineSineStaysInUnitRange = test("Tables/sineStaysInUnitRange") = []
 auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []
 {
     // The table turns a slope into an angle, so it must never go backwards - a
-    // steeper slope is always a wider angle. R_PointToAngle indexes straight
+    // steeper slope is always a wider angle. Doom::pointToAngle indexes straight
     // into it and would aim the player wrongly if it did.
     for (auto i = 1; i <= SLOPERANGE; ++i)
         check(tantoangle[i] >= tantoangle[i - 1]);
@@ -278,7 +279,7 @@ auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []
 // SLOPERANGE, the steepest slope it can name, whatever the numerator. So
 // Doom::slopeDiv(0, 1) is 2048 and not 0, which reads as a bug and is not one: the
 // result indexes tantoangle, the guard is what keeps the index in the table, and
-// R_PointToAngle only ever calls it with a denominator it has already made large.
+// Doom::pointToAngle only ever calls it with a denominator it has already made large.
 auto tSlopeDivGivesUpOnSmallDenominators =
     test("Tables/slopeDivGivesUpOnSmallDenominators") = []
 {
@@ -322,40 +323,40 @@ auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
     check(P_AproxDistance(4 * one, 3 * one) != 5 * one);
 };
 
-// R_PointToAngle inherits the trig table's half-bucket offset, so it lands one
+// Doom::pointToAngle inherits the trig table's half-bucket offset, so it lands one
 // unit BELOW the exact cardinal - due north is 0x3fffffff, not ANG90. (Due south
 // is exact, because it is reached by negating rather than by a lookup.) An angle
 // is 1/2^32 of a circle, so one unit is nothing to look at and everything to
 // replay: it is what the recorded demos were aimed with.
 auto tPointToAngleCardinals = test("Geometry/pointToAngleCardinals") = []
 {
-    check(R_PointToAngle2(0, 0, one, 0) == 0); // east, exact
-    check(R_PointToAngle2(0, 0, 0, one) == ANG90 - 1); // north
-    check(R_PointToAngle2(0, 0, -one, 0) == ANG180 - 1); // west
-    check(R_PointToAngle2(0, 0, 0, -one) == ANG270); // south, exact
+    check(Doom::pointToAngle2(0, 0, one, 0) == 0); // east, exact
+    check(Doom::pointToAngle2(0, 0, 0, one) == ANG90 - 1); // north
+    check(Doom::pointToAngle2(0, 0, -one, 0) == ANG180 - 1); // west
+    check(Doom::pointToAngle2(0, 0, 0, -one) == ANG270); // south, exact
 };
 
 auto tPointToAngleDiagonal = test("Geometry/pointToAngleDiagonal") = []
 {
-    check(R_PointToAngle2(0, 0, one, one) == ANG45 - 1);
-    check(R_PointToAngle2(0, 0, -one, one) == ANG90 + ANG45);
+    check(Doom::pointToAngle2(0, 0, one, one) == ANG45 - 1);
+    check(Doom::pointToAngle2(0, 0, -one, one) == ANG90 + ANG45);
 };
 
 // Whatever the exact values, the four quadrants must at least be the four
 // quadrants - this is the property a rewrite would actually break.
 auto tPointToAngleQuadrants = test("Geometry/pointToAngleQuadrants") = []
 {
-    check(R_PointToAngle2(0, 0, one, one) < ANG90); // NE
-    check(R_PointToAngle2(0, 0, -one, one) > ANG90); // NW
-    check(R_PointToAngle2(0, 0, -one, one) < ANG180);
-    check(R_PointToAngle2(0, 0, -one, -one) > ANG180); // SW
-    check(R_PointToAngle2(0, 0, -one, -one) < ANG270);
-    check(R_PointToAngle2(0, 0, one, -one) > ANG270); // SE
+    check(Doom::pointToAngle2(0, 0, one, one) < ANG90); // NE
+    check(Doom::pointToAngle2(0, 0, -one, one) > ANG90); // NW
+    check(Doom::pointToAngle2(0, 0, -one, one) < ANG180);
+    check(Doom::pointToAngle2(0, 0, -one, -one) > ANG180); // SW
+    check(Doom::pointToAngle2(0, 0, -one, -one) < ANG270);
+    check(Doom::pointToAngle2(0, 0, one, -one) > ANG270); // SE
 };
 
 // The same point is no angle at all, rather than an out-of-range index.
 auto tPointToAngleDegenerate = test("Geometry/pointToAngleAtSamePoint") = []
-{ check(R_PointToAngle2(100, 100, 100, 100) == 0); };
+{ check(Doom::pointToAngle2(100, 100, 100, 100) == 0); };
 
 // ---------------------------------------------------------------------------
 // The tables, whole.

@@ -28,8 +28,13 @@
 #include "Specials.h"
 #include <ea_data_structures/Structures/Array.h>
 
-// P_SpawnMapThing is Mobj's now (global shim); the things loader calls it.
-void P_SpawnMapThing(mapthing_t* mthing);
+// Doom::spawnMapThing is Mobj's now (global shim); the things loader calls it.
+#include "../Game/Game.h"
+#include "../Game/Sound.h"
+#include "../Host/System.h"
+#include "Mobj.h"
+#include "Switches.h"
+void Doom::spawnMapThing(mapthing_t* mthing);
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -254,7 +259,7 @@ void loadThings(int lump)
         mt->type = SHORT(mt->type);
         mt->options = SHORT(mt->options);
 
-        P_SpawnMapThing(mt);
+        Doom::spawnMapThing(mt);
     }
 }
 
@@ -458,7 +463,7 @@ void groupLines()
             }
         }
         if (linebuffer - sector->lines != sector->linecount)
-            I_Error("Error: groupLines: miscounted");
+            fatalError("Error: groupLines: miscounted");
 
         // set the degenmobj_t to the middle of the bounding box
         sector->soundorg.x = (bbox[BOXRIGHT] + bbox[BOXLEFT]) / 2;
@@ -503,7 +508,7 @@ void setupLevel(int episode, int map, int, skill_t)
     players[consoleplayer].viewz = 1;
 
     // Make sure all sounds are stopped before the level's allocations go.
-    S_Start();
+    Doom::startLevelSound();
 
     // Free the previous level's mobjs and thinker specials - what
     // Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1) reclaimed when they lived in the
@@ -570,7 +575,7 @@ void setupLevel(int episode, int map, int, skill_t)
             if (playeringame[i])
             {
                 players[i].mo = nullptr;
-                G_DeathMatchSpawnPlayer(i);
+                Doom::deathMatchSpawnPlayer(i);
             }
     }
 
@@ -590,7 +595,7 @@ void setupLevel(int episode, int map, int, skill_t)
 //
 void init()
 {
-    P_InitSwitchList();
+    Doom::initSwitchList();
     Doom::initPicAnims();
     Doom::initSprites(sprnames);
 }

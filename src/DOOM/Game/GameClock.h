@@ -3,7 +3,7 @@
 namespace Doom
 {
 // The game clock: gametic counts tics of simulation since the process started, advancing once
-// per G_Ticker call. It is the monotonic session clock the whole engine times against - the
+// per Doom::gameTicker call. It is the monotonic session clock the whole engine times against - the
 // level clock leveltime is measured from it (levelstarttic), demos are paced by it, and the
 // netcode indexes its command rings by it. doomstat.h's gametic in "Internal parameters,
 // fixed". (Distinct from leveltime, which resets each level and lives in Doom::LevelStats,

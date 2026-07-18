@@ -2,7 +2,7 @@
 //
 // Savegame serialisation: players, the world (sectors/lines), the thinkers (mobjs),
 // and the active specials. Thinkers are identified on write and restored on read by
-// their function pointer, which is why the T_* thinker functions and P_MobjThinker
+// their function pointer, which is why the T_* thinker functions and Doom::mobjThinker
 // stay global shims - this code compares against and stores those exact addresses.
 // p_saveg.cpp shims the eight vanilla names and owns the save_p cursor. Not covered
 // by the demos (no save in a demo); migrated copy-for-copy so the byte layout is
@@ -21,8 +21,10 @@
 
 #include "Plats.h"
 #include <new> // placement new
+#include "../Host/System.h"
 
 // save_p is a reference onto Doom::SaveGameState's cursor (an Engine member), bound in
+#include "Mobj.h"
 // the p_saveg.cpp shim; g_game, the probe and this file share it. This bare extern must
 // stay a reference in lockstep with p_saveg.h's - a plain `extern byte* save_p` here
 // would write the low half of the reference's pointer and corrupt it.
@@ -254,7 +256,7 @@ void archiveThinkers()
             continue;
         }
 
-        // I_Error ("archiveThinkers: Unknown thinker function");
+        // fatalError ("archiveThinkers: Unknown thinker function");
     }
 
     // add a terminating marker
@@ -278,7 +280,7 @@ void unArchiveThinkers()
         next = currentthinker->next;
 
         if (currentthinker->kind() == Doom::ThinkerKind::Mobj)
-            P_RemoveMobj(reinterpret_cast<mobj_t*>(currentthinker));
+            Doom::removeMobj(reinterpret_cast<mobj_t*>(currentthinker));
         else
             levelFree(currentthinker);
 
@@ -315,12 +317,12 @@ void unArchiveThinkers()
 
             default:
             {
-                //I_Error("Error: Unknown tclass %i in savegame", tclass);
+                //fatalError("Error: Unknown tclass %i in savegame", tclass);
 
                 doom_strcpy(error_buf, "Error: Unknown tclass ");
                 doom_concat(error_buf, doom_itoa(tclass, 10));
                 doom_concat(error_buf, " in savegame");
-                I_Error(error_buf);
+                fatalError(error_buf);
             }
         }
     }
@@ -554,13 +556,13 @@ void unArchiveSpecials()
 
             default:
             {
-                //I_Error("Error: P_UnarchiveSpecials:Unknown tclass %i "
+                //fatalError("Error: P_UnarchiveSpecials:Unknown tclass %i "
                 //        "in savegame", tclass);
 
                 doom_strcpy(error_buf, "Error: P_UnarchiveSpecials:Unknown tclass ");
                 doom_concat(error_buf, doom_itoa(tclass, 10));
                 doom_concat(error_buf, " in savegame");
-                I_Error(error_buf);
+                fatalError(error_buf);
             }
         }
     }

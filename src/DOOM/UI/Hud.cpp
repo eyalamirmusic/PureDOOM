@@ -48,6 +48,7 @@
 #include "HudState.h"
 
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
+#include "../Game/Sound.h"
 // externs): the HUD font, the config-persisted chat macros, the player names,
 // the level-name tables (st_stuff reads mapnames), and the two message flags.
 extern char* chat_macros[];
@@ -395,9 +396,9 @@ void hudTicker()
                             message_on = true;
                             message_counter = HU_MSGTIMEOUT;
                             if (gamemode == commercial)
-                                S_StartSound(0, sfx_radio);
+                                Doom::startSound(0, sfx_radio);
                             else
-                                S_StartSound(0, sfx_tink);
+                                Doom::startSound(0, sfx_tink);
                         }
                         HUlib_resetIText(&w_inputbuffer[i]);
                     }

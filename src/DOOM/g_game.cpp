@@ -22,97 +22,21 @@
 
 #include "Game/Game.h"
 
-void G_DeathMatchSpawnPlayer(int playernum)
-{
-    Doom::gDeathMatchSpawnPlayer(playernum);
-}
 
-void G_InitNew(skill_t skill, int episode, int map)
-{
-    Doom::gInitNew(skill, episode, map);
-}
 
-void G_DeferedInitNew(skill_t skill, int episode, int map)
-{
-    Doom::gDeferedInitNew(skill, episode, map);
-}
 
-void G_DeferedPlayDemo(const char* demo)
-{
-    Doom::gDeferedPlayDemo(demo);
-}
 
-void G_LoadGame(char* name)
-{
-    Doom::gLoadGame(name);
-}
 
-void G_DoLoadGame()
-{
-    Doom::gDoLoadGame();
-}
 
-void G_SaveGame(int slot, char* description)
-{
-    Doom::gSaveGame(slot, description);
-}
 
-void G_RecordDemo(char* name)
-{
-    Doom::gRecordDemo(name);
-}
 
-void G_BeginRecording()
-{
-    Doom::gBeginRecording();
-}
 
-void G_TimeDemo(char* name)
-{
-    Doom::gTimeDemo(name);
-}
 
-doom_boolean G_CheckDemoStatus()
-{
-    return Doom::gCheckDemoStatus();
-}
 
-void G_ExitLevel()
-{
-    Doom::gExitLevel();
-}
 
-void G_SecretExitLevel()
-{
-    Doom::gSecretExitLevel();
-}
 
-void G_WorldDone()
-{
-    Doom::gWorldDone();
-}
 
-void G_Ticker()
-{
-    Doom::gTicker();
-}
 
-doom_boolean G_Responder(event_t* ev)
-{
-    return Doom::gResponder(ev);
-}
 
-void G_ScreenShot()
-{
-    Doom::gScreenShot();
-}
 
-void G_BuildTiccmd(ticcmd_t* cmd)
-{
-    Doom::gBuildTiccmd(cmd);
-}
 
-void G_PlayerReborn(int player)
-{
-    Doom::gPlayerReborn(player);
-}

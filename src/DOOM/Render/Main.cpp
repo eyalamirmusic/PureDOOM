@@ -6,7 +6,7 @@
 // r_main.cpp shims the R_ names and owns the view-state globals (viewx/viewangle/...,
 // validcount, the drawer pointers other renderer files switch, the pending-view
 // flags d_main/g_game/DOOM read); r_main's own bookkeeping (framecount, setdetail,
-// transcolfunc) is file-local here. renderInit is R_Init (renamed to avoid a clash
+// transcolfunc) is file-local here. renderInit is Doom::renderInit (renamed to avoid a clash
 // with Setup's init).
 
 #include "../doom_config.h" // doom_abs, doom_print

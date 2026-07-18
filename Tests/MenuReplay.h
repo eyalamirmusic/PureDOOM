@@ -135,7 +135,7 @@ inline Hashes runMenuScript()
             doomSimPostKeyUp(key);
         }
 
-        // A menu action that reached I_Quit would return 0 here; the script is
+        // A menu action that reached Doom::quitGame would return 0 here; the script is
         // written never to, so this doubles as an assertion that it did not.
         nano::check(doomSimStepTic() != 0, "the tic ran");
         frames.push_back(doomSimFrameHash());

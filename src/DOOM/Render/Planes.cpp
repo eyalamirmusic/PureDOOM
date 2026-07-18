@@ -18,6 +18,7 @@
 #include "Planes.h"
 
 #include "Data.h"
+#include "../Host/System.h"
 #define MAXVISPLANES 128
 #define MAXOPENINGS SCREENWIDTH * 64
 
@@ -79,7 +80,7 @@ void mapPlane(int y, int x1, int x2)
     if (x2 < x1 || x1 < 0 || x2 >= viewwidth
         || static_cast<unsigned>(y) > static_cast<unsigned>(viewheight))
     {
-        //I_Error("Error: mapPlane: %i, %i at %i", x1, x2, y);
+        //fatalError("Error: mapPlane: %i, %i at %i", x1, x2, y);
 
         doom_strcpy(error_buf, "Error: mapPlane: ");
         doom_concat(error_buf, doom_itoa(x1, 10));
@@ -87,7 +88,7 @@ void mapPlane(int y, int x1, int x2)
         doom_concat(error_buf, doom_itoa(x2, 10));
         doom_concat(error_buf, " at ");
         doom_concat(error_buf, doom_itoa(y, 10));
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 
@@ -185,7 +186,7 @@ visplane_t* findPlane(fixed_t height, int picnum, int lightlevel)
         return check;
 
     if (lastvisplane - visplanes == MAXVISPLANES)
-        I_Error("Error: findPlane: no more visplanes");
+        fatalError("Error: findPlane: no more visplanes");
 
     lastvisplane++;
 
@@ -302,37 +303,37 @@ void drawPlanes()
 #ifdef RANGECHECK
     if (ds_p - drawsegs > MAXDRAWSEGS)
     {
-        //I_Error("Error: drawPlanes: drawsegs overflow (%i)",
+        //fatalError("Error: drawPlanes: drawsegs overflow (%i)",
         //        ds_p - drawsegs);
 
         doom_strcpy(error_buf, "Error: drawPlanes: drawsegs overflow (");
         doom_concat(error_buf, doom_itoa(static_cast<int>(ds_p - drawsegs), 10));
         doom_concat(error_buf, ")");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     if (lastvisplane - visplanes > MAXVISPLANES)
     {
-        //I_Error("Error: drawPlanes: visplane overflow (%i)",
+        //fatalError("Error: drawPlanes: visplane overflow (%i)",
         //        lastvisplane - visplanes);
 
         doom_strcpy(error_buf, "Error: drawPlanes: visplane overflow (");
         doom_concat(error_buf,
                     doom_itoa(static_cast<int>(lastvisplane - visplanes), 10));
         doom_concat(error_buf, ")");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     if (lastopening - openings > MAXOPENINGS)
     {
-        //I_Error("Error: drawPlanes: opening overflow (%i)",
+        //fatalError("Error: drawPlanes: opening overflow (%i)",
         //        lastopening - openings);
 
         doom_strcpy(error_buf, "Error: drawPlanes: opening overflow (");
         doom_concat(error_buf,
                     doom_itoa(static_cast<int>(lastopening - openings), 10));
         doom_concat(error_buf, ")");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 #endif
 

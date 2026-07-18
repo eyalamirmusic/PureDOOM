@@ -4,7 +4,7 @@
 
 namespace Doom
 {
-// The savegame serialization / orchestration state. G_DoSaveGame / G_DoLoadGame set
+// The savegame serialization / orchestration state. G_DoSaveGame / Doom::doLoadGame set
 // name (the file), read it into buffer, then archive or unarchive the world by walking
 // cursor along buffer: the P_Archive* / P_UnArchive* functions (Sim/SaveGame) advance
 // cursor a field at a time, and the written length is cursor - buffer.

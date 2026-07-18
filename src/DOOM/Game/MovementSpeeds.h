@@ -6,7 +6,7 @@
 
 namespace Doom
 {
-// The movement-speed lookup tables G_BuildTiccmd applies to the player's input when building a
+// The movement-speed lookup tables Doom::buildTiccmd applies to the player's input when building a
 // ticcmd: forwardmove[speed] and sidemove[speed] are the walk/run forward and strafe amounts
 // (indexed by whether the run key is held), and angleturn[tspeed] the per-tic turn amount (fast,
 // faster, and a slow-turn value used for the first few tics of a key press). MAXPLMOVE is
@@ -20,7 +20,7 @@ namespace Doom
 // would silently read the reference's hidden pointer as the array). angleturn is g_game's alone.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names
-// become references-to-array onto these members, so every indexed read is unchanged. G_BuildTiccmd
+// become references-to-array onto these members, so every indexed read is unchanged. Doom::buildTiccmd
 // is the only consumer, and in the headless suite the demo playback overrides the command it builds
 // (and -turbo is never passed), so the move is golden-neutral.
 struct MovementSpeeds

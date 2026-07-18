@@ -5,7 +5,7 @@
 namespace Doom
 {
 // The two cross-read HUD flags the hu_stuff shim owns and other files read: chat_on (the chat
-// input line is open, so G_Responder should route keys to it) and message_dontfuckwithme (a
+// input line is open, so Doom::gameResponder should route keys to it) and message_dontfuckwithme (a
 // forced message is showing that a lower-priority one may not overwrite). Distinct from HudState,
 // which holds UI/Hud's file-local four (plr, w_title, headsupactive) that no other file reads.
 //

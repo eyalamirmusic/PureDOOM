@@ -28,7 +28,3 @@
 
 #include "Sim/Sight.h"
 
-doom_boolean P_CheckSight(mobj_t* t1, mobj_t* t2)
-{
-    return Doom::checkSight(t1, t2);
-}

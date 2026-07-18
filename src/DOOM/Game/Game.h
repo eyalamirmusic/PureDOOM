@@ -7,23 +7,23 @@
 namespace Doom
 {
 // The game controller; g_game.cpp keeps the vanilla G_ names as shims.
-void gDeathMatchSpawnPlayer(int playernum);
-void gInitNew(skill_t skill, int episode, int map);
-void gDeferedInitNew(skill_t skill, int episode, int map);
-void gDeferedPlayDemo(const char* demo);
-void gLoadGame(char* name);
-void gDoLoadGame();
-void gSaveGame(int slot, char* description);
-void gRecordDemo(char* name);
-void gBeginRecording();
-void gTimeDemo(char* name);
-doom_boolean gCheckDemoStatus();
-void gExitLevel();
-void gSecretExitLevel();
-void gWorldDone();
-void gTicker();
-doom_boolean gResponder(event_t* ev);
-void gScreenShot();
-void gBuildTiccmd(ticcmd_t* cmd);
-void gPlayerReborn(int player);
+void deathMatchSpawnPlayer(int playernum);
+void initNewGame(skill_t skill, int episode, int map);
+void deferInitNew(skill_t skill, int episode, int map);
+void deferPlayDemo(const char* demo);
+void loadGame(char* name);
+void doLoadGame();
+void saveGame(int slot, char* description);
+void recordDemo(char* name);
+void beginRecording();
+void startTimeDemo(char* name);
+doom_boolean checkDemoStatus();
+void exitLevel();
+void secretExitLevel();
+void worldDone();
+void gameTicker();
+doom_boolean gameResponder(event_t* ev);
+void takeScreenshot();
+void buildTiccmd(ticcmd_t* cmd);
+void playerReborn(int player);
 } // namespace Doom

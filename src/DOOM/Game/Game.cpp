@@ -95,6 +95,11 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include "Config.h"
+#include "../Host/System.h"
+#include "../Render/Main.h"
+#include "../Sim/Mobj.h"
+#include "../Sim/Movement.h"
+#include "Sound.h"
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
 #define MAXPLMOVE (forwardmove[1])
@@ -106,8 +111,8 @@
 #define DEMOMARKER 0x80
 
 // Prototypes for other subsystems' functions.
-void P_SpawnPlayer(mapthing_t* mthing);
-void R_ExecuteSetViewSize();
+void Doom::spawnPlayer(mapthing_t* mthing);
+void Doom::executeSetViewSize();
 
 // gameaction, gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; these
 // (and the extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
@@ -220,7 +225,7 @@ int& joybstrafe = Doom::inputConfig().joybstrafe;
 int& joybuse = Doom::inputConfig().joybuse;
 int& joybspeed = Doom::inputConfig().joybspeed;
 
-// The movement-speed tables G_BuildTiccmd applies to the player's input are a Doom::MovementSpeeds
+// The movement-speed tables Doom::buildTiccmd applies to the player's input are a Doom::MovementSpeeds
 // owned by the Engine now, moved by the file-scope-statics sweep; these vanilla names are
 // references-to-array onto the members (REFACTOR.md, Step 5). forwardmove/sidemove are also scaled
 // by -turbo over in Game/DoomMain.cpp, whose externs move to references in lockstep.
@@ -299,15 +304,15 @@ namespace Doom
 {
 
 // Forward declarations so call order needs no rearranging.
-doom_boolean gCheckDemoStatus();
+doom_boolean checkDemoStatus();
 void gReadDemoTiccmd(ticcmd_t* cmd);
 void gWriteDemoTiccmd(ticcmd_t* cmd);
-void gPlayerReborn(int player);
-void gInitNew(skill_t skill, int episode, int map);
+void playerReborn(int player);
+void initNewGame(skill_t skill, int episode, int map);
 void gDoReborn(int playernum);
 void gDoLoadLevel();
 void gDoNewGame();
-void gDoLoadGame();
+void doLoadGame();
 void gDoPlayDemo();
 void gDoCompleted();
 void gDoWorldDone();
@@ -324,12 +329,12 @@ int gCmdChecksum(ticcmd_t* cmd)
 }
 
 //
-// gBuildTiccmd
+// buildTiccmd
 // Builds a ticcmd from all of the available inputs
 // or reads it from the demo buffer.
 // If recording a demo, write it out
 //
-void gBuildTiccmd(ticcmd_t* cmd)
+void buildTiccmd(ticcmd_t* cmd)
 {
     doom_boolean strafe;
     doom_boolean bstrafe;
@@ -340,7 +345,7 @@ void gBuildTiccmd(ticcmd_t* cmd)
 
     ticcmd_t* base;
 
-    base = I_BaseTiccmd(); // empty, or external driver
+    base = baseTiccmd(); // empty, or external driver
     doom_memcpy(cmd, base, sizeof(*cmd));
 
     cmd->consistancy = consistancy[consoleplayer][maketic % BACKUPTICS];
@@ -563,7 +568,7 @@ void gDoLoadLevel()
 
     Doom::setupLevel(gameepisode, gamemap, 0, gameskill);
     displayplayer = consoleplayer; // view the guy you are playing
-    starttime = I_GetTime();
+    starttime = currentTic();
     gameaction = ga_nothing;
 
     // clear cmd building stuff
@@ -576,10 +581,10 @@ void gDoLoadLevel()
 }
 
 //
-// gResponder
+// gameResponder
 // Get info needed to make ticcmd_ts for the players.
 //
-doom_boolean gResponder(event_t* ev)
+doom_boolean gameResponder(event_t* ev)
 {
     // allow spy mode changes even during the demo
     if (gamestate == GS_LEVEL && ev->type == ev_keydown && ev->data1 == KEY_F12
@@ -613,7 +618,7 @@ doom_boolean gResponder(event_t* ev)
 #if 0 
         if (devparm && ev->type == ev_keydown && ev->data1 == ';')
         {
-            gDeathMatchSpawnPlayer(0);
+            deathMatchSpawnPlayer(0);
             return true;
         }
 #endif
@@ -673,10 +678,10 @@ doom_boolean gResponder(event_t* ev)
 }
 
 //
-// gTicker
+// gameTicker
 // Make ticcmd_ts for the players.
 //
-void gTicker()
+void gameTicker()
 {
     int buf;
     ticcmd_t* cmd;
@@ -698,7 +703,7 @@ void gTicker()
                 gDoNewGame();
                 break;
             case ga_loadgame:
-                gDoLoadGame();
+                doLoadGame();
                 break;
             case ga_savegame:
                 gDoSaveGame();
@@ -756,7 +761,7 @@ void gTicker()
             {
                 if (gametic > BACKUPTICS && consistancy[i][buf] != cmd->consistancy)
                 {
-                    //I_Error("Error: consistency failure (%i should be %i)",
+                    //fatalError("Error: consistency failure (%i should be %i)",
                     //        cmd->consistancy, consistancy[i][buf]);
 
                     doom_strcpy(error_buf, "Error: consistency failure (");
@@ -764,7 +769,7 @@ void gTicker()
                     doom_concat(error_buf, " should be ");
                     doom_concat(error_buf, doom_itoa(consistancy[i][buf], 10));
                     doom_concat(error_buf, ")");
-                    I_Error(error_buf);
+                    fatalError(error_buf);
                 }
                 if (players[i].mo)
                     consistancy[i][buf] = players[i].mo->x;
@@ -786,9 +791,9 @@ void gTicker()
                     case BTS_PAUSE:
                         paused ^= 1;
                         if (paused)
-                            S_PauseSound();
+                            Doom::pauseSound();
                         else
-                            S_ResumeSound();
+                            Doom::resumeSound();
                         break;
 
                     case BTS_SAVEGAME:
@@ -829,7 +834,7 @@ void gTicker()
 
 //
 // PLAYER STRUCTURE FUNCTIONS
-// also see P_SpawnPlayer in P_Things
+// also see Doom::spawnPlayer in P_Things
 //
 
 //
@@ -840,7 +845,7 @@ void gTicker()
 void gInitPlayer(int player)
 {
     // clear everything else to defaults
-    gPlayerReborn(player);
+    playerReborn(player);
 }
 
 //
@@ -863,11 +868,11 @@ void gPlayerFinishLevel(int player)
 }
 
 //
-// gPlayerReborn
+// playerReborn
 // Called after a player dies
 // almost everything is cleared and initialized
 //
-void gPlayerReborn(int player)
+void playerReborn(int player)
 {
     player_t* p;
     EA::Array<int, MAXPLAYERS> frags;
@@ -928,36 +933,36 @@ doom_boolean gCheckSpot(int playernum, mapthing_t* mthing)
     x = mthing->x << FRACBITS;
     y = mthing->y << FRACBITS;
 
-    if (!P_CheckPosition(players[playernum].mo, x, y))
+    if (!Doom::checkPosition(players[playernum].mo, x, y))
         return false;
 
     // flush an old corpse if needed
     if (bodyqueslot >= BODYQUESIZE)
-        P_RemoveMobj(bodyque[bodyqueslot % BODYQUESIZE]);
+        Doom::removeMobj(bodyque[bodyqueslot % BODYQUESIZE]);
     bodyque[bodyqueslot % BODYQUESIZE] = players[playernum].mo;
     bodyqueslot++;
 
     // spawn a teleport fog
-    ss = R_PointInSubsector(x, y);
+    ss = Doom::pointInSubsector(x, y);
     an = (ANG45 * (mthing->angle / 45)) >> ANGLETOFINESHIFT;
 
-    mo = P_SpawnMobj(x + 20 * finecosine[an],
+    mo = Doom::spawnMobj(x + 20 * finecosine[an],
                      y + 20 * finesine[an],
                      ss->sector->floorheight,
                      MT_TFOG);
 
     if (players[consoleplayer].viewz != 1)
-        S_StartSound(mo, sfx_telept); // don't start sound on first frame
+        Doom::startSound(mo, sfx_telept); // don't start sound on first frame
 
     return true;
 }
 
 //
-// gDeathMatchSpawnPlayer
+// deathMatchSpawnPlayer
 // Spawns a player at one of the random death match spots
 // called at level load and each death
 //
-void gDeathMatchSpawnPlayer(int playernum)
+void deathMatchSpawnPlayer(int playernum)
 {
     int i;
     int selections;
@@ -965,12 +970,12 @@ void gDeathMatchSpawnPlayer(int playernum)
     selections = static_cast<int>((deathmatch_p - deathmatchstarts));
     if (selections < 4)
     {
-        //I_Error("Error: Only %i deathmatch spots, 4 required", selections);
+        //fatalError("Error: Only %i deathmatch spots, 4 required", selections);
 
         doom_strcpy(error_buf, "Error: Only ");
         doom_concat(error_buf, doom_itoa(selections, 10));
         doom_concat(error_buf, " deathmatch spots, 4 required");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     for (int j = 0; j < 20; j++)
@@ -979,13 +984,13 @@ void gDeathMatchSpawnPlayer(int playernum)
         if (gCheckSpot(playernum, &deathmatchstarts[i]))
         {
             deathmatchstarts[i].type = playernum + 1;
-            P_SpawnPlayer(&deathmatchstarts[i]);
+            Doom::spawnPlayer(&deathmatchstarts[i]);
             return;
         }
     }
 
     // no good spot, so the player will probably get stuck
-    P_SpawnPlayer(&playerstarts[playernum]);
+    Doom::spawnPlayer(&playerstarts[playernum]);
 }
 
 //
@@ -1008,13 +1013,13 @@ void gDoReborn(int playernum)
         // spawn at random spot if in death match
         if (deathmatch)
         {
-            gDeathMatchSpawnPlayer(playernum);
+            deathMatchSpawnPlayer(playernum);
             return;
         }
 
         if (gCheckSpot(playernum, &playerstarts[playernum]))
         {
-            P_SpawnPlayer(&playerstarts[playernum]);
+            Doom::spawnPlayer(&playerstarts[playernum]);
             return;
         }
 
@@ -1024,17 +1029,17 @@ void gDoReborn(int playernum)
             if (gCheckSpot(playernum, &playerstarts[i]))
             {
                 playerstarts[i].type = playernum + 1; // fake as other player
-                P_SpawnPlayer(&playerstarts[i]);
+                Doom::spawnPlayer(&playerstarts[i]);
                 playerstarts[i].type = i + 1; // restore
                 return;
             }
             // he's going to be inside something.  Too bad.
         }
-        P_SpawnPlayer(&playerstarts[playernum]);
+        Doom::spawnPlayer(&playerstarts[playernum]);
     }
 }
 
-void gScreenShot()
+void takeScreenshot()
 {
     gameaction = ga_screenshot;
 }
@@ -1042,14 +1047,14 @@ void gScreenShot()
 //
 // gDoCompleted
 //
-void gExitLevel()
+void exitLevel()
 {
     secretexit = false;
     gameaction = ga_completed;
 }
 
 // Here's for the german edition.
-void gSecretExitLevel()
+void secretExitLevel()
 {
     // IF NO WOLF3D LEVELS, NO SECRET EXIT!
     if ((gamemode == commercial) && (W_CheckNumForName("map31") < 0))
@@ -1183,9 +1188,9 @@ void gDoCompleted()
 }
 
 //
-// gWorldDone
+// worldDone
 //
-void gWorldDone()
+void worldDone()
 {
     gameaction = ga_worlddone;
 
@@ -1224,13 +1229,13 @@ void gDoWorldDone()
 // Can be called by the startup code or the menu task.
 //
 
-void gLoadGame(char* name)
+void loadGame(char* name)
 {
     doom_strcpy(savename, name);
     gameaction = ga_loadgame;
 }
 
-void gDoLoadGame()
+void doLoadGame()
 {
     int a, b, c;
     EA::Array<char, VERSIONSIZE> vcheck;
@@ -1257,7 +1262,7 @@ void gDoLoadGame()
         playeringame[i] = *save_p++;
 
     // load a base level
-    gInitNew(gameskill, gameepisode, gamemap);
+    initNewGame(gameskill, gameepisode, gamemap);
 
     // get the times
     a = *save_p++;
@@ -1272,24 +1277,24 @@ void gDoLoadGame()
     Doom::unArchiveSpecials();
 
     if (*save_p != 0x1d)
-        I_Error("Error: Bad savegame");
+        fatalError("Error: Bad savegame");
 
     // done
     doom_free(savebuffer);
 
     if (setsizeneeded)
-        R_ExecuteSetViewSize();
+        Doom::executeSetViewSize();
 
     // draw the pattern into the back screen
     Doom::fillBackScreen();
 }
 
 //
-// gSaveGame
+// saveGame
 // Called by the menu task.
 // Description is a 24 byte text string
 //
-void gSaveGame(int slot, char* description)
+void saveGame(int slot, char* description)
 {
     savegameslot = slot;
     doom_strcpy(savedescription.data(), description);
@@ -1345,7 +1350,7 @@ void gDoSaveGame()
 
     length = static_cast<int>((save_p - savebuffer));
     if (length > SAVEGAMESIZE)
-        I_Error("Error: Savegame buffer overrun");
+        fatalError("Error: Savegame buffer overrun");
     Doom::writeFile(name.data(), savebuffer, length);
     gameaction = ga_nothing;
     savedescription[0] = 0;
@@ -1357,12 +1362,12 @@ void gDoSaveGame()
 }
 
 //
-// gInitNew
+// initNewGame
 // Can be called by the startup code or the menu task,
 // consoleplayer, displayplayer, playeringame[] should be set.
 //
 
-void gDeferedInitNew(skill_t skill, int episode, int map)
+void deferInitNew(skill_t skill, int episode, int map)
 {
     d_skill = skill;
     d_episode = episode;
@@ -1381,16 +1386,16 @@ void gDoNewGame()
     fastparm = false;
     nomonsters = false;
     consoleplayer = 0;
-    gInitNew(d_skill, d_episode, d_map);
+    initNewGame(d_skill, d_episode, d_map);
     gameaction = ga_nothing;
 }
 
-void gInitNew(skill_t skill, int episode, int map)
+void initNewGame(skill_t skill, int episode, int map)
 {
     if (paused)
     {
         paused = false;
-        S_ResumeSound();
+        Doom::resumeSound();
     }
 
     if (skill > sk_nightmare)
@@ -1501,7 +1506,7 @@ void gReadDemoTiccmd(ticcmd_t* cmd)
     if (*demo_p == DEMOMARKER)
     {
         // end of demo data stream
-        gCheckDemoStatus();
+        checkDemoStatus();
         return;
     }
     cmd->forwardmove = (static_cast<signed char>(*demo_p++));
@@ -1513,7 +1518,7 @@ void gReadDemoTiccmd(ticcmd_t* cmd)
 void gWriteDemoTiccmd(ticcmd_t* cmd)
 {
     if (gamekeydown['q']) // press q to end demo recording
-        gCheckDemoStatus();
+        checkDemoStatus();
     *demo_p++ = cmd->forwardmove;
     *demo_p++ = cmd->sidemove;
     *demo_p++ = (cmd->angleturn + 128) >> 8;
@@ -1522,7 +1527,7 @@ void gWriteDemoTiccmd(ticcmd_t* cmd)
     if (demo_p > demoend - 16)
     {
         // no more space
-        gCheckDemoStatus();
+        checkDemoStatus();
         return;
     }
 
@@ -1530,9 +1535,9 @@ void gWriteDemoTiccmd(ticcmd_t* cmd)
 }
 
 //
-// gRecordDemo
+// recordDemo
 //
-void gRecordDemo(char* name)
+void recordDemo(char* name)
 {
     int i;
     int maxsize;
@@ -1550,7 +1555,7 @@ void gRecordDemo(char* name)
     demorecording = true;
 }
 
-void gBeginRecording()
+void beginRecording()
 {
     demo_p = demobuffer;
 
@@ -1572,7 +1577,7 @@ void gBeginRecording()
 // gPlayDemo
 //
 
-void gDeferedPlayDemo(const char* name)
+void deferPlayDemo(const char* name)
 {
     defdemoname = name;
     gameaction = ga_playdemo;
@@ -1619,7 +1624,7 @@ void gDoPlayDemo()
 
     // don't spend a lot of time in loadlevel
     precache = false;
-    gInitNew(skill, episode, map);
+    initNewGame(skill, episode, map);
     precache = true;
 
     usergame = false;
@@ -1627,9 +1632,9 @@ void gDoPlayDemo()
 }
 
 //
-// gTimeDemo
+// startTimeDemo
 //
-void gTimeDemo(char* name)
+void startTimeDemo(char* name)
 {
     nodrawers = Doom::checkParm("-nodraw");
     noblit = Doom::checkParm("-noblit");
@@ -1643,21 +1648,21 @@ void gTimeDemo(char* name)
 /*
 ===================
 =
-= gCheckDemoStatus
+= checkDemoStatus
 =
 = Called after a death or level completion to allow demos to be cleaned up
 = Returns true if a new demo loop action will take place
 ===================
 */
 
-doom_boolean gCheckDemoStatus()
+doom_boolean checkDemoStatus()
 {
     int endtime;
 
     if (timingdemo)
     {
-        endtime = I_GetTime();
-        //I_Error("Error: timed %i gametics in %i realtics", gametic
+        endtime = currentTic();
+        //fatalError("Error: timed %i gametics in %i realtics", gametic
         //        , endtime - starttime);
 
         doom_strcpy(error_buf, "Error: timed ");
@@ -1665,13 +1670,13 @@ doom_boolean gCheckDemoStatus()
         doom_concat(error_buf, " gametics in ");
         doom_concat(error_buf, doom_itoa(endtime - starttime, 10));
         doom_concat(error_buf, " realtics");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     if (demoplayback)
     {
         if (singledemo)
-            I_Quit();
+            quitGame();
 
         demoplayback = false;
         netdemo = false;
@@ -1692,12 +1697,12 @@ doom_boolean gCheckDemoStatus()
         Doom::writeFile(demoname, demobuffer, static_cast<int>((demo_p - demobuffer)));
         doom_free(demobuffer);
         demorecording = false;
-        //I_Error("Error: Demo %s recorded", demoname);
+        //fatalError("Error: Demo %s recorded", demoname);
 
         doom_strcpy(error_buf, "Error: Demo ");
         doom_concat(error_buf, demoname);
         doom_concat(error_buf, " recorded");
-        I_Error(error_buf);
+        fatalError(error_buf);
     }
 
     return false;
