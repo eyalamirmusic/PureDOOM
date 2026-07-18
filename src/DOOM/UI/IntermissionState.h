@@ -4,14 +4,14 @@
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "../r_defs.h" // Patch
-#include "../wi_stuff.h" // stateenum_t
+#include "../wi_stuff.h" // IntermissionPhase
 
 namespace Doom
 {
 // The level-completion intermission's residual runtime state and loaded graphics - what
 // UI/Intermission keeps for itself as the single-player count-up, the coop/deathmatch tables and
 // the "you are here" pointer play out. Three loosely-related threads: the timing/state machine
-// (the current stateenum_t `state`, the `acceleratestage` skip flag, the `cnt`/`bcnt` counters, the
+// (the current IntermissionPhase `state`, the `acceleratestage` skip flag, the `cnt`/`bcnt` counters, the
 // per-stage `dm_state`/`ng_state`/`sp_state`, and the animated count-up accumulators `cnt_*`), the
 // passed-in scoreboard data (`wbs`/`plrs`/`me`), and the patches `wiLoadData` reads from the WAD
 // once and the drawers then paint from (`bg`, `num`, `kills`, the player faces, ...) plus the
@@ -34,7 +34,7 @@ struct IntermissionState
 {
     // Timing and the count-up state machine.
     int acceleratestage = 0; // skip the current stage's delay
-    stateenum_t state =
+    IntermissionPhase state =
         StatCount; // zero-init lands here (NoState is -1); reset by wiInit* before use
     int cnt = 0; // general timing
     int bcnt = 0; // background-animation timing

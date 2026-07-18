@@ -24,16 +24,16 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void moveCeiling(ceiling_t& ceiling);
-int doCeiling(Line* line, ceiling_e type);
-void addActiveCeiling(ceiling_t* c);
-void removeActiveCeiling(ceiling_t* c);
+void moveCeiling(Ceiling& ceiling);
+int doCeiling(Line* line, CeilingType type);
+void addActiveCeiling(Ceiling* c);
+void removeActiveCeiling(Ceiling* c);
 void activateInStasisCeiling(Line* line);
 int ceilingCrushStop(Line* line);
 
-void moveCeiling(ceiling_t& ceiling)
+void moveCeiling(Ceiling& ceiling)
 {
-    result_e res;
+    MoveResult res;
 
     switch (ceiling.direction)
     {
@@ -157,12 +157,12 @@ void moveCeiling(ceiling_t& ceiling)
 // doCeiling
 // Move a ceiling up/down and all around!
 //
-int doCeiling(Line* line, ceiling_e type)
+int doCeiling(Line* line, CeilingType type)
 {
     int secnum;
     int rtn;
     Sector* sec;
-    ceiling_t* ceiling;
+    Ceiling* ceiling;
 
     secnum = -1;
     rtn = 0;
@@ -186,7 +186,7 @@ int doCeiling(Line* line, ceiling_e type)
 
         // new door thinker
         rtn = 1;
-        ceiling = new (levelAlloc(sizeof(*ceiling))) ceiling_t {};
+        ceiling = new (levelAlloc(sizeof(*ceiling))) Ceiling {};
         Doom::addThinker(ceiling);
         sec->specialdata = ceiling;
         ceiling->sector = sec;
@@ -233,7 +233,7 @@ int doCeiling(Line* line, ceiling_e type)
 //
 // Add an active ceiling
 //
-void addActiveCeiling(ceiling_t* c)
+void addActiveCeiling(Ceiling* c)
 {
     for (int i = 0; i < MAXCEILINGS; i++)
     {
@@ -248,7 +248,7 @@ void addActiveCeiling(ceiling_t* c)
 //
 // Remove a ceiling's thinker
 //
-void removeActiveCeiling(ceiling_t* c)
+void removeActiveCeiling(Ceiling* c)
 {
     for (int i = 0; i < MAXCEILINGS; i++)
     {

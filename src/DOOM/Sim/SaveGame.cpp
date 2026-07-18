@@ -346,24 +346,24 @@ enum
 //
 // Things to handle:
 //
-// T_MoveCeiling, (ceiling_t: Sector * swizzle), - active list
-// T_VerticalDoor, (vldoor_t: Sector * swizzle),
-// T_MoveFloor, (floormove_t: Sector * swizzle),
-// T_LightFlash, (lightflash_t: Sector * swizzle),
-// T_StrobeFlash, (strobe_t: Sector *),
-// T_Glow, (glow_t: Sector *),
-// T_PlatRaise, (plat_t: Sector *), - active list
+// T_MoveCeiling, (Ceiling: Sector * swizzle), - active list
+// T_VerticalDoor, (Door: Sector * swizzle),
+// T_MoveFloor, (FloorMove: Sector * swizzle),
+// T_LightFlash, (LightFlash: Sector * swizzle),
+// T_StrobeFlash, (Strobe: Sector *),
+// T_Glow, (Glow: Sector *),
+// T_PlatRaise, (Plat: Sector *), - active list
 //
 void archiveSpecials()
 {
     thinker_t* th;
-    ceiling_t* ceiling;
-    vldoor_t* door;
-    floormove_t* floor;
-    plat_t* plat;
-    lightflash_t* flash;
-    strobe_t* strobe;
-    glow_t* glow;
+    Ceiling* ceiling;
+    Door* door;
+    FloorMove* floor;
+    Plat* plat;
+    LightFlash* flash;
+    Strobe* strobe;
+    Glow* glow;
 
     // save off the current thinkers
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
@@ -381,7 +381,7 @@ void archiveSpecials()
             {
                 *save_p++ = tc_ceiling;
                 PADSAVEP();
-                ceiling = reinterpret_cast<ceiling_t*>(save_p);
+                ceiling = reinterpret_cast<Ceiling*>(save_p);
                 doom_memcpy(ceiling, th, sizeof(*ceiling));
                 save_p += sizeof(*ceiling);
                 ceiling->sector =
@@ -394,7 +394,7 @@ void archiveSpecials()
         {
             *save_p++ = tc_ceiling;
             PADSAVEP();
-            ceiling = reinterpret_cast<ceiling_t*>(save_p);
+            ceiling = reinterpret_cast<Ceiling*>(save_p);
             doom_memcpy(ceiling, th, sizeof(*ceiling));
             save_p += sizeof(*ceiling);
             ceiling->sector = reinterpret_cast<Sector*>(ceiling->sector - sectors);
@@ -405,7 +405,7 @@ void archiveSpecials()
         {
             *save_p++ = tc_door;
             PADSAVEP();
-            door = reinterpret_cast<vldoor_t*>(save_p);
+            door = reinterpret_cast<Door*>(save_p);
             doom_memcpy(door, th, sizeof(*door));
             save_p += sizeof(*door);
             door->sector = reinterpret_cast<Sector*>(door->sector - sectors);
@@ -416,7 +416,7 @@ void archiveSpecials()
         {
             *save_p++ = tc_floor;
             PADSAVEP();
-            floor = reinterpret_cast<floormove_t*>(save_p);
+            floor = reinterpret_cast<FloorMove*>(save_p);
             doom_memcpy(floor, th, sizeof(*floor));
             save_p += sizeof(*floor);
             floor->sector = reinterpret_cast<Sector*>(floor->sector - sectors);
@@ -427,7 +427,7 @@ void archiveSpecials()
         {
             *save_p++ = tc_plat;
             PADSAVEP();
-            plat = reinterpret_cast<plat_t*>(save_p);
+            plat = reinterpret_cast<Plat*>(save_p);
             doom_memcpy(plat, th, sizeof(*plat));
             save_p += sizeof(*plat);
             plat->sector = reinterpret_cast<Sector*>(plat->sector - sectors);
@@ -438,7 +438,7 @@ void archiveSpecials()
         {
             *save_p++ = tc_flash;
             PADSAVEP();
-            flash = reinterpret_cast<lightflash_t*>(save_p);
+            flash = reinterpret_cast<LightFlash*>(save_p);
             doom_memcpy(flash, th, sizeof(*flash));
             save_p += sizeof(*flash);
             flash->sector = reinterpret_cast<Sector*>(flash->sector - sectors);
@@ -449,7 +449,7 @@ void archiveSpecials()
         {
             *save_p++ = tc_strobe;
             PADSAVEP();
-            strobe = reinterpret_cast<strobe_t*>(save_p);
+            strobe = reinterpret_cast<Strobe*>(save_p);
             doom_memcpy(strobe, th, sizeof(*strobe));
             save_p += sizeof(*strobe);
             strobe->sector = reinterpret_cast<Sector*>(strobe->sector - sectors);
@@ -460,7 +460,7 @@ void archiveSpecials()
         {
             *save_p++ = tc_glow;
             PADSAVEP();
-            glow = reinterpret_cast<glow_t*>(save_p);
+            glow = reinterpret_cast<Glow*>(save_p);
             doom_memcpy(glow, th, sizeof(*glow));
             save_p += sizeof(*glow);
             glow->sector = reinterpret_cast<Sector*>(glow->sector - sectors);
@@ -478,13 +478,13 @@ void archiveSpecials()
 void unArchiveSpecials()
 {
     byte tclass;
-    ceiling_t* ceiling;
-    vldoor_t* door;
-    floormove_t* floor;
-    plat_t* plat;
-    lightflash_t* flash;
-    strobe_t* strobe;
-    glow_t* glow;
+    Ceiling* ceiling;
+    Door* door;
+    FloorMove* floor;
+    Plat* plat;
+    LightFlash* flash;
+    Strobe* strobe;
+    Glow* glow;
 
     // read in saved thinkers
     while (1)
@@ -497,7 +497,7 @@ void unArchiveSpecials()
 
             case tc_ceiling:
                 PADSAVEP();
-                ceiling = unarchiveThinker<ceiling_t>();
+                ceiling = unarchiveThinker<Ceiling>();
                 ceiling->sector =
                     &sectors[reinterpret_cast<long long>(ceiling->sector)];
                 ceiling->sector->specialdata = ceiling;
@@ -508,7 +508,7 @@ void unArchiveSpecials()
 
             case tc_door:
                 PADSAVEP();
-                door = unarchiveThinker<vldoor_t>();
+                door = unarchiveThinker<Door>();
                 door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
                 Doom::addThinker(door);
@@ -516,7 +516,7 @@ void unArchiveSpecials()
 
             case tc_floor:
                 PADSAVEP();
-                floor = unarchiveThinker<floormove_t>();
+                floor = unarchiveThinker<FloorMove>();
                 floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
                 Doom::addThinker(floor);
@@ -524,7 +524,7 @@ void unArchiveSpecials()
 
             case tc_plat:
                 PADSAVEP();
-                plat = unarchiveThinker<plat_t>();
+                plat = unarchiveThinker<Plat>();
                 plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
 
@@ -534,14 +534,14 @@ void unArchiveSpecials()
 
             case tc_flash:
                 PADSAVEP();
-                flash = unarchiveThinker<lightflash_t>();
+                flash = unarchiveThinker<LightFlash>();
                 flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
                 Doom::addThinker(flash);
                 break;
 
             case tc_strobe:
                 PADSAVEP();
-                strobe = unarchiveThinker<strobe_t>();
+                strobe = unarchiveThinker<Strobe>();
                 strobe->sector =
                     &sectors[reinterpret_cast<long long>(strobe->sector)];
                 Doom::addThinker(strobe);
@@ -549,7 +549,7 @@ void unArchiveSpecials()
 
             case tc_glow:
                 PADSAVEP();
-                glow = unarchiveThinker<glow_t>();
+                glow = unarchiveThinker<Glow>();
                 glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];
                 Doom::addThinker(glow);
                 break;

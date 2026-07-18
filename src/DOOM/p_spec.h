@@ -16,7 +16,7 @@
 //
 // DESCRIPTION:  none
 //        Implements special effects:
-//        Texture animation, height or lighting changes
+//        Doom::Texture animation, height or lighting changes
 //         according to adjacent sectors, respective
 //         utility functions, etc.
 //
@@ -63,7 +63,9 @@ Doom::Sector* getNextSector(Doom::Line* line, Doom::Sector* sec);
 //
 // P_LIGHTS
 //
-struct fireflicker_t : Doom::Thinker
+namespace Doom
+{
+struct FireFlicker : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::FireFlicker; }
@@ -72,9 +74,12 @@ struct fireflicker_t : Doom::Thinker
     int maxlight;
     int minlight;
 };
+} // namespace Doom
 
 
-struct lightflash_t : Doom::Thinker
+namespace Doom
+{
+struct LightFlash : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::LightFlash; }
@@ -85,9 +90,12 @@ struct lightflash_t : Doom::Thinker
     int maxtime;
     int mintime;
 };
+} // namespace Doom
 
 
-struct strobe_t : Doom::Thinker
+namespace Doom
+{
+struct Strobe : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::StrobeFlash; }
@@ -98,9 +106,12 @@ struct strobe_t : Doom::Thinker
     int darktime;
     int brighttime;
 };
+} // namespace Doom
 
 
-struct glow_t : Doom::Thinker
+namespace Doom
+{
+struct Glow : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Glow; }
@@ -109,6 +120,7 @@ struct glow_t : Doom::Thinker
     int maxlight;
     int direction;
 };
+} // namespace Doom
 
 
 #define GLOWSPEED 8
@@ -120,30 +132,39 @@ struct glow_t : Doom::Thinker
 //
 // P_SWITCH
 //
-struct switchlist_t
+namespace Doom
+{
+struct SwitchListEntry
 {
     char name1[9];
     char name2[9];
     short episode;
 };
+} // namespace Doom
 
 
-enum bwhere_e
+namespace Doom
+{
+enum ButtonWhere
 {
     top,
     middle,
     bottom
 };
+} // namespace Doom
 
 
-struct button_t
+namespace Doom
+{
+struct Button
 {
     Doom::Line* line;
-    bwhere_e where;
+    ButtonWhere where;
     int btexture;
     int btimer;
     Doom::Mobj* soundorg;
 };
+} // namespace Doom
 
 
 // max # of wall switches in a level
@@ -158,7 +179,7 @@ struct button_t
 
 // The active-special registries are a Doom::ActiveSpecials owned by the Engine now; these
 // (and activeplats/activeceilings below) are references onto its members (REFACTOR.md, Step 5).
-extern button_t (&buttonlist)[MAXBUTTONS];
+extern Doom::Button (&buttonlist)[MAXBUTTONS];
 
 
 
@@ -166,16 +187,21 @@ extern button_t (&buttonlist)[MAXBUTTONS];
 //
 // P_PLATS
 //
-enum plat_e
+namespace Doom
+{
+enum PlatState
 {
     up,
     down,
     waiting,
     in_stasis
 };
+} // namespace Doom
 
 
-enum plattype_e
+namespace Doom
+{
+enum PlatType
 {
     perpetualRaise,
     downWaitUpStay,
@@ -183,9 +209,12 @@ enum plattype_e
     raiseToNearestAndChange,
     blazeDWUS
 };
+} // namespace Doom
 
 
-struct plat_t : Doom::Thinker
+namespace Doom
+{
+struct Plat : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Plat; }
@@ -195,12 +224,13 @@ struct plat_t : Doom::Thinker
     fixed_t high;
     int wait;
     int count;
-    plat_e status;
-    plat_e oldstatus;
+    PlatState status;
+    PlatState oldstatus;
     doom_boolean crush;
     int tag;
-    plattype_e type;
+    PlatType type;
 };
+} // namespace Doom
 
 
 #define PLATWAIT 3
@@ -208,13 +238,15 @@ struct plat_t : Doom::Thinker
 #define MAXPLATS 30
 
 
-extern plat_t* (&activeplats)[MAXPLATS];
+extern Doom::Plat* (&activeplats)[MAXPLATS];
 
 
 //
 // P_DOORS
 //
-enum vldoor_e
+namespace Doom
+{
+enum DoorType
 {
     door_normal,
     close30ThenOpen,
@@ -225,13 +257,16 @@ enum vldoor_e
     blazeOpen,
     blazeClose
 };
+} // namespace Doom
 
 
-struct vldoor_t : Doom::Thinker
+namespace Doom
+{
+struct Door : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Door; }
-    vldoor_e type;
+    DoorType type;
     Doom::Sector* sector;
     fixed_t topheight;
     fixed_t speed;
@@ -246,6 +281,7 @@ struct vldoor_t : Doom::Thinker
     // when it reaches 0, start going down
     int topcountdown;
 };
+} // namespace Doom
 
 
 #define VDOORSPEED                FRACUNIT*2
@@ -255,7 +291,9 @@ struct vldoor_t : Doom::Thinker
 //
 // P_CEILNG
 //
-enum ceiling_e
+namespace Doom
+{
+enum CeilingType
 {
     lowerToFloor,
     raiseToHighest,
@@ -264,13 +302,16 @@ enum ceiling_e
     fastCrushAndRaise,
     silentCrushAndRaise
 };
+} // namespace Doom
 
 
-struct ceiling_t : Doom::Thinker
+namespace Doom
+{
+struct Ceiling : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Ceiling; }
-    ceiling_e type;
+    CeilingType type;
     Doom::Sector* sector;
     fixed_t bottomheight;
     fixed_t topheight;
@@ -284,6 +325,7 @@ struct ceiling_t : Doom::Thinker
     int tag;
     int olddirection;
 };
+} // namespace Doom
 
 
 #define CEILSPEED FRACUNIT
@@ -291,13 +333,15 @@ struct ceiling_t : Doom::Thinker
 #define MAXCEILINGS 30
 
 
-extern ceiling_t* (&activeceilings)[MAXCEILINGS];
+extern Doom::Ceiling* (&activeceilings)[MAXCEILINGS];
 
 
 //
 // P_FLOOR
 //
-enum floor_e
+namespace Doom
+{
+enum FloorType
 {
     // lower floor to highest surrounding floor
     lowerFloor,
@@ -330,20 +374,26 @@ enum floor_e
     donutRaise,
     raiseFloor512
 };
+} // namespace Doom
 
 
-enum stair_e
+namespace Doom
+{
+enum StairType
 {
     build8,        // slowly build by 8
     turbo16        // quickly build by 16
 };
+} // namespace Doom
 
 
-struct floormove_t : Doom::Thinker
+namespace Doom
+{
+struct FloorMove : Doom::Thinker
 {
     void tick() override;
     Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Floor; }
-    floor_e type;
+    FloorType type;
     doom_boolean crush;
     Doom::Sector* sector;
     int direction;
@@ -352,20 +402,24 @@ struct floormove_t : Doom::Thinker
     fixed_t floordestheight;
     fixed_t speed;
 };
+} // namespace Doom
 
 
 #define FLOORSPEED FRACUNIT
 
 
-enum result_e
+namespace Doom
+{
+enum MoveResult
 {
     ok,
     crushed,
     pastdest
 };
+} // namespace Doom
 
 
-result_e T_MovePlane(Doom::Sector* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);
+Doom::MoveResult T_MovePlane(Doom::Sector* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);
 
 //
 // P_TELEPT

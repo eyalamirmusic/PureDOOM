@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // event_t
+#include "../d_event.h" // Event
 #include "../d_ticcmd.h" // Ticcmd
 #include "../doomdef.h" // Skill
 
@@ -22,7 +22,7 @@ void exitLevel();
 void secretExitLevel();
 void worldDone();
 void gameTicker();
-doom_boolean gameResponder(event_t* ev);
+doom_boolean gameResponder(Event* ev);
 void takeScreenshot();
 void buildTiccmd(Ticcmd* cmd);
 void playerReborn(int player);

@@ -341,7 +341,7 @@ void nightmareRespawn(Mobj* mobj)
     fixed_t z;
     SubSector* ss;
     Mobj* mo;
-    mapthing_t* mthing;
+    MapThing* mthing;
 
     x = mobj->spawnpoint.x << FRACBITS;
     y = mobj->spawnpoint.y << FRACBITS;
@@ -534,7 +534,7 @@ void respawnSpecials()
 
     SubSector* ss;
     Mobj* mo;
-    mapthing_t* mthing;
+    MapThing* mthing;
 
     int i;
 
@@ -587,7 +587,7 @@ void respawnSpecials()
 // Most of the player structure stays unchanged
 // between levels.
 //
-void spawnPlayer(mapthing_t* mthing)
+void spawnPlayer(MapThing* mthing)
 {
     Player* p;
     fixed_t x;
@@ -650,7 +650,7 @@ void spawnPlayer(mapthing_t* mthing)
 // The fields of the mapthing should
 // already be in host byte order.
 //
-void spawnMapThing(mapthing_t* mthing)
+void spawnMapThing(MapThing* mthing)
 {
     int i;
     int bit;

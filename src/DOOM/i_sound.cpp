@@ -45,7 +45,7 @@ void setChannels()
     Doom::setChannels();
 }
 
-int sfxLumpNum(sfxinfo_t* sfxinfo)
+int sfxLumpNum(Doom::SfxInfo* sfxinfo)
 {
     return Doom::sfxLumpNum(sfxinfo);
 }

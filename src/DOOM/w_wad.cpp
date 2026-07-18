@@ -23,11 +23,11 @@
 #include "w_wad.h"
 
 #include "Host/System.h"
-lumpinfo_t* lumpinfo;
+Doom::LumpInfo* lumpinfo;
 int numlumps;
 
-static_assert(sizeof(Doom::Lump) == sizeof(lumpinfo_t),
-              "Doom::Lump must be layout-compatible with vanilla's lumpinfo_t");
+static_assert(sizeof(Doom::Lump) == sizeof(Doom::LumpInfo),
+              "Doom::Lump must be layout-compatible with vanilla's Doom::LumpInfo");
 
 
 // The directory moved into the WadFile, so these two follow it wherever its
@@ -35,7 +35,7 @@ static_assert(sizeof(Doom::Lump) == sizeof(lumpinfo_t),
 static void refreshDirectoryView()
 {
     numlumps = Doom::wad().count();
-    lumpinfo = (lumpinfo_t*) Doom::wad().directory().data();
+    lumpinfo = (Doom::LumpInfo*) Doom::wad().directory().data();
 }
 
 void W_AddFile(char* filename)

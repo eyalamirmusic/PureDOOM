@@ -20,19 +20,19 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void fireFlicker(fireflicker_t& flick);
+void fireFlicker(FireFlicker& flick);
 void spawnFireFlicker(Sector* sector);
-void lightFlash(lightflash_t& flash);
+void lightFlash(LightFlash& flash);
 void spawnLightFlash(Sector* sector);
-void strobeFlash(strobe_t& flash);
+void strobeFlash(Strobe& flash);
 void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync);
 void startLightStrobing(Line* line);
 void turnTagLightsOff(Line* line);
 void lightTurnOn(Line* line, int bright);
-void glow(glow_t& g);
+void glow(Glow& g);
 void spawnGlowingLight(Sector* sector);
 
-void fireFlicker(fireflicker_t& flick)
+void fireFlicker(FireFlicker& flick)
 {
     int amount;
 
@@ -54,13 +54,13 @@ void fireFlicker(fireflicker_t& flick)
 //
 void spawnFireFlicker(Sector* sector)
 {
-    fireflicker_t* flick;
+    FireFlicker* flick;
 
     // Note that we are resetting sector attributes.
     // Nothing special about it during gameplay.
     sector->special = 0;
 
-    flick = new (levelAlloc(sizeof(*flick))) fireflicker_t {};
+    flick = new (levelAlloc(sizeof(*flick))) FireFlicker {};
 
     Doom::addThinker(flick);
 
@@ -78,7 +78,7 @@ void spawnFireFlicker(Sector* sector)
 // lightFlash
 // Do flashing lights.
 //
-void lightFlash(lightflash_t& flash)
+void lightFlash(LightFlash& flash)
 {
     if (--flash.count)
         return;
@@ -102,12 +102,12 @@ void lightFlash(lightflash_t& flash)
 //
 void spawnLightFlash(Sector* sector)
 {
-    lightflash_t* flash;
+    LightFlash* flash;
 
     // nothing special about it during gameplay
     sector->special = 0;
 
-    flash = new (levelAlloc(sizeof(*flash))) lightflash_t {};
+    flash = new (levelAlloc(sizeof(*flash))) LightFlash {};
 
     Doom::addThinker(flash);
 
@@ -127,7 +127,7 @@ void spawnLightFlash(Sector* sector)
 //
 // strobeFlash
 //
-void strobeFlash(strobe_t& flash)
+void strobeFlash(Strobe& flash)
 {
     if (--flash.count)
         return;
@@ -151,9 +151,9 @@ void strobeFlash(strobe_t& flash)
 //
 void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync)
 {
-    strobe_t* flash;
+    Strobe* flash;
 
-    flash = new (levelAlloc(sizeof(*flash))) strobe_t {};
+    flash = new (levelAlloc(sizeof(*flash))) Strobe {};
 
     Doom::addThinker(flash);
 
@@ -265,7 +265,7 @@ void lightTurnOn(Line* line, int bright)
 //
 // Spawn glowing light
 //
-void glow(glow_t& g)
+void glow(Glow& g)
 {
     switch (g.direction)
     {
@@ -293,9 +293,9 @@ void glow(glow_t& g)
 
 void spawnGlowingLight(Sector* sector)
 {
-    glow_t* g;
+    Glow* g;
 
-    g = new (levelAlloc(sizeof(*g))) glow_t {};
+    g = new (levelAlloc(sizeof(*g))) Glow {};
 
     Doom::addThinker(g);
 

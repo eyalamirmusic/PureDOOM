@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_spec.h" // plat_t, ceiling_t, button_t, MAXPLATS, MAXCEILINGS, MAXBUTTONS
+#include "../p_spec.h" // Plat, Ceiling, Button, MAXPLATS, MAXCEILINGS, MAXBUTTONS
 
 namespace Doom
 {
@@ -21,9 +21,9 @@ namespace Doom
 // identical slot, so both hold byte-identical.
 struct ActiveSpecials
 {
-    plat_t* activeplats[MAXPLATS] = {}; // the running platform/lift thinkers
-    ceiling_t* activeceilings[MAXCEILINGS] = {}; // the running ceiling/crusher thinkers
-    button_t buttonlist[MAXBUTTONS] = {}; // switch textures counting down to revert
+    Plat* activeplats[MAXPLATS] = {}; // the running platform/lift thinkers
+    Ceiling* activeceilings[MAXCEILINGS] = {}; // the running ceiling/crusher thinkers
+    Button buttonlist[MAXBUTTONS] = {}; // switch textures counting down to revert
 };
 
 // The one ActiveSpecials, a view onto the Engine's member - the same pattern as

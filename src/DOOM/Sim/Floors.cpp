@@ -26,17 +26,17 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-result_e movePlane(Sector& sector,
+MoveResult movePlane(Sector& sector,
                    fixed_t speed,
                    fixed_t dest,
                    doom_boolean crush,
                    int floorOrCeiling,
                    int direction);
-void moveFloor(floormove_t& floor);
-int doFloor(Line* line, floor_e floortype);
-int buildStairs(Line* line, stair_e type);
+void moveFloor(FloorMove& floor);
+int doFloor(Line* line, FloorType floortype);
+int buildStairs(Line* line, StairType type);
 
-result_e movePlane(Sector& sector,
+MoveResult movePlane(Sector& sector,
                    fixed_t speed,
                    fixed_t dest,
                    doom_boolean crush,
@@ -194,9 +194,9 @@ result_e movePlane(Sector& sector,
 //
 // MOVE A FLOOR TO IT'S DESTINATION (UP OR DOWN)
 //
-void moveFloor(floormove_t& floor)
+void moveFloor(FloorMove& floor)
 {
-    result_e res;
+    MoveResult res;
 
     res = movePlane(*floor.sector,
                     floor.speed,
@@ -244,12 +244,12 @@ void moveFloor(floormove_t& floor)
 //
 // HANDLE FLOOR TYPES
 //
-int doFloor(Line* line, floor_e floortype)
+int doFloor(Line* line, FloorType floortype)
 {
     int secnum;
     int rtn;
     Sector* sec;
-    floormove_t* floor;
+    FloorMove* floor;
 
     secnum = -1;
     rtn = 0;
@@ -263,7 +263,7 @@ int doFloor(Line* line, floor_e floortype)
 
         // new floor thinker
         rtn = 1;
-        floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+        floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
         Doom::addThinker(floor);
         sec->specialdata = floor;
         floor->type = floortype;
@@ -417,7 +417,7 @@ int doFloor(Line* line, floor_e floortype)
 //
 // BUILD A STAIRCASE!
 //
-int buildStairs(Line* line, stair_e type)
+int buildStairs(Line* line, StairType type)
 {
     int secnum;
     int height;
@@ -429,7 +429,7 @@ int buildStairs(Line* line, stair_e type)
     Sector* sec;
     Sector* tsec;
 
-    floormove_t* floor;
+    FloorMove* floor;
 
     fixed_t stairsize;
     fixed_t speed;
@@ -446,7 +446,7 @@ int buildStairs(Line* line, stair_e type)
 
         // new floor thinker
         rtn = 1;
-        floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+        floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
         Doom::addThinker(floor);
         sec->specialdata = floor;
         floor->direction = 1;
@@ -498,7 +498,7 @@ int buildStairs(Line* line, stair_e type)
 
                 sec = tsec;
                 secnum = newsecnum;
-                floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+                floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
 
                 Doom::addThinker(floor);
 

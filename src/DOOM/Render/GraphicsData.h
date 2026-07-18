@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../r_data.h" // texture_t, and SpriteDef / lighttable_t / fixed_t through it
+#include "../r_data.h" // Texture, and SpriteDef / lighttable_t / fixed_t through it
 
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -25,13 +25,13 @@ struct GraphicsData
 {
     // Wall textures: the composed texture table and its count, each texture's height
     // (for pegging), and the animation redirect R_UpdateAnimations walks. RAII-owned
-    // (Step 9): textureStorage owns the texture_t structs by value (each owning its
-    // own patches vector); texturePointers is the texture_t* array that the vanilla
-    // name `textures` (a texture_t** view, r_data.cpp) points at, so readers using
+    // (Step 9): textureStorage owns the Texture structs by value (each owning its
+    // own patches vector); texturePointers is the Texture* array that the vanilla
+    // name `textures` (a Texture** view, r_data.cpp) points at, so readers using
     // textures[i]->field are unchanged. Both sized once by Doom::initTextures.
     int numtextures = 0;
-    EA::Vector<texture_t> textureStorage;
-    EA::Vector<texture_t*> texturePointers;
+    EA::Vector<Texture> textureStorage;
+    EA::Vector<Texture*> texturePointers;
     EA::Vector<fixed_t>
         textureheight; // RAII-owned (Step 9); r_data's name is a view
     EA::Vector<int>

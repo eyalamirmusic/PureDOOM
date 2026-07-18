@@ -205,10 +205,10 @@ extern doom_boolean (&playeringame)[MAXPLAYERS];
 // Doom::Player spawn spots. These live in Doom::MapSpawns (an Engine member) now; the references
 // onto it are references-to-array for the two arrays (REFACTOR.md, Step 5).
 #define MAX_DM_STARTS 10
-extern mapthing_t (&deathmatchstarts)[MAX_DM_STARTS];
-extern mapthing_t*& deathmatch_p;
+extern Doom::MapThing (&deathmatchstarts)[MAX_DM_STARTS];
+extern Doom::MapThing*& deathmatch_p;
 
-extern mapthing_t (&playerstarts)[MAXPLAYERS];
+extern Doom::MapThing (&playerstarts)[MAXPLAYERS];
 
 // Intermission stats. Parameters for world map / intermission. In Doom::IntermissionInfo
 // (an Engine member) now; a reference onto it (REFACTOR.md, Step 5).
@@ -261,10 +261,10 @@ extern int& skyflatnum;
 // (REFACTOR.md, Step 5).
 
 // This is ???
-extern doomcom_t*& doomcom;
+extern Doom::DoomCom*& doomcom;
 
 // This points inside doomcom.
-extern doomdata_t*& netbuffer;
+extern Doom::NetPacket*& netbuffer;
 
 
 extern Doom::Ticcmd (&localcmds)[BACKUPTICS];

@@ -38,7 +38,9 @@
 //
 
 // Number widget
-struct st_number_t
+namespace Doom
+{
+struct StatusNumber
 {
     // upper right-hand corner
     //  of the number (right-justified)
@@ -64,22 +66,28 @@ struct st_number_t
     // user data
     int data;
 };
+} // namespace Doom
 
 
 // Percent widget ("child" of number widget,
 //  or, more precisely, contains a number widget.)
-struct st_percent_t
+namespace Doom
+{
+struct StatusPercent
 {
     // number information
-    st_number_t n;
+    StatusNumber n;
 
     // percent sign graphic
     Doom::Patch* p;
 };
+} // namespace Doom
 
 
 // Multiple Icon widget
-struct st_multicon_t
+namespace Doom
+{
+struct StatusMultIcon
 {
     // center-justified location of icons
     int x;
@@ -101,10 +109,13 @@ struct st_multicon_t
     // user data
     int data;
 };
+} // namespace Doom
 
 
 // Binary Icon widget
-struct st_binicon_t
+namespace Doom
+{
+struct StatusBinIcon
 {
     // center-justified location of icon
     int x;
@@ -125,6 +136,7 @@ struct st_binicon_t
     int data;   // user data
 
 };
+} // namespace Doom
 
 
 //-----------------------------------------------------------------------------

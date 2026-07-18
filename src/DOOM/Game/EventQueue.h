@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // event_t, MAXEVENTS
+#include "../d_event.h" // Event, MAXEVENTS
 #include "DoomMain.h"
 
 namespace Doom
@@ -18,7 +18,7 @@ namespace Doom
 // identical slot.
 struct EventQueue
 {
-    event_t events[MAXEVENTS] = {}; // the pending input events
+    Event events[MAXEVENTS] = {}; // the pending input events
     int eventhead = 0; // where the next posted event lands
     int eventtail = 0; // where the next drained event is read
 };

@@ -21,5 +21,5 @@
 
 // activeceilings is declared in p_spec.h and read by p_saveg; it is a member of the
 // Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
-ceiling_t* (&activeceilings)[MAXCEILINGS] = Doom::activeSpecials().activeceilings;
+Doom::Ceiling* (&activeceilings)[MAXCEILINGS] = Doom::activeSpecials().activeceilings;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../st_stuff.h" // st_stateenum_t, st_chatstateenum_t
+#include "../st_stuff.h" // StatusBarMode, ChatState
 
 // Doom::Player is used only by pointer here, so a forward declaration is enough.
 namespace Doom
@@ -38,7 +38,7 @@ struct StatusBarState
                                          // no bar). The app reads it to know whether to
                                          // composite the bar strip, and the STlib widgets
                                          // bind their "on" pointer to it.
-    st_stateenum_t st_gamestate = {}; // automap vs first-person (0 = AutomapState)
+    StatusBarMode st_gamestate = {}; // automap vs first-person (0 = AutomapState)
     doom_boolean st_notdeathmatch = false; // single-player layout (arms, not frags)
     doom_boolean st_armson = false; // the arms panel is shown (not DM, bar up)
     doom_boolean st_fragson = false; // the frags summary is shown (deathmatch)
@@ -46,7 +46,7 @@ struct StatusBarState
     int keyboxes[3] = {}; // the key-type shown in each of the three key slots
 
     // The status-bar chat line (the "t"-to-talk entry).
-    st_chatstateenum_t st_chatstate =
+    ChatState st_chatstate =
         {}; // where in chat entry we are (0 = StartChatState)
     doom_boolean st_chat = false; // chat entry is active
     doom_boolean st_oldchat = false; // st_chat before a message popped up

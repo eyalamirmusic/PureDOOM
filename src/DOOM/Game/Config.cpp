@@ -131,7 +131,7 @@ int& always_run = Doom::inputConfig().always_run;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wwritable-strings"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-default_t defaults[] = {
+Doom::ConfigDefault defaults[] = {
     // These config-backed globals are Engine members reached through references, so their
     // location is bound to the member at runtime (bindEngineDefaults) rather than captured
     // here: a static &member would take the address of a reference before the Engine exists
@@ -188,7 +188,7 @@ default_t defaults[] = {
     {"chatmacro9", 0, STRING_VALUE, 0, 0, &chat_macros[9], HUSTR_CHATMACRO9}};
 
 #pragma GCC diagnostic pop
-int numdefaults = sizeof(defaults) / sizeof(default_t);
+int numdefaults = sizeof(defaults) / sizeof(Doom::ConfigDefault);
 // defaultfile is an Engine member now (Game/ConfigPaths.h); reference onto it.
 char*& defaultfile = Doom::configPaths().defaultfile;
 

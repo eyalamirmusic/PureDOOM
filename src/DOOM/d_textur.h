@@ -30,12 +30,15 @@
 // Flats?
 //
 // a pic is an unmasked block of pixels
-struct pic_t
+namespace Doom
+{
+struct Pic
 {
     byte width;
     byte height;
     byte data;
 };
+} // namespace Doom
 
 
 

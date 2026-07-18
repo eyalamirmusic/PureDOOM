@@ -27,7 +27,7 @@
 
 // The vector graphics for the automap (the GPU automap path reads these shapes).
 #define R ((8 * PLAYERRADIUS) / 7)
-mline_t player_arrow[] = {
+Doom::MapLine player_arrow[] = {
     { { -R + R / 8, 0 }, { R, 0 } }, // -----
     { { R, 0 }, { R - R / 2, R / 4 } },  // ----->
     { { R, 0 }, { R - R / 2, -R / 4 } },
@@ -39,7 +39,7 @@ mline_t player_arrow[] = {
 #undef R
 
 #define R ((8 * PLAYERRADIUS) / 7)
-mline_t cheat_player_arrow[] = {
+Doom::MapLine cheat_player_arrow[] = {
     { { -R + R / 8, 0 }, { R, 0 } }, // -----
     { { R, 0 }, { R - R / 2, R / 6 } },  // ----->
     { { R, 0 }, { R - R / 2, -R / 6 } },
@@ -60,7 +60,7 @@ mline_t cheat_player_arrow[] = {
 #undef R
 
 #define R (FRACUNIT)
-mline_t thintriangle_guy[] = {
+Doom::MapLine thintriangle_guy[] = {
     { { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) }, { R, 0 } },
     { { R, 0 }, { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) } },
     { { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) }, { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) } }

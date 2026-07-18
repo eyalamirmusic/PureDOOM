@@ -39,39 +39,37 @@
 //
 // TYPES
 //
-struct wadinfo_t
+namespace Doom
+{
+struct WadInfo
 {
     // Should be "IWAD" or "PWAD".
     char identification[4];
     int numlumps;
     int infotableofs;
 };
-
-
-struct filelump_t
-{
-    int filepos;
-    int size;
-    char name[8];
-};
+} // namespace Doom
 
 
 //
 // WADFILE I/O related stuff.
 //
-struct lumpinfo_t
+namespace Doom
+{
+struct LumpInfo
 {
     char name[8];
     void* handle;
     int position;
     int size;
 };
+} // namespace Doom
 
 
 // lumpcache is gone with the zone's lump ownership: Doom::WadFile (Wad/WadFile.h)
 // owns the bytes now, and a lump pointer stays valid for as long as the WAD does.
 // These two are a view onto its directory, not a second copy of it.
-extern lumpinfo_t* lumpinfo;
+extern Doom::LumpInfo* lumpinfo;
 extern int numlumps;
 
 void W_InitMultipleFiles(char** filenames);

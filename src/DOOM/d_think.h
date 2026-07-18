@@ -38,10 +38,13 @@
 //
 typedef void (*actionf_p1)(void*);
 
-struct actionf_t
+namespace Doom
+{
+struct ActionFunc
 {
     actionf_p1 fn;
 };
+} // namespace Doom
 
 
 // The doubly-linked list node is now a real base class with a virtual tick() -

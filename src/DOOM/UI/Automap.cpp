@@ -125,13 +125,13 @@ struct islope_t
 //
 
 #define R (FRACUNIT)
-EA::Array<mline_t, 3> triangle_guy = {
+EA::Array<MapLine, 3> triangle_guy = {
     {{static_cast<fixed_t>(-.867 * R), static_cast<fixed_t>(-.5 * R)},
      {static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}},
     {{static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}, {0, R}},
     {{0, R}, {static_cast<fixed_t>(-.867 * R), static_cast<fixed_t>(-.5 * R)}}};
 #undef R
-#define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(mline_t))
+#define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(MapLine))
 
 // The automap's internal view state is a Doom::AutomapView owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members, the arrays as
@@ -145,7 +145,7 @@ static int& finit_height = automapView().finit_height;
 static byte*& fb = automapView().fb; // pseudo-frame buffer
 static int& amclock = automapView().amclock;
 
-static mpoint_t& m_paninc =
+static MapPoint& m_paninc =
     automapView().m_paninc; // window pan per tic (map coords)
 static fixed_t& mtof_zoommul =
     automapView().mtof_zoommul; // window zoom per tic (map)
@@ -183,25 +183,25 @@ static fixed_t& old_m_x = automapView().old_m_x;
 static fixed_t& old_m_y = automapView().old_m_y;
 
 // old location used by the Follower routine
-static mpoint_t& f_oldloc = automapView().f_oldloc;
+static MapPoint& f_oldloc = automapView().f_oldloc;
 
 // used by MTOF/FTOM to scale between map and frame-buffer coords (=1/scale_mtof)
 static fixed_t& scale_ftom = automapView().scale_ftom;
 
 static Patch* (&marknums)[10] = automapView().marknums; // mark-number patches
-static mpoint_t (&markpoints)[AM_NUMMARKPOINTS] =
+static MapPoint (&markpoints)[AM_NUMMARKPOINTS] =
     automapView().markpoints; // the marks
 static int& markpointnum = automapView().markpointnum; // next point to be assigned
 
 static EA::Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
-static cheatseq_t cheat_amap = {cheat_amap_seq.data(), 0};
+static CheatSequence cheat_amap = {cheat_amap_seq.data(), 0};
 
 static doom_boolean& stopped = automapView().stopped;
 
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so
 // that it can be used with the brain-dead drawing stuff.
-void amGetIslope(mline_t* ml, islope_t* is)
+void amGetIslope(MapLine* ml, islope_t* is)
 {
     int dx, dy;
 
@@ -350,7 +350,7 @@ void amChangeWindowLoc()
 void amInitVariables()
 {
     int pnum;
-    static event_t st_notify = {ev_keyup, AM_MSGENTERED, 0, 0};
+    static Event st_notify = {ev_keyup, AM_MSGENTERED, 0, 0};
 
     automapactive = true;
     fb = screens[0];
@@ -441,7 +441,7 @@ void amLevelInit()
 //
 void stopAutomap()
 {
-    static event_t st_notify = {static_cast<evtype_t>(0), ev_keyup, AM_MSGEXITED, 0};
+    static Event st_notify = {static_cast<EventType>(0), ev_keyup, AM_MSGEXITED, 0};
 
     amUnloadPics();
     automapactive = false;
@@ -493,7 +493,7 @@ void amMaxOutWindowScale()
 //
 // Handle events (user inputs) in automap mode
 //
-doom_boolean automapResponder(event_t* ev)
+doom_boolean automapResponder(Event* ev)
 {
     int rc;
     int& bigstate = automapView().bigstate;
@@ -721,7 +721,7 @@ void amClearFB(int color)
 // faster reject and precalculated slopes.  If the speed is needed,
 // use a hash algorithm to handle  the common cases.
 //
-doom_boolean amClipMline(mline_t* ml, fline_t* fl)
+doom_boolean amClipMline(MapLine* ml, fline_t* fl)
 {
     enum
     {
@@ -928,7 +928,7 @@ void amDrawFline(fline_t* fl, int color)
 //
 // Clip lines, draw visible part sof lines.
 //
-void amDrawMline(mline_t* ml, int color)
+void amDrawMline(MapLine* ml, int color)
 {
     static fline_t fl;
 
@@ -943,7 +943,7 @@ void amDrawGrid(int color)
 {
     fixed_t x, y;
     fixed_t start, end;
-    mline_t ml;
+    MapLine ml;
 
     // Figure out start of vertical gridlines
     start = m_x;
@@ -986,7 +986,7 @@ void amDrawGrid(int color)
 //
 void amDrawWalls()
 {
-    static mline_t l;
+    static MapLine l;
 
     for (int i = 0; i < numlines; i++)
     {
@@ -1056,7 +1056,7 @@ void rotateAutomapPoint(fixed_t* x, fixed_t* y, angle_t a)
     *x = tmpx;
 }
 
-void amDrawLineCharacter(mline_t* lineguy,
+void amDrawLineCharacter(MapLine* lineguy,
                          int lineguylines,
                          fixed_t scale,
                          angle_t angle,
@@ -1064,7 +1064,7 @@ void amDrawLineCharacter(mline_t* lineguy,
                          fixed_t x,
                          fixed_t y)
 {
-    mline_t l;
+    MapLine l;
 
     for (int i = 0; i < lineguylines; i++)
     {

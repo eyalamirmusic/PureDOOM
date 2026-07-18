@@ -73,8 +73,8 @@
 // The netcode buffers and tic bookkeeping are a Doom::NetState owned by the Engine now; these
 // (and maketic/ticdup below) are references onto it, the arrays as references-to-array
 // (REFACTOR.md, Step 5).
-doomcom_t*& doomcom = Doom::netState().doomcom;
-doomdata_t*& netbuffer = Doom::netState().netbuffer; // points inside doomcom
+Doom::DoomCom*& doomcom = Doom::netState().doomcom;
+Doom::NetPacket*& netbuffer = Doom::netState().netbuffer; // points inside doomcom
 
 Doom::Ticcmd (&localcmds)[BACKUPTICS] = Doom::netState().localcmds;
 
@@ -95,7 +95,7 @@ int& ticdup = Doom::netState().ticdup;
 int& maxsend = Doom::netState().maxsend; // BACKUPTICS/(2*ticdup)-1
 
 doom_boolean& reboundpacket = Doom::netState().reboundpacket;
-doomdata_t& reboundstore = Doom::netState().reboundstore;
+Doom::NetPacket& reboundstore = Doom::netState().reboundstore;
 
 char (&exitmsg)[80] = Doom::netState().exitmsg;
 int& gametime = Doom::netState().gametime;
@@ -115,7 +115,7 @@ namespace Doom
 
 int netbufferSize()
 {
-    return (int) (long long) &(((doomdata_t*) 0)->cmds[netbuffer->numtics]);
+    return (int) (long long) &(((NetPacket*) 0)->cmds[netbuffer->numtics]);
 }
 
 //
@@ -133,7 +133,7 @@ unsigned netbufferChecksum()
     return 0; // byte order problems
     // #endif
 
-    l = (netbufferSize() - (int) (long long) &(((doomdata_t*) 0)->retransmitfrom))
+    l = (netbufferSize() - (int) (long long) &(((NetPacket*) 0)->retransmitfrom))
         / 4;
     for (i = 0; i < l; i++)
         c += (reinterpret_cast<unsigned*>(&netbuffer->retransmitfrom))[i] * (i + 1);
@@ -544,7 +544,7 @@ listen:
 //
 void checkAbort()
 {
-    event_t* ev;
+    Event* ev;
     int stoptic;
 
     stoptic = currentTic() + 2;

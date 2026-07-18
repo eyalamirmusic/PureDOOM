@@ -18,7 +18,7 @@
 
 #include "Sim/Floors.h"
 
-result_e T_MovePlane(Doom::Sector* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction)
+Doom::MoveResult T_MovePlane(Doom::Sector* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction)
 {
     return Doom::movePlane(*sector, speed, dest, crush, floorOrCeiling, direction);
 }

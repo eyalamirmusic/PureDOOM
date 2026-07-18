@@ -26,30 +26,38 @@
 
 
 //
-// Event handling.
+// Doom::Event handling.
 //
 
 // Input event types.
-enum evtype_t
+namespace Doom
+{
+enum EventType
 {
     ev_keydown,
     ev_keyup,
     ev_mouse,
     ev_joystick
 };
+} // namespace Doom
 
 
-// Event structure.
-struct event_t
+// Doom::Event structure.
+namespace Doom
 {
-    evtype_t type;
+struct Event
+{
+    EventType type;
     int data1;  // keys / mouse/joystick buttons
     int data2;  // mouse/joystick x move
     int data3;  // mouse/joystick y move
 };
+} // namespace Doom
 
 
-enum gameaction_t
+namespace Doom
+{
+enum GameAction
 {
     ga_nothing,
     ga_loadlevel,
@@ -62,12 +70,15 @@ enum gameaction_t
     ga_worlddone,
     ga_screenshot
 };
+} // namespace Doom
 
 
 //
-// Button/action code definitions.
+// Doom::Button/action code definitions.
 //
-enum buttoncode_t
+namespace Doom
+{
+enum ButtonCode
 {
     // Press "Fire".
     BT_ATTACK = 1,
@@ -95,6 +106,7 @@ enum buttoncode_t
     BTS_SAVEMASK = (4 + 8 + 16),
     BTS_SAVESHIFT = 2,
 };
+} // namespace Doom
 
 
 //
@@ -104,13 +116,13 @@ enum buttoncode_t
 
 // The input event ring buffer is a Doom::EventQueue owned by the Engine now; these are
 // references onto its members (REFACTOR.md, Step 5).
-extern event_t (&events)[MAXEVENTS];
+extern Doom::Event (&events)[MAXEVENTS];
 extern int& eventhead;
 extern int& eventtail;
 
 // The pending game action is a member of the Doom::GameFlow owned by the Engine now; this is
 // a reference onto it (REFACTOR.md, Step 5).
-extern gameaction_t& gameaction;
+extern Doom::GameAction& gameaction;
 
 
 

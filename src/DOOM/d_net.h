@@ -42,17 +42,22 @@
 #define BACKUPTICS                12
 
 
-enum command_t
+namespace Doom
+{
+enum NetCommandKind
 {
     CMD_SEND = 1,
     CMD_GET = 2
 };
+} // namespace Doom
 
 
 //
 // Network packet data.
 //
-struct doomdata_t
+namespace Doom
+{
+struct NetPacket
 {
     // High bit is retransmit request.
     unsigned checksum;
@@ -64,9 +69,12 @@ struct doomdata_t
     byte numtics;
     Doom::Ticcmd cmds[BACKUPTICS];
 };
+} // namespace Doom
 
 
-struct doomcom_t
+namespace Doom
+{
+struct DoomCom
 {
     // Supposed to be DOOMCOM_ID?
     long id;
@@ -112,8 +120,9 @@ struct doomcom_t
     short drone;
 
     // The packet data to be sent.
-    doomdata_t data;
+    NetPacket data;
 };
+} // namespace Doom
 
 
 // Create any new ticcmds and broadcast to other players.

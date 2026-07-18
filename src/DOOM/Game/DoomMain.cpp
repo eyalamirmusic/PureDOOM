@@ -106,7 +106,7 @@ doom_boolean& respawnparm =
     Doom::launchOptions().respawnparm; // checkparm of -respawn
 doom_boolean& fastparm = Doom::launchOptions().fastparm; // checkparm of -fast
 
-// (drone, an always-unread vestige, was deleted here - the doomcom_t.drone in d_net.h
+// (drone, an always-unread vestige, was deleted here - the Doom::DoomCom.drone in d_net.h
 // is an unrelated struct member.)
 
 // singletics / debugfile are Doom::EngineParams owned by the Engine now; these are references onto
@@ -142,7 +142,7 @@ char (&basedefault)[1024] = Doom::configPaths().basedefault; // default file
 //
 // The input event ring buffer is a Doom::EventQueue owned by the Engine now; these vanilla
 // names are references onto it (events[] as a reference-to-array).
-event_t (&events)[MAXEVENTS] = Doom::eventQueue().events;
+Doom::Event (&events)[MAXEVENTS] = Doom::eventQueue().events;
 int& eventhead = Doom::eventQueue().eventhead;
 int& eventtail = Doom::eventQueue().eventtail;
 
@@ -187,7 +187,7 @@ void doAdvanceDemo();
 // postEvent
 // Called by the I/O functions when input is detected
 //
-void postEvent(event_t* ev)
+void postEvent(Event* ev)
 {
     events[eventhead] = *ev;
     eventhead++;
@@ -200,7 +200,7 @@ void postEvent(event_t* ev)
 //
 void processEvents()
 {
-    event_t* ev;
+    Event* ev;
 
     // IF STORE DEMO, DO NOT ACCEPT INPUT
     if ((gamemode == commercial) && (W_CheckNumForName("map01") < 0))

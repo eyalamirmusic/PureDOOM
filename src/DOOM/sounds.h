@@ -26,7 +26,9 @@
 //
 // SoundFX struct.
 //
-struct sfxinfo_t
+namespace Doom
+{
+struct SfxInfo
 {
     // up to 6-character name
     char* name;
@@ -38,7 +40,7 @@ struct sfxinfo_t
     int priority;
 
     // referenced sound if a link
-    sfxinfo_t* link;
+    SfxInfo* link;
 
     // pitch if a link
     int pitch;
@@ -57,12 +59,15 @@ struct sfxinfo_t
     // lump number of sfx
     int lumpnum;
 };
+} // namespace Doom
 
 
 //
-// MusicInfo struct.
+// Doom::MusicInfo struct.
 //
-struct musicinfo_t
+namespace Doom
+{
+struct MusicInfo
 {
     // up to 6-character name
     char* name;
@@ -76,18 +81,21 @@ struct musicinfo_t
     // music handle once registered
     int handle;
 };
+} // namespace Doom
 
 
 // the complete set of sound effects
-extern sfxinfo_t S_sfx[];
+extern Doom::SfxInfo S_sfx[];
 
 // the complete set of music
-extern musicinfo_t S_music[];
+extern Doom::MusicInfo S_music[];
 
 //
 // Identifiers for all music in game.
 //
-enum musicenum_t
+namespace Doom
+{
+enum MusicEnum
 {
     mus_None,
     mus_e1m1,
@@ -159,12 +167,15 @@ enum musicenum_t
     mus_dm2int,
     NUMMUSIC
 };
+} // namespace Doom
 
 
 //
 // Identifiers for all sfx in game.
 //
-enum sfxenum_t
+namespace Doom
+{
+enum SfxEnum
 {
     sfx_None,
     sfx_pistol,
@@ -277,6 +288,7 @@ enum sfxenum_t
     sfx_radio,
     NUMSFX
 };
+} // namespace Doom
 
 
 //-----------------------------------------------------------------------------

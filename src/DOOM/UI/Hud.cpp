@@ -89,19 +89,19 @@ namespace Doom
 // owned by the Engine now, moved by the file-scope-statics sweep; these names are references onto
 // the members (headsupactive follows below, at its own site) (REFACTOR.md, Step 5).
 static Player*& plr = hudState().plr;
-static hu_textline_t& w_title = hudState().w_title;
+static HudTextLine& w_title = hudState().w_title;
 // The heads-up chat state is a Doom::HudChat owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
-static hu_itext_t& w_chat = hudChat().w_chat;
+static HudInputText& w_chat = hudChat().w_chat;
 static doom_boolean& always_off = hudChat().always_off;
 static char (&chat_dest)[MAXPLAYERS] = hudChat().chat_dest;
-static hu_itext_t (&w_inputbuffer)[MAXPLAYERS] = hudChat().w_inputbuffer;
+static HudInputText (&w_inputbuffer)[MAXPLAYERS] = hudChat().w_inputbuffer;
 // The HUD message line is a Doom::HudMessage owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).
 static doom_boolean& message_on = hudMessage().message_on;
 static doom_boolean& message_nottobefuckedwith =
     hudMessage().message_nottobefuckedwith;
-static hu_stext_t& w_message = hudMessage().w_message;
+static HudScrollingText& w_message = hudMessage().w_message;
 static int& message_counter = hudMessage().message_counter;
 static doom_boolean& headsupactive = hudState().headsupactive;
 static char (&chatchars)[QUEUESIZE] =
@@ -440,7 +440,7 @@ char dequeueChatChar()
     return c;
 }
 
-doom_boolean hudResponder(event_t* ev)
+doom_boolean hudResponder(Event* ev)
 {
     char(&lastmessage)[HU_MAXLINELENGTH + 1] = hudChat().lastmessage; // ref-to-array onto member
     char* macromessage;

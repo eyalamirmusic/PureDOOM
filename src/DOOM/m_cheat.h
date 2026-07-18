@@ -31,11 +31,14 @@
  + (((a)&16)>>1) + ((a)&32) + (((a)&64)>>5) + (((a)&128)>>7))
 
 
-struct cheatseq_t
+namespace Doom
+{
+struct CheatSequence
 {
     unsigned char* sequence;
     unsigned char* p;
 };
+} // namespace Doom
 
 
 

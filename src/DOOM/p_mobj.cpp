@@ -34,7 +34,7 @@
 // arrays are read only here and by Sim/Doom::Mobj.cpp through these definitions.
 // The item respawn queue is a Doom::ItemRespawnQueue owned by the Engine now; these are
 // references onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
-mapthing_t (&itemrespawnque)[ITEMQUESIZE] = Doom::itemRespawnQueue().itemrespawnque;
+Doom::MapThing (&itemrespawnque)[ITEMQUESIZE] = Doom::itemRespawnQueue().itemrespawnque;
 int (&itemrespawntime)[ITEMQUESIZE] = Doom::itemRespawnQueue().itemrespawntime;
 int& iquehead = Doom::itemRespawnQueue().iquehead;
 int& iquetail = Doom::itemRespawnQueue().iquetail;

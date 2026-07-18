@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../d_event.h" // event_t
+#include "../d_event.h" // Event
 #include "../m_fixed.h" // fixed_t
 #include "../tables.h" // angle_t
 
 namespace Doom
 {
 // The automap; am_map.cpp keeps the vanilla AM_ names as shims.
-doom_boolean automapResponder(event_t* ev);
+doom_boolean automapResponder(Event* ev);
 void automapTicker();
 void drawAutomap();
 void stopAutomap();

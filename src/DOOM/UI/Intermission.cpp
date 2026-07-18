@@ -131,7 +131,7 @@ struct point_t
 
 //
 // Animation.
-// There is another anim_t used in p_spec.
+// There is another SurfaceAnim used in p_spec.
 //
 struct anim_t_wi_stuff
 {
@@ -284,7 +284,7 @@ static int& acceleratestage = intermissionState().acceleratestage;
 static int& me = intermissionState().me;
 
 // specifies current state
-static stateenum_t& state = intermissionState().state;
+static IntermissionPhase& state = intermissionState().state;
 
 // contains information passed into intermission
 static IntermissionStart*& wbs = intermissionState().wbs;
@@ -392,7 +392,7 @@ void wiSlamBackground()
 
 // The ticker is used to detect keys
 //  because of timing issues in netgames.
-doom_boolean wiResponder(event_t*)
+doom_boolean wiResponder(Event*)
 {
     return false;
 }

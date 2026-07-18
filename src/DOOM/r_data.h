@@ -26,7 +26,7 @@
 #include "r_defs.h"
 #include "r_state.h"
 
-// texture_t owns its patches in an EA::Vector now (RAII, REFACTOR.md Step 9).
+// Doom::Texture owns its patches in an EA::Vector now (RAII, REFACTOR.md Step 9).
 #include <ea_data_structures/Structures/Vector.h>
 
 
@@ -34,7 +34,9 @@
 // A single patch from a texture definition,
 // basically a rectangular area within
 // the texture rectangle.
-struct texpatch_t
+namespace Doom
+{
+struct TexPatch
 {
     // Block origin (allways UL),
     // which has allready accounted
@@ -43,12 +45,15 @@ struct texpatch_t
     int originy;
     int patch;
 };
+} // namespace Doom
 
 
 // A maptexturedef_t describes a rectangular texture,
 // which is composed of one or more mappatch_t structures
 // that arrange graphic patches.
-struct texture_t
+namespace Doom
+{
+struct Texture
 {
     // Keep name for switch changing, etc.
     char name[8];
@@ -58,11 +63,12 @@ struct texture_t
     // All the patches[patchcount]
     //  are drawn back to front into the cached texture. RAII-owned (Step 9): was a
     //  trailing flexible-array-member (patches[1] with a variable-length malloc);
-    //  now an owned vector, so a texture_t is fixed-size and frees its own patches.
+    //  now an owned vector, so a Texture is fixed-size and frees its own patches.
     //  Readers index it as before (patches[j], &patches[0]).
     short patchcount;
-    EA::Vector<texpatch_t> patches;
+    EA::Vector<TexPatch> patches;
 };
+} // namespace Doom
 
 
 // Every wall texture the WAD loaded, and how many.
@@ -73,9 +79,9 @@ struct texture_t
 // cached columns (which are post data, not pixels, for exactly those textures)
 // has to compose them the same way.
 // The texture table lives in Doom::GraphicsData (an Engine member) now. It owns the
-// texture_t structs by value; `textures` stays a texture_t** (a view onto a pointer
+// Doom::Texture structs by value; `textures` stays a Doom::Texture** (a view onto a pointer
 // array into that storage) so every `textures[i]->field` reader is unchanged (Step 9).
-extern texture_t** textures;
+extern Doom::Texture** textures;
 
 
 

@@ -141,7 +141,7 @@ static doom_boolean& castattacking = finaleState().castattacking;
 
 void fStartCast();
 void fCastTicker();
-doom_boolean fCastResponder(event_t* ev);
+doom_boolean fCastResponder(Event* ev);
 void fCastDrawer();
 
 //
@@ -241,7 +241,7 @@ void startFinale()
     finalecount = 0;
 }
 
-doom_boolean finaleResponder(event_t* event)
+doom_boolean finaleResponder(Event* event)
 {
     if (finalestage == 2)
         return fCastResponder(event);
@@ -526,7 +526,7 @@ void fCastTicker()
 //
 // fCastResponder
 //
-doom_boolean fCastResponder(event_t* ev)
+doom_boolean fCastResponder(Event* ev)
 {
     if (ev->type != ev_keydown)
         return false;

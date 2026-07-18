@@ -34,7 +34,7 @@
 #include "../Host/System.h"
 #include "Mobj.h"
 #include "Switches.h"
-void Doom::spawnMapThing(mapthing_t* mthing);
+void Doom::spawnMapThing(Doom::MapThing* mthing);
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -58,12 +58,12 @@ void init();
 void loadVertexes(int lump)
 {
     byte* data;
-    mapvertex_t* ml;
+    MapVertex* ml;
     Vertex* li;
 
     // Determine number of lumps:
     //  total lump length / vertex record length.
-    numvertexes = W_LumpLength(lump) / sizeof(mapvertex_t);
+    numvertexes = W_LumpLength(lump) / sizeof(MapVertex);
 
     // Owned by the Level now (Sim/Level.h); vertexes is a view onto its vector.
     // assign, not resize, so a shorter second level does not inherit the first
@@ -74,7 +74,7 @@ void loadVertexes(int lump)
     // Load data into cache.
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ml = reinterpret_cast<mapvertex_t*>(data);
+    ml = reinterpret_cast<MapVertex*>(data);
     li = vertexes;
 
     // Copy and convert vertex coordinates,
@@ -94,18 +94,18 @@ void loadVertexes(int lump)
 void loadSegs(int lump)
 {
     byte* data;
-    mapseg_t* ml;
+    MapSeg* ml;
     Seg* li;
     Line* ldef;
     int linedef;
     int side;
 
-    numsegs = W_LumpLength(lump) / sizeof(mapseg_t);
+    numsegs = W_LumpLength(lump) / sizeof(MapSeg);
     Doom::level().segs.assign(numsegs, Seg {});
     segs = Doom::level().segs.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ml = reinterpret_cast<mapseg_t*>(data);
+    ml = reinterpret_cast<MapSeg*>(data);
     li = segs;
     for (int i = 0; i < numsegs; i++, li++, ml++)
     {
@@ -133,15 +133,15 @@ void loadSegs(int lump)
 void loadSubsectors(int lump)
 {
     byte* data;
-    mapsubsector_t* ms;
+    MapSubsector* ms;
     SubSector* ss;
 
-    numsubsectors = W_LumpLength(lump) / sizeof(mapsubsector_t);
+    numsubsectors = W_LumpLength(lump) / sizeof(MapSubsector);
     Doom::level().subsectors.assign(numsubsectors, SubSector {});
     subsectors = Doom::level().subsectors.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ms = reinterpret_cast<mapsubsector_t*>(data);
+    ms = reinterpret_cast<MapSubsector*>(data);
     ss = subsectors;
 
     for (int i = 0; i < numsubsectors; i++, ss++, ms++)
@@ -157,15 +157,15 @@ void loadSubsectors(int lump)
 void loadSectors(int lump)
 {
     byte* data;
-    mapsector_t* ms;
+    MapSector* ms;
     Sector* ss;
 
-    numsectors = W_LumpLength(lump) / sizeof(mapsector_t);
+    numsectors = W_LumpLength(lump) / sizeof(MapSector);
     Doom::level().sectors.assign(numsectors, Sector {});
     sectors = Doom::level().sectors.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    ms = reinterpret_cast<mapsector_t*>(data);
+    ms = reinterpret_cast<MapSector*>(data);
     ss = sectors;
     for (int i = 0; i < numsectors; i++, ss++, ms++)
     {
@@ -186,15 +186,15 @@ void loadSectors(int lump)
 void loadNodes(int lump)
 {
     byte* data;
-    mapnode_t* mn;
+    MapNode* mn;
     Node* no;
 
-    numnodes = W_LumpLength(lump) / sizeof(mapnode_t);
+    numnodes = W_LumpLength(lump) / sizeof(MapNode);
     Doom::level().nodes.assign(numnodes, Node {});
     nodes = Doom::level().nodes.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    mn = reinterpret_cast<mapnode_t*>(data);
+    mn = reinterpret_cast<MapNode*>(data);
     no = nodes;
 
     for (int i = 0; i < numnodes; i++, no++, mn++)
@@ -218,14 +218,14 @@ void loadNodes(int lump)
 void loadThings(int lump)
 {
     byte* data;
-    mapthing_t* mt;
+    MapThing* mt;
     int numthings;
     doom_boolean spawn;
 
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
-    numthings = W_LumpLength(lump) / sizeof(mapthing_t);
+    numthings = W_LumpLength(lump) / sizeof(MapThing);
 
-    mt = reinterpret_cast<mapthing_t*>(data);
+    mt = reinterpret_cast<MapThing*>(data);
     for (int i = 0; i < numthings; i++, mt++)
     {
         spawn = true;
@@ -270,17 +270,17 @@ void loadThings(int lump)
 void loadLineDefs(int lump)
 {
     byte* data;
-    maplinedef_t* mld;
+    MapLinedef* mld;
     Line* ld;
     Vertex* v1;
     Vertex* v2;
 
-    numlines = W_LumpLength(lump) / sizeof(maplinedef_t);
+    numlines = W_LumpLength(lump) / sizeof(MapLinedef);
     Doom::level().lines.assign(numlines, Line {});
     lines = Doom::level().lines.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    mld = reinterpret_cast<maplinedef_t*>(data);
+    mld = reinterpret_cast<MapLinedef*>(data);
     ld = lines;
     for (int i = 0; i < numlines; i++, mld++, ld++)
     {
@@ -347,15 +347,15 @@ void loadLineDefs(int lump)
 void loadSideDefs(int lump)
 {
     byte* data;
-    mapsidedef_t* msd;
+    MapSidedef* msd;
     Side* sd;
 
-    numsides = W_LumpLength(lump) / sizeof(mapsidedef_t);
+    numsides = W_LumpLength(lump) / sizeof(MapSidedef);
     Doom::level().sides.assign(numsides, Side {});
     sides = Doom::level().sides.data();
     data = static_cast<byte*>(W_CacheLumpNum(lump, PU_STATIC));
 
-    msd = reinterpret_cast<mapsidedef_t*>(data);
+    msd = reinterpret_cast<MapSidedef*>(data);
     sd = sides;
     for (int i = 0; i < numsides; i++, msd++, sd++)
     {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../d_event.h" // event_t
+#include "../d_event.h" // Event
 
 namespace Doom
 {
 // DOOM startup + the main game loop; d_main.cpp keeps the vanilla D_ names as
 // shims. The core state d_main owns is defined at file scope in DoomMain.cpp
 // (above its namespace).
-void postEvent(event_t* ev);
+void postEvent(Event* ev);
 void processEvents();
 void displayFrame();
 void updateWipe();

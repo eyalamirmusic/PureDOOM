@@ -30,15 +30,15 @@ void Doom::storeWallRange(int start, int stop);
 
 namespace Doom
 {
-// cliprange_t and the solidsegs/newend clip ranges now live on the Engine (Render/SolidSegs.h, moved
+// ClipRange and the solidsegs/newend clip ranges now live on the Engine (Render/SolidSegs.h, moved
 // by the file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are references onto that
 // member. The type moved to the header so solidsegs could become a member (an anonymous-struct
 // typedef in the .cpp cannot be named there).
 
 // newend is one past the last valid seg
-static cliprange_t*& newend = solidSegs().newend;
+static ClipRange*& newend = solidSegs().newend;
 
-static cliprange_t (&solidsegs)[MAXSEGS] = solidSegs().solidsegs;
+static ClipRange (&solidsegs)[MAXSEGS] = solidSegs().solidsegs;
 
 EA::Array<EA::Array<int, 4>, 12> checkcoord = {{3, 0, 2, 1},
                          {3, 0, 2, 0},
@@ -75,8 +75,8 @@ void clearDrawSegs()
 //
 void clipSolidWallSegment(int first, int last)
 {
-    cliprange_t* next;
-    cliprange_t* start;
+    ClipRange* next;
+    ClipRange* start;
 
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
@@ -162,7 +162,7 @@ crunch:
 //
 void clipPassWallSegment(int first, int last)
 {
-    cliprange_t* start;
+    ClipRange* start;
 
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
@@ -345,7 +345,7 @@ doom_boolean checkBBox(fixed_t* bspcoord)
     angle_t span;
     angle_t tspan;
 
-    cliprange_t* start;
+    ClipRange* start;
 
     int sx1;
     int sx2;

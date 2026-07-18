@@ -422,7 +422,7 @@ void eacpDoomBindKeys()
 
     for (i = 0; i < count; i++)
     {
-        default_t* entry = &defaults[i];
+        Doom::ConfigDefault* entry = &defaults[i];
 
         if (entry->defaultvalue != STRING_VALUE
             && doom_strncmp(entry->name, "key_", 4) == 0)
@@ -529,7 +529,7 @@ static void eacpBlitPatch(Doom::Patch* patch,
 static void eacpDecodeWall(
     int id, unsigned char* indices, unsigned char* alpha, int width, int height)
 {
-    texture_t* texture = textures[id];
+    Doom::Texture* texture = textures[id];
     int i;
 
     doom_memset(indices, 0, width * height);
@@ -537,7 +537,7 @@ static void eacpDecodeWall(
 
     for (i = 0; i < texture->patchcount; ++i)
     {
-        texpatch_t* piece = &texture->patches[i];
+        Doom::TexPatch* piece = &texture->patches[i];
         Doom::Patch* patch = (Doom::Patch*) W_CacheLumpNum(piece->patch, PU_CACHE);
 
         eacpBlitPatch(
@@ -1774,7 +1774,7 @@ static void eacpAutomapLine(EacpAutomapEmitter* em,
 
 // AM_drawLineCharacter, emitting instead of rasterizing.
 static void eacpAutomapLineCharacter(EacpAutomapEmitter* em,
-                                     mline_t* lineguy,
+                                     Doom::MapLine* lineguy,
                                      int lineguylines,
                                      fixed_t scale,
                                      angle_t angle,
@@ -1783,7 +1783,7 @@ static void eacpAutomapLineCharacter(EacpAutomapEmitter* em,
                                      fixed_t y)
 {
     int i;
-    mline_t l;
+    Doom::MapLine l;
 
     for (i = 0; i < lineguylines; i++)
     {

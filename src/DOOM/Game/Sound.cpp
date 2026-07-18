@@ -74,7 +74,7 @@
 // The snd_*Device selectors that were externed here were always dead - no definition, no
 // reader - and are dropped (with their doomstat.h declarations), not moved.
 
-// channel_t moved to Game/SoundState.h (the RAII sweep, Step 9, makes SoundState own the
+// Doom::SoundChannel moved to Game/SoundState.h (the RAII sweep, Step 9, makes SoundState own the
 // channel array by value, which needs the complete type there).
 
 // The engine-side sound bookkeeping now lives on the Engine (Game/SoundState.h, moved
@@ -83,9 +83,9 @@
 // members, the same as snd_SfxVolume/... just below. channels_s_sound is now a
 // plain-pointer VIEW onto SoundState's owned channels vector (RAII, Step 9), refreshed by
 // initSound after the resize, rather than a reference to a pointer member.
-static channel_t* channels_s_sound = nullptr;
+static Doom::SoundChannel* channels_s_sound = nullptr;
 static doom_boolean& mus_paused = Doom::soundState().mus_paused;
-static musicinfo_t*& mus_playing_s_sound = Doom::soundState().mus_playing;
+static Doom::MusicInfo*& mus_playing_s_sound = Doom::soundState().mus_playing;
 static int& nextcleanup = Doom::soundState().nextcleanup;
 
 // The sfx/music volumes and the channel count are config-backed, and used to
@@ -109,7 +109,7 @@ namespace Doom
 //
 // Prototypes
 //
-int sgetChannel(void* origin, sfxinfo_t* sfxinfo);
+int sgetChannel(void* origin, SfxInfo* sfxinfo);
 int sAdjustSoundParams(
     Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch);
 void sStopChannel(int cnum);
@@ -136,7 +136,7 @@ void initSound(int sfxVolume, int musicVolume)
     // Allocating the internal channels for mixing
     // (the maximum numer of sounds rendered
     // simultaneously). RAII now (Step 9): SoundState owns the vector; channels_s_sound
-    // is the view onto its data(). resize value-initialises each channel_t (sfxinfo
+    // is the view onto its data(). resize value-initialises each SoundChannel (sfxinfo
     // null), so the explicit clear below is kept only to match vanilla verbatim.
     auto& snd = Doom::soundState();
     snd.channels.resize(numChannels);
@@ -211,7 +211,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     int sep;
     int pitch;
     int priority;
-    sfxinfo_t* sfx;
+    SfxInfo* sfx;
     int cnum;
 
     Mobj* origin = static_cast<Mobj*>(origin_p);
@@ -382,8 +382,8 @@ void updateSounds(void* listener_p)
     int volume;
     int sep;
     int pitch;
-    sfxinfo_t* sfx;
-    channel_t* c;
+    SfxInfo* sfx;
+    SoundChannel* c;
 
     Mobj* listener = static_cast<Mobj*>(listener_p);
 
@@ -483,7 +483,7 @@ void startMusic(int m_id)
 
 void changeMusic(int musicnum, int looping)
 {
-    musicinfo_t* music = nullptr;
+    MusicInfo* music = nullptr;
     EA::Array<char, 9> namebuf;
 
     if ((musicnum <= mus_None) || (musicnum >= NUMMUSIC))
@@ -538,7 +538,7 @@ void stopMusic()
 
 void sStopChannel(int cnum)
 {
-    channel_t& c = channels_s_sound[cnum];
+    SoundChannel& c = channels_s_sound[cnum];
 
     if (c.sfxinfo)
     {
@@ -640,12 +640,12 @@ int sAdjustSoundParams(
 // sgetChannel :
 // If none available, return -1.  Otherwise channel #.
 //
-int sgetChannel(void* origin, sfxinfo_t* sfxinfo)
+int sgetChannel(void* origin, SfxInfo* sfxinfo)
 {
     // channel number to use
     int cnum;
 
-    channel_t* c;
+    SoundChannel* c;
 
     // Find an open channel
     for (cnum = 0; cnum < numChannels; cnum++)

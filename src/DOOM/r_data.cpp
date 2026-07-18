@@ -30,9 +30,9 @@ int& lastspritelump = Doom::graphicsData().lastspritelump;
 int& numspritelumps = Doom::graphicsData().numspritelumps;
 
 int& numtextures = Doom::graphicsData().numtextures;
-// A texture_t** view onto GraphicsData's owned texturePointers array (Step 9);
+// A Doom::Texture** view onto GraphicsData's owned texturePointers array (Step 9);
 // R_InitTextures points it at data() after the resize.
-texture_t** textures = nullptr;
+Doom::Texture** textures = nullptr;
 
 // needed for texture pegging. A view onto GraphicsData's owned EA::Vector (Step 9);
 // initTextures points it at data() after the resize.

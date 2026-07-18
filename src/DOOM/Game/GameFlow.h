@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // gameaction_t
+#include "../d_event.h" // GameAction
 #include "../doomdef.h" // GameState
 
 namespace Doom
@@ -26,7 +26,7 @@ namespace Doom
 // ga_nothing at the hash point, and golden-neutral through the reference all the same.
 struct GameFlow
 {
-    gameaction_t gameaction =
+    GameAction gameaction =
         ga_nothing; // the deferred action Doom::gameTicker runs each tic
     GameState gamestate =
         GS_LEVEL; // which screen we are on (vanilla zero-inits this)

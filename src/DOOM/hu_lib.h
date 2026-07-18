@@ -43,7 +43,9 @@
 
 // Text Doom::Line widget
 //  (parent of Scrolling Text and Input Text widgets)
-struct hu_textline_t
+namespace Doom
+{
+struct HudTextLine
 {
     // left-justified position of scrolling text window
     int x;
@@ -57,13 +59,16 @@ struct hu_textline_t
     // whether this line needs to be udpated
     int needsupdate;
 };
+} // namespace Doom
 
 
 // Scrolling Text window widget
 //  (child of Text Doom::Line widget)
-struct hu_stext_t
+namespace Doom
 {
-    hu_textline_t l[HU_MAXLINES];        // text lines to draw
+struct HudScrollingText
+{
+    HudTextLine l[HU_MAXLINES];        // text lines to draw
     int h;                // height in lines
     int cl;                // current line number
 
@@ -71,13 +76,16 @@ struct hu_stext_t
     doom_boolean* on;
     doom_boolean laston;                // last value of *->on.
 };
+} // namespace Doom
 
 
 // Input Text Doom::Line widget
 //  (child of Text Doom::Line widget)
-struct hu_itext_t
+namespace Doom
 {
-    hu_textline_t l;                // text line to input on
+struct HudInputText
+{
+    HudTextLine l;                // text line to input on
 
      // left margin past which I am not to delete characters
     int lm;
@@ -86,6 +94,7 @@ struct hu_itext_t
     doom_boolean* on;
     doom_boolean laston; // last value of *->on;
 };
+} // namespace Doom
 
 
 //-----------------------------------------------------------------------------

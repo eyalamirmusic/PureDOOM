@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomdef.h" // MAXPLAYERS
-#include "../doomstat.h" // mapthing_t, MAX_DM_STARTS
+#include "../doomstat.h" // MapThing, MAX_DM_STARTS
 
 namespace Doom
 {
@@ -20,9 +20,9 @@ namespace Doom
 // only playerstarts[0]), so golden-neutral.
 struct MapSpawns
 {
-    mapthing_t deathmatchstarts[MAX_DM_STARTS] = {}; // deathmatch frag spawns
-    mapthing_t* deathmatch_p = nullptr; // append cursor into the above
-    mapthing_t playerstarts[MAXPLAYERS] = {}; // per-player start spots
+    MapThing deathmatchstarts[MAX_DM_STARTS] = {}; // deathmatch frag spawns
+    MapThing* deathmatch_p = nullptr; // append cursor into the above
+    MapThing playerstarts[MAXPLAYERS] = {}; // per-player start spots
 };
 
 // The one MapSpawns, a view onto the Engine's member - the same pattern as

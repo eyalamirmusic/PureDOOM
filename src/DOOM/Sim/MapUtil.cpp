@@ -113,19 +113,19 @@ doom_boolean addThingIntercept(Mobj* thing)
 
 // P_TraverseIntercepts: hand the gathered intercepts to func from nearest to
 // farthest, stopping if func returns false or the next one is past maxfrac.
-bool traverseIntercepts(traverser_t func, fixed_t maxfrac)
+bool traverseIntercepts(Traverser func, fixed_t maxfrac)
 {
     Clip& clip = Doom::clip();
 
     int count = static_cast<int>(clip.interceptPtr - clip.intercepts);
 
-    intercept_t* in = nullptr; // shut up compiler warning
+    Intercept* in = nullptr; // shut up compiler warning
 
     while (count--)
     {
         fixed_t dist = DOOM_MAXINT;
 
-        for (intercept_t* scan = clip.intercepts; scan < clip.interceptPtr; scan++)
+        for (Intercept* scan = clip.intercepts; scan < clip.interceptPtr; scan++)
         {
             if (scan->frac < dist)
             {
@@ -229,7 +229,7 @@ void unsetThingPosition(Mobj& thing)
 }
 
 bool pathTraverse(
-    fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, traverser_t trav)
+    fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, Traverser trav)
 {
     Clip& clip = Doom::clip();
 

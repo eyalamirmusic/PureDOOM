@@ -150,7 +150,7 @@ void PacketSend()
 {
 #if defined(I_NET_ENABLED)
     int c;
-    doomdata_t sw;
+    NetPacket sw;
 
     // byte swap
     sw.checksum = htonl(netbuffer->checksum);
@@ -192,7 +192,7 @@ void PacketGet()
 #else
     int fromlen;
 #endif
-    doomdata_t sw;
+    NetPacket sw;
 
     fromlen = sizeof(fromaddress);
     c = recvfrom(insocket,
@@ -330,7 +330,7 @@ void initNetwork()
     // RAII now (Step 9): doomcom is the view onto NetState's owned doomcomStorage,
     // value-initialised here as the old doom_malloc + doom_memset(0) block was.
     auto& net = Doom::netState();
-    net.doomcomStorage = doomcom_t {};
+    net.doomcomStorage = DoomCom {};
     doomcom = &net.doomcomStorage;
 
     // set up for network

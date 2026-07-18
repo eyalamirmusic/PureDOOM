@@ -158,17 +158,17 @@ struct menuitem_t
     char alphaKey;
 };
 
-struct menu_s
+struct MenuDef
 {
     short numitems; // # of menu items
-    menu_s* prevMenu; // previous menu
+    MenuDef* prevMenu; // previous menu
     menuitem_t* menuitems; // menu items
     void (*routine)(); // draw routine
     short x;
     short y; // x,y of menu
     short lastOn; // last item user was on in menu
 };
-using menu_t = menu_s;
+using menu_t = MenuDef;
 
 struct menu_custom_text_seg_t
 {
@@ -1567,7 +1567,7 @@ void M_WriteText(int x, int y, const char* string)
 //
 // menuResponder
 //
-doom_boolean menuResponder(event_t* ev)
+doom_boolean menuResponder(Event* ev)
 {
     int ch;
     int& joywait = menuState().joywait;

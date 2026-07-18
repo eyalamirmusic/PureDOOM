@@ -48,8 +48,8 @@
 #define MAXLINEANIMS 64
 #define MAX_ADJOINING_SECTORS 20
 
-// (The vanilla file-scope `anim_t` typedef that sat here was dead - unused at global scope, a
-// leftover of the namespace wrap - and was removed; anim_t now lives in Sim/AnimatedSurfaces.h.)
+// (The vanilla file-scope `Doom::SurfaceAnim` typedef that sat here was dead - unused at global scope, a
+// leftover of the namespace wrap - and was removed; Doom::SurfaceAnim now lives in Sim/AnimatedSurfaces.h.)
 
 Doom::Side* getSide(int currentSector, int line, int side)
 {
@@ -100,7 +100,7 @@ Doom::Sector* getNextSector(Doom::Line* line, Doom::Sector* sec)
 
 namespace Doom
 {
-// anim_t moved to Sim/AnimatedSurfaces.h with the anims/lastanim it types.
+// SurfaceAnim moved to Sim/AnimatedSurfaces.h with the anims/lastanim it types.
 
 struct animdef_t
 {
@@ -148,8 +148,8 @@ EA::Array<animdef_t, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},
 // The animated flats/textures and the scrolling-line list now live on the Engine
 // (Sim/AnimatedSurfaces.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla
 // names are references onto that member; read by no other file.
-static anim_t (&anims)[MAXANIMS] = animatedSurfaces().anims;
-static anim_t*& lastanim = animatedSurfaces().lastanim;
+static SurfaceAnim (&anims)[MAXANIMS] = animatedSurfaces().anims;
+static SurfaceAnim*& lastanim = animatedSurfaces().lastanim;
 
 static short& numlinespecials = animatedSurfaces().numlinespecials;
 static Line* (&linespeciallist)[MAXLINEANIMS] = animatedSurfaces().linespeciallist;
@@ -999,7 +999,7 @@ void playerInSpecialSector(Player* player)
 //
 void updateSpecials()
 {
-    anim_t* anim;
+    SurfaceAnim* anim;
     int pic;
     Line* line;
 
@@ -1063,7 +1063,7 @@ void updateSpecials()
                 }
                 Doom::startSound(reinterpret_cast<Mobj*>(&buttonlist[i].soundorg),
                              sfx_swtchn);
-                doom_memset(&buttonlist[i], 0, sizeof(button_t));
+                doom_memset(&buttonlist[i], 0, sizeof(Button));
             }
         }
 }
@@ -1078,7 +1078,7 @@ int doDonut(Line* line)
     Sector* s3;
     int secnum;
     int rtn;
-    floormove_t* floor;
+    FloorMove* floor;
 
     secnum = -1;
     rtn = 0;
@@ -1100,7 +1100,7 @@ int doDonut(Line* line)
             s3 = s2->lines[i]->backsector;
 
             //        Spawn rising slime
-            floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+            floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
             Doom::addThinker(floor);
             s2->specialdata = floor;
             floor->type = donutRaise;
@@ -1113,7 +1113,7 @@ int doDonut(Line* line)
             floor->floordestheight = s3->floorheight;
 
             //        Spawn lowering donut-hole
-            floor = new (levelAlloc(sizeof(*floor))) floormove_t {};
+            floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
             Doom::addThinker(floor);
             s1->specialdata = floor;
             floor->type = lowerFloor;
@@ -1250,6 +1250,6 @@ void spawnSpecials()
         activeplats[i] = nullptr;
 
     for (i = 0; i < MAXBUTTONS; i++)
-        doom_memset(&buttonlist[i], 0, sizeof(button_t));
+        doom_memset(&buttonlist[i], 0, sizeof(Button));
 }
 } // namespace Doom

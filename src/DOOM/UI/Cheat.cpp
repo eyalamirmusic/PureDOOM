@@ -23,7 +23,7 @@ static EA::Array<unsigned char, 256> cheat_xlate_table;
 // Called in st_stuff module, which handles the input.
 // Returns a 1 if the cheat was successful, 0 if failed.
 //
-int checkCheat(cheatseq_t* cht, char key)
+int checkCheat(CheatSequence* cht, char key)
 {
     int rc = 0;
 
@@ -55,7 +55,7 @@ int checkCheat(cheatseq_t* cht, char key)
     return rc;
 }
 
-void getParam(cheatseq_t* cht, char* buffer)
+void getParam(CheatSequence* cht, char* buffer)
 {
     unsigned char *p, c;
 

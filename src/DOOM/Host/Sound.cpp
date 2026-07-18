@@ -675,7 +675,7 @@ void setMusicVolume(int volume)
 // Retrieve the raw data lump index
 //  for a given SFX name.
 //
-int sfxLumpNum(sfxinfo_t* sfx)
+int sfxLumpNum(SfxInfo* sfx)
 {
     EA::Array<char, 9> namebuf;
     //doom_sprintf(namebuf, "ds%s", sfx->name);
@@ -903,7 +903,7 @@ void initSoundHost()
         {
             // Previously loaded already?
             S_sfx[i].data = S_sfx[i].link->data;
-            lengths[i] = lengths[(S_sfx[i].link - S_sfx) / sizeof(sfxinfo_t)];
+            lengths[i] = lengths[(S_sfx[i].link - S_sfx) / sizeof(SfxInfo)];
         }
     }
 

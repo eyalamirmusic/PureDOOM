@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../hu_lib.h" // hu_stext_t
+#include "../hu_lib.h" // HudScrollingText
 
 namespace Doom
 {
@@ -22,7 +22,7 @@ struct HudMessage
     doom_boolean message_on = false; // a message is currently showing
     doom_boolean message_nottobefuckedwith =
         false; // this one outranks a plain message
-    hu_stext_t w_message = {}; // the scrolling-text widget it is drawn through
+    HudScrollingText w_message = {}; // the scrolling-text widget it is drawn through
     int message_counter = 0; // tics left before the message clears
 };
 

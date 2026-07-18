@@ -100,7 +100,7 @@ void hitSlideLine(Line* ld)
 //
 // PTR_SlideTraverse
 //
-doom_boolean slideTraverse(intercept_t* in)
+doom_boolean slideTraverse(Intercept* in)
 {
     Clip& clip = Doom::clip();
 
@@ -162,7 +162,7 @@ static fixed_t& shootz = actionScratch().shootz;
 
 static int& la_damage = actionScratch().la_damage;
 
-doom_boolean aimTraverse(intercept_t* in)
+doom_boolean aimTraverse(Intercept* in)
 {
     Clip& clip = Doom::clip();
 
@@ -245,7 +245,7 @@ doom_boolean aimTraverse(intercept_t* in)
 //
 // PTR_ShootTraverse
 //
-doom_boolean shootTraverse(intercept_t* in)
+doom_boolean shootTraverse(Intercept* in)
 {
     Clip& clip = Doom::clip();
 
@@ -367,7 +367,7 @@ doom_boolean shootTraverse(intercept_t* in)
 //
 static Mobj*& usething = actionScratch().usething;
 
-doom_boolean useTraverse(intercept_t* in)
+doom_boolean useTraverse(Intercept* in)
 {
     Clip& clip = Doom::clip();
 

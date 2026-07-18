@@ -111,12 +111,12 @@
 #define DEMOMARKER 0x80
 
 // Prototypes for other subsystems' functions.
-void Doom::spawnPlayer(mapthing_t* mthing);
+void Doom::spawnPlayer(Doom::MapThing* mthing);
 void Doom::executeSetViewSize();
 
 // gameaction, gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; these
 // (and the extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
-gameaction_t& gameaction = Doom::gameFlow().gameaction;
+Doom::GameAction& gameaction = Doom::gameFlow().gameaction;
 Doom::GameState& gamestate = Doom::gameFlow().gamestate;
 
 // The current game's rules are a Doom::GameSession owned by the Engine now; these (and
@@ -584,7 +584,7 @@ void gDoLoadLevel()
 // gameResponder
 // Get info needed to make ticcmd_ts for the players.
 //
-doom_boolean gameResponder(event_t* ev)
+doom_boolean gameResponder(Event* ev)
 {
     // allow spy mode changes even during the demo
     if (gamestate == GS_LEVEL && ev->type == ev_keydown && ev->data1 == KEY_F12
@@ -908,11 +908,11 @@ void playerReborn(int player)
 //
 // gCheckSpot
 // Returns false if the player cannot be respawned
-// at the given mapthing_t spot
+// at the given MapThing spot
 // because something is occupying it
 //
 
-doom_boolean gCheckSpot(int playernum, mapthing_t* mthing)
+doom_boolean gCheckSpot(int playernum, MapThing* mthing)
 {
     fixed_t x;
     fixed_t y;

@@ -26,7 +26,9 @@
 
 
 // Weapon info: sprite frames, ammunition use.
-struct weaponinfo_t
+namespace Doom
+{
+struct WeaponInfo
 {
     Doom::AmmoType ammo;
     int upstate;
@@ -35,9 +37,10 @@ struct weaponinfo_t
     int atkstate;
     int flashstate;
 };
+} // namespace Doom
 
 
-extern weaponinfo_t weaponinfo[Doom::NUMWEAPONS];
+extern Doom::WeaponInfo weaponinfo[Doom::NUMWEAPONS];
 
 
 

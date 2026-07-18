@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_net.h" // doomcom_t, doomdata_t, BACKUPTICS, MAXNETNODES
+#include "../d_net.h" // DoomCom, NetPacket, BACKUPTICS, MAXNETNODES
 #include "../d_ticcmd.h" // Ticcmd
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
@@ -30,12 +30,12 @@ struct NetState
 {
     // The driver's shared comms block. RAII-owned by value now (Step 9) - what was a
     // boot-once doom_malloc in initNetwork; the vanilla name `doomcom` stays a
-    // doomcom_t* VIEW that initNetwork points at doomcomStorage, so every doomcom->
+    // DoomCom* VIEW that initNetwork points at doomcomStorage, so every doomcom->
     // reader and netbuffer (= &doomcom->data, a stable pointer into the member) is
-    // unchanged. This mirrors reboundstore below, already a doomdata_t held by value.
-    doomcom_t doomcomStorage = {}; // the owned comms block
-    doomcom_t* doomcom = nullptr; // view onto doomcomStorage
-    doomdata_t* netbuffer = nullptr; // points inside doomcom
+    // unchanged. This mirrors reboundstore below, already a NetPacket held by value.
+    DoomCom doomcomStorage = {}; // the owned comms block
+    DoomCom* doomcom = nullptr; // view onto doomcomStorage
+    NetPacket* netbuffer = nullptr; // points inside doomcom
 
     Ticcmd localcmds[BACKUPTICS] = {}; // this node's commands
     Ticcmd netcmds[MAXPLAYERS][BACKUPTICS] = {}; // every node's commands
@@ -60,7 +60,7 @@ struct NetState
     int skiptics = 0;                            // tics to skip catching up
     int maxsend = 0;                             // BACKUPTICS/(2*ticdup)-1
     doom_boolean reboundpacket = false;          // a loopback packet is queued
-    doomdata_t reboundstore = {};                // the loopback packet
+    NetPacket reboundstore = {};                // the loopback packet
     char exitmsg[80] = {};                       // netgame exit message scratch
     int gametime = 0;                            // currentTic at the last Doom::tryRunTics
     int oldentertics = 0;                        // entertic at the last Doom::tryRunTics (was a static)

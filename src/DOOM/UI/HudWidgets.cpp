@@ -26,14 +26,14 @@ namespace Doom
 
 void initWidgets() {}
 
-void clearTextLine(hu_textline_t& t)
+void clearTextLine(HudTextLine& t)
 {
     t.len = 0;
     t.l[0] = 0;
     t.needsupdate = true;
 }
 
-void initTextLine(hu_textline_t& t, int x, int y, Patch** f, int sc)
+void initTextLine(HudTextLine& t, int x, int y, Patch** f, int sc)
 {
     t.x = x;
     t.y = y;
@@ -42,7 +42,7 @@ void initTextLine(hu_textline_t& t, int x, int y, Patch** f, int sc)
     clearTextLine(t);
 }
 
-doom_boolean addCharToTextLine(hu_textline_t& t, char ch)
+doom_boolean addCharToTextLine(HudTextLine& t, char ch)
 {
     if (t.len == HU_MAXLINELENGTH)
         return false;
@@ -55,7 +55,7 @@ doom_boolean addCharToTextLine(hu_textline_t& t, char ch)
     }
 }
 
-doom_boolean delCharFromTextLine(hu_textline_t& t)
+doom_boolean delCharFromTextLine(HudTextLine& t)
 {
     if (!t.len)
         return false;
@@ -67,7 +67,7 @@ doom_boolean delCharFromTextLine(hu_textline_t& t)
     }
 }
 
-void drawTextLine(hu_textline_t& l, doom_boolean drawcursor)
+void drawTextLine(HudTextLine& l, doom_boolean drawcursor)
 {
     int i;
     int w;
@@ -103,7 +103,7 @@ void drawTextLine(hu_textline_t& l, doom_boolean drawcursor)
 }
 
 // sorta called by Doom::eraseHud and just better darn get things straight
-void eraseTextLine(hu_textline_t& l)
+void eraseTextLine(HudTextLine& l)
 {
     int lh;
     int y;
@@ -134,7 +134,7 @@ void eraseTextLine(hu_textline_t& l)
         l.needsupdate--;
 }
 
-void initSText(hu_stext_t& s,
+void initSText(HudScrollingText& s,
                int x,
                int y,
                int h,
@@ -153,7 +153,7 @@ void initSText(hu_stext_t& s,
             s.l[i], x, y - i * (SHORT(font[0]->height) + 1), font, startchar);
 }
 
-void addLineToSText(hu_stext_t& s)
+void addLineToSText(HudScrollingText& s)
 {
     int i;
 
@@ -167,7 +167,7 @@ void addLineToSText(hu_stext_t& s)
         s.l[i].needsupdate = 4;
 }
 
-void addMessageToSText(hu_stext_t& s, const char* prefix, const char* msg)
+void addMessageToSText(HudScrollingText& s, const char* prefix, const char* msg)
 {
     addLineToSText(s);
     if (prefix)
@@ -178,7 +178,7 @@ void addMessageToSText(hu_stext_t& s, const char* prefix, const char* msg)
         addCharToTextLine(s.l[s.cl], *(msg++));
 }
 
-void drawSText(hu_stext_t& s)
+void drawSText(HudScrollingText& s)
 {
     int i, idx;
 
@@ -197,7 +197,7 @@ void drawSText(hu_stext_t& s)
     }
 }
 
-void eraseSText(hu_stext_t& s)
+void eraseSText(HudScrollingText& s)
 {
     int i;
 
@@ -211,7 +211,7 @@ void eraseSText(hu_stext_t& s)
 }
 
 void initIText(
-    hu_itext_t& it, int x, int y, Patch** font, int startchar, doom_boolean* on)
+    HudInputText& it, int x, int y, Patch** font, int startchar, doom_boolean* on)
 {
     it.lm = 0; // default left margin is start of text
     it.on = on;
@@ -220,26 +220,26 @@ void initIText(
 }
 
 // The following deletion routines adhere to the left margin restriction
-void delCharFromIText(hu_itext_t& it)
+void delCharFromIText(HudInputText& it)
 {
     if (it.l.len != it.lm)
         delCharFromTextLine(it.l);
 }
 
-void eraseLineFromIText(hu_itext_t& it)
+void eraseLineFromIText(HudInputText& it)
 {
     while (it.lm != it.l.len)
         delCharFromTextLine(it.l);
 }
 
 // Resets left margin as well
-void resetIText(hu_itext_t& it)
+void resetIText(HudInputText& it)
 {
     it.lm = 0;
     clearTextLine(it.l);
 }
 
-void addPrefixToIText(hu_itext_t& it, char* str)
+void addPrefixToIText(HudInputText& it, char* str)
 {
     while (*str)
         addCharToTextLine(it.l, *(str++));
@@ -248,7 +248,7 @@ void addPrefixToIText(hu_itext_t& it, char* str)
 
 // wrapper function for handling general keyed input.
 // returns true if it ate the key
-doom_boolean keyInIText(hu_itext_t& it, unsigned char ch)
+doom_boolean keyInIText(HudInputText& it, unsigned char ch)
 {
     if (ch >= ' ' && ch <= '_')
         addCharToTextLine(it.l, static_cast<char>(ch));
@@ -260,14 +260,14 @@ doom_boolean keyInIText(hu_itext_t& it, unsigned char ch)
     return true; // ate the key
 }
 
-void drawIText(hu_itext_t& it)
+void drawIText(HudInputText& it)
 {
     if (!*it.on)
         return;
     drawTextLine(it.l, true); // draw the line w/ cursor
 }
 
-void eraseIText(hu_itext_t& it)
+void eraseIText(HudInputText& it)
 {
     if (it.laston && !*it.on)
         it.l.needsupdate = 4;

@@ -202,7 +202,7 @@ doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean (*func)(Doom::Mobj
 }
 
 
-doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, doom_boolean(*trav) (intercept_t*))
+doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, doom_boolean(*trav) (Doom::Intercept*))
 {
     return Doom::pathTraverse(x1, y1, x2, y2, flags, trav);
 }

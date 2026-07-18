@@ -24,12 +24,15 @@
 #include "doomdef.h"
 
 // States for the intermission
-enum stateenum_t
+namespace Doom
+{
+enum IntermissionPhase
 {
     NoState = -1,
     StatCount,
     ShowNextLoc
 };
+} // namespace Doom
 
 // Called by main loop, animate the intermission.
 

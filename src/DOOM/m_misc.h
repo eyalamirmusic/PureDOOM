@@ -28,7 +28,9 @@
 //
 // MISC
 //
-struct default_t
+namespace Doom
+{
+struct ConfigDefault
 {
     char* name;
     int* location;
@@ -38,6 +40,7 @@ struct default_t
     char** text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
     char* default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
 };
+} // namespace Doom
 
 
 // A default whose value is text rather than a number: `defaultvalue` is this
@@ -45,7 +48,7 @@ struct default_t
 #define STRING_VALUE 0xFFFF
 
 
-extern default_t defaults[];
+extern Doom::ConfigDefault defaults[];
 extern int numdefaults;
 
 

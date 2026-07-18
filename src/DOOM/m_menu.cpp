@@ -22,7 +22,7 @@
 
 #include "UI/Menu.h"
 
-doom_boolean menuResponder(event_t* ev)
+doom_boolean menuResponder(Doom::Event* ev)
 {
     return Doom::menuResponder(ev);
 }

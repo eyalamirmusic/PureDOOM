@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // event_t, doom_boolean
+#include "../d_event.h" // Event, doom_boolean
 
 namespace Doom
 {
@@ -14,7 +14,7 @@ namespace Doom
 // detailLevel / showMessages / mouseSensitivity, inhelpscreens, messageToPrint)
 // stay at file scope for them. The M_ names are kept inside the namespace so the
 // transcription stays diffable against the 1993 source.
-doom_boolean menuResponder(event_t* ev);
+doom_boolean menuResponder(Event* ev);
 void menuTicker();
 void drawMenu();
 void initMenu();

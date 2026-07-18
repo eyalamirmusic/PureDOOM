@@ -57,16 +57,22 @@
 // the shapes, named. The choices stay AM_Drawer's own.
 //
 
-struct mpoint_t
+namespace Doom
+{
+struct MapPoint
 {
     fixed_t x, y;
 };
+} // namespace Doom
 
 
-struct mline_t
+namespace Doom
 {
-    mpoint_t a, b;
+struct MapLine
+{
+    MapPoint a, b;
 };
+} // namespace Doom
 
 
 // The automap's palette. It picks raw colour indices rather than texturing
@@ -109,9 +115,9 @@ struct mline_t
 #define NUMCHEATPLYRLINES 16
 #define NUMTHINTRIANGLEGUYLINES 3
 
-extern mline_t player_arrow[NUMPLYRLINES];
-extern mline_t cheat_player_arrow[NUMCHEATPLYRLINES];
-extern mline_t thintriangle_guy[NUMTHINTRIANGLEGUYLINES];
+extern Doom::MapLine player_arrow[NUMPLYRLINES];
+extern Doom::MapLine cheat_player_arrow[NUMCHEATPLYRLINES];
+extern Doom::MapLine thintriangle_guy[NUMTHINTRIANGLEGUYLINES];
 
 
 // Where the map is looking, and how far in. m_x/m_y is the lower-left corner in

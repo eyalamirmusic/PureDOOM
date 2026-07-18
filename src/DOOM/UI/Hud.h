@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_event.h" // event_t
+#include "../d_event.h" // Event
 
 namespace Doom
 {
@@ -8,7 +8,7 @@ namespace Doom
 // HU_ names as shims.
 void initHud();
 void startHud();
-doom_boolean hudResponder(event_t* ev);
+doom_boolean hudResponder(Event* ev);
 void hudTicker();
 void drawHud();
 char dequeueChatChar();

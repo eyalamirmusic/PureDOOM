@@ -80,7 +80,7 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
               && AutomapView {}.finit_width == SCREENWIDTH
               && AutomapView {}.finit_height == SCREENHEIGHT - 32,
           "AutomapView kluge flag, closed flag and frame size");
-    // The one non-zero-looking default: stateenum_t zero-init lands on StatCount, since NoState is
+    // The one non-zero-looking default: IntermissionPhase zero-init lands on StatCount, since NoState is
     // -1, not 0. A migration that "helpfully" defaulted state to NoState would change the value.
     check(IntermissionState {}.state == StatCount
               && IntermissionState {}.snl_pointeron == false

@@ -49,20 +49,26 @@
 
 
 // States for status bar code.
-enum st_stateenum_t
+namespace Doom
+{
+enum StatusBarMode
 {
     AutomapState,
     FirstPersonState
 };
+} // namespace Doom
 
 
 // States for the chat code.
-enum st_chatstateenum_t
+namespace Doom
+{
+enum ChatState
 {
     StartChatState,
     WaitDestState,
     GetChatState
 };
+} // namespace Doom
 
 
 

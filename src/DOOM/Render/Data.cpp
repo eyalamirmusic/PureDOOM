@@ -1,6 +1,6 @@
 // Rewritten out of vanilla r_data into namespace Doom.
 //
-// Texture/flat/sprite/colormap data: compose a wall texture from its patches (what a
+// Doom::Texture/flat/sprite/colormap data: compose a wall texture from its patches (what a
 // non-software renderer must do too), build the column lookup, retrieve a column,
 // and load the TEXTURE/PNAMES/flat/sprite/COLORMAP lumps. r_data.cpp shims the R_
 // names; the externally-read tables (textures, colormaps, spritewidth, ...) live
@@ -139,8 +139,8 @@ void drawColumnInCache(column_t* patch, byte* cache, int originy, int cacheheigh
 void generateComposite(int texnum)
 {
     byte* block;
-    texture_t* texture;
-    texpatch_t* patch;
+    Texture* texture;
+    TexPatch* patch;
     Patch* realpatch;
     int x;
     int x1;
@@ -209,8 +209,8 @@ void generateComposite(int texnum)
 //
 void generateLookup(int texnum)
 {
-    texture_t* texture;
-    texpatch_t* patch;
+    Texture* texture;
+    TexPatch* patch;
     Patch* realpatch;
     int x;
     int x1;
@@ -323,9 +323,9 @@ byte* getColumn(int tex, int col)
 void initTextures()
 {
     maptexture_t* mtexture;
-    texture_t* texture;
+    Texture* texture;
     mappatch_t* mpatch;
-    texpatch_t* patch;
+    TexPatch* patch;
 
     int i;
     int j;
@@ -387,7 +387,7 @@ void initTextures()
     numtextures = numtextures1 + numtextures2;
 
     // GraphicsData owns the texture structs by value now (RAII, Step 9); `textures`
-    // stays a texture_t** view onto the texturePointers array into that storage, so
+    // stays a Texture** view onto the texturePointers array into that storage, so
     // every textures[i]->field reader is unchanged. Sized once here (stable after - the
     // loop below only fills them, never resizes).
     auto& gd = graphicsData();
@@ -679,7 +679,7 @@ void precacheLevel()
     int k;
     int lump;
 
-    texture_t* texture;
+    Texture* texture;
     thinker_t* th;
     SpriteFrame* sf;
 

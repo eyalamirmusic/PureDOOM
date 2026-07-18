@@ -6,7 +6,7 @@ namespace Doom
 {
 // Forward declaration of the menu-definition struct (defined in UI/Menu.cpp). currentMenu points at
 // one of the file-local menu tables, so it needs the type named but not its layout.
-struct menu_s;
+struct MenuDef;
 
 // SAVESTRINGSIZE in UI/Menu (and Game/Game): the length of a savegame description. The
 // reference-to-array bindings in Menu.cpp still spell the arrays with the SAVESTRINGSIZE macro, so
@@ -73,7 +73,7 @@ struct MenuState
     short skullAnimCounter = 0; // skull blink counter
     short whichSkull = 0; // which skull frame to draw
 
-    menu_s* currentMenu =
+    MenuDef* currentMenu =
         nullptr; // the menu currently shown (into a file-local table)
 
     char tempstring[80] = {}; // scratch for building confirmation strings

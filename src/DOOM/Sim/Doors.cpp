@@ -25,16 +25,16 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void verticalDoor(vldoor_t& door);
-int doLockedDoor(Line* line, vldoor_e type, Mobj* thing);
-int doDoor(Line* line, vldoor_e type);
+void verticalDoor(Door& door);
+int doLockedDoor(Line* line, DoorType type, Mobj* thing);
+int doDoor(Line* line, DoorType type);
 void verticalDoor(Line* line, Mobj* thing);
 void spawnDoorCloseIn30(Sector* sec);
 void spawnDoorRaiseIn5Mins(Sector* sec, int secnum);
 
-void verticalDoor(vldoor_t& door)
+void verticalDoor(Door& door)
 {
-    result_e res;
+    MoveResult res;
 
     switch (door.direction)
     {
@@ -183,7 +183,7 @@ void verticalDoor(vldoor_t& door)
 // doLockedDoor
 // Move a locked door up/down
 //
-int doLockedDoor(Line* line, vldoor_e type, Mobj* thing)
+int doLockedDoor(Line* line, DoorType type, Mobj* thing)
 {
     Player* p;
 
@@ -234,11 +234,11 @@ int doLockedDoor(Line* line, vldoor_e type, Mobj* thing)
     return doDoor(line, type);
 }
 
-int doDoor(Line* line, vldoor_e type)
+int doDoor(Line* line, DoorType type)
 {
     int secnum, rtn;
     Sector* sec;
-    vldoor_t* door;
+    Door* door;
 
     secnum = -1;
     rtn = 0;
@@ -251,7 +251,7 @@ int doDoor(Line* line, vldoor_e type)
 
         // new door thinker
         rtn = 1;
-        door = new (levelAlloc(sizeof(*door))) vldoor_t {};
+        door = new (levelAlloc(sizeof(*door))) Door {};
         Doom::addThinker(door);
         sec->specialdata = door;
 
@@ -322,7 +322,7 @@ void verticalDoor(Line* line, Mobj* thing)
 {
     Player* player;
     Sector* sec;
-    vldoor_t* door;
+    Door* door;
     int side;
 
     side = 0; // only front sides can be used
@@ -377,7 +377,7 @@ void verticalDoor(Line* line, Mobj* thing)
 
     if (sec->specialdata)
     {
-        door = static_cast<vldoor_t*>(sec->specialdata);
+        door = static_cast<Door*>(sec->specialdata);
         switch (line->special)
         {
             case 1: // ONLY FOR "RAISE" DOORS, NOT "OPEN"s
@@ -417,7 +417,7 @@ void verticalDoor(Line* line, Mobj* thing)
     }
 
     // new door thinker
-    door = new (levelAlloc(sizeof(*door))) vldoor_t {};
+    door = new (levelAlloc(sizeof(*door))) Door {};
     Doom::addThinker(door);
     sec->specialdata = door;
     door->sector = sec;
@@ -463,9 +463,9 @@ void verticalDoor(Line* line, Mobj* thing)
 //
 void spawnDoorCloseIn30(Sector* sec)
 {
-    vldoor_t* door;
+    Door* door;
 
-    door = new (levelAlloc(sizeof(*door))) vldoor_t {};
+    door = new (levelAlloc(sizeof(*door))) Door {};
 
     Doom::addThinker(door);
 
@@ -484,9 +484,9 @@ void spawnDoorCloseIn30(Sector* sec)
 //
 void spawnDoorRaiseIn5Mins(Sector* sec, int)
 {
-    vldoor_t* door;
+    Door* door;
 
-    door = new (levelAlloc(sizeof(*door))) vldoor_t {};
+    door = new (levelAlloc(sizeof(*door))) Door {};
 
     Doom::addThinker(door);
 

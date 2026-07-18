@@ -283,7 +283,7 @@ struct Mobj : Doom::Thinker
     int lastlook;
 
     // For nightmare respawn.
-    mapthing_t spawnpoint;
+    MapThing spawnpoint;
 
     // Thing being chased/attacked for tracers.
     struct Mobj* tracer;

@@ -2,7 +2,7 @@
 
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
-#include "../hu_lib.h" // hu_itext_t
+#include "../hu_lib.h" // HudInputText
 
 namespace Doom
 {
@@ -24,8 +24,8 @@ struct HudChat
     static constexpr int queueSize =
         128; // QUEUESIZE in UI/Hud: the chatchars ring size
 
-    hu_itext_t w_chat = {}; // the local input line being typed
-    hu_itext_t w_inputbuffer[MAXPLAYERS] = {}; // each remote player's incoming text
+    HudInputText w_chat = {}; // the local input line being typed
+    HudInputText w_inputbuffer[MAXPLAYERS] = {}; // each remote player's incoming text
     doom_boolean always_off =
         false; // the input buffers' cursor, wired permanently off
     char chat_dest[MAXPLAYERS] = {}; // who each player is addressing

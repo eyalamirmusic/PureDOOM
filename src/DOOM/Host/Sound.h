@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../i_sound.h" // vanilla I_ sound interface + sfxinfo_t
+#include "../i_sound.h" // vanilla I_ sound interface + SfxInfo
 
 namespace Doom
 {
@@ -14,7 +14,7 @@ void updateSound();
 void submitSound();
 void shutdownSoundHost();
 void setChannels();
-int sfxLumpNum(sfxinfo_t* sfxinfo);
+int sfxLumpNum(SfxInfo* sfxinfo);
 int startSoundHost(int id, int vol, int sep, int pitch, int priority);
 void stopSoundHost(int handle);
 int soundIsPlaying(int handle);

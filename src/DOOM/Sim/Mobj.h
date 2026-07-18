@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_mobj.h" // Mobj, mapthing_t, StateNum, MobjType
+#include "../p_mobj.h" // Mobj, MapThing, StateNum, MobjType
 
 namespace Doom
 {
@@ -14,8 +14,8 @@ void mobjThinker(Mobj* mobj);
 Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type);
 void removeMobj(Mobj* mobj);
 void respawnSpecials();
-void spawnPlayer(mapthing_t* mthing);
-void spawnMapThing(mapthing_t* mthing);
+void spawnPlayer(MapThing* mthing);
+void spawnMapThing(MapThing* mthing);
 void spawnPuff(fixed_t x, fixed_t y, fixed_t z);
 void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage);
 Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type);

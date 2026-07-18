@@ -16,7 +16,7 @@ namespace Doom
 // cycles picnum through every speed tics (istexture picks the texture vs flat translation table).
 // Moved out of Sim/Specials so anims/lastanim can be Engine members (the type was defined there - as
 // a file-scope typedef and, redundantly, a namespace one; the dead file-scope copy was deleted).
-struct anim_t
+struct SurfaceAnim
 {
     doom_boolean istexture; // texture (else flat)
     int picnum; // the frame currently shown
@@ -39,8 +39,8 @@ struct AnimatedSurfaces
     static constexpr int maxAnims = 32; // MAXANIMS in Sim/Specials
     static constexpr int maxLineAnims = 64; // MAXLINEANIMS in Sim/Specials
 
-    anim_t anims[maxAnims] = {}; // the level's animating flats/textures
-    anim_t* lastanim = nullptr; // one past the last animation in use
+    SurfaceAnim anims[maxAnims] = {}; // the level's animating flats/textures
+    SurfaceAnim* lastanim = nullptr; // one past the last animation in use
     short numlinespecials = 0; // # of scrolling-texture linedefs
     Line* linespeciallist[maxLineAnims] = {}; // those linedefs
 };

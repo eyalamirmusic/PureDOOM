@@ -97,7 +97,7 @@ void P_PlayerThink(Doom::Player* player);
 
 // The item respawn queue lives in Doom::ItemRespawnQueue (an Engine member) now; these are
 // references onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
-extern mapthing_t (&itemrespawnque)[ITEMQUESIZE];
+extern Doom::MapThing (&itemrespawnque)[ITEMQUESIZE];
 extern int (&itemrespawntime)[ITEMQUESIZE];
 extern int& iquehead;
 extern int& iquetail;
@@ -122,7 +122,9 @@ struct divline_t
 };
 
 
-struct intercept_t
+namespace Doom
+{
+struct Intercept
 {
     fixed_t frac; // along trace line
     doom_boolean isaline;
@@ -132,6 +134,7 @@ struct intercept_t
         Doom::Line* line;
     } d;
 };
+} // namespace Doom
 
 
 #define MAXINTERCEPTS        128
@@ -139,7 +142,7 @@ struct intercept_t
 // Doom::clip(); they were p_maputl's own scratch, read by no other file.
 
 
-typedef doom_boolean(*traverser_t) (intercept_t* in);
+typedef doom_boolean(*Traverser) (Doom::Intercept* in);
 
 
 fixed_t P_AproxDistance(fixed_t dx, fixed_t dy);
@@ -175,7 +178,7 @@ doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean(*func)(Doom::Mobj*
 extern divline_t& trace;
 
 
-doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, doom_boolean(*trav) (intercept_t*));
+doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, doom_boolean(*trav) (Doom::Intercept*));
 void P_UnsetThingPosition(Doom::Mobj* thing);
 void P_SetThingPosition(Doom::Mobj* thing);
 

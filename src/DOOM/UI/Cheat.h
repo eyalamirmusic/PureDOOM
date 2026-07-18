@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../m_cheat.h" // cheatseq_t
+#include "../m_cheat.h" // CheatSequence
 
 namespace Doom
 {
 // Cheat-sequence matching; m_cheat.cpp keeps the vanilla cht_ names as shims.
-int checkCheat(cheatseq_t* cht, char key);
-void getParam(cheatseq_t* cht, char* buffer);
+int checkCheat(CheatSequence* cht, char key);
+void getParam(CheatSequence* cht, char* buffer);
 } // namespace Doom

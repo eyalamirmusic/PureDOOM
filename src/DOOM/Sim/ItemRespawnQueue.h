@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdata.h" // mapthing_t
+#include "../doomdata.h" // MapThing
 #include "../p_local.h" // ITEMQUESIZE
 
 namespace Doom
@@ -19,7 +19,7 @@ namespace Doom
 // the reference bindings are mechanical, so the move is golden-neutral.
 struct ItemRespawnQueue
 {
-    mapthing_t itemrespawnque[ITEMQUESIZE] =
+    MapThing itemrespawnque[ITEMQUESIZE] =
         {}; // the picked-up items awaiting respawn
     int itemrespawntime[ITEMQUESIZE] = {}; // the leveltime each was collected at
 

@@ -286,8 +286,8 @@ static int& veryfirsttime = statusBarState().veryfirsttime; // execute initStatu
 static int& lu_palette = statusBarState().lu_palette; // lump number for PLAYPAL
 static unsigned int& st_clock = statusBarState().st_clock; // used for timing
 static int& st_msgcounter = statusBarState().st_msgcounter; // messages go away
-static st_chatstateenum_t& st_chatstate = statusBarState().st_chatstate; // in chat
-static st_stateenum_t& st_gamestate =
+static ChatState& st_chatstate = statusBarState().st_chatstate; // in chat
+static StatusBarMode& st_gamestate =
     statusBarState().st_gamestate; // automap/1st-person
 static doom_boolean& st_chat = statusBarState().st_chat; // status bar chat is active
 static doom_boolean& st_oldchat =
@@ -314,16 +314,16 @@ static Patch* (&arms)[6][2] = statusBarGraphics().arms; // weapon ownership
 // The STlib widgets are a Doom::StatusBarWidgets owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members, the arrays as
 // references-to-array (REFACTOR.md, Step 5).
-static st_number_t& w_ready = statusBarWidgets().w_ready; // ready-weapon widget
-static st_number_t& w_frags = statusBarWidgets().w_frags; // deathmatch frags summary
-static st_percent_t& w_health = statusBarWidgets().w_health; // health widget
-static st_binicon_t& w_armsbg = statusBarWidgets().w_armsbg; // arms background
-static st_multicon_t (&w_arms)[6] = statusBarWidgets().w_arms; // weapon ownership
-static st_multicon_t& w_faces = statusBarWidgets().w_faces; // face status widget
-static st_multicon_t (&w_keyboxes)[3] = statusBarWidgets().w_keyboxes; // keycards
-static st_percent_t& w_armor = statusBarWidgets().w_armor; // armor widget
-static st_number_t (&w_ammo)[4] = statusBarWidgets().w_ammo; // ammo widgets
-static st_number_t (&w_maxammo)[4] =
+static StatusNumber& w_ready = statusBarWidgets().w_ready; // ready-weapon widget
+static StatusNumber& w_frags = statusBarWidgets().w_frags; // deathmatch frags summary
+static StatusPercent& w_health = statusBarWidgets().w_health; // health widget
+static StatusBinIcon& w_armsbg = statusBarWidgets().w_armsbg; // arms background
+static StatusMultIcon (&w_arms)[6] = statusBarWidgets().w_arms; // weapon ownership
+static StatusMultIcon& w_faces = statusBarWidgets().w_faces; // face status widget
+static StatusMultIcon (&w_keyboxes)[3] = statusBarWidgets().w_keyboxes; // keycards
+static StatusPercent& w_armor = statusBarWidgets().w_armor; // armor widget
+static StatusNumber (&w_ammo)[4] = statusBarWidgets().w_ammo; // ammo widgets
+static StatusNumber (&w_maxammo)[4] =
     statusBarWidgets().w_maxammo; // max ammo widgets
 static int& st_fragscount =
     statusBarState().st_fragscount; // frags so far in deathmatch
@@ -398,14 +398,14 @@ EA::Array<unsigned char, 8> cheat_mypos_seq = {
 };
 
 // Now what?
-cheatseq_t cheat_mus = {cheat_mus_seq.data(), 0};
-cheatseq_t cheat_god = {cheat_god_seq.data(), 0};
-cheatseq_t cheat_ammo = {cheat_ammo_seq.data(), 0};
-cheatseq_t cheat_ammonokey = {cheat_ammonokey_seq.data(), 0};
-cheatseq_t cheat_noclip = {cheat_noclip_seq.data(), 0};
-cheatseq_t cheat_commercial_noclip = {cheat_commercial_noclip_seq.data(), 0};
+CheatSequence cheat_mus = {cheat_mus_seq.data(), 0};
+CheatSequence cheat_god = {cheat_god_seq.data(), 0};
+CheatSequence cheat_ammo = {cheat_ammo_seq.data(), 0};
+CheatSequence cheat_ammonokey = {cheat_ammonokey_seq.data(), 0};
+CheatSequence cheat_noclip = {cheat_noclip_seq.data(), 0};
+CheatSequence cheat_commercial_noclip = {cheat_commercial_noclip_seq.data(), 0};
 
-EA::Array<cheatseq_t, 7> cheat_powerup = {{cheat_powerup_seq[0].data(), 0},
+EA::Array<CheatSequence, 7> cheat_powerup = {{cheat_powerup_seq[0].data(), 0},
                                           {cheat_powerup_seq[1].data(), 0},
                                           {cheat_powerup_seq[2].data(), 0},
                                           {cheat_powerup_seq[3].data(), 0},
@@ -413,9 +413,9 @@ EA::Array<cheatseq_t, 7> cheat_powerup = {{cheat_powerup_seq[0].data(), 0},
                                           {cheat_powerup_seq[5].data(), 0},
                                           {cheat_powerup_seq[6].data(), 0}};
 
-cheatseq_t cheat_choppers = {cheat_choppers_seq.data(), 0};
-cheatseq_t cheat_clev = {cheat_clev_seq.data(), 0};
-cheatseq_t cheat_mypos = {cheat_mypos_seq.data(), 0};
+CheatSequence cheat_choppers = {cheat_choppers_seq.data(), 0};
+CheatSequence cheat_clev = {cheat_clev_seq.data(), 0};
+CheatSequence cheat_mypos = {cheat_mypos_seq.data(), 0};
 
 void stStop();
 
@@ -438,7 +438,7 @@ void strefreshBackground()
 
 // Respond to keyboard input events,
 //  intercept cheats.
-doom_boolean statusBarResponder(event_t* ev)
+doom_boolean statusBarResponder(Event* ev)
 {
     // Filter automap on/off.
     if (ev->type == ev_keyup && ((ev->data1 & 0xffff0000) == AM_MSGHEADER))

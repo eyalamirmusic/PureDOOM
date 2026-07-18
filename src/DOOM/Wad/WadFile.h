@@ -7,7 +7,7 @@
 
 namespace Doom
 {
-// One entry of a WAD's directory. Laid out exactly as vanilla's lumpinfo_t,
+// One entry of a WAD's directory. Laid out exactly as vanilla's LumpInfo,
 // because r_things reads sprite names straight out of the directory (it parses
 // TROOA1 into a frame and a rotation) and r_data adds up lump sizes, and both
 // still hold it as a bare array. m_bbox's BBox does the same trick, and for the

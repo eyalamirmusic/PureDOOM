@@ -28,6 +28,11 @@
 #include "../sounds.h"
 
 // The sfx / music tables are 1993 data verbatim: partial-init rows (only the
+
+// The S_sfx/S_music tables below are kept verbatim from the 1993 source, so they
+// name sfx_*/mus_* unqualified. Those enums live in namespace Doom now; this
+// brings them into scope without touching the tables.
+using namespace Doom;
 // leading fields are given; the rest zero) and name literals bound to char*.
 // Keep them exactly as they were - guard the layout from clang-format and quiet
 // the two warnings that legitimate data of this shape raises under -Wall.
@@ -40,7 +45,7 @@
 //
 // Information about all the music
 //
-musicinfo_t S_music[] =
+Doom::MusicInfo S_music[] =
 {
     { 0 },
     { "e1m1", 0 },
@@ -116,7 +121,7 @@ musicinfo_t S_music[] =
 //
 // Information about all the sfx
 //
-sfxinfo_t S_sfx[] =
+Doom::SfxInfo S_sfx[] =
 {
     // S_sfx[0] needs to be a dummy for odd reasons.
     { "none", false,  0, 0, -1, -1, 0 },

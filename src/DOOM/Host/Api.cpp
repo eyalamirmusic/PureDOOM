@@ -24,7 +24,7 @@
 extern byte* screens[5];
 extern unsigned char screen_palette[256 * 3];
 extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
-extern default_t defaults[];
+extern Doom::ConfigDefault defaults[];
 extern int numdefaults;
 extern signed short mixbuffer[2048];
 
@@ -470,7 +470,7 @@ int doom_fprint(void* handle, const char* str)
     return doom_write(handle, str, doom_strlen(str));
 }
 
-static default_t* get_default(const char* name)
+static Doom::ConfigDefault* get_default(const char* name)
 {
     for (int i = 0; i < numdefaults; ++i)
     {
@@ -490,7 +490,7 @@ void doom_set_resolution(int width, int height)
 
 void doom_set_default_int(const char* name, int value)
 {
-    default_t* def = get_default(name);
+    Doom::ConfigDefault* def = get_default(name);
     if (!def)
         return;
     def->defaultvalue = value;
@@ -498,7 +498,7 @@ void doom_set_default_int(const char* name, int value)
 
 void doom_set_default_string(const char* name, const char* value)
 {
-    default_t* def = get_default(name);
+    Doom::ConfigDefault* def = get_default(name);
     if (!def)
         return;
     def->default_text_value = const_cast<char*>(value);
@@ -689,16 +689,16 @@ short* doom_get_sound_buffer()
 
 void doom_key_down(doom_key_t key)
 {
-    event_t event;
-    event.type = ev_keydown;
+    Doom::Event event;
+    event.type = Doom::ev_keydown;
     event.data1 = static_cast<int>(key);
     Doom::postEvent(&event);
 }
 
 void doom_key_up(doom_key_t key)
 {
-    event_t event;
-    event.type = ev_keyup;
+    Doom::Event event;
+    event.type = Doom::ev_keyup;
     event.data1 = static_cast<int>(key);
     Doom::postEvent(&event);
 }
@@ -707,8 +707,8 @@ void doom_button_down(doom_button_t button)
 {
     button_states[button] = 1;
 
-    event_t event;
-    event.type = ev_mouse;
+    Doom::Event event;
+    event.type = Doom::ev_mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = event.data3 = 0;
@@ -719,8 +719,8 @@ void doom_button_up(doom_button_t button)
 {
     button_states[button] = 0;
 
-    event_t event;
-    event.type = ev_mouse;
+    Doom::Event event;
+    event.type = Doom::ev_mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
 
@@ -733,9 +733,9 @@ void doom_button_up(doom_button_t button)
 
 void doom_mouse_move(int delta_x, int delta_y)
 {
-    event_t event;
+    Doom::Event event;
 
-    event.type = ev_mouse;
+    event.type = Doom::ev_mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = delta_x;

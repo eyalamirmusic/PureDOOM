@@ -1158,7 +1158,7 @@ struct State
     SpriteNum sprite;
     long frame;
     long tics;
-    actionf_t action;
+    ActionFunc action;
     StateNum nextstate;
     long misc1, misc2;
 };

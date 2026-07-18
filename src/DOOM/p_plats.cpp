@@ -21,5 +21,5 @@
 
 // activeplats is declared in p_spec.h and read by p_saveg; it is a member of the
 // Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
-plat_t* (&activeplats)[MAXPLATS] = Doom::activeSpecials().activeplats;
+Doom::Plat* (&activeplats)[MAXPLATS] = Doom::activeSpecials().activeplats;
 

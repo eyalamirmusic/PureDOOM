@@ -1,22 +1,26 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../sounds.h" // musicinfo_t (an anonymous-struct typedef, so it cannot be
-// forward-declared - only a pointer is held here regardless); also sfxinfo_t
+#include "../sounds.h" // MusicInfo (an anonymous-struct typedef, so it cannot be
+// forward-declared - only a pointer is held here regardless); also Doom::SfxInfo
 
 #include <ea_data_structures/Structures/Vector.h>
 
 // A mixing channel: which sound occupies it (null = available), the sound's origin and
 // the handle of the sound being played. This was Game/Sound's file-local struct - a
 // forward declaration sufficed while SoundState held only a pointer to the array - but the
-// RAII sweep (Step 9) makes SoundState own the channel array by value (EA::Vector<channel_t>),
+// RAII sweep (Step 9) makes SoundState own the channel array by value (EA::Vector<Doom::SoundChannel>),
 // which needs the complete type here. Still used by no file but Game/Sound.
-struct channel_t
+namespace Doom
 {
-    sfxinfo_t* sfxinfo; // sound occupying the channel (null = available)
+// (definition kept here rather than in Game/Sound so SoundState can own it by value)
+struct SoundChannel
+{
+    Doom::SfxInfo* sfxinfo; // sound occupying the channel (null = available)
     void* origin; // origin of the sound
     int handle; // handle of the sound being played
 };
+} // namespace Doom
 
 namespace Doom
 {
@@ -41,10 +45,10 @@ struct SoundState
     // doom_malloc; Game/Sound's vanilla name channels_s_sound is a plain-pointer view
     // onto data(), refreshed after the resize (the same owner/view split screens[] and
     // GraphicsData's arrays use).
-    EA::Vector<::channel_t> channels;
+    EA::Vector<SoundChannel> channels;
 
     doom_boolean mus_paused = false; // whether songs are paused
-    ::musicinfo_t* mus_playing = nullptr; // music currently being played
+    MusicInfo* mus_playing = nullptr; // music currently being played
     int nextcleanup = 0; // gametic the next channel cleanup is due
 };
 

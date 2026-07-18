@@ -31,14 +31,14 @@ namespace Doom
 // a plain pointer would clobber the reference's storage).
 Patch*& sttminus = statusWidgetGraphics().sttminus;
 
-void drawNum(st_number_t& n);
+void drawNum(StatusNumber& n);
 
 void initStatusWidgets()
 {
     sttminus = static_cast<Patch*>(W_CacheLumpName("STTMINUS", PU_STATIC));
 }
 
-void initNum(st_number_t& n,
+void initNum(StatusNumber& n,
              int x,
              int y,
              Patch** pl,
@@ -60,7 +60,7 @@ void initNum(st_number_t& n,
 //  based on differences from the old number.
 // Note: worth the trouble?
 //
-void drawNum(st_number_t& n)
+void drawNum(StatusNumber& n)
 {
     int numdigits = n.width;
     int num = *n.num;
@@ -116,14 +116,14 @@ void drawNum(st_number_t& n)
         Doom::drawPatch(x - 8, n.y, STLIB_FG, sttminus);
 }
 
-void updateNum(st_number_t& n, doom_boolean refresh)
+void updateNum(StatusNumber& n, doom_boolean refresh)
 {
     (void) refresh;
     if (*n.on)
         drawNum(n);
 }
 
-void initPercent(st_percent_t& p,
+void initPercent(StatusPercent& p,
                  int x,
                  int y,
                  Patch** pl,
@@ -135,7 +135,7 @@ void initPercent(st_percent_t& p,
     p.p = percent;
 }
 
-void updatePercent(st_percent_t& per, int refresh)
+void updatePercent(StatusPercent& per, int refresh)
 {
     if (refresh && *per.n.on)
         Doom::drawPatch(per.n.x, per.n.y, STLIB_FG, per.p);
@@ -144,7 +144,7 @@ void updatePercent(st_percent_t& per, int refresh)
 }
 
 void initMultIcon(
-    st_multicon_t& i, int x, int y, Patch** il, int* inum, doom_boolean* on)
+    StatusMultIcon& i, int x, int y, Patch** il, int* inum, doom_boolean* on)
 {
     i.x = x;
     i.y = y;
@@ -154,7 +154,7 @@ void initMultIcon(
     i.p = il;
 }
 
-void updateMultIcon(st_multicon_t& mi, doom_boolean refresh)
+void updateMultIcon(StatusMultIcon& mi, doom_boolean refresh)
 {
     int w;
     int h;
@@ -181,7 +181,7 @@ void updateMultIcon(st_multicon_t& mi, doom_boolean refresh)
 }
 
 void initBinIcon(
-    st_binicon_t& b, int x, int y, Patch* i, doom_boolean* val, doom_boolean* on)
+    StatusBinIcon& b, int x, int y, Patch* i, doom_boolean* val, doom_boolean* on)
 {
     b.x = x;
     b.y = y;
@@ -191,7 +191,7 @@ void initBinIcon(
     b.p = i;
 }
 
-void updateBinIcon(st_binicon_t& bi, doom_boolean refresh)
+void updateBinIcon(StatusBinIcon& bi, doom_boolean refresh)
 {
     int x;
     int y;

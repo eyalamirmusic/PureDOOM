@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../hu_lib.h" // hu_textline_t
+#include "../hu_lib.h" // HudTextLine
 
 // Doom::Player is used only by pointer here, so a forward declaration is enough.
 namespace Doom
@@ -23,7 +23,7 @@ namespace Doom
 struct HudState
 {
     Player* plr = nullptr; // the console player the HUD reads from
-    hu_textline_t w_title = {}; // the level-title text line, drawn on entry
+    HudTextLine w_title = {}; // the level-title text line, drawn on entry
     doom_boolean headsupactive = false; // the HUD is set up (gate against re-init)
 };
 

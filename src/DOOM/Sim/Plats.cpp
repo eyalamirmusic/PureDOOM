@@ -27,16 +27,16 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void platRaise(plat_t& plat);
-int doPlat(Line* line, plattype_e type, int amount);
+void platRaise(Plat& plat);
+int doPlat(Line* line, PlatType type, int amount);
 void activateInStasis(int tag);
 void stopPlat(Line* line);
-void addActivePlat(plat_t* plat);
-void removeActivePlat(plat_t* plat);
+void addActivePlat(Plat* plat);
+void removeActivePlat(Plat* plat);
 
-void platRaise(plat_t& plat)
+void platRaise(Plat& plat)
 {
-    result_e res;
+    MoveResult res;
 
     switch (plat.status)
     {
@@ -119,9 +119,9 @@ void platRaise(plat_t& plat)
 // Do Platforms
 //  "amount" is only used for SOME platforms.
 //
-int doPlat(Line* line, plattype_e type, int amount)
+int doPlat(Line* line, PlatType type, int amount)
 {
-    plat_t* plat;
+    Plat* plat;
     int secnum;
     int rtn;
     Sector* sec;
@@ -148,7 +148,7 @@ int doPlat(Line* line, plattype_e type, int amount)
 
         // Find lowest & highest floors around sector
         rtn = 1;
-        plat = new (levelAlloc(sizeof(*plat))) plat_t {};
+        plat = new (levelAlloc(sizeof(*plat))) Plat {};
         Doom::addThinker(plat);
 
         plat->type = type;
@@ -220,7 +220,7 @@ int doPlat(Line* line, plattype_e type, int amount)
                     plat->high = sec->floorheight;
 
                 plat->wait = 35 * PLATWAIT;
-                plat->status = (plat_e) (P_Random() & 1);
+                plat->status = (PlatState) (P_Random() & 1);
 
                 Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;
@@ -254,7 +254,7 @@ void stopPlat(Line* line)
         }
 }
 
-void addActivePlat(plat_t* plat)
+void addActivePlat(Plat* plat)
 {
     for (int i = 0; i < MAXPLATS; i++)
         if (activeplats[i] == nullptr)
@@ -265,7 +265,7 @@ void addActivePlat(plat_t* plat)
     fatalError("Error: addActivePlat: no more plats!");
 }
 
-void removeActivePlat(plat_t* plat)
+void removeActivePlat(Plat* plat)
 {
     for (int i = 0; i < MAXPLATS; i++)
         if (plat == activeplats[i])

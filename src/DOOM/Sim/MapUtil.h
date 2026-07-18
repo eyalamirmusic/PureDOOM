@@ -84,5 +84,5 @@ void unsetThingPosition(Mobj& thing);
 // then call trav for each in near-to-far order. Returns false if any iterator or
 // trav bailed early (PT_EARLYOUT hitting a solid line, a traverser saying stop).
 bool pathTraverse(
-    fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, traverser_t trav);
+    fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, Traverser trav);
 } // namespace Doom

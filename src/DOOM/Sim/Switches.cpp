@@ -36,7 +36,7 @@
 #include "Floors.h"
 namespace Doom
 {
-switchlist_t alphSwitchList[] = {
+SwitchListEntry alphSwitchList[] = {
     // Doom shareware episode 1 switches
     {"SW1BRCOM", "SW2BRCOM", 1},
     {"SW1BRN1", "SW2BRN1", 1},
@@ -93,7 +93,7 @@ static int& numswitches = switchList().numswitches;
 
 // Forward declarations so the file's own call order needs no rearranging.
 void initSwitchList();
-void startButton(Line* line, bwhere_e w, int texture, int time);
+void startButton(Line* line, ButtonWhere w, int texture, int time);
 void changeSwitchTexture(Line* line, int useAgain);
 doom_boolean useSpecialLine(Mobj* thing, Line* line, int side);
 
@@ -128,7 +128,7 @@ void initSwitchList()
 //
 // Start a button counting down till it turns off.
 //
-void startButton(Line* line, bwhere_e w, int texture, int time)
+void startButton(Line* line, ButtonWhere w, int texture, int time)
 {
     // See if button is already pressed
     for (int i = 0; i < MAXBUTTONS; i++)

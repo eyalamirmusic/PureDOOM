@@ -22,8 +22,8 @@ namespace Doom
 // Engine&.
 struct Clip
 {
-    intercept_t intercepts[MAXINTERCEPTS];
-    intercept_t* interceptPtr = nullptr;
+    Intercept intercepts[MAXINTERCEPTS];
+    Intercept* interceptPtr = nullptr;
     doom_boolean earlyOut = false;
 
     // P_PathTraverse's trace, read back by the shooting code in p_map.

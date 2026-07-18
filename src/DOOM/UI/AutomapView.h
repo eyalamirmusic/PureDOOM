@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../am_map.h" // mpoint_t (and fixed_t through it)
+#include "../am_map.h" // MapPoint (and fixed_t through it)
 #include "../doomdef.h" // SCREENWIDTH, SCREENHEIGHT
 #include "../doomtype.h" // byte, doom_boolean
 #include "../r_defs.h" // Patch
@@ -13,7 +13,7 @@ namespace Doom
 // pan/zoom increments and limits, the level's map bounds, the saved window for resize recovery, the
 // follower's old location, the frame->map scale, the placed marks, and the open/closed flag. None
 // is read by any other file. (Named AutomapView, not AutomapState, because st_stuff.h already has a
-// global enum value AutomapState - the st_stateenum_t case - which would be ambiguous with a
+// global enum value AutomapState - the StatusBarMode case - which would be ambiguous with a
 // Doom::AutomapState under `using namespace Doom`.)
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names
@@ -22,7 +22,7 @@ namespace Doom
 // compiler binds each name to its same-named member - so this is behaviour-preserving by
 // construction, and verified by build + app-link. AM_LevelInit / AM_initVariables reset the view
 // before it is drawn, so the defaults matter little, but they reproduce vanilla's initializers.
-// (The "iddt" cheat sequence stays a file-local static: its cheatseq_t holds a pointer to its own
+// (The "iddt" cheat sequence stays a file-local static: its CheatSequence holds a pointer to its own
 // byte array, which does not survive being a copyable struct member; it is an m_cheat concern.)
 struct AutomapView
 {
@@ -42,7 +42,7 @@ struct AutomapView
     int nexttic = 0; // Doom::automapTicker: next tic the fuse animation advances
     int litelevelscnt = 0; // Doom::automapTicker: cursor into the fuse brightness ramp
 
-    mpoint_t m_paninc = {}; // window pan per tic (map coords)
+    MapPoint m_paninc = {}; // window pan per tic (map coords)
     fixed_t mtof_zoommul = 0; // window zoom per tic (map -> frame)
     fixed_t ftom_zoommul = 0; // window zoom per tic (frame -> map)
 
@@ -56,12 +56,12 @@ struct AutomapView
 
     fixed_t old_m_w = 0, old_m_h = 0; // saved window for resize recovery
     fixed_t old_m_x = 0, old_m_y = 0;
-    mpoint_t f_oldloc = {}; // the follower's previous location
+    MapPoint f_oldloc = {}; // the follower's previous location
 
     fixed_t scale_ftom = 0; // frame -> map scale (1 / scale_mtof)
 
     Patch* marknums[10] = {}; // the 0-9 mark-number patches
-    mpoint_t markpoints[numMarkPoints] = {}; // the placed marks
+    MapPoint markpoints[numMarkPoints] = {}; // the placed marks
     int markpointnum = 0; // the next mark slot
 
     doom_boolean stopped = true; // the automap is closed

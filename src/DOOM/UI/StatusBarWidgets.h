@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../st_lib.h" // st_number_t, st_percent_t, st_binicon_t, st_multicon_t
+#include "../st_lib.h" // StatusNumber, StatusPercent, StatusBinIcon, StatusMultIcon
 
 namespace Doom
 {
@@ -19,16 +19,16 @@ namespace Doom
 // frame-golden-covered - the byte-identical goldens are a live confirmation.
 struct StatusBarWidgets
 {
-    st_number_t w_ready = {}; // ready-weapon ammo count
-    st_number_t w_frags = {}; // deathmatch frags summary (replaces the arms)
-    st_percent_t w_health = {}; // health percent
-    st_binicon_t w_armsbg = {}; // arms background (single-player only)
-    st_multicon_t w_arms[6] = {}; // the six weapon-ownership icons
-    st_multicon_t w_faces = {}; // the animated face
-    st_multicon_t w_keyboxes[3] = {}; // the three key slots
-    st_percent_t w_armor = {}; // armor percent
-    st_number_t w_ammo[4] = {}; // the four ammo-type counts
-    st_number_t w_maxammo[4] = {}; // the four ammo-type caps
+    StatusNumber w_ready = {}; // ready-weapon ammo count
+    StatusNumber w_frags = {}; // deathmatch frags summary (replaces the arms)
+    StatusPercent w_health = {}; // health percent
+    StatusBinIcon w_armsbg = {}; // arms background (single-player only)
+    StatusMultIcon w_arms[6] = {}; // the six weapon-ownership icons
+    StatusMultIcon w_faces = {}; // the animated face
+    StatusMultIcon w_keyboxes[3] = {}; // the three key slots
+    StatusPercent w_armor = {}; // armor percent
+    StatusNumber w_ammo[4] = {}; // the four ammo-type counts
+    StatusNumber w_maxammo[4] = {}; // the four ammo-type caps
 
     // The "n/a" sentinel w_ready.num points at when the ready weapon uses no ammo (fist/chainsaw).
     // stupdateWidgets' own function-local static (the "later function-local pass"); it must persist,
