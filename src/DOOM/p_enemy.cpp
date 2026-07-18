@@ -26,4 +26,4 @@
 // Engine now (Sim/SoundTarget.h); this is a reference onto it. (The old "p_saveg archives it" note
 // was wrong - p_saveg only touches Doom::Sector::soundtarget, never this global.) Written by
 // Doom::noiseAlert / recursiveSound.
-mobj_t*& soundtarget = Doom::soundTarget().soundtarget;
+Doom::Mobj*& soundtarget = Doom::soundTarget().soundtarget;

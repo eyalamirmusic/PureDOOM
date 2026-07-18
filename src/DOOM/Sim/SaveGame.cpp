@@ -49,7 +49,7 @@ void unArchiveSpecials();
 
 void archivePlayers()
 {
-    player_t* dest;
+    Player* dest;
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -58,9 +58,9 @@ void archivePlayers()
 
         PADSAVEP();
 
-        dest = reinterpret_cast<player_t*>(save_p);
-        doom_memcpy(dest, &players[i], sizeof(player_t));
-        save_p += sizeof(player_t);
+        dest = reinterpret_cast<Player*>(save_p);
+        doom_memcpy(dest, &players[i], sizeof(Player));
+        save_p += sizeof(Player);
         for (int j = 0; j < NUMPSPRITES; j++)
         {
             if (dest->psprites[j].state)
@@ -84,8 +84,8 @@ void unArchivePlayers()
 
         PADSAVEP();
 
-        doom_memcpy(&players[i], save_p, sizeof(player_t));
-        save_p += sizeof(player_t);
+        doom_memcpy(&players[i], save_p, sizeof(Player));
+        save_p += sizeof(Player);
 
         // will be set when unarc thinker
         players[i].mo = nullptr;
@@ -216,7 +216,7 @@ enum thinkerclass_t
 // pointer is preserved across the copy, since the bytes on disk carry a stale one.
 // Every derived field lands byte-identical; only the (reconstructed) linkage and the
 // vtable are not taken from the save. This is what lets p_saveg keep memcpy'ing a now
-// polymorphic mobj_t / special without corrupting its dispatch.
+// polymorphic Mobj / special without corrupting its dispatch.
 template <typename T>
 static T* unarchiveThinker()
 {
@@ -234,7 +234,7 @@ static T* unarchiveThinker()
 void archiveThinkers()
 {
     thinker_t* th;
-    mobj_t* mobj;
+    Mobj* mobj;
 
     // save off the current thinkers
     for (th = thinkercap.next; th != &thinkercap; th = th->next)
@@ -245,14 +245,14 @@ void archiveThinkers()
         {
             *save_p++ = tc_mobj;
             PADSAVEP();
-            mobj = reinterpret_cast<mobj_t*>(save_p);
+            mobj = reinterpret_cast<Mobj*>(save_p);
             doom_memcpy(mobj, th, sizeof(*mobj));
             save_p += sizeof(*mobj);
             mobj->state = reinterpret_cast<state_t*>(mobj->state - states);
 
             if (mobj->player)
                 mobj->player =
-                    reinterpret_cast<player_t*>((mobj->player - players) + 1);
+                    reinterpret_cast<Player*>((mobj->player - players) + 1);
             continue;
         }
 
@@ -271,7 +271,7 @@ void unArchiveThinkers()
     byte tclass;
     thinker_t* currentthinker;
     thinker_t* next;
-    mobj_t* mobj;
+    Mobj* mobj;
 
     // remove all the current thinkers
     currentthinker = thinkercap.next;
@@ -280,7 +280,7 @@ void unArchiveThinkers()
         next = currentthinker->next;
 
         if (currentthinker->kind() == Doom::ThinkerKind::Mobj)
-            Doom::removeMobj(reinterpret_cast<mobj_t*>(currentthinker));
+            Doom::removeMobj(reinterpret_cast<Mobj*>(currentthinker));
         else
             levelFree(currentthinker);
 
@@ -299,7 +299,7 @@ void unArchiveThinkers()
 
             case tc_mobj:
                 PADSAVEP();
-                mobj = unarchiveThinker<mobj_t>();
+                mobj = unarchiveThinker<Mobj>();
                 mobj->state = &states[reinterpret_cast<long long>(mobj->state)];
                 mobj->target = nullptr;
                 if (mobj->player)

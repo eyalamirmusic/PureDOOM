@@ -111,7 +111,7 @@ namespace Doom
 //
 int sgetChannel(void* origin, sfxinfo_t* sfxinfo);
 int sAdjustSoundParams(
-    mobj_t* listener, mobj_t* source, int* vol, int* sep, int* pitch);
+    Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch);
 void sStopChannel(int cnum);
 
 //
@@ -214,7 +214,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     sfxinfo_t* sfx;
     int cnum;
 
-    mobj_t* origin = static_cast<mobj_t*>(origin_p);
+    Mobj* origin = static_cast<Mobj*>(origin_p);
 
     // check for bogus sound #
     if (sfx_id < 1 || sfx_id > NUMSFX)
@@ -385,7 +385,7 @@ void updateSounds(void* listener_p)
     sfxinfo_t* sfx;
     channel_t* c;
 
-    mobj_t* listener = static_cast<mobj_t*>(listener_p);
+    Mobj* listener = static_cast<Mobj*>(listener_p);
 
     for (int cnum = 0; cnum < numChannels; cnum++)
     {
@@ -421,7 +421,7 @@ void updateSounds(void* listener_p)
                 if (c->origin && listener_p != c->origin)
                 {
                     audible = sAdjustSoundParams(listener,
-                                                 static_cast<mobj_t*>((c->origin)),
+                                                 static_cast<Mobj*>((c->origin)),
                                                  &volume,
                                                  &sep,
                                                  &pitch);
@@ -576,7 +576,7 @@ void sStopChannel(int cnum)
 // Otherwise, modifies parameters and returns 1.
 //
 int sAdjustSoundParams(
-    mobj_t* listener, mobj_t* source, int* vol, int* sep, int* pitch)
+    Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch)
 {
     fixed_t approx_dist;
     fixed_t adx;

@@ -88,7 +88,7 @@ namespace Doom
 // The HUD's residual state (the player, the level-title line, the active flag) is a Doom::HudState
 // owned by the Engine now, moved by the file-scope-statics sweep; these names are references onto
 // the members (headsupactive follows below, at its own site) (REFACTOR.md, Step 5).
-static player_t*& plr = hudState().plr;
+static Player*& plr = hudState().plr;
 static hu_textline_t& w_title = hudState().w_title;
 // The heads-up chat state is a Doom::HudChat owned by the Engine now, moved by the
 // file-scope-statics sweep; these names are references onto the members (REFACTOR.md, Step 5).

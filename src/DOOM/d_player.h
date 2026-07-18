@@ -40,9 +40,11 @@
 
 
 //
-// Player states.
+// Doom::Player states.
 //
-enum playerstate_t
+namespace Doom
+{
+enum PlayerLifeState
 {
     // Playing or camping.
     PST_LIVE,
@@ -51,12 +53,15 @@ enum playerstate_t
     // Ready to restart/respawn???
     PST_REBORN
 };
+} // namespace Doom
 
 
 //
-// Player internal flags, for cheats and debug.
+// Doom::Player internal flags, for cheats and debug.
 //
-enum cheat_t
+namespace Doom
+{
+enum CheatFlag
 {
     // No clipping, walk through barriers.
     CF_NOCLIP = 1,
@@ -65,16 +70,19 @@ enum cheat_t
     // Not really a cheat, just a debug aid.
     CF_NOMOMENTUM = 4
 };
+} // namespace Doom
 
 
 //
-// Extended player object info: player_t
+// Extended player object info: Doom::Player
 //
-struct player_t
+namespace Doom
 {
-    mobj_t* mo;
-    playerstate_t playerstate;
-    ticcmd_t cmd;
+struct Player
+{
+    Mobj* mo;
+    PlayerLifeState playerstate;
+    Ticcmd cmd;
 
     // Determine POV,
     //  including viewpoint bobbing during movement.
@@ -115,7 +123,7 @@ struct player_t
     int usedown;
 
     // Bit flags, for cheats and debug.
-    // See cheat_t, above.
+    // See CheatFlag, above.
     int cheats;
 
     // Refired shots are less accurate.
@@ -135,7 +143,7 @@ struct player_t
     int bonuscount;
 
     // Who did damage (0 for floors/ceilings).
-    mobj_t* attacker;
+    Mobj* attacker;
 
     // So gun flashes light up areas.
     int extralight;
@@ -149,18 +157,21 @@ struct player_t
     int colormap;
 
     // Overlay view sprites (gun, etc).
-    pspdef_t psprites[NUMPSPRITES];
+    PspDef psprites[NUMPSPRITES];
 
     // True if secret level has been done.
     doom_boolean didsecret;
 };
+} // namespace Doom
 
 
 //
 // INTERMISSION
 // Structure passed e.g. to Doom::startIntermission(wb)
 //
-struct wbplayerstruct_t
+namespace Doom
+{
+struct IntermissionPlayer
 {
     doom_boolean in;        // whether the player is in game
 
@@ -172,9 +183,12 @@ struct wbplayerstruct_t
     int frags[4];
     int score;        // current score on entry, modified on return
 };
+} // namespace Doom
 
 
-struct wbstartstruct_t
+namespace Doom
+{
+struct IntermissionStart
 {
     int epsd;        // episode # (0-2)
 
@@ -196,8 +210,9 @@ struct wbstartstruct_t
     // index of this player in game
     int pnum;
 
-    wbplayerstruct_t plyr[MAXPLAYERS];
+    IntermissionPlayer plyr[MAXPLAYERS];
 };
+} // namespace Doom
 
 
 

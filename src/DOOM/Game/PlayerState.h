@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // player_t
+#include "../d_player.h" // Player
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 
@@ -21,7 +21,7 @@ namespace Doom
 // reference reads the identical bytes, so the move is golden-neutral.
 struct PlayerState
 {
-    player_t players[MAXPLAYERS] = {}; // every player's state (single-player here)
+    Player players[MAXPLAYERS] = {}; // every player's state (single-player here)
     doom_boolean playeringame[MAXPLAYERS] = {}; // which slots are live
 
     int consoleplayer = 0; // the player this node takes events for

@@ -1104,7 +1104,7 @@ void amDrawLineCharacter(mline_t* lineguy,
 
 void amDrawPlayers()
 {
-    player_t* p;
+    Player* p;
     static EA::Array<int, 4> their_colors = {GREENS, GRAYS, BROWNS, REDS};
     int their_color = -1;
     int color;
@@ -1153,7 +1153,7 @@ void amDrawPlayers()
 
 void amDrawThings(int colors)
 {
-    mobj_t* t;
+    Mobj* t;
 
     for (int i = 0; i < numsectors; i++)
     {

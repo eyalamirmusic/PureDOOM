@@ -17,7 +17,7 @@
 // $Log:$
 //
 // DESCRIPTION:
-//        Player related stuff. Rewritten in Sim/Player.{h,cpp}; this keeps the
+//        Doom::Player related stuff. Rewritten in Sim/Doom::Player.{h,cpp}; this keeps the
 //        vanilla P_PlayerThink name.
 //
 //-----------------------------------------------------------------------------
@@ -26,7 +26,7 @@
 
 #include "Sim/Player.h"
 
-void P_PlayerThink(player_t* player)
+void P_PlayerThink(Doom::Player* player)
 {
     Doom::playerThink(*player);
 }

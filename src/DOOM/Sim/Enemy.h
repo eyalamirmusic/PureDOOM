@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../d_player.h" // player_t, pspdef_t
-#include "../p_mobj.h" // mobj_t, Sector, angle_t
+#include "../d_player.h" // Player, PspDef
+#include "../p_mobj.h" // Mobj, Sector, angle_t
 
 namespace Doom
 {
@@ -9,60 +9,60 @@ namespace Doom
 // alert Doom::noiseAlert weapons trigger. p_enemy.cpp keeps the vanilla names as shims.
 // Covered by the demos (a level's worth of monsters chasing, attacking, dying) and
 // golden-neutral.
-void keenDie(mobj_t& mo);
-void look(mobj_t& actor);
-void chase(mobj_t& actor);
-void faceTarget(mobj_t& actor);
-void posAttack(mobj_t& actor);
-void sPosAttack(mobj_t& actor);
-void cPosAttack(mobj_t& actor);
-void cPosRefire(mobj_t& actor);
-void spidRefire(mobj_t& actor);
-void bspiAttack(mobj_t& actor);
-void troopAttack(mobj_t& actor);
-void sargAttack(mobj_t& actor);
-void headAttack(mobj_t& actor);
-void cyberAttack(mobj_t& actor);
-void bruisAttack(mobj_t& actor);
-void skelMissile(mobj_t& actor);
-void tracer(mobj_t& actor);
-void skelWhoosh(mobj_t& actor);
-void skelFist(mobj_t& actor);
-void vileChase(mobj_t& actor);
-void vileStart(mobj_t& actor);
-void startFire(mobj_t& actor);
-void fireCrackle(mobj_t& actor);
-void fire(mobj_t& actor);
-void vileTarget(mobj_t& actor);
-void vileAttack(mobj_t& actor);
-void fatRaise(mobj_t& actor);
-void fatAttack1(mobj_t& actor);
-void fatAttack2(mobj_t& actor);
-void fatAttack3(mobj_t& actor);
-void skullAttack(mobj_t& actor);
-void painShootSkull(mobj_t& actor, angle_t angle);
-void painAttack(mobj_t& actor);
-void painDie(mobj_t& actor);
-void scream(mobj_t& actor);
-void xScream(mobj_t& actor);
-void pain(mobj_t& actor);
-void fall(mobj_t& actor);
-void explode(mobj_t& thingy);
-void bossDeath(mobj_t& mo);
-void hoof(mobj_t& mo);
-void metal(mobj_t& mo);
-void babyMetal(mobj_t& mo);
-void openShotgun2(player_t* player, pspdef_t* psp);
-void loadShotgun2(player_t* player, pspdef_t* psp);
-void closeShotgun2(player_t* player, pspdef_t* psp);
-void brainAwake(mobj_t& mo);
-void brainPain(mobj_t& mo);
-void brainScream(mobj_t& mo);
-void brainExplode(mobj_t& mo);
-void brainDie(mobj_t& mo);
-void brainSpit(mobj_t& mo);
-void spawnSound(mobj_t& mo);
-void spawnFly(mobj_t& mo);
-void playerScream(mobj_t& mo);
-void noiseAlert(mobj_t* target, mobj_t& emmiter);
+void keenDie(Mobj& mo);
+void look(Mobj& actor);
+void chase(Mobj& actor);
+void faceTarget(Mobj& actor);
+void posAttack(Mobj& actor);
+void sPosAttack(Mobj& actor);
+void cPosAttack(Mobj& actor);
+void cPosRefire(Mobj& actor);
+void spidRefire(Mobj& actor);
+void bspiAttack(Mobj& actor);
+void troopAttack(Mobj& actor);
+void sargAttack(Mobj& actor);
+void headAttack(Mobj& actor);
+void cyberAttack(Mobj& actor);
+void bruisAttack(Mobj& actor);
+void skelMissile(Mobj& actor);
+void tracer(Mobj& actor);
+void skelWhoosh(Mobj& actor);
+void skelFist(Mobj& actor);
+void vileChase(Mobj& actor);
+void vileStart(Mobj& actor);
+void startFire(Mobj& actor);
+void fireCrackle(Mobj& actor);
+void fire(Mobj& actor);
+void vileTarget(Mobj& actor);
+void vileAttack(Mobj& actor);
+void fatRaise(Mobj& actor);
+void fatAttack1(Mobj& actor);
+void fatAttack2(Mobj& actor);
+void fatAttack3(Mobj& actor);
+void skullAttack(Mobj& actor);
+void painShootSkull(Mobj& actor, angle_t angle);
+void painAttack(Mobj& actor);
+void painDie(Mobj& actor);
+void scream(Mobj& actor);
+void xScream(Mobj& actor);
+void pain(Mobj& actor);
+void fall(Mobj& actor);
+void explode(Mobj& thingy);
+void bossDeath(Mobj& mo);
+void hoof(Mobj& mo);
+void metal(Mobj& mo);
+void babyMetal(Mobj& mo);
+void openShotgun2(Player* player, PspDef* psp);
+void loadShotgun2(Player* player, PspDef* psp);
+void closeShotgun2(Player* player, PspDef* psp);
+void brainAwake(Mobj& mo);
+void brainPain(Mobj& mo);
+void brainScream(Mobj& mo);
+void brainExplode(Mobj& mo);
+void brainDie(Mobj& mo);
+void brainSpit(Mobj& mo);
+void spawnSound(Mobj& mo);
+void spawnFly(Mobj& mo);
+void playerScream(Mobj& mo);
+void noiseAlert(Mobj* target, Mobj& emmiter);
 } // namespace Doom

@@ -95,7 +95,7 @@ static int& numswitches = switchList().numswitches;
 void initSwitchList();
 void startButton(Line* line, bwhere_e w, int texture, int time);
 void changeSwitchTexture(Line* line, int useAgain);
-doom_boolean useSpecialLine(mobj_t* thing, Line* line, int side);
+doom_boolean useSpecialLine(Mobj* thing, Line* line, int side);
 
 void initSwitchList()
 {
@@ -148,7 +148,7 @@ void startButton(Line* line, bwhere_e w, int texture, int time)
             buttonlist[i].btexture = texture;
             buttonlist[i].btimer = time;
             buttonlist[i].soundorg =
-                reinterpret_cast<mobj_t*>(&line->frontsector->soundorg);
+                reinterpret_cast<Mobj*>(&line->frontsector->soundorg);
             return;
         }
     }
@@ -226,7 +226,7 @@ void changeSwitchTexture(Line* line, int useAgain)
 // Called when a thing uses a special line.
 // Only the front sides of lines are usable.
 //
-doom_boolean useSpecialLine(mobj_t* thing, Line* line, int side)
+doom_boolean useSpecialLine(Mobj* thing, Line* line, int side)
 {
     // Err...
     // Use the back sides of VERY SPECIAL lines...

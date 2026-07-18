@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // wbstartstruct_t
+#include "../d_player.h" // IntermissionStart
 
 namespace Doom
 {
@@ -15,7 +15,7 @@ namespace Doom
 // reaches the intermission, so it is not hashed - golden-neutral either way.
 struct IntermissionInfo
 {
-    wbstartstruct_t wminfo =
+    IntermissionStart wminfo =
         {}; // parameters for the world-map / intermission screen
 };
 

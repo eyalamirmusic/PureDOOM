@@ -53,7 +53,7 @@ extern fixed_t& attackrange;
 namespace Doom
 {
 
-doom_boolean setMobjState(mobj_t* mobj, statenum_t state)
+doom_boolean setMobjState(Mobj* mobj, statenum_t state)
 {
     state_t* st;
 
@@ -74,10 +74,10 @@ doom_boolean setMobjState(mobj_t* mobj, statenum_t state)
 
         // Modified handling.
         // Call action functions when the state is set. The action is stored
-        // type-erased; a mobj state carries a (mobj_t*) action, cast back from the
+        // type-erased; a mobj state carries a (Mobj*) action, cast back from the
         // erased pointer here (a round-trip conversion, hence well-defined).
         if (st->action.fn)
-            reinterpret_cast<void (*)(mobj_t*)>(st->action.fn)(mobj);
+            reinterpret_cast<void (*)(Mobj*)>(st->action.fn)(mobj);
 
         state = st->nextstate;
     } while (!mobj->tics);
@@ -88,7 +88,7 @@ doom_boolean setMobjState(mobj_t* mobj, statenum_t state)
 //
 // explodeMissile
 //
-void explodeMissile(mobj_t* mo)
+void explodeMissile(Mobj* mo)
 {
     mo->momx = mo->momy = mo->momz = 0;
 
@@ -108,11 +108,11 @@ void explodeMissile(mobj_t* mo)
 //
 // xyMovement
 //
-void xyMovement(mobj_t* mo)
+void xyMovement(Mobj* mo)
 {
     fixed_t ptryx;
     fixed_t ptryy;
-    player_t* player;
+    Player* player;
     fixed_t xmove;
     fixed_t ymove;
 
@@ -234,7 +234,7 @@ void xyMovement(mobj_t* mo)
 //
 // zMovement
 //
-void zMovement(mobj_t* mo)
+void zMovement(Mobj* mo)
 {
     fixed_t dist;
     fixed_t delta;
@@ -334,13 +334,13 @@ void zMovement(mobj_t* mo)
 //
 // nightmareRespawn
 //
-void nightmareRespawn(mobj_t* mobj)
+void nightmareRespawn(Mobj* mobj)
 {
     fixed_t x;
     fixed_t y;
     fixed_t z;
     SubSector* ss;
-    mobj_t* mo;
+    Mobj* mo;
     mapthing_t* mthing;
 
     x = mobj->spawnpoint.x << FRACBITS;
@@ -389,7 +389,7 @@ void nightmareRespawn(mobj_t* mobj)
 //
 // mobjThinker
 //
-void mobjThinker(mobj_t* mobj)
+void mobjThinker(Mobj* mobj)
 {
     // momentum movement
     if (mobj->momx || mobj->momy || (mobj->flags & MF_SKULLFLY))
@@ -447,13 +447,13 @@ void mobjThinker(mobj_t* mobj)
 //
 // spawnMobj
 //
-mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
+Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 {
-    mobj_t* mobj;
+    Mobj* mobj;
     state_t* st;
     mobjinfo_t* info;
 
-    mobj = new (levelAlloc(sizeof(*mobj))) mobj_t {};
+    mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
     info = &mobjinfo[type];
 
     mobj->type = type;
@@ -499,7 +499,7 @@ mobj_t* spawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 //
 // removeMobj
 //
-void removeMobj(mobj_t* mobj)
+void removeMobj(Mobj* mobj)
 {
     if ((mobj->flags & MF_SPECIAL) && !(mobj->flags & MF_DROPPED)
         && (mobj->type != MT_INV) && (mobj->type != MT_INS))
@@ -533,7 +533,7 @@ void respawnSpecials()
     fixed_t z;
 
     SubSector* ss;
-    mobj_t* mo;
+    Mobj* mo;
     mapthing_t* mthing;
 
     int i;
@@ -589,12 +589,12 @@ void respawnSpecials()
 //
 void spawnPlayer(mapthing_t* mthing)
 {
-    player_t* p;
+    Player* p;
     fixed_t x;
     fixed_t y;
     fixed_t z;
 
-    mobj_t* mobj;
+    Mobj* mobj;
 
     // not playing?
     if (!playeringame[mthing->type - 1])
@@ -654,7 +654,7 @@ void spawnMapThing(mapthing_t* mthing)
 {
     int i;
     int bit;
-    mobj_t* mobj;
+    Mobj* mobj;
     fixed_t x;
     fixed_t y;
     fixed_t z;
@@ -759,7 +759,7 @@ void spawnMapThing(mapthing_t* mthing)
 //
 void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 {
-    mobj_t* th;
+    Mobj* th;
 
     z += ((P_Random() - P_Random()) << 10);
 
@@ -780,7 +780,7 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 //
 void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 {
-    mobj_t* th;
+    Mobj* th;
 
     z += ((P_Random() - P_Random()) << 10);
     th = spawnMobj(x, y, z, MT_BLOOD);
@@ -801,7 +801,7 @@ void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 // Moves the missile forward a bit
 //  and possibly explodes it right there.
 //
-void checkMissileSpawn(mobj_t* th)
+void checkMissileSpawn(Mobj* th)
 {
     th->tics -= P_Random() & 3;
     if (th->tics < 1)
@@ -820,9 +820,9 @@ void checkMissileSpawn(mobj_t* th)
 //
 // spawnMissile
 //
-mobj_t* spawnMissile(mobj_t* source, mobj_t* dest, mobjtype_t type)
+Mobj* spawnMissile(Mobj* source, Mobj* dest, mobjtype_t type)
 {
-    mobj_t* th;
+    Mobj* th;
     angle_t an;
     int dist;
 
@@ -859,9 +859,9 @@ mobj_t* spawnMissile(mobj_t* source, mobj_t* dest, mobjtype_t type)
 // spawnPlayerMissile
 // Tries to aim at a nearby monster
 //
-void spawnPlayerMissile(mobj_t* source, mobjtype_t type)
+void spawnPlayerMissile(Mobj* source, mobjtype_t type)
 {
-    mobj_t* th;
+    Mobj* th;
     angle_t an;
 
     fixed_t x;

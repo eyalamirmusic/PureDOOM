@@ -57,7 +57,7 @@ angle_t& viewangle = Doom::viewPoint().viewangle;
 fixed_t& viewcos = Doom::viewPoint().viewcos;
 fixed_t& viewsin = Doom::viewPoint().viewsin;
 
-player_t*& viewplayer = Doom::viewPoint().viewplayer;
+Doom::Player*& viewplayer = Doom::viewPoint().viewplayer;
 
 // 0 = high, 1 = low. Part of the view-sizing state in Doom::ViewWindow now; a reference
 // onto it.
@@ -126,12 +126,12 @@ void (*spanfunc)();
 
 
 
-void R_SetupFrame(player_t* player)
+void R_SetupFrame(Doom::Player* player)
 {
     Doom::setupFrame(*player);
 }
 
-void R_RenderPlayerView(player_t* player)
+void R_RenderPlayerView(Doom::Player* player)
 {
     Doom::renderPlayerView(*player);
 }

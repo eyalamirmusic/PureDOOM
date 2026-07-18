@@ -25,7 +25,7 @@ void tactileFeedback(int on, int off, int total)
     Doom::tactileFeedback(on, off, total);
 }
 
-ticcmd_t* baseTiccmd()
+Doom::Ticcmd* baseTiccmd()
 {
     return Doom::baseTiccmd();
 }

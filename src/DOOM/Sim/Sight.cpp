@@ -261,7 +261,7 @@ doom_boolean crossBSPNode(int bspnum)
 }
 } // namespace
 
-bool checkSight(mobj_t* t1, mobj_t* t2)
+bool checkSight(Mobj* t1, Mobj* t2)
 {
     Clip& clip = Doom::clip();
 

@@ -54,7 +54,7 @@ bool forEachLineInBlock(int x, int y, LineFunc&& func)
     return true;
 }
 
-// Walk the things in one blockmap cell, calling func(mobj_t*) for each until one
+// Walk the things in one blockmap cell, calling func(Mobj*) for each until one
 // returns false. Same callable-taking shape as forEachLineInBlock; no validcount,
 // since a thing lives in exactly one cell.
 template <class ThingFunc>
@@ -65,7 +65,7 @@ bool forEachThingInBlock(int x, int y, ThingFunc&& func)
     if (!bmap.contains(x, y))
         return true;
 
-    for (mobj_t* mobj = blocklinks[bmap.index(x, y)]; mobj; mobj = mobj->bnext)
+    for (Mobj* mobj = blocklinks[bmap.index(x, y)]; mobj; mobj = mobj->bnext)
         if (!func(mobj))
             return false;
 
@@ -74,10 +74,10 @@ bool forEachThingInBlock(int x, int y, ThingFunc&& func)
 
 // Link a thing into its subsector's sector list and its blockmap cell (or neither,
 // for MF_NOSECTOR / MF_NOBLOCKMAP), setting thing.subsector from its x,y.
-void setThingPosition(mobj_t& thing);
+void setThingPosition(Mobj& thing);
 
 // Unlink a thing from both, ahead of a position change.
-void unsetThingPosition(mobj_t& thing);
+void unsetThingPosition(Mobj& thing);
 
 // Trace the segment (x1,y1)->(x2,y2) across the blockmap, gathering the lines
 // (PT_ADDLINES) and/or things (PT_ADDTHINGS) it crosses into Clip's intercept list,

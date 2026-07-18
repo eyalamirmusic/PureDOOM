@@ -28,7 +28,7 @@
 #include "Specials.h"
 #include <ea_data_structures/Structures/Array.h>
 
-// Doom::spawnMapThing is Mobj's now (global shim); the things loader calls it.
+// Doom::spawnMapThing is Doom::Mobj's now (global shim); the things loader calls it.
 #include "../Game/Game.h"
 #include "../Game/Sound.h"
 #include "../Host/System.h"

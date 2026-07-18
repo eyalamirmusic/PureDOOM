@@ -56,7 +56,7 @@ doom_boolean addLineIntercept(Line* ld)
 
 // PIT_AddThingIntercepts: a thing whose bounding-box diagonal the trace crosses is
 // added. The diagonal chosen is the one facing the trace, so a corner clip counts.
-doom_boolean addThingIntercept(mobj_t* thing)
+doom_boolean addThingIntercept(Mobj* thing)
 {
     Clip& clip = Doom::clip();
     divline_t& trace = clip.trace;
@@ -147,7 +147,7 @@ bool traverseIntercepts(traverser_t func, fixed_t maxfrac)
 }
 } // namespace
 
-void setThingPosition(mobj_t& thing)
+void setThingPosition(Mobj& thing)
 {
     // link into subsector
     SubSector* ss = Doom::pointInSubsector(thing.x, thing.y);
@@ -177,7 +177,7 @@ void setThingPosition(mobj_t& thing)
 
         if (bmap.contains(blockx, blocky))
         {
-            mobj_t** link = &blocklinks[bmap.index(blockx, blocky)];
+            Mobj** link = &blocklinks[bmap.index(blockx, blocky)];
             thing.bprev = nullptr;
             thing.bnext = *link;
             if (*link)
@@ -193,7 +193,7 @@ void setThingPosition(mobj_t& thing)
     }
 }
 
-void unsetThingPosition(mobj_t& thing)
+void unsetThingPosition(Mobj& thing)
 {
     if (!(thing.flags & MF_NOSECTOR))
     {

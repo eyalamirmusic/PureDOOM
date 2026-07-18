@@ -76,9 +76,9 @@
 doomcom_t*& doomcom = Doom::netState().doomcom;
 doomdata_t*& netbuffer = Doom::netState().netbuffer; // points inside doomcom
 
-ticcmd_t (&localcmds)[BACKUPTICS] = Doom::netState().localcmds;
+Doom::Ticcmd (&localcmds)[BACKUPTICS] = Doom::netState().localcmds;
 
-ticcmd_t (&netcmds)[MAXPLAYERS][BACKUPTICS] = Doom::netState().netcmds;
+Doom::Ticcmd (&netcmds)[MAXPLAYERS][BACKUPTICS] = Doom::netState().netcmds;
 int (&nettics)[MAXNETNODES] = Doom::netState().nettics;
 // Game/Net's private bookkeeping is a Doom::NetState now (Engine); references onto its members.
 doom_boolean (&nodeingame)[MAXNETNODES] = Doom::netState().nodeingame;
@@ -107,7 +107,7 @@ int& oldnettics = Doom::netState().oldnettics;
 extern doom_boolean& advancedemo; // Doom::AttractMode (Engine member)
 
 void Doom::processEvents();
-void Doom::buildTiccmd(ticcmd_t* cmd);
+void Doom::buildTiccmd(Doom::Ticcmd* cmd);
 void Doom::doAdvanceDemo();
 
 namespace Doom
@@ -328,7 +328,7 @@ void getPackets()
 {
     int netconsole;
     int netnode;
-    ticcmd_t *src, *dest;
+    Ticcmd *src, *dest;
     int realend;
     int realstart;
 
@@ -847,7 +847,7 @@ void tryRunTics()
             // modify command for duplicated tics
             if (i != ticdup - 1)
             {
-                ticcmd_t* cmd;
+                Ticcmd* cmd;
                 int buf;
 
                 buf = (gametic / ticdup) % BACKUPTICS;

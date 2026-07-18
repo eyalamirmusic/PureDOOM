@@ -178,13 +178,13 @@ void P_LineOpening(Doom::Line* linedef)
 // All rewritten in Sim/MapUtil.{h,cpp}; these keep the vanilla names.
 //
 
-void P_UnsetThingPosition(mobj_t* thing)
+void P_UnsetThingPosition(Doom::Mobj* thing)
 {
     Doom::unsetThingPosition(*thing);
 }
 
 
-void P_SetThingPosition(mobj_t* thing)
+void P_SetThingPosition(Doom::Mobj* thing)
 {
     Doom::setThingPosition(*thing);
 }
@@ -196,7 +196,7 @@ doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean (*func)(Doom::Line*
 }
 
 
-doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean (*func)(mobj_t*))
+doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean (*func)(Doom::Mobj*))
 {
     return Doom::forEachThingInBlock(x, y, func);
 }

@@ -38,7 +38,7 @@ struct Level
 
     // The per-block mobj chain heads. The array is ours; the mobjs it points at
     // are the zone's.
-    EA::Vector<mobj_t*> blockLinks;
+    EA::Vector<Mobj*> blockLinks;
 
     // The blockmap descriptor - origin, extent and the lump pointers the iterators
     // read from. Filled by Doom::loadBlockMap, which then refreshes the vanilla

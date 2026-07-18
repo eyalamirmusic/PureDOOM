@@ -53,9 +53,9 @@ void clearSprites();
 VisSprite* newVisSprite();
 void drawMaskedColumn(column_t* column);
 void drawVisSprite(VisSprite* vis);
-void projectSprite(mobj_t* thing);
+void projectSprite(Mobj* thing);
 void addSprites(Sector* sec);
-void drawPSprite(pspdef_t* psp);
+void drawPSprite(PspDef* psp);
 void drawPlayerSprites();
 void sortVisSprites();
 void drawSprite(VisSprite* spr);
@@ -423,7 +423,7 @@ void drawVisSprite(VisSprite* vis)
 // Generates a vissprite for a thing
 //  if it might be visible.
 //
-void projectSprite(mobj_t* thing)
+void projectSprite(Mobj* thing)
 {
     fixed_t tr_x;
     fixed_t tr_y;
@@ -593,7 +593,7 @@ void projectSprite(mobj_t* thing)
 //
 void addSprites(Sector* sec)
 {
-    mobj_t* thing;
+    Mobj* thing;
     int lightnum;
 
     // BSP is traversed by subsector.
@@ -623,7 +623,7 @@ void addSprites(Sector* sec)
 //
 // drawPSprite
 //
-void drawPSprite(pspdef_t* psp)
+void drawPSprite(PspDef* psp)
 {
     fixed_t tx;
     int x1;
@@ -737,7 +737,7 @@ void drawPlayerSprites()
 {
     int i;
     int lightnum;
-    pspdef_t* psp;
+    PspDef* psp;
 
     // get light level
     lightnum = (viewplayer->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT)

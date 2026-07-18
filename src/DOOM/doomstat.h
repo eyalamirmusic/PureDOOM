@@ -142,7 +142,7 @@ extern int& scaledviewwidth;
 // This one is related to the 3-screen display mode.
 // ANG90 = left side, ANG270 = right
 
-// Player taking events, and displaying. These live in Doom::PlayerState (an Engine member)
+// Doom::Player taking events, and displaying. These live in Doom::PlayerState (an Engine member)
 // now, with the player arrays below; all four are references onto it (REFACTOR.md, Step 5).
 extern int& consoleplayer;
 extern int& displayplayer;
@@ -196,13 +196,13 @@ extern int& gametic;
 
 // Bookkeeping on players - state. In Doom::PlayerState (an Engine member) now, with
 // consoleplayer/displayplayer above; references-to-array onto it (REFACTOR.md, Step 5).
-extern player_t (&players)[MAXPLAYERS];
+extern Doom::Player (&players)[MAXPLAYERS];
 
 // Alive? Disconnected?
 extern doom_boolean (&playeringame)[MAXPLAYERS];
 
 
-// Player spawn spots. These live in Doom::MapSpawns (an Engine member) now; the references
+// Doom::Player spawn spots. These live in Doom::MapSpawns (an Engine member) now; the references
 // onto it are references-to-array for the two arrays (REFACTOR.md, Step 5).
 #define MAX_DM_STARTS 10
 extern mapthing_t (&deathmatchstarts)[MAX_DM_STARTS];
@@ -212,7 +212,7 @@ extern mapthing_t (&playerstarts)[MAXPLAYERS];
 
 // Intermission stats. Parameters for world map / intermission. In Doom::IntermissionInfo
 // (an Engine member) now; a reference onto it (REFACTOR.md, Step 5).
-extern wbstartstruct_t& wminfo;
+extern Doom::IntermissionStart& wminfo;
 
 
 // LUT of ammunition limits for each kind. This doubles with BackPack powerup item.
@@ -267,7 +267,7 @@ extern doomcom_t*& doomcom;
 extern doomdata_t*& netbuffer;
 
 
-extern ticcmd_t (&localcmds)[BACKUPTICS];
+extern Doom::Ticcmd (&localcmds)[BACKUPTICS];
 
 // rndindex was declared here too, a second name for m_random.h's. Include that
 // instead - Doom::Random owns the state now and there is one declaration of it.
@@ -275,7 +275,7 @@ extern ticcmd_t (&localcmds)[BACKUPTICS];
 extern int& maketic;
 extern int (&nettics)[MAXNETNODES];
 
-extern ticcmd_t (&netcmds)[MAXPLAYERS][BACKUPTICS];
+extern Doom::Ticcmd (&netcmds)[MAXPLAYERS][BACKUPTICS];
 extern int& ticdup;
 
 

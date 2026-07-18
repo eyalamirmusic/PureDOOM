@@ -81,11 +81,11 @@ struct Line;
 // moving objects (doppler), because
 // position is prolly just buffered, not
 // updated.
-// A sector's sound origin. The sound code casts it to mobj_t* and reads x/y off
-// it, so x/y/z must sit at the same offsets as mobj_t's. mobj_t inherits
+// A sector's sound origin. The sound code casts it to Doom::Mobj* and reads x/y off
+// it, so x/y/z must sit at the same offsets as Doom::Mobj's. Doom::Mobj inherits
 // Doom::Thinker and its first field reuses the base's tail padding, so this must
 // inherit it the same way rather than hold a `thinker_t thinker` member - a member
-// gets no tail-padding reuse, which would push x/y/z 4 bytes later than mobj_t's
+// gets no tail-padding reuse, which would push x/y/z 4 bytes later than Doom::Mobj's
 // and make the cast read the wrong words (a silently misplaced, wrongly-inaudible
 // sound). The Thinker part is otherwise unused: this is never a real thinker.
 namespace Doom
@@ -118,7 +118,7 @@ struct Sector
     int soundtraversed;
 
     // thing that made a sound (or null)
-    mobj_t* soundtarget;
+    Mobj* soundtarget;
 
     // mapblock bounding box for height changes
     int blockbox[4];
@@ -130,7 +130,7 @@ struct Sector
     int validcount;
 
     // list of mobjs in sector
-    mobj_t* thinglist;
+    Mobj* thinglist;
 
     // thinker_t for reversable actions
     void* specialdata;

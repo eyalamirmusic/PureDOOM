@@ -81,7 +81,7 @@ int f_y;
 int f_w;
 int f_h;
 
-player_t* am_plr; // the player represented by an arrow
+Doom::Player* am_plr; // the player represented by an arrow
 int followplayer = 1; // whether to follow the player around
 int cheating = 0;
 int grid = 0;

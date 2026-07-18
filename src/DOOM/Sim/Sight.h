@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_local.h" // mobj_t
+#include "../p_local.h" // Mobj
 
 namespace Doom
 {
@@ -12,5 +12,5 @@ namespace Doom
 // p_sight.cpp keeps the vanilla name Doom::checkSight as a shim; p_enemy (monster AI)
 // and MapAction (radius attack) call it. Golden-neutral - the sight scratch is never
 // hashed - and covered by every demo with a monster that can see the player.
-bool checkSight(mobj_t* t1, mobj_t* t2);
+bool checkSight(Mobj* t1, Mobj* t2);
 } // namespace Doom

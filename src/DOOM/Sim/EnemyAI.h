@@ -3,8 +3,11 @@
 #include "../m_fixed.h" // fixed_t
 
 // Forward declaration at global scope (where p_mobj.h declares it) - the scratch holds pointers, not
-// layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to mobj_t.
-struct mobj_t; // mobj_t
+// layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to Doom::Mobj.
+namespace Doom
+{
+struct Mobj; // Mobj
+} // namespace Doom
 
 namespace Doom
 {
@@ -22,12 +25,12 @@ namespace Doom
 // + app-link.
 struct EnemyAI
 {
-    mobj_t* corpsehit = nullptr; // the corpse A_VileChase is raising
-    mobj_t* vileobj = nullptr; // the archvile raising it
+    Mobj* corpsehit = nullptr; // the corpse A_VileChase is raising
+    Mobj* vileobj = nullptr; // the archvile raising it
     fixed_t viletryx = 0; // where it is trying to stand the corpse up
     fixed_t viletryy = 0;
 
-    mobj_t* braintargets[32] = {}; // the boss brain's spawn-cube targets
+    Mobj* braintargets[32] = {}; // the boss brain's spawn-cube targets
     int numbraintargets = 0; // # of targets found
     int braintargeton = 0; // the next target to aim a cube at
 

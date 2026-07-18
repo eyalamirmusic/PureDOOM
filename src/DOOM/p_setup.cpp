@@ -64,7 +64,7 @@ short* blockmaplump;
 fixed_t bmaporgx;
 fixed_t bmaporgy;
 // for thing chains
-mobj_t** blocklinks;
+Doom::Mobj** blocklinks;
 
 // REJECT
 // For fast sight rejection.

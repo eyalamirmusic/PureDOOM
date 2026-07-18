@@ -3,8 +3,11 @@
 #include "../doomtype.h" // doom_boolean
 #include "../st_stuff.h" // st_stateenum_t, st_chatstateenum_t
 
-// player_t is used only by pointer here, so a forward declaration is enough.
-struct player_t;
+// Doom::Player is used only by pointer here, so a forward declaration is enough.
+namespace Doom
+{
+struct Player;
+} // namespace Doom
 
 namespace Doom
 {
@@ -22,7 +25,7 @@ namespace Doom
 struct StatusBarState
 {
     // Lifecycle and timing.
-    player_t* plyr = nullptr; // the console player, refreshed at Doom::startStatusBar
+    Player* plyr = nullptr; // the console player, refreshed at Doom::startStatusBar
     doom_boolean st_firsttime = false; // Doom::startStatusBar just ran (force a full redraw)
     int veryfirsttime = 1; // gate for the one-time ST_initData
     int lu_palette = 0; // the PLAYPAL lump number

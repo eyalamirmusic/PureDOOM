@@ -163,9 +163,9 @@ fixed_t findLowestCeilingSurrounding(Sector* sec);
 fixed_t findHighestCeilingSurrounding(Sector* sec);
 int findSectorFromLineTag(Line* line, int start);
 int findMinSurroundingLight(Sector* sector, int max);
-void crossSpecialLine(int linenum, int side, mobj_t* thing);
-void shootSpecialLine(mobj_t* thing, Line* line);
-void playerInSpecialSector(player_t* player);
+void crossSpecialLine(int linenum, int side, Mobj* thing);
+void shootSpecialLine(Mobj* thing, Line* line);
+void playerInSpecialSector(Player* player);
 void updateSpecials();
 int doDonut(Line* line);
 void spawnSpecials();
@@ -415,7 +415,7 @@ int findMinSurroundingLight(Sector* sector, int max)
 // Called every time a thing origin is about
 //  to cross a line with a non 0 special.
 //
-void crossSpecialLine(int linenum, int side, mobj_t* thing)
+void crossSpecialLine(int linenum, int side, Mobj* thing)
 {
     Line* line;
     int ok;
@@ -876,7 +876,7 @@ void crossSpecialLine(int linenum, int side, mobj_t* thing)
 // shootSpecialLine - IMPACT SPECIALS
 // Called when a thing shoots a special line.
 //
-void shootSpecialLine(mobj_t* thing, Line* line)
+void shootSpecialLine(Mobj* thing, Line* line)
 {
     int ok;
 
@@ -922,7 +922,7 @@ void shootSpecialLine(mobj_t* thing, Line* line)
 // Called every tic frame
 //  that the player origin is in a special sector
 //
-void playerInSpecialSector(player_t* player)
+void playerInSpecialSector(Player* player)
 {
     Sector* sector;
 
@@ -1061,7 +1061,7 @@ void updateSpecials()
                             buttonlist[i].btexture;
                         break;
                 }
-                Doom::startSound(reinterpret_cast<mobj_t*>(&buttonlist[i].soundorg),
+                Doom::startSound(reinterpret_cast<Mobj*>(&buttonlist[i].soundorg),
                              sfx_swtchn);
                 doom_memset(&buttonlist[i], 0, sizeof(button_t));
             }

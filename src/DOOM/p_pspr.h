@@ -48,21 +48,27 @@
 // drawn directly on the view screen,
 // coordinates are given for a 320*200 view screen.
 //
-enum psprnum_t
+namespace Doom
+{
+enum PspNum
 {
     ps_weapon,
     ps_flash,
     NUMPSPRITES
 };
+} // namespace Doom
 
 
-struct pspdef_t
+namespace Doom
+{
+struct PspDef
 {
     state_t* state;        // a 0 state means not active
     int tics;
     fixed_t sx;
     fixed_t sy;
 };
+} // namespace Doom
 
 
 

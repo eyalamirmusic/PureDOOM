@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // player_t (p_spec.h needs it)
+#include "../d_player.h" // Player (p_spec.h needs it)
 #include "../p_spec.h" // fireflicker_t, lightflash_t, strobe_t, glow_t
 #include "../r_defs.h"
 

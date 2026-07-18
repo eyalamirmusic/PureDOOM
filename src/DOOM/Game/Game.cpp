@@ -156,7 +156,7 @@ doom_boolean& netgame = Doom::gameSession().netgame; // packets are broadcast
 // The player roster and view selection is a Doom::PlayerState owned by the Engine now;
 // these are references onto it (the arrays as references-to-array) (REFACTOR.md, Step 5).
 doom_boolean (&playeringame)[MAXPLAYERS] = Doom::playerState().playeringame;
-player_t (&players)[MAXPLAYERS] = Doom::playerState().players;
+Doom::Player (&players)[MAXPLAYERS] = Doom::playerState().players;
 
 int& consoleplayer =
     Doom::playerState().consoleplayer; // taking events and displaying
@@ -188,7 +188,7 @@ doom_boolean& precache = Doom::engineParams().precache;
 
 // wminfo is a Doom::IntermissionInfo owned by the Engine now; this is a reference onto it
 // (REFACTOR.md, Step 5).
-wbstartstruct_t& wminfo =
+Doom::IntermissionStart& wminfo =
     Doom::intermissionInfo().wminfo; // world map / intermission parms
 
 // consistancy folded into Doom::NetState (the netcode bookkeeping) by the file-scope-statics
@@ -265,7 +265,7 @@ EA::Array<char, 32> savedescription;
 
 // The corpse queue (bodyque + bodyqueslot) is a Doom::CorpseQueue owned by the Engine now;
 // these are references onto it, bodyque as a reference-to-array (REFACTOR.md, Step 5).
-mobj_t* (&bodyque)[BODYQUESIZE] = Doom::corpseQueue().bodyque;
+Doom::Mobj* (&bodyque)[BODYQUESIZE] = Doom::corpseQueue().bodyque;
 int& bodyqueslot = Doom::corpseQueue().bodyqueslot;
 
 void* statcopy; // for statistics driver
@@ -305,8 +305,8 @@ namespace Doom
 
 // Forward declarations so call order needs no rearranging.
 doom_boolean checkDemoStatus();
-void gReadDemoTiccmd(ticcmd_t* cmd);
-void gWriteDemoTiccmd(ticcmd_t* cmd);
+void gReadDemoTiccmd(Ticcmd* cmd);
+void gWriteDemoTiccmd(Ticcmd* cmd);
 void playerReborn(int player);
 void initNewGame(skill_t skill, int episode, int map);
 void gDoReborn(int playernum);
@@ -318,7 +318,7 @@ void gDoCompleted();
 void gDoWorldDone();
 void gDoSaveGame();
 
-int gCmdChecksum(ticcmd_t* cmd)
+int gCmdChecksum(Ticcmd* cmd)
 {
     int sum = 0;
 
@@ -334,7 +334,7 @@ int gCmdChecksum(ticcmd_t* cmd)
 // or reads it from the demo buffer.
 // If recording a demo, write it out
 //
-void buildTiccmd(ticcmd_t* cmd)
+void buildTiccmd(Ticcmd* cmd)
 {
     doom_boolean strafe;
     doom_boolean bstrafe;
@@ -343,7 +343,7 @@ void buildTiccmd(ticcmd_t* cmd)
     int forward;
     int side;
 
-    ticcmd_t* base;
+    Ticcmd* base;
 
     base = baseTiccmd(); // empty, or external driver
     doom_memcpy(cmd, base, sizeof(*cmd));
@@ -684,7 +684,7 @@ doom_boolean gameResponder(event_t* ev)
 void gameTicker()
 {
     int buf;
-    ticcmd_t* cmd;
+    Ticcmd* cmd;
 
     // do player reborns if needed
     for (int i = 0; i < MAXPLAYERS; i++)
@@ -739,7 +739,7 @@ void gameTicker()
         {
             cmd = &players[i].cmd;
 
-            doom_memcpy(cmd, &netcmds[i][buf], sizeof(ticcmd_t));
+            doom_memcpy(cmd, &netcmds[i][buf], sizeof(Ticcmd));
 
             if (demoplayback)
                 gReadDemoTiccmd(cmd);
@@ -854,7 +854,7 @@ void gInitPlayer(int player)
 //
 void gPlayerFinishLevel(int player)
 {
-    player_t* p;
+    Player* p;
 
     p = &players[player];
 
@@ -874,7 +874,7 @@ void gPlayerFinishLevel(int player)
 //
 void playerReborn(int player)
 {
-    player_t* p;
+    Player* p;
     EA::Array<int, MAXPLAYERS> frags;
     int killcount;
     int itemcount;
@@ -918,7 +918,7 @@ doom_boolean gCheckSpot(int playernum, mapthing_t* mthing)
     fixed_t y;
     SubSector* ss;
     unsigned an;
-    mobj_t* mo;
+    Mobj* mo;
 
     if (!players[playernum].mo)
     {
@@ -1501,7 +1501,7 @@ void initNewGame(skill_t skill, int episode, int map)
 // DEMO RECORDING
 //
 
-void gReadDemoTiccmd(ticcmd_t* cmd)
+void gReadDemoTiccmd(Ticcmd* cmd)
 {
     if (*demo_p == DEMOMARKER)
     {
@@ -1515,7 +1515,7 @@ void gReadDemoTiccmd(ticcmd_t* cmd)
     cmd->buttons = static_cast<unsigned char>(*demo_p++);
 }
 
-void gWriteDemoTiccmd(ticcmd_t* cmd)
+void gWriteDemoTiccmd(Ticcmd* cmd)
 {
     if (gamekeydown['q']) // press q to end demo recording
         checkDemoStatus();

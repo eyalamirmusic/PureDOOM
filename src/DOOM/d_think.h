@@ -26,8 +26,8 @@
 
 //
 // A state's action: the free function setMobjState / setPsprite runs when a mobj
-// or weapon enters the state. mobj states are called with (mobj_t*), weapon states
-// with (player_t*, pspdef_t*) - the two shapes never mix for a given state. The
+// or weapon enters the state. mobj states are called with (Doom::Mobj*), weapon states
+// with (Doom::Player*, Doom::PspDef*) - the two shapes never mix for a given state. The
 // pointer is stored type-erased (fn) and cast back to its exact signature at the
 // two call sites, which is a round-trip conversion and therefore well-defined.
 //

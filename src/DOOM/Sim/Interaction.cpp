@@ -55,7 +55,7 @@ namespace Doom
 // Returns false if the ammo can't be picked up at all
 //
 
-doom_boolean giveAmmo(player_t* player, ammotype_t ammo, int num)
+doom_boolean giveAmmo(Player* player, ammotype_t ammo, int num)
 {
     int oldammo;
 
@@ -146,7 +146,7 @@ doom_boolean giveAmmo(player_t* player, ammotype_t ammo, int num)
 // giveWeapon
 // The weapon name may have a MF_DROPPED flag ored in.
 //
-doom_boolean giveWeapon(player_t* player, weapontype_t weapon, doom_boolean dropped)
+doom_boolean giveWeapon(Player* player, weapontype_t weapon, doom_boolean dropped)
 {
     doom_boolean gaveammo;
     doom_boolean gaveweapon;
@@ -199,7 +199,7 @@ doom_boolean giveWeapon(player_t* player, weapontype_t weapon, doom_boolean drop
 // giveBody
 // Returns false if the body isn't needed at all
 //
-doom_boolean giveBody(player_t* player, int num)
+doom_boolean giveBody(Player* player, int num)
 {
     if (player->health >= MAXHEALTH)
         return false;
@@ -217,7 +217,7 @@ doom_boolean giveBody(player_t* player, int num)
 // Returns false if the armor is worse
 // than the current armor.
 //
-doom_boolean giveArmor(player_t* player, int armortype)
+doom_boolean giveArmor(Player* player, int armortype)
 {
     int hits = armortype * 100;
     if (player->armorpoints >= hits)
@@ -232,7 +232,7 @@ doom_boolean giveArmor(player_t* player, int armortype)
 //
 // giveCard
 //
-void giveCard(player_t* player, card_t card)
+void giveCard(Player* player, card_t card)
 {
     if (player->cards[card])
         return;
@@ -244,7 +244,7 @@ void giveCard(player_t* player, card_t card)
 //
 // givePower
 //
-doom_boolean givePower(player_t* player, int /*powertype_t*/ power)
+doom_boolean givePower(Player* player, int /*powertype_t*/ power)
 {
     if (power == pw_invulnerability)
     {
@@ -288,9 +288,9 @@ doom_boolean givePower(player_t* player, int /*powertype_t*/ power)
 //
 // touchSpecialThing
 //
-void touchSpecialThing(mobj_t* special, mobj_t* toucher)
+void touchSpecialThing(Mobj* special, Mobj* toucher)
 {
-    player_t* player;
+    Player* player;
     fixed_t delta;
     int sound;
 
@@ -609,10 +609,10 @@ void touchSpecialThing(mobj_t* special, mobj_t* toucher)
 //
 // KillMobj
 //
-void killMobj(mobj_t* source, mobj_t* target)
+void killMobj(Mobj* source, Mobj* target)
 {
     mobjtype_t item;
-    mobj_t* mo;
+    Mobj* mo;
 
     target->flags &= ~(MF_SHOOTABLE | MF_FLOAT | MF_SKULLFLY);
 
@@ -706,11 +706,11 @@ void killMobj(mobj_t* source, mobj_t* target)
 // Source can be 0 for slime, barrel explosions
 // and other environmental stuff.
 //
-void damageMobj(mobj_t* target, mobj_t* inflictor, mobj_t* source, int damage)
+void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
 {
     unsigned ang;
     int saved;
-    player_t* player;
+    Player* player;
     fixed_t thrust;
     int temp;
 

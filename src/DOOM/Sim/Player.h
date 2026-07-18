@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // player_t
+#include "../d_player.h" // Player
 
 namespace Doom
 {
@@ -8,5 +8,5 @@ namespace Doom
 // specials, powerup countdowns and the powerup colormap. p_user.cpp keeps the
 // vanilla name P_PlayerThink as a shim; p_tick calls it. Golden-neutral and covered
 // by every demo (the demos are recorded player input).
-void playerThink(player_t& player);
+void playerThink(Player& player);
 } // namespace Doom

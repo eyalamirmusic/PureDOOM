@@ -287,9 +287,9 @@ static int& me = intermissionState().me;
 static stateenum_t& state = intermissionState().state;
 
 // contains information passed into intermission
-static wbstartstruct_t*& wbs = intermissionState().wbs;
+static IntermissionStart*& wbs = intermissionState().wbs;
 
-static wbplayerstruct_t*& plrs = intermissionState().plrs; // wbs->plyr[]
+static IntermissionPlayer*& plrs = intermissionState().plrs; // wbs->plyr[]
 
 // used for general timing
 static int& cnt = intermissionState().cnt;
@@ -1345,7 +1345,7 @@ void wiDrawStats()
 void wiCheckForAccelerate()
 {
     int i;
-    player_t* player;
+    Player* player;
 
     // check for button presses to skip delays
     for (i = 0, player = players; i < MAXPLAYERS; i++, player++)
@@ -1625,7 +1625,7 @@ void drawIntermission()
     }
 }
 
-void wiInitVariables(wbstartstruct_t* wbstartstruct)
+void wiInitVariables(IntermissionStart* wbstartstruct)
 {
     wbs = wbstartstruct;
 
@@ -1666,7 +1666,7 @@ void wiInitVariables(wbstartstruct_t* wbstartstruct)
             wbs->epsd -= 3;
 }
 
-void startIntermission(wbstartstruct_t* wbstartstruct)
+void startIntermission(IntermissionStart* wbstartstruct)
 {
     wiInitVariables(wbstartstruct);
     wiLoadData();

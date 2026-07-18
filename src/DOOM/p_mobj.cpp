@@ -17,7 +17,7 @@
 // $Log:$
 //
 // DESCRIPTION:
-//        Moving object handling. Rewritten in Sim/Mobj.{h,cpp}; this keeps the
+//        Moving object handling. Rewritten in Sim/Doom::Mobj.{h,cpp}; this keeps the
 //        vanilla names as shims. P_MobjThinker keeps its global address because
 //        p_saveg and the sim probe identify mobjs by comparing to it.
 //
@@ -31,7 +31,7 @@
 
 
 // The item-respawn queue. iquehead/iquetail are reset by p_setup on level load; the
-// arrays are read only here and by Sim/Mobj.cpp through these definitions.
+// arrays are read only here and by Sim/Doom::Mobj.cpp through these definitions.
 // The item respawn queue is a Doom::ItemRespawnQueue owned by the Engine now; these are
 // references onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
 mapthing_t (&itemrespawnque)[ITEMQUESIZE] = Doom::itemRespawnQueue().itemrespawnque;

@@ -62,7 +62,7 @@ struct doomdata_t
     byte starttic;
     byte player;
     byte numtics;
-    ticcmd_t cmds[BACKUPTICS];
+    Doom::Ticcmd cmds[BACKUPTICS];
 };
 
 

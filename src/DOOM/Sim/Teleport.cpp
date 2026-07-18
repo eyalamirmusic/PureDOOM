@@ -14,11 +14,11 @@
 namespace Doom
 {
 
-int teleport(Line* line, int side, mobj_t* thing)
+int teleport(Line* line, int side, Mobj* thing)
 {
     int tag;
-    mobj_t* m;
-    mobj_t* fog;
+    Mobj* m;
+    Mobj* fog;
     unsigned an;
     thinker_t* thinker;
     Sector* sector;
@@ -48,7 +48,7 @@ int teleport(Line* line, int side, mobj_t* thing)
                 if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
                     continue;
 
-                m = reinterpret_cast<mobj_t*>(thinker);
+                m = reinterpret_cast<Mobj*>(thinker);
 
                 // not a teleportman
                 if (m->type != MT_TELEPORTMAN)

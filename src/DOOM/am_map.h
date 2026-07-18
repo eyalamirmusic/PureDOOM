@@ -127,7 +127,7 @@ extern fixed_t scale_mtof;
 extern int f_x, f_y, f_w, f_h;
 
 // The player it draws the arrow for, and whether it is keeping them centred.
-extern player_t* am_plr;
+extern Doom::Player* am_plr;
 extern int followplayer;
 
 // The map cheats: `cheating` reveals the walls and the things, `grid` the grid.

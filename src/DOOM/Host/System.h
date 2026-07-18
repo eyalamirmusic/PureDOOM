@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../i_system.h" // vanilla I_ system interface + ticcmd_t / byte
+#include "../i_system.h" // vanilla I_ system interface + Ticcmd / byte
 
 namespace Doom
 {
@@ -10,7 +10,7 @@ namespace Doom
 // the rest are host stubs. i_system.cpp keeps the vanilla I_ names as shims over
 // these; mb_used and emptycmd are file-local to System.cpp.
 void tactileFeedback(int on, int off, int total);
-ticcmd_t* baseTiccmd();
+Ticcmd* baseTiccmd();
 int heapSize();
 byte* zoneBase(int* size);
 int currentTic();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_local.h" // mobj_t, fixed_t
+#include "../p_local.h" // Mobj, fixed_t
 
 namespace Doom
 {
@@ -19,18 +19,18 @@ namespace Doom
 // Is `thing` clear to occupy (x, y)? Sets the tm* clipping results in Clip as a
 // side effect (floor/ceiling window, spechit list); picks up MF_SPECIAL things it
 // overlaps if the mover has MF_PICKUP. Nothing else is modified.
-bool checkPosition(mobj_t* thing, fixed_t x, fixed_t y);
+bool checkPosition(Mobj* thing, fixed_t x, fixed_t y);
 
 // Try to move `thing` to (x, y), crossing any special lines unless MF_TELEPORT.
 // Returns false and leaves the mobj where it was if blocked; on success links it
 // into its new cell and runs the crossed specials.
-bool tryMove(mobj_t* thing, fixed_t x, fixed_t y);
+bool tryMove(Mobj* thing, fixed_t x, fixed_t y);
 
 // Move `thing` to (x, y) unconditionally, telefragging any shootable thing already
 // there (monsters only on the boss map). Always succeeds.
-bool teleportMove(mobj_t* thing, fixed_t x, fixed_t y);
+bool teleportMove(Mobj* thing, fixed_t x, fixed_t y);
 
 // Re-seat a thing's floorz/ceilingz (and z, if it stood on the floor) after the
 // sector under it changed height. Returns false if it no longer fits.
-bool thingHeightClip(mobj_t* thing);
+bool thingHeightClip(Mobj* thing);
 } // namespace Doom

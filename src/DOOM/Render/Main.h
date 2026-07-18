@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // player_t
+#include "../d_player.h" // Player
 #include "../r_defs.h" // Node, Seg, SubSector
 
 namespace Doom
@@ -21,6 +21,6 @@ void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
 SubSector* pointInSubsector(fixed_t x, fixed_t y);
-void setupFrame(player_t& player);
-void renderPlayerView(player_t& player);
+void setupFrame(Player& player);
+void renderPlayerView(Player& player);
 } // namespace Doom

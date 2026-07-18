@@ -142,7 +142,7 @@ struct button_t
     bwhere_e where;
     int btexture;
     int btimer;
-    mobj_t* soundorg;
+    Doom::Mobj* soundorg;
 };
 
 

@@ -187,7 +187,7 @@ static int simIsMobj(thinker_t* thinker)
 unsigned long long doomSimStateHash()
 {
     thinker_t* thinker;
-    player_t* player = &players[0];
+    Doom::Player* player = &players[0];
     int count = 0;
 
     simHash = 1469598103934665603ULL;
@@ -219,7 +219,7 @@ unsigned long long doomSimStateHash()
     for (thinker = thinkercap.next; thinker && thinker != &thinkercap;
          thinker = thinker->next)
     {
-        mobj_t* mobj = (mobj_t*) thinker;
+        Doom::Mobj* mobj = (Doom::Mobj*) thinker;
         int frame;
 
         if (!simIsMobj(thinker))
@@ -362,9 +362,9 @@ int doomSimGeometryViewsConsistent()
 // Handles are indices into this vector. A level load frees every PU_LEVEL mobj,
 // so the handles it hands out are only valid until the next load - which clears
 // the registry and re-registers the fresh player as handle 0.
-static std::vector<mobj_t*> simMobjs;
+static std::vector<Doom::Mobj*> simMobjs;
 
-static mobj_t* simMobj(int handle)
+static Doom::Mobj* simMobj(int handle)
 {
     if (handle < 0 || handle >= (int) simMobjs.size())
         return 0;
@@ -410,7 +410,7 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
     if (setjmp(simAbort))
         return -1;
 
-    mobj_t* mobj = Doom::spawnMobj(x, y, z, (mobjtype_t) type);
+    Doom::Mobj* mobj = Doom::spawnMobj(x, y, z, (mobjtype_t) type);
 
     if (!mobj)
         return -1;
@@ -421,7 +421,7 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
 
 int doomSimCheckPosition(int handle, int x, int y)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
 
     if (!mobj)
         return 0;
@@ -434,7 +434,7 @@ int doomSimCheckPosition(int handle, int x, int y)
 
 int doomSimTryMove(int handle, int x, int y)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
 
     if (!mobj)
         return 0;
@@ -447,31 +447,31 @@ int doomSimTryMove(int handle, int x, int y)
 
 int doomSimMobjX(int handle)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
     return mobj ? mobj->x : 0;
 }
 
 int doomSimMobjY(int handle)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
     return mobj ? mobj->y : 0;
 }
 
 int doomSimMobjZ(int handle)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
     return mobj ? mobj->z : 0;
 }
 
 int doomSimMobjFlags(int handle)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
     return mobj ? (int) mobj->flags : 0;
 }
 
 void doomSimSetMobjFlags(int handle, int flags)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
 
     if (mobj)
         mobj->flags = flags;
@@ -482,7 +482,7 @@ void doomSimSetMobjFlags(int handle, int flags)
 // probe is single-threaded, so the static is safe.
 static int simBlockThingCount;
 
-static doom_boolean simCountThing(mobj_t*)
+static doom_boolean simCountThing(Doom::Mobj*)
 {
     ++simBlockThingCount;
     return (doom_boolean) 1;
@@ -490,7 +490,7 @@ static doom_boolean simCountThing(mobj_t*)
 
 int doomSimThingsInBlockOf(int handle)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
 
     if (!mobj)
         return -1;
@@ -508,7 +508,7 @@ int doomSimThingsInBlockOf(int handle)
 
 void doomSimUnsetThingPosition(int handle)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
 
     if (mobj)
         P_UnsetThingPosition(mobj);
@@ -516,7 +516,7 @@ void doomSimUnsetThingPosition(int handle)
 
 void doomSimSetThingPosition(int handle)
 {
-    mobj_t* mobj = simMobj(handle);
+    Doom::Mobj* mobj = simMobj(handle);
 
     if (mobj)
         P_SetThingPosition(mobj);
@@ -534,7 +534,7 @@ int doomSimOnFloorZ()
 
 int doomSimFlagNoClip()
 {
-    return MF_NOCLIP;
+    return Doom::MF_NOCLIP;
 }
 
 // --- The save/load serialization net (pre-Thinker) --------------------------
@@ -565,7 +565,7 @@ static unsigned long long simWorldHash()
     {
         if (!playeringame[i])
             continue;
-        player_t* p = &players[i];
+        Doom::Player* p = &players[i];
         simMix(&p->health, sizeof(p->health));
         simMix(&p->armorpoints, sizeof(p->armorpoints));
         simMix(&p->armortype, sizeof(p->armortype));
@@ -622,7 +622,7 @@ static unsigned long long simWorldHash()
         ++thinkerCount;
         if (!simIsMobj(th))
             continue;
-        mobj_t* m = (mobj_t*) th;
+        Doom::Mobj* m = (Doom::Mobj*) th;
         int frame = (int) (m->state - states);
         simMix(&m->x, sizeof(fixed_t));
         simMix(&m->y, sizeof(fixed_t));

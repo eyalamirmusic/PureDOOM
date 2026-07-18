@@ -206,7 +206,7 @@ void moveFloor(floormove_t& floor)
                     floor.direction);
 
     if (!(leveltime & 7))
-        Doom::startSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg),
+        Doom::startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
                      sfx_stnmov);
 
     if (res == pastdest)
@@ -237,7 +237,7 @@ void moveFloor(floormove_t& floor)
         }
         Doom::removeThinker(&floor);
 
-        Doom::startSound(reinterpret_cast<mobj_t*>(&floor.sector->soundorg), sfx_pstop);
+        Doom::startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), sfx_pstop);
     }
 }
 

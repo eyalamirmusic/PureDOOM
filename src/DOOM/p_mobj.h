@@ -47,7 +47,7 @@ struct SubSector;
 
 
 //
-// NOTES: mobj_t
+// NOTES: Doom::Mobj
 //
 // mobj_ts are used to tell the refresh where to draw an image,
 // tell the world simulation when objects are contacted,
@@ -70,23 +70,23 @@ struct SubSector;
 // it is standing on.
 //
 // The sound code uses the x,y, and subsector fields
-// to do stereo positioning of any sound effited by the mobj_t.
+// to do stereo positioning of any sound effited by the Doom::Mobj.
 //
 // The play simulation uses the blocklinks, x,y,z, radius, height
 // to determine when mobj_ts are touching each other,
 // touching lines in the map, or hit by trace lines (gunshots,
 // lines of sight, etc).
-// The mobj_t->flags element has various bit flags
+// The Doom::Mobj->flags element has various bit flags
 // used by the simulation.
 //
-// Every mobj_t is linked into a single sector
+// Every Doom::Mobj is linked into a single sector
 // based on its origin coordinates.
 // The Doom::SubSector is found with Doom::pointInSubsector(x,y),
 // and the Doom::Sector can be found with subsector->sector.
 // The sector links are only used by the rendering code,
 // the play simulation does not care about them at all.
 //
-// Any mobj_t that needs to be acted upon by something else
+// Any Doom::Mobj that needs to be acted upon by something else
 // in the play world (block movement, be shot, etc) will also
 // need to be linked into the blockmap.
 // If the thing has the MF_NOBLOCK flag set, it will not use
@@ -95,9 +95,9 @@ struct SubSector;
 // things, but nothing can run into a missile).
 // Each block in the grid is 128*128 units, and knows about
 // every Doom::Line that it contains a piece of, and every
-// interactable mobj_t that has its origin contained.  
+// interactable Doom::Mobj that has its origin contained.  
 //
-// A valid mobj_t is a mobj_t that has the proper Doom::SubSector
+// A valid Doom::Mobj is a Doom::Mobj that has the proper Doom::SubSector
 // filled in for its xy coordinates and is linked into the
 // sector from which the subsector was made, or has the
 // MF_NOSECTOR flag set (the Doom::SubSector needs to be valid
@@ -113,7 +113,9 @@ struct SubSector;
 //
 // Misc. mobj flags
 //
-enum mobjflag_t
+namespace Doom
+{
+enum MobjFlag
 {
     // Call P_SpecialThing when touched.
     MF_SPECIAL = 1,
@@ -199,10 +201,13 @@ enum mobjflag_t
     // Hmm ???.
     MF_TRANSSHIFT = 26
 };
+} // namespace Doom
 
 
 // Map Object definition.
-struct mobj_t : Doom::Thinker
+namespace Doom
+{
+struct Mobj : Doom::Thinker
 {
     // Was `thinker_t thinker;` as the first member; a mobj now *is* a Thinker.
     // Its per-tic action (vanilla's P_MobjThinker) is tick(), defined in Mobj.cpp.
@@ -215,8 +220,8 @@ struct mobj_t : Doom::Thinker
     fixed_t z;
 
     // More list: links in sector (if needed)
-    struct mobj_t* snext;
-    struct mobj_t* sprev;
+    struct Mobj* snext;
+    struct Mobj* sprev;
 
     //More drawing info: to determine current sprite.
     angle_t angle;        // orientation
@@ -225,8 +230,8 @@ struct mobj_t : Doom::Thinker
 
     // Interaction info, by BLOCKMAP.
     // Links in blocks (if needed).
-    struct mobj_t* bnext;
-    struct mobj_t* bprev;
+    struct Mobj* bnext;
+    struct Mobj* bprev;
 
     Doom::SubSector* subsector;
 
@@ -260,7 +265,7 @@ struct mobj_t : Doom::Thinker
 
     // Thing being chased/attacked (or 0),
     // also the originator for missiles.
-    struct mobj_t* target;
+    struct Mobj* target;
 
     // Reaction time: if non 0, don't attack yet.
     // Used by player to freeze a bit after teleporting.
@@ -272,7 +277,7 @@ struct mobj_t : Doom::Thinker
 
     // Additional info record for player avatars only.
     // Only valid if type == MT_PLAYER
-    struct player_t* player;
+    struct Player* player;
 
     // Player number last looked for.
     int lastlook;
@@ -281,8 +286,9 @@ struct mobj_t : Doom::Thinker
     mapthing_t spawnpoint;
 
     // Thing being chased/attacked for tracers.
-    struct mobj_t* tracer;
+    struct Mobj* tracer;
 };
+} // namespace Doom
 
 
 

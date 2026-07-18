@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // player_t (p_spec.h needs it)
+#include "../d_player.h" // Player (p_spec.h needs it)
 #include "../p_spec.h" // plat_t, plattype_e
 #include "../r_defs.h"
 

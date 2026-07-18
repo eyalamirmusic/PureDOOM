@@ -101,7 +101,7 @@ extern fixed_t& viewy;
 extern fixed_t& viewz;
 
 extern angle_t& viewangle;
-extern player_t*& viewplayer;
+extern Doom::Player*& viewplayer;
 
 // The screen projection also lives in Doom::ViewProjection (an Engine member); these
 // are references onto it, the two tables as references-to-array so their type and every

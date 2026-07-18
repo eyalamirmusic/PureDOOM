@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../d_net.h" // doomcom_t, doomdata_t, BACKUPTICS, MAXNETNODES
-#include "../d_ticcmd.h" // ticcmd_t
+#include "../d_ticcmd.h" // Ticcmd
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "Net.h"
@@ -19,7 +19,7 @@ namespace Doom
 //
 // The first seven were a doomstat.h loose-global cluster, defined in Game/Net.cpp; consistancy is
 // g_game's own file-scope state (read by no other file - the consistancy in d_ticcmd.h / Host/Net
-// is the unrelated ticcmd_t member), folded in here as the file-scope-statics sweep reaches it -
+// is the unrelated Ticcmd member), folded in here as the file-scope-statics sweep reaches it -
 // one netcode-bookkeeping owner (REFACTOR.md, Step 5). The vanilla names become references onto
 // the members, the arrays as references-to-array so every indexed read is unchanged; the seven
 // bind in Game/Net.cpp, consistancy in Game/Game.cpp, each at its definition site. PureDOOM ships
@@ -37,8 +37,8 @@ struct NetState
     doomcom_t* doomcom = nullptr; // view onto doomcomStorage
     doomdata_t* netbuffer = nullptr; // points inside doomcom
 
-    ticcmd_t localcmds[BACKUPTICS] = {}; // this node's commands
-    ticcmd_t netcmds[MAXPLAYERS][BACKUPTICS] = {}; // every node's commands
+    Ticcmd localcmds[BACKUPTICS] = {}; // this node's commands
+    Ticcmd netcmds[MAXPLAYERS][BACKUPTICS] = {}; // every node's commands
     int nettics[MAXNETNODES] = {}; // tics received per node
 
     int maketic = 0; // the next tic to build

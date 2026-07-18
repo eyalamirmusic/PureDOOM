@@ -57,7 +57,7 @@ int& numspechit = Doom::clip().numspechit;
 // linetarget (the aim's hit) and attackrange (the shot's range) are read by p_mobj
 // and p_pspr, so they live in Doom::Clip with vanilla-name references here. The rest
 // of the slide/aim/shoot/radius scratch is file-local to Sim/MapAction.cpp.
-mobj_t*& linetarget = Doom::clip().linetarget;
+Doom::Mobj*& linetarget = Doom::clip().linetarget;
 fixed_t& attackrange = Doom::clip().attackrange;
 
 
@@ -86,9 +86,9 @@ fixed_t& attackrange = Doom::clip().attackrange;
 // (except things picked up).
 // 
 // in:
-//  a mobj_t (can be valid or invalid)
+//  a Doom::Mobj (can be valid or invalid)
 //  a position to be checked
-//   (doesn't need to be related to the mobj_t->x,y)
+//   (doesn't need to be related to the Doom::Mobj->x,y)
 //
 // during:
 //  special things are touched if MF_PICKUP

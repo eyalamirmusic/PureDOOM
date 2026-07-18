@@ -67,8 +67,8 @@ void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
 SubSector* pointInSubsector(fixed_t x, fixed_t y);
-void setupFrame(player_t& player);
-void renderPlayerView(player_t& player);
+void setupFrame(Player& player);
+void renderPlayerView(Player& player);
 
 void addPointToBox(int x, int y, fixed_t* box)
 {
@@ -638,7 +638,7 @@ SubSector* pointInSubsector(fixed_t x, fixed_t y)
 //
 // setupFrame
 //
-void setupFrame(player_t& player)
+void setupFrame(Player& player)
 {
     viewplayer = &player;
     viewx = player.mo->x;
@@ -673,7 +673,7 @@ void setupFrame(player_t& player)
 //
 // R_RenderView
 //
-void renderPlayerView(player_t& player)
+void renderPlayerView(Player& player)
 {
     setupFrame(player);
 

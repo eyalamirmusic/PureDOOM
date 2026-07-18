@@ -173,7 +173,7 @@ extern EA::Array<fixed_t, 2>& forwardmove; // g_game
 extern EA::Array<fixed_t, 2>& sidemove; // g_game
 extern void* statcopy; // g_game
 void Doom::checkNetGame();
-void Doom::buildTiccmd(ticcmd_t* cmd);
+void Doom::buildTiccmd(Doom::Ticcmd* cmd);
 
 namespace Doom
 {

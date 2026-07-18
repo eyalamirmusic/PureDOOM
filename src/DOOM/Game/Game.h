@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../d_event.h" // event_t
-#include "../d_ticcmd.h" // ticcmd_t
+#include "../d_ticcmd.h" // Ticcmd
 #include "../doomdef.h" // skill_t
 
 namespace Doom
@@ -24,6 +24,6 @@ void worldDone();
 void gameTicker();
 doom_boolean gameResponder(event_t* ev);
 void takeScreenshot();
-void buildTiccmd(ticcmd_t* cmd);
+void buildTiccmd(Ticcmd* cmd);
 void playerReborn(int player);
 } // namespace Doom

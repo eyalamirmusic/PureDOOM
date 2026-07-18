@@ -26,9 +26,9 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void verticalDoor(vldoor_t& door);
-int doLockedDoor(Line* line, vldoor_e type, mobj_t* thing);
+int doLockedDoor(Line* line, vldoor_e type, Mobj* thing);
 int doDoor(Line* line, vldoor_e type);
-void verticalDoor(Line* line, mobj_t* thing);
+void verticalDoor(Line* line, Mobj* thing);
 void spawnDoorCloseIn30(Sector* sec);
 void spawnDoorRaiseIn5Mins(Sector* sec, int secnum);
 
@@ -47,21 +47,21 @@ void verticalDoor(vldoor_t& door)
                     case blazeRaise:
                         door.direction = -1; // time to go back down
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_bdcls);
                         break;
 
                     case door_normal:
                         door.direction = -1; // time to go back down
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_dorcls);
                         break;
 
                     case close30ThenOpen:
                         door.direction = 1;
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
 
@@ -81,7 +81,7 @@ void verticalDoor(vldoor_t& door)
                         door.direction = 1;
                         door.type = door_normal;
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
 
@@ -108,7 +108,7 @@ void verticalDoor(vldoor_t& door)
                         door.sector->specialdata = nullptr;
                         Doom::removeThinker(&door); // unlink and free
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_bdcls);
                         break;
 
@@ -138,7 +138,7 @@ void verticalDoor(vldoor_t& door)
                     default:
                         door.direction = 1;
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&door.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
                 }
@@ -183,9 +183,9 @@ void verticalDoor(vldoor_t& door)
 // doLockedDoor
 // Move a locked door up/down
 //
-int doLockedDoor(Line* line, vldoor_e type, mobj_t* thing)
+int doLockedDoor(Line* line, vldoor_e type, Mobj* thing)
 {
-    player_t* p;
+    Player* p;
 
     p = thing->player;
 
@@ -267,7 +267,7 @@ int doDoor(Line* line, vldoor_e type)
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 door->speed = VDOORSPEED * 4;
-                Doom::startSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                              sfx_bdcls);
                 break;
 
@@ -275,14 +275,14 @@ int doDoor(Line* line, vldoor_e type)
                 door->topheight = Doom::findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
-                Doom::startSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                              sfx_dorcls);
                 break;
 
             case close30ThenOpen:
                 door->topheight = sec->ceilingheight;
                 door->direction = -1;
-                Doom::startSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                              sfx_dorcls);
                 break;
 
@@ -293,7 +293,7 @@ int doDoor(Line* line, vldoor_e type)
                 door->topheight -= 4 * FRACUNIT;
                 door->speed = VDOORSPEED * 4;
                 if (door->topheight != sec->ceilingheight)
-                    Doom::startSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                    Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                                  sfx_bdopn);
                 break;
 
@@ -303,7 +303,7 @@ int doDoor(Line* line, vldoor_e type)
                 door->topheight = Doom::findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 if (door->topheight != sec->ceilingheight)
-                    Doom::startSound(reinterpret_cast<mobj_t*>(&door->sector->soundorg),
+                    Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                                  sfx_doropn);
                 break;
 
@@ -318,9 +318,9 @@ int doDoor(Line* line, vldoor_e type)
 //
 // verticalDoor : open a door manually, no tag value
 //
-void verticalDoor(Line* line, mobj_t* thing)
+void verticalDoor(Line* line, Mobj* thing)
 {
-    player_t* player;
+    Player* player;
     Sector* sec;
     vldoor_t* door;
     int side;
@@ -403,16 +403,16 @@ void verticalDoor(Line* line, mobj_t* thing)
     {
         case 117: // BLAZING DOOR RAISE
         case 118: // BLAZING DOOR OPEN
-            Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_bdopn);
+            Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_bdopn);
             break;
 
         case 1: // NORMAL DOOR SOUND
         case 31:
-            Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_doropn);
+            Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
             break;
 
         default: // LOCKED DOOR SOUND
-            Doom::startSound(reinterpret_cast<mobj_t*>(&sec->soundorg), sfx_doropn);
+            Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
             break;
     }
 

@@ -42,7 +42,7 @@ static fixed_t& secondslidefrac = actionScratch().secondslidefrac;
 static Line*& bestslideline = actionScratch().bestslideline;
 static Line*& secondslideline = actionScratch().secondslideline;
 
-static mobj_t*& slidemo = actionScratch().slidemo;
+static Mobj*& slidemo = actionScratch().slidemo;
 
 static fixed_t& tmxmove = actionScratch().tmxmove;
 static fixed_t& tmymove = actionScratch().tmymove;
@@ -155,7 +155,7 @@ isblocking:
 // Sets linetarget and aimslope when a target is aimed at.
 //
 static fixed_t& aimslope = actionScratch().aimslope;
-static mobj_t*& shootthing = actionScratch().shootthing;
+static Mobj*& shootthing = actionScratch().shootthing;
 
 // Height if not aiming up or down.
 static fixed_t& shootz = actionScratch().shootz;
@@ -167,7 +167,7 @@ doom_boolean aimTraverse(intercept_t* in)
     Clip& clip = Doom::clip();
 
     Line* li;
-    mobj_t* th;
+    Mobj* th;
     fixed_t slope;
     fixed_t thingtopslope;
     fixed_t thingbottomslope;
@@ -256,7 +256,7 @@ doom_boolean shootTraverse(intercept_t* in)
 
     Line* li;
 
-    mobj_t* th;
+    Mobj* th;
 
     fixed_t slope;
     fixed_t dist;
@@ -365,7 +365,7 @@ doom_boolean shootTraverse(intercept_t* in)
 //
 // USE LINES
 //
-static mobj_t*& usething = actionScratch().usething;
+static Mobj*& usething = actionScratch().usething;
 
 doom_boolean useTraverse(intercept_t* in)
 {
@@ -400,15 +400,15 @@ doom_boolean useTraverse(intercept_t* in)
 //
 // RADIUS ATTACK scratch
 //
-static mobj_t*& bombsource = actionScratch().bombsource;
-static mobj_t*& bombspot = actionScratch().bombspot;
+static Mobj*& bombsource = actionScratch().bombsource;
+static Mobj*& bombspot = actionScratch().bombspot;
 static int& bombdamage = actionScratch().bombdamage;
 
 //
 // PIT_RadiusAttack
 // "bombsource" is the creature that caused the explosion at "bombspot".
 //
-doom_boolean radiusAttackThing(mobj_t* thing)
+doom_boolean radiusAttackThing(Mobj* thing)
 {
     fixed_t dx;
     fixed_t dy;
@@ -448,9 +448,9 @@ doom_boolean radiusAttackThing(mobj_t* thing)
 static doom_boolean& nofit = actionScratch().nofit;
 static doom_boolean& crushchange = actionScratch().crushchange;
 
-doom_boolean changeSectorThing(mobj_t* thing)
+doom_boolean changeSectorThing(Mobj* thing)
 {
-    mobj_t* mo;
+    Mobj* mo;
 
     if (thingHeightClip(thing))
     {
@@ -509,7 +509,7 @@ doom_boolean changeSectorThing(mobj_t* thing)
 // The momx / momy move is bad, so try to slide along a wall. Find the first line
 // hit, move flush to it, and slide along it. This is a kludgy mess.
 //
-void slideMove(mobj_t* mo)
+void slideMove(Mobj* mo)
 {
     fixed_t leadx;
     fixed_t leady;
@@ -618,7 +618,7 @@ retry:
 //
 // Doom::aimLineAttack
 //
-fixed_t aimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance)
+fixed_t aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
 {
     Clip& clip = Doom::clip();
 
@@ -652,7 +652,7 @@ fixed_t aimLineAttack(mobj_t* t1, angle_t angle, fixed_t distance)
 // If damage == 0, it is just a test trace that will leave linetarget set.
 //
 void lineAttack(
-    mobj_t* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
+    Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
 {
     Clip& clip = Doom::clip();
 
@@ -675,7 +675,7 @@ void lineAttack(
 // Doom::useLines
 // Looks for special lines in front of the player to activate.
 //
-void useLines(player_t* player)
+void useLines(Player* player)
 {
     int angle;
     fixed_t x1;
@@ -699,7 +699,7 @@ void useLines(player_t* player)
 // Doom::radiusAttack
 // Source is the creature that caused the explosion at spot.
 //
-void radiusAttack(mobj_t* spot, mobj_t* source, int damage)
+void radiusAttack(Mobj* spot, Mobj* source, int damage)
 {
     int xl;
     int xh;

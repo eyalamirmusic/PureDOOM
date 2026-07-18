@@ -288,7 +288,7 @@ float eacpDoomViewRows()
 
 void eacpDoomRevealAutomap()
 {
-    player_t* player = &players[displayplayer];
+    Doom::Player* player = &players[displayplayer];
 
     if (gamestate != GS_LEVEL || !gametic || !automapactive || player->mo == 0)
         return;
@@ -459,7 +459,7 @@ int eacpDoomMouseSensitivity()
 EacpDoomCamera eacpDoomGetCamera()
 {
     EacpDoomCamera camera = {0, 0, 0, 0};
-    player_t* player = &players[displayplayer];
+    Doom::Player* player = &players[displayplayer];
 
     if (player->mo == 0)
         return camera;
@@ -1265,7 +1265,7 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
 // left of the thing's position along the view plane, and its top sits the
 // sprite's top offset above the thing's feet.
 static void eacpEmitSprite(
-    EacpEmitter* em, mobj_t* thing, mobj_t* viewer, double rightX, double rightY)
+    EacpEmitter* em, Doom::Mobj* thing, Doom::Mobj* viewer, double rightX, double rightY)
 {
     Doom::SpriteDef* definition;
     Doom::SpriteFrame* frame;
@@ -1359,7 +1359,7 @@ static angle_t eacpAngleFromRadians(float radians)
 }
 
 static void
-    eacpEmitSprites(EacpEmitter* em, mobj_t* viewer, const EacpDoomCamera* camera)
+    eacpEmitSprites(EacpEmitter* em, Doom::Mobj* viewer, const EacpDoomCamera* camera)
 {
     thinker_t* thinker;
 
@@ -1372,13 +1372,13 @@ static void
 
     for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
     {
-        // A mobj is a Thinker whose virtual kind() is Mobj (was the function.acp1 ==
+        // A mobj is a Thinker whose virtual kind() is Doom::Mobj (was the function.acp1 ==
         // Doom::mobjThinker identity, before thinker_t became a real Doom::Thinker);
         // skip a removed-but-not-yet-freed one, as the engine's own scans do.
         if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
             continue;
 
-        eacpEmitSprite(em, (mobj_t*) thinker, viewer, rightX, rightY);
+        eacpEmitSprite(em, (Doom::Mobj*) thinker, viewer, rightX, rightY);
     }
 }
 
@@ -1498,7 +1498,7 @@ static float eacpWeaponRowShift()
 
 void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 {
-    player_t* player = &players[displayplayer];
+    Doom::Player* player = &players[displayplayer];
     int i;
 
     if (out == 0)
@@ -1512,9 +1512,9 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
     if (!eacpTexturesReady || gamestate != GS_LEVEL || player->mo == 0)
         return;
 
-    for (i = 0; i < NUMPSPRITES && i < EACP_DOOM_HUD_SPRITES; ++i)
+    for (i = 0; i < Doom::NUMPSPRITES && i < EACP_DOOM_HUD_SPRITES; ++i)
     {
-        pspdef_t* weapon = &player->psprites[i];
+        Doom::PspDef* weapon = &player->psprites[i];
         state_t* state = weapon->state;
         Doom::SpriteDef* definition;
         Doom::SpriteFrame* frame;
@@ -1605,7 +1605,7 @@ static void eacpEmitSubsector(EacpEmitter* em, int index)
 
 static void eacpEmitWorld(EacpEmitter* em, const EacpDoomCamera* camera)
 {
-    player_t* player = &players[displayplayer];
+    Doom::Player* player = &players[displayplayer];
     int i;
 
     for (i = 0; i < numlines; ++i)
@@ -1908,7 +1908,7 @@ static void eacpAutomapThings(EacpAutomapEmitter* em, int color)
 
     for (i = 0; i < numsectors; i++)
     {
-        mobj_t* thing = sectors[i].thinglist;
+        Doom::Mobj* thing = sectors[i].thinglist;
 
         while (thing != 0)
         {

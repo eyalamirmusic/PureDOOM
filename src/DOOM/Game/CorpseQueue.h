@@ -1,8 +1,11 @@
 #pragma once
 
-// mobj_t is used only by pointer here, so a forward declaration is enough - no need to pull
+// Doom::Mobj is used only by pointer here, so a forward declaration is enough - no need to pull
 // the whole mobj definition into everyone who includes the Engine.
-struct mobj_t;
+namespace Doom
+{
+struct Mobj;
+} // namespace Doom
 
 namespace Doom
 {
@@ -21,7 +24,7 @@ struct CorpseQueue
 {
     static constexpr int size = 32; // BODYQUESIZE: how many corpses persist
 
-    mobj_t* bodyque[size] = {}; // the retained corpse mobjs
+    Mobj* bodyque[size] = {}; // the retained corpse mobjs
     int bodyqueslot = 0; // ever-incrementing insert counter
 };
 

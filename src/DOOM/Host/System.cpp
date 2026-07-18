@@ -37,11 +37,11 @@ extern doom_boolean& demorecording;
 namespace Doom
 {
 int mb_used = 6 * (sizeof(void*) / 4);
-ticcmd_t emptycmd;
+Ticcmd emptycmd;
 
 void tactileFeedback(int, int, int) {}
 
-ticcmd_t* baseTiccmd()
+Ticcmd* baseTiccmd()
 {
     return &emptycmd;
 }

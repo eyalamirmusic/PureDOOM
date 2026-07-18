@@ -7,7 +7,7 @@
 // terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//        Player related stuff: bobbing POV/weapon, movement, pending weapon.
+//        Doom::Player related stuff: bobbing POV/weapon, movement, pending weapon.
 //
 // Rewritten into namespace Doom out of vanilla p_user; p_user.cpp keeps the vanilla
 // name P_PlayerThink as a shim. Everything else (thrust, calcHeight, movePlayer,
@@ -52,7 +52,7 @@ static doom_boolean& onground = playerScratch().onground;
 // thrust
 // Moves the given origin along a given angle.
 //
-void thrust(player_t& player, angle_t angle, fixed_t move)
+void thrust(Player& player, angle_t angle, fixed_t move)
 {
     angle >>= ANGLETOFINESHIFT;
 
@@ -64,7 +64,7 @@ void thrust(player_t& player, angle_t angle, fixed_t move)
 // calcHeight
 // Calculate the walking / running height adjustment
 //
-void calcHeight(player_t& player)
+void calcHeight(Player& player)
 {
     int angle;
     fixed_t bob;
@@ -131,9 +131,9 @@ void calcHeight(player_t& player)
 //
 // movePlayer
 //
-void movePlayer(player_t& player)
+void movePlayer(Player& player)
 {
-    ticcmd_t* cmd = &player.cmd;
+    Ticcmd* cmd = &player.cmd;
 
     player.mo->angle += (cmd->angleturn << 16);
 
@@ -158,7 +158,7 @@ void movePlayer(player_t& player)
 // Fall on your face when dying.
 // Decrease POV height to floor height.
 //
-void deathThink(player_t& player)
+void deathThink(Player& player)
 {
     angle_t angle;
     angle_t delta;
@@ -207,9 +207,9 @@ void deathThink(player_t& player)
 //
 // playerThink
 //
-void playerThink(player_t& player)
+void playerThink(Player& player)
 {
-    ticcmd_t* cmd;
+    Ticcmd* cmd;
     weapontype_t newweapon;
 
     // fixme: do this in the cheat code

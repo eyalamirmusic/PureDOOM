@@ -5,7 +5,7 @@
 // / Doom::unArchiveThinkers and the whole mobj/special byte layout ride through the
 // suite unpinned. That layout is exactly what the thinker_t -> Thinker
 // virtualisation and the mobj/special zone-ownership change will rewrite: a vtable
-// on mobj_t shifts every offset the archive memcpy's, and no golden would notice.
+// on Doom::Mobj shifts every offset the archive memcpy's, and no golden would notice.
 // So the net has to exist before those steps do - the Step-0 move once more.
 //
 // The assertion is a round trip: build a distinctive world, archive it, reload a

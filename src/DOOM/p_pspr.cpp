@@ -31,17 +31,17 @@
 #include "Sim/Weapon.h"
 
 
-void P_SetupPsprites(player_t* player)
+void P_SetupPsprites(Doom::Player* player)
 {
     Doom::setupPsprites(*player);
 }
 
-void P_MovePsprites(player_t* player)
+void P_MovePsprites(Doom::Player* player)
 {
     Doom::movePsprites(*player);
 }
 
-void P_DropWeapon(player_t* player)
+void P_DropWeapon(Doom::Player* player)
 {
     Doom::dropWeapon(*player);
 }

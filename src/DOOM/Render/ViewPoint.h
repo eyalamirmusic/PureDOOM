@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // player_t, and fixed_t / angle_t through it.
+#include "../d_player.h" // Player, and fixed_t / angle_t through it.
 #include "../m_fixed.h"
 #include "../tables.h"
 
@@ -33,7 +33,7 @@ struct ViewPoint
     fixed_t viewcos = 0;
     fixed_t viewsin = 0;
 
-    player_t* viewplayer = nullptr;
+    Player* viewplayer = nullptr;
 };
 
 // The one ViewPoint, a view onto the Engine's member - the same pattern as clip(),

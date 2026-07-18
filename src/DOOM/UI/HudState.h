@@ -3,8 +3,11 @@
 #include "../doomtype.h" // doom_boolean
 #include "../hu_lib.h" // hu_textline_t
 
-// player_t is used only by pointer here, so a forward declaration is enough.
-struct player_t;
+// Doom::Player is used only by pointer here, so a forward declaration is enough.
+namespace Doom
+{
+struct Player;
+} // namespace Doom
 
 namespace Doom
 {
@@ -19,7 +22,7 @@ namespace Doom
 // demos exercise every level start, so this is frame-golden-covered.
 struct HudState
 {
-    player_t* plr = nullptr; // the console player the HUD reads from
+    Player* plr = nullptr; // the console player the HUD reads from
     hu_textline_t w_title = {}; // the level-title text line, drawn on entry
     doom_boolean headsupactive = false; // the HUD is set up (gate against re-init)
 };

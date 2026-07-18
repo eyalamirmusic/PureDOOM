@@ -74,15 +74,15 @@ extern thinker_t& thinkercap;
 //
 // P_PSPR
 //
-void P_SetupPsprites(player_t* curplayer);
-void P_MovePsprites(player_t* curplayer);
-void P_DropWeapon(player_t* player);
+void P_SetupPsprites(Doom::Player* curplayer);
+void P_MovePsprites(Doom::Player* curplayer);
+void P_DropWeapon(Doom::Player* player);
 
 
 //
 // P_USER
 //
-void P_PlayerThink(player_t* player);
+void P_PlayerThink(Doom::Player* player);
 
 
 //
@@ -128,7 +128,7 @@ struct intercept_t
     doom_boolean isaline;
     union
     {
-        mobj_t* thing;
+        Doom::Mobj* thing;
         Doom::Line* line;
     } d;
 };
@@ -164,7 +164,7 @@ void P_LineOpening(Doom::Line* linedef);
 
 
 doom_boolean P_BlockLinesIterator(int x, int y, doom_boolean(*func)(Doom::Line*));
-doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean(*func)(mobj_t*));
+doom_boolean P_BlockThingsIterator(int x, int y, doom_boolean(*func)(Doom::Mobj*));
 
 
 #define PT_ADDLINES     1
@@ -176,8 +176,8 @@ extern divline_t& trace;
 
 
 doom_boolean P_PathTraverse(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, doom_boolean(*trav) (intercept_t*));
-void P_UnsetThingPosition(mobj_t* thing);
-void P_SetThingPosition(mobj_t* thing);
+void P_UnsetThingPosition(Doom::Mobj* thing);
+void P_SetThingPosition(Doom::Mobj* thing);
 
 
 //
@@ -196,7 +196,7 @@ extern Doom::Line*& ceilingline;
 
 
 
-extern mobj_t*& linetarget; // who got hit (or 0); a reference into Doom::Clip
+extern Doom::Mobj*& linetarget; // who got hit (or 0); a reference into Doom::Clip
 
 
 
@@ -211,7 +211,7 @@ extern int bmapwidth;
 extern int bmapheight; // in mapblocks
 extern fixed_t bmaporgx;
 extern fixed_t bmaporgy; // origin of block map
-extern mobj_t** blocklinks; // for thing chains
+extern Doom::Mobj** blocklinks; // for thing chains
 
 
 //

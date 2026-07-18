@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // wbstartstruct_t, wbplayerstruct_t
+#include "../d_player.h" // IntermissionStart, IntermissionPlayer
 #include "../doomdef.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "../r_defs.h" // Patch
@@ -46,8 +46,8 @@ struct IntermissionState
 
     // The passed-in scoreboard data.
     int me = 0; // wbs->pnum, the player being shown
-    wbstartstruct_t* wbs = nullptr; // the intermission parameters
-    wbplayerstruct_t* plrs = nullptr; // wbs->plyr[]
+    IntermissionStart* wbs = nullptr; // the intermission parameters
+    IntermissionPlayer* plrs = nullptr; // wbs->plyr[]
 
     // The animated count-up accumulators.
     int cnt_kills[MAXPLAYERS] = {};

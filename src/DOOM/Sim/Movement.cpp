@@ -20,7 +20,7 @@ namespace Doom
 namespace
 {
 // PIT_StompThing: telefrag a shootable thing occupying the teleport destination.
-doom_boolean stompThing(mobj_t* thing)
+doom_boolean stompThing(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 
@@ -113,7 +113,7 @@ doom_boolean checkLine(Line* ld)
 
 // PIT_CheckThing: the mover against another thing - skull slam, missile impact,
 // pickup, or a plain solid block.
-doom_boolean checkThing(mobj_t* thing)
+doom_boolean checkThing(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 
@@ -207,7 +207,7 @@ doom_boolean checkThing(mobj_t* thing)
 }
 } // namespace
 
-bool checkPosition(mobj_t* thing, fixed_t x, fixed_t y)
+bool checkPosition(Mobj* thing, fixed_t x, fixed_t y)
 {
     Clip& clip = Doom::clip();
 
@@ -265,7 +265,7 @@ bool checkPosition(mobj_t* thing, fixed_t x, fixed_t y)
     return true;
 }
 
-bool tryMove(mobj_t* thing, fixed_t x, fixed_t y)
+bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
 {
     Clip& clip = Doom::clip();
 
@@ -325,7 +325,7 @@ bool tryMove(mobj_t* thing, fixed_t x, fixed_t y)
     return true;
 }
 
-bool teleportMove(mobj_t* thing, fixed_t x, fixed_t y)
+bool teleportMove(Mobj* thing, fixed_t x, fixed_t y)
 {
     Clip& clip = Doom::clip();
 
@@ -376,7 +376,7 @@ bool teleportMove(mobj_t* thing, fixed_t x, fixed_t y)
     return true;
 }
 
-bool thingHeightClip(mobj_t* thing)
+bool thingHeightClip(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 

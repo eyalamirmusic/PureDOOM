@@ -20,7 +20,7 @@ namespace Doom
 // request pair via file-scope externs in Render/Main, Game and Host) and defined in
 // r_draw.cpp / r_main.cpp; the definitions are now references onto these members and
 // every extern is a reference onto them, so every reader resolves unchanged. (The engine
-// global viewheight is unrelated to player_t::viewheight, the player's eye height - a
+// global viewheight is unrelated to Player::viewheight, the player's eye height - a
 // separate field the playsim reads and this does not touch.) Nothing here is hashed, so
 // gathering it is golden-neutral, as the earlier clusters were.
 struct ViewWindow

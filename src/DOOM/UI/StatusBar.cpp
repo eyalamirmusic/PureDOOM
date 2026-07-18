@@ -279,7 +279,7 @@ namespace Doom
 // The status bar's residual runtime state is a Doom::StatusBarState owned by the Engine now, moved
 // by the file-scope-statics sweep; these names are references onto the members (REFACTOR.md,
 // Step 5). keyboxes, st_fragscount, st_palette and st_stopped follow below, at their own sites.
-static player_t*& plyr = statusBarState().plyr; // main player in game
+static Player*& plyr = statusBarState().plyr; // main player in game
 static doom_boolean& st_firsttime =
     statusBarState().st_firsttime; // startStatusBar() just called
 static int& veryfirsttime = statusBarState().veryfirsttime; // execute initStatusBar() once

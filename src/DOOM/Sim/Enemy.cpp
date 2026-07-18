@@ -53,9 +53,9 @@
 
 // closeShotgun2 calls the weapon refire; soundtarget and spechit/numspechit are
 // globals the AI shares. soundtarget is a Doom::SoundTarget member (Engine) now, so this
-// extern is a reference - and must be, since recursiveSound writes it (a plain-mobj_t*
+// extern is a reference - and must be, since recursiveSound writes it (a plain-Doom::Mobj*
 // extern that wrote it would clobber the reference's pointer). spechit is Clip's.
-extern mobj_t*& soundtarget;
+extern Doom::Mobj*& soundtarget;
 extern Doom::Line** spechit;
 extern int& numspechit;
 
@@ -99,79 +99,79 @@ int TRACEANGLE = 0xc000000;
 // The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
 // file. (The const direction/speed tables above stay file-local.)
-static mobj_t*& corpsehit = enemyAI().corpsehit;
-static mobj_t*& vileobj = enemyAI().vileobj;
+static Mobj*& corpsehit = enemyAI().corpsehit;
+static Mobj*& vileobj = enemyAI().vileobj;
 static fixed_t& viletryx = enemyAI().viletryx;
 static fixed_t& viletryy = enemyAI().viletryy;
-static mobj_t* (&braintargets)[32] = enemyAI().braintargets;
+static Mobj* (&braintargets)[32] = enemyAI().braintargets;
 static int& numbraintargets = enemyAI().numbraintargets;
 static int& braintargeton = enemyAI().braintargeton;
 
 // Forward declarations so the file's own call order needs no rearranging.
 void recursiveSound(Sector* sec, int soundblocks);
-void noiseAlert(mobj_t* target, mobj_t& emmiter);
-doom_boolean checkMeleeRange(mobj_t& actor);
-doom_boolean checkMissileRange(mobj_t& actor);
-doom_boolean move(mobj_t& actor);
-doom_boolean tryWalk(mobj_t& actor);
-void newChaseDir(mobj_t& actor);
-doom_boolean lookForPlayers(mobj_t& actor, doom_boolean allaround);
-void keenDie(mobj_t& mo);
-void look(mobj_t& actor);
-void chase(mobj_t& actor);
-void faceTarget(mobj_t& actor);
-void posAttack(mobj_t& actor);
-void sPosAttack(mobj_t& actor);
-void cPosAttack(mobj_t& actor);
-void cPosRefire(mobj_t& actor);
-void spidRefire(mobj_t& actor);
-void bspiAttack(mobj_t& actor);
-void troopAttack(mobj_t& actor);
-void sargAttack(mobj_t& actor);
-void headAttack(mobj_t& actor);
-void cyberAttack(mobj_t& actor);
-void bruisAttack(mobj_t& actor);
-void skelMissile(mobj_t& actor);
-void tracer(mobj_t& actor);
-void skelWhoosh(mobj_t& actor);
-void skelFist(mobj_t& actor);
-doom_boolean vileCheck(mobj_t* thing);
-void vileChase(mobj_t& actor);
-void vileStart(mobj_t& actor);
-void startFire(mobj_t& actor);
-void fireCrackle(mobj_t& actor);
-void fire(mobj_t& actor);
-void vileTarget(mobj_t& actor);
-void vileAttack(mobj_t& actor);
-void fatRaise(mobj_t& actor);
-void fatAttack1(mobj_t& actor);
-void fatAttack2(mobj_t& actor);
-void fatAttack3(mobj_t& actor);
-void skullAttack(mobj_t& actor);
-void painShootSkull(mobj_t& actor, angle_t angle);
-void painAttack(mobj_t& actor);
-void painDie(mobj_t& actor);
-void scream(mobj_t& actor);
-void xScream(mobj_t& actor);
-void pain(mobj_t& actor);
-void fall(mobj_t& actor);
-void explode(mobj_t& thingy);
-void bossDeath(mobj_t& mo);
-void hoof(mobj_t& mo);
-void metal(mobj_t& mo);
-void babyMetal(mobj_t& mo);
-void openShotgun2(player_t* player, pspdef_t* psp);
-void loadShotgun2(player_t* player, pspdef_t* psp);
-void closeShotgun2(player_t* player, pspdef_t* psp);
-void brainAwake(mobj_t& mo);
-void brainPain(mobj_t& mo);
-void brainScream(mobj_t& mo);
-void brainExplode(mobj_t& mo);
-void brainDie(mobj_t& mo);
-void brainSpit(mobj_t& mo);
-void spawnSound(mobj_t& mo);
-void spawnFly(mobj_t& mo);
-void playerScream(mobj_t& mo);
+void noiseAlert(Mobj* target, Mobj& emmiter);
+doom_boolean checkMeleeRange(Mobj& actor);
+doom_boolean checkMissileRange(Mobj& actor);
+doom_boolean move(Mobj& actor);
+doom_boolean tryWalk(Mobj& actor);
+void newChaseDir(Mobj& actor);
+doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround);
+void keenDie(Mobj& mo);
+void look(Mobj& actor);
+void chase(Mobj& actor);
+void faceTarget(Mobj& actor);
+void posAttack(Mobj& actor);
+void sPosAttack(Mobj& actor);
+void cPosAttack(Mobj& actor);
+void cPosRefire(Mobj& actor);
+void spidRefire(Mobj& actor);
+void bspiAttack(Mobj& actor);
+void troopAttack(Mobj& actor);
+void sargAttack(Mobj& actor);
+void headAttack(Mobj& actor);
+void cyberAttack(Mobj& actor);
+void bruisAttack(Mobj& actor);
+void skelMissile(Mobj& actor);
+void tracer(Mobj& actor);
+void skelWhoosh(Mobj& actor);
+void skelFist(Mobj& actor);
+doom_boolean vileCheck(Mobj* thing);
+void vileChase(Mobj& actor);
+void vileStart(Mobj& actor);
+void startFire(Mobj& actor);
+void fireCrackle(Mobj& actor);
+void fire(Mobj& actor);
+void vileTarget(Mobj& actor);
+void vileAttack(Mobj& actor);
+void fatRaise(Mobj& actor);
+void fatAttack1(Mobj& actor);
+void fatAttack2(Mobj& actor);
+void fatAttack3(Mobj& actor);
+void skullAttack(Mobj& actor);
+void painShootSkull(Mobj& actor, angle_t angle);
+void painAttack(Mobj& actor);
+void painDie(Mobj& actor);
+void scream(Mobj& actor);
+void xScream(Mobj& actor);
+void pain(Mobj& actor);
+void fall(Mobj& actor);
+void explode(Mobj& thingy);
+void bossDeath(Mobj& mo);
+void hoof(Mobj& mo);
+void metal(Mobj& mo);
+void babyMetal(Mobj& mo);
+void openShotgun2(Player* player, PspDef* psp);
+void loadShotgun2(Player* player, PspDef* psp);
+void closeShotgun2(Player* player, PspDef* psp);
+void brainAwake(Mobj& mo);
+void brainPain(Mobj& mo);
+void brainScream(Mobj& mo);
+void brainExplode(Mobj& mo);
+void brainDie(Mobj& mo);
+void brainSpit(Mobj& mo);
+void spawnSound(Mobj& mo);
+void spawnFly(Mobj& mo);
+void playerScream(Mobj& mo);
 
 void recursiveSound(Sector* sec, int soundblocks)
 {
@@ -219,7 +219,7 @@ void recursiveSound(Sector* sec, int soundblocks)
 // If a monster yells at a player,
 // it will alert other monsters to the player.
 //
-void noiseAlert(mobj_t* target, mobj_t& emmiter)
+void noiseAlert(Mobj* target, Mobj& emmiter)
 {
     soundtarget = target;
     validcount++;
@@ -229,9 +229,9 @@ void noiseAlert(mobj_t* target, mobj_t& emmiter)
 //
 // checkMeleeRange
 //
-doom_boolean checkMeleeRange(mobj_t& actor)
+doom_boolean checkMeleeRange(Mobj& actor)
 {
-    mobj_t* pl;
+    Mobj* pl;
     fixed_t dist;
 
     if (!actor.target)
@@ -252,7 +252,7 @@ doom_boolean checkMeleeRange(mobj_t& actor)
 //
 // checkMissileRange
 //
-doom_boolean checkMissileRange(mobj_t& actor)
+doom_boolean checkMissileRange(Mobj& actor)
 {
     fixed_t dist;
 
@@ -315,7 +315,7 @@ doom_boolean checkMissileRange(mobj_t& actor)
 // Move in the current direction,
 // returns false if the move is blocked.
 //
-doom_boolean move(mobj_t& actor)
+doom_boolean move(Mobj& actor)
 {
     fixed_t tryx;
     fixed_t tryy;
@@ -391,7 +391,7 @@ doom_boolean move(mobj_t& actor)
 // If a door is in the way,
 // an OpenDoor call is made to start it opening.
 //
-doom_boolean tryWalk(mobj_t& actor)
+doom_boolean tryWalk(Mobj& actor)
 {
     if (!move(actor))
     {
@@ -402,7 +402,7 @@ doom_boolean tryWalk(mobj_t& actor)
     return true;
 }
 
-void newChaseDir(mobj_t& actor)
+void newChaseDir(Mobj& actor)
 {
     fixed_t deltax;
     fixed_t deltay;
@@ -529,11 +529,11 @@ void newChaseDir(mobj_t& actor)
 // If allaround is false, only look 180 degrees in front.
 // Returns true if a player is targeted.
 //
-doom_boolean lookForPlayers(mobj_t& actor, doom_boolean allaround)
+doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround)
 {
     int c;
     int stop;
-    player_t* player;
+    Player* player;
     angle_t an;
     fixed_t dist;
 
@@ -586,10 +586,10 @@ doom_boolean lookForPlayers(mobj_t& actor, doom_boolean allaround)
 // DOOM II special, map 32.
 // Uses special tag 666.
 //
-void keenDie(mobj_t& mo)
+void keenDie(Mobj& mo)
 {
     thinker_t* th;
-    mobj_t* mo2;
+    Mobj* mo2;
     Line junk;
 
     fall(mo);
@@ -601,7 +601,7 @@ void keenDie(mobj_t& mo)
         if (th->kind() != Doom::ThinkerKind::Mobj || th->removed)
             continue;
 
-        mo2 = reinterpret_cast<mobj_t*>(th);
+        mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != &mo && mo2->type == mo.type && mo2->health > 0)
         {
             // other Keen not dead
@@ -621,9 +621,9 @@ void keenDie(mobj_t& mo)
 // look
 // Stay in state until a player is sighted.
 //
-void look(mobj_t& actor)
+void look(Mobj& actor)
 {
-    mobj_t* targ;
+    Mobj* targ;
 
     actor.threshold = 0; // any shot will wake up
     targ = actor.subsector->sector->soundtarget;
@@ -685,7 +685,7 @@ seeyou:
 // Actor has a melee attack,
 // so it tries to close as fast as possible
 //
-void chase(mobj_t& actor)
+void chase(Mobj& actor)
 {
     int delta;
 
@@ -785,7 +785,7 @@ nomissile:
 //
 // faceTarget
 //
-void faceTarget(mobj_t& actor)
+void faceTarget(Mobj& actor)
 {
     if (!actor.target)
         return;
@@ -802,7 +802,7 @@ void faceTarget(mobj_t& actor)
 //
 // posAttack
 //
-void posAttack(mobj_t& actor)
+void posAttack(Mobj& actor)
 {
     int angle;
     int damage;
@@ -821,7 +821,7 @@ void posAttack(mobj_t& actor)
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
-void sPosAttack(mobj_t& actor)
+void sPosAttack(Mobj& actor)
 {
     int angle;
     int bangle;
@@ -844,7 +844,7 @@ void sPosAttack(mobj_t& actor)
     }
 }
 
-void cPosAttack(mobj_t& actor)
+void cPosAttack(Mobj& actor)
 {
     int angle;
     int bangle;
@@ -864,7 +864,7 @@ void cPosAttack(mobj_t& actor)
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
-void cPosRefire(mobj_t& actor)
+void cPosRefire(Mobj& actor)
 {
     // keep firing unless target got out of sight
     faceTarget(actor);
@@ -879,7 +879,7 @@ void cPosRefire(mobj_t& actor)
     }
 }
 
-void spidRefire(mobj_t& actor)
+void spidRefire(Mobj& actor)
 {
     // keep firing unless target got out of sight
     faceTarget(actor);
@@ -894,7 +894,7 @@ void spidRefire(mobj_t& actor)
     }
 }
 
-void bspiAttack(mobj_t& actor)
+void bspiAttack(Mobj& actor)
 {
     if (!actor.target)
         return;
@@ -908,7 +908,7 @@ void bspiAttack(mobj_t& actor)
 //
 // troopAttack
 //
-void troopAttack(mobj_t& actor)
+void troopAttack(Mobj& actor)
 {
     int damage;
 
@@ -928,7 +928,7 @@ void troopAttack(mobj_t& actor)
     Doom::spawnMissile(&actor, actor.target, MT_TROOPSHOT);
 }
 
-void sargAttack(mobj_t& actor)
+void sargAttack(Mobj& actor)
 {
     int damage;
 
@@ -943,7 +943,7 @@ void sargAttack(mobj_t& actor)
     }
 }
 
-void headAttack(mobj_t& actor)
+void headAttack(Mobj& actor)
 {
     int damage;
 
@@ -962,7 +962,7 @@ void headAttack(mobj_t& actor)
     Doom::spawnMissile(&actor, actor.target, MT_HEADSHOT);
 }
 
-void cyberAttack(mobj_t& actor)
+void cyberAttack(Mobj& actor)
 {
     if (!actor.target)
         return;
@@ -971,7 +971,7 @@ void cyberAttack(mobj_t& actor)
     Doom::spawnMissile(&actor, actor.target, MT_ROCKET);
 }
 
-void bruisAttack(mobj_t& actor)
+void bruisAttack(Mobj& actor)
 {
     int damage;
 
@@ -993,9 +993,9 @@ void bruisAttack(mobj_t& actor)
 //
 // skelMissile
 //
-void skelMissile(mobj_t& actor)
+void skelMissile(Mobj& actor)
 {
-    mobj_t* mo;
+    Mobj* mo;
 
     if (!actor.target)
         return;
@@ -1010,13 +1010,13 @@ void skelMissile(mobj_t& actor)
     mo->tracer = actor.target;
 }
 
-void tracer(mobj_t& actor)
+void tracer(Mobj& actor)
 {
     angle_t exact;
     fixed_t dist;
     fixed_t slope;
-    mobj_t* dest;
-    mobj_t* th;
+    Mobj* dest;
+    Mobj* th;
 
     if (gametic & 3)
         return;
@@ -1076,7 +1076,7 @@ void tracer(mobj_t& actor)
         actor.momz += FRACUNIT / 8;
 }
 
-void skelWhoosh(mobj_t& actor)
+void skelWhoosh(Mobj& actor)
 {
     if (!actor.target)
         return;
@@ -1085,7 +1085,7 @@ void skelWhoosh(mobj_t& actor)
     Doom::startSound(&actor, sfx_skeswg);
 }
 
-void skelFist(mobj_t& actor)
+void skelFist(Mobj& actor)
 {
     int damage;
 
@@ -1106,7 +1106,7 @@ void skelFist(mobj_t& actor)
 // vileCheck
 // Detect a corpse that could be raised.
 //
-doom_boolean vileCheck(mobj_t* thing)
+doom_boolean vileCheck(Mobj* thing)
 {
     int maxdist;
     doom_boolean check;
@@ -1142,7 +1142,7 @@ doom_boolean vileCheck(mobj_t* thing)
 // vileChase
 // Check for ressurecting a body
 //
-void vileChase(mobj_t& actor)
+void vileChase(Mobj& actor)
 {
     int xl;
     int xh;
@@ -1150,7 +1150,7 @@ void vileChase(mobj_t& actor)
     int yh;
 
     mobjinfo_t* info;
-    mobj_t* temp;
+    Mobj* temp;
 
     if (actor.movedir != DI_NODIR)
     {
@@ -1203,7 +1203,7 @@ void vileChase(mobj_t& actor)
 //
 // vileStart
 //
-void vileStart(mobj_t& actor)
+void vileStart(Mobj& actor)
 {
     Doom::startSound(&actor, sfx_vilatk);
 }
@@ -1212,21 +1212,21 @@ void vileStart(mobj_t& actor)
 // fire
 // Keep fire in front of player unless out of sight
 //
-void startFire(mobj_t& actor)
+void startFire(Mobj& actor)
 {
     Doom::startSound(&actor, sfx_flamst);
     fire(actor);
 }
 
-void fireCrackle(mobj_t& actor)
+void fireCrackle(Mobj& actor)
 {
     Doom::startSound(&actor, sfx_flame);
     fire(actor);
 }
 
-void fire(mobj_t& actor)
+void fire(Mobj& actor)
 {
-    mobj_t* dest;
+    Mobj* dest;
     unsigned an;
 
     dest = actor.tracer;
@@ -1250,9 +1250,9 @@ void fire(mobj_t& actor)
 // vileTarget
 // Spawn the hellfire
 //
-void vileTarget(mobj_t& actor)
+void vileTarget(Mobj& actor)
 {
-    mobj_t* fog;
+    Mobj* fog;
 
     if (!actor.target)
         return;
@@ -1270,9 +1270,9 @@ void vileTarget(mobj_t& actor)
 //
 // vileAttack
 //
-void vileAttack(mobj_t& actor)
+void vileAttack(Mobj& actor)
 {
-    mobj_t* fire;
+    Mobj* fire;
     int an;
 
     if (!actor.target)
@@ -1306,15 +1306,15 @@ void vileAttack(mobj_t& actor)
 // in three different directions?
 // Doesn't look like it.
 //
-void fatRaise(mobj_t& actor)
+void fatRaise(Mobj& actor)
 {
     faceTarget(actor);
     Doom::startSound(&actor, sfx_manatk);
 }
 
-void fatAttack1(mobj_t& actor)
+void fatAttack1(Mobj& actor)
 {
-    mobj_t* mo;
+    Mobj* mo;
     int an;
 
     faceTarget(actor);
@@ -1329,9 +1329,9 @@ void fatAttack1(mobj_t& actor)
     mo->momy = FixedMul(mo->info->speed, finesine[an]);
 }
 
-void fatAttack2(mobj_t& actor)
+void fatAttack2(Mobj& actor)
 {
-    mobj_t* mo;
+    Mobj* mo;
     int an;
 
     faceTarget(actor);
@@ -1346,9 +1346,9 @@ void fatAttack2(mobj_t& actor)
     mo->momy = FixedMul(mo->info->speed, finesine[an]);
 }
 
-void fatAttack3(mobj_t& actor)
+void fatAttack3(Mobj& actor)
 {
-    mobj_t* mo;
+    Mobj* mo;
     int an;
 
     faceTarget(actor);
@@ -1370,9 +1370,9 @@ void fatAttack3(mobj_t& actor)
 // SkullAttack
 // Fly at the player like a missile.
 //
-void skullAttack(mobj_t& actor)
+void skullAttack(Mobj& actor)
 {
-    mobj_t* dest;
+    Mobj* dest;
     angle_t an;
     int dist;
 
@@ -1399,13 +1399,13 @@ void skullAttack(mobj_t& actor)
 // painShootSkull
 // Spawn a lost soul and launch it at the target
 //
-void painShootSkull(mobj_t& actor, angle_t angle)
+void painShootSkull(Mobj& actor, angle_t angle)
 {
     fixed_t x;
     fixed_t y;
     fixed_t z;
 
-    mobj_t* newmobj;
+    Mobj* newmobj;
     angle_t an;
     int prestep;
     int count;
@@ -1419,7 +1419,7 @@ void painShootSkull(mobj_t& actor, angle_t angle)
     {
         if (currentthinker->kind() == Doom::ThinkerKind::Mobj
             && !currentthinker->removed
-            && (reinterpret_cast<mobj_t*>(currentthinker))->type == MT_SKULL)
+            && (reinterpret_cast<Mobj*>(currentthinker))->type == MT_SKULL)
             count++;
         currentthinker = currentthinker->next;
     }
@@ -1457,7 +1457,7 @@ void painShootSkull(mobj_t& actor, angle_t angle)
 // painAttack
 // Spawn a lost soul and launch it at the target
 //
-void painAttack(mobj_t& actor)
+void painAttack(Mobj& actor)
 {
     if (!actor.target)
         return;
@@ -1466,7 +1466,7 @@ void painAttack(mobj_t& actor)
     painShootSkull(actor, actor.angle);
 }
 
-void painDie(mobj_t& actor)
+void painDie(Mobj& actor)
 {
     fall(actor);
     painShootSkull(actor, actor.angle + ANG90);
@@ -1474,7 +1474,7 @@ void painDie(mobj_t& actor)
     painShootSkull(actor, actor.angle + ANG270);
 }
 
-void scream(mobj_t& actor)
+void scream(Mobj& actor)
 {
     int sound;
 
@@ -1509,18 +1509,18 @@ void scream(mobj_t& actor)
         Doom::startSound(&actor, sound);
 }
 
-void xScream(mobj_t& actor)
+void xScream(Mobj& actor)
 {
     Doom::startSound(&actor, sfx_slop);
 }
 
-void pain(mobj_t& actor)
+void pain(Mobj& actor)
 {
     if (actor.info->painsound)
         Doom::startSound(&actor, actor.info->painsound);
 }
 
-void fall(mobj_t& actor)
+void fall(Mobj& actor)
 {
     // actor is on ground, it can be walked over
     actor.flags &= ~MF_SOLID;
@@ -1532,7 +1532,7 @@ void fall(mobj_t& actor)
 //
 // explode
 //
-void explode(mobj_t& thingy)
+void explode(Mobj& thingy)
 {
     Doom::radiusAttack(&thingy, thingy.target, 128);
 }
@@ -1542,10 +1542,10 @@ void explode(mobj_t& thingy)
 // Possibly trigger special effects
 // if on first boss level
 //
-void bossDeath(mobj_t& mo)
+void bossDeath(Mobj& mo)
 {
     thinker_t* th;
-    mobj_t* mo2;
+    Mobj* mo2;
     Line junk;
     int i;
 
@@ -1627,7 +1627,7 @@ void bossDeath(mobj_t& mo)
         if (th->kind() != Doom::ThinkerKind::Mobj || th->removed)
             continue;
 
-        mo2 = reinterpret_cast<mobj_t*>(th);
+        mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != &mo && mo2->type == mo.type && mo2->health > 0)
         {
             // other boss not dead
@@ -1686,44 +1686,44 @@ void bossDeath(mobj_t& mo)
     Doom::exitLevel();
 }
 
-void hoof(mobj_t& mo)
+void hoof(Mobj& mo)
 {
     Doom::startSound(&mo, sfx_hoof);
     chase(mo);
 }
 
-void metal(mobj_t& mo)
+void metal(Mobj& mo)
 {
     Doom::startSound(&mo, sfx_metal);
     chase(mo);
 }
 
-void babyMetal(mobj_t& mo)
+void babyMetal(Mobj& mo)
 {
     Doom::startSound(&mo, sfx_bspwlk);
     chase(mo);
 }
 
-void openShotgun2(player_t* player, pspdef_t*)
+void openShotgun2(Player* player, PspDef*)
 {
     Doom::startSound(player->mo, sfx_dbopn);
 }
 
-void loadShotgun2(player_t* player, pspdef_t*)
+void loadShotgun2(Player* player, PspDef*)
 {
     Doom::startSound(player->mo, sfx_dbload);
 }
 
-void closeShotgun2(player_t* player, pspdef_t* psp)
+void closeShotgun2(Player* player, PspDef* psp)
 {
     Doom::startSound(player->mo, sfx_dbcls);
     Doom::reFire(*player, *psp);
 }
 
-void brainAwake(mobj_t&)
+void brainAwake(Mobj&)
 {
     thinker_t* thinker;
-    mobj_t* m;
+    Mobj* m;
 
     // find all the target spots
     numbraintargets = 0;
@@ -1735,7 +1735,7 @@ void brainAwake(mobj_t&)
         if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
             continue; // not a mobj
 
-        m = reinterpret_cast<mobj_t*>(thinker);
+        m = reinterpret_cast<Mobj*>(thinker);
 
         if (m->type == MT_BOSSTARGET)
         {
@@ -1747,16 +1747,16 @@ void brainAwake(mobj_t&)
     Doom::startSound(0, sfx_bossit);
 }
 
-void brainPain(mobj_t&)
+void brainPain(Mobj&)
 {
     Doom::startSound(0, sfx_bospn);
 }
 
-void brainScream(mobj_t& mo)
+void brainScream(Mobj& mo)
 {
     int y;
     int z;
-    mobj_t* th;
+    Mobj* th;
 
     for (int x = mo.x - 196 * FRACUNIT; x < mo.x + 320 * FRACUNIT;
          x += FRACUNIT * 8)
@@ -1776,12 +1776,12 @@ void brainScream(mobj_t& mo)
     Doom::startSound(0, sfx_bosdth);
 }
 
-void brainExplode(mobj_t& mo)
+void brainExplode(Mobj& mo)
 {
     int x;
     int y;
     int z;
-    mobj_t* th;
+    Mobj* th;
 
     x = mo.x + (P_Random() - P_Random()) * 2048;
     y = mo.y;
@@ -1796,15 +1796,15 @@ void brainExplode(mobj_t& mo)
         th->tics = 1;
 }
 
-void brainDie(mobj_t&)
+void brainDie(Mobj&)
 {
     Doom::exitLevel();
 }
 
-void brainSpit(mobj_t& mo)
+void brainSpit(Mobj& mo)
 {
-    mobj_t* targ;
-    mobj_t* newmobj;
+    Mobj* targ;
+    Mobj* newmobj;
 
     int& easy = enemyAI().brainSpitEasy;
 
@@ -1826,17 +1826,17 @@ void brainSpit(mobj_t& mo)
 }
 
 // travelling cube sound
-void spawnSound(mobj_t& mo)
+void spawnSound(Mobj& mo)
 {
     Doom::startSound(&mo, sfx_boscub);
     spawnFly(mo);
 }
 
-void spawnFly(mobj_t& mo)
+void spawnFly(Mobj& mo)
 {
-    mobj_t* newmobj;
-    mobj_t* fog;
-    mobj_t* targ;
+    Mobj* newmobj;
+    Mobj* fog;
+    Mobj* targ;
     int r;
     mobjtype_t type;
 
@@ -1888,7 +1888,7 @@ void spawnFly(mobj_t& mo)
     Doom::removeMobj(&mo);
 }
 
-void playerScream(mobj_t& mo)
+void playerScream(Mobj& mo)
 {
     // Default death sound.
     int sound = sfx_pldeth;

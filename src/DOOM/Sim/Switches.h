@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../d_player.h" // player_t
+#include "../d_player.h" // Player
 #include "../p_spec.h" // bwhere_e
 #include "../r_defs.h"
 
@@ -10,5 +10,5 @@ namespace Doom
 void initSwitchList();
 void startButton(Line* line, bwhere_e w, int texture, int time);
 void changeSwitchTexture(Line* line, int useAgain);
-doom_boolean useSpecialLine(mobj_t* thing, Line* line, int side);
+doom_boolean useSpecialLine(Mobj* thing, Line* line, int side);
 } // namespace Doom

@@ -5,8 +5,11 @@
 
 // Forward declarations at global scope (that is where p_mobj.h / r_defs.h declare them) - the
 // scratch holds pointers to these, not their layout. Declaring them inside namespace Doom would make
-// distinct Doom:: types that do not match the vanilla mobj_t / Doom::Line the reference aliases bind to.
-struct mobj_t; // mobj_t
+// distinct Doom:: types that do not match the vanilla Doom::Mobj / Doom::Line the reference aliases bind to.
+namespace Doom
+{
+struct Mobj; // Mobj
+} // namespace Doom
 namespace Doom
 {
 struct Line; // Line
@@ -36,22 +39,22 @@ struct ActionScratch
     fixed_t secondslidefrac = 0; // runner-up
     Line* bestslideline = nullptr; // the wall slid against
     Line* secondslideline = nullptr; // the runner-up wall
-    mobj_t* slidemo = nullptr; // the mobj sliding
+    Mobj* slidemo = nullptr; // the mobj sliding
     fixed_t tmxmove = 0; // residual x move after the slide
     fixed_t tmymove = 0; // residual y move after the slide
 
     // The hitscan attacks (Doom::aimLineAttack / Doom::lineAttack).
     fixed_t aimslope = 0; // vertical slope to the aimed target
-    mobj_t* shootthing = nullptr; // the mobj firing
+    Mobj* shootthing = nullptr; // the mobj firing
     fixed_t shootz = 0; // z the shot leaves from
     int la_damage = 0; // hitscan damage
 
     // Doom::useLines.
-    mobj_t* usething = nullptr; // the mobj pressing use
+    Mobj* usething = nullptr; // the mobj pressing use
 
     // Doom::radiusAttack.
-    mobj_t* bombsource = nullptr; // who set off the blast
-    mobj_t* bombspot = nullptr; // where it went off
+    Mobj* bombsource = nullptr; // who set off the blast
+    Mobj* bombspot = nullptr; // where it went off
     int bombdamage = 0; // blast damage at the centre
 
     // Doom::changeSector.

@@ -12,377 +12,377 @@
 
 namespace Doom::Actions
 {
-void keenDie(mobj_t* mo)
+void keenDie(Mobj* mo)
 {
     Doom::keenDie(*mo);
 }
 
-void look(mobj_t* actor)
+void look(Mobj* actor)
 {
     Doom::look(*actor);
 }
 
-void chase(mobj_t* actor)
+void chase(Mobj* actor)
 {
     Doom::chase(*actor);
 }
 
-void faceTarget(mobj_t* actor)
+void faceTarget(Mobj* actor)
 {
     Doom::faceTarget(*actor);
 }
 
-void posAttack(mobj_t* actor)
+void posAttack(Mobj* actor)
 {
     Doom::posAttack(*actor);
 }
 
-void sPosAttack(mobj_t* actor)
+void sPosAttack(Mobj* actor)
 {
     Doom::sPosAttack(*actor);
 }
 
-void cPosAttack(mobj_t* actor)
+void cPosAttack(Mobj* actor)
 {
     Doom::cPosAttack(*actor);
 }
 
-void cPosRefire(mobj_t* actor)
+void cPosRefire(Mobj* actor)
 {
     Doom::cPosRefire(*actor);
 }
 
-void spidRefire(mobj_t* actor)
+void spidRefire(Mobj* actor)
 {
     Doom::spidRefire(*actor);
 }
 
-void bspiAttack(mobj_t* actor)
+void bspiAttack(Mobj* actor)
 {
     Doom::bspiAttack(*actor);
 }
 
-void troopAttack(mobj_t* actor)
+void troopAttack(Mobj* actor)
 {
     Doom::troopAttack(*actor);
 }
 
-void sargAttack(mobj_t* actor)
+void sargAttack(Mobj* actor)
 {
     Doom::sargAttack(*actor);
 }
 
-void headAttack(mobj_t* actor)
+void headAttack(Mobj* actor)
 {
     Doom::headAttack(*actor);
 }
 
-void cyberAttack(mobj_t* actor)
+void cyberAttack(Mobj* actor)
 {
     Doom::cyberAttack(*actor);
 }
 
-void bruisAttack(mobj_t* actor)
+void bruisAttack(Mobj* actor)
 {
     Doom::bruisAttack(*actor);
 }
 
-void skelMissile(mobj_t* actor)
+void skelMissile(Mobj* actor)
 {
     Doom::skelMissile(*actor);
 }
 
-void tracer(mobj_t* actor)
+void tracer(Mobj* actor)
 {
     Doom::tracer(*actor);
 }
 
-void skelWhoosh(mobj_t* actor)
+void skelWhoosh(Mobj* actor)
 {
     Doom::skelWhoosh(*actor);
 }
 
-void skelFist(mobj_t* actor)
+void skelFist(Mobj* actor)
 {
     Doom::skelFist(*actor);
 }
 
-void vileChase(mobj_t* actor)
+void vileChase(Mobj* actor)
 {
     Doom::vileChase(*actor);
 }
 
-void vileStart(mobj_t* actor)
+void vileStart(Mobj* actor)
 {
     Doom::vileStart(*actor);
 }
 
-void startFire(mobj_t* actor)
+void startFire(Mobj* actor)
 {
     Doom::startFire(*actor);
 }
 
-void fireCrackle(mobj_t* actor)
+void fireCrackle(Mobj* actor)
 {
     Doom::fireCrackle(*actor);
 }
 
-void fire(mobj_t* actor)
+void fire(Mobj* actor)
 {
     Doom::fire(*actor);
 }
 
-void vileTarget(mobj_t* actor)
+void vileTarget(Mobj* actor)
 {
     Doom::vileTarget(*actor);
 }
 
-void vileAttack(mobj_t* actor)
+void vileAttack(Mobj* actor)
 {
     Doom::vileAttack(*actor);
 }
 
-void fatRaise(mobj_t* actor)
+void fatRaise(Mobj* actor)
 {
     Doom::fatRaise(*actor);
 }
 
-void fatAttack1(mobj_t* actor)
+void fatAttack1(Mobj* actor)
 {
     Doom::fatAttack1(*actor);
 }
 
-void fatAttack2(mobj_t* actor)
+void fatAttack2(Mobj* actor)
 {
     Doom::fatAttack2(*actor);
 }
 
-void fatAttack3(mobj_t* actor)
+void fatAttack3(Mobj* actor)
 {
     Doom::fatAttack3(*actor);
 }
 
-void skullAttack(mobj_t* actor)
+void skullAttack(Mobj* actor)
 {
     Doom::skullAttack(*actor);
 }
 
-void painShootSkull(mobj_t* actor, angle_t angle)
+void painShootSkull(Mobj* actor, angle_t angle)
 {
     Doom::painShootSkull(*actor, angle);
 }
 
-void painAttack(mobj_t* actor)
+void painAttack(Mobj* actor)
 {
     Doom::painAttack(*actor);
 }
 
-void painDie(mobj_t* actor)
+void painDie(Mobj* actor)
 {
     Doom::painDie(*actor);
 }
 
-void scream(mobj_t* actor)
+void scream(Mobj* actor)
 {
     Doom::scream(*actor);
 }
 
-void xScream(mobj_t* actor)
+void xScream(Mobj* actor)
 {
     Doom::xScream(*actor);
 }
 
-void pain(mobj_t* actor)
+void pain(Mobj* actor)
 {
     Doom::pain(*actor);
 }
 
-void fall(mobj_t* actor)
+void fall(Mobj* actor)
 {
     Doom::fall(*actor);
 }
 
-void explode(mobj_t* thingy)
+void explode(Mobj* thingy)
 {
     Doom::explode(*thingy);
 }
 
-void bossDeath(mobj_t* mo)
+void bossDeath(Mobj* mo)
 {
     Doom::bossDeath(*mo);
 }
 
-void hoof(mobj_t* mo)
+void hoof(Mobj* mo)
 {
     Doom::hoof(*mo);
 }
 
-void metal(mobj_t* mo)
+void metal(Mobj* mo)
 {
     Doom::metal(*mo);
 }
 
-void babyMetal(mobj_t* mo)
+void babyMetal(Mobj* mo)
 {
     Doom::babyMetal(*mo);
 }
 
-void openShotgun2(player_t* player, pspdef_t* psp)
+void openShotgun2(Player* player, PspDef* psp)
 {
     Doom::openShotgun2(player, psp);
 }
 
-void loadShotgun2(player_t* player, pspdef_t* psp)
+void loadShotgun2(Player* player, PspDef* psp)
 {
     Doom::loadShotgun2(player, psp);
 }
 
-void closeShotgun2(player_t* player, pspdef_t* psp)
+void closeShotgun2(Player* player, PspDef* psp)
 {
     Doom::closeShotgun2(player, psp);
 }
 
-void brainAwake(mobj_t* mo)
+void brainAwake(Mobj* mo)
 {
     Doom::brainAwake(*mo);
 }
 
-void brainPain(mobj_t* mo)
+void brainPain(Mobj* mo)
 {
     Doom::brainPain(*mo);
 }
 
-void brainScream(mobj_t* mo)
+void brainScream(Mobj* mo)
 {
     Doom::brainScream(*mo);
 }
 
-void brainExplode(mobj_t* mo)
+void brainExplode(Mobj* mo)
 {
     Doom::brainExplode(*mo);
 }
 
-void brainDie(mobj_t* mo)
+void brainDie(Mobj* mo)
 {
     Doom::brainDie(*mo);
 }
 
-void brainSpit(mobj_t* mo)
+void brainSpit(Mobj* mo)
 {
     Doom::brainSpit(*mo);
 }
 
-void spawnSound(mobj_t* mo)
+void spawnSound(Mobj* mo)
 {
     Doom::spawnSound(*mo);
 }
 
-void spawnFly(mobj_t* mo)
+void spawnFly(Mobj* mo)
 {
     Doom::spawnFly(*mo);
 }
 
-void playerScream(mobj_t* mo)
+void playerScream(Mobj* mo)
 {
     Doom::playerScream(*mo);
 }
 
-void weaponReady(player_t* player, pspdef_t* psp)
+void weaponReady(Player* player, PspDef* psp)
 {
     Doom::weaponReady(*player, *psp);
 }
 
-void reFire(player_t* player, pspdef_t* psp)
+void reFire(Player* player, PspDef* psp)
 {
     Doom::reFire(*player, *psp);
 }
 
-void checkReload(player_t* player, pspdef_t* psp)
+void checkReload(Player* player, PspDef* psp)
 {
     Doom::checkReload(*player, *psp);
 }
 
-void lower(player_t* player, pspdef_t* psp)
+void lower(Player* player, PspDef* psp)
 {
     Doom::lower(*player, *psp);
 }
 
-void raise(player_t* player, pspdef_t* psp)
+void raise(Player* player, PspDef* psp)
 {
     Doom::raise(*player, *psp);
 }
 
-void gunFlash(player_t* player, pspdef_t* psp)
+void gunFlash(Player* player, PspDef* psp)
 {
     Doom::gunFlash(*player, *psp);
 }
 
-void punch(player_t* player, pspdef_t* psp)
+void punch(Player* player, PspDef* psp)
 {
     Doom::punch(*player, *psp);
 }
 
-void saw(player_t* player, pspdef_t* psp)
+void saw(Player* player, PspDef* psp)
 {
     Doom::saw(*player, *psp);
 }
 
-void fireMissile(player_t* player, pspdef_t* psp)
+void fireMissile(Player* player, PspDef* psp)
 {
     Doom::fireMissile(*player, *psp);
 }
 
-void fireBFG(player_t* player, pspdef_t* psp)
+void fireBFG(Player* player, PspDef* psp)
 {
     Doom::fireBFG(*player, *psp);
 }
 
-void firePlasma(player_t* player, pspdef_t* psp)
+void firePlasma(Player* player, PspDef* psp)
 {
     Doom::firePlasma(*player, *psp);
 }
 
-void firePistol(player_t* player, pspdef_t* psp)
+void firePistol(Player* player, PspDef* psp)
 {
     Doom::firePistol(*player, *psp);
 }
 
-void fireShotgun(player_t* player, pspdef_t* psp)
+void fireShotgun(Player* player, PspDef* psp)
 {
     Doom::fireShotgun(*player, *psp);
 }
 
-void fireShotgun2(player_t* player, pspdef_t* psp)
+void fireShotgun2(Player* player, PspDef* psp)
 {
     Doom::fireShotgun2(*player, *psp);
 }
 
-void fireCGun(player_t* player, pspdef_t* psp)
+void fireCGun(Player* player, PspDef* psp)
 {
     Doom::fireCGun(*player, *psp);
 }
 
-void light0(player_t* player, pspdef_t* psp)
+void light0(Player* player, PspDef* psp)
 {
     Doom::light0(*player, *psp);
 }
 
-void light1(player_t* player, pspdef_t* psp)
+void light1(Player* player, PspDef* psp)
 {
     Doom::light1(*player, *psp);
 }
 
-void light2(player_t* player, pspdef_t* psp)
+void light2(Player* player, PspDef* psp)
 {
     Doom::light2(*player, *psp);
 }
 
-void bfgSpray(mobj_t* mo)
+void bfgSpray(Mobj* mo)
 {
     Doom::bfgSpray(mo);
 }
 
-void bfgSound(player_t* player, pspdef_t* psp)
+void bfgSound(Player* player, PspDef* psp)
 {
     Doom::bfgSound(*player, *psp);
 }

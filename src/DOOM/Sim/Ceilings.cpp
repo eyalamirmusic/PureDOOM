@@ -57,7 +57,7 @@ void moveCeiling(ceiling_t& ceiling)
                         break;
                     default:
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                         // ?
                         break;
@@ -74,7 +74,7 @@ void moveCeiling(ceiling_t& ceiling)
 
                     case silentCrushAndRaise:
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case fastCrushAndRaise:
                     case crushAndRaise:
@@ -104,7 +104,7 @@ void moveCeiling(ceiling_t& ceiling)
                         break;
                     default:
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                 }
             }
@@ -115,7 +115,7 @@ void moveCeiling(ceiling_t& ceiling)
                 {
                     case silentCrushAndRaise:
                         Doom::startSound(
-                            reinterpret_cast<mobj_t*>(&ceiling.sector->soundorg),
+                            reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case crushAndRaise:
                         ceiling.speed = CEILSPEED;
