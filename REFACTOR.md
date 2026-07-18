@@ -95,10 +95,10 @@ the `thinker_t`→`Thinker` virtualisation has landed, and the flat vanilla sour
 **The naming half of the goal is finished.** No vanilla-prefixed function name
 (`R_`/`P_`/`D_`/`G_`/`M_`/`S_`/`V_`/`W_`/`I_`/`EV_`/`T_`/`HU_`/`ST_`/`AM_`/`WI_`/`F_`/`HUlib_`/
 `STlib_`) survives anywhere in `src/DOOM`, and all 107 vanilla `_t` types are PascalCase inside
-`namespace Doom`. The flat `.cpp` shims are deleted — 53 of them at the start of that session, 21 now,
-and the 21 hold **no functions at all**.
+`namespace Doom`. The flat `.cpp` shims are deleted — **53 of them at the start of that session, 26
+now, and not one of the 26 contains a single function definition.**
 
-**What those 21 files still hold is the one remaining piece of the shim layer: ~104
+**What those 26 files still hold is the one remaining piece of the shim layer: ~104
 reference-alias data shims** (`fixed_t& viewx = engine().viewPoint.viewx`), concentrated in
 `r_draw.cpp` (22), `r_main.cpp` (20), `r_segs.cpp` (13), `r_things.cpp` (9), `p_map.cpp` (7),
 `r_data.cpp`/`r_bsp.cpp` (6 each). Retiring them so every reader goes through an owner — which also
@@ -144,7 +144,7 @@ padding cache and the `Sim/Tick` level pool). What is otherwise loose is *not wo
 - **`MenuState::messageRoutine` is a `std::function`** with a no-op default, removing
   `startMessage`'s `void*` parameter and six `reinterpret_cast<void*>`.
 
-**Two traps this session added to the list, both caught by the net:**
+**Three traps this session added to the list:**
 
 - **Namespacing an unscoped enum moves its enumerators.** `enum MobjFlag` into `namespace Doom` takes
   every `MF_*` with it. The three verbatim generated tables (`Sim/Info.cpp`, `Sim/Items.cpp`,
@@ -153,6 +153,16 @@ padding cache and the `Sim/Tick` level pool). What is otherwise loose is *not wo
 - **A name collision can be invisible to grep.** `M_Options` → `options` collided with an unscoped
   enum constant of that name and only surfaced in the build. Grep the new name before renaming, and
   do not trust a clean grep as proof.
+- **A two-pass rename can silently orphan the thing it meant to delete, and no test will say so.**
+  Where the vanilla name and the namespaced name are the *same identifier* (`I_Error` was both
+  `::I_Error` and `Doom::I_Error`), pass 1 renamed the shim's own definition, so pass 2 searched for
+  the vanilla name, found nothing, and left the definition standing under its new name — 48 dead
+  global duplicates (`::initSoundHost()` forwarding to `Doom::initSoundHost()`). They linked cleanly
+  and were never executed, so build + 80/80 + goldens *all passed with them present*. Two of the 48
+  turned out not to be dead: `Host/Api.cpp` is `extern "C"` at global scope, so its unqualified calls
+  were binding to the orphan rather than to `Doom::`. **The lesson: after a rename sweep, count the
+  function definitions left in the files you expected to empty — a green suite does not prove the
+  deletion half ran.**
 
 **The earlier session landed, newest last:**
 
