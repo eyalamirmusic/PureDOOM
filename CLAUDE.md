@@ -106,14 +106,26 @@ apparatus:
   already exist as *strong* types — moving 862 uses onto them changes arithmetic, so it
   is a semantic migration with its own verification, not a rename.
 
-  What *does* remain of the shim layer is **data**: ~104 reference aliases
-  (`fixed_t& viewx = engine().viewPoint.viewx`) in the flat `r_*.cpp`/`p_*.cpp` files,
-  plus the pointer-and-count views. `rndindex`/`prndindex` are *references* into
-  `Doom::Random`; `vertexes`/`numsegs`/`sectors`/… are *views* onto `Doom::Level`'s
-  vectors, refreshed by each loader after it fills its vector. That is deliberate — it
-  puts the new types on the critical path of every demo the suite replays, which is the
-  only thing that can test them. Retiring those aliases is Step 9 strand (a), and it is
-  what finally lets the `Engine` be constructed rather than booted.
+  **The reference-alias layer is gone too.** ~290 aliases
+  (`fixed_t& viewx = engine().viewPoint.viewx`) stood between readers and the state they
+  read; every one is retired and every reader reaches its cluster through the owner,
+  hoisting a local reference once per function (`auto& draw = drawState();`) rather than
+  calling the out-of-line accessor per access — which matters in the per-pixel drawers.
+  That releases the static-init address pin on `engine()`, so the Engine can now be
+  **constructed** rather than booted, which was the point of Step 9 strand (a).
+
+  **13 aliases survive on purpose**: the host callbacks (`doom_print`, `doom_malloc`, …)
+  are references onto `Doom::host()`, not onto the Engine. `host()` is deliberately a
+  separate immortal singleton that must *not* be reset with a fresh Engine, so pinning
+  its address costs nothing, and they are the bridge the public `extern "C"` `doom_set_*`
+  API writes through.
+
+  What is left in the 11 flat `.cpp` files is not a shim layer but **data and views**:
+  `am_map`'s vector shapes and `hu_stuff`'s chat macros; the pointer-and-count views
+  (`vertexes`/`numsegs`/`sectors`/… onto `Doom::Level`, the `textures`/`sprites` tables
+  onto `GraphicsData`, `finesine`/`finecosine` onto `Math/Trig`), each refreshed by its
+  loader after filling the owning vector; the drawer function pointers; and
+  `FixedMul`/`FixedDiv`, the `fixed_t`↔`Doom::Fixed` bridge.
 
   Those three owners live inside one `Doom::Engine` now (`Engine/Engine.h`), and
   `randomness()`/`wad()`/`level()` are accessors into the single `engine()`

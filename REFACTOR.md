@@ -98,8 +98,9 @@ the `thinker_t`→`Thinker` virtualisation has landed, and the flat vanilla sour
 `namespace Doom`. The flat `.cpp` shims are deleted — **53 of them at the start of that session, 26
 now, and not one of the 26 contains a single function definition.**
 
-**What those 26 files still hold is the one remaining piece of the shim layer: ~104
-reference-alias data shims** (`fixed_t& viewx = engine().viewPoint.viewx`), concentrated in
+**[SUPERSEDED - the alias layer has since been retired entirely; see the strand (a) note
+below. What follows described the state before that.] What those 26 files still held was
+~104 reference-alias data shims** (`fixed_t& viewx = engine().viewPoint.viewx`), concentrated in
 `r_draw.cpp` (22), `r_main.cpp` (20), `r_segs.cpp` (13), `r_things.cpp` (9), `p_map.cpp` (7),
 `r_data.cpp`/`r_bsp.cpp` (6 each). Retiring them so every reader goes through an owner — which also
 removes the fixed-address pin that keeps the Engine from being *constructed* — is **strand (a), and it
@@ -122,6 +123,43 @@ padding cache and the `Sim/Tick` level pool). What is otherwise loose is *not wo
    precisely because a bare function pointer cannot capture; a callable parameter would let that
    context become captures. A real design win, but hot-path and behaviour-adjacent, so it is its own
    reviewed step rather than part of a sweep.
+
+**Strand (a) is now DONE — the reference-alias layer is retired.** ~290 aliases in all
+(the first survey said 104; it had only scanned the flat `.cpp` files and missed a second
+tier of ~160 defined inside the already-namespaced ones, `Game/Game.cpp` alone holding 81).
+Every reader now reaches its cluster through the owner. The transform is a **per-function
+hoist**, not a token substitution: the accessors are out-of-line functions in `Engine.cpp`,
+so rewriting each `dc_x` as `Doom::drawState().dc_x` would add a call per access inside the
+per-pixel drawers — a regression no golden could catch, since they hash pixels, not time.
+Each function takes `auto& draw = drawState();` once instead. **That releases the
+static-init address pin on `engine()`, so the Engine can be constructed rather than
+booted** — the dividend strand (a) was always for. 11 flat `.cpp` files remain and none is
+a shim: data tables, the pointer-and-count views, the drawer function pointers, and the
+`fixed_t`↔`Doom::Fixed` bridge.
+
+**13 aliases stay, deliberately**: the host callbacks (`doom_print`/`doom_malloc`/…) are
+references onto `Doom::host()`, not the Engine. `host()` is a separate immortal singleton
+that must not be reset with a fresh Engine, so pinning its address blocks nothing, and
+retiring them would rewrite ~249 call sites to `host().print(...)` for no gain.
+
+**Four traps this added to the list:**
+
+- **A reader-count heuristic lies after a hoist.** Agents legitimately name the hoisted
+  local after the alias it replaces, so a bare-name count reports those locals as readers
+  (`Net.cpp`'s local `debugfile` copy alone showed 70). Delete the definitions and let the
+  **compiler** name the survivors; it does not confuse a local with a global.
+- **`extern` declarations are not only in headers.** Several sat in `.cpp` files
+  (`Host/System.cpp`, `Host/Api.cpp`, `Render/Main.cpp`, `UI/Menu.cpp`) and three inside
+  function bodies. A header-only sweep leaves dangling declarations.
+- **Names collide across clusters.** `UI/Menu.cpp`'s `mousex`/`mousey` are references into
+  `Doom::MenuState`, *not* the identically-named `ticcmdInput` aliases; `forwardmove`/
+  `sidemove`/`angleturn` in the playsim are `cmd->` `Ticcmd` members; `linedef` is a
+  parameter in `Sim/MapUtil.cpp` and a local `int` in `Sim/Setup.cpp`. Substituting by name
+  would have broken all of them.
+- **A test can assert the very thing being removed.** `Random/vanillaNamesAliasTheObject`
+  existed to check `&prndindex == &randomness().playIndex`. Converting it mechanically
+  yields `&x == &x` — green forever, testing nothing. It was deleted, with a comment
+  recording where its surviving coverage lives. **The suite is 79 tests now, not 80.**
 
 **The naming session landed, newest last:**
 
