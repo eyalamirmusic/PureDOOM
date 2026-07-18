@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // GameMode, GameMission, Language
+#include "GameDefs.h" // GameMode, GameMission, Language
 #include "../doomtype.h" // doom_boolean
 
 namespace Doom

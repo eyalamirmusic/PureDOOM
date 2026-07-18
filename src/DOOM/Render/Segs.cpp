@@ -5,10 +5,10 @@
 // shims the R_ names and owns the per-column wall state r_bsp/r_plane share; its own
 // scratch is file-local. Golden-neutral.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
 
 #include "../Game/SkyState.h"
 

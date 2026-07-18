@@ -5,7 +5,7 @@
 // The demos never enter a cheat, so this is a faithful transcription driven by
 // the status bar / automap responders.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "CheatTypes.h"
 

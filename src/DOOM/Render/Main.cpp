@@ -9,12 +9,12 @@
 // transcolfunc) is file-local here. renderInit is Doom::renderInit (renamed to avoid a clash
 // with Setup's init).
 
-#include "../doom_config.h" // doom_abs, doom_print
+#include "../Host/Platform.h" // doom_abs, doom_print
 
-#include "../doomdef.h"
+#include "../Game/GameDefs.h"
 
 #include "../Game/NetTypes.h"
-#include "../doomstat.h"
+#include "../Game/MapSpawns.h"
 
 #include "Main.h"
 #include "RenderMainState.h"

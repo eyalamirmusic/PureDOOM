@@ -19,8 +19,8 @@
 // the old one, which is the claim the shims make and the only thing that can
 // check it.
 #include <DOOM/doomtype.h>
-#include <DOOM/m_fixed.h>
-#include <DOOM/m_random.h>
+#include <DOOM/Math/FixedPoint.h>
+#include <DOOM/Sim/Random.h>
 
 #include <cstddef>
 #include <type_traits>

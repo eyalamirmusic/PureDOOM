@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // NUMCARDS
+#include "../Game/GameDefs.h" // NUMCARDS
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 

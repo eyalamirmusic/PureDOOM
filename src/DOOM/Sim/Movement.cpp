@@ -1,10 +1,10 @@
 #include "Movement.h"
 
-#include "../doom_config.h" // doom_abs
+#include "../Host/Platform.h" // doom_abs
 #include "../Game/GameSession.h" // gamemap
-#include "../doomstat.h"
-#include "../m_random.h"
-#include "../p_local.h"
+#include "../Game/MapSpawns.h"
+#include "Random.h"
+#include "SimDefs.h"
 
 #include "Clip.h"
 #include "ValidCount.h"

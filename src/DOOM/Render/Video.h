@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // SCREENHEIGHT
+#include "../Game/GameDefs.h" // SCREENHEIGHT
 #include "../doomtype.h" // byte
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Patch

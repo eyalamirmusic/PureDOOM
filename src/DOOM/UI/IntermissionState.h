@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Game/PlayerTypes.h" // IntermissionStart, IntermissionPlayer
-#include "../doomdef.h" // MAXPLAYERS
+#include "../Game/GameDefs.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch

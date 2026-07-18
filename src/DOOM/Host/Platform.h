@@ -10,7 +10,7 @@
 #endif
 
 
-#include "DOOM.h"
+#include "../DOOM.h"
 
 
 #define doom_abs(x) ((x) < 0 ? -(x) : (x))

@@ -33,15 +33,15 @@
 // paths are read straight off Doom::configPaths() (Game/ConfigPaths.h).
 // loadDefaults reads the test config, so the frame goldens pin it.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h" // State.
-#include "../dstrings.h" // Data.
-#include "../hu_stuff.h"
-#include "../m_argv.h"
-#include "../m_misc.h"
-#include "../m_swap.h"
+#include "GameDefs.h"
+#include "MapSpawns.h" // State.
+#include "Strings.h" // Data.
+#include "../UI/Hud.h"
+#include "Args.h"
+#include "ConfigTypes.h"
+#include "../Math/Swap.h"
 #include "../Wad/WadFile.h"
 
 #include "Config.h"

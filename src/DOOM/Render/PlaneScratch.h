@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../doomdef.h" // SCREENWIDTH, SCREENHEIGHT
-#include "../m_fixed.h" // fixed_t
+#include "../Game/GameDefs.h" // SCREENWIDTH, SCREENHEIGHT
+#include "../Math/FixedPoint.h" // fixed_t
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // VisPlane, LightTable
 

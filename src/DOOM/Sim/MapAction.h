@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_local.h" // Mobj, Player, angle_t, fixed_t, Sector
+#include "SimDefs.h" // Mobj, Player, angle_t, fixed_t, Sector
 
 namespace Doom
 {

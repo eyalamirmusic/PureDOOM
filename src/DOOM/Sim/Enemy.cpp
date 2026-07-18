@@ -17,13 +17,13 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../m_random.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "Random.h"
+#include "SimDefs.h"
+#include "../Game/SoundData.h"
 
 #include "Clip.h"
 #include "Enemy.h"

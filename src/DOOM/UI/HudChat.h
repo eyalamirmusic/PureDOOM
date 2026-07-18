@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // MAXPLAYERS
+#include "../Game/GameDefs.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "HudWidgetTypes.h" // HudInputText
 

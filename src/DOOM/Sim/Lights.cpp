@@ -4,11 +4,11 @@
 // glow, plus their spawners and the EV_ line handlers. p_lights.cpp shims every
 // name. Golden-neutral.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../m_random.h"
-#include "../p_local.h"
+#include "../Game/GameDefs.h"
+#include "Random.h"
+#include "SimDefs.h"
 
 #include "Lights.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations

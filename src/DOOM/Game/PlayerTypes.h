@@ -26,8 +26,8 @@
 // of other structs: items (internal inventory),
 // animation states (closely tied to the sprites
 // used to represent them, unfortunately).
-#include "Sim/ItemTypes.h"
-#include "Sim/WeaponTypes.h"
+#include "../Sim/ItemTypes.h"
+#include "../Sim/WeaponTypes.h"
 
 // In addition, the player is just a special
 // case of the generic moving object/actor.
@@ -36,7 +36,7 @@
 // Finally, for odd reasons, the player input
 // is buffered within the player data struct,
 // as commands per game tick.
-#include "Game/Ticcmd.h"
+#include "Ticcmd.h"
 
 
 //

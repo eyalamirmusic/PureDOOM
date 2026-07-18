@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../m_fixed.h" // fixed_t
-#include "../tables.h" // angle_t
+#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/TrigTables.h" // angle_t
 
 namespace Doom
 {

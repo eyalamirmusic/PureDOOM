@@ -6,7 +6,7 @@
 // in doomstat.h, read by ~17 files) are references onto it (REFACTOR.md, Step 5).
 // d_main's D_IdentifyVersion is what fills them at startup.
 
-#include "../doomstat.h"
+#include "MapSpawns.h"
 
 #include "GameVersion.h"
 

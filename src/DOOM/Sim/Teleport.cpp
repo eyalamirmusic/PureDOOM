@@ -2,11 +2,11 @@
 #include "Level.h"
 #include "../Game/PlayerTypes.h"
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "../Game/GameDefs.h"
+#include "SimDefs.h"
+#include "../Game/SoundData.h"
 
 #include "../Game/Sound.h"
 #include "Mobj.h"

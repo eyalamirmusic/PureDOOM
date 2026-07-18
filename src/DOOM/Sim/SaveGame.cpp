@@ -8,10 +8,10 @@
 // by the demos (no save in a demo); migrated copy-for-copy so the byte layout is
 // unchanged.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomstat.h"
-#include "../p_local.h"
+#include "../Game/MapSpawns.h"
+#include "SimDefs.h"
 
 #include "../Game/PlayerState.h"
 #include "../Game/SaveGameState.h"

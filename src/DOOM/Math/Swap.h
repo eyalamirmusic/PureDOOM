@@ -8,6 +8,16 @@
 
 #include <cstdint>
 
+// The vanilla spelling the WAD loaders use. DOOM's on-disk data is
+// little-endian, so these are identity on a little-endian host. Was m_swap.h.
+#ifdef __BIG_ENDIAN__
+#define SHORT(x) ((short) Doom::swap16((unsigned short) (x)))
+#define LONG(x) ((long) Doom::swap32((unsigned long) (x)))
+#else
+#define SHORT(x) (x)
+#define LONG(x) (x)
+#endif
+
 namespace Doom
 {
 

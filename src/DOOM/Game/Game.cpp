@@ -30,20 +30,20 @@
 // this file has always owned), above the namespace. The demos drive this file
 // end to end, so the simulation AND frame goldens pin it exactly.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "../UI/AutomapTypes.h"
-#include "../d_main.h"
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../dstrings.h" // Data.
-#include "../hu_stuff.h"
-#include "../m_argv.h"
-#include "../m_menu.h"
-#include "../m_misc.h"
-#include "../m_random.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "DoomMain.h"
+#include "GameDefs.h"
+#include "MapSpawns.h"
+#include "Strings.h" // Data.
+#include "../UI/Hud.h"
+#include "Args.h"
+#include "../UI/Menu.h"
+#include "ConfigTypes.h"
+#include "../Sim/Random.h"
+#include "../Sim/SimDefs.h"
+#include "SoundData.h"
 #include "../UI/StatusBarTypes.h"
 #include "../Wad/WadFile.h"
 #include "../UI/IntermissionTypes.h"

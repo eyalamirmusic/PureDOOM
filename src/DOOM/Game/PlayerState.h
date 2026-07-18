@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PlayerTypes.h" // Player
-#include "../doomdef.h" // MAXPLAYERS
+#include "GameDefs.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 
 namespace Doom

@@ -2,7 +2,7 @@
 
 #include "Event.h" // Event
 #include "Ticcmd.h" // Ticcmd
-#include "../doomdef.h" // Skill
+#include "GameDefs.h" // Skill
 
 namespace Doom
 {

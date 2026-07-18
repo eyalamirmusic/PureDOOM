@@ -2,6 +2,9 @@
 
 #include "Event.h" // Event
 
+// How many WADs -file may add. Was d_main.h.
+#define MAXWADFILES 20
+
 namespace Doom
 {
 // DOOM startup + the main game loop; d_main.cpp keeps the vanilla D_ names as

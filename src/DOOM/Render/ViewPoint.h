@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../Game/PlayerTypes.h" // Player, and fixed_t / angle_t through it.
-#include "../m_fixed.h"
-#include "../tables.h"
+#include "../Math/FixedPoint.h"
+#include "../Math/TrigTables.h"
 
 namespace Doom
 {

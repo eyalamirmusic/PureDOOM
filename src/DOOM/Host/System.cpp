@@ -14,11 +14,11 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "Platform.h"
 
 #include "../Game/NetTypes.h"
-#include "../doomdef.h"
-#include "../m_misc.h"
+#include "../Game/GameDefs.h"
+#include "../Game/ConfigTypes.h"
 
 #include "System.h"
 

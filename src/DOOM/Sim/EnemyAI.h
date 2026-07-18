@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../m_fixed.h" // fixed_t
+#include "../Math/FixedPoint.h" // fixed_t
 
 // Forward declaration at global scope (where p_mobj.h declares it) - the scratch holds pointers, not
 // layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to Doom::Mobj.

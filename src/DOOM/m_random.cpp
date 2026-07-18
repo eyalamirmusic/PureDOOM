@@ -9,8 +9,8 @@
 
 #include "Sim/Random.h"
 
-#include "doom_config.h"
-#include "m_random.h"
+#include "Host/Platform.h"
+#include "Sim/Random.h"
 
 
 const unsigned char* rndtable = Doom::Random::table().data();

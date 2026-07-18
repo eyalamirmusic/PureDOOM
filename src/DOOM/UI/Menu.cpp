@@ -22,19 +22,19 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 #include "../Render/GraphicsData.h"
 
-#include "../doomdef.h"
-#include "../dstrings.h"
-#include "../d_main.h"
+#include "../Game/GameDefs.h"
+#include "../Game/Strings.h"
+#include "../Game/DoomMain.h"
 #include "../Wad/WadFile.h"
-#include "../hu_stuff.h"
-#include "../m_argv.h"
-#include "../m_swap.h"
-#include "../doomstat.h"
-#include "../sounds.h" // Data.
-#include "../m_menu.h"
+#include "Hud.h"
+#include "../Game/Args.h"
+#include "../Math/Swap.h"
+#include "../Game/MapSpawns.h"
+#include "../Game/SoundData.h" // Data.
+#include "Menu.h"
 
 #include "../Game/OverlayState.h"
 

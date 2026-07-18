@@ -30,12 +30,12 @@
 // the shim. No attract demo reaches the intermission, so this is a faithful
 // transcription.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomstat.h"
-#include "../m_random.h"
-#include "../m_swap.h"
-#include "../sounds.h" // Data.
+#include "../Game/MapSpawns.h"
+#include "../Sim/Random.h"
+#include "../Math/Swap.h"
+#include "../Game/SoundData.h" // Data.
 #include "../Wad/WadFile.h"
 #include "IntermissionTypes.h"
 

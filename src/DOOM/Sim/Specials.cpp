@@ -8,16 +8,16 @@
 // levelTimer stays global. Golden-neutral - the demos scroll skies, damage in slime
 // and open exits.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 #include "Level.h"
 #include "../Render/GraphicsData.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../m_argv.h"
-#include "../m_random.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "../Game/Args.h"
+#include "Random.h"
+#include "SimDefs.h"
+#include "../Game/SoundData.h"
 #include "../Wad/WadFile.h"
 
 #include "../Game/GameSession.h"

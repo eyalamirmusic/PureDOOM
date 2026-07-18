@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../doomdef.h" // SCREENWIDTH
-#include "../m_fixed.h" // fixed_t
-#include "../tables.h" // angle_t, FINEANGLES
+#include "../Game/GameDefs.h" // SCREENWIDTH
+#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/TrigTables.h" // angle_t, FINEANGLES
 
 namespace Doom
 {

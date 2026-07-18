@@ -1,13 +1,13 @@
 #include "MapAction.h"
 
-#include "../doom_config.h" // doom_abs
-#include "../doomstat.h" // leveltime
-#include "../m_random.h"
-#include "../p_local.h"
+#include "../Host/Platform.h" // doom_abs
+#include "../Game/MapSpawns.h" // leveltime
+#include "Random.h"
+#include "SimDefs.h"
 
 #include "../Game/LevelStats.h"
 #include "../Game/SkyState.h"
-#include "../sounds.h"
+#include "../Game/SoundData.h"
 
 #include "Clip.h"
 #include "ActionScratch.h"

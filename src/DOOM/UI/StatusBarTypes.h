@@ -24,7 +24,7 @@
 #pragma once
 
 #include "../doomtype.h"
-#include "Game/Event.h"
+#include "../Game/Event.h"
 
 // Size of statusbar.
 // Now sensitive for scaling.

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../sounds.h" // MusicInfo (an anonymous-struct typedef, so it cannot be
+#include "SoundData.h" // MusicInfo (an anonymous-struct typedef, so it cannot be
 // forward-declared - only a pointer is held here regardless); also Doom::SfxInfo
 
 #include <ea_data_structures/Structures/Vector.h>

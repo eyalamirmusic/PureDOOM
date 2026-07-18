@@ -6,10 +6,10 @@
 // stores stay global. p_tick.cpp shims the vanilla names and owns leveltime and
 // thinkercap. Golden-neutral - this is the heartbeat every demo tic runs through.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomstat.h"
-#include "../p_local.h"
+#include "../Game/MapSpawns.h"
+#include "SimDefs.h"
 
 #include "../Game/DemoState.h"
 #include "../Game/GameSession.h"

@@ -24,8 +24,8 @@
 
 // Basic data types.
 // Needs fixed point, and BAM angles.
-#include "../m_fixed.h"
-#include "../tables.h"
+#include "../Math/FixedPoint.h"
+#include "../Math/TrigTables.h"
 
 // Needs to include the precompiled
 // sprite animation tables.

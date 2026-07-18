@@ -29,8 +29,8 @@
 // ceiling becomes. Was the second half of r_defs.h; the map geometry went to
 // Sim/MapTypes.h.
 
-#include "../doomdef.h"
-#include "../m_fixed.h"
+#include "../Game/GameDefs.h"
+#include "../Math/FixedPoint.h"
 #include "../Sim/MapTypes.h"
 
 #include <ea_data_structures/Structures/Vector.h>

@@ -7,7 +7,7 @@
 // specials) live in the global namespace, and out of line because those routines
 // take the concrete type and so are only declared after it.
 
-#include "../p_local.h" // Doom::mobjThinker, Mobj
+#include "SimDefs.h" // Doom::mobjThinker, Mobj
 #include "SpecialTypes.h" // the specials
 #include "Ceilings.h" // Doom::moveCeiling
 #include "Doors.h" // Doom::verticalDoor

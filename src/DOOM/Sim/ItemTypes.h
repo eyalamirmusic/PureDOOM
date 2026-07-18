@@ -22,7 +22,7 @@
 #pragma once
 
 
-#include "../doomdef.h"
+#include "../Game/GameDefs.h"
 
 
 // Weapon info: sprite frames, ammunition use.

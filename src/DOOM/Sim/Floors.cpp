@@ -5,12 +5,12 @@
 // T_MovePlane stays global because other specials call it. p_floor.cpp shims every
 // name. Golden-neutral - the demos lower floors and build stairs.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "SimDefs.h"
+#include "../Game/SoundData.h"
 
 #include "Floors.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations

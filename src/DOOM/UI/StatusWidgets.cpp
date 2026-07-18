@@ -7,10 +7,10 @@
 // Engine (reached by a reference alias). Covered by the frame goldens (the bar
 // lands in screens[0]).
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../m_swap.h"
+#include "../Game/GameDefs.h"
+#include "../Math/Swap.h"
 #include "StatusWidgetTypes.h"
 #include "StatusBarTypes.h"
 #include "../Wad/WadFile.h"

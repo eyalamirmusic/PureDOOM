@@ -15,9 +15,9 @@
 // linker for symbols that do not exist.
 #include <DOOM/doomtype.h>
 #include <DOOM/Sim/Info.h>
-#include <DOOM/m_fixed.h>
-#include <DOOM/m_random.h>
-#include <DOOM/tables.h>
+#include <DOOM/Math/FixedPoint.h>
+#include <DOOM/Sim/Random.h>
+#include <DOOM/Math/TrigTables.h>
 
 #include <DOOM/Sim/MapGeometry.h>
 

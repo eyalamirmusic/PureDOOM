@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../m_fixed.h" // fixed_t
+#include "../Math/FixedPoint.h" // fixed_t
 
 #include <ea_data_structures/Structures/Array.h>
 

@@ -17,18 +17,18 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 // Data.
-#include "../doomdef.h"
-#include "../dstrings.h"
-#include "../sounds.h"
+#include "../Game/GameDefs.h"
+#include "../Game/Strings.h"
+#include "../Game/SoundData.h"
 
-#include "../doomstat.h"
+#include "../Game/MapSpawns.h"
 
 #include "../UI/AutomapTypes.h"
-#include "../m_random.h"
-#include "../p_local.h"
+#include "Random.h"
+#include "SimDefs.h"
 
 #include "../Game/AmmoLimits.h"
 #include "../Game/GameSession.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_local.h" // Mobj
+#include "SimDefs.h" // Mobj
 
 namespace Doom
 {

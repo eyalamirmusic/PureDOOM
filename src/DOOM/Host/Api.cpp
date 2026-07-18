@@ -8,12 +8,12 @@
 
 #include "Host.h" // Doom::host(), the owner of the 13 callbacks below
 
-#include "../doom_config.h" // the 13 host pointers / helpers we define, for drift
-#include "../d_main.h"
-#include "../doomdef.h"
+#include "Platform.h" // the 13 host pointers / helpers we define, for drift
+#include "../Game/DoomMain.h"
+#include "../Game/GameDefs.h"
 #include "../doomtype.h"
-#include "../m_argv.h"
-#include "../m_misc.h"
+#include "../Game/Args.h"
+#include "../Game/ConfigTypes.h"
 
 #include "../Game/DoomMain.h"
 #include "../Game/OverlayState.h"

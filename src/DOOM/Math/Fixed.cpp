@@ -2,7 +2,7 @@
 
 
 #include "../Host/System.h"
-#include "../doomdef.h"
+#include "../Game/GameDefs.h"
 namespace Doom
 {
 Fixed fixedDivUnchecked(Fixed a, Fixed b)

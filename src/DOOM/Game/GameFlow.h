@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Event.h" // GameAction
-#include "../doomdef.h" // GameState
+#include "GameDefs.h" // GameState
 
 namespace Doom
 {

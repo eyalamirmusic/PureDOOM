@@ -19,7 +19,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #endif
-#include "../doom_config.h"
+#include "Platform.h"
 
 #if defined(I_NET_ENABLED)
 #if defined(DOOM_WIN32)
@@ -41,8 +41,8 @@
 #endif
 
 #include "../Game/NetTypes.h"
-#include "../m_argv.h"
-#include "../doomstat.h"
+#include "../Game/Args.h"
+#include "../Game/MapSpawns.h"
 
 #include "../Game/GameSession.h"
 #include "../Game/NetState.h"

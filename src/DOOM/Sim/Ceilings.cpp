@@ -4,12 +4,12 @@
 // the global activeceilings list. p_ceilng.cpp shims every name and owns the
 // activeceilings storage. Golden-neutral - the demos trip crushers.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "SimDefs.h"
+#include "../Game/SoundData.h"
 
 #include "Ceilings.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations

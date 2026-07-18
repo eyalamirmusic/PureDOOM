@@ -29,15 +29,15 @@
 // cheating, grid, lightlev, automapactive); everything else is file-local here.
 // No demo opens the automap, so this is a faithful transcription.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 #include "../Sim/Level.h"
 
 #include "AutomapTypes.h"
-#include "../doomdef.h"
-#include "../doomstat.h" // State (automapactive, viewactive).
-#include "../dstrings.h" // Data.
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h" // State (automapactive, viewactive).
+#include "../Game/Strings.h" // Data.
 #include "CheatTypes.h"
-#include "../p_local.h"
+#include "../Sim/SimDefs.h"
 #include "StatusBarTypes.h"
 #include "../Game/DemoState.h"
 #include "../Game/GameSession.h"

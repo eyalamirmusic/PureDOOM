@@ -14,11 +14,11 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "doom_config.h"
+#include "Host/Platform.h"
 
-#include "doomdef.h"
-#include "dstrings.h" // Data.
-#include "hu_stuff.h"
+#include "Game/GameDefs.h"
+#include "Game/Strings.h" // Data.
+#include "UI/Hud.h"
 #include "Sim/MapTypes.h"
 #include "Render/RenderTypes.h" // Patch
 

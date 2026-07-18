@@ -22,11 +22,11 @@
 #pragma once
 
 
-#include "Game/Event.h"
+#include "../Game/Event.h"
 #include "../Game/PlayerTypes.h"
-#include "Wad/MapFormat.h"
-#include "../m_fixed.h"
-#include "../tables.h"
+#include "../Wad/MapFormat.h"
+#include "../Math/FixedPoint.h"
+#include "../Math/TrigTables.h"
 
 
 // Used by ST StatusBar stuff.

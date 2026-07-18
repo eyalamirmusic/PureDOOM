@@ -29,13 +29,13 @@
 // other subsystems' globals. Not covered by any golden (no demo reaches a
 // finale), so this is a faithful transcription.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomstat.h"
-#include "../dstrings.h" // Data.
-#include "../hu_stuff.h"
-#include "../m_swap.h" // Functions.
-#include "../sounds.h" // Data.
+#include "../Game/MapSpawns.h"
+#include "../Game/Strings.h" // Data.
+#include "Hud.h"
+#include "../Math/Swap.h" // Functions.
+#include "../Game/SoundData.h" // Data.
 #include "../Game/GameFlow.h"
 #include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"

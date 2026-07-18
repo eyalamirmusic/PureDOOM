@@ -7,12 +7,12 @@
 // per-lump loaders are file-local. Golden-neutral - every demo loads its level
 // through this, and LevelTests pins the view invariant.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../m_swap.h"
-#include "../p_local.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "../Math/Swap.h"
+#include "SimDefs.h"
 #include "../Wad/WadFile.h"
 
 #include "../Game/CorpseQueue.h"

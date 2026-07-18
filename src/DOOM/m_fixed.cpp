@@ -10,8 +10,8 @@
 
 #include "Math/Fixed.h"
 
-#include "doom_config.h"
-#include "m_fixed.h"
+#include "Host/Platform.h"
+#include "Math/FixedPoint.h"
 
 fixed_t FixedMul(fixed_t a, fixed_t b)
 {

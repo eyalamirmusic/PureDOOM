@@ -6,12 +6,12 @@
 // file-local here. The melt walks M_Random (not P_Random), so it never desyncs
 // the simulation. Golden-neutral.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../m_random.h"
+#include "../Game/GameDefs.h"
+#include "../Sim/Random.h"
 
-#include "../f_wipe.h" // the shim's globals (wipe_scr_start / offsets / running)
+#include "Wipe.h" // the shim's globals (wipe_scr_start / offsets / running)
 #include "Wipe.h"
 #include "WipeState.h"
 

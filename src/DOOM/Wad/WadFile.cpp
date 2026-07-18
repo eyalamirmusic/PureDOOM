@@ -1,7 +1,7 @@
 #include "WadFile.h"
 
-#include "../doom_config.h"
-#include "../m_swap.h"
+#include "../Host/Platform.h"
+#include "../Math/Swap.h"
 
 #include <ea_data_structures/Structures/Array.h>
 

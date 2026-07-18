@@ -12,7 +12,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "p_local.h"
+#include "Sim/SimDefs.h"
 #include "Sim/MobjTypes.h"
 #include "Sim/MapTypes.h"
 #include "Render/RenderTypes.h"

@@ -23,20 +23,20 @@
 
 
 // Basics.
-#include "../tables.h"
-#include "../m_fixed.h"
+#include "../Math/TrigTables.h"
+#include "../Math/FixedPoint.h"
 
 // We need the Doom::Thinker stuff.
-#include "Sim/ActionFunc.h"
+#include "ActionFunc.h"
 
 // We need the WAD data structure for Map things,
 // from the THINGS lump.
-#include "Wad/MapFormat.h"
+#include "../Wad/MapFormat.h"
 
 // States are tied to finite states are
 //  tied to animation frames.
 // Needs precompiled tables/data structures.
-#include "Sim/Info.h"
+#include "Info.h"
 
 
 // Held only by pointer here; r_defs.h has the definition.

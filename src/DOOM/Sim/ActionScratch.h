@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // doom_boolean
-#include "../m_fixed.h" // fixed_t
+#include "../Math/FixedPoint.h" // fixed_t
 
 // Forward declarations at global scope (that is where p_mobj.h / r_defs.h declare them) - the
 // scratch holds pointers to these, not their layout. Declaring them inside namespace Doom would make

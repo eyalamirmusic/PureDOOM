@@ -4,7 +4,7 @@
 // equal 360 degrees. Doom::initSkyMap pins the vertical centre whenever the view size
 // changes. r_sky.cpp shims Doom::initSkyMap and owns the sky globals.
 
-#include "../m_fixed.h" // FRACUNIT
+#include "../Math/FixedPoint.h" // FRACUNIT
 
 #include "../Game/SkyState.h"
 #include "Sky.h"

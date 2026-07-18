@@ -7,10 +7,10 @@
 // drawer input state (dc_*, ds_*) the other renderer files fill in; the frame
 // address tables and the fuzz walk are file-local here. Golden-neutral.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h" // State.
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h" // State.
 #include "../Wad/WadFile.h"
 
 #include "Draw.h"

@@ -7,13 +7,13 @@
 // is file-local and buttonlist stays global (p_spec ticks it). Golden-neutral - the
 // demos flip switches.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 #include "Level.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "SimDefs.h"
+#include "../Game/SoundData.h"
 
 #include "ActiveSpecials.h"
 #include "SwitchList.h"

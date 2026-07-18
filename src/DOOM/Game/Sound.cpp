@@ -20,14 +20,14 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../sounds.h"
-#include "../m_random.h"
+#include "SoundData.h"
+#include "../Sim/Random.h"
 #include "../Wad/WadFile.h"
-#include "../doomdef.h"
-#include "../p_local.h"
-#include "../doomstat.h"
+#include "GameDefs.h"
+#include "../Sim/SimDefs.h"
+#include "MapSpawns.h"
 
 #include "GameSession.h"
 #include "GameVersion.h"

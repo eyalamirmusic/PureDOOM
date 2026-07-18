@@ -5,10 +5,10 @@
 // r_segs and floor/ceiling to r_plane. r_bsp.cpp shims the R_ names and owns the
 // drawseg list and clip ranges other renderer files read. Golden-neutral.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
 
 #include "../Game/SkyState.h"
 #include "BSP.h"

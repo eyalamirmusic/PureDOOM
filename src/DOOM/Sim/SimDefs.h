@@ -23,10 +23,10 @@
 
 
 
-#include "doomtype.h"
-#include "m_fixed.h"
-#include "Sim/MapTypes.h"
-#include "Render/RenderTypes.h"
+#include "../doomtype.h"
+#include "../Math/FixedPoint.h"
+#include "MapTypes.h"
+#include "../Render/RenderTypes.h"
 #ifndef __R_LOCAL__
 #endif
 
@@ -182,7 +182,7 @@ extern Doom::Mobj** blocklinks; // for thing chains
 //
 // P_SPEC
 //
-#include "Sim/SpecialTypes.h"
+#include "SpecialTypes.h"
 
 
 

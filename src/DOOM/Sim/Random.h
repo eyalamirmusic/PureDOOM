@@ -1,6 +1,10 @@
 #pragma once
 
 #include <ea_data_structures/Structures/Array.h>
+#include "../doomtype.h"
+
+// A view onto Doom::Random's fixed 256-entry table. Was m_random.h.
+extern const unsigned char* rndtable;
 
 #include <cstdint>
 

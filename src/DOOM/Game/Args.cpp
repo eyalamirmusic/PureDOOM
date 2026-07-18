@@ -4,7 +4,7 @@
 // the argument vector the host fills in and every subsystem reads, so they stay
 // defined at file scope here, above the namespace (still ::-scoped).
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "Args.h"
 

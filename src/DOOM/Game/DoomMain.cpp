@@ -24,7 +24,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #if defined(DOOM_WIN32)
 
@@ -36,20 +36,20 @@
 
 #endif
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../dstrings.h"
-#include "../sounds.h"
+#include "GameDefs.h"
+#include "MapSpawns.h"
+#include "Strings.h"
+#include "SoundData.h"
 #include "../Wad/WadFile.h"
-#include "../f_wipe.h"
-#include "../m_argv.h"
-#include "../m_misc.h"
-#include "../m_menu.h"
-#include "../hu_stuff.h"
+#include "../UI/Wipe.h"
+#include "Args.h"
+#include "ConfigTypes.h"
+#include "../UI/Menu.h"
+#include "../UI/Hud.h"
 #include "../UI/IntermissionTypes.h"
 #include "../UI/StatusBarTypes.h"
 #include "../UI/AutomapTypes.h"
-#include "../d_main.h"
+#include "DoomMain.h"
 
 #include "AttractMode.h"
 #include "DoomMain.h"

@@ -1,7 +1,11 @@
 #pragma once
 
-#include "../doomdef.h" // MAXPLAYERS
-#include "../doomstat.h" // MapThing, MAX_DM_STARTS
+#include "GameDefs.h" // MAXPLAYERS
+#include "MapSpawns.h" // MapThing, MAX_DM_STARTS
+#include "../Wad/MapFormat.h"
+
+// The deathmatch start table's size. Was doomstat.h.
+#define MAX_DM_STARTS 10
 
 namespace Doom
 {

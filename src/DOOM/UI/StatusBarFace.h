@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // NUMWEAPONS
+#include "../Game/GameDefs.h" // NUMWEAPONS
 #include "../doomtype.h" // doom_boolean
 
 namespace Doom

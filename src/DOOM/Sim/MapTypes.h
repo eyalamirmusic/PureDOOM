@@ -28,25 +28,25 @@
 // the degenerate mobj a sector uses as a sound origin. Was the first half of
 // r_defs.h; the renderer's own types went to Render/RenderTypes.h.
 
-#include "../doomdef.h"
-#include "../m_fixed.h"
+#include "../Game/GameDefs.h"
+#include "../Math/FixedPoint.h"
 #include "ActionFunc.h"
 #include "MobjTypes.h"
 
 #include <ea_data_structures/Structures/Vector.h>
 
 // Screenwidth.
-#include "doomdef.h"
+#include "../Game/GameDefs.h"
 
 // Some more or less basic data types
 // we depend on.
-#include "m_fixed.h"
+#include "../Math/FixedPoint.h"
 
 // We rely on the thinker data struct
 // to handle sound origins in sectors.
-#include "Sim/ActionFunc.h"
+#include "ActionFunc.h"
 // SECTORS do store MObjs anyway.
-#include "Sim/MobjTypes.h"
+#include "MobjTypes.h"
 
 // Doom::SpriteDef owns its frames in an EA::Vector now (RAII, REFACTOR.md Step 9).
 #include <ea_data_structures/Structures/Vector.h>

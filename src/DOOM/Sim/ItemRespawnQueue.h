@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Wad/MapFormat.h" // MapThing
-#include "../p_local.h" // ITEMQUESIZE
+#include "SimDefs.h" // ITEMQUESIZE
 
 namespace Doom
 {

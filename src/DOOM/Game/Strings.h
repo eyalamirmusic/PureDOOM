@@ -14,40 +14,46 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the DOOM Source Code License
 // for more details.
 //
-// DESCRIPTION:  Head up display
+//
+// $Log:$
+//
+// DESCRIPTION:
+//        DOOM strings, by language.
 //
 //-----------------------------------------------------------------------------
 
 #pragma once
 
 
-#include "Game/Event.h"
+// All important printed strings.
+// Doom::Language selection (message strings).
+// Use -DFRENCH etc.
+
+#ifdef FRENCH
+#include "StringsFrench.h"
+#else
+#include "StringsEnglish.h"
+#endif
 
 
-//
-// Globally visible constants.
-//
-#define HU_FONTSTART '!'    // the first font characters
-#define HU_FONTEND '_'      // the last font characters
-
-// Calculate # of glyphs in font.
-#define HU_FONTSIZE (HU_FONTEND - HU_FONTSTART + 1)        
-
-#define HU_BROADCAST 5
-
-#define HU_MSGREFRESH KEY_ENTER
-#define HU_MSGX 0
-#define HU_MSGY 0
-#define HU_MSGWIDTH 64  // in characters
-#define HU_MSGHEIGHT 1  // in lines
-
-#define HU_MSGTIMEOUT (4*TICRATE)
-
+// Misc. other strings.
+#define SAVEGAMENAME "doomsav"
 
 //
-// HEADS UP TEXT
+// File locations,
+//  relative to current position.
+// Path names are OS-sensitive.
 //
+#define DEVMAPS "devmaps"
+#define DEVDATA "devdata"
 
+// Not done in french?
+
+// QuitDOOM messages
+#define NUM_QUITMESSAGES   22
+
+
+extern const char* endmsg[];
 
 
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // byte
-#include "../m_fixed.h" // fixed_t
+#include "../Math/FixedPoint.h" // fixed_t
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // LightTable
 

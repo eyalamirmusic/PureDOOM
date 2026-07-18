@@ -15,12 +15,12 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "../Game/Event.h"
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../p_local.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "SimDefs.h"
 
 #include "../Game/GameVersion.h"
 #include "../Game/LevelStats.h"

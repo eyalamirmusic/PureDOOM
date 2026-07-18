@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "Info.h" // We are referring to sprite numbers.
 #include "ItemTypes.h"

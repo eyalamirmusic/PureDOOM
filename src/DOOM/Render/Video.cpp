@@ -32,11 +32,11 @@
 // namespace. The HUD/status bar/menu all draw through these into screens[0], so
 // the frame goldens pin the blitters exactly.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "../Wad/MapFormat.h"
-#include "../doomdef.h"
-#include "../m_swap.h"
+#include "../Game/GameDefs.h"
+#include "../Math/Swap.h"
 
 #include "Video.h"
 #include "VideoState.h"

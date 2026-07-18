@@ -28,15 +28,15 @@
 // message flags); everything else is file-local. Covered by the frame goldens
 // (messages and the level name land in screens[0]).
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../dstrings.h" // Data.
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "../Game/Strings.h" // Data.
 #include "HudWidgetTypes.h"
-#include "../hu_stuff.h"
-#include "../m_swap.h"
-#include "../sounds.h"
+#include "Hud.h"
+#include "../Math/Swap.h"
+#include "../Game/SoundData.h"
 #include "../Wad/WadFile.h"
 
 #include <ea_data_structures/Structures/Array.h>

@@ -14,46 +14,44 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the DOOM Source Code License
 // for more details.
 //
-//
-// $Log:$
-//
 // DESCRIPTION:
-//        DOOM strings, by language.
 //
+//    
 //-----------------------------------------------------------------------------
 
 #pragma once
 
 
-// All important printed strings.
-// Doom::Language selection (message strings).
-// Use -DFRENCH etc.
+#include "../doomtype.h"
 
-#ifdef FRENCH
-#include "d_french.h"
-#else
-#include "d_englsh.h"
-#endif
-
-
-// Misc. other strings.
-#define SAVEGAMENAME "doomsav"
 
 //
-// File locations,
-//  relative to current position.
-// Path names are OS-sensitive.
+// MISC
 //
-#define DEVMAPS "devmaps"
-#define DEVDATA "devdata"
+namespace Doom
+{
+struct ConfigDefault
+{
+    char* name;
+    int* location;
+    int defaultvalue;
+    int scantranslate; // PC scan code hack
+    int untranslated; // lousy hack
+    char** text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
+    char* default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
+};
+} // namespace Doom
 
-// Not done in french?
 
-// QuitDOOM messages
-#define NUM_QUITMESSAGES   22
+// A default whose value is text rather than a number: `defaultvalue` is this
+// sentinel and the string lives in text_location.
+#define STRING_VALUE 0xFFFF
 
 
-extern const char* endmsg[];
+extern Doom::ConfigDefault defaults[];
+extern int numdefaults;
+
+
 
 
 

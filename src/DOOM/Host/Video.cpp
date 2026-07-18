@@ -14,12 +14,12 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "Platform.h"
 #include "../Render/Video.h"
 
-#include "../d_main.h"
-#include "../doomdef.h"
-#include "../doomstat.h"
+#include "../Game/DoomMain.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
 
 #include "../Render/VideoState.h"
 #include "Video.h"

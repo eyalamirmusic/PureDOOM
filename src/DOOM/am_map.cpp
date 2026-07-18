@@ -15,11 +15,11 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "doom_config.h"
+#include "Host/Platform.h"
 
-#include "doomdef.h"
-#include "doomstat.h" // automapactive
-#include "p_local.h"  // PLAYERRADIUS
+#include "Game/GameDefs.h"
+#include "Game/MapSpawns.h" // automapactive
+#include "Sim/SimDefs.h"  // PLAYERRADIUS
 #include "UI/AutomapTypes.h"
 
 #include "Game/OverlayState.h"

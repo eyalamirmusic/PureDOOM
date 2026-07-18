@@ -8,12 +8,12 @@
 // counters) is file-local here. The tutti-frutti over-read in getColumn is
 // load-bearing and preserved (REFACTOR.md Step 4).
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../m_swap.h"
-#include "../p_local.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "../Math/Swap.h"
+#include "../Sim/SimDefs.h"
 #include "../Wad/WadFile.h"
 
 #include <alloca.h>

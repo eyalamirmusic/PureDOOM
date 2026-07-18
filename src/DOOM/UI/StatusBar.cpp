@@ -31,16 +31,16 @@
 // is up); everything else — the widget/patch state and the cheat sequences — is
 // file-local here. Covered by the frame goldens (the bar lands in screens[0]).
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "AutomapTypes.h"
-#include "../doomdef.h"
-#include "../doomstat.h" // State.
-#include "../dstrings.h" // Data.
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h" // State.
+#include "../Game/Strings.h" // Data.
 #include "CheatTypes.h"
-#include "../m_random.h"
-#include "../p_local.h"
-#include "../sounds.h"
+#include "../Sim/Random.h"
+#include "../Sim/SimDefs.h"
+#include "../Game/SoundData.h"
 #include "StatusWidgetTypes.h"
 #include "StatusBarTypes.h"
 #include "../Wad/WadFile.h"

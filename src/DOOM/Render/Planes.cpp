@@ -5,10 +5,10 @@
 // visplane arrays and span state other renderer files index; r_plane's private
 // bookkeeping is file-local. Golden-neutral (frame goldens).
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
 #include "../Wad/WadFile.h"
 
 #include "../Game/SkyState.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // GameState
+#include "GameDefs.h" // GameState
 
 namespace Doom
 {

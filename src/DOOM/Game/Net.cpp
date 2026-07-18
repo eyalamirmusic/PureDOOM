@@ -31,11 +31,11 @@
 // singletics behaviour is load-bearing (CLAUDE.md) and preserved verbatim. The
 // demos drive the tic loop, so the goldens pin it.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../m_menu.h"
-#include "../doomdef.h"
-#include "../doomstat.h"
+#include "../UI/Menu.h"
+#include "GameDefs.h"
+#include "MapSpawns.h"
 
 #include "AttractMode.h"
 #include "DemoState.h"

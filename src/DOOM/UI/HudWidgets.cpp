@@ -6,11 +6,11 @@
 // these have been retired; callers use the Doom:: names directly. Covered by
 // the frame goldens (messages and the level name land in screens[0]).
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
+#include "../Game/GameDefs.h"
 #include "HudWidgetTypes.h"
-#include "../m_swap.h"
+#include "../Math/Swap.h"
 
 #include "HudWidgets.h"
 

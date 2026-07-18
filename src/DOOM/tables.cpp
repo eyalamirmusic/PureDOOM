@@ -13,8 +13,8 @@
 
 #include "Math/Trig.h"
 
-#include "doom_config.h"
-#include "tables.h"
+#include "Host/Platform.h"
+#include "Math/TrigTables.h"
 
 const fixed_t* finesine = Doom::fineSineTable.data();
 const fixed_t* finecosine = Doom::fineSineTable.data() + FINEANGLES / 4;

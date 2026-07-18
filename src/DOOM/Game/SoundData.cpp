@@ -22,10 +22,10 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
 #include "../doomtype.h"
-#include "../sounds.h"
+#include "SoundData.h"
 
 // The sfx / music tables are 1993 data verbatim: partial-init rows (only the
 

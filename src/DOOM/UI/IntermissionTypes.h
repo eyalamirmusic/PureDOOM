@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "../doomdef.h"
+#include "../Game/GameDefs.h"
 
 // States for the intermission
 namespace Doom

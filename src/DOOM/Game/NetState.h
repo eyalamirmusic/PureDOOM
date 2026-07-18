@@ -2,7 +2,7 @@
 
 #include "NetTypes.h" // DoomCom, NetPacket, BACKUPTICS, MAXNETNODES
 #include "Ticcmd.h" // Ticcmd
-#include "../doomdef.h" // MAXPLAYERS
+#include "GameDefs.h" // MAXPLAYERS
 #include "../doomtype.h" // doom_boolean
 #include "Net.h"
 

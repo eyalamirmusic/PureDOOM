@@ -13,10 +13,10 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "doom_config.h"
+#include "Host/Platform.h"
 
 #include "doomtype.h" // doom_boolean, byte (the melt-state globals' types)
-#include "f_wipe.h"
+#include "UI/Wipe.h"
 
 #include "UI/Wipe.h"
 

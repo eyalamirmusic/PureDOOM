@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../doom_config.h" // doom_abs
-#include "../doomdef.h"
-#include "../p_local.h"
+#include "../Host/Platform.h" // doom_abs
+#include "../Game/GameDefs.h"
+#include "SimDefs.h"
 
 #include "Clip.h"
 #include "Level.h"

@@ -16,13 +16,13 @@
 #include <DOOM/Sim/Setup.h>
 #include <DOOM/DOOM.h>
 
-#include <DOOM/doomstat.h>
-#include <DOOM/d_main.h>
+#include <DOOM/Game/MapSpawns.h>
+#include <DOOM/Game/DoomMain.h>
 #include <DOOM/Sim/Info.h>
-#include <DOOM/m_random.h>
-#include <DOOM/p_local.h>
+#include <DOOM/Sim/Random.h>
+#include <DOOM/Sim/SimDefs.h>
 #include <DOOM/Sim/MobjTypes.h>
-#include <DOOM/tables.h>
+#include <DOOM/Math/TrigTables.h>
 #include <DOOM/Wad/WadFile.h>
 
 #include <DOOM/Sim/Level.h>

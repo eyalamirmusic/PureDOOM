@@ -41,7 +41,7 @@
 #define PI 3.141592657
 #endif
 
-#include "m_fixed.h"
+#include "FixedPoint.h"
 
 #define FINEANGLES 8192
 #define FINEMASK (FINEANGLES-1)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomdef.h" // Skill
+#include "GameDefs.h" // Skill
 
 namespace Doom
 {

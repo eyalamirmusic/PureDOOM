@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../p_local.h"
+#include "SimDefs.h"
 
 #include "MapGeometry.h" // DivLine
 

@@ -6,11 +6,11 @@
 // shims the R_ names and owns the vissprite pool + psprite-clip globals the other
 // renderer files share; this unit's own scratch is file-local. Golden-neutral.
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../m_swap.h"
+#include "../Game/GameDefs.h"
+#include "../Game/MapSpawns.h"
+#include "../Math/Swap.h"
 #include "../Wad/WadFile.h"
 
 #include "../Sim/ValidCount.h"

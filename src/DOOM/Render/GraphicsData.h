@@ -7,7 +7,7 @@
 // Plain-pointer views onto the GraphicsData vectors above, refreshed by each
 #include "../Render/Data.h"
 // loader after it fills its vector. Were r_state.h.
-#include "../m_fixed.h"
+#include "../Math/FixedPoint.h"
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h"
 extern fixed_t* textureheight;

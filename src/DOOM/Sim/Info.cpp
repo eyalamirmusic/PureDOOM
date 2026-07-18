@@ -24,10 +24,10 @@
 //-----------------------------------------------------------------------------
 
 
-#include "../doom_config.h"
+#include "../Host/Platform.h"
 
-#include "../sounds.h" // Data.
-#include "../m_fixed.h" // Data.
+#include "../Game/SoundData.h" // Data.
+#include "../Math/FixedPoint.h" // Data.
 #include "Info.h"
 #include "MobjTypes.h"
 
