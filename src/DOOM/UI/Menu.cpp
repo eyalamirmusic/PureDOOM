@@ -57,6 +57,7 @@
 #include "../Game/Sound.h"
 #include "../Host/System.h"
 #include "../Render/Main.h"
+#include <functional>
 #define SAVESTRINGSIZE 24
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
@@ -206,7 +207,7 @@ static int& messageLastMenuActive = menuState().messageLastMenuActive;
 // timed message = no input from user
 static doom_boolean& messageNeedsInput = menuState().messageNeedsInput;
 
-static void (*&messageRoutine)(int response) = menuState().messageRoutine;
+static std::function<void(int response)>& messageRoutine = menuState().messageRoutine;
 
 EA::Array<EA::Array<char, 26>, 5> gammamsg = {EA::Array<char, 26> {{GAMMALVL0}},
                                               EA::Array<char, 26> {{GAMMALVL1}},
@@ -363,7 +364,9 @@ void writeText(int x, int y, const char* string);
 int stringWidth(const char* string);
 int stringHeight(const char* string);
 void startControlPanel();
-void startMessage(const char* string, void* routine, doom_boolean input);
+void startMessage(const char* string,
+                  std::function<void(int)> routine,
+                  doom_boolean input);
 void stopMessage();
 void clearMenus();
 void drawMouseOptions();
@@ -819,7 +822,7 @@ void loadGameMenu(int)
 {
     if (netgame)
     {
-        startMessage(LOADNET, 0, false);
+        startMessage(LOADNET, {}, false);
         return;
     }
 
@@ -884,7 +887,7 @@ void saveGameMenu(int)
 {
     if (!usergame)
     {
-        startMessage(SAVEDEAD, 0, false);
+        startMessage(SAVEDEAD, {}, false);
         return;
     }
 
@@ -930,7 +933,7 @@ void quickSave()
     doom_strcpy(tempstring, QSPROMPT_1);
     doom_concat(tempstring, savegamestrings[quickSaveSlot]);
     doom_strcpy(tempstring, QSPROMPT_2);
-    startMessage(tempstring, reinterpret_cast<void*>(quickSaveResponse), true);
+    startMessage(tempstring, quickSaveResponse, true);
 }
 
 //
@@ -949,20 +952,20 @@ void quickLoad()
 {
     if (netgame)
     {
-        startMessage(QLOADNET, 0, false);
+        startMessage(QLOADNET, {}, false);
         return;
     }
 
     if (quickSaveSlot < 0)
     {
-        startMessage(QSAVESPOT, 0, false);
+        startMessage(QSAVESPOT, {}, false);
         return;
     }
     //doom_sprintf(tempstring, QLPROMPT, savegamestrings[quickSaveSlot]);
     doom_strcpy(tempstring, QLPROMPT_1);
     doom_concat(tempstring, savegamestrings[quickSaveSlot]);
     doom_strcpy(tempstring, QLPROMPT_2);
-    startMessage(tempstring, reinterpret_cast<void*>(quickLoadResponse), true);
+    startMessage(tempstring, quickLoadResponse, true);
 }
 
 //
@@ -1110,7 +1113,7 @@ void newGame(int)
 {
     if (netgame && !demoplayback)
     {
-        startMessage(NEWGAME, 0, false);
+        startMessage(NEWGAME, {}, false);
         return;
     }
 
@@ -1142,7 +1145,7 @@ void chooseSkill(int choice)
 {
     if (choice == nightmare)
     {
-        startMessage(NIGHTMARE, reinterpret_cast<void*>(verifyNightmare), true);
+        startMessage(NIGHTMARE, verifyNightmare, true);
         return;
     }
 
@@ -1154,7 +1157,7 @@ void episode(int choice)
 {
     if ((gamemode == shareware) && choice)
     {
-        startMessage(SWSTRING, 0, false);
+        startMessage(SWSTRING, {}, false);
         setupNextMenu(&ReadDef1);
         return;
     }
@@ -1292,11 +1295,11 @@ void endGame(int)
 
     if (netgame)
     {
-        startMessage(NETEND, 0, false);
+        startMessage(NETEND, {}, false);
         return;
     }
 
-    startMessage(ENDGAME, reinterpret_cast<void*>(endGameResponse), true);
+    startMessage(ENDGAME, endGameResponse, true);
 }
 
 //
@@ -1352,7 +1355,7 @@ void quitDOOM(int)
         doom_concat(endstring, "\n\n" DOSY);
     }
 
-    startMessage(endstring, reinterpret_cast<void*>(quitResponse), true);
+    startMessage(endstring, quitResponse, true);
 }
 
 void changeSensitivity(int choice)
@@ -1450,15 +1453,18 @@ void drawSelCell(MenuDef* menu, int item)
                           static_cast<Patch*>(Doom::cacheLumpName("M_CELL2")));
 }
 
-void startMessage(const char* string, void* routine, doom_boolean input)
+void startMessage(const char* string,
+                  std::function<void(int)> routine,
+                  doom_boolean input)
 {
     messageLastMenuActive = menuactive;
     messageToPrint = 1;
     messageString = string;
-    messageRoutine = reinterpret_cast<void (*)(int)>(routine);
+    // An empty routine means "no answer needed"; keep the member callable so the
+    // responder never has to test it.
+    messageRoutine = routine ? std::move(routine) : std::function<void(int)> {[](int) {}};
     messageNeedsInput = input;
     menuactive = true;
-    return;
 }
 
 void stopMessage()
@@ -1702,8 +1708,7 @@ doom_boolean menuResponder(Event* ev)
 
         menuactive = messageLastMenuActive;
         messageToPrint = 0;
-        if (messageRoutine)
-            messageRoutine(ch);
+        messageRoutine(ch);
 
         menuactive = false;
         Doom::startSound(0, sfx_swtchx);

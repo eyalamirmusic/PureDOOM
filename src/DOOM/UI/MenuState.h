@@ -2,6 +2,8 @@
 
 #include "../doomtype.h" // doom_boolean
 
+#include <functional>
+
 namespace Doom
 {
 // Forward declaration of the menu-definition struct (defined in UI/Menu.cpp). currentMenu points at
@@ -57,7 +59,10 @@ struct MenuState
     int messy = 0; // message y
     int messageLastMenuActive = 0; // menuactive as the message opened
     doom_boolean messageNeedsInput = false; // timed message = no user input
-    void (*messageRoutine)(int response) = nullptr; // answers the message
+    // Answers the message. Given a non-null default (eacp style) so the responder
+    // can call it unconditionally - vanilla passed this as a void* and
+    // reinterpret_cast it back to a function pointer, and null-checked it.
+    std::function<void(int response)> messageRoutine = [](int) {};
 
     // The savegame string editor.
     int saveStringEnter = 0; // editing a savegame description
