@@ -25,7 +25,6 @@
 
 extern byte* screens[5];
 extern unsigned char screen_palette[256 * 3];
-extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
 extern Doom::ConfigDefault defaults[];
 extern int numdefaults;
 extern signed short mixbuffer[2048];
@@ -202,6 +201,8 @@ void doom_exit_impl(int code) {}
 #if defined(DOOM_IMPLEMENT_GETENV)
 #include <stdlib.h>
 #include "System.h"
+#include "../Game/GameFlow.h"
+#include "../Game/InputConfig.h"
 char* doom_getenv_impl(const char* var)
 {
     return getenv(var);
@@ -592,7 +593,7 @@ void doom_update()
 
     while (delta_time-- > 0)
     {
-        if (is_wiping_screen)
+        if (Doom::gameFlow().is_wiping_screen)
             Doom::updateWipe();
         else
             Doom::doomLoop();
@@ -603,7 +604,7 @@ void doom_update()
 
 void doom_force_update()
 {
-    if (is_wiping_screen)
+    if (Doom::gameFlow().is_wiping_screen)
         Doom::updateWipe();
     else
         Doom::doomLoop();
@@ -613,12 +614,9 @@ const unsigned char* doom_get_framebuffer(int channels)
 {
     doom_memcpy(screen_buffer.data(), screens[0], SCREENWIDTH * SCREENHEIGHT);
 
-    extern doom_boolean& menuactive; // Doom::OverlayState (Engine member)
-    extern Doom::GameState& gamestate; // Doom::GameFlow (Engine member)
-    extern int& crosshair; // Doom::InputConfig (Engine member)
 
-    // Draw crosshair
-    if (crosshair && !menuactive && gamestate == Doom::GS_LEVEL
+    // Draw Doom::inputConfig().crosshair
+    if (Doom::inputConfig().crosshair && !Doom::overlayState().menuactive && Doom::gameFlow().gamestate == Doom::GS_LEVEL
         && !Doom::overlayState().automapactive)
     {
         int y;

@@ -50,8 +50,7 @@
 #include "../Math/BBox.h"
 byte* screens[5];
 
-// dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
-EA::Array<int, 4>& dirtybox = Doom::videoState().dirtybox;
+// videoState().dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
 
 // Now where did these came from?
 EA::Array<EA::Array<byte, 256>, 5> gammatable = {
@@ -145,7 +144,6 @@ EA::Array<EA::Array<byte, 256>, 5> gammatable = {
 // usegamma is config-backed and owned by the Engine's MenuSettings cluster now
 // (UI/MenuSettings.h); this is a reference onto that member. Config.cpp binds its
 // defaults[] entry at runtime rather than capturing the address at static-init.
-int& usegamma = Doom::menuSettings().usegamma;
 
 namespace Doom
 {
@@ -155,8 +153,8 @@ namespace Doom
 //
 void markRect(int x, int y, int width, int height)
 {
-    Doom::addToBox(dirtybox.data(), x, y);
-    Doom::addToBox(dirtybox.data(), x + width - 1, y + height - 1);
+    Doom::addToBox(videoState().dirtybox.data(), x, y);
+    Doom::addToBox(videoState().dirtybox.data(), x + width - 1, y + height - 1);
 }
 
 //

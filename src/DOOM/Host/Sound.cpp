@@ -27,7 +27,7 @@
 #include "../i_sound.h"
 #include "../Wad/WadFile.h"
 #include "../doomdef.h"
-#include "../doomstat.h" // gametic, snd_SfxVolume / snd_MusicVolume
+#include "../doomstat.h" // gameClock().gametic, soundSettings().sfxVolume / soundSettings().musicVolume
 
 #include "Sound.h"
 
@@ -35,6 +35,8 @@
 
 // Needed for calling the actual sound output.
 #include "System.h"
+#include "../Game/GameClock.h"
+#include "../Game/SoundSettings.h"
 #define SAMPLECOUNT 512
 #define NUM_CHANNELS 8
 // It is 2 for 16bit, and 2 for two channels.
@@ -95,7 +97,7 @@ struct MusHeader
 
 // A quick hack to establish a protocol between
 // synchronous mix buffer updates and asynchronous
-// audio writes. Probably redundant with gametic.
+// audio writes. Probably redundant with gameClock().gametic.
 [[maybe_unused]] static int flag = 0;
 
 static unsigned char* mus_data = 0;
@@ -135,7 +137,7 @@ EA::Array<unsigned int, NUM_CHANNELS> channelstepremainder;
 EA::Array<unsigned char*, NUM_CHANNELS> channels;
 EA::Array<unsigned char*, NUM_CHANNELS> channelsend;
 
-// Time/gametic that the channel started playing,
+// Time/gameClock().gametic that the channel started playing,
 //  used to determine oldest, which automatically
 //  has lowest priority.
 // In case number of active sounds exceeds
@@ -188,7 +190,7 @@ void* getsfx(char* sfxname, int* len)
 
     // Now, there is a severe problem with the
     //  sound handling, in it is not (yet/anymore)
-    //  gamemode aware. That means, sounds from
+    //  gameVersion().gamemode aware. That means, sounds from
     //  DOOM II will be requested even with DOOM
     //  shareware.
     // The sound list is wired into sounds.c,
@@ -243,7 +245,7 @@ int addsfx(int sfxid, int volume, int step, int seperation)
     int i;
     int rc = -1;
 
-    int oldest = gametic;
+    int oldest = gameClock().gametic;
     int oldestnum = 0;
     int slot;
 
@@ -309,8 +311,8 @@ int addsfx(int sfxid, int volume, int step, int seperation)
     channelstep[slot] = step;
     // ???
     channelstepremainder[slot] = 0;
-    // Should be gametic, I presume.
-    channelstart[slot] = gametic;
+    // Should be gameClock().gametic, I presume.
+    channelstart[slot] = gameClock().gametic;
 
     // Separation, that is, orientation/stereo.
     //  range is: 1 - 256
@@ -654,14 +656,14 @@ void setSfxVolumeHost(int volume)
     //  the menu/config file setting
     //  to the state variable used in
     //  the mixing.
-    snd_SfxVolume = volume;
+    soundSettings().sfxVolume = volume;
 }
 
 // MUSIC API - dummy. Some code from DOS version.
 void setMusicVolume(int volume)
 {
-    snd_MusicVolume = volume;
-    mus_volume = snd_MusicVolume * 8;
+    soundSettings().musicVolume = volume;
+    mus_volume = soundSettings().musicVolume * 8;
 
     for (int i = 0; i < 16; ++i)
     {
@@ -715,7 +717,7 @@ void stopSoundHost([[maybe_unused]] int handle)
 int soundIsPlaying(int handle)
 {
     // Ouch.
-    return gametic < handle;
+    return gameClock().gametic < handle;
 }
 
 //
@@ -927,7 +929,7 @@ void shutdownMusic() {}
 
 void playSong([[maybe_unused]] int handle, int looping)
 {
-    musicdies = gametic + TICRATE * 30;
+    musicdies = gameClock().gametic + TICRATE * 30;
 
     mus_loop = looping ? true : false;
     mus_playing = true;

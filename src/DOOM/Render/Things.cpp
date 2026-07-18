@@ -33,6 +33,7 @@
 #include "Draw.h"
 #include "../Host/System.h"
 #include "Main.h"
+#include "../Game/GameVersion.h"
 #define MINZ (FRACUNIT * 4)
 #define BASEYCENTER 100
 
@@ -224,7 +225,7 @@ void initSpriteDefs(char** namelist)
                 frame = entry.name[4] - 'A';
                 rotation = entry.name[5] - '0';
 
-                if (modifiedgame)
+                if (gameVersion().modifiedgame)
                     patched = Doom::wad().number(entry.name);
                 else
                     patched = l;

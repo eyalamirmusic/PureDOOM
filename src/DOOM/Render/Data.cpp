@@ -32,6 +32,7 @@
 #include <ea_data_structures/Structures/Vector.h>
 
 #include "../Host/System.h"
+#include "../Game/DemoState.h"
 namespace Doom
 {
 // Each texture is composed of one or more patches,
@@ -690,7 +691,7 @@ void precacheLevel()
     Doom::Thinker* th;
     SpriteFrame* sf;
 
-    if (demoplayback)
+    if (demoState().demoplayback)
         return;
 
     auto& gd = graphicsData();

@@ -116,13 +116,9 @@ enum ButtonCode
 
 // The input event ring buffer is a Doom::EventQueue owned by the Engine now; these are
 // references onto its members (REFACTOR.md, Step 5).
-extern Doom::Event (&events)[MAXEVENTS];
-extern int& eventhead;
-extern int& eventtail;
 
 // The pending game action is a member of the Doom::GameFlow owned by the Engine now; this is
 // a reference onto it (REFACTOR.md, Step 5).
-extern Doom::GameAction& gameaction;
 
 
 

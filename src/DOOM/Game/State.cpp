@@ -10,9 +10,5 @@
 
 #include "GameVersion.h"
 
-Doom::GameMode& gamemode = Doom::gameVersion().gamemode;
-Doom::GameMission& gamemission = Doom::gameVersion().gamemission;
 
-Doom::Language& language = Doom::gameVersion().language;
 
-doom_boolean& modifiedgame = Doom::gameVersion().modifiedgame;

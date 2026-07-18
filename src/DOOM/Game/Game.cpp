@@ -130,69 +130,39 @@ void Doom::executeSetViewSize();
 //
 // gameaction and gamestate are a Doom::GameFlow owned by the Engine now; these are references
 // onto it (d_event.h / doomstat.h extern them).
-Doom::GameAction& gameaction = Doom::gameFlow().gameaction;
-Doom::GameState& gamestate = Doom::gameFlow().gamestate;
 
 // The current game's rules are a Doom::GameSession owned by the Engine now; these (and
 // netgame/deathmatch below) are references onto it (REFACTOR.md, Step 5).
-Doom::Skill& gameskill = Doom::gameSession().gameskill;
-doom_boolean& respawnmonsters = Doom::gameSession().respawnmonsters;
-int& gameepisode = Doom::gameSession().gameepisode;
-int& gamemap = Doom::gameSession().gamemap;
 
 // paused (with viewactive/nodrawers/noblit below) is a Doom::RefreshFlags owned by the
 // Engine now; these are references onto it (REFACTOR.md, Step 5).
-doom_boolean& paused = Doom::refreshFlags().paused;
 
 // usergame (with the demo flags below) is a Doom::DemoState owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
-doom_boolean& usergame = Doom::demoState().usergame; // ok to save / end game
 
-doom_boolean& nodrawers = Doom::refreshFlags().nodrawers; // comparative timing
-doom_boolean& noblit = Doom::refreshFlags().noblit; // comparative timing
 
-doom_boolean& viewactive = Doom::refreshFlags().viewactive;
 
-doom_boolean& deathmatch = Doom::gameSession().deathmatch; // net deathmatch
-doom_boolean& netgame = Doom::gameSession().netgame; // packets are broadcast
 // The player roster and view selection is a Doom::PlayerState owned by the Engine now;
 // these are references onto it (the arrays as references-to-array) (REFACTOR.md, Step 5).
-doom_boolean (&playeringame)[MAXPLAYERS] = Doom::playerState().playeringame;
-Doom::Player (&players)[MAXPLAYERS] = Doom::playerState().players;
 
-int& consoleplayer =
-    Doom::playerState().consoleplayer; // taking events and displaying
-int& displayplayer = Doom::playerState().displayplayer; // view being displayed
-int& gametic = Doom::gameClock().gametic; // Doom::GameClock (Engine member)
 
 // The level's progress (levelstarttic + the intermission totals, and leveltime over in
 // p_tick) is a Doom::LevelStats owned by the Engine now; these are references onto it.
-int& levelstarttic = Doom::levelStats().levelstarttic; // gametic at level start
-int& totalkills = Doom::levelStats().totalkills; // for intermission
-int& totalitems = Doom::levelStats().totalitems;
-int& totalsecret = Doom::levelStats().totalsecret;
 
 // The demo flags are a Doom::DemoState owned by the Engine now; these vanilla names are
 // references onto it (REFACTOR.md, Step 5). The buffer state (demoname/demobuffer/demo_p/
 // demoend/netdemo) needed no alias - nothing outside this file reads it.
-doom_boolean& demorecording = Doom::demoState().demorecording;
-doom_boolean& demoplayback = Doom::demoState().demoplayback;
-doom_boolean& singledemo = Doom::demoState().singledemo; // quit after one demo
 
 // precache is a Doom::EngineParams owned by the Engine now; this is a reference onto it (default
 // true - load all graphics at start; REFACTOR.md, Step 5).
-doom_boolean& precache = Doom::engineParams().precache;
 
 // wminfo is a Doom::IntermissionInfo owned by the Engine now; this is a reference onto it
 // (REFACTOR.md, Step 5).
-Doom::IntermissionStart& wminfo =
-    Doom::intermissionInfo().wminfo; // world map / intermission parms
 
 // mousemove is the one control binding another translation unit still reads by its vanilla name
 // (UI/Menu.cpp externs it); the rest of the Doom::InputConfig bindings are reached through
 // inputConfig() here. Config.cpp binds its defaults[] entries to the members at runtime rather
 // than capturing their addresses at static-init, which is what unblocked the migration.
-int& mousemove = Doom::inputConfig().mousemove;
 
 // The interior views onto Doom::TiccmdInput's button arrays, offset by one so vanilla's [-1]
 // index (an unbound button) stays in bounds.
@@ -204,7 +174,6 @@ EA::Array<char, 32> savedescription;
 
 // bodyqueslot is a Doom::CorpseQueue owned by the Engine now; this is a reference onto it
 // (doomstat.h externs it, bodyque[] alongside it does not need one) (REFACTOR.md, Step 5).
-int& bodyqueslot = Doom::corpseQueue().bodyqueslot;
 
 void* statcopy; // for statistics driver
 
@@ -212,7 +181,6 @@ doom_boolean secretexit;
 
 const char* defdemoname;
 
-extern const char*& pagename; // Doom::AttractMode (Engine member)
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).

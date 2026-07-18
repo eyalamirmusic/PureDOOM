@@ -27,6 +27,7 @@
 
 // ?
 #include "../Host/System.h"
+#include "../Game/GameVersion.h"
 #define MAXWIDTH 1120
 #define MAXHEIGHT 832
 
@@ -508,7 +509,7 @@ void fillBackScreen()
     if (view.scaledviewwidth == 320)
         return;
 
-    if (gamemode == commercial)
+    if (gameVersion().gamemode == commercial)
         name = name2;
     else
         name = name1;

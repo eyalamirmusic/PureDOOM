@@ -40,11 +40,10 @@
 #include "ViewProjection.h"
 #include "ViewWindow.h"
 #include "../Math/BBox.h"
+#include "../UI/MenuSettings.h"
 #define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
-// detailLevel/screenblocks are config-backed Engine members (UI/MenuSettings.h); references.
-extern int& detailLevel;
-extern int& screenblocks;
+// menuSettings().detailLevel/menuSettings().screenblocks are config-backed Engine members (UI/MenuSettings.h); references.
 
 namespace Doom
 {
@@ -620,10 +619,10 @@ void renderInit()
     initPointToAngle();
     doom_print("\nR_InitPointToAngle");
     initTables();
-    // viewwidth / viewheight / detailLevel are set by the defaults
+    // viewwidth / viewheight / menuSettings().detailLevel are set by the defaults
     doom_print("\nR_InitTables");
 
-    setViewSize(screenblocks, detailLevel);
+    setViewSize(menuSettings().screenblocks, menuSettings().detailLevel);
     Doom::initPlanes();
     doom_print("\nR_InitPlanes");
     initLightTables();

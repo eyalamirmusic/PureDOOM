@@ -83,16 +83,9 @@
 // this file reads them straight off netState(). These five are still externed in doomstat.h
 // and read through those externs by Game/Game.cpp, Game/DoomMain.cpp and Host/Net.cpp, so the
 // references stay until their readers go through netState() too (REFACTOR.md, Step 5).
-Doom::DoomCom*& doomcom = Doom::netState().doomcom;
-Doom::NetPacket*& netbuffer = Doom::netState().netbuffer; // points inside doomcom
 
-Doom::Ticcmd (&localcmds)[BACKUPTICS] = Doom::netState().localcmds;
 
-Doom::Ticcmd (&netcmds)[MAXPLAYERS][BACKUPTICS] = Doom::netState().netcmds;
-int (&nettics)[MAXNETNODES] = Doom::netState().nettics;
 
-int& maketic = Doom::netState().maketic;
-int& ticdup = Doom::netState().ticdup;
 
 void Doom::processEvents();
 void Doom::buildTiccmd(Doom::Ticcmd* cmd);

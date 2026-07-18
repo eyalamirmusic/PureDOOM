@@ -118,8 +118,6 @@ extern byte scantokey[128];
 
 // crosshair/always_run are Doom::InputConfig members (Engine); references, still read by
 // UI/Menu.cpp, Game/Game.cpp and Host/Api.cpp through their own extern declarations.
-int& crosshair = Doom::inputConfig().crosshair;
-int& always_run = Doom::inputConfig().always_run;
 
 // The config keys are string literals bound to option globals by address;
 // the -Wwritable-strings that legitimate 1993 table raises is benign here.

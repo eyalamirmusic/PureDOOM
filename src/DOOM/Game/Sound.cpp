@@ -96,8 +96,6 @@ static Doom::SoundChannel* channels_s_sound = nullptr;
 // SoundSettings.h, REFACTOR.md Step 5).
 // Both are still externed as references in doomstat.h and read by UI/Menu and Host/Sound,
 // so the two definitions stay until those readers go through soundSettings() too.
-int& snd_SfxVolume = Doom::soundSettings().sfxVolume; // sound-effect volume, 0-15
-int& snd_MusicVolume = Doom::soundSettings().musicVolume; // music volume, 0-15
 
 namespace Doom
 {

@@ -53,6 +53,5 @@
 // has to lower this first, or the title sequence takes the game straight back.
 // advancedemo is a member of the Doom::AttractMode owned by the Engine now; this is a
 // reference onto it (REFACTOR.md, Step 5).
-extern doom_boolean& advancedemo;
 
 

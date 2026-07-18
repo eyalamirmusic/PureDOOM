@@ -41,10 +41,6 @@
 //
 // The command-line launch flags live in Doom::LaunchOptions (an Engine member) now; these
 // are references onto it (REFACTOR.md, Step 5).
-extern doom_boolean& nomonsters;     // checkparm of -nomonsters
-extern doom_boolean& respawnparm;    // checkparm of -respawn
-extern doom_boolean& fastparm;       // checkparm of -fast
-extern doom_boolean& devparm;        // DEBUG: launched with -devparm
 
 
 // -----------------------------------------------------
@@ -52,16 +48,12 @@ extern doom_boolean& devparm;        // DEBUG: launched with -devparm
 //
 // The loaded game's identity lives in Doom::GameVersion (an Engine member) now; these
 // are references onto it (REFACTOR.md, Step 5).
-extern Doom::GameMode& gamemode;
-extern Doom::GameMission& gamemission;
 
 // Set if homebrew PWAD stuff has been added.
-extern doom_boolean& modifiedgame;
 
 
 // -------------------------------------------
 // Doom::Language.
-extern Doom::Language& language;
 
 
 // -------------------------------------------
@@ -70,29 +62,19 @@ extern Doom::Language& language;
 
 // Defaults for menu, methinks. They live in Doom::StartupDefaults (an Engine member) now;
 // these are references onto it (REFACTOR.md, Step 5).
-extern Doom::Skill& startskill;
-extern int& startepisode;
-extern int& startmap;
 
-extern doom_boolean& autostart;
 
 // The current game's rules live in Doom::GameSession (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
 
 // Selected by user.
-extern Doom::Skill& gameskill;
-extern int& gameepisode;
-extern int& gamemap;
 
 // Nightmare mode flag, single player.
-extern doom_boolean& respawnmonsters;
 
 // Netgame? Only true if >1 player.
-extern doom_boolean& netgame;
 
 // Flag: true only if started as net deathmatch.
 // An enum might handle altdeath/cooperative better.
-extern doom_boolean& deathmatch;
 
 // -------------------------
 // Internal parameters for sound rendering.
@@ -105,8 +87,6 @@ extern doom_boolean& deathmatch;
 // binds its defaults[] entries to them at runtime rather than capturing their addresses
 // at static-init, which is what unblocked the migration. The snd_*Device selectors that
 // were declared here were always dead (no definition, no reader) and are dropped.
-extern int& snd_SfxVolume;     // maximum volume for sound
-extern int& snd_MusicVolume;   // maximum volume for music
 
 
 // -------------------------
@@ -118,16 +98,11 @@ extern int& snd_MusicVolume;   // maximum volume for music
 
 // automapactive/menuactive live in Doom::OverlayState (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
-extern doom_boolean& menuactive;     // Menu overlayed?
 
 // paused/viewactive/nodrawers/noblit live in Doom::RefreshFlags (an Engine member) now;
 // these are references onto it (REFACTOR.md, Step 5).
-extern doom_boolean& paused;         // Game Pause?
 
-extern doom_boolean& viewactive;
 
-extern doom_boolean& nodrawers;
-extern doom_boolean& noblit;
 
 // The view window geometry lives in Doom::ViewWindow (an Engine member) now; these
 // are references onto it (REFACTOR.md, Step 5).
@@ -138,8 +113,6 @@ extern doom_boolean& noblit;
 
 // Doom::Player taking events, and displaying. These live in Doom::PlayerState (an Engine member)
 // now, with the player arrays below; all four are references onto it (REFACTOR.md, Step 5).
-extern int& consoleplayer;
-extern int& displayplayer;
 
 
 // -------------------------------------
@@ -148,12 +121,8 @@ extern int& displayplayer;
 //
 // The level's progress lives in Doom::LevelStats (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
-extern int& totalkills;
-extern int& totalitems;
-extern int& totalsecret;
 
 // Timer, for scores.
-extern int& levelstarttic;   // gametic at level start
 
 
 // --------------------------------------
@@ -162,18 +131,13 @@ extern int& levelstarttic;   // gametic at level start
 // Disable save/end game?
 // The demo-playback state lives in Doom::DemoState (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
-extern doom_boolean& usergame;
 
 //?
-extern doom_boolean& demoplayback;
-extern doom_boolean& demorecording;
 
 // Quit after playing a demo from cmdline.
-extern doom_boolean& singledemo;
 
 // gamestate and wipegamestate live in Doom::GameFlow (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
-extern Doom::GameState& gamestate;
 
 
 //-----------------------------
@@ -184,15 +148,12 @@ extern Doom::GameState& gamestate;
 
 // gametic lives in Doom::GameClock (an Engine member) now; this is a reference onto it
 // (REFACTOR.md, Step 5).
-extern int& gametic;
 
 
 // Bookkeeping on players - state. In Doom::PlayerState (an Engine member) now, with
 // consoleplayer/displayplayer above; references-to-array onto it (REFACTOR.md, Step 5).
-extern Doom::Player (&players)[MAXPLAYERS];
 
 // Alive? Disconnected?
-extern doom_boolean (&playeringame)[MAXPLAYERS];
 
 
 // Doom::Player spawn spots. These live in Doom::MapSpawns (an Engine member) now; the references
@@ -202,7 +163,6 @@ extern doom_boolean (&playeringame)[MAXPLAYERS];
 
 // Intermission stats. Parameters for world map / intermission. In Doom::IntermissionInfo
 // (an Engine member) now; a reference onto it (REFACTOR.md, Step 5).
-extern Doom::IntermissionStart& wminfo;
 
 
 // LUT of ammunition limits for each kind. This doubles with BackPack powerup item.
@@ -215,28 +175,21 @@ extern Doom::IntermissionStart& wminfo;
 //
 
 // File handling stuff. basedefault is an Engine member (Game/ConfigPaths.h); reference.
-extern char (&basedefault)[1024];
 // debugfile / precache / singletics are Doom::EngineParams (an Engine member) now; these are
 // references onto it (REFACTOR.md, Step 5).
-extern void*& debugfile;
 
 // if true, load all graphics at level load
-extern doom_boolean& precache;
 
 // wipegamestate can be set to -1
 // to force a wipe on the next draw (in Doom::GameFlow now; see gamestate above)
-extern Doom::GameState& wipegamestate;
 
 // mouseSensitivity is config-backed and owned by the Engine's MenuSettings cluster
 // (UI/MenuSettings.h) now; this is a reference onto that member.
-extern int& mouseSensitivity;
 //?
 // debug flag to cancel adaptiveness (in Doom::EngineParams now; see debugfile above)
-extern doom_boolean& singletics;
 
 // bodyqueslot lives in Doom::CorpseQueue (an Engine member) now, with the bodyque[] array;
 // this is a reference onto it (REFACTOR.md, Step 5).
-extern int& bodyqueslot;
 
 
 // Needed to store the number of the dummy sky flat. Used for rendering, as well as tracking
@@ -249,22 +202,15 @@ extern int& bodyqueslot;
 // (REFACTOR.md, Step 5).
 
 // This is ???
-extern Doom::DoomCom*& doomcom;
 
 // This points inside doomcom.
-extern Doom::NetPacket*& netbuffer;
 
 
-extern Doom::Ticcmd (&localcmds)[BACKUPTICS];
 
 // rndindex was declared here too, a second name for m_random.h's. Include that
 // instead - Doom::Random owns the state now and there is one declaration of it.
 
-extern int& maketic;
-extern int (&nettics)[MAXNETNODES];
 
-extern Doom::Ticcmd (&netcmds)[MAXPLAYERS][BACKUPTICS];
-extern int& ticdup;
 
 
 

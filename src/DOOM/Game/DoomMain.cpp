@@ -110,42 +110,27 @@ static char* wadfiles[MAXWADFILES];
 
 // The command-line launch flags are a Doom::LaunchOptions owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
-doom_boolean& devparm = Doom::launchOptions().devparm; // started game with -devparm
-doom_boolean& nomonsters =
-    Doom::launchOptions().nomonsters; // checkparm of -nomonsters
-doom_boolean& respawnparm =
-    Doom::launchOptions().respawnparm; // checkparm of -respawn
-doom_boolean& fastparm = Doom::launchOptions().fastparm; // checkparm of -fast
 
 // (drone, an always-unread vestige, was deleted here - the Doom::DoomCom.drone in d_net.h
 // is an unrelated struct member.)
 
 // singletics / debugfile are Doom::EngineParams owned by the Engine now; these are references onto
 // it (REFACTOR.md, Step 5).
-doom_boolean& singletics = Doom::engineParams().singletics;
 
-doom_boolean& is_wiping_screen = Doom::gameFlow().is_wiping_screen;
 
 // The new-game defaults are a Doom::StartupDefaults owned by the Engine now; these are
 // references onto it (REFACTOR.md, Step 5).
-Doom::Skill& startskill = Doom::startupDefaults().startskill;
-int& startepisode = Doom::startupDefaults().startepisode;
-int& startmap = Doom::startupDefaults().startmap;
-doom_boolean& autostart = Doom::startupDefaults().autostart;
 
-void*& debugfile = Doom::engineParams().debugfile;
 
 // advancedemo is a Doom::AttractMode member owned by the Engine now; this reference stays
 // because d_main.h still externs it for Tests/SimProbe (REFACTOR.md, Step 5). Its
 // demosequence/pagetic siblings had no reader outside this file and are gone; pagename's
 // reference is below, kept for g_game.
-doom_boolean& advancedemo = Doom::attractMode().advancedemo;
 
 // wadfile[]/mapdir[] were dead (referenced only in comments) and are deleted, the
 // linecount/loopcount/viewangleoffset way. basedefault is an Engine member now
 // (Game/ConfigPaths.h) - it was never actually config-blocked, since defaults[] does
 // not capture its address (defaultfile is assigned it at runtime, not bound to it).
-char (&basedefault)[1024] = Doom::configPaths().basedefault; // default file
 
 //
 // EVENT HANDLING
@@ -155,13 +140,9 @@ char (&basedefault)[1024] = Doom::configPaths().basedefault; // default file
 //
 // The input event ring buffer is a Doom::EventQueue owned by the Engine now; these vanilla
 // names are references onto it (events[] as a reference-to-array).
-Doom::Event (&events)[MAXEVENTS] = Doom::eventQueue().events;
-int& eventhead = Doom::eventQueue().eventhead;
-int& eventtail = Doom::eventQueue().eventtail;
 
 // wipegamestate (with gamestate) is a Doom::GameFlow owned by the Engine now; this is a
 // reference onto it. It can be set to -1 to force a wipe on the next draw.
-Doom::GameState& wipegamestate = Doom::gameFlow().wipegamestate;
 void Doom::executeSetViewSize();
 
 // print title for every printed line - file-local, built and printed only here
@@ -169,7 +150,6 @@ static EA::Array<char, 128> title;
 
 // Title/demo-loop state: a member of the Doom::AttractMode above, still read by g_game
 // through its own extern declaration.
-const char*& pagename = Doom::attractMode().pagename;
 
 // Other subsystems' globals/functions this file reaches (at global scope so the
 // namespace code below binds :: not Doom::).

@@ -29,6 +29,7 @@
 // Read by DOOM.cpp, the menu, the status bar, the eacp port (View.h / Common.h /
 #include "System.h"
 // EngineAccess) and the frame hash, so it stays at file scope rather than moving
+#include "../Game/LaunchOptions.h"
 // into namespace Doom below.
 unsigned char screen_palette[256 * 3];
 
@@ -64,7 +65,7 @@ void finishUpdate()
     static int lasttic;
 
     // draws little dots on the bottom of the screen
-    if (devparm)
+    if (launchOptions().devparm)
     {
         int i = currentTic();
         int tics = i - lasttic;

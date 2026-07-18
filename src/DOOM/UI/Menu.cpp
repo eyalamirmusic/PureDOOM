@@ -83,16 +83,10 @@
 // menuactive, automapactive and inhelpscreens (which gates Doom::displayFrame's border
 // redraw) are a Doom::OverlayState owned by the Engine now; these are references
 // onto it (REFACTOR.md, Step 5).
-doom_boolean& inhelpscreens = Doom::overlayState().inhelpscreens;
-doom_boolean& menuactive = Doom::overlayState().menuactive;
 // The config-backed settings (mouse sensitivity, message toggle, detail, view
 // size) are Engine members now (UI/MenuSettings.h); these are references onto
 // them. Config.cpp binds its defaults[] entries to the members at runtime rather
 // than capturing their addresses at static-init, which is what unblocked the move.
-int& mouseSensitivity = Doom::menuSettings().mouseSensitivity;
-int& showMessages = Doom::menuSettings().showMessages; // 0 = off, 1 = on
-int& detailLevel = Doom::menuSettings().detailLevel; // 0 = high, 1 = normal
-int& screenblocks = Doom::menuSettings().screenblocks;
 int messageToPrint; // 1 = message to be printed
 
 // Globals owned elsewhere that the menu reads or writes. They are declared here,

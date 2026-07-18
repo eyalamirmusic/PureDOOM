@@ -32,8 +32,8 @@
 #include "Sound.h"
 #include "Video.h"
 #include "../Game/Game.h"
-extern doom_boolean& demorecording;
 
+#include "../Game/DemoState.h"
 namespace Doom
 {
 int mb_used = 6 * (sizeof(void*) / 4);
@@ -131,7 +131,7 @@ void fatalError(const char* error)
     doom_print("\n");
 
     // Shutdown. Here might be other errors.
-    if (demorecording)
+    if (demoState().demorecording)
         Doom::checkDemoStatus();
 
     Doom::quitNetGame();
