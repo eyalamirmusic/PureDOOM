@@ -1,8 +1,7 @@
 // Rewritten out of vanilla p_ceilng into namespace Doom.
 //
-// Moving ceilings and crushers: the T_MoveCeiling thinker and the EV_ handlers over
-// the global activeceilings list. T_MoveCeiling stays global (p_saveg identity; the
-// spawner stores its address). p_ceilng.cpp shims every name and owns the
+// Moving ceilings and crushers: the moveCeiling thinker and the EV_ handlers over
+// the global activeceilings list. p_ceilng.cpp shims every name and owns the
 // activeceilings storage. Golden-neutral - the demos trip crushers.
 
 #include "../doom_config.h"
@@ -20,10 +19,7 @@
 
 #include <new>
 
-// The thinker functions stay global (p_saveg identity); declared so the spawners
 #include "../Game/Sound.h"
-// can store their address.
-void T_MoveCeiling(ceiling_t* ceiling);
 
 namespace Doom
 {

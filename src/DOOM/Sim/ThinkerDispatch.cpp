@@ -1,19 +1,20 @@
 // The virtual tick() bodies for the polymorphic thinker types.
 //
-// Each forwards to the vanilla-named thinker routine (Doom::mobjThinker for a mobj,
-// the T_* functions for the specials) - the same routine Doom::runThinkers used to
-// reach through the old `thinker_t.function` union. They are defined together, at
+// Each forwards to the namespaced thinker routine (Doom::mobjThinker for a mobj,
+// the Doom::* functions for the specials) - the same routine Doom::runThinkers used
+// to reach through the old `thinker_t.function` union. They are defined together, at
 // global scope, because the types they belong to (mobj_t and the p_spec.h
 // specials) live in the global namespace, and out of line because those routines
 // take the concrete type and so are only declared after it.
 
 #include "../p_local.h" // Doom::mobjThinker, mobj_t
-#include "../p_spec.h" // the specials and their T_* thinkers
+#include "../p_spec.h" // the specials
+#include "Ceilings.h" // Doom::moveCeiling
+#include "Doors.h" // Doom::verticalDoor
+#include "Floors.h" // Doom::moveFloor
+#include "Lights.h" // Doom::fireFlicker, lightFlash, strobeFlash, glow
 #include "Mobj.h"
-
-// T_FireFlicker has no shared-header declaration (p_saveg never serialises a
-// fireflicker, so nothing outside Lights.cpp needed it); declare it to reach it.
-void T_FireFlicker(fireflicker_t* flick);
+#include "Plats.h" // Doom::platRaise
 
 void mobj_t::tick()
 {
@@ -21,33 +22,33 @@ void mobj_t::tick()
 }
 void vldoor_t::tick()
 {
-    T_VerticalDoor(this);
+    Doom::verticalDoor(*this);
 }
 void ceiling_t::tick()
 {
-    T_MoveCeiling(this);
+    Doom::moveCeiling(*this);
 }
 void floormove_t::tick()
 {
-    T_MoveFloor(this);
+    Doom::moveFloor(*this);
 }
 void plat_t::tick()
 {
-    T_PlatRaise(this);
+    Doom::platRaise(*this);
 }
 void fireflicker_t::tick()
 {
-    T_FireFlicker(this);
+    Doom::fireFlicker(*this);
 }
 void lightflash_t::tick()
 {
-    T_LightFlash(this);
+    Doom::lightFlash(*this);
 }
 void strobe_t::tick()
 {
-    T_StrobeFlash(this);
+    Doom::strobeFlash(*this);
 }
 void glow_t::tick()
 {
-    T_Glow(this);
+    Doom::glow(*this);
 }

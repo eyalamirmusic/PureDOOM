@@ -116,13 +116,6 @@ struct glow_t : Doom::Thinker
 #define FASTDARK 15
 #define SLOWDARK 35
 
-void T_LightFlash(lightflash_t* flash);
-void T_StrobeFlash(strobe_t* flash);
-
-
-
-void T_Glow(glow_t* g);
-
 
 //
 // P_SWITCH
@@ -218,9 +211,6 @@ struct plat_t : Doom::Thinker
 extern plat_t* (&activeplats)[MAXPLATS];
 
 
-void T_PlatRaise(plat_t* plat);
-
-
 //
 // P_DOORS
 //
@@ -260,9 +250,6 @@ struct vldoor_t : Doom::Thinker
 
 #define VDOORSPEED                FRACUNIT*2
 #define VDOORWAIT                150
-
-
-void T_VerticalDoor(vldoor_t* door);
 
 
 //
@@ -305,9 +292,6 @@ struct ceiling_t : Doom::Thinker
 
 
 extern ceiling_t* (&activeceilings)[MAXCEILINGS];
-
-
-void T_MoveCeiling(ceiling_t* ceiling);
 
 
 //
@@ -382,7 +366,6 @@ enum result_e
 
 
 result_e T_MovePlane(sector_t* sector, fixed_t speed, fixed_t dest, doom_boolean crush, int floorOrCeiling, int direction);
-void T_MoveFloor(floormove_t* floor);
 
 //
 // P_TELEPT

@@ -8,8 +8,9 @@
 //
 // DESCRIPTION:
 //        Elevator platforms. Rewritten in Sim/Plats.{h,cpp}; this keeps the vanilla
-//        names as shims and owns the activeplats storage (p_saveg reads it, and
-//        T_PlatRaise stays global for the same reason).
+//        names as shims and owns the activeplats storage (p_saveg reads it).
+//        T_PlatRaise was deleted once ThinkerDispatch.cpp started calling
+//        Doom::platRaise directly.
 //
 //-----------------------------------------------------------------------------
 
@@ -21,13 +22,4 @@
 // activeplats is declared in p_spec.h and read by p_saveg; it is a member of the
 // Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
 plat_t* (&activeplats)[MAXPLATS] = Doom::activeSpecials().activeplats;
-
-void T_PlatRaise(plat_t* plat)
-{
-    Doom::platRaise(*plat);
-}
-
-
-
-
 

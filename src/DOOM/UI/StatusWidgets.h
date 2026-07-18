@@ -4,7 +4,8 @@
 
 namespace Doom
 {
-// Status-bar widgets; st_lib.cpp keeps the vanilla STlib_ names as shims.
+// Status-bar widgets. The vanilla STlib_ names that used to shim these have
+// been retired; call sites use these Doom:: names directly.
 void initStatusWidgets();
 void initNum(st_number_t& n,
              int x,

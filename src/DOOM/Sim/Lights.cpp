@@ -1,9 +1,8 @@
 // Rewritten out of vanilla p_lights into namespace Doom.
 //
 // Sector light effects: the fire flicker, the random and strobe flashes and the
-// glow, plus their spawners and the EV_ line handlers. The T_ thinker functions
-// stay global (p_saveg identifies a thinker by comparing to them, and the spawners
-// store their global address); p_lights.cpp shims every name. Golden-neutral.
+// glow, plus their spawners and the EV_ line handlers. p_lights.cpp shims every
+// name. Golden-neutral.
 
 #include "../doom_config.h"
 
@@ -17,13 +16,6 @@
 #include "Specials.h"
 
 #include <new>
-
-// The thinker functions stay global (p_saveg identity); declared so the spawners
-// can store their address.
-void T_FireFlicker(fireflicker_t* flick);
-void T_LightFlash(lightflash_t* flash);
-void T_StrobeFlash(strobe_t* flash);
-void T_Glow(glow_t* g);
 
 namespace Doom
 {

@@ -9,7 +9,8 @@
 // DESCRIPTION:
 //        Moving ceilings/crushers. Rewritten in Sim/Ceilings.{h,cpp}; this keeps the
 //        vanilla names as shims and owns the activeceilings storage (p_saveg reads
-//        it; T_MoveCeiling stays global for the same reason).
+//        it). T_MoveCeiling was deleted once ThinkerDispatch.cpp started calling
+//        Doom::moveCeiling directly.
 //
 //-----------------------------------------------------------------------------
 
@@ -21,13 +22,4 @@
 // activeceilings is declared in p_spec.h and read by p_saveg; it is a member of the
 // Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
 ceiling_t* (&activeceilings)[MAXCEILINGS] = Doom::activeSpecials().activeceilings;
-
-void T_MoveCeiling(ceiling_t* ceiling)
-{
-    Doom::moveCeiling(*ceiling);
-}
-
-
-
-
 

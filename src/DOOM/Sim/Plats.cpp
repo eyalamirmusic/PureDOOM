@@ -1,8 +1,7 @@
 // Rewritten out of vanilla p_plats into namespace Doom.
 //
-// Elevator platforms: the T_PlatRaise thinker and the EV_ handlers that spawn and
-// stop them, over the global activeplats list. T_PlatRaise stays global (p_saveg
-// identity; the spawners store its address). p_plats.cpp shims every name and owns
+// Elevator platforms: the platRaise thinker and the EV_ handlers that spawn and
+// stop them, over the global activeplats list. p_plats.cpp shims every name and owns
 // the activeplats storage. Golden-neutral - the demos ride lifts.
 
 #include "../doom_config.h"
@@ -22,11 +21,8 @@
 
 #include <new>
 
-// The thinker functions stay global (p_saveg identity); declared so the spawners
 #include "../Game/Sound.h"
-// can store their address.
 #include "../Host/System.h"
-void T_PlatRaise(plat_t* plat);
 
 namespace Doom
 {

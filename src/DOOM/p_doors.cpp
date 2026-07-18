@@ -7,22 +7,13 @@
 // terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//        Vertical doors. Rewritten in Sim/Doors.{h,cpp}; this keeps the vanilla
-//        names as shims. T_VerticalDoor stays global for the p_saveg-identity
-//        reason.
+//        Vertical doors. Rewritten in Sim/Doors.{h,cpp}; this file is now empty
+//        of vanilla shims - T_VerticalDoor was deleted once ThinkerDispatch.cpp
+//        started calling Doom::verticalDoor directly.
 //
 //-----------------------------------------------------------------------------
 
 #include "p_local.h"
 
 #include "Sim/Doors.h"
-
-void T_VerticalDoor(vldoor_t* door)
-{
-    Doom::verticalDoor(*door);
-}
-
-
-
-
 

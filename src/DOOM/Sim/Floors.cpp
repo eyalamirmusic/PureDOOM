@@ -1,11 +1,9 @@
 // Rewritten out of vanilla p_floor into namespace Doom.
 //
 // Floor movement: T_MovePlane (the shared height-mover the ceiling, plat and door
-// thinkers all call), the T_MoveFloor thinker, and the EV_ floor/stairs handlers.
-// T_MovePlane and T_MoveFloor stay global - T_MovePlane because other specials call
-// it, T_MoveFloor because p_saveg identifies it and EV_ spawners store its address.
-// p_floor.cpp shims every name. Golden-neutral - the demos lower floors and build
-// stairs.
+// thinkers all call), the moveFloor thinker, and the EV_ floor/stairs handlers.
+// T_MovePlane stays global because other specials call it. p_floor.cpp shims every
+// name. Golden-neutral - the demos lower floors and build stairs.
 
 #include "../doom_config.h"
 
@@ -22,11 +20,8 @@
 
 #include <new>
 
-// The thinker functions stay global (p_saveg identity); declared so the spawners
 #include "../Game/Sound.h"
-// can store their address.
 #include "MapAction.h"
-void T_MoveFloor(floormove_t* floor);
 
 namespace Doom
 {

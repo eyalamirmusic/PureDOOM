@@ -46,6 +46,7 @@
 #include "HudChat.h"
 #include "HudMessage.h"
 #include "HudState.h"
+#include "HudWidgets.h"
 
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 #include "../Game/Sound.h"
@@ -276,7 +277,7 @@ void startHud()
     chat_on = false;
 
     // create the message widget
-    HUlib_initSText(&w_message,
+    Doom::initSText(w_message,
                     HU_MSGX,
                     HU_MSGY,
                     HU_MSGHEIGHT,
@@ -285,7 +286,7 @@ void startHud()
                     &message_on);
 
     // create the map title widget
-    HUlib_initTextLine(&w_title, HU_TITLEX, HU_TITLEY, hu_font, HU_FONTSTART);
+    Doom::initTextLine(w_title, HU_TITLEX, HU_TITLEY, hu_font, HU_FONTSTART);
 
     switch (gamemode)
     {
@@ -311,31 +312,31 @@ void startHud()
     }
 
     while (*s)
-        HUlib_addCharToTextLine(&w_title, *(s++));
+        Doom::addCharToTextLine(w_title, *(s++));
 
     // create the chat widget
-    HUlib_initIText(&w_chat, HU_INPUTX, HU_INPUTY, hu_font, HU_FONTSTART, &chat_on);
+    Doom::initIText(w_chat, HU_INPUTX, HU_INPUTY, hu_font, HU_FONTSTART, &chat_on);
 
     // create the inputbuffer widgets
     for (int i = 0; i < MAXPLAYERS; i++)
-        HUlib_initIText(&w_inputbuffer[i], 0, 0, 0, 0, &always_off);
+        Doom::initIText(w_inputbuffer[i], 0, 0, 0, 0, &always_off);
 
     headsupactive = true;
 }
 
 void drawHud()
 {
-    HUlib_drawSText(&w_message);
-    HUlib_drawIText(&w_chat);
+    Doom::drawSText(w_message);
+    Doom::drawIText(w_chat);
     if (automapactive)
-        HUlib_drawTextLine(&w_title, false);
+        Doom::drawTextLine(w_title, false);
 }
 
 void eraseHud()
 {
-    HUlib_eraseSText(&w_message);
-    HUlib_eraseIText(&w_chat);
-    HUlib_eraseTextLine(&w_title);
+    Doom::eraseSText(w_message);
+    Doom::eraseIText(w_chat);
+    Doom::eraseTextLine(w_title);
 }
 
 void hudTicker()
@@ -356,7 +357,7 @@ void hudTicker()
         if ((plr->message && !message_nottobefuckedwith)
             || (plr->message && message_dontfuckwithme))
         {
-            HUlib_addMessageToSText(&w_message, 0, plr->message);
+            Doom::addMessageToSText(w_message, 0, plr->message);
             plr->message = nullptr;
             message_on = true;
             message_counter = HU_MSGTIMEOUT;
@@ -382,15 +383,15 @@ void hudTicker()
                     if (c >= 'a' && c <= 'z')
                         c = static_cast<char>(
                             shiftxform[static_cast<unsigned char>(c)]);
-                    rc = HUlib_keyInIText(&w_inputbuffer[i], c);
+                    rc = Doom::keyInIText(w_inputbuffer[i], c);
                     if (rc && c == KEY_ENTER)
                     {
                         if (w_inputbuffer[i].l.len
                             && (chat_dest[i] == consoleplayer + 1
                                 || chat_dest[i] == HU_BROADCAST))
                         {
-                            HUlib_addMessageToSText(
-                                &w_message, player_names[i], w_inputbuffer[i].l.l);
+                            Doom::addMessageToSText(
+                                w_message, player_names[i], w_inputbuffer[i].l.l);
 
                             message_nottobefuckedwith = true;
                             message_on = true;
@@ -400,7 +401,7 @@ void hudTicker()
                             else
                                 Doom::startSound(0, sfx_tink);
                         }
-                        HUlib_resetIText(&w_inputbuffer[i]);
+                        Doom::resetIText(w_inputbuffer[i]);
                     }
                 }
                 players[i].cmd.chatchar = 0;
@@ -483,7 +484,7 @@ doom_boolean hudResponder(event_t* ev)
         else if (netgame && ev->data1 == HU_INPUTTOGGLE)
         {
             eatkey = chat_on = true;
-            HUlib_resetIText(&w_chat);
+            Doom::resetIText(w_chat);
             huQueueChatChar(HU_BROADCAST);
         }
         else if (netgame && numplayers > 2)
@@ -495,7 +496,7 @@ doom_boolean hudResponder(event_t* ev)
                     if (playeringame[i] && i != consoleplayer)
                     {
                         eatkey = chat_on = true;
-                        HUlib_resetIText(&w_chat);
+                        Doom::resetIText(w_chat);
                         huQueueChatChar(i + 1);
                         break;
                     }
@@ -548,7 +549,7 @@ doom_boolean hudResponder(event_t* ev)
                 c = foreignTranslation(c);
             if (shiftdown || (c >= 'a' && c <= 'z'))
                 c = shiftxform[c];
-            eatkey = HUlib_keyInIText(&w_chat, c);
+            eatkey = Doom::keyInIText(w_chat, c);
             if (eatkey)
             {
                 huQueueChatChar(c);

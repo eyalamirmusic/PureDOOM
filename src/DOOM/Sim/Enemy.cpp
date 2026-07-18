@@ -10,9 +10,10 @@
 //        Enemy thinking, AI. Action pointers for the states/definitions.
 //
 // Rewritten into namespace Doom out of vanilla p_enemy; p_enemy.cpp keeps the
-// vanilla A_*/Doom::noiseAlert names as shims (info.cpp's state table references the A_*
-// by address). The AI scratch is file-local; soundtarget stays global (p_saveg
-// archives it), and the thinker-identity comparison keeps the global Doom::mobjThinker.
+// vanilla Doom::noiseAlert name as a shim (Sim/Info.cpp's state table references
+// the Doom::Actions:: adapters by address instead, in Sim/Actions.{h,cpp}). The AI
+// scratch is file-local; soundtarget stays global (p_saveg archives it), and the
+// thinker-identity comparison keeps the global Doom::mobjThinker.
 //
 //-----------------------------------------------------------------------------
 
@@ -45,15 +46,15 @@
 #include "Movement.h"
 #include "Sight.h"
 #include "Switches.h"
+#include "Weapon.h"
 #define MAXSPECIALCROSS 8
 #define FATSPREAD (ANG90 / 8)
 #define SKULLSPEED (20 * FRACUNIT)
 
-// A_CloseShotgun2 calls the weapon refire; soundtarget and spechit/numspechit are
+// closeShotgun2 calls the weapon refire; soundtarget and spechit/numspechit are
 // globals the AI shares. soundtarget is a Doom::SoundTarget member (Engine) now, so this
 // extern is a reference - and must be, since recursiveSound writes it (a plain-mobj_t*
 // extern that wrote it would clobber the reference's pointer). spechit is Clip's.
-void A_ReFire(player_t* player, pspdef_t* psp);
 extern mobj_t*& soundtarget;
 extern line_t** spechit;
 extern int& numspechit;
@@ -1716,7 +1717,7 @@ void loadShotgun2(player_t* player, pspdef_t*)
 void closeShotgun2(player_t* player, pspdef_t* psp)
 {
     Doom::startSound(player->mo, sfx_dbcls);
-    A_ReFire(player, psp);
+    Doom::reFire(*player, *psp);
 }
 
 void brainAwake(mobj_t&)

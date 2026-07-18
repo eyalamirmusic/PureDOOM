@@ -4,7 +4,8 @@
 
 namespace Doom
 {
-// Heads-up text widgets; hu_lib.cpp keeps the vanilla HUlib_ names as shims.
+// Heads-up text widgets. The vanilla HUlib_ names that used to shim these
+// have been retired; call sites use these Doom:: names directly.
 void initWidgets();
 void clearTextLine(hu_textline_t& t);
 void initTextLine(hu_textline_t& t, int x, int y, patch_t** f, int sc);

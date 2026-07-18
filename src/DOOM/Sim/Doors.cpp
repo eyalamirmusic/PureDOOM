@@ -1,8 +1,7 @@
 // Rewritten out of vanilla p_doors into namespace Doom.
 //
-// Vertical doors: the T_VerticalDoor thinker and the EV_/spawn handlers that raise,
-// lower and time them. T_VerticalDoor stays global (p_saveg identity; the spawners
-// store its address). p_doors.cpp shims every name. Golden-neutral - the demos open
+// Vertical doors: the verticalDoor thinker and the EV_/spawn handlers that raise,
+// lower and time them. p_doors.cpp shims every name. Golden-neutral - the demos open
 // doors.
 
 #include "../doom_config.h"
@@ -21,10 +20,7 @@
 
 #include <new>
 
-// The thinker functions stay global (p_saveg identity); declared so the spawners
 #include "../Game/Sound.h"
-// can store their address.
-void T_VerticalDoor(vldoor_t* door);
 
 namespace Doom
 {

@@ -9,7 +9,8 @@
 // DESCRIPTION:
 //        Floor movement / stairs. Rewritten in Sim/Floors.{h,cpp}; this keeps the
 //        vanilla names as shims. T_MovePlane stays global because the other
-//        specials call it; T_MoveFloor for the p_saveg-identity reason.
+//        specials call it; T_MoveFloor was deleted once ThinkerDispatch.cpp started
+//        calling Doom::moveFloor directly.
 //
 //-----------------------------------------------------------------------------
 
@@ -21,10 +22,4 @@ result_e T_MovePlane(sector_t* sector, fixed_t speed, fixed_t dest, doom_boolean
 {
     return Doom::movePlane(*sector, speed, dest, crush, floorOrCeiling, direction);
 }
-
-void T_MoveFloor(floormove_t* floor)
-{
-    Doom::moveFloor(*floor);
-}
-
 
