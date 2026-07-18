@@ -15,6 +15,7 @@
 #include "../p_local.h"
 #include "../r_state.h"
 
+#include "../Game/PlayerState.h"
 #include "../Game/SaveGameState.h"
 #include "SaveGame.h"
 #include "ThinkerList.h"
@@ -54,16 +55,17 @@ void archivePlayers()
     Player* dest;
 
     auto& save = saveGameState();
+    auto& players_ = playerState();
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (!playeringame[i])
+        if (!players_.playeringame[i])
             continue;
 
         PADSAVEP(save.cursor);
 
         dest = reinterpret_cast<Player*>(save.cursor);
-        doom_memcpy(dest, &players[i], sizeof(Player));
+        doom_memcpy(dest, &players_.players[i], sizeof(Player));
         save.cursor += sizeof(Player);
         for (int j = 0; j < NUMPSPRITES; j++)
         {
@@ -82,28 +84,30 @@ void archivePlayers()
 void unArchivePlayers()
 {
     auto& save = saveGameState();
+    auto& players_ = playerState();
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (!playeringame[i])
+        if (!players_.playeringame[i])
             continue;
 
         PADSAVEP(save.cursor);
 
-        doom_memcpy(&players[i], save.cursor, sizeof(Player));
+        doom_memcpy(&players_.players[i], save.cursor, sizeof(Player));
         save.cursor += sizeof(Player);
 
         // will be set when unarc thinker
-        players[i].mo = nullptr;
-        players[i].message = nullptr;
-        players[i].attacker = nullptr;
+        players_.players[i].mo = nullptr;
+        players_.players[i].message = nullptr;
+        players_.players[i].attacker = nullptr;
 
         for (int j = 0; j < NUMPSPRITES; j++)
         {
-            if (players[i].psprites[j].state)
+            if (players_.players[i].psprites[j].state)
             {
-                players[i].psprites[j].state = &states[reinterpret_cast<long long>(
-                    players[i].psprites[j].state)];
+                players_.players[i].psprites[j].state =
+                    &states[reinterpret_cast<long long>(
+                        players_.players[i].psprites[j].state)];
             }
         }
     }
@@ -265,8 +269,8 @@ void archiveThinkers()
             mobj->state = reinterpret_cast<State*>(mobj->state - states);
 
             if (mobj->player)
-                mobj->player =
-                    reinterpret_cast<Player*>((mobj->player - players) + 1);
+                mobj->player = reinterpret_cast<Player*>(
+                    (mobj->player - playerState().players) + 1);
             continue;
         }
 
@@ -322,7 +326,8 @@ void unArchiveThinkers()
                 if (mobj->player)
                 {
                     mobj->player =
-                        &players[reinterpret_cast<long long>(mobj->player) - 1];
+                        &playerState()
+                             .players[reinterpret_cast<long long>(mobj->player) - 1];
                     mobj->player->mo = mobj;
                 }
                 setThingPosition(*mobj);

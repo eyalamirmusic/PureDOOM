@@ -43,7 +43,16 @@
 
 #include "../Game/OverlayState.h"
 
+#include "../Game/DemoState.h"
+#include "../Game/GameClock.h"
+#include "../Game/GameFlow.h"
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
+#include "../Game/InputConfig.h"
+#include "../Game/LaunchOptions.h"
 #include "../Game/OverlayState.h"
+#include "../Game/PlayerState.h"
+#include "../Game/SoundSettings.h"
 #include "HudFlags.h"
 #include "HudFont.h"
 #include "Menu.h"
@@ -93,10 +102,6 @@ int messageToPrint; // 1 = message to be printed
 // out). screens (v_video.h) and colormaps (r_state.h) already come in through
 // headers; screen_palette has no header, so it is declared here.
 extern int doom_flags;
-// mousemove/crosshair/always_run are Doom::InputConfig members (Engine); references onto them.
-extern int& mousemove;
-extern int& crosshair;
-extern int& always_run;
 extern unsigned char screen_palette[256 * 3]; // i_video, no header
 
 // The quit-screen taunts, drawn by quitDOOM. Declared in dstrings.h, read only
@@ -817,7 +822,7 @@ void loadSelect(int choice)
 //
 void loadGameMenu(int)
 {
-    if (netgame)
+    if (gameSession().netgame)
     {
         startMessage(LOADNET, {}, false);
         return;
@@ -882,13 +887,13 @@ void saveSelect(int choice)
 //
 void saveGameMenu(int)
 {
-    if (!usergame)
+    if (!demoState().usergame)
     {
         startMessage(SAVEDEAD, {}, false);
         return;
     }
 
-    if (gamestate != GS_LEVEL)
+    if (gameFlow().gamestate != GS_LEVEL)
         return;
 
     setupNextMenu(&SaveDef);
@@ -909,13 +914,13 @@ void quickSaveResponse(int ch)
 
 void quickSave()
 {
-    if (!usergame)
+    if (!demoState().usergame)
     {
         Doom::startSound(0, sfx_oof);
         return;
     }
 
-    if (gamestate != GS_LEVEL)
+    if (gameFlow().gamestate != GS_LEVEL)
         return;
 
     if (quickSaveSlot < 0)
@@ -947,7 +952,7 @@ void quickLoadResponse(int ch)
 
 void quickLoad()
 {
-    if (netgame)
+    if (gameSession().netgame)
     {
         startMessage(QLOADNET, {}, false);
         return;
@@ -971,8 +976,8 @@ void quickLoad()
 //
 void drawReadThis1()
 {
-    inhelpscreens = true;
-    switch (gamemode)
+    overlayState().inhelpscreens = true;
+    switch (gameVersion().gamemode)
     {
         case commercial:
             Doom::drawPatchDirect(
@@ -995,8 +1000,8 @@ void drawReadThis1()
 //
 void drawReadThis2()
 {
-    inhelpscreens = true;
-    switch (gamemode)
+    overlayState().inhelpscreens = true;
+    switch (gameVersion().gamemode)
     {
         case retail:
         case commercial:
@@ -1020,6 +1025,8 @@ void drawReadThis2()
 //
 void drawSound()
 {
+    auto& sndset = soundSettings();
+
     Doom::drawPatchDirect(
         60, 38, 0, static_cast<Patch*>(Doom::cacheLumpName("M_SVOL")));
 
@@ -1028,8 +1035,10 @@ void drawSound()
         int offset = (doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
                          ? static_cast<int>(sfx_vol_no_music)
                          : static_cast<int>(sfx_vol);
-        drawThermo(
-            SoundDef.x, SoundDef.y + LINEHEIGHT * (offset + 1), 16, snd_SfxVolume);
+        drawThermo(SoundDef.x,
+                   SoundDef.y + LINEHEIGHT * (offset + 1),
+                   16,
+                   sndset.sfxVolume);
     }
 
     if (!(doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS))
@@ -1037,8 +1046,10 @@ void drawSound()
         int offset = (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
                          ? static_cast<int>(music_vol_no_sfx)
                          : static_cast<int>(music_vol);
-        drawThermo(
-            SoundDef.x, SoundDef.y + LINEHEIGHT * (offset + 1), 16, snd_MusicVolume);
+        drawThermo(SoundDef.x,
+                   SoundDef.y + LINEHEIGHT * (offset + 1),
+                   16,
+                   sndset.musicVolume);
     }
 }
 
@@ -1054,36 +1065,40 @@ void mouseOptions(int)
 
 void sfxVol(int choice)
 {
+    auto& sndset = soundSettings();
+
     switch (choice)
     {
         case 0:
-            if (snd_SfxVolume)
-                snd_SfxVolume--;
+            if (sndset.sfxVolume)
+                sndset.sfxVolume--;
             break;
         case 1:
-            if (snd_SfxVolume < 15)
-                snd_SfxVolume++;
+            if (sndset.sfxVolume < 15)
+                sndset.sfxVolume++;
             break;
     }
 
-    Doom::setSfxVolume(snd_SfxVolume /* *8 */);
+    Doom::setSfxVolume(sndset.sfxVolume /* *8 */);
 }
 
 void musicVol(int choice)
 {
+    auto& sndset = soundSettings();
+
     switch (choice)
     {
         case 0:
-            if (snd_MusicVolume)
-                snd_MusicVolume--;
+            if (sndset.musicVolume)
+                sndset.musicVolume--;
             break;
         case 1:
-            if (snd_MusicVolume < 15)
-                snd_MusicVolume++;
+            if (sndset.musicVolume < 15)
+                sndset.musicVolume++;
             break;
     }
 
-    Doom::setMusicVolumeLevel(snd_MusicVolume /* *8 */);
+    Doom::setMusicVolumeLevel(sndset.musicVolume /* *8 */);
 }
 
 //
@@ -1108,13 +1123,13 @@ void drawNewGame()
 
 void newGame(int)
 {
-    if (netgame && !demoplayback)
+    if (gameSession().netgame && !demoState().demoplayback)
     {
         startMessage(NEWGAME, {}, false);
         return;
     }
 
-    if (gamemode == commercial)
+    if (gameVersion().gamemode == commercial)
         setupNextMenu(&NewDef);
     else
         setupNextMenu(&EpiDef);
@@ -1152,7 +1167,9 @@ void chooseSkill(int choice)
 
 void episode(int choice)
 {
-    if ((gamemode == shareware) && choice)
+    auto& version = gameVersion();
+
+    if ((version.gamemode == shareware) && choice)
     {
         startMessage(SWSTRING, {}, false);
         setupNextMenu(&ReadDef1);
@@ -1160,7 +1177,7 @@ void episode(int choice)
     }
 
     // Yet another hack...
-    if ((gamemode == registered) && (choice > 2))
+    if ((version.gamemode == registered) && (choice > 2))
     {
         doom_print("episode: 4th episode requires UltimateDOOM\n");
         choice = 0;
@@ -1175,29 +1192,31 @@ void episode(int choice)
 //
 void drawOptions()
 {
+    auto& input = inputConfig();
+
     Doom::drawPatchDirect(
         108, 15, 0, static_cast<Patch*>(Doom::cacheLumpName("M_OPTTTL")));
 
     //Doom::drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
     //                Doom::cacheLumpName(detailNames[detailLevel])); // Details do nothing?
 
-    Doom::drawPatchDirect(
-        OptionsDef.x + 120,
-        OptionsDef.y + LINEHEIGHT * messages,
-        0,
-        static_cast<Patch*>(Doom::cacheLumpName(msgNames[showMessages].data())));
+    Doom::drawPatchDirect(OptionsDef.x + 120,
+                          OptionsDef.y + LINEHEIGHT * messages,
+                          0,
+                          static_cast<Patch*>(Doom::cacheLumpName(
+                              msgNames[menuSettings().showMessages].data())));
 
     Doom::drawPatchDirect(
         OptionsDef.x + 131,
         OptionsDef.y + LINEHEIGHT * crosshair_opt,
         0,
-        static_cast<Patch*>(Doom::cacheLumpName(msgNames[crosshair].data())));
+        static_cast<Patch*>(Doom::cacheLumpName(msgNames[input.crosshair].data())));
 
     Doom::drawPatchDirect(
         OptionsDef.x + 147,
         OptionsDef.y + LINEHEIGHT * always_run_opt,
         0,
-        static_cast<Patch*>(Doom::cacheLumpName(msgNames[always_run].data())));
+        static_cast<Patch*>(Doom::cacheLumpName(msgNames[input.always_run].data())));
 
     drawThermo(
         OptionsDef.x, OptionsDef.y + LINEHEIGHT * (scrnsize + 1), 9, screenSize);
@@ -1207,16 +1226,16 @@ void drawMouseOptions()
 {
     drawCustomMenuText("TXT_MOPT", 74, 45);
 
-    Doom::drawPatchDirect(
-        MouseOptionsDef.x + 149,
-        MouseOptionsDef.y + LINEHEIGHT * mousemov,
-        0,
-        static_cast<Patch*>(Doom::cacheLumpName(msgNames[mousemove].data())));
+    Doom::drawPatchDirect(MouseOptionsDef.x + 149,
+                          MouseOptionsDef.y + LINEHEIGHT * mousemov,
+                          0,
+                          static_cast<Patch*>(Doom::cacheLumpName(
+                              msgNames[inputConfig().mousemove].data())));
 
     drawThermo(MouseOptionsDef.x,
                MouseOptionsDef.y + LINEHEIGHT * (mousesens + 1),
                10,
-               mouseSensitivity);
+               menuSettings().mouseSensitivity);
 }
 
 void optionsMenu(int)
@@ -1229,12 +1248,15 @@ void optionsMenu(int)
 //
 void changeMessages(int)
 {
-    showMessages = 1 - showMessages;
+    auto& players_ = playerState();
+    auto& settings = menuSettings();
 
-    if (!showMessages)
-        players[consoleplayer].message = MSGOFF;
+    settings.showMessages = 1 - settings.showMessages;
+
+    if (!settings.showMessages)
+        players_.players[players_.consoleplayer].message = MSGOFF;
     else
-        players[consoleplayer].message = MSGON;
+        players_.players[players_.consoleplayer].message = MSGON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1244,12 +1266,15 @@ void changeMessages(int)
 //
 void changeCrosshair(int)
 {
-    crosshair = 1 - crosshair;
+    auto& input = inputConfig();
+    auto& players_ = playerState();
 
-    if (!crosshair)
-        players[consoleplayer].message = CROSSOFF;
+    input.crosshair = 1 - input.crosshair;
+
+    if (!input.crosshair)
+        players_.players[players_.consoleplayer].message = CROSSOFF;
     else
-        players[consoleplayer].message = CROSSON;
+        players_.players[players_.consoleplayer].message = CROSSON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1259,12 +1284,15 @@ void changeCrosshair(int)
 //
 void changeAlwaysRun(int)
 {
-    always_run = 1 - always_run;
+    auto& input = inputConfig();
+    auto& players_ = playerState();
 
-    if (!always_run)
-        players[consoleplayer].message = ALWAYSRUNOFF;
+    input.always_run = 1 - input.always_run;
+
+    if (!input.always_run)
+        players_.players[players_.consoleplayer].message = ALWAYSRUNOFF;
     else
-        players[consoleplayer].message = ALWAYSRUNON;
+        players_.players[players_.consoleplayer].message = ALWAYSRUNON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1284,13 +1312,13 @@ void endGameResponse(int ch)
 
 void endGame(int)
 {
-    if (!usergame)
+    if (!demoState().usergame)
     {
         Doom::startSound(0, sfx_oof);
         return;
     }
 
-    if (netgame)
+    if (gameSession().netgame)
     {
         startMessage(NETEND, {}, false);
         return;
@@ -1322,14 +1350,16 @@ void finishReadThis(int)
 //
 void quitResponse(int ch)
 {
+    auto& clock = gameClock();
+
     if (ch != 'y')
         return;
-    if (!netgame)
+    if (!gameSession().netgame)
     {
-        if (gamemode == commercial)
-            Doom::startSound(0, quitsounds2[(gametic >> 2) & 7]);
+        if (gameVersion().gamemode == commercial)
+            Doom::startSound(0, quitsounds2[(clock.gametic >> 2) & 7]);
         else
-            Doom::startSound(0, quitsounds[(gametic >> 2) & 7]);
+            Doom::startSound(0, quitsounds[(clock.gametic >> 2) & 7]);
         waitVBlank(105);
     }
     quitGame();
@@ -1339,7 +1369,7 @@ void quitDOOM(int)
 {
     // We pick index 0 which is language sensitive,
     //  or one at random, between 1 and maximum number.
-    if (language != english)
+    if (gameVersion().language != english)
     {
         //doom_sprintf(endstring, "%s\n\n"DOSY, endmsg[0]);
         doom_strcpy(endstring, endmsg[0]);
@@ -1348,7 +1378,8 @@ void quitDOOM(int)
     else
     {
         //doom_sprintf(endstring, "%s\n\n" DOSY, endmsg[gametic % (NUM_QUITMESSAGES - 2) + 1]);
-        doom_strcpy(endstring, endmsg[gametic % (NUM_QUITMESSAGES - 2) + 1]);
+        doom_strcpy(endstring,
+                    endmsg[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1]);
         doom_concat(endstring, "\n\n" DOSY);
     }
 
@@ -1357,29 +1388,35 @@ void quitDOOM(int)
 
 void changeSensitivity(int choice)
 {
+    auto& settings = menuSettings();
+
     switch (choice)
     {
         case 0:
-            if (mouseSensitivity)
-                mouseSensitivity--;
+            if (settings.mouseSensitivity)
+                settings.mouseSensitivity--;
             break;
         case 1:
-            if (mouseSensitivity < 9)
-                mouseSensitivity++;
+            if (settings.mouseSensitivity < 9)
+                settings.mouseSensitivity++;
             break;
     }
 }
 
 void mouseMove(int)
 {
-    mousemove = 1 - mousemove;
+    auto& input = inputConfig();
+
+    input.mousemove = 1 - input.mousemove;
 
     return;
 }
 
 void changeDetail(int)
 {
-    detailLevel = 1 - detailLevel;
+    auto& settings = menuSettings();
+
+    settings.detailLevel = 1 - settings.detailLevel;
 
     // FIXME - does not work. Remove anyway?
     doom_print("changeDetail: low detail mode n.a.\n");
@@ -1387,25 +1424,27 @@ void changeDetail(int)
 
 void sizeDisplay(int choice)
 {
+    auto& settings = menuSettings();
+
     switch (choice)
     {
         case 0:
             if (screenSize > 0)
             {
-                screenblocks--;
+                settings.screenblocks--;
                 screenSize--;
             }
             break;
         case 1:
             if (screenSize < 8)
             {
-                screenblocks++;
+                settings.screenblocks++;
                 screenSize++;
             }
             break;
     }
 
-    Doom::setViewSize(screenblocks, detailLevel);
+    Doom::setViewSize(settings.screenblocks, settings.detailLevel);
 }
 
 //
@@ -1454,19 +1493,21 @@ void startMessage(const char* string,
                   std::function<void(int)> routine,
                   doom_boolean input)
 {
-    messageLastMenuActive = menuactive;
+    auto& overlay = overlayState();
+
+    messageLastMenuActive = overlay.menuactive;
     messageToPrint = 1;
     messageString = string;
     // An empty routine means "no answer needed"; keep the member callable so the
     // responder never has to test it.
     messageRoutine = routine ? std::move(routine) : std::function<void(int)> {[](int) {}};
     messageNeedsInput = input;
-    menuactive = true;
+    overlay.menuactive = true;
 }
 
 void stopMessage()
 {
-    menuactive = messageLastMenuActive;
+    overlayState().menuactive = messageLastMenuActive;
     messageToPrint = 0;
 }
 
@@ -1559,6 +1600,10 @@ void writeText(int x, int y, const char* string)
 //
 doom_boolean menuResponder(Event* ev)
 {
+    auto& overlay = overlayState();
+    auto& players_ = playerState();
+    auto& settings = menuSettings();
+
     int ch;
     int& joywait = menuState().joywait;
     int& mousewait = menuState().mousewait;
@@ -1705,23 +1750,23 @@ doom_boolean menuResponder(Event* ev)
             && !(ch == ' ' || ch == 'n' || ch == 'y' || ch == KEY_ESCAPE))
             return false;
 
-        menuactive = messageLastMenuActive;
+        overlay.menuactive = messageLastMenuActive;
         messageToPrint = 0;
         messageRoutine(ch);
 
-        menuactive = false;
+        overlay.menuactive = false;
         Doom::startSound(0, sfx_swtchx);
         return true;
     }
 
-    if (devparm && ch == KEY_F1)
+    if (launchOptions().devparm && ch == KEY_F1)
     {
         Doom::takeScreenshot();
         return true;
     }
 
     // F-Keys
-    if (!menuactive)
+    if (!overlay.menuactive)
         switch (ch)
         {
             case KEY_MINUS: // Screen size down
@@ -1741,7 +1786,7 @@ doom_boolean menuResponder(Event* ev)
             case KEY_F1: // Help key
                 startControlPanel();
 
-                if (gamemode == retail)
+                if (gameVersion().gamemode == retail)
                     currentMenu = &ReadDef2;
                 else
                     currentMenu = &ReadDef1;
@@ -1805,16 +1850,17 @@ doom_boolean menuResponder(Event* ev)
                 return true;
 
             case KEY_F11: // gamma toggle
-                usegamma++;
-                if (usegamma > 4)
-                    usegamma = 0;
-                players[consoleplayer].message = gammamsg[usegamma].data();
+                settings.usegamma++;
+                if (settings.usegamma > 4)
+                    settings.usegamma = 0;
+                players_.players[players_.consoleplayer].message =
+                    gammamsg[settings.usegamma].data();
                 setPalette(static_cast<byte*>(Doom::cacheLumpName("PLAYPAL")));
                 return true;
         }
 
     // Pop-up menu?
-    if (!menuactive)
+    if (!overlay.menuactive)
     {
         if (ch == KEY_ESCAPE)
         {
@@ -1928,11 +1974,13 @@ doom_boolean menuResponder(Event* ev)
 //
 void startControlPanel()
 {
+    auto& overlay = overlayState();
+
     // intro might call this repeatedly
-    if (menuactive)
+    if (overlay.menuactive)
         return;
 
-    menuactive = 1;
+    overlay.menuactive = 1;
     currentMenu = &MainDef; // JDC
     itemOn = currentMenu->lastOn; // JDC
 }
@@ -1944,6 +1992,8 @@ void startControlPanel()
 //
 void drawMenu()
 {
+    auto& overlay = overlayState();
+
     static short x;
     static short y;
     short i;
@@ -1951,7 +2001,7 @@ void drawMenu()
     EA::Array<char, 40> string;
     int start;
 
-    inhelpscreens = false;
+    overlay.inhelpscreens = false;
 
     // Horiz. & Vertically center string and print it.
     if (messageToPrint)
@@ -1982,7 +2032,7 @@ void drawMenu()
         return;
     }
 
-    if (!menuactive)
+    if (!overlay.menuactive)
         return;
 
     // Darken background so the menu is more readable.
@@ -2038,7 +2088,7 @@ void drawMenu()
 //
 void clearMenus()
 {
-    menuactive = 0;
+    overlayState().menuactive = 0;
 }
 
 //
@@ -2067,6 +2117,8 @@ void menuTicker()
 //
 void initMenu()
 {
+    auto& overlay = overlayState();
+
     doom_boolean hide_mouse =
         (doom_flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
     doom_boolean hide_sound = ((doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
@@ -2104,20 +2156,20 @@ void initMenu()
     }
 
     currentMenu = &MainDef;
-    menuactive = 0;
+    overlay.menuactive = 0;
     itemOn = currentMenu->lastOn;
     whichSkull = 0;
     skullAnimCounter = 10;
-    screenSize = screenblocks - 3;
+    screenSize = menuSettings().screenblocks - 3;
     messageToPrint = 0;
     messageString = nullptr;
-    messageLastMenuActive = menuactive;
+    messageLastMenuActive = overlay.menuactive;
     quickSaveSlot = -1;
 
     // Here we could catch other version dependencies,
     //  like HELP1/2, and four episodes.
 
-    switch (gamemode)
+    switch (gameVersion().gamemode)
     {
         case commercial:
             // This is used because DOOM 2 had only one HELP

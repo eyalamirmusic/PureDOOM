@@ -26,6 +26,7 @@
 #include "../s_sound.h"
 #include "../sounds.h"
 
+#include "../Game/GameVersion.h"
 #include "../Game/LevelStats.h"
 #include "Clip.h"
 #include "Weapon.h"
@@ -182,15 +183,17 @@ doom_boolean checkAmmo(Player* player)
 
     // Out of ammo, pick a weapon to change to.
     // Preferences are set here.
+    const auto& version = gameVersion();
+
     do
     {
         if (player->weaponowned[wp_plasma] && player->ammo[am_cell]
-            && (gamemode != shareware))
+            && (version.gamemode != shareware))
         {
             player->pendingweapon = wp_plasma;
         }
         else if (player->weaponowned[wp_supershotgun] && player->ammo[am_shell] > 2
-                 && (gamemode == commercial))
+                 && (version.gamemode == commercial))
         {
             player->pendingweapon = wp_supershotgun;
         }
@@ -215,7 +218,7 @@ doom_boolean checkAmmo(Player* player)
             player->pendingweapon = wp_missile;
         }
         else if (player->weaponowned[wp_bfg] && player->ammo[am_cell] > 40
-                 && (gamemode != shareware))
+                 && (version.gamemode != shareware))
         {
             player->pendingweapon = wp_bfg;
         }

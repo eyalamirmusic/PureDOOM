@@ -31,6 +31,7 @@
 #include "Plats.h"
 #include "Specials.h"
 #include "../Game/Game.h"
+#include "../Game/GameVersion.h"
 #include "../Game/Sound.h"
 #include "../Host/System.h"
 #include "Doors.h"
@@ -104,9 +105,11 @@ void initSwitchList()
 
     episode = 1;
 
-    if (gamemode == registered)
+    const auto& version = gameVersion();
+
+    if (version.gamemode == registered)
         episode = 2;
-    else if (gamemode == commercial)
+    else if (version.gamemode == commercial)
         episode = 3;
 
     for (int index = 0, i = 0; i < MAXSWITCHES; i++)

@@ -40,7 +40,12 @@
 #include "../s_sound.h" // Functions.
 #include "../sounds.h" // Data.
 #include "../v_video.h" // Functions.
+#include "../Game/GameFlow.h"
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
 #include "../Game/OverlayState.h"
+#include "../Game/PlayerState.h"
+#include "../Game/RefreshFlags.h"
 #include "../Render/GraphicsData.h"
 #include "../Wad/WadFile.h"
 
@@ -53,7 +58,6 @@
 
 // Other subsystems' globals/functions this file reads.
 #include "../Game/Sound.h"
-extern Doom::GameState& wipegamestate; // Doom::GameFlow (Engine member)
 void Doom::drawPatchFlipped(int x, int y, int scrn, Doom::Patch* patch); // v_video
 
 namespace Doom
@@ -150,15 +154,17 @@ void castDrawer();
 //
 void startFinale()
 {
-    gameaction = ga_nothing;
-    gamestate = GS_FINALE;
-    viewactive = false;
+    auto& flow = gameFlow();
+
+    flow.gameaction = ga_nothing;
+    flow.gamestate = GS_FINALE;
+    refreshFlags().viewactive = false;
     overlayState().automapactive = false;
 
     // Okay - IWAD dependend stuff.
     // This has been changed severly, and
     //  some stuff might have changed in the process.
-    switch (gamemode)
+    switch (gameVersion().gamemode)
     {
         // DOOM 1 - E1, E3 or E4, but each nine missions
         case shareware:
@@ -167,7 +173,7 @@ void startFinale()
         {
             Doom::changeMusic(mus_victor, true);
 
-            switch (gameepisode)
+            switch (gameSession().gameepisode)
             {
                 case 1:
                     finaleflat = "FLOOR4_8";
@@ -197,7 +203,7 @@ void startFinale()
         {
             Doom::changeMusic(mus_read_m, true);
 
-            switch (gamemap)
+            switch (gameSession().gamemap)
             {
                 case 6:
                     finaleflat = "SLIME16";
@@ -257,20 +263,23 @@ void finaleTicker()
 {
     int i;
 
+    const auto& version = gameVersion();
+    const auto& players_ = playerState();
+
     // check for skipping
-    if ((gamemode == commercial) && (finalecount > 50))
+    if ((version.gamemode == commercial) && (finalecount > 50))
     {
         // go on to the next level
         for (i = 0; i < MAXPLAYERS; i++)
-            if (players[i].cmd.buttons)
+            if (players_.players[i].cmd.buttons)
                 break;
 
         if (i < MAXPLAYERS)
         {
-            if (gamemap == 30)
+            if (gameSession().gamemap == 30)
                 startCast();
             else
-                gameaction = ga_worlddone;
+                gameFlow().gameaction = ga_worlddone;
         }
     }
 
@@ -283,15 +292,15 @@ void finaleTicker()
         return;
     }
 
-    if (gamemode == commercial)
+    if (version.gamemode == commercial)
         return;
 
     if (!finalestage && finalecount > doom_strlen(finaletext) * TEXTSPEED + TEXTWAIT)
     {
         finalecount = 0;
         finalestage = 1;
-        wipegamestate = static_cast<GameState>(-1); // force a wipe
-        if (gameepisode == 3)
+        gameFlow().wipegamestate = static_cast<GameState>(-1); // force a wipe
+        if (gameSession().gameepisode == 3)
             Doom::startMusic(mus_bunny);
     }
 }
@@ -375,7 +384,7 @@ void textWrite()
 //
 void startCast()
 {
-    wipegamestate = static_cast<GameState>(-1); // force a screen wipe
+    gameFlow().wipegamestate = static_cast<GameState>(-1); // force a screen wipe
     castnum = 0;
     caststate = &states[mobjinfo[castorder[castnum].type].seestate];
     casttics = caststate->tics;
@@ -738,10 +747,10 @@ void drawFinale()
         textWrite();
     else
     {
-        switch (gameepisode)
+        switch (gameSession().gameepisode)
         {
             case 1:
-                if (gamemode == retail)
+                if (gameVersion().gamemode == retail)
                     Doom::drawPatch(
                         0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("CREDIT")));
                 else

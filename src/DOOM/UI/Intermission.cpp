@@ -51,6 +51,9 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include "../Game/Game.h"
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
+#include "../Game/PlayerState.h"
 #include "../Game/Sound.h"
 #include "../Sim/Random.h"
 namespace Doom
@@ -477,7 +480,7 @@ void initAnimatedBack()
 {
     anim_t_wi_stuff* a;
 
-    if (gamemode == commercial)
+    if (gameVersion().gamemode == commercial)
         return;
 
     if (wbs->epsd > 2)
@@ -504,7 +507,7 @@ void updateAnimatedBack()
 {
     anim_t_wi_stuff* a;
 
-    if (gamemode == commercial)
+    if (gameVersion().gamemode == commercial)
         return;
 
     if (wbs->epsd > 2)
@@ -714,6 +717,8 @@ void updateShowNextLoc()
 
 void drawShowNextLoc()
 {
+    const auto& version = gameVersion();
+
     int last;
 
     slamBackground();
@@ -721,7 +726,7 @@ void drawShowNextLoc()
     // draw animated background
     drawAnimatedBack();
 
-    if (gamemode != commercial)
+    if (version.gamemode != commercial)
     {
         if (wbs->epsd > 2)
         {
@@ -745,7 +750,7 @@ void drawShowNextLoc()
     }
 
     // draws which level you are entering..
-    if ((gamemode != commercial) || wbs->next != 30)
+    if ((version.gamemode != commercial) || wbs->next != 30)
         drawEL();
 }
 
@@ -761,7 +766,7 @@ int fragSum(int playernum)
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (playeringame[i] && i != playernum)
+        if (playerState().playeringame[i] && i != playernum)
         {
             frags += plrs[playernum].frags[i];
         }
@@ -777,6 +782,8 @@ int fragSum(int playernum)
 
 void initDeathmatchStats()
 {
+    const auto& players_ = playerState();
+
     state = StatCount;
     acceleratestage = 0;
     dm_state = 1;
@@ -785,10 +792,10 @@ void initDeathmatchStats()
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (playeringame[i])
+        if (players_.playeringame[i])
         {
             for (int j = 0; j < MAXPLAYERS; j++)
-                if (playeringame[j])
+                if (players_.playeringame[j])
                     dm_frags[i][j] = 0;
 
             dm_totals[i] = 0;
@@ -800,6 +807,8 @@ void initDeathmatchStats()
 
 void updateDeathmatchStats()
 {
+    const auto& players_ = playerState();
+
     doom_boolean stillticking;
 
     updateAnimatedBack();
@@ -810,10 +819,10 @@ void updateDeathmatchStats()
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (playeringame[i])
+            if (players_.playeringame[i])
             {
                 for (int j = 0; j < MAXPLAYERS; j++)
-                    if (playeringame[j])
+                    if (players_.playeringame[j])
                         dm_frags[i][j] = plrs[i].frags[j];
 
                 dm_totals[i] = fragSum(i);
@@ -833,11 +842,12 @@ void updateDeathmatchStats()
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (playeringame[i])
+            if (players_.playeringame[i])
             {
                 for (int j = 0; j < MAXPLAYERS; j++)
                 {
-                    if (playeringame[j] && dm_frags[i][j] != plrs[i].frags[j])
+                    if (players_.playeringame[j]
+                        && dm_frags[i][j] != plrs[i].frags[j])
                     {
                         if (plrs[i].frags[j] < 0)
                             dm_frags[i][j]--;
@@ -874,7 +884,7 @@ void updateDeathmatchStats()
         {
             Doom::startSound(0, sfx_slop);
 
-            if (gamemode == commercial)
+            if (gameVersion().gamemode == commercial)
                 initNoState();
             else
                 initShowNextLoc();
@@ -892,6 +902,8 @@ void updateDeathmatchStats()
 
 void drawDeathmatchStats()
 {
+    const auto& players_ = playerState();
+
     int x;
     int y;
     int w;
@@ -917,7 +929,7 @@ void drawDeathmatchStats()
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (playeringame[i])
+        if (players_.playeringame[i])
         {
             Doom::drawPatch(
                 x - SHORT(p[i]->width) / 2, DM_MATRIXY - WI_SPACINGY, FB, p[i]);
@@ -951,11 +963,11 @@ void drawDeathmatchStats()
     {
         x = DM_MATRIXX + DM_SPACINGX;
 
-        if (playeringame[i])
+        if (players_.playeringame[i])
         {
             for (int j = 0; j < MAXPLAYERS; j++)
             {
-                if (playeringame[j])
+                if (players_.playeringame[j])
                     drawIntermissionNum(x + w, y, dm_frags[i][j], 2);
 
                 x += DM_SPACINGX;
@@ -976,7 +988,7 @@ void initNetgameStats()
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (!playeringame[i])
+        if (!playerState().playeringame[i])
             continue;
 
         cnt_kills[i] = cnt_items[i] = cnt_secret[i] = cnt_frags[i] = 0;
@@ -991,6 +1003,8 @@ void initNetgameStats()
 
 void updateNetgameStats()
 {
+    const auto& players_ = playerState();
+
     int fsum;
 
     doom_boolean stillticking;
@@ -1003,7 +1017,7 @@ void updateNetgameStats()
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (!playeringame[i])
+            if (!players_.playeringame[i])
                 continue;
 
             cnt_kills[i] = (plrs[i].skills * 100) / wbs->maxkills;
@@ -1026,7 +1040,7 @@ void updateNetgameStats()
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (!playeringame[i])
+            if (!players_.playeringame[i])
                 continue;
 
             cnt_kills[i] += 2;
@@ -1052,7 +1066,7 @@ void updateNetgameStats()
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (!playeringame[i])
+            if (!players_.playeringame[i])
                 continue;
 
             cnt_items[i] += 2;
@@ -1076,7 +1090,7 @@ void updateNetgameStats()
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (!playeringame[i])
+            if (!players_.playeringame[i])
                 continue;
 
             cnt_secret[i] += 2;
@@ -1102,7 +1116,7 @@ void updateNetgameStats()
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (!playeringame[i])
+            if (!players_.playeringame[i])
                 continue;
 
             cnt_frags[i] += 1;
@@ -1124,7 +1138,7 @@ void updateNetgameStats()
         if (acceleratestage)
         {
             Doom::startSound(0, sfx_sgcock);
-            if (gamemode == commercial)
+            if (gameVersion().gamemode == commercial)
                 initNoState();
             else
                 initShowNextLoc();
@@ -1172,7 +1186,7 @@ void drawNetgameStats()
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (!playeringame[i])
+        if (!playerState().playeringame[i])
             continue;
 
         x = NG_STATSX;
@@ -1296,7 +1310,7 @@ void updateStats()
         {
             Doom::startSound(0, sfx_sgcock);
 
-            if (gamemode == commercial)
+            if (gameVersion().gamemode == commercial)
                 initNoState();
             else
                 initShowNextLoc();
@@ -1347,13 +1361,15 @@ void drawStats()
 
 void checkForAccelerate()
 {
+    auto& players_ = playerState();
+
     int i;
     Player* player;
 
     // check for button presses to skip delays
-    for (i = 0, player = players; i < MAXPLAYERS; i++, player++)
+    for (i = 0, player = players_.players; i < MAXPLAYERS; i++, player++)
     {
-        if (playeringame[i])
+        if (players_.playeringame[i])
         {
             if (player->cmd.buttons & BT_ATTACK)
             {
@@ -1378,13 +1394,15 @@ void checkForAccelerate()
 // Updates stuff each tick
 void intermissionTicker()
 {
+    const auto& session = gameSession();
+
     // counter for general background animation
     bcnt++;
 
     if (bcnt == 1)
     {
         // intermission music
-        if (gamemode == commercial)
+        if (gameVersion().gamemode == commercial)
             Doom::changeMusic(mus_dm2int, true);
         else
             Doom::changeMusic(mus_inter, true);
@@ -1395,9 +1413,9 @@ void intermissionTicker()
     switch (state)
     {
         case StatCount:
-            if (deathmatch)
+            if (session.deathmatch)
                 updateDeathmatchStats();
-            else if (netgame)
+            else if (session.netgame)
                 updateNetgameStats();
             else
                 updateStats();
@@ -1415,10 +1433,13 @@ void intermissionTicker()
 
 void loadIntermissionData()
 {
+    const auto& session = gameSession();
+    const auto& version = gameVersion();
+
     EA::Array<char, 9> name;
     anim_t_wi_stuff* a;
 
-    if (gamemode == commercial)
+    if (version.gamemode == commercial)
         doom_strcpy(name.data(), "INTERPIC");
     else
     {
@@ -1427,7 +1448,7 @@ void loadIntermissionData()
         doom_concat(name.data(), doom_itoa(wbs->epsd, 10));
     }
 
-    if (gamemode == retail)
+    if (version.gamemode == retail)
     {
         if (wbs->epsd == 3)
             doom_strcpy(name.data(), "INTERPIC");
@@ -1437,7 +1458,7 @@ void loadIntermissionData()
     bg = static_cast<Patch*>(Doom::cacheLumpName(name.data()));
     Doom::drawPatch(0, 0, 1, bg);
 
-    if (gamemode == commercial)
+    if (version.gamemode == commercial)
     {
         NUMCMAPS = 32;
         lnames = static_cast<Patch**>(doom_malloc(sizeof(Patch*) * NUMCMAPS));
@@ -1539,7 +1560,7 @@ void loadIntermissionData()
     if (french)
     {
         // "items"
-        if (netgame && !deathmatch)
+        if (session.netgame && !session.deathmatch)
             items = static_cast<Patch*>(Doom::cacheLumpName("WIOBJ"));
         else
             items = static_cast<Patch*>(Doom::cacheLumpName("WIOSTI"));
@@ -1607,12 +1628,14 @@ void unloadIntermissionData()
 
 void drawIntermission()
 {
+    const auto& session = gameSession();
+
     switch (state)
     {
         case StatCount:
-            if (deathmatch)
+            if (session.deathmatch)
                 drawDeathmatchStats();
-            else if (netgame)
+            else if (session.netgame)
                 drawNetgameStats();
             else
                 drawStats();
@@ -1630,12 +1653,14 @@ void drawIntermission()
 
 void initIntermissionVariables(IntermissionStart* wbstartstruct)
 {
+    const auto& version = gameVersion();
+
     wbs = wbstartstruct;
 
 #ifdef RANGECHECKING
-    if (gamemode != commercial)
+    if (version.gamemode != commercial)
     {
-        if (gamemode == retail)
+        if (version.gamemode == retail)
             RNGCHECK(wbs->epsd, 0, 3);
         else
             RNGCHECK(wbs->epsd, 0, 2);
@@ -1664,19 +1689,21 @@ void initIntermissionVariables(IntermissionStart* wbstartstruct)
     if (!wbs->maxsecret)
         wbs->maxsecret = 1;
 
-    if (gamemode != retail)
+    if (version.gamemode != retail)
         if (wbs->epsd > 2)
             wbs->epsd -= 3;
 }
 
 void startIntermission(IntermissionStart* wbstartstruct)
 {
+    const auto& session = gameSession();
+
     initIntermissionVariables(wbstartstruct);
     loadIntermissionData();
 
-    if (deathmatch)
+    if (session.deathmatch)
         initDeathmatchStats();
-    else if (netgame)
+    else if (session.netgame)
         initNetgameStats();
     else
         initStats();

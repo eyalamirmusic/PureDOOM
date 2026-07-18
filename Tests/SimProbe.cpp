@@ -1,6 +1,12 @@
 #include "SimProbe.h"
 
+#include <DOOM/Game/AttractMode.h>
+#include <DOOM/Game/DemoState.h>
+#include <DOOM/Game/GameFlow.h>
+#include <DOOM/Game/GameSession.h>
 #include <DOOM/Game/LevelStats.h>
+#include <DOOM/Game/OverlayState.h>
+#include <DOOM/Game/PlayerState.h>
 #include <DOOM/Game/SaveGameState.h>
 #include <DOOM/Sim/Level.h>
 #include <DOOM/Sim/Random.h>
@@ -108,7 +114,7 @@ static int simBootInternal(const char* demoLump, int keepAttract)
     // it; a title boot (keepAttract) leaves it up, so the first tic brings up
     // TITLEPIC and the attract loop then holds there for ~170 tics.
     if (!keepAttract)
-        advancedemo = false;
+        Doom::attractMode().advancedemo = false;
 
     // Deliberately NOT -playdemo. That sets `singledemo`, which ends the demo
     // through Doom::quitGame - and Doom::quitGame calls Doom::saveDefaults, which would have every
@@ -134,7 +140,8 @@ int doomSimBootToTitle()
 
 int doomSimInLevel()
 {
-    return demoplayback && gamestate == Doom::GS_LEVEL;
+    return Doom::demoState().demoplayback
+           && Doom::gameFlow().gamestate == Doom::GS_LEVEL;
 }
 
 // The demo is deferred, so it is not playing on the tic that queues it. "Not
@@ -148,7 +155,7 @@ int doomSimRunTic()
 
     doom_force_update();
 
-    if (demoplayback)
+    if (Doom::demoState().demoplayback)
     {
         simDemoStarted = 1;
         return 1;
@@ -164,7 +171,7 @@ void doomSimReplayDemo(const char* demoLump)
     // again for the same reason doomSimBoot does, and forget that the last demo
     // ran so doomSimRunTic's "finished" test starts over.
     simDemoStarted = 0;
-    advancedemo = false;
+    Doom::attractMode().advancedemo = false;
     Doom::deferPlayDemo((char*) demoLump);
 }
 
@@ -195,7 +202,7 @@ unsigned long long doomSimStateHash()
     auto& thinkers = Doom::thinkerList();
 
     Doom::Thinker* thinker;
-    Doom::Player* player = &players[0];
+    Doom::Player* player = &Doom::playerState().players[0];
     int count = 0;
 
     simHash = 1469598103934665603ULL;
@@ -312,26 +319,32 @@ int doomSimLevelTime()
 
 int doomSimPlayerHealth()
 {
-    return players[0].health;
+    return Doom::playerState().players[0].health;
 }
 
 int doomSimPlayerX()
 {
-    return players[0].mo ? players[0].mo->x >> FRACBITS : 0;
+    auto& players_ = Doom::playerState();
+
+    return players_.players[0].mo ? players_.players[0].mo->x >> FRACBITS : 0;
 }
 
 int doomSimPlayerY()
 {
-    return players[0].mo ? players[0].mo->y >> FRACBITS : 0;
+    auto& players_ = Doom::playerState();
+
+    return players_.players[0].mo ? players_.players[0].mo->y >> FRACBITS : 0;
 }
 
 int doomSimPlayerAngleDegrees()
 {
-    if (!players[0].mo)
+    auto& players_ = Doom::playerState();
+
+    if (!players_.players[0].mo)
         return 0;
 
     // angle_t spans a circle in 2^32 units.
-    return (int) (players[0].mo->angle / (ANG45 / 45));
+    return (int) (players_.players[0].mo->angle / (ANG45 / 45));
 }
 
 int doomSimMobjCount()
@@ -384,16 +397,19 @@ static Doom::Mobj* simMobj(int handle)
 
 int doomSimLoadLevel(int episode, int map, int skill)
 {
+    auto& players_ = Doom::playerState();
+    auto& session = Doom::gameSession();
+
     if (setjmp(simAbort))
         return 0;
 
     // A demo playback would have set these from the .lmp header; a direct load
     // has no header, so establish single-player ourselves. Without playeringame[0]
     // the map's player-1 start spawns no mobj and there is nothing to move.
-    consoleplayer = displayplayer = 0;
-    deathmatch = false;
-    netgame = false;
-    playeringame[0] = true;
+    players_.consoleplayer = players_.displayplayer = 0;
+    session.deathmatch = false;
+    session.netgame = false;
+    players_.playeringame[0] = true;
 
     // The old level's mobjs are about to be freed by Doom::setupLevel (the level
     // allocation pool is released whole), so every handle into them dies here.
@@ -405,9 +421,9 @@ int doomSimLoadLevel(int episode, int map, int skill)
 
     // Handle 0 is always the player, so a scenario can move it without spawning
     // anything. It is null only if the map had no player-1 start.
-    simMobjs.push_back(players[0].mo);
+    simMobjs.push_back(players_.players[0].mo);
 
-    return players[0].mo != 0;
+    return players_.players[0].mo != 0;
 }
 
 int doomSimPlayerHandle()
@@ -567,6 +583,8 @@ int doomSimFlagNoClip()
 // out of the hash rather than restored.
 static unsigned long long simWorldHash()
 {
+    auto& players_ = Doom::playerState();
+
     auto& thinkers = Doom::thinkerList();
 
     simHash = 1469598103934665603ULL;
@@ -575,9 +593,9 @@ static unsigned long long simWorldHash()
     // (pointers like mo/attacker/message are fixed up or nulled on load).
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (!playeringame[i])
+        if (!players_.playeringame[i])
             continue;
-        Doom::Player* p = &players[i];
+        Doom::Player* p = &players_.players[i];
         simMix(&p->health, sizeof(p->health));
         simMix(&p->armorpoints, sizeof(p->armorpoints));
         simMix(&p->armortype, sizeof(p->armortype));
@@ -662,6 +680,8 @@ static unsigned long long simWorldHash()
 
 int doomSimSaveLoadPreservesWorld()
 {
+    auto& session = Doom::gameSession();
+
     auto& save = Doom::saveGameState();
 
     static byte saveScratch[0x2c000]; // SAVEGAMESIZE
@@ -669,9 +689,9 @@ int doomSimSaveLoadPreservesWorld()
     if (setjmp(simAbort))
         return 0;
 
-    int ep = gameepisode;
-    int map = gamemap;
-    int skill = (int) gameskill;
+    int ep = session.gameepisode;
+    int map = session.gamemap;
+    int skill = (int) session.gameskill;
 
     unsigned long long before = simWorldHash();
 
@@ -700,7 +720,7 @@ int doomSimSaveLoadPreservesWorld()
     // The fresh player doomSimLoadLevel registered as handle 0 was just freed and
     // rebuilt by the unarchive; point the registry at the restored one.
     simMobjs.clear();
-    simMobjs.push_back(players[0].mo);
+    simMobjs.push_back(Doom::playerState().players[0].mo);
 
     unsigned long long after = simWorldHash();
     return before == after ? 1 : 0;
@@ -708,11 +728,8 @@ int doomSimSaveLoadPreservesWorld()
 
 // --- The menu/UI harness (Step 8) -------------------------------------------
 //
-// gamestate is declared in doomstat.h (already included); menuactive lives
-// there too. is_wiping_screen has no header - it is a reference onto
-// Doom::GameFlow's member now (an Engine member), and this bare extern must be a
-// reference to match, or it would read the reference's pointer bits as a bool.
-extern doom_boolean& is_wiping_screen;
+// The game-flow and overlay state the harness reads (gamestate, menuactive,
+// is_wiping_screen) come off the Engine through their cluster accessors.
 
 void doomSimPostKeyDown(int key)
 {
@@ -735,15 +752,15 @@ int doomSimStepTic()
 
 int doomSimIsWiping()
 {
-    return is_wiping_screen ? 1 : 0;
+    return Doom::gameFlow().is_wiping_screen ? 1 : 0;
 }
 
 int doomSimGameState()
 {
-    return (int) gamestate;
+    return (int) Doom::gameFlow().gamestate;
 }
 
 int doomSimMenuActive()
 {
-    return menuactive ? 1 : 0;
+    return Doom::overlayState().menuactive ? 1 : 0;
 }

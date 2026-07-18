@@ -18,8 +18,14 @@
 #include "../s_sound.h"
 #include "../Wad/WadFile.h"
 
+#include "../Game/CorpseQueue.h"
+#include "../Game/EngineParams.h"
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
+#include "../Game/IntermissionInfo.h"
 #include "../Game/LevelStats.h"
 #include "../Game/MapSpawns.h"
+#include "../Game/PlayerState.h"
 #include "Level.h"
 #include "Setup.h"
 #include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
@@ -234,7 +240,7 @@ void loadThings(int lump)
         spawn = true;
 
         // Do not spawn cool, new monsters if !commercial
-        if (gamemode != commercial)
+        if (gameVersion().gamemode != commercial)
         {
             switch (mt->type)
             {
@@ -499,16 +505,21 @@ void setupLevel(int episode, int map, int, Skill)
     EA::Array<char, 9> lumpname;
     int lumpnum;
 
-    totalkills = totalitems = totalsecret = wminfo.maxfrags = 0;
-    wminfo.partime = 180;
+    auto& stats = levelStats();
+    auto& wminfo_ = intermissionInfo().wminfo;
+    auto& players_ = playerState();
+
+    stats.totalkills = stats.totalitems = stats.totalsecret = wminfo_.maxfrags = 0;
+    wminfo_.partime = 180;
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        players[i].killcount = players[i].secretcount = players[i].itemcount = 0;
+        players_.players[i].killcount = players_.players[i].secretcount =
+            players_.players[i].itemcount = 0;
     }
 
     // Initial height of PointOfView
     // will be set by player think.
-    players[consoleplayer].viewz = 1;
+    players_.players[players_.consoleplayer].viewz = 1;
 
     // Make sure all sounds are stopped before the level's allocations go.
     Doom::startLevelSound();
@@ -525,7 +536,7 @@ void setupLevel(int episode, int map, int, Skill)
     Doom::wad().reload();
 
     // find map name
-    if (gamemode == commercial)
+    if (gameVersion().gamemode == commercial)
     {
         if (map < 10)
         {
@@ -551,7 +562,7 @@ void setupLevel(int episode, int map, int, Skill)
 
     lumpnum = Doom::wad().number(lumpname.data());
 
-    levelStats().leveltime = 0;
+    stats.leveltime = 0;
 
     // note: most of this ordering is important
     loadBlockMap(lumpnum + ML_BLOCKMAP);
@@ -567,18 +578,18 @@ void setupLevel(int episode, int map, int, Skill)
     rejectmatrix = static_cast<byte*>(Doom::cacheLumpNum(lumpnum + ML_REJECT));
     groupLines();
 
-    bodyqueslot = 0;
+    corpseQueue().bodyqueslot = 0;
     auto& spawns = mapSpawns();
     spawns.deathmatch_p = spawns.deathmatchstarts;
     loadThings(lumpnum + ML_THINGS);
 
     // if deathmatch, randomly spawn the active players
-    if (deathmatch)
+    if (gameSession().deathmatch)
     {
         for (int i = 0; i < MAXPLAYERS; i++)
-            if (playeringame[i])
+            if (players_.playeringame[i])
             {
-                players[i].mo = nullptr;
+                players_.players[i].mo = nullptr;
                 Doom::deathMatchSpawnPlayer(i);
             }
     }
@@ -590,7 +601,7 @@ void setupLevel(int episode, int map, int, Skill)
     Doom::spawnSpecials();
 
     // preload graphics
-    if (precache)
+    if (engineParams().precache)
         Doom::precacheLevel();
 }
 

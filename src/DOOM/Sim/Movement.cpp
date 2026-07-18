@@ -1,7 +1,8 @@
 #include "Movement.h"
 
 #include "../doom_config.h" // doom_abs
-#include "../doomstat.h" // gamemap
+#include "../Game/GameSession.h" // gamemap
+#include "../doomstat.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_state.h" // validcount, lines
@@ -43,7 +44,7 @@ doom_boolean stompThing(Mobj* thing)
         return true;
 
     // monsters don't stomp things except on boss level
-    if (!clip.tmthing->player && gamemap != 30)
+    if (!clip.tmthing->player && gameSession().gamemap != 30)
         return false;
 
     Doom::damageMobj(thing, clip.tmthing, clip.tmthing, 10000);

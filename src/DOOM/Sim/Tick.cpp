@@ -11,7 +11,12 @@
 #include "../doomstat.h"
 #include "../p_local.h"
 
+#include "../Game/DemoState.h"
+#include "../Game/GameSession.h"
 #include "../Game/LevelStats.h"
+#include "../Game/OverlayState.h"
+#include "../Game/PlayerState.h"
+#include "../Game/RefreshFlags.h"
 #include "LevelPool.h"
 #include "ThinkerList.h"
 #include "Tick.h"
@@ -169,18 +174,22 @@ void runThinkers()
 void ticker()
 {
     // run the tic
-    if (paused)
+    if (refreshFlags().paused)
         return;
 
+    auto& players_ = playerState();
+
     // pause if in menu and at least one tic has been run
-    if (!netgame && menuactive && !demoplayback && players[consoleplayer].viewz != 1)
+    if (!gameSession().netgame && overlayState().menuactive
+        && !demoState().demoplayback
+        && players_.players[players_.consoleplayer].viewz != 1)
     {
         return;
     }
 
     for (int i = 0; i < MAXPLAYERS; i++)
-        if (playeringame[i])
-            playerThink(players[i]);
+        if (players_.playeringame[i])
+            playerThink(players_.players[i]);
 
     runThinkers();
     Doom::updateSpecials();

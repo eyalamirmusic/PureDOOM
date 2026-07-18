@@ -23,6 +23,7 @@
 #include "../sounds.h"
 #include "../Wad/WadFile.h"
 
+#include "../Game/GameSession.h"
 #include "../Game/LevelStats.h"
 #include "ActiveSpecials.h"
 #include "AnimatedSurfaces.h"
@@ -1158,19 +1159,20 @@ void spawnSpecials()
 
     auto& timer = endLevelTimer();
     auto& specials = activeSpecials();
+    const auto& session = gameSession();
 
     // See if -TIMER needs to be used.
     timer.levelTimer = false;
 
     i = Doom::checkParm("-avg");
-    if (i && deathmatch)
+    if (i && session.deathmatch)
     {
         timer.levelTimer = true;
         timer.levelTimeCount = 20 * 60 * 35;
     }
 
     i = Doom::checkParm("-timer");
-    if (i && deathmatch)
+    if (i && session.deathmatch)
     {
         int time = doom_atoi(myargv[i + 1]) * 60 * 35;
         timer.levelTimer = true;
@@ -1213,7 +1215,7 @@ void spawnSpecials()
                 break;
             case 9:
                 // SECRET SECTOR
-                totalsecret++;
+                levelStats().totalsecret++;
                 break;
 
             case 10:

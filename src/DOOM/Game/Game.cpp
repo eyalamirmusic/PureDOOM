@@ -66,7 +66,9 @@
 #include "GameClock.h"
 #include "GameFlow.h"
 #include "GameSession.h"
+#include "GameVersion.h"
 #include "InputConfig.h"
+#include "LaunchOptions.h"
 #include "IntermissionInfo.h"
 #include "LevelStats.h"
 #include "MovementSpeeds.h"
@@ -97,6 +99,7 @@
 #include "Args.h"
 #include "DoomMain.h"
 #include "../UI/Menu.h"
+#include "../UI/MenuSettings.h"
 #include <ea_data_structures/Structures/Array.h>
 
 #include "Config.h"
@@ -108,7 +111,7 @@
 #include "../Sim/Random.h"
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
-#define MAXPLMOVE (forwardmove[1])
+#define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1])
 #define TURBOTHRESHOLD 0x32
 #define SLOWTURNTICS 6
 #define NUMKEYS 256
@@ -120,8 +123,13 @@
 void Doom::spawnPlayer(Doom::MapThing* mthing);
 void Doom::executeSetViewSize();
 
-// gameaction, gamestate and wipegamestate are a Doom::GameFlow owned by the Engine now; these
-// (and the extern wipegamestate below) are references onto it (REFACTOR.md, Step 5).
+// The reference aliases that survive here are the ones a header still externs, so other
+// translation units read them by their vanilla names; this file itself goes through the owning
+// cluster (gameFlow(), gameSession(), ...) and no longer reads any of them. The aliases nothing
+// outside this file needed are gone (REFACTOR.md, Step 5).
+//
+// gameaction and gamestate are a Doom::GameFlow owned by the Engine now; these are references
+// onto it (d_event.h / doomstat.h extern them).
 Doom::GameAction& gameaction = Doom::gameFlow().gameaction;
 Doom::GameState& gamestate = Doom::gameFlow().gamestate;
 
@@ -135,25 +143,13 @@ int& gamemap = Doom::gameSession().gamemap;
 // paused (with viewactive/nodrawers/noblit below) is a Doom::RefreshFlags owned by the
 // Engine now; these are references onto it (REFACTOR.md, Step 5).
 doom_boolean& paused = Doom::refreshFlags().paused;
-// sendpause/sendsave are a Doom::PendingCommands owned by the Engine now, moved by the
-// file-scope-statics sweep; these vanilla names are references onto the members (REFACTOR.md,
-// Step 5).
-doom_boolean& sendpause =
-    Doom::pendingCommands().sendpause; // send a pause event next tic
-doom_boolean& sendsave =
-    Doom::pendingCommands().sendsave; // send a save event next tic
 
 // usergame (with the demo flags below) is a Doom::DemoState owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
 doom_boolean& usergame = Doom::demoState().usergame; // ok to save / end game
 
-// timingdemo (with starttime below) is the -timedemo benchmark state, a Doom::TimeDemo owned by
-// the Engine now; these vanilla names are references onto it (REFACTOR.md, Step 5).
-doom_boolean& timingdemo =
-    Doom::timeDemo().timingdemo; // if true, exit with report on completion
 doom_boolean& nodrawers = Doom::refreshFlags().nodrawers; // comparative timing
 doom_boolean& noblit = Doom::refreshFlags().noblit; // comparative timing
-int& starttime = Doom::timeDemo().starttime; // for comparative timing purposes
 
 doom_boolean& viewactive = Doom::refreshFlags().viewactive;
 
@@ -176,16 +172,11 @@ int& totalkills = Doom::levelStats().totalkills; // for intermission
 int& totalitems = Doom::levelStats().totalitems;
 int& totalsecret = Doom::levelStats().totalsecret;
 
-// The demo flags and buffer are a Doom::DemoState owned by the Engine now; these vanilla names
-// are references onto it (the buffer state folded in by the file-scope-statics sweep - REFACTOR.md,
-// Step 5). demoname is a reference-to-array, the buffer pointers references-to-pointer.
-char (&demoname)[32] = Doom::demoState().demoname;
+// The demo flags are a Doom::DemoState owned by the Engine now; these vanilla names are
+// references onto it (REFACTOR.md, Step 5). The buffer state (demoname/demobuffer/demo_p/
+// demoend/netdemo) needed no alias - nothing outside this file reads it.
 doom_boolean& demorecording = Doom::demoState().demorecording;
 doom_boolean& demoplayback = Doom::demoState().demoplayback;
-doom_boolean& netdemo = Doom::demoState().netdemo;
-byte*& demobuffer = Doom::demoState().demobuffer;
-byte*& demo_p = Doom::demoState().demo_p;
-byte*& demoend = Doom::demoState().demoend;
 doom_boolean& singledemo = Doom::demoState().singledemo; // quit after one demo
 
 // precache is a Doom::EngineParams owned by the Engine now; this is a reference onto it (default
@@ -197,109 +188,34 @@ doom_boolean& precache = Doom::engineParams().precache;
 Doom::IntermissionStart& wminfo =
     Doom::intermissionInfo().wminfo; // world map / intermission parms
 
-// consistancy folded into Doom::NetState (the netcode bookkeeping) by the file-scope-statics
-// sweep; this vanilla name is a reference-to-array onto the member (REFACTOR.md, Step 5).
-short (&consistancy)[MAXPLAYERS][BACKUPTICS] = Doom::netState().consistancy;
-
-byte*& savebuffer = Doom::saveGameState().buffer;
-
-//
-// controls (have defaults). The config-backed control bindings are a Doom::InputConfig owned by
-// the Engine now (Game/InputConfig.h); these are references onto its members. Config.cpp binds
-// its defaults[] entries to the members at runtime rather than capturing their addresses at
-// static-init, which is what unblocked the migration.
-//
-int& key_right = Doom::inputConfig().key_right;
-int& key_left = Doom::inputConfig().key_left;
-
-int& key_up = Doom::inputConfig().key_up;
-int& key_down = Doom::inputConfig().key_down;
-int& key_strafeleft = Doom::inputConfig().key_strafeleft;
-int& key_straferight = Doom::inputConfig().key_straferight;
-int& key_fire = Doom::inputConfig().key_fire;
-int& key_use = Doom::inputConfig().key_use;
-int& key_strafe = Doom::inputConfig().key_strafe;
-int& key_speed = Doom::inputConfig().key_speed;
-
-int& mousebfire = Doom::inputConfig().mousebfire;
-int& mousebstrafe = Doom::inputConfig().mousebstrafe;
-int& mousebforward = Doom::inputConfig().mousebforward;
+// mousemove is the one control binding another translation unit still reads by its vanilla name
+// (UI/Menu.cpp externs it); the rest of the Doom::InputConfig bindings are reached through
+// inputConfig() here. Config.cpp binds its defaults[] entries to the members at runtime rather
+// than capturing their addresses at static-init, which is what unblocked the migration.
 int& mousemove = Doom::inputConfig().mousemove;
 
-int& joybfire = Doom::inputConfig().joybfire;
-int& joybstrafe = Doom::inputConfig().joybstrafe;
-int& joybuse = Doom::inputConfig().joybuse;
-int& joybspeed = Doom::inputConfig().joybspeed;
-
-// The movement-speed tables Doom::buildTiccmd applies to the player's input are a Doom::MovementSpeeds
-// owned by the Engine now, moved by the file-scope-statics sweep; these vanilla names are
-// references-to-array onto the members (REFACTOR.md, Step 5). forwardmove/sidemove are also scaled
-// by -turbo over in Game/DoomMain.cpp, whose externs move to references in lockstep.
-EA::Array<fixed_t, 2>& forwardmove = Doom::movementSpeeds().forwardmove;
-EA::Array<fixed_t, 2>& sidemove = Doom::movementSpeeds().sidemove;
-EA::Array<fixed_t, 3>& angleturn = Doom::movementSpeeds().angleturn; // + slow turn
-
-// The per-tic input accumulators are a Doom::TiccmdInput owned by the Engine now; these
-// vanilla names are references onto it (REFACTOR.md, Step 5, the file-scope-statics sweep). The
-// arrays become references-to-array; the interior view pointers mousebuttons/joybuttons stay
-// here, indexing into the referenced arrays to allow a [-1] index.
-doom_boolean (&gamekeydown)[NUMKEYS] = Doom::ticcmdInput().gamekeydown;
-int& turnheld = Doom::ticcmdInput().turnheld; // for accelerative turning
-
-doom_boolean (&mousearray)[4] = Doom::ticcmdInput().mousearray;
-doom_boolean* mousebuttons = &mousearray[1]; // allow [-1]
-
-// mouse values are used once
-int& mousex = Doom::ticcmdInput().mousex;
-int& mousey = Doom::ticcmdInput().mousey;
-
-int& dclicktime = Doom::ticcmdInput().dclicktime;
-int& dclickstate = Doom::ticcmdInput().dclickstate;
-int& dclicks = Doom::ticcmdInput().dclicks;
-int& dclicktime2 = Doom::ticcmdInput().dclicktime2;
-int& dclickstate2 = Doom::ticcmdInput().dclickstate2;
-int& dclicks2 = Doom::ticcmdInput().dclicks2;
-
-// joystick values are repeated
-int& joyxmove = Doom::ticcmdInput().joyxmove;
-int& joyymove = Doom::ticcmdInput().joyymove;
-doom_boolean (&joyarray)[5] = Doom::ticcmdInput().joyarray;
-doom_boolean* joybuttons = &joyarray[1]; // allow [-1]
+// The interior views onto Doom::TiccmdInput's button arrays, offset by one so vanilla's [-1]
+// index (an unbound button) stays in bounds.
+doom_boolean* mousebuttons = &Doom::ticcmdInput().mousearray[1];
+doom_boolean* joybuttons = &Doom::ticcmdInput().joyarray[1];
 
 int savegameslot;
 EA::Array<char, 32> savedescription;
 
-// The corpse queue (bodyque + bodyqueslot) is a Doom::CorpseQueue owned by the Engine now;
-// these are references onto it, bodyque as a reference-to-array (REFACTOR.md, Step 5).
-Doom::Mobj* (&bodyque)[BODYQUESIZE] = Doom::corpseQueue().bodyque;
+// bodyqueslot is a Doom::CorpseQueue owned by the Engine now; this is a reference onto it
+// (doomstat.h externs it, bodyque[] alongside it does not need one) (REFACTOR.md, Step 5).
 int& bodyqueslot = Doom::corpseQueue().bodyqueslot;
 
 void* statcopy; // for statistics driver
 
-// The par-time tables (DOOM's pars[episode][map] and DOOM II's flat cpars[]) are a Doom::ParTimes
-// owned by the Engine now, moved by the file-scope-statics sweep; these vanilla names are
-// references-to-array onto the members (REFACTOR.md, Step 5).
-int (&pars)[4][10] = Doom::parTimes().pars;
-int (&cpars)[32] = Doom::parTimes().cpars;
-
 doom_boolean secretexit;
-
-char (&savename)[256] = Doom::saveGameState().name;
-
-// The deferred new-game request is a Doom::DeferredNewGame owned by the Engine now; these vanilla
-// names are references onto it (the file-scope-statics sweep - REFACTOR.md, Step 5).
-Doom::Skill& d_skill = Doom::deferredNewGame().d_skill;
-int& d_episode = Doom::deferredNewGame().d_episode;
-int& d_map = Doom::deferredNewGame().d_map;
 
 const char* defdemoname;
 
-extern Doom::GameState& wipegamestate; // Doom::GameFlow (Engine member)
 extern const char*& pagename; // Doom::AttractMode (Engine member)
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
-extern int& always_run; // Doom::InputConfig member (Engine)
 extern char* player_names[4]; // hu_stuff
 
 namespace Doom
@@ -338,6 +254,12 @@ int cmdChecksum(Ticcmd* cmd)
 //
 void buildTiccmd(Ticcmd* cmd)
 {
+    auto& config = inputConfig();
+    auto& input = ticcmdInput();
+    auto& speeds = movementSpeeds();
+    auto& net = netState();
+    auto& pending = pendingCommands();
+
     doom_boolean strafe;
     doom_boolean bstrafe;
     int speed;
@@ -350,26 +272,28 @@ void buildTiccmd(Ticcmd* cmd)
     base = baseTiccmd(); // empty, or external driver
     doom_memcpy(cmd, base, sizeof(*cmd));
 
-    cmd->consistancy = consistancy[consoleplayer][maketic % BACKUPTICS];
+    cmd->consistancy =
+        net.consistancy[playerState().consoleplayer][net.maketic % BACKUPTICS];
 
-    strafe = gamekeydown[key_strafe] || mousebuttons[mousebstrafe]
-             || joybuttons[joybstrafe];
+    strafe = input.gamekeydown[config.key_strafe]
+             || mousebuttons[config.mousebstrafe] || joybuttons[config.joybstrafe];
 
-    doom_boolean running = always_run ? (gamekeydown[key_speed] ? false : true)
-                                      : (gamekeydown[key_speed] ? true : false);
-    speed = running || joybuttons[joybspeed];
+    doom_boolean running =
+        config.always_run ? (input.gamekeydown[config.key_speed] ? false : true)
+                          : (input.gamekeydown[config.key_speed] ? true : false);
+    speed = running || joybuttons[config.joybspeed];
 
     forward = side = 0;
 
     // use two stage accelerative turning
     // on the keyboard and joystick
-    if (joyxmove < 0 || joyxmove > 0 || gamekeydown[key_right]
-        || gamekeydown[key_left])
-        turnheld += ticdup;
+    if (input.joyxmove < 0 || input.joyxmove > 0
+        || input.gamekeydown[config.key_right] || input.gamekeydown[config.key_left])
+        input.turnheld += net.ticdup;
     else
-        turnheld = 0;
+        input.turnheld = 0;
 
-    if (turnheld < SLOWTURNTICS)
+    if (input.turnheld < SLOWTURNTICS)
         tspeed = 2; // slow turn
     else
         tspeed = speed;
@@ -377,64 +301,65 @@ void buildTiccmd(Ticcmd* cmd)
     // let movement keys cancel each other out
     if (strafe)
     {
-        if (gamekeydown[key_right])
+        if (input.gamekeydown[config.key_right])
         {
-            side += sidemove[speed];
+            side += speeds.sidemove[speed];
         }
-        if (gamekeydown[key_left])
+        if (input.gamekeydown[config.key_left])
         {
-            side -= sidemove[speed];
+            side -= speeds.sidemove[speed];
         }
-        if (joyxmove > 0)
-            side += sidemove[speed];
-        if (joyxmove < 0)
-            side -= sidemove[speed];
+        if (input.joyxmove > 0)
+            side += speeds.sidemove[speed];
+        if (input.joyxmove < 0)
+            side -= speeds.sidemove[speed];
     }
     else
     {
-        if (gamekeydown[key_right])
-            cmd->angleturn -= angleturn[tspeed];
-        if (gamekeydown[key_left])
-            cmd->angleturn += angleturn[tspeed];
-        if (joyxmove > 0)
-            cmd->angleturn -= angleturn[tspeed];
-        if (joyxmove < 0)
-            cmd->angleturn += angleturn[tspeed];
+        if (input.gamekeydown[config.key_right])
+            cmd->angleturn -= speeds.angleturn[tspeed];
+        if (input.gamekeydown[config.key_left])
+            cmd->angleturn += speeds.angleturn[tspeed];
+        if (input.joyxmove > 0)
+            cmd->angleturn -= speeds.angleturn[tspeed];
+        if (input.joyxmove < 0)
+            cmd->angleturn += speeds.angleturn[tspeed];
     }
 
-    if (gamekeydown[key_up])
+    if (input.gamekeydown[config.key_up])
     {
-        forward += forwardmove[speed];
+        forward += speeds.forwardmove[speed];
     }
-    if (gamekeydown[key_down])
+    if (input.gamekeydown[config.key_down])
     {
-        forward -= forwardmove[speed];
+        forward -= speeds.forwardmove[speed];
     }
-    if (joyymove < 0)
-        forward += forwardmove[speed];
-    if (joyymove > 0)
-        forward -= forwardmove[speed];
-    if (gamekeydown[key_straferight])
-        side += sidemove[speed];
-    if (gamekeydown[key_strafeleft])
-        side -= sidemove[speed];
+    if (input.joyymove < 0)
+        forward += speeds.forwardmove[speed];
+    if (input.joyymove > 0)
+        forward -= speeds.forwardmove[speed];
+    if (input.gamekeydown[config.key_straferight])
+        side += speeds.sidemove[speed];
+    if (input.gamekeydown[config.key_strafeleft])
+        side -= speeds.sidemove[speed];
 
     // buttons
     cmd->chatchar = Doom::dequeueChatChar();
 
-    if (gamekeydown[key_fire] || mousebuttons[mousebfire] || joybuttons[joybfire])
+    if (input.gamekeydown[config.key_fire] || mousebuttons[config.mousebfire]
+        || joybuttons[config.joybfire])
         cmd->buttons |= BT_ATTACK;
 
-    if (gamekeydown[key_use] || joybuttons[joybuse])
+    if (input.gamekeydown[config.key_use] || joybuttons[config.joybuse])
     {
         cmd->buttons |= BT_USE;
         // clear double clicks if hit use button
-        dclicks = 0;
+        input.dclicks = 0;
     }
 
     // chainsaw overrides
     for (int i = 0; i < NUMWEAPONS - 1; i++)
-        if (gamekeydown['1' + i])
+        if (input.gamekeydown['1' + i])
         {
             cmd->buttons |= BT_CHANGE;
             cmd->buttons |= i << BT_WEAPONSHIFT;
@@ -442,66 +367,67 @@ void buildTiccmd(Ticcmd* cmd)
         }
 
     // mouse
-    if (mousebuttons[mousebforward])
-        forward += forwardmove[speed];
+    if (mousebuttons[config.mousebforward])
+        forward += speeds.forwardmove[speed];
 
     // forward double click
-    if (mousebuttons[mousebforward] != dclickstate && dclicktime > 1)
+    if (mousebuttons[config.mousebforward] != input.dclickstate
+        && input.dclicktime > 1)
     {
-        dclickstate = mousebuttons[mousebforward];
-        if (dclickstate)
-            dclicks++;
-        if (dclicks == 2)
+        input.dclickstate = mousebuttons[config.mousebforward];
+        if (input.dclickstate)
+            input.dclicks++;
+        if (input.dclicks == 2)
         {
             cmd->buttons |= BT_USE;
-            dclicks = 0;
+            input.dclicks = 0;
         }
         else
-            dclicktime = 0;
+            input.dclicktime = 0;
     }
     else
     {
-        dclicktime += ticdup;
-        if (dclicktime > 20)
+        input.dclicktime += net.ticdup;
+        if (input.dclicktime > 20)
         {
-            dclicks = 0;
-            dclickstate = 0;
+            input.dclicks = 0;
+            input.dclickstate = 0;
         }
     }
 
     // strafe double click
-    bstrafe = mousebuttons[mousebstrafe] || joybuttons[joybstrafe];
-    if (bstrafe != dclickstate2 && dclicktime2 > 1)
+    bstrafe = mousebuttons[config.mousebstrafe] || joybuttons[config.joybstrafe];
+    if (bstrafe != input.dclickstate2 && input.dclicktime2 > 1)
     {
-        dclickstate2 = bstrafe;
-        if (dclickstate2)
-            dclicks2++;
-        if (dclicks2 == 2)
+        input.dclickstate2 = bstrafe;
+        if (input.dclickstate2)
+            input.dclicks2++;
+        if (input.dclicks2 == 2)
         {
             cmd->buttons |= BT_USE;
-            dclicks2 = 0;
+            input.dclicks2 = 0;
         }
         else
-            dclicktime2 = 0;
+            input.dclicktime2 = 0;
     }
     else
     {
-        dclicktime2 += ticdup;
-        if (dclicktime2 > 20)
+        input.dclicktime2 += net.ticdup;
+        if (input.dclicktime2 > 20)
         {
-            dclicks2 = 0;
-            dclickstate2 = 0;
+            input.dclicks2 = 0;
+            input.dclickstate2 = 0;
         }
     }
 
-    if (mousemove)
-        forward += mousey;
+    if (config.mousemove)
+        forward += input.mousey;
     if (strafe)
-        side += mousex * 2;
+        side += input.mousex * 2;
     else
-        cmd->angleturn -= mousex * 0x8;
+        cmd->angleturn -= input.mousex * 0x8;
 
-    mousex = mousey = 0;
+    input.mousex = input.mousey = 0;
 
     if (forward > MAXPLMOVE)
         forward = MAXPLMOVE;
@@ -516,15 +442,15 @@ void buildTiccmd(Ticcmd* cmd)
     cmd->sidemove += side;
 
     // special buttons
-    if (sendpause)
+    if (pending.sendpause)
     {
-        sendpause = false;
+        pending.sendpause = false;
         cmd->buttons = BT_SPECIAL | BTS_PAUSE;
     }
 
-    if (sendsave)
+    if (pending.sendsave)
     {
-        sendsave = false;
+        pending.sendsave = false;
         cmd->buttons = BT_SPECIAL | BTS_SAVEGAME | (savegameslot << BTS_SAVESHIFT);
     }
 }
@@ -535,6 +461,10 @@ void buildTiccmd(Ticcmd* cmd)
 void doLoadLevel()
 {
     auto& sky = skyState();
+    auto& session = gameSession();
+    auto& flow = gameFlow();
+    auto& players_ = playerState();
+    auto& input = ticcmdInput();
 
     // Set the sky map.
     // First thing, we have a dummy sky texture name,
@@ -545,41 +475,43 @@ void doLoadLevel()
 
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
-    if ((gamemode == commercial)
-        || (static_cast<int>(gamemode) == static_cast<int>(pack_tnt))
-        || (static_cast<int>(gamemode) == static_cast<int>(pack_plut)))
+    const auto mode = gameVersion().gamemode;
+    if ((mode == commercial)
+        || (static_cast<int>(mode) == static_cast<int>(pack_tnt))
+        || (static_cast<int>(mode) == static_cast<int>(pack_plut)))
     {
         sky.skytexture = Doom::textureNumForName("SKY3");
-        if (gamemap < 12)
+        if (session.gamemap < 12)
             sky.skytexture = Doom::textureNumForName("SKY1");
-        else if (gamemap < 21)
+        else if (session.gamemap < 21)
             sky.skytexture = Doom::textureNumForName("SKY2");
     }
 
-    levelstarttic = gametic; // for time calculation
+    levelStats().levelstarttic = gameClock().gametic; // for time calculation
 
-    if (wipegamestate == GS_LEVEL)
-        wipegamestate = static_cast<GameState>((-1)); // force a wipe
+    if (flow.wipegamestate == GS_LEVEL)
+        flow.wipegamestate = static_cast<GameState>((-1)); // force a wipe
 
-    gamestate = GS_LEVEL;
+    flow.gamestate = GS_LEVEL;
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (playeringame[i] && players[i].playerstate == PST_DEAD)
-            players[i].playerstate = PST_REBORN;
-        doom_memset(players[i].frags, 0, sizeof(players[i].frags));
+        if (players_.playeringame[i] && players_.players[i].playerstate == PST_DEAD)
+            players_.players[i].playerstate = PST_REBORN;
+        doom_memset(players_.players[i].frags, 0, sizeof(players_.players[i].frags));
     }
 
-    Doom::setupLevel(gameepisode, gamemap, 0, gameskill);
-    displayplayer = consoleplayer; // view the guy you are playing
-    starttime = currentTic();
-    gameaction = ga_nothing;
+    Doom::setupLevel(session.gameepisode, session.gamemap, 0, session.gameskill);
+    players_.displayplayer = players_.consoleplayer; // view the guy you are playing
+    timeDemo().starttime = currentTic();
+    flow.gameaction = ga_nothing;
 
     // clear cmd building stuff
-    doom_memset(gamekeydown, 0, sizeof(gamekeydown));
-    joyxmove = joyymove = 0;
-    mousex = mousey = 0;
-    sendpause = sendsave = paused = false;
+    doom_memset(input.gamekeydown, 0, sizeof(input.gamekeydown));
+    input.joyxmove = input.joyymove = 0;
+    input.mousex = input.mousey = 0;
+    pendingCommands().sendpause = pendingCommands().sendsave =
+        refreshFlags().paused = false;
     doom_memset(mousebuttons, 0, sizeof(*mousebuttons) * 3);
     doom_memset(joybuttons, 0, sizeof(*joybuttons) * 4);
 }
@@ -590,23 +522,29 @@ void doLoadLevel()
 //
 doom_boolean gameResponder(Event* ev)
 {
+    auto& flow = gameFlow();
+    auto& demo = demoState();
+    auto& players_ = playerState();
+    auto& input = ticcmdInput();
+
     // allow spy mode changes even during the demo
-    if (gamestate == GS_LEVEL && ev->type == ev_keydown && ev->data1 == KEY_F12
-        && (singledemo || !deathmatch))
+    if (flow.gamestate == GS_LEVEL && ev->type == ev_keydown && ev->data1 == KEY_F12
+        && (demo.singledemo || !gameSession().deathmatch))
     {
         // spy mode
         do
         {
-            displayplayer++;
-            if (displayplayer == MAXPLAYERS)
-                displayplayer = 0;
-        } while (!playeringame[displayplayer] && displayplayer != consoleplayer);
+            players_.displayplayer++;
+            if (players_.displayplayer == MAXPLAYERS)
+                players_.displayplayer = 0;
+        } while (!players_.playeringame[players_.displayplayer]
+                 && players_.displayplayer != players_.consoleplayer);
         return true;
     }
 
     // any other key pops up menu if in demos
-    if (gameaction == ga_nothing && !singledemo
-        && (demoplayback || gamestate == GS_DEMOSCREEN))
+    if (flow.gameaction == ga_nothing && !demo.singledemo
+        && (demo.demoplayback || flow.gamestate == GS_DEMOSCREEN))
     {
         if (ev->type == ev_keydown || (ev->type == ev_mouse && ev->data1)
             || (ev->type == ev_joystick && ev->data1))
@@ -617,7 +555,7 @@ doom_boolean gameResponder(Event* ev)
         return false;
     }
 
-    if (gamestate == GS_LEVEL)
+    if (flow.gamestate == GS_LEVEL)
     {
 #if 0 
         if (devparm && ev->type == ev_keydown && ev->data1 == ';')
@@ -634,7 +572,7 @@ doom_boolean gameResponder(Event* ev)
             return true; // automap ate it
     }
 
-    if (gamestate == GS_FINALE)
+    if (flow.gamestate == GS_FINALE)
     {
         if (Doom::finaleResponder(ev))
             return true; // finale ate the event
@@ -645,33 +583,36 @@ doom_boolean gameResponder(Event* ev)
         case ev_keydown:
             if (ev->data1 == KEY_PAUSE)
             {
-                sendpause = true;
+                pendingCommands().sendpause = true;
                 return true;
             }
             if (ev->data1 < NUMKEYS)
-                gamekeydown[ev->data1] = true;
+                input.gamekeydown[ev->data1] = true;
             return true; // eat key down events
 
         case ev_keyup:
             if (ev->data1 < NUMKEYS)
-                gamekeydown[ev->data1] = false;
+                input.gamekeydown[ev->data1] = false;
             return false; // always let key up events filter down
 
         case ev_mouse:
+        {
+            const auto sensitivity = menuSettings().mouseSensitivity;
             mousebuttons[0] = ev->data1 & 1;
             mousebuttons[1] = ev->data1 & 2;
             mousebuttons[2] = ev->data1 & 4;
-            mousex = ev->data2 * (mouseSensitivity + 5) / 10;
-            mousey = ev->data3 * (mouseSensitivity + 5) / 10;
+            input.mousex = ev->data2 * (sensitivity + 5) / 10;
+            input.mousey = ev->data3 * (sensitivity + 5) / 10;
             return true; // eat events
+        }
 
         case ev_joystick:
             joybuttons[0] = ev->data1 & 1;
             joybuttons[1] = ev->data1 & 2;
             joybuttons[2] = ev->data1 & 4;
             joybuttons[3] = ev->data1 & 8;
-            joyxmove = ev->data2;
-            joyymove = ev->data3;
+            input.joyxmove = ev->data2;
+            input.joyymove = ev->data3;
             return true; // eat events
 
         default:
@@ -687,18 +628,25 @@ doom_boolean gameResponder(Event* ev)
 //
 void gameTicker()
 {
+    auto& flow = gameFlow();
+    auto& clock = gameClock();
+    auto& net = netState();
+    auto& demo = demoState();
+    auto& players_ = playerState();
+
     int buf;
     Ticcmd* cmd;
 
     // do player reborns if needed
     for (int i = 0; i < MAXPLAYERS; i++)
-        if (playeringame[i] && players[i].playerstate == PST_REBORN)
+        if (players_.playeringame[i]
+            && players_.players[i].playerstate == PST_REBORN)
             doReborn(i);
 
     // do things to change the game state
-    while (gameaction != ga_nothing)
+    while (flow.gameaction != ga_nothing)
     {
-        switch (gameaction)
+        switch (flow.gameaction)
         {
             case ga_loadlevel:
                 doLoadLevel();
@@ -726,7 +674,7 @@ void gameTicker()
                 break;
             case ga_screenshot:
                 Doom::writeScreenshot();
-                gameaction = ga_nothing;
+                flow.gameaction = ga_nothing;
                 break;
             case ga_nothing:
                 break;
@@ -735,35 +683,38 @@ void gameTicker()
 
     // get commands, check consistancy,
     // and build new consistancy check
-    buf = (gametic / ticdup) % BACKUPTICS;
+    buf = (clock.gametic / net.ticdup) % BACKUPTICS;
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (playeringame[i])
+        if (players_.playeringame[i])
         {
-            cmd = &players[i].cmd;
+            cmd = &players_.players[i].cmd;
 
-            doom_memcpy(cmd, &netcmds[i][buf], sizeof(Ticcmd));
+            doom_memcpy(cmd, &net.netcmds[i][buf], sizeof(Ticcmd));
 
-            if (demoplayback)
+            if (demo.demoplayback)
                 readDemoTiccmd(cmd);
-            if (demorecording)
+            if (demo.demorecording)
                 writeDemoTiccmd(cmd);
 
             // check for turbo cheats
-            if (cmd->forwardmove > TURBOTHRESHOLD && !(gametic & 31)
-                && ((gametic >> 5) & 3) == i)
+            if (cmd->forwardmove > TURBOTHRESHOLD && !(clock.gametic & 31)
+                && ((clock.gametic >> 5) & 3) == i)
             {
                 static EA::Array<char, 80> turbomessage;
                 //doom_sprintf(turbomessage, "%s is turbo!", player_names[i]);
                 doom_strcpy(turbomessage.data(), player_names[i]);
                 doom_concat(turbomessage.data(), " is turbo!");
-                players[consoleplayer].message = turbomessage.data();
+                players_.players[players_.consoleplayer].message =
+                    turbomessage.data();
             }
 
-            if (netgame && !netdemo && !(gametic % ticdup))
+            if (gameSession().netgame && !demo.netdemo
+                && !(clock.gametic % net.ticdup))
             {
-                if (gametic > BACKUPTICS && consistancy[i][buf] != cmd->consistancy)
+                if (clock.gametic > BACKUPTICS
+                    && net.consistancy[i][buf] != cmd->consistancy)
                 {
                     //fatalError("Error: consistency failure (%i should be %i)",
                     //        cmd->consistancy, consistancy[i][buf]);
@@ -771,14 +722,14 @@ void gameTicker()
                     doom_strcpy(error_buf, "Error: consistency failure (");
                     doom_concat(error_buf, doom_itoa(cmd->consistancy, 10));
                     doom_concat(error_buf, " should be ");
-                    doom_concat(error_buf, doom_itoa(consistancy[i][buf], 10));
+                    doom_concat(error_buf, doom_itoa(net.consistancy[i][buf], 10));
                     doom_concat(error_buf, ")");
                     fatalError(error_buf);
                 }
-                if (players[i].mo)
-                    consistancy[i][buf] = players[i].mo->x;
+                if (players_.players[i].mo)
+                    net.consistancy[i][buf] = players_.players[i].mo->x;
                 else
-                    consistancy[i][buf] = randomness().menuIndex;
+                    net.consistancy[i][buf] = randomness().menuIndex;
             }
         }
     }
@@ -786,15 +737,15 @@ void gameTicker()
     // check for special buttons
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (playeringame[i])
+        if (players_.playeringame[i])
         {
-            if (players[i].cmd.buttons & BT_SPECIAL)
+            if (players_.players[i].cmd.buttons & BT_SPECIAL)
             {
-                switch (players[i].cmd.buttons & BT_SPECIALMASK)
+                switch (players_.players[i].cmd.buttons & BT_SPECIALMASK)
                 {
                     case BTS_PAUSE:
-                        paused ^= 1;
-                        if (paused)
+                        refreshFlags().paused ^= 1;
+                        if (refreshFlags().paused)
                             Doom::pauseSound();
                         else
                             Doom::resumeSound();
@@ -804,8 +755,9 @@ void gameTicker()
                         if (!savedescription[0])
                             doom_strcpy(savedescription.data(), "NET GAME");
                         savegameslot =
-                            (players[i].cmd.buttons & BTS_SAVEMASK) >> BTS_SAVESHIFT;
-                        gameaction = ga_savegame;
+                            (players_.players[i].cmd.buttons & BTS_SAVEMASK)
+                            >> BTS_SAVESHIFT;
+                        flow.gameaction = ga_savegame;
                         break;
                 }
             }
@@ -813,7 +765,7 @@ void gameTicker()
     }
 
     // do main actions
-    switch (gamestate)
+    switch (flow.gamestate)
     {
         case GS_LEVEL:
             Doom::ticker();
@@ -860,7 +812,7 @@ void playerFinishLevel(int player)
 {
     Player* p;
 
-    p = &players[player];
+    p = &playerState().players[player];
 
     doom_memset(p->powers, 0, sizeof(p->powers));
     doom_memset(p->cards, 0, sizeof(p->cards));
@@ -879,6 +831,7 @@ void playerFinishLevel(int player)
 void playerReborn(int player)
 {
     auto& ammo = ammoLimits();
+    auto& players_ = playerState();
 
     Player* p;
     EA::Array<int, MAXPLAYERS> frags;
@@ -886,18 +839,20 @@ void playerReborn(int player)
     int itemcount;
     int secretcount;
 
-    doom_memcpy(frags.data(), players[player].frags, sizeof(frags));
-    killcount = players[player].killcount;
-    itemcount = players[player].itemcount;
-    secretcount = players[player].secretcount;
+    doom_memcpy(frags.data(), players_.players[player].frags, sizeof(frags));
+    killcount = players_.players[player].killcount;
+    itemcount = players_.players[player].itemcount;
+    secretcount = players_.players[player].secretcount;
 
-    p = &players[player];
+    p = &players_.players[player];
     doom_memset(p, 0, sizeof(*p));
 
-    doom_memcpy(players[player].frags, frags.data(), sizeof(players[player].frags));
-    players[player].killcount = killcount;
-    players[player].itemcount = itemcount;
-    players[player].secretcount = secretcount;
+    doom_memcpy(players_.players[player].frags,
+                frags.data(),
+                sizeof(players_.players[player].frags));
+    players_.players[player].killcount = killcount;
+    players_.players[player].itemcount = itemcount;
+    players_.players[player].secretcount = secretcount;
 
     p->usedown = p->attackdown = true; // don't do anything immediately
     p->playerstate = PST_LIVE;
@@ -920,18 +875,21 @@ void playerReborn(int player)
 
 doom_boolean checkSpot(int playernum, MapThing* mthing)
 {
+    auto& players_ = playerState();
+    auto& corpses = corpseQueue();
+
     fixed_t x;
     fixed_t y;
     SubSector* ss;
     unsigned an;
     Mobj* mo;
 
-    if (!players[playernum].mo)
+    if (!players_.players[playernum].mo)
     {
         // first spawn of level, before corpses
         for (int i = 0; i < playernum; i++)
-            if (players[i].mo->x == mthing->x << FRACBITS
-                && players[i].mo->y == mthing->y << FRACBITS)
+            if (players_.players[i].mo->x == mthing->x << FRACBITS
+                && players_.players[i].mo->y == mthing->y << FRACBITS)
                 return false;
         return true;
     }
@@ -939,14 +897,15 @@ doom_boolean checkSpot(int playernum, MapThing* mthing)
     x = mthing->x << FRACBITS;
     y = mthing->y << FRACBITS;
 
-    if (!Doom::checkPosition(players[playernum].mo, x, y))
+    if (!Doom::checkPosition(players_.players[playernum].mo, x, y))
         return false;
 
     // flush an old corpse if needed
-    if (bodyqueslot >= BODYQUESIZE)
-        Doom::removeMobj(bodyque[bodyqueslot % BODYQUESIZE]);
-    bodyque[bodyqueslot % BODYQUESIZE] = players[playernum].mo;
-    bodyqueslot++;
+    if (corpses.bodyqueslot >= BODYQUESIZE)
+        Doom::removeMobj(corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE]);
+    corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE] =
+        players_.players[playernum].mo;
+    corpses.bodyqueslot++;
 
     // spawn a teleport fog
     ss = Doom::pointInSubsector(x, y);
@@ -957,7 +916,7 @@ doom_boolean checkSpot(int playernum, MapThing* mthing)
                          ss->sector->floorheight,
                          MT_TFOG);
 
-    if (players[consoleplayer].viewz != 1)
+    if (players_.players[players_.consoleplayer].viewz != 1)
         Doom::startSound(mo, sfx_telept); // don't start sound on first frame
 
     return true;
@@ -1007,21 +966,22 @@ void deathMatchSpawnPlayer(int playernum)
 void doReborn(int playernum)
 {
     auto& spawns = mapSpawns();
+    auto& session = gameSession();
 
-    if (!netgame)
+    if (!session.netgame)
     {
         // reload the level from scratch
-        gameaction = ga_loadlevel;
+        gameFlow().gameaction = ga_loadlevel;
     }
     else
     {
         // respawn at the start
 
         // first dissasociate the corpse
-        players[playernum].mo->player = nullptr;
+        playerState().players[playernum].mo->player = nullptr;
 
         // spawn at random spot if in death match
-        if (deathmatch)
+        if (session.deathmatch)
         {
             deathMatchSpawnPlayer(playernum);
             return;
@@ -1051,7 +1011,7 @@ void doReborn(int playernum)
 
 void takeScreenshot()
 {
-    gameaction = ga_screenshot;
+    gameFlow().gameaction = ga_screenshot;
 }
 
 //
@@ -1060,143 +1020,151 @@ void takeScreenshot()
 void exitLevel()
 {
     secretexit = false;
-    gameaction = ga_completed;
+    gameFlow().gameaction = ga_completed;
 }
 
 // Here's for the german edition.
 void secretExitLevel()
 {
     // IF NO WOLF3D LEVELS, NO SECRET EXIT!
-    if ((gamemode == commercial) && (Doom::wad().find("map31") < 0))
+    if ((gameVersion().gamemode == commercial) && (Doom::wad().find("map31") < 0))
         secretexit = false;
     else
         secretexit = true;
-    gameaction = ga_completed;
+    gameFlow().gameaction = ga_completed;
 }
 
 void doCompleted()
 {
     auto& overlay = overlayState();
+    auto& flow = gameFlow();
+    auto& session = gameSession();
+    auto& players_ = playerState();
+    auto& stats = levelStats();
+    auto& par = parTimes();
+    auto& wminfo_ = intermissionInfo().wminfo;
+    const auto mode = gameVersion().gamemode;
 
-    gameaction = ga_nothing;
+    flow.gameaction = ga_nothing;
 
     for (int i = 0; i < MAXPLAYERS; i++)
-        if (playeringame[i])
+        if (players_.playeringame[i])
             playerFinishLevel(i); // take away cards and stuff
 
     if (overlay.automapactive)
         Doom::stopAutomap();
 
-    if (gamemode != commercial)
-        switch (gamemap)
+    if (mode != commercial)
+        switch (session.gamemap)
         {
             case 8:
-                gameaction = ga_victory;
+                flow.gameaction = ga_victory;
                 return;
             case 9:
                 for (int i = 0; i < MAXPLAYERS; i++)
-                    players[i].didsecret = true;
+                    players_.players[i].didsecret = true;
                 break;
         }
 
-    if ((gamemap == 8) && (gamemode != commercial))
+    if ((session.gamemap == 8) && (mode != commercial))
     {
         // victory
-        gameaction = ga_victory;
+        flow.gameaction = ga_victory;
         return;
     }
 
-    if ((gamemap == 9) && (gamemode != commercial))
+    if ((session.gamemap == 9) && (mode != commercial))
     {
         // exit secret level
         for (int i = 0; i < MAXPLAYERS; i++)
-            players[i].didsecret = true;
+            players_.players[i].didsecret = true;
     }
 
-    wminfo.didsecret = players[consoleplayer].didsecret;
-    wminfo.epsd = gameepisode - 1;
-    wminfo.last = gamemap - 1;
+    wminfo_.didsecret = players_.players[players_.consoleplayer].didsecret;
+    wminfo_.epsd = session.gameepisode - 1;
+    wminfo_.last = session.gamemap - 1;
 
     // wminfo.next is 0 biased, unlike gamemap
-    if (gamemode == commercial)
+    if (mode == commercial)
     {
         if (secretexit)
-            switch (gamemap)
+            switch (session.gamemap)
             {
                 case 15:
-                    wminfo.next = 30;
+                    wminfo_.next = 30;
                     break;
                 case 31:
-                    wminfo.next = 31;
+                    wminfo_.next = 31;
                     break;
             }
         else
-            switch (gamemap)
+            switch (session.gamemap)
             {
                 case 31:
                 case 32:
-                    wminfo.next = 15;
+                    wminfo_.next = 15;
                     break;
                 default:
-                    wminfo.next = gamemap;
+                    wminfo_.next = session.gamemap;
             }
     }
     else
     {
         if (secretexit)
-            wminfo.next = 8; // go to secret level
-        else if (gamemap == 9)
+            wminfo_.next = 8; // go to secret level
+        else if (session.gamemap == 9)
         {
             // returning from secret level
-            switch (gameepisode)
+            switch (session.gameepisode)
             {
                 case 1:
-                    wminfo.next = 3;
+                    wminfo_.next = 3;
                     break;
                 case 2:
-                    wminfo.next = 5;
+                    wminfo_.next = 5;
                     break;
                 case 3:
-                    wminfo.next = 6;
+                    wminfo_.next = 6;
                     break;
                 case 4:
-                    wminfo.next = 2;
+                    wminfo_.next = 2;
                     break;
             }
         }
         else
-            wminfo.next = gamemap; // go to next level
+            wminfo_.next = session.gamemap; // go to next level
     }
 
-    wminfo.maxkills = totalkills;
-    wminfo.maxitems = totalitems;
-    wminfo.maxsecret = totalsecret;
-    wminfo.maxfrags = 0;
-    if (gamemode == commercial)
-        wminfo.partime = 35 * cpars[gamemap - 1];
+    wminfo_.maxkills = stats.totalkills;
+    wminfo_.maxitems = stats.totalitems;
+    wminfo_.maxsecret = stats.totalsecret;
+    wminfo_.maxfrags = 0;
+    if (mode == commercial)
+        wminfo_.partime = 35 * par.cpars[session.gamemap - 1];
     else
-        wminfo.partime = 35 * pars[gameepisode][gamemap];
-    wminfo.pnum = consoleplayer;
+        wminfo_.partime = 35 * par.pars[session.gameepisode][session.gamemap];
+    wminfo_.pnum = players_.consoleplayer;
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        wminfo.plyr[i].in = playeringame[i];
-        wminfo.plyr[i].skills = players[i].killcount;
-        wminfo.plyr[i].sitems = players[i].itemcount;
-        wminfo.plyr[i].ssecret = players[i].secretcount;
-        wminfo.plyr[i].stime = levelStats().leveltime;
-        doom_memcpy(
-            wminfo.plyr[i].frags, players[i].frags, sizeof(wminfo.plyr[i].frags));
+        wminfo_.plyr[i].in = players_.playeringame[i];
+        wminfo_.plyr[i].skills = players_.players[i].killcount;
+        wminfo_.plyr[i].sitems = players_.players[i].itemcount;
+        wminfo_.plyr[i].ssecret = players_.players[i].secretcount;
+        wminfo_.plyr[i].stime = stats.leveltime;
+        doom_memcpy(wminfo_.plyr[i].frags,
+                    players_.players[i].frags,
+                    sizeof(wminfo_.plyr[i].frags));
     }
 
-    gamestate = GS_INTERMISSION;
-    viewactive = false;
+    flow.gamestate = GS_INTERMISSION;
+    refreshFlags().viewactive = false;
     overlay.automapactive = false;
 
     if (statcopy)
-        doom_memcpy(statcopy, &wminfo, sizeof(wminfo));
+        doom_memcpy(statcopy, &wminfo_, sizeof(wminfo_));
 
-    Doom::startIntermission(&wminfo);
+    Doom::startIntermission(&wminfo_);
 }
 
 //
@@ -1204,14 +1172,17 @@ void doCompleted()
 //
 void worldDone()
 {
-    gameaction = ga_worlddone;
+    gameFlow().gameaction = ga_worlddone;
 
     if (secretexit)
-        players[consoleplayer].didsecret = true;
-
-    if (gamemode == commercial)
     {
-        switch (gamemap)
+        auto& players_ = playerState();
+        players_.players[players_.consoleplayer].didsecret = true;
+    }
+
+    if (gameVersion().gamemode == commercial)
+    {
+        switch (gameSession().gamemap)
         {
             case 15:
             case 31:
@@ -1229,11 +1200,13 @@ void worldDone()
 
 void doWorldDone()
 {
-    gamestate = GS_LEVEL;
-    gamemap = wminfo.next + 1;
+    auto& flow = gameFlow();
+
+    flow.gamestate = GS_LEVEL;
+    gameSession().gamemap = intermissionInfo().wminfo.next + 1;
     doLoadLevel();
-    gameaction = ga_nothing;
-    viewactive = true;
+    flow.gameaction = ga_nothing;
+    refreshFlags().viewactive = true;
 }
 
 //
@@ -1243,21 +1216,23 @@ void doWorldDone()
 
 void loadGame(char* name)
 {
-    doom_strcpy(savename, name);
-    gameaction = ga_loadgame;
+    doom_strcpy(saveGameState().name, name);
+    gameFlow().gameaction = ga_loadgame;
 }
 
 void doLoadGame()
 {
     auto& save = saveGameState();
+    auto& session = gameSession();
+    auto& players_ = playerState();
 
     int a, b, c;
     EA::Array<char, VERSIONSIZE> vcheck;
 
-    gameaction = ga_nothing;
+    gameFlow().gameaction = ga_nothing;
 
-    Doom::readFile(savename, &savebuffer);
-    save.cursor = savebuffer + SAVESTRINGSIZE;
+    Doom::readFile(save.name, &save.buffer);
+    save.cursor = save.buffer + SAVESTRINGSIZE;
 
     // skip the description field
     doom_memset(vcheck.data(), 0, sizeof(vcheck));
@@ -1269,14 +1244,14 @@ void doLoadGame()
         return; // bad version
     save.cursor += VERSIONSIZE;
 
-    gameskill = static_cast<Skill>((*save.cursor++));
-    gameepisode = *save.cursor++;
-    gamemap = *save.cursor++;
+    session.gameskill = static_cast<Skill>((*save.cursor++));
+    session.gameepisode = *save.cursor++;
+    session.gamemap = *save.cursor++;
     for (int i = 0; i < MAXPLAYERS; i++)
-        playeringame[i] = *save.cursor++;
+        players_.playeringame[i] = *save.cursor++;
 
     // load a base level
-    initNewGame(gameskill, gameepisode, gamemap);
+    initNewGame(session.gameskill, session.gameepisode, session.gamemap);
 
     // get the times
     a = *save.cursor++;
@@ -1294,7 +1269,7 @@ void doLoadGame()
         fatalError("Error: Bad savegame");
 
     // done
-    doom_free(savebuffer);
+    doom_free(save.buffer);
 
     if (viewWindow().setsizeneeded)
         Doom::executeSetViewSize();
@@ -1312,13 +1287,15 @@ void saveGame(int slot, char* description)
 {
     savegameslot = slot;
     doom_strcpy(savedescription.data(), description);
-    sendsave = true;
+    pendingCommands().sendsave = true;
 }
 
 void doSaveGame()
 {
     auto& save = saveGameState();
     auto& stats = levelStats();
+    auto& session = gameSession();
+    auto& players_ = playerState();
 
     EA::Array<char, 100> name;
     EA::Array<char, VERSIONSIZE> name2;
@@ -1338,7 +1315,7 @@ void doSaveGame()
     }
     description = savedescription.data();
 
-    save.cursor = savebuffer = screens[1] + 0x4000;
+    save.cursor = save.buffer = screens[1] + 0x4000;
 
     doom_memcpy(save.cursor, description, SAVESTRINGSIZE);
     save.cursor += SAVESTRINGSIZE;
@@ -1349,11 +1326,11 @@ void doSaveGame()
     doom_memcpy(save.cursor, name2.data(), VERSIONSIZE);
     save.cursor += VERSIONSIZE;
 
-    *save.cursor++ = gameskill;
-    *save.cursor++ = gameepisode;
-    *save.cursor++ = gamemap;
+    *save.cursor++ = session.gameskill;
+    *save.cursor++ = session.gameepisode;
+    *save.cursor++ = session.gamemap;
     for (int i = 0; i < MAXPLAYERS; i++)
-        *save.cursor++ = playeringame[i];
+        *save.cursor++ = players_.playeringame[i];
     *save.cursor++ = stats.leveltime >> 16;
     *save.cursor++ = stats.leveltime >> 8;
     *save.cursor++ = stats.leveltime;
@@ -1365,14 +1342,14 @@ void doSaveGame()
 
     *save.cursor++ = 0x1d; // consistancy marker
 
-    length = static_cast<int>((save.cursor - savebuffer));
+    length = static_cast<int>((save.cursor - save.buffer));
     if (length > SAVEGAMESIZE)
         fatalError("Error: Savegame buffer overrun");
-    Doom::writeFile(name.data(), savebuffer, length);
-    gameaction = ga_nothing;
+    Doom::writeFile(name.data(), save.buffer, length);
+    gameFlow().gameaction = ga_nothing;
     savedescription[0] = 0;
 
-    players[consoleplayer].message = GGSAVED;
+    players_.players[players_.consoleplayer].message = GGSAVED;
 
     // draw the pattern into the back screen
     Doom::fillBackScreen();
@@ -1386,34 +1363,47 @@ void doSaveGame()
 
 void deferInitNew(Skill skill, int episode, int map)
 {
-    d_skill = skill;
-    d_episode = episode;
-    d_map = map;
-    gameaction = ga_newgame;
+    auto& deferred = deferredNewGame();
+
+    deferred.d_skill = skill;
+    deferred.d_episode = episode;
+    deferred.d_map = map;
+    gameFlow().gameaction = ga_newgame;
 }
 
 void doNewGame()
 {
-    demoplayback = false;
-    netdemo = false;
-    netgame = false;
-    deathmatch = false;
-    playeringame[1] = playeringame[2] = playeringame[3] = 0;
-    respawnparm = false;
-    fastparm = false;
-    nomonsters = false;
-    consoleplayer = 0;
-    initNewGame(d_skill, d_episode, d_map);
-    gameaction = ga_nothing;
+    auto& demo = demoState();
+    auto& session = gameSession();
+    auto& players_ = playerState();
+    auto& opts = launchOptions();
+    auto& deferred = deferredNewGame();
+
+    demo.demoplayback = false;
+    demo.netdemo = false;
+    session.netgame = false;
+    session.deathmatch = false;
+    players_.playeringame[1] = players_.playeringame[2] = players_.playeringame[3] =
+        0;
+    opts.respawnparm = false;
+    opts.fastparm = false;
+    opts.nomonsters = false;
+    players_.consoleplayer = 0;
+    initNewGame(deferred.d_skill, deferred.d_episode, deferred.d_map);
+    gameFlow().gameaction = ga_nothing;
 }
 
 void initNewGame(Skill skill, int episode, int map)
 {
     auto& sky = skyState();
+    auto& refresh = refreshFlags();
+    auto& session = gameSession();
+    auto& opts = launchOptions();
+    const auto mode = gameVersion().gamemode;
 
-    if (paused)
+    if (refresh.paused)
     {
-        paused = false;
+        refresh.paused = false;
         Doom::resumeSound();
     }
 
@@ -1426,12 +1416,12 @@ void initNewGame(Skill skill, int episode, int map)
     if (episode < 1)
         episode = 1;
 
-    if (gamemode == retail)
+    if (mode == retail)
     {
         if (episode > 4)
             episode = 4;
     }
-    else if (gamemode == shareware)
+    else if (mode == shareware)
     {
         if (episode > 1)
             episode = 1; // only start episode 1 on shareware
@@ -1445,17 +1435,18 @@ void initNewGame(Skill skill, int episode, int map)
     if (map < 1)
         map = 1;
 
-    if ((map > 9) && (gamemode != commercial))
+    if ((map > 9) && (mode != commercial))
         map = 9;
 
     Doom::randomness().clear();
 
-    if (skill == sk_nightmare || respawnparm)
-        respawnmonsters = true;
+    if (skill == sk_nightmare || opts.respawnparm)
+        session.respawnmonsters = true;
     else
-        respawnmonsters = false;
+        session.respawnmonsters = false;
 
-    if (fastparm || (skill == sk_nightmare && gameskill != sk_nightmare))
+    if (opts.fastparm
+        || (skill == sk_nightmare && session.gameskill != sk_nightmare))
     {
         for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics >>= 1;
@@ -1463,7 +1454,7 @@ void initNewGame(Skill skill, int episode, int map)
         mobjinfo[MT_HEADSHOT].speed = 20 * FRACUNIT;
         mobjinfo[MT_TROOPSHOT].speed = 20 * FRACUNIT;
     }
-    else if (skill != sk_nightmare && gameskill == sk_nightmare)
+    else if (skill != sk_nightmare && session.gameskill == sk_nightmare)
     {
         for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics <<= 1;
@@ -1474,26 +1465,26 @@ void initNewGame(Skill skill, int episode, int map)
 
     // force players to be initialized upon first level load
     for (int i = 0; i < MAXPLAYERS; i++)
-        players[i].playerstate = PST_REBORN;
+        playerState().players[i].playerstate = PST_REBORN;
 
-    usergame = true; // will be set false if a demo
-    paused = false;
-    demoplayback = false;
+    demoState().usergame = true; // will be set false if a demo
+    refresh.paused = false;
+    demoState().demoplayback = false;
     overlayState().automapactive = false;
-    viewactive = true;
-    gameepisode = episode;
-    gamemap = map;
-    gameskill = skill;
+    refresh.viewactive = true;
+    session.gameepisode = episode;
+    session.gamemap = map;
+    session.gameskill = skill;
 
-    viewactive = true;
+    refresh.viewactive = true;
 
     // set the sky map for the episode
-    if (gamemode == commercial)
+    if (mode == commercial)
     {
         sky.skytexture = Doom::textureNumForName("SKY3");
-        if (gamemap < 12)
+        if (session.gamemap < 12)
             sky.skytexture = Doom::textureNumForName("SKY1");
-        else if (gamemap < 21)
+        else if (session.gamemap < 21)
             sky.skytexture = Doom::textureNumForName("SKY2");
     }
     else
@@ -1522,28 +1513,32 @@ void initNewGame(Skill skill, int episode, int map)
 
 void readDemoTiccmd(Ticcmd* cmd)
 {
-    if (*demo_p == DEMOMARKER)
+    auto& demo = demoState();
+
+    if (*demo.demo_p == DEMOMARKER)
     {
         // end of demo data stream
         checkDemoStatus();
         return;
     }
-    cmd->forwardmove = (static_cast<signed char>(*demo_p++));
-    cmd->sidemove = (static_cast<signed char>(*demo_p++));
-    cmd->angleturn = (static_cast<unsigned char>(*demo_p++)) << 8;
-    cmd->buttons = static_cast<unsigned char>(*demo_p++);
+    cmd->forwardmove = (static_cast<signed char>(*demo.demo_p++));
+    cmd->sidemove = (static_cast<signed char>(*demo.demo_p++));
+    cmd->angleturn = (static_cast<unsigned char>(*demo.demo_p++)) << 8;
+    cmd->buttons = static_cast<unsigned char>(*demo.demo_p++);
 }
 
 void writeDemoTiccmd(Ticcmd* cmd)
 {
-    if (gamekeydown['q']) // press q to end demo recording
+    auto& demo = demoState();
+
+    if (ticcmdInput().gamekeydown['q']) // press q to end demo recording
         checkDemoStatus();
-    *demo_p++ = cmd->forwardmove;
-    *demo_p++ = cmd->sidemove;
-    *demo_p++ = (cmd->angleturn + 128) >> 8;
-    *demo_p++ = cmd->buttons;
-    demo_p -= 4;
-    if (demo_p > demoend - 16)
+    *demo.demo_p++ = cmd->forwardmove;
+    *demo.demo_p++ = cmd->sidemove;
+    *demo.demo_p++ = (cmd->angleturn + 128) >> 8;
+    *demo.demo_p++ = cmd->buttons;
+    demo.demo_p -= 4;
+    if (demo.demo_p > demo.demoend - 16)
     {
         // no more space
         checkDemoStatus();
@@ -1558,38 +1553,45 @@ void writeDemoTiccmd(Ticcmd* cmd)
 //
 void recordDemo(char* name)
 {
+    auto& demo = demoState();
+
     int i;
     int maxsize;
 
-    usergame = false;
-    doom_strcpy(demoname, name);
-    doom_concat(demoname, ".lmp");
+    demo.usergame = false;
+    doom_strcpy(demo.demoname, name);
+    doom_concat(demo.demoname, ".lmp");
     maxsize = 0x20000;
     i = Doom::checkParm("-maxdemo");
     if (i && i < myargc - 1)
         maxsize = doom_atoi(myargv[i + 1]) * 1024;
-    demobuffer = static_cast<byte*>((doom_malloc(maxsize)));
-    demoend = demobuffer + maxsize;
+    demo.demobuffer = static_cast<byte*>((doom_malloc(maxsize)));
+    demo.demoend = demo.demobuffer + maxsize;
 
-    demorecording = true;
+    demo.demorecording = true;
 }
 
 void beginRecording()
 {
-    demo_p = demobuffer;
+    auto& demo = demoState();
+    auto& session = gameSession();
+    auto& opts = launchOptions();
+    auto& players_ = playerState();
 
-    *demo_p++ = VERSION;
-    *demo_p++ = gameskill;
-    *demo_p++ = gameepisode;
-    *demo_p++ = gamemap;
-    *demo_p++ = deathmatch;
-    *demo_p++ = respawnparm;
-    *demo_p++ = fastparm;
-    *demo_p++ = nomonsters;
-    *demo_p++ = consoleplayer;
+    demo.demo_p = demo.demobuffer;
+
+    *demo.demo_p++ = VERSION;
+    *demo.demo_p++ = session.gameskill;
+    *demo.demo_p++ = session.gameepisode;
+    *demo.demo_p++ = session.gamemap;
+    *demo.demo_p++ = session.deathmatch;
+    *demo.demo_p++ = opts.respawnparm;
+    *demo.demo_p++ = opts.fastparm;
+    *demo.demo_p++ = opts.nomonsters;
+    *demo.demo_p++ = players_.consoleplayer;
 
     for (int i = 0; i < MAXPLAYERS; i++)
-        *demo_p++ = playeringame[i];
+        *demo.demo_p++ = players_.playeringame[i];
 }
 
 //
@@ -1599,17 +1601,24 @@ void beginRecording()
 void deferPlayDemo(const char* name)
 {
     defdemoname = name;
-    gameaction = ga_playdemo;
+    gameFlow().gameaction = ga_playdemo;
 }
 
 void doPlayDemo()
 {
+    auto& flow = gameFlow();
+    auto& demo = demoState();
+    auto& session = gameSession();
+    auto& opts = launchOptions();
+    auto& players_ = playerState();
+
     Skill skill;
     int episode, map;
 
-    gameaction = ga_nothing;
-    demobuffer = demo_p = static_cast<byte*>((Doom::cacheLumpName(defdemoname)));
-    byte demo_version = *demo_p++;
+    flow.gameaction = ga_nothing;
+    demo.demobuffer = demo.demo_p =
+        static_cast<byte*>((Doom::cacheLumpName(defdemoname)));
+    byte demo_version = *demo.demo_p++;
     if (demo_version != VERSION
         && demo_version != 109) // Demos seem to run fine with version 109
     {
@@ -1619,34 +1628,34 @@ void doPlayDemo()
         doom_print(", this version = ");
         doom_print(doom_itoa(VERSION, 10));
         doom_print("\n");
-        gameaction = ga_nothing;
+        flow.gameaction = ga_nothing;
         return;
     }
 
-    skill = static_cast<Skill>((*demo_p++));
-    episode = *demo_p++;
-    map = *demo_p++;
-    deathmatch = *demo_p++;
-    respawnparm = *demo_p++;
-    fastparm = *demo_p++;
-    nomonsters = *demo_p++;
-    consoleplayer = *demo_p++;
+    skill = static_cast<Skill>((*demo.demo_p++));
+    episode = *demo.demo_p++;
+    map = *demo.demo_p++;
+    session.deathmatch = *demo.demo_p++;
+    opts.respawnparm = *demo.demo_p++;
+    opts.fastparm = *demo.demo_p++;
+    opts.nomonsters = *demo.demo_p++;
+    players_.consoleplayer = *demo.demo_p++;
 
     for (int i = 0; i < MAXPLAYERS; i++)
-        playeringame[i] = *demo_p++;
-    if (playeringame[1])
+        players_.playeringame[i] = *demo.demo_p++;
+    if (players_.playeringame[1])
     {
-        netgame = true;
-        netdemo = true;
+        session.netgame = true;
+        demo.netdemo = true;
     }
 
     // don't spend a lot of time in loadlevel
-    precache = false;
+    engineParams().precache = false;
     initNewGame(skill, episode, map);
-    precache = true;
+    engineParams().precache = true;
 
-    usergame = false;
-    demoplayback = true;
+    demo.usergame = false;
+    demo.demoplayback = true;
 }
 
 //
@@ -1654,13 +1663,15 @@ void doPlayDemo()
 //
 void startTimeDemo(char* name)
 {
-    nodrawers = Doom::checkParm("-nodraw");
-    noblit = Doom::checkParm("-noblit");
-    timingdemo = true;
-    singletics = true;
+    auto& refresh = refreshFlags();
+
+    refresh.nodrawers = Doom::checkParm("-nodraw");
+    refresh.noblit = Doom::checkParm("-noblit");
+    timeDemo().timingdemo = true;
+    engineParams().singletics = true;
 
     defdemoname = name;
-    gameaction = ga_playdemo;
+    gameFlow().gameaction = ga_playdemo;
 }
 
 /*
@@ -1675,51 +1686,60 @@ void startTimeDemo(char* name)
 
 doom_boolean checkDemoStatus()
 {
+    auto& demo = demoState();
+    auto& timedemo = timeDemo();
+
     int endtime;
 
-    if (timingdemo)
+    if (timedemo.timingdemo)
     {
         endtime = currentTic();
         //fatalError("Error: timed %i gametics in %i realtics", gametic
         //        , endtime - starttime);
 
         doom_strcpy(error_buf, "Error: timed ");
-        doom_concat(error_buf, doom_itoa(gametic, 10));
+        doom_concat(error_buf, doom_itoa(gameClock().gametic, 10));
         doom_concat(error_buf, " gametics in ");
-        doom_concat(error_buf, doom_itoa(endtime - starttime, 10));
+        doom_concat(error_buf, doom_itoa(endtime - timedemo.starttime, 10));
         doom_concat(error_buf, " realtics");
         fatalError(error_buf);
     }
 
-    if (demoplayback)
+    if (demo.demoplayback)
     {
-        if (singledemo)
+        auto& session = gameSession();
+        auto& players_ = playerState();
+        auto& opts = launchOptions();
+
+        if (demo.singledemo)
             quitGame();
 
-        demoplayback = false;
-        netdemo = false;
-        netgame = false;
-        deathmatch = false;
-        playeringame[1] = playeringame[2] = playeringame[3] = 0;
-        respawnparm = false;
-        fastparm = false;
-        nomonsters = false;
-        consoleplayer = 0;
+        demo.demoplayback = false;
+        demo.netdemo = false;
+        session.netgame = false;
+        session.deathmatch = false;
+        players_.playeringame[1] = players_.playeringame[2] =
+            players_.playeringame[3] = 0;
+        opts.respawnparm = false;
+        opts.fastparm = false;
+        opts.nomonsters = false;
+        players_.consoleplayer = 0;
         Doom::advanceDemo();
         return true;
     }
 
-    if (demorecording)
+    if (demo.demorecording)
     {
-        *demo_p++ = DEMOMARKER;
-        Doom::writeFile(
-            demoname, demobuffer, static_cast<int>((demo_p - demobuffer)));
-        doom_free(demobuffer);
-        demorecording = false;
+        *demo.demo_p++ = DEMOMARKER;
+        Doom::writeFile(demo.demoname,
+                        demo.demobuffer,
+                        static_cast<int>((demo.demo_p - demo.demobuffer)));
+        doom_free(demo.demobuffer);
+        demo.demorecording = false;
         //fatalError("Error: Demo %s recorded", demoname);
 
         doom_strcpy(error_buf, "Error: Demo ");
-        doom_concat(error_buf, demoname);
+        doom_concat(error_buf, demo.demoname);
         doom_concat(error_buf, " recorded");
         fatalError(error_buf);
     }

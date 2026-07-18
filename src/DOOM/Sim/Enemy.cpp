@@ -39,6 +39,11 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include "../Game/Game.h"
+#include "../Game/GameClock.h"
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
+#include "../Game/LaunchOptions.h"
+#include "../Game/PlayerState.h"
 #include "../Game/Sound.h"
 #include "../Host/System.h"
 #include "../Render/Main.h"
@@ -546,9 +551,11 @@ doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround)
     c = 0;
     stop = (actor.lastlook - 1) & 3;
 
+    auto& players_ = playerState();
+
     for (;; actor.lastlook = (actor.lastlook + 1) & 3)
     {
-        if (!playeringame[actor.lastlook])
+        if (!players_.playeringame[actor.lastlook])
             continue;
 
         if (c++ == 2 || actor.lastlook == stop)
@@ -557,7 +564,7 @@ doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround)
             return false;
         }
 
-        player = &players[actor.lastlook];
+        player = &players_.players[actor.lastlook];
 
         if (player->health <= 0)
             continue; // dead
@@ -734,11 +741,14 @@ void chase(Mobj& actor)
         return;
     }
 
+    const auto& session = gameSession();
+    const auto& opts = launchOptions();
+
     // do not attack twice in a row
     if (actor.flags & MF_JUSTATTACKED)
     {
         actor.flags &= ~MF_JUSTATTACKED;
-        if (gameskill != sk_nightmare && !fastparm)
+        if (session.gameskill != sk_nightmare && !opts.fastparm)
             newChaseDir(actor);
         return;
     }
@@ -756,7 +766,7 @@ void chase(Mobj& actor)
     // check for missile attack
     if (actor.info->missilestate)
     {
-        if (gameskill < sk_nightmare && !fastparm && actor.movecount)
+        if (session.gameskill < sk_nightmare && !opts.fastparm && actor.movecount)
         {
             goto nomissile;
         }
@@ -772,7 +782,8 @@ void chase(Mobj& actor)
     // ?
 nomissile:
     // possibly choose another target
-    if (netgame && !actor.threshold && !Doom::checkSight(&actor, actor.target))
+    if (session.netgame && !actor.threshold
+        && !Doom::checkSight(&actor, actor.target))
     {
         if (lookForPlayers(actor, true))
             return; // got a new target
@@ -1027,7 +1038,7 @@ void tracer(Mobj& actor)
     Mobj* dest;
     Mobj* th;
 
-    if (gametic & 3)
+    if (gameClock().gametic & 3)
         return;
 
     // spawn a puff of smoke behind the rocket
@@ -1561,10 +1572,13 @@ void bossDeath(Mobj& mo)
     int i;
 
     auto& thinkers = thinkerList();
+    const auto& version = gameVersion();
+    const auto& session = gameSession();
+    const auto& players_ = playerState();
 
-    if (gamemode == commercial)
+    if (version.gamemode == commercial)
     {
-        if (gamemap != 7)
+        if (session.gamemap != 7)
             return;
 
         if ((mo.type != MT_FATSO) && (mo.type != MT_BABY))
@@ -1572,10 +1586,10 @@ void bossDeath(Mobj& mo)
     }
     else
     {
-        switch (gameepisode)
+        switch (session.gameepisode)
         {
             case 1:
-                if (gamemap != 8)
+                if (session.gamemap != 8)
                     return;
 
                 if (mo.type != MT_BRUISER)
@@ -1583,7 +1597,7 @@ void bossDeath(Mobj& mo)
                 break;
 
             case 2:
-                if (gamemap != 8)
+                if (session.gamemap != 8)
                     return;
 
                 if (mo.type != MT_CYBORG)
@@ -1591,7 +1605,7 @@ void bossDeath(Mobj& mo)
                 break;
 
             case 3:
-                if (gamemap != 8)
+                if (session.gamemap != 8)
                     return;
 
                 if (mo.type != MT_SPIDER)
@@ -1600,7 +1614,7 @@ void bossDeath(Mobj& mo)
                 break;
 
             case 4:
-                switch (gamemap)
+                switch (session.gamemap)
                 {
                     case 6:
                         if (mo.type != MT_CYBORG)
@@ -1619,7 +1633,7 @@ void bossDeath(Mobj& mo)
                 break;
 
             default:
-                if (gamemap != 8)
+                if (session.gamemap != 8)
                     return;
                 break;
         }
@@ -1627,7 +1641,7 @@ void bossDeath(Mobj& mo)
 
     // make sure there is a player alive for victory
     for (i = 0; i < MAXPLAYERS; i++)
-        if (playeringame[i] && players[i].health > 0)
+        if (players_.playeringame[i] && players_.players[i].health > 0)
             break;
 
     if (i == MAXPLAYERS)
@@ -1649,9 +1663,9 @@ void bossDeath(Mobj& mo)
     }
 
     // victory!
-    if (gamemode == commercial)
+    if (version.gamemode == commercial)
     {
-        if (gamemap == 7)
+        if (session.gamemap == 7)
         {
             if (mo.type == MT_FATSO)
             {
@@ -1670,7 +1684,7 @@ void bossDeath(Mobj& mo)
     }
     else
     {
-        switch (gameepisode)
+        switch (session.gameepisode)
         {
             case 1:
                 junk.tag = 666;
@@ -1679,7 +1693,7 @@ void bossDeath(Mobj& mo)
                 break;
 
             case 4:
-                switch (gamemap)
+                switch (session.gamemap)
                 {
                     case 6:
                         junk.tag = 666;
@@ -1825,7 +1839,7 @@ void brainSpit(Mobj& mo)
     int& easy = enemyAI().brainSpitEasy;
 
     easy ^= 1;
-    if (gameskill <= sk_easy && (!easy))
+    if (gameSession().gameskill <= sk_easy && (!easy))
         return;
 
     // shoot a cube at current target
@@ -1909,7 +1923,7 @@ void playerScream(Mobj& mo)
     // Default death sound.
     int sound = sfx_pldeth;
 
-    if ((gamemode == commercial) && (mo.health < -50))
+    if ((gameVersion().gamemode == commercial) && (mo.health < -50))
     {
         // IF THE PLAYER DIES
         // LESS THAN -50% WITHOUT GIBBING

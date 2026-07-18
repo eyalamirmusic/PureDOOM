@@ -41,7 +41,11 @@
 #include "../r_state.h" // State.
 #include "../st_stuff.h"
 #include "../v_video.h" // Needs access to LFB, Doom::markRect.
+#include "../Game/DemoState.h"
+#include "../Game/GameSession.h"
 #include "../Game/OverlayState.h"
+#include "../Game/PlayerState.h"
+#include "../Game/RefreshFlags.h"
 #include "../Wad/WadFile.h"
 
 #include "Automap.h"
@@ -367,13 +371,15 @@ void initAutomapVariables()
     m_w = FTOM(f_w);
     m_h = FTOM(f_h);
 
+    auto& players_ = playerState();
+
     // find player to center on initially
-    if (!playeringame[pnum = consoleplayer])
+    if (!players_.playeringame[pnum = players_.consoleplayer])
         for (pnum = 0; pnum < MAXPLAYERS; pnum++)
-            if (playeringame[pnum])
+            if (players_.playeringame[pnum])
                 break;
 
-    am_plr = &players[pnum];
+    am_plr = &players_.players[pnum];
     m_x = am_plr->mo->x - m_w / 2;
     m_y = am_plr->mo->y - m_h / 2;
     changeWindowLoc();
@@ -461,11 +467,13 @@ void startAutomap()
     if (!stopped)
         stopAutomap();
     stopped = false;
-    if (lastlevel != gamemap || lastepisode != gameepisode)
+    const auto& session = gameSession();
+
+    if (lastlevel != session.gamemap || lastepisode != session.gameepisode)
     {
         levelInit();
-        lastlevel = gamemap;
-        lastepisode = gameepisode;
+        lastlevel = session.gamemap;
+        lastepisode = session.gameepisode;
     }
     initAutomapVariables();
     loadPics();
@@ -507,7 +515,7 @@ doom_boolean automapResponder(Event* ev)
         if (ev->type == ev_keydown && ev->data1 == AM_STARTKEY)
         {
             startAutomap();
-            viewactive = false;
+            refreshFlags().viewactive = false;
             rc = true;
         }
     }
@@ -551,7 +559,7 @@ doom_boolean automapResponder(Event* ev)
                 break;
             case AM_ENDKEY:
                 bigstate = 0;
-                viewactive = true;
+                refreshFlags().viewactive = true;
                 stopAutomap();
                 break;
             case AM_GOBIGKEY:
@@ -590,7 +598,7 @@ doom_boolean automapResponder(Event* ev)
             default:
                 rc = false;
         }
-        if (!deathmatch && Doom::checkCheat(&cheat_amap, ev->data1))
+        if (!gameSession().deathmatch && Doom::checkCheat(&cheat_amap, ev->data1))
         {
             rc = false;
             cheating = (cheating + 1) % 3;
@@ -1110,7 +1118,9 @@ void drawPlayers()
     int their_color = -1;
     int color;
 
-    if (!netgame)
+    const auto& session = gameSession();
+
+    if (!session.netgame)
     {
         if (cheating)
             drawLineCharacter(cheat_player_arrow,
@@ -1131,15 +1141,17 @@ void drawPlayers()
         return;
     }
 
+    auto& players_ = playerState();
+
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         their_color++;
-        p = &players[i];
+        p = &players_.players[i];
 
-        if ((deathmatch && !singledemo) && p != am_plr)
+        if ((session.deathmatch && !demoState().singledemo) && p != am_plr)
             continue;
 
-        if (!playeringame[i])
+        if (!players_.playeringame[i])
             continue;
 
         if (p->powers[pw_invisibility])

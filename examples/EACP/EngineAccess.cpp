@@ -43,6 +43,13 @@
 #include <DOOM/st_stuff.h>
 #include <DOOM/tables.h>
 #include <DOOM/v_video.h>
+#include <DOOM/Game/GameClock.h>
+#include <DOOM/Game/GameFlow.h>
+#include <DOOM/Game/GameSession.h>
+#include <DOOM/Game/OverlayState.h>
+#include <DOOM/Game/PlayerState.h>
+#include <DOOM/Game/RefreshFlags.h>
+#include <DOOM/UI/MenuSettings.h>
 #include <DOOM/Wad/WadFile.h>
 
 // Engine globals that no header declares. DOOM.c reaches them the same way, so
@@ -50,9 +57,7 @@
 // this is the house style rather than a workaround - but they are the natural
 #include <DOOM/Render/Main.h>
 // candidates for a real interface as the engine gets refactored.
-extern doom_boolean& is_wiping_screen; // Doom::GameFlow (Engine member)
 extern unsigned char screen_palette[256 * 3];
-extern int& screenblocks; // config-backed Engine member (UI/MenuSettings.h)
 
 // Convex subsector cells rarely exceed a handful of corners; the cap only
 // bounds the clipper's scratch space.
@@ -189,7 +194,8 @@ void eacpDoomSnapshotTic()
 {
     int i;
 
-    if (gamestate != Doom::GS_LEVEL || sectors == 0 || numsectors <= 0)
+    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || sectors == 0
+        || numsectors <= 0)
         return;
 
     if (eacpSnapshotSectors != numsectors)
@@ -217,7 +223,7 @@ void eacpDoomSnapshotTic()
 
 int eacpDoomViewActive()
 {
-    return gamestate == Doom::GS_LEVEL && gametic;
+    return Doom::gameFlow().gamestate == Doom::GS_LEVEL && Doom::gameClock().gametic;
 }
 
 int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
@@ -226,7 +232,7 @@ int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
     int column;
     int row;
 
-    if (!is_wiping_screen || start == 0)
+    if (!Doom::gameFlow().is_wiping_screen || start == 0)
         return 0;
 
     // wipe_melt_running is the melt's own "I have been set up" flag, and the only
@@ -294,9 +300,11 @@ float eacpDoomViewRows()
 
 void eacpDoomRevealAutomap()
 {
-    Doom::Player* player = &players[displayplayer];
+    auto& players_ = Doom::playerState();
 
-    if (gamestate != Doom::GS_LEVEL || !gametic
+    Doom::Player* player = &players_.players[players_.displayplayer];
+
+    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || !Doom::gameClock().gametic
         || !Doom::overlayState().automapactive || player->mo == 0)
         return;
 
@@ -321,7 +329,8 @@ int eacpDoomDarkenRow()
 {
     // Doom::drawMenu only reaches its darkening once it is actually showing a menu: a
     // confirmation prompt draws its text and returns before then.
-    if (menuactive && !messageToPrint && (doom_flags & DOOM_FLAG_MENU_DARKEN_BG))
+    if (Doom::overlayState().menuactive && !messageToPrint
+        && (doom_flags & DOOM_FLAG_MENU_DARKEN_BG))
         return EACP_DOOM_MENU_DARKEN_ROW;
 
     return 0;
@@ -340,7 +349,7 @@ static void eacpDrawUnderLayers()
     auto& overlay = Doom::overlayState();
     auto& view = Doom::viewWindow();
 
-    if (gamestate != Doom::GS_LEVEL || !gametic)
+    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || !Doom::gameClock().gametic)
         return;
 
     if (overlay.automapactive)
@@ -348,7 +357,7 @@ static void eacpDrawUnderLayers()
 
     Doom::drawHud();
 
-    if (paused)
+    if (Doom::refreshFlags().paused)
     {
         int y = overlay.automapactive ? 4 : view.viewwindowy + 4;
 
@@ -458,18 +467,20 @@ double eacpDoomTicTime()
 
 int eacpDoomIsWiping()
 {
-    return is_wiping_screen ? 1 : 0;
+    return Doom::gameFlow().is_wiping_screen ? 1 : 0;
 }
 
 int eacpDoomMouseSensitivity()
 {
-    return mouseSensitivity;
+    return Doom::menuSettings().mouseSensitivity;
 }
 
 EacpDoomCamera eacpDoomGetCamera()
 {
+    auto& players_ = Doom::playerState();
+
     EacpDoomCamera camera = {0, 0, 0, 0};
-    Doom::Player* player = &players[displayplayer];
+    Doom::Player* player = &players_.players[players_.displayplayer];
 
     if (player->mo == 0)
         return camera;
@@ -753,7 +764,9 @@ typedef struct
 // ignored.
 static int eacpFixedRow()
 {
-    return players[displayplayer].fixedcolormap;
+    auto& players_ = Doom::playerState();
+
+    return players_.players[players_.displayplayer].fixedcolormap;
 }
 
 // One row, whatever the distance - what the engine does with a bare colormap
@@ -967,17 +980,20 @@ static void eacpMeasureLines()
 // loads; per-frame the geometry pass just re-reads the (moving) heights.
 static void eacpEnsureLevel()
 {
+    auto& session = Doom::gameSession();
+
     EacpPoint square[4];
     int i;
 
     if (nodes == eacpCachedNodes && numsubsectors == eacpCachedSubsectors
-        && gameepisode == eacpCachedEpisode && gamemap == eacpCachedMap)
+        && session.gameepisode == eacpCachedEpisode
+        && session.gamemap == eacpCachedMap)
         return;
 
     eacpCachedNodes = nodes;
     eacpCachedSubsectors = numsubsectors;
-    eacpCachedEpisode = gameepisode;
-    eacpCachedMap = gamemap;
+    eacpCachedEpisode = session.gameepisode;
+    eacpCachedMap = session.gamemap;
 
     eacpPolyTotal = 0;
 
@@ -1505,6 +1521,8 @@ static float eacpWeaponBrightening()
 // lit frame, then the sector.
 static float eacpWeaponLight(int fullbright)
 {
+    auto& players_ = Doom::playerState();
+
     float row;
 
     if (eacpFixedRow())
@@ -1513,10 +1531,11 @@ static float eacpWeaponLight(int fullbright)
     if (fullbright)
         return 0.0f;
 
-    row =
-        eacpSectorLight(players[displayplayer].mo->subsector->sector->lightlevel, 0)
-            .row
-        - eacpWeaponBrightening();
+    row = eacpSectorLight(players_.players[players_.displayplayer]
+                              .mo->subsector->sector->lightlevel,
+                          0)
+              .row
+          - eacpWeaponBrightening();
 
     return row < 0.0f ? 0.0f : row;
 }
@@ -1531,9 +1550,11 @@ static float eacpWeaponRowShift()
 
 void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 {
+    auto& players_ = Doom::playerState();
+
     auto& gfx = Doom::graphicsData();
 
-    Doom::Player* player = &players[displayplayer];
+    Doom::Player* player = &players_.players[players_.displayplayer];
     int i;
 
     if (out == 0)
@@ -1544,7 +1565,8 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 
     eacpEnsureTextureData();
 
-    if (!eacpTexturesReady || gamestate != Doom::GS_LEVEL || player->mo == 0)
+    if (!eacpTexturesReady || Doom::gameFlow().gamestate != Doom::GS_LEVEL
+        || player->mo == 0)
         return;
 
     for (i = 0; i < Doom::NUMPSPRITES && i < EACP_DOOM_HUD_SPRITES; ++i)
@@ -1642,7 +1664,9 @@ static void eacpEmitSubsector(EacpEmitter* em, int index)
 
 static void eacpEmitWorld(EacpEmitter* em, const EacpDoomCamera* camera)
 {
-    Doom::Player* player = &players[displayplayer];
+    auto& players_ = Doom::playerState();
+
+    Doom::Player* player = &players_.players[players_.displayplayer];
     int i;
 
     for (i = 0; i < numlines; ++i)
@@ -1681,8 +1705,8 @@ int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
     eacpAlpha = alpha < 0.0f ? 0.0f : (alpha > 1.0f ? 1.0f : alpha);
     eacpEnsureTextureData();
 
-    if (gamestate != Doom::GS_LEVEL || vertices == 0 || draws == 0 || camera == 0
-        || textureCount <= 0 || lines == 0 || !eacpTexturesReady)
+    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || vertices == 0 || draws == 0
+        || camera == 0 || textureCount <= 0 || lines == 0 || !eacpTexturesReady)
         return 0;
 
     eacpEnsureLevel();
@@ -1978,8 +2002,9 @@ int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
 {
     EacpAutomapEmitter em;
 
-    if (!Doom::overlayState().automapactive || gamestate != Doom::GS_LEVEL
-        || camera == 0 || vertices == 0 || lines == 0)
+    if (!Doom::overlayState().automapactive
+        || Doom::gameFlow().gamestate != Doom::GS_LEVEL || camera == 0
+        || vertices == 0 || lines == 0)
         return 0;
 
     em.vertices = vertices;

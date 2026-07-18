@@ -32,6 +32,9 @@
 #include "../p_local.h"
 #include "../doomstat.h"
 
+#include "GameSession.h"
+#include "GameVersion.h"
+#include "PlayerState.h"
 #include "Sound.h"
 #include "SoundSettings.h"
 #include "SoundState.h"
@@ -79,15 +82,10 @@
 // channel array by value, which needs the complete type there).
 
 // The engine-side sound bookkeeping now lives on the Engine (Game/SoundState.h, moved
-// by the file-scope-statics sweep - REFACTOR.md, Step 5). These were file-local to
-// Game/Sound and read by no other file; the vanilla names become references onto the
-// members, the same as snd_SfxVolume/... just below. channels_s_sound is now a
-// plain-pointer VIEW onto SoundState's owned channels vector (RAII, Step 9), refreshed by
-// initSound after the resize, rather than a reference to a pointer member.
+// by the file-scope-statics sweep - REFACTOR.md, Step 5), and is read straight off
+// Doom::soundState(). channels_s_sound is a plain-pointer VIEW onto SoundState's owned
+// channels vector (RAII, Step 9), refreshed by initSound after the resize.
 static Doom::SoundChannel* channels_s_sound = nullptr;
-static doom_boolean& mus_paused = Doom::soundState().mus_paused;
-static Doom::MusicInfo*& mus_playing_s_sound = Doom::soundState().mus_playing;
-static int& nextcleanup = Doom::soundState().nextcleanup;
 
 // The sfx/music volumes and the channel count are config-backed, and used to
 // resist the Engine migration because Config.cpp's defaults[] captured their
@@ -96,13 +94,10 @@ static int& nextcleanup = Doom::soundState().nextcleanup;
 // runtime (bindEngineDefaults) instead, so these are ordinary references onto
 // the Engine's SoundSettings cluster like any other migrated global (Game/
 // SoundSettings.h, REFACTOR.md Step 5).
+// Both are still externed as references in doomstat.h and read by UI/Menu and Host/Sound,
+// so the two definitions stay until those readers go through soundSettings() too.
 int& snd_SfxVolume = Doom::soundSettings().sfxVolume; // sound-effect volume, 0-15
 int& snd_MusicVolume = Doom::soundSettings().musicVolume; // music volume, 0-15
-
-// following is set
-//  by the defaults code in M_misc:
-// number of channels available
-int& numChannels = Doom::soundSettings().numChannels;
 
 namespace Doom
 {
@@ -139,15 +134,16 @@ void initSound(int sfxVolume, int musicVolume)
     // is the view onto its data(). resize value-initialises each SoundChannel (sfxinfo
     // null), so the explicit clear below is kept only to match vanilla verbatim.
     auto& snd = Doom::soundState();
-    snd.channels.resize(numChannels);
+    auto& sndset = soundSettings();
+    snd.channels.resize(sndset.numChannels);
     channels_s_sound = snd.channels.data();
 
     // Free all channels for use
-    for (int i = 0; i < numChannels; i++)
+    for (int i = 0; i < sndset.numChannels; i++)
         channels_s_sound[i].sfxinfo = nullptr;
 
     // no sounds are playing, and they are not mus_paused
-    mus_paused = 0;
+    snd.mus_paused = 0;
 
     // Note that sounds have not been cached (yet).
     for (int i = 1; i < NUMSFX; i++)
@@ -163,17 +159,20 @@ void startLevelSound()
 {
     int mnum;
 
+    auto& sound = soundState();
+    auto& session = gameSession();
+
     // kill all playing sounds at start of level
     //  (trust me - a good idea)
-    for (int cnum = 0; cnum < numChannels; cnum++)
+    for (int cnum = 0; cnum < soundSettings().numChannels; cnum++)
         if (channels_s_sound[cnum].sfxinfo)
             stopChannel(cnum);
 
     // start new music for the level
-    mus_paused = 0;
+    sound.mus_paused = 0;
 
-    if (gamemode == commercial)
-        mnum = mus_runnin + gamemap - 1;
+    if (gameVersion().gamemode == commercial)
+        mnum = mus_runnin + session.gamemap - 1;
     else
     {
         int spmus[] = {
@@ -190,10 +189,10 @@ void startLevelSound()
             mus_e1m9 // Tim                e4m9
         };
 
-        if (gameepisode < 4)
-            mnum = mus_e1m1 + (gameepisode - 1) * 9 + gamemap - 1;
+        if (session.gameepisode < 4)
+            mnum = mus_e1m1 + (session.gameepisode - 1) * 9 + session.gamemap - 1;
         else
-            mnum = spmus[gamemap - 1];
+            mnum = spmus[session.gamemap - 1];
     }
 
     // HACK FOR COMMERCIAL
@@ -202,7 +201,7 @@ void startLevelSound()
 
     changeMusic(mnum, true);
 
-    nextcleanup = 15;
+    sound.nextcleanup = 15;
 }
 
 void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
@@ -215,6 +214,8 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     int cnum;
 
     Mobj* origin = static_cast<Mobj*>(origin_p);
+
+    auto& sndset = soundSettings();
 
     // check for bogus sound #
     if (sfx_id < 1 || sfx_id > NUMSFX)
@@ -237,8 +238,8 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
         if (volume < 1)
             return;
 
-        if (volume > snd_SfxVolume)
-            volume = snd_SfxVolume;
+        if (volume > sndset.sfxVolume)
+            volume = sndset.sfxVolume;
     }
     else
     {
@@ -246,15 +247,17 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
         priority = NORM_PRIORITY;
     }
 
+    auto& state = playerState();
+
     // Check to see if it is audible,
     //  and if not, modify the params
-    if (origin && origin != players[consoleplayer].mo)
+    if (origin && origin != state.players[state.consoleplayer].mo)
     {
         rc = adjustSoundParams(
-            players[consoleplayer].mo, origin, &volume, &sep, &pitch);
+            state.players[state.consoleplayer].mo, origin, &volume, &sep, &pitch);
 
-        if (origin->x == players[consoleplayer].mo->x
-            && origin->y == players[consoleplayer].mo->y)
+        if (origin->x == state.players[state.consoleplayer].mo->x
+            && origin->y == state.players[state.consoleplayer].mo->y)
         {
             sep = NORM_SEP;
         }
@@ -336,12 +339,12 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
 
 void startSound(void* origin, int sfx_id)
 {
-    startSoundAtVolume(origin, sfx_id, snd_SfxVolume);
+    startSoundAtVolume(origin, sfx_id, soundSettings().sfxVolume);
 }
 
 void stopSound(void* origin)
 {
-    for (int cnum = 0; cnum < numChannels; cnum++)
+    for (int cnum = 0; cnum < soundSettings().numChannels; cnum++)
     {
         if (channels_s_sound[cnum].sfxinfo
             && channels_s_sound[cnum].origin == origin)
@@ -357,19 +360,23 @@ void stopSound(void* origin)
 //
 void pauseSound()
 {
-    if (mus_playing_s_sound && !mus_paused)
+    auto& sound = soundState();
+
+    if (sound.mus_playing && !sound.mus_paused)
     {
-        pauseSong(mus_playing_s_sound->handle);
-        mus_paused = true;
+        pauseSong(sound.mus_playing->handle);
+        sound.mus_paused = true;
     }
 }
 
 void resumeSound()
 {
-    if (mus_playing_s_sound && mus_paused)
+    auto& sound = soundState();
+
+    if (sound.mus_playing && sound.mus_paused)
     {
-        resumeSong(mus_playing_s_sound->handle);
-        mus_paused = false;
+        resumeSong(sound.mus_playing->handle);
+        sound.mus_paused = false;
     }
 }
 
@@ -387,7 +394,9 @@ void updateSounds(void* listener_p)
 
     Mobj* listener = static_cast<Mobj*>(listener_p);
 
-    for (int cnum = 0; cnum < numChannels; cnum++)
+    auto& sndset = soundSettings();
+
+    for (int cnum = 0; cnum < sndset.numChannels; cnum++)
     {
         c = &channels_s_sound[cnum];
         sfx = c->sfxinfo;
@@ -397,7 +406,7 @@ void updateSounds(void* listener_p)
             if (soundIsPlaying(c->handle))
             {
                 // initialize parameters
-                volume = snd_SfxVolume;
+                volume = sndset.sfxVolume;
                 pitch = NORM_PITCH;
                 sep = NORM_SEP;
 
@@ -410,9 +419,9 @@ void updateSounds(void* listener_p)
                         stopChannel(cnum);
                         continue;
                     }
-                    else if (volume > snd_SfxVolume)
+                    else if (volume > sndset.sfxVolume)
                     {
-                        volume = snd_SfxVolume;
+                        volume = sndset.sfxVolume;
                     }
                 }
 
@@ -457,7 +466,7 @@ void setMusicVolumeLevel(int volume)
 
     setMusicVolume(127);
     setMusicVolume(volume);
-    snd_MusicVolume = volume;
+    soundSettings().musicVolume = volume;
 }
 
 void setSfxVolume(int volume)
@@ -470,7 +479,7 @@ void setSfxVolume(int volume)
         fatalError(error_buf);
     }
 
-    snd_SfxVolume = volume;
+    soundSettings().sfxVolume = volume;
 }
 
 //
@@ -486,6 +495,8 @@ void changeMusic(int musicnum, int looping)
     MusicInfo* music = nullptr;
     EA::Array<char, 9> namebuf;
 
+    auto& sound = soundState();
+
     if ((musicnum <= mus_None) || (musicnum >= NUMMUSIC))
     {
         //fatalError("Error: Bad music number %d", musicnum);
@@ -496,7 +507,7 @@ void changeMusic(int musicnum, int looping)
     else
         music = &S_music[musicnum];
 
-    if (mus_playing_s_sound == music)
+    if (sound.mus_playing == music)
         return;
 
     // shutdown old music
@@ -518,21 +529,23 @@ void changeMusic(int musicnum, int looping)
     // play it
     playSong(music->handle, looping);
 
-    mus_playing_s_sound = music;
+    sound.mus_playing = music;
 }
 
 void stopMusic()
 {
-    if (mus_playing_s_sound)
+    auto& sound = soundState();
+
+    if (sound.mus_playing)
     {
-        if (mus_paused)
-            resumeSong(mus_playing_s_sound->handle);
+        if (sound.mus_paused)
+            resumeSong(sound.mus_playing->handle);
 
-        stopSong(mus_playing_s_sound->handle);
-        unregisterSong(mus_playing_s_sound->handle);
+        stopSong(sound.mus_playing->handle);
+        unregisterSong(sound.mus_playing->handle);
 
-        mus_playing_s_sound->data = nullptr;
-        mus_playing_s_sound = nullptr;
+        sound.mus_playing->data = nullptr;
+        sound.mus_playing = nullptr;
     }
 }
 
@@ -554,7 +567,7 @@ void stopChannel(int cnum)
 
         // check to see
         //  if other channels are playing the sound
-        for (int i = 0; i < numChannels; i++)
+        for (int i = 0; i < soundSettings().numChannels; i++)
         {
             if (cnum != i && c.sfxinfo == channels_s_sound[i].sfxinfo)
             {
@@ -584,6 +597,9 @@ int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pit
 
     (void) pitch; // vanilla leaves pitch adjustment commented out
 
+    auto& sndset = soundSettings();
+    auto& session = gameSession();
+
     // calculate the distance to sound origin
     //  and clip it if necessary
     adx = doom_abs(listener->x - source->x);
@@ -592,7 +608,7 @@ int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pit
     // From _GG1_ p.428. Appox. eucledian distance fast.
     approx_dist = adx + ady - ((adx < ady ? adx : ady) >> 1);
 
-    if (gamemap != 8 && approx_dist > S_CLIPPING_DIST)
+    if (session.gamemap != 8 && approx_dist > S_CLIPPING_DIST)
     {
         return 0;
     }
@@ -613,22 +629,22 @@ int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pit
     // volume calculation
     if (approx_dist < S_CLOSE_DIST)
     {
-        *vol = snd_SfxVolume;
+        *vol = sndset.sfxVolume;
     }
-    else if (gamemap == 8)
+    else if (session.gamemap == 8)
     {
         if (approx_dist > S_CLIPPING_DIST)
             approx_dist = S_CLIPPING_DIST;
 
-        *vol =
-            15
-            + ((snd_SfxVolume - 15) * ((S_CLIPPING_DIST - approx_dist) >> FRACBITS))
-                  / S_ATTENUATOR;
+        *vol = 15
+               + ((sndset.sfxVolume - 15)
+                  * ((S_CLIPPING_DIST - approx_dist) >> FRACBITS))
+                     / S_ATTENUATOR;
     }
     else
     {
         // distance effect
-        *vol = (snd_SfxVolume * ((S_CLIPPING_DIST - approx_dist) >> FRACBITS))
+        *vol = (sndset.sfxVolume * ((S_CLIPPING_DIST - approx_dist) >> FRACBITS))
                / S_ATTENUATOR;
     }
 
@@ -646,8 +662,10 @@ int getChannel(void* origin, SfxInfo* sfxinfo)
 
     SoundChannel* c;
 
+    auto& sndset = soundSettings();
+
     // Find an open channel
-    for (cnum = 0; cnum < numChannels; cnum++)
+    for (cnum = 0; cnum < sndset.numChannels; cnum++)
     {
         if (!channels_s_sound[cnum].sfxinfo)
             break;
@@ -659,14 +677,14 @@ int getChannel(void* origin, SfxInfo* sfxinfo)
     }
 
     // None available
-    if (cnum == numChannels)
+    if (cnum == sndset.numChannels)
     {
         // Look for lower priority
-        for (cnum = 0; cnum < numChannels; cnum++)
+        for (cnum = 0; cnum < sndset.numChannels; cnum++)
             if (channels_s_sound[cnum].sfxinfo->priority >= sfxinfo->priority)
                 break;
 
-        if (cnum == numChannels)
+        if (cnum == sndset.numChannels)
         {
             // FUCK!  No lower priority.  Sorry, Charlie.
             return -1;

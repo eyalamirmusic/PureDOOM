@@ -29,9 +29,9 @@
 // Config load/save, the raw file I/O, the screenshot writer and Doom::drawText.
 // m_misc.cpp shims the M_ names. The defaults[] table (binding config keys to
 // the engine's option globals) stays at file scope here, above the namespace,
-// alongside the externs the still-loose entries take addresses of; defaultfile
-// is a reference onto its Engine member (Game/ConfigPaths.h). loadDefaults reads
-// the test config, so the frame goldens pin it.
+// alongside the externs the still-loose entries take addresses of; the config
+// paths are read straight off Doom::configPaths() (Game/ConfigPaths.h).
+// loadDefaults reads the test config, so the frame goldens pin it.
 
 #include "../doom_config.h"
 
@@ -55,6 +55,7 @@
 #include "Args.h"
 #include "ConfigPaths.h"
 #include "InputConfig.h"
+#include "PlayerState.h"
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -115,9 +116,8 @@ extern char* chat_macros[];
 
 extern byte scantokey[128];
 
-// usemouse/usejoystick/crosshair/always_run are Doom::InputConfig members (Engine); references.
-int& usemouse = Doom::inputConfig().usemouse;
-int& usejoystick = Doom::inputConfig().usejoystick;
+// crosshair/always_run are Doom::InputConfig members (Engine); references, still read by
+// UI/Menu.cpp, Game/Game.cpp and Host/Api.cpp through their own extern declarations.
 int& crosshair = Doom::inputConfig().crosshair;
 int& always_run = Doom::inputConfig().always_run;
 
@@ -184,8 +184,6 @@ Doom::ConfigDefault defaults[] = {
 
 #pragma GCC diagnostic pop
 int numdefaults = sizeof(defaults) / sizeof(Doom::ConfigDefault);
-// defaultfile is an Engine member now (Game/ConfigPaths.h); reference onto it.
-char*& defaultfile = Doom::configPaths().defaultfile;
 
 namespace Doom
 {
@@ -356,7 +354,7 @@ void saveDefaults()
 
     bindEngineDefaults();
 
-    f = doom_open(defaultfile, "w");
+    f = doom_open(configPaths().defaultfile, "w");
     if (!f)
         return; // can't write the file, but don't complain
 
@@ -399,6 +397,8 @@ void loadDefaults()
     int parm;
     doom_boolean isstring;
 
+    auto& paths = configPaths();
+
     bindEngineDefaults();
 
     // set everything to base values
@@ -415,17 +415,17 @@ void loadDefaults()
     i = Doom::checkParm("-config");
     if (i && i < myargc - 1)
     {
-        defaultfile = myargv[i + 1];
+        paths.defaultfile = myargv[i + 1];
         //doom_print("        default file: %s\n", defaultfile);
         doom_print("        default file: ");
-        doom_print(defaultfile);
+        doom_print(paths.defaultfile);
         doom_print("\n");
     }
     else
-        defaultfile = basedefault;
+        paths.defaultfile = paths.basedefault;
 
     // read the file in, overriding any set defaults
-    f = doom_open(defaultfile, "r");
+    f = doom_open(paths.defaultfile, "r");
     if (f)
     {
         while (!doom_eof(f))
@@ -602,7 +602,8 @@ void writeScreenshot()
                  SCREENHEIGHT,
                  static_cast<byte*>((Doom::cacheLumpName("PLAYPAL"))));
 
-    players[consoleplayer].message = "screen shot";
+    auto& state = playerState();
+    state.players[state.consoleplayer].message = "screen shot";
 }
 
 } // namespace Doom

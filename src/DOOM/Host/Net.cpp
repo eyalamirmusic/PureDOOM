@@ -10,8 +10,8 @@
 //        The engine's network seam. Rewritten from i_net.cpp, which keeps the
 //        vanilla I_ names as shims. PureDOOM ships single-player, so the socket
 //        code lives behind I_NET_ENABLED (off by default) and only the
-//        single-player init path runs. doomcom / netbuffer / netgame are owned
-//        by Game/Net.cpp and reached here through doomstat.h's externs.
+//        single-player init path runs. doomcom / netbuffer live on the Engine's
+//        NetState and netgame on its GameSession, reached through their accessors.
 //
 //-----------------------------------------------------------------------------
 
@@ -46,6 +46,7 @@
 #include "../doomstat.h"
 #include "../i_net.h"
 
+#include "../Game/GameSession.h"
 #include "../Game/NetState.h"
 #include "Net.h"
 
@@ -152,29 +153,31 @@ void PacketSend()
     int c;
     NetPacket sw;
 
+    auto& net = netState();
+
     // byte swap
-    sw.checksum = htonl(netbuffer->checksum);
-    sw.player = netbuffer->player;
-    sw.retransmitfrom = netbuffer->retransmitfrom;
-    sw.starttic = netbuffer->starttic;
-    sw.numtics = netbuffer->numtics;
-    for (c = 0; c < netbuffer->numtics; c++)
+    sw.checksum = htonl(net.netbuffer->checksum);
+    sw.player = net.netbuffer->player;
+    sw.retransmitfrom = net.netbuffer->retransmitfrom;
+    sw.starttic = net.netbuffer->starttic;
+    sw.numtics = net.netbuffer->numtics;
+    for (c = 0; c < net.netbuffer->numtics; c++)
     {
-        sw.cmds[c].forwardmove = netbuffer->cmds[c].forwardmove;
-        sw.cmds[c].sidemove = netbuffer->cmds[c].sidemove;
-        sw.cmds[c].angleturn = htons(netbuffer->cmds[c].angleturn);
-        sw.cmds[c].consistancy = htons(netbuffer->cmds[c].consistancy);
-        sw.cmds[c].chatchar = netbuffer->cmds[c].chatchar;
-        sw.cmds[c].buttons = netbuffer->cmds[c].buttons;
+        sw.cmds[c].forwardmove = net.netbuffer->cmds[c].forwardmove;
+        sw.cmds[c].sidemove = net.netbuffer->cmds[c].sidemove;
+        sw.cmds[c].angleturn = htons(net.netbuffer->cmds[c].angleturn);
+        sw.cmds[c].consistancy = htons(net.netbuffer->cmds[c].consistancy);
+        sw.cmds[c].chatchar = net.netbuffer->cmds[c].chatchar;
+        sw.cmds[c].buttons = net.netbuffer->cmds[c].buttons;
     }
 
     // doom_print ("sending %i\n",gametic);
     c = sendto(sendsocket,
                (const char*) &sw,
-               doomcom->datalength,
+               net.doomcom->datalength,
                0,
-               (void*) &sendaddress[doomcom->remotenode],
-               sizeof(sendaddress[doomcom->remotenode]));
+               (void*) &sendaddress[net.doomcom->remotenode],
+               sizeof(sendaddress[net.doomcom->remotenode]));
 #endif
 }
 
@@ -193,6 +196,8 @@ void PacketGet()
     int fromlen;
 #endif
     NetPacket sw;
+
+    auto& net = netState();
 
     fromlen = sizeof(fromaddress);
     c = recvfrom(insocket,
@@ -223,7 +228,7 @@ void PacketGet()
             fatalError(error_buf);
         }
 #endif
-        doomcom->remotenode = -1; // no packet
+        net.doomcom->remotenode = -1; // no packet
         return;
     }
 
@@ -245,35 +250,35 @@ void PacketGet()
     }
 
     // find remote node number
-    for (i = 0; i < doomcom->numnodes; i++)
+    for (i = 0; i < net.doomcom->numnodes; i++)
         if (fromaddress.sin_addr.s_addr == sendaddress[i].sin_addr.s_addr)
             break;
 
-    if (i == doomcom->numnodes)
+    if (i == net.doomcom->numnodes)
     {
         // packet is not from one of the players (new game broadcast)
-        doomcom->remotenode = -1; // no packet
+        net.doomcom->remotenode = -1; // no packet
         return;
     }
 
-    doomcom->remotenode = i; // good packet from a game player
-    doomcom->datalength = c;
+    net.doomcom->remotenode = i; // good packet from a game player
+    net.doomcom->datalength = c;
 
     // byte swap
-    netbuffer->checksum = ntohl(sw.checksum);
-    netbuffer->player = sw.player;
-    netbuffer->retransmitfrom = sw.retransmitfrom;
-    netbuffer->starttic = sw.starttic;
-    netbuffer->numtics = sw.numtics;
+    net.netbuffer->checksum = ntohl(sw.checksum);
+    net.netbuffer->player = sw.player;
+    net.netbuffer->retransmitfrom = sw.retransmitfrom;
+    net.netbuffer->starttic = sw.starttic;
+    net.netbuffer->numtics = sw.numtics;
 
-    for (c = 0; c < netbuffer->numtics; c++)
+    for (c = 0; c < net.netbuffer->numtics; c++)
     {
-        netbuffer->cmds[c].forwardmove = sw.cmds[c].forwardmove;
-        netbuffer->cmds[c].sidemove = sw.cmds[c].sidemove;
-        netbuffer->cmds[c].angleturn = ntohs(sw.cmds[c].angleturn);
-        netbuffer->cmds[c].consistancy = ntohs(sw.cmds[c].consistancy);
-        netbuffer->cmds[c].chatchar = sw.cmds[c].chatchar;
-        netbuffer->cmds[c].buttons = sw.cmds[c].buttons;
+        net.netbuffer->cmds[c].forwardmove = sw.cmds[c].forwardmove;
+        net.netbuffer->cmds[c].sidemove = sw.cmds[c].sidemove;
+        net.netbuffer->cmds[c].angleturn = ntohs(sw.cmds[c].angleturn);
+        net.netbuffer->cmds[c].consistancy = ntohs(sw.cmds[c].consistancy);
+        net.netbuffer->cmds[c].chatchar = sw.cmds[c].chatchar;
+        net.netbuffer->cmds[c].buttons = sw.cmds[c].buttons;
     }
 #endif
 }
@@ -331,25 +336,25 @@ void initNetwork()
     // value-initialised here as the old doom_malloc + doom_memset(0) block was.
     auto& net = Doom::netState();
     net.doomcomStorage = DoomCom {};
-    doomcom = &net.doomcomStorage;
+    net.doomcom = &net.doomcomStorage;
 
     // set up for network
     i = Doom::checkParm("-dup");
     if (i && i < myargc - 1)
     {
-        doomcom->ticdup = myargv[i + 1][0] - '0';
-        if (doomcom->ticdup < 1)
-            doomcom->ticdup = 1;
-        if (doomcom->ticdup > 9)
-            doomcom->ticdup = 9;
+        net.doomcom->ticdup = myargv[i + 1][0] - '0';
+        if (net.doomcom->ticdup < 1)
+            net.doomcom->ticdup = 1;
+        if (net.doomcom->ticdup > 9)
+            net.doomcom->ticdup = 9;
     }
     else
-        doomcom->ticdup = 1;
+        net.doomcom->ticdup = 1;
 
     if (Doom::checkParm("-extratic"))
-        doomcom->extratics = 1;
+        net.doomcom->extratics = 1;
     else
-        doomcom->extratics = 0;
+        net.doomcom->extratics = 0;
 
     p = Doom::checkParm("-port");
     if (p && p < myargc - 1)
@@ -377,32 +382,32 @@ void initNetwork()
     if (!i)
     {
         // single player game
-        netgame = false;
-        doomcom->id = DOOMCOM_ID;
-        doomcom->numplayers = doomcom->numnodes = 1;
-        doomcom->deathmatch = false;
-        doomcom->consoleplayer = 0;
+        gameSession().netgame = false;
+        net.doomcom->id = DOOMCOM_ID;
+        net.doomcom->numplayers = net.doomcom->numnodes = 1;
+        net.doomcom->deathmatch = false;
+        net.doomcom->consoleplayer = 0;
         return;
     }
 
 #if defined(I_NET_ENABLED)
     netsend = PacketSend;
     netget = PacketGet;
-    netgame = true;
+    gameSession().netgame = true;
 
     // parse player number and host list
-    doomcom->consoleplayer = myargv[i + 1][0] - '1';
+    net.doomcom->consoleplayer = myargv[i + 1][0] - '1';
 
-    doomcom->numnodes = 1; // this node for sure
+    net.doomcom->numnodes = 1; // this node for sure
 
     i++;
     while (++i < myargc && myargv[i][0] != '-')
     {
-        sendaddress[doomcom->numnodes].sin_family = AF_INET;
-        sendaddress[doomcom->numnodes].sin_port = htons(DOOMPORT);
+        sendaddress[net.doomcom->numnodes].sin_family = AF_INET;
+        sendaddress[net.doomcom->numnodes].sin_port = htons(DOOMPORT);
         if (myargv[i][0] == '.')
         {
-            sendaddress[doomcom->numnodes].sin_addr.s_addr =
+            sendaddress[net.doomcom->numnodes].sin_addr.s_addr =
                 inet_addr(myargv[i] + 1);
         }
         else
@@ -416,14 +421,14 @@ void initNetwork()
                 doom_concat(error_buf, myargv[i]);
                 fatalError(error_buf);
             }
-            sendaddress[doomcom->numnodes].sin_addr.s_addr =
+            sendaddress[net.doomcom->numnodes].sin_addr.s_addr =
                 *(int*) hostentry->h_addr_list[0];
         }
-        doomcom->numnodes++;
+        net.doomcom->numnodes++;
     }
 
-    doomcom->id = DOOMCOM_ID;
-    doomcom->numplayers = doomcom->numnodes;
+    net.doomcom->id = DOOMCOM_ID;
+    net.doomcom->numplayers = net.doomcom->numnodes;
 
     // build message to receive
     insocket = UDPsocket();
@@ -441,11 +446,13 @@ void initNetwork()
 void netCommand()
 {
 #if defined(I_NET_ENABLED)
-    if (doomcom->command == CMD_SEND)
+    auto& net = netState();
+
+    if (net.doomcom->command == CMD_SEND)
     {
         netsend();
     }
-    else if (doomcom->command == CMD_GET)
+    else if (net.doomcom->command == CMD_GET)
     {
         netget();
     }
@@ -454,7 +461,7 @@ void netCommand()
         // fatalError("Error: Bad net cmd: %i\n", doomcom->command);
 
         doom_strcpy(error_buf, "Error: Bad net cmd: ");
-        doom_concat(error_buf, doom_itoa(doomcom->command, 10));
+        doom_concat(error_buf, doom_itoa(net.doomcom->command, 10));
         fatalError(error_buf);
     }
 #endif

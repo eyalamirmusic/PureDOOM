@@ -65,7 +65,10 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include "../Game/Game.h"
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
 #include "../Game/OverlayState.h"
+#include "../Game/PlayerState.h"
 #include "../Game/Sound.h"
 #include "../Host/Video.h"
 #include "../Render/Main.h"
@@ -264,7 +267,9 @@ extern int doom_flags;
 // Height, in lines.
 #define ST_OUTHEIGHT 1
 
-#define ST_MAPWIDTH (doom_strlen(mapnames[(gameepisode - 1) * 9 + (gamemap - 1)]))
+#define ST_MAPWIDTH                                                                 \
+    (doom_strlen(mapnames[(gameSession().gameepisode - 1) * 9                       \
+                          + (gameSession().gamemap - 1)]))
 
 #define ST_MAPTITLEX (SCREENWIDTH - ST_MAPWIDTH * ST_CHATFONTWIDTH)
 
@@ -429,7 +434,7 @@ void refreshBackground()
     {
         Doom::drawPatch(ST_X, 0, STLIB_BG, sbar);
 
-        if (netgame)
+        if (gameSession().netgame)
             Doom::drawPatch(ST_FX, 0, STLIB_BG, faceback);
 
         Doom::copyRect(ST_X, 0, STLIB_BG, ST_WIDTH, ST_HEIGHT, ST_X, ST_Y, STLIB_FG);
@@ -460,7 +465,7 @@ doom_boolean statusBarResponder(Event* ev)
     // if a user keypress...
     else if (ev->type == ev_keydown)
     {
-        if (!netgame)
+        if (!gameSession().netgame)
         {
             // b. - enabled for more debug fun.
             // if (gameskill != sk_nightmare) {
@@ -520,7 +525,7 @@ doom_boolean statusBarResponder(Event* ev)
                 plyr->message = STSTR_MUS;
                 Doom::getParam(&cheat_mus, buf.data());
 
-                if (gamemode == commercial)
+                if (gameVersion().gamemode == commercial)
                 {
                     musnum = mus_runnin + (buf[0] - '0') * 10 + buf[1] - '0' - 1;
 
@@ -587,13 +592,15 @@ doom_boolean statusBarResponder(Event* ev)
                 //        players[consoleplayer].mo->angle,
                 //        players[consoleplayer].mo->x,
                 //        players[consoleplayer].mo->y);
+                auto& players_ = playerState();
+                const auto* mo = players_.players[players_.consoleplayer].mo;
+
                 doom_strcpy(buf.data(), "ang=0x");
-                doom_concat(buf.data(),
-                            doom_itoa(players[consoleplayer].mo->angle, 16));
+                doom_concat(buf.data(), doom_itoa(mo->angle, 16));
                 doom_concat(buf.data(), ";x,y=(0x");
-                doom_concat(buf.data(), doom_itoa(players[consoleplayer].mo->x, 16));
+                doom_concat(buf.data(), doom_itoa(mo->x, 16));
                 doom_concat(buf.data(), ",0x");
-                doom_concat(buf.data(), doom_itoa(players[consoleplayer].mo->y, 16));
+                doom_concat(buf.data(), doom_itoa(mo->y, 16));
                 doom_concat(buf.data(), ")");
                 plyr->message = buf.data();
             }
@@ -608,7 +615,9 @@ doom_boolean statusBarResponder(Event* ev)
 
             Doom::getParam(&cheat_clev, buf.data());
 
-            if (gamemode == commercial)
+            const auto& version = gameVersion();
+
+            if (version.gamemode == commercial)
             {
                 epsd = 0;
                 map = (buf[0] - '0') * 10 + buf[1] - '0';
@@ -627,21 +636,21 @@ doom_boolean statusBarResponder(Event* ev)
                 return false;
 
             // Ohmygod - this is not going to work.
-            if ((gamemode == retail) && ((epsd > 4) || (map > 9)))
+            if ((version.gamemode == retail) && ((epsd > 4) || (map > 9)))
                 return false;
 
-            if ((gamemode == registered) && ((epsd > 3) || (map > 9)))
+            if ((version.gamemode == registered) && ((epsd > 3) || (map > 9)))
                 return false;
 
-            if ((gamemode == shareware) && ((epsd > 1) || (map > 9)))
+            if ((version.gamemode == shareware) && ((epsd > 1) || (map > 9)))
                 return false;
 
-            if ((gamemode == commercial) && ((epsd > 1) || (map > 34)))
+            if ((version.gamemode == commercial) && ((epsd > 1) || (map > 34)))
                 return false;
 
             // So be it.
             plyr->message = STSTR_CLEV;
-            Doom::deferInitNew(gameskill, epsd, map);
+            Doom::deferInitNew(gameSession().gameskill, epsd, map);
         }
     }
     return false;
@@ -859,19 +868,21 @@ void updateWidgets()
     // refresh everything if this is him coming back to life
     updateFaceWidget();
 
+    const auto& session = gameSession();
+
     // used by the w_armsbg widget
-    st_notdeathmatch = !deathmatch;
+    st_notdeathmatch = !session.deathmatch;
 
     // used by w_arms[] widgets
-    st_armson = bar.st_statusbaron && !deathmatch;
+    st_armson = bar.st_statusbaron && !session.deathmatch;
 
     // used by w_frags widget
-    st_fragson = deathmatch && bar.st_statusbaron;
+    st_fragson = session.deathmatch && bar.st_statusbaron;
     st_fragscount = 0;
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (i != consoleplayer)
+        if (i != playerState().consoleplayer)
             st_fragscount += plyr->frags[i];
         else
             st_fragscount -= plyr->frags[i];
@@ -944,12 +955,13 @@ void doPaletteStuff()
 void drawWidgets(doom_boolean refresh)
 {
     auto& bar = statusBarState();
+    const auto& session = gameSession();
 
     // used by w_arms[] widgets
-    st_armson = bar.st_statusbaron && !deathmatch;
+    st_armson = bar.st_statusbaron && !session.deathmatch;
 
     // used by w_frags widget
-    st_fragson = deathmatch && bar.st_statusbaron;
+    st_fragson = session.deathmatch && bar.st_statusbaron;
 
     Doom::updateNum(w_ready, refresh);
 
@@ -1068,7 +1080,7 @@ void loadGraphics()
     // face backgrounds for different color players
     //doom_sprintf(namebuf, "STFB%d", consoleplayer);
     doom_strcpy(namebuf.data(), "STFB");
-    doom_concat(namebuf.data(), doom_itoa(consoleplayer, 10));
+    doom_concat(namebuf.data(), doom_itoa(playerState().consoleplayer, 10));
     faceback = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
 
     // status bar background bits
@@ -1134,8 +1146,10 @@ void unloadData()
 
 void initStatusBarData()
 {
+    auto& players_ = playerState();
+
     st_firsttime = true;
-    plyr = &players[consoleplayer];
+    plyr = &players_.players[players_.consoleplayer];
 
     st_clock = 0;
     st_chatstate = StartChatState;

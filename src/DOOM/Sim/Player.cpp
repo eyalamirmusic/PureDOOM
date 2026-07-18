@@ -22,6 +22,7 @@
 #include "../doomstat.h"
 #include "../p_local.h"
 
+#include "../Game/GameVersion.h"
 #include "../Game/LevelStats.h"
 #include "Player.h"
 #include "PlayerScratch.h"
@@ -269,7 +270,9 @@ void playerThink(Player& player)
             newweapon = wp_chainsaw;
         }
 
-        if ((gamemode == commercial) && newweapon == wp_shotgun
+        const auto& version = gameVersion();
+
+        if ((version.gamemode == commercial) && newweapon == wp_shotgun
             && player.weaponowned[wp_supershotgun]
             && player.readyweapon != wp_supershotgun)
         {
@@ -281,7 +284,7 @@ void playerThink(Player& player)
             // Do not go to plasma or BFG in shareware,
             //  even if cheated.
             if ((newweapon != wp_plasma && newweapon != wp_bfg)
-                || (gamemode != shareware))
+                || (version.gamemode != shareware))
             {
                 player.pendingweapon = newweapon;
             }

@@ -33,7 +33,10 @@
 #include "../s_sound.h"
 
 #include "../Game/AmmoLimits.h"
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
 #include "../Game/OverlayState.h"
+#include "../Game/PlayerState.h"
 #include "Interaction.h"
 
 #include "../UI/Automap.h"
@@ -85,7 +88,9 @@ doom_boolean giveAmmo(Player* player, AmmoType ammo, int num)
     else
         num = ammoLimit.clipammo[ammo] / 2;
 
-    if (gameskill == sk_baby || gameskill == sk_nightmare)
+    const auto skill = gameSession().gameskill;
+
+    if (skill == sk_baby || skill == sk_nightmare)
     {
         // give double ammo in trainer mode,
         // you'll need in nightmare
@@ -157,7 +162,9 @@ doom_boolean giveWeapon(Player* player, WeaponType weapon, doom_boolean dropped)
     doom_boolean gaveammo;
     doom_boolean gaveweapon;
 
-    if (netgame && (deathmatch != 2) && !dropped)
+    const auto& session = gameSession();
+
+    if (session.netgame && (session.deathmatch != 2) && !dropped)
     {
         // leave placed weapons forever on net games
         if (player->weaponowned[weapon])
@@ -166,13 +173,15 @@ doom_boolean giveWeapon(Player* player, WeaponType weapon, doom_boolean dropped)
         player->bonuscount += BONUSADD;
         player->weaponowned[weapon] = true;
 
-        if (deathmatch)
+        if (session.deathmatch)
             giveAmmo(player, weaponinfo[weapon].ammo, 5);
         else
             giveAmmo(player, weaponinfo[weapon].ammo, 2);
         player->pendingweapon = weapon;
 
-        if (player == &players[consoleplayer])
+        const auto& players_ = playerState();
+
+        if (player == &players_.players[players_.consoleplayer])
             Doom::startSound(nullptr, sfx_wpnup);
         return false;
     }
@@ -311,6 +320,8 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
     sound = sfx_itemup;
     player = toucher->player;
 
+    const auto& session = gameSession();
+
     // Dead thing touching.
     // Can happen with a sliding player corpse.
     if (toucher->health <= 0)
@@ -360,7 +371,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
             break;
 
         case SPR_MEGA:
-            if (gamemode != commercial)
+            if (gameVersion().gamemode != commercial)
                 return;
             player->health = 200;
             player->mo->health = player->health;
@@ -375,7 +386,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
             if (!player->cards[it_bluecard])
                 player->message = GOTBLUECARD;
             giveCard(player, it_bluecard);
-            if (!netgame)
+            if (!session.netgame)
                 break;
             return;
 
@@ -383,7 +394,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
             if (!player->cards[it_yellowcard])
                 player->message = GOTYELWCARD;
             giveCard(player, it_yellowcard);
-            if (!netgame)
+            if (!session.netgame)
                 break;
             return;
 
@@ -391,7 +402,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
             if (!player->cards[it_redcard])
                 player->message = GOTREDCARD;
             giveCard(player, it_redcard);
-            if (!netgame)
+            if (!session.netgame)
                 break;
             return;
 
@@ -399,7 +410,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
             if (!player->cards[it_blueskull])
                 player->message = GOTBLUESKUL;
             giveCard(player, it_blueskull);
-            if (!netgame)
+            if (!session.netgame)
                 break;
             return;
 
@@ -407,7 +418,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
             if (!player->cards[it_yellowskull])
                 player->message = GOTYELWSKUL;
             giveCard(player, it_yellowskull);
-            if (!netgame)
+            if (!session.netgame)
                 break;
             return;
 
@@ -415,7 +426,7 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
             if (!player->cards[it_redskull])
                 player->message = GOTREDSKULL;
             giveCard(player, it_redskull);
-            if (!netgame)
+            if (!session.netgame)
                 break;
             return;
 
@@ -608,7 +619,10 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
         player->itemcount++;
     Doom::removeMobj(special);
     player->bonuscount += BONUSADD;
-    if (player == &players[consoleplayer])
+
+    const auto& players_ = playerState();
+
+    if (player == &players_.players[players_.consoleplayer])
         Doom::startSound(nullptr, sound);
 }
 
@@ -628,6 +642,8 @@ void killMobj(Mobj* source, Mobj* target)
     target->flags |= MF_CORPSE | MF_DROPOFF;
     target->height >>= 2;
 
+    auto& players_ = playerState();
+
     if (source && source->player)
     {
         // count for intermission
@@ -635,26 +651,26 @@ void killMobj(Mobj* source, Mobj* target)
             source->player->killcount++;
 
         if (target->player)
-            source->player->frags[target->player - players]++;
+            source->player->frags[target->player - players_.players]++;
     }
-    else if (!netgame && (target->flags & MF_COUNTKILL))
+    else if (!gameSession().netgame && (target->flags & MF_COUNTKILL))
     {
         // count all monster deaths,
         // even those caused by other monsters
-        players[0].killcount++;
+        players_.players[0].killcount++;
     }
 
     if (target->player)
     {
         // count environment kills against you
         if (!source)
-            target->player->frags[target->player - players]++;
+            target->player->frags[target->player - players_.players]++;
 
         target->flags &= ~MF_SOLID;
         target->player->playerstate = PST_DEAD;
         dropWeapon(*target->player);
 
-        if (target->player == &players[consoleplayer]
+        if (target->player == &players_.players[players_.consoleplayer]
             && overlayState().automapactive)
         {
             // don't die in auto map,
@@ -733,7 +749,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
     }
 
     player = target->player;
-    if (player && gameskill == sk_baby)
+    if (player && gameSession().gameskill == sk_baby)
         damage >>= 1; // take half damage in trainer mode
 
     // Some close combat weapons should not
@@ -805,7 +821,9 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
 
         temp = damage < 100 ? damage : 100;
 
-        if (player == &players[consoleplayer])
+        const auto& players_ = playerState();
+
+        if (player == &players_.players[players_.consoleplayer])
             tactileFeedback(40, 10, 40 + temp * 2);
     }
 

@@ -29,8 +29,11 @@
 #include "../sounds.h"
 #include "../st_stuff.h"
 
+#include "../Game/GameSession.h"
+#include "../Game/LaunchOptions.h"
 #include "../Game/LevelStats.h"
 #include "../Game/MapSpawns.h"
+#include "../Game/PlayerState.h"
 #include "../Game/SkyState.h"
 #include "Clip.h"
 #include "Mobj.h"
@@ -438,7 +441,7 @@ void mobjThinker(Mobj* mobj)
         if (!(mobj->flags & MF_COUNTKILL))
             return;
 
-        if (!respawnmonsters)
+        if (!gameSession().respawnmonsters)
             return;
 
         mobj->movecount++;
@@ -477,7 +480,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     mobj->flags = info->flags;
     mobj->health = info->spawnhealth;
 
-    if (gameskill != sk_nightmare)
+    if (gameSession().gameskill != sk_nightmare)
         mobj->reactiontime = info->reactiontime;
 
     mobj->lastlook = Doom::randomness().forPlay() % MAXPLAYERS;
@@ -553,7 +556,7 @@ void respawnSpecials()
     int i;
 
     // only respawn items in deathmatch
-    if (deathmatch != 2)
+    if (gameSession().deathmatch != 2)
         return; //
 
     auto& queue = itemRespawnQueue();
@@ -613,11 +616,13 @@ void spawnPlayer(MapThing* mthing)
 
     Mobj* mobj;
 
+    auto& players_ = playerState();
+
     // not playing?
-    if (!playeringame[mthing->type - 1])
+    if (!players_.playeringame[mthing->type - 1])
         return;
 
-    p = &players[mthing->type - 1];
+    p = &players_.players[mthing->type - 1];
 
     if (p->playerstate == PST_REBORN)
         Doom::playerReborn(mthing->type - 1);
@@ -649,11 +654,11 @@ void spawnPlayer(MapThing* mthing)
     setupPsprites(*p);
 
     // give all cards in death match mode
-    if (deathmatch)
+    if (gameSession().deathmatch)
         for (int i = 0; i < NUMCARDS; i++)
             p->cards[i] = true;
 
-    if (mthing->type - 1 == consoleplayer)
+    if (mthing->type - 1 == players_.consoleplayer)
     {
         // wake up the status bar
         Doom::startStatusBar();
@@ -677,6 +682,7 @@ void spawnMapThing(MapThing* mthing)
     fixed_t z;
 
     auto& spawns = mapSpawns();
+    const auto& session = gameSession();
 
     // count deathmatch start positions
     if (mthing->type == 11)
@@ -694,22 +700,22 @@ void spawnMapThing(MapThing* mthing)
     {
         // save spots for respawning in network games
         spawns.playerstarts[mthing->type - 1] = *mthing;
-        if (!deathmatch)
+        if (!session.deathmatch)
             spawnPlayer(mthing);
 
         return;
     }
 
     // check for apropriate skill level
-    if (!netgame && (mthing->options & 16))
+    if (!session.netgame && (mthing->options & 16))
         return;
 
-    if (gameskill == sk_baby)
+    if (session.gameskill == sk_baby)
         bit = 1;
-    else if (gameskill == sk_nightmare)
+    else if (session.gameskill == sk_nightmare)
         bit = 4;
     else
-        bit = 1 << (gameskill - 1);
+        bit = 1 << (session.gameskill - 1);
 
     if (!(mthing->options & bit))
         return;
@@ -736,11 +742,12 @@ void spawnMapThing(MapThing* mthing)
     }
 
     // don't spawn keycards and players in deathmatch
-    if (deathmatch && mobjinfo[i].flags & MF_NOTDMATCH)
+    if (session.deathmatch && mobjinfo[i].flags & MF_NOTDMATCH)
         return;
 
     // don't spawn any monsters if -nomonsters
-    if (nomonsters && (i == MT_SKULL || (mobjinfo[i].flags & MF_COUNTKILL)))
+    if (launchOptions().nomonsters
+        && (i == MT_SKULL || (mobjinfo[i].flags & MF_COUNTKILL)))
     {
         return;
     }
@@ -759,10 +766,12 @@ void spawnMapThing(MapThing* mthing)
 
     if (mobj->tics > 0)
         mobj->tics = 1 + (Doom::randomness().forPlay() % mobj->tics);
+    auto& stats = levelStats();
+
     if (mobj->flags & MF_COUNTKILL)
-        totalkills++;
+        stats.totalkills++;
     if (mobj->flags & MF_COUNTITEM)
-        totalitems++;
+        stats.totalitems++;
 
     mobj->angle = ANG45 * (mthing->angle / 45);
     if (mthing->options & MTF_AMBUSH)

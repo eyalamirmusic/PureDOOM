@@ -42,8 +42,12 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include "../Game/GameSession.h"
+#include "../Game/GameVersion.h"
 #include "../Game/OverlayState.h"
+#include "../Game/PlayerState.h"
 #include "Hud.h"
+#include "MenuSettings.h"
 #include "HudChat.h"
 #include "HudFlags.h"
 #include "HudFont.h"
@@ -60,16 +64,14 @@ extern char* chat_macros[];
 extern char* player_names[];
 extern char* mapnames[];
 
-// Other subsystems' globals this file reads.
-extern int& showMessages; // config-backed Engine member (UI/MenuSettings.h)
-
 //
 // Locally used constants, shortcuts.
 //
-#define HU_TITLE (mapnames[(gameepisode - 1) * 9 + gamemap - 1])
-#define HU_TITLE2 (mapnames2[gamemap - 1])
-#define HU_TITLEP (mapnamesp[gamemap - 1])
-#define HU_TITLET (mapnamest[gamemap - 1])
+#define HU_TITLE                                                                    \
+    (mapnames[(gameSession().gameepisode - 1) * 9 + gameSession().gamemap - 1])
+#define HU_TITLE2 (mapnames2[gameSession().gamemap - 1])
+#define HU_TITLEP (mapnamesp[gameSession().gamemap - 1])
+#define HU_TITLET (mapnamest[gameSession().gamemap - 1])
 #define HU_TITLEHEIGHT 1
 #define HU_TITLEX 0
 #define HU_TITLEY (167 - SHORT(Doom::hudFont().hu_font[0]->height))
@@ -273,7 +275,9 @@ void startHud()
     if (headsupactive)
         stopHud();
 
-    plr = &players[consoleplayer];
+    auto& players_ = playerState();
+
+    plr = &players_.players[players_.consoleplayer];
     message_on = false;
     hud.message_dontfuckwithme = false;
     message_nottobefuckedwith = false;
@@ -291,7 +295,7 @@ void startHud()
     // create the map title widget
     Doom::initTextLine(w_title, HU_TITLEX, HU_TITLEY, font.hu_font, HU_FONTSTART);
 
-    switch (gamemode)
+    switch (gameVersion().gamemode)
     {
         case shareware:
         case registered:
@@ -357,7 +361,7 @@ void hudTicker()
         message_nottobefuckedwith = false;
     }
 
-    if (showMessages || hud.message_dontfuckwithme)
+    if (menuSettings().showMessages || hud.message_dontfuckwithme)
     {
         // display message if necessary
         if ((plr->message && !message_nottobefuckedwith)
@@ -373,14 +377,17 @@ void hudTicker()
 
     } // else message_on = false;
 
+    auto& players_ = playerState();
+
     // check for incoming chat characters
-    if (netgame)
+    if (gameSession().netgame)
     {
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (!playeringame[i])
+            if (!players_.playeringame[i])
                 continue;
-            if (i != consoleplayer && (c = players[i].cmd.chatchar))
+            if (i != players_.consoleplayer
+                && (c = players_.players[i].cmd.chatchar))
             {
                 if (c <= HU_BROADCAST)
                     chat_dest[i] = c;
@@ -393,7 +400,7 @@ void hudTicker()
                     if (rc && c == KEY_ENTER)
                     {
                         if (w_inputbuffer[i].l.len
-                            && (chat_dest[i] == consoleplayer + 1
+                            && (chat_dest[i] == players_.consoleplayer + 1
                                 || chat_dest[i] == HU_BROADCAST))
                         {
                             Doom::addMessageToSText(
@@ -402,7 +409,7 @@ void hudTicker()
                             message_nottobefuckedwith = true;
                             message_on = true;
                             message_counter = HU_MSGTIMEOUT;
-                            if (gamemode == commercial)
+                            if (gameVersion().gamemode == commercial)
                                 Doom::startSound(0, sfx_radio);
                             else
                                 Doom::startSound(0, sfx_tink);
@@ -410,7 +417,7 @@ void hudTicker()
                         Doom::resetIText(w_inputbuffer[i]);
                     }
                 }
-                players[i].cmd.chatchar = 0;
+                players_.players[i].cmd.chatchar = 0;
             }
         }
     }
@@ -464,9 +471,11 @@ doom_boolean hudResponder(Event* ev)
 
     int& num_nobrainers = hudChat().num_nobrainers;
 
+    auto& players_ = playerState();
+
     numplayers = 0;
     for (int i = 0; i < MAXPLAYERS; i++)
-        numplayers += playeringame[i];
+        numplayers += players_.playeringame[i];
 
     if (ev->data1 == KEY_RSHIFT)
     {
@@ -490,26 +499,26 @@ doom_boolean hudResponder(Event* ev)
             message_counter = HU_MSGTIMEOUT;
             eatkey = true;
         }
-        else if (netgame && ev->data1 == HU_INPUTTOGGLE)
+        else if (gameSession().netgame && ev->data1 == HU_INPUTTOGGLE)
         {
             eatkey = hud.chat_on = true;
             Doom::resetIText(w_chat);
             queueChatChar(HU_BROADCAST);
         }
-        else if (netgame && numplayers > 2)
+        else if (gameSession().netgame && numplayers > 2)
         {
             for (int i = 0; i < MAXPLAYERS; i++)
             {
                 if (ev->data1 == destination_keys[i])
                 {
-                    if (playeringame[i] && i != consoleplayer)
+                    if (players_.playeringame[i] && i != players_.consoleplayer)
                     {
                         eatkey = hud.chat_on = true;
                         Doom::resetIText(w_chat);
                         queueChatChar(i + 1);
                         break;
                     }
-                    else if (i == consoleplayer)
+                    else if (i == players_.consoleplayer)
                     {
                         num_nobrainers++;
                         if (num_nobrainers < 3)
