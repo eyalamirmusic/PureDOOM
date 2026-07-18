@@ -779,3 +779,36 @@ void precacheLevel()
     }
 }
 } // namespace Doom
+
+// ---------------------------------------------------------------------------
+// Global-scope data that was r_data.cpp. It stays at :: scope because these are the
+// vanilla names other translation units (and the eacp port) still link against.
+// ---------------------------------------------------------------------------
+// The renderer's loaded graphics data (textures, flats, sprite lumps, colormaps) is a
+// Doom::GraphicsData owned by the Engine now; these vanilla names are references onto it.
+// R_InitData fills the members once at startup; they are read-only after.
+
+
+
+// A Doom::Texture** view onto GraphicsData's owned texturePointers array (Step 9);
+// R_InitTextures points it at data() after the resize.
+Doom::Texture** textures = nullptr;
+
+// needed for texture pegging. A view onto GraphicsData's owned EA::Vector (Step 9);
+// initTextures points it at data() after the resize.
+fixed_t* textureheight = nullptr;
+
+// for global animation. Views onto GraphicsData's owned EA::Vectors (Step 9), set to
+// data() by initTextures / initFlats; P_ animation writes through them.
+int* flattranslation = nullptr;
+int* texturetranslation = nullptr;
+
+// needed for pre rendering. Plain-pointer views onto GraphicsData's owned EA::Vectors
+// (Step 9); initSpriteLumps points them at data() after filling the vectors.
+fixed_t* spritewidth = nullptr;
+fixed_t* spriteoffset = nullptr;
+fixed_t* spritetopoffset = nullptr;
+
+// A 256-byte-aligned view into GraphicsData's owned colormapStorage; initColormaps
+// points it at the aligned offset after reading the COLORMAP lump (Step 9).
+Doom::LightTable* colormaps = nullptr;

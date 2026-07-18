@@ -1,4 +1,6 @@
 #include "Trig.h"
+#include "../Host/Platform.h"
+#include "TrigTables.h"
 
 namespace Doom
 {
@@ -2075,3 +2077,12 @@ const EA::Array<std::uint32_t, slopeRange + 1> tanToAngleTable = {
 };
 // clang-format on
 } // namespace Doom
+
+// ---------------------------------------------------------------------------
+// Global-scope data that was tables.cpp. It stays at :: scope because these are the
+// vanilla names other translation units (and the eacp port) still link against.
+// ---------------------------------------------------------------------------
+const fixed_t* finesine = Doom::fineSineTable.data();
+const fixed_t* finecosine = Doom::fineSineTable.data() + FINEANGLES / 4;
+const fixed_t* finetangent = Doom::fineTangentTable.data();
+const angle_t* tantoangle = Doom::tanToAngleTable.data();

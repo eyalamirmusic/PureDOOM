@@ -626,3 +626,38 @@ void drawViewBorder()
 }
 
 } // namespace Doom
+
+// ---------------------------------------------------------------------------
+// Global-scope data that was r_draw.cpp. It stays at :: scope because these are the
+// vanilla names other translation units (and the eacp port) still link against.
+// ---------------------------------------------------------------------------
+//
+// The view window geometry (set by r_main, read across the renderer and app). The
+// storage is a Doom::ViewWindow owned by the Engine now; these vanilla names are
+// references onto it.
+//
+
+//
+// The column/span drawer inputs are a Doom::DrawState owned by the Engine now; these are
+// references onto its members (REFACTOR.md, Step 5).
+//
+
+//
+// R_DrawColumn input: the caller (r_segs/r_plane/r_things) fills these in, the
+// column drawers in Render/Draw.cpp read them.
+//
+
+// first pixel in a column (possibly virtual)
+
+// Translation tables for player-sprite recolouring (read by r_things).
+// A 256-byte-aligned view into DrawState's owned translationTableStorage;
+// R_InitTranslationTables points it at the aligned offset (Step 9).
+byte* translationtables = nullptr;
+
+//
+// R_DrawSpan input: r_plane fills these in, the span drawers read them.
+//
+
+
+
+// start of a 64*64 tile image

@@ -1,4 +1,5 @@
 #include "Random.h"
+#include "../Host/Platform.h"
 
 namespace Doom
 {
@@ -36,3 +37,9 @@ const EA::Array<std::uint8_t, Random::tableSize>& Random::table()
 }
 // clang-format on
 } // namespace Doom
+
+// ---------------------------------------------------------------------------
+// Global-scope data that was m_random.cpp. It stays at :: scope because these are the
+// vanilla names other translation units (and the eacp port) still link against.
+// ---------------------------------------------------------------------------
+const unsigned char* rndtable = Doom::Random::table().data();

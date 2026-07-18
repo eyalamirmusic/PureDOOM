@@ -7,6 +7,7 @@
 // the simulation. Golden-neutral.
 
 #include "../Host/Platform.h"
+#include "../doomtype.h"
 
 #include "../Game/GameDefs.h"
 #include "../Sim/Random.h"
@@ -240,3 +241,23 @@ int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
 }
 
 } // namespace Doom
+
+// ---------------------------------------------------------------------------
+// Global-scope data that was f_wipe.cpp. It stays at :: scope because these are the
+// vanilla names other translation units (and the eacp port) still link against.
+// ---------------------------------------------------------------------------
+//
+// SCREEN WIPE PACKAGE
+//
+
+// Raised while a melt is running, and the only safe thing to test: wipe_exitMelt
+// frees the column table without clearing the pointer to it. (Read by the GPU
+// melt compositor in EngineAccess.)
+doom_boolean wipe_melt_running = 0;
+
+// The outgoing frame, as palette indices; wipe_initMelt leaves it column-major.
+byte* wipe_scr_start;
+
+// How far down each two-pixel column of the outgoing screen has slid so far.
+// Negative means the column has not started moving yet.
+int* wipe_melt_offsets;

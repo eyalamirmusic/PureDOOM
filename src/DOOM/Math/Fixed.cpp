@@ -1,4 +1,6 @@
 #include "Fixed.h"
+#include "../Host/Platform.h"
+#include "FixedPoint.h"
 
 
 #include "../Host/System.h"
@@ -26,3 +28,22 @@ Fixed fixedDiv(Fixed a, Fixed b)
     return fixedDivUnchecked(a, b);
 }
 } // namespace Doom
+
+// ---------------------------------------------------------------------------
+// Global-scope data that was m_fixed.cpp. It stays at :: scope because these are the
+// vanilla names other translation units (and the eacp port) still link against.
+// ---------------------------------------------------------------------------
+fixed_t FixedMul(fixed_t a, fixed_t b)
+{
+    return (Doom::Fixed {a} * Doom::Fixed {b}).raw;
+}
+
+fixed_t FixedDiv(fixed_t a, fixed_t b)
+{
+    return Doom::fixedDiv(Doom::Fixed {a}, Doom::Fixed {b}).raw;
+}
+
+fixed_t FixedDiv2(fixed_t a, fixed_t b)
+{
+    return Doom::fixedDivUnchecked(Doom::Fixed {a}, Doom::Fixed {b}).raw;
+}
