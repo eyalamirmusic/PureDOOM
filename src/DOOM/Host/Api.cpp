@@ -58,10 +58,6 @@ doom_gettime_fn& doom_gettime = Doom::host().gettime;
 doom_exit_fn& doom_exit = Doom::host().exit;
 doom_getenv_fn& doom_getenv = Doom::host().getenv;
 
-void Doom::doomLoop();
-void Doom::updateWipe();
-void updateSound();
-unsigned long tickSong();
 
 #if defined(DOOM_IMPLEMENT_PRINT)
 #include <stdio.h>
@@ -678,12 +674,12 @@ const unsigned char* doom_get_framebuffer(int channels)
 
 unsigned long doom_tick_midi()
 {
-    return tickSong();
+    return Doom::tickSong();
 }
 
 short* doom_get_sound_buffer()
 {
-    updateSound();
+    Doom::updateSound();
     return mixbuffer;
 }
 
