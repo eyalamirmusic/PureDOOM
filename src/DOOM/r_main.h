@@ -92,11 +92,11 @@ extern int& detailshift;
 // Function pointers to switch refresh/drawing functions.
 // Used to select shadow mode etc.
 //
-extern void (*colfunc) (void);
-extern void (*basecolfunc) (void);
-extern void (*fuzzcolfunc) (void);
+extern void (*colfunc)();
+extern void (*basecolfunc)();
+extern void (*fuzzcolfunc)();
 // No shadow effects on floors.
-extern void (*spanfunc) (void);
+extern void (*spanfunc)();
 
 
 //
@@ -128,7 +128,7 @@ void R_AddPointToBox(int x, int y, fixed_t* box);
 void R_RenderPlayerView(player_t* player);
 
 // Called by startup code.
-void R_Init(void);
+void R_Init();
 
 // Called by M_Responder.
 void R_SetViewSize(int blocks, int detail);

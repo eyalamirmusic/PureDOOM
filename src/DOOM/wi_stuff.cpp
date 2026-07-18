@@ -20,12 +20,12 @@
 
 #include "UI/Intermission.h"
 
-void WI_Ticker(void)
+void WI_Ticker()
 {
     Doom::wiTicker();
 }
 
-void WI_Drawer(void)
+void WI_Drawer()
 {
     Doom::wiDrawer();
 }

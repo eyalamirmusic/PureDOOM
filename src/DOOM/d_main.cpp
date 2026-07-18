@@ -27,47 +27,47 @@ void D_PostEvent(event_t* ev)
     Doom::dPostEvent(ev);
 }
 
-void D_ProcessEvents(void)
+void D_ProcessEvents()
 {
     Doom::dProcessEvents();
 }
 
-void D_Display(void)
+void D_Display()
 {
     Doom::dDisplay();
 }
 
-void D_UpdateWipe(void)
+void D_UpdateWipe()
 {
     Doom::dUpdateWipe();
 }
 
-void D_DoomLoop(void)
+void D_DoomLoop()
 {
     Doom::dDoomLoop();
 }
 
-void D_PageTicker(void)
+void D_PageTicker()
 {
     Doom::dPageTicker();
 }
 
-void D_PageDrawer(void)
+void D_PageDrawer()
 {
     Doom::dPageDrawer();
 }
 
-void D_AdvanceDemo(void)
+void D_AdvanceDemo()
 {
     Doom::dAdvanceDemo();
 }
 
-void D_DoAdvanceDemo(void)
+void D_DoAdvanceDemo()
 {
     Doom::dDoAdvanceDemo();
 }
 
-void D_StartTitle(void)
+void D_StartTitle()
 {
     Doom::dStartTitle();
 }
@@ -77,7 +77,7 @@ void D_AddFile(const char* file)
     Doom::dAddFile(file);
 }
 
-void D_DoomMain(void)
+void D_DoomMain()
 {
     Doom::dDoomMain();
 }

@@ -60,7 +60,7 @@ void P_RemoveMobj(mobj_t* mobj)
     Doom::removeMobj(mobj);
 }
 
-void P_RespawnSpecials(void)
+void P_RespawnSpecials()
 {
     Doom::respawnSpecials();
 }

@@ -114,11 +114,11 @@ extern "C"
 
     // True when the GPU renderer owns the view area rather than the software
     // frame: the game is in a level and is not mid screen-melt.
-    int eacpDoomViewActive(void);
+    int eacpDoomViewActive();
 
     // True when the automap has replaced the 3D view. The engine skips
     // R_RenderPlayerView entirely while it is up, so the two never coexist.
-    int eacpDoomAutomapActive(void);
+    int eacpDoomAutomapActive();
 
     // Whether the engine is drawing the status bar, which the player sizes away
     // with the last notch of the menu's screen size (screenblocks 11). The view
@@ -130,10 +130,10 @@ extern "C"
     // screen size it keeps drawing the full-width view rather than shrinking it
     // into a border, that being a concession to 1993 hardware and not something
     // this renderer needs to reproduce.
-    int eacpDoomStatusBarVisible(void);
+    int eacpDoomStatusBarVisible();
 
     // The rows the 3D view occupies, which is the above as a number.
-    float eacpDoomViewRows(void);
+    float eacpDoomViewRows();
 
     // Marks the walls the player can see from where they are standing, so the map
     // keeps filling in while it is being looked at. Call once a tic, after the
@@ -148,13 +148,13 @@ extern "C"
     // It walks the BSP the way R_RenderPlayerView would and no further: the planes
     // and the sprites are never drawn, and the four NetUpdate calls it makes on
     // the way are not wanted here, as they drain the event queue.
-    void eacpDoomRevealAutomap(void);
+    void eacpDoomRevealAutomap();
 
     // The COLORMAP row the view is remapped through before it reaches the palette:
     // 0 while playing, and the row the menu darkens its background with while the
     // menu is up. Row 0 is the identity map, so applying it unconditionally costs
     // one lookup and changes nothing.
-    int eacpDoomDarkenRow(void);
+    int eacpDoomDarkenRow();
 
     // The layers the engine draws over the view in software and nothing else
     // reproduces: HUD messages, the level name, the PAUSE graphic, the menu, and
@@ -178,7 +178,7 @@ extern "C"
 
     // Re-applies the key bindings the app asked for with doom_set_default_int.
     // Call once, after doom_init, which reads ~/.doomrc back over them.
-    void eacpDoomBindKeys(void);
+    void eacpDoomBindKeys();
 
     // The engine's clock, in tics - 35 a second - with the fraction: the whole
     // part says which tic the world is on, the rest how far into it time has
@@ -187,9 +187,9 @@ extern "C"
     //
     // It counts from the epoch rather than from when the game started, so only its
     // steps and its fraction are meaningful; both agree with the engine's.
-    double eacpDoomTicTime(void);
+    double eacpDoomTicTime();
 
-    int eacpDoomIsWiping(void);
+    int eacpDoomIsWiping();
 
     // The screen melt, while one is running: the frame it is sliding away, as
     // palette indices, and how far down each column of it has moved so far. The
@@ -206,14 +206,14 @@ extern "C"
     // The engine's mouse sensitivity (the options menu changes it). It scales the
     // movement it is handed by (sensitivity + 5) / 10, so a view that runs ahead of
     // the engine has to scale by the same amount or the two disagree.
-    int eacpDoomMouseSensitivity(void);
+    int eacpDoomMouseSensitivity();
 
-    EacpDoomCamera eacpDoomGetCamera(void);
+    EacpDoomCamera eacpDoomGetCamera();
 
     // Every wall texture, flat and sprite the game loaded, in one id space and in
     // that order. Stable for the whole run, so the renderer can upload each one
     // lazily and keep it. Zero until the engine has initialised.
-    int eacpDoomGetTextureCount(void);
+    int eacpDoomGetTextureCount();
     EacpDoomTextureInfo eacpDoomGetTextureInfo(int id);
 
     // Fills out with the texture's pixels, row-major, top row first: one byte per
@@ -264,7 +264,7 @@ extern "C"
     // Remembers where every sector's floor and ceiling are, so the next frame can
     // draw them part-way to wherever they move next. Call once per tic, just
     // before the engine runs it.
-    void eacpDoomSnapshotTic(void);
+    void eacpDoomSnapshotTic();
 
     // The player's weapon and muzzle flash. Always writes EACP_DOOM_HUD_SPRITES
     // entries, one per slot, so a caller can match a slot against the one it saw

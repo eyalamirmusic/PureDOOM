@@ -19,7 +19,7 @@
 
 #include "UI/StatusWidgets.h"
 
-void STlib_init(void)
+void STlib_init()
 {
     Doom::initStatusWidgets();
 }

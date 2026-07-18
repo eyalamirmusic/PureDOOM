@@ -47,7 +47,7 @@ void G_LoadGame(char* name)
     Doom::gLoadGame(name);
 }
 
-void G_DoLoadGame(void)
+void G_DoLoadGame()
 {
     Doom::gDoLoadGame();
 }
@@ -62,7 +62,7 @@ void G_RecordDemo(char* name)
     Doom::gRecordDemo(name);
 }
 
-void G_BeginRecording(void)
+void G_BeginRecording()
 {
     Doom::gBeginRecording();
 }
@@ -72,27 +72,27 @@ void G_TimeDemo(char* name)
     Doom::gTimeDemo(name);
 }
 
-doom_boolean G_CheckDemoStatus(void)
+doom_boolean G_CheckDemoStatus()
 {
     return Doom::gCheckDemoStatus();
 }
 
-void G_ExitLevel(void)
+void G_ExitLevel()
 {
     Doom::gExitLevel();
 }
 
-void G_SecretExitLevel(void)
+void G_SecretExitLevel()
 {
     Doom::gSecretExitLevel();
 }
 
-void G_WorldDone(void)
+void G_WorldDone()
 {
     Doom::gWorldDone();
 }
 
-void G_Ticker(void)
+void G_Ticker()
 {
     Doom::gTicker();
 }
@@ -102,7 +102,7 @@ doom_boolean G_Responder(event_t* ev)
     return Doom::gResponder(ev);
 }
 
-void G_ScreenShot(void)
+void G_ScreenShot()
 {
     Doom::gScreenShot();
 }

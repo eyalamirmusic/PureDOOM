@@ -35,7 +35,7 @@ doom_boolean ST_Responder(event_t* ev)
     return Doom::stResponder(ev);
 }
 
-void ST_Ticker(void)
+void ST_Ticker()
 {
     Doom::stTicker();
 }
@@ -45,12 +45,12 @@ void ST_Drawer(doom_boolean fullscreen, doom_boolean refresh)
     Doom::stDrawer(fullscreen, refresh);
 }
 
-void ST_Start(void)
+void ST_Start()
 {
     Doom::stStart();
 }
 
-void ST_Init(void)
+void ST_Init()
 {
     Doom::stInit();
 }

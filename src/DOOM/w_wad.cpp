@@ -43,7 +43,7 @@ void W_AddFile(char* filename)
     refreshDirectoryView();
 }
 
-void W_Reload(void)
+void W_Reload()
 {
     Doom::wad().reload();
     refreshDirectoryView();
@@ -69,7 +69,7 @@ void W_InitFile(char* filename)
     W_InitMultipleFiles(names);
 }
 
-int W_NumLumps(void)
+int W_NumLumps()
 {
     return numlumps;
 }

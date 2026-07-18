@@ -35,17 +35,17 @@ int M_ReadFile(char const* name, byte** buffer)
     return Doom::mReadFile(name, buffer);
 }
 
-void M_SaveDefaults(void)
+void M_SaveDefaults()
 {
     Doom::mSaveDefaults();
 }
 
-void M_LoadDefaults(void)
+void M_LoadDefaults()
 {
     Doom::mLoadDefaults();
 }
 
-void M_ScreenShot(void)
+void M_ScreenShot()
 {
     Doom::mScreenShot();
 }

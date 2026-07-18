@@ -25,12 +25,12 @@ void I_Tactile(int on, int off, int total)
     Doom::I_Tactile(on, off, total);
 }
 
-ticcmd_t* I_BaseTiccmd(void)
+ticcmd_t* I_BaseTiccmd()
 {
     return Doom::I_BaseTiccmd();
 }
 
-int I_GetHeapSize(void)
+int I_GetHeapSize()
 {
     return Doom::I_GetHeapSize();
 }
@@ -40,17 +40,17 @@ byte* I_ZoneBase(int* size)
     return Doom::I_ZoneBase(size);
 }
 
-int I_GetTime(void)
+int I_GetTime()
 {
     return Doom::I_GetTime();
 }
 
-void I_Init(void)
+void I_Init()
 {
     Doom::I_Init();
 }
 
-void I_Quit(void)
+void I_Quit()
 {
     Doom::I_Quit();
 }
@@ -60,12 +60,12 @@ void I_WaitVBL(int count)
     Doom::I_WaitVBL(count);
 }
 
-void I_BeginRead(void)
+void I_BeginRead()
 {
     Doom::I_BeginRead();
 }
 
-void I_EndRead(void)
+void I_EndRead()
 {
     Doom::I_EndRead();
 }

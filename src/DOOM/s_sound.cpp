@@ -24,7 +24,7 @@ void S_Init(int sfxVolume, int musicVolume)
     Doom::sInit(sfxVolume, musicVolume);
 }
 
-void S_Start(void)
+void S_Start()
 {
     Doom::sStart();
 }
@@ -54,17 +54,17 @@ void S_ChangeMusic(int music_id, int looping)
     Doom::sChangeMusic(music_id, looping);
 }
 
-void S_StopMusic(void)
+void S_StopMusic()
 {
     Doom::sStopMusic();
 }
 
-void S_PauseSound(void)
+void S_PauseSound()
 {
     Doom::sPauseSound();
 }
 
-void S_ResumeSound(void)
+void S_ResumeSound()
 {
     Doom::sResumeSound();
 }

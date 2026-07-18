@@ -22,7 +22,7 @@
 doom_boolean& levelTimer = Doom::endLevelTimer().levelTimer;
 int& levelTimeCount = Doom::endLevelTimer().levelTimeCount;
 
-void P_InitPicAnims(void)
+void P_InitPicAnims()
 {
     Doom::initPicAnims();
 }
@@ -77,7 +77,7 @@ void P_PlayerInSpecialSector(player_t* player)
     Doom::playerInSpecialSector(player);
 }
 
-void P_UpdateSpecials(void)
+void P_UpdateSpecials()
 {
     Doom::updateSpecials();
 }
@@ -87,7 +87,7 @@ int EV_DoDonut(line_t* line)
     return Doom::doDonut(line);
 }
 
-void P_SpawnSpecials(void)
+void P_SpawnSpecials()
 {
     Doom::spawnSpecials();
 }

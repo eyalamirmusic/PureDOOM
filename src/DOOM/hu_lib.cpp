@@ -19,7 +19,7 @@
 
 #include "UI/HudWidgets.h"
 
-void HUlib_init(void)
+void HUlib_init()
 {
     Doom::initWidgets();
 }

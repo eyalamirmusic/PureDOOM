@@ -35,7 +35,7 @@ extern "C"
     int doomSimBoot(const char* demoLump);
 
     // Runs one tic. Returns 0 once the demo has played out.
-    int doomSimRunTic(void);
+    int doomSimRunTic();
 
     // Queues a demo again, in the same process, WITHOUT re-running doom_init.
     //
@@ -51,7 +51,7 @@ extern "C"
 
     // Whether the demo is actually driving a level yet: the engine spends a few
     // tics on the title screen first.
-    int doomSimInLevel(void);
+    int doomSimInLevel();
 
     // Everything the simulation could plausibly diverge in, hashed: the random
     // index, the level clock, the player, and every thinking object in the
@@ -62,7 +62,7 @@ extern "C"
     // so a refactor that adds, drops or reorders a single call shifts the whole
     // subsequent random sequence and the world diverges within a few tics, even
     // if the arithmetic was otherwise perfect.
-    unsigned long long doomSimStateHash(void);
+    unsigned long long doomSimStateHash();
 
     // The finished software frame: the 320x200 palette-indexed picture the
     // engine just drew (screens[0]), and the palette it would be resolved
@@ -80,12 +80,12 @@ extern "C"
     // the wipe out of vanilla's busy-wait on the wall clock (still visible,
     // #if 0'd, in D_Display) and into D_UpdateWipe, which advances it by exactly
     // one tic per call.
-    unsigned long long doomSimFrameHash(void);
+    unsigned long long doomSimFrameHash();
 
     // The WAD directory as the reader sees it, so that tearing the zone
     // allocator out from under W_CacheLumpNum has something to answer to. The
     // hash is over the lump's bytes.
-    int doomSimLumpCount(void);
+    int doomSimLumpCount();
     void doomSimLumpName(int lump, char* nameOut);
     int doomSimLumpSize(int lump);
     unsigned long long doomSimLumpHash(int lump);
@@ -95,17 +95,17 @@ extern "C"
     // it: every pointer equal to its vector's data(), every count equal to its
     // vector's size(). The transitional design leans on a loader refreshing the
     // global after every resize; this catches one that forgot.
-    int doomSimGeometryViewsConsistent(void);
+    int doomSimGeometryViewsConsistent();
 
     // Individual probes, so a failure can say what actually differs rather than
     // just that two hashes do.
-    int doomSimRndIndex(void);
-    int doomSimLevelTime(void);
-    int doomSimPlayerHealth(void);
-    int doomSimPlayerX(void);
-    int doomSimPlayerY(void);
-    int doomSimPlayerAngleDegrees(void);
-    int doomSimMobjCount(void);
+    int doomSimRndIndex();
+    int doomSimLevelTime();
+    int doomSimPlayerHealth();
+    int doomSimPlayerX();
+    int doomSimPlayerY();
+    int doomSimPlayerAngleDegrees();
+    int doomSimMobjCount();
 
     // --- The scenario harness (Step 6) ---------------------------------------
     //
@@ -133,7 +133,7 @@ extern "C"
     int doomSimLoadLevel(int episode, int map, int skill);
 
     // The player-1 mobj as a handle (0), or -1 if no level is loaded.
-    int doomSimPlayerHandle(void);
+    int doomSimPlayerHandle();
 
     // Spawns a mobj of `type` at fixed-point (x, y, z) - z may be the ONFLOORZ
     // sentinel from doomSimOnFloorZ() - links it into the world, and returns a
@@ -169,9 +169,9 @@ extern "C"
 
     // Named constants, so a scenario test stays free of DOOM's enums (info.h,
     // p_mobj.h). Add more here as scenarios need them.
-    int doomSimTypeBarrel(void); // MT_BARREL: solid, shootable, radius 10
-    int doomSimOnFloorZ(void); // ONFLOORZ, the "rest on the floor" spawn z
-    int doomSimFlagNoClip(void); // MF_NOCLIP
+    int doomSimTypeBarrel(); // MT_BARREL: solid, shootable, radius 10
+    int doomSimOnFloorZ(); // ONFLOORZ, the "rest on the floor" spawn z
+    int doomSimFlagNoClip(); // MF_NOCLIP
 
     // Archives the live world (players/sectors/thinkers/specials), reloads a
     // fresh base level and unarchives over it - the exact p_saveg round trip
@@ -179,7 +179,7 @@ extern "C"
     // simulation path no demo golden covers, and precisely the mobj/special byte
     // layout the thinker_t->Thinker step rewrites: the net that must exist before
     // it. Requires a level to be loaded (doomSimLoadLevel) with the world set up.
-    int doomSimSaveLoadPreservesWorld(void);
+    int doomSimSaveLoadPreservesWorld();
 
     // --- The menu/UI harness (Step 8) ----------------------------------------
     //
@@ -198,7 +198,7 @@ extern "C"
     // loop's advancedemo flag up so the first tic brings up TITLEPIC. Returns 0
     // if the engine aborted. Must be the only boot in the process, like
     // doomSimBoot.
-    int doomSimBootToTitle(void);
+    int doomSimBootToTitle();
 
     // Post a synthetic key event, exactly as the host's doom_key_down/up do. The
     // key is a doom_key_t value from DOOM/DOOM.h - the public host API a menu is
@@ -210,19 +210,19 @@ extern "C"
     // While a screen melt is in flight this advances the melt instead of the
     // game loop, exactly as the host does. Returns 1 normally, 0 if the engine
     // aborted (e.g. a menu action reached I_Quit).
-    int doomSimStepTic(void);
+    int doomSimStepTic();
 
     // Whether a screen melt is animating right now. The title screen arrives
     // through a wipe, so the menu harness runs warm-up tics until this clears
     // before it starts hashing - the golden pins the menu, not the entry wipe.
-    int doomSimIsWiping(void);
+    int doomSimIsWiping();
 
     // The current gamestate as a small int (GS_LEVEL=0 .. GS_DEMOSCREEN=3), so
     // the harness can assert the background stayed the title screen for the whole
     // script (the attract loop would otherwise advance to a demo after ~170
     // tics), and whether the menu is currently open.
-    int doomSimGameState(void);
-    int doomSimMenuActive(void);
+    int doomSimGameState();
+    int doomSimMenuActive();
 
 #ifdef __cplusplus
 }

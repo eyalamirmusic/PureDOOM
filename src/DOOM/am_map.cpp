@@ -97,17 +97,17 @@ doom_boolean AM_Responder(event_t* ev)
     return Doom::amResponder(ev);
 }
 
-void AM_Ticker(void)
+void AM_Ticker()
 {
     Doom::amTicker();
 }
 
-void AM_Drawer(void)
+void AM_Drawer()
 {
     Doom::amDrawer();
 }
 
-void AM_Stop(void)
+void AM_Stop()
 {
     Doom::amStop();
 }
@@ -117,7 +117,7 @@ void AM_rotate(fixed_t* x, fixed_t* y, angle_t a)
     Doom::amRotate(x, y, a);
 }
 
-void AM_drawMarks(void)
+void AM_drawMarks()
 {
     Doom::amDrawMarks();
 }

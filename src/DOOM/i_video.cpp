@@ -20,32 +20,32 @@
 
 #include "Host/Video.h"
 
-void I_ShutdownGraphics(void)
+void I_ShutdownGraphics()
 {
     Doom::I_ShutdownGraphics();
 }
 
-void I_StartFrame(void)
+void I_StartFrame()
 {
     Doom::I_StartFrame();
 }
 
-void I_GetEvent(void)
+void I_GetEvent()
 {
     Doom::I_GetEvent();
 }
 
-void I_StartTic(void)
+void I_StartTic()
 {
     Doom::I_StartTic();
 }
 
-void I_UpdateNoBlit(void)
+void I_UpdateNoBlit()
 {
     Doom::I_UpdateNoBlit();
 }
 
-void I_FinishUpdate(void)
+void I_FinishUpdate()
 {
     Doom::I_FinishUpdate();
 }
@@ -60,7 +60,7 @@ void I_SetPalette(byte* palette)
     Doom::I_SetPalette(palette);
 }
 
-void I_InitGraphics(void)
+void I_InitGraphics()
 {
     Doom::I_InitGraphics();
 }

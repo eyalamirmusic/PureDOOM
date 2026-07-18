@@ -68,12 +68,12 @@ char* mapnames[] = // DOOM shareware/registered/retail (Ultimate) names.
      "NEWLEVEL", "NEWLEVEL", "NEWLEVEL"};
 
 
-void HU_Init(void)
+void HU_Init()
 {
     Doom::huInit();
 }
 
-void HU_Start(void)
+void HU_Start()
 {
     Doom::huStart();
 }
@@ -83,22 +83,22 @@ doom_boolean HU_Responder(event_t* ev)
     return Doom::huResponder(ev);
 }
 
-void HU_Ticker(void)
+void HU_Ticker()
 {
     Doom::huTicker();
 }
 
-void HU_Drawer(void)
+void HU_Drawer()
 {
     Doom::huDrawer();
 }
 
-char HU_dequeueChatChar(void)
+char HU_dequeueChatChar()
 {
     return Doom::huDequeueChatChar();
 }
 
-void HU_Erase(void)
+void HU_Erase()
 {
     Doom::huErase();
 }

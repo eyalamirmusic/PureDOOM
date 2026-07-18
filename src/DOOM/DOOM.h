@@ -183,18 +183,18 @@ void doom_set_getenv(doom_getenv_fn getenv_fn);
 void doom_init(int argc, char** argv, int flags);
 
 // Call this every frame
-void doom_update(void); // This will update at 35 FPS
-void doom_force_update(void); // This will run a frame everytime it's called, regardless of FPS.
+void doom_update(); // This will update at 35 FPS
+void doom_force_update(); // This will run a frame everytime it's called, regardless of FPS.
 
 // Channels: 1 = indexed, 3 = RGB, 4 = RGBA
 const unsigned char* doom_get_framebuffer(int channels);
 
 // It is always 2048 bytes in size
-short* doom_get_sound_buffer(void);
+short* doom_get_sound_buffer();
 
 // Call this 140 times per second. Or about every 7ms. 
 // Returns midi message. Keep calling it until it returns 0.
-unsigned long doom_tick_midi(void);
+unsigned long doom_tick_midi();
 
 // Events
 void doom_key_down(doom_key_t key);

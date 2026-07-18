@@ -21,7 +21,7 @@
 // of the Doom::ActiveSpecials owned by the Engine now, and this vanilla name a reference onto it.
 button_t (&buttonlist)[MAXBUTTONS] = Doom::activeSpecials().buttonlist;
 
-void P_InitSwitchList(void)
+void P_InitSwitchList()
 {
     Doom::initSwitchList();
 }

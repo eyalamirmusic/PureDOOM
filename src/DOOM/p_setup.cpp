@@ -126,7 +126,7 @@ void P_LoadBlockMap(int lump)
     Doom::loadBlockMap(lump);
 }
 
-void P_GroupLines(void)
+void P_GroupLines()
 {
     Doom::groupLines();
 }
@@ -136,7 +136,7 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
     Doom::setupLevel(episode, map, playermask, skill);
 }
 
-void P_Init(void)
+void P_Init()
 {
     Doom::init();
 }

@@ -69,7 +69,7 @@
 extern thinker_t& thinkercap;
 
 
-void P_InitThinkers(void);
+void P_InitThinkers();
 void P_AddThinker(thinker_t* thinker);
 void P_RemoveThinker(thinker_t* thinker);
 
@@ -106,7 +106,7 @@ extern int& iquehead;
 extern int& iquetail;
 
 
-void P_RespawnSpecials(void);
+void P_RespawnSpecials();
 mobj_t* P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 void P_RemoveMobj(mobj_t* th);
 doom_boolean P_SetMobjState(mobj_t* mobj, statenum_t state);

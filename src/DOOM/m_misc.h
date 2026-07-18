@@ -51,9 +51,9 @@ extern int numdefaults;
 
 doom_boolean M_WriteFile(char const* name, void* source, int length);
 int M_ReadFile(char const* name, byte** buffer);
-void M_ScreenShot(void);
-void M_LoadDefaults(void);
-void M_SaveDefaults(void);
+void M_ScreenShot();
+void M_LoadDefaults();
+void M_SaveDefaults();
 int M_DrawText(int x, int y, doom_boolean direct, char* string);
 
 

@@ -99,10 +99,10 @@ int& setblocks = Doom::viewWindow().setblocks;
 
 
 
-void (*colfunc) (void);
-void (*basecolfunc) (void);
-void (*fuzzcolfunc) (void);
-void (*spanfunc) (void);
+void (*colfunc)();
+void (*basecolfunc)();
+void (*fuzzcolfunc)();
+void (*spanfunc)();
 
 
 //
@@ -141,7 +141,7 @@ fixed_t R_PointToDist(fixed_t x, fixed_t y)
     return Doom::pointToDist(x, y);
 }
 
-void R_InitPointToAngle(void)
+void R_InitPointToAngle()
 {
     Doom::initPointToAngle();
 }
@@ -151,17 +151,17 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
     return Doom::scaleFromGlobalAngle(visangle);
 }
 
-void R_InitTables(void)
+void R_InitTables()
 {
     Doom::initTables();
 }
 
-void R_InitTextureMapping(void)
+void R_InitTextureMapping()
 {
     Doom::initTextureMapping();
 }
 
-void R_InitLightTables(void)
+void R_InitLightTables()
 {
     Doom::initLightTables();
 }
@@ -171,12 +171,12 @@ void R_SetViewSize(int blocks, int detail)
     Doom::setViewSize(blocks, detail);
 }
 
-void R_ExecuteSetViewSize(void)
+void R_ExecuteSetViewSize()
 {
     Doom::executeSetViewSize();
 }
 
-void R_Init(void)
+void R_Init()
 {
     Doom::renderInit();
 }

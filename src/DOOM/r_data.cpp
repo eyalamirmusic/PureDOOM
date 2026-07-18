@@ -74,27 +74,27 @@ byte* R_GetColumn(int tex, int col)
     return Doom::getColumn(tex, col);
 }
 
-void R_InitTextures(void)
+void R_InitTextures()
 {
     Doom::initTextures();
 }
 
-void R_InitFlats(void)
+void R_InitFlats()
 {
     Doom::initFlats();
 }
 
-void R_InitSpriteLumps(void)
+void R_InitSpriteLumps()
 {
     Doom::initSpriteLumps();
 }
 
-void R_InitColormaps(void)
+void R_InitColormaps()
 {
     Doom::initColormaps();
 }
 
-void R_InitData(void)
+void R_InitData()
 {
     Doom::initData();
 }
@@ -114,7 +114,7 @@ int R_TextureNumForName(const char* name)
     return Doom::textureNumForName(name);
 }
 
-void R_PrecacheLevel(void)
+void R_PrecacheLevel()
 {
     Doom::precacheLevel();
 }

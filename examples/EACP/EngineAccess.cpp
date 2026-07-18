@@ -172,7 +172,7 @@ static float eacpCeilingHeight(sector_t* sector)
     return eacpMix(eacpPreviousCeiling[index], now, eacpAlpha);
 }
 
-void eacpDoomSnapshotTic(void)
+void eacpDoomSnapshotTic()
 {
     int i;
 
@@ -202,7 +202,7 @@ void eacpDoomSnapshotTic(void)
     }
 }
 
-int eacpDoomViewActive(void)
+int eacpDoomViewActive()
 {
     return gamestate == GS_LEVEL && gametic;
 }
@@ -260,12 +260,12 @@ int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
     return 1;
 }
 
-int eacpDoomAutomapActive(void)
+int eacpDoomAutomapActive()
 {
     return automapactive ? 1 : 0;
 }
 
-int eacpDoomStatusBarVisible(void)
+int eacpDoomStatusBarVisible()
 {
     // ST_Drawer's own st_statusbaron, which is private to it: D_Display asks for
     // a bar-less frame once the view fills all 200 rows, and the automap keeps
@@ -273,12 +273,12 @@ int eacpDoomStatusBarVisible(void)
     return viewheight != SCREENHEIGHT || automapactive;
 }
 
-float eacpDoomViewRows(void)
+float eacpDoomViewRows()
 {
     return eacpDoomStatusBarVisible() ? (float) ST_Y : (float) SCREENHEIGHT;
 }
 
-void eacpDoomRevealAutomap(void)
+void eacpDoomRevealAutomap()
 {
     player_t* player = &players[displayplayer];
 
@@ -302,7 +302,7 @@ void eacpDoomRevealAutomap(void)
     AM_Drawer();
 }
 
-int eacpDoomDarkenRow(void)
+int eacpDoomDarkenRow()
 {
     // M_Drawer only reaches its darkening once it is actually showing a menu: a
     // confirmation prompt draws its text and returns before then.
@@ -320,7 +320,7 @@ static unsigned char eacpMenuMask[EACP_SCREEN_PIXELS];
 
 // What D_Display draws over the view *before* the menu darkens the frame, in its
 // order - and so what the menu darkens along with the world.
-static void eacpDrawUnderLayers(void)
+static void eacpDrawUnderLayers()
 {
     if (gamestate != GS_LEVEL || !gametic)
         return;
@@ -345,7 +345,7 @@ static void eacpDrawUnderLayers(void)
 // the two passes agree only where the layer drew, so where they agree is exactly
 // what it covered - which no single pass can tell, a drawn pixel being free to
 // hold whatever value the buffer was primed with.
-static void eacpCaptureLayer(void (*layer)(void),
+static void eacpCaptureLayer(void (*layer)(),
                              unsigned char* indices,
                              unsigned char* coverage)
 {
@@ -407,7 +407,7 @@ int eacpDoomBuildOverlay(unsigned char* outRgba)
     return covered;
 }
 
-void eacpDoomBindKeys(void)
+void eacpDoomBindKeys()
 {
     int count = numdefaults;
     int i;
@@ -424,7 +424,7 @@ void eacpDoomBindKeys(void)
     }
 }
 
-double eacpDoomTicTime(void)
+double eacpDoomTicTime()
 {
     int sec, usec;
 
@@ -438,17 +438,17 @@ double eacpDoomTicTime(void)
     return (double) sec * TICRATE + (double) usec * TICRATE / 1000000.0;
 }
 
-int eacpDoomIsWiping(void)
+int eacpDoomIsWiping()
 {
     return is_wiping_screen ? 1 : 0;
 }
 
-int eacpDoomMouseSensitivity(void)
+int eacpDoomMouseSensitivity()
 {
     return mouseSensitivity;
 }
 
-EacpDoomCamera eacpDoomGetCamera(void)
+EacpDoomCamera eacpDoomGetCamera()
 {
     EacpDoomCamera camera = {0, 0, 0, 0};
     player_t* player = &players[displayplayer];
@@ -466,7 +466,7 @@ EacpDoomCamera eacpDoomGetCamera(void)
     return camera;
 }
 
-static int eacpSpriteBase(void)
+static int eacpSpriteBase()
 {
     return numtextures + numflats;
 }
@@ -569,7 +569,7 @@ static int eacpWallIsMasked(int id)
 // Which wall textures have holes, and how tall each sprite is: both are known
 // only after decoding, and both are wanted before the renderer asks for a
 // single pixel.
-static void eacpEnsureTextureData(void)
+static void eacpEnsureTextureData()
 {
     int i;
 
@@ -594,7 +594,7 @@ static void eacpEnsureTextureData(void)
     eacpTexturesReady = 1;
 }
 
-int eacpDoomGetTextureCount(void)
+int eacpDoomGetTextureCount()
 {
     if (numtextures <= 0 || textures == 0)
         return 0;
@@ -723,7 +723,7 @@ typedef struct
 // (P_PlayerThink), and R_SetupFrame then puts every wall, flat, sprite and the
 // weapon through it, with the sector's brightness and the distance falloff both
 // ignored.
-static int eacpFixedRow(void)
+static int eacpFixedRow()
 {
     return players[displayplayer].fixedcolormap;
 }
@@ -769,7 +769,7 @@ static EacpLight eacpSectorLight(int lightlevel, int contrast)
 // A frame the engine marks as lit - a muzzle flash, a rocket - is drawn through
 // row 0 at any distance. A powerup outranks it (R_ProjectSprite tests
 // fixedcolormap first), and this says both.
-static EacpLight eacpFullbrightLight(void)
+static EacpLight eacpFullbrightLight()
 {
     return eacpFixedLight(eacpFixedRow());
 }
@@ -901,7 +901,7 @@ static void eacpDescend(int nodenum, const EacpPoint* poly, int count)
     eacpDescend(node->children[1], clipped, clippedCount);
 }
 
-static int eacpEnsurePolyStorage(void)
+static int eacpEnsurePolyStorage()
 {
     doom_free(eacpPolyVertices);
     doom_free(eacpPolyStart);
@@ -915,7 +915,7 @@ static int eacpEnsurePolyStorage(void)
     return eacpPolyVertices != 0 && eacpPolyStart != 0 && eacpPolyCount != 0;
 }
 
-static void eacpMeasureLines(void)
+static void eacpMeasureLines()
 {
     int i;
 
@@ -936,7 +936,7 @@ static void eacpMeasureLines(void)
 
 // The BSP is static for a level, so the cells are rebuilt only when a new one
 // loads; per-frame the geometry pass just re-reads the (moving) heights.
-static void eacpEnsureLevel(void)
+static void eacpEnsureLevel()
 {
     EacpPoint square[4];
     int i;
@@ -1450,7 +1450,7 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
 // if it stood infinitely far away, which is nearly black in a dim room and
 // visibly dark in almost any room: DOOM's weapon is fullbright in every sector
 // above light level 240 and close to it well below that.
-static float eacpWeaponBrightening(void)
+static float eacpWeaponBrightening()
 {
     int width = viewwidth << detailshift;
 
@@ -1483,7 +1483,7 @@ static float eacpWeaponLight(int fullbright)
 // The engine places the weapon in a 320x200 space centred on row 100
 // (BASEYCENTER), and R_DrawPSprite lands that centre on the middle row of
 // whatever the view is: row 84 with the status bar up, row 100 without it.
-static float eacpWeaponRowShift(void)
+static float eacpWeaponRowShift()
 {
     return 100.0f - eacpDoomViewRows() * 0.5f;
 }

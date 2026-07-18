@@ -27,22 +27,22 @@ doom_boolean M_Responder(event_t* ev)
     return Doom::M_Responder(ev);
 }
 
-void M_Ticker(void)
+void M_Ticker()
 {
     Doom::M_Ticker();
 }
 
-void M_Drawer(void)
+void M_Drawer()
 {
     Doom::M_Drawer();
 }
 
-void M_Init(void)
+void M_Init()
 {
     Doom::M_Init();
 }
 
-void M_StartControlPanel(void)
+void M_StartControlPanel()
 {
     Doom::M_StartControlPanel();
 }

@@ -116,12 +116,12 @@ int doomSimBoot(const char* demoLump)
     return simBootInternal(demoLump, 0);
 }
 
-int doomSimBootToTitle(void)
+int doomSimBootToTitle()
 {
     return simBootInternal(0, 1);
 }
 
-int doomSimInLevel(void)
+int doomSimInLevel()
 {
     return demoplayback && gamestate == GS_LEVEL;
 }
@@ -130,7 +130,7 @@ int doomSimInLevel(void)
 // playing" therefore only means "finished" once it has actually started.
 static int simDemoStarted;
 
-int doomSimRunTic(void)
+int doomSimRunTic()
 {
     if (setjmp(simAbort))
         return 0;
@@ -178,7 +178,7 @@ static int simIsMobj(thinker_t* thinker)
     return thinker->kind() == Doom::ThinkerKind::Mobj && !thinker->removed;
 }
 
-unsigned long long doomSimStateHash(void)
+unsigned long long doomSimStateHash()
 {
     thinker_t* thinker;
     player_t* player = &players[0];
@@ -235,7 +235,7 @@ unsigned long long doomSimStateHash(void)
     return simHash;
 }
 
-unsigned long long doomSimFrameHash(void)
+unsigned long long doomSimFrameHash()
 {
     simHash = 1469598103934665603ULL;
 
@@ -249,7 +249,7 @@ unsigned long long doomSimFrameHash(void)
     return simHash;
 }
 
-int doomSimLumpCount(void)
+int doomSimLumpCount()
 {
     return numlumps;
 }
@@ -286,32 +286,32 @@ unsigned long long doomSimLumpHash(int lump)
 }
 
 // The simulation's random index, which is P_Random's.
-int doomSimRndIndex(void)
+int doomSimRndIndex()
 {
     return prndindex;
 }
 
-int doomSimLevelTime(void)
+int doomSimLevelTime()
 {
     return leveltime;
 }
 
-int doomSimPlayerHealth(void)
+int doomSimPlayerHealth()
 {
     return players[0].health;
 }
 
-int doomSimPlayerX(void)
+int doomSimPlayerX()
 {
     return players[0].mo ? players[0].mo->x >> FRACBITS : 0;
 }
 
-int doomSimPlayerY(void)
+int doomSimPlayerY()
 {
     return players[0].mo ? players[0].mo->y >> FRACBITS : 0;
 }
 
-int doomSimPlayerAngleDegrees(void)
+int doomSimPlayerAngleDegrees()
 {
     if (!players[0].mo)
         return 0;
@@ -320,7 +320,7 @@ int doomSimPlayerAngleDegrees(void)
     return (int) (players[0].mo->angle / (ANG45 / 45));
 }
 
-int doomSimMobjCount(void)
+int doomSimMobjCount()
 {
     thinker_t* thinker;
     int count = 0;
@@ -333,7 +333,7 @@ int doomSimMobjCount(void)
     return count;
 }
 
-int doomSimGeometryViewsConsistent(void)
+int doomSimGeometryViewsConsistent()
 {
     const auto& lvl = Doom::level();
 
@@ -394,7 +394,7 @@ int doomSimLoadLevel(int episode, int map, int skill)
     return players[0].mo != 0;
 }
 
-int doomSimPlayerHandle(void)
+int doomSimPlayerHandle()
 {
     return (!simMobjs.empty() && simMobjs[0]) ? 0 : -1;
 }
@@ -516,17 +516,17 @@ void doomSimSetThingPosition(int handle)
         P_SetThingPosition(mobj);
 }
 
-int doomSimTypeBarrel(void)
+int doomSimTypeBarrel()
 {
     return MT_BARREL;
 }
 
-int doomSimOnFloorZ(void)
+int doomSimOnFloorZ()
 {
     return ONFLOORZ;
 }
 
-int doomSimFlagNoClip(void)
+int doomSimFlagNoClip()
 {
     return MF_NOCLIP;
 }
@@ -549,7 +549,7 @@ int doomSimFlagNoClip(void)
 // legitimately recomputes on load and would differ between two world instances.
 // The random indices and leveltime ride outside the archive, so they are left
 // out of the hash rather than restored.
-static unsigned long long simWorldHash(void)
+static unsigned long long simWorldHash()
 {
     simHash = 1469598103934665603ULL;
 
@@ -641,7 +641,7 @@ static unsigned long long simWorldHash(void)
     return simHash;
 }
 
-int doomSimSaveLoadPreservesWorld(void)
+int doomSimSaveLoadPreservesWorld()
 {
     static byte saveScratch[0x2c000]; // SAVEGAMESIZE
 
@@ -703,7 +703,7 @@ void doomSimPostKeyUp(int key)
     doom_key_up((doom_key_t) key);
 }
 
-int doomSimStepTic(void)
+int doomSimStepTic()
 {
     if (setjmp(simAbort))
         return 0;
@@ -712,17 +712,17 @@ int doomSimStepTic(void)
     return 1;
 }
 
-int doomSimIsWiping(void)
+int doomSimIsWiping()
 {
     return is_wiping_screen ? 1 : 0;
 }
 
-int doomSimGameState(void)
+int doomSimGameState()
 {
     return (int) gamestate;
 }
 
-int doomSimMenuActive(void)
+int doomSimMenuActive()
 {
     return menuactive ? 1 : 0;
 }

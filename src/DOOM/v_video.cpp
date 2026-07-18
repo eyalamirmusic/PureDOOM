@@ -64,7 +64,7 @@ void V_GetBlock(int x, int y, int scrn, int width, int height, byte* dest)
     Doom::vGetBlock(x, y, scrn, width, height, dest);
 }
 
-void V_Init(void)
+void V_Init()
 {
     Doom::vInit();
 }

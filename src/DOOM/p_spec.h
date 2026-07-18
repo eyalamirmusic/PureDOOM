@@ -43,13 +43,13 @@ extern int& levelTimeCount;
 
 
 // at game start
-void P_InitPicAnims(void);
+void P_InitPicAnims();
 
 // at map load
-void P_SpawnSpecials(void);
+void P_SpawnSpecials();
 
 // every tic
-void P_UpdateSpecials(void);
+void P_UpdateSpecials();
 
 // when needed
 doom_boolean P_UseSpecialLine(mobj_t* thing, line_t* line, int side);
@@ -191,7 +191,7 @@ extern button_t (&buttonlist)[MAXBUTTONS];
 
 
 void P_ChangeSwitchTexture(line_t* line, int useAgain);
-void P_InitSwitchList(void);
+void P_InitSwitchList();
 
 
 //

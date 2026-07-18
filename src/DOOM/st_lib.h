@@ -135,7 +135,7 @@ struct st_binicon_t
 // More precisely, initialize STMINUS,
 // everything else is done somewhere else.
 //
-void STlib_init(void);
+void STlib_init();
 
 // Number widget routines
 void STlib_initNum(st_number_t* n,

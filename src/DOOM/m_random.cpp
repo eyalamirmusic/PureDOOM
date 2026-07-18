@@ -17,17 +17,17 @@ int& prndindex = Doom::randomness().playIndex;
 
 const unsigned char* rndtable = Doom::Random::table().data();
 
-int P_Random(void)
+int P_Random()
 {
     return Doom::randomness().forPlay();
 }
 
-int M_Random(void)
+int M_Random()
 {
     return Doom::randomness().forMenu();
 }
 
-void M_ClearRandom(void)
+void M_ClearRandom()
 {
     Doom::randomness().clear();
 }

@@ -22,42 +22,42 @@
 // the engine-wide readers (g_game, Sim/SaveGame, the probe) resolve unchanged.
 byte*& save_p = Doom::saveGameState().cursor;
 
-void P_ArchivePlayers(void)
+void P_ArchivePlayers()
 {
     Doom::archivePlayers();
 }
 
-void P_UnArchivePlayers(void)
+void P_UnArchivePlayers()
 {
     Doom::unArchivePlayers();
 }
 
-void P_ArchiveWorld(void)
+void P_ArchiveWorld()
 {
     Doom::archiveWorld();
 }
 
-void P_UnArchiveWorld(void)
+void P_UnArchiveWorld()
 {
     Doom::unArchiveWorld();
 }
 
-void P_ArchiveThinkers(void)
+void P_ArchiveThinkers()
 {
     Doom::archiveThinkers();
 }
 
-void P_UnArchiveThinkers(void)
+void P_UnArchiveThinkers()
 {
     Doom::unArchiveThinkers();
 }
 
-void P_ArchiveSpecials(void)
+void P_ArchiveSpecials()
 {
     Doom::archiveSpecials();
 }
 
-void P_UnArchiveSpecials(void)
+void P_UnArchiveSpecials()
 {
     Doom::unArchiveSpecials();
 }

@@ -25,17 +25,17 @@ void I_InitSound()
     Doom::I_InitSound();
 }
 
-void I_UpdateSound(void)
+void I_UpdateSound()
 {
     Doom::I_UpdateSound();
 }
 
-void I_SubmitSound(void)
+void I_SubmitSound()
 {
     Doom::I_SubmitSound();
 }
 
-void I_ShutdownSound(void)
+void I_ShutdownSound()
 {
     Doom::I_ShutdownSound();
 }
@@ -70,12 +70,12 @@ void I_UpdateSoundParams(int handle, int vol, int sep, int pitch)
     Doom::I_UpdateSoundParams(handle, vol, sep, pitch);
 }
 
-void I_InitMusic(void)
+void I_InitMusic()
 {
     Doom::I_InitMusic();
 }
 
-void I_ShutdownMusic(void)
+void I_ShutdownMusic()
 {
     Doom::I_ShutdownMusic();
 }

@@ -44,7 +44,7 @@ void G_DeferedPlayDemo(const char* demo);
 // calls P_SetupLevel or W_EnterWorld.
 void G_LoadGame(char* name);
 
-void G_DoLoadGame(void);
+void G_DoLoadGame();
 
 // Called by M_Responder.
 void G_SaveGame(int slot, char* description);
@@ -52,20 +52,20 @@ void G_SaveGame(int slot, char* description);
 // Only called by startup code.
 void G_RecordDemo(char* name);
 
-void G_BeginRecording(void);
+void G_BeginRecording();
 
 void G_TimeDemo(char* name);
-doom_boolean G_CheckDemoStatus(void);
+doom_boolean G_CheckDemoStatus();
 
-void G_ExitLevel(void);
-void G_SecretExitLevel(void);
+void G_ExitLevel();
+void G_SecretExitLevel();
 
-void G_WorldDone(void);
+void G_WorldDone();
 
-void G_Ticker(void);
+void G_Ticker();
 doom_boolean G_Responder(event_t* ev);
 
-void G_ScreenShot(void);
+void G_ScreenShot();
 
 
 

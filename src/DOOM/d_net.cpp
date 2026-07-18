@@ -19,22 +19,22 @@
 
 #include "Game/Net.h"
 
-void NetUpdate(void)
+void NetUpdate()
 {
     Doom::netUpdate();
 }
 
-void TryRunTics(void)
+void TryRunTics()
 {
     Doom::tryRunTics();
 }
 
-void D_CheckNetGame(void)
+void D_CheckNetGame()
 {
     Doom::dCheckNetGame();
 }
 
-void D_QuitNetGame(void)
+void D_QuitNetGame()
 {
     Doom::dQuitNetGame();
 }

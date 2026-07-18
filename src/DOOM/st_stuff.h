@@ -41,16 +41,16 @@
 doom_boolean ST_Responder(event_t* ev);
 
 // Called by main loop.
-void ST_Ticker(void);
+void ST_Ticker();
 
 // Called by main loop.
 void ST_Drawer(doom_boolean fullscreen, doom_boolean refresh);
 
 // Called when the console player is spawned on each level.
-void ST_Start(void);
+void ST_Start();
 
 // Called by startup code.
-void ST_Init(void);
+void ST_Init();
 
 
 // States for status bar code.

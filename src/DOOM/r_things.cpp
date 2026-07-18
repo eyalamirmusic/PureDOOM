@@ -56,7 +56,7 @@ void R_DrawMaskedColumn(column_t* column)
     Doom::drawMaskedColumn(column);
 }
 
-void R_SortVisSprites(void)
+void R_SortVisSprites()
 {
     Doom::sortVisSprites();
 }
@@ -71,12 +71,12 @@ void R_InitSprites(char** namelist)
     Doom::initSprites(namelist);
 }
 
-void R_ClearSprites(void)
+void R_ClearSprites()
 {
     Doom::clearSprites();
 }
 
-void R_DrawMasked(void)
+void R_DrawMasked()
 {
     Doom::drawMasked();
 }

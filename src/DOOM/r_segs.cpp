@@ -73,7 +73,7 @@ void R_RenderMaskedSegRange(drawseg_t* ds, int x1, int x2)
     Doom::renderMaskedSegRange(ds, x1, x2);
 }
 
-void R_RenderSegLoop(void)
+void R_RenderSegLoop()
 {
     Doom::renderSegLoop();
 }

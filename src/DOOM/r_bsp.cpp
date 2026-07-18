@@ -46,7 +46,7 @@ void R_StoreWallRange(int start, int stop);
 // R_ClearDrawSegs
 //
 
-void R_ClearDrawSegs(void)
+void R_ClearDrawSegs()
 {
     Doom::clearDrawSegs();
 }
@@ -61,7 +61,7 @@ void R_ClipPassWallSegment(int first, int last)
     Doom::clipPassWallSegment(first, last);
 }
 
-void R_ClearClipSegs(void)
+void R_ClearClipSegs()
 {
     Doom::clearClipSegs();
 }

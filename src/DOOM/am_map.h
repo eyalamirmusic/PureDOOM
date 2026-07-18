@@ -39,15 +39,15 @@
 doom_boolean AM_Responder(event_t* ev);
 
 // Called by main loop.
-void AM_Ticker(void);
+void AM_Ticker();
 
 // Called by main loop,
 // called instead of view drawer if automap active.
-void AM_Drawer(void);
+void AM_Drawer();
 
 // Called to force the automap to quit
 // if the level is completed while it is up.
-void AM_Stop(void);
+void AM_Stop();
 
 
 //
@@ -147,7 +147,7 @@ extern int lightlev;
 void AM_rotate(fixed_t* x, fixed_t* y, angle_t a);
 
 // Draws the player's marks into the frame.
-void AM_drawMarks(void);
+void AM_drawMarks();
 
 
 

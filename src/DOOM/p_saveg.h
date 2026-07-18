@@ -27,14 +27,14 @@
 
 // Persistent storage/archiving.
 // These are the load / save game routines.
-void P_ArchivePlayers(void);
-void P_UnArchivePlayers(void);
-void P_ArchiveWorld(void);
-void P_UnArchiveWorld(void);
-void P_ArchiveThinkers(void);
-void P_UnArchiveThinkers(void);
-void P_ArchiveSpecials(void);
-void P_UnArchiveSpecials(void);
+void P_ArchivePlayers();
+void P_UnArchivePlayers();
+void P_ArchiveWorld();
+void P_UnArchiveWorld();
+void P_ArchiveThinkers();
+void P_UnArchiveThinkers();
+void P_ArchiveSpecials();
+void P_UnArchiveSpecials();
 
 // a reference onto Doom::SaveGameState's cursor (an Engine member) - the storage moved
 // off this loose global in Step 5
