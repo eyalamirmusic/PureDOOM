@@ -33,12 +33,9 @@
 #include "../doom_config.h"
 
 #include "../doomstat.h"
-#include "../g_game.h"
-#include "../i_system.h"
 #include "../m_random.h"
 #include "../m_swap.h"
 #include "../r_local.h"
-#include "../s_sound.h"
 #include "../sounds.h" // Data.
 #include "../v_video.h" // Needs access to LFB.
 #include "../Wad/WadFile.h"

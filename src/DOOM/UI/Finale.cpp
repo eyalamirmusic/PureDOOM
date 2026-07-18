@@ -34,10 +34,8 @@
 #include "../doomstat.h"
 #include "../dstrings.h" // Data.
 #include "../hu_stuff.h"
-#include "../i_system.h" // Functions.
 #include "../m_swap.h" // Functions.
 #include "../r_state.h"
-#include "../s_sound.h" // Functions.
 #include "../sounds.h" // Data.
 #include "../v_video.h" // Functions.
 #include "../Game/GameFlow.h"

@@ -11,7 +11,6 @@
 
 #include "../doomdef.h"
 #include "../doomstat.h" // State.
-#include "../i_system.h"
 #include "../r_local.h"
 #include "../v_video.h" // Needs access to LFB, Doom::drawPatch, Doom::markRect.
 #include "../Wad/WadFile.h"

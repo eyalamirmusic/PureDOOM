@@ -2,14 +2,12 @@
 
 #include "../doom_config.h" // doom_abs
 #include "../doomstat.h" // leveltime
-#include "../i_system.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_state.h" // skyflatnum
 
 #include "../Game/LevelStats.h"
 #include "../Game/SkyState.h"
-#include "../s_sound.h"
 #include "../sounds.h"
 
 #include "Clip.h"

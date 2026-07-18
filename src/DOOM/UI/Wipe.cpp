@@ -9,7 +9,6 @@
 #include "../doom_config.h"
 
 #include "../doomdef.h"
-#include "../i_video.h"
 #include "../m_random.h"
 #include "../v_video.h"
 

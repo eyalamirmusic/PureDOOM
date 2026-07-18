@@ -23,8 +23,6 @@
 
 #include "../doom_config.h"
 
-#include "../i_system.h"
-#include "../i_sound.h"
 #include "../Wad/WadFile.h"
 #include "../doomdef.h"
 #include "../doomstat.h" // gameClock().gametic, soundSettings().sfxVolume / soundSettings().musicVolume
@@ -37,6 +35,7 @@
 #include "System.h"
 #include "../Game/GameClock.h"
 #include "../Game/SoundSettings.h"
+#include "../sounds.h"
 #define SAMPLECOUNT 512
 #define NUM_CHANNELS 8
 // It is 2 for 16bit, and 2 for two channels.

@@ -37,26 +37,19 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../dstrings.h" // Data.
-#include "../f_finale.h"
 #include "../hu_stuff.h"
-#include "../i_system.h"
 #include "../m_argv.h"
 #include "../m_menu.h"
 #include "../m_misc.h"
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../p_saveg.h"
-#include "../p_setup.h"
-#include "../p_tick.h"
 #include "../r_data.h" // SKY handling - still the wrong place.
 #include "../r_sky.h"
-#include "../s_sound.h"
 #include "../sounds.h"
 #include "../st_stuff.h"
 #include "../v_video.h" // Needs access to LFB.
 #include "../Wad/WadFile.h"
 #include "../wi_stuff.h"
-#include "../g_game.h"
 
 #include "CorpseQueue.h"
 #include "DeferredNewGame.h"

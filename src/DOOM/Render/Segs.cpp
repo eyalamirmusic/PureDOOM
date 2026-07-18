@@ -9,7 +9,6 @@
 
 #include "../doomdef.h"
 #include "../doomstat.h"
-#include "../i_system.h"
 #include "../r_local.h"
 
 #include "../Game/SkyState.h"

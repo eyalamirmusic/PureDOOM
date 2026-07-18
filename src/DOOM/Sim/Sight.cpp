@@ -2,7 +2,6 @@
 
 #include "../doom_config.h" // error_buf, doom_itoa (RANGECHECK)
 #include "../doomdef.h"
-#include "../i_system.h"
 #include "../p_local.h"
 #include "../r_state.h" // sectors, segs, nodes, rejectmatrix, validcount
 

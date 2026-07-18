@@ -19,8 +19,6 @@
 #include "../d_main.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
-#include "../i_system.h"
-#include "../i_video.h"
 #include "../v_video.h"
 
 #include "../Render/VideoState.h"

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../i_net.h" // vanilla I_ network interface
 
 namespace Doom
 {

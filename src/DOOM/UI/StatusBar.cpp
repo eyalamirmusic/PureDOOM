@@ -37,15 +37,10 @@
 #include "../doomdef.h"
 #include "../doomstat.h" // State.
 #include "../dstrings.h" // Data.
-#include "../g_game.h"
-#include "../i_system.h"
-#include "../i_video.h"
 #include "../m_cheat.h"
 #include "../m_random.h"
-#include "../p_inter.h"
 #include "../p_local.h"
 #include "../r_local.h"
-#include "../s_sound.h"
 #include "../sounds.h"
 #include "../st_lib.h"
 #include "../st_stuff.h"

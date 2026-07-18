@@ -36,7 +36,6 @@
 #include <DOOM/r_data.h>
 #include <DOOM/r_defs.h>
 #include <DOOM/r_main.h>
-#include <DOOM/r_plane.h>
 #include <DOOM/r_sky.h>
 #include <DOOM/r_state.h>
 #include <DOOM/r_things.h>

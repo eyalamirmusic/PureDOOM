@@ -34,10 +34,6 @@
 #include "../doom_config.h"
 
 #include "../m_menu.h"
-#include "../i_system.h"
-#include "../i_video.h"
-#include "../i_net.h"
-#include "../g_game.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
 

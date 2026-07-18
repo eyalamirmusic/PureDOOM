@@ -22,10 +22,7 @@
 
 #include "../doom_config.h"
 
-#include "../i_system.h"
-#include "../i_sound.h"
 #include "../sounds.h"
-#include "../s_sound.h"
 #include "../m_random.h"
 #include "../Wad/WadFile.h"
 #include "../doomdef.h"

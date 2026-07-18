@@ -8,11 +8,9 @@
 
 #include "../doomdef.h"
 #include "../doomstat.h"
-#include "../i_system.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_state.h"
-#include "../s_sound.h"
 #include "../sounds.h"
 
 #include "Plats.h"

@@ -18,10 +18,6 @@
 
 #include "../d_net.h"
 #include "../doomdef.h"
-#include "../g_game.h"
-#include "../i_sound.h"
-#include "../i_system.h"
-#include "../i_video.h"
 #include "../m_misc.h"
 
 #include "System.h"

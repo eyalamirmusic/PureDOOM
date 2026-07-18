@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../i_system.h" // vanilla I_ system interface + Ticcmd / byte
 
+
+#include "../doomtype.h"
+#include "../d_ticcmd.h"
 namespace Doom
 {
 // The engine's system seam: timing (currentTic), the zone's backing allocation

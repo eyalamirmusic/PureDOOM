@@ -1,8 +1,8 @@
 #include "Fixed.h"
 
-#include "../i_system.h"
 
 #include "../Host/System.h"
+#include "../doomdef.h"
 namespace Doom
 {
 Fixed fixedDivUnchecked(Fixed a, Fixed b)

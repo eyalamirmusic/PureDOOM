@@ -22,10 +22,8 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../hu_stuff.h"
-#include "../i_system.h"
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../s_sound.h"
 #include "../sounds.h"
 #include "../st_stuff.h"
 

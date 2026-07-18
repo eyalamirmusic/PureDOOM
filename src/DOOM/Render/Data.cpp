@@ -12,7 +12,6 @@
 
 #include "../doomdef.h"
 #include "../doomstat.h"
-#include "../i_system.h"
 #include "../m_swap.h"
 #include "../p_local.h"
 #include "../r_local.h"

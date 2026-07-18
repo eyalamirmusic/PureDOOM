@@ -27,10 +27,8 @@
 #include "../doomstat.h"
 
 #include "../am_map.h"
-#include "../i_system.h"
 #include "../m_random.h"
 #include "../p_local.h"
-#include "../s_sound.h"
 
 #include "../Game/AmmoLimits.h"
 #include "../Game/GameSession.h"

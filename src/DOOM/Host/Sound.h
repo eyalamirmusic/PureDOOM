@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../i_sound.h" // vanilla I_ sound interface + SfxInfo
 
+
+#include "../sounds.h"
 namespace Doom
 {
 // The engine's sound/music host seam. PureDOOM ships no audio backend yet

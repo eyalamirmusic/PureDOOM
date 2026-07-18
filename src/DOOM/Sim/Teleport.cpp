@@ -5,7 +5,6 @@
 #include "../doomdef.h"
 #include "../p_local.h"
 #include "../r_state.h"
-#include "../s_sound.h"
 #include "../sounds.h"
 
 #include "../Game/Sound.h"

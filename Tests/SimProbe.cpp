@@ -17,12 +17,10 @@
 
 #include <DOOM/doomstat.h>
 #include <DOOM/d_main.h>
-#include <DOOM/g_game.h>
 #include <DOOM/info.h>
 #include <DOOM/m_random.h>
 #include <DOOM/p_local.h>
 #include <DOOM/p_mobj.h>
-#include <DOOM/p_saveg.h>
 #include <DOOM/tables.h>
 #include <DOOM/v_video.h>
 #include <DOOM/Wad/WadFile.h>

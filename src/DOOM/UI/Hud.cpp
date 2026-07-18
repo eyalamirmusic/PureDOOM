@@ -36,7 +36,6 @@
 #include "../hu_lib.h"
 #include "../hu_stuff.h"
 #include "../m_swap.h"
-#include "../s_sound.h"
 #include "../sounds.h"
 #include "../Wad/WadFile.h"
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../i_video.h" // the vanilla I_ video interface + byte
 
 namespace Doom
 {

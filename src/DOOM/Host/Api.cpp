@@ -12,7 +12,6 @@
 #include "../d_main.h"
 #include "../doomdef.h"
 #include "../doomtype.h"
-#include "../i_system.h"
 #include "../m_argv.h"
 #include "../m_misc.h"
 

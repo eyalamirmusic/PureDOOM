@@ -39,8 +39,6 @@
 #include "../doomstat.h" // State.
 #include "../dstrings.h" // Data.
 #include "../hu_stuff.h"
-#include "../i_system.h"
-#include "../i_video.h"
 #include "../m_argv.h"
 #include "../m_misc.h"
 #include "../m_swap.h"

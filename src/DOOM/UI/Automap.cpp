@@ -35,7 +35,6 @@
 #include "../doomdef.h"
 #include "../doomstat.h" // State (automapactive, viewactive).
 #include "../dstrings.h" // Data.
-#include "../i_system.h"
 #include "../m_cheat.h"
 #include "../p_local.h"
 #include "../r_state.h" // State.

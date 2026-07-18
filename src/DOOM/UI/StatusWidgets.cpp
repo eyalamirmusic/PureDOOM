@@ -10,7 +10,6 @@
 #include "../doom_config.h"
 
 #include "../doomdef.h"
-#include "../i_system.h"
 #include "../m_swap.h"
 #include "../r_local.h"
 #include "../st_lib.h"
