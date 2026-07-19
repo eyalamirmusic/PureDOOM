@@ -167,6 +167,14 @@ extern int doom_flags;
 // Height, in lines.
 #define ST_OUTHEIGHT 1
 
+// These two stay macros, and REFACTOR.md item 6 had them filed wrongly. They were
+// listed among the six "object-like macros whose bodies call a runtime accessor and
+// therefore want to be inline functions" - true of the body, but beside the point:
+// both are dead here *and* dead at 110ddbe (defined, never used, in either era), so
+// they belong to the ~55 dead-in-both-eras macros that item deliberately leaves in
+// place. Converting them would dress dead code as live, which is the exact mistake
+// that had ten [[maybe_unused]] constexprs reverted. The live members of that list
+// of six are UI/Hud's three and Game/Game's MAXPLMOVE, and those are functions now.
 #define ST_MAPWIDTH                                                                 \
     (doom_strlen(mapnames[(gameSession().gameepisode - 1) * 9                       \
                           + (gameSession().gamemap - 1)]))

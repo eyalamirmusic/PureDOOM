@@ -7,6 +7,16 @@ option(PUREDOOM_BUILD_TESTS "" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
+# Nothing here is a C++20 module, but CMake scans for them anyway on any target
+# built as C++20, which costs a scan pass per translation unit and - on GCC -
+# breaks the build outright. The scan is what puts `-fmodules-ts` on the command
+# line; that makes `__has_feature(modules)` true, and Apple's SDK then sends
+# <cstring> down a Clang-only path (`#define __need_rsize_t` before <stddef.h>,
+# which GCC's stddef.h does not honour), leaving `rsize_t` undeclared and
+# memset_s unparseable. Turning the scan off is both the fix and free: turn it
+# back on only when something here actually becomes a module.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
 # eacp's data structures (EA::Vector / EA::Array): header-only, INTERFACE-only,
 # C++20, and pulls in nothing else - no eacp, no graphics. The engine uses them
 # in its rewritten code, so it is added here, ahead of the engine, rather than

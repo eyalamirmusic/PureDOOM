@@ -116,10 +116,12 @@ extern byte scantokey[128];
 // crosshair/always_run are Doom::InputConfig members (Engine); references, still read by
 // UI/Menu.cpp, Game/Game.cpp and Host/Api.cpp through their own extern declarations.
 
-// The config keys are string literals bound to option globals by address;
-// the -Wwritable-strings that legitimate 1993 table raises is benign here.
+// Only the trailing fields are given, so the rest are zero-initialized. The
+// writable-strings suppression that used to sit here went stale when
+// ConfigDefault::name became a const char* and has been removed - it named a
+// warning this table can no longer raise, in Clang's spelling of the flag, which
+// GCC then warned about not recognising.
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwritable-strings"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 Doom::ConfigDefault defaults[] = {
     // These config-backed globals are Engine members reached through references, so their

@@ -80,6 +80,7 @@ void moveCeiling(Ceiling& ceiling)
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
+                        [[fallthrough]];
                     case fastCrushAndRaise:
                     case crushAndRaise:
                         ceiling.direction = -1;
@@ -121,8 +122,10 @@ void moveCeiling(Ceiling& ceiling)
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
+                        [[fallthrough]];
                     case crushAndRaise:
                         ceiling.speed = CEILSPEED;
+                        [[fallthrough]];
                     case fastCrushAndRaise:
                         ceiling.direction = 1;
                         break;
@@ -205,6 +208,7 @@ int doCeiling(Line* line, CeilingType type)
             case crushAndRaise:
                 ceiling->crush = true;
                 ceiling->topheight = sec->ceilingheight;
+                [[fallthrough]];
             case lowerAndCrush:
             case lowerToFloor:
                 ceiling->bottomheight = sec->floorheight;

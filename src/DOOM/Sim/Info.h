@@ -1167,8 +1167,7 @@ struct State
 
 
 extern Doom::State states[Doom::NUMSTATES];
-extern char* sprnames[Doom::NUMSPRITES + 1];
-
+extern const char* sprnames[Doom::NUMSPRITES + 1];
 
 namespace Doom
 {

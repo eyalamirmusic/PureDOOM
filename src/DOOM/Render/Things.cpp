@@ -47,8 +47,8 @@ constexpr int BASEYCENTER = 100;
 
 // Forward declarations so call order needs no rearranging.
 void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped);
-void initSpriteDefs(char** namelist);
-void initSprites(char** namelist);
+void initSpriteDefs(const char** namelist);
+void initSprites(const char** namelist);
 void clearSprites();
 VisSprite* newVisSprite();
 void drawMaskedColumn(Column* column);
@@ -159,9 +159,9 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
 //  letter/number appended.
 // The rotation character can be 0 to signify no rotations.
 //
-void initSpriteDefs(char** namelist)
+void initSpriteDefs(const char** namelist)
 {
-    char** check;
+    const char** check;
     int i;
     int l;
     int intname;
@@ -202,7 +202,7 @@ void initSpriteDefs(char** namelist)
         doom_memset(scratch.sprtemp.data(), -1, sizeof(scratch.sprtemp));
 
         scratch.maxframe = -1;
-        intname = *reinterpret_cast<int*>(namelist[i]);
+        intname = *reinterpret_cast<const int*>(namelist[i]);
 
         // scan the lumps,
         //  filling in the frames for whatever is found
@@ -296,7 +296,7 @@ void initSpriteDefs(char** namelist)
 // initSprites
 // Called at program start.
 //
-void initSprites(char** namelist)
+void initSprites(const char** namelist)
 {
     auto& sprState = spriteState();
 

@@ -40,6 +40,42 @@
 
 namespace Doom
 {
+namespace
+{
+// Sim/Info.cpp's states[] stores every action under one pointer shape
+// (actionf_p1, void(*)(void*)), because a single table holds actions of three
+// different signatures. A weapon state's action really is a (Player*, PspDef*)
+// function, so casting the erased pointer back to that exact signature before
+// calling it is a round trip and therefore well-defined - but neither compiler
+// can see the round trip, and both object to the cast on arity alone. (The
+// sibling cast in Sim/Mobj.cpp draws no warning: void(*)(Mobj*) keeps the one
+// parameter, so only this two-parameter one differs in shape.)
+//
+// The suppression is scoped to this one function and spelled for each compiler,
+// which is the point of the wrapper: the two disagree on the flag's name, and
+// naming the wrong one is itself a warning - GCC raises -Wpragmas for Clang's
+// spelling, which is how three stale suppressions in this tree were found. Clang
+// must be tested before GCC, since it defines __GNUC__ as well.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-function-type-mismatch"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+
+void callWeaponAction(actionf_p1 action, Player* player, PspDef* psp)
+{
+    reinterpret_cast<void (*)(Player*, PspDef*)>(action)(player, psp);
+}
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+} // namespace
+
 constexpr fixed_t LOWERSPEED = FRACUNIT * 6;
 constexpr fixed_t RAISESPEED = FRACUNIT * 6;
 
@@ -114,8 +150,7 @@ void setPsprite(Player* player, int position, StateNum stnum)
         // here (a round-trip conversion, hence well-defined).
         if (state->action.fn)
         {
-            reinterpret_cast<void (*)(Player*, PspDef*)>(state->action.fn)(player,
-                                                                           psp);
+            callWeaponAction(state->action.fn, player, psp);
             if (!psp->state)
                 break;
         }

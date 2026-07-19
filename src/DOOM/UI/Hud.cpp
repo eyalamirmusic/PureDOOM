@@ -68,21 +68,13 @@ extern EA::Array<const char*, 45> mapnames;
 //
 // Locally used constants, shortcuts.
 //
-// Every one of these stays a macro on purpose, for one of two reasons.
-// HU_TITLE/2/P/T and HU_TITLEY/HU_INPUTY have bodies that call a runtime accessor
-// (gameSession(), hudFont()), so no constexpr is available to them at all.
-// HU_TITLEHEIGHT/HU_INPUTWIDTH/HU_INPUTHEIGHT are dead, and dead in 1993 too, and
-// belong to the ~55 REFACTOR.md item 6 deliberately leaves alone.
-#define HU_TITLE                                                                    \
-    (mapnames[(gameSession().gameepisode - 1) * 9 + gameSession().gamemap - 1])
-#define HU_TITLE2 (mapnames2[gameSession().gamemap - 1])
-#define HU_TITLEP (mapnamesp[gameSession().gamemap - 1])
-#define HU_TITLET (mapnamest[gameSession().gamemap - 1])
+// The level-title and input-row positions that used to live here as macros are
+// functions now (hudTitle/hudTitle2/hudTitleY/hudInputY, below the name tables
+// they read) - their bodies call runtime accessors, so no constexpr was ever
+// available to them, but nothing about them wanted the preprocessor either.
+// HU_TITLEHEIGHT/HU_INPUTWIDTH/HU_INPUTHEIGHT stay macros: they are dead, and dead
+// in 1993 too, and belong to the ~55 REFACTOR.md item 6 deliberately leaves alone.
 #define HU_TITLEHEIGHT 1
-#define HU_TITLEY (167 - Doom::littleEndian(Doom::hudFont().hu_font[0]->height))
-#define HU_INPUTY                                                                   \
-    (HU_MSGY                                                                        \
-     + HU_MSGHEIGHT * (Doom::littleEndian(Doom::hudFont().hu_font[0]->height) + 1))
 #define HU_INPUTWIDTH 64
 #define HU_INPUTHEIGHT 1
 
@@ -226,6 +218,40 @@ EA::Array<const char*, 32> mapnamest = // TNT WAD map names.
      THUSTR_25, THUSTR_26, THUSTR_27, THUSTR_28,
      THUSTR_29, THUSTR_30, THUSTR_31, THUSTR_32};
 
+// The level title for the current map, and the two positions derived from the HUD
+// font's height. These were macros until Step 9's last pass - not for any reason
+// of the preprocessor's, but because their bodies call accessors and so could not
+// become constexpr. They sit here rather than beside the other constants because
+// they read the name tables defined just above.
+//
+// The Plutonia and TNT variants (mapnamesp/mapnamest) have no function: their only
+// callers are inside a commented-out FIXME in initHud, in both eras.
+const char* hudTitle()
+{
+    const auto& session = gameSession();
+    return mapnames[(session.gameepisode - 1) * 9 + session.gamemap - 1];
+}
+
+const char* hudTitle2()
+{
+    return mapnames2[gameSession().gamemap - 1];
+}
+
+int hudFontHeight()
+{
+    return littleEndian(hudFont().hu_font[0]->height);
+}
+
+int hudTitleY()
+{
+    return 167 - hudFontHeight();
+}
+
+int hudInputY()
+{
+    return HU_MSGY + HU_MSGHEIGHT * (hudFontHeight() + 1);
+}
+
 char foreignTranslation(unsigned char ch)
 {
     return ch < 128 ? frenchKeyMap[ch] : ch;
@@ -295,14 +321,14 @@ void startHud()
 
     // create the map title widget
     initTextLine(
-        state.w_title, HU_TITLEX, HU_TITLEY, font.hu_font.data(), HU_FONTSTART);
+        state.w_title, HU_TITLEX, hudTitleY(), font.hu_font.data(), HU_FONTSTART);
 
     switch (gameVersion().gamemode)
     {
         case shareware:
         case registered:
         case retail:
-            s = HU_TITLE;
+            s = hudTitle();
             break;
 
             /* FIXME
@@ -316,7 +342,7 @@ void startHud()
 
         case commercial:
         default:
-            s = HU_TITLE2;
+            s = hudTitle2();
             break;
     }
 
@@ -325,11 +351,11 @@ void startHud()
 
     // create the chat widget
     initIText(chat.w_chat,
-                    HU_INPUTX,
-                    HU_INPUTY,
-                    font.hu_font.data(),
-                    HU_FONTSTART,
-                    &hud.chat_on);
+              HU_INPUTX,
+              hudInputY(),
+              font.hu_font.data(),
+              HU_FONTSTART,
+              &hud.chat_on);
 
     // create the inputbuffer widgets
     for (int i = 0; i < MAXPLAYERS; i++)

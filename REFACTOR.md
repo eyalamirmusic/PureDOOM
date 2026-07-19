@@ -82,7 +82,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **done, bar audio (externally blocked)** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio alone — the engine side is built and it is blocked outside this repository, on an eacp audio stream. (This row read **in progress** while the handoff four lines below it read **8 is done**; the handoff was right. The row had also been counting the globals-into-`Engine` sweep as its own remainder, which is Step 5's work, not Step 8's.) |
-| 9 | Modern C++ / RAII across the board — the second half of the goal | **all three strands done; one audio-blocked item** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array` (**now genuinely all of them** — this row twice claimed it finished while it had not been counted; the category was enumerated at 130 members across 43 headers, 111 converted in three batches and 19 correctly left raw, see item 8), `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now done bar one audio-blocked item**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — and the level pool has a destructor now (it was leaking every mobj on `resetEngine()`), leaving only `Host/Sound`'s audio-blocked `paddedsfx` and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **The function-like macro layer is now retired too** — `Math/Swap.h`'s `SHORT`/`LONG` across 154 sites became one deduced-width `Doom::littleEndian`, and `UI/Automap`'s seven, `Sim/SaveGame`'s `PADSAVEP` and `UI/CheatTypes`' `SCRAMBLE` became functions; `Host/Net`'s `ntohl`/`ntohs` stay, deliberately, being under an `#if` for a platform no gate here compiles. That sweep found the refactor's **one real behaviour bug** (`thintriangle_guy`, see the traps section) and two more little-endian-invisible defects. **The constant macros followed and are now essentially closed — 629 → 309 across `src/DOOM`**, of which 199 of the remainder is `Game/StringsFrench.h`, which no build here compiles: `Sim/SimDefs.h`, `Sim/SpecialTypes.h`, `Render/Lighting.h`, `UI/Hud.h`, `UI/HudWidgetTypes.h`, `UI/StatusBarTypes.h`, 290 of `Game/StringsEnglish.h`'s 293, then `Game/GameDefs.h`, `UI/AutomapTypes.h`, `Wad/MapFormat.h`, `Game/NetTypes.h`, `UI/StatusWidgetTypes.h`, `Sim/WeaponTypes.h` and every `.cpp`-local pile. **That sweep's largest finding was not about macros**: eleven constants existed twice, once as the vanilla macro and once as a `constexpr` on the owning `Engine` cluster, and in five of them the overflow guard tested one while the array was sized by the other — see item 6. `Math/TrigTables.h` was the same thing at eleven-in-one-file scale and became a deletion rather than a conversion. **The warning count went 81 → 1**, the survivor being the deliberate type-erased-action cast. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **all three strands done; one audio-blocked item** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array` (**now genuinely all of them** — this row twice claimed it finished while it had not been counted; the category was enumerated at 130 members across 43 headers, 111 converted in three batches and 19 correctly left raw, see item 8), `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now done bar one audio-blocked item**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — and the level pool has a destructor now (it was leaking every mobj on `resetEngine()`), leaving only `Host/Sound`'s audio-blocked `paddedsfx` and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **The function-like macro layer is now retired too** — `Math/Swap.h`'s `SHORT`/`LONG` across 154 sites became one deduced-width `Doom::littleEndian`, and `UI/Automap`'s seven, `Sim/SaveGame`'s `PADSAVEP` and `UI/CheatTypes`' `SCRAMBLE` became functions; `Host/Net`'s `ntohl`/`ntohs` stay, deliberately, being under an `#if` for a platform no gate here compiles. That sweep found the refactor's **one real behaviour bug** (`thintriangle_guy`, see the traps section) and two more little-endian-invisible defects. **The constant macros followed and are now essentially closed — 629 → 309 across `src/DOOM`**, of which 199 of the remainder is `Game/StringsFrench.h`, which no build here compiles: `Sim/SimDefs.h`, `Sim/SpecialTypes.h`, `Render/Lighting.h`, `UI/Hud.h`, `UI/HudWidgetTypes.h`, `UI/StatusBarTypes.h`, 290 of `Game/StringsEnglish.h`'s 293, then `Game/GameDefs.h`, `UI/AutomapTypes.h`, `Wad/MapFormat.h`, `Game/NetTypes.h`, `UI/StatusWidgetTypes.h`, `Sim/WeaponTypes.h` and every `.cpp`-local pile. **That sweep's largest finding was not about macros**: eleven constants existed twice, once as the vanilla macro and once as a `constexpr` on the owning `Engine` cluster, and in five of them the overflow guard tested one while the array was sized by the other — see item 6. `Math/TrigTables.h` was the same thing at eleven-in-one-file scale and became a deletion rather than a conversion. **The warning count went 81 → 1 → 0**, the last survivor (the deliberate type-erased-action cast) having moved behind a scoped per-compiler suppression — and that zero is now measured on **three** configurations rather than one, GCC 16 included. GCC had never been built here: it failed outright (CMake's C++20 module scanning breaks Apple's SDK headers under GCC) and then reported 327 warnings, 314 of them hidden from Clang behind a pragma spelled in Clang's own dialect. Two real defects fell out of that, both preserved and documented. The runtime-accessor macros are converted too, the list of six having been wrong in both directions. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
 
 ## Where this is — session handoff
 
@@ -95,10 +95,22 @@ behaviour bug — a `double * Fixed` that silently multiplied by zero, from the
 `fixed_t` → `Doom::Fixed` migration — and both of the reasons it survived are
 general: the migration had fixed two of the three sites and left no sign the third
 was outstanding, and the compiler had been printing the exact defect in every build
-inside an 81-warning haystack. **That haystack is gone** — the engine builds with
-exactly one warning, the deliberate one in `Sim/Weapon.cpp`. Note the measurement's
-scope before reaching for `-Werror`: that count is Apple Clang on macOS, and CI
-builds five configurations including MSVC on a different flag set. See item 7.
+inside an 81-warning haystack. **That haystack is gone** — the engine now builds with
+**zero** warnings, the last deliberate one (`Sim/Weapon.cpp`'s type-erased action
+cast) having moved behind a scoped, per-compiler suppression.
+
+**That zero is now measured on three configurations, not one, and the second
+compiler is where the interesting part was.** Apple Clang `Debug` and `Release` and
+**GCC 16 `Release`** all read zero. GCC had never been built here at all, and it did
+not merely warn more — **it failed to build**, and then reported **327** warnings,
+314 of them suppressed on Clang by a pragma written in *Clang's* spelling of the
+flag, which GCC could not honour and warned about separately. Read "The second
+compiler, measured at last" under item 7 before touching the build files or trusting
+a warning count: the transferable lesson is that **a suppression is scoped to one
+compiler and spelled in its dialect, so it fails silently in the direction that looks
+clean.** Two real defects came out of it, both preserved and documented rather than
+fixed (a MUS delay-decode precedence bug, and an intermission background that has
+never drawn since 1993). Two CI configurations remain unmeasured — Ubuntu and MSVC.
 
 **Steps 0–8 are done**, with one externally blocked item: audio, whose engine side
 is built and which waits on an eacp audio stream. The whole UI, game loop, netcode,
@@ -110,8 +122,8 @@ the one audio-blocked owner. Step 5 keeps a short named tail (see its row).
 
 **The preprocessor and the warning count were the open front, and both are now
 largely closed** (items 6 and 7 under "What is left"). The function-like macros are
-retired; the string table is converted; the warning count went 81 → 1, the survivor
-being deliberate. The constant macros went **629 → 312**, and 199 of that remainder is
+retired; the string table is converted; the warning count went 81 → 1 → 0, and is
+now measured on three configurations rather than one. The constant macros went **629 → 312**, and 199 of that remainder is
 `Game/StringsFrench.h`, which no build here compiles — every header named as open in
 the previous draft of this paragraph is done, as are all the `.cpp` piles.
 
@@ -125,9 +137,20 @@ headers that were never at risk.
 refactor is the short, named, mostly-deliberate tail: audio (blocked outside this
 repository), `Host/Sound`'s `paddedsfx` and `findResponseFile`/`myargv` behind it, the
 ~55 dead-in-both-eras macros whose deletion is a judgement call reserved for a human,
-the six runtime-accessor macros that want to be inline functions, and item 7's
-prerequisite — measuring the warning count on the four CI configurations this
-repository has never measured, before anyone reaches for `-Werror`.
+and item 7's remaining prerequisite — the **two** CI configurations still unmeasured
+(Ubuntu's gcc/clang, and MSVC on `/W4`), before anyone reaches for `-Werror`.
+
+**The runtime-accessor macros are done**, and the list of six this paragraph used to
+name was wrong in both directions: two of them (`ST_MAPWIDTH`/`ST_MAPTITLEX`) are
+dead in both eras and belong to the ~55 pile instead, and one that had to be
+converted (`HU_TITLE2`) was missing from it. The four live ones are functions now —
+`hudTitle`/`hudTitle2`/`hudTitleY`/`hudInputY` and `maxPlayerMove`. See item 6.
+
+**The goldens are now known to be compiler-independent**, which had never been
+tested. All 87 tests, the seven golden cases included, pass built by GCC at
+`Release` — so the recorded world is a property of the engine rather than of one
+compiler's code generation. That is the claim `-ffp-contract=off` and the single
+`double` in `FixedDiv2` were meant to buy, and nothing had ever checked it.
 
 **Item 6 is now essentially closed.** The one- and two-macro tail went in a single
 batch (17 names, `326 → 309`), and what remains is deliberate rather than pending:
@@ -967,14 +990,43 @@ Everything above the line is done. What follows is, in the order worth doing it:
        a redirect, not the eleven-macro conversion it was queued as. `PI` went with
        them — no reader here, none in `110ddbe`, and its only mention in either era is
        the typo'd comment on `finecosine`.
-     - **Some object-like macros are not constants at all.** Six have bodies that call
-       a runtime accessor: `UI/Hud`'s `HU_TITLE`/`HU_TITLEY`/`HU_INPUTY`
-       (`gameSession()`, `hudFont()`), `UI/StatusBar`'s `ST_MAPWIDTH`/`ST_MAPTITLEX`
-       (`doom_strlen` over live state), and `Game/Game`'s `MAXPLMOVE`
-       (`movementSpeeds().forwardmove[1]`, which `-turbo` rescales at startup). No
-       `constexpr` is available to any of them. They are function-like macros wearing
-       an object-like spelling and they want to be inline functions, which is
-       call-site churn and a separate change. **Unclaimed.**
+     - ~~**Some object-like macros are not constants at all.**~~ **Done, and the list
+       of six was wrong in both directions — it named two macros that must not be
+       converted and missed one that had to be.** The category is real: a body that
+       calls a runtime accessor has no `constexpr` available to it, so it is a
+       function-like macro wearing an object-like spelling and it wants to be an
+       inline function. But the membership was never checked against the *other* rule
+       this item states two bullets down.
+
+       **`UI/StatusBar`'s `ST_MAPWIDTH` and `ST_MAPTITLEX` are dead — here and at
+       `110ddbe` — so they stay macros.** Defined, never used, in either era. They
+       belong to the ~55 dead-in-both-eras pile this item deliberately leaves in
+       place, and converting them would have been precisely the mistake that had ten
+       `[[maybe_unused]] constexpr`s reverted. They are the same 42-macro `UI/StatusBar`
+       pile that bullet already names; nobody noticed that two of them had been
+       enumerated twice, under two incompatible dispositions.
+
+       **`UI/Hud`'s `HU_TITLE2` was missing from the list and is live** — the DOOM II
+       title, chosen by `initHud`'s `gamemode` switch. It reads a different name table
+       from `HU_TITLE` and is otherwise the same shape. (`HU_TITLEP`/`HU_TITLET`, the
+       Plutonia and TNT variants, have no callers outside a commented-out `FIXME` in
+       both eras, so their `#define`s went with the conversion rather than becoming
+       functions nothing calls.)
+
+       So the live set was **four**, not six, and it is now converted: `UI/Hud`'s
+       `hudTitle()`/`hudTitle2()`/`hudTitleY()`/`hudInputY()` — plus `hudFontHeight()`,
+       which the last two both wanted and which the macros had spelled out twice — and
+       `Game/Game`'s `maxPlayerMove()`. `MAXPLMOVE`'s eight call sites became one
+       hoisted `const int maxmove`, the accessor now being a call rather than a macro
+       that re-read the member at each of eight uses.
+
+       **The lesson is the one this item keeps relearning, in a new dress.** A macro
+       was classified by the *property that made it interesting* — "its body calls an
+       accessor, so no `constexpr` is available" — and never against the prior
+       question this document already insists on: *is anything reading it at all?*
+       Both tests are cheap; only the second one was skipped, and it is the one that
+       decides whether the work should happen. **Ask whether it is live before asking
+       what it should become.**
    - **~55 macros are dead *and* dead in 1993, and are deliberately left in place.**
      Zero uses in the tree, and zero in `110ddbe` beyond their own `#define` — so id
      leftovers, not reads this rewrite dropped. `UI/StatusBar` holds 42 of them (the
@@ -1137,6 +1189,113 @@ Everything above the line is done. What follows is, in the order worth doing it:
    `thintriangle_guy`, and it is the kind of discipline that decays the moment a
    second warning is tolerated — which is an argument for watching the number, not
    for enforcing it before it is known.
+
+   ### The second compiler, measured at last — and it did not build
+
+   **GCC is now measured, and the prerequisite above was right to insist on it.**
+   Homebrew GCC 16.1 on macOS, `Release`, the same `-Wall -Wextra -Wpedantic` the
+   engine has always claimed: **one hard error and 327 warnings**, against Apple
+   Clang's one. It is now **0 and 0**, on `Debug` and `Release` both, and the whole
+   87-test suite passes when built by it.
+
+   That the count was 327 rather than 1 is not the interesting part. **314 of them
+   were suppressed on Clang and could never have been suppressed on GCC**, because
+   the suppression was written in Clang's dialect:
+
+       #pragma GCC diagnostic ignored "-Wwritable-strings"   // Clang's name
+                                       -Wwrite-strings       // GCC's name
+
+   `Game/SoundData.cpp` and `Sim/Info.cpp` each carried that line over a generated
+   table whose `name` field was `char*` initialised from string literals. Clang read
+   the pragma and went quiet. GCC did not recognise the option, warned about *that*
+   (`-Wpragmas`), and then emitted all 314. So the same source was simultaneously
+   "clean" and "314 warnings", and **the suppression was itself a warning on the
+   compiler it did not cover.** Fixed at the root instead of by adding GCC's
+   spelling: `SfxInfo::name`, `MusicInfo::name` and `sprnames[]` are `const char*`
+   now, and both pragma lines are deleted — the same fix this item already records
+   for `UI/Hud.cpp`'s `chat_macros`/`player_names`/`mapnames`, which is to say the
+   category was closed on one compiler and left open on another.
+
+   **A third copy of that pragma, in `Game/Config.cpp`, was suppressing nothing at
+   all.** `ConfigDefault::name` had become `const char*` at some earlier point, so
+   the line named a warning the table could no longer raise. It is deleted. **A
+   suppression outlives the problem it was written for and nothing points at it** —
+   the same shape as the `MenuState.h` comment this document records under item 6,
+   where a refactor deleted the mechanism and left the reassurance standing.
+
+   **The generalisation, which is the reusable part:** a warning suppression is
+   scoped to a compiler *and* spelled in its dialect, so "the warning count is N" is
+   a claim about one toolchain and says nothing about the others — and a pragma that
+   silences a real defect on the compiler you run will not silence it on the compiler
+   CI runs, nor tell you it failed to apply. This document already knew that a
+   one-compiler measurement does not generalise. What it did not know is that the
+   *suppressions* do not generalise either, and that they fail silently in the
+   direction that looks clean.
+
+   The remaining eleven warnings were one of each, and worth the enumeration:
+
+   | Warning | Verdict |
+   |---|---|
+   | 6 × `-Wimplicit-fallthrough` | **intentional**, every one — the crushing-ceiling and floor-crush cases, and `worldDone`'s secret-exit case. Each checked against `110ddbe` and marked `[[fallthrough]]` |
+   | 1 × `-Wmaybe-uninitialized` (`Render/Segs.cpp`) | **provable false positive** — `segtextured` is exactly `midtexture \| toptexture \| bottomtexture \| maskedtexture`, so every guarded read implies the assignment ran. GCC cannot see that the five members move together. Initialised to 0 with the invariant written down |
+   | 1 × `-Wparentheses` (`Host/Sound.cpp`) | **a real defect, preserved** — see below |
+   | 1 × `-Wint-in-bool-context` (`UI/Intermission.cpp`) | **a real 1993-lineage bug, preserved** — see below |
+   | 3 × `-Wpragmas` | the Clang-dialect suppressions above |
+   | 1 × `-Wcast-function-type` | the deliberate type-erased-action cast. Now behind a `#if defined(__clang__)` / `#elif defined(__GNUC__)` scoped suppression around a one-line `callWeaponAction` wrapper, spelled correctly for each compiler. Clang must be tested first, since it defines `__GNUC__` too |
+
+   **Two of those are real bugs this measurement found, and neither is fixed.** Both
+   are behaviour changes no gate here can check, so both are documented at the site
+   and left for a human:
+
+   - **`Host/Sound.cpp`'s MUS delay decode has a precedence bug.**
+     `mus_delay = mus_delay * 128 + delay_byte & 0b01111111` binds as
+     `(mus_delay * 128 + delay_byte) & 0x7f`, masking the *accumulator* instead of the
+     byte being folded in. A MUS delay is a variable-length quantity of seven bits per
+     byte, so the intended reading is `mus_delay * 128 + (delay_byte & 0x7f)` and every
+     delay longer than one byte truncates. It is at `110ddbe:src/DOOM/i_sound.c:1158`
+     too, so it predates this refactor. Left alone because audio is unwired, nothing
+     calls it, and no golden covers it — correcting it is a one-parenthesis change
+     whenever someone wires audio and can *hear* the result.
+   - **`UI/Intermission.cpp`'s `drawAnimatedBack` never draws.** It opens
+     `if (commercial) return;` — the enum *constant*, which is 2 and therefore always
+     true, not `gameVersion().gamemode == commercial`. The intermission's animated
+     background has consequently never drawn in this lineage, in any game mode. The
+     line is identical at `110ddbe:src/DOOM/wi_stuff.c:562`. The frame goldens are
+     recorded with it, so this is a behaviour change and not a cleanup. Written as an
+     explicit `!= 0` so the always-true test is visible in the source rather than
+     something only a compiler mentions.
+
+   **The build failure came first, and had two causes worth knowing.** GCC did not
+   reach the warnings until both were fixed:
+   - `Tests/Sim/PrimitiveTests.cpp` called `std::printf` without `<cstdio>`. libc++
+     supplies it transitively and libstdc++ does not — the ordinary shape of a
+     single-standard-library measurement.
+   - **CMake's C++20 module scanning breaks GCC on the macOS SDK.** Nothing here is a
+     module, but CMake scans any C++20 target anyway, which puts `-fmodules-ts` on the
+     command line, which makes `__has_feature(modules)` true, which sends Apple's
+     `<cstring>` down a **Clang-only** path — `#define __need_rsize_t` before
+     `<stddef.h>`, an extension GCC's `stddef.h` does not honour — leaving `rsize_t`
+     undeclared and `memset_s` unparseable. `CMAKE_CXX_SCAN_FOR_MODULES OFF` at the
+     top level is the fix, and it costs nothing but a scan pass per translation unit.
+     Turn it back on if something here ever becomes a module.
+
+   **And the goldens are compiler-independent, which had never been checked.** All 87
+   tests pass built by GCC 16 at `Release`, the seven golden cases included — so
+   `demo1/2/3.hashes`, the six `.frames` and `doom1.lumps` all hold byte-for-byte
+   across two compilers and two optimisation levels. That is a real strengthening of
+   the safety net rather than a formality: it says the recorded world is a property of
+   the *engine*, not of Apple Clang's code generation, which is exactly the claim
+   `-ffp-contract=off` and the one `double` in `FixedDiv2` were supposed to buy and
+   which nothing had ever tested.
+
+   **Where `-Werror` stands now: three of the five CI configurations are measured at
+   zero** — Apple Clang `Debug`, Apple Clang `Release`, GCC `Release`. Still
+   unmeasured: **gcc and clang on Ubuntu** (a different libstdc++ and glibc, so a
+   different set of transitive includes — the `<cstdio>` failure above is precisely
+   the kind of thing that differs) and **MSVC on `/W4`**, which is not the same flag
+   set at all. The recommendation is unchanged and now better supported: a CI job that
+   *reports* per-configuration counts without failing, then `-Werror` once all five
+   read zero.
 
    **The eight `-Wliteral-conversion` warnings are already gone** — they *were*
    `thintriangle_guy`, and fixing the bug removed them. Worth stating plainly,

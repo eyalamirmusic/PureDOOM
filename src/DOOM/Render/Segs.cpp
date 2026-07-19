@@ -179,7 +179,14 @@ void renderSegLoop()
     int mid;
     // Vanilla declares this fixed_t and shifts it down by fracBits in place; by the
     // time anything reads it, it is a whole texture column number.
-    int texturecolumn;
+    //
+    // The initializer is never read: every use below is guarded by one of
+    // midtexture/toptexture/bottomtexture/maskedtexture, and segtextured - which
+    // guards the assignment - is exactly the OR of those four (see setupWallRange).
+    // So the assignment always precedes the read. GCC cannot see that the four
+    // members and segtextured move together and warns; the invariant is real, and
+    // 0 is written here to say so rather than to change what runs.
+    int texturecolumn = 0;
     int top;
     int bottom;
 

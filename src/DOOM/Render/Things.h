@@ -11,7 +11,7 @@ namespace Doom
 void drawMaskedColumn(Column* column);
 void sortVisSprites();
 void addSprites(Sector* sec);
-void initSprites(char** namelist);
+void initSprites(const char** namelist);
 void clearSprites();
 void drawMasked();
 } // namespace Doom

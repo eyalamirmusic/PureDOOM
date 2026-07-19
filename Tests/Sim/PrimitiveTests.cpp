@@ -22,6 +22,7 @@
 #include <DOOM/Sim/MapGeometry.h>
 
 #include <cstdint>
+#include <cstdio>
 
 #include <DOOM/Render/Main.h>
 #include <DOOM/Sim/Random.h>

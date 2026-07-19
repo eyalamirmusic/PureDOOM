@@ -46,9 +46,20 @@ What is left of the whole refactor is a short, named, mostly *deliberate* tail:
 audio (blocked outside this repository) and `Host/Sound`'s `paddedsfx` behind it;
 `findResponseFile`/`myargv`, a real ownership question with no test driving it; the
 ~55 dead-in-both-eras macros whose deletion is a judgement call reserved for a
-human; the six object-like macros whose bodies call runtime accessors and want to
-be inline functions; and measuring the warning count on the four CI configurations
-this repository has never measured, which is the prerequisite for `-Werror`.
+human; and measuring the warning count on the **two** CI configurations still
+unmeasured (Ubuntu's gcc/clang, and MSVC on `/W4`), which is the prerequisite for
+`-Werror`. The runtime-accessor macros are converted — and the list of "six" this
+paragraph used to name was wrong in both directions: two of them were dead in both
+eras and belong to the ~55 pile, and one that had to be converted was missing from
+it. Four were live and are now functions.
+
+Two defects found by the first GCC build are **preserved and documented at their
+sites, not fixed**, because both are behaviour changes no gate here can check:
+`Host/Sound.cpp`'s MUS delay decode has an operator-precedence bug that truncates
+any multi-byte delay, and `UI/Intermission.cpp`'s `drawAnimatedBack` tests the enum
+*constant* `commercial` rather than comparing against it, so the intermission's
+animated background has never drawn in this lineage. Both are in the 1993-lineage
+source too. Fixing either is a deliberate behaviour change for a human to make.
 
 Read `REFACTOR.md`'s progress table for the current state rather than assuming from
 this paragraph — and if the two ever disagree, the table is the one that gets
@@ -276,9 +287,14 @@ apparatus:
     the bottom of `UI/Automap.cpp` have all needed qualifying. `UI/AutomapTypes.h` is
     deliberately **all** at `::` scope for this reason; keep it that way.
   - **Not every macro can go.** Feature toggles read by `#ifdef` (`RANGECHECK`,
-    `Host/Platform.h`'s three), string-literal building blocks that rely on
-    translation-phase-6 concatenation (`PRESSKEY`, `DOSY`, `DEVDATA`, `DEVMAPS`), and
-    bodies that call runtime accessors all stay.
+    `Host/Platform.h`'s three) and string-literal building blocks that rely on
+    translation-phase-6 concatenation (`PRESSKEY`, `DOSY`, `DEVDATA`, `DEVMAPS`) stay.
+    A body that calls a *runtime accessor* is a different case and no longer a reason
+    to stay: it rules out `constexpr`, not the preprocessor, so the live ones became
+    inline functions (`hudTitle`, `hudTitleY`, `hudInputY`, `maxPlayerMove`). **Ask
+    whether it is live before asking what it should become** — the list that named
+    them also named two that are dead in both eras (`ST_MAPWIDTH`, `ST_MAPTITLEX`),
+    classified by the interesting property and never against the prior question.
 
   **The fixed-size C arrays are `EA::Array<T, N>` now** — 111 members across 39
   headers, in the state and scratch clusters. **19 are deliberately still raw**, and
@@ -524,6 +540,22 @@ The tests need no GPU and no eacp — they link `doom-engine` alone — so
 `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast engine-only loop while
 refactoring. That is also what CI builds, for the same reason.
 
+**Build it with a second compiler before believing a warning count.** GCC catches
+things Apple Clang does not, and — as of the session that first tried it — the
+engine is clean under both, goldens included:
+
+```bash
+brew install gcc   # Homebrew GCC; /usr/bin/gcc on macOS is Apple Clang wearing a hat
+cmake -G Ninja -B build-gcc -DCMAKE_BUILD_TYPE=Release \
+      -DPUREDOOM_BUILD_EACP_EXAMPLE=OFF \
+      -DCMAKE_C_COMPILER=$(brew --prefix)/bin/gcc-16 \
+      -DCMAKE_CXX_COMPILER=$(brew --prefix)/bin/g++-16
+cmake --build build-gcc && ctest --test-dir build-gcc
+```
+
+Note `/usr/bin/gcc` is Apple Clang under another name, so pointing CMake at it
+measures nothing new — the Homebrew path is the point.
+
 eacp is fetched from GitHub via CPM. To co-develop against a local eacp
 checkout, pass `-DCPM_eacp_SOURCE=$HOME/Code/eacp` at configure time. Use
 `$HOME`, not `~` — CMake does not expand tildes, and a quoted `~/...` path
@@ -709,17 +741,40 @@ a second build directory for it and treat the app linking as a fourth gate.
 
 ### Read the warnings — they are a fifth gate
 
-The engine builds under `-Wall -Wextra -Wpedantic` with **exactly one warning**, and
-that one is deliberate: `Sim/Weapon.cpp`'s type-erased `states[].action` pointer cast
-back to its exact signature, a round trip and therefore well-defined. **Anything else
-is a regression.** It was 81 warnings before the session that cleared them, so this
-is a state to hold, not a number to admire.
+The engine builds under `-Wall -Wextra -Wpedantic` with **zero warnings**. **Anything
+at all is a regression.** It was 81 before the session that cleared them and 1 for a
+while after — `Sim/Weapon.cpp`'s type-erased `states[].action` cast, which is a round
+trip and therefore well-defined, and which now sits behind a scoped suppression
+spelled for each compiler. This is a state to hold, not a number to admire.
 
-That count is **Apple Clang on macOS**, `Debug` and `Release` alike. CI
-(`.github/workflows/tests.yml`) builds *five* configurations — gcc and clang on
-Ubuntu, gcc and clang on macOS, MSVC on Windows — and MSVC is on `/W4`, a different
-flag set entirely. **The gcc and MSVC counts have never been measured**, which is
-why `-Werror` is not on: see `REFACTOR.md` item 7.
+That zero is measured on **three** of CI's five configurations: Apple Clang `Debug`,
+Apple Clang `Release`, and **GCC `Release`**. Still unmeasured are **Ubuntu's gcc and
+clang** (a different standard library, so a different set of transitive includes) and
+**MSVC on `/W4`**, which is not the same flag set at all. `-Werror` waits on those
+two: see `REFACTOR.md` item 7.
+
+**Two things the first GCC build taught, both of which cost a working day and neither
+of which is visible from a Clang-only measurement:**
+
+- **A warning suppression is scoped to one compiler and spelled in its dialect.**
+  Two generated tables carried `#pragma GCC diagnostic ignored "-Wwritable-strings"`
+  — Clang's name for the flag; GCC's is `-Wwrite-strings`. Clang went quiet, GCC did
+  not recognise the option, warned about *that*, and then emitted **314** warnings the
+  other compiler had never shown. A third copy of the pragma was suppressing a warning
+  its table could no longer raise. So a suppression fails silently in the direction
+  that looks clean — prefer fixing the type (these wanted `const char*`) over naming
+  the flag, and if you must suppress, spell it per compiler behind `__clang__` /
+  `__GNUC__` and put it around the smallest possible scope.
+- **Nothing here is a C++20 module, but CMake scans for them anyway**, which puts
+  `-fmodules-ts` on GCC's command line, which makes `__has_feature(modules)` true,
+  which sends Apple's `<cstring>` down a Clang-only path and leaves `rsize_t`
+  undeclared. The root `CMakeLists.txt` sets `CMAKE_CXX_SCAN_FOR_MODULES OFF` for
+  this reason. Turn it back on only when something here actually becomes a module.
+
+**The goldens are compiler-independent**, and this has now been checked rather than
+assumed: all 87 tests, the seven golden cases included, pass built by GCC at
+`Release`. That is what `-ffp-contract=off` and the single documented `double` in
+`FixedDiv2` were supposed to buy.
 
 Also worth knowing, since it is easy to develop for a week without noticing: **CI
 builds `Release` and the local instructions above build `Debug`.** The goldens hold

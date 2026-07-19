@@ -33,13 +33,12 @@
 // name sfx_*/mus_* unqualified. Those enums live in namespace Doom now; this
 // brings them into scope without touching the tables.
 using namespace Doom;
-// leading fields are given; the rest zero) and name literals bound to char*.
-// Keep them exactly as they were - guard the layout from clang-format and quiet
-// the two warnings that legitimate data of this shape raises under -Wall.
+// leading fields are given; the rest zero). Keep them exactly as they were -
+// guard the layout from clang-format and quiet the warning that legitimate
+// data of this shape raises under -Wall.
 // clang-format off
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#pragma GCC diagnostic ignored "-Wwritable-strings"
 
 
 //

@@ -454,7 +454,16 @@ void drawAnimatedBack()
 
     anim_t_wi_stuff* a;
 
-    if (commercial)
+    // Preserved exactly as found, bug included. This tests the enum *constant*
+    // `commercial` - which is 2, and therefore always true - rather than
+    // `gameVersion().gamemode == commercial`, so the function returns before
+    // drawing anything in every game mode. The intermission's animated background
+    // has consequently never drawn in this lineage; the identical line is in the
+    // 1993-lineage source (110ddbe:src/DOOM/wi_stuff.c:562). The frame goldens are
+    // recorded with it, so correcting it is a behaviour change, not a cleanup.
+    // Written as an explicit comparison only so the always-true test is visible
+    // rather than something a compiler has to point out.
+    if (commercial != 0)
         return;
 
     if (im.wbs->epsd > 2)

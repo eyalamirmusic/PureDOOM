@@ -31,7 +31,7 @@ namespace Doom
 struct SfxInfo
 {
     // up to 6-character name
-    char* name;
+    const char* name;
 
     // Sfx singularity (only one at a time)
     int singularity;
@@ -70,7 +70,7 @@ namespace Doom
 struct MusicInfo
 {
     // up to 6-character name
-    char* name;
+    const char* name;
 
     // lump number of music
     int lumpnum;

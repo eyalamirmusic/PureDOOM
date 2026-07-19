@@ -181,7 +181,7 @@ int queue_midi_tail = 0;
 // This function loads the sound data from the WAD lump,
 //  for single sound.
 //
-void* getsfx(char* sfxname, int* len)
+void* getsfx(const char* sfxname, int* len)
 {
     unsigned char* sfx;
     unsigned char* paddedsfx;
@@ -1145,7 +1145,18 @@ unsigned long tickSong()
             do
             {
                 delay_byte = mus_data[mus_offset++];
-                mus_delay = mus_delay * 128 + delay_byte & 0b01111111;
+                // KNOWN DEFECT, preserved and parenthesized rather than fixed.
+                // `+` binds tighter than `&`, so the mask lands on the whole
+                // accumulator instead of on the byte being folded in. A MUS delay
+                // is a variable-length quantity of seven bits per byte, so the
+                // intended reading is `mus_delay * 128 + (delay_byte & 0x7f)`;
+                // as written, every delay needing more than one byte truncates to
+                // its low seven bits. The same line is in the 1993-lineage source
+                // (110ddbe:src/DOOM/i_sound.c:1158), so it predates this refactor.
+                // Left alone because it is a behaviour change no gate here can
+                // check: audio is unwired, nothing calls this, and no golden
+                // covers it. Move the parenthesis one term left to correct it.
+                mus_delay = (mus_delay * 128 + delay_byte) & 0b01111111;
             } while (delay_byte & 0b10000000);
 
             return midi_event;

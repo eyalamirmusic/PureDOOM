@@ -109,8 +109,9 @@
 //
 // Not a constexpr candidate: Doom::movementSpeeds().forwardmove[1] is a runtime
 // accessor into per-session state (Doom::doomLoop's -turbo handling scales it at
-// startup), not a compile-time constant.
-#define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1])
+// startup), not a compile-time constant. It was a macro for exactly that reason
+// until Step 9's last pass, which is a reason not to be a constant and never was a
+// reason to be a macro; maxPlayerMove() is defined in namespace Doom below.
 
 // Prototypes for other subsystems' functions.
 void Doom::spawnPlayer(Doom::MapThing* mthing);
@@ -192,6 +193,13 @@ static_assert(
 constexpr int TURBOTHRESHOLD = 0x32;
 constexpr int SLOWTURNTICS = 6;
 constexpr int NUMKEYS = 256;
+
+// The cap on the combined forward/side move - see the note above the includes for
+// why it is a run-time read rather than a constant.
+int maxPlayerMove()
+{
+    return movementSpeeds().forwardmove[1];
+}
 constexpr int BODYQUESIZE = 32;
 constexpr int VERSIONSIZE = 16;
 constexpr int DEMOMARKER = 0x80;
@@ -404,14 +412,16 @@ void buildTiccmd(Ticcmd* cmd)
 
     input.mousex = input.mousey = 0;
 
-    if (forward > MAXPLMOVE)
-        forward = MAXPLMOVE;
-    else if (forward < -MAXPLMOVE)
-        forward = -MAXPLMOVE;
-    if (side > MAXPLMOVE)
-        side = MAXPLMOVE;
-    else if (side < -MAXPLMOVE)
-        side = -MAXPLMOVE;
+    const int maxmove = maxPlayerMove();
+
+    if (forward > maxmove)
+        forward = maxmove;
+    else if (forward < -maxmove)
+        forward = -maxmove;
+    if (side > maxmove)
+        side = maxmove;
+    else if (side < -maxmove)
+        side = -maxmove;
 
     cmd->forwardmove += forward;
     cmd->sidemove += side;
@@ -1172,6 +1182,9 @@ void worldDone()
             case 31:
                 if (!secretexit)
                     break;
+                // A secret exit from 15 or 31 reaches the finale, so the
+                // fallthrough is the point of the case rather than an omission.
+                [[fallthrough]];
             case 6:
             case 11:
             case 20:
