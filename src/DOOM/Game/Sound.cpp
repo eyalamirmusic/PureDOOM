@@ -44,29 +44,10 @@
 #include "../Sim/Random.h"
 #define S_MAX_VOLUME 127
 
-// when to clip out sounds
-// Does not fit the large outdoor areas.
-#define S_CLIPPING_DIST (1200 * FRACUNIT)
-
-// Distance tp origin when sounds should be maxed out.
-// This should relate to movement clipping resolution
-// (see BLOCKMAP handling).
-// Originally: (200*0x10000).
-#define S_CLOSE_DIST (160 * FRACUNIT)
-
-// A plain integer divisor in whole map units (1040), not a fixed value: the volume
-// ramp below divides a whole-unit distance by it.
-#define S_ATTENUATOR ((S_CLIPPING_DIST - S_CLOSE_DIST).toInt())
-
 // Adjustable by menu.
 #define NORM_VOLUME snd_MaxVolume
 
-#define NORM_PITCH 128
-#define NORM_PRIORITY 64
-#define NORM_SEP 128
-
 #define S_PITCH_PERTURB 1
-#define S_STEREO_SWING (96 * FRACUNIT)
 
 // percent attenuation from front to back
 #define S_IFRACVOL 30
@@ -98,6 +79,26 @@ static Doom::SoundChannel* channels_s_sound = nullptr;
 
 namespace Doom
 {
+
+// when to clip out sounds
+// Does not fit the large outdoor areas.
+constexpr fixed_t S_CLIPPING_DIST = 1200 * FRACUNIT;
+
+// Distance tp origin when sounds should be maxed out.
+// This should relate to movement clipping resolution
+// (see BLOCKMAP handling).
+// Originally: (200*0x10000).
+constexpr fixed_t S_CLOSE_DIST = 160 * FRACUNIT;
+
+// A plain integer divisor in whole map units (1040), not a fixed value: the volume
+// ramp below divides a whole-unit distance by it.
+constexpr int S_ATTENUATOR = (S_CLIPPING_DIST - S_CLOSE_DIST).toInt();
+
+constexpr int NORM_PITCH = 128;
+constexpr int NORM_PRIORITY = 64;
+constexpr int NORM_SEP = 128;
+
+constexpr fixed_t S_STEREO_SWING = 96 * FRACUNIT;
 
 //
 // Prototypes

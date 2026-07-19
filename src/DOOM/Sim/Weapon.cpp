@@ -37,17 +37,18 @@
 #include "MapAction.h"
 #include "Mobj.h"
 #include "Random.h"
-#define LOWERSPEED (FRACUNIT * 6)
-#define RAISESPEED (FRACUNIT * 6)
-
-#define WEAPONBOTTOM (128 * FRACUNIT)
-#define WEAPONTOP (32 * FRACUNIT)
-
-// plasma cells for a bfg attack
-#define BFGCELLS 40
 
 namespace Doom
 {
+constexpr fixed_t LOWERSPEED = FRACUNIT * 6;
+constexpr fixed_t RAISESPEED = FRACUNIT * 6;
+
+constexpr fixed_t WEAPONBOTTOM = 128 * FRACUNIT;
+constexpr fixed_t WEAPONTOP = 32 * FRACUNIT;
+
+// plasma cells for a bfg attack
+constexpr int BFGCELLS = 40;
+
 // The auto-aim slope of the shot being fired; file-local. The weapon scratch now lives on the
 // Engine (Sim/WeaponScratch.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5).
 // computeBulletSlope hoists weaponScratch() once and reaches bulletslope through it; gunShot and

@@ -36,43 +36,13 @@
 #include "../Game/GameClock.h"
 #include "../Game/SoundSettings.h"
 #include "../Game/SoundData.h"
-#define SAMPLECOUNT 512
-#define NUM_CHANNELS 8
+constexpr int SAMPLECOUNT = 512;
 // It is 2 for 16bit, and 2 for two channels.
-#define BUFMUL 4
-#define MIXBUFFERSIZE (SAMPLECOUNT * BUFMUL)
+constexpr int BUFMUL = 4;
+constexpr int MIXBUFFERSIZE = SAMPLECOUNT * BUFMUL;
 
 #define SAMPLERATE 11025 // Hz
 #define SAMPLESIZE 2 // 16bit
-
-#define MAX_QUEUED_MIDI_MSGS 256
-
-#define EVENT_RELEASE_NOTE 0
-#define EVENT_PLAY_NOTE 1
-#define EVENT_PITCH_BEND 2
-#define EVENT_SYSTEM_EVENT 3
-#define EVENT_CONTROLLER 4
-#define EVENT_END_OF_MEASURE 5
-#define EVENT_FINISH 6
-#define EVENT_UNUSED 7
-
-#define CONTROLLER_EVENT_ALL_SOUNDS_OFF 10
-#define CONTROLLER_EVENT_ALL_NOTES_OFF 11
-#define CONTROLLER_EVENT_MONO 12
-#define CONTROLLER_EVENT_POLY 13
-#define CONTROLLER_EVENT_RESET_ALL_CONTROLLERS 14
-#define CONTROLLER_EVENT_EVENT 15
-
-#define CONTROLLER_CHANGE_INSTRUMENT 0
-#define CONTROLLER_BANK_SELECT 1
-#define CONTROLLER_MODULATION 2
-#define CONTROLLER_VOLUME 3
-#define CONTROLLER_PAN 4
-#define CONTROLLER_EXPRESSION 5
-#define CONTROLLER_REVERB 6
-#define CONTROLLER_CHORUS 7
-#define CONTROLLER_SUSTAIN 8
-#define CONTROLLER_SOFT 9
 
 // The global mixing buffer stays at ::-file-scope: DOOM.cpp externs it as
 // `signed short mixbuffer[2048]` and hands it out through doom_get_sound_buffer,
@@ -82,6 +52,37 @@ signed short mixbuffer[MIXBUFFERSIZE];
 
 namespace Doom
 {
+
+constexpr int NUM_CHANNELS = 8;
+
+constexpr int MAX_QUEUED_MIDI_MSGS = 256;
+
+constexpr int EVENT_RELEASE_NOTE = 0;
+constexpr int EVENT_PLAY_NOTE = 1;
+constexpr int EVENT_PITCH_BEND = 2;
+constexpr int EVENT_SYSTEM_EVENT = 3;
+constexpr int EVENT_CONTROLLER = 4;
+constexpr int EVENT_END_OF_MEASURE = 5;
+constexpr int EVENT_FINISH = 6;
+constexpr int EVENT_UNUSED = 7;
+
+constexpr int CONTROLLER_EVENT_ALL_SOUNDS_OFF = 10;
+constexpr int CONTROLLER_EVENT_ALL_NOTES_OFF = 11;
+constexpr int CONTROLLER_EVENT_MONO = 12;
+constexpr int CONTROLLER_EVENT_POLY = 13;
+constexpr int CONTROLLER_EVENT_RESET_ALL_CONTROLLERS = 14;
+constexpr int CONTROLLER_EVENT_EVENT = 15;
+
+constexpr int CONTROLLER_CHANGE_INSTRUMENT = 0;
+constexpr int CONTROLLER_BANK_SELECT = 1;
+constexpr int CONTROLLER_MODULATION = 2;
+constexpr int CONTROLLER_VOLUME = 3;
+constexpr int CONTROLLER_PAN = 4;
+constexpr int CONTROLLER_EXPRESSION = 5;
+constexpr int CONTROLLER_REVERB = 6;
+constexpr int CONTROLLER_CHORUS = 7;
+constexpr int CONTROLLER_SUSTAIN = 8;
+constexpr int CONTROLLER_SOFT = 9;
 
 struct MusHeader
 {

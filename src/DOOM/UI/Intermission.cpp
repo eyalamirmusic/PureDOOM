@@ -66,38 +66,38 @@ namespace Doom
 // This is supposedly ignored for commercial
 //  release (aka DOOM II), which had 34 maps
 //  in one episode. So there.
-#define NUMEPISODES 4
-#define NUMMAPS 9
+constexpr int NUMEPISODES = 4;
+constexpr int NUMMAPS = 9;
 
 // GLOBAL LOCATIONS
-#define WI_TITLEY 2
-#define WI_SPACINGY 33
+constexpr int WI_TITLEY = 2;
+constexpr int WI_SPACINGY = 33;
 
 // SINGPLE-PLAYER STUFF
-#define SP_STATSX 50
-#define SP_STATSY 50
+constexpr int SP_STATSX = 50;
+constexpr int SP_STATSY = 50;
 
-#define SP_TIMEX 16
-#define SP_TIMEY (SCREENHEIGHT - 32)
+constexpr int SP_TIMEX = 16;
+constexpr int SP_TIMEY = SCREENHEIGHT - 32;
 
 // NET GAME STUFF
-#define NG_STATSY 50
-#define NG_SPACINGX 64
+constexpr int NG_STATSY = 50;
+constexpr int NG_SPACINGX = 64;
 
 // DEATHMATCH STUFF
-#define DM_MATRIXX 42
-#define DM_MATRIXY 68
+constexpr int DM_MATRIXX = 42;
+constexpr int DM_MATRIXY = 68;
 
-#define DM_SPACINGX 40
+constexpr int DM_SPACINGX = 40;
 
-#define DM_TOTALSX 269
+constexpr int DM_TOTALSX = 269;
 
-#define DM_KILLERSX 10
-#define DM_KILLERSY 100
-#define DM_VICTIMSX 5
-#define DM_VICTIMSY 50
+constexpr int DM_KILLERSX = 10;
+constexpr int DM_KILLERSY = 100;
+constexpr int DM_VICTIMSX = 5;
+constexpr int DM_VICTIMSY = 50;
 
-#define FB 0
+constexpr int FB = 0;
 
 // States for single-player
 #define SP_KILLS 0
@@ -110,7 +110,7 @@ namespace Doom
 #define SP_PAUSE 1
 
 // in seconds
-#define SHOWNEXTLOCDELAY 4
+constexpr int SHOWNEXTLOCDELAY = 4;
 //#define SHOWLASTLOCDELAY        SHOWNEXTLOCDELAY
 
 enum AnimEnum
@@ -858,7 +858,8 @@ void drawDeathmatchStats()
                             FB,
                             im.p[i]);
 
-            Doom::drawPatch(DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.p[i]);
+            Doom::drawPatch(
+                DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.p[i]);
 
             if (i == im.me)
             {
@@ -1102,11 +1103,15 @@ void drawNetgameStats()
     drawLF();
 
     // draw stat titles (top line)
-    Doom::drawPatch(
-        statsX + NG_SPACINGX - littleEndian(im.kills->width), NG_STATSY, FB, im.kills);
+    Doom::drawPatch(statsX + NG_SPACINGX - littleEndian(im.kills->width),
+                    NG_STATSY,
+                    FB,
+                    im.kills);
 
-    Doom::drawPatch(
-        statsX + 2 * NG_SPACINGX - littleEndian(im.items->width), NG_STATSY, FB, im.items);
+    Doom::drawPatch(statsX + 2 * NG_SPACINGX - littleEndian(im.items->width),
+                    NG_STATSY,
+                    FB,
+                    im.items);
 
     Doom::drawPatch(statsX + 3 * NG_SPACINGX - littleEndian(im.secret->width),
                     NG_STATSY,

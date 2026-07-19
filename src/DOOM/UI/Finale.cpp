@@ -60,8 +60,8 @@ void Doom::drawPatchFlipped(int x, int y, int scrn, Doom::Patch* patch); // v_vi
 namespace Doom
 {
 
-#define TEXTSPEED 3
-#define TEXTWAIT 250
+constexpr int TEXTSPEED = 3;
+constexpr int TEXTWAIT = 250;
 
 struct CastInfo
 {

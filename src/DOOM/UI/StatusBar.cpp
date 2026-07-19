@@ -76,15 +76,6 @@ extern int doom_flags;
 // STATUS BAR DATA
 //
 
-// Palette indices.
-// For damage/bonus red-/gold-shifts
-#define STARTREDPALS 1
-#define STARTBONUSPALS 9
-#define NUMREDPALS 8
-#define NUMBONUSPALS 4
-// Radiation suit, green shift.
-#define RADIATIONPAL 13
-
 // N/256*100% probability
 //  that the normal face state will change
 #define ST_FACEPROBABILITY 96
@@ -93,41 +84,15 @@ extern int doom_flags;
 #define ST_TOGGLECHAT KEY_ENTER
 
 // Location of status bar
-#define ST_X 0
 #define ST_X2 104
 
-#define ST_FX 143
 #define ST_FY 169
-
-// Number of status faces.
-#define ST_NUMPAINFACES 5
-#define ST_NUMSTRAIGHTFACES 3
-#define ST_NUMTURNFACES 2
-#define ST_NUMSPECIALFACES 3
-
-#define ST_FACESTRIDE (ST_NUMSTRAIGHTFACES + ST_NUMTURNFACES + ST_NUMSPECIALFACES)
 
 #define ST_NUMEXTRAFACES 2
 
 #define ST_NUMFACES (ST_FACESTRIDE * ST_NUMPAINFACES + ST_NUMEXTRAFACES)
 
-#define ST_TURNOFFSET (ST_NUMSTRAIGHTFACES)
-#define ST_OUCHOFFSET (ST_TURNOFFSET + ST_NUMTURNFACES)
-#define ST_EVILGRINOFFSET (ST_OUCHOFFSET + 1)
-#define ST_RAMPAGEOFFSET (ST_EVILGRINOFFSET + 1)
-#define ST_GODFACE (ST_NUMPAINFACES * ST_FACESTRIDE)
-#define ST_DEADFACE (ST_GODFACE + 1)
-
-#define ST_FACESX 143
-#define ST_FACESY 168
-
-#define ST_EVILGRINCOUNT (2 * TICRATE)
-#define ST_STRAIGHTFACECOUNT (TICRATE / 2)
-#define ST_TURNCOUNT (1 * TICRATE)
 #define ST_OUCHCOUNT (1 * TICRATE)
-#define ST_RAMPAGEDELAY (2 * TICRATE)
-
-#define ST_MUCHPAIN 20
 
 // Location and size of statistics,
 // justified according to widget type.
@@ -137,76 +102,24 @@ extern int doom_flags;
 //       into a buffer,
 //       or into the frame buffer?
 
-// AMMO number pos.
-#define ST_AMMOWIDTH 3
-#define ST_AMMOX 44
-#define ST_AMMOY 171
-
 // HEALTH number pos.
 #define ST_HEALTHWIDTH 3
-#define ST_HEALTHX 90
-#define ST_HEALTHY 171
-
-// Weapon pos.
-#define ST_ARMSX 111
-#define ST_ARMSY 172
-#define ST_ARMSBGX 104
-#define ST_ARMSBGY 168
-#define ST_ARMSXSPACE 12
-#define ST_ARMSYSPACE 10
-
-// Frags pos.
-#define ST_FRAGSX 138
-#define ST_FRAGSY 171
-#define ST_FRAGSWIDTH 2
 
 // ARMOR number pos.
 #define ST_ARMORWIDTH 3
-#define ST_ARMORX 221
-#define ST_ARMORY 171
 
 // Key icon positions.
 #define ST_KEY0WIDTH 8
 #define ST_KEY0HEIGHT 5
-#define ST_KEY0X 239
-#define ST_KEY0Y 171
 #define ST_KEY1WIDTH ST_KEY0WIDTH
-#define ST_KEY1X 239
-#define ST_KEY1Y 181
 #define ST_KEY2WIDTH ST_KEY0WIDTH
-#define ST_KEY2X 239
-#define ST_KEY2Y 191
 
 // Ammunition counter.
-#define ST_AMMO0WIDTH 3
 #define ST_AMMO0HEIGHT 6
-#define ST_AMMO0X 288
-#define ST_AMMO0Y 173
-#define ST_AMMO1WIDTH ST_AMMO0WIDTH
-#define ST_AMMO1X 288
-#define ST_AMMO1Y 179
-#define ST_AMMO2WIDTH ST_AMMO0WIDTH
-#define ST_AMMO2X 288
-#define ST_AMMO2Y 191
-#define ST_AMMO3WIDTH ST_AMMO0WIDTH
-#define ST_AMMO3X 288
-#define ST_AMMO3Y 185
 
 // Indicate maximum ammunition.
 // Only needed because backpack exists.
-#define ST_MAXAMMO0WIDTH 3
 #define ST_MAXAMMO0HEIGHT 5
-#define ST_MAXAMMO0X 314
-#define ST_MAXAMMO0Y 173
-#define ST_MAXAMMO1WIDTH ST_MAXAMMO0WIDTH
-#define ST_MAXAMMO1X 314
-#define ST_MAXAMMO1Y 179
-#define ST_MAXAMMO2WIDTH ST_MAXAMMO0WIDTH
-#define ST_MAXAMMO2X 314
-#define ST_MAXAMMO2Y 191
-#define ST_MAXAMMO3WIDTH ST_MAXAMMO0WIDTH
-#define ST_MAXAMMO3X 314
-#define ST_MAXAMMO3Y 185
 
 // pistol
 #define ST_WEAPON0X 110
@@ -243,8 +156,6 @@ extern int doom_flags;
 //Incoming messages window location
 #define ST_MSGTEXTX 0
 #define ST_MSGTEXTY 0
-// Dimensions given in characters.
-#define ST_MSGWIDTH 52
 // Or shall I say, in lines?
 #define ST_MSGHEIGHT 1
 
@@ -267,6 +178,120 @@ extern int doom_flags;
 
 namespace Doom
 {
+
+// Palette indices.
+// For damage/bonus red-/gold-shifts
+constexpr int STARTREDPALS = 1;
+constexpr int STARTBONUSPALS = 9;
+constexpr int NUMREDPALS = 8;
+constexpr int NUMBONUSPALS = 4;
+// Radiation suit, green shift.
+constexpr int RADIATIONPAL = 13;
+
+// Location of status bar
+constexpr int ST_X = 0;
+
+constexpr int ST_FX = 143;
+
+// Number of status faces.
+constexpr int ST_NUMPAINFACES = 5;
+constexpr int ST_NUMSTRAIGHTFACES = 3;
+constexpr int ST_NUMTURNFACES = 2;
+constexpr int ST_NUMSPECIALFACES = 3;
+
+constexpr int ST_FACESTRIDE =
+    ST_NUMSTRAIGHTFACES + ST_NUMTURNFACES + ST_NUMSPECIALFACES;
+
+constexpr int ST_TURNOFFSET = ST_NUMSTRAIGHTFACES;
+constexpr int ST_OUCHOFFSET = ST_TURNOFFSET + ST_NUMTURNFACES;
+constexpr int ST_EVILGRINOFFSET = ST_OUCHOFFSET + 1;
+constexpr int ST_RAMPAGEOFFSET = ST_EVILGRINOFFSET + 1;
+constexpr int ST_GODFACE = ST_NUMPAINFACES * ST_FACESTRIDE;
+constexpr int ST_DEADFACE = ST_GODFACE + 1;
+
+constexpr int ST_FACESX = 143;
+constexpr int ST_FACESY = 168;
+
+constexpr int ST_EVILGRINCOUNT = 2 * TICRATE;
+constexpr int ST_STRAIGHTFACECOUNT = TICRATE / 2;
+constexpr int ST_TURNCOUNT = 1 * TICRATE;
+constexpr int ST_RAMPAGEDELAY = 2 * TICRATE;
+
+constexpr int ST_MUCHPAIN = 20;
+
+// Location and size of statistics,
+// justified according to widget type.
+// Problem is, within which space? STbar? Screen?
+// Note: this could be read in by a lump.
+//       Problem is, is the stuff rendered
+//       into a buffer,
+//       or into the frame buffer?
+
+// AMMO number pos.
+constexpr int ST_AMMOWIDTH = 3;
+constexpr int ST_AMMOX = 44;
+constexpr int ST_AMMOY = 171;
+
+// HEALTH number pos.
+constexpr int ST_HEALTHX = 90;
+constexpr int ST_HEALTHY = 171;
+
+// Weapon pos.
+constexpr int ST_ARMSX = 111;
+constexpr int ST_ARMSY = 172;
+constexpr int ST_ARMSBGX = 104;
+constexpr int ST_ARMSBGY = 168;
+constexpr int ST_ARMSXSPACE = 12;
+constexpr int ST_ARMSYSPACE = 10;
+
+// Frags pos.
+constexpr int ST_FRAGSX = 138;
+constexpr int ST_FRAGSY = 171;
+constexpr int ST_FRAGSWIDTH = 2;
+
+// ARMOR number pos.
+constexpr int ST_ARMORX = 221;
+constexpr int ST_ARMORY = 171;
+
+// Key icon positions.
+constexpr int ST_KEY0X = 239;
+constexpr int ST_KEY0Y = 171;
+constexpr int ST_KEY1X = 239;
+constexpr int ST_KEY1Y = 181;
+constexpr int ST_KEY2X = 239;
+constexpr int ST_KEY2Y = 191;
+
+// Ammunition counter.
+constexpr int ST_AMMO0WIDTH = 3;
+constexpr int ST_AMMO0X = 288;
+constexpr int ST_AMMO0Y = 173;
+constexpr int ST_AMMO1WIDTH = ST_AMMO0WIDTH;
+constexpr int ST_AMMO1X = 288;
+constexpr int ST_AMMO1Y = 179;
+constexpr int ST_AMMO2WIDTH = ST_AMMO0WIDTH;
+constexpr int ST_AMMO2X = 288;
+constexpr int ST_AMMO2Y = 191;
+constexpr int ST_AMMO3WIDTH = ST_AMMO0WIDTH;
+constexpr int ST_AMMO3X = 288;
+constexpr int ST_AMMO3Y = 185;
+
+// Indicate maximum ammunition.
+// Only needed because backpack exists.
+constexpr int ST_MAXAMMO0WIDTH = 3;
+constexpr int ST_MAXAMMO0X = 314;
+constexpr int ST_MAXAMMO0Y = 173;
+constexpr int ST_MAXAMMO1WIDTH = ST_MAXAMMO0WIDTH;
+constexpr int ST_MAXAMMO1X = 314;
+constexpr int ST_MAXAMMO1Y = 179;
+constexpr int ST_MAXAMMO2WIDTH = ST_MAXAMMO0WIDTH;
+constexpr int ST_MAXAMMO2X = 314;
+constexpr int ST_MAXAMMO2Y = 191;
+constexpr int ST_MAXAMMO3WIDTH = ST_MAXAMMO0WIDTH;
+constexpr int ST_MAXAMMO3X = 314;
+constexpr int ST_MAXAMMO3Y = 185;
+
+// Dimensions given in characters.
+constexpr int ST_MSGWIDTH = 52;
 
 // The status bar's residual runtime state is a Doom::StatusBarState owned by the Engine
 // (StatusBarState.h); the loaded patches are a Doom::StatusBarGraphics (StatusBarGraphics.h,

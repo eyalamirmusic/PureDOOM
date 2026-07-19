@@ -29,14 +29,14 @@
 #define MAXWIDTH 1120
 #define MAXHEIGHT 832
 
-// status bar height at bottom of screen
-#define SBARHEIGHT 32
-
-#define FUZZTABLE 50
-#define FUZZOFF (SCREENWIDTH)
-
 namespace Doom
 {
+
+// status bar height at bottom of screen
+constexpr int SBARHEIGHT = 32;
+
+constexpr int FUZZTABLE = 50;
+constexpr int FUZZOFF = SCREENWIDTH;
 
 //
 // All drawing to the view buffer is accomplished in this file. The other refresh

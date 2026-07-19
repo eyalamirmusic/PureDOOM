@@ -101,19 +101,15 @@
 #include "../Sim/Random.h"
 #include "../Render/Sky.h"
 #include "../Render/Video.h"
-#define SAVEGAMESIZE 0x2c000
-#define SAVESTRINGSIZE 24
 // The run speed, and the cap on the combined forward/side move. forwardmove[]
 // holds the small raw integers that go into ticcmd's char fields - P_MovePlayer is
 // what turns them into a velocity, by multiplying by 2048. So the cap is that raw
 // integer, not a whole-unit conversion of it.
+//
+// Not a constexpr candidate: Doom::movementSpeeds().forwardmove[1] is a runtime
+// accessor into per-session state (Doom::doomLoop's -turbo handling scales it at
+// startup), not a compile-time constant.
 #define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1])
-#define TURBOTHRESHOLD 0x32
-#define SLOWTURNTICS 6
-#define NUMKEYS 256
-#define BODYQUESIZE 32
-#define VERSIONSIZE 16
-#define DEMOMARKER 0x80
 
 // Prototypes for other subsystems' functions.
 void Doom::spawnPlayer(Doom::MapThing* mthing);
@@ -180,6 +176,15 @@ extern EA::Array<const char*, 4> player_names; // hu_stuff
 
 namespace Doom
 {
+
+constexpr int SAVEGAMESIZE = 0x2c000;
+constexpr int SAVESTRINGSIZE = 24;
+constexpr int TURBOTHRESHOLD = 0x32;
+constexpr int SLOWTURNTICS = 6;
+constexpr int NUMKEYS = 256;
+constexpr int BODYQUESIZE = 32;
+constexpr int VERSIONSIZE = 16;
+constexpr int DEMOMARKER = 0x80;
 
 // Forward declarations so call order needs no rearranging.
 bool checkDemoStatus();

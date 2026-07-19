@@ -94,7 +94,6 @@
 #include "../Render/ViewWindow.h"
 #include "Game.h"
 #include "Sound.h"
-#define MAXARGVS 100
 
 // The boot-time WAD list, file-local: Doom::addWadFile appends to it and Doom::initWadFiles
 // consumes it, and nothing outside this file reads it (its d_main.h extern is gone).
@@ -155,6 +154,8 @@ void Doom::buildTiccmd(Doom::Ticcmd* cmd);
 
 namespace Doom
 {
+
+constexpr int MAXARGVS = 100;
 
 // Forward declarations so call order needs no rearranging.
 void doomLoop();

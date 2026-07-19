@@ -60,44 +60,45 @@ namespace Doom
 // Colours, the line-drawing shapes and the view state now live in am_map.h,
 // so a renderer can draw the same map without rasterising it.
 
-#define YOURRANGE 0
-#define TSWALLRANGE GRAYSRANGE
-#define FDWALLRANGE BROWNRANGE
-#define CDWALLRANGE YELLOWRANGE
-#define THINGRANGE GREENRANGE
-#define SECRETWALLRANGE WALLRANGE
-#define GRIDRANGE 0
+// The seven colour-range constants that sat here - YOURRANGE, TSWALLRANGE,
+// FDWALLRANGE, CDWALLRANGE, THINGRANGE, SECRETWALLRANGE, GRIDRANGE - are gone
+// rather than converted. Each was read nowhere, and per the standing rule for
+// this category they were checked against the 1993-lineage source before being
+// deleted: all seven are equally dead in `git show 110ddbe:src/DOOM/am_map.c`.
+// THINGRANGE is the one that looks alive there and is not - it is passed as
+// AM_drawThings' `colorrange` parameter, which that function's body never reads.
+// The ranges the port genuinely does read stay in AutomapTypes.h.
 
 // drawing stuff
-#define FB 0
+constexpr int FB = 0;
 
-#define AM_PANDOWNKEY KEY_DOWNARROW
-#define AM_PANUPKEY KEY_UPARROW
-#define AM_PANRIGHTKEY KEY_RIGHTARROW
-#define AM_PANLEFTKEY KEY_LEFTARROW
-#define AM_ZOOMINKEY '='
-#define AM_ZOOMOUTKEY '-'
-#define AM_STARTKEY KEY_TAB
-#define AM_ENDKEY KEY_TAB
-#define AM_GOBIGKEY '0'
-#define AM_FOLLOWKEY 'f'
-#define AM_GRIDKEY 'g'
-#define AM_MARKKEY 'm'
-#define AM_CLEARMARKKEY 'c'
+constexpr int AM_PANDOWNKEY = KEY_DOWNARROW;
+constexpr int AM_PANUPKEY = KEY_UPARROW;
+constexpr int AM_PANRIGHTKEY = KEY_RIGHTARROW;
+constexpr int AM_PANLEFTKEY = KEY_LEFTARROW;
+constexpr int AM_ZOOMINKEY = '=';
+constexpr int AM_ZOOMOUTKEY = '-';
+constexpr int AM_STARTKEY = KEY_TAB;
+constexpr int AM_ENDKEY = KEY_TAB;
+constexpr int AM_GOBIGKEY = '0';
+constexpr int AM_FOLLOWKEY = 'f';
+constexpr int AM_GRIDKEY = 'g';
+constexpr int AM_MARKKEY = 'm';
+constexpr int AM_CLEARMARKKEY = 'c';
 
-#define AM_NUMMARKPOINTS 10
+constexpr int AM_NUMMARKPOINTS = 10;
 
 // scale on entry
-#define INITSCALEMTOF (fixed_t {(std::int32_t) (.2 * FRACUNIT.raw)})
+constexpr fixed_t INITSCALEMTOF {(std::int32_t) (.2 * FRACUNIT.raw)};
 // how much the automap moves window per tic in frame-buffer coordinates
 // moves 140 pixels in 1 second
-#define F_PANINC 4
+constexpr int F_PANINC = 4;
 // how much zoom-in per tic
 // goes to 2x in 1 second
-#define M_ZOOMIN (fixed_t {(std::int32_t) (1.02 * FRACUNIT.raw)})
+constexpr fixed_t M_ZOOMIN {(std::int32_t) (1.02 * FRACUNIT.raw)};
 // how much zoom-out per tic
 // pulls out to 0.5x in 1 second
-#define M_ZOOMOUT (fixed_t {(std::int32_t) (FRACUNIT.raw / 1.02)})
+constexpr fixed_t M_ZOOMOUT {(std::int32_t) (FRACUNIT.raw / 1.02)};
 
 // translates between frame-buffer and map distances
 static inline fixed_t frameToMap(const AutomapView& view, int x)
@@ -148,15 +149,23 @@ static constexpr fixed_t amFixed(double value)
 {
     return fixed_t {(std::int32_t) value};
 }
-#define R_UNIT (FRACUNIT.raw)
+// The raw fixed-point unit, as an int32 rather than a Fixed, because every use
+// of it scales a `double` literal and the result is truncated by amFixed. That
+// distinction is the whole of the thintriangle_guy bug: see the comment on that
+// table, at the bottom of this file.
+//
+// This is the one name the three shape tables share. Each of them used to
+// `#define R` it, use it, and `#undef R` - one short-lived spelling reused with
+// two different meanings, which is exactly the shape that let the bug in.
+constexpr std::int32_t R_UNIT = FRACUNIT.raw;
 
-#define R (FRACUNIT.raw)
 EA::Array<MapLine, 3> triangle_guy = {
-    {{amFixed(-.867 * R), amFixed(-.5 * R)}, {amFixed(.867 * R), amFixed(-.5 * R)}},
-    {{amFixed(.867 * R), amFixed(-.5 * R)}, {fixed_t {}, fixed_t {R}}},
-    {{fixed_t {}, fixed_t {R}}, {amFixed(-.867 * R), amFixed(-.5 * R)}}};
-#undef R
-#define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(MapLine))
+    {{amFixed(-.867 * R_UNIT), amFixed(-.5 * R_UNIT)},
+     {amFixed(.867 * R_UNIT), amFixed(-.5 * R_UNIT)}},
+    {{amFixed(.867 * R_UNIT), amFixed(-.5 * R_UNIT)},
+     {fixed_t {}, fixed_t {R_UNIT}}},
+    {{fixed_t {}, fixed_t {R_UNIT}},
+     {amFixed(-.867 * R_UNIT), amFixed(-.5 * R_UNIT)}}};
 
 // The automap's internal view state is a Doom::AutomapView owned by the Engine (AutomapView.h). It
 // used to be reached through file-scope `static T& x = automapView().x;` reference aliases (the
@@ -1250,7 +1259,10 @@ void drawAutomap()
 // Stays at :: scope because those are the names it links against.
 // ---------------------------------------------------------------------------
 
-#define R ((8 * Doom::PLAYERRADIUS) / 7)
+// The player arrow's radius, a Fixed. Both arrow tables are drawn to the same
+// one; it was `#define R` twice, with the identical body, and #undef'd between.
+constexpr fixed_t R = (8 * Doom::PLAYERRADIUS) / 7;
+
 Doom::MapLine player_arrow[] = {
     {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
     {{R, fixed_t {}}, {R - R / 2, R / 4}}, // ----->
@@ -1259,9 +1271,7 @@ Doom::MapLine player_arrow[] = {
     {{-R + R / 8, fixed_t {}}, {-R - R / 8, -R / 4}},
     {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, R / 4}}, // >>--->
     {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, -R / 4}}};
-#undef R
 
-#define R ((8 * Doom::PLAYERRADIUS) / 7)
 Doom::MapLine cheat_player_arrow[] = {
     {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
     {{R, fixed_t {}}, {R - R / 2, R / 6}}, // ----->
@@ -1279,25 +1289,29 @@ Doom::MapLine cheat_player_arrow[] = {
     {{R / 6, R / 4}, {R / 6, -R / 7}}, // >>-ddt->
     {{R / 6, -R / 7}, {R / 6 + R / 32, -R / 7 - R / 32}},
     {{R / 6 + R / 32, -R / 7 - R / 32}, {R / 6 + R / 10, -R / 7}}};
-#undef R
 
-// R is the RAW unit, not the Fixed, and the scaled vertices go through amFixed --
-// the same shape triangle_guy above uses, and for the reason recorded there. When
-// this table said `#define R (FRACUNIT)` the multiplications were `double * Fixed`,
-// so each -.5 and .7 was converted to `int` 0 before it ever reached the multiply
-// and every scaled vertex collapsed to the origin: the "thin triangle" was one
+// This table scales Doom::R_UNIT -- the RAW unit, an int32 -- and not the Fixed
+// `R` the arrows above use, and the scaled vertices go through amFixed. That is
+// the same shape triangle_guy uses, and for the reason recorded there. When this
+// table said `#define R (FRACUNIT)` the multiplications were `double * Fixed`, so
+// each -.5 and .7 was converted to `int` 0 before it ever reached the multiply and
+// every scaled vertex collapsed to the origin: the "thin triangle" was one
 // degenerate line from (0,0) to (65536,0). Vanilla's fixed_t was a plain int, so
 // -.5 * 65536 truncated to -32768 as intended; the strong-type migration is what
 // silently changed the meaning. No golden saw it -- drawThings needs `cheating ==
 // 2` (IDDT twice) and no test or demo cheats -- so Automap/shapeTablesAreScaled
 // pins these values directly instead.
-#define R (FRACUNIT.raw)
+//
+// The two meanings now have two names. They had one, `R`, redefined between the
+// tables, which is what made "the neighbouring table is right" so easy to read as
+// "this one is too".
 Doom::MapLine thintriangle_guy[] = {
-    {{Doom::amFixed(-.5 * R), Doom::amFixed(-.7 * R)}, {fixed_t {R}, fixed_t {}}},
-    {{fixed_t {R}, fixed_t {}}, {Doom::amFixed(-.5 * R), Doom::amFixed(.7 * R)}},
-    {{Doom::amFixed(-.5 * R), Doom::amFixed(.7 * R)},
-     {Doom::amFixed(-.5 * R), Doom::amFixed(-.7 * R)}}};
-#undef R
+    {{Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(-.7 * Doom::R_UNIT)},
+     {fixed_t {Doom::R_UNIT}, fixed_t {}}},
+    {{fixed_t {Doom::R_UNIT}, fixed_t {}},
+     {Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(.7 * Doom::R_UNIT)}},
+    {{Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(.7 * Doom::R_UNIT)},
+     {Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(-.7 * Doom::R_UNIT)}}};
 
 // Map-window position/size and scale (map coords), read by the GPU automap.
 fixed_t m_x, m_y;
@@ -1306,7 +1320,9 @@ fixed_t m_h;
 
 // INITSCALEMTOF is the one defined at the top of the file; this used to redefine it
 // verbatim right here, which was legal only because the two texts were identical.
-fixed_t scale_mtof = (fixed_t) INITSCALEMTOF;
+// As a constexpr it cannot be redefined at all, and it is already a fixed_t, so the
+// cast that used to launder the macro's expansion goes too.
+fixed_t scale_mtof = Doom::INITSCALEMTOF;
 
 // Frame-window position/size (screen coords).
 int f_x;

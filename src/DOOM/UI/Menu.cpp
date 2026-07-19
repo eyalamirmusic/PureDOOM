@@ -65,9 +65,6 @@
 #include "../Host/System.h"
 #include "../Render/Main.h"
 #include <functional>
-#define SAVESTRINGSIZE 24
-#define SKULLXOFF -32
-#define LINEHEIGHT 16
 
 // --- Globals other subsystems read ------------------------------------------
 //
@@ -130,6 +127,10 @@ const char* endmsg[Doom::NUM_QUITMESSAGES + 1] = {
 
 namespace Doom
 {
+
+constexpr int SAVESTRINGSIZE = 24;
+constexpr int SKULLXOFF = -32;
+constexpr int LINEHEIGHT = 16;
 
 //
 // MENU TYPEDEFS

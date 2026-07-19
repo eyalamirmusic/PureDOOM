@@ -33,15 +33,16 @@
 #include "MapAction.h"
 #include "Mobj.h"
 #include "Weapon.h"
-#define INVERSECOLORMAP 32
-
-// 16 pixels of bob (a raw fixed value: 0x100000 is 16.0)
-#define MAXBOB (fixed_t {0x100000})
-
-#define ANG5 (ANG90 / 18)
 
 namespace Doom
 {
+
+constexpr int INVERSECOLORMAP = 32;
+
+// 16 pixels of bob (a raw fixed value: 0x100000 is 16.0)
+constexpr fixed_t MAXBOB {0x100000};
+
+constexpr angle_t ANG5 = ANG90 / 18;
 
 //
 // Movement.
@@ -265,7 +266,7 @@ void playerThink(Player& player)
         //  when the weapon psprite can do it
         //  (read: not in the middle of an attack).
         newweapon = static_cast<WeaponType>((cmd->buttons & BT_WEAPONMASK)
-                                              >> BT_WEAPONSHIFT);
+                                            >> BT_WEAPONSHIFT);
 
         if (newweapon == wp_fist && player.weaponowned[wp_chainsaw]
             && !(player.readyweapon == wp_chainsaw && player.powers[pw_strength]))

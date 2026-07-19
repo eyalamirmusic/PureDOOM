@@ -55,11 +55,12 @@
 #include "Weapon.h"
 #include "Random.h"
 #define MAXSPECIALCROSS 8
-#define FATSPREAD (ANG90 / 8)
-#define SKULLSPEED (20 * FRACUNIT)
 
 namespace Doom
 {
+constexpr angle_t FATSPREAD = ANG90 / 8;
+constexpr fixed_t SKULLSPEED = 20 * FRACUNIT;
+
 // P_NewChaseDir movement LUTs and the transient targets the AI threads through its
 // state actions (the vile's corpse, the fat/brain spit targets). All file-local;
 // soundtarget alone is shared (now a Doom::SoundTarget Engine member, reached above).

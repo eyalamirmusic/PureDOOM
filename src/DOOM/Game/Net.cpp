@@ -66,15 +66,6 @@
 // a gametic cannot be run until nettics[] > gametic for all players
 //
 
-#define NCMD_EXIT 0x80000000
-#define NCMD_RETRANSMIT 0x40000000
-#define NCMD_SETUP 0x20000000
-#define NCMD_KILL 0x10000000 // kill game
-#define NCMD_CHECKSUM 0x0fffffff
-
-#define RESENDCOUNT 10
-#define PL_DRONE 0x80 // bit flag in doomdata->player
-
 // The netcode buffers and tic bookkeeping are a Doom::NetState owned by the Engine now, and
 // this file reads them straight off netState(). These five are still externed in doomstat.h
 // and read through those externs by Game/Game.cpp, Game/DoomMain.cpp and Host/Net.cpp, so the
@@ -86,6 +77,17 @@ void Doom::doAdvanceDemo();
 
 namespace Doom
 {
+
+// NCMD_EXIT does not fit int (0x80000000 > INT_MAX), so it is unsigned - the
+// same type the bare hex literal already had as a macro.
+constexpr unsigned NCMD_EXIT = 0x80000000;
+constexpr int NCMD_RETRANSMIT = 0x40000000;
+constexpr int NCMD_SETUP = 0x20000000;
+constexpr int NCMD_KILL = 0x10000000; // kill game
+constexpr int NCMD_CHECKSUM = 0x0fffffff;
+
+constexpr int RESENDCOUNT = 10;
+constexpr int PL_DRONE = 0x80; // bit flag in doomdata->player
 
 int netbufferSize()
 {

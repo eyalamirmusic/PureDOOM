@@ -74,19 +74,20 @@ extern EA::Array<const char*, 45> mapnames;
 #define HU_TITLEP (mapnamesp[gameSession().gamemap - 1])
 #define HU_TITLET (mapnamest[gameSession().gamemap - 1])
 #define HU_TITLEHEIGHT 1
-#define HU_TITLEX 0
 #define HU_TITLEY (167 - Doom::littleEndian(Doom::hudFont().hu_font[0]->height))
-#define HU_INPUTTOGGLE 't'
-#define HU_INPUTX HU_MSGX
 #define HU_INPUTY                                                                   \
     (HU_MSGY                                                                        \
      + HU_MSGHEIGHT * (Doom::littleEndian(Doom::hudFont().hu_font[0]->height) + 1))
 #define HU_INPUTWIDTH 64
 #define HU_INPUTHEIGHT 1
-#define QUEUESIZE 128
 
 namespace Doom
 {
+
+constexpr int HU_TITLEX = 0;
+constexpr char HU_INPUTTOGGLE = 't';
+constexpr int HU_INPUTX = HU_MSGX;
+constexpr int QUEUESIZE = 128;
 
 // The HUD's residual state (the player, the level-title line, the active flag) is a Doom::HudState
 // owned by the Engine (HudState.h); the heads-up chat state is a Doom::HudChat (HudChat.h); the
