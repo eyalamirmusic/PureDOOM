@@ -357,7 +357,7 @@ void storeWallRange(int start, int stop)
     int lightnum;
 
     // don't overflow and crash
-    if (bsp.ds_p == &bsp.drawsegs[MAXDRAWSEGS])
+    if (bsp.ds_p == &bsp.drawsegs[BSPScratch::maxDrawSegs])
         return;
 
 #ifdef RANGECHECK

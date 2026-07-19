@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,46 +21,17 @@
 
 #pragma once
 
-#pragma once
-
 // The map's geometry as the engine holds it in memory: the vertices, sectors,
 // sidedefs, linedefs, subsectors, segs and BSP nodes a level is built from, plus
-// the degenerate mobj a sector uses as a sound origin. Was the first half of
-// r_defs.h; the renderer's own types went to Render/RenderTypes.h.
+// the degenerate mobj a sector uses as a sound origin. The renderer's own types
+// are in Render/RenderTypes.h.
 
-#include "../Game/GameDefs.h"
-#include "../Math/FixedPoint.h"
-#include "ActionFunc.h"
-#include "MobjTypes.h"
+#include "../Game/GameDefs.h" // SCREENWIDTH
+#include "../Math/FixedPoint.h" // fixed_t
+#include "ActionFunc.h" // Thinker, for a sector's sound origin
+#include "MobjTypes.h" // Mobj, which a sector holds a list of
 
 #include <ea_data_structures/Structures/Vector.h>
-
-// Screenwidth.
-#include "../Game/GameDefs.h"
-
-// Some more or less basic data types
-// we depend on.
-#include "../Math/FixedPoint.h"
-
-// We rely on the thinker data struct
-// to handle sound origins in sectors.
-#include "ActionFunc.h"
-// SECTORS do store MObjs anyway.
-#include "MobjTypes.h"
-
-// Doom::SpriteDef owns its frames in an EA::Vector now (RAII, REFACTOR.md Step 9).
-#include <ea_data_structures/Structures/Vector.h>
-
-
-// Silhouette, needed for clipping Segs (mainly)
-// and sprites representing things.
-#define SIL_NONE 0
-#define SIL_BOTTOM 1
-#define SIL_TOP 2
-#define SIL_BOTH 3
-
-#define MAXDRAWSEGS 256
-
 
 //
 // INTERNAL MAP TYPES
@@ -76,11 +47,10 @@ namespace Doom
 {
 struct Vertex
 {
-    fixed_t        x;
-    fixed_t        y;
+    fixed_t x;
+    fixed_t y;
 };
 } // namespace Doom
-
 
 // Forward of LineDefs, for Sectors.
 namespace Doom
@@ -105,9 +75,9 @@ namespace Doom
 {
 struct DegenMobj : Doom::Thinker
 {
-    fixed_t                x;
-    fixed_t                y;
-    fixed_t                z;
+    fixed_t x;
+    fixed_t y;
+    fixed_t z;
 };
 } // namespace Doom
 
@@ -149,10 +119,9 @@ struct Sector
     void* specialdata;
 
     int linecount;
-    struct Line** lines;        // [linecount] size
+    struct Line** lines; // [linecount] size
 };
 } // namespace Doom
-
 
 //
 // The SideDef.
@@ -168,7 +137,7 @@ struct Side
     fixed_t rowoffset;
 
     // Texture indices.
-    // We do not maintain names here. 
+    // We do not maintain names here.
     short toptexture;
     short bottomtexture;
     short midtexture;
@@ -177,7 +146,6 @@ struct Side
     Sector* sector;
 };
 } // namespace Doom
-
 
 //
 // Move clipping aid for LineDefs.
@@ -192,7 +160,6 @@ enum SlopeType
     ST_NEGATIVE
 };
 } // namespace Doom
-
 
 namespace Doom
 {
@@ -235,7 +202,6 @@ struct Line
 };
 } // namespace Doom
 
-
 //
 // A Doom::SubSector.
 // References a Doom::Sector.
@@ -252,7 +218,6 @@ struct SubSector
     short firstline;
 };
 } // namespace Doom
-
 
 //
 // The LineSeg.
@@ -278,7 +243,6 @@ struct Seg
     Sector* backsector;
 };
 } // namespace Doom
-
 
 //
 // BSP node.

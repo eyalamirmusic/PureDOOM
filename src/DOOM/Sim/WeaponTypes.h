@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -19,7 +19,6 @@
 //
 //-----------------------------------------------------------------------------
 
-
 #pragma once
 
 // Basic data types.
@@ -35,13 +34,15 @@
 // and the Frame Sequence table.
 #include "Info.h"
 
+namespace Doom
+{
 //
 // Frame flags:
 // handles maximum brightness (torches, muzzle flare, light sources)
 //
-#define FF_FULLBRIGHT 0x8000 // flag in thing->frame
-#define FF_FRAMEMASK 0x7fff
-
+constexpr int FF_FULLBRIGHT = 0x8000; // flag in thing->frame
+constexpr int FF_FRAMEMASK = 0x7fff;
+} // namespace Doom
 
 //
 // Overlay psprites are scaled shapes
@@ -58,19 +59,16 @@ enum PspNum
 };
 } // namespace Doom
 
-
 namespace Doom
 {
 struct PspDef
 {
-    State* state;        // a 0 state means not active
+    State* state; // a 0 state means not active
     int tics;
     fixed_t sx;
     fixed_t sy;
 };
 } // namespace Doom
-
-
 
 //-----------------------------------------------------------------------------
 //

@@ -75,7 +75,7 @@ Doom::Sector* getSector(int currentSector, int line, int side)
 //
 int twoSided(int sector, int line)
 {
-    return (sectors[sector].lines[line])->flags & ML_TWOSIDED;
+    return (sectors[sector].lines[line])->flags & Doom::ML_TWOSIDED;
 }
 
 //
@@ -85,7 +85,7 @@ int twoSided(int sector, int line)
 //
 Doom::Sector* getNextSector(Doom::Line* line, Doom::Sector* sec)
 {
-    if (!(line->flags & ML_TWOSIDED))
+    if (!(line->flags & Doom::ML_TWOSIDED))
         return nullptr;
 
     if (line->frontsector == sec)
@@ -1104,7 +1104,7 @@ int doDonut(Line* line)
         s2 = getNextSector(s1->lines[0], s1);
         for (int i = 0; i < s2->linecount; i++)
         {
-            if ((!(s2->lines[i]->flags & ML_TWOSIDED))
+            if ((!(s2->lines[i]->flags & Doom::ML_TWOSIDED))
                 || (s2->lines[i]->backsector == s1))
                 continue;
             s3 = s2->lines[i]->backsector;

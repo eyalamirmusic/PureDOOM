@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,13 +21,10 @@
 
 #pragma once
 
-#pragma once
-
 // The renderer's own types: a patch and the posts/columns it is stored as, the
 // silhouette-clipped drawseg a wall segment becomes, the vissprite a thing
 // becomes, the sprite frame/definition tables, and the visplane a floor or
-// ceiling becomes. Was the second half of r_defs.h; the map geometry went to
-// Sim/MapTypes.h.
+// ceiling becomes. The map geometry is in Sim/MapTypes.h.
 
 #include "../Game/GameDefs.h"
 #include "../Math/FixedPoint.h"
@@ -35,21 +32,27 @@
 
 #include <ea_data_structures/Structures/Vector.h>
 
-// Drawseg silhouette flags, and the drawseg pool's size.
-#define SIL_NONE 0
-#define SIL_BOTTOM 1
-#define SIL_TOP 2
-#define SIL_BOTH 3
+namespace Doom
+{
+// Drawseg silhouette flags: which edges of a wall segment clip the sprites
+// behind it. SIL_BOTH is the two OR'd together, so these combine bitwise.
+constexpr int SIL_NONE = 0;
+constexpr int SIL_BOTTOM = 1;
+constexpr int SIL_TOP = 2;
+constexpr int SIL_BOTH = 3;
+} // namespace Doom
 
-#define MAXDRAWSEGS 256
+// The drawseg pool's size is BSPScratch::maxDrawSegs (Render/BSPScratch.h),
+// which is what sizes the array. Bound-check against that, not against a
+// separate constant of the same value.
 
 // posts are runs of non masked source pixels
 namespace Doom
 {
 struct Post
 {
-    byte topdelta;        // -1 is the last post in a column
-    byte length;         // length data bytes follows
+    byte topdelta; // -1 is the last post in a column
+    byte length; // length data bytes follows
 };
 } // namespace Doom
 
@@ -58,7 +61,6 @@ namespace Doom
 // A Column is a list of 0 or more Post, (byte)-1 terminated
 using Column = Post;
 } // namespace Doom
-
 
 //
 // OTHER TYPES
@@ -73,7 +75,6 @@ namespace Doom
 {
 using LightTable = byte;
 } // namespace Doom
-
 
 //
 // ?
@@ -107,7 +108,6 @@ struct DrawSeg
 };
 } // namespace Doom
 
-
 // Patches.
 // A patch holds one or more columns.
 // Patches are used for sprites and all masked pictures,
@@ -117,15 +117,14 @@ namespace Doom
 {
 struct Patch
 {
-    short width;                // bounding box size 
+    short width; // bounding box size
     short height;
-    short leftoffset;        // pixels to the left of origin 
-    short topoffset;        // pixels below the origin 
-    int columnofs[8];        // only [width] used
-    // the [0] is &columnofs[width] 
+    short leftoffset; // pixels to the left of origin
+    short topoffset; // pixels below the origin
+    int columnofs[8]; // only [width] used
+    // the [0] is &columnofs[width]
 };
 } // namespace Doom
-
 
 // A Doom::VisSprite is a thing
 //  that will be drawn during a refresh.
@@ -168,8 +167,7 @@ struct VisSprite
 };
 } // namespace Doom
 
-
-//        
+//
 // Sprites are patches with a special naming convention
 //  so they can be recognized by Doom::initSprites.
 // The base name is NNNNFx or NNNNFxFx, with
@@ -208,7 +206,6 @@ struct SpriteFrame
 };
 } // namespace Doom
 
-
 //
 // A sprite definition:
 //  a number of animation frames.
@@ -225,10 +222,9 @@ struct SpriteDef
 };
 } // namespace Doom
 
-
 //
 // Now what is a visplane, anyway?
-// 
+//
 namespace Doom
 {
 struct VisPlane
@@ -252,8 +248,6 @@ struct VisPlane
     byte pad4;
 };
 } // namespace Doom
-
-
 
 //-----------------------------------------------------------------------------
 //

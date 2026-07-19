@@ -19,15 +19,16 @@ namespace Doom
 // demos draw is emitted through these.
 struct BSPScratch
 {
-    static constexpr int maxDrawSegs = 256; // MAXDRAWSEGS in r_defs.h
+    static constexpr int maxDrawSegs = 256; // sizes drawsegs below; the overflow
+    // guards in Segs/Planes test this
 
-    Seg* curline = nullptr;        // the seg currently being drawn
-    Side* sidedef = nullptr;       // its sidedef
-    Line* linedef = nullptr;       // its linedef
+    Seg* curline = nullptr; // the seg currently being drawn
+    Side* sidedef = nullptr; // its sidedef
+    Line* linedef = nullptr; // its linedef
     Sector* frontsector = nullptr; // the sector in front of it
-    Sector* backsector = nullptr;  // the sector behind it (null if one-sided)
+    Sector* backsector = nullptr; // the sector behind it (null if one-sided)
     DrawSeg drawsegs[maxDrawSegs] = {}; // the frame's emitted wall ranges
-    DrawSeg* ds_p = nullptr;       // one past the last emitted drawseg
+    DrawSeg* ds_p = nullptr; // one past the last emitted drawseg
 };
 
 BSPScratch& bspScratch();

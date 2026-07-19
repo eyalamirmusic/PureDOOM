@@ -103,7 +103,7 @@ constexpr int GRIDCOLORS = GRAYS + GRAYSRANGE / 2;
 constexpr int XHAIRCOLORS = GRAYS;
 
 // A line the map never draws, whatever the player has seen.
-constexpr int LINE_NEVERSEE = ML_DONTDRAW;
+constexpr int LINE_NEVERSEE = Doom::ML_DONTDRAW;
 
 // The line drawings the map is made of. These counts are the array bounds the
 // tables in UI/Automap.cpp are defined against, so a count that drifts from its

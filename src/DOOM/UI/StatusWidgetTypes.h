@@ -25,11 +25,14 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h"
 
+namespace Doom
+{
 //
 // Background and foreground screen numbers
 //
-#define STLIB_BG 4
-#define STLIB_FG 0
+constexpr int STLIB_BG = 4;
+constexpr int STLIB_FG = 0;
+} // namespace Doom
 
 //
 // Typedefs of widgets

@@ -919,9 +919,9 @@ static void eacpDescend(int nodenum, const EacpPoint* poly, int count)
     if (count < 3)
         return;
 
-    if (nodenum & NF_SUBSECTOR)
+    if (nodenum & Doom::NF_SUBSECTOR)
     {
-        eacpStoreSubsector(nodenum & ~NF_SUBSECTOR, poly, count);
+        eacpStoreSubsector(nodenum & ~Doom::NF_SUBSECTOR, poly, count);
         return;
     }
 
@@ -1158,8 +1158,9 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
         textureWidth = (float) textures[texture]->width;
         textureHeight = (float) textures[texture]->height;
 
-        textureTop = (line->flags & ML_DONTPEGBOTTOM) ? frontFloor + textureHeight
-                                                      : frontCeiling;
+        textureTop = (line->flags & Doom::ML_DONTPEGBOTTOM)
+                         ? frontFloor + textureHeight
+                         : frontCeiling;
         textureTop += rowOffset;
 
         uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
@@ -1192,7 +1193,7 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
             float textureHeight = (float) textures[texture]->height;
 
             float textureTop =
-                (line->flags & ML_DONTPEGBOTTOM) ? frontCeiling : backFloor;
+                (line->flags & Doom::ML_DONTPEGBOTTOM) ? frontCeiling : backFloor;
             textureTop += rowOffset;
 
             uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
@@ -1223,7 +1224,7 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
             float textureWidth = (float) textures[texture]->width;
             float textureHeight = (float) textures[texture]->height;
 
-            float textureTop = (line->flags & ML_DONTPEGTOP)
+            float textureTop = (line->flags & Doom::ML_DONTPEGTOP)
                                    ? frontCeiling
                                    : backCeiling + textureHeight;
             textureTop += rowOffset;
@@ -1260,7 +1261,7 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
             float openingTop =
                 backCeiling < frontCeiling ? backCeiling : frontCeiling;
 
-            float textureTop = (line->flags & ML_DONTPEGBOTTOM)
+            float textureTop = (line->flags & Doom::ML_DONTPEGBOTTOM)
                                    ? openingBottom + textureHeight
                                    : openingTop;
             float top;
@@ -1322,10 +1323,10 @@ static void eacpEmitSprite(EacpEmitter* em,
 
     definition = &sprites[thing->sprite];
 
-    if ((int) (thing->frame & FF_FRAMEMASK) >= definition->numframes)
+    if ((int) (thing->frame & Doom::FF_FRAMEMASK) >= definition->numframes)
         return;
 
-    frame = &definition->spriteframes[thing->frame & FF_FRAMEMASK];
+    frame = &definition->spriteframes[thing->frame & Doom::FF_FRAMEMASK];
 
     // Eight drawings per frame, one per facing: which one shows depends on the
     // angle the thing is seen from.
@@ -1365,7 +1366,7 @@ static void eacpEmitSprite(EacpEmitter* em,
         bottom = top - height;
     }
 
-    light = (thing->frame & FF_FULLBRIGHT)
+    light = (thing->frame & Doom::FF_FULLBRIGHT)
                 ? eacpFullbrightLight()
                 : eacpSectorLight(thing->subsector->sector->lightlevel, 0);
 
@@ -1577,10 +1578,10 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 
         definition = &sprites[state->sprite];
 
-        if ((int) (state->frame & FF_FRAMEMASK) >= definition->numframes)
+        if ((int) (state->frame & Doom::FF_FRAMEMASK) >= definition->numframes)
             continue;
 
-        frame = &definition->spriteframes[state->frame & FF_FRAMEMASK];
+        frame = &definition->spriteframes[state->frame & Doom::FF_FRAMEMASK];
         lump = frame->lump[0];
 
         if (lump < 0 || lump >= gfx.numspritelumps)
@@ -1595,7 +1596,7 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
         out[i].y = eacpFixedToFloat(weapon->sy)
                    - eacpFixedToFloat(spritetopoffset[lump]) - eacpWeaponRowShift();
 
-        out[i].light = eacpWeaponLight(state->frame & FF_FULLBRIGHT);
+        out[i].light = eacpWeaponLight(state->frame & Doom::FF_FULLBRIGHT);
         out[i].flip = frame->flip[0];
     }
 }
@@ -1878,7 +1879,7 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
         fixed_t bx = line->v2->x;
         fixed_t by = line->v2->y;
 
-        if (cheating || (line->flags & ML_MAPPED))
+        if (cheating || (line->flags & Doom::ML_MAPPED))
         {
             if ((line->flags & LINE_NEVERSEE) && !cheating)
                 continue;
@@ -1887,7 +1888,7 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
                 eacpAutomapLine(em, ax, ay, bx, by, WALLCOLORS + lightlev);
             else if (line->special == 39)
                 eacpAutomapLine(em, ax, ay, bx, by, WALLCOLORS + WALLRANGE / 2);
-            else if (line->flags & ML_SECRET)
+            else if (line->flags & Doom::ML_SECRET)
                 eacpAutomapLine(em,
                                 ax,
                                 ay,

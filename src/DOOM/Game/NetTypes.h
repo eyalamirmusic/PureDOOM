@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,9 +21,7 @@
 
 #pragma once
 
-
 #include "PlayerTypes.h"
-
 
 //
 // Network play related stuff.
@@ -33,14 +31,17 @@
 // be transmitted.
 //
 
-#define DOOMCOM_ID                0x12345678l
+namespace Doom
+{
+// Sanity marker the driver and the engine agree on; DoomCom::id holds it.
+constexpr long DOOMCOM_ID = 0x12345678l;
 
 // Max computers/players in a game.
-#define MAXNETNODES                8
+constexpr int MAXNETNODES = 8;
 
 // Networking and tick handling related.
-#define BACKUPTICS                12
-
+constexpr int BACKUPTICS = 12;
+} // namespace Doom
 
 namespace Doom
 {
@@ -50,7 +51,6 @@ enum NetCommandKind
     CMD_GET = 2
 };
 } // namespace Doom
-
 
 //
 // Network packet data.
@@ -70,7 +70,6 @@ struct NetPacket
     Doom::Ticcmd cmds[BACKUPTICS];
 };
 } // namespace Doom
-
 
 namespace Doom
 {
@@ -101,9 +100,9 @@ struct DoomCom
     short deathmatch;
     // Flag: -1 = new game, 0-5 = load savegame
     short savegame;
-    short episode;  // 1-3
-    short map;      // 1-9
-    short skill;    // 1-5
+    short episode; // 1-3
+    short map; // 1-9
+    short skill; // 1-5
 
     // Info specific to this node.
     short consoleplayer;
@@ -124,15 +123,12 @@ struct DoomCom
 };
 } // namespace Doom
 
-
 // Create any new ticcmds and broadcast to other players.
 
 // Broadcasts special packets to other players
 //  to notify of game exit
 
 //? how many ticks to run?
-
-
 
 //-----------------------------------------------------------------------------
 //

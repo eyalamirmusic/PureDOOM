@@ -326,7 +326,7 @@ void drawPlanes()
 #ifdef RANGECHECK
     auto& bsp = bspScratch();
 
-    if (bsp.ds_p - bsp.drawsegs > MAXDRAWSEGS)
+    if (bsp.ds_p - bsp.drawsegs > BSPScratch::maxDrawSegs)
     {
         //fatalError("Error: drawPlanes: drawsegs overflow (%i)",
         //        ds_p - drawsegs);
