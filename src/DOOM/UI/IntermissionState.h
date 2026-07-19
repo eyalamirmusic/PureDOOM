@@ -19,11 +19,14 @@ namespace Doom
 // malloc'd `lnames` pointer array.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were all
-// UI/Intermission's own file-local statics (internal linkage, read by no other file). The vanilla
-// names become references onto the members (the arrays as references-to-array). No attract demo or
-// menu replay reaches the intermission, so this is not golden-covered - but a reference alias is
-// pure storage relocation (the compiler binds each name to its same-named member), so it is
-// behaviour-preserving by construction, verified by build + app-link.
+// UI/Intermission's own file-local statics (internal linkage, read by no other file). They were all
+// reached through file-scope reference aliases (the arrays as references-to-array) until the
+// file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - every function in
+// UI/Intermission now hoists a single `auto& im = intermissionState();` and reaches its members
+// through it. No attract demo or menu replay reaches the intermission, so this is not
+// golden-covered, but the hoist is a mechanical per-function rewrite (the compiler still binds
+// every access to the same member), so it is behaviour-preserving by construction, verified by
+// build + app-link.
 //
 // The animation/layout data tables stay file-local in UI/Intermission and do *not* move in here:
 // `anims_wi_stuff` is a table of pointers *into* `epsd0/1/2animinfo`, the same self-referential-

@@ -14,9 +14,12 @@ namespace Doom
 // GraphicsData.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// UI/StatusBar's own file-local statics (internal linkage, read by no other file). The vanilla
-// names become references onto the members (the arrays as references-to-array). Loaded from the WAD
-// each level start and drawn into screens[0] every tic, so this is live frame-golden-covered.
+// UI/StatusBar's own file-local statics (internal linkage, read by no other file). They were reached
+// through file-scope reference aliases (the arrays as references-to-array) until the file-local-alias
+// sweep (REFACTOR.md, Step 9 strand (a)) retired them - loadGraphics, the loader, and every drawer
+// that reads more than one of these patches hoist a single `auto& gfx = statusBarGraphics();` and
+// reach them through it. Loaded from the WAD each level start and drawn into screens[0] every tic,
+// so this is live frame-golden-covered.
 struct StatusBarGraphics
 {
     // ST_NUMFACES in UI/StatusBar: (straight 3 + turn 2 + special 3) painfaces 5 + 2 extra. The

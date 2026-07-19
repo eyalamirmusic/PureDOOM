@@ -17,11 +17,14 @@ namespace Doom
 // lifecycle/timing bookkeeping, which layout is drawn, the "t"-to-talk chat line, and the palette
 // flash. None is read by any other file.
 //
-// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names
-// become references onto these members (keyboxes as a reference-to-array). Doom::startStatusBar / ST_initData
-// reset most of these before use, so the defaults matter little, but they reproduce vanilla's
-// zero/one/true initializers exactly. The bar is drawn into screens[0] every tic, so this is
-// frame-golden-covered.
+// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were reached
+// through file-scope reference aliases (keyboxes as a reference-to-array) until the file-local-alias
+// sweep (REFACTOR.md, Step 9 strand (a)) retired them - every function in UI/StatusBar that touches
+// more than one of these members now hoists a single `auto& bar = statusBarState();` and reaches
+// them through it (a function touching only one keeps the inline `statusBarState().member` call).
+// Doom::startStatusBar / ST_initData reset most of these before use, so the defaults matter little,
+// but they reproduce vanilla's zero/one/true initializers exactly. The bar is drawn into screens[0]
+// every tic, so this is frame-golden-covered.
 struct StatusBarState
 {
     // Lifecycle and timing.

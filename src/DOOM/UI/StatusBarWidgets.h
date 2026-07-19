@@ -12,11 +12,14 @@ namespace Doom
 // w_keyboxes the three key slots, and w_frags the deathmatch frags summary that replaces the arms.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// UI/StatusBar's own file-local statics (internal linkage, read by no other file). The vanilla
-// names become references onto the members (the arrays as references-to-array), and their addresses
-// (`&w_ready`, `&w_arms[i]`) taken by the STlib calls resolve to the members. The bar is drawn into
-// screens[0] every tic and the demos pick up ammo, take damage and get weapons, so this is live
-// frame-golden-covered - the byte-identical goldens are a live confirmation.
+// UI/StatusBar's own file-local statics (internal linkage, read by no other file). They were reached
+// through file-scope reference aliases (the arrays as references-to-array) until the file-local-alias
+// sweep (REFACTOR.md, Step 9 strand (a)) retired them - updateWidgets, drawWidgets and createWidgets
+// each hoist a single `auto& widgets = statusBarWidgets();` and reach every member through it,
+// including their addresses (`&widgets.w_ready`, `&widgets.w_arms[i]`) taken by the STlib calls,
+// which still resolve to the members. The bar is drawn into screens[0] every tic and the demos pick
+// up ammo, take damage and get weapons, so this is live frame-golden-covered - the byte-identical
+// goldens are a live confirmation.
 struct StatusBarWidgets
 {
     StatusNumber w_ready = {}; // ready-weapon ammo count
@@ -33,7 +36,8 @@ struct StatusBarWidgets
     // The "n/a" sentinel w_ready.num points at when the ready weapon uses no ammo (fist/chainsaw).
     // updateWidgets' own function-local static (the "later function-local pass"); it must persist,
     // since the widget holds its address and reads it when drawing. Never reassigned - a constant in
-    // practice - so its stable member address is what the widget needs.
+    // practice - so its stable member address is what the widget needs, now reached as
+    // widgets.largeammo.
     int largeammo = 1994;
 };
 

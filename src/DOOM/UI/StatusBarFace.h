@@ -12,17 +12,20 @@ namespace Doom
 // grin), and st_randomnumber is a per-tic M_Random the straight-ahead face varies with.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// UI/StatusBar's own file-local statics, read by no other file. The vanilla names become references
-// onto the members (oldweaponsowned as a reference-to-array). The face is drawn into screens[0]
-// every tic and the demos take damage, grab weapons, rampage and die, so this is live
-// frame-golden-covered - the byte-identical goldens are a live confirmation.
+// UI/StatusBar's own file-local statics, read by no other file. They were reached through file-scope
+// reference aliases (oldweaponsowned as a reference-to-array) until the file-local-alias sweep
+// (REFACTOR.md, Step 9 strand (a)) retired them - updateFaceWidget hoists a single
+// `auto& face = statusBarFace();` and reaches every member (including the function-local four below)
+// through it. The face is drawn into screens[0] every tic and the demos take damage, grab weapons,
+// rampage and die, so this is live frame-golden-covered - the byte-identical goldens are a live
+// confirmation.
 //
 // The last four are the face drawer's own function-local statics (the "later function-local pass"),
 // distinct from the file-scope statics above but the same face subsystem, so they join the cluster:
 // lastcalc/oldhealth cache the pain-offset computation in calcPainOffset (recomputed only when
 // health changes), and lastattackdown/priority carry the expression state machine across tics in
 // updateFaceWidget. Vanilla never resets them (they are function-local), so they are members with
-// matching defaults reached by a local reference in each function - identical persistence in a
+// matching defaults reached by a hoisted local in each function - identical persistence in a
 // single-Engine process.
 struct StatusBarFace
 {
