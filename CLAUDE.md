@@ -187,6 +187,23 @@ apparatus:
   `plr` had to become `am_plr` — still its name, now in `UI/Automap.cpp`); a source
   file may include a system header; and the header include graph need not be acyclic.
 
+  **The function-like macros are gone too.** `Math/Swap.h`'s `SHORT`/`LONG` are one
+  deduced-width `Doom::littleEndian` across 154 sites; the automap's seven,
+  `Sim/SaveGame`'s `PADSAVEP` and `UI/CheatTypes`' `SCRAMBLE` are functions. One
+  family survives on purpose: `Host/Net.cpp`'s `ntohl`/`ntohs`/`htonl`/`htons` sit
+  inside `#if defined(I_NET_ENABLED) && !defined(DOOM_APPLE)`, so **no build in this
+  repository compiles them** and no gate here could check a change to them.
+
+  The *constant* macros are part-way: `Sim/SimDefs.h` and `Sim/SpecialTypes.h` are
+  `constexpr` in `namespace Doom`, the rest are not. Two things to know before
+  converting another header. A `constexpr` is implicitly parenthesized and several
+  vanilla bodies are **not** (`PLAYERRADIUS 16 * FRACUNIT`), so equivalence is a
+  fact to establish per call site rather than assume. And the name moves into
+  `namespace Doom`, which breaks *global-scope* readers — `Tests/SimProbe.cpp`,
+  `examples/EACP/EngineAccess.cpp` and the exported carve-outs at the bottom of
+  `UI/Automap.cpp` all needed qualifying, and the last kind is invisible without
+  the app-link gate.
+
   **`doom_boolean` is gone** — the last vanilla type. All ~288 uses are a real
   `bool`, and the typedef is deleted, so a boolean in this engine is a boolean.
   What is left of it is a short list of declarations that must **stay `int`**, each
@@ -425,7 +442,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-83 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
+87 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
 in `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -444,11 +461,11 @@ What each source covers, since the sections below do not name them all:
 | `Sim/ReplayTests.cpp` | SimTests | replay-twice and load-a-second-demo; the per-level reset |
 | `Sim/LevelTests.cpp` | SimTests | the geometry-view invariant after a load |
 | `Sim/WadTests.cpp` | SimTests | all 1,264 lumps against `doom1.lumps` |
-| `Sim/MenuTests.cpp` `Sim/AutomapTests.cpp` `Sim/FinaleTests.cpp` | SimTests | the three screens no demo reaches |
+| `Sim/MenuTests.cpp` `Sim/AutomapTests.cpp` `Sim/FinaleTests.cpp` | SimTests | the three screens no demo reaches — plus, in `AutomapTests`, the automap's vector shape tables, which its *frame* golden cannot reach (they are drawn only under the IDDT cheat) |
 | `Sim/ScenarioTests.cpp` | SimTests | place a mobj, move it, assert — see **Layers still to build** |
 | `Sim/SaveGameTests.cpp` | SimTests | the save/load round trip, and `readFile`'s owner |
 | `Sim/OwnershipTests.cpp` | SimTests | that destroying an `Engine` gives the memory back |
-| `Sim/PrimitiveTests.cpp` `Sim/MathTests.cpp` `Sim/GeometryTests.cpp` | PrimitiveTests | the arithmetic underneath the simulation |
+| `Sim/PrimitiveTests.cpp` `Sim/MathTests.cpp` `Sim/GeometryTests.cpp` | PrimitiveTests | the arithmetic underneath the simulation — including the endian swaps, which matter out of proportion to their size because `littleEndian()` is the identity on every machine this builds on, so a typo in `swap16`/`swap32` would surface only on a big-endian host |
 | `Sim/EngineTests.cpp` | PrimitiveTests | the composition root, and that `resetEngine` is genuine |
 | `Sim/StateClusterTests.cpp` | PrimitiveTests | the `Engine`'s state clusters and accessor identity |
 
@@ -580,6 +597,27 @@ The `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` fast loop has its own blind spot: it
 never compiles `examples/EACP`, and `EngineAccess.cpp` includes engine headers
 directly, so an engine change can break the app with every test still green. Keep
 a second build directory for it and treat the app linking as a fourth gate.
+
+### Read the warnings — they are a fifth gate
+
+The engine builds under `-Wall -Wextra -Wpedantic` and the warning count is being
+driven to zero (`REFACTOR.md`, "What is left" item 7). **Treat a new warning as a
+failure**, and read the ones that are still there rather than assuming they are
+vanilla noise.
+
+This is not tidiness. The refactor's only real behaviour bug — `thintriangle_guy`,
+the shape the automap draws every *thing* with, silently collapsed to a point when
+`fixed_t` became a strong type and `-.5 * FRACUNIT` started converting `-.5` to
+`int` 0 — was named by the compiler in plain language in **every single build**
+("implicit conversion from 'double' to 'int' changes value from -0.5 to 0") and
+went unread for months because 81 warnings looked like scenery. The goldens could
+not see it: the shape is drawn only under the IDDT cheat, which no demo and no
+test script uses.
+
+The general form, worth carrying into any strong-type work: when a raw arithmetic
+type becomes a strong one, the sites needing an audit are not only the ones that
+fail to compile — they are every site where a *literal of another type* met the old
+one. Those compile, run, and warn in a way that is easy to dismiss.
 
 ### The WAD directory has its own golden
 
