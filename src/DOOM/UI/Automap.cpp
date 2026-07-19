@@ -100,11 +100,26 @@ namespace Doom
 #define M_ZOOMOUT (fixed_t {(std::int32_t) (FRACUNIT.raw / 1.02)})
 
 // translates between frame-buffer and map distances
-#define FTOM(view, x) FixedMul(Doom::Fixed::fromInt(x), (view).scale_ftom)
-#define MTOF(x) (FixedMul((x), scale_mtof).toInt())
+static inline fixed_t frameToMap(const AutomapView& view, int x)
+{
+    return FixedMul(Doom::Fixed::fromInt(x), view.scale_ftom);
+}
+
+static inline int mapToFrame(fixed_t x)
+{
+    return FixedMul(x, scale_mtof).toInt();
+}
+
 // translates between frame-buffer and map coordinates
-#define CXMTOF(x) (f_x + MTOF((x) - m_x))
-#define CYMTOF(y) (f_y + (f_h - MTOF((y) - m_y)))
+static inline int mapXToFrame(fixed_t x)
+{
+    return f_x + mapToFrame(x - m_x);
+}
+
+static inline int mapYToFrame(fixed_t y)
+{
+    return f_y + (f_h - mapToFrame(y - m_y));
+}
 
 struct FPoint
 {
@@ -129,15 +144,17 @@ struct ISlope
 
 // Scale a double by the raw unit and truncate - what the old
 // static_cast<fixed_t>(-.867 * R) did when fixed_t was an int.
-#define AM_FIXED(expr) (fixed_t {(std::int32_t) (expr)})
+static constexpr fixed_t amFixed(double value)
+{
+    return fixed_t {(std::int32_t) value};
+}
 #define R_UNIT (FRACUNIT.raw)
 
 #define R (FRACUNIT.raw)
 EA::Array<MapLine, 3> triangle_guy = {
-    {{AM_FIXED(-.867 * R), AM_FIXED(-.5 * R)},
-     {AM_FIXED(.867 * R), AM_FIXED(-.5 * R)}},
-    {{AM_FIXED(.867 * R), AM_FIXED(-.5 * R)}, {fixed_t {}, fixed_t {R}}},
-    {{fixed_t {}, fixed_t {R}}, {AM_FIXED(-.867 * R), AM_FIXED(-.5 * R)}}};
+    {{amFixed(-.867 * R), amFixed(-.5 * R)}, {amFixed(.867 * R), amFixed(-.5 * R)}},
+    {{amFixed(.867 * R), amFixed(-.5 * R)}, {fixed_t {}, fixed_t {R}}},
+    {{fixed_t {}, fixed_t {R}}, {amFixed(-.867 * R), amFixed(-.5 * R)}}};
 #undef R
 #define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(MapLine))
 
@@ -146,8 +163,8 @@ EA::Array<MapLine, 3> triangle_guy = {
 // arrays as references-to-array), moved in by the file-scope-statics sweep (REFACTOR.md, Step 5);
 // the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - every function below
 // reaches automapView() through a hoisted local instead, taken once per function (or inline where a
-// function touches it exactly once). FTOM, the one macro that read a member (scale_ftom), now takes
-// the view explicitly. The "iddt" cheat below stays a file-local static.
+// function touches it exactly once). frameToMap, the one helper that read a member (scale_ftom), now
+// takes the view explicitly. The "iddt" cheat below stays a file-local static.
 
 static EA::Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
 static CheatSequence cheat_amap = {cheat_amap_seq.data(), 0};
@@ -180,8 +197,8 @@ void activateNewScale()
 
     m_x += m_w / 2;
     m_y += m_h / 2;
-    m_w = FTOM(map, f_w);
-    m_h = FTOM(map, f_h);
+    m_w = frameToMap(map, f_w);
+    m_h = frameToMap(map, f_h);
     m_x -= m_w / 2;
     m_y -= m_h / 2;
     map.m_x2 = m_x + m_w;
@@ -328,8 +345,8 @@ void initAutomapVariables()
     map.ftom_zoommul = FRACUNIT;
     map.mtof_zoommul = FRACUNIT;
 
-    m_w = FTOM(map, f_w);
-    m_h = FTOM(map, f_h);
+    m_w = frameToMap(map, f_w);
+    m_h = frameToMap(map, f_h);
 
     auto& players_ = playerState();
 
@@ -401,7 +418,7 @@ void levelInit()
     clearMarks();
 
     findMinMaxBoundaries();
-    scale_mtof = FixedDiv(map.min_scale_mtof, AM_FIXED(0.7 * R_UNIT));
+    scale_mtof = FixedDiv(map.min_scale_mtof, amFixed(0.7 * R_UNIT));
     if (scale_mtof > map.max_scale_mtof)
         scale_mtof = map.min_scale_mtof;
     map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
@@ -495,25 +512,25 @@ bool automapResponder(Event* ev)
         {
             case AM_PANRIGHTKEY: // pan right
                 if (!followplayer)
-                    map.m_paninc.x = FTOM(map, F_PANINC);
+                    map.m_paninc.x = frameToMap(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANLEFTKEY: // pan left
                 if (!followplayer)
-                    map.m_paninc.x = -FTOM(map, F_PANINC);
+                    map.m_paninc.x = -frameToMap(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANUPKEY: // pan up
                 if (!followplayer)
-                    map.m_paninc.y = FTOM(map, F_PANINC);
+                    map.m_paninc.y = frameToMap(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANDOWNKEY: // pan down
                 if (!followplayer)
-                    map.m_paninc.y = -FTOM(map, F_PANINC);
+                    map.m_paninc.y = -frameToMap(map, F_PANINC);
                 else
                     rc = false;
                 break;
@@ -633,8 +650,8 @@ void doFollowPlayer()
 
     if (map.f_oldloc.x != am_plr->mo->x || map.f_oldloc.y != am_plr->mo->y)
     {
-        m_x = FTOM(map, MTOF(am_plr->mo->x)) - m_w / 2;
-        m_y = FTOM(map, MTOF(am_plr->mo->y)) - m_h / 2;
+        m_x = frameToMap(map, mapToFrame(am_plr->mo->x)) - m_w / 2;
+        m_y = frameToMap(map, mapToFrame(am_plr->mo->y)) - m_h / 2;
         map.m_x2 = m_x + m_w;
         map.m_y2 = m_y + m_h;
         map.f_oldloc.x = am_plr->mo->x;
@@ -697,6 +714,31 @@ void clearFB(int color)
     doom_memset(automapView().fb, color, f_w * f_h);
 }
 
+namespace
+{
+enum
+{
+    LEFT = 1,
+    RIGHT = 2,
+    BOTTOM = 4,
+    TOP = 8
+};
+
+int computeOutcode(int mx, int my)
+{
+    int oc = 0;
+    if (my < 0)
+        oc |= TOP;
+    else if (my >= f_h)
+        oc |= BOTTOM;
+    if (mx < 0)
+        oc |= LEFT;
+    else if (mx >= f_w)
+        oc |= RIGHT;
+    return oc;
+}
+} // namespace
+
 //
 // Automap clipping of lines.
 //
@@ -708,14 +750,6 @@ bool clipMline(MapLine* ml, FLine* fl)
 {
     auto& map = automapView();
 
-    enum
-    {
-        LEFT = 1,
-        RIGHT = 2,
-        BOTTOM = 4,
-        TOP = 8
-    };
-
     int outcode1 = 0;
     int outcode2 = 0;
     int outside;
@@ -723,17 +757,6 @@ bool clipMline(MapLine* ml, FLine* fl)
     FPoint tmp;
     int dx;
     int dy;
-
-#define DOOUTCODE(oc, mx, my)                                                       \
-    (oc) = 0;                                                                       \
-    if ((my) < 0)                                                                   \
-        (oc) |= TOP;                                                                \
-    else if ((my) >= f_h)                                                           \
-        (oc) |= BOTTOM;                                                             \
-    if ((mx) < 0)                                                                   \
-        (oc) |= LEFT;                                                               \
-    else if ((mx) >= f_w)                                                           \
-        (oc) |= RIGHT;
 
     // do trivial rejects and outcodes
     if (ml->a.y > map.m_y2)
@@ -763,13 +786,13 @@ bool clipMline(MapLine* ml, FLine* fl)
         return false; // trivially outside
 
     // transform to frame-buffer coordinates.
-    fl->a.x = CXMTOF(ml->a.x);
-    fl->a.y = CYMTOF(ml->a.y);
-    fl->b.x = CXMTOF(ml->b.x);
-    fl->b.y = CYMTOF(ml->b.y);
+    fl->a.x = mapXToFrame(ml->a.x);
+    fl->a.y = mapYToFrame(ml->a.y);
+    fl->b.x = mapXToFrame(ml->b.x);
+    fl->b.y = mapYToFrame(ml->b.y);
 
-    DOOUTCODE(outcode1, fl->a.x, fl->a.y);
-    DOOUTCODE(outcode2, fl->b.x, fl->b.y);
+    outcode1 = computeOutcode(fl->a.x, fl->a.y);
+    outcode2 = computeOutcode(fl->b.x, fl->b.y);
 
     if (outcode1 & outcode2)
         return false;
@@ -816,12 +839,12 @@ bool clipMline(MapLine* ml, FLine* fl)
         if (outside == outcode1)
         {
             fl->a = tmp;
-            DOOUTCODE(outcode1, fl->a.x, fl->a.y);
+            outcode1 = computeOutcode(fl->a.x, fl->a.y);
         }
         else
         {
             fl->b = tmp;
-            DOOUTCODE(outcode2, fl->b.x, fl->b.y);
+            outcode2 = computeOutcode(fl->b.x, fl->b.y);
         }
 
         if (outcode1 & outcode2)
@@ -830,7 +853,11 @@ bool clipMline(MapLine* ml, FLine* fl)
 
     return true;
 }
-#undef DOOUTCODE
+
+static inline void putDot(byte* fb, int xx, int yy, int cc)
+{
+    fb[yy * f_w + xx] = cc;
+}
 
 //
 // Classic Bresenham w/ whatever optimizations needed for speed
@@ -863,8 +890,6 @@ void drawFline(FLine* fl, int color)
     }
 #endif
 
-#define PUTDOT(xx, yy, cc) map.fb[(yy) * f_w + (xx)] = (cc)
-
     dx = fl->b.x - fl->a.x;
     ax = 2 * (dx < 0 ? -dx : dx);
     sx = dx < 0 ? -1 : 1;
@@ -881,7 +906,7 @@ void drawFline(FLine* fl, int color)
         d = ay - ax / 2;
         while (1)
         {
-            PUTDOT(x, y, color);
+            putDot(map.fb, x, y, color);
             if (x == fl->b.x)
                 return;
             if (d >= 0)
@@ -898,7 +923,7 @@ void drawFline(FLine* fl, int color)
         d = ax - ay / 2;
         while (1)
         {
-            PUTDOT(x, y, color);
+            putDot(map.fb, x, y, color);
             if (y == fl->b.y)
                 return;
             if (d >= 0)
@@ -1181,12 +1206,12 @@ void drawAutomapMarks()
     {
         if (map.markpoints[i].x != fixed_t {-1})
         {
-            //      w = SHORT(marknums[i]->width);
-            //      h = SHORT(marknums[i]->height);
+            //      w = littleEndian(marknums[i]->width);
+            //      h = littleEndian(marknums[i]->height);
             w = 5; // because something's wrong with the wad, i guess
             h = 6; // because something's wrong with the wad, i guess
-            fx = CXMTOF(map.markpoints[i].x);
-            fy = CYMTOF(map.markpoints[i].y);
+            fx = mapXToFrame(map.markpoints[i].x);
+            fy = mapYToFrame(map.markpoints[i].y);
             if (fx >= f_x && fx <= f_w - w && fy >= f_y && fy <= f_h - h)
                 Doom::drawPatch(fx, fy, FB, map.marknums[i]);
         }

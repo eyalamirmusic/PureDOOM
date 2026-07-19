@@ -19,6 +19,16 @@ namespace Doom
 static int firsttime = 1;
 static EA::Array<unsigned char, 256> cheat_xlate_table;
 
+// Was SCRAMBLE(a): a bit-permutation macro used to build cheat_xlate_table.
+// ((((a)&1)<<7) + (((a)&2)<<5) + ((a)&4) + (((a)&8)<<1)
+//  + (((a)&16)>>1) + ((a)&32) + (((a)&64)>>5) + (((a)&128)>>7))
+static constexpr unsigned char scramble(int a)
+{
+    return static_cast<unsigned char>(((a & 1) << 7) + ((a & 2) << 5) + (a & 4)
+                                      + ((a & 8) << 1) + ((a & 16) >> 1) + (a & 32)
+                                      + ((a & 64) >> 5) + ((a & 128) >> 7));
+}
+
 //
 // Called in st_stuff module, which handles the input.
 // Returns a 1 if the cheat was successful, 0 if failed.
@@ -31,7 +41,7 @@ int checkCheat(CheatSequence* cht, char key)
     {
         firsttime = 0;
         for (int i = 0; i < 256; i++)
-            cheat_xlate_table[i] = SCRAMBLE(i);
+            cheat_xlate_table[i] = scramble(i);
     }
 
     if (!cht->p)

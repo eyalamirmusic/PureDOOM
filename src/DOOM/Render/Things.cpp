@@ -428,11 +428,11 @@ void drawVisSprite(VisSprite* vis)
     {
         texturecolumn = frac.toInt();
 #ifdef RANGECHECK
-        if (texturecolumn < 0 || texturecolumn >= SHORT(patch->width))
+        if (texturecolumn < 0 || texturecolumn >= littleEndian(patch->width))
             fatalError("Error: R_DrawSpriteRange: bad texturecolumn");
 #endif
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                           + LONG(patch->columnofs[texturecolumn]));
+                                           + littleEndian(patch->columnofs[texturecolumn]));
         drawMaskedColumn(column);
     }
 

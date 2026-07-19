@@ -228,11 +228,11 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
     byte* source;
     int w;
 
-    y -= SHORT(patch->topoffset);
-    x -= SHORT(patch->leftoffset);
+    y -= littleEndian(patch->topoffset);
+    x -= littleEndian(patch->leftoffset);
 #ifdef RANGECHECK
-    if (x < 0 || x + SHORT(patch->width) > SCREENWIDTH || y < 0
-        || y + SHORT(patch->height) > SCREENHEIGHT
+    if (x < 0 || x + littleEndian(patch->width) > SCREENWIDTH || y < 0
+        || y + littleEndian(patch->height) > SCREENHEIGHT
         || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch at %d,%d exceeds LFB\n", x, y);
@@ -248,17 +248,17 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
 #endif
 
     if (!scrn)
-        markRect(x, y, SHORT(patch->width), SHORT(patch->height));
+        markRect(x, y, littleEndian(patch->width), littleEndian(patch->height));
 
     col = 0;
     desttop = screens[scrn] + y * SCREENWIDTH + x;
 
-    w = SHORT(patch->width);
+    w = littleEndian(patch->width);
 
     for (; col < w; x++, col++, desttop++)
     {
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                             + LONG(patch->columnofs[col]));
+                                             + littleEndian(patch->columnofs[col]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
@@ -293,11 +293,11 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
     byte* source;
     int w;
 
-    y -= SHORT(patch->topoffset);
-    x -= SHORT(patch->leftoffset);
+    y -= littleEndian(patch->topoffset);
+    x -= littleEndian(patch->leftoffset);
 #ifdef RANGECHECK
-    if (x < 0 || x + SHORT(patch->width) > SCREENWIDTH || y < 0
-        || y + SHORT(patch->height) > SCREENHEIGHT
+    if (x < 0 || x + littleEndian(patch->width) > SCREENWIDTH || y < 0
+        || y + littleEndian(patch->height) > SCREENHEIGHT
         || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch origin %d,%d exceeds LFB\n", x, y);
@@ -311,17 +311,17 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 #endif
 
     if (!scrn)
-        markRect(x, y, SHORT(patch->width), SHORT(patch->height));
+        markRect(x, y, littleEndian(patch->width), littleEndian(patch->height));
 
     col = 0;
     desttop = screens[scrn] + y * SCREENWIDTH + x;
 
-    w = SHORT(patch->width);
+    w = littleEndian(patch->width);
 
     for (; col < w; x++, col++, desttop++)
     {
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                             + LONG(patch->columnofs[w - 1 - col]));
+                                             + littleEndian(patch->columnofs[w - 1 - col]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
@@ -341,6 +341,12 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
     }
 }
 
+// src_x/src_w are NOT byte-swapped, unlike the patch's own header fields. They are
+// this port's own addition (Menu.cpp's one call site passes a MenuCustomTextSeg's
+// members, built in C++), so they never came off disk and there is nothing to
+// swap. The SHORT() this had inherited from the surrounding patch-width reads was
+// identity on a little-endian host and would have swapped a screen-space width on
+// a big-endian one.
 void drawPatchRectDirect(
     int x, int y, int scrn, Patch* patch, int src_x, int src_w)
 {
@@ -352,11 +358,11 @@ void drawPatchRectDirect(
     byte* source;
     int w;
 
-    y -= SHORT(patch->topoffset);
-    x -= SHORT(patch->leftoffset);
+    y -= littleEndian(patch->topoffset);
+    x -= littleEndian(patch->leftoffset);
 #ifdef RANGECHECK
-    if (x < 0 || x + SHORT(src_w) > SCREENWIDTH || y < 0
-        || y + SHORT(patch->height) > SCREENHEIGHT
+    if (x < 0 || x + src_w > SCREENWIDTH || y < 0
+        || y + littleEndian(patch->height) > SCREENHEIGHT
         || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch at %d,%d exceeds LFB\n", x, y);
@@ -372,17 +378,17 @@ void drawPatchRectDirect(
 #endif
 
     if (!scrn)
-        markRect(x, y, SHORT(src_w), SHORT(patch->height));
+        markRect(x, y, src_w, littleEndian(patch->height));
 
     col = 0;
     desttop = screens[scrn] + y * SCREENWIDTH + x;
 
-    w = SHORT(src_w);
+    w = src_w;
 
     for (; col < w; x++, col++, desttop++)
     {
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                             + LONG(patch->columnofs[col + src_x]));
+                                             + littleEndian(patch->columnofs[col + src_x]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
@@ -472,8 +478,8 @@ void initVideo()
 {
     // stick these in low dos memory on PCs
 
-    // RAII now (Step 9): the base block is a VideoState-owned vector, zero-filled as
-    // allocLow left it, sliced into the screens[] view. screens[0]'s slice is
+    // RAII now (Step 9): the base block is VideoState's workspace vector, zero-filled
+    // by assign() below and sliced into the screens[] view. screens[0]'s slice is
     // overwritten by initGraphics, exactly as vanilla left it.
     auto& workspace = videoState().workspace;
     workspace.assign(SCREENWIDTH * SCREENHEIGHT * 4, byte(0));

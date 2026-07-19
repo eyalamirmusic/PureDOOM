@@ -356,7 +356,7 @@ void textWrite()
             continue;
         }
 
-        w = SHORT(font.hu_font[c]->width);
+        w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
         Doom::drawPatch(cx, cy, 0, font.hu_font[c]);
@@ -582,7 +582,7 @@ void castPrint(const char* text)
             continue;
         }
 
-        w = SHORT(font.hu_font[c]->width);
+        w = littleEndian(font.hu_font[c]->width);
         width += w;
     }
 
@@ -601,7 +601,7 @@ void castPrint(const char* text)
             continue;
         }
 
-        w = SHORT(font.hu_font[c]->width);
+        w = littleEndian(font.hu_font[c]->width);
         Doom::drawPatch(cx, 180, 0, font.hu_font[c]);
         cx += w;
     }
@@ -651,7 +651,7 @@ void drawPatchCol(int x, Patch* patch, int col)
     int count;
 
     column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                       + LONG(patch->columnofs[col]));
+                                       + littleEndian(patch->columnofs[col]));
     desttop = screens[0] + x;
 
     // step through the posts in a column

@@ -1494,7 +1494,7 @@ int stringWidth(const char* string)
         if (c < 0 || c >= HU_FONTSIZE)
             w += 4;
         else
-            w += SHORT(hudFont().hu_font[c]->width);
+            w += littleEndian(hudFont().hu_font[c]->width);
     }
 
     return w;
@@ -1506,7 +1506,7 @@ int stringWidth(const char* string)
 int stringHeight(const char* string)
 {
     int h;
-    int height = SHORT(hudFont().hu_font[0]->height);
+    int height = littleEndian(hudFont().hu_font[0]->height);
 
     h = height;
     for (int i = 0; i < doom_strlen(string); i++)
@@ -1552,7 +1552,7 @@ void writeText(int x, int y, const char* string)
             continue;
         }
 
-        w = SHORT(font.hu_font[c]->width);
+        w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
         Doom::drawPatchDirect(cx, cy, 0, font.hu_font[c]);
@@ -1996,7 +1996,7 @@ void drawMenu()
 
             x = 160 - stringWidth(string.data()) / 2;
             writeText(x, y, string.data());
-            y += SHORT(hudFont().hu_font[0]->height);
+            y += littleEndian(hudFont().hu_font[0]->height);
         }
         return;
     }

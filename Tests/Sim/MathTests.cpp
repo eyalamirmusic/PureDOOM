@@ -12,6 +12,7 @@
 #include <DOOM/Math/Angle.h>
 #include <DOOM/Math/BBox.h>
 #include <DOOM/Math/Fixed.h>
+#include <DOOM/Math/Swap.h>
 #include <DOOM/Math/Trig.h>
 #include <DOOM/Sim/Random.h>
 
@@ -260,6 +261,43 @@ auto tRandomWraps = test("Random/wrapsAfter256") = []
 
     check(rng.playIndex == 0);
     check(rng.forPlay() == first);
+};
+
+// The endian swaps. These matter out of proportion to their size, because the
+// path that uses them is compiled on no machine we build on: littleEndian() is
+// the identity on a little-endian host, so a typo in swap16/swap32 would sit
+// undetected until someone built for a big-endian one. swap16/swap32 themselves
+// are compiled unconditionally, so they can be held to their answers here, and
+// littleEndian() is then only the choice between them and the identity.
+auto tSwap16 = test("Math/swap16ReversesBytes") = []
+{
+    check(swap16(0x1234) == 0x3412);
+    check(swap16(0xff00) == 0x00ff);
+    check(swap16(swap16(0xabcd)) == 0xabcd); // its own inverse
+};
+
+auto tSwap32 = test("Math/swap32ReversesBytes") = []
+{
+    check(swap32(0x12345678) == 0x78563412u);
+    check(swap32(0xff000000) == 0x000000ffu);
+    check(swap32(swap32(0xdeadbeef)) == 0xdeadbeefu); // its own inverse
+};
+
+// littleEndian() preserves the call site's type, which is the whole reason it
+// replaced SHORT()/LONG(). Those picked the swap by the spelling at the call
+// site and disagreed about the result type on a big-endian host - LONG() yielded
+// `long`, 8 bytes here, where the little-endian path yielded the argument's own
+// `int`. A width mismatch is now a compile error, not a silent truncation.
+auto tLittleEndianPreservesType = test("Math/littleEndianPreservesWidth") = []
+{
+    static_assert(std::is_same_v<decltype(littleEndian(short {1})), short>);
+    static_assert(std::is_same_v<decltype(littleEndian(int {1})), int>);
+    static_assert(
+        std::is_same_v<decltype(littleEndian((unsigned short) 1)), unsigned short>);
+
+    // On this (little-endian) host it is the identity, exactly as SHORT/LONG were.
+    check(littleEndian<short>(0x1234) == 0x1234);
+    check(littleEndian<int>(0x12345678) == 0x12345678);
 };
 
 // (Random/vanillaNamesAliasTheObject lived here. It asserted that the vanilla

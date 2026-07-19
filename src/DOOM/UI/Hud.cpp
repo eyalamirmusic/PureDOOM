@@ -75,11 +75,11 @@ extern char* mapnames[];
 #define HU_TITLET (mapnamest[gameSession().gamemap - 1])
 #define HU_TITLEHEIGHT 1
 #define HU_TITLEX 0
-#define HU_TITLEY (167 - SHORT(Doom::hudFont().hu_font[0]->height))
+#define HU_TITLEY (167 - Doom::littleEndian(Doom::hudFont().hu_font[0]->height))
 #define HU_INPUTTOGGLE 't'
 #define HU_INPUTX HU_MSGX
 #define HU_INPUTY                                                                   \
-    (HU_MSGY + HU_MSGHEIGHT * (SHORT(Doom::hudFont().hu_font[0]->height) + 1))
+    (HU_MSGY + HU_MSGHEIGHT * (Doom::littleEndian(Doom::hudFont().hu_font[0]->height) + 1))
 #define HU_INPUTWIDTH 64
 #define HU_INPUTHEIGHT 1
 #define QUEUESIZE 128

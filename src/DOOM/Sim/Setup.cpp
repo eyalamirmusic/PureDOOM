@@ -90,8 +90,8 @@ void loadVertexes(int lump)
     // internal representation as fixed.
     for (int i = 0; i < numvertexes; i++, li++, ml++)
     {
-        li->x = Doom::Fixed::fromInt(SHORT(ml->x));
-        li->y = Doom::Fixed::fromInt(SHORT(ml->y));
+        li->x = Doom::Fixed::fromInt(littleEndian(ml->x));
+        li->y = Doom::Fixed::fromInt(littleEndian(ml->y));
     }
 
     // Free buffer memory.
@@ -118,15 +118,15 @@ void loadSegs(int lump)
     li = segs;
     for (int i = 0; i < numsegs; i++, li++, ml++)
     {
-        li->v1 = &vertexes[SHORT(ml->v1)];
-        li->v2 = &vertexes[SHORT(ml->v2)];
+        li->v1 = &vertexes[littleEndian(ml->v1)];
+        li->v2 = &vertexes[littleEndian(ml->v2)];
 
-        li->angle = angle_t {(unsigned) (SHORT(ml->angle)) << 16};
-        li->offset = Doom::Fixed::fromInt(SHORT(ml->offset));
-        linedef = SHORT(ml->linedef);
+        li->angle = angle_t {(unsigned) (littleEndian(ml->angle)) << 16};
+        li->offset = Doom::Fixed::fromInt(littleEndian(ml->offset));
+        linedef = littleEndian(ml->linedef);
         ldef = &lines[linedef];
         li->linedef = ldef;
-        side = SHORT(ml->side);
+        side = littleEndian(ml->side);
         li->sidedef = &sides[ldef->sidenum[side]];
         li->frontsector = sides[ldef->sidenum[side]].sector;
         if (ldef->flags & ML_TWOSIDED)
@@ -155,8 +155,8 @@ void loadSubsectors(int lump)
 
     for (int i = 0; i < numsubsectors; i++, ss++, ms++)
     {
-        ss->numlines = SHORT(ms->numsegs);
-        ss->firstline = SHORT(ms->firstseg);
+        ss->numlines = littleEndian(ms->numsegs);
+        ss->firstline = littleEndian(ms->firstseg);
     }
 }
 
@@ -178,13 +178,13 @@ void loadSectors(int lump)
     ss = sectors;
     for (int i = 0; i < numsectors; i++, ss++, ms++)
     {
-        ss->floorheight = Doom::Fixed::fromInt(SHORT(ms->floorheight));
-        ss->ceilingheight = Doom::Fixed::fromInt(SHORT(ms->ceilingheight));
+        ss->floorheight = Doom::Fixed::fromInt(littleEndian(ms->floorheight));
+        ss->ceilingheight = Doom::Fixed::fromInt(littleEndian(ms->ceilingheight));
         ss->floorpic = Doom::flatNumForName(ms->floorpic);
         ss->ceilingpic = Doom::flatNumForName(ms->ceilingpic);
-        ss->lightlevel = SHORT(ms->lightlevel);
-        ss->special = SHORT(ms->special);
-        ss->tag = SHORT(ms->tag);
+        ss->lightlevel = littleEndian(ms->lightlevel);
+        ss->special = littleEndian(ms->special);
+        ss->tag = littleEndian(ms->tag);
         ss->thinglist = nullptr;
     }
 }
@@ -208,15 +208,15 @@ void loadNodes(int lump)
 
     for (int i = 0; i < numnodes; i++, no++, mn++)
     {
-        no->x = Doom::Fixed::fromInt(SHORT(mn->x));
-        no->y = Doom::Fixed::fromInt(SHORT(mn->y));
-        no->dx = Doom::Fixed::fromInt(SHORT(mn->dx));
-        no->dy = Doom::Fixed::fromInt(SHORT(mn->dy));
+        no->x = Doom::Fixed::fromInt(littleEndian(mn->x));
+        no->y = Doom::Fixed::fromInt(littleEndian(mn->y));
+        no->dx = Doom::Fixed::fromInt(littleEndian(mn->dx));
+        no->dy = Doom::Fixed::fromInt(littleEndian(mn->dy));
         for (int j = 0; j < 2; j++)
         {
-            no->children[j] = SHORT(mn->children[j]);
+            no->children[j] = littleEndian(mn->children[j]);
             for (int k = 0; k < 4; k++)
-                no->bbox[j][k] = Doom::Fixed::fromInt(SHORT(mn->bbox[j][k]));
+                no->bbox[j][k] = Doom::Fixed::fromInt(littleEndian(mn->bbox[j][k]));
         }
     }
 }
@@ -262,11 +262,11 @@ void loadThings(int lump)
             break;
 
         // Do spawn all other stuff.
-        mt->x = SHORT(mt->x);
-        mt->y = SHORT(mt->y);
-        mt->angle = SHORT(mt->angle);
-        mt->type = SHORT(mt->type);
-        mt->options = SHORT(mt->options);
+        mt->x = littleEndian(mt->x);
+        mt->y = littleEndian(mt->y);
+        mt->angle = littleEndian(mt->angle);
+        mt->type = littleEndian(mt->type);
+        mt->options = littleEndian(mt->options);
 
         Doom::spawnMapThing(mt);
     }
@@ -293,11 +293,11 @@ void loadLineDefs(int lump)
     ld = lines;
     for (int i = 0; i < numlines; i++, mld++, ld++)
     {
-        ld->flags = SHORT(mld->flags);
-        ld->special = SHORT(mld->special);
-        ld->tag = SHORT(mld->tag);
-        v1 = ld->v1 = &vertexes[SHORT(mld->v1)];
-        v2 = ld->v2 = &vertexes[SHORT(mld->v2)];
+        ld->flags = littleEndian(mld->flags);
+        ld->special = littleEndian(mld->special);
+        ld->tag = littleEndian(mld->tag);
+        v1 = ld->v1 = &vertexes[littleEndian(mld->v1)];
+        v2 = ld->v2 = &vertexes[littleEndian(mld->v2)];
         ld->dx = v2->x - v1->x;
         ld->dy = v2->y - v1->y;
 
@@ -335,8 +335,8 @@ void loadLineDefs(int lump)
             ld->bbox[BOXTOP] = v1->y;
         }
 
-        ld->sidenum[0] = SHORT(mld->sidenum[0]);
-        ld->sidenum[1] = SHORT(mld->sidenum[1]);
+        ld->sidenum[0] = littleEndian(mld->sidenum[0]);
+        ld->sidenum[1] = littleEndian(mld->sidenum[1]);
 
         if (ld->sidenum[0] != -1)
             ld->frontsector = sides[ld->sidenum[0]].sector;
@@ -368,12 +368,12 @@ void loadSideDefs(int lump)
     sd = sides;
     for (int i = 0; i < numsides; i++, msd++, sd++)
     {
-        sd->textureoffset = Doom::Fixed::fromInt(SHORT(msd->textureoffset));
-        sd->rowoffset = Doom::Fixed::fromInt(SHORT(msd->rowoffset));
+        sd->textureoffset = Doom::Fixed::fromInt(littleEndian(msd->textureoffset));
+        sd->rowoffset = Doom::Fixed::fromInt(littleEndian(msd->rowoffset));
         sd->toptexture = Doom::textureNumForName(msd->toptexture);
         sd->bottomtexture = Doom::textureNumForName(msd->bottomtexture);
         sd->midtexture = Doom::textureNumForName(msd->midtexture);
-        sd->sector = &sectors[SHORT(msd->sector)];
+        sd->sector = &sectors[littleEndian(msd->sector)];
     }
 }
 
@@ -388,7 +388,7 @@ void loadBlockMap(int lump)
     count = Doom::wad().length(lump) / 2;
 
     for (int i = 0; i < count; i++)
-        blockmaplump[i] = SHORT(blockmaplump[i]);
+        blockmaplump[i] = littleEndian(blockmaplump[i]);
 
     // Fill the Level's blockmap descriptor from the lump header, then refresh the
     // vanilla globals as views onto it.

@@ -13,7 +13,7 @@ namespace Doom
 namespace
 {
 // The on-disk directory entry. The file stores sizes and offsets little-endian,
-// which LONG() swaps on a big-endian host and leaves alone everywhere else.
+// which littleEndian() swaps on a big-endian host and leaves alone everywhere else.
 struct FileLump
 {
     int filepos;
@@ -170,10 +170,10 @@ void WadFile::addDirectory(const char* path, void* handle)
         fail("Error: Wad file ", path);
     }
 
-    auto lumpCount = LONG(header.numlumps);
+    auto lumpCount = littleEndian(header.numlumps);
     auto entries = EA::Vector<FileLump>(lumpCount);
 
-    doom_seek(handle, LONG(header.infotableofs), DOOM_SEEK_SET);
+    doom_seek(handle, littleEndian(header.infotableofs), DOOM_SEEK_SET);
     doom_read(
         handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
 
@@ -184,8 +184,8 @@ void WadFile::addDirectory(const char* path, void* handle)
         // A reloadable file's lumps carry no handle: read() re-opens the file
         // every time, which is what makes the reload hack work at all.
         lump.handle = reloadName ? nullptr : handle;
-        lump.position = LONG(entry.filepos);
-        lump.size = LONG(entry.size);
+        lump.position = littleEndian(entry.filepos);
+        lump.size = littleEndian(entry.size);
         doom_strncpy(lump.name, entry.name, 8);
 
         lumps.push_back(lump);
@@ -295,10 +295,10 @@ void WadFile::reload()
     auto header = WadHeader {};
     doom_read(handle, &header, sizeof(header));
 
-    auto lumpCount = LONG(header.numlumps);
+    auto lumpCount = littleEndian(header.numlumps);
     auto entries = EA::Vector<FileLump>(lumpCount);
 
-    doom_seek(handle, LONG(header.infotableofs), DOOM_SEEK_SET);
+    doom_seek(handle, littleEndian(header.infotableofs), DOOM_SEEK_SET);
     doom_read(
         handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
     doom_close(handle);
@@ -307,8 +307,8 @@ void WadFile::reload()
     {
         auto lump = reloadLump + i;
 
-        lumps[lump].position = LONG(entries[i].filepos);
-        lumps[lump].size = LONG(entries[i].size);
+        lumps[lump].position = littleEndian(entries[i].filepos);
+        lumps[lump].size = littleEndian(entries[i].size);
 
         // Whatever was cached is now the old file's bytes. Drop it; the next
         // caller re-reads.

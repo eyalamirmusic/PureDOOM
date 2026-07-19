@@ -298,16 +298,16 @@ void drawLF()
     int y = WI_TITLEY;
 
     // draw <LevelName>
-    Doom::drawPatch((SCREENWIDTH - SHORT(im.lnames[im.wbs->last]->width)) / 2,
+    Doom::drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->last]->width)) / 2,
                     y,
                     FB,
                     im.lnames[im.wbs->last]);
 
     // draw "Finished!"
-    y += (5 * SHORT(im.lnames[im.wbs->last]->height)) / 4;
+    y += (5 * littleEndian(im.lnames[im.wbs->last]->height)) / 4;
 
     Doom::drawPatch(
-        (SCREENWIDTH - SHORT(im.finished->width)) / 2, y, FB, im.finished);
+        (SCREENWIDTH - littleEndian(im.finished->width)) / 2, y, FB, im.finished);
 }
 
 // Draws "Entering <LevelName>"
@@ -319,12 +319,12 @@ void drawEL()
 
     // draw "Entering"
     Doom::drawPatch(
-        (SCREENWIDTH - SHORT(im.entering->width)) / 2, y, FB, im.entering);
+        (SCREENWIDTH - littleEndian(im.entering->width)) / 2, y, FB, im.entering);
 
     // draw level
-    y += (5 * SHORT(im.lnames[im.wbs->next]->height)) / 4;
+    y += (5 * littleEndian(im.lnames[im.wbs->next]->height)) / 4;
 
-    Doom::drawPatch((SCREENWIDTH - SHORT(im.lnames[im.wbs->next]->width)) / 2,
+    Doom::drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->next]->width)) / 2,
                     y,
                     FB,
                     im.lnames[im.wbs->next]);
@@ -344,10 +344,10 @@ void drawOnLnode(int n, Patch* c[])
     i = 0;
     do
     {
-        left = lnodes[im.wbs->epsd][n].x - SHORT(c[i]->leftoffset);
-        top = lnodes[im.wbs->epsd][n].y - SHORT(c[i]->topoffset);
-        right = left + SHORT(c[i]->width);
-        bottom = top + SHORT(c[i]->height);
+        left = lnodes[im.wbs->epsd][n].x - littleEndian(c[i]->leftoffset);
+        top = lnodes[im.wbs->epsd][n].y - littleEndian(c[i]->topoffset);
+        right = left + littleEndian(c[i]->width);
+        bottom = top + littleEndian(c[i]->height);
 
         if (left >= 0 && right < SCREENWIDTH && top >= 0 && bottom < SCREENHEIGHT)
         {
@@ -488,7 +488,7 @@ int drawIntermissionNum(int x, int y, int n, int digits)
 {
     auto& im = intermissionState();
 
-    int fontwidth = SHORT(im.num[0]->width);
+    int fontwidth = littleEndian(im.num[0]->width);
     int neg;
     int temp;
 
@@ -566,7 +566,7 @@ void drawTime(int x, int y, int t)
         do
         {
             n = (t / div) % 60;
-            x = drawIntermissionNum(x, y, n, 2) - SHORT(im.colon->width);
+            x = drawIntermissionNum(x, y, n, 2) - littleEndian(im.colon->width);
             div *= 60;
 
             // draw
@@ -578,7 +578,7 @@ void drawTime(int x, int y, int t)
     else
     {
         // "sucks"
-        Doom::drawPatch(x - SHORT(im.sucks->width), y, FB, im.sucks);
+        Doom::drawPatch(x - littleEndian(im.sucks->width), y, FB, im.sucks);
     }
 }
 
@@ -837,7 +837,7 @@ void drawDeathmatchStats()
     drawLF();
 
     // draw stat titles (top line)
-    Doom::drawPatch(DM_TOTALSX - SHORT(im.total->width) / 2,
+    Doom::drawPatch(DM_TOTALSX - littleEndian(im.total->width) / 2,
                     DM_MATRIXY - WI_SPACINGY + 10,
                     FB,
                     im.total);
@@ -853,29 +853,29 @@ void drawDeathmatchStats()
     {
         if (players_.playeringame[i])
         {
-            Doom::drawPatch(x - SHORT(im.p[i]->width) / 2,
+            Doom::drawPatch(x - littleEndian(im.p[i]->width) / 2,
                             DM_MATRIXY - WI_SPACINGY,
                             FB,
                             im.p[i]);
 
-            Doom::drawPatch(DM_MATRIXX - SHORT(im.p[i]->width) / 2, y, FB, im.p[i]);
+            Doom::drawPatch(DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.p[i]);
 
             if (i == im.me)
             {
-                Doom::drawPatch(x - SHORT(im.p[i]->width) / 2,
+                Doom::drawPatch(x - littleEndian(im.p[i]->width) / 2,
                                 DM_MATRIXY - WI_SPACINGY,
                                 FB,
                                 im.bstar);
 
                 Doom::drawPatch(
-                    DM_MATRIXX - SHORT(im.p[i]->width) / 2, y, FB, im.star);
+                    DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.star);
             }
         }
         else
         {
-            // Doom::drawPatch(x-SHORT(bp[i]->width)/2,
+            // Doom::drawPatch(x-littleEndian(bp[i]->width)/2,
             //   DM_MATRIXY - WI_SPACINGY, FB, bp[i]);
-            // Doom::drawPatch(DM_MATRIXX-SHORT(bp[i]->width)/2,
+            // Doom::drawPatch(DM_MATRIXX-littleEndian(bp[i]->width)/2,
             //   y, FB, bp[i]);
         }
         x += DM_SPACINGX;
@@ -884,7 +884,7 @@ void drawDeathmatchStats()
 
     // draw stats
     y = DM_MATRIXY + 10;
-    w = SHORT(im.num[0]->width);
+    w = littleEndian(im.num[0]->width);
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -1088,11 +1088,11 @@ void drawNetgameStats()
 {
     auto& im = intermissionState();
 
-    const int statsX = 32 + SHORT(im.star->width) / 2 + 32 * !im.dofrags;
+    const int statsX = 32 + littleEndian(im.star->width) / 2 + 32 * !im.dofrags;
 
     int x;
     int y;
-    int pwidth = SHORT(im.percent->width);
+    int pwidth = littleEndian(im.percent->width);
 
     slamBackground();
 
@@ -1103,24 +1103,24 @@ void drawNetgameStats()
 
     // draw stat titles (top line)
     Doom::drawPatch(
-        statsX + NG_SPACINGX - SHORT(im.kills->width), NG_STATSY, FB, im.kills);
+        statsX + NG_SPACINGX - littleEndian(im.kills->width), NG_STATSY, FB, im.kills);
 
     Doom::drawPatch(
-        statsX + 2 * NG_SPACINGX - SHORT(im.items->width), NG_STATSY, FB, im.items);
+        statsX + 2 * NG_SPACINGX - littleEndian(im.items->width), NG_STATSY, FB, im.items);
 
-    Doom::drawPatch(statsX + 3 * NG_SPACINGX - SHORT(im.secret->width),
+    Doom::drawPatch(statsX + 3 * NG_SPACINGX - littleEndian(im.secret->width),
                     NG_STATSY,
                     FB,
                     im.secret);
 
     if (im.dofrags)
-        Doom::drawPatch(statsX + 4 * NG_SPACINGX - SHORT(im.frags->width),
+        Doom::drawPatch(statsX + 4 * NG_SPACINGX - littleEndian(im.frags->width),
                         NG_STATSY,
                         FB,
                         im.frags);
 
     // draw stats
-    y = NG_STATSY + SHORT(im.kills->height);
+    y = NG_STATSY + littleEndian(im.kills->height);
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -1128,10 +1128,10 @@ void drawNetgameStats()
             continue;
 
         x = statsX;
-        Doom::drawPatch(x - SHORT(im.p[i]->width), y, FB, im.p[i]);
+        Doom::drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.p[i]);
 
         if (i == im.me)
-            Doom::drawPatch(x - SHORT(im.p[i]->width), y, FB, im.star);
+            Doom::drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.star);
 
         x += NG_SPACINGX;
         drawPercent(x - pwidth, y + 10, im.cnt_kills[i]);
@@ -1275,7 +1275,7 @@ void drawStats()
     // line height
     int lh;
 
-    lh = (3 * SHORT(im.num[0]->height)) / 2;
+    lh = (3 * littleEndian(im.num[0]->height)) / 2;
 
     slamBackground();
 

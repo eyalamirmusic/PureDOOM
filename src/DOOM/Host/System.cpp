@@ -92,17 +92,6 @@ void waitVBlank(int)
 #endif
 }
 
-void beginRead() {}
-
-void endRead() {}
-
-byte* allocLow(int length)
-{
-    byte* mem = static_cast<byte*>(doom_malloc(length));
-    doom_memset(mem, 0, length);
-    return mem;
-}
-
 //
 // fatalError
 //

@@ -61,8 +61,7 @@ struct GraphicsData
     // measured once so the renderer need not re-read the patch headers. RAII-owned
     // (Step 9): the arrays are EA::Vectors here, and the vanilla names (r_data.cpp)
     // are plain-pointer views onto data(), refreshed by initSpriteLumps after the fill
-    // - the same owner/view split Level's geometry uses. The rest of this cluster is
-    // still raw doom_malloc pointers, pending the same conversion.
+    // - the same owner/view split Level's geometry uses.
     int firstspritelump = 0;
     int lastspritelump = 0;
     int numspritelumps = 0;

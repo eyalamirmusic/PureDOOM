@@ -179,7 +179,7 @@ void generateComposite(int texnum)
     {
         realpatch = static_cast<Patch*>(Doom::cacheLumpNum(patch->patch));
         x1 = patch->originx;
-        x2 = x1 + SHORT(realpatch->width);
+        x2 = x1 + littleEndian(realpatch->width);
 
         if (x1 < 0)
             x = 0;
@@ -197,7 +197,7 @@ void generateComposite(int texnum)
 
             patchcol =
                 reinterpret_cast<Column*>(reinterpret_cast<byte*>(realpatch)
-                                            + LONG(realpatch->columnofs[x - x1]));
+                                            + littleEndian(realpatch->columnofs[x - x1]));
             drawColumnInCache(
                 patchcol, block + colofs[x], patch->originy, texture->height);
         }
@@ -246,7 +246,7 @@ void generateLookup(int texnum)
     {
         realpatch = static_cast<Patch*>(Doom::cacheLumpNum(patch->patch));
         x1 = patch->originx;
-        x2 = x1 + SHORT(realpatch->width);
+        x2 = x1 + littleEndian(realpatch->width);
 
         if (x1 < 0)
             x = 0;
@@ -259,7 +259,7 @@ void generateLookup(int texnum)
         {
             patchcount[x]++;
             collump[x] = patch->patch;
-            colofs[x] = LONG(realpatch->columnofs[x - x1]) + 3;
+            colofs[x] = littleEndian(realpatch->columnofs[x - x1]) + 3;
         }
     }
 
@@ -360,7 +360,7 @@ void initTextures()
     // Load the patch names from pnames.lmp.
     name[8] = 0;
     names = static_cast<char*>(Doom::cacheLumpName("PNAMES"));
-    nummappatches = LONG(*(reinterpret_cast<int*>(names)));
+    nummappatches = littleEndian(*(reinterpret_cast<int*>(names)));
     name_p = names + 4;
     auto patchlookup = EA::Vector<int>(nummappatches);
 
@@ -374,14 +374,14 @@ void initTextures()
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
     maptex = maptex1 = static_cast<int*>(Doom::cacheLumpName("TEXTURE1"));
-    numtextures1 = LONG(*maptex);
+    numtextures1 = littleEndian(*maptex);
     maxoff = Doom::wad().length(Doom::wad().number("TEXTURE1"));
     directory = maptex + 1;
 
     if (Doom::wad().find("TEXTURE2") != -1)
     {
         maptex2 = static_cast<int*>(Doom::cacheLumpName("TEXTURE2"));
-        numtextures2 = LONG(*maptex2);
+        numtextures2 = littleEndian(*maptex2);
         maxoff2 = Doom::wad().length(Doom::wad().number("TEXTURE2"));
     }
     else
@@ -449,7 +449,7 @@ void initTextures()
             directory = maptex + 1;
         }
 
-        offset = LONG(*directory);
+        offset = littleEndian(*directory);
 
         if (offset > maxoff)
             fatalError("Error: initTextures: bad texture directory");
@@ -462,9 +462,9 @@ void initTextures()
         texture = &gd.textureStorage[i];
         gd.texturePointers[i] = texture;
 
-        texture->width = SHORT(mtexture->width);
-        texture->height = SHORT(mtexture->height);
-        texture->patchcount = SHORT(mtexture->patchcount);
+        texture->width = littleEndian(mtexture->width);
+        texture->height = littleEndian(mtexture->height);
+        texture->patchcount = littleEndian(mtexture->patchcount);
         texture->patches.resize(texture->patchcount);
 
         doom_memcpy(texture->name, mtexture->name, sizeof(texture->name));
@@ -473,9 +473,9 @@ void initTextures()
 
         for (j = 0; j < texture->patchcount; j++, mpatch++, patch++)
         {
-            patch->originx = SHORT(mpatch->originx);
-            patch->originy = SHORT(mpatch->originy);
-            patch->patch = patchlookup[SHORT(mpatch->patch)];
+            patch->originx = littleEndian(mpatch->originx);
+            patch->originy = littleEndian(mpatch->originy);
+            patch->patch = patchlookup[littleEndian(mpatch->patch)];
             if (patch->patch == -1)
             {
                 //fatalError("Error: initTextures: Missing patch in texture %s",
@@ -566,9 +566,9 @@ void initSpriteLumps()
             doom_print(".");
 
         patch = static_cast<Patch*>(Doom::cacheLumpNum(gd.firstspritelump + i));
-        spritewidth[i] = Doom::Fixed::fromInt(SHORT(patch->width));
-        spriteoffset[i] = Doom::Fixed::fromInt(SHORT(patch->leftoffset));
-        spritetopoffset[i] = Doom::Fixed::fromInt(SHORT(patch->topoffset));
+        spritewidth[i] = Doom::Fixed::fromInt(littleEndian(patch->width));
+        spriteoffset[i] = Doom::Fixed::fromInt(littleEndian(patch->leftoffset));
+        spritetopoffset[i] = Doom::Fixed::fromInt(littleEndian(patch->topoffset));
     }
 }
 

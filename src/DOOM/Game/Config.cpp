@@ -200,7 +200,7 @@ int drawText(int x, int y, bool direct, char* string)
             continue;
         }
 
-        w = SHORT(font.hu_font[c]->width);
+        w = littleEndian(font.hu_font[c]->width);
         if (x + w > SCREENWIDTH)
             break;
         if (direct)
@@ -549,14 +549,14 @@ void WritePCXfile(char* filename, byte* data, int width, int height, byte* palet
     pcx->bits_per_pixel = 8; // 256 color
     pcx->xmin = 0;
     pcx->ymin = 0;
-    pcx->xmax = SHORT(width - 1);
-    pcx->ymax = SHORT(height - 1);
-    pcx->hres = SHORT(width);
-    pcx->vres = SHORT(height);
+    pcx->xmax = littleEndian<unsigned short>(width - 1);
+    pcx->ymax = littleEndian<unsigned short>(height - 1);
+    pcx->hres = littleEndian<unsigned short>(width);
+    pcx->vres = littleEndian<unsigned short>(height);
     doom_memset(pcx->palette, 0, sizeof(pcx->palette));
     pcx->color_planes = 1; // chunky image
-    pcx->bytes_per_line = SHORT(width);
-    pcx->palette_type = SHORT(2); // not a grey scale
+    pcx->bytes_per_line = littleEndian<unsigned short>(width);
+    pcx->palette_type = littleEndian<unsigned short>(2); // not a grey scale
     doom_memset(pcx->filler, 0, sizeof(pcx->filler));
 
     // pack the image

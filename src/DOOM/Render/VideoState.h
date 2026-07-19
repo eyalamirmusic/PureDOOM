@@ -15,15 +15,16 @@ namespace Doom
 // v_video.h but read only within Render/Video, so the vanilla name becomes a reference onto this
 // member (a reference-to-array). The gamma table stays in the shim (const data).
 //
-// The software renderer's framebuffers are RAII-owned here now (Step 9) - what were three
-// boot-once, never-freed doom_malloc / allocLow blocks. The vanilla name screens[] (a
-// byte*[5] in Render/Video) stays a raw VIEW array pointing at these owners' data(), because
-// it is legitimately reseated - the eacp port swaps screens[0] to its overlay-capture scratch
-// and restores it - so it is a pointer that merely refers, kept raw by the RAII rules. workspace
-// is the one contiguous SCREENWIDTH*SCREENHEIGHT*4 block Doom::initVideo sliced into screens[0..3]
-// (screens[0]'s slice is then overwritten by initGraphics, as vanilla left it); frame is the
-// software frame proper (screens[0], initGraphics); statusBar is the status bar back-buffer
-// (screens[4], Doom::initStatusBar). Each is filled by the drawers, so the frame goldens pin them exactly.
+// The software renderer's framebuffers are RAII-owned here (Step 9): frame, workspace
+// and statusBar below are the EA::Vector<byte> owners of that memory. The vanilla name
+// screens[] (a byte*[5] in Render/Video) stays a raw VIEW array pointing at these owners'
+// data(), because it is legitimately reseated - the eacp port swaps screens[0] to its
+// overlay-capture scratch and restores it - so it is a pointer that merely refers, kept raw
+// by the RAII rules. workspace is the one contiguous SCREENWIDTH*SCREENHEIGHT*4 block
+// Doom::initVideo fills and slices into screens[0..3] (screens[0]'s slice is then
+// overwritten by initGraphics, as vanilla left it); frame is the software frame proper
+// (screens[0], initGraphics); statusBar is the status bar back-buffer (screens[4],
+// Doom::initStatusBar). Each is filled by the drawers, so the frame goldens pin them exactly.
 struct VideoState
 {
     // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP (Math/BBox.h) of the drawn region, in screen

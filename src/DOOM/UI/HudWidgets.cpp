@@ -79,7 +79,7 @@ void drawTextLine(HudTextLine& l, bool drawcursor)
         c = doom_toupper(l.l[i]);
         if (c != ' ' && c >= l.sc && c <= '_')
         {
-            w = SHORT(l.f[c - l.sc]->width);
+            w = littleEndian(l.f[c - l.sc]->width);
             if (x + w > SCREENWIDTH)
                 break;
             Doom::drawPatchDirect(x, l.y, FG, l.f[c - l.sc]);
@@ -94,7 +94,7 @@ void drawTextLine(HudTextLine& l, bool drawcursor)
     }
 
     // draw the cursor if requested
-    if (drawcursor && x + SHORT(l.f['_' - l.sc]->width) <= SCREENWIDTH)
+    if (drawcursor && x + littleEndian(l.f['_' - l.sc]->width) <= SCREENWIDTH)
     {
         Doom::drawPatchDirect(x, l.y, FG, l.f['_' - l.sc]);
     }
@@ -115,7 +115,7 @@ void eraseTextLine(HudTextLine& l)
 
     if (!overlayState().automapactive && view.viewwindowx && l.needsupdate)
     {
-        lh = SHORT(l.f[0]->height) + 1;
+        lh = littleEndian(l.f[0]->height) + 1;
         for (y = l.y, yoffset = y * SCREENWIDTH; y < l.y + lh;
              y++, yoffset += SCREENWIDTH)
         {
@@ -146,7 +146,7 @@ void initSText(
     s.cl = 0;
     for (i = 0; i < h; i++)
         initTextLine(
-            s.l[i], x, y - i * (SHORT(font[0]->height) + 1), font, startchar);
+            s.l[i], x, y - i * (littleEndian(font[0]->height) + 1), font, startchar);
 }
 
 void addLineToSText(HudScrollingText& s)

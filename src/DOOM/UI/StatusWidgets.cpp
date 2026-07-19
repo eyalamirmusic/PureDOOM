@@ -57,8 +57,8 @@ void drawNum(StatusNumber& n)
     int numdigits = n.width;
     int num = *n.num;
 
-    int w = SHORT(n.p[0]->width);
-    int h = SHORT(n.p[0]->height);
+    int w = littleEndian(n.p[0]->width);
+    int h = littleEndian(n.p[0]->height);
     int x = n.x;
 
     int neg;
@@ -151,10 +151,10 @@ void updateMultIcon(StatusMultIcon& mi, bool refresh)
     {
         if (mi.oldinum != -1)
         {
-            x = mi.x - SHORT(mi.p[mi.oldinum]->leftoffset);
-            y = mi.y - SHORT(mi.p[mi.oldinum]->topoffset);
-            w = SHORT(mi.p[mi.oldinum]->width);
-            h = SHORT(mi.p[mi.oldinum]->height);
+            x = mi.x - littleEndian(mi.p[mi.oldinum]->leftoffset);
+            y = mi.y - littleEndian(mi.p[mi.oldinum]->topoffset);
+            w = littleEndian(mi.p[mi.oldinum]->width);
+            h = littleEndian(mi.p[mi.oldinum]->height);
 
             if (y - ST_Y < 0)
                 fatalError("Error: updateMultIcon: y - ST_Y < 0");
@@ -185,10 +185,10 @@ void updateBinIcon(StatusBinIcon& bi, bool refresh)
 
     if (*bi.on && (bi.oldval != *bi.val || refresh))
     {
-        x = bi.x - SHORT(bi.p->leftoffset);
-        y = bi.y - SHORT(bi.p->topoffset);
-        w = SHORT(bi.p->width);
-        h = SHORT(bi.p->height);
+        x = bi.x - littleEndian(bi.p->leftoffset);
+        y = bi.y - littleEndian(bi.p->topoffset);
+        w = littleEndian(bi.p->width);
+        h = littleEndian(bi.p->height);
 
         if (y - ST_Y < 0)
             fatalError("Error: updateBinIcon: y - ST_Y < 0");
