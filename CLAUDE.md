@@ -600,17 +600,18 @@ a second build directory for it and treat the app linking as a fourth gate.
 
 ### Read the warnings — they are a fifth gate
 
-The engine builds under `-Wall -Wextra -Wpedantic` and the warning count is being
-driven to zero (`REFACTOR.md`, "What is left" item 7). **Treat a new warning as a
-failure**, and read the ones that are still there rather than assuming they are
-vanilla noise.
+The engine builds under `-Wall -Wextra -Wpedantic` with **exactly one warning**, and
+that one is deliberate: `Sim/Weapon.cpp`'s type-erased `states[].action` pointer cast
+back to its exact signature, a round trip and therefore well-defined. **Anything else
+is a regression.** It was 81 warnings at the start of the session that cleared them,
+so this is a state to hold, not a number to admire.
 
 This is not tidiness. The refactor's only real behaviour bug — `thintriangle_guy`,
 the shape the automap draws every *thing* with, silently collapsed to a point when
 `fixed_t` became a strong type and `-.5 * FRACUNIT` started converting `-.5` to
 `int` 0 — was named by the compiler in plain language in **every single build**
 ("implicit conversion from 'double' to 'int' changes value from -0.5 to 0") and
-went unread for months because 81 warnings looked like scenery. The goldens could
+went unread for months because 81 other warnings looked like scenery. The goldens could
 not see it: the shape is drawn only under the IDDT cheat, which no demo and no
 test script uses.
 

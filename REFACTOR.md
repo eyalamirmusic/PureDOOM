@@ -95,8 +95,9 @@ behaviour bug — a `double * Fixed` that silently multiplied by zero, from the
 `fixed_t` → `Doom::Fixed` migration — and both of the reasons it survived are
 general: the migration had fixed two of the three sites and left no sign the third
 was outstanding, and the compiler had been printing the exact defect in every build
-inside a 70-warning haystack. That second one is why "zero the warning count" is now
-a numbered item rather than a tidiness note.
+inside an 81-warning haystack. **That haystack is gone** — the engine now builds
+with exactly one warning, the deliberate one in `Sim/Weapon.cpp` — so `-Werror` is
+one suppression away and should be turned on before the count is allowed to drift.
 
 **Steps 0–8 are done**, with one externally blocked item: audio, whose engine side
 is built and which waits on an eacp audio stream. The whole UI, game loop, netcode,
@@ -670,33 +671,49 @@ Everything above the line is done. What follows is, in the order worth doing it:
      for one set of names, so `constexpr` works only if exactly one is ever included;
      check that before starting, and check for literal concatenation (`"a" MACRO "b"`),
      which a variable cannot do.
-7. **Zero the warning count, and treat it as a gate.** The engine built with **81**
-   warnings under `-Wall -Wextra -Wpedantic` at the start of this session and **60**
-   now, and `thintriangle_guy` is the proof that this is not cosmetic: the compiler had been naming that bug in plain
-   language in every single build, and it was invisible inside the noise. Three
-   classes, in the order worth doing:
-   - **59 × `-Wwritable-strings`**, all in `UI/Hud.cpp`: `chat_macros[]`,
-     `player_names[]` and `mapnames[]` are `char*[]` initialised from string
-     literals. The neighbouring `mapnames2`/`mapnamesp`/`mapnamest` are **already**
-     `EA::Array<const char*, 32>` — three of four were converted and the fourth was
-     not, the same partially-applied-fix shape as `thintriangle_guy`. The one real
-     hazard is `chat_macros`: `Config.cpp`'s `defaults[]` stores `&chat_macros[i]`
-     and `loadDefaults` writes a heap pointer back through it, so the *pointers* are
-     genuinely mutable and only the *pointees* are const — `const char*`, never
-     `char* const` — and the `location` field's type has to accept that.
+7. ~~**Zero the warning count, and treat it as a gate.**~~ **Done — the engine
+   builds with exactly one warning**, down from **81** at the start of this session,
+   and that one is deliberate. `thintriangle_guy` is why this was worth doing at all
+   rather than filed as tidiness: the compiler had been naming that bug in plain
+   language in every single build, and it was invisible inside the noise. What the
+   three classes were:
+   - ~~**59 × `-Wwritable-strings`**~~ — all in `UI/Hud.cpp`: `chat_macros[]`,
+     `player_names[]` and `mapnames[]` were `char*[]` initialised from string
+     literals, while the neighbouring `mapnames2`/`mapnamesp`/`mapnamest` were
+     **already** `EA::Array<const char*, 32>` — three of four converted and the
+     fourth not, the same partially-applied-fix shape as `thintriangle_guy`, which
+     is now twice in one session. All three are `EA::Array<const char*, N>` now.
+
+     **`chat_macros` was the one that needed thought, and it is `const char*`, not
+     `char* const`.** Its elements are genuinely reassigned at runtime:
+     `Config.cpp`'s `defaults[]` stores `&chat_macros[i]` and `loadDefaults` writes
+     a pointer to heap-owned storage back through it when the config supplies a
+     macro. So the *pointers* are mutable and only the *pointees* are const. The
+     ripple that followed is worth knowing because it turned out to be **one field**:
+     `ConfigDefault::text_location` became `const char**`, and nothing else in the
+     table had to move. It also retired a `*(char**)` cast in `saveDefaults` that
+     existed only to launder the type.
+
+     The trap here is the one this document already records in another form: `extern`
+     declarations must move in **lockstep** with the definition, and these had six
+     across four files (`Hud.cpp` ×3, `Config.cpp`, `Game.cpp`, `StatusBar.cpp`).
+     With `EA::Array<const char*, N>` the size is part of the type, so a stale
+     declaration is an ODR violation rather than a link error — check every one, and
+     check the count in the declaration against the initializer (`mapnames` is 45:
+     four episodes of nine, plus nine `"NEWLEVEL"`).
    - ~~**13 × `-Wunused-variable`**~~ — rewrite leftovers, where the vanilla `an`
      fed `finesine[an]` and the C++ replaced it with an `Angle::fineIndex()` local
      under another name. Deleted against the documented bar (zero reads *and* zero
      writes) with each site checked for a lost read rather than pattern-matched.
-   - **1 × `-Wcast-function-type-mismatch`** in `Sim/Weapon.cpp` is *deliberate* —
-     the type-erased `states[].action` pointer cast back to its exact signature, a
-     round-trip and therefore well-defined. It wants a comment the compiler can be
-     told about, not a change.
+   - **1 × `-Wcast-function-type-mismatch`** in `Sim/Weapon.cpp` is *deliberate* and
+     is **the one that remains** — the type-erased `states[].action` pointer cast
+     back to its exact signature, a round-trip and therefore well-defined. It wants
+     a narrowly scoped suppression it can be pointed at, not a change to the code.
 
-   Clearing the first of those three leaves **one** warning, at which point
-   `-Werror` on the engine target becomes affordable, and the class of bug
-   `thintriangle_guy` belongs to stops being able to hide. That is the actual goal
-   of this item; the counts are just the route.
+   **`-Werror` on the engine target is now one warning away**, and turning it on is
+   the point of this item — the counts were only ever the route. Until it is on,
+   *read the build output*: that is the whole lesson of `thintriangle_guy`, and it
+   is the kind of discipline that decays the moment a second warning is tolerated.
 
    **The eight `-Wliteral-conversion` warnings are already gone** — they *were*
    `thintriangle_guy`, and fixing the bug removed them. Worth stating plainly,
@@ -708,7 +725,7 @@ Recently finished, for orientation: **the function-like macro layer, and the
 `thintriangle_guy` bug it uncovered** (the newest work — `SHORT`/`LONG` across 154
 sites, `UI/Automap`'s seven, `PADSAVEP`, `SCRAMBLE`; three new tests in
 `Math/`, one in `Automap/`; the orphaned `Host/System` definitions this document
-had already called deleted; 13 unused-variable leftovers; warnings 81 → 60); **the
+had already called deleted; 13 unused-variable leftovers; warnings 81 → 1); **the
 `doom_boolean` flip and the deletion of the
 typedef** (four batches, ~288 sites); the 247 file-local reference
 aliases (strand (a), seven batches); `MovementSpeeds` and `VideoState::dirtybox`

@@ -109,7 +109,7 @@ struct PcxHeader
 // sound params below, their defaults[] entries are bound to those members at runtime by
 // bindEngineDefaults() rather than capturing their addresses here at static-init.
 
-extern char* chat_macros[];
+extern EA::Array<const char*, 10> chat_macros;
 
 extern byte scantokey[128];
 
@@ -368,7 +368,7 @@ void saveDefaults()
             //        *(char**)(defaults[i].text_location));
             doom_fprint(f, defaults[i].name);
             doom_fprint(f, "\t\t\"");
-            doom_fprint(f, *(char**) (defaults[i].text_location));
+            doom_fprint(f, *defaults[i].text_location);
             doom_fprint(f, "\"\n");
         }
     }

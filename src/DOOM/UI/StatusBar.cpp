@@ -69,7 +69,7 @@
 #include "../Sim/Random.h"
 
 // mapnames (hu_stuff) and doom_flags are other subsystems' globals this file reads.
-extern char* mapnames[];
+extern EA::Array<const char*, 45> mapnames;
 extern int doom_flags;
 
 //

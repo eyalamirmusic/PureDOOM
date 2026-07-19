@@ -176,7 +176,7 @@ const char* defdemoname;
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
-extern char* player_names[4]; // hu_stuff
+extern EA::Array<const char*, 4> player_names; // hu_stuff
 
 namespace Doom
 {

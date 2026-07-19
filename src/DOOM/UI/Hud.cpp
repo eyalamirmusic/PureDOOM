@@ -61,9 +61,9 @@
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 // externs): the config-persisted chat macros, the player names and the level-name
 // tables (st_stuff reads mapnames).
-extern char* chat_macros[];
-extern char* player_names[];
-extern char* mapnames[];
+extern EA::Array<const char*, 10> chat_macros;
+extern EA::Array<const char*, 4> player_names;
+extern EA::Array<const char*, 45> mapnames;
 
 //
 // Locally used constants, shortcuts.
@@ -456,7 +456,7 @@ bool hudResponder(Event* ev)
     auto& msg = hudMessage();
     auto& state = hudState();
 
-    char* macromessage;
+    const char* macromessage;
     bool eatkey = false;
     unsigned char c;
     int numplayers;
@@ -598,26 +598,27 @@ bool hudResponder(Event* ev)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.
 
 // The chat macros (m_misc persists them in the config).
-char* chat_macros[] = {HUSTR_CHATMACRO0,
-                       HUSTR_CHATMACRO1,
-                       HUSTR_CHATMACRO2,
-                       HUSTR_CHATMACRO3,
-                       HUSTR_CHATMACRO4,
-                       HUSTR_CHATMACRO5,
-                       HUSTR_CHATMACRO6,
-                       HUSTR_CHATMACRO7,
-                       HUSTR_CHATMACRO8,
-                       HUSTR_CHATMACRO9};
+EA::Array<const char*, 10> chat_macros = {HUSTR_CHATMACRO0,
+                                          HUSTR_CHATMACRO1,
+                                          HUSTR_CHATMACRO2,
+                                          HUSTR_CHATMACRO3,
+                                          HUSTR_CHATMACRO4,
+                                          HUSTR_CHATMACRO5,
+                                          HUSTR_CHATMACRO6,
+                                          HUSTR_CHATMACRO7,
+                                          HUSTR_CHATMACRO8,
+                                          HUSTR_CHATMACRO9};
 
 // The player colour names (g_game uses them for obituary messages).
-char* player_names[] = {
+EA::Array<const char*, 4> player_names = {
     HUSTR_PLRGREEN, HUSTR_PLRINDIGO, HUSTR_PLRBROWN, HUSTR_PLRRED};
 
 //
 // Builtin map names. The actual names can be found in dstrings.h. st_stuff reads
 // mapnames for the deathmatch/coop level title.
 //
-char* mapnames[] = // DOOM shareware/registered/retail (Ultimate) names.
+EA::Array<const char*, 45>
+    mapnames = // DOOM shareware/registered/retail (Ultimate) names.
     {HUSTR_E1M1, HUSTR_E1M2, HUSTR_E1M3, HUSTR_E1M4, HUSTR_E1M5,
      HUSTR_E1M6, HUSTR_E1M7, HUSTR_E1M8, HUSTR_E1M9,
 

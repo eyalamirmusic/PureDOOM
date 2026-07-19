@@ -37,7 +37,8 @@ struct ConfigDefault
     int defaultvalue;
     int scantranslate; // PC scan code hack
     int untranslated; // lousy hack
-    char** text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
+    const char**
+        text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
     char* default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
 };
 } // namespace Doom
