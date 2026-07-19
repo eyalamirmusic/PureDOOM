@@ -1196,12 +1196,34 @@ found by comparing against GZDoom:
    `doom_get_sound_buffer()`); music needs a 140 Hz (`DOOM_MIDI_RATE`) tick
    draining `doom_tick_midi()` into a synth. Both are unwired; the game runs
    silent.
-2. **KeyCode table gaps.** `Graphics::KeyCode` has no codes for punctuation
-   (`,` `.` `-` `=` `[` `]` `;` `'` `/`), and modifier keys (Ctrl/Shift/Alt)
-   produce no key events at all — DOOM binds them as ordinary keys (Ctrl =
-   fire, Shift = run, Alt = strafe). Workarounds: punctuation is mapped from
-   `KeyEvent::charactersIgnoringModifiers`; modifiers are diffed once per
-   frame from polled `Window::getModifiers()` into synthetic down/up events.
+2. **Modifier keys produce no key events**, on any platform — DOOM binds them as
+   ordinary keys (Ctrl = fire, Shift = run, Alt = strafe). Workaround: they are
+   diffed once per frame from polled `Window::getModifiers()` into synthetic
+   down/up events. (The punctuation half of this entry has been **fixed
+   upstream**: `Graphics::KeyCode` now carries `Minus`, `Equals`, the brackets,
+   `Semicolon`, `Quote`, `Comma`, `Period`, `Slash`, `Backslash` and `Grave`, and
+   `Input.h` maps them from the KeyCode rather than from a character.)
+2b. **`charactersIgnoringModifiers` is macOS-only**, and `characters` is filled on
+   key *down* alone. Only `Keyboard-macOS.mm` assigns either;
+   `CompositionHostWindow-Windows.cpp`'s `dispatchKeyEvent` sets `keyCode`,
+   `characters` (down only) and the modifiers, and leaves
+   `charactersIgnoringModifiers` empty always.
+
+   This is the bug that made the first Windows build look like it had *partial*
+   keyboard support. `Input.h` read the character first and the KeyCode only for
+   the handful of keys in its switch, so Space, Escape, Enter, Tab and the arrows
+   worked while **every letter, digit and punctuation key returned
+   `DOOM_KEY_UNKNOWN`** and `View::keyDown` dropped it — w/a/s/d did nothing, and
+   neither did the weapon-select number row.
+
+   Workaround: `Input.h` now maps the printable keys from the positional
+   `KeyCode`, with the character kept only as a last resort for keys eacp has no
+   constant for. **Positional has to win even where both are available**, and the
+   reason is key *up* rather than layout: with characters reported on key down
+   alone, a character-first mapping identifies a key one way when pressed and
+   another when released, so on any layout where those disagree the release never
+   matches the press and the engine never clears the key. Down and up must resolve
+   identically, which only the KeyCode does on both platforms.
 3. **CPM consumers don't get app-bundle setup.** `eacp_default_setup()` (which
    sets `EACP_MACOS_PLIST` and the deployment target) only runs when eacp is
    the top-level project, so `set_default_target_setting()` on a consumer app

@@ -44,10 +44,20 @@ nano_add_executable(SimTests
         Sim/MenuTests.cpp
         Sim/AutomapTests.cpp
         Sim/FinaleTests.cpp
+        Port/GeometryTests.cpp
+        ${CMAKE_SOURCE_DIR}/examples/EACP/EngineAccess.cpp
         TARGETS doom-sim-probe)
 
 target_compile_definitions(SimTests PRIVATE
         PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
+
+# examples/EACP is otherwise ungated: CI never builds the app, so an engine change
+# can break EngineAccess.cpp - which includes the engine's headers directly - with
+# every test still green. Compiling it here makes that a build failure in the
+# ordinary suite, and lets Port/GeometryTests drive the world-geometry builder
+# headlessly. Only EngineAccess.cpp is reachable this way; the rest of the port is
+# GPU-bound and still needs the app build.
+target_include_directories(SimTests PRIVATE ${CMAKE_SOURCE_DIR}/examples/EACP)
 
 # The arithmetic underneath the simulation. Pure functions over tables the engine
 # ships with, so these boot nothing and are free to share a process - which is
