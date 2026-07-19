@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
+#include "../doomtype.h" // byte
 
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -35,13 +35,13 @@ namespace Doom
 // never freed directly either way.
 struct DemoState
 {
-    doom_boolean usergame = 0; // a real game is running; save / end allowed
-    doom_boolean demoplayback = 0; // a recorded demo is driving input
-    doom_boolean demorecording = 0; // a demo is being captured
-    doom_boolean singledemo = 0; // -playdemo: quit after the one demo
+    bool usergame = false; // a real game is running; save / end allowed
+    bool demoplayback = false; // a recorded demo is driving input
+    bool demorecording = false; // a demo is being captured
+    bool singledemo = false; // -playdemo: quit after the one demo
 
     char demoname[32] = {}; // the demo lump/file name
-    doom_boolean netdemo = 0; // the demo in play was recorded over a netgame
+    bool netdemo = false; // the demo in play was recorded over a netgame
     EA::Vector<byte>
         demoRecordBuffer; // owns the buffer while recordDemo() is writing one
     byte* demobuffer = nullptr; // the demo byte block: a view, see the note above

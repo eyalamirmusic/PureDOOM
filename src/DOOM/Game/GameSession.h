@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameDefs.h" // Skill
-#include "../doomtype.h" // doom_boolean
 
 namespace Doom
 {
@@ -25,8 +24,8 @@ struct GameSession
     int gameepisode = 0; // the episode being played
     int gamemap = 0; // the map being played
 
-    doom_boolean respawnmonsters = 0; // the dead come back (nightmare / -respawn)
-    doom_boolean netgame = 0; // packets are being broadcast
+    bool respawnmonsters = false; // the dead come back (nightmare / -respawn)
+    bool netgame = false; // packets are being broadcast
 
     // TRI-STATE, not a boolean: 0 coop, 1 deathmatch, 2 altdeath. DoomMain assigns 2
     // for -altdeath, and Sim/Interaction and Sim/Mobj gate the altdeath-only item

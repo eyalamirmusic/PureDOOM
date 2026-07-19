@@ -21,9 +21,8 @@ namespace Doom
 // confirm it.
 struct HudMessage
 {
-    doom_boolean message_on = false; // a message is currently showing
-    doom_boolean message_nottobefuckedwith =
-        false; // this one outranks a plain message
+    bool message_on = false; // a message is currently showing
+    bool message_nottobefuckedwith = false; // this one outranks a plain message
     HudScrollingText w_message = {}; // the scrolling-text widget it is drawn through
     int message_counter = 0; // tics left before the message clears
 };

@@ -212,15 +212,15 @@ void displayFrame()
     // references (formerly displayFrame's own function-local statics, never reset - identical
     // persistence).
     DisplayState& ds = displayState();
-    doom_boolean& viewactivestate = ds.viewactivestate;
-    doom_boolean& menuactivestate = ds.menuactivestate;
-    doom_boolean& inhelpscreensstate = ds.inhelpscreensstate;
-    doom_boolean& fullscreen = ds.fullscreen;
+    bool& viewactivestate = ds.viewactivestate;
+    bool& menuactivestate = ds.menuactivestate;
+    bool& inhelpscreensstate = ds.inhelpscreensstate;
+    bool& fullscreen = ds.fullscreen;
     GameState& oldgamestate = ds.oldgamestate;
     int& borderdrawcount = ds.borderdrawcount;
     int y;
-    doom_boolean wipe;
-    doom_boolean redrawsbar;
+    bool wipe;
+    bool redrawsbar;
 
     auto& flow = gameFlow();
     auto& clock = gameClock();
@@ -1132,19 +1132,19 @@ void doomMain()
         // These are the lumps that will be checked in IWAD,
         // if any one is not present, execution will be aborted.
         EA::Array<const char*, 23> name = {
-            "e2m1",   "e2m2",   "e2m3",    "e2m4",   "e2m5",   "e2m6",
-            "e2m7",   "e2m8",   "e2m9",    "e3m1",   "e3m3",   "e3m3",
-            "e3m4",   "e3m5",   "e3m6",    "e3m7",   "e3m8",   "e3m9",
-            "dphoof", "bfgga0", "heada1",  "cybra1", "spida1d1"};
+            "e2m1",   "e2m2",   "e2m3",   "e2m4",   "e2m5",    "e2m6",
+            "e2m7",   "e2m8",   "e2m9",   "e3m1",   "e3m3",    "e3m3",
+            "e3m4",   "e3m5",   "e3m6",   "e3m7",   "e3m8",    "e3m9",
+            "dphoof", "bfgga0", "heada1", "cybra1", "spida1d1"};
 
         if (version.gamemode == shareware)
             fatalError("Error: \nYou cannot -file with the shareware "
-                    "version. Register!");
+                       "version. Register!");
 
         // Check for fake IWAD with right name,
         // but w/o all the lumps of the registered version.
         if (version.gamemode == registered)
-            for (auto n : name)
+            for (auto n: name)
                 if (Doom::wad().find(n) < 0)
                     fatalError("Error: \nThis is not the registered version.");
     }
@@ -1269,9 +1269,8 @@ void doomMain()
     if (gameFlow().gameaction != ga_loadgame)
     {
         if (defaults_.autostart || session.netgame)
-            Doom::initNewGame(defaults_.startskill,
-                              defaults_.startepisode,
-                              defaults_.startmap);
+            Doom::initNewGame(
+                defaults_.startskill, defaults_.startepisode, defaults_.startmap);
         else
             startTitle(); // start up intro loop
     }
@@ -1286,8 +1285,7 @@ void doomMain()
         EA::Array<char, 20> filename;
         //doom_sprintf(filename, "debug%i.txt", consoleplayer);
         doom_strcpy(filename.data(), "debug");
-        doom_concat(filename.data(),
-                    doom_itoa(playerState().consoleplayer, 10));
+        doom_concat(filename.data(), doom_itoa(playerState().consoleplayer, 10));
         doom_concat(filename.data(), ".txt");
         //doom_print("debug output to: %s\n", filename);
         doom_print("debug output to: ");

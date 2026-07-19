@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Game/Event.h" // Event, doom_boolean
+#include "../Game/Event.h" // Event
 
 // Set while a pop-up message is on screen. Was m_menu.h.
 extern int messageToPrint;
@@ -17,7 +17,7 @@ namespace Doom
 // detailLevel / showMessages / mouseSensitivity, inhelpscreens, messageToPrint)
 // stay at file scope for them. The M_ names are kept inside the namespace so the
 // transcription stays diffable against the 1993 source.
-doom_boolean menuResponder(Event* ev);
+bool menuResponder(Event* ev);
 void menuTicker();
 void drawMenu();
 void initMenu();

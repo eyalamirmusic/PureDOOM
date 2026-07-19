@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Game/GameDefs.h" // MAXPLAYERS
-#include "../doomtype.h" // doom_boolean
 #include "HudWidgetTypes.h" // HudInputText
 
 namespace Doom
@@ -28,8 +27,7 @@ struct HudChat
     HudInputText w_chat = {}; // the local input line being typed
     HudInputText w_inputbuffer[MAXPLAYERS] =
         {}; // each remote player's incoming text
-    doom_boolean always_off =
-        false; // the input buffers' cursor, wired permanently off
+    bool always_off = false; // the input buffers' cursor, wired permanently off
     char chat_dest[MAXPLAYERS] = {}; // who each player is addressing
 
     char chatchars[queueSize] = {}; // outgoing local keystrokes, awaiting send
@@ -39,8 +37,8 @@ struct HudChat
     // Doom::hudResponder's own send-path state, folded in from its function-local statics.
     char lastmessage[HU_MAXLINELENGTH + 1] =
         {}; // the last message sent (HU_MSGREFRESH)
-    doom_boolean shiftdown = false; // shift held (chat input)
-    doom_boolean altdown = false; // alt held (chat input)
+    bool shiftdown = false; // shift held (chat input)
+    bool altdown = false; // alt held (chat input)
     int num_nobrainers = 0; // consecutive "no-brainer" chat macro sends
 };
 

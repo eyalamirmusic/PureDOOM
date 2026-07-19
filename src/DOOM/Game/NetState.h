@@ -3,7 +3,6 @@
 #include "NetTypes.h" // DoomCom, NetPacket, BACKUPTICS, MAXNETNODES
 #include "Ticcmd.h" // Ticcmd
 #include "GameDefs.h" // MAXPLAYERS
-#include "../doomtype.h" // doom_boolean
 #include "Net.h"
 
 namespace Doom
@@ -56,21 +55,21 @@ struct NetState
     // own default member initializers, in this rewrite or in vanilla d_net.c.
     // Verified against the 1993 source in this repository's history; deleted
     // rather than carried, as no read was lost.
-    doom_boolean nodeingame[MAXNETNODES] = {};   // node still in the game
-    doom_boolean remoteresend[MAXNETNODES] = {}; // node needs local tics resent
-    int resendto[MAXNETNODES] = {};              // next tic to send that node
-    int resendcount[MAXNETNODES] = {};           // resend backoff counter
-    int nodeforplayer[MAXPLAYERS] = {};          // node index per player
-    int skiptics = 0;                            // tics to skip catching up
-    int maxsend = 0;                             // BACKUPTICS/(2*ticdup)-1
-    doom_boolean reboundpacket = false;          // a loopback packet is queued
-    NetPacket reboundstore = {};                // the loopback packet
-    char exitmsg[80] = {};                       // netgame exit message scratch
-    int gametime = 0;                            // currentTic at the last Doom::tryRunTics
-    int oldentertics = 0;                        // entertic at the last Doom::tryRunTics (was a static)
-    int frameon = 0;                             // rate-meter frame counter
-    int frameskip[4] = {};                       // per-frame skip flags (rate meter)
-    int oldnettics = 0;                          // nettics at the last rate sample
+    bool nodeingame[MAXNETNODES] = {}; // node still in the game
+    bool remoteresend[MAXNETNODES] = {}; // node needs local tics resent
+    int resendto[MAXNETNODES] = {}; // next tic to send that node
+    int resendcount[MAXNETNODES] = {}; // resend backoff counter
+    int nodeforplayer[MAXPLAYERS] = {}; // node index per player
+    int skiptics = 0; // tics to skip catching up
+    int maxsend = 0; // BACKUPTICS/(2*ticdup)-1
+    bool reboundpacket = false; // a loopback packet is queued
+    NetPacket reboundstore = {}; // the loopback packet
+    char exitmsg[80] = {}; // netgame exit message scratch
+    int gametime = 0; // currentTic at the last Doom::tryRunTics
+    int oldentertics = 0; // entertic at the last Doom::tryRunTics (was a static)
+    int frameon = 0; // rate-meter frame counter
+    int frameskip[4] = {}; // per-frame skip flags (rate meter)
+    int oldnettics = 0; // nettics at the last rate sample
 };
 
 // The one NetState, a view onto the Engine's member - the same pattern as

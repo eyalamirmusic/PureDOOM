@@ -40,7 +40,7 @@ void initTextLine(HudTextLine& t, int x, int y, Patch** f, int sc)
     clearTextLine(t);
 }
 
-doom_boolean addCharToTextLine(HudTextLine& t, char ch)
+bool addCharToTextLine(HudTextLine& t, char ch)
 {
     if (t.len == HU_MAXLINELENGTH)
         return false;
@@ -53,7 +53,7 @@ doom_boolean addCharToTextLine(HudTextLine& t, char ch)
     }
 }
 
-doom_boolean delCharFromTextLine(HudTextLine& t)
+bool delCharFromTextLine(HudTextLine& t)
 {
     if (!t.len)
         return false;
@@ -65,7 +65,7 @@ doom_boolean delCharFromTextLine(HudTextLine& t)
     }
 }
 
-void drawTextLine(HudTextLine& l, doom_boolean drawcursor)
+void drawTextLine(HudTextLine& l, bool drawcursor)
 {
     int i;
     int w;
@@ -135,13 +135,8 @@ void eraseTextLine(HudTextLine& l)
         l.needsupdate--;
 }
 
-void initSText(HudScrollingText& s,
-               int x,
-               int y,
-               int h,
-               Patch** font,
-               int startchar,
-               doom_boolean* on)
+void initSText(
+    HudScrollingText& s, int x, int y, int h, Patch** font, int startchar, bool* on)
 {
     int i;
 
@@ -211,8 +206,7 @@ void eraseSText(HudScrollingText& s)
     s.laston = *s.on;
 }
 
-void initIText(
-    HudInputText& it, int x, int y, Patch** font, int startchar, doom_boolean* on)
+void initIText(HudInputText& it, int x, int y, Patch** font, int startchar, bool* on)
 {
     it.lm = 0; // default left margin is start of text
     it.on = on;
@@ -249,7 +243,7 @@ void addPrefixToIText(HudInputText& it, char* str)
 
 // wrapper function for handling general keyed input.
 // returns true if it ate the key
-doom_boolean keyInIText(HudInputText& it, unsigned char ch)
+bool keyInIText(HudInputText& it, unsigned char ch)
 {
     if (ch >= ' ' && ch <= '_')
         addCharToTextLine(it.l, static_cast<char>(ch));

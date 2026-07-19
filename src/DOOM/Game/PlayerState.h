@@ -2,7 +2,6 @@
 
 #include "PlayerTypes.h" // Player
 #include "GameDefs.h" // MAXPLAYERS
-#include "../doomtype.h" // doom_boolean
 
 namespace Doom
 {
@@ -16,13 +15,19 @@ namespace Doom
 // (REFACTOR.md, Step 5). All four were externed only in doomstat.h and defined in
 // Game/Game.cpp above its namespace (a state owner); the vanilla names become references
 // onto the members - the two arrays as references-to-array, so the type and every indexed
-// read (including vanilla's own (int*) casts into playeringame, which rely on doom_boolean
-// being int-sized) are unchanged. players' fields are hashed by the simulation probe, but a
-// reference reads the identical bytes, so the move is golden-neutral.
+// read are unchanged. (An earlier revision of this comment warned that vanilla makes (int*)
+// casts into playeringame and so depends on its element being int-sized. It does not: there
+// is no such cast anywhere in src/DOOM, Tests or examples. The note had generalized from the
+// real weaponowned/ARMS-widget precedent, which lived in UI/StatusBar and is itself now
+// untangled. Recorded rather than merely deleted because a wrong warning about a
+// load-bearing quirk costs more than no warning - it sends the next reader hunting a hazard
+// that does not exist, or preserves a constraint nothing needs.) players' fields are hashed
+// by the simulation probe, but a reference reads the identical bytes, so the move is
+// golden-neutral.
 struct PlayerState
 {
     Player players[MAXPLAYERS] = {}; // every player's state (single-player here)
-    doom_boolean playeringame[MAXPLAYERS] = {}; // which slots are live
+    bool playeringame[MAXPLAYERS] = {}; // which slots are live
 
     int consoleplayer = 0; // the player this node takes events for
     int displayplayer = 0; // the player whose view is drawn

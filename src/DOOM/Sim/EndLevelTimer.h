@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The deathmatch end-level timer (the -timer / -avg options). When Doom::spawnSpecials sees -avg
@@ -18,7 +16,7 @@ namespace Doom
 // golden-neutral.
 struct EndLevelTimer
 {
-    doom_boolean levelTimer = false; // is the -timer/-avg countdown running
+    bool levelTimer = false; // is the -timer/-avg countdown running
     int levelTimeCount = 0; // tics remaining until Doom::exitLevel
 };
 

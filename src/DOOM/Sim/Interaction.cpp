@@ -60,7 +60,7 @@ namespace Doom
 // Returns false if the ammo can't be picked up at all
 //
 
-doom_boolean giveAmmo(Player* player, AmmoType ammo, int num)
+bool giveAmmo(Player* player, AmmoType ammo, int num)
 {
     int oldammo;
 
@@ -155,10 +155,10 @@ doom_boolean giveAmmo(Player* player, AmmoType ammo, int num)
 // giveWeapon
 // The weapon name may have a MF_DROPPED flag ored in.
 //
-doom_boolean giveWeapon(Player* player, WeaponType weapon, doom_boolean dropped)
+bool giveWeapon(Player* player, WeaponType weapon, bool dropped)
 {
-    doom_boolean gaveammo;
-    doom_boolean gaveweapon;
+    bool gaveammo;
+    bool gaveweapon;
 
     const auto& session = gameSession();
 
@@ -212,7 +212,7 @@ doom_boolean giveWeapon(Player* player, WeaponType weapon, doom_boolean dropped)
 // giveBody
 // Returns false if the body isn't needed at all
 //
-doom_boolean giveBody(Player* player, int num)
+bool giveBody(Player* player, int num)
 {
     if (player->health >= MAXHEALTH)
         return false;
@@ -230,7 +230,7 @@ doom_boolean giveBody(Player* player, int num)
 // Returns false if the armor is worse
 // than the current armor.
 //
-doom_boolean giveArmor(Player* player, int armortype)
+bool giveArmor(Player* player, int armortype)
 {
     int hits = armortype * 100;
     if (player->armorpoints >= hits)
@@ -251,13 +251,13 @@ void giveCard(Player* player, Card card)
         return;
 
     player->bonuscount = BONUSADD;
-    player->cards[card] = 1;
+    player->cards[card] = true;
 }
 
 //
 // givePower
 //
-doom_boolean givePower(Player* player, int /*PowerType*/ power)
+bool givePower(Player* player, int /*PowerType*/ power)
 {
     if (power == pw_invulnerability)
     {

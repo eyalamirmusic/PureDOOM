@@ -104,24 +104,24 @@ const char* t5text = T5TEXT;
 const char* t6text = T6TEXT;
 
 EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
-                                       {CC_SHOTGUN, MT_SHOTGUY},
-                                       {CC_HEAVY, MT_CHAINGUY},
-                                       {CC_IMP, MT_TROOP},
-                                       {CC_DEMON, MT_SERGEANT},
-                                       {CC_LOST, MT_SKULL},
-                                       {CC_CACO, MT_HEAD},
-                                       {CC_HELL, MT_KNIGHT},
-                                       {CC_BARON, MT_BRUISER},
-                                       {CC_ARACH, MT_BABY},
-                                       {CC_PAIN, MT_PAIN},
-                                       {CC_REVEN, MT_UNDEAD},
-                                       {CC_MANCU, MT_FATSO},
-                                       {CC_ARCH, MT_VILE},
-                                       {CC_SPIDER, MT_SPIDER},
-                                       {CC_CYBER, MT_CYBORG},
-                                       {CC_HERO, MT_PLAYER},
+                                     {CC_SHOTGUN, MT_SHOTGUY},
+                                     {CC_HEAVY, MT_CHAINGUY},
+                                     {CC_IMP, MT_TROOP},
+                                     {CC_DEMON, MT_SERGEANT},
+                                     {CC_LOST, MT_SKULL},
+                                     {CC_CACO, MT_HEAD},
+                                     {CC_HELL, MT_KNIGHT},
+                                     {CC_BARON, MT_BRUISER},
+                                     {CC_ARACH, MT_BABY},
+                                     {CC_PAIN, MT_PAIN},
+                                     {CC_REVEN, MT_UNDEAD},
+                                     {CC_MANCU, MT_FATSO},
+                                     {CC_ARCH, MT_VILE},
+                                     {CC_SPIDER, MT_SPIDER},
+                                     {CC_CYBER, MT_CYBORG},
+                                     {CC_HERO, MT_PLAYER},
 
-                                       {0, static_cast<MobjType>(0)}};
+                                     {0, static_cast<MobjType>(0)}};
 
 //
 // startCast
@@ -129,7 +129,7 @@ EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
 
 void startCast();
 void castTicker();
-doom_boolean castResponder(Event* ev);
+bool castResponder(Event* ev);
 void castDrawer();
 
 //
@@ -232,7 +232,7 @@ void startFinale()
     fin.finalecount = 0;
 }
 
-doom_boolean finaleResponder(Event* event)
+bool finaleResponder(Event* event)
 {
     if (finaleState().finalestage == 2)
         return castResponder(event);
@@ -534,7 +534,7 @@ void castTicker()
 //
 // castResponder
 //
-doom_boolean castResponder(Event* ev)
+bool castResponder(Event* ev)
 {
     auto& fin = finaleState();
 
@@ -617,7 +617,7 @@ void castDrawer()
     SpriteDef* sprdef;
     SpriteFrame* sprframe;
     int lump;
-    doom_boolean flip;
+    bool flip;
     Patch* patch;
 
     // erase the entire screen to a background
@@ -629,7 +629,7 @@ void castDrawer()
     sprdef = &sprites[fin.caststate->sprite];
     sprframe = &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
     lump = sprframe->lump[0];
-    flip = static_cast<doom_boolean>(sprframe->flip[0]);
+    flip = static_cast<bool>(sprframe->flip[0]);
 
     patch = static_cast<Patch*>(
         Doom::cacheLumpNum(lump + graphicsData().firstspritelump));

@@ -380,7 +380,7 @@ void refreshBackground()
 
 // Respond to keyboard input events,
 //  intercept cheats.
-doom_boolean statusBarResponder(Event* ev)
+bool statusBarResponder(Event* ev)
 {
     auto& bar = statusBarState();
 
@@ -627,7 +627,7 @@ void updateFaceWidget()
     // hoisted local (formerly function-local statics, never reset - identical persistence).
     auto& face = statusBarFace();
     auto& bar = statusBarState();
-    doom_boolean doevilgrin;
+    bool doevilgrin;
 
     if (face.priority < 10)
     {
@@ -829,7 +829,6 @@ void updateWidgets()
         else
             bar.st_fragscount -= bar.plyr->frags[i];
     }
-
 }
 
 void statusBarTicker()
@@ -896,7 +895,7 @@ void doPaletteStuff()
     }
 }
 
-void drawWidgets(doom_boolean refresh)
+void drawWidgets(bool refresh)
 {
     auto& bar = statusBarState();
     auto& widgets = statusBarWidgets();
@@ -955,7 +954,7 @@ void diffDraw()
     drawWidgets(false);
 }
 
-void drawStatusBar(doom_boolean fullscreen, doom_boolean refresh)
+void drawStatusBar(bool fullscreen, bool refresh)
 {
     auto& bar = statusBarState();
 

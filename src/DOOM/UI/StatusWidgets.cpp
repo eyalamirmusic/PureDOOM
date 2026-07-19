@@ -35,13 +35,8 @@ void initStatusWidgets()
     sttminus = static_cast<Patch*>(Doom::cacheLumpName("STTMINUS"));
 }
 
-void initNum(StatusNumber& n,
-             int x,
-             int y,
-             Patch** pl,
-             int* num,
-             doom_boolean* on,
-             int width)
+void initNum(
+    StatusNumber& n, int x, int y, Patch** pl, int* num, bool* on, int width)
 {
     n.x = x;
     n.y = y;
@@ -113,20 +108,15 @@ void drawNum(StatusNumber& n)
         Doom::drawPatch(x - 8, n.y, STLIB_FG, sttminus);
 }
 
-void updateNum(StatusNumber& n, doom_boolean refresh)
+void updateNum(StatusNumber& n, bool refresh)
 {
     (void) refresh;
     if (*n.on)
         drawNum(n);
 }
 
-void initPercent(StatusPercent& p,
-                 int x,
-                 int y,
-                 Patch** pl,
-                 int* num,
-                 doom_boolean* on,
-                 Patch* percent)
+void initPercent(
+    StatusPercent& p, int x, int y, Patch** pl, int* num, bool* on, Patch* percent)
 {
     initNum(p.n, x, y, pl, num, on, 3);
     p.p = percent;
@@ -140,8 +130,7 @@ void updatePercent(StatusPercent& per, int refresh)
     updateNum(per.n, refresh);
 }
 
-void initMultIcon(
-    StatusMultIcon& i, int x, int y, Patch** il, int* inum, doom_boolean* on)
+void initMultIcon(StatusMultIcon& i, int x, int y, Patch** il, int* inum, bool* on)
 {
     i.x = x;
     i.y = y;
@@ -151,7 +140,7 @@ void initMultIcon(
     i.p = il;
 }
 
-void updateMultIcon(StatusMultIcon& mi, doom_boolean refresh)
+void updateMultIcon(StatusMultIcon& mi, bool refresh)
 {
     int w;
     int h;
@@ -177,8 +166,7 @@ void updateMultIcon(StatusMultIcon& mi, doom_boolean refresh)
     }
 }
 
-void initBinIcon(
-    StatusBinIcon& b, int x, int y, Patch* i, doom_boolean* val, doom_boolean* on)
+void initBinIcon(StatusBinIcon& b, int x, int y, Patch* i, bool* val, bool* on)
 {
     b.x = x;
     b.y = y;
@@ -188,7 +176,7 @@ void initBinIcon(
     b.p = i;
 }
 
-void updateBinIcon(StatusBinIcon& bi, doom_boolean refresh)
+void updateBinIcon(StatusBinIcon& bi, bool refresh)
 {
     int x;
     int y;

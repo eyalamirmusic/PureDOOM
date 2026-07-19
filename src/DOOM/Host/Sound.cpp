@@ -103,8 +103,8 @@ static unsigned char* mus_data = 0;
 static MusHeader mus_header;
 static int mus_offset = 0;
 static int mus_delay = 0;
-static doom_boolean mus_loop = false;
-static doom_boolean mus_playing = false;
+static bool mus_loop = false;
+static bool mus_playing = false;
 static int mus_volume = 127;
 static EA::Array<int, 16> mus_channel_volumes = {
     127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127};
@@ -836,9 +836,6 @@ void updateSound()
     }
 }
 
-//extern doom_sound_callbacks_t doom_sound_callbacks;
-//extern doom_boolean skip_next_sound_update;
-
 //
 // This would be used to write out the mixbuffer
 //  during each game loop update.
@@ -930,7 +927,7 @@ void playSong([[maybe_unused]] int handle, int looping)
 {
     musicdies = gameClock().gametic + TICRATE * 30;
 
-    mus_loop = looping ? true : false;
+    mus_loop = looping != 0;
     mus_playing = true;
 }
 

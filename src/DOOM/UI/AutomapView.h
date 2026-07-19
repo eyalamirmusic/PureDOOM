@@ -2,7 +2,7 @@
 
 #include "AutomapTypes.h" // MapPoint (and fixed_t through it)
 #include "../Game/GameDefs.h" // SCREENWIDTH, SCREENHEIGHT
-#include "../doomtype.h" // byte, doom_boolean
+#include "../doomtype.h" // byte
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 
@@ -76,7 +76,7 @@ struct AutomapView
     MapPoint markpoints[numMarkPoints] = {}; // the placed marks
     int markpointnum = 0; // the next mark slot
 
-    doom_boolean stopped = true; // the automap is closed
+    bool stopped = true; // the automap is closed
 };
 
 // The one AutomapView, a view onto the Engine's member - the same pattern as the other clusters

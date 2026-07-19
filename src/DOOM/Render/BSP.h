@@ -11,7 +11,7 @@ void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
 void clearClipSegs();
 void addLine(Seg* line);
-doom_boolean checkBBox(fixed_t* bspcoord);
+bool checkBBox(fixed_t* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);
 } // namespace Doom

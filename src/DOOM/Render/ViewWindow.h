@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // How big the 3D view is and where it sits. The menu asks for a size with Doom::setViewSize,
@@ -32,7 +30,7 @@ struct ViewWindow
     int viewwindowy = 0;
 
     // The pending sizing request Doom::setViewSize stashes for Doom::executeSetViewSize.
-    doom_boolean setsizeneeded = false;
+    bool setsizeneeded = false;
     int setblocks = 0;
 
     // The applied detail shift (0 = high, 1 = low), read by the drawers and the app.

@@ -2,7 +2,6 @@
 
 #include "../Game/PlayerTypes.h" // IntermissionStart, IntermissionPlayer
 #include "../Game/GameDefs.h" // MAXPLAYERS
-#include "../doomtype.h" // doom_boolean
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 #include "IntermissionTypes.h" // IntermissionPhase
@@ -68,8 +67,7 @@ struct IntermissionState
     int cnt_frags[MAXPLAYERS] = {};
 
     // Deathmatch tallies and the frag-column flag.
-    doom_boolean snl_pointeron =
-        false; // the "you are here" pointer is lit this frame
+    bool snl_pointeron = false; // the "you are here" pointer is lit this frame
     int dm_frags[MAXPLAYERS][MAXPLAYERS] = {};
     int dm_totals[MAXPLAYERS] = {};
     int dofrags = 0; // netgame has frags to show

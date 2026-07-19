@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameDefs.h" // Skill
-#include "../doomtype.h" // doom_boolean
 
 namespace Doom
 {
@@ -20,7 +19,7 @@ struct StartupDefaults
     int startepisode = 0; // default episode
     int startmap = 0; // default map
 
-    doom_boolean autostart = 0; // command line asked for a specific start
+    bool autostart = false; // command line asked for a specific start
 };
 
 // The one StartupDefaults, a view onto the Engine's member - the same pattern as

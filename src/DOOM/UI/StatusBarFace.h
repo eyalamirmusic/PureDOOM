@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Game/GameDefs.h" // NUMWEAPONS
-#include "../doomtype.h" // doom_boolean
 
 namespace Doom
 {
@@ -30,8 +29,7 @@ namespace Doom
 struct StatusBarFace
 {
     int st_oldhealth = -1; // last tic's health, for the pained face
-    doom_boolean oldweaponsowned[NUMWEAPONS] =
-        {}; // last tic's weapons, for the evil grin
+    bool oldweaponsowned[NUMWEAPONS] = {}; // last tic's weapons, for the evil grin
     int st_facecount = 0; // tics until the expression may change
     int st_faceindex = 0; // the face patch currently shown (w_faces binds to it)
     int st_randomnumber = 0; // a per-tic M_Random the straight face varies with

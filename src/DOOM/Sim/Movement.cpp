@@ -22,7 +22,7 @@ namespace Doom
 namespace
 {
 // PIT_StompThing: telefrag a shootable thing occupying the teleport destination.
-doom_boolean stompThing(Mobj* thing)
+bool stompThing(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 
@@ -54,7 +54,7 @@ doom_boolean stompThing(Mobj* thing)
 // PIT_CheckLine: a line the mover's box crosses. Blocks the move (return false) if
 // solid or explicitly blocking; otherwise narrows tmfloorz/tmceilingz/tmdropoffz to
 // the opening it leaves and records a special line for later.
-doom_boolean checkLine(Line* ld)
+bool checkLine(Line* ld)
 {
     Clip& clip = Doom::clip();
 
@@ -115,7 +115,7 @@ doom_boolean checkLine(Line* ld)
 
 // PIT_CheckThing: the mover against another thing - skull slam, missile impact,
 // pickup, or a plain solid block.
-doom_boolean checkThing(Mobj* thing)
+bool checkThing(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 
@@ -198,7 +198,7 @@ doom_boolean checkThing(Mobj* thing)
     // check for special pickup
     if (thing->flags & MF_SPECIAL)
     {
-        doom_boolean solid = thing->flags & MF_SOLID;
+        bool solid = thing->flags & MF_SOLID;
         if (clip.tmflags & MF_PICKUP)
         {
             // can remove thing
@@ -386,7 +386,7 @@ bool thingHeightClip(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 
-    doom_boolean onfloor = (thing->z == thing->floorz);
+    bool onfloor = (thing->z == thing->floorz);
 
     checkPosition(thing, thing->x, thing->y);
     // what about stranding a monster partially off an edge?

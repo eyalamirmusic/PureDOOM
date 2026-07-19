@@ -56,7 +56,7 @@ namespace Doom
 
 // Forward declarations so call order needs no rearranging.
 void bringUpWeapon(Player* player);
-doom_boolean checkAmmo(Player* player);
+bool checkAmmo(Player* player);
 void fireWeapon(Player* player);
 void dropWeapon(Player& player);
 void weaponReady(Player& player, PspDef& psp);
@@ -71,7 +71,7 @@ void fireMissile(Player& player, PspDef& psp);
 void fireBFG(Player& player, PspDef& psp);
 void firePlasma(Player& player, PspDef& psp);
 void computeBulletSlope(Mobj* mo);
-void gunShot(Mobj* mo, doom_boolean accurate);
+void gunShot(Mobj* mo, bool accurate);
 void firePistol(Player& player, PspDef& psp);
 void fireShotgun(Player& player, PspDef& psp);
 void fireShotgun2(Player& player, PspDef& psp);
@@ -116,8 +116,8 @@ void setPsprite(Player* player, int position, StateNum stnum)
         // here (a round-trip conversion, hence well-defined).
         if (state->action.fn)
         {
-            reinterpret_cast<void (*)(Player*, PspDef*)>(state->action.fn)(
-                player, psp);
+            reinterpret_cast<void (*)(Player*, PspDef*)>(state->action.fn)(player,
+                                                                           psp);
             if (!psp->state)
                 break;
         }
@@ -157,7 +157,7 @@ void bringUpWeapon(Player* player)
 // Returns true if there is enough ammo to shoot.
 // If not, selects the next weapon to use.
 //
-doom_boolean checkAmmo(Player* player)
+bool checkAmmo(Player* player)
 {
     AmmoType ammo;
     int count;
@@ -296,8 +296,7 @@ void weaponReady(Player& player, PspDef& psp)
     {
         // change weapon
         //  (pending weapon should allready be validated)
-        newstate =
-            static_cast<StateNum>(weaponinfo[player.readyweapon].downstate);
+        newstate = static_cast<StateNum>(weaponinfo[player.readyweapon].downstate);
         setPsprite(&player, ps_weapon, newstate);
         return;
     }
@@ -437,9 +436,9 @@ void punch(Player& player, PspDef&)
         damage *= 10;
 
     angle = player.mo->angle;
-    angle += angle_t {(unsigned) (Doom::randomness().forPlay()
-                              - Doom::randomness().forPlay())
-                  << 18};
+    angle += angle_t {
+        (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+        << 18};
     const auto aim = Doom::aimLineAttack(player.mo, angle, MELEERANGE);
     Doom::lineAttack(player.mo, angle, MELEERANGE, aim.slope, damage);
 
@@ -462,9 +461,9 @@ void saw(Player& player, PspDef&)
 
     damage = 2 * (Doom::randomness().forPlay() % 10 + 1);
     angle = player.mo->angle;
-    angle += angle_t {(unsigned) (Doom::randomness().forPlay()
-                              - Doom::randomness().forPlay())
-                  << 18};
+    angle += angle_t {
+        (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+        << 18};
 
     // use meleerange + 1 se the puff doesn't skip the flash
     const auto aim = Doom::aimLineAttack(player.mo, angle, MELEERANGE + fixed_t {1});
@@ -525,7 +524,7 @@ void firePlasma(Player& player, PspDef&)
     setPsprite(&player,
                ps_flash,
                static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate
-                                       + (Doom::randomness().forPlay() & 1)));
+                                     + (Doom::randomness().forPlay() & 1)));
 
     Doom::spawnPlayerMissile(player.mo, MT_PLASMA);
 }
@@ -563,7 +562,7 @@ void computeBulletSlope(Mobj* mo)
 //
 // gunShot
 //
-void gunShot(Mobj* mo, doom_boolean accurate)
+void gunShot(Mobj* mo, bool accurate)
 {
     angle_t angle;
     int damage;
@@ -572,9 +571,9 @@ void gunShot(Mobj* mo, doom_boolean accurate)
     angle = mo->angle;
 
     if (!accurate)
-        angle += angle_t {(unsigned) (Doom::randomness().forPlay()
-                              - Doom::randomness().forPlay())
-                  << 18};
+        angle += angle_t {
+            (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+            << 18};
 
     Doom::lineAttack(mo, angle, MISSILERANGE, weaponScratch().bulletslope, damage);
 }
@@ -640,17 +639,17 @@ void fireShotgun2(Player& player, PspDef&)
     {
         damage = 5 * (Doom::randomness().forPlay() % 3 + 1);
         angle = player.mo->angle;
-        angle += angle_t {(unsigned) (Doom::randomness().forPlay()
-                              - Doom::randomness().forPlay())
-                  << 19};
+        angle += angle_t {
+            (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+            << 19};
         Doom::lineAttack(player.mo,
-                     angle,
-                     MISSILERANGE,
-                     weaponScratch().bulletslope
-                         + fixed_t {(Doom::randomness().forPlay()
-                                     - Doom::randomness().forPlay())
-                                    << 5},
-                     damage);
+                         angle,
+                         MISSILERANGE,
+                         weaponScratch().bulletslope
+                             + fixed_t {(Doom::randomness().forPlay()
+                                         - Doom::randomness().forPlay())
+                                        << 5},
+                         damage);
     }
 }
 
@@ -670,7 +669,7 @@ void fireCGun(Player& player, PspDef& psp)
     setPsprite(&player,
                ps_flash,
                static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate
-                                       + psp.state - &states[S_CHAIN1]));
+                                     + psp.state - &states[S_CHAIN1]));
 
     computeBulletSlope(player.mo);
 
@@ -717,9 +716,9 @@ void bfgSpray(Mobj* mo)
             continue;
 
         Doom::spawnMobj(aim.target->x,
-                    aim.target->y,
-                    aim.target->z + (aim.target->height >> 2),
-                    MT_EXTRABFG);
+                        aim.target->y,
+                        aim.target->z + (aim.target->height >> 2),
+                        MT_EXTRABFG);
 
         damage = 0;
         for (int j = 0; j < 15; j++)

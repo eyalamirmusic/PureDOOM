@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The pending special-command requests. A pause (the pause key, in Doom::gameResponder) or a save (menu
@@ -16,8 +14,8 @@ namespace Doom
 // feed the ticcmd directly), so both stay false throughout - golden-neutral.
 struct PendingCommands
 {
-    doom_boolean sendpause = false; // fold a BTS_PAUSE into next tic's command
-    doom_boolean sendsave = false; // fold a BTS_SAVEGAME into next tic's command
+    bool sendpause = false; // fold a BTS_PAUSE into next tic's command
+    bool sendsave = false; // fold a BTS_SAVEGAME into next tic's command
 };
 
 // The one PendingCommands, a view onto the Engine's member - the same pattern as the other Game/

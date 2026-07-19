@@ -45,10 +45,7 @@ namespace Doom
 // and reaches them through it.
 
 // Forward declarations so call order needs no rearranging.
-void installSpriteLump(int lump,
-                       unsigned frame,
-                       unsigned rotation,
-                       doom_boolean flipped);
+void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped);
 void initSpriteDefs(char** namelist);
 void initSprites(char** namelist);
 void clearSprites();
@@ -67,10 +64,7 @@ void drawMasked();
 // installSpriteLump
 // Local function for initSprites.
 //
-void installSpriteLump(int lump,
-                       unsigned frame,
-                       unsigned rotation,
-                       doom_boolean flipped)
+void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped)
 {
     auto& gd = graphicsData();
     auto& scratch = spriteScratch();
@@ -471,7 +465,7 @@ void projectSprite(Mobj* thing)
     int lump;
 
     unsigned rot;
-    doom_boolean flip;
+    bool flip;
 
     int index;
 
@@ -539,13 +533,13 @@ void projectSprite(Mobj* thing)
         ang = Doom::pointToAngle(thing->x, thing->y);
         rot = ((ang - thing->angle + (ANG45 / 2u) * 9u) >> 29).raw;
         lump = sprframe->lump[rot];
-        flip = static_cast<doom_boolean>(sprframe->flip[rot]);
+        flip = static_cast<bool>(sprframe->flip[rot]);
     }
     else
     {
         // use single rotation for all views
         lump = sprframe->lump[0];
-        flip = static_cast<doom_boolean>(sprframe->flip[0]);
+        flip = static_cast<bool>(sprframe->flip[0]);
     }
 
     // calculate edges of the shape
@@ -668,7 +662,7 @@ void drawPSprite(PspDef* psp)
     SpriteDef* sprdef;
     SpriteFrame* sprframe;
     int lump;
-    doom_boolean flip;
+    bool flip;
     VisSprite* vis;
     VisSprite avis;
 
@@ -704,7 +698,7 @@ void drawPSprite(PspDef* psp)
     sprframe = &sprdef->spriteframes[psp->state->frame & FF_FRAMEMASK];
 
     lump = sprframe->lump[0];
-    flip = static_cast<doom_boolean>(sprframe->flip[0]);
+    flip = static_cast<bool>(sprframe->flip[0]);
 
     // calculate edges of the shape
     tx = psp->sx - 160 * FRACUNIT;

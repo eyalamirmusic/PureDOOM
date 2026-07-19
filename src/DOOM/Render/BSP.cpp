@@ -43,16 +43,16 @@ namespace Doom
 // checkBBox each hoist solidSegs() once and reach its members through it.
 
 EA::Array<EA::Array<int, 4>, 12> checkcoord = {{3, 0, 2, 1},
-                         {3, 0, 2, 0},
-                         {3, 1, 2, 0},
-                         {0},
-                         {2, 0, 2, 1},
-                         {0, 0, 0, 0},
-                         {3, 1, 3, 0},
-                         {0},
-                         {2, 0, 3, 1},
-                         {2, 1, 3, 1},
-                         {2, 1, 3, 0}};
+                                               {3, 0, 2, 0},
+                                               {3, 1, 2, 0},
+                                               {0},
+                                               {2, 0, 2, 1},
+                                               {0, 0, 0, 0},
+                                               {3, 1, 3, 0},
+                                               {0},
+                                               {2, 0, 3, 1},
+                                               {2, 1, 3, 1},
+                                               {2, 1, 3, 0}};
 
 // Forward declarations so call order needs no rearranging.
 void clearDrawSegs();
@@ -60,7 +60,7 @@ void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
 void clearClipSegs();
 void addLine(Seg* line);
-doom_boolean checkBBox(fixed_t* bspcoord);
+bool checkBBox(fixed_t* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);
 
@@ -343,7 +343,7 @@ clipsolid:
 // Returns true
 //  if some part of the bbox might be visible.
 //
-doom_boolean checkBBox(fixed_t* bspcoord)
+bool checkBBox(fixed_t* bspcoord)
 {
     int boxx;
     int boxy;

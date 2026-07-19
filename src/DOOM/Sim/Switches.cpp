@@ -93,7 +93,7 @@ SwitchListEntry alphSwitchList[] = {
 void initSwitchList();
 void startButton(Line* line, ButtonWhere w, int texture, int time);
 void changeSwitchTexture(Line* line, int useAgain);
-doom_boolean useSpecialLine(Mobj* thing, Line* line, int side);
+bool useSpecialLine(Mobj* thing, Line* line, int side);
 
 void initSwitchList()
 {
@@ -234,7 +234,7 @@ void changeSwitchTexture(Line* line, int useAgain)
 // Called when a thing uses a special line.
 // Only the front sides of lines are usable.
 //
-doom_boolean useSpecialLine(Mobj* thing, Line* line, int side)
+bool useSpecialLine(Mobj* thing, Line* line, int side)
 {
     // Err...
     // Use the back sides of VERY SPECIAL lines...

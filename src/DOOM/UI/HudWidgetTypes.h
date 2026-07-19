@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -20,11 +20,9 @@
 
 #pragma once
 
-
 // We are referring to patches.
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h"
-
 
 // background and foreground screen numbers
 // different from other modules.
@@ -36,7 +34,6 @@
 
 #define HU_MAXLINES 4
 #define HU_MAXLINELENGTH 80
-
 
 //
 // Typedefs of widgets
@@ -52,16 +49,15 @@ struct HudTextLine
     int x;
     int y;
 
-    Doom::Patch** f;                        // font
-    int sc;                        // start character
-    char l[HU_MAXLINELENGTH + 1];        // line of text
-    int len;                              // current line length
+    Doom::Patch** f; // font
+    int sc; // start character
+    char l[HU_MAXLINELENGTH + 1]; // line of text
+    int len; // current line length
 
     // whether this line needs to be udpated
     int needsupdate;
 };
 } // namespace Doom
-
 
 // Scrolling Text window widget
 //  (child of Text Doom::Line widget)
@@ -69,16 +65,15 @@ namespace Doom
 {
 struct HudScrollingText
 {
-    HudTextLine l[HU_MAXLINES];        // text lines to draw
-    int h;                // height in lines
-    int cl;                // current line number
+    HudTextLine l[HU_MAXLINES]; // text lines to draw
+    int h; // height in lines
+    int cl; // current line number
 
-    // pointer to doom_boolean stating whether to update window
-    doom_boolean* on;
-    doom_boolean laston;                // last value of *->on.
+    // pointer to bool stating whether to update window
+    bool* on;
+    bool laston; // last value of *->on.
 };
 } // namespace Doom
-
 
 // Input Text Doom::Line widget
 //  (child of Text Doom::Line widget)
@@ -86,17 +81,16 @@ namespace Doom
 {
 struct HudInputText
 {
-    HudTextLine l;                // text line to input on
+    HudTextLine l; // text line to input on
 
-     // left margin past which I am not to delete characters
+    // left margin past which I am not to delete characters
     int lm;
 
-    // pointer to doom_boolean stating whether to update window
-    doom_boolean* on;
-    doom_boolean laston; // last value of *->on;
+    // pointer to bool stating whether to update window
+    bool* on;
+    bool laston; // last value of *->on;
 };
 } // namespace Doom
-
 
 //-----------------------------------------------------------------------------
 //

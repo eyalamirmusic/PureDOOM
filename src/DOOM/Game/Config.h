@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../doomtype.h" // byte, doom_boolean
+#include "../doomtype.h" // byte
 
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -8,8 +8,8 @@ namespace Doom
 {
 // Config I/O, file I/O, screenshots, Doom::drawText; m_misc.cpp keeps the M_ names
 // as shims.
-int drawText(int x, int y, doom_boolean direct, char* string);
-doom_boolean writeFile(char const* name, void* source, int length);
+int drawText(int x, int y, bool direct, char* string);
+bool writeFile(char const* name, void* source, int length);
 
 // Reads the whole file into buffer, sized to fit, and returns its length. Takes the
 // owner rather than the old `byte** buffer` out-parameter, which handed a

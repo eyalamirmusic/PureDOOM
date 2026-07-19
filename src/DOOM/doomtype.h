@@ -23,24 +23,27 @@
 #pragma once
 
 
-// An int, and NOT the built-in bool, even though the engine is C++ now.
+// `doom_boolean` used to live here - an int, deliberately not the built-in bool,
+// because compiled as C it was `enum { false, true }` and the engine leaned on its
+// width wherever a boolean was read through a pointer to something else. It is gone:
+// every one of its ~288 uses is a real `bool` now (REFACTOR.md, Step 9).
 //
-// Compiled as C this was `enum { false, true }`, which is int-sized, and the
-// engine leans on that in places where a boolean is read through a pointer to
-// something else. `ST_createWidgets` binds the ARMS widget with
+// Three declarations had to stop lying before the flip could happen, and all three
+// are still `int` on purpose, each with the reason recorded at its own site - do not
+// "tidy" them into bool:
 //
-//     STlib_initMultIcon(..., (int*) &plyr->weaponowned[i + 1], ...)
+//   - Render/Data.cpp's `MapTexture::masked`, overlaid on raw TEXTURE1/TEXTURE2 lump
+//     bytes, where its four bytes hold the following fields in place.
+//   - Game/GameSession.h's `deathmatch`, which is tri-state (0 coop, 1 deathmatch,
+//     2 altdeath) and would silently collapse 1 and 2.
+//   - Sim/Specials.cpp's `AnimDef::istexture`, whose animdefs table terminates on a
+//     `-1` sentinel that would read as `true` and never end the scan.
 //
-// - vanilla's own cast - and `STlib_updateMultIcon` then reads four bytes back
-// out through that `int*`. Against a one-byte bool those reads are three bytes of
-// neighbouring struct, the icon index comes out as garbage, and the status bar
-// draws a null patch on the first tic of the first demo.
-//
-// Making it a real bool is a change to the engine's behaviour, not to its
-// spelling, so it belongs to the refactor proper (REFACTOR.md, Step 5 onward),
-// one subsystem at a time with the demos watching - not to the language flip,
-// whose whole promise is that nothing moves.
-typedef int doom_boolean;
+// And one pun had to be untangled: `ST_createWidgets` bound the ARMS widget with
+// vanilla's own `(int*) &plyr->weaponowned[i + 1]` cast and read four bytes back out
+// through it, which against a one-byte bool is three bytes of the neighbouring struct
+// - and for i == 5, of the `int ammo[]` past the end of the array. The widget indexes
+// `StatusBarWidgets::w_armsindex[6]` instead now.
 
 
 typedef unsigned char byte;

@@ -58,7 +58,7 @@ namespace
 {
 // PIT_AddLineIntercepts: a line the trace crosses is added to the intercept list.
 // A line is crossed when its two endpoints fall on opposite sides of the trace.
-doom_boolean addLineIntercept(Line* ld)
+bool addLineIntercept(Line* ld)
 {
     Clip& clip = Doom::clip();
     const DivLine& trace = clip.trace;
@@ -103,12 +103,12 @@ doom_boolean addLineIntercept(Line* ld)
 
 // PIT_AddThingIntercepts: a thing whose bounding-box diagonal the trace crosses is
 // added. The diagonal chosen is the one facing the trace, so a corner clip counts.
-doom_boolean addThingIntercept(Mobj* thing)
+bool addThingIntercept(Mobj* thing)
 {
     Clip& clip = Doom::clip();
     const DivLine& trace = clip.trace;
 
-    doom_boolean tracepositive = (trace.delta.x.raw ^ trace.delta.y.raw) > 0;
+    bool tracepositive = (trace.delta.x.raw ^ trace.delta.y.raw) > 0;
 
     fixed_t x1;
     fixed_t y1;

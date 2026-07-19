@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 // Doom::Player is used only by pointer here, so a forward declaration is enough.
 namespace Doom
 {
@@ -54,18 +52,18 @@ struct StatusBarState
 {
     // Lifecycle and timing.
     Player* plyr = nullptr; // the console player, refreshed at Doom::startStatusBar
-    doom_boolean st_firsttime = false; // Doom::startStatusBar just ran (force a full redraw)
+    bool st_firsttime = false; // Doom::startStatusBar just ran (force a full redraw)
     int lu_palette = 0; // the PLAYPAL lump number
-    doom_boolean st_stopped = true; // ST_Stop has parked the bar
+    bool st_stopped = true; // ST_Stop has parked the bar
 
     // Which layout is drawn, and the keys shown.
-    doom_boolean st_statusbaron = false; // the main bar is drawn (false = full-screen,
-                                         // no bar). The app reads it to know whether to
-                                         // composite the bar strip, and the STlib widgets
-                                         // bind their "on" pointer to it.
-    doom_boolean st_notdeathmatch = false; // single-player layout (arms, not frags)
-    doom_boolean st_armson = false; // the arms panel is shown (not DM, bar up)
-    doom_boolean st_fragson = false; // the frags summary is shown (deathmatch)
+    bool st_statusbaron = false; // the main bar is drawn (false = full-screen,
+    // no bar). The app reads it to know whether to
+    // composite the bar strip, and the STlib widgets
+    // bind their "on" pointer to it.
+    bool st_notdeathmatch = false; // single-player layout (arms, not frags)
+    bool st_armson = false; // the arms panel is shown (not DM, bar up)
+    bool st_fragson = false; // the frags summary is shown (deathmatch)
     int st_fragscount = 0; // the frags total w_frags draws
     int keyboxes[3] = {}; // the key-type shown in each of the three key slots
 

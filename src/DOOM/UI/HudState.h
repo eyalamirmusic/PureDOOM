@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
 #include "HudWidgetTypes.h" // HudTextLine
 
 // Doom::Player is used only by pointer here, so a forward declaration is enough.
@@ -25,7 +24,7 @@ struct HudState
 {
     Player* plr = nullptr; // the console player the HUD reads from
     HudTextLine w_title = {}; // the level-title text line, drawn on entry
-    doom_boolean headsupactive = false; // the HUD is set up (gate against re-init)
+    bool headsupactive = false; // the HUD is set up (gate against re-init)
 };
 
 // The one HudState, a view onto the Engine's member - the same pattern as the other clusters

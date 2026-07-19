@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,18 +21,15 @@
 
 #pragma once
 
-
 // We are referring to patches.
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h"
-
 
 //
 // Background and foreground screen numbers
 //
 #define STLIB_BG 4
 #define STLIB_FG 0
-
 
 //
 // Typedefs of widgets
@@ -57,9 +54,9 @@ struct StatusNumber
     // pointer to current value
     int* num;
 
-    // pointer to doom_boolean stating
+    // pointer to bool stating
     //  whether to update number
-    doom_boolean* on;
+    bool* on;
 
     // list of patches for 0-9
     Doom::Patch** p;
@@ -68,7 +65,6 @@ struct StatusNumber
     int data;
 };
 } // namespace Doom
-
 
 // Percent widget ("child" of number widget,
 //  or, more precisely, contains a number widget.)
@@ -83,7 +79,6 @@ struct StatusPercent
     Doom::Patch* p;
 };
 } // namespace Doom
-
 
 // Multiple Icon widget
 namespace Doom
@@ -100,9 +95,9 @@ struct StatusMultIcon
     // pointer to current icon
     int* inum;
 
-    // pointer to doom_boolean stating
+    // pointer to bool stating
     //  whether to update icon
-    doom_boolean* on;
+    bool* on;
 
     // list of icons
     Doom::Patch** p;
@@ -111,7 +106,6 @@ struct StatusMultIcon
     int data;
 };
 } // namespace Doom
-
 
 // Binary Icon widget
 namespace Doom
@@ -126,19 +120,16 @@ struct StatusBinIcon
     int oldval;
 
     // pointer to current icon status
-    doom_boolean* val;
+    bool* val;
 
-    // pointer to doom_boolean
+    // pointer to bool
     //  stating whether to update icon
-    doom_boolean* on;
-
+    bool* on;
 
     Doom::Patch* p; // icon
-    int data;   // user data
-
+    int data; // user data
 };
 } // namespace Doom
-
 
 //-----------------------------------------------------------------------------
 //

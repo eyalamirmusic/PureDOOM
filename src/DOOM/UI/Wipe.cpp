@@ -54,7 +54,7 @@ int doColorXForm(int width, int height, int ticks)
 {
     auto& scratch = wipeState();
 
-    doom_boolean changed;
+    bool changed;
     byte* w;
     byte* e;
     int newval;
@@ -145,7 +145,7 @@ int doMelt(int width, int height, int ticks)
 
     short* s;
     short* d;
-    doom_boolean done = true;
+    bool done = true;
 
     width /= 2;
 
@@ -236,7 +236,7 @@ int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     // initial stuff
     if (!wipe_melt_running)
     {
-        wipe_melt_running = 1;
+        wipe_melt_running = true;
         wipeState().wipe_scr = screens[0];
         (*wipes[wipeno * 3])(width, height, ticks);
     }
@@ -248,7 +248,7 @@ int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     // final stuff
     if (rc)
     {
-        wipe_melt_running = 0;
+        wipe_melt_running = false;
         (*wipes[wipeno * 3 + 2])(width, height, ticks);
     }
 
@@ -268,7 +268,7 @@ int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
 // Raised while a melt is running, and the only safe thing to test: exitMelt clears
 // the column table's owning vector without refreshing the pointer to it. (Read by
 // the GPU melt compositor in EngineAccess.)
-doom_boolean wipe_melt_running = 0;
+bool wipe_melt_running = false;
 
 // The outgoing frame, as palette indices; wipe_initMelt leaves it column-major.
 byte* wipe_scr_start;

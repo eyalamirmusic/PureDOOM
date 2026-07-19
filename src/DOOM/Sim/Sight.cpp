@@ -111,10 +111,10 @@ struct SightTrace
 // not Clip - threaded down by reference the same way the aim trace threads its
 // own through aimTraverse (Sim/MapAction.cpp).
 //
-doom_boolean crossSubsector(int num,
-                            const SightTrace& trace,
-                            fixed_t& topslope,
-                            fixed_t& bottomslope)
+bool crossSubsector(int num,
+                    const SightTrace& trace,
+                    fixed_t& topslope,
+                    fixed_t& bottomslope)
 {
     Seg* seg;
     Line* line;
@@ -238,10 +238,10 @@ doom_boolean crossSubsector(int num,
 // P_CrossBSPNode
 // Returns true if strace crosses the given node successfully.
 //
-doom_boolean crossBSPNode(int bspnum,
-                          const SightTrace& trace,
-                          fixed_t& topslope,
-                          fixed_t& bottomslope)
+bool crossBSPNode(int bspnum,
+                  const SightTrace& trace,
+                  fixed_t& topslope,
+                  fixed_t& bottomslope)
 {
     Node* bsp;
     int side;

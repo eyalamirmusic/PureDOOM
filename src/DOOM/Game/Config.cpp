@@ -183,7 +183,7 @@ int numdefaults = sizeof(defaults) / sizeof(Doom::ConfigDefault);
 namespace Doom
 {
 
-int drawText(int x, int y, doom_boolean direct, char* string)
+int drawText(int x, int y, bool direct, char* string)
 {
     auto& font = hudFont();
 
@@ -216,7 +216,7 @@ int drawText(int x, int y, doom_boolean direct, char* string)
 //
 // writeFile
 //
-doom_boolean writeFile(char const* name, void* source, int length)
+bool writeFile(char const* name, void* source, int length)
 {
     void* handle;
     int count;
@@ -387,7 +387,7 @@ void loadDefaults()
     EA::Array<char, 80> def;
     EA::Array<char, 100> strparm;
     int parm;
-    doom_boolean isstring;
+    bool isstring;
 
     // Owns the storage for the string-valued defaults (currently the ten
     // chatmacroN entries) read from ~/.doomrc, in place of what was a

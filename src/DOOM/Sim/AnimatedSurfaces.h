@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
 #include "Specials.h"
 
 // Forward declaration at global scope (where r_defs.h declares it) - linespeciallist holds pointers,
@@ -18,7 +17,7 @@ namespace Doom
 // a file-scope typedef and, redundantly, a namespace one; the dead file-scope copy was deleted).
 struct SurfaceAnim
 {
-    doom_boolean istexture; // texture (else flat)
+    bool istexture; // texture (else flat)
     int picnum; // the frame currently shown
     int basepic; // the first frame
     int numpics; // # of frames

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The -timedemo benchmark state. Doom::startTimeDemo raises timingdemo and plays a demo flat out; starttime
@@ -15,7 +13,7 @@ namespace Doom
 // timingdemo stays false and starttime is written-but-unread - golden-neutral.
 struct TimeDemo
 {
-    doom_boolean timingdemo = false; // report fps and exit when the demo ends
+    bool timingdemo = false; // report fps and exit when the demo ends
     int starttime = 0; // currentTic at level start, the report's reference point
 };
 

@@ -11,5 +11,5 @@ namespace Doom
 void initSwitchList();
 void startButton(Line* line, ButtonWhere w, int texture, int time);
 void changeSwitchTexture(Line* line, int useAgain);
-doom_boolean useSpecialLine(Mobj* thing, Line* line, int side);
+bool useSpecialLine(Mobj* thing, Line* line, int side);
 } // namespace Doom

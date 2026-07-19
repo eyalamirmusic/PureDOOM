@@ -229,7 +229,7 @@ void loadThings(int lump)
     byte* data;
     MapThing* mt;
     int numthings;
-    doom_boolean spawn;
+    bool spawn;
 
     data = static_cast<byte*>(Doom::cacheLumpNum(lump));
     numthings = Doom::wad().length(lump) / sizeof(MapThing);

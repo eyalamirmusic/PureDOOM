@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The attract-mode demo loop - what the game shows when no one is playing. With no game
@@ -20,7 +18,7 @@ namespace Doom
 // mechanical, so the move is golden-neutral, which the attract-mode demo replays confirm.
 struct AttractMode
 {
-    doom_boolean advancedemo = false; // request to advance the loop next tic
+    bool advancedemo = false; // request to advance the loop next tic
     int demosequence = 0; // which entry of the attract cycle we are on
     int pagetic = 0; // tics the current page lingers
     const char* pagename = nullptr; // lump name of the current page graphic

@@ -82,7 +82,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio (engine side built, externally blocked on an eacp audio stream) and the ongoing globals-into-`Engine` work |
-| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now nearly done too**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — leaving only `Host/Sound`'s audio-blocked `paddedsfx`, `Sim/Tick`'s level pool (its own reviewed step) and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is what is left**, and its three blockers are now cleared. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now nearly done too**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — leaving only `Host/Sound`'s audio-blocked `paddedsfx`, `Sim/Tick`'s level pool (its own reviewed step) and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
 
 ## Where this is — session handoff
 
@@ -111,8 +111,10 @@ moved pixels are provably not part of any lump.
 **`src/DOOM` has no flat layer left.** It is eight subsystem directories —
 `Math/ Wad/ Sim/ Render/ UI/ Game/ Host/ Engine/` — plus exactly two files:
 `DOOM.h`, the public `extern "C"` interface an embedder includes, and
-`doomtype.h`, the `byte`/`doom_boolean` foundation every layer including `Math/`
-depends on and which therefore cannot live inside any one subsystem. It began
+`doomtype.h`, the `byte` foundation every layer including `Math/` depends on and
+which therefore cannot live inside any one subsystem (it carried `doom_boolean`
+too until Step 9 retired it; what is left there is `byte`, the `DOOM_MAX*`/`DOOM_MIN*`
+limits, and the standing list of declarations that must not become `bool`). It began
 this work as 53 flat `.cpp` and 61 flat `.h`.
 
 Concretely, all of the following are **done**:
@@ -345,33 +347,53 @@ Everything above the line is done. What follows is, in the order worth doing it:
    callers anywhere in `src/DOOM`, `Tests/` or `examples/` (verified before
    deleting; the remaining mentions were comments, now corrected). `zoneBase` would
    still have `doom_malloc`'d a 12 MB arena and leaked it.
-3. **`doom_boolean` is still an `int`** — now the largest remaining item, 312 sites.
-   **Its three blockers are cleared** (see the section below, which records what each
-   one actually was): `MapTexture::masked` and `deathmatch` are now `int`, declared
-   as what their storage always held, and the ARMS widget has its own
-   `StatusBarWidgets::w_armsindex[6]` instead of punning `weaponowned` through
-   `(int*)`. All three were behaviour-neutral by construction and verified so.
-   The flip itself is still to do, in this order: **Render** (20 sites, isolated and
-   frame-golden covered), **Host** (4, trivial but golden-blind since audio is),
-   then **Sim + Game atomically** (73 + 90 — they share `Player` and
-   `SaveGame.cpp`'s whole-struct `doom_memcpy`, so a partial flip corrupts the
-   save round-trip), then **UI** (124, largest but shallowest once the ARMS
-   widget is untangled).
+3. ~~**`doom_boolean` is still an `int`.**~~ **Done.** All ~288 uses are a real
+   `bool` and **the typedef is deleted from `doomtype.h`**, so there is no longer a
+   type in this engine that says "boolean" and means "int". It went in the planned
+   four batches — **Render** (19), **Host** (4), **UI** (104), **Sim + Game + `SimProbe`**
+   (161) — each verified against the full four gates: build clean, 82/82, all six
+   goldens byte-identical, and `PureDoomEACP` linking.
 
-   The save format is only ever round-tripped within one build — `Tests/Goldens`
-   holds no save file — so a layout change is self-consistent *provided every
-   `doom_boolean`-carrying struct flips in one commit*. Consider bumping the
-   savegame version so an older `.dsg` is rejected rather than silently misread.
-   `Tests/SimProbe.cpp` uses `doom_boolean` as a `Traverser` return type and
-   needs updating in lockstep.
+   **The version bump this entry used to suggest was not made, and should not be.**
+   There is no savegame-format version to bump. `Game/Game.cpp` stamps saves with
+   `VERSION` (110, `Game/GameDefs.h`) — and that same constant is the **demo** header
+   version, written at `Game.cpp:1549` and gated at `:1588`. It is the *game* version,
+   wired to two formats; bumping it to invalidate old `.dsg` files reaches for a knob
+   that also moves the demo stream. The exposure it was meant to close is small
+   anyway: no `.dsg` is committed, `Tests/Goldens/` holds none, and the format is only
+   ever round-tripped inside one build, where `sizeof` is consistent on both sides.
+   If old-save rejection is ever genuinely wanted, add a *separate* save-format
+   version field rather than overloading `VERSION`.
 
-   Verified **not** hazards, so they need no special handling: `TiccmdInput`'s
-   `mousebuttons`/`joybuttons` are same-type interior views; the config
-   `defaults[]` table binds `int*` onto members that are already `int`; there is
-   no `union` and no `#pragma pack` anywhere in `src/DOOM`; `Wad/MapFormat.h` and
-   `Game/Ticcmd.h` carry no `doom_boolean`; the demo header is written a byte at
-   a time; `Game.cpp`'s `paused ^= 1` and `Hud.cpp`'s `numplayers +=
-   playeringame[i]` are both safe on a `bool`.
+   **One narrow behavioural difference the goldens cannot see, recorded rather than
+   fixed.** `DoomMain.cpp:850-853` assigns `opts.nomonsters = checkParm("-nomonsters")`
+   and friends — and `checkParm` returns an **argv index**, not 0/1. `Game.cpp:1561`
+   then writes that value into a recorded demo's header (`*demo.demo_p++ =
+   opts.respawnparm`), so a flag sitting at argv[3] used to put a `3` in that byte and
+   now puts a `1`. Gameplay is identical in both directions — every consumer
+   truth-tests, and read-back treats any non-zero as set — and no golden covers it,
+   because the goldens only ever *play demos back*, never record one. It is noted
+   because "the flip was byte-neutral everywhere" would be a slightly stronger claim
+   than the truth.
+
+   Verified **not** hazards, and each traced to the bottom rather than pattern-matched:
+   `TiccmdInput`'s `mousebuttons`/`joybuttons` are same-type interior views, and though
+   `gameResponder` assigns raw masks into them (`mousebuttons[1] = ev->data1 & 2`), the
+   `dclickstate` they are compared against is a plain `int` assigned *only* from those
+   same arrays, so both sides normalise identically; the config `defaults[]` table binds
+   `int*` onto members that are already `int`; there is no `union` and no `#pragma pack`
+   anywhere in `src/DOOM`; the demo and save streams move these values through a `byte*`
+   cursor, so each transfer was one byte either way; `Game.cpp`'s `paused ^= 1` compiles
+   warning-free on a `bool` under `-Wall -Wextra -Wpedantic`; and `Hud.cpp`'s
+   `numplayers += playeringame[i]` is safe, `bool` promoting to 0/1.
+
+   One site was a genuine judgement call and was flipped deliberately:
+   `Game.cpp:1126`'s `doom_memcpy(statcopy, &wminfo_, sizeof(wminfo_))`. `statcopy` is a
+   raw address parsed from the DOS-era `-statcopy` flag for another process to read, so
+   `wminfo_`'s layout is nominally an external ABI and the flip moved it. Nothing in this
+   repository consumes it and an absolute pointer shared between two processes cannot work
+   on a modern OS, so it moved with the rest of the struct, with the reasoning left at the
+   call site.
 4. ~~**Write-only state: `AutomapView::min_w` / `min_h`.**~~ **Resolved, and they
    are deleted.** The suspicion recorded here was that vanilla computed the
    zoom-out limit from them and that the rewrite had **lost a read** — a real bug.
@@ -453,22 +475,71 @@ Everything above the line is done. What follows is, in the order worth doing it:
    generated tables are built from them, and renaming them is high-churn and
    zero-value.
 
-Recently finished, for orientation: the 247 file-local reference aliases (strand
-(a), seven batches); `MovementSpeeds` and `VideoState::dirtybox` retyped to
-`int`; the hitscan traversers returning `AimResult`; frame goldens for the
-automap and the finale; and the constructible `Engine` with the test that proves
-it.
+Recently finished, for orientation: **the `doom_boolean` flip and the deletion of the
+typedef** (four batches, ~288 sites — the newest work); the 247 file-local reference
+aliases (strand (a), seven batches); `MovementSpeeds` and `VideoState::dirtybox`
+retyped to `int`; the hitscan traversers returning `AimResult`; frame goldens for the
+automap and the finale; and the constructible `Engine` with the test that proves it.
 
-### Three types that lie, found under `doom_boolean` — all three now corrected
+**How the `doom_boolean` flip was actually run, since the method is the transferable
+part.** The mechanical substitution is not the work; finding the sites where it is
+*not* mechanical is. What that took, in order:
 
-These were the hard blockers for the `doom_boolean` flip, and all three are the
+1. **Audit before editing, by hazard class rather than by spelling.** Four classes
+   were worth enumerating up front — a value that is not 0/1 whose *number* is read;
+   an address handed to something that reads a fixed byte count; a struct that is
+   `memcpy`'d, persisted or overlaid on foreign bytes; and a pun between a boolean
+   array and another type. Two real findings came from the address class alone
+   (`ioctl`'s `trueval`, and `-statcopy`'s external struct), and **neither is visible
+   from the declaration** — only from asking who else reads those bytes.
+2. **Pre-clear the false alarms, in writing.** Eight sites match a dangerous pattern
+   and are safe (`solid = thing->flags & MF_SOLID` and the rest). Handing that list to
+   whoever does the edit is what stops the flip stalling on each one, and it forces the
+   trace to be done once, properly, rather than re-argued per site.
+3. **Know what the goldens cannot see, before trusting them.** They are extraordinarily
+   sharp on the simulation and blind in three specific places: `deathmatch != 0` (all
+   three demos are single-player), the netgame paths, and audio. Every `doom_boolean`
+   in those regions was read by hand — `gameResponder`'s raw `ev_mouse` masks are the
+   clearest case, since a demo feeds `Ticcmd`s directly and never produces one.
+4. **Build the app.** `wipe_melt_running` is a `bool` crossing into
+   `examples/EACP/EngineAccess.cpp`, and `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` never
+   compiles that file. The already-documented fourth gate earned its place again.
+
+### Types that lie, found under `doom_boolean` — five of them, all now corrected
+
+These were the hard blockers for the `doom_boolean` flip, and every one is the
 same shape: a declaration that says "boolean" over storage that holds something
-else. Each is now declared as what it actually is. **All three corrections are
-behaviour-neutral by construction** — `doom_boolean` *is* `int` today, so the
+else. Each is now declared as what it actually is. **The corrections are
+behaviour-neutral by construction** — `doom_boolean` *was* `int`, so the
 storage, the layout and every value read are unchanged; what the change buys is
-that the flip can no longer reach them. Verified: build clean, 82/82, all six
+that the flip could no longer reach them. Verified: build clean, 82/82, all six
 goldens byte-identical, app links. What each one was, kept because the *reasons*
 are the load-bearing part:
+
+**Three were found before the flip** (the first three below). **Two more surfaced
+during it**, and the way each was found is the reusable part:
+
+- **`Host/Net.cpp`'s `trueval`** is handed to `ioctl(insocket, FIONBIO, &trueval)`,
+  which reads a full word back through that address — a one-byte `bool` makes that
+  three bytes of neighbouring stack. **Now `int`.** It was found not by reading the
+  declaration but by asking, of every `doom_boolean`, whether its *address* goes
+  anywhere that reads a fixed byte count. The confirmation was sitting four lines up:
+  the Windows arm of the same `#if` already spells it `u_long trueval = 1`, because
+  that ABI's own header forced someone to get it right on one side only.
+- **`Sim/Specials.cpp`'s `AnimDef::istexture`** was *already* a plain `int`, with a
+  comment saying why: the animdefs table terminates on a `{-1, "", "", 0}` sentinel,
+  and under a real `bool` that `-1` reads as `true`, so the end-of-table test never
+  fires and the scan runs off the array. Worth listing because it is the same class
+  caught by a previous reader, and because the neighbouring `SurfaceAnim::istexture`
+  — the *destination* it is copied into — is safely `bool`, the copy happening only
+  for rows the loop guard has already excluded the sentinel from.
+
+**The general shape, since five instances is enough to call it a rule:** a boolean
+declaration is lying whenever its storage is *not* private to the program — an
+on-disk field, an OS/ABI call reading through its address, a wire or table sentinel,
+or a value with more than two meanings. Grepping the type finds none of these. What
+finds them is asking of each site: who else reads these bytes, and how many do they
+expect?
 
 - **`Render/Data.cpp`'s `MapTexture::masked`** is `doom_boolean` in a struct
   *overlaid directly onto raw `TEXTURE1`/`TEXTURE2` lump bytes*. Its value is
@@ -499,12 +570,27 @@ are the load-bearing part:
   in exactly one place — `initStatusBarData`, immediately before `createWidgets` —
   so the widget and the player can never disagree about which player is shown.
 
-**A false trap, now corrected.** `Game/PlayerState.h` claimed vanilla makes
-`(int*)` casts into `playeringame` that "rely on `doom_boolean` being
-int-sized." There are none, anywhere in the tree — the note generalized from
-the `weaponowned` precedent. A wrong warning about a load-bearing quirk is worse
-than no warning: it sends the next reader hunting for a hazard that does not
-exist, or preserves a constraint nothing needs.
+**A false trap — and this document said it was corrected while it was still there.**
+`Game/PlayerState.h` claimed vanilla makes `(int*)` casts into `playeringame` that
+"rely on `doom_boolean` being int-sized." There are none, anywhere in the tree — not
+in `src/DOOM`, not in `Tests/`, not in `examples/`; the note had generalized from the
+real `weaponowned` precedent. A wrong warning about a load-bearing quirk is worse than
+no warning: it sends the next reader hunting for a hazard that does not exist, or
+preserves a constraint nothing needs.
+
+**The correction is now actually in the file** — it was not before. This entry read
+"now corrected" for a full session while `PlayerState.h:19` still carried the warning
+verbatim: the fix had been written into *this document* and never into the source. It
+was found only because the `doom_boolean` flip had to read every one of those
+declarations anyway.
+
+That is the same failure as strand (a)'s three false completions, in a new place, and
+it sharpens the lesson rather than repeating it. **A claim in this file is not evidence
+about the tree.** The earlier rule — prefer a claim a *test* can fail over one only a
+grep can support — has a corollary for the claims that no test can hold: when the
+correction is to a *comment*, the document recording it and the thing being corrected
+are both prose, and nothing but re-reading the source will ever catch the gap. Cite
+the file:line you actually changed, so the claim can be checked against something.
 
 ### Traps carried from earlier sessions
 
@@ -906,8 +992,10 @@ fetches from GitHub `main` by default — the GPU-palette features this port nee
 have merged, so no `-DCPM_eacp_SOURCE` override is required (pass one only to
 co-develop against a local eacp checkout).
 
-**Traps already paid for, do not rediscover:** `doom_boolean` must stay `int` (not
-`bool`); `pointOnLineSide` and `pointOnDivlineSide` are different formulae on
+**Traps already paid for, do not rediscover:** ~~`doom_boolean` must stay `int` (not
+`bool`)~~ *(superseded — Step 9 flipped it engine-wide and deleted the typedef; what
+survives is four specific `int`s listed in `doomtype.h`)*;
+`pointOnLineSide` and `pointOnDivlineSide` are different formulae on
 purpose; deleting a statement can silently orphan an unbraced `if`/`for` body;
 changing a renderer allocator re-triggers tutti-frutti on composite pixel blocks;
 the engine cannot re-`doom_init` but does not need to. All detailed in the step
@@ -1046,7 +1134,11 @@ bit-identical to the C engine's, tic for tic, and the WAD reads back the same
 bytes. Which is what the step promised, and the only thing that could have
 demonstrated it.
 
-**`doom_boolean` is an `int`, and must stay one.** `doomtype.h` already had a
+**`doom_boolean` is an `int`, and must stay one** — *true as written, for Step 2. Step
+9 has since flipped it to `bool` engine-wide and deleted the typedef; what made that
+safe was untangling the very cast described below, not discovering it was harmless.
+Kept because the failure it records is the reason the flip took four batches and an
+audit.* `doomtype.h` already had a
 `typedef bool` waiting behind `#ifdef __cplusplus`, and taking it was the single
 worst thing that happened here. Vanilla reads booleans through pointers to other
 types — `ST_createWidgets` binds the status bar's ARMS widget with

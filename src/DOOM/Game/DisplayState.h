@@ -18,10 +18,10 @@ namespace Doom
 // every tic in the headless suite, so this is live frame-golden-covered.
 struct DisplayState
 {
-    doom_boolean viewactivestate = false; // last frame's viewactive
-    doom_boolean menuactivestate = false; // last frame's menuactive
-    doom_boolean inhelpscreensstate = false; // last frame's inhelpscreens
-    doom_boolean fullscreen = false; // last frame's full-view (viewheight == 200)
+    bool viewactivestate = false; // last frame's viewactive
+    bool menuactivestate = false; // last frame's menuactive
+    bool inhelpscreensstate = false; // last frame's inhelpscreens
+    bool fullscreen = false; // last frame's full-view (viewheight == 200)
     GameState oldgamestate =
         static_cast<GameState>(-1); // last drawn gamestate, -1 forces a redraw
     int borderdrawcount = 0; // frames of view-border redraw still owed

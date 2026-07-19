@@ -61,7 +61,7 @@ void Doom::playerReborn(int player);
 namespace Doom
 {
 
-doom_boolean setMobjState(Mobj* mobj, StateNum state)
+bool setMobjState(Mobj* mobj, StateNum state)
 {
     State* st;
 
@@ -562,8 +562,7 @@ void respawnSpecials()
         return;
 
     // wait at least 30 seconds
-    if (levelStats().leveltime - queue.itemrespawntime[queue.iquetail]
-        < 30 * 35)
+    if (levelStats().leveltime - queue.itemrespawntime[queue.iquetail] < 30 * 35)
         return;
 
     mthing = &queue.itemrespawnque[queue.iquetail];
@@ -862,9 +861,9 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 
     // fuzzy player
     if (dest->flags & MF_SHADOW)
-        an += angle_t {(unsigned) (Doom::randomness().forPlay()
-                           - Doom::randomness().forPlay())
-               << 20};
+        an += angle_t {
+            (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+            << 20};
 
     th->angle = an;
     const auto anFine = an.fineIndex();
@@ -935,10 +934,8 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
 
     th->target = source;
     th->angle = an;
-    th->momx =
-        FixedMul(Doom::Fixed {th->info->speed}, finecosine[an.fineIndex()]);
-    th->momy =
-        FixedMul(Doom::Fixed {th->info->speed}, finesine[an.fineIndex()]);
+    th->momx = FixedMul(Doom::Fixed {th->info->speed}, finecosine[an.fineIndex()]);
+    th->momy = FixedMul(Doom::Fixed {th->info->speed}, finesine[an.fineIndex()]);
     th->momz = FixedMul(Doom::Fixed {th->info->speed}, slope);
 
     checkMissileSpawn(th);

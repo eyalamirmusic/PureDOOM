@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
 #include "SoundData.h" // MusicInfo (an anonymous-struct typedef, so it cannot be
 // forward-declared - only a pointer is held here regardless); also Doom::SfxInfo
 
@@ -51,7 +50,7 @@ struct SoundState
     // GraphicsData's arrays use).
     EA::Vector<SoundChannel> channels;
 
-    doom_boolean mus_paused = false; // whether songs are paused
+    bool mus_paused = false; // whether songs are paused
     MusicInfo* mus_playing = nullptr; // music currently being played
 };
 

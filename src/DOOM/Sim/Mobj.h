@@ -9,7 +9,7 @@ namespace Doom
 // (and info.cpp's state actions, p_saveg, the sim probe) use those. Covered exactly
 // by the demos (every monster, missile and item is an mobj) and golden-neutral.
 
-doom_boolean setMobjState(Mobj* mobj, StateNum state);
+bool setMobjState(Mobj* mobj, StateNum state);
 void mobjThinker(Mobj* mobj);
 Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type);
 void removeMobj(Mobj* mobj);

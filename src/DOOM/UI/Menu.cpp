@@ -315,9 +315,7 @@ void writeText(int x, int y, const char* string);
 int stringWidth(const char* string);
 int stringHeight(const char* string);
 void startControlPanel();
-void startMessage(const char* string,
-                  std::function<void(int)> routine,
-                  doom_boolean input);
+void startMessage(const char* string, std::function<void(int)> routine, bool input);
 void stopMessage();
 void clearMenus();
 void drawMouseOptions();
@@ -1460,9 +1458,7 @@ void drawSelCell(MenuDef* menu, int item)
                           static_cast<Patch*>(Doom::cacheLumpName("M_CELL2")));
 }
 
-void startMessage(const char* string,
-                  std::function<void(int)> routine,
-                  doom_boolean input)
+void startMessage(const char* string, std::function<void(int)> routine, bool input)
 {
     auto& overlay = overlayState();
     auto& state = menuState();
@@ -1571,7 +1567,7 @@ void writeText(int x, int y, const char* string)
 //
 // menuResponder
 //
-doom_boolean menuResponder(Event* ev)
+bool menuResponder(Event* ev)
 {
     auto& overlay = overlayState();
     auto& players_ = playerState();
@@ -2097,12 +2093,11 @@ void initMenu()
     auto& overlay = overlayState();
     auto& state = menuState();
 
-    doom_boolean hide_mouse =
-        (doom_flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
-    doom_boolean hide_sound = ((doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
-                               && (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
-                                  ? true
-                                  : false;
+    bool hide_mouse = (doom_flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
+    bool hide_sound = ((doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
+                       && (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
+                          ? true
+                          : false;
 
     OptionsMenu = OptionsMenuFull.data();
     if (hide_mouse && !hide_sound)

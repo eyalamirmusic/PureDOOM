@@ -28,23 +28,23 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 MoveResult movePlane(Sector& sector,
-                   fixed_t speed,
-                   fixed_t dest,
-                   doom_boolean crush,
-                   int floorOrCeiling,
-                   int direction);
+                     fixed_t speed,
+                     fixed_t dest,
+                     bool crush,
+                     int floorOrCeiling,
+                     int direction);
 void moveFloor(FloorMove& floor);
 int doFloor(Line* line, FloorType floortype);
 int buildStairs(Line* line, StairType type);
 
 MoveResult movePlane(Sector& sector,
-                   fixed_t speed,
-                   fixed_t dest,
-                   doom_boolean crush,
-                   int floorOrCeiling,
-                   int direction)
+                     fixed_t speed,
+                     fixed_t dest,
+                     bool crush,
+                     int floorOrCeiling,
+                     int direction)
 {
-    doom_boolean flag;
+    bool flag;
     fixed_t lastpos;
 
     switch (floorOrCeiling)
@@ -208,7 +208,7 @@ void moveFloor(FloorMove& floor)
 
     if (!(levelStats().leveltime & 7))
         Doom::startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
-                     sfx_stnmov);
+                         sfx_stnmov);
 
     if (res == pastdest)
     {
@@ -238,7 +238,8 @@ void moveFloor(FloorMove& floor)
         }
         Doom::removeThinker(&floor);
 
-        Doom::startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), sfx_pstop);
+        Doom::startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
+                         sfx_pstop);
     }
 }
 

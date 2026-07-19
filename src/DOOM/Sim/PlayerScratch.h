@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The player-movement scratch: onground, set once a tic by P_MovePlayer from whether the player is
@@ -16,7 +14,7 @@ namespace Doom
 // confirmation.
 struct PlayerScratch
 {
-    doom_boolean onground = false; // the player is standing on the floor this tic
+    bool onground = false; // the player is standing on the floor this tic
 };
 
 // The one PlayerScratch, a view onto the Engine's member (distinct from PlayerState, the roster).

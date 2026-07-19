@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameDefs.h" // GameMode, Language
-#include "../doomtype.h" // doom_boolean
 
 namespace Doom
 {
@@ -23,12 +22,11 @@ namespace Doom
 // rather than carried, as no read was lost.
 struct GameVersion
 {
-    GameMode gamemode =
-        indetermined; // shareware / registered / retail / commercial
+    GameMode gamemode = indetermined; // shareware / registered / retail / commercial
 
     Language language = english; // string-table language
 
-    doom_boolean modifiedgame = 0; // a PWAD has modified the game
+    bool modifiedgame = false; // a PWAD has modified the game
 };
 
 // The one GameVersion, a view onto the Engine's member - the same pattern as

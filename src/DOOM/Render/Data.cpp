@@ -59,7 +59,8 @@ struct MapTexture
     // onto raw TEXTURE1/TEXTURE2 lump bytes. The value is never read, but its four
     // bytes are load-bearing - as a one-byte bool, width/height/columndirectory/
     // patchcount below would all shift by three and every texture in every WAD would
-    // parse as garbage. Declared int so the doom_boolean->bool flip cannot reach it.
+    // parse as garbage. It was declared int ahead of the engine-wide flip to bool
+    // precisely so that flip could not reach it, and it stays int for the same reason.
     int masked;
     short width;
     short height;

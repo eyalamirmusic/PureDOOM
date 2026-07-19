@@ -37,13 +37,14 @@ struct StatusBarWidgets
     // from plyr->weaponowned[i + 1] by drawWidgets immediately before it updates them.
     //
     // Vanilla bound the widget straight to the player with its own cast,
-    // `(int*) &plyr->weaponowned[i + 1]`, punning a doom_boolean array element as a 4-byte
-    // int. That only works while doom_boolean IS an int: at one byte the widget would read
-    // four neighbouring elements at once, and for i == 5 spill past the array into the
-    // int ammo[] that follows it. This array is the untangling REFACTOR.md requires before
-    // the doom_boolean -> bool flip; the copy is behaviour-identical because updateMultIcon
-    // only ever reads through inum, and plyr is assigned in exactly one place -
-    // initStatusBarData, immediately before createWidgets - so the two can never disagree.
+    // `(int*) &plyr->weaponowned[i + 1]`, punning an element of what was then an
+    // int-sized boolean array as a 4-byte int. weaponowned is `bool[]` now, so that
+    // cast would read four neighbouring elements at once and, for i == 5, spill past
+    // the array into the int ammo[] that follows it. This array is the untangling that
+    // had to land before weaponowned could become bool at all; the copy is
+    // behaviour-identical because updateMultIcon only ever reads through inum, and plyr
+    // is assigned in exactly one place - initStatusBarData, immediately before
+    // createWidgets - so the two can never disagree about which player is shown.
     int w_armsindex[6] = {};
 
     // The "n/a" sentinel w_ready.num points at when the ready weapon uses no ammo (fist/chainsaw).

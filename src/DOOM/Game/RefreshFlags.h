@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The refresh flags the game loop sets and the display reads. paused freezes the tic while
@@ -19,10 +17,10 @@ namespace Doom
 // this is where it lands.)
 struct RefreshFlags
 {
-    doom_boolean paused = 0; // tic frozen, still redrawing
-    doom_boolean viewactive = 0; // the 3D view is being drawn
-    doom_boolean nodrawers = 0; // -nodraw: skip the render (timing)
-    doom_boolean noblit = 0; // -noblit: skip the blit (timing)
+    bool paused = false; // tic frozen, still redrawing
+    bool viewactive = false; // the 3D view is being drawn
+    bool nodrawers = false; // -nodraw: skip the render (timing)
+    bool noblit = false; // -noblit: skip the blit (timing)
 };
 
 // The one RefreshFlags, a view onto the Engine's member - the same pattern as

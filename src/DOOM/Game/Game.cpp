@@ -159,8 +159,8 @@ void Doom::executeSetViewSize();
 
 // The interior views onto Doom::TiccmdInput's button arrays, offset by one so vanilla's [-1]
 // index (an unbound button) stays in bounds.
-doom_boolean* mousebuttons = &Doom::ticcmdInput().mousearray[1];
-doom_boolean* joybuttons = &Doom::ticcmdInput().joyarray[1];
+bool* mousebuttons = &Doom::ticcmdInput().mousearray[1];
+bool* joybuttons = &Doom::ticcmdInput().joyarray[1];
 
 int savegameslot;
 EA::Array<char, 32> savedescription;
@@ -170,7 +170,7 @@ EA::Array<char, 32> savedescription;
 
 void* statcopy; // for statistics driver
 
-doom_boolean secretexit;
+bool secretexit;
 
 const char* defdemoname;
 
@@ -182,7 +182,7 @@ namespace Doom
 {
 
 // Forward declarations so call order needs no rearranging.
-doom_boolean checkDemoStatus();
+bool checkDemoStatus();
 void readDemoTiccmd(Ticcmd* cmd);
 void writeDemoTiccmd(Ticcmd* cmd);
 void playerReborn(int player);
@@ -220,8 +220,8 @@ void buildTiccmd(Ticcmd* cmd)
     auto& net = netState();
     auto& pending = pendingCommands();
 
-    doom_boolean strafe;
-    doom_boolean bstrafe;
+    bool strafe;
+    bool bstrafe;
     int speed;
     int tspeed;
     int forward;
@@ -238,9 +238,9 @@ void buildTiccmd(Ticcmd* cmd)
     strafe = input.gamekeydown[config.key_strafe]
              || mousebuttons[config.mousebstrafe] || joybuttons[config.joybstrafe];
 
-    doom_boolean running =
-        config.always_run ? (input.gamekeydown[config.key_speed] ? false : true)
-                          : (input.gamekeydown[config.key_speed] ? true : false);
+    bool running = config.always_run
+                       ? (input.gamekeydown[config.key_speed] ? false : true)
+                       : (input.gamekeydown[config.key_speed] ? true : false);
     speed = running || joybuttons[config.joybspeed];
 
     forward = side = 0;
@@ -478,7 +478,7 @@ void doLoadLevel()
 // gameResponder
 // Get info needed to make ticcmd_ts for the players.
 //
-doom_boolean gameResponder(Event* ev)
+bool gameResponder(Event* ev)
 {
     auto& flow = gameFlow();
     auto& demo = demoState();
@@ -834,7 +834,7 @@ void playerReborn(int player)
 // because something is occupying it
 //
 
-doom_boolean checkSpot(int playernum, MapThing* mthing)
+bool checkSpot(int playernum, MapThing* mthing)
 {
     auto& players_ = playerState();
     auto& corpses = corpseQueue();
@@ -1123,6 +1123,13 @@ void doCompleted()
     refreshFlags().viewactive = false;
     overlay.automapactive = false;
 
+    // wminfo_'s layout (IntermissionStart/IntermissionPlayer, including their
+    // doom_boolean-turned-bool fields) is nominally an external ABI here - statcopy
+    // is a raw address parsed from the DOS-era -statcopy flag, for some other
+    // process to read. The doom_boolean -> bool flip moved that layout. Nothing in
+    // this repository consumes statcopy, and the flag cannot work against a modern
+    // process anyway (an absolute pointer between two processes), so this is left
+    // to move with the rest of the struct rather than carved out.
     if (statcopy)
         doom_memcpy(statcopy, &wminfo_, sizeof(wminfo_));
 
@@ -1349,7 +1356,7 @@ void doNewGame()
     session.netgame = false;
     session.deathmatch = false;
     players_.playeringame[1] = players_.playeringame[2] = players_.playeringame[3] =
-        0;
+        false;
     opts.respawnparm = false;
     opts.fastparm = false;
     opts.nomonsters = false;
@@ -1650,7 +1657,7 @@ void startTimeDemo(char* name)
 ===================
 */
 
-doom_boolean checkDemoStatus()
+bool checkDemoStatus()
 {
     auto& demo = demoState();
     auto& timedemo = timeDemo();
@@ -1685,7 +1692,7 @@ doom_boolean checkDemoStatus()
         session.netgame = false;
         session.deathmatch = false;
         players_.playeringame[1] = players_.playeringame[2] =
-            players_.playeringame[3] = 0;
+            players_.playeringame[3] = false;
         opts.respawnparm = false;
         opts.fastparm = false;
         opts.nomonsters = false;

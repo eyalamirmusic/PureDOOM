@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
 #include "../Sim/MapTypes.h"
-#include "RenderTypes.h"   // LightTable
+#include "RenderTypes.h" // LightTable
 
 namespace Doom
 {
@@ -19,19 +18,21 @@ namespace Doom
 // demos draw is stored through these.
 struct SegState
 {
-    doom_boolean segtextured = false; // the seg has a wall texture to draw
-    doom_boolean markfloor = false;   // draw the floor plane for this seg
-    doom_boolean markceiling = false; // draw the ceiling plane for this seg
+    bool segtextured = false; // the seg has a wall texture to draw
+    bool markfloor = false; // draw the floor plane for this seg
+    bool markceiling = false; // draw the ceiling plane for this seg
 
-    int toptexture = 0;    // upper texture number
+    int toptexture = 0; // upper texture number
     int bottomtexture = 0; // lower texture number
-    int midtexture = 0;    // middle texture number
+    int midtexture = 0; // middle texture number
 
-    int rw_x = 0;     // current column being drawn
+    int rw_x = 0; // current column being drawn
     int rw_stopx = 0; // one past the last column
 
-    LightTable** walllights = nullptr; // light row (a scalelight/zlight row) for the seg
-    short* maskedtexturecol = nullptr;   // per-column offsets into the masked middle texture
+    LightTable** walllights =
+        nullptr; // light row (a scalelight/zlight row) for the seg
+    short* maskedtexturecol =
+        nullptr; // per-column offsets into the masked middle texture
 };
 
 SegState& segState();

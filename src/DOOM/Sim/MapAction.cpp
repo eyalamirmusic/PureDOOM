@@ -92,7 +92,7 @@ void hitSlideLine(Line* ld)
 //
 // PTR_SlideTraverse
 //
-doom_boolean slideTraverse(Intercept* in)
+bool slideTraverse(Intercept* in)
 {
     Clip& clip = Doom::clip();
     auto& scratch = actionScratch();
@@ -148,12 +148,12 @@ isblocking:
 // aimLineAttack now, and the result - which used to be Clip::linetarget/aimslope -
 // is written into `result` by reference (REFACTOR.md, Step 9 strand (a)).
 //
-doom_boolean aimTraverse(Intercept* in,
-                         Mobj* shootthing,
-                         fixed_t shootz,
-                         fixed_t& topslope,
-                         fixed_t& bottomslope,
-                         AimResult& result)
+bool aimTraverse(Intercept* in,
+                 Mobj* shootthing,
+                 fixed_t shootz,
+                 fixed_t& topslope,
+                 fixed_t& bottomslope,
+                 AimResult& result)
 {
     Clip& clip = Doom::clip();
 
@@ -239,7 +239,7 @@ doom_boolean aimTraverse(Intercept* in,
 // the damage) rides along as captures from lineAttack now (REFACTOR.md, Step 9
 // strand (a)).
 //
-doom_boolean shootTraverse(
+bool shootTraverse(
     Intercept* in, Mobj* shootthing, fixed_t shootz, fixed_t aimslope, int la_damage)
 {
     Clip& clip = Doom::clip();
@@ -367,7 +367,7 @@ doom_boolean shootTraverse(
 // The per-line half of Doom::useLines. `usething` was a global purely so this
 // could see who pressed use; it is a capture now.
 //
-static doom_boolean useTraverse(Intercept* in, Mobj* usething)
+static bool useTraverse(Intercept* in, Mobj* usething)
 {
     Clip& clip = Doom::clip();
 
@@ -404,7 +404,7 @@ static doom_boolean useTraverse(Intercept* in, Mobj* usething)
 // cannot carry context; it is a lambda over those three now, so the globals are
 // gone (REFACTOR.md, Step 9).
 //
-static doom_boolean
+static bool
     radiusAttackThing(Mobj* thing, Mobj* bombspot, Mobj* bombsource, int bombdamage)
 {
     fixed_t dx;
@@ -451,8 +451,7 @@ static doom_boolean
 // context in and nofit a global carrying the answer back out; they are a capture
 // and an out-parameter now.
 //
-static doom_boolean
-    changeSectorThing(Mobj* thing, doom_boolean crushchange, doom_boolean& nofit)
+static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 {
     Mobj* mo;
 
@@ -750,9 +749,9 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
 //
 // Doom::changeSector
 //
-bool changeSector(Sector* sector, doom_boolean crunch)
+bool changeSector(Sector* sector, bool crunch)
 {
-    doom_boolean nofit = false;
+    bool nofit = false;
 
     const auto clipThing = [crunch, &nofit](Mobj* thing)
     { return changeSectorThing(thing, crunch, nofit); };

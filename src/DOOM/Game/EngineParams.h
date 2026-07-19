@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // doomstat.h's "Internal parameters, used for engine" section - the three loose scalars that are
@@ -25,8 +23,8 @@ namespace Doom
 struct EngineParams
 {
     void* debugfile = nullptr; // -debugfile packet-trace output (0 = none)
-    doom_boolean precache = true; // load all graphics at level load
-    doom_boolean singletics = true; // one tic per loop iteration, no adaptiveness
+    bool precache = true; // load all graphics at level load
+    bool singletics = true; // one tic per loop iteration, no adaptiveness
 };
 
 // The one EngineParams, a view onto the Engine's member - the same pattern as the other clusters.

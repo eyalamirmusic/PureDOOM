@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The command-line parameters that modify the game, checked long after startup. The three
@@ -17,10 +15,10 @@ namespace Doom
 // hash's path, but a reference reads the identical value, so the move is golden-neutral.
 struct LaunchOptions
 {
-    doom_boolean nomonsters = 0; // -nomonsters: no monsters at all
-    doom_boolean respawnparm = 0; // -respawn: monsters respawn
-    doom_boolean fastparm = 0; // -fast: fast monsters and missiles
-    doom_boolean devparm = 0; // -devparm: developer mode
+    bool nomonsters = false; // -nomonsters: no monsters at all
+    bool respawnparm = false; // -respawn: monsters respawn
+    bool fastparm = false; // -fast: fast monsters and missiles
+    bool devparm = false; // -devparm: developer mode
 };
 
 // The one LaunchOptions, a view onto the Engine's member - the same pattern as

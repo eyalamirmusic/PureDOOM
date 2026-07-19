@@ -80,9 +80,6 @@
 // and read through those externs by Game/Game.cpp, Game/DoomMain.cpp and Host/Net.cpp, so the
 // references stay until their readers go through netState() too (REFACTOR.md, Step 5).
 
-
-
-
 void Doom::processEvents();
 void Doom::buildTiccmd(Doom::Ticcmd* cmd);
 void Doom::doAdvanceDemo();
@@ -216,7 +213,7 @@ void hSendPacket(int node, int flags)
 // hGetPacket
 // Returns false if no packet is waiting
 //
-doom_boolean hGetPacket()
+bool hGetPacket()
 {
     auto& net = netState();
     auto* debugfile = engineParams().debugfile;
@@ -450,7 +447,7 @@ void netUpdate()
     int gameticdiv;
 
     auto& net = netState();
-    const doom_boolean singletics = engineParams().singletics;
+    const bool singletics = engineParams().singletics;
 
     // check time
     nowtime = currentTic() / net.ticdup;
@@ -568,7 +565,7 @@ void checkAbort()
 void dArbitrateNetStart()
 {
     int i;
-    doom_boolean gotinfo[MAXNETNODES];
+    bool gotinfo[MAXNETNODES];
 
     auto& net = netState();
     auto& defaults_ = startupDefaults();

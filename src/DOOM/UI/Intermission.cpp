@@ -285,7 +285,7 @@ void slamBackground()
 
 // The ticker is used to detect keys
 //  because of timing issues in netgames.
-doom_boolean intermissionResponder(Event*)
+bool intermissionResponder(Event*)
 {
     return false;
 }
@@ -339,7 +339,7 @@ void drawOnLnode(int n, Patch* c[])
     int top;
     int right;
     int bottom;
-    doom_boolean fits = false;
+    bool fits = false;
 
     i = 0;
     do
@@ -730,7 +730,7 @@ void updateDeathmatchStats()
     auto& im = intermissionState();
     const auto& players_ = playerState();
 
-    doom_boolean stillticking;
+    bool stillticking;
 
     updateAnimatedBack();
 
@@ -937,7 +937,7 @@ void updateNetgameStats()
 
     int fsum;
 
-    doom_boolean stillticking;
+    bool stillticking;
 
     updateAnimatedBack();
 

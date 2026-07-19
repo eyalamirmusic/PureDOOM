@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
 #include "../Math/FixedPoint.h" // fixed_t
 #include "../Math/TrigTables.h" // angle_t
 
@@ -23,7 +22,7 @@ namespace Doom
 // confirmation.
 struct WallScratch
 {
-    doom_boolean maskedtexture = false; // the seg has a masked middle texture
+    bool maskedtexture = false; // the seg has a masked middle texture
 
     angle_t rw_centerangle {}; // angle from the view to the seg's centre
     fixed_t rw_offset {}; // texture x offset along the seg

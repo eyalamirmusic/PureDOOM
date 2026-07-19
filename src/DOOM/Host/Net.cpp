@@ -323,7 +323,11 @@ void initNetwork()
 
     u_long trueval = 1;
 #else
-    doom_boolean trueval = true;
+    // An int, not a bool, and this one is not a spelling choice: the address is
+    // handed to ioctl(FIONBIO) below, which reads a full word back out through
+    // it. A one-byte bool makes that read three bytes of neighbouring stack.
+    // The Windows arm above says the same thing in its own ABI's spelling.
+    int trueval = 1;
 #endif
     struct hostent* hostentry; // host information entry
 #endif

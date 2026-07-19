@@ -469,7 +469,7 @@ void maxOutWindowScale()
 //
 // Handle events (user inputs) in automap mode
 //
-doom_boolean automapResponder(Event* ev)
+bool automapResponder(Event* ev)
 {
     auto& map = automapView();
 
@@ -704,7 +704,7 @@ void clearFB(int color)
 // faster reject and precalculated slopes.  If the speed is needed,
 // use a hash algorithm to handle  the common cases.
 //
-doom_boolean clipMline(MapLine* ml, FLine* fl)
+bool clipMline(MapLine* ml, FLine* fl)
 {
     auto& map = automapView();
 
@@ -938,8 +938,8 @@ void drawGrid(int color)
     // Figure out start of vertical gridlines
     start = m_x;
     if (fixed_t {(start - bmaporgx).raw % blockSpacing.raw})
-        start += blockSpacing
-                 - (fixed_t {(start - bmaporgx).raw % blockSpacing.raw});
+        start +=
+            blockSpacing - (fixed_t {(start - bmaporgx).raw % blockSpacing.raw});
     end = m_x + m_w;
 
     // draw vertical gridlines
@@ -955,8 +955,8 @@ void drawGrid(int color)
     // Figure out start of horizontal gridlines
     start = m_y;
     if (fixed_t {(start - bmaporgy).raw % blockSpacing.raw})
-        start += blockSpacing
-                 - (fixed_t {(start - bmaporgy).raw % blockSpacing.raw});
+        start +=
+            blockSpacing - (fixed_t {(start - bmaporgy).raw % blockSpacing.raw});
     end = m_y + m_h;
 
     // draw horizontal gridlines
@@ -1140,8 +1140,13 @@ void drawPlayers()
         else
             color = their_colors[their_color];
 
-        drawLineCharacter(
-            player_arrow, NUMPLYRLINES, fixed_t {}, p->mo->angle, color, p->mo->x, p->mo->y);
+        drawLineCharacter(player_arrow,
+                          NUMPLYRLINES,
+                          fixed_t {},
+                          p->mo->angle,
+                          color,
+                          p->mo->x,
+                          p->mo->y);
     }
 }
 
@@ -1222,43 +1227,41 @@ void drawAutomap()
 
 #define R ((8 * PLAYERRADIUS) / 7)
 Doom::MapLine player_arrow[] = {
-    { { -R + R / 8, fixed_t {} }, { R, fixed_t {} } }, // -----
-    { { R, fixed_t {} }, { R - R / 2, R / 4 } },  // ----->
-    { { R, fixed_t {} }, { R - R / 2, -R / 4 } },
-    { { -R + R / 8, fixed_t {} }, { -R - R / 8, R / 4 } }, // >---->
-    { { -R + R / 8, fixed_t {} }, { -R - R / 8, -R / 4 } },
-    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, R / 4 } }, // >>--->
-    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, -R / 4 } }
-};
+    {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
+    {{R, fixed_t {}}, {R - R / 2, R / 4}}, // ----->
+    {{R, fixed_t {}}, {R - R / 2, -R / 4}},
+    {{-R + R / 8, fixed_t {}}, {-R - R / 8, R / 4}}, // >---->
+    {{-R + R / 8, fixed_t {}}, {-R - R / 8, -R / 4}},
+    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, R / 4}}, // >>--->
+    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, -R / 4}}};
 #undef R
 
 #define R ((8 * PLAYERRADIUS) / 7)
 Doom::MapLine cheat_player_arrow[] = {
-    { { -R + R / 8, fixed_t {} }, { R, fixed_t {} } }, // -----
-    { { R, fixed_t {} }, { R - R / 2, R / 6 } },  // ----->
-    { { R, fixed_t {} }, { R - R / 2, -R / 6 } },
-    { { -R + R / 8, fixed_t {} }, { -R - R / 8, R / 6 } }, // >----->
-    { { -R + R / 8, fixed_t {} }, { -R - R / 8, -R / 6 } },
-    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, R / 6 } }, // >>----->
-    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, -R / 6 } },
-    { { -R / 2, fixed_t {} }, { -R / 2, -R / 6 } }, // >>-d--->
-    { { -R / 2, -R / 6 }, { -R / 2 + R / 6, -R / 6 } },
-    { { -R / 2 + R / 6, -R / 6 }, { -R / 2 + R / 6, R / 4 } },
-    { { -R / 6, fixed_t {} }, { -R / 6, -R / 6 } }, // >>-dd-->
-    { { -R / 6, -R / 6 }, { fixed_t {}, -R / 6 } },
-    { { fixed_t {}, -R / 6 }, { fixed_t {}, R / 4 } },
-    { { R / 6, R / 4 }, { R / 6, -R / 7 } }, // >>-ddt->
-    { { R / 6, -R / 7 }, { R / 6 + R / 32, -R / 7 - R / 32 } },
-    { { R / 6 + R / 32, -R / 7 - R / 32 }, { R / 6 + R / 10, -R / 7 } }
-};
+    {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
+    {{R, fixed_t {}}, {R - R / 2, R / 6}}, // ----->
+    {{R, fixed_t {}}, {R - R / 2, -R / 6}},
+    {{-R + R / 8, fixed_t {}}, {-R - R / 8, R / 6}}, // >----->
+    {{-R + R / 8, fixed_t {}}, {-R - R / 8, -R / 6}},
+    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, R / 6}}, // >>----->
+    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, -R / 6}},
+    {{-R / 2, fixed_t {}}, {-R / 2, -R / 6}}, // >>-d--->
+    {{-R / 2, -R / 6}, {-R / 2 + R / 6, -R / 6}},
+    {{-R / 2 + R / 6, -R / 6}, {-R / 2 + R / 6, R / 4}},
+    {{-R / 6, fixed_t {}}, {-R / 6, -R / 6}}, // >>-dd-->
+    {{-R / 6, -R / 6}, {fixed_t {}, -R / 6}},
+    {{fixed_t {}, -R / 6}, {fixed_t {}, R / 4}},
+    {{R / 6, R / 4}, {R / 6, -R / 7}}, // >>-ddt->
+    {{R / 6, -R / 7}, {R / 6 + R / 32, -R / 7 - R / 32}},
+    {{R / 6 + R / 32, -R / 7 - R / 32}, {R / 6 + R / 10, -R / 7}}};
 #undef R
 
 #define R (FRACUNIT)
 Doom::MapLine thintriangle_guy[] = {
-    { { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) }, { R, fixed_t {} } },
-    { { R, fixed_t {} }, { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) } },
-    { { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) }, { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) } }
-};
+    {{(fixed_t) (-.5 * R), (fixed_t) (-.7 * R)}, {R, fixed_t {}}},
+    {{R, fixed_t {}}, {(fixed_t) (-.5 * R), (fixed_t) (.7 * R)}},
+    {{(fixed_t) (-.5 * R), (fixed_t) (.7 * R)},
+     {(fixed_t) (-.5 * R), (fixed_t) (-.7 * R)}}};
 #undef R
 
 // Map-window position/size and scale (map coords), read by the GPU automap.

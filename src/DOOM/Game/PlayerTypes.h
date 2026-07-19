@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,7 +21,6 @@
 
 #pragma once
 
-
 // The player data structure depends on a number
 // of other structs: items (internal inventory),
 // animation states (closely tied to the sprites
@@ -37,7 +36,6 @@
 // is buffered within the player data struct,
 // as commands per game tick.
 #include "Ticcmd.h"
-
 
 //
 // Doom::Player states.
@@ -55,7 +53,6 @@ enum PlayerLifeState
 };
 } // namespace Doom
 
-
 //
 // Doom::Player internal flags, for cheats and debug.
 //
@@ -71,7 +68,6 @@ enum CheatFlag
     CF_NOMOMENTUM = 4
 };
 } // namespace Doom
-
 
 //
 // Extended player object info: Doom::Player
@@ -104,8 +100,8 @@ struct Player
 
     // Power ups. invinc and invis are tic counters.
     int powers[NUMPOWERS];
-    doom_boolean cards[NUMCARDS];
-    doom_boolean backpack;
+    bool cards[NUMCARDS];
+    bool backpack;
 
     // Frags, kills of other players.
     int frags[MAXPLAYERS];
@@ -114,7 +110,7 @@ struct Player
     // Is wp_nochange if not changing.
     WeaponType pendingweapon;
 
-    doom_boolean weaponowned[NUMWEAPONS];
+    bool weaponowned[NUMWEAPONS];
     int ammo[NUMAMMO];
     int maxammo[NUMAMMO];
 
@@ -160,10 +156,9 @@ struct Player
     PspDef psprites[NUMPSPRITES];
 
     // True if secret level has been done.
-    doom_boolean didsecret;
+    bool didsecret;
 };
 } // namespace Doom
-
 
 //
 // INTERMISSION
@@ -173,7 +168,7 @@ namespace Doom
 {
 struct IntermissionPlayer
 {
-    doom_boolean in;        // whether the player is in game
+    bool in; // whether the player is in game
 
     // Player stats, kills, collected items etc.
     int skills;
@@ -181,19 +176,18 @@ struct IntermissionPlayer
     int ssecret;
     int stime;
     int frags[4];
-    int score;        // current score on entry, modified on return
+    int score; // current score on entry, modified on return
 };
 } // namespace Doom
-
 
 namespace Doom
 {
 struct IntermissionStart
 {
-    int epsd;        // episode # (0-2)
+    int epsd; // episode # (0-2)
 
     // if true, splash the secret level
-    doom_boolean didsecret;
+    bool didsecret;
 
     // previous and next levels, origin 0
     int last;
@@ -213,8 +207,6 @@ struct IntermissionStart
     IntermissionPlayer plyr[MAXPLAYERS];
 };
 } // namespace Doom
-
-
 
 //-----------------------------------------------------------------------------
 //

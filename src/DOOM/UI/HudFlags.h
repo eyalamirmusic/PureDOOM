@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 namespace Doom
 {
 // The two cross-read HUD flags the hu_stuff shim owns and other files read: chat_on (the chat
@@ -15,8 +13,8 @@ namespace Doom
 // clobber the reference's storage). Live golden-covered - the HUD draws every tic.
 struct HudFlags
 {
-    doom_boolean chat_on = false;                // the chat input line is open
-    doom_boolean message_dontfuckwithme = false; // a forced message locks the line
+    bool chat_on = false; // the chat input line is open
+    bool message_dontfuckwithme = false; // a forced message locks the line
 };
 
 HudFlags& hudFlags();

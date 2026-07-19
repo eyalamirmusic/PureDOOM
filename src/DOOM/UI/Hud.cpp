@@ -449,7 +449,7 @@ char dequeueChatChar()
     return c;
 }
 
-doom_boolean hudResponder(Event* ev)
+bool hudResponder(Event* ev)
 {
     auto& hud = hudFlags();
     auto& chat = hudChat();
@@ -457,7 +457,7 @@ doom_boolean hudResponder(Event* ev)
     auto& state = hudState();
 
     char* macromessage;
-    doom_boolean eatkey = false;
+    bool eatkey = false;
     unsigned char c;
     int numplayers;
 

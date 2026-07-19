@@ -58,7 +58,6 @@
 #define FATSPREAD (ANG90 / 8)
 #define SKULLSPEED (20 * FRACUNIT)
 
-
 namespace Doom
 {
 // P_NewChaseDir movement LUTs and the transient targets the AI threads through its
@@ -79,14 +78,14 @@ enum DirType
 };
 
 EA::Array<DirType, 9> opposite = {DI_WEST,
-                                    DI_SOUTHWEST,
-                                    DI_SOUTH,
-                                    DI_SOUTHEAST,
-                                    DI_EAST,
-                                    DI_NORTHEAST,
-                                    DI_NORTH,
-                                    DI_NORTHWEST,
-                                    DI_NODIR};
+                                  DI_SOUTHWEST,
+                                  DI_SOUTH,
+                                  DI_SOUTHEAST,
+                                  DI_EAST,
+                                  DI_NORTHEAST,
+                                  DI_NORTH,
+                                  DI_NORTHWEST,
+                                  DI_NODIR};
 
 EA::Array<DirType, 4> diags = {
     DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
@@ -118,12 +117,12 @@ angle_t TRACEANGLE {0xc000000};
 // Forward declarations so the file's own call order needs no rearranging.
 void recursiveSound(Sector* sec, int soundblocks);
 void noiseAlert(Mobj* target, Mobj& emmiter);
-doom_boolean checkMeleeRange(Mobj& actor);
-doom_boolean checkMissileRange(Mobj& actor);
-doom_boolean move(Mobj& actor);
-doom_boolean tryWalk(Mobj& actor);
+bool checkMeleeRange(Mobj& actor);
+bool checkMissileRange(Mobj& actor);
+bool move(Mobj& actor);
+bool tryWalk(Mobj& actor);
 void newChaseDir(Mobj& actor);
-doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround);
+bool lookForPlayers(Mobj& actor, bool allaround);
 void keenDie(Mobj& mo);
 void look(Mobj& actor);
 void chase(Mobj& actor);
@@ -143,7 +142,7 @@ void skelMissile(Mobj& actor);
 void tracer(Mobj& actor);
 void skelWhoosh(Mobj& actor);
 void skelFist(Mobj& actor);
-doom_boolean vileCheck(Mobj* thing);
+bool vileCheck(Mobj* thing);
 void vileChase(Mobj& actor);
 void vileStart(Mobj& actor);
 void startFire(Mobj& actor);
@@ -189,8 +188,7 @@ void recursiveSound(Sector* sec, int soundblocks)
     auto& vc = validCount();
 
     // wake up all monsters in this sector
-    if (sec->validcount == vc.validcount
-        && sec->soundtraversed <= soundblocks + 1)
+    if (sec->validcount == vc.validcount && sec->soundtraversed <= soundblocks + 1)
     {
         return; // already flooded
     }
@@ -240,7 +238,7 @@ void noiseAlert(Mobj* target, Mobj& emmiter)
 //
 // checkMeleeRange
 //
-doom_boolean checkMeleeRange(Mobj& actor)
+bool checkMeleeRange(Mobj& actor)
 {
     Mobj* pl;
     fixed_t dist;
@@ -263,7 +261,7 @@ doom_boolean checkMeleeRange(Mobj& actor)
 //
 // checkMissileRange
 //
-doom_boolean checkMissileRange(Mobj& actor)
+bool checkMissileRange(Mobj& actor)
 {
     // Vanilla declares dist fixed_t and then shifts it down to whole units
     // half way through, after which every use of it is a plain integer -
@@ -307,8 +305,7 @@ doom_boolean checkMissileRange(Mobj& actor)
         dist >>= 1;
     }
 
-    if (actor.type == MT_CYBORG || actor.type == MT_SPIDER
-        || actor.type == MT_SKULL)
+    if (actor.type == MT_CYBORG || actor.type == MT_SPIDER || actor.type == MT_SKULL)
     {
         dist >>= 1;
     }
@@ -330,7 +327,7 @@ doom_boolean checkMissileRange(Mobj& actor)
 // Move in the current direction,
 // returns false if the move is blocked.
 //
-doom_boolean move(Mobj& actor)
+bool move(Mobj& actor)
 {
     fixed_t tryx;
     fixed_t tryy;
@@ -339,8 +336,8 @@ doom_boolean move(Mobj& actor)
 
     // warning: 'catch', 'throw', and 'try'
     // are all C++ reserved words
-    doom_boolean try_ok;
-    doom_boolean good;
+    bool try_ok;
+    bool good;
 
     auto& c = clip();
 
@@ -408,7 +405,7 @@ doom_boolean move(Mobj& actor)
 // If a door is in the way,
 // an OpenDoor call is made to start it opening.
 //
-doom_boolean tryWalk(Mobj& actor)
+bool tryWalk(Mobj& actor)
 {
     if (!move(actor))
     {
@@ -546,7 +543,7 @@ void newChaseDir(Mobj& actor)
 // If allaround is false, only look 180 degrees in front.
 // Returns true if a player is targeted.
 //
-doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround)
+bool lookForPlayers(Mobj& actor, bool allaround)
 {
     int c;
     int stop;
@@ -825,9 +822,9 @@ void faceTarget(Mobj& actor)
         Doom::pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
 
     if (actor.target->flags & MF_SHADOW)
-        actor.angle += angle_t {(unsigned) (Doom::randomness().forPlay()
-                                    - Doom::randomness().forPlay())
-                        << 21};
+        actor.angle += angle_t {
+            (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+            << 21};
 }
 
 //
@@ -847,9 +844,9 @@ void posAttack(Mobj& actor)
     slope = Doom::aimLineAttack(&actor, angle, MISSILERANGE).slope;
 
     Doom::startSound(&actor, sfx_pistol);
-    angle += angle_t {(unsigned) (Doom::randomness().forPlay()
-                              - Doom::randomness().forPlay())
-                  << 20};
+    angle += angle_t {
+        (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+        << 20};
     damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
@@ -895,10 +892,11 @@ void cPosAttack(Mobj& actor)
     bangle = actor.angle;
     slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
-    angle = bangle
-                + angle_t {(unsigned) (Doom::randomness().forPlay()
-                                       - Doom::randomness().forPlay())
-                           << 20};
+    angle =
+        bangle
+        + angle_t {
+            (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+            << 20};
     damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
@@ -1147,10 +1145,10 @@ void skelFist(Mobj& actor)
 // vileCheck
 // Detect a corpse that could be raised.
 //
-doom_boolean vileCheck(Mobj* thing)
+bool vileCheck(Mobj* thing)
 {
     fixed_t maxdist;
-    doom_boolean check;
+    bool check;
 
     auto& ai = enemyAI();
 
@@ -1303,7 +1301,8 @@ void vileTarget(Mobj& actor)
 
     faceTarget(actor);
 
-    fog = Doom::spawnMobj(actor.target->x, actor.target->x, actor.target->z, MT_FIRE);
+    fog =
+        Doom::spawnMobj(actor.target->x, actor.target->x, actor.target->z, MT_FIRE);
 
     actor.tracer = fog;
     fog->target = &actor;

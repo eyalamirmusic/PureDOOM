@@ -140,13 +140,18 @@ apparatus:
   `plr` had to become `am_plr`); a source file may include a system header; and
   the header include graph need not be acyclic.
 
-  One trap survives the flip and is load-bearing: **`doom_boolean` is an `int`,
-  not a `bool`** (`doomtype.h` says why at length). Vanilla reads booleans through
-  pointers to other types — `ST_createWidgets` binds the ARMS widget with
-  `(int*) &plyr->weaponowned[i + 1]`, its own cast — and a one-byte `bool` makes
-  those reads garbage. Turning it into a real `bool` is a change to the engine's
-  behaviour, not its spelling, and belongs to a later step, one subsystem at a
-  time with the demos watching.
+  **`doom_boolean` is gone** — the last vanilla type. All ~288 uses are a real
+  `bool`, and the typedef is deleted, so a boolean in this engine is a boolean.
+  What is left of it is a short list of declarations that must **stay `int`**, each
+  saying so at its own site, because each is storage that only *looks* like a flag:
+  `Render/Data.cpp`'s `MapTexture::masked` (overlaid on raw `TEXTURE1` lump bytes,
+  where its four bytes hold the following fields in place), `Game/GameSession.h`'s
+  `deathmatch` (tri-state: 0 coop, 1 deathmatch, 2 altdeath), `Sim/Specials.cpp`'s
+  `AnimDef::istexture` (its table ends on a `-1` sentinel that would read as `true`),
+  and `Host/Net.cpp`'s `trueval` (its address goes to `ioctl(FIONBIO)`, which reads
+  a whole word back through it). `doomtype.h` keeps that list. The ARMS widget's
+  `(int*) &plyr->weaponowned[i + 1]` pun — vanilla's own cast, and the reason the
+  flip was blocked for so long — is untangled into `StatusBarWidgets::w_armsindex[6]`.
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
   eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the plain-C

@@ -25,7 +25,7 @@ struct Clip
 {
     Intercept intercepts[MAXINTERCEPTS];
     Intercept* interceptPtr = nullptr;
-    doom_boolean earlyOut = false;
+    bool earlyOut = false;
 
     // pathTraverse's trace, read back by the shooting code in MapAction.
     DivLine trace = {};
@@ -45,7 +45,7 @@ struct Clip
     fixed_t tmbbox[4] = {};
 
     // floatok: the move would fit if the mobj sat between tmfloorz and tmceilingz.
-    doom_boolean floatok = false;
+    bool floatok = false;
 
     // The floor/ceiling the contacted lines leave for the mover, and the lowest
     // floor under it (a dropoff a monster refuses to walk off).

@@ -19,5 +19,5 @@ void touchSpecialThing(Mobj* special, Mobj* toucher);
 void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage);
 
 // Grant a powerup to the player; returns false if it had no effect.
-doom_boolean givePower(Player* player, int power);
+bool givePower(Player* player, int power);
 } // namespace Doom

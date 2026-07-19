@@ -51,5 +51,5 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage);
 
 // After a sector changed height, re-clip every thing touching it; crush those that
 // no longer fit if `crunch`. Returns true if anything did not fit.
-bool changeSector(Sector* sector, doom_boolean crunch);
+bool changeSector(Sector* sector, bool crunch);
 } // namespace Doom

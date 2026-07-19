@@ -35,7 +35,7 @@ struct GameFlow
 
     // A screen melt is currently animating: Doom::displayFrame raises it, doom_update drains
     // it via Doom::updateWipe instead of Doom::doomLoop, and the eacp compositor reads it.
-    doom_boolean is_wiping_screen = false;
+    bool is_wiping_screen = false;
 };
 
 // The one GameFlow, a view onto the Engine's member - the same pattern as

@@ -140,7 +140,7 @@ void initSound(int sfxVolume, int musicVolume)
         channels_s_sound[i].sfxinfo = nullptr;
 
     // no sounds are playing, and they are not mus_paused
-    snd.mus_paused = 0;
+    snd.mus_paused = false;
 
     // Note that sounds have not been cached (yet).
     for (int i = 1; i < NUMSFX; i++)
@@ -166,7 +166,7 @@ void startLevelSound()
             stopChannel(cnum);
 
     // start new music for the level
-    sound.mus_paused = 0;
+    sound.mus_paused = false;
 
     if (gameVersion().gamemode == commercial)
         mnum = mus_runnin + session.gamemap - 1;
@@ -632,8 +632,7 @@ int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pit
             approx_dist = S_CLIPPING_DIST;
 
         *vol = 15
-               + ((sndset.sfxVolume - 15)
-                  * (S_CLIPPING_DIST - approx_dist).toInt())
+               + ((sndset.sfxVolume - 15) * (S_CLIPPING_DIST - approx_dist).toInt())
                      / S_ATTENUATOR;
     }
     else

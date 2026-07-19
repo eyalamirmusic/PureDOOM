@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "../doomtype.h"
 // The screen-melt's cross-read state: whether a melt is running, the outgoing
 // frame it reads, and the per-column offsets it composites by. The eacp port's
@@ -12,7 +11,7 @@ enum
     wipe_NUMWIPES
 };
 
-extern doom_boolean wipe_melt_running;
+extern bool wipe_melt_running;
 extern byte* wipe_scr_start;
 extern int* wipe_melt_offsets;
 namespace Doom

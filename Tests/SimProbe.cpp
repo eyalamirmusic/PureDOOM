@@ -509,10 +509,10 @@ void doomSimSetMobjFlags(int handle, int flags)
 // single-threaded, so the static is safe.
 static int simBlockThingCount;
 
-static doom_boolean simCountThing(Doom::Mobj*)
+static bool simCountThing(Doom::Mobj*)
 {
     ++simBlockThingCount;
-    return (doom_boolean) 1;
+    return true;
 }
 
 int doomSimThingsInBlockOf(int handle)

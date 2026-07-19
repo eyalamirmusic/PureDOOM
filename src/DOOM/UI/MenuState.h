@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../doomtype.h" // doom_boolean
-
 #include <functional>
 
 namespace Doom
@@ -59,7 +57,7 @@ struct MenuState
     // The pop-up message box.
     const char* messageString = nullptr; // the message text
     int messageLastMenuActive = 0; // menuactive as the message opened
-    doom_boolean messageNeedsInput = false; // timed message = no user input
+    bool messageNeedsInput = false; // timed message = no user input
     // Answers the message. Given a non-null default (eacp style) so the responder
     // can call it unconditionally - vanilla passed this as a void* and
     // reinterpret_cast it back to a function pointer, and null-checked it.

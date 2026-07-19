@@ -6,9 +6,9 @@ namespace Doom
 {
 // Status bar (widgets, face, palette flashes, cheats); st_stuff.cpp keeps the
 // vanilla ST_ names as shims.
-doom_boolean statusBarResponder(Event* ev);
+bool statusBarResponder(Event* ev);
 void statusBarTicker();
-void drawStatusBar(doom_boolean fullscreen, doom_boolean refresh);
+void drawStatusBar(bool fullscreen, bool refresh);
 void startStatusBar();
 void initStatusBar();
 } // namespace Doom
