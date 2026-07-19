@@ -761,3 +761,10 @@ int doomSimMenuActive()
 {
     return Doom::overlayState().menuactive ? 1 : 0;
 }
+
+// --- The automap harness -----------------------------------------------------
+
+int doomSimAutomapActive()
+{
+    return Doom::overlayState().automapactive ? 1 : 0;
+}

@@ -224,6 +224,24 @@ extern "C"
     int doomSimGameState();
     int doomSimMenuActive();
 
+    // --- The automap harness --------------------------------------------------
+    //
+    // UI/Automap.cpp is the map window, the pan/zoom, the BSP-less line walk and
+    // the mark points, and it has no demo coverage either: nothing in a .lmp
+    // opens it. Unlike the menu it needs an actual level rather than the title
+    // screen, so the harness loads one (doomSimLoadLevel above) and drives
+    // AM_STARTKEY and its siblings through the same synthetic doom_key_down/up
+    // path the menu harness uses. This is the one thing that path does not
+    // already give it: whether the responder actually caught a keypress and
+    // opened the map, so a script that presses the wrong key - or catches the
+    // engine in the wrong gamestate, where Doom::gameResponder never reaches
+    // Doom::automapResponder at all - fails loudly instead of silently recording
+    // a golden of nothing happening.
+
+    // Whether the automap is open right now (Doom::OverlayState's
+    // automapactive) - the same shape as doomSimMenuActive above.
+    int doomSimAutomapActive();
+
 #ifdef __cplusplus
 }
 #endif
