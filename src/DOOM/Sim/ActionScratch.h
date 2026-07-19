@@ -50,16 +50,10 @@ struct ActionScratch
     int la_damage = 0; // hitscan damage
 
     // Doom::useLines.
-    Mobj* usething = nullptr; // the mobj pressing use
 
     // Doom::radiusAttack.
-    Mobj* bombsource = nullptr; // who set off the blast
-    Mobj* bombspot = nullptr; // where it went off
-    int bombdamage = 0; // blast damage at the centre
 
     // Doom::changeSector.
-    doom_boolean nofit = false; // something could not fit after the move
-    doom_boolean crushchange = false; // crush things that do not fit
 };
 
 // The one ActionScratch, a view onto the Engine's member - the same pattern as the other clusters

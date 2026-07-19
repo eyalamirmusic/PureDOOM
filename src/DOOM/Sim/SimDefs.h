@@ -27,6 +27,7 @@
 #include "../Math/FixedPoint.h"
 #include "MapTypes.h"
 #include "../Render/RenderTypes.h"
+#include "../Math/FunctionRef.h"
 #ifndef __R_LOCAL__
 #endif
 
@@ -135,7 +136,10 @@ struct Intercept
 // Doom::clip(); they were p_maputl's own scratch, read by no other file.
 
 
-typedef doom_boolean(*Traverser) (Doom::Intercept* in);
+// The callback pathTraverse hands each crossed line and thing to, in near-to-far
+// order. A FunctionRef rather than a bare function pointer so a traverser can be
+// a lambda capturing the shot that spawned it, instead of reaching for globals.
+using Traverser = Doom::FunctionRef<doom_boolean(Doom::Intercept*)>;
 
 
 #define PT_ADDLINES     1

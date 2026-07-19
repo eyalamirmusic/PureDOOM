@@ -368,9 +368,12 @@ doom_boolean shootTraverse(Intercept* in)
 //
 // USE LINES
 //
-static Mobj*& usething = actionScratch().usething;
 
-doom_boolean useTraverse(Intercept* in)
+//
+// The per-line half of Doom::useLines. `usething` was a global purely so this
+// could see who pressed use; it is a capture now.
+//
+static doom_boolean useTraverse(Intercept* in, Mobj* usething)
 {
     Clip& clip = Doom::clip();
 
@@ -401,17 +404,16 @@ doom_boolean useTraverse(Intercept* in)
 }
 
 //
-// RADIUS ATTACK scratch
 //
-static Mobj*& bombsource = actionScratch().bombsource;
-static Mobj*& bombspot = actionScratch().bombspot;
-static int& bombdamage = actionScratch().bombdamage;
-
+// The per-thing half of Doom::radiusAttack. Vanilla passed the bomb's spot,
+// source and damage through three globals because a bare function pointer
+// cannot carry context; it is a lambda over those three now, so the globals are
+// gone (REFACTOR.md, Step 9).
 //
-// PIT_RadiusAttack
-// "bombsource" is the creature that caused the explosion at "bombspot".
-//
-doom_boolean radiusAttackThing(Mobj* thing)
+static doom_boolean radiusAttackThing(Mobj* thing,
+                                      Mobj* bombspot,
+                                      Mobj* bombsource,
+                                      int bombdamage)
 {
     fixed_t dx;
     fixed_t dy;
@@ -452,10 +454,14 @@ doom_boolean radiusAttackThing(Mobj* thing)
 //
 // PIT_ChangeSector
 //
-static doom_boolean& nofit = actionScratch().nofit;
-static doom_boolean& crushchange = actionScratch().crushchange;
-
-doom_boolean changeSectorThing(Mobj* thing)
+//
+// The per-thing half of Doom::changeSector. crushchange was a global carrying
+// context in and nofit a global carrying the answer back out; they are a capture
+// and an out-parameter now.
+//
+static doom_boolean changeSectorThing(Mobj* thing,
+                                      doom_boolean crushchange,
+                                      doom_boolean& nofit)
 {
     Mobj* mo;
 
@@ -696,8 +702,6 @@ void useLines(Player* player)
     fixed_t x2;
     fixed_t y2;
 
-    usething = player->mo;
-
     angle = player->mo->angle >> ANGLETOFINESHIFT;
 
     x1 = player->mo->x;
@@ -706,7 +710,12 @@ void useLines(Player* player)
     x2 = x1 + USERANGE.toInt() * finecosine[angle];
     y2 = y1 + USERANGE.toInt() * finesine[angle];
 
-    pathTraverse(x1, y1, x2, y2, PT_ADDLINES, useTraverse);
+    Mobj* usething = player->mo;
+
+    const auto tryLine = [usething](Intercept* in)
+    { return useTraverse(in, usething); };
+
+    pathTraverse(x1, y1, x2, y2, PT_ADDLINES, tryLine);
 }
 
 //
@@ -731,13 +740,12 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
     yl = (spot->y - dist - bmaporgy).raw >> MAPBLOCKSHIFT;
     xh = (spot->x + dist - bmaporgx).raw >> MAPBLOCKSHIFT;
     xl = (spot->x - dist - bmaporgx).raw >> MAPBLOCKSHIFT;
-    bombspot = spot;
-    bombsource = source;
-    bombdamage = damage;
+    const auto hitThing = [spot, source, damage](Mobj* thing)
+    { return radiusAttackThing(thing, spot, source, damage); };
 
     for (int y = yl; y <= yh; y++)
         for (int x = xl; x <= xh; x++)
-            forEachThingInBlock(x, y, radiusAttackThing);
+            forEachThingInBlock(x, y, hitThing);
 }
 
 //
@@ -745,13 +753,15 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
 //
 bool changeSector(Sector* sector, doom_boolean crunch)
 {
-    nofit = false;
-    crushchange = crunch;
+    doom_boolean nofit = false;
+
+    const auto clipThing = [crunch, &nofit](Mobj* thing)
+    { return changeSectorThing(thing, crunch, nofit); };
 
     // re-check heights for all things near the moving sector
     for (int x = sector->blockbox[BOXLEFT]; x <= sector->blockbox[BOXRIGHT]; x++)
         for (int y = sector->blockbox[BOXBOTTOM]; y <= sector->blockbox[BOXTOP]; y++)
-            forEachThingInBlock(x, y, changeSectorThing);
+            forEachThingInBlock(x, y, clipThing);
 
     return nofit;
 }
