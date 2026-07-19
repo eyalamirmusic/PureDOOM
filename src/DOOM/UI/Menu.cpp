@@ -175,30 +175,11 @@ struct MenuCustomText
     MenuCustomTextSeg segs[16];
 };
 
-// The menu's transient interaction state now lives on the Engine (UI/MenuState.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names below are references onto that
-// member, so every use is unchanged. The immutable reference-data tables interspersed among them
-// (gammamsg / skullName / detailNames / msgNames / quitsounds / menu_custom_texts) and the
-// self-referential menu-definition apparatus further down stay file-local.
-
-// temp for screenblocks (0-9)
-static int& screenSize = menuState().screenSize;
-
-// -1 = no quicksave slot picked!
-static int& quickSaveSlot = menuState().quickSaveSlot;
-
-// ...and here is the message string!
-static const char*& messageString = menuState().messageString;
-
-// message x & y
-static int& messx = menuState().messx;
-static int& messy = menuState().messy;
-static int& messageLastMenuActive = menuState().messageLastMenuActive;
-
-// timed message = no input from user
-static doom_boolean& messageNeedsInput = menuState().messageNeedsInput;
-
-static std::function<void(int response)>& messageRoutine = menuState().messageRoutine;
+// The menu's transient interaction state lives on the Engine (UI/MenuState.h). Every function
+// below reaches it through a hoisted local instead of a file-scope alias (REFACTOR.md, Step 9
+// strand (a)). The immutable reference-data tables interspersed among them (gammamsg / skullName /
+// detailNames / msgNames / quitsounds / menu_custom_texts) and the self-referential menu-definition
+// apparatus further down stay file-local.
 
 EA::Array<EA::Array<char, 26>, 5> gammamsg = {EA::Array<char, 26> {{GAMMALVL0}},
                                               EA::Array<char, 26> {{GAMMALVL1}},
@@ -206,29 +187,10 @@ EA::Array<EA::Array<char, 26>, 5> gammamsg = {EA::Array<char, 26> {{GAMMALVL0}},
                                               EA::Array<char, 26> {{GAMMALVL3}},
                                               EA::Array<char, 26> {{GAMMALVL4}}};
 
-// we are going to be entering a savegame string
-static int& saveStringEnter = menuState().saveStringEnter;
-static int& saveSlot = menuState().saveSlot; // which slot to save in
-static int& saveCharIndex = menuState().saveCharIndex; // which char we're editing
-// old save description before edit
-static char (&saveOldString)[SAVESTRINGSIZE] = menuState().saveOldString;
-
-static char (&savegamestrings)[10][SAVESTRINGSIZE] = menuState().savegamestrings;
-
-static char (&endstring)[160] = menuState().endstring;
-
-static short& itemOn = menuState().itemOn; // menu item skull is on
-static short& skullAnimCounter =
-    menuState().skullAnimCounter; // skull animation counter
-static short& whichSkull = menuState().whichSkull; // which skull to draw
-
 // graphic name of skulls
 // warning: initializer-string for array of chars is too long
 EA::Array<EA::Array<char, /*8*/ 9>, 2> skullName = {
     EA::Array<char, 9> {{"M_SKULL1"}}, EA::Array<char, 9> {{"M_SKULL2"}}};
-
-// current menudef
-static MenuDef*& currentMenu = menuState().currentMenu;
 
 // The menu-definition tables below lean on partial aggregate initializers on
 // purpose: a {0} terminates a custom-text segment list, and a {-1,"",0} marks a
@@ -276,8 +238,6 @@ EA::Array<MenuCustomText, 4> menu_custom_texts = {
 
 const int custom_texts_count = sizeof(menu_custom_texts) / sizeof(MenuCustomText);
 
-static char (&tempstring)[80] = menuState().tempstring;
-static int& epi = menuState().epi;
 EA::Array<EA::Array<char, 9>, 2> detailNames = {EA::Array<char, 9> {{"M_GDHIGH"}},
                                                 EA::Array<char, 9> {{"M_GDLOW"}}};
 EA::Array<EA::Array<char, 9>, 2> msgNames = {EA::Array<char, 9> {{"M_MSGOFF"}},
@@ -721,6 +681,8 @@ void drawCustomMenuText(const char* name, int x, int y)
 //
 void readSaveStrings()
 {
+    auto& state = menuState();
+
     void* handle;
     EA::Array<char, 256> name;
 
@@ -741,11 +703,11 @@ void readSaveStrings()
         handle = doom_open(name.data(), "r");
         if (handle == nullptr)
         {
-            doom_strcpy(&savegamestrings[i][0], EMPTYSTRING);
+            doom_strcpy(&state.savegamestrings[i][0], EMPTYSTRING);
             DOOM_LoadMenu[i].status = 0;
             continue;
         }
-        doom_read(handle, &savegamestrings[i], SAVESTRINGSIZE);
+        doom_read(handle, &state.savegamestrings[i], SAVESTRINGSIZE);
         doom_close(handle);
         DOOM_LoadMenu[i].status = 1;
     }
@@ -756,12 +718,14 @@ void readSaveStrings()
 //
 void drawLoad()
 {
+    auto& state = menuState();
+
     Doom::drawPatchDirect(
         72, 28, 0, static_cast<Patch*>(Doom::cacheLumpName("M_LOADG")));
     for (int i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
-        writeText(LoadDef.x, LoadDef.y + LINEHEIGHT * i, savegamestrings[i]);
+        writeText(LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i]);
     }
 }
 
@@ -826,6 +790,8 @@ void loadGameMenu(int)
 //
 void drawSave()
 {
+    auto& state = menuState();
+
     int i;
 
     Doom::drawPatchDirect(
@@ -833,13 +799,13 @@ void drawSave()
     for (i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
-        writeText(LoadDef.x, LoadDef.y + LINEHEIGHT * i, savegamestrings[i]);
+        writeText(LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i]);
     }
 
-    if (saveStringEnter)
+    if (state.saveStringEnter)
     {
-        i = stringWidth(savegamestrings[saveSlot]);
-        writeText(LoadDef.x + i, LoadDef.y + LINEHEIGHT * saveSlot, "_");
+        i = stringWidth(state.savegamestrings[state.saveSlot]);
+        writeText(LoadDef.x + i, LoadDef.y + LINEHEIGHT * state.saveSlot, "_");
     }
 }
 
@@ -848,12 +814,14 @@ void drawSave()
 //
 void doSave(int slot)
 {
-    Doom::saveGame(slot, savegamestrings[slot]);
+    auto& state = menuState();
+
+    Doom::saveGame(slot, state.savegamestrings[slot]);
     clearMenus();
 
     // PICK QUICKSAVE SLOT YET?
-    if (quickSaveSlot == -2)
-        quickSaveSlot = slot;
+    if (state.quickSaveSlot == -2)
+        state.quickSaveSlot = slot;
 }
 
 //
@@ -861,14 +829,17 @@ void doSave(int slot)
 //
 void saveSelect(int choice)
 {
-    // we are going to be intercepting all chars
-    saveStringEnter = 1;
+    auto& state = menuState();
 
-    saveSlot = choice;
-    doom_strcpy(saveOldString, savegamestrings[choice]);
-    if (!doom_strcmp(savegamestrings[choice], EMPTYSTRING))
-        savegamestrings[choice][0] = 0;
-    saveCharIndex = static_cast<int>(doom_strlen(savegamestrings[choice]));
+    // we are going to be intercepting all chars
+    state.saveStringEnter = 1;
+
+    state.saveSlot = choice;
+    doom_strcpy(state.saveOldString, state.savegamestrings[choice]);
+    if (!doom_strcmp(state.savegamestrings[choice], EMPTYSTRING))
+        state.savegamestrings[choice][0] = 0;
+    state.saveCharIndex =
+        static_cast<int>(doom_strlen(state.savegamestrings[choice]));
 }
 
 //
@@ -896,13 +867,15 @@ void quickSaveResponse(int ch)
 {
     if (ch == 'y')
     {
-        doSave(quickSaveSlot);
+        doSave(menuState().quickSaveSlot);
         Doom::startSound(0, sfx_swtchx);
     }
 }
 
 void quickSave()
 {
+    auto& state = menuState();
+
     if (!demoState().usergame)
     {
         Doom::startSound(0, sfx_oof);
@@ -912,19 +885,19 @@ void quickSave()
     if (gameFlow().gamestate != GS_LEVEL)
         return;
 
-    if (quickSaveSlot < 0)
+    if (state.quickSaveSlot < 0)
     {
         startControlPanel();
         readSaveStrings();
         setupNextMenu(&SaveDef);
-        quickSaveSlot = -2; // means to pick a slot now
+        state.quickSaveSlot = -2; // means to pick a slot now
         return;
     }
     //doom_sprintf(tempstring, QSPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(tempstring, QSPROMPT_1);
-    doom_concat(tempstring, savegamestrings[quickSaveSlot]);
-    doom_strcpy(tempstring, QSPROMPT_2);
-    startMessage(tempstring, quickSaveResponse, true);
+    doom_strcpy(state.tempstring, QSPROMPT_1);
+    doom_concat(state.tempstring, state.savegamestrings[state.quickSaveSlot]);
+    doom_strcpy(state.tempstring, QSPROMPT_2);
+    startMessage(state.tempstring, quickSaveResponse, true);
 }
 
 //
@@ -934,29 +907,31 @@ void quickLoadResponse(int ch)
 {
     if (ch == 'y')
     {
-        loadSelect(quickSaveSlot);
+        loadSelect(menuState().quickSaveSlot);
         Doom::startSound(0, sfx_swtchx);
     }
 }
 
 void quickLoad()
 {
+    auto& state = menuState();
+
     if (gameSession().netgame)
     {
         startMessage(QLOADNET, {}, false);
         return;
     }
 
-    if (quickSaveSlot < 0)
+    if (state.quickSaveSlot < 0)
     {
         startMessage(QSAVESPOT, {}, false);
         return;
     }
     //doom_sprintf(tempstring, QLPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(tempstring, QLPROMPT_1);
-    doom_concat(tempstring, savegamestrings[quickSaveSlot]);
-    doom_strcpy(tempstring, QLPROMPT_2);
-    startMessage(tempstring, quickLoadResponse, true);
+    doom_strcpy(state.tempstring, QLPROMPT_1);
+    doom_concat(state.tempstring, state.savegamestrings[state.quickSaveSlot]);
+    doom_strcpy(state.tempstring, QLPROMPT_2);
+    startMessage(state.tempstring, quickLoadResponse, true);
 }
 
 //
@@ -1138,7 +1113,7 @@ void verifyNightmare(int ch)
     if (ch != 'y')
         return;
 
-    Doom::deferInitNew(static_cast<Skill>(nightmare), epi + 1, 1);
+    Doom::deferInitNew(static_cast<Skill>(nightmare), menuState().epi + 1, 1);
     clearMenus();
 }
 
@@ -1150,7 +1125,7 @@ void chooseSkill(int choice)
         return;
     }
 
-    Doom::deferInitNew(static_cast<Skill>(choice), epi + 1, 1);
+    Doom::deferInitNew(static_cast<Skill>(choice), menuState().epi + 1, 1);
     clearMenus();
 }
 
@@ -1172,7 +1147,7 @@ void episode(int choice)
         choice = 0;
     }
 
-    epi = choice;
+    menuState().epi = choice;
     setupNextMenu(&NewDef);
 }
 
@@ -1207,8 +1182,10 @@ void drawOptions()
         0,
         static_cast<Patch*>(Doom::cacheLumpName(msgNames[input.always_run].data())));
 
-    drawThermo(
-        OptionsDef.x, OptionsDef.y + LINEHEIGHT * (scrnsize + 1), 9, screenSize);
+    drawThermo(OptionsDef.x,
+               OptionsDef.y + LINEHEIGHT * (scrnsize + 1),
+               9,
+               menuState().screenSize);
 }
 
 void drawMouseOptions()
@@ -1294,7 +1271,9 @@ void endGameResponse(int ch)
     if (ch != 'y')
         return;
 
-    currentMenu->lastOn = itemOn;
+    auto& state = menuState();
+
+    state.currentMenu->lastOn = state.itemOn;
     clearMenus();
     Doom::startTitle();
 }
@@ -1356,23 +1335,25 @@ void quitResponse(int ch)
 
 void quitDOOM(int)
 {
+    auto& state = menuState();
+
     // We pick index 0 which is language sensitive,
     //  or one at random, between 1 and maximum number.
     if (gameVersion().language != english)
     {
         //doom_sprintf(endstring, "%s\n\n"DOSY, endmsg[0]);
-        doom_strcpy(endstring, endmsg[0]);
-        doom_concat(endstring, "\n\n" DOSY);
+        doom_strcpy(state.endstring, endmsg[0]);
+        doom_concat(state.endstring, "\n\n" DOSY);
     }
     else
     {
         //doom_sprintf(endstring, "%s\n\n" DOSY, endmsg[gametic % (NUM_QUITMESSAGES - 2) + 1]);
-        doom_strcpy(endstring,
+        doom_strcpy(state.endstring,
                     endmsg[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1]);
-        doom_concat(endstring, "\n\n" DOSY);
+        doom_concat(state.endstring, "\n\n" DOSY);
     }
 
-    startMessage(endstring, quitResponse, true);
+    startMessage(state.endstring, quitResponse, true);
 }
 
 void changeSensitivity(int choice)
@@ -1414,21 +1395,22 @@ void changeDetail(int)
 void sizeDisplay(int choice)
 {
     auto& settings = menuSettings();
+    auto& state = menuState();
 
     switch (choice)
     {
         case 0:
-            if (screenSize > 0)
+            if (state.screenSize > 0)
             {
                 settings.screenblocks--;
-                screenSize--;
+                state.screenSize--;
             }
             break;
         case 1:
-            if (screenSize < 8)
+            if (state.screenSize < 8)
             {
                 settings.screenblocks++;
-                screenSize++;
+                state.screenSize++;
             }
             break;
     }
@@ -1483,20 +1465,22 @@ void startMessage(const char* string,
                   doom_boolean input)
 {
     auto& overlay = overlayState();
+    auto& state = menuState();
 
-    messageLastMenuActive = overlay.menuactive;
+    state.messageLastMenuActive = overlay.menuactive;
     messageToPrint = 1;
-    messageString = string;
+    state.messageString = string;
     // An empty routine means "no answer needed"; keep the member callable so the
     // responder never has to test it.
-    messageRoutine = routine ? std::move(routine) : std::function<void(int)> {[](int) {}};
-    messageNeedsInput = input;
+    state.messageRoutine =
+        routine ? std::move(routine) : std::function<void(int)> {[](int) {}};
+    state.messageNeedsInput = input;
     overlay.menuactive = true;
 }
 
 void stopMessage()
 {
-    overlayState().menuactive = messageLastMenuActive;
+    overlayState().menuactive = menuState().messageLastMenuActive;
     messageToPrint = 0;
 }
 
@@ -1594,92 +1578,87 @@ doom_boolean menuResponder(Event* ev)
     auto& settings = menuSettings();
 
     int ch;
-    int& joywait = menuState().joywait;
-    int& mousewait = menuState().mousewait;
-    int& mousey = menuState().mousey;
-    int& lasty = menuState().lasty;
-    int& mousex = menuState().mousex;
-    int& lastx = menuState().lastx;
+    auto& state = menuState();
 
     ch = -1;
 
-    if (ev->type == ev_joystick && joywait < currentTic())
+    if (ev->type == ev_joystick && state.joywait < currentTic())
     {
         if (ev->data3 == -1)
         {
             ch = KEY_UPARROW;
-            joywait = currentTic() + 5;
+            state.joywait = currentTic() + 5;
         }
         else if (ev->data3 == 1)
         {
             ch = KEY_DOWNARROW;
-            joywait = currentTic() + 5;
+            state.joywait = currentTic() + 5;
         }
 
         if (ev->data2 == -1)
         {
             ch = KEY_LEFTARROW;
-            joywait = currentTic() + 2;
+            state.joywait = currentTic() + 2;
         }
         else if (ev->data2 == 1)
         {
             ch = KEY_RIGHTARROW;
-            joywait = currentTic() + 2;
+            state.joywait = currentTic() + 2;
         }
 
         if (ev->data1 & 1)
         {
             ch = KEY_ENTER;
-            joywait = currentTic() + 5;
+            state.joywait = currentTic() + 5;
         }
         if (ev->data1 & 2)
         {
             ch = KEY_BACKSPACE;
-            joywait = currentTic() + 5;
+            state.joywait = currentTic() + 5;
         }
     }
     else
     {
-        if (ev->type == ev_mouse && mousewait < currentTic())
+        if (ev->type == ev_mouse && state.mousewait < currentTic())
         {
-            mousey += ev->data3;
-            if (mousey < lasty - 30)
+            state.mousey += ev->data3;
+            if (state.mousey < state.lasty - 30)
             {
                 ch = KEY_DOWNARROW;
-                mousewait = currentTic() + 5;
-                mousey = lasty -= 30;
+                state.mousewait = currentTic() + 5;
+                state.mousey = state.lasty -= 30;
             }
-            else if (mousey > lasty + 30)
+            else if (state.mousey > state.lasty + 30)
             {
                 ch = KEY_UPARROW;
-                mousewait = currentTic() + 5;
-                mousey = lasty += 30;
+                state.mousewait = currentTic() + 5;
+                state.mousey = state.lasty += 30;
             }
 
-            mousex += ev->data2;
-            if (mousex < lastx - 30)
+            state.mousex += ev->data2;
+            if (state.mousex < state.lastx - 30)
             {
                 ch = KEY_LEFTARROW;
-                mousewait = currentTic() + 5;
-                mousex = lastx -= 30;
+                state.mousewait = currentTic() + 5;
+                state.mousex = state.lastx -= 30;
             }
-            else if (mousex > lastx + 30)
+            else if (state.mousex > state.lastx + 30)
             {
                 ch = KEY_RIGHTARROW;
-                mousewait = currentTic() + 5;
-                mousex = lastx += 30;
+                state.mousewait = currentTic() + 5;
+                state.mousex = state.lastx += 30;
             }
 
             if (ev->data1 & 1)
             {
                 ch = KEY_ENTER;
-                mousewait = currentTic() + 15;
+                state.mousewait = currentTic() + 15;
             }
 
             if (ev->data1 & 2)
             {
                 ch = KEY_BACKSPACE;
-                mousewait = currentTic() + 15;
+                state.mousewait = currentTic() + 15;
             }
         }
         else if (ev->type == ev_keydown)
@@ -1692,27 +1671,28 @@ doom_boolean menuResponder(Event* ev)
         return false;
 
     // Save Game string input
-    if (saveStringEnter)
+    if (state.saveStringEnter)
     {
         switch (ch)
         {
             case KEY_BACKSPACE:
-                if (saveCharIndex > 0)
+                if (state.saveCharIndex > 0)
                 {
-                    saveCharIndex--;
-                    savegamestrings[saveSlot][saveCharIndex] = 0;
+                    state.saveCharIndex--;
+                    state.savegamestrings[state.saveSlot][state.saveCharIndex] = 0;
                 }
                 break;
 
             case KEY_ESCAPE:
-                saveStringEnter = 0;
-                doom_strcpy(&savegamestrings[saveSlot][0], saveOldString);
+                state.saveStringEnter = 0;
+                doom_strcpy(&state.savegamestrings[state.saveSlot][0],
+                            state.saveOldString);
                 break;
 
             case KEY_ENTER:
-                saveStringEnter = 0;
-                if (savegamestrings[saveSlot][0])
-                    doSave(saveSlot);
+                state.saveStringEnter = 0;
+                if (state.savegamestrings[state.saveSlot][0])
+                    doSave(state.saveSlot);
                 break;
 
             default:
@@ -1720,12 +1700,13 @@ doom_boolean menuResponder(Event* ev)
                 if (ch != 32)
                     if (ch - HU_FONTSTART < 0 || ch - HU_FONTSTART >= HU_FONTSIZE)
                         break;
-                if (ch >= 32 && ch <= 127 && saveCharIndex < SAVESTRINGSIZE - 1
-                    && stringWidth(savegamestrings[saveSlot])
+                if (ch >= 32 && ch <= 127 && state.saveCharIndex < SAVESTRINGSIZE - 1
+                    && stringWidth(state.savegamestrings[state.saveSlot])
                            < (SAVESTRINGSIZE - 2) * 8)
                 {
-                    savegamestrings[saveSlot][saveCharIndex++] = ch;
-                    savegamestrings[saveSlot][saveCharIndex] = 0;
+                    state.savegamestrings[state.saveSlot][state.saveCharIndex++] =
+                        ch;
+                    state.savegamestrings[state.saveSlot][state.saveCharIndex] = 0;
                 }
                 break;
         }
@@ -1735,13 +1716,13 @@ doom_boolean menuResponder(Event* ev)
     // Take care of any messages that need input
     if (messageToPrint)
     {
-        if (messageNeedsInput == true
+        if (state.messageNeedsInput == true
             && !(ch == ' ' || ch == 'n' || ch == 'y' || ch == KEY_ESCAPE))
             return false;
 
-        overlay.menuactive = messageLastMenuActive;
+        overlay.menuactive = state.messageLastMenuActive;
         messageToPrint = 0;
-        messageRoutine(ch);
+        state.messageRoutine(ch);
 
         overlay.menuactive = false;
         Doom::startSound(0, sfx_swtchx);
@@ -1776,11 +1757,11 @@ doom_boolean menuResponder(Event* ev)
                 startControlPanel();
 
                 if (gameVersion().gamemode == retail)
-                    currentMenu = &ReadDef2;
+                    state.currentMenu = &ReadDef2;
                 else
-                    currentMenu = &ReadDef1;
+                    state.currentMenu = &ReadDef1;
 
-                itemOn = 0;
+                state.itemOn = 0;
                 Doom::startSound(0, sfx_swtchn);
                 return true;
 
@@ -1798,8 +1779,8 @@ doom_boolean menuResponder(Event* ev)
 
             case KEY_F4: // Sound Volume
                 startControlPanel();
-                currentMenu = &SoundDef;
-                itemOn = sfx_vol;
+                state.currentMenu = &SoundDef;
+                state.itemOn = sfx_vol;
                 Doom::startSound(0, sfx_swtchn);
                 return true;
 
@@ -1866,89 +1847,90 @@ doom_boolean menuResponder(Event* ev)
         case KEY_DOWNARROW:
             do
             {
-                if (itemOn + 1 > currentMenu->numitems - 1)
-                    itemOn = 0;
+                if (state.itemOn + 1 > state.currentMenu->numitems - 1)
+                    state.itemOn = 0;
                 else
-                    itemOn++;
+                    state.itemOn++;
                 Doom::startSound(0, sfx_pstop);
-            } while (currentMenu->menuitems[itemOn].status == -1);
+            } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
         case KEY_UPARROW:
             do
             {
-                if (!itemOn)
-                    itemOn = currentMenu->numitems - 1;
+                if (!state.itemOn)
+                    state.itemOn = state.currentMenu->numitems - 1;
                 else
-                    itemOn--;
+                    state.itemOn--;
                 Doom::startSound(0, sfx_pstop);
-            } while (currentMenu->menuitems[itemOn].status == -1);
+            } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
         case KEY_LEFTARROW:
-            if (currentMenu->menuitems[itemOn].routine
-                && currentMenu->menuitems[itemOn].status == 2)
+            if (state.currentMenu->menuitems[state.itemOn].routine
+                && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
                 Doom::startSound(0, sfx_stnmov);
-                currentMenu->menuitems[itemOn].routine(0);
+                state.currentMenu->menuitems[state.itemOn].routine(0);
             }
             return true;
 
         case KEY_RIGHTARROW:
-            if (currentMenu->menuitems[itemOn].routine
-                && currentMenu->menuitems[itemOn].status == 2)
+            if (state.currentMenu->menuitems[state.itemOn].routine
+                && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
                 Doom::startSound(0, sfx_stnmov);
-                currentMenu->menuitems[itemOn].routine(1);
+                state.currentMenu->menuitems[state.itemOn].routine(1);
             }
             return true;
 
         case KEY_ENTER:
-            if (currentMenu->menuitems[itemOn].routine
-                && currentMenu->menuitems[itemOn].status)
+            if (state.currentMenu->menuitems[state.itemOn].routine
+                && state.currentMenu->menuitems[state.itemOn].status)
             {
-                currentMenu->lastOn = itemOn;
-                if (currentMenu->menuitems[itemOn].status == 2)
+                state.currentMenu->lastOn = state.itemOn;
+                if (state.currentMenu->menuitems[state.itemOn].status == 2)
                 {
-                    currentMenu->menuitems[itemOn].routine(1); // right arrow
+                    state.currentMenu->menuitems[state.itemOn].routine(
+                        1); // right arrow
                     Doom::startSound(0, sfx_stnmov);
                 }
                 else
                 {
-                    currentMenu->menuitems[itemOn].routine(itemOn);
+                    state.currentMenu->menuitems[state.itemOn].routine(state.itemOn);
                     Doom::startSound(0, sfx_pistol);
                 }
             }
             return true;
 
         case KEY_ESCAPE:
-            currentMenu->lastOn = itemOn;
+            state.currentMenu->lastOn = state.itemOn;
             clearMenus();
             Doom::startSound(0, sfx_swtchx);
             return true;
 
         case KEY_BACKSPACE:
-            currentMenu->lastOn = itemOn;
-            if (currentMenu->prevMenu)
+            state.currentMenu->lastOn = state.itemOn;
+            if (state.currentMenu->prevMenu)
             {
-                currentMenu = currentMenu->prevMenu;
-                itemOn = currentMenu->lastOn;
+                state.currentMenu = state.currentMenu->prevMenu;
+                state.itemOn = state.currentMenu->lastOn;
                 Doom::startSound(0, sfx_swtchn);
             }
             return true;
 
         default:
-            for (int i = itemOn + 1; i < currentMenu->numitems; i++)
-                if (currentMenu->menuitems[i].alphaKey == ch)
+            for (int i = state.itemOn + 1; i < state.currentMenu->numitems; i++)
+                if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
-                    itemOn = i;
+                    state.itemOn = i;
                     Doom::startSound(0, sfx_pstop);
                     return true;
                 }
-            for (int i = 0; i <= itemOn; i++)
-                if (currentMenu->menuitems[i].alphaKey == ch)
+            for (int i = 0; i <= state.itemOn; i++)
+                if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
-                    itemOn = i;
+                    state.itemOn = i;
                     Doom::startSound(0, sfx_pstop);
                     return true;
                 }
@@ -1964,14 +1946,15 @@ doom_boolean menuResponder(Event* ev)
 void startControlPanel()
 {
     auto& overlay = overlayState();
+    auto& state = menuState();
 
     // intro might call this repeatedly
     if (overlay.menuactive)
         return;
 
     overlay.menuactive = 1;
-    currentMenu = &MainDef; // JDC
-    itemOn = currentMenu->lastOn; // JDC
+    state.currentMenu = &MainDef; // JDC
+    state.itemOn = state.currentMenu->lastOn; // JDC
 }
 
 //
@@ -1982,6 +1965,7 @@ void startControlPanel()
 void drawMenu()
 {
     auto& overlay = overlayState();
+    auto& state = menuState();
 
     static short x;
     static short y;
@@ -1996,21 +1980,21 @@ void drawMenu()
     if (messageToPrint)
     {
         start = 0;
-        y = 100 - stringHeight(messageString) / 2;
-        while (*(messageString + start))
+        y = 100 - stringHeight(state.messageString) / 2;
+        while (*(state.messageString + start))
         {
-            for (i = 0; i < doom_strlen(messageString + start); i++)
-                if (*(messageString + start + i) == '\n')
+            for (i = 0; i < doom_strlen(state.messageString + start); i++)
+                if (*(state.messageString + start + i) == '\n')
                 {
                     doom_memset(string.data(), 0, 40);
-                    doom_strncpy(string.data(), messageString + start, i);
+                    doom_strncpy(string.data(), state.messageString + start, i);
                     start += i + 1;
                     break;
                 }
 
-            if (i == doom_strlen(messageString + start))
+            if (i == doom_strlen(state.messageString + start))
             {
-                doom_strcpy(string.data(), messageString + start);
+                doom_strcpy(string.data(), state.messageString + start);
                 start += i;
             }
 
@@ -2035,17 +2019,17 @@ void drawMenu()
         }
     }
 
-    if (currentMenu->routine)
-        currentMenu->routine(); // call Draw routine
+    if (state.currentMenu->routine)
+        state.currentMenu->routine(); // call Draw routine
 
     // DRAW MENU
-    x = currentMenu->x;
-    y = currentMenu->y;
-    max = currentMenu->numitems;
+    x = state.currentMenu->x;
+    y = state.currentMenu->y;
+    max = state.currentMenu->numitems;
 
     for (i = 0; i < max; i++)
     {
-        MenuItem* menuitem = currentMenu->menuitems + i;
+        MenuItem* menuitem = state.currentMenu->menuitems + i;
         if (menuitem->name[0])
         {
             if (doom_strncmp(menuitem->name, "TXT_", 4) == 0)
@@ -2065,11 +2049,11 @@ void drawMenu()
     }
 
     // DRAW SKULL
-    Doom::drawPatchDirect(
-        x + SKULLXOFF,
-        currentMenu->y - 5 + itemOn * LINEHEIGHT,
-        0,
-        static_cast<Patch*>(Doom::cacheLumpName(skullName[whichSkull].data())));
+    Doom::drawPatchDirect(x + SKULLXOFF,
+                          state.currentMenu->y - 5 + state.itemOn * LINEHEIGHT,
+                          0,
+                          static_cast<Patch*>(Doom::cacheLumpName(
+                              skullName[state.whichSkull].data())));
 }
 
 //
@@ -2085,8 +2069,10 @@ void clearMenus()
 //
 void setupNextMenu(MenuDef* menudef)
 {
-    currentMenu = menudef;
-    itemOn = currentMenu->lastOn;
+    auto& state = menuState();
+
+    state.currentMenu = menudef;
+    state.itemOn = state.currentMenu->lastOn;
 }
 
 //
@@ -2094,10 +2080,12 @@ void setupNextMenu(MenuDef* menudef)
 //
 void menuTicker()
 {
-    if (--skullAnimCounter <= 0)
+    auto& state = menuState();
+
+    if (--state.skullAnimCounter <= 0)
     {
-        whichSkull ^= 1;
-        skullAnimCounter = 8;
+        state.whichSkull ^= 1;
+        state.skullAnimCounter = 8;
     }
 }
 
@@ -2107,6 +2095,7 @@ void menuTicker()
 void initMenu()
 {
     auto& overlay = overlayState();
+    auto& state = menuState();
 
     doom_boolean hide_mouse =
         (doom_flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
@@ -2144,16 +2133,16 @@ void initMenu()
         doom_memcpy(&SoundDef, &SoundNoSFXDef, sizeof(SoundDef));
     }
 
-    currentMenu = &MainDef;
+    state.currentMenu = &MainDef;
     overlay.menuactive = 0;
-    itemOn = currentMenu->lastOn;
-    whichSkull = 0;
-    skullAnimCounter = 10;
-    screenSize = menuSettings().screenblocks - 3;
+    state.itemOn = state.currentMenu->lastOn;
+    state.whichSkull = 0;
+    state.skullAnimCounter = 10;
+    state.screenSize = menuSettings().screenblocks - 3;
     messageToPrint = 0;
-    messageString = nullptr;
-    messageLastMenuActive = overlay.menuactive;
-    quickSaveSlot = -1;
+    state.messageString = nullptr;
+    state.messageLastMenuActive = overlay.menuactive;
+    state.quickSaveSlot = -1;
 
     // Here we could catch other version dependencies,
     //  like HELP1/2, and four episodes.

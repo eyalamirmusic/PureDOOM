@@ -14,9 +14,11 @@ namespace Doom
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5) - the first UI
 // cluster, and the first that was already file-local (a `static` inside UI/Hud's namespace rather
 // than a loose global), so it was off the global cloud but still process-static state a second
-// Engine would share. The vanilla names become references onto these members. The status bar and
-// HUD are drawn into screens[0] every tic, which the frame goldens hash, and the demos pick items
-// up (setting plr->message), so this is live-golden-covered - byte-identical goldens confirm it.
+// Engine would share. UI/Hud reaches these members through a hoisted `auto& msg = hudMessage();`
+// local per function rather than a file-scope alias (REFACTOR.md, Step 9 strand (a)). The status
+// bar and HUD are drawn into screens[0] every tic, which the frame goldens hash, and the demos
+// pick items up (setting plr->message), so this is live-golden-covered - byte-identical goldens
+// confirm it.
 struct HudMessage
 {
     doom_boolean message_on = false; // a message is currently showing

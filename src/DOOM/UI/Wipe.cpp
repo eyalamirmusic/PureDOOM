@@ -24,12 +24,10 @@
 namespace Doom
 {
 
-// The melt's scratch framebuffers now live on the Engine (UI/WipeState.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto that
-// member. The exported wipe_scr_start / wipe_melt_offsets / wipe_melt_running stay in the f_wipe.cpp
-// shim, being what the GPU compositor reads.
-static byte*& wipe_scr_end = wipeState().wipe_scr_end;
-static byte*& wipe_scr = wipeState().wipe_scr;
+// The melt's scratch framebuffers live on the Engine (UI/WipeState.h). Every function below
+// reaches them through a hoisted `auto& scratch = wipeState();` local instead of a file-scope
+// alias (REFACTOR.md, Step 9 strand (a)). The exported wipe_scr_start / wipe_melt_offsets /
+// wipe_melt_running stay in the f_wipe.cpp shim, being what the GPU compositor reads.
 
 void colMajorXform(short* array, int width, int height)
 {
@@ -46,22 +44,24 @@ void colMajorXform(short* array, int width, int height)
 int initColorXForm(int width, int height, int ticks)
 {
     (void) ticks;
-    doom_memcpy(wipe_scr, wipe_scr_start, width * height);
+    doom_memcpy(wipeState().wipe_scr, wipe_scr_start, width * height);
     return 0;
 }
 
 int doColorXForm(int width, int height, int ticks)
 {
+    auto& scratch = wipeState();
+
     doom_boolean changed;
     byte* w;
     byte* e;
     int newval;
 
     changed = false;
-    w = wipe_scr;
-    e = wipe_scr_end;
+    w = scratch.wipe_scr;
+    e = scratch.wipe_scr_end;
 
-    while (w != wipe_scr + width * height)
+    while (w != scratch.wipe_scr + width * height)
     {
         if (*w != *e)
         {
@@ -101,16 +101,18 @@ int exitColorXForm(int width, int height, int ticks)
 
 int initMelt(int width, int height, int ticks)
 {
+    auto& scratch = wipeState();
+
     int r;
     (void) ticks;
 
     // copy start screen to main screen
-    doom_memcpy(wipe_scr, wipe_scr_start, width * height);
+    doom_memcpy(scratch.wipe_scr, wipe_scr_start, width * height);
 
     // makes this wipe faster (in theory)
     // to have stuff in column-major format
     colMajorXform(reinterpret_cast<short*>(wipe_scr_start), width / 2, height);
-    colMajorXform(reinterpret_cast<short*>(wipe_scr_end), width / 2, height);
+    colMajorXform(reinterpret_cast<short*>(scratch.wipe_scr_end), width / 2, height);
 
     // setup initial column positions
     // (wipe_melt_offsets<0 => not ready to scroll yet)
@@ -131,6 +133,8 @@ int initMelt(int width, int height, int ticks)
 
 int doMelt(int width, int height, int ticks)
 {
+    auto& scratch = wipeState();
+
     int dy;
     int idx;
 
@@ -155,9 +159,9 @@ int doMelt(int width, int height, int ticks)
                 if (wipe_melt_offsets[i] + dy >= height)
                     dy = height - wipe_melt_offsets[i];
                 s = &(reinterpret_cast<short*>(
-                    wipe_scr_end))[i * height + wipe_melt_offsets[i]];
+                    scratch.wipe_scr_end))[i * height + wipe_melt_offsets[i]];
                 d = &(reinterpret_cast<short*>(
-                    wipe_scr))[wipe_melt_offsets[i] * width + i];
+                    scratch.wipe_scr))[wipe_melt_offsets[i] * width + i];
                 idx = 0;
                 for (int j = dy; j; j--)
                 {
@@ -167,7 +171,7 @@ int doMelt(int width, int height, int ticks)
                 wipe_melt_offsets[i] += dy;
                 s = &(reinterpret_cast<short*>(wipe_scr_start))[i * height];
                 d = &(reinterpret_cast<short*>(
-                    wipe_scr))[wipe_melt_offsets[i] * width + i];
+                    scratch.wipe_scr))[wipe_melt_offsets[i] * width + i];
                 idx = 0;
                 for (int j = height - wipe_melt_offsets[i]; j; j--)
                 {
@@ -204,8 +208,10 @@ int startScreen(int x, int y, int width, int height)
 
 int endScreen(int x, int y, int width, int height)
 {
-    wipe_scr_end = screens[3];
-    readScreen(wipe_scr_end);
+    auto& scratch = wipeState();
+
+    scratch.wipe_scr_end = screens[3];
+    readScreen(scratch.wipe_scr_end);
     Doom::drawBlock(x, y, 0, width, height, wipe_scr_start); // restore start scr.
     return 0;
 }
@@ -222,7 +228,7 @@ int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
     if (!wipe_melt_running)
     {
         wipe_melt_running = 1;
-        wipe_scr = screens[0];
+        wipeState().wipe_scr = screens[0];
         (*wipes[wipeno * 3])(width, height, ticks);
     }
 

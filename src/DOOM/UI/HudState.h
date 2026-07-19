@@ -17,9 +17,10 @@ namespace Doom
 // Doom::startHud/HU_Stop raise and drop so the HUD is set up exactly once per level. None is read by any
 // other file.
 //
-// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names
-// become references onto these members. The level title lands in screens[0] on entry, which the
-// demos exercise every level start, so this is frame-golden-covered.
+// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); UI/Hud reaches
+// these members through a hoisted `auto& state = hudState();` local per function rather than a
+// file-scope alias (REFACTOR.md, Step 9 strand (a)). The level title lands in screens[0] on
+// entry, which the demos exercise every level start, so this is frame-golden-covered.
 struct HudState
 {
     Player* plr = nullptr; // the console player the HUD reads from

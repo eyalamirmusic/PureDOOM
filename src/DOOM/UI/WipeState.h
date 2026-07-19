@@ -13,10 +13,11 @@ namespace Doom
 // in the shim, the private scratch moves to the Engine).
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were UI/Wipe's
-// own namespace-scope scratch, read by no other file. The vanilla names become references onto the
-// members. The melt runs at every level load (G_DoLoadLevel wipes), so the demo frame goldens see
-// it - but a reference alias is pure storage relocation all the same (the melt walks M_Random, not
-// P_Random, so it never touches the simulation hash).
+// own namespace-scope scratch, read by no other file. UI/Wipe reaches them through a hoisted
+// `auto& scratch = wipeState();` local per function rather than a file-scope alias (REFACTOR.md,
+// Step 9 strand (a)). The melt runs at every level load (G_DoLoadLevel wipes), so the demo frame
+// goldens see it - but relocating the storage changes nothing observable either way (the melt
+// walks M_Random, not P_Random, so it never touches the simulation hash).
 struct WipeState
 {
     byte* wipe_scr =

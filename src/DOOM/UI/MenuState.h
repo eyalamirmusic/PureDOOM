@@ -21,10 +21,13 @@ inline constexpr int menuSaveStringSize = 24;
 // string editor (which slot, the character being edited, the descriptions and the pre-edit backup).
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were UI/Menu's
-// own namespace-scope private globals, read by no other file. The vanilla names become references
-// onto the members (arrays as references-to-array). The menu is frame-golden-covered
+// own namespace-scope private globals, read by no other file. UI/Menu reaches them through a
+// hoisted `auto& state = menuState();` local per function rather than a file-scope or
+// function-scope alias (REFACTOR.md, Step 9 strand (a)). The menu is frame-golden-covered
 // (Tests/Goldens/menu.frames drives a scripted walk through it), so this is live-verified, not just
-// build + app-link - a reference alias is pure storage relocation all the same.
+// build + app-link - relocating the storage changes nothing observable either way. (messx/messy,
+// the message box's never-used position fields, were dropped outright rather than hoisted - no
+// reader anywhere ever set or read them.)
 //
 // Three groups of Menu globals stay put and do *not* move in here:
 //  - the config-backed / cross-read globals (screenblocks / detailLevel / showMessages /
@@ -55,8 +58,6 @@ struct MenuState
 
     // The pop-up message box.
     const char* messageString = nullptr; // the message text
-    int messx = 0; // message x
-    int messy = 0; // message y
     int messageLastMenuActive = 0; // menuactive as the message opened
     doom_boolean messageNeedsInput = false; // timed message = no user input
     // Answers the message. Given a non-null default (eacp style) so the responder
