@@ -36,12 +36,23 @@ Read it before touching `src/DOOM`, and update its progress table as steps land.
 **That end state has largely arrived.** It was stated as: no C left, no
 `PureDOOM.h`, no zone allocator, no ~684 loose globals, and an `Engine` object
 constructed rather than booted. All five are true today — Steps 0–8 are done and
-`Engine/resetEngineMakesAFreshInstance` proves the last one. **Step 9 is the only
-open front**: modern C++ / RAII across the board, of which the idiom cleanup and
-the alias retirement are finished and the RAII sweep is down to one audio-blocked
-owner. Read `REFACTOR.md`'s progress table for the current state rather than
-assuming from this paragraph — and if the two ever disagree, the table is the
-one that gets updated as work lands.
+`Engine/resetEngineMakesAFreshInstance` proves the last one. **Step 9's three
+strands are now done too** — the idiom cleanup (including the C-array conversion,
+which this file and `REFACTOR.md` both called finished twice before it was ever
+counted), the alias retirement, and the RAII sweep, that last one bar a single
+audio-blocked owner.
+
+What is left of the whole refactor is a short, named, mostly *deliberate* tail:
+audio (blocked outside this repository) and `Host/Sound`'s `paddedsfx` behind it;
+`findResponseFile`/`myargv`, a real ownership question with no test driving it; the
+~55 dead-in-both-eras macros whose deletion is a judgement call reserved for a
+human; the six object-like macros whose bodies call runtime accessors and want to
+be inline functions; and measuring the warning count on the four CI configurations
+this repository has never measured, which is the prerequisite for `-Werror`.
+
+Read `REFACTOR.md`'s progress table for the current state rather than assuming from
+this paragraph — and if the two ever disagree, the table is the one that gets
+updated as work lands.
 
 (Scenario tests, once thought to depend on the constructible `Engine`, never did:
 the engine runs many scenarios per process because loading a level resets the
@@ -194,16 +205,20 @@ apparatus:
   inside `#if defined(I_NET_ENABLED) && !defined(DOOM_APPLE)`, so **no build in this
   repository compiles them** and no gate here could check a change to them.
 
-  The *constant* macros are **well advanced — 629 → 312 across `src/DOOM`**, and 199
-  of that remainder is `Game/StringsFrench.h`, which no build here compiles. Every
-  header is done and so is every `.cpp` pile. What is left is named in `REFACTOR.md`
-  item 6: ~25 in the one- and two-macro files, `UI/StatusBar`'s 42 dead ones, and six
+  The *constant* macros are **essentially closed — 629 → 309 across `src/DOOM`**, and
+  199 of that remainder is `Game/StringsFrench.h`, which no build here compiles. Every
+  header is done, every `.cpp` pile, and the one- and two-macro tail with them. What
+  is left is deliberate rather than pending, and named in `REFACTOR.md` item 6:
+  `UI/StatusBar`'s 42 dead ones and the ~55 dead-in-both-eras pile they belong to
+  (deleting those is a human's call, and converting one is worse than leaving it —
+  see below); the five string families that cannot leave the preprocessor at all,
+  because adjacent-literal concatenation happens at translation phase 6; and six
   object-like macros whose bodies call a runtime accessor (`HU_TITLE`, `MAXPLMOVE`)
   and therefore cannot be `constexpr` at all.
 
-  Four things to know before converting another one:
+  Five things to know before converting another one:
 
-  - **Ask whether the constant already exists — eleven did, and five of those were a
+  - **Ask whether the constant already exists — fifteen did, and five of those were a
     latent overrun.** A fixed-size array in a state cluster is sized by that cluster's
     own constant (`PlaneScratch::maxVisplanes`/`maxOpenings`,
     `SpriteState::maxVisSprites`, `BSPScratch::maxDrawSegs`, `SolidSegs::maxSegs`,
@@ -217,6 +232,40 @@ apparatus:
     (`fineAngles`, `fineMask`, `slopeRange`, `slopeBits`, `slopeToFixedShift`,
     `ang45`/`ang90`/`ang180`/`ang270`, `Angle::angleToFineShift`). Do not add a
     second spelling of any of these.
+
+    **The category is wider than "a macro with a `constexpr` twin", which is why it
+    keeps growing.** Three more instances turned up after that list was written, and
+    none of them looks like the others:
+    - `FRACBITS` was a plain duplicate of `Fixed::fracBits`/`Doom::fracBits`, sitting
+      two lines from `using fixed_t = Doom::Fixed` in `Math/FixedPoint.h`. It caused
+      no defect — a shift count cannot overflow an array — so nothing ever surfaced
+      it, and two sites had quietly drifted into using **both spellings in one
+      expression** (`(topscreen.raw + fracUnit - 1) >> FRACBITS`). It is retired;
+      use `Doom::fracBits`. `FRACUNIT` stays, being the `Fixed` value 1.0 rather than
+      the integer 65536, and is now defined *from* `Doom::fracUnit`.
+    - `Sim/Mobj.cpp` bounded an array sized `MAX_DM_STARTS` with a **bare literal**
+      `10`. No second spelling exists, so no grep for duplicate constants could ever
+      have found it. **The real category is "the guard and the array bound are not
+      the same token."**
+    - The savegame description length had **three** spellings, and one of them
+      bounded a `doom_read` into a buffer sized by another — an overrun waiting for
+      anyone who lowered it. Worse, `MenuState.h` carried a comment explaining that
+      the compiler kept the two in step via `char(&)[24]` reference-to-array
+      bindings; that was true until Step 9 strand (a) retired every such binding,
+      which removed the mechanism and left the reassurance behind. **A refactor can
+      delete the thing an older comment depends on, and nothing points at the
+      comment.** When you retire a mechanism, grep the prose for its name.
+
+    Where two constants must agree across a subsystem boundary, the fix is a
+    `static_assert`, not a third spelling and not a comment (`Game/Game.cpp`'s
+    `SAVESTRINGSIZE == menuSaveStringSize` is the worked example).
+  - **Do not convert a macro that is dead in both eras.** ~55 of them are, and they
+    are left as `#define`s on purpose. A sweep converted ten and every one came out
+    as `[[maybe_unused]] constexpr` — an attribute whose only job is to silence the
+    diagnostic saying the thing is unused, which is the signal it should not have
+    been converted at all. All ten were reverted. (Live constants in *headers* need
+    no such attribute either: Clang does not warn for const variables declared in a
+    header, which is why `Sim/SimDefs.h`'s 21 never needed one.)
   - **A `constexpr` is implicitly parenthesized and several vanilla bodies are not**
     (`PLAYERRADIUS 16 * FRACUNIT` is the surviving example), so equivalence is a fact
     to establish per call site rather than assume. What breaks is dividing by, or
@@ -230,6 +279,39 @@ apparatus:
     `Host/Platform.h`'s three), string-literal building blocks that rely on
     translation-phase-6 concatenation (`PRESSKEY`, `DOSY`, `DEVDATA`, `DEVMAPS`), and
     bodies that call runtime accessors all stay.
+
+  **The fixed-size C arrays are `EA::Array<T, N>` now** — 111 members across 39
+  headers, in the state and scratch clusters. **19 are deliberately still raw**, and
+  the distinction is by *struct*, not by file:
+
+  | Still raw | Why |
+  |---|---|
+  | `Wad/MapFormat.h`'s 8 structs | `reinterpret_cast` onto raw WAD lump bytes |
+  | `Render/RenderTypes.h`'s `Patch::columnofs` | the same, one file over — and a *flexible* array, declared `[8]` but indexed to `[width]`, with the pixel data starting at `&columnofs[width]`. `SpriteFrame` and `VisPlane` in that same header are engine-composed and *are* converted |
+  | `Game/PlayerTypes.h`'s 9 | `Player` is `memcpy`'d whole by `Sim/SaveGame.cpp`; `IntermissionStart`/`IntermissionPlayer` are `memcpy`'d whole to the `-statcopy` address |
+  | `Game/NetTypes.h`'s `NetPacket::cmds` | packed onto the wire, checksummed through a `reinterpret_cast<unsigned*>` and byte-swapped field by field |
+
+  Four things that bite when converting or reading these:
+
+  - **`EA::Array` value-initializes; a raw C array does not.** Its sole member is
+    declared `ContainerType container {}`, so `EA::Array<char, N> x;` zeroes where
+    `char x[N];` left garbage. "I left the `= {}` off, so nothing changed" is false.
+  - **It adds no storage**, so it is layout- and size-identical to the raw array —
+    but that is an implementation fact about eacp, not a language guarantee. One
+    place genuinely depends on it: **`VisPlane::top`/`bottom` are indexed out of
+    bounds on purpose**, `Render/Planes.cpp` writing a `0xff` sentinel at
+    `[minx - 1]` and `[maxx + 1]` so the span loop needs no bounds test in its inner
+    loop. That is what `pad1`..`pad4` are for. `RenderTypes.h` pins it with a
+    `static_assert` rather than a memory.
+  - **`EA::Array` does not decay to `T*`.** Sites using the bare array as a pointer
+    need `.data()`; `&arr[i]` is fine unchanged. The pointer-*difference* idiom is
+    the one that hides — `player - players_.players` computes a player index in four
+    places and none was in any survey. The compiler catches each individually, which
+    makes this one of the few sweeps here that the build verifies for you.
+  - **`EA::Array<char, N>` is not an aggregate**, so a bare string literal in a table
+    stops binding: `Sim/Switches.cpp`'s `alphSwitchList[]` needs
+    `EA::Array<char, 9> {{"SW1BRCOM"}}`. Verify any bulk string change by extracting
+    every literal before and after and diffing them.
 
   **`doom_boolean` is gone** — the last vanilla type. All ~288 uses are a real
   `bool`, and the typedef is deleted, so a boolean in this engine is a boolean.

@@ -82,7 +82,7 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **done, bar audio (externally blocked)** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio alone — the engine side is built and it is blocked outside this repository, on an eacp audio stream. (This row read **in progress** while the handoff four lines below it read **8 is done**; the handoff was right. The row had also been counting the globals-into-`Engine` sweep as its own remainder, which is Step 5's work, not Step 8's.) |
-| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), *some* C arrays → `EA::Array` (**not all — 128 remain, see item 8 under "What is left"; this row listed it as finished and it is not**), `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now done bar one audio-blocked item**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — and the level pool has a destructor now (it was leaking every mobj on `resetEngine()`), leaving only `Host/Sound`'s audio-blocked `paddedsfx` and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **The function-like macro layer is now retired too** — `Math/Swap.h`'s `SHORT`/`LONG` across 154 sites became one deduced-width `Doom::littleEndian`, and `UI/Automap`'s seven, `Sim/SaveGame`'s `PADSAVEP` and `UI/CheatTypes`' `SCRAMBLE` became functions; `Host/Net`'s `ntohl`/`ntohs` stay, deliberately, being under an `#if` for a platform no gate here compiles. That sweep found the refactor's **one real behaviour bug** (`thintriangle_guy`, see the traps section) and two more little-endian-invisible defects. **The constant macros followed and are now well advanced — 629 → 312 across `src/DOOM`**, of which 199 of the remainder is `Game/StringsFrench.h`, which no build here compiles: `Sim/SimDefs.h`, `Sim/SpecialTypes.h`, `Render/Lighting.h`, `UI/Hud.h`, `UI/HudWidgetTypes.h`, `UI/StatusBarTypes.h`, 290 of `Game/StringsEnglish.h`'s 293, then `Game/GameDefs.h`, `UI/AutomapTypes.h`, `Wad/MapFormat.h`, `Game/NetTypes.h`, `UI/StatusWidgetTypes.h`, `Sim/WeaponTypes.h` and every `.cpp`-local pile. **That sweep's largest finding was not about macros**: eleven constants existed twice, once as the vanilla macro and once as a `constexpr` on the owning `Engine` cluster, and in five of them the overflow guard tested one while the array was sized by the other — see item 6. `Math/TrigTables.h` was the same thing at eleven-in-one-file scale and became a deletion rather than a conversion. **The warning count went 81 → 1**, the survivor being the deliberate type-erased-action cast. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **all three strands done; one audio-blocked item** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array` (**now genuinely all of them** — this row twice claimed it finished while it had not been counted; the category was enumerated at 130 members across 43 headers, 111 converted in three batches and 19 correctly left raw, see item 8), `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now done bar one audio-blocked item**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — and the level pool has a destructor now (it was leaking every mobj on `resetEngine()`), leaving only `Host/Sound`'s audio-blocked `paddedsfx` and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **The function-like macro layer is now retired too** — `Math/Swap.h`'s `SHORT`/`LONG` across 154 sites became one deduced-width `Doom::littleEndian`, and `UI/Automap`'s seven, `Sim/SaveGame`'s `PADSAVEP` and `UI/CheatTypes`' `SCRAMBLE` became functions; `Host/Net`'s `ntohl`/`ntohs` stay, deliberately, being under an `#if` for a platform no gate here compiles. That sweep found the refactor's **one real behaviour bug** (`thintriangle_guy`, see the traps section) and two more little-endian-invisible defects. **The constant macros followed and are now essentially closed — 629 → 309 across `src/DOOM`**, of which 199 of the remainder is `Game/StringsFrench.h`, which no build here compiles: `Sim/SimDefs.h`, `Sim/SpecialTypes.h`, `Render/Lighting.h`, `UI/Hud.h`, `UI/HudWidgetTypes.h`, `UI/StatusBarTypes.h`, 290 of `Game/StringsEnglish.h`'s 293, then `Game/GameDefs.h`, `UI/AutomapTypes.h`, `Wad/MapFormat.h`, `Game/NetTypes.h`, `UI/StatusWidgetTypes.h`, `Sim/WeaponTypes.h` and every `.cpp`-local pile. **That sweep's largest finding was not about macros**: eleven constants existed twice, once as the vanilla macro and once as a `constexpr` on the owning `Engine` cluster, and in five of them the overflow guard tested one while the array was sized by the other — see item 6. `Math/TrigTables.h` was the same thing at eleven-in-one-file scale and became a deletion rather than a conversion. **The warning count went 81 → 1**, the survivor being the deliberate type-erased-action cast. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
 
 ## Where this is — session handoff
 
@@ -115,11 +115,35 @@ being deliberate. The constant macros went **629 → 312**, and 199 of that rema
 `Game/StringsFrench.h`, which no build here compiles — every header named as open in
 the previous draft of this paragraph is done, as are all the `.cpp` piles.
 
-What is left of item 6 is smaller and named there: ~25 convertible macros in the one-
-and two-macro files the survey never fanned out to, `UI/StatusBar`'s 42 dead ones, and
-six object-like macros whose bodies call a runtime accessor and therefore cannot be
-`constexpr` at all. Item 8, the 128 C arrays, is the other open one, and part of it is
-deliberately closed.
+**Item 8 is done**: 130 members enumerated, 19 that must stay raw, **111 converted** in
+three batches (UI 35, Render 29, Game+Sim+Wad 47). Its hazard list was wrong in both
+directions and is corrected there — as written it would have led someone to convert
+`Patch::columnofs`, a flexible array over raw lump bytes, while carefully avoiding two
+headers that were never at risk.
+
+**With that, Step 9's three strands are all done**, and what remains of the whole
+refactor is the short, named, mostly-deliberate tail: audio (blocked outside this
+repository), `Host/Sound`'s `paddedsfx` and `findResponseFile`/`myargv` behind it, the
+~55 dead-in-both-eras macros whose deletion is a judgement call reserved for a human,
+the six runtime-accessor macros that want to be inline functions, and item 7's
+prerequisite — measuring the warning count on the four CI configurations this
+repository has never measured, before anyone reaches for `-Werror`.
+
+**Item 6 is now essentially closed.** The one- and two-macro tail went in a single
+batch (17 names, `326 → 309`), and what remains is deliberate rather than pending:
+`Game/StringsFrench.h`'s 199 that no build here compiles, the ~55 dead-in-both-eras
+macros whose *deletion* is a judgement call reserved for a human, the five
+concatenation families that cannot leave the preprocessor at all, and six object-like
+macros whose bodies call a runtime accessor and therefore have no `constexpr` available
+(they want to be inline functions — call-site churn, a separate change, unclaimed).
+**Item 8, the 128 C arrays, is the open one**, and part of it is deliberately closed.
+
+Two things that batch turned up are worth reading before the next sweep of any kind:
+`FRACBITS` was a **thirteenth** duplicate constant hiding in plain sight next to
+`Doom::fracBits`, and a work list built by grepping for "files with one or two macros
+left" silently overlapped the pile this document deliberately leaves alone — producing
+ten `[[maybe_unused]] constexpr`s whose annotation was itself the evidence they should
+not have been converted. Both are under item 6.
 
 **The macro work's largest finding was not about macros.** Eleven constants were
 defined twice — once as the vanilla macro, once as a `constexpr` on the `Engine`
@@ -229,9 +253,23 @@ count looked like a retraction and was a bad grep. **Read what the hits actually
 before writing the correction** — a false retraction costs the next reader as much as
 a false completion, and this document has now made both mistakes.
 
-(The 17 `(void) param;` suppressions are themselves a C idiom C++ has better answers
+(~~The 17 `(void) param;` suppressions are themselves a C idiom C++ has better answers
 for — omit the parameter name, or `[[maybe_unused]]`. Fourteen are in `UI/Wipe.cpp`,
-where a family of stubs shares a function-pointer signature. Small, safe, unclaimed.)
+where a family of stubs shares a function-pointer signature. Small, safe, unclaimed.~~
+**Already done, and this entry never noticed.** `UI/Wipe.cpp`, `UI/StatusWidgets.cpp`
+and `Host/Sound.cpp` all carry `[[maybe_unused]]` parameters today; `git grep '(void)'`
+returns **one** hit, `Host/Sound.cpp:1136`'s `(void) mus_data[mus_offset++];`, which is
+a different idiom entirely — discarding an expression's result to advance a cursor, not
+suppressing an unused parameter.
+
+**This is the first claim in this document to be wrong in the *other* direction**, and
+that is why it is worth keeping rather than deleting. Four earlier retractions were
+work called finished that was not; this is work called outstanding that was finished.
+Both come from the same habit — writing a status from memory instead of from the tree —
+but they fail differently: an overstated completion lets a sweep land under a green
+suite that never ran the code, while an *understated* one just wastes the next reader's
+afternoon re-doing something. The rule covers both: **a status line is a measurement,
+and it is stale the moment it is written down.**)
 
 ### Strand (a), and the three times it was called done
 
@@ -697,9 +735,10 @@ Everything above the line is done. What follows is, in the order worth doing it:
      `#if defined(I_NET_ENABLED) && !defined(DOOM_APPLE)`, so **no gate in this
      repository compiles them**, and a change there could not be verified by
      anything. Leave them until someone builds that configuration.
-   - **Constant object-like macros** — **well advanced: 629 → 312 across
+   - **Constant object-like macros** — **essentially done: 629 → 309 across
      `src/DOOM`**, of which 199 of the remainder is `Game/StringsFrench.h`, which no
-     build here compiles. Done: `Sim/SimDefs.h` (21), `Sim/SpecialTypes.h` (16),
+     build here compiles, and ~55 more are the dead-in-both-eras pile this item
+     deliberately leaves in place. Done: `Sim/SimDefs.h` (21), `Sim/SpecialTypes.h` (16),
      `Game/GameDefs.h` (39 of 40), `UI/AutomapTypes.h` (32), `Wad/MapFormat.h` (10),
      `Math/TrigTables.h` (11, by deletion — see below), `Game/NetTypes.h` (3),
      `UI/StatusWidgetTypes.h` (2), `Sim/WeaponTypes.h` (2), and the `.cpp`-local
@@ -710,16 +749,40 @@ Everything above the line is done. What follows is, in the order worth doing it:
      `Sim/Specials` (1). Mostly **no call-site churn**: the name is unchanged, so
      every use inside `namespace Doom` still resolves.
 
-     **What is genuinely left**, counted rather than estimated: ~25 convertible ones
-     in the one- and two-macro files the first survey never fanned out to
-     (`Math/FixedPoint.h`'s `FRACBITS`/`FRACUNIT`, `Render/Sky.h`, `Render/Segs.cpp`,
-     `Sim/Mobj.cpp`, `Game/Event.h`, `Render/Video.h`, `Render/Main.h`,
-     `Game/MapSpawns.h`, `Game/DoomMain.h`, `Game/ConfigTypes.h`,
-     `Sim/Interaction.cpp` and a tail of singles); `UI/StatusBar`'s 42 dead ones; and
-     the deliberate remainders below. **That survey is the lesson**: it ranked files
-     by macro count and fanned agents out to everything with two or more, which
-     silently scoped out a third of the work. A per-file count is a work *estimate*,
-     not a work *list*.
+     **The one- and two-macro tail is now done too** — the files the first survey
+     never fanned out to. Seventeen names left the preprocessor in one batch:
+     `Sim/Mobj.cpp`'s `STOPSPEED`/`FRICTION`, `Render/Things.cpp`'s
+     `MINZ`/`BASEYCENTER`, `Render/Segs.cpp`'s `HEIGHTBITS`/`HEIGHTUNIT`,
+     `Sim/Interaction.cpp`'s `BONUSADD`, `Render/Main.cpp`'s `FIELDOFVIEW`,
+     `Render/Sky.h`'s `SKYFLATNAME`/`ANGLETOSKYSHIFT`, `Render/Main.h`'s `DISTMAP`,
+     `Game/MapSpawns.h`'s `MAX_DM_STARTS`, `Game/Event.h`'s `MAXEVENTS`,
+     `Game/DoomMain.h`'s `MAXWADFILES`, `Game/ConfigTypes.h`'s `STRING_VALUE`, and
+     `Math/FixedPoint.h`'s `FRACUNIT`/`FRACBITS` (the latter **retired**, not
+     converted — see the duplicate-constant entry below). `examples/EACP/
+     EngineAccess.cpp` needed `Doom::` on `DISTMAP` and `STRING_VALUE`, and
+     `Game/DoomMain.cpp:106`'s `static char* wadfiles[MAXWADFILES]` sits *before*
+     the file's `namespace Doom` and needed qualifying too — a global-scope reader
+     that is not one of the four this document keeps listing, found only by grepping
+     every includer rather than the known-readers list.
+
+     **That first survey is still the lesson**: it ranked files by macro count and
+     fanned agents out to everything with two or more, which silently scoped out a
+     third of the work. A per-file count is a work *estimate*, not a work *list*.
+
+     **And the count in the previous draft of this entry was itself wrong.** It said
+     312; the tree held **326**. Nobody had re-run the count after the last batch, so
+     a number that exists precisely to track progress had drifted by fourteen while
+     reading as measured. The command is one line and settles it:
+
+         grep -rl --include='*.h' --include='*.cpp' -E '^[[:space:]]*#[[:space:]]*define' src/DOOM \
+           | while read f; do grep -cE '^[[:space:]]*#[[:space:]]*define' "$f"; done \
+           | awk '{s+=$1} END {print s}'
+
+     Better still, verify a macro sweep by **diffing the set of names** before and
+     after rather than the count — `grep -rhoE '#[[:space:]]*define[[:space:]]+\w+'`
+     piped to `sort`, then `comm`. That is what confirmed this batch removed exactly
+     seventeen names and *added none*, which a count alone cannot tell you: a sweep
+     that retires one macro and introduces another nets to zero and looks untouched.
 
      Six things learned, all of which apply to the next header:
      - **Three bodies were unparenthesized** — `PLAYERRADIUS 16 * FRACUNIT`,
@@ -773,6 +836,21 @@ Everything above the line is done. What follows is, in the order worth doing it:
        and `Render/Planes`' guard keeps the old bound, silently. All five now test
        the constant that sizes the array.
 
+       **A sixth has since turned up, and it hid from the grep because it is not a
+       constant at all.** `Sim/Mobj.cpp`'s deathmatch-start guard read
+
+           if (spawns.deathmatch_p < &spawns.deathmatchstarts[10])
+
+       — a **bare literal**, against an array sized `MAX_DM_STARTS`. Same defect,
+       same consequence (raise the bound and the guard stays at ten), but no second
+       *spelling* exists for a grep to find, and the instrument this document was so
+       pleased with — `grep -rn 'constexpr.*// *[A-Z_]* in '` — could never have
+       matched it. It now reads `[MAX_DM_STARTS]`, identical in value, so no golden
+       moved. **The category is "the guard and the array bound are not the same
+       token", and a literal is the commonest way to be in it.** Worth a sweep of its
+       own: every fixed-size array member in a state cluster, checked against every
+       comparison that bounds an index or a cursor into it.
+
        **The instrument is the reusable part.** The migration that introduced each
        twin left a comment naming the macro it replaced, so
 
@@ -795,6 +873,89 @@ Everything above the line is done. What follows is, in the order worth doing it:
        `AutomapView::numMarkPoints` rather than retired, giving both spellings equal
        standing. **A macro-to-`constexpr` sweep that does not first ask "does this
        already exist?" manufactures the defect it is cleaning up.**
+
+       **`FRACBITS` was the thirteenth, and it is the one that should have been
+       obvious.** `Math/FixedPoint.h` defined `FRACBITS 16` two lines below a
+       `using fixed_t = Doom::Fixed`, while `Math/Fixed.h` — the header it
+       includes — had held `Fixed::fracBits` and `Doom::fracBits` all along, same
+       value, same meaning. It survived twelve other findings of this exact category
+       because a shift count cannot overflow an array, so it never produced the
+       *defect* that made the other eleven visible. What it produced instead was
+       drift: two sites had already reached the state where **both spellings appear
+       inside one expression** —
+
+           draw.dc_yl = (topscreen.raw + fracUnit - 1) >> FRACBITS;   // Render/Things.cpp
+           t = (proj.centerxfrac.raw - t + fracUnit - 1) >> FRACBITS; // Render/Main.cpp
+
+       — which is precisely the `ANG*`/`ang*` problem `Math/TrigTables.h` had
+       (69 sites one way, 17 the other, nothing telling a reader they were the same
+       constant). So `FRACBITS` is **retired**, not converted, and its twelve real
+       sites read `fracBits`. `FRACUNIT` stays, because it is genuinely a different
+       thing — the `Fixed` value 1.0, not the integer 65536 — but it is now
+       `constexpr Doom::Fixed FRACUNIT {Doom::fracUnit}`, defined *from* the existing
+       constant so there is one number in the header and not two. It stays at `::`
+       scope deliberately, beside `fixed_t` and `FixedMul`: `Tests/Sim/
+       PrimitiveTests.cpp` and `examples/EACP/EngineAccess.cpp` read it unqualified
+       and neither has a `using namespace Doom`.
+
+       **The generalisation, since this is now thirteen instances:** the category is
+       not "a macro and a `constexpr` with the same value". It is *any* constant
+       reachable under two spellings, and the eleven were found only because five of
+       them had produced a guard/array mismatch. `FRACBITS` shows the silent
+       majority — a duplicate that causes no bug and simply lets a file drift into
+       using both names for one number. Look for it **before** converting, because
+       after conversion the two spellings are equally idiomatic and nothing marks
+       one as the newcomer.
+
+       **A fourteenth, recorded rather than acted on:** `Host/Sound.cpp`'s
+       `SAMPLERATE 11025` duplicates the public `DOOM_SAMPLERATE` in `DOOM.h`. It is
+       left alone only because it is *also* dead in both eras and therefore belongs
+       to the deliberately-untouched pile below; whoever deletes that pile should
+       know it was a duplicate as well as dead.
+
+       **And a fifteenth, which is the worst of the set and was found by item 8's
+       array conversion rather than by any macro work.** The savegame description
+       length existed as **three** constants: `menuSaveStringSize` (`UI/MenuState.h`)
+       sizing the ten slot buffers, and a file-local `SAVESTRINGSIZE = 24` in *each*
+       of `UI/Menu.cpp` and `Game/Game.cpp`. `Menu.cpp` then read a whole field into
+       one of those buffers —
+
+           doom_read(handle, &state.savegamestrings[i], SAVESTRINGSIZE);
+
+       — with the length and the buffer's size coming from **different constants that
+       nothing related**. Lower `menuSaveStringSize` and that is a buffer overrun on
+       every load-menu open; raise it and the read silently truncates. The typed-name
+       bound two functions down (`saveCharIndex < SAVESTRINGSIZE - 1`) had the same
+       split.
+
+       **What makes it the sharpest instance is how the protection was lost.**
+       `MenuState.h` carried a comment explaining that the two were kept in step *by
+       the compiler*: Menu.cpp's reference-to-array bindings were spelled
+       `char(&)[24]`, so a drift would fail to compile. That was true when written.
+       **Step 9 strand (a) then retired every one of those bindings**, which removed
+       the mechanism — and left the comment behind, still asserting a guarantee that
+       no longer existed. Nothing points from a deleted mechanism to the comment that
+       depended on it. So the general form is worse than "two spellings of a
+       constant": **a refactor can delete the thing an older comment relies on, and
+       the comment then reads as reassurance.** When retiring a mechanism, grep for
+       prose that names it.
+
+       `UI/Menu.cpp`'s copy is retired and the file uses `menuSaveStringSize`.
+       `Game/Game.cpp` keeps its `SAVESTRINGSIZE` — it is the *on-disk* field width
+       and deserves its own name — but now carries the compile-time link that was
+       missing all along:
+
+           static_assert(SAVESTRINGSIZE == menuSaveStringSize, ...);
+
+       Shown sharp by moving `menuSaveStringSize` to 25: the build fails on that
+       assertion with its own message. **That is the shape to reach for whenever two
+       constants must agree across a subsystem boundary** — not a third spelling, and
+       not a comment.
+
+       It is also the argument in item 8 arriving early and unprompted: this was
+       found *because* the buffer became an `EA::Array` whose size is part of its
+       type, which put the array's real bound next to a `doom_read` using a different
+       number. A raw `char[24]` says nothing.
 
        `Math/TrigTables.h` was the same finding at eleven-in-one-file scale, and is
        the reason to check before converting rather than after: every numeric name in
@@ -824,6 +985,41 @@ Everything above the line is done. What follows is, in the order worth doing it:
      (`X_OK`/`W_OK`/`R_OK`/`RW_OK`, never paired with an `access()` call).
      Converting them would dress dead code as live; deleting them is the separate
      judgement call this document reserves for a human, and is **unclaimed**.
+
+     **A sweep converted ten of them anyway, and the way it went wrong is worth the
+     entry.** The work list handed to the agent was built by grepping for files with
+     one or two `#define`s left — a mechanical, complete-looking query — and that list
+     silently *overlapped this pile*: `Game/Sound`'s five, `UI/Hud`'s three,
+     `Host/Sound`'s two and `Render/Video.h`'s `CENTERY`. The agent converted them as
+     instructed, and flagged the contradiction with this document rather than
+     resolving it quietly, which is the only reason it was caught before landing. All
+     ten are reverted to macros.
+
+     **The tell was in the code the sweep produced.** Every one came out as
+
+         [[maybe_unused]] constexpr int S_MAX_VOLUME = 127;   // "kept as a dead
+                                                             //  constant rather than
+                                                             //  dressed up as live"
+
+     and an attribute whose entire job is to silence the diagnostic that says *this is
+     unused* is a fairly loud signal that the thing should not have been converted.
+     **When a mechanical conversion needs an annotation to stay quiet, ask what the
+     compiler was trying to tell you before you silence it** — this repository already
+     has one bug (`thintriangle_guy`) that lived for months behind exactly that
+     reflex.
+
+     **A second, unrelated `[[maybe_unused]]` was pure cargo cult, and measurement
+     killed it.** The same sweep put the attribute on the six *live* header constants
+     too (`DISTMAP`, `SKYFLATNAME`, `MAXEVENTS`, …), reasoning that a namespace-scope
+     `constexpr` has internal linkage and so would warn in every including TU that
+     does not read it. That reasoning is plausible and wrong: Clang deliberately does
+     not warn about unused const variables **declared in a header**, which is why
+     `Sim/SimDefs.h`'s 21 and `UI/Hud.h`'s have never needed one. The attribute was
+     also a new idiom — `git grep` found **zero** at HEAD — which is itself the signal
+     worth acting on. Removing all six left the build at its one deliberate warning,
+     on a full clean rebuild. **A codebase that has done a thing a hundred times
+     already has an answer; introducing a new spelling for it deserves a measurement
+     first.**
 
      One of them is worth a second look rather than a deletion: `ST_NUMFACES`'s
      comment says the `faces[]` array is "sized off the same macro", and
@@ -947,35 +1143,209 @@ Everything above the line is done. What follows is, in the order worth doing it:
    because it is the cleanest possible demonstration of why the pile mattered: the
    only warnings in the build that described a real defect looked exactly like the
    seventy that did not.
-8. **Strand (c)'s "C arrays → `EA::Array`" is not done, and the progress row says it
-   is.** Counted rather than estimated: **128 raw fixed-size array members across 43
-   headers**, led by `Render/PlaneScratch.h` (11), `Game/NetState.h` (11),
-   `UI/IntermissionState.h` (10) and `Game/PlayerTypes.h` (9). This is the fourth
-   overstated completeness claim this document has had to walk back, and it is the
-   same failure as the others — the sweep converted the arrays it *touched* while
-   doing something else, and the category was never counted.
+8. **Strand (c)'s "C arrays → `EA::Array`" — surveyed, and the UI is done.**
+   Enumerated member by member rather than counted: **130 raw fixed-size array
+   members across 43 headers**, of which **19 must stay raw** (table below) and
+   **111 are safe**. This began as the fourth overstated completeness claim this
+   document has had to walk back, and it was the same failure as the others — the
+   sweep converted the arrays it *touched* while doing something else, and the
+   category was never counted.
 
-   **Do not simply finish it, because part of the remainder is load-bearing:**
-   - **`Wad/MapFormat.h` (7)** are `reinterpret_cast` onto raw lump bytes. These
-     model an on-disk format; they should stay exactly as they are.
-   - **`Game/PlayerTypes.h` (9) and `Sim/MapTypes.h` (4)** are inside structs the
-     savegame writes **whole**: `Sim/SaveGame.cpp` does
-     `doom_memcpy(dest, &players_.players[i], sizeof(Player))` and
-     `doom_memcpy(mobj, th, sizeof(*mobj))`. Any container swap there has to leave
-     `sizeof` and layout untouched or every `.dsg` written by one build is
-     unreadable by the next — and no golden covers that, since
-     `doomSimSaveLoadPreservesWorld` round-trips within a single build where both
-     sides agree by construction.
+   **The UI subsystem is now converted: 35 members across 10 headers**
+   (`IntermissionState`, `StatusBarGraphics`, `StatusBarWidgets`, `HudChat`,
+   `MenuState`, `HudWidgetTypes`, `AutomapView`, `StatusBarState`, `StatusBarFace`,
+   `HudFont`), with all four gates green and every frame golden byte-identical —
+   which matters here more than usual, because `menu.frames`, `automap.frames`,
+   `finale.frames` and the three demo `.frames` between them cover the status bar,
+   HUD, menu, automap and intermission. It was chosen as the first batch for exactly
+   that reason.
 
-   `EA::Array<T, N>` is a wrapper over `std::array<T, N>` (`Array() = default`, one
-   `std::array` member), so it *is* size- and layout-identical in practice and
-   trivially copyable — but note that is an **implementation fact about eacp's
-   container**, not a language guarantee, and it is the sort of thing that should be
-   re-checked rather than remembered before it is relied on for a serialised struct.
+   **The Render subsystem followed: 29 members across 10 headers** (`PlaneScratch`
+   11, `Lighting` 3, `SpriteState` 3, `RenderTypes`' `SpriteFrame`/`VisPlane` 4,
+   `DrawTables` 2, `ViewProjection` 2, `BSPScratch`, `SolidSegs`, `SpriteScratch`,
+   `Data`'s `Texture::name`), again with every frame golden byte-identical — which is
+   the gate that matters most for this batch, since it is the software renderer and
+   six `.frames` goldens point at it. **`Patch::columnofs` was excluded**, per the
+   corrected hazard table above. `Render/Draw.cpp` needed no edit at all: its
+   `tables.ylookup[i] + tables.columnofs[x]` are element reads, not decay.
 
-   For the rest — the scratch and state clusters — the conversion is safe and the
-   value is real but modest. Worth doing per-cluster alongside other work in that
-   file, not as a sweep of its own.
+   **`Game/` and `Sim/` finished it: 47 more members across 19 headers** — `NetState`
+   11, `MapTypes`' `Sector`/`Line`/`Node` 5, `Clip` 3, `ActiveSpecials` 3,
+   `TiccmdInput` 3, and the rest in twos and ones down to `Wad/WadFile.h`'s
+   `Lump::name`. This is the batch that edits the **playsim**, so the `*.hashes`
+   goldens are the gate that matters, and they are byte-identical.
+
+   **So item 8 is done: 111 of 111 safe members converted, 19 correctly left raw.**
+
+   **If you re-run the count, know that the obvious grep undercounts.** A pattern
+   matching one `[...]` misses a **2D** array (`short bbox[2][4]`) and any member
+   whose `= {}` initializer wraps to the next line. Checking this document's "19"
+   with such a pattern returns 18 and looks like a retraction — the same bad-grep
+   trap the `(void)` row records, walked into again while verifying this very
+   section. The 19 are: `Wad/MapFormat.h` 8, `Game/PlayerTypes.h` 9,
+   `Render/RenderTypes.h`'s `Patch::columnofs`, `Game/NetTypes.h`'s
+   `NetPacket::cmds`. Likewise the warning count is **1 on a clean build**; an
+   incremental one reports 0 because `Sim/Weapon.cpp` is not recompiled, which is a
+   measurement artefact and not an improvement.
+
+   Four things it taught that the earlier batches had not:
+
+   - **`EA::Array<char, N>` is not an aggregate, so a bare string literal in a table
+     stops binding.** `Sim/Switches.cpp`'s 41-entry `alphSwitchList[]` needed
+     `EA::Array<char, 9> {{"SW1BRCOM"}}` rather than `"SW1BRCOM"` — the only place in
+     the whole conversion needing a change of code *shape* instead of a `.data()`.
+     Verified the way this document prescribes for any bulk string change: extract
+     every literal before and after and `diff` them. Identical, 103 either side.
+   - **`array-of-struct` decays in a pointer-*difference* idiom, which is easy to
+     undercount.** `player - players_.players` computes a player index from a
+     `Player*` in four places (`SaveGame`, `Interaction` ×2, `Intermission`), plus
+     `spawns.deathmatch_p - spawns.deathmatchstarts`. None was in the briefing; all
+     five were found by the compiler. **Grep for `- <arrayname>` when converting an
+     array of structs**, because each site is individually a build error but the set
+     is invisible to a reader.
+   - **The enum-index warning in the briefing was wrong, and harmlessly so.**
+     `AmmoLimits::maxammo` is indexed by `AmmoType`, an *unscoped* enum, which
+     converts to `int` on its own — no `static_cast` needed anywhere. The
+     `static_cast<int>` friction this document records is real but specific to
+     `EA::Vector`'s `SizeType` concept, not to `EA::Array`.
+   - **Nine members gained zero-initialization**, per the semantics correction above:
+     `Sector::blockbox`, `Line::sidenum`/`bbox`, `Node::bbox`/`children`,
+     `Clip::intercepts`, `SwitchListEntry::name1`/`name2`, `Lump::name` had no
+     initializer before. Each is fully overwritten by its loader before any read
+     (`Sim/Setup.cpp`'s `groupLines`/`loadLineDefs`/`loadNodes`, `pathTraverse`,
+     `WadFile::addDirectory`), which the WAD, demo and level goldens confirm
+     empirically rather than by argument. Recorded because "no initializer, so
+     unchanged" is the wrong instinct here.
+
+   Two `Game/` members publish a decayed pointer that outlives the call and had to
+   keep pointing at the same storage — `NetState::exitmsg` into `Player::message`,
+   `ConfigPaths::basedefault` into `ConfigPaths::defaultfile`. Both are fine under
+   `.data()` (a by-value member's storage is stable for the `Engine`'s lifetime) and
+   both are the standing RAII rule in another dress: a pointer that merely refers
+   stays raw.
+
+   Two things that batch taught, both about the decay sites:
+   - **A nested array reached through a non-array member is easy to miss.**
+     `HudChat::w_inputbuffer[i].l.l` and `w_chat.l.l` are the `char` buffer inside a
+     `HudTextLine`, reached through a member that is not itself being converted. A
+     work list built from the converted members does not contain them; the compiler
+     found them.
+   - **The enumerated decay list was incomplete and the compiler closed the gap.**
+     `UI/Menu.cpp` had five `.data()` sites nobody had listed (`writeText`,
+     `stringWidth`, `saveGame`, and the `startMessage` arguments). That is the right
+     division of labour for this particular sweep — unlike a *deletion*, where
+     nothing fails to build, a container swap makes every missed site a compile
+     error. **Lean on that: it is one of the few sweeps in this document the build
+     verifies for you**, which is why it is safe to hand out with an admittedly
+     partial list.
+
+   **It also found the sharpest duplicate-constant instance in the document**
+   (the savegame description length, three spellings, one of them bounding a
+   `doom_read` into a buffer sized by another) — see item 6's fifteenth entry. That
+   is the concrete return on this conversion, arriving in the first batch.
+
+   **Do not simply finish it, because part of the remainder is load-bearing — and
+   the list of which part was wrong in both directions until it was surveyed.**
+   The category has now been enumerated member by member rather than counted:
+   **130 members across 43 headers** (the "128" above was close but never checked),
+   of which **19 must stay raw and 111 are safe**. The hazard list this entry
+   carried named three headers; **two of them were not hazards at all, and two real
+   hazards were missing.** Corrected:
+
+   | Must stay raw | Why | In the old list? |
+   |---|---|---|
+   | `Wad/MapFormat.h` (8 members) | `reinterpret_cast` onto raw lump bytes in `Sim/Setup.cpp` — an on-disk format | yes |
+   | **`Render/RenderTypes.h`'s `Patch::columnofs`** | **the same thing one file over** — every `Patch*` is `static_cast` straight off `cacheLumpName`. Worse than a plain overlay: `columnofs[8]` is a *flexible array*, declared 8 and indexed to `[width]`, with the pixel data starting at `&columnofs[width]`. Its own comment says so | **no** |
+   | `Game/PlayerTypes.h`'s `Player` (7 members) | `Sim/SaveGame.cpp:73` memcpys the whole `Player` | yes |
+   | **`Game/PlayerTypes.h`'s `IntermissionStart`/`IntermissionPlayer` (2)** | **a whole-struct memcpy outside the SaveGame path entirely** — `Game/Game.cpp:1138` writes `wminfo_` to the `-statcopy` address. Dead in practice, but it is still a serialised struct with array members | **no** |
+   | **`Game/NetTypes.h`'s `NetPacket::cmds`** | **packed onto the wire** — `Game/Net.cpp` checksums it through a `reinterpret_cast<unsigned*>` and `Host/Net.cpp` byte-swaps it field by field | **no** |
+
+   And the two that were listed and should not have been:
+   - **`Sim/MapTypes.h` (5 members, not 4) is safe.** The entry justified it with
+     `doom_memcpy(mobj, th, sizeof(*mobj))` — but **`Mobj` is not in `MapTypes.h`**,
+     it is in `Sim/MobjTypes.h`, and **it has no array members at all**.
+     `MapTypes.h`'s arrays belong to `Sector`, `Line` and `Node`; `archiveWorld`
+     copies `Sector`/`Line` fields *one at a time* into a `short*` stream, and
+     `Node` is BSP data rebuilt from the WAD on every load and never saved.
+   - **`Sim/SpecialTypes.h` is safe**, and the shorthand "the eight thinker
+     specials" is wrong twice over: `SaveGame.cpp` archives **seven**
+     (`FireFlicker` has no case at all), and **none of the seven has an array
+     member**. That header's only two arrays belong to `SwitchListEntry`, which is
+     the switch-texture table and is not archived by anything.
+
+   **The shape of the error is the reusable part.** Every wrong entry came from
+   reasoning about a *header* when the property belongs to a *struct* — "PlayerTypes
+   is serialised" is true of `Player` and irrelevant to the other structs in the
+   file; "MapTypes holds `Mobj`" was simply not checked. And the two missing hazards
+   were missed because the search was seeded from a known list (`SaveGame.cpp`'s
+   memcpys, `MapFormat.h`'s casts) rather than from the question *who else reads
+   these bytes* — which is the identical failure, and the identical fix, as the
+   `doom_boolean` "types that lie" sweep two sections down. **Classify the owning
+   struct, not the file, and ask the ownership question of every one.**
+
+   Any container swap in the 19 has to leave `sizeof` and layout untouched, and no
+   golden covers it: `doomSimSaveLoadPreservesWorld` round-trips within a single
+   build where both sides agree by construction, and nothing here exercises the
+   wire or `-statcopy` paths at all.
+
+   `EA::Array<T, N>` is a wrapper over `std::array<T, N>` with exactly one member, so
+   it *is* size- and layout-identical and trivially copyable — but that is an
+   **implementation fact about eacp's container**, not a language guarantee, and it
+   should be re-checked rather than remembered before being relied on. **It has now
+   been both re-checked and pinned**, because the Render batch found the one place in
+   the engine that genuinely depends on it:
+
+   - **`VisPlane::top`/`bottom` are indexed out of bounds on purpose.**
+     `Render/Planes.cpp` writes `pl->top[pl->maxx + 1] = 0xff` and
+     `pl->top[pl->minx - 1] = 0xff` — a sentinel one byte past each end, so the
+     span-filling loop can run off either edge and stop on it with no bounds test in
+     the inner loop. `pad1`..`pad4` exist to absorb exactly those writes, and the
+     trick holds only while `top` and `bottom` occupy exactly `SCREENWIDTH` bytes
+     with the pads immediately either side. The conversion preserved it, and
+     `RenderTypes.h` now carries a `static_assert` on
+     `sizeof(EA::Array<byte, SCREENWIDTH>)` so a future eacp change cannot break it
+     silently. **A remembered implementation fact became a compile-time gate**, which
+     is the same move as the `SAVESTRINGSIZE` assert in item 6, for the same reason.
+     (A companion `offsetof` assertion was written and then removed on purpose:
+     `offsetof` on a non-standard-layout class is only conditionally supported, and
+     item 7's point stands — the warning count here is measured on Apple Clang alone.)
+
+   - **The conversion is *not* initialization-neutral, and a batch report claimed it
+     was.** `EA::Array`'s sole member is declared `ContainerType container {};` — a
+     default member initializer — so `EA::Array<char, N> x;` **value-initializes**
+     where `char x[N];` left garbage. The UI batch left `= {}` off two members
+     (`HudTextLine::l`, `HudScrollingText::l`) reasoning that this "matches original
+     semantics exactly"; it does not. Measured rather than argued, with a placement-new
+     over a `0xAB`-filled buffer: the raw array reads back `0xAB`, the `EA::Array`
+     reads back `0x00`.
+
+     It is harmless here — those members live in `Engine` clusters that are
+     value-initialized anyway, and every golden is byte-identical — and zeroing is the
+     safer direction. But **"I left the initializer off, so nothing changed" is false
+     for this container**, and on an array deliberately left uninitialized for cost it
+     would be a real (if benign) behaviour change. Worth knowing for the remaining
+     batches: the conversion adds zero-initialization whether or not you ask for it.
+
+   For the rest — the scratch and state clusters — the conversion is safe. **About
+   40 of the 111 have a bare-decay site** that a mechanical swap breaks and that
+   therefore needs `.data()`: `plane.lastopening = plane.openings`,
+   `spritelights = lights.scalelight[n]` (a row of a 2D array), the
+   `doom_memset(check->top, 0xff, sizeof(...))` family, and the widget
+   initialisers that take `Patch**`. Four are worth singling out because the
+   decayed pointer is **stored and outlives the call** — `NetState::exitmsg` and
+   `HudChat::lastmessage` are published into `Player::message`,
+   `ConfigPaths::basedefault` into `ConfigPaths::defaultfile`, and
+   `MenuState::endstring`/`tempstring` into `MenuState::messageString`. Those are
+   the owner-of-owners hazard this document already records, in a different dress.
+
+   This entry used to call the value "real but modest" and recommend doing it
+   per-cluster rather than as a sweep. The *scheduling* advice still holds, but the
+   value is worth restating upward, because the bare-literal guard found in
+   `Sim/Mobj.cpp` this session (item 6) is precisely the defect an `EA::Array`
+   makes unwritable: with a real container the bound is `arr.size()`, reachable
+   from the array itself, so a guard **cannot** drift away from what it guards.
+   That is the same defect class as the thirteen duplicate constants, and it is the
+   strongest argument for the conversion — stronger than tidiness.
 
 Recently finished, for orientation: **the function-like macro layer, and the
 `thintriangle_guy` bug it uncovered** (the newest work — `SHORT`/`LONG` across 154
