@@ -82,12 +82,22 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **done, bar audio (externally blocked)** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio alone — the engine side is built and it is blocked outside this repository, on an eacp audio stream. (This row read **in progress** while the handoff four lines below it read **8 is done**; the handoff was right. The row had also been counting the globals-into-`Engine` sweep as its own remainder, which is Step 5's work, not Step 8's.) |
-| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now done bar one audio-blocked item**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — and the level pool has a destructor now (it was leaking every mobj on `resetEngine()`), leaving only `Host/Sound`'s audio-blocked `paddedsfx` and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now done bar one audio-blocked item**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — and the level pool has a destructor now (it was leaking every mobj on `resetEngine()`), leaving only `Host/Sound`'s audio-blocked `paddedsfx` and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **The function-like macro layer is now retired too** — `Math/Swap.h`'s `SHORT`/`LONG` across 154 sites became one deduced-width `Doom::littleEndian`, and `UI/Automap`'s seven, `Sim/SaveGame`'s `PADSAVEP` and `UI/CheatTypes`' `SCRAMBLE` became functions; `Host/Net`'s `ntohl`/`ntohs` stay, deliberately, being under an `#if` for a platform no gate here compiles. That sweep found the refactor's **one real behaviour bug** (`thintriangle_guy`, see the traps section) and two more little-endian-invisible defects. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**83 tests**, ~22s: `ctest --test-dir build`).
+clean and the suite is green (**87 tests**, ~25s: `ctest --test-dir build`).
+
+**Read the `thintriangle_guy` entry under "Traps this work added to the list"
+before doing anything else.** It is the refactor's first and so far only real
+behaviour bug — a `double * Fixed` that silently multiplied by zero, from the
+`fixed_t` → `Doom::Fixed` migration — and both of the reasons it survived are
+general: the migration had fixed two of the three sites and left no sign the third
+was outstanding, and the compiler had been printing the exact defect in every build
+inside a 70-warning haystack. That second one is why "zero the warning count" is now
+a numbered item rather than a tidiness note.
+
 **Steps 0–8 are done**, with one externally blocked item: audio, whose engine side
 is built and which waits on an eacp audio stream. The whole UI, game loop, netcode,
 utility layer and host boundary are migrated, the zone allocator is deleted, the
@@ -95,6 +105,13 @@ utility layer and host boundary are migrated, the zone allocator is deleted, the
 gone — `src/DOOM` has no `.cpp` at top level at all. **Step 9 is the only open
 front**, and within it strand (c) and strand (a) are finished, strand (b) is down to
 the one audio-blocked owner. Step 5 keeps a short named tail (see its row).
+
+What is genuinely open in Step 9 is now the **preprocessor** and the **warning
+count** — items 6 and 7 under "What is left". The function-like macros are retired;
+the constant macros are part-converted; the string tables and the 59
+`-Wwritable-strings` in `UI/Hud.cpp` are the two largest remaining pieces. Neither
+is hard. Both are the kind of work under which a `thintriangle_guy` hides, so do
+them with the four gates and read the warnings the build prints.
 
 *Until this session the table said Step 8 was "in progress" while this paragraph
 said "8 is done", four lines apart. Both were edited by hand at different times.
@@ -254,6 +271,66 @@ red one.
 
 ### Traps this work added to the list
 
+- **A `double` scaled by `FRACUNIT` silently became zero under the strong type, and
+  the compiler had been saying so all along.** This is the one real *behaviour* bug
+  the refactor has produced, and it survived every gate for months.
+
+  `UI/Automap.cpp` builds its vector shapes by scaling literals: vanilla wrote
+  `#define R (FRACUNIT)` and `(fixed_t)(-.5 * R)`, which with `fixed_t` an `int` and
+  `FRACUNIT` `65536` truncated to `-32768`, exactly as intended. Once `FRACUNIT`
+  became a `Doom::Fixed`, `-.5 * R` is `double * Fixed` — and the only viable
+  operator takes an `int`, so **`-.5` is converted to `0` before the multiply ever
+  happens**. Every scaled vertex of `thintriangle_guy` collapsed to the origin, and
+  the shape the automap draws every *thing* with became a single degenerate line
+  from `(0,0)` to `(65536,0)`.
+
+  Three things make it worth a full entry:
+
+  - **The neighbouring table was right.** `triangle_guy`, twenty lines above, scales
+    off `FRACUNIT.raw` and goes through `amFixed`, and `INITSCALEMTOF` on the next
+    page uses `.raw` too. So the migration *did* catch this class — it caught it two
+    times out of three and left no sign that the third was outstanding. A partially
+    applied fix reads exactly like a completed one.
+  - **No golden could see it, by construction.** `drawThings` is gated on
+    `cheating == 2` — the IDDT cheat pressed twice — and neither the automap script
+    nor any recorded demo cheats. The proof is not the argument, it is the
+    measurement: the fix left `automap.frames` **byte-identical**, which is precisely
+    what "the golden never ran this code" looks like. `automap.frames` was recorded
+    to cover this file and does cover it well; it simply cannot reach a cheat path.
+  - **The compiler had already found it.** Every build printed eight
+    `-Wliteral-conversion` warnings naming the exact values —
+    *"implicit conversion from 'double' to 'int' changes value from -0.5 to 0"* — and
+    they were read as noise from "vanilla's C-style casts" and left alone. The engine
+    builds with 70-odd warnings under `-Wall -Wextra -Wpedantic`, which is what let a
+    warning that named a real bug in plain language sit in the output unexamined.
+    **A warning count that is not zero is a place bugs hide.**
+
+  It is fixed, and pinned by `Automap/shapeTablesAreScaled` (`Tests/Sim/AutomapTests.cpp`),
+  which asserts the vertex values directly rather than through a picture — a frame
+  golden would have had to be re-recorded to cover a cheat path, and the numbers are
+  sharper anyway. Shown sharp by restoring the old definition: it fails on the
+  vertex values *and* on "no edge of the thin triangle is degenerate".
+
+  **The general rule**: when a raw arithmetic type becomes a strong one, the sites
+  that need auditing are not only the ones that fail to compile — they are every site
+  where a *literal of another type* met the old one. `Fixed{n}` vs `Fixed::fromInt(n)`
+  was already on this list; `double * Fixed` is the same hazard one step further out,
+  and it is worse because it compiles, runs, and warns in a way that is easy to
+  dismiss.
+
+  **The category has since been swept, which is the part this document keeps failing
+  to do.** Every decimal literal in an arithmetic expression anywhere in `src/DOOM`
+  or `examples/EACP` was enumerated —
+
+      git grep -nE '[0-9]*\.[0-9]+ *[*/]' -- 'src/DOOM/*' 'examples/EACP/*'
+
+  — and there are nineteen. Fifteen are `UI/Automap.cpp`'s, and every one of them
+  now scales `FRACUNIT.raw` or goes through `amFixed`; two are `Math/Angle.h`'s
+  degree conversions, which are `double` throughout and cast at the end; two are
+  `examples/EACP`'s, which are genuinely floating-point. **`thintriangle_guy` was the
+  last instance, and this is a claim a single command re-checks** — which is the bar
+  a completeness claim in this file should meet, and mostly has not.
+
 - **"Its signature can't change" is a claim to check, not assume.** The RAII sweep
   first bridged `readFile`'s `doom_malloc`'d `byte**` out-parameter into an owner by
   copying and freeing — treating the signature as fixed. It is not: `readFile` has
@@ -397,11 +474,26 @@ Everything above the line is done. What follows is, in the order worth doing it:
    process — so a scope-owned buffer would dangle every argument parsed from it.
    That one needs `myargv`'s own ownership rethought, not a container swap, and no
    test drives `@responsefile` today.
-2. ~~**Dead code from Step 4 that outlived the zone.**~~ **Done.** `Host/System`'s
-   `zoneBase`, `heapSize`, `allocLow`, `mb_used`, `beginRead` and `endRead` had zero
-   callers anywhere in `src/DOOM`, `Tests/` or `examples/` (verified before
-   deleting; the remaining mentions were comments, now corrected). `zoneBase` would
-   still have `doom_malloc`'d a 12 MB arena and leaked it.
+2. ~~**Dead code from Step 4 that outlived the zone.**~~ **Done — on the second
+   attempt, and the first one is the lesson.** This entry read **Done** for a full
+   session while `allocLow`, `beginRead` and `endRead` were still sitting in
+   `Host/System.cpp`. What had actually happened is the trap already recorded two
+   sections down: the *declarations* were deleted from `System.h` and the
+   *definitions* were not, so nothing referred to them, nothing failed to link, and
+   every gate stayed green over three orphaned functions — one of which,
+   `allocLow`, would still `doom_malloc` a block and leak it if anything called it.
+   `zoneBase`, `heapSize` and `mb_used` were genuinely gone. All three definitions
+   are now deleted, and the stale comments crediting `allocLow` for the `screens[]`
+   backing buffer (`Render/VideoState.h`, `Render/Video.cpp`) say `EA::Vector` instead.
+
+   **This is the third time a completion claim in this file has been wrong in the
+   same way**, after strand (a)'s two false finishes, and it is the same shape every
+   time: the claim was checked against the pattern that produced it (here, "the
+   header no longer declares them") rather than against the category ("no definition
+   of them survives anywhere"). The document's own rule — *count the definitions left
+   in the files you expected to empty* — was written for exactly this and was not
+   applied to this entry. **A deletion is verified by grepping for the definition,
+   not by grepping for the declaration.**
 3. ~~**`doom_boolean` is still an `int`.**~~ **Done.** All ~288 uses are a real
    `bool` and **the typedef is deleted from `doomtype.h`**, so there is no longer a
    type in this engine that says "boolean" and means "int". It went in the planned
@@ -529,9 +621,96 @@ Everything above the line is done. What follows is, in the order worth doing it:
    prefixes **on purpose** — they are DOOM's data vocabulary, `Sim/Info.cpp`'s
    generated tables are built from them, and renaming them is high-churn and
    zero-value.
+6. **The macro layer.** The numbered list above was written when the open work was
+   ownership, and it is now spent — items 1–4 are done or blocked, and 5 is a
+   deliberate non-item. What is actually left of the goal's "no 1993 C idiom" half is
+   the preprocessor, and it splits into three piles of very different value:
+   - ~~**Function-like macros**~~ — **done**, and it paid for itself: retiring
+     `SHORT`/`LONG` is what surfaced `thintriangle_guy`, the PCX width mismatch and
+     the meaningless swap on `drawPatchRectDirect`'s `src_w`. `Host/Net`'s
+     `ntohl`/`ntohs`/`htonl`/`htons` are the deliberate remainder: they sit inside
+     `#if defined(I_NET_ENABLED) && !defined(DOOM_APPLE)`, so **no gate in this
+     repository compiles them**, and a change there could not be verified by
+     anything. Leave them until someone builds that configuration.
+   - **Constant object-like macros** — started. `Sim/SimDefs.h` (21) and
+     `Sim/SpecialTypes.h` (16) are `constexpr` in `namespace Doom` now, with **no
+     call-site churn at all**: the name is unchanged, so every use inside
+     `namespace Doom` still resolves. Four things learned, all of which apply to the
+     next header:
+     - **Three bodies were unparenthesized** — `PLAYERRADIUS 16 * FRACUNIT`,
+       `MAXRADIUS 32 * FRACUNIT`, `VDOORSPEED FRACUNIT * 2` — so a `constexpr` adds
+       parentheses the expansion did not have, and is *not* automatically equivalent.
+       Audited site by site rather than assumed: every use is either pure
+       multiplication (associative, so grouping cannot matter), `+`/`-` (binds looser
+       than `*`, so unaffected), or already hand-parenthesized — `MapAction.cpp:734`
+       writes `(MAXRADIUS).raw`, so whoever wrote it already knew. The pattern that
+       *would* differ is dividing by, or taking `.`/`->` off, a bare macro, and it
+       occurs nowhere. **Establish that; do not assume it.**
+     - **The name moves into `namespace Doom`, which breaks *global-scope* readers.**
+       Three files needed qualifying: `Tests/SimProbe.cpp` and
+       `examples/EACP/EngineAccess.cpp` (both ordinary non-namespaced translation
+       units), and the two `#define R ((8 * Doom::PLAYERRADIUS) / 7)` in
+       `UI/Automap.cpp` that sit *after* the file's closing brace, at deliberate
+       `::` scope so the eacp compositor links against them by bare name. The app is
+       the gate that catches the second kind, and `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF`
+       never compiles it.
+     - **Nothing had to stay a macro**, checked rather than presumed: no name in
+       either header is read by `#if`/`#ifdef`/`#elif` or by `#`/`##`.
+     - **Three were dead and are deleted, not converted** — `MAPBMASK`,
+       `MO_TELEPORTMAN` and `CEILWAIT` have zero uses, and each was checked against
+       `110ddbe` per the standing rule for this category: all three are dead *in
+       vanilla too*, so they are id leftovers rather than lost reads.
+       `MAPBMASK` is the instructive one — as `(MAPBLOCKSIZE - 1)` it could not
+       compile as a real expression once `MAPBLOCKSIZE` became a `Fixed`, and needed
+       contorting to `MAPBLOCKSIZE.raw - 1` to convert at all. **A constant that has
+       to be rewritten to compile has not been evaluated in years**; that is the
+       signal to check whether anything reads it before finding it a new spelling.
+   - **The string tables** (`Game/StringsEnglish.h` 293, `Game/StringsFrench.h` 199)
+     are the large remainder and the least urgent. They are two alternative bodies
+     for one set of names, so `constexpr` works only if exactly one is ever included;
+     check that before starting, and check for literal concatenation (`"a" MACRO "b"`),
+     which a variable cannot do.
+7. **Zero the warning count, and treat it as a gate.** The engine built with **81**
+   warnings under `-Wall -Wextra -Wpedantic` at the start of this session and **60**
+   now, and `thintriangle_guy` is the proof that this is not cosmetic: the compiler had been naming that bug in plain
+   language in every single build, and it was invisible inside the noise. Three
+   classes, in the order worth doing:
+   - **59 × `-Wwritable-strings`**, all in `UI/Hud.cpp`: `chat_macros[]`,
+     `player_names[]` and `mapnames[]` are `char*[]` initialised from string
+     literals. The neighbouring `mapnames2`/`mapnamesp`/`mapnamest` are **already**
+     `EA::Array<const char*, 32>` — three of four were converted and the fourth was
+     not, the same partially-applied-fix shape as `thintriangle_guy`. The one real
+     hazard is `chat_macros`: `Config.cpp`'s `defaults[]` stores `&chat_macros[i]`
+     and `loadDefaults` writes a heap pointer back through it, so the *pointers* are
+     genuinely mutable and only the *pointees* are const — `const char*`, never
+     `char* const` — and the `location` field's type has to accept that.
+   - ~~**13 × `-Wunused-variable`**~~ — rewrite leftovers, where the vanilla `an`
+     fed `finesine[an]` and the C++ replaced it with an `Angle::fineIndex()` local
+     under another name. Deleted against the documented bar (zero reads *and* zero
+     writes) with each site checked for a lost read rather than pattern-matched.
+   - **1 × `-Wcast-function-type-mismatch`** in `Sim/Weapon.cpp` is *deliberate* —
+     the type-erased `states[].action` pointer cast back to its exact signature, a
+     round-trip and therefore well-defined. It wants a comment the compiler can be
+     told about, not a change.
 
-Recently finished, for orientation: **the `doom_boolean` flip and the deletion of the
-typedef** (four batches, ~288 sites — the newest work); the 247 file-local reference
+   Clearing the first of those three leaves **one** warning, at which point
+   `-Werror` on the engine target becomes affordable, and the class of bug
+   `thintriangle_guy` belongs to stops being able to hide. That is the actual goal
+   of this item; the counts are just the route.
+
+   **The eight `-Wliteral-conversion` warnings are already gone** — they *were*
+   `thintriangle_guy`, and fixing the bug removed them. Worth stating plainly,
+   because it is the cleanest possible demonstration of why the pile mattered: the
+   only warnings in the build that described a real defect looked exactly like the
+   seventy that did not.
+
+Recently finished, for orientation: **the function-like macro layer, and the
+`thintriangle_guy` bug it uncovered** (the newest work — `SHORT`/`LONG` across 154
+sites, `UI/Automap`'s seven, `PADSAVEP`, `SCRAMBLE`; three new tests in
+`Math/`, one in `Automap/`; the orphaned `Host/System` definitions this document
+had already called deleted; 13 unused-variable leftovers; warnings 81 → 60); **the
+`doom_boolean` flip and the deletion of the
+typedef** (four batches, ~288 sites); the 247 file-local reference
 aliases (strand (a), seven batches); `MovementSpeeds` and `VideoState::dirtybox`
 retyped to `int`; the hitscan traversers returning `AimResult`; frame goldens for the
 automap and the finale; and the constructible `Engine` with the test that proves it.

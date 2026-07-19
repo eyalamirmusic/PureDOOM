@@ -1269,7 +1269,6 @@ void fireCrackle(Mobj& actor)
 void fire(Mobj& actor)
 {
     Mobj* dest;
-    unsigned an;
 
     dest = actor.tracer;
     if (!dest)
@@ -1316,7 +1315,6 @@ void vileTarget(Mobj& actor)
 void vileAttack(Mobj& actor)
 {
     Mobj* fire;
-    int an;
 
     if (!actor.target)
         return;
@@ -1358,7 +1356,6 @@ void fatRaise(Mobj& actor)
 void fatAttack1(Mobj& actor)
 {
     Mobj* mo;
-    int an;
 
     faceTarget(actor);
     // Change direction  to ...
@@ -1375,7 +1372,6 @@ void fatAttack1(Mobj& actor)
 void fatAttack2(Mobj& actor)
 {
     Mobj* mo;
-    int an;
 
     faceTarget(actor);
     // Now here choose opposite deviation.
@@ -1392,7 +1388,6 @@ void fatAttack2(Mobj& actor)
 void fatAttack3(Mobj& actor)
 {
     Mobj* mo;
-    int an;
 
     faceTarget(actor);
 
@@ -1416,7 +1411,6 @@ void fatAttack3(Mobj& actor)
 void skullAttack(Mobj& actor)
 {
     Mobj* dest;
-    angle_t an;
     int dist;
 
     if (!actor.target)
@@ -1449,7 +1443,6 @@ void painShootSkull(Mobj& actor, angle_t angle)
     fixed_t z;
 
     Mobj* newmobj;
-    angle_t an;
     fixed_t prestep;
     int count;
     Doom::Thinker* currentthinker;

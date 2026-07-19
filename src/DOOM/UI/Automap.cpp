@@ -1250,7 +1250,7 @@ void drawAutomap()
 // Stays at :: scope because those are the names it links against.
 // ---------------------------------------------------------------------------
 
-#define R ((8 * PLAYERRADIUS) / 7)
+#define R ((8 * Doom::PLAYERRADIUS) / 7)
 Doom::MapLine player_arrow[] = {
     {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
     {{R, fixed_t {}}, {R - R / 2, R / 4}}, // ----->
@@ -1261,7 +1261,7 @@ Doom::MapLine player_arrow[] = {
     {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, -R / 4}}};
 #undef R
 
-#define R ((8 * PLAYERRADIUS) / 7)
+#define R ((8 * Doom::PLAYERRADIUS) / 7)
 Doom::MapLine cheat_player_arrow[] = {
     {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
     {{R, fixed_t {}}, {R - R / 2, R / 6}}, // ----->
@@ -1281,12 +1281,22 @@ Doom::MapLine cheat_player_arrow[] = {
     {{R / 6 + R / 32, -R / 7 - R / 32}, {R / 6 + R / 10, -R / 7}}};
 #undef R
 
-#define R (FRACUNIT)
+// R is the RAW unit, not the Fixed, and the scaled vertices go through amFixed --
+// the same shape triangle_guy above uses, and for the reason recorded there. When
+// this table said `#define R (FRACUNIT)` the multiplications were `double * Fixed`,
+// so each -.5 and .7 was converted to `int` 0 before it ever reached the multiply
+// and every scaled vertex collapsed to the origin: the "thin triangle" was one
+// degenerate line from (0,0) to (65536,0). Vanilla's fixed_t was a plain int, so
+// -.5 * 65536 truncated to -32768 as intended; the strong-type migration is what
+// silently changed the meaning. No golden saw it -- drawThings needs `cheating ==
+// 2` (IDDT twice) and no test or demo cheats -- so Automap/shapeTablesAreScaled
+// pins these values directly instead.
+#define R (FRACUNIT.raw)
 Doom::MapLine thintriangle_guy[] = {
-    {{(fixed_t) (-.5 * R), (fixed_t) (-.7 * R)}, {R, fixed_t {}}},
-    {{R, fixed_t {}}, {(fixed_t) (-.5 * R), (fixed_t) (.7 * R)}},
-    {{(fixed_t) (-.5 * R), (fixed_t) (.7 * R)},
-     {(fixed_t) (-.5 * R), (fixed_t) (-.7 * R)}}};
+    {{Doom::amFixed(-.5 * R), Doom::amFixed(-.7 * R)}, {fixed_t {R}, fixed_t {}}},
+    {{fixed_t {R}, fixed_t {}}, {Doom::amFixed(-.5 * R), Doom::amFixed(.7 * R)}},
+    {{Doom::amFixed(-.5 * R), Doom::amFixed(.7 * R)},
+     {Doom::amFixed(-.5 * R), Doom::amFixed(-.7 * R)}}};
 #undef R
 
 // Map-window position/size and scale (map coords), read by the GPU automap.
@@ -1294,7 +1304,8 @@ fixed_t m_x, m_y;
 fixed_t m_w;
 fixed_t m_h;
 
-#define INITSCALEMTOF (fixed_t {(std::int32_t) (.2 * FRACUNIT.raw)})
+// INITSCALEMTOF is the one defined at the top of the file; this used to redefine it
+// verbatim right here, which was legal only because the two texts were identical.
 fixed_t scale_mtof = (fixed_t) INITSCALEMTOF;
 
 // Frame-window position/size (screen coords).

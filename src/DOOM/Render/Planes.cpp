@@ -76,7 +76,6 @@ void mapPlane(int y, int x1, int x2)
     auto& pt = viewPoint();
     auto& lights = lighting();
 
-    angle_t angle;
     fixed_t distance;
     fixed_t length;
     unsigned index;
@@ -149,8 +148,6 @@ void clearPlanes()
     auto& plane = planeScratch();
     auto& view = viewWindow();
     auto& proj = viewProjection();
-
-    angle_t angle;
 
     // opening / clipping determination
     for (int i = 0; i < view.viewwidth; i++)

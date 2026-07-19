@@ -559,8 +559,8 @@ int doomSimThingsInBlockOf(int handle)
     if (setjmp(simAbort))
         return -1;
 
-    int blockx = (mobj->x - bmaporgx).raw >> MAPBLOCKSHIFT;
-    int blocky = (mobj->y - bmaporgy).raw >> MAPBLOCKSHIFT;
+    int blockx = (mobj->x - bmaporgx).raw >> Doom::MAPBLOCKSHIFT;
+    int blocky = (mobj->y - bmaporgy).raw >> Doom::MAPBLOCKSHIFT;
 
     simBlockThingCount = 0;
     Doom::forEachThingInBlock(blockx, blocky, simCountThing);
@@ -590,7 +590,7 @@ int doomSimTypeBarrel()
 
 int doomSimOnFloorZ()
 {
-    return ONFLOORZ.raw;
+    return Doom::ONFLOORZ.raw;
 }
 
 int doomSimFlagNoClip()

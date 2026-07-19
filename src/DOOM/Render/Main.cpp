@@ -313,7 +313,6 @@ angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2)
 
 fixed_t pointToDist(fixed_t x, fixed_t y)
 {
-    int angle;
     fixed_t dx;
     fixed_t dy;
     fixed_t temp;

@@ -29,36 +29,38 @@
 #ifndef __R_LOCAL__
 #endif
 
-#define FLOATSPEED (FRACUNIT * 4)
+namespace Doom
+{
+constexpr fixed_t FLOATSPEED = FRACUNIT * 4;
 
-#define MAXHEALTH 100
-#define VIEWHEIGHT (41 * FRACUNIT)
+constexpr int MAXHEALTH = 100;
+constexpr fixed_t VIEWHEIGHT = 41 * FRACUNIT;
 
 // mapblocks are used to check movement
 // against lines and things
-#define MAPBLOCKUNITS 128
-#define MAPBLOCKSIZE (MAPBLOCKUNITS * FRACUNIT)
-#define MAPBLOCKSHIFT (FRACBITS + 7)
-#define MAPBMASK (MAPBLOCKSIZE - 1)
-#define MAPBTOFRAC (MAPBLOCKSHIFT - FRACBITS)
+constexpr int MAPBLOCKUNITS = 128;
+constexpr fixed_t MAPBLOCKSIZE = MAPBLOCKUNITS * FRACUNIT;
+constexpr int MAPBLOCKSHIFT = FRACBITS + 7;
+constexpr int MAPBTOFRAC = MAPBLOCKSHIFT - FRACBITS;
 
 // player radius for movement checking
-#define PLAYERRADIUS 16 * FRACUNIT
+constexpr fixed_t PLAYERRADIUS = 16 * FRACUNIT;
 
 // MAXRADIUS is for precalculated sector block boxes
 // the spider demon is larger,
 // but we do not have any moving sectors nearby
-#define MAXRADIUS 32 * FRACUNIT
+constexpr fixed_t MAXRADIUS = 32 * FRACUNIT;
 
-#define GRAVITY FRACUNIT
-#define MAXMOVE (30 * FRACUNIT)
+constexpr fixed_t GRAVITY = FRACUNIT;
+constexpr fixed_t MAXMOVE = 30 * FRACUNIT;
 
-#define USERANGE (64 * FRACUNIT)
-#define MELEERANGE (64 * FRACUNIT)
-#define MISSILERANGE (32 * 64 * FRACUNIT)
+constexpr fixed_t USERANGE = 64 * FRACUNIT;
+constexpr fixed_t MELEERANGE = 64 * FRACUNIT;
+constexpr fixed_t MISSILERANGE = 32 * 64 * FRACUNIT;
 
 // follow a player exlusively for 3 seconds
-#define BASETHRESHOLD 100
+constexpr int BASETHRESHOLD = 100;
+} // namespace Doom
 
 //
 // P_TICK
@@ -78,11 +80,14 @@
 //
 // P_MOBJ
 //
-#define ONFLOORZ (Doom::Fixed {DOOM_MININT})
-#define ONCEILINGZ (Doom::Fixed {DOOM_MAXINT})
+namespace Doom
+{
+constexpr fixed_t ONFLOORZ = Doom::Fixed {DOOM_MININT};
+constexpr fixed_t ONCEILINGZ = Doom::Fixed {DOOM_MAXINT};
 
 // Time interval for item respawning.
-#define ITEMQUESIZE 128
+constexpr int ITEMQUESIZE = 128;
+} // namespace Doom
 
 // The item respawn queue lives in Doom::ItemRespawnQueue (an Engine member) now; these are
 // references onto it, the arrays as references-to-array (REFACTOR.md, Step 5).
@@ -115,7 +120,10 @@ struct Intercept
 };
 } // namespace Doom
 
-#define MAXINTERCEPTS 128
+namespace Doom
+{
+constexpr int MAXINTERCEPTS = 128;
+} // namespace Doom
 // intercepts[] and intercept_p moved into Doom::Clip (Sim/Clip.h), reached through
 // Doom::clip(); they were p_maputl's own scratch, read by no other file.
 
@@ -124,9 +132,12 @@ struct Intercept
 // a lambda capturing the shot that spawned it, instead of reaching for globals.
 using Traverser = Doom::FunctionRef<bool(Doom::Intercept*)>;
 
-#define PT_ADDLINES 1
-#define PT_ADDTHINGS 2
-#define PT_EARLYOUT 4
+namespace Doom
+{
+constexpr int PT_ADDLINES = 1;
+constexpr int PT_ADDTHINGS = 2;
+constexpr int PT_EARLYOUT = 4;
+} // namespace Doom
 
 //
 // P_MAP

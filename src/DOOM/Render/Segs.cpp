@@ -172,7 +172,6 @@ void renderSegLoop()
     auto& view = viewWindow();
     auto& wall = wallScratch();
 
-    angle_t angle;
     unsigned index;
     int yl;
     int yh;

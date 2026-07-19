@@ -34,9 +34,6 @@
 // The end-level timer is a Doom::EndLevelTimer owned by the Engine now; these are references
 // onto its members (REFACTOR.md, Step 5).
 
-// Define values for map objects
-#define MO_TELEPORTMAN 14
-
 // at game start
 
 // at map load
@@ -119,10 +116,13 @@ struct Glow : Doom::Thinker
 };
 } // namespace Doom
 
-#define GLOWSPEED 8
-#define STROBEBRIGHT 5
-#define FASTDARK 15
-#define SLOWDARK 35
+namespace Doom
+{
+constexpr int GLOWSPEED = 8;
+constexpr int STROBEBRIGHT = 5;
+constexpr int FASTDARK = 15;
+constexpr int SLOWDARK = 35;
+} // namespace Doom
 
 //
 // P_SWITCH
@@ -159,14 +159,17 @@ struct Button
 };
 } // namespace Doom
 
+namespace Doom
+{
 // max # of wall switches in a level
-#define MAXSWITCHES 50
+constexpr int MAXSWITCHES = 50;
 
 // 4 players, 4 buttons each at once, max.
-#define MAXBUTTONS 16
+constexpr int MAXBUTTONS = 16;
 
 // 1 second, in ticks.
-#define BUTTONTIME 35
+constexpr int BUTTONTIME = 35;
+} // namespace Doom
 
 // The active-special registries are a Doom::ActiveSpecials owned by the Engine now; these
 // (and activeplats/activeceilings below) are references onto its members (REFACTOR.md, Step 5).
@@ -217,9 +220,12 @@ struct Plat : Doom::Thinker
 };
 } // namespace Doom
 
-#define PLATWAIT 3
-#define PLATSPEED FRACUNIT
-#define MAXPLATS 30
+namespace Doom
+{
+constexpr int PLATWAIT = 3;
+constexpr fixed_t PLATSPEED = FRACUNIT;
+constexpr int MAXPLATS = 30;
+} // namespace Doom
 
 //
 // P_DOORS
@@ -262,8 +268,11 @@ struct Door : Doom::Thinker
 };
 } // namespace Doom
 
-#define VDOORSPEED FRACUNIT * 2
-#define VDOORWAIT 150
+namespace Doom
+{
+constexpr fixed_t VDOORSPEED = FRACUNIT * 2;
+constexpr int VDOORWAIT = 150;
+} // namespace Doom
 
 //
 // P_CEILNG
@@ -303,9 +312,11 @@ struct Ceiling : Doom::Thinker
 };
 } // namespace Doom
 
-#define CEILSPEED FRACUNIT
-#define CEILWAIT 150
-#define MAXCEILINGS 30
+namespace Doom
+{
+constexpr fixed_t CEILSPEED = FRACUNIT;
+constexpr int MAXCEILINGS = 30;
+} // namespace Doom
 
 //
 // P_FLOOR
@@ -373,7 +384,10 @@ struct FloorMove : Doom::Thinker
 };
 } // namespace Doom
 
-#define FLOORSPEED FRACUNIT
+namespace Doom
+{
+constexpr fixed_t FLOORSPEED = FRACUNIT;
+} // namespace Doom
 
 namespace Doom
 {

@@ -842,7 +842,6 @@ bool checkSpot(int playernum, MapThing* mthing)
     fixed_t x;
     fixed_t y;
     SubSector* ss;
-    angle_t an {};
     Mobj* mo;
 
     if (!players_.players[playernum].mo)

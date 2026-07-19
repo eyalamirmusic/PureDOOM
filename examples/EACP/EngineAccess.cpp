@@ -1912,7 +1912,7 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
 
 static void eacpAutomapGrid(EacpAutomapEmitter* em, int color)
 {
-    fixed_t block = Doom::Fixed::fromInt(MAPBLOCKUNITS);
+    fixed_t block = Doom::Fixed::fromInt(Doom::MAPBLOCKUNITS);
     fixed_t originX = (fixed_t) em->originX;
     fixed_t originY = (fixed_t) em->originY;
     fixed_t x, y, start, end;

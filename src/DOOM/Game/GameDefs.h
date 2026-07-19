@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -22,11 +22,6 @@
 
 #pragma once
 
-
-
-
-
-
 //
 // Global parameters/defines.
 //
@@ -36,36 +31,33 @@ enum
     VERSION = 110
 };
 
-
 // Game mode handling - identify IWAD version
 //  to handle IWAD dependend animations etc.
 namespace Doom
 {
 enum GameMode
 {
-    shareware,      // DOOM 1 shareware, E1, M9
-    registered,     // DOOM 1 registered, E3, M27
-    commercial,     // DOOM 2 retail, E1 M34
+    shareware, // DOOM 1 shareware, E1, M9
+    registered, // DOOM 1 registered, E3, M27
+    commercial, // DOOM 2 retail, E1 M34
     // DOOM 2 german edition not handled
-    retail,         // DOOM 1 retail, E4, M36
-    indetermined    // Well, no IWAD found.
+    retail, // DOOM 1 retail, E4, M36
+    indetermined // Well, no IWAD found.
 };
 } // namespace Doom
-
 
 // Mission packs - might be useful for TC stuff?
 namespace Doom
 {
 enum GameMission
 {
-    doom,       // DOOM 1
-    doom2,      // DOOM 2
-    pack_tnt,   // TNT mission pack
-    pack_plut,  // Plutonia pack
+    doom, // DOOM 1
+    doom2, // DOOM 2
+    pack_tnt, // TNT mission pack
+    pack_plut, // Plutonia pack
     none
 };
 } // namespace Doom
-
 
 // Identify language to use, software localization.
 namespace Doom
@@ -78,7 +70,6 @@ enum Language
     unknown
 };
 } // namespace Doom
-
 
 // If rangecheck is undefined,
 // most parameter validation debugging code will not be compiled
@@ -95,7 +86,6 @@ enum Language
 //  menues etc. is tied to the scale implied
 //  by the graphics.
 #define SCREEN_MUL 1
-#define INV_ASPECT_RATIO 0.625 // 0.75, ideally
 
 // Defines suck. C sucks.
 // C++ might sucks for OOP, but it sure is a better C.
@@ -115,10 +105,9 @@ enum Language
 #endif
 #define TICRATE (35 * TICKMUL)
 
-
 // The current state of the game: whether we are
 // playing, gazing at the intermission screen,
-// the game final animation, or a demo. 
+// the game final animation, or a demo.
 namespace Doom
 {
 enum GameState
@@ -130,19 +119,17 @@ enum GameState
 };
 } // namespace Doom
 
-
 //
 // Difficulty/skill settings/filters.
 //
 
 // Doom::Skill flags.
-#define MTF_EASY    1
-#define MTF_NORMAL  2
-#define MTF_HARD    4
+#define MTF_EASY 1
+#define MTF_NORMAL 2
+#define MTF_HARD 4
 
 // Deaf monsters/do not react to sound.
-#define MTF_AMBUSH  8
-
+#define MTF_AMBUSH 8
 
 namespace Doom
 {
@@ -155,7 +142,6 @@ enum Skill
     sk_nightmare
 };
 } // namespace Doom
-
 
 //
 // Key cards.
@@ -173,7 +159,6 @@ enum Card
     NUMCARDS
 };
 } // namespace Doom
-
 
 // The defined weapons,
 // including a marker indicating
@@ -197,21 +182,19 @@ enum WeaponType
 };
 } // namespace Doom
 
-
 // Ammunition types defined.
 namespace Doom
 {
 enum AmmoType
 {
-    am_clip,    // Pistol / chaingun ammo.
-    am_shell,   // Shotgun / double barreled shotgun.
-    am_cell,    // Plasma rifle, BFG.
-    am_misl,    // Missile launcher.
+    am_clip, // Pistol / chaingun ammo.
+    am_shell, // Shotgun / double barreled shotgun.
+    am_cell, // Plasma rifle, BFG.
+    am_misl, // Missile launcher.
     NUMAMMO,
-    am_noammo   // Unlimited for chainsaw / fist.        
+    am_noammo // Unlimited for chainsaw / fist.
 };
 } // namespace Doom
-
 
 // Power up artifacts.
 namespace Doom
@@ -227,7 +210,6 @@ enum PowerType
     NUMPOWERS
 };
 } // namespace Doom
-
 
 //
 // Power up durations,
@@ -245,45 +227,42 @@ enum PowerDuration
 };
 } // namespace Doom
 
-
 //
 // DOOM keyboard definition.
 // This is the stuff configured by Setup.Exe.
 // Most key data are simple ascii (uppercased).
 //
-#define KEY_RIGHTARROW  0xae
-#define KEY_LEFTARROW   0xac
-#define KEY_UPARROW     0xad
-#define KEY_DOWNARROW   0xaf
-#define KEY_ESCAPE      27
-#define KEY_ENTER       13
-#define KEY_TAB         9
-#define KEY_F1          (0x80+0x3b)
-#define KEY_F2          (0x80+0x3c)
-#define KEY_F3          (0x80+0x3d)
-#define KEY_F4          (0x80+0x3e)
-#define KEY_F5          (0x80+0x3f)
-#define KEY_F6          (0x80+0x40)
-#define KEY_F7          (0x80+0x41)
-#define KEY_F8          (0x80+0x42)
-#define KEY_F9          (0x80+0x43)
-#define KEY_F10         (0x80+0x44)
-#define KEY_F11         (0x80+0x57)
-#define KEY_F12         (0x80+0x58)
+#define KEY_RIGHTARROW 0xae
+#define KEY_LEFTARROW 0xac
+#define KEY_UPARROW 0xad
+#define KEY_DOWNARROW 0xaf
+#define KEY_ESCAPE 27
+#define KEY_ENTER 13
+#define KEY_TAB 9
+#define KEY_F1 (0x80 + 0x3b)
+#define KEY_F2 (0x80 + 0x3c)
+#define KEY_F3 (0x80 + 0x3d)
+#define KEY_F4 (0x80 + 0x3e)
+#define KEY_F5 (0x80 + 0x3f)
+#define KEY_F6 (0x80 + 0x40)
+#define KEY_F7 (0x80 + 0x41)
+#define KEY_F8 (0x80 + 0x42)
+#define KEY_F9 (0x80 + 0x43)
+#define KEY_F10 (0x80 + 0x44)
+#define KEY_F11 (0x80 + 0x57)
+#define KEY_F12 (0x80 + 0x58)
 
-#define KEY_BACKSPACE   127
-#define KEY_PAUSE       0xff
+#define KEY_BACKSPACE 127
+#define KEY_PAUSE 0xff
 
-#define KEY_EQUALS      0x3d
-#define KEY_MINUS       0x2d
+#define KEY_EQUALS 0x3d
+#define KEY_MINUS 0x2d
 
-#define KEY_RSHIFT      (0x80+0x36)
-#define KEY_RCTRL       (0x80+0x1d)
-#define KEY_RALT        (0x80+0x38)
+#define KEY_RSHIFT (0x80 + 0x36)
+#define KEY_RCTRL (0x80 + 0x1d)
+#define KEY_RALT (0x80 + 0x38)
 
-#define KEY_LALT        KEY_RALT
-
-
+#define KEY_LALT KEY_RALT
 
 //-----------------------------------------------------------------------------
 //
