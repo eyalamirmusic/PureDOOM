@@ -37,8 +37,8 @@ struct SurfaceAnim
 // - the demos scroll skies and cross animating floors.
 struct AnimatedSurfaces
 {
-    static constexpr int maxAnims = 32; // MAXANIMS in Sim/Specials
-    static constexpr int maxLineAnims = 64; // MAXLINEANIMS in Sim/Specials
+    static constexpr int maxAnims = 32; // sizes anims below
+    static constexpr int maxLineAnims = 64; // sizes linespeciallist below
 
     SurfaceAnim anims[maxAnims] = {}; // the level's animating flats/textures
     SurfaceAnim* lastanim = nullptr; // one past the last animation in use

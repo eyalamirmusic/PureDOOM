@@ -26,9 +26,10 @@ namespace Doom
 // through these.
 struct PlaneScratch
 {
-    static constexpr int maxVisplanes = 128; // MAXVISPLANES in Render/Planes
+    static constexpr int maxVisplanes =
+        128; // sizes visplanes; Render/Planes guards on it
     static constexpr int maxOpenings =
-        SCREENWIDTH * 64; // MAXOPENINGS in Render/Planes
+        SCREENWIDTH * 64; // sizes openings; Render/Planes guards on it
 
     VisPlane visplanes[maxVisplanes] = {}; // the frame's floor/ceiling planes
     VisPlane* lastvisplane = nullptr; // one past the last used plane

@@ -29,7 +29,8 @@ namespace Doom
 // byte array, which does not survive being a copyable struct member; it is an m_cheat concern.)
 struct AutomapView
 {
-    static constexpr int numMarkPoints = 10; // AM_NUMMARKPOINTS in UI/Automap
+    static constexpr int numMarkPoints =
+        10; // markpoints below, and the wrap it cycles through
 
     // No leveljuststarted: vanilla's own comment called it a "kluge until
     // AM_LevelInit() is called", set once by levelInit and read nowhere in either

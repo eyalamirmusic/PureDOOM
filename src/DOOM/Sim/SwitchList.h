@@ -13,7 +13,8 @@ namespace Doom
 // covered - the demos press switches on E1M1 - so the byte-identical *.hashes are a live confirmation.
 struct SwitchList
 {
-    static constexpr int maxSwitches = 50; // MAXSWITCHES in p_spec.h
+    static constexpr int maxSwitches =
+        50; // sizes switchlist; Sim/Switches scans to it
 
     int switchlist[maxSwitches * 2] =
         {}; // on/off texture-number pairs, -1 terminated

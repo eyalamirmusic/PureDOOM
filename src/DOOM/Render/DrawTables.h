@@ -18,8 +18,8 @@ namespace Doom
 // frame-golden-covered - every column and span the demos draw is addressed through these.
 struct DrawTables
 {
-    static constexpr int maxHeight = 832; // MAXHEIGHT in Render/Draw
-    static constexpr int maxWidth = 1120; // MAXWIDTH in Render/Draw
+    static constexpr int maxHeight = 832; // sizes ylookup below
+    static constexpr int maxWidth = 1120; // sizes columnofs below
 
     byte* ylookup[maxHeight] = {}; // per-row framebuffer address
     int columnofs[maxWidth] = {}; // per-column byte offset

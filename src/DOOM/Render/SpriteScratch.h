@@ -8,7 +8,7 @@ namespace Doom
 // Render/Things' private sprite state: the light-table row for the sprite being drawn
 // (spritelights), the R_InitSpriteDefs working table and its high-water mark (sprtemp / maxframe),
 // the sprite name currently being installed (spritename), and the sink the vissprite pool overflows
-// into when a frame has more than MAXVISSPRITES sprites (overflowsprite).
+// into when a frame has more than SpriteState::maxVisSprites sprites (overflowsprite).
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // Render/Things' own namespace-scope private globals, read by no other file (the cross-read sprite
@@ -24,7 +24,7 @@ struct SpriteScratch
     SpriteFrame sprtemp[29] = {}; // R_InitSpriteDefs working frames
     int maxframe = 0; // highest frame index seen while installing
     char* spritename = nullptr; // the sprite name being installed
-    VisSprite overflowsprite = {}; // sink for the (MAXVISSPRITES+1)th sprite
+    VisSprite overflowsprite = {}; // sink for the (maxVisSprites + 1)th sprite
 };
 
 // The one SpriteScratch, a view onto the Engine's member - the same pattern as the other clusters

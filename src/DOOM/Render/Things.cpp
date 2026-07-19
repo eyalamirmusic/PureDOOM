@@ -325,7 +325,7 @@ VisSprite* newVisSprite()
 {
     auto& sprState = spriteState();
 
-    if (sprState.vissprite_p == &sprState.vissprites[MAXVISSPRITES])
+    if (sprState.vissprite_p == &sprState.vissprites[SpriteState::maxVisSprites])
         return &spriteScratch().overflowsprite;
 
     sprState.vissprite_p++;

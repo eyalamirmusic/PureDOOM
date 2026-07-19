@@ -27,7 +27,7 @@ struct ClipRange
 
 struct SolidSegs
 {
-    static constexpr int maxSegs = 32; // MAXSEGS in Render/BSP
+    static constexpr int maxSegs = 32; // sizes solidsegs below
 
     ClipRange solidsegs[maxSegs] = {}; // sorted occluded column spans
     ClipRange* newend = nullptr; // one past the last valid range

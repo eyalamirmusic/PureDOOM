@@ -46,8 +46,6 @@
 #include "Interaction.h"
 #include "Switches.h"
 #include "Random.h"
-#define MAXANIMS 32
-#define MAXLINEANIMS 64
 
 // (The vanilla file-scope `Doom::SurfaceAnim` typedef that sat here was dead - unused at global scope, a
 // leftover of the namespace wrap - and was removed; Doom::SurfaceAnim now lives in Sim/AnimatedSurfaces.h.)

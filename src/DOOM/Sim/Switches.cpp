@@ -109,7 +109,7 @@ void initSwitchList()
     else if (version.gamemode == commercial)
         episode = 3;
 
-    for (int index = 0, i = 0; i < MAXSWITCHES; i++)
+    for (int index = 0, i = 0; i < SwitchList::maxSwitches; i++)
     {
         if (!alphSwitchList[i].episode)
         {

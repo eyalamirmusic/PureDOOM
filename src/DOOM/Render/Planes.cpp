@@ -28,8 +28,6 @@
 #include "../Host/System.h"
 #include "../Render/Main.h"
 #include "../Render/Sky.h"
-#define MAXVISPLANES 128
-#define MAXOPENINGS SCREENWIDTH * 64
 
 namespace Doom
 {
@@ -197,7 +195,7 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
     if (check < plane.lastvisplane)
         return check;
 
-    if (plane.lastvisplane - plane.visplanes == MAXVISPLANES)
+    if (plane.lastvisplane - plane.visplanes == PlaneScratch::maxVisplanes)
         fatalError("Error: findPlane: no more visplanes");
 
     plane.lastvisplane++;
@@ -338,7 +336,7 @@ void drawPlanes()
         fatalError(error_buf);
     }
 
-    if (plane.lastvisplane - plane.visplanes > MAXVISPLANES)
+    if (plane.lastvisplane - plane.visplanes > PlaneScratch::maxVisplanes)
     {
         //fatalError("Error: drawPlanes: visplane overflow (%i)",
         //        lastvisplane - visplanes);
@@ -351,7 +349,7 @@ void drawPlanes()
         fatalError(error_buf);
     }
 
-    if (plane.lastopening - plane.openings > MAXOPENINGS)
+    if (plane.lastopening - plane.openings > PlaneScratch::maxOpenings)
     {
         //fatalError("Error: drawPlanes: opening overflow (%i)",
         //        lastopening - openings);

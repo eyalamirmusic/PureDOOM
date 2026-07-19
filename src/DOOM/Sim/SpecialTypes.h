@@ -162,7 +162,6 @@ struct Button
 namespace Doom
 {
 // max # of wall switches in a level
-constexpr int MAXSWITCHES = 50;
 
 // 4 players, 4 buttons each at once, max.
 constexpr int MAXBUTTONS = 16;

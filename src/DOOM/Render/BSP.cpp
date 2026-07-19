@@ -31,8 +31,6 @@
 #include "../Sim/Level.h"
 void Doom::storeWallRange(int start, int stop);
 
-#define MAXSEGS 32
-
 namespace Doom
 {
 // ClipRange and the solidsegs/newend clip ranges now live on the Engine (Render/SolidSegs.h, moved

@@ -54,7 +54,6 @@
 #include "Switches.h"
 #include "Weapon.h"
 #include "Random.h"
-#define MAXSPECIALCROSS 8
 
 namespace Doom
 {

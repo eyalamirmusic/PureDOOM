@@ -3,7 +3,7 @@
 #include "../Game/GameDefs.h" // SCREENWIDTH
 #include "../Math/FixedPoint.h" // fixed_t
 #include "../Sim/MapTypes.h"
-#include "RenderTypes.h"   // VisSprite
+#include "RenderTypes.h" // VisSprite
 
 namespace Doom
 {
@@ -23,22 +23,24 @@ namespace Doom
 // frame-golden-covered - every sprite the demos draw passes through these.
 struct SpriteState
 {
-    static constexpr int maxVisSprites = 128; // MAXVISSPRITES in r_things.h
+    static constexpr int maxVisSprites =
+        128; // sizes vissprites; Render/Things guards on it
 
-    fixed_t pspritescale {};  // player-sprite horizontal scale
+    fixed_t pspritescale {}; // player-sprite horizontal scale
     fixed_t pspriteiscale {}; // its inverse
 
-    short negonearray[SCREENWIDTH] = {};       // all -1 (a "no clip" top)
-    short screenheightarray[SCREENWIDTH] = {}; // all SCREENHEIGHT (a "no clip" bottom)
+    short negonearray[SCREENWIDTH] = {}; // all -1 (a "no clip" top)
+    short screenheightarray[SCREENWIDTH] =
+        {}; // all SCREENHEIGHT (a "no clip" bottom)
 
     VisSprite vissprites[maxVisSprites] = {}; // the frame's gathered sprites
-    VisSprite* vissprite_p = nullptr;         // one past the last gathered
-    VisSprite vsprsortedhead = {};            // sentinel head of the sorted list
+    VisSprite* vissprite_p = nullptr; // one past the last gathered
+    VisSprite vsprsortedhead = {}; // sentinel head of the sorted list
 
-    short* mfloorclip = nullptr;   // per-column floor clip for the current sprite
+    short* mfloorclip = nullptr; // per-column floor clip for the current sprite
     short* mceilingclip = nullptr; // per-column ceiling clip for the current sprite
-    fixed_t spryscale {};         // vertical scale of the current sprite column
-    fixed_t sprtopscreen {};      // screen y of the current sprite's top
+    fixed_t spryscale {}; // vertical scale of the current sprite column
+    fixed_t sprtopscreen {}; // screen y of the current sprite's top
 };
 
 SpriteState& spriteState();

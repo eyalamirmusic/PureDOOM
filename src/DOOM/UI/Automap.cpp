@@ -80,8 +80,6 @@ constexpr int AM_GRIDKEY = 'g';
 constexpr int AM_MARKKEY = 'm';
 constexpr int AM_CLEARMARKKEY = 'c';
 
-constexpr int AM_NUMMARKPOINTS = 10;
-
 // scale on entry
 constexpr fixed_t INITSCALEMTOF {(std::int32_t) (.2 * FRACUNIT.raw)};
 // how much the automap moves window per tic in frame-buffer coordinates
@@ -252,7 +250,7 @@ void addMark()
 
     map.markpoints[map.markpointnum].x = m_x + m_w / 2;
     map.markpoints[map.markpointnum].y = m_y + m_h / 2;
-    map.markpointnum = (map.markpointnum + 1) % AM_NUMMARKPOINTS;
+    map.markpointnum = (map.markpointnum + 1) % AutomapView::numMarkPoints;
 }
 
 //
@@ -396,7 +394,7 @@ void clearMarks()
 {
     auto& map = automapView();
 
-    for (int i = 0; i < AM_NUMMARKPOINTS; i++)
+    for (int i = 0; i < AutomapView::numMarkPoints; i++)
         map.markpoints[i].x = fixed_t {-1}; // means empty
     map.markpointnum = 0;
 }
@@ -1200,7 +1198,7 @@ void drawAutomapMarks()
 
     int fx, fy, w, h;
 
-    for (int i = 0; i < AM_NUMMARKPOINTS; i++)
+    for (int i = 0; i < AutomapView::numMarkPoints; i++)
     {
         if (map.markpoints[i].x != fixed_t {-1})
         {

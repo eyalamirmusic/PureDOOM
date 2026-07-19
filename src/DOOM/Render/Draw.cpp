@@ -26,8 +26,6 @@
 #include "../Host/System.h"
 #include "../Game/GameVersion.h"
 #include "../Render/GraphicsData.h"
-#define MAXWIDTH 1120
-#define MAXHEIGHT 832
 
 namespace Doom
 {

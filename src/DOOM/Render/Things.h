@@ -4,7 +4,6 @@
 #include "RenderTypes.h" // Column, Sector
 
 // The vissprite pool's size. Was r_things.h.
-#define MAXVISSPRITES 128
 
 namespace Doom
 {
