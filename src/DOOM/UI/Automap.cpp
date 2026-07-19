@@ -100,7 +100,7 @@ namespace Doom
 #define M_ZOOMOUT (fixed_t {(std::int32_t) (FRACUNIT.raw / 1.02)})
 
 // translates between frame-buffer and map distances
-#define FTOM(x) FixedMul(Doom::Fixed::fromInt(x), scale_ftom)
+#define FTOM(view, x) FixedMul(Doom::Fixed::fromInt(x), (view).scale_ftom)
 #define MTOF(x) (FixedMul((x), scale_mtof).toInt())
 // translates between frame-buffer and map coordinates
 #define CXMTOF(x) (f_x + MTOF((x) - m_x))
@@ -141,70 +141,16 @@ EA::Array<MapLine, 3> triangle_guy = {
 #undef R
 #define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(MapLine))
 
-// The automap's internal view state is a Doom::AutomapView owned by the Engine now, moved by the
-// file-scope-statics sweep; these names are references onto the members, the arrays as
-// references-to-array (REFACTOR.md, Step 5). The "iddt" cheat below stays a file-local static.
-static int& leveljuststarted =
-    automapView().leveljuststarted; // kluge until AM_LevelInit
-
-static int& finit_width = automapView().finit_width;
-static int& finit_height = automapView().finit_height;
-
-static byte*& fb = automapView().fb; // pseudo-frame buffer
-static int& amclock = automapView().amclock;
-
-static MapPoint& m_paninc =
-    automapView().m_paninc; // window pan per tic (map coords)
-static fixed_t& mtof_zoommul =
-    automapView().mtof_zoommul; // window zoom per tic (map)
-static fixed_t& ftom_zoommul =
-    automapView().ftom_zoommul; // window zoom per tic (fb)
-
-static fixed_t& m_x2 =
-    automapView().m_x2; // UR corner where the window is (map coords)
-static fixed_t& m_y2 = automapView().m_y2;
-
-//
-// width/height of window on map (map coords)
-//
-
-// based on level size
-static fixed_t& min_x = automapView().min_x;
-static fixed_t& min_y = automapView().min_y;
-static fixed_t& max_x = automapView().max_x;
-static fixed_t& max_y = automapView().max_y;
-
-static fixed_t& max_w = automapView().max_w; // max_x-min_x,
-static fixed_t& max_h = automapView().max_h; // max_y-min_y
-
-// based on player size
-static fixed_t& min_w = automapView().min_w;
-static fixed_t& min_h = automapView().min_h;
-
-static fixed_t& min_scale_mtof = automapView().min_scale_mtof; // stop zooming out
-static fixed_t& max_scale_mtof = automapView().max_scale_mtof; // stop zooming in
-
-// old stuff for recovery later
-static fixed_t& old_m_w = automapView().old_m_w;
-static fixed_t& old_m_h = automapView().old_m_h;
-static fixed_t& old_m_x = automapView().old_m_x;
-static fixed_t& old_m_y = automapView().old_m_y;
-
-// old location used by the Follower routine
-static MapPoint& f_oldloc = automapView().f_oldloc;
-
-// used by MTOF/FTOM to scale between map and frame-buffer coords (=1/scale_mtof)
-static fixed_t& scale_ftom = automapView().scale_ftom;
-
-static Patch* (&marknums)[10] = automapView().marknums; // mark-number patches
-static MapPoint (&markpoints)[AM_NUMMARKPOINTS] =
-    automapView().markpoints; // the marks
-static int& markpointnum = automapView().markpointnum; // next point to be assigned
+// The automap's internal view state is a Doom::AutomapView owned by the Engine (AutomapView.h). It
+// used to be reached through file-scope `static T& x = automapView().x;` reference aliases (the
+// arrays as references-to-array), moved in by the file-scope-statics sweep (REFACTOR.md, Step 5);
+// the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - every function below
+// reaches automapView() through a hoisted local instead, taken once per function (or inline where a
+// function touches it exactly once). FTOM, the one macro that read a member (scale_ftom), now takes
+// the view explicitly. The "iddt" cheat below stays a file-local static.
 
 static EA::Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
 static CheatSequence cheat_amap = {cheat_amap_seq.data(), 0};
-
-static doom_boolean& stopped = automapView().stopped;
 
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so
@@ -230,14 +176,16 @@ void getIslope(MapLine* ml, ISlope* is)
 //
 void activateNewScale()
 {
+    auto& map = automapView();
+
     m_x += m_w / 2;
     m_y += m_h / 2;
-    m_w = FTOM(f_w);
-    m_h = FTOM(f_h);
+    m_w = FTOM(map, f_w);
+    m_h = FTOM(map, f_h);
     m_x -= m_w / 2;
     m_y -= m_h / 2;
-    m_x2 = m_x + m_w;
-    m_y2 = m_y + m_h;
+    map.m_x2 = m_x + m_w;
+    map.m_y2 = m_y + m_h;
 }
 
 //
@@ -245,10 +193,12 @@ void activateNewScale()
 //
 void saveScaleAndLoc()
 {
-    old_m_x = m_x;
-    old_m_y = m_y;
-    old_m_w = m_w;
-    old_m_h = m_h;
+    auto& map = automapView();
+
+    map.old_m_x = m_x;
+    map.old_m_y = m_y;
+    map.old_m_w = m_w;
+    map.old_m_h = m_h;
 }
 
 //
@@ -256,24 +206,26 @@ void saveScaleAndLoc()
 //
 void restoreScaleAndLoc()
 {
-    m_w = old_m_w;
-    m_h = old_m_h;
+    auto& map = automapView();
+
+    m_w = map.old_m_w;
+    m_h = map.old_m_h;
     if (!followplayer)
     {
-        m_x = old_m_x;
-        m_y = old_m_y;
+        m_x = map.old_m_x;
+        m_y = map.old_m_y;
     }
     else
     {
         m_x = am_plr->mo->x - m_w / 2;
         m_y = am_plr->mo->y - m_h / 2;
     }
-    m_x2 = m_x + m_w;
-    m_y2 = m_y + m_h;
+    map.m_x2 = m_x + m_w;
+    map.m_y2 = m_y + m_h;
 
     // Change the scaling multipliers
     scale_mtof = FixedDiv(Doom::Fixed::fromInt(f_w), m_w);
-    scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 }
 
 //
@@ -281,9 +233,11 @@ void restoreScaleAndLoc()
 //
 void addMark()
 {
-    markpoints[markpointnum].x = m_x + m_w / 2;
-    markpoints[markpointnum].y = m_y + m_h / 2;
-    markpointnum = (markpointnum + 1) % AM_NUMMARKPOINTS;
+    auto& map = automapView();
+
+    map.markpoints[map.markpointnum].x = m_x + m_w / 2;
+    map.markpoints[map.markpointnum].y = m_y + m_h / 2;
+    map.markpointnum = (map.markpointnum + 1) % AM_NUMMARKPOINTS;
 }
 
 //
@@ -292,36 +246,38 @@ void addMark()
 //
 void findMinMaxBoundaries()
 {
+    auto& map = automapView();
+
     fixed_t a;
     fixed_t b;
 
-    min_x = min_y = fixed_t {DOOM_MAXINT};
-    max_x = max_y = fixed_t {-DOOM_MAXINT};
+    map.min_x = map.min_y = fixed_t {DOOM_MAXINT};
+    map.max_x = map.max_y = fixed_t {-DOOM_MAXINT};
 
     for (int i = 0; i < numvertexes; i++)
     {
-        if (vertexes[i].x < min_x)
-            min_x = vertexes[i].x;
-        else if (vertexes[i].x > max_x)
-            max_x = vertexes[i].x;
+        if (vertexes[i].x < map.min_x)
+            map.min_x = vertexes[i].x;
+        else if (vertexes[i].x > map.max_x)
+            map.max_x = vertexes[i].x;
 
-        if (vertexes[i].y < min_y)
-            min_y = vertexes[i].y;
-        else if (vertexes[i].y > max_y)
-            max_y = vertexes[i].y;
+        if (vertexes[i].y < map.min_y)
+            map.min_y = vertexes[i].y;
+        else if (vertexes[i].y > map.max_y)
+            map.max_y = vertexes[i].y;
     }
 
-    max_w = max_x - min_x;
-    max_h = max_y - min_y;
+    map.max_w = map.max_x - map.min_x;
+    map.max_h = map.max_y - map.min_y;
 
-    min_w = 2 * PLAYERRADIUS; // const? never changed?
-    min_h = 2 * PLAYERRADIUS;
+    map.min_w = 2 * PLAYERRADIUS; // const? never changed?
+    map.min_h = 2 * PLAYERRADIUS;
 
-    a = FixedDiv(Doom::Fixed::fromInt(f_w), max_w);
-    b = FixedDiv(Doom::Fixed::fromInt(f_h), max_h);
+    a = FixedDiv(Doom::Fixed::fromInt(f_w), map.max_w);
+    b = FixedDiv(Doom::Fixed::fromInt(f_h), map.max_h);
 
-    min_scale_mtof = a < b ? a : b;
-    max_scale_mtof = FixedDiv(Doom::Fixed::fromInt(f_h), 2 * PLAYERRADIUS);
+    map.min_scale_mtof = a < b ? a : b;
+    map.max_scale_mtof = FixedDiv(Doom::Fixed::fromInt(f_h), 2 * PLAYERRADIUS);
 }
 
 //
@@ -329,27 +285,29 @@ void findMinMaxBoundaries()
 //
 void changeWindowLoc()
 {
-    if (m_paninc.x || m_paninc.y)
+    auto& map = automapView();
+
+    if (map.m_paninc.x || map.m_paninc.y)
     {
         followplayer = 0;
-        f_oldloc.x = fixed_t {DOOM_MAXINT};
+        map.f_oldloc.x = fixed_t {DOOM_MAXINT};
     }
 
-    m_x += m_paninc.x;
-    m_y += m_paninc.y;
+    m_x += map.m_paninc.x;
+    m_y += map.m_paninc.y;
 
-    if (m_x + m_w / 2 > max_x)
-        m_x = max_x - m_w / 2;
-    else if (m_x + m_w / 2 < min_x)
-        m_x = min_x - m_w / 2;
+    if (m_x + m_w / 2 > map.max_x)
+        m_x = map.max_x - m_w / 2;
+    else if (m_x + m_w / 2 < map.min_x)
+        m_x = map.min_x - m_w / 2;
 
-    if (m_y + m_h / 2 > max_y)
-        m_y = max_y - m_h / 2;
-    else if (m_y + m_h / 2 < min_y)
-        m_y = min_y - m_h / 2;
+    if (m_y + m_h / 2 > map.max_y)
+        m_y = map.max_y - m_h / 2;
+    else if (m_y + m_h / 2 < map.min_y)
+        m_y = map.min_y - m_h / 2;
 
-    m_x2 = m_x + m_w;
-    m_y2 = m_y + m_h;
+    map.m_x2 = m_x + m_w;
+    map.m_y2 = m_y + m_h;
 }
 
 //
@@ -357,22 +315,24 @@ void changeWindowLoc()
 //
 void initAutomapVariables()
 {
+    auto& map = automapView();
+
     int pnum;
     static Event st_notify = {ev_keyup, AM_MSGENTERED, 0, 0};
 
     overlayState().automapactive = true;
-    fb = screens[0];
+    map.fb = screens[0];
 
-    f_oldloc.x = fixed_t {DOOM_MAXINT};
-    amclock = 0;
+    map.f_oldloc.x = fixed_t {DOOM_MAXINT};
+    map.amclock = 0;
     lightlev = 0;
 
-    m_paninc.x = m_paninc.y = fixed_t {};
-    ftom_zoommul = FRACUNIT;
-    mtof_zoommul = FRACUNIT;
+    map.m_paninc.x = map.m_paninc.y = fixed_t {};
+    map.ftom_zoommul = FRACUNIT;
+    map.mtof_zoommul = FRACUNIT;
 
-    m_w = FTOM(f_w);
-    m_h = FTOM(f_h);
+    m_w = FTOM(map, f_w);
+    m_h = FTOM(map, f_h);
 
     auto& players_ = playerState();
 
@@ -388,10 +348,10 @@ void initAutomapVariables()
     changeWindowLoc();
 
     // for saving & restoring
-    old_m_x = m_x;
-    old_m_y = m_y;
-    old_m_w = m_w;
-    old_m_h = m_h;
+    map.old_m_x = m_x;
+    map.old_m_y = m_y;
+    map.old_m_w = m_w;
+    map.old_m_h = m_h;
 
     // inform the status bar of the change
     Doom::statusBarResponder(&st_notify);
@@ -402,12 +362,14 @@ void initAutomapVariables()
 //
 void loadPics()
 {
+    auto& map = automapView();
+
     EA::Array<char, 9> namebuf;
 
     for (int i = 0; i < 10; i++)
     {
         doom_concat(doom_strcpy(namebuf.data(), "AMMNUM"), doom_itoa(i, 10));
-        marknums[i] = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+        map.marknums[i] = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
     }
 }
 
@@ -420,9 +382,11 @@ void unloadPics()
 
 void clearMarks()
 {
+    auto& map = automapView();
+
     for (int i = 0; i < AM_NUMMARKPOINTS; i++)
-        markpoints[i].x = fixed_t {-1}; // means empty
-    markpointnum = 0;
+        map.markpoints[i].x = fixed_t {-1}; // means empty
+    map.markpointnum = 0;
 }
 
 //
@@ -431,19 +395,21 @@ void clearMarks()
 //
 void levelInit()
 {
-    leveljuststarted = 0;
+    auto& map = automapView();
+
+    map.leveljuststarted = 0;
 
     f_x = f_y = 0;
-    f_w = finit_width;
-    f_h = finit_height;
+    f_w = map.finit_width;
+    f_h = map.finit_height;
 
     clearMarks();
 
     findMinMaxBoundaries();
-    scale_mtof = FixedDiv(min_scale_mtof, AM_FIXED(0.7 * R_UNIT));
-    if (scale_mtof > max_scale_mtof)
-        scale_mtof = min_scale_mtof;
-    scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    scale_mtof = FixedDiv(map.min_scale_mtof, AM_FIXED(0.7 * R_UNIT));
+    if (scale_mtof > map.max_scale_mtof)
+        scale_mtof = map.min_scale_mtof;
+    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 }
 
 //
@@ -456,7 +422,7 @@ void stopAutomap()
     unloadPics();
     overlayState().automapactive = false;
     Doom::statusBarResponder(&st_notify);
-    stopped = true;
+    automapView().stopped = true;
 }
 
 //
@@ -464,19 +430,18 @@ void stopAutomap()
 //
 void startAutomap()
 {
-    int& lastlevel = automapView().lastlevel;
-    int& lastepisode = automapView().lastepisode;
+    auto& map = automapView();
 
-    if (!stopped)
+    if (!map.stopped)
         stopAutomap();
-    stopped = false;
+    map.stopped = false;
     const auto& session = gameSession();
 
-    if (lastlevel != session.gamemap || lastepisode != session.gameepisode)
+    if (map.lastlevel != session.gamemap || map.lastepisode != session.gameepisode)
     {
         levelInit();
-        lastlevel = session.gamemap;
-        lastepisode = session.gameepisode;
+        map.lastlevel = session.gamemap;
+        map.lastepisode = session.gameepisode;
     }
     initAutomapVariables();
     loadPics();
@@ -487,8 +452,10 @@ void startAutomap()
 //
 void minOutWindowScale()
 {
-    scale_mtof = min_scale_mtof;
-    scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    auto& map = automapView();
+
+    scale_mtof = map.min_scale_mtof;
+    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
     activateNewScale();
 }
 
@@ -497,8 +464,10 @@ void minOutWindowScale()
 //
 void maxOutWindowScale()
 {
-    scale_mtof = max_scale_mtof;
-    scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    auto& map = automapView();
+
+    scale_mtof = map.max_scale_mtof;
+    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
     activateNewScale();
 }
 
@@ -507,8 +476,9 @@ void maxOutWindowScale()
 //
 doom_boolean automapResponder(Event* ev)
 {
+    auto& map = automapView();
+
     int rc;
-    int& bigstate = automapView().bigstate;
     static EA::Array<char, 20> buffer;
 
     rc = false;
@@ -530,44 +500,44 @@ doom_boolean automapResponder(Event* ev)
         {
             case AM_PANRIGHTKEY: // pan right
                 if (!followplayer)
-                    m_paninc.x = FTOM(F_PANINC);
+                    map.m_paninc.x = FTOM(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANLEFTKEY: // pan left
                 if (!followplayer)
-                    m_paninc.x = -FTOM(F_PANINC);
+                    map.m_paninc.x = -FTOM(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANUPKEY: // pan up
                 if (!followplayer)
-                    m_paninc.y = FTOM(F_PANINC);
+                    map.m_paninc.y = FTOM(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANDOWNKEY: // pan down
                 if (!followplayer)
-                    m_paninc.y = -FTOM(F_PANINC);
+                    map.m_paninc.y = -FTOM(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_ZOOMOUTKEY: // zoom out
-                mtof_zoommul = M_ZOOMOUT;
-                ftom_zoommul = M_ZOOMIN;
+                map.mtof_zoommul = M_ZOOMOUT;
+                map.ftom_zoommul = M_ZOOMIN;
                 break;
             case AM_ZOOMINKEY: // zoom in
-                mtof_zoommul = M_ZOOMIN;
-                ftom_zoommul = M_ZOOMOUT;
+                map.mtof_zoommul = M_ZOOMIN;
+                map.ftom_zoommul = M_ZOOMOUT;
                 break;
             case AM_ENDKEY:
-                bigstate = 0;
+                map.bigstate = 0;
                 refreshFlags().viewactive = true;
                 stopAutomap();
                 break;
             case AM_GOBIGKEY:
-                bigstate = !bigstate;
-                if (bigstate)
+                map.bigstate = !map.bigstate;
+                if (map.bigstate)
                 {
                     saveScaleAndLoc();
                     minOutWindowScale();
@@ -577,7 +547,7 @@ doom_boolean automapResponder(Event* ev)
                 break;
             case AM_FOLLOWKEY:
                 followplayer = !followplayer;
-                f_oldloc.x = fixed_t {DOOM_MAXINT};
+                map.f_oldloc.x = fixed_t {DOOM_MAXINT};
                 am_plr->message = const_cast<char*>(followplayer ? AMSTR_FOLLOWON
                                                                  : AMSTR_FOLLOWOFF);
                 break;
@@ -589,7 +559,7 @@ doom_boolean automapResponder(Event* ev)
             case AM_MARKKEY:
                 doom_strcpy(buffer.data(), AMSTR_MARKEDSPOT);
                 doom_concat(buffer.data(), " ");
-                doom_concat(buffer.data(), doom_itoa(markpointnum, 10));
+                doom_concat(buffer.data(), doom_itoa(map.markpointnum, 10));
                 //doom_sprintf(buffer, "%s %d", AMSTR_MARKEDSPOT, markpointnum);
                 am_plr->message = buffer.data();
                 addMark();
@@ -615,24 +585,24 @@ doom_boolean automapResponder(Event* ev)
         {
             case AM_PANRIGHTKEY:
                 if (!followplayer)
-                    m_paninc.x = fixed_t {};
+                    map.m_paninc.x = fixed_t {};
                 break;
             case AM_PANLEFTKEY:
                 if (!followplayer)
-                    m_paninc.x = fixed_t {};
+                    map.m_paninc.x = fixed_t {};
                 break;
             case AM_PANUPKEY:
                 if (!followplayer)
-                    m_paninc.y = fixed_t {};
+                    map.m_paninc.y = fixed_t {};
                 break;
             case AM_PANDOWNKEY:
                 if (!followplayer)
-                    m_paninc.y = fixed_t {};
+                    map.m_paninc.y = fixed_t {};
                 break;
             case AM_ZOOMOUTKEY:
             case AM_ZOOMINKEY:
-                mtof_zoommul = FRACUNIT;
-                ftom_zoommul = FRACUNIT;
+                map.mtof_zoommul = FRACUNIT;
+                map.ftom_zoommul = FRACUNIT;
                 break;
         }
     }
@@ -645,13 +615,15 @@ doom_boolean automapResponder(Event* ev)
 //
 void changeWindowScale()
 {
-    // Change the scaling multipliers
-    scale_mtof = FixedMul(scale_mtof, mtof_zoommul);
-    scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    auto& map = automapView();
 
-    if (scale_mtof < min_scale_mtof)
+    // Change the scaling multipliers
+    scale_mtof = FixedMul(scale_mtof, map.mtof_zoommul);
+    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+
+    if (scale_mtof < map.min_scale_mtof)
         minOutWindowScale();
-    else if (scale_mtof > max_scale_mtof)
+    else if (scale_mtof > map.max_scale_mtof)
         maxOutWindowScale();
     else
         activateNewScale();
@@ -662,14 +634,16 @@ void changeWindowScale()
 //
 void doFollowPlayer()
 {
-    if (f_oldloc.x != am_plr->mo->x || f_oldloc.y != am_plr->mo->y)
+    auto& map = automapView();
+
+    if (map.f_oldloc.x != am_plr->mo->x || map.f_oldloc.y != am_plr->mo->y)
     {
-        m_x = FTOM(MTOF(am_plr->mo->x)) - m_w / 2;
-        m_y = FTOM(MTOF(am_plr->mo->y)) - m_h / 2;
-        m_x2 = m_x + m_w;
-        m_y2 = m_y + m_h;
-        f_oldloc.x = am_plr->mo->x;
-        f_oldloc.y = am_plr->mo->y;
+        m_x = FTOM(map, MTOF(am_plr->mo->x)) - m_w / 2;
+        m_y = FTOM(map, MTOF(am_plr->mo->y)) - m_h / 2;
+        map.m_x2 = m_x + m_w;
+        map.m_y2 = m_y + m_h;
+        map.f_oldloc.x = am_plr->mo->x;
+        map.f_oldloc.y = am_plr->mo->y;
     }
 }
 
@@ -678,18 +652,18 @@ void doFollowPlayer()
 //
 void updateLightLev()
 {
-    int& nexttic = automapView().nexttic;
+    auto& map = automapView();
+
     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
     static EA::Array<int, 8> litelevels = {0, 4, 7, 10, 12, 14, 15, 15};
-    int& litelevelscnt = automapView().litelevelscnt;
 
     // Change light level
-    if (amclock > nexttic)
+    if (map.amclock > map.nexttic)
     {
-        lightlev = litelevels[litelevelscnt++];
-        if (litelevelscnt == litelevels.size())
-            litelevelscnt = 0;
-        nexttic = amclock + 6 - (amclock % 6);
+        lightlev = litelevels[map.litelevelscnt++];
+        if (map.litelevelscnt == litelevels.size())
+            map.litelevelscnt = 0;
+        map.nexttic = map.amclock + 6 - (map.amclock % 6);
     }
 }
 
@@ -701,17 +675,19 @@ void automapTicker()
     if (!overlayState().automapactive)
         return;
 
-    amclock++;
+    auto& map = automapView();
+
+    map.amclock++;
 
     if (followplayer)
         doFollowPlayer();
 
     // Change the zoom if necessary
-    if (ftom_zoommul != FRACUNIT)
+    if (map.ftom_zoommul != FRACUNIT)
         changeWindowScale();
 
     // Change x,y location
-    if (m_paninc.x || m_paninc.y)
+    if (map.m_paninc.x || map.m_paninc.y)
         changeWindowLoc();
 
     // Update light level
@@ -723,7 +699,7 @@ void automapTicker()
 //
 void clearFB(int color)
 {
-    doom_memset(fb, color, f_w * f_h);
+    doom_memset(automapView().fb, color, f_w * f_h);
 }
 
 //
@@ -735,6 +711,8 @@ void clearFB(int color)
 //
 doom_boolean clipMline(MapLine* ml, FLine* fl)
 {
+    auto& map = automapView();
+
     enum
     {
         LEFT = 1,
@@ -763,12 +741,12 @@ doom_boolean clipMline(MapLine* ml, FLine* fl)
         (oc) |= RIGHT;
 
     // do trivial rejects and outcodes
-    if (ml->a.y > m_y2)
+    if (ml->a.y > map.m_y2)
         outcode1 = TOP;
     else if (ml->a.y < m_y)
         outcode1 = BOTTOM;
 
-    if (ml->b.y > m_y2)
+    if (ml->b.y > map.m_y2)
         outcode2 = TOP;
     else if (ml->b.y < m_y)
         outcode2 = BOTTOM;
@@ -778,12 +756,12 @@ doom_boolean clipMline(MapLine* ml, FLine* fl)
 
     if (ml->a.x < m_x)
         outcode1 |= LEFT;
-    else if (ml->a.x > m_x2)
+    else if (ml->a.x > map.m_x2)
         outcode1 |= RIGHT;
 
     if (ml->b.x < m_x)
         outcode2 |= LEFT;
-    else if (ml->b.x > m_x2)
+    else if (ml->b.x > map.m_x2)
         outcode2 |= RIGHT;
 
     if (outcode1 & outcode2)
@@ -864,6 +842,8 @@ doom_boolean clipMline(MapLine* ml, FLine* fl)
 //
 void drawFline(FLine* fl, int color)
 {
+    auto& map = automapView();
+
     int x;
     int y;
     int dx;
@@ -888,7 +868,7 @@ void drawFline(FLine* fl, int color)
     }
 #endif
 
-#define PUTDOT(xx, yy, cc) fb[(yy) * f_w + (xx)] = (cc)
+#define PUTDOT(xx, yy, cc) map.fb[(yy) * f_w + (xx)] = (cc)
 
     dx = fl->b.x - fl->a.x;
     ax = 2 * (dx < 0 ? -dx : dx);
@@ -1193,27 +1173,29 @@ void drawThings(int colors)
 
 void drawAutomapMarks()
 {
+    auto& map = automapView();
+
     int fx, fy, w, h;
 
     for (int i = 0; i < AM_NUMMARKPOINTS; i++)
     {
-        if (markpoints[i].x != fixed_t {-1})
+        if (map.markpoints[i].x != fixed_t {-1})
         {
             //      w = SHORT(marknums[i]->width);
             //      h = SHORT(marknums[i]->height);
             w = 5; // because something's wrong with the wad, i guess
             h = 6; // because something's wrong with the wad, i guess
-            fx = CXMTOF(markpoints[i].x);
-            fy = CYMTOF(markpoints[i].y);
+            fx = CXMTOF(map.markpoints[i].x);
+            fy = CYMTOF(map.markpoints[i].y);
             if (fx >= f_x && fx <= f_w - w && fy >= f_y && fy <= f_h - h)
-                Doom::drawPatch(fx, fy, FB, marknums[i]);
+                Doom::drawPatch(fx, fy, FB, map.marknums[i]);
         }
     }
 }
 
 void amDrawCrosshair(int color)
 {
-    fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
+    automapView().fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
 }
 
 void drawAutomap()

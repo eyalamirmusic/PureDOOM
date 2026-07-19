@@ -17,12 +17,14 @@ namespace Doom
 // global enum value AutomapState - the StatusBarMode case - which would be ambiguous with a
 // Doom::AutomapState under `using namespace Doom`.)
 //
-// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names
-// become references onto these members (the arrays as references-to-array). The automap is not
-// frame-golden-covered (no demo opens it), but a reference alias is pure storage relocation - the
-// compiler binds each name to its same-named member - so this is behaviour-preserving by
-// construction, and verified by build + app-link. levelInit / initAutomapVariables reset the view
-// before it is drawn, so the defaults matter little, but they reproduce vanilla's initializers.
+// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5). The vanilla names
+// were references onto these members (the arrays as references-to-array) until the file-local-alias
+// sweep (REFACTOR.md, Step 9 strand (a)) retired them; UI/Automap.cpp now reaches automapView()
+// through a hoisted local per function instead. The automap has its own frame golden now
+// (Tests/Goldens/automap.frames, via Tests/AutomapReplay.h - no demo opens it, so nothing else
+// covers this file), which is what made retiring these aliases safe to verify by more than build +
+// app-link. levelInit / initAutomapVariables reset the view before it is drawn, so the defaults
+// matter little, but they reproduce vanilla's initializers.
 // (The "iddt" cheat sequence stays a file-local static: its CheatSequence holds a pointer to its own
 // byte array, which does not survive being a copyable struct member; it is an m_cheat concern.)
 struct AutomapView
