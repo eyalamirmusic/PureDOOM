@@ -3,6 +3,8 @@
 #include "PlayerTypes.h" // Player
 #include "GameDefs.h" // MAXPLAYERS
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The player roster and which of them this node cares about. players is the array of every
@@ -26,8 +28,9 @@ namespace Doom
 // golden-neutral.
 struct PlayerState
 {
-    Player players[MAXPLAYERS] = {}; // every player's state (single-player here)
-    bool playeringame[MAXPLAYERS] = {}; // which slots are live
+    EA::Array<Player, MAXPLAYERS> players =
+        {}; // every player's state (single-player here)
+    EA::Array<bool, MAXPLAYERS> playeringame = {}; // which slots are live
 
     int consoleplayer = 0; // the player this node takes events for
     int displayplayer = 0; // the player whose view is drawn

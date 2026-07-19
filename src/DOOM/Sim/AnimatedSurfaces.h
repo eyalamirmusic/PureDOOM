@@ -2,6 +2,8 @@
 
 #include "Specials.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // Forward declaration at global scope (where r_defs.h declares it) - linespeciallist holds pointers,
 // not layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to Doom::Line.
 namespace Doom
@@ -40,10 +42,11 @@ struct AnimatedSurfaces
     static constexpr int maxAnims = 32; // sizes anims below
     static constexpr int maxLineAnims = 64; // sizes linespeciallist below
 
-    SurfaceAnim anims[maxAnims] = {}; // the level's animating flats/textures
+    EA::Array<SurfaceAnim, maxAnims> anims =
+        {}; // the level's animating flats/textures
     SurfaceAnim* lastanim = nullptr; // one past the last animation in use
     short numlinespecials = 0; // # of scrolling-texture linedefs
-    Line* linespeciallist[maxLineAnims] = {}; // those linedefs
+    EA::Array<Line*, maxLineAnims> linespeciallist = {}; // those linedefs
 };
 
 // The one AnimatedSurfaces, a view onto the Engine's member - the same pattern as the other clusters.

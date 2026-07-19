@@ -68,6 +68,11 @@ extern EA::Array<const char*, 45> mapnames;
 //
 // Locally used constants, shortcuts.
 //
+// Every one of these stays a macro on purpose, for one of two reasons.
+// HU_TITLE/2/P/T and HU_TITLEY/HU_INPUTY have bodies that call a runtime accessor
+// (gameSession(), hudFont()), so no constexpr is available to them at all.
+// HU_TITLEHEIGHT/HU_INPUTWIDTH/HU_INPUTHEIGHT are dead, and dead in 1993 too, and
+// belong to the ~55 REFACTOR.md item 6 deliberately leaves alone.
 #define HU_TITLE                                                                    \
     (mapnames[(gameSession().gameepisode - 1) * 9 + gameSession().gamemap - 1])
 #define HU_TITLE2 (mapnames2[gameSession().gamemap - 1])
@@ -285,13 +290,13 @@ void startHud()
                     HU_MSGX,
                     HU_MSGY,
                     HU_MSGHEIGHT,
-                    font.hu_font,
+                    font.hu_font.data(),
                     HU_FONTSTART,
                     &msg.message_on);
 
     // create the map title widget
     Doom::initTextLine(
-        state.w_title, HU_TITLEX, HU_TITLEY, font.hu_font, HU_FONTSTART);
+        state.w_title, HU_TITLEX, HU_TITLEY, font.hu_font.data(), HU_FONTSTART);
 
     switch (gameVersion().gamemode)
     {
@@ -320,8 +325,12 @@ void startHud()
         Doom::addCharToTextLine(state.w_title, *(s++));
 
     // create the chat widget
-    Doom::initIText(
-        chat.w_chat, HU_INPUTX, HU_INPUTY, font.hu_font, HU_FONTSTART, &hud.chat_on);
+    Doom::initIText(chat.w_chat,
+                    HU_INPUTX,
+                    HU_INPUTY,
+                    font.hu_font.data(),
+                    HU_FONTSTART,
+                    &hud.chat_on);
 
     // create the inputbuffer widgets
     for (int i = 0; i < MAXPLAYERS; i++)
@@ -404,9 +413,10 @@ void hudTicker()
                             && (chat.chat_dest[i] == players_.consoleplayer + 1
                                 || chat.chat_dest[i] == HU_BROADCAST))
                         {
-                            Doom::addMessageToSText(msg.w_message,
-                                                    player_names[i],
-                                                    chat.w_inputbuffer[i].l.l);
+                            Doom::addMessageToSText(
+                                msg.w_message,
+                                player_names[i],
+                                chat.w_inputbuffer[i].l.l.data());
 
                             msg.message_nottobefuckedwith = true;
                             msg.message_on = true;
@@ -562,8 +572,8 @@ bool hudResponder(Event* ev)
 
             // leave chat mode and notify that it was sent
             hud.chat_on = false;
-            doom_strcpy(chat.lastmessage, chat_macros[c]);
-            state.plr->message = chat.lastmessage;
+            doom_strcpy(chat.lastmessage.data(), chat_macros[c]);
+            state.plr->message = chat.lastmessage.data();
             eatkey = true;
         }
         else
@@ -582,8 +592,8 @@ bool hudResponder(Event* ev)
                 hud.chat_on = false;
                 if (chat.w_chat.l.len)
                 {
-                    doom_strcpy(chat.lastmessage, chat.w_chat.l.l);
-                    state.plr->message = chat.lastmessage;
+                    doom_strcpy(chat.lastmessage.data(), chat.w_chat.l.l.data());
+                    state.plr->message = chat.lastmessage.data();
                 }
             }
             else if (c == KEY_ESCAPE)

@@ -130,7 +130,7 @@ void drawColumnInCache(Column* patch, byte* cache, int originy, int cacheheight)
             doom_memcpy(cache + position, source, count);
 
         patch = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                            + patch->length + 4);
+                                          + patch->length + 4);
     }
 }
 
@@ -195,9 +195,9 @@ void generateComposite(int texnum)
             if (collump[x] >= 0)
                 continue;
 
-            patchcol =
-                reinterpret_cast<Column*>(reinterpret_cast<byte*>(realpatch)
-                                            + littleEndian(realpatch->columnofs[x - x1]));
+            patchcol = reinterpret_cast<Column*>(
+                reinterpret_cast<byte*>(realpatch)
+                + littleEndian(realpatch->columnofs[x - x1]));
             drawColumnInCache(
                 patchcol, block + colofs[x], patch->originy, texture->height);
         }
@@ -270,7 +270,7 @@ void generateLookup(int texnum)
             //doom_print("generateLookup: column without a patch (%s)\n",
             //    texture->name);
             doom_print("generateLookup: column without a patch (");
-            doom_print(texture->name);
+            doom_print(texture->name.data());
             doom_print(")\n");
             return;
         }
@@ -454,8 +454,8 @@ void initTextures()
         if (offset > maxoff)
             fatalError("Error: initTextures: bad texture directory");
 
-        mtexture = reinterpret_cast<MapTexture*>(reinterpret_cast<byte*>(maptex)
-                                                   + offset);
+        mtexture =
+            reinterpret_cast<MapTexture*>(reinterpret_cast<byte*>(maptex) + offset);
 
         // The struct lives in textureStorage now; point the view entry at it and size
         // its patches vector (RAII, Step 9) instead of the old variable-length malloc.
@@ -467,7 +467,7 @@ void initTextures()
         texture->patchcount = littleEndian(mtexture->patchcount);
         texture->patches.resize(texture->patchcount);
 
-        doom_memcpy(texture->name, mtexture->name, sizeof(texture->name));
+        doom_memcpy(texture->name.data(), mtexture->name, sizeof(texture->name));
         mpatch = &mtexture->patches[0];
         patch = &texture->patches[0];
 
@@ -483,7 +483,7 @@ void initTextures()
 
                 doom_strcpy(error_buf,
                             "Error: initTextures: Missing patch in texture ");
-                doom_concat(error_buf, texture->name);
+                doom_concat(error_buf, texture->name.data());
                 fatalError(error_buf);
             }
         }
@@ -650,7 +650,7 @@ int checkTextureNumForName(const char* name)
     auto& gd = graphicsData();
 
     for (int i = 0; i < gd.numtextures; i++)
-        if (!doom_strncasecmp(textures[i]->name, name, 8))
+        if (!doom_strncasecmp(textures[i]->name.data(), name, 8))
             return i;
 
     return -1;
@@ -756,8 +756,7 @@ void precacheLevel()
     for (th = cap.next; th != &cap; th = th->next)
     {
         if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
-            spritepresent[static_cast<int>(reinterpret_cast<Mobj*>(th)->sprite)] =
-                1;
+            spritepresent[static_cast<int>(reinterpret_cast<Mobj*>(th)->sprite)] = 1;
     }
 
     for (i = 0; i < gd.numsprites; i++)

@@ -64,7 +64,7 @@ bool checkLine(Line* ld)
         || clip.tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
         return true;
 
-    if (boxLineSide(clip.tmbbox, *ld) != -1)
+    if (boxLineSide(clip.tmbbox.data(), *ld) != -1)
         return true;
 
     // A line has been hit.

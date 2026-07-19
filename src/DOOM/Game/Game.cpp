@@ -89,6 +89,7 @@
 #include "Args.h"
 #include "DoomMain.h"
 #include "../UI/Menu.h"
+#include "../UI/MenuState.h"
 #include "../UI/MenuSettings.h"
 #include <ea_data_structures/Structures/Array.h>
 
@@ -178,7 +179,16 @@ namespace Doom
 {
 
 constexpr int SAVEGAMESIZE = 0x2c000;
+
+// The .dsg's description field width. UI/Menu sizes its ten slot buffers from
+// menuSaveStringSize and reads a whole field into one of them, so the two must agree or that read
+// either truncates or overruns the buffer. They were both a bare 24 with nothing relating them -
+// see MenuState.h - so the assert is the compile-time link that was missing.
 constexpr int SAVESTRINGSIZE = 24;
+static_assert(
+    SAVESTRINGSIZE == menuSaveStringSize,
+    "the savegame description field and the menu's slot buffers must be the "
+    "same size: Menu::readSaveStrings reads a whole field into one buffer");
 constexpr int TURBOTHRESHOLD = 0x32;
 constexpr int SLOWTURNTICS = 6;
 constexpr int NUMKEYS = 256;
@@ -470,7 +480,7 @@ void doLoadLevel()
     flow.gameaction = ga_nothing;
 
     // clear cmd building stuff
-    doom_memset(input.gamekeydown, 0, sizeof(input.gamekeydown));
+    doom_memset(input.gamekeydown.data(), 0, sizeof(input.gamekeydown));
     input.joyxmove = input.joyymove = 0;
     input.mousex = input.mousey = 0;
     pendingCommands().sendpause = pendingCommands().sendsave =
@@ -900,7 +910,8 @@ void deathMatchSpawnPlayer(int playernum)
     int i;
     int selections;
 
-    selections = static_cast<int>((spawns.deathmatch_p - spawns.deathmatchstarts));
+    selections =
+        static_cast<int>((spawns.deathmatch_p - spawns.deathmatchstarts.data()));
     if (selections < 4)
     {
         //fatalError("Error: Only %i deathmatch spots, 4 required", selections);
@@ -1189,7 +1200,7 @@ void doWorldDone()
 
 void loadGame(char* name)
 {
-    doom_strcpy(saveGameState().name, name);
+    doom_strcpy(saveGameState().name.data(), name);
     gameFlow().gameaction = ga_loadgame;
 }
 
@@ -1206,7 +1217,7 @@ void doLoadGame()
 
     // readFile() fills the owner directly; buffer is left a view onto it, as it is a
     // view onto the framebuffer scratch on the save path (see SaveGameState.h).
-    Doom::readFile(save.name, save.loadStorage);
+    Doom::readFile(save.name.data(), save.loadStorage);
     save.buffer = save.loadStorage.data();
     save.cursor = save.buffer + SAVESTRINGSIZE;
 
@@ -1535,8 +1546,8 @@ void recordDemo(char* name)
     int maxsize;
 
     demo.usergame = false;
-    doom_strcpy(demo.demoname, name);
-    doom_concat(demo.demoname, ".lmp");
+    doom_strcpy(demo.demoname.data(), name);
+    doom_concat(demo.demoname.data(), ".lmp");
     maxsize = 0x20000;
     i = Doom::checkParm("-maxdemo");
     if (i && i < myargc - 1)
@@ -1708,7 +1719,7 @@ bool checkDemoStatus()
     if (demo.demorecording)
     {
         *demo.demo_p++ = DEMOMARKER;
-        Doom::writeFile(demo.demoname,
+        Doom::writeFile(demo.demoname.data(),
                         demo.demobuffer,
                         static_cast<int>((demo.demo_p - demo.demobuffer)));
         // demoRecordBuffer (not demobuffer, which also views the playback lump) owns this
@@ -1717,7 +1728,7 @@ bool checkDemoStatus()
         //fatalError("Error: Demo %s recorded", demoname);
 
         doom_strcpy(error_buf, "Error: Demo ");
-        doom_concat(error_buf, demo.demoname);
+        doom_concat(error_buf, demo.demoname.data());
         doom_concat(error_buf, " recorded");
         fatalError(error_buf);
     }

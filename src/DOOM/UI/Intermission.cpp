@@ -663,7 +663,7 @@ void drawShowNextLoc()
 
         // draw flashing ptr
         if (im.snl_pointeron)
-            drawOnLnode(im.wbs->next, im.yah);
+            drawOnLnode(im.wbs->next, im.yah.data());
     }
 
     // draws which level you are entering..
@@ -1317,7 +1317,7 @@ void checkForAccelerate()
     Player* player;
 
     // check for button presses to skip delays
-    for (i = 0, player = players_.players; i < MAXPLAYERS; i++, player++)
+    for (i = 0, player = players_.players.data(); i < MAXPLAYERS; i++, player++)
     {
         if (players_.playeringame[i])
         {

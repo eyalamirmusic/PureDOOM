@@ -2,6 +2,7 @@
 
 #include "../doomtype.h" // byte
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 namespace Doom
@@ -40,7 +41,7 @@ struct DemoState
     bool demorecording = false; // a demo is being captured
     bool singledemo = false; // -playdemo: quit after the one demo
 
-    char demoname[32] = {}; // the demo lump/file name
+    EA::Array<char, 32> demoname = {}; // the demo lump/file name
     bool netdemo = false; // the demo in play was recorded over a netgame
     EA::Vector<byte>
         demoRecordBuffer; // owns the buffer while recordDemo() is writing one

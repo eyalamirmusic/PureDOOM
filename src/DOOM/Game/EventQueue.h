@@ -3,6 +3,8 @@
 #include "Event.h" // Event, MAXEVENTS
 #include "DoomMain.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The engine's input event ring buffer. The host posts events with Doom::postEvent, which writes
@@ -18,7 +20,7 @@ namespace Doom
 // identical slot.
 struct EventQueue
 {
-    Event events[MAXEVENTS] = {}; // the pending input events
+    EA::Array<Event, MAXEVENTS> events = {}; // the pending input events
     int eventhead = 0; // where the next posted event lands
     int eventtail = 0; // where the next drained event is read
 };

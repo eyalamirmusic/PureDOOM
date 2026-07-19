@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 #include <cstddef>
@@ -14,7 +15,8 @@ namespace Doom
 // the entry rather than indexing a parallel array.
 struct Lump
 {
-    char name[8]; // eight bytes, and NOT null-terminated when it fills them
+    EA::Array<char, 8>
+        name; // eight bytes, and NOT null-terminated when it fills them
     void* handle; // the file it came from
     int position;
     int size;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The wall-switch texture table Doom::initSwitchList builds from the WAD and Doom::changeSwitchTexture
@@ -16,7 +18,7 @@ struct SwitchList
     static constexpr int maxSwitches =
         50; // sizes switchlist; Sim/Switches scans to it
 
-    int switchlist[maxSwitches * 2] =
+    EA::Array<int, maxSwitches * 2> switchlist =
         {}; // on/off texture-number pairs, -1 terminated
     int numswitches = 0; // # of switch pairs found
 };

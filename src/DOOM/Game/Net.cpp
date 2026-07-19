@@ -344,9 +344,9 @@ void getPackets()
                 continue;
             net.nodeingame[netnode] = false;
             state.playeringame[netconsole] = false;
-            doom_strcpy(net.exitmsg, "Player 1 left the game");
+            doom_strcpy(net.exitmsg.data(), "Player 1 left the game");
             net.exitmsg[7] += netconsole;
-            state.players[state.consoleplayer].message = net.exitmsg;
+            state.players[state.consoleplayer].message = net.exitmsg.data();
             if (demoState().demorecording)
                 Doom::checkDemoStatus();
             continue;

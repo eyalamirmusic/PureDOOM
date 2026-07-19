@@ -173,7 +173,7 @@ void initPicAnims()
     auto& surf = animatedSurfaces();
 
     // Init animation
-    surf.lastanim = surf.anims;
+    surf.lastanim = surf.anims.data();
     for (int i = 0; animdefs[i].istexture != -1; i++)
     {
         if (animdefs[i].istexture)
@@ -1018,7 +1018,7 @@ void updateSpecials()
     }
 
     // ANIMATE FLATS AND TEXTURES GLOBALLY
-    for (anim = surf.anims; anim < surf.lastanim; anim++)
+    for (anim = surf.anims.data(); anim < surf.lastanim; anim++)
     {
         for (int i = anim->basepic; i < anim->basepic + anim->numpics; i++)
         {

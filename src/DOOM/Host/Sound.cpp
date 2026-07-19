@@ -41,14 +41,23 @@ constexpr int SAMPLECOUNT = 512;
 constexpr int BUFMUL = 4;
 constexpr int MIXBUFFERSIZE = SAMPLECOUNT * BUFMUL;
 
-#define SAMPLERATE 11025 // Hz
-#define SAMPLESIZE 2 // 16bit
-
 // The global mixing buffer stays at ::-file-scope: DOOM.cpp externs it as
 // `signed short mixbuffer[2048]` and hands it out through doom_get_sound_buffer,
 // so it must not become a Doom:: member. Everything else in this seam is
 // file-local to namespace Doom below.
 signed short mixbuffer[MIXBUFFERSIZE];
+
+// Both dead, and dead in 1993 too - only their own #define. Left as macros with
+// the ~55 others REFACTOR.md item 6 deliberately does not convert.
+//
+// SAMPLERATE is worth a note for whoever does eventually delete them: it is an
+// exact duplicate of the already-public DOOM_SAMPLERATE (DOOM.h's extern "C"
+// API), same value and same meaning. So it is not merely dead, it is a twelfth
+// instance of the duplicate-constant category item 6 tabulates - it simply never
+// caused a defect, because nothing reads either spelling here. Converting it to a
+// constexpr would have manufactured a third.
+#define SAMPLERATE 11025 // Hz
+#define SAMPLESIZE 2 // 16bit
 
 namespace Doom
 {

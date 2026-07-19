@@ -154,7 +154,7 @@ void WadFile::addSingleLump(const char* path, void* handle)
     // The lump is named after the file it came from.
     EA::Array<char, 9> base = {};
     extractFileBase(path, base.data());
-    doom_strncpy(lump.name, base.data(), 8);
+    doom_strncpy(lump.name.data(), base.data(), 8);
 
     lumps.push_back(lump);
 }
@@ -186,7 +186,7 @@ void WadFile::addDirectory(const char* path, void* handle)
         lump.handle = reloadName ? nullptr : handle;
         lump.position = littleEndian(entry.filepos);
         lump.size = littleEndian(entry.size);
-        doom_strncpy(lump.name, entry.name, 8);
+        doom_strncpy(lump.name.data(), entry.name, 8);
 
         lumps.push_back(lump);
     }
@@ -199,7 +199,7 @@ int WadFile::find(const char* name) const
     // Backwards, so that a lump from a later file takes precedence over the same
     // name in an earlier one. That is how a PWAD overrides the IWAD.
     for (auto lump = count() - 1; lump >= 0; --lump)
-        if (wanted.matches(lumps[lump].name))
+        if (wanted.matches(lumps[lump].name.data()))
             return lump;
 
     return -1;

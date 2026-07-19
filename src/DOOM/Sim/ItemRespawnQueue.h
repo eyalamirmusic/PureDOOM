@@ -3,6 +3,8 @@
 #include "../Wad/MapFormat.h" // MapThing
 #include "SimDefs.h" // ITEMQUESIZE
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The ring of picked-up items waiting to respawn, used only in deathmatch. When an item is
@@ -19,9 +21,10 @@ namespace Doom
 // the reference bindings are mechanical, so the move is golden-neutral.
 struct ItemRespawnQueue
 {
-    MapThing itemrespawnque[ITEMQUESIZE] =
+    EA::Array<MapThing, ITEMQUESIZE> itemrespawnque =
         {}; // the picked-up items awaiting respawn
-    int itemrespawntime[ITEMQUESIZE] = {}; // the leveltime each was collected at
+    EA::Array<int, ITEMQUESIZE> itemrespawntime =
+        {}; // the leveltime each was collected at
 
     int iquehead = 0; // append cursor
     int iquetail = 0; // respawn cursor

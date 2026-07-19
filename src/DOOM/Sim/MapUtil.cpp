@@ -160,7 +160,7 @@ bool traverseIntercepts(Traverser func, fixed_t maxfrac)
 {
     Clip& clip = Doom::clip();
 
-    int count = static_cast<int>(clip.interceptPtr - clip.intercepts);
+    int count = static_cast<int>(clip.interceptPtr - clip.intercepts.data());
 
     Intercept* in = nullptr; // shut up compiler warning
 
@@ -168,7 +168,8 @@ bool traverseIntercepts(Traverser func, fixed_t maxfrac)
     {
         fixed_t dist {DOOM_MAXINT};
 
-        for (Intercept* scan = clip.intercepts; scan < clip.interceptPtr; scan++)
+        for (Intercept* scan = clip.intercepts.data(); scan < clip.interceptPtr;
+             scan++)
         {
             if (scan->frac < dist)
             {
@@ -279,7 +280,7 @@ bool pathTraverse(
     clip.earlyOut = flags & PT_EARLYOUT;
 
     validCount().validcount++;
-    clip.interceptPtr = clip.intercepts;
+    clip.interceptPtr = clip.intercepts.data();
 
     if (((x1 - bmaporgx).raw & (MAPBLOCKSIZE.raw - 1)) == 0)
         x1 += FRACUNIT; // don't side exactly on a line
@@ -294,7 +295,7 @@ bool pathTraverse(
     y1 -= bmaporgy;
 
     // Blockmap cell indices, not fixed values: the shift is MAPBLOCKSHIFT
-    // (FRACBITS + 7), which folds the 16.16 point and the 128-unit cell into one
+    // (fracBits + 7), which folds the 16.16 point and the 128-unit cell into one
     // arithmetic shift of the raw bits. Vanilla declares these fixed_t and means
     // int by it.
     int xt1 = x1.raw >> MAPBLOCKSHIFT;

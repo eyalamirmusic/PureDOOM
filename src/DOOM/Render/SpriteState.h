@@ -5,6 +5,8 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // VisSprite
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The sprite-drawing state r_things exports for the rest of the renderer: the vissprite pool the
@@ -29,11 +31,12 @@ struct SpriteState
     fixed_t pspritescale {}; // player-sprite horizontal scale
     fixed_t pspriteiscale {}; // its inverse
 
-    short negonearray[SCREENWIDTH] = {}; // all -1 (a "no clip" top)
-    short screenheightarray[SCREENWIDTH] =
+    EA::Array<short, SCREENWIDTH> negonearray = {}; // all -1 (a "no clip" top)
+    EA::Array<short, SCREENWIDTH> screenheightarray =
         {}; // all SCREENHEIGHT (a "no clip" bottom)
 
-    VisSprite vissprites[maxVisSprites] = {}; // the frame's gathered sprites
+    EA::Array<VisSprite, maxVisSprites> vissprites =
+        {}; // the frame's gathered sprites
     VisSprite* vissprite_p = nullptr; // one past the last gathered
     VisSprite vsprsortedhead = {}; // sentinel head of the sorted list
 

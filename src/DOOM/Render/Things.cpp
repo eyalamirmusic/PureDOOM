@@ -32,11 +32,12 @@
 #include "../Host/System.h"
 #include "Main.h"
 #include "../Game/GameVersion.h"
-#define MINZ (FRACUNIT * 4)
-#define BASEYCENTER 100
 
 namespace Doom
 {
+
+constexpr fixed_t MINZ = FRACUNIT * 4;
+constexpr int BASEYCENTER = 100;
 
 // File-local scratch, now on the Engine (Render/SpriteScratch.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5); no other file reads these. sprtemp, spritelights, maxframe,
@@ -198,7 +199,7 @@ void initSpriteDefs(char** namelist)
     for (i = 0; i < gd.numsprites; i++)
     {
         scratch.spritename = namelist[i];
-        doom_memset(scratch.sprtemp, -1, sizeof(scratch.sprtemp));
+        doom_memset(scratch.sprtemp.data(), -1, sizeof(scratch.sprtemp));
 
         scratch.maxframe = -1;
         intname = *reinterpret_cast<int*>(namelist[i]);
@@ -209,13 +210,13 @@ void initSpriteDefs(char** namelist)
         {
             const Lump& entry = Doom::wad().info(l);
 
-            if (*reinterpret_cast<const int*>(entry.name) == intname)
+            if (*reinterpret_cast<const int*>(entry.name.data()) == intname)
             {
                 frame = entry.name[4] - 'A';
                 rotation = entry.name[5] - '0';
 
                 if (gameVersion().modifiedgame)
-                    patched = Doom::wad().number(entry.name);
+                    patched = Doom::wad().number(entry.name.data());
                 else
                     patched = l;
 
@@ -282,7 +283,7 @@ void initSpriteDefs(char** namelist)
         sprites[i].numframes = scratch.maxframe;
         sprites[i].spriteframes.resize(scratch.maxframe);
         doom_memcpy(sprites[i].spriteframes.data(),
-                    scratch.sprtemp,
+                    scratch.sprtemp.data(),
                     scratch.maxframe * sizeof(SpriteFrame));
     }
 }
@@ -315,7 +316,7 @@ void clearSprites()
 {
     auto& sprState = spriteState();
 
-    sprState.vissprite_p = sprState.vissprites;
+    sprState.vissprite_p = sprState.vissprites.data();
 }
 
 //
@@ -358,8 +359,8 @@ void drawMaskedColumn(Column* column)
         topscreen = sprState.sprtopscreen + sprState.spryscale * column->topdelta;
         bottomscreen = topscreen + sprState.spryscale * column->length;
 
-        draw.dc_yl = (topscreen.raw + fracUnit - 1) >> FRACBITS;
-        draw.dc_yh = (bottomscreen.raw - 1) >> FRACBITS;
+        draw.dc_yl = (topscreen.raw + fracUnit - 1) >> fracBits;
+        draw.dc_yh = (bottomscreen.raw - 1) >> fracBits;
 
         if (draw.dc_yh >= sprState.mfloorclip[draw.dc_x])
             draw.dc_yh = sprState.mfloorclip[draw.dc_x] - 1;
@@ -641,11 +642,11 @@ void addSprites(Sector* sec)
     lightnum = (sec->lightlevel >> LIGHTSEGSHIFT) + lights.extralight;
 
     if (lightnum < 0)
-        scratch.spritelights = lights.scalelight[0];
+        scratch.spritelights = lights.scalelight[0].data();
     else if (lightnum >= LIGHTLEVELS)
-        scratch.spritelights = lights.scalelight[LIGHTLEVELS - 1];
+        scratch.spritelights = lights.scalelight[LIGHTLEVELS - 1].data();
     else
-        scratch.spritelights = lights.scalelight[lightnum];
+        scratch.spritelights = lights.scalelight[lightnum].data();
 
     // Handle all things in sector.
     for (thing = sec->thinglist; thing; thing = thing->snext)
@@ -787,15 +788,15 @@ void drawPlayerSprites()
                + lights.extralight;
 
     if (lightnum < 0)
-        scratch.spritelights = lights.scalelight[0];
+        scratch.spritelights = lights.scalelight[0].data();
     else if (lightnum >= LIGHTLEVELS)
-        scratch.spritelights = lights.scalelight[LIGHTLEVELS - 1];
+        scratch.spritelights = lights.scalelight[LIGHTLEVELS - 1].data();
     else
-        scratch.spritelights = lights.scalelight[lightnum];
+        scratch.spritelights = lights.scalelight[lightnum].data();
 
     // clip to screen bounds
-    sprState.mfloorclip = sprState.screenheightarray;
-    sprState.mceilingclip = sprState.negonearray;
+    sprState.mfloorclip = sprState.screenheightarray.data();
+    sprState.mceilingclip = sprState.negonearray.data();
 
     // add all active psprites
     for (i = 0, psp = pt.viewplayer->psprites; i < NUMPSPRITES; i++, psp++)
@@ -818,14 +819,14 @@ void sortVisSprites()
 
     auto& sprState = spriteState();
 
-    count = static_cast<int>(sprState.vissprite_p - sprState.vissprites);
+    count = static_cast<int>(sprState.vissprite_p - sprState.vissprites.data());
 
     unsorted.next = unsorted.prev = &unsorted;
 
     if (!count)
         return;
 
-    for (ds = sprState.vissprites; ds < sprState.vissprite_p; ds++)
+    for (ds = sprState.vissprites.data(); ds < sprState.vissprite_p; ds++)
     {
         ds->next = ds + 1;
         ds->prev = ds - 1;
@@ -884,7 +885,7 @@ void drawSprite(VisSprite* spr)
     // Scan drawsegs from end to start for obscuring segs.
     // The first drawseg that has a greater scale
     //  is the clip seg.
-    for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs; ds--)
+    for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs.data(); ds--)
     {
         // determine if the drawseg obscures the sprite
         if (ds->x1 > spr->x2 || ds->x2 < spr->x1
@@ -985,7 +986,7 @@ void drawMasked()
 
     sortVisSprites();
 
-    if (sprState.vissprite_p > sprState.vissprites)
+    if (sprState.vissprite_p > sprState.vissprites.data())
     {
         // draw all vissprites back to front
         for (spr = sprState.vsprsortedhead.next; spr != &sprState.vsprsortedhead;
@@ -996,7 +997,7 @@ void drawMasked()
     }
 
     // render any remaining masked mid textures
-    for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs; ds--)
+    for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs.data(); ds--)
         if (ds->maskedtexturecol)
             Doom::renderMaskedSegRange(ds, ds->x1, ds->x2);
 

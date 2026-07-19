@@ -4,6 +4,8 @@
 
 #include "MapGeometry.h" // DivLine
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The transient movement/collision scratch Sim/MapUtil builds and the clipping
@@ -23,7 +25,7 @@ namespace Doom
 // now; the vanilla-named references onto these members went with p_maputl.cpp.
 struct Clip
 {
-    Intercept intercepts[MAXINTERCEPTS];
+    EA::Array<Intercept, MAXINTERCEPTS> intercepts;
     Intercept* interceptPtr = nullptr;
     bool earlyOut = false;
 
@@ -42,7 +44,7 @@ struct Clip
     int tmflags = 0;
     fixed_t tmx {};
     fixed_t tmy {};
-    fixed_t tmbbox[4] = {};
+    EA::Array<fixed_t, 4> tmbbox = {};
 
     // floatok: the move would fit if the mobj sat between tmfloorz and tmceilingz.
     bool floatok = false;
@@ -61,7 +63,7 @@ struct Clip
     // and then crossed. Not sorted - two specials 8 units apart cross in either
     // order, a vanilla quirk.
     static constexpr int maxSpecialCross = 8;
-    Line* spechit[maxSpecialCross] = {};
+    EA::Array<Line*, maxSpecialCross> spechit = {};
     int numspechit = 0;
 
     // The range of the shot in progress. This looks like a result and is not: it is

@@ -103,7 +103,7 @@
 // MAXWADFILES up front, in addWadFile, so a push never reallocates the outer vector and
 // never moves an already-published inner buffer out from under a stored view pointer.
 static EA::Vector<EA::Vector<char>> wadFileStorage;
-static char* wadfiles[MAXWADFILES];
+static char* wadfiles[Doom::MAXWADFILES];
 
 // The command-line launch flags are a Doom::LaunchOptions owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
@@ -644,8 +644,8 @@ void IdentifyVersion()
     home = ".";
 #endif
     //doom_sprintf(basedefault, "%s/.doomrc", home);
-    doom_strcpy(paths.basedefault, home);
-    doom_concat(paths.basedefault, "/.doomrc");
+    doom_strcpy(paths.basedefault.data(), home);
+    doom_concat(paths.basedefault.data(), "/.doomrc");
 
     if (Doom::checkParm("-shdev"))
     {
@@ -654,7 +654,7 @@ void IdentifyVersion()
         addWadFile(DEVDATA "doom1.wad");
         addWadFile(DEVMAPS "data_se/texture1.lmp");
         addWadFile(DEVMAPS "data_se/pnames.lmp");
-        doom_strcpy(paths.basedefault, DEVDATA "default.cfg");
+        doom_strcpy(paths.basedefault.data(), DEVDATA "default.cfg");
         return;
     }
 
@@ -666,7 +666,7 @@ void IdentifyVersion()
         addWadFile(DEVMAPS "data_se/texture1.lmp");
         addWadFile(DEVMAPS "data_se/texture2.lmp");
         addWadFile(DEVMAPS "data_se/pnames.lmp");
-        doom_strcpy(paths.basedefault, DEVDATA "default.cfg");
+        doom_strcpy(paths.basedefault.data(), DEVDATA "default.cfg");
         return;
     }
 
@@ -684,7 +684,7 @@ void IdentifyVersion()
 
         addWadFile(DEVMAPS "cdata/texture1.lmp");
         addWadFile(DEVMAPS "cdata/pnames.lmp");
-        doom_strcpy(paths.basedefault, DEVDATA "default.cfg");
+        doom_strcpy(paths.basedefault.data(), DEVDATA "default.cfg");
         return;
     }
 

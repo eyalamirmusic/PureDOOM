@@ -30,6 +30,7 @@
 #include "../Math/FixedPoint.h"
 #include "../Sim/MapTypes.h"
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 namespace Doom
@@ -199,10 +200,10 @@ struct SpriteFrame
     int rotate;
 
     // Lump to use for view angles 0-7.
-    short lump[8];
+    EA::Array<short, 8> lump;
 
     // Flip bit (1 = flip) to use for view angles 0-7.
-    byte flip[8];
+    EA::Array<byte, 8> flip;
 };
 } // namespace Doom
 
@@ -240,13 +241,38 @@ struct VisPlane
     byte pad1;
     // Here lies the rub for all
     //  dynamic resize/change of resolution.
-    byte top[SCREENWIDTH];
+    EA::Array<byte, SCREENWIDTH> top;
     byte pad2;
     byte pad3;
     // See above.
-    byte bottom[SCREENWIDTH];
+    EA::Array<byte, SCREENWIDTH> bottom;
     byte pad4;
 };
+
+// The pads above are not alignment slack - they are load-bearing, and they are the reason this
+// struct needs an assertion that no other converted array does.
+//
+// Render/Planes.cpp writes deliberately OUT OF BOUNDS of top[]: `pl->top[pl->maxx + 1] = 0xff` and
+// `pl->top[pl->minx - 1] = 0xff` put a sentinel one byte past each end, so the span-filling loop
+// can run off either edge and terminate on it without a bounds test in the inner loop. That is a
+// 1993 trick, it is what pad1..pad4 exist to absorb, and it only works while `top` and `bottom`
+// occupy exactly SCREENWIDTH bytes each with the pads immediately either side.
+//
+// Converting them to EA::Array kept that true, because EA::Array holds a single std::array and
+// nothing else - but that is an *implementation fact about a dependency*, not a language
+// guarantee, and REFACTOR.md item 8 explicitly says it should be re-checked rather than
+// remembered before anything is relied on. This is the one place in the engine that relies on it,
+// so it is checked here, at compile time, instead of being remembered:
+static_assert(
+    sizeof(EA::Array<byte, SCREENWIDTH>) == SCREENWIDTH * sizeof(byte),
+    "VisPlane's pad1..pad4 absorb Planes.cpp's deliberate [minx-1]/[maxx+1] "
+    "sentinel writes; that requires EA::Array to add no storage of its own");
+// A companion offsetof() assertion — that pad2 sits immediately after top[] — was written here and
+// then deliberately removed. offsetof on a non-standard-layout class is only conditionally
+// supported, and this repository has measured its warning count on **Apple Clang alone**: CI builds
+// gcc and MSVC as well, MSVC on /W4, and neither has ever been measured (REFACTOR.md item 7).
+// Introducing a construct that might warn on four configurations out of five, to check something
+// the sizeof assertion above already implies, is a bad trade.
 } // namespace Doom
 
 //-----------------------------------------------------------------------------

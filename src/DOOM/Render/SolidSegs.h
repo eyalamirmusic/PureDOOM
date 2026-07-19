@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The BSP occlusion clip ranges (Doom::clearClipSegs / Doom::clipSolidWallSegment): as the BSP is walked
@@ -29,7 +31,7 @@ struct SolidSegs
 {
     static constexpr int maxSegs = 32; // sizes solidsegs below
 
-    ClipRange solidsegs[maxSegs] = {}; // sorted occluded column spans
+    EA::Array<ClipRange, maxSegs> solidsegs = {}; // sorted occluded column spans
     ClipRange* newend = nullptr; // one past the last valid range
 };
 

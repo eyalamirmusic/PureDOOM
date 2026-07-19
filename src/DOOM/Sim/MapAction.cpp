@@ -728,10 +728,10 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
     int yh;
 
     // Vanilla, overflow and all: MAXRADIUS is already a fixed value, so shifting
-    // (damage + MAXRADIUS) up by another FRACBITS wraps the MAXRADIUS term away
+    // (damage + MAXRADIUS) up by another Doom::fracBits wraps the MAXRADIUS term away
     // and leaves the damage alone as the radius. Kept as the integer expression
     // it has always been - the demos are recorded against the wrap.
-    fixed_t dist {(damage + (MAXRADIUS).raw) << FRACBITS};
+    fixed_t dist {(damage + (MAXRADIUS).raw) << Doom::fracBits};
 
     // Blockmap cell indices: a raw shift by MAPBLOCKSHIFT, not a conversion.
     yh = (spot->y + dist - bmaporgy).raw >> MAPBLOCKSHIFT;

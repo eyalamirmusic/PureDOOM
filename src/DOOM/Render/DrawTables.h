@@ -2,6 +2,8 @@
 
 #include "../doomtype.h" // byte
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // Render/Draw's frame-address lookup tables and fuzz cursor: ylookup[y] is the framebuffer address
@@ -21,8 +23,8 @@ struct DrawTables
     static constexpr int maxHeight = 832; // sizes ylookup below
     static constexpr int maxWidth = 1120; // sizes columnofs below
 
-    byte* ylookup[maxHeight] = {}; // per-row framebuffer address
-    int columnofs[maxWidth] = {}; // per-column byte offset
+    EA::Array<byte*, maxHeight> ylookup = {}; // per-row framebuffer address
+    EA::Array<int, maxWidth> columnofs = {}; // per-column byte offset
     int fuzzpos = 0; // spectre-fuzz distortion-table cursor
 };
 

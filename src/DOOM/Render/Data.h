@@ -3,6 +3,8 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Column, byte
 
+#include <ea_data_structures/Structures/Array.h>
+
 // The composed-texture types. Were r_data.h.
 namespace Doom
 {
@@ -17,7 +19,6 @@ struct TexPatch
 };
 } // namespace Doom
 
-
 // A maptexturedef_t describes a rectangular texture,
 // which is composed of one or more Doom::MapPatch structures
 // that arrange graphic patches.
@@ -26,7 +27,7 @@ namespace Doom
 struct Texture
 {
     // Keep name for switch changing, etc.
-    char name[8];
+    EA::Array<char, 8> name;
     short width;
     short height;
 
@@ -40,7 +41,6 @@ struct Texture
 };
 } // namespace Doom
 
-
 // Every wall texture the WAD loaded, and how many.
 //
 // A texture is a list of patches to be drawn back to front, not a bitmap - which
@@ -53,8 +53,6 @@ struct Texture
 // array into that storage) so every `textures[i]->field` reader is unchanged (Step 9).
 extern Doom::Texture** textures;
 
-
-
 // I/O, setting up the stuff.
 
 // Retrieval.
@@ -64,11 +62,8 @@ extern Doom::Texture** textures;
 // Called by Doom::ticker for switches and animations,
 // returns the texture number for the texture name.
 
-
 // How many wall textures and flats the WAD loaded. Composed lazily, so these are
 // the id space anything walking the graphics has to work in.
-
-
 
 //-----------------------------------------------------------------------------
 //

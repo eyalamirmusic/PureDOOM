@@ -395,8 +395,8 @@ void loadBlockMap(int lump)
     Doom::Blockmap& bmap = Doom::level().blockmap;
     bmap.lump = blockmaplump;
     bmap.offsets = blockmaplump + 4;
-    bmap.origin = {Doom::Fixed {blockmaplump[0] << FRACBITS},
-                   Doom::Fixed {blockmaplump[1] << FRACBITS}};
+    bmap.origin = {Doom::Fixed {blockmaplump[0] << fracBits},
+                   Doom::Fixed {blockmaplump[1] << fracBits}};
     bmap.width = blockmaplump[2];
     bmap.height = blockmaplump[3];
 
@@ -580,7 +580,7 @@ void setupLevel(int episode, int map, int, Skill)
 
     corpseQueue().bodyqueslot = 0;
     auto& spawns = mapSpawns();
-    spawns.deathmatch_p = spawns.deathmatchstarts;
+    spawns.deathmatch_p = spawns.deathmatchstarts.data();
     loadThings(lumpnum + ML_THINGS);
 
     // if deathmatch, randomly spawn the active players

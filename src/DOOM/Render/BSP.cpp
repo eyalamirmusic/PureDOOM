@@ -66,7 +66,7 @@ void clearDrawSegs()
 {
     auto& bsp = bspScratch();
 
-    bsp.ds_p = bsp.drawsegs;
+    bsp.ds_p = bsp.drawsegs.data();
 }
 
 //
@@ -84,7 +84,7 @@ void clipSolidWallSegment(int first, int last)
 
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
-    start = solid.solidsegs;
+    start = solid.solidsegs.data();
     while (start->last < first - 1)
         start++;
 
@@ -172,7 +172,7 @@ void clipPassWallSegment(int first, int last)
 
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
-    start = solid.solidsegs;
+    start = solid.solidsegs.data();
     while (start->last < first - 1)
         start++;
 
@@ -218,7 +218,7 @@ void clearClipSegs()
     solid.solidsegs[0].last = -1;
     solid.solidsegs[1].first = viewWindow().viewwidth;
     solid.solidsegs[1].last = 0x7fffffff;
-    solid.newend = solid.solidsegs + 2;
+    solid.newend = solid.solidsegs.data() + 2;
 }
 
 //
@@ -445,7 +445,7 @@ bool checkBBox(fixed_t* bspcoord)
         return false;
     sx2--;
 
-    start = solid.solidsegs;
+    start = solid.solidsegs.data();
     while (start->last < sx2)
         start++;
 
@@ -552,7 +552,7 @@ void renderBSPNode(int bspnum)
     renderBSPNode(bsp->children[side]);
 
     // Possibly divide back space.
-    if (checkBBox(bsp->bbox[side ^ 1]))
+    if (checkBBox(bsp->bbox[side ^ 1].data()))
         renderBSPNode(bsp->children[side ^ 1]);
 }
 } // namespace Doom

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ea_data_structures/Structures/Array.h>
+
 #include <functional>
 
 namespace Doom
@@ -8,9 +10,17 @@ namespace Doom
 // one of the file-local menu tables, so it needs the type named but not its layout.
 struct MenuDef;
 
-// SAVESTRINGSIZE in UI/Menu (and Game/Game): the length of a savegame description. The
-// reference-to-array bindings in Menu.cpp still spell the arrays with the SAVESTRINGSIZE macro, so
-// this must equal it - a drift would fail to compile there (char(&)[24] vs char(&)[macro]).
+// The length of a savegame description: the width of the .dsg's description field, and therefore
+// the size of the ten slot buffers below. UI/Menu reads this constant directly; Game/Game keeps its
+// own SAVESTRINGSIZE for the on-disk field and static_asserts it equal to this one.
+//
+// The comment here used to claim something that had stopped being true: that Menu.cpp's
+// reference-to-array bindings (char(&)[24]) would fail to compile if the two drifted, so no further
+// care was needed. Step 9 strand (a) retired every one of those bindings, which silently removed
+// the compile-time link the claim rested on - leaving two 24s with nothing tying them together, and
+// a comment asserting a guarantee that no longer existed. See REFACTOR.md item 6's
+// duplicate-constant entry; this is the shape where a *later* refactor deletes the mechanism an
+// *earlier* comment relied on, and nothing points at the comment.
 inline constexpr int menuSaveStringSize = 24;
 
 // The menu's transient interaction state - what UI/Menu keeps as the user navigates: which menu and
@@ -67,10 +77,12 @@ struct MenuState
     int saveStringEnter = 0; // editing a savegame description
     int saveSlot = 0; // which slot to save in
     int saveCharIndex = 0; // which char we're editing
-    char saveOldString[menuSaveStringSize] = {}; // description before the edit
-    char savegamestrings[10][menuSaveStringSize] = {}; // the ten slot descriptions
+    EA::Array<char, menuSaveStringSize> saveOldString =
+        {}; // description before the edit
+    EA::Array<EA::Array<char, menuSaveStringSize>, 10> savegamestrings =
+        {}; // the ten slot descriptions
 
-    char endstring[160] = {}; // built quit/end-game confirmation text
+    EA::Array<char, 160> endstring = {}; // built quit/end-game confirmation text
 
     // The skull cursor.
     short itemOn = 0; // menu item the skull is on
@@ -80,7 +92,7 @@ struct MenuState
     MenuDef* currentMenu =
         nullptr; // the menu currently shown (into a file-local table)
 
-    char tempstring[80] = {}; // scratch for building confirmation strings
+    EA::Array<char, 80> tempstring = {}; // scratch for building confirmation strings
     int epi = 0; // episode picked in the new-game flow
 };
 

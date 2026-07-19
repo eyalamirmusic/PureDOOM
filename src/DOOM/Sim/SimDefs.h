@@ -40,8 +40,8 @@ constexpr fixed_t VIEWHEIGHT = 41 * FRACUNIT;
 // against lines and things
 constexpr int MAPBLOCKUNITS = 128;
 constexpr fixed_t MAPBLOCKSIZE = MAPBLOCKUNITS * FRACUNIT;
-constexpr int MAPBLOCKSHIFT = FRACBITS + 7;
-constexpr int MAPBTOFRAC = MAPBLOCKSHIFT - FRACBITS;
+constexpr int MAPBLOCKSHIFT = fracBits + 7;
+constexpr int MAPBTOFRAC = MAPBLOCKSHIFT - fracBits;
 
 // player radius for movement checking
 constexpr fixed_t PLAYERRADIUS = 16 * FRACUNIT;

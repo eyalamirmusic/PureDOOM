@@ -2,6 +2,8 @@
 
 #include "SpecialTypes.h" // Plat, Ceiling, Button, MAXPLATS, MAXCEILINGS, MAXBUTTONS
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The level's active special-effect registries. activeplats and activeceilings hold the
@@ -21,9 +23,12 @@ namespace Doom
 // identical slot, so both hold byte-identical.
 struct ActiveSpecials
 {
-    Plat* activeplats[MAXPLATS] = {}; // the running platform/lift thinkers
-    Ceiling* activeceilings[MAXCEILINGS] = {}; // the running ceiling/crusher thinkers
-    Button buttonlist[MAXBUTTONS] = {}; // switch textures counting down to revert
+    EA::Array<Plat*, MAXPLATS> activeplats =
+        {}; // the running platform/lift thinkers
+    EA::Array<Ceiling*, MAXCEILINGS> activeceilings =
+        {}; // the running ceiling/crusher thinkers
+    EA::Array<Button, MAXBUTTONS> buttonlist =
+        {}; // switch textures counting down to revert
 };
 
 // The one ActiveSpecials, a view onto the Engine's member - the same pattern as

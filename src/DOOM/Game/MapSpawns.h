@@ -1,14 +1,15 @@
 #pragma once
 
 #include "GameDefs.h" // MAXPLAYERS
-#include "MapSpawns.h" // MapThing, MAX_DM_STARTS
-#include "../Wad/MapFormat.h"
+#include "../Wad/MapFormat.h" // MapThing
 
-// The deathmatch start table's size. Was doomstat.h.
-#define MAX_DM_STARTS 10
+#include <ea_data_structures/Structures/Array.h>
 
 namespace Doom
 {
+// The deathmatch start table's size. Was doomstat.h.
+constexpr int MAX_DM_STARTS = 10;
+
 // Where players and deathmatch frags spawn on the current map. Doom::setupLevel walks the map's
 // things and records each player-start into playerstarts (indexed by player number) and each
 // deathmatch start into deathmatchstarts, with deathmatch_p the append cursor into that array.
@@ -24,9 +25,10 @@ namespace Doom
 // only playerstarts[0]), so golden-neutral.
 struct MapSpawns
 {
-    MapThing deathmatchstarts[MAX_DM_STARTS] = {}; // deathmatch frag spawns
+    EA::Array<MapThing, MAX_DM_STARTS> deathmatchstarts =
+        {}; // deathmatch frag spawns
     MapThing* deathmatch_p = nullptr; // append cursor into the above
-    MapThing playerstarts[MAXPLAYERS] = {}; // per-player start spots
+    EA::Array<MapThing, MAXPLAYERS> playerstarts = {}; // per-player start spots
 };
 
 // The one MapSpawns, a view onto the Engine's member - the same pattern as

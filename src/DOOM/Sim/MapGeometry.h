@@ -18,7 +18,7 @@ struct DivLine
 // Which side of a line's infinite extension a point lies on: 0 in front, 1 behind.
 //
 // The arithmetic is vanilla's, exactly, and the shift on one factor of each
-// cross-product term is load-bearing: `line.dy >> FRACBITS` keeps the 16.16
+// cross-product term is load-bearing: `line.dy >> fracBits` keeps the 16.16
 // multiply from overflowing, and it is what every recorded demo's collisions were
 // computed through. It is NOT the same formula as pointOnDivlineSide below - that
 // one shifts both factors by 8 and has a sign-bit fast path - and the two must not

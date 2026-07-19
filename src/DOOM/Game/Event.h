@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -16,14 +16,12 @@
 //
 // DESCRIPTION:
 //
-//    
+//
 //-----------------------------------------------------------------------------
 
 #pragma once
 
-
 #include "../doomtype.h"
-
 
 //
 // Doom::Event handling.
@@ -41,19 +39,17 @@ enum EventType
 };
 } // namespace Doom
 
-
 // Doom::Event structure.
 namespace Doom
 {
 struct Event
 {
     EventType type;
-    int data1;  // keys / mouse/joystick buttons
-    int data2;  // mouse/joystick x move
-    int data3;  // mouse/joystick y move
+    int data1; // keys / mouse/joystick buttons
+    int data2; // mouse/joystick x move
+    int data3; // mouse/joystick y move
 };
 } // namespace Doom
-
 
 namespace Doom
 {
@@ -71,7 +67,6 @@ enum GameAction
     ga_screenshot
 };
 } // namespace Doom
-
 
 //
 // Doom::Button/action code definitions.
@@ -102,25 +97,26 @@ enum ButtonCode
     BTS_SAVEGAME = 2,
 
     // Savegame slot numbers
-    //  occupy the second byte of buttons.    
+    //  occupy the second byte of buttons.
     BTS_SAVEMASK = (4 + 8 + 16),
     BTS_SAVESHIFT = 2,
 };
 } // namespace Doom
 
-
 //
 // GLOBAL VARIABLES
 //
-#define MAXEVENTS (64 * 64) // [pd] Crank up the number because we pump them faster
+namespace Doom
+{
+// [pd] Crank up the number because we pump them faster.
+constexpr int MAXEVENTS = 64 * 64;
+} // namespace Doom
 
 // The input event ring buffer is a Doom::EventQueue owned by the Engine now; these are
 // references onto its members (REFACTOR.md, Step 5).
 
 // The pending game action is a member of the Doom::GameFlow owned by the Engine now; this is
 // a reference onto it (REFACTOR.md, Step 5).
-
-
 
 //-----------------------------------------------------------------------------
 //

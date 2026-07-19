@@ -2,6 +2,8 @@
 
 #include "../Game/GameDefs.h" // NUMWEAPONS
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The animated face's selection state (ST_updateFaceWidget). st_faceindex is the face patch shown
@@ -29,7 +31,8 @@ namespace Doom
 struct StatusBarFace
 {
     int st_oldhealth = -1; // last tic's health, for the pained face
-    bool oldweaponsowned[NUMWEAPONS] = {}; // last tic's weapons, for the evil grin
+    EA::Array<bool, NUMWEAPONS> oldweaponsowned =
+        {}; // last tic's weapons, for the evil grin
     int st_facecount = 0; // tics until the expression may change
     int st_faceindex = 0; // the face patch currently shown (w_faces binds to it)
     int st_randomnumber = 0; // a per-tic M_Random the straight face varies with

@@ -137,7 +137,7 @@ void archiveWorld()
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
     {
         // The on-disk format stores heights in WHOLE map units, as vanilla's
-        // `>> FRACBITS` into a short did - so toInt(), not raw.
+        // `>> fracBits` into a short did - so toInt(), not raw.
         *put++ = sec->floorheight.toInt();
         *put++ = sec->ceilingheight.toInt();
         *put++ = sec->floorpic;
@@ -277,7 +277,7 @@ void archiveThinkers()
 
             if (mobj->player)
                 mobj->player = reinterpret_cast<Player*>(
-                    (mobj->player - playerState().players) + 1);
+                    (mobj->player - playerState().players.data()) + 1);
             continue;
         }
 

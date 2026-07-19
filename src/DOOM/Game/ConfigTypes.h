@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -16,14 +16,12 @@
 //
 // DESCRIPTION:
 //
-//    
+//
 //-----------------------------------------------------------------------------
 
 #pragma once
 
-
 #include "../doomtype.h"
-
 
 //
 // MISC
@@ -39,22 +37,20 @@ struct ConfigDefault
     int untranslated; // lousy hack
     const char**
         text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
-    const char* default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
+    const char*
+        default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
 };
 } // namespace Doom
 
-
+namespace Doom
+{
 // A default whose value is text rather than a number: `defaultvalue` is this
 // sentinel and the string lives in text_location.
-#define STRING_VALUE 0xFFFF
-
+constexpr int STRING_VALUE = 0xFFFF;
+} // namespace Doom
 
 extern Doom::ConfigDefault defaults[];
 extern int numdefaults;
-
-
-
-
 
 //-----------------------------------------------------------------------------
 //

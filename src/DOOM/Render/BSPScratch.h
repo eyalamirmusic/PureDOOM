@@ -3,6 +3,8 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Seg, Side, Line, Sector, DrawSeg
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // Render/BSP's traversal state: the current seg being drawn and the sidedef, linedef and
@@ -27,7 +29,7 @@ struct BSPScratch
     Line* linedef = nullptr; // its linedef
     Sector* frontsector = nullptr; // the sector in front of it
     Sector* backsector = nullptr; // the sector behind it (null if one-sided)
-    DrawSeg drawsegs[maxDrawSegs] = {}; // the frame's emitted wall ranges
+    EA::Array<DrawSeg, maxDrawSegs> drawsegs = {}; // the frame's emitted wall ranges
     DrawSeg* ds_p = nullptr; // one past the last emitted drawseg
 };
 

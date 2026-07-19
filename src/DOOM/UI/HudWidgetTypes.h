@@ -24,6 +24,8 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 // background and foreground screen numbers
 // different from other modules.
 namespace Doom
@@ -50,7 +52,7 @@ struct HudTextLine
 
     Doom::Patch** f; // font
     int sc; // start character
-    char l[HU_MAXLINELENGTH + 1]; // line of text
+    EA::Array<char, HU_MAXLINELENGTH + 1> l; // line of text
     int len; // current line length
 
     // whether this line needs to be udpated
@@ -64,7 +66,7 @@ namespace Doom
 {
 struct HudScrollingText
 {
-    HudTextLine l[HU_MAXLINES]; // text lines to draw
+    EA::Array<HudTextLine, HU_MAXLINES> l; // text lines to draw
     int h; // height in lines
     int cl; // current line number
 

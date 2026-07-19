@@ -3,6 +3,8 @@
 #include "../Game/GameDefs.h" // MAXPLAYERS
 #include "HudWidgetTypes.h" // HudInputText
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The heads-up chat state (multiplayer talk). w_chat is the input line you type into; the local
@@ -25,17 +27,18 @@ struct HudChat
         128; // QUEUESIZE in UI/Hud: the chatchars ring size
 
     HudInputText w_chat = {}; // the local input line being typed
-    HudInputText w_inputbuffer[MAXPLAYERS] =
+    EA::Array<HudInputText, MAXPLAYERS> w_inputbuffer =
         {}; // each remote player's incoming text
     bool always_off = false; // the input buffers' cursor, wired permanently off
-    char chat_dest[MAXPLAYERS] = {}; // who each player is addressing
+    EA::Array<char, MAXPLAYERS> chat_dest = {}; // who each player is addressing
 
-    char chatchars[queueSize] = {}; // outgoing local keystrokes, awaiting send
+    EA::Array<char, queueSize> chatchars =
+        {}; // outgoing local keystrokes, awaiting send
     int head = 0; // chatchars ring head
     int tail = 0; // chatchars ring tail
 
     // Doom::hudResponder's own send-path state, folded in from its function-local statics.
-    char lastmessage[HU_MAXLINELENGTH + 1] =
+    EA::Array<char, HU_MAXLINELENGTH + 1> lastmessage =
         {}; // the last message sent (HU_MSGREFRESH)
     bool shiftdown = false; // shift held (chat input)
     bool altdown = false; // alt held (chat input)

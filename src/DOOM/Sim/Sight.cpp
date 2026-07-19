@@ -57,10 +57,10 @@ int divlineSide(fixed_t x, fixed_t y, const DivLine& node)
 
     // These are INTEGER products of the shifted-down values, not a fixed-point
     // multiply: vanilla declares them fixed_t but never treats them as such, and
-    // Fixed::operator* would shift the product back down by FRACBITS and give a
+    // Fixed::operator* would shift the product back down by fracBits and give a
     // different answer. Kept as plain ints on the raw bits.
-    const int left = (node.delta.y.raw >> FRACBITS) * (dx.raw >> FRACBITS);
-    const int right = (dy.raw >> FRACBITS) * (node.delta.x.raw >> FRACBITS);
+    const int left = (node.delta.y.raw >> fracBits) * (dx.raw >> fracBits);
+    const int right = (dy.raw >> fracBits) * (node.delta.x.raw >> fracBits);
 
     if (right < left)
         return 0; // front side

@@ -37,52 +37,52 @@ namespace Doom
 {
 SwitchListEntry alphSwitchList[] = {
     // Doom shareware episode 1 switches
-    {"SW1BRCOM", "SW2BRCOM", 1},
-    {"SW1BRN1", "SW2BRN1", 1},
-    {"SW1BRN2", "SW2BRN2", 1},
-    {"SW1BRNGN", "SW2BRNGN", 1},
-    {"SW1BROWN", "SW2BROWN", 1},
-    {"SW1COMM", "SW2COMM", 1},
-    {"SW1COMP", "SW2COMP", 1},
-    {"SW1DIRT", "SW2DIRT", 1},
-    {"SW1EXIT", "SW2EXIT", 1},
-    {"SW1GRAY", "SW2GRAY", 1},
-    {"SW1GRAY1", "SW2GRAY1", 1},
-    {"SW1METAL", "SW2METAL", 1},
-    {"SW1PIPE", "SW2PIPE", 1},
-    {"SW1SLAD", "SW2SLAD", 1},
-    {"SW1STARG", "SW2STARG", 1},
-    {"SW1STON1", "SW2STON1", 1},
-    {"SW1STON2", "SW2STON2", 1},
-    {"SW1STONE", "SW2STONE", 1},
-    {"SW1STRTN", "SW2STRTN", 1},
+    {EA::Array<char, 9> {{"SW1BRCOM"}}, EA::Array<char, 9> {{"SW2BRCOM"}}, 1},
+    {EA::Array<char, 9> {{"SW1BRN1"}}, EA::Array<char, 9> {{"SW2BRN1"}}, 1},
+    {EA::Array<char, 9> {{"SW1BRN2"}}, EA::Array<char, 9> {{"SW2BRN2"}}, 1},
+    {EA::Array<char, 9> {{"SW1BRNGN"}}, EA::Array<char, 9> {{"SW2BRNGN"}}, 1},
+    {EA::Array<char, 9> {{"SW1BROWN"}}, EA::Array<char, 9> {{"SW2BROWN"}}, 1},
+    {EA::Array<char, 9> {{"SW1COMM"}}, EA::Array<char, 9> {{"SW2COMM"}}, 1},
+    {EA::Array<char, 9> {{"SW1COMP"}}, EA::Array<char, 9> {{"SW2COMP"}}, 1},
+    {EA::Array<char, 9> {{"SW1DIRT"}}, EA::Array<char, 9> {{"SW2DIRT"}}, 1},
+    {EA::Array<char, 9> {{"SW1EXIT"}}, EA::Array<char, 9> {{"SW2EXIT"}}, 1},
+    {EA::Array<char, 9> {{"SW1GRAY"}}, EA::Array<char, 9> {{"SW2GRAY"}}, 1},
+    {EA::Array<char, 9> {{"SW1GRAY1"}}, EA::Array<char, 9> {{"SW2GRAY1"}}, 1},
+    {EA::Array<char, 9> {{"SW1METAL"}}, EA::Array<char, 9> {{"SW2METAL"}}, 1},
+    {EA::Array<char, 9> {{"SW1PIPE"}}, EA::Array<char, 9> {{"SW2PIPE"}}, 1},
+    {EA::Array<char, 9> {{"SW1SLAD"}}, EA::Array<char, 9> {{"SW2SLAD"}}, 1},
+    {EA::Array<char, 9> {{"SW1STARG"}}, EA::Array<char, 9> {{"SW2STARG"}}, 1},
+    {EA::Array<char, 9> {{"SW1STON1"}}, EA::Array<char, 9> {{"SW2STON1"}}, 1},
+    {EA::Array<char, 9> {{"SW1STON2"}}, EA::Array<char, 9> {{"SW2STON2"}}, 1},
+    {EA::Array<char, 9> {{"SW1STONE"}}, EA::Array<char, 9> {{"SW2STONE"}}, 1},
+    {EA::Array<char, 9> {{"SW1STRTN"}}, EA::Array<char, 9> {{"SW2STRTN"}}, 1},
 
     // Doom registered episodes 2&3 switches
-    {"SW1BLUE", "SW2BLUE", 2},
-    {"SW1CMT", "SW2CMT", 2},
-    {"SW1GARG", "SW2GARG", 2},
-    {"SW1GSTON", "SW2GSTON", 2},
-    {"SW1HOT", "SW2HOT", 2},
-    {"SW1LION", "SW2LION", 2},
-    {"SW1SATYR", "SW2SATYR", 2},
-    {"SW1SKIN", "SW2SKIN", 2},
-    {"SW1VINE", "SW2VINE", 2},
-    {"SW1WOOD", "SW2WOOD", 2},
+    {EA::Array<char, 9> {{"SW1BLUE"}}, EA::Array<char, 9> {{"SW2BLUE"}}, 2},
+    {EA::Array<char, 9> {{"SW1CMT"}}, EA::Array<char, 9> {{"SW2CMT"}}, 2},
+    {EA::Array<char, 9> {{"SW1GARG"}}, EA::Array<char, 9> {{"SW2GARG"}}, 2},
+    {EA::Array<char, 9> {{"SW1GSTON"}}, EA::Array<char, 9> {{"SW2GSTON"}}, 2},
+    {EA::Array<char, 9> {{"SW1HOT"}}, EA::Array<char, 9> {{"SW2HOT"}}, 2},
+    {EA::Array<char, 9> {{"SW1LION"}}, EA::Array<char, 9> {{"SW2LION"}}, 2},
+    {EA::Array<char, 9> {{"SW1SATYR"}}, EA::Array<char, 9> {{"SW2SATYR"}}, 2},
+    {EA::Array<char, 9> {{"SW1SKIN"}}, EA::Array<char, 9> {{"SW2SKIN"}}, 2},
+    {EA::Array<char, 9> {{"SW1VINE"}}, EA::Array<char, 9> {{"SW2VINE"}}, 2},
+    {EA::Array<char, 9> {{"SW1WOOD"}}, EA::Array<char, 9> {{"SW2WOOD"}}, 2},
 
     // Doom II switches
-    {"SW1PANEL", "SW2PANEL", 3},
-    {"SW1ROCK", "SW2ROCK", 3},
-    {"SW1MET2", "SW2MET2", 3},
-    {"SW1WDMET", "SW2WDMET", 3},
-    {"SW1BRIK", "SW2BRIK", 3},
-    {"SW1MOD1", "SW2MOD1", 3},
-    {"SW1ZIM", "SW2ZIM", 3},
-    {"SW1STON6", "SW2STON6", 3},
-    {"SW1TEK", "SW2TEK", 3},
-    {"SW1MARB", "SW2MARB", 3},
-    {"SW1SKULL", "SW2SKULL", 3},
+    {EA::Array<char, 9> {{"SW1PANEL"}}, EA::Array<char, 9> {{"SW2PANEL"}}, 3},
+    {EA::Array<char, 9> {{"SW1ROCK"}}, EA::Array<char, 9> {{"SW2ROCK"}}, 3},
+    {EA::Array<char, 9> {{"SW1MET2"}}, EA::Array<char, 9> {{"SW2MET2"}}, 3},
+    {EA::Array<char, 9> {{"SW1WDMET"}}, EA::Array<char, 9> {{"SW2WDMET"}}, 3},
+    {EA::Array<char, 9> {{"SW1BRIK"}}, EA::Array<char, 9> {{"SW2BRIK"}}, 3},
+    {EA::Array<char, 9> {{"SW1MOD1"}}, EA::Array<char, 9> {{"SW2MOD1"}}, 3},
+    {EA::Array<char, 9> {{"SW1ZIM"}}, EA::Array<char, 9> {{"SW2ZIM"}}, 3},
+    {EA::Array<char, 9> {{"SW1STON6"}}, EA::Array<char, 9> {{"SW2STON6"}}, 3},
+    {EA::Array<char, 9> {{"SW1TEK"}}, EA::Array<char, 9> {{"SW2TEK"}}, 3},
+    {EA::Array<char, 9> {{"SW1MARB"}}, EA::Array<char, 9> {{"SW2MARB"}}, 3},
+    {EA::Array<char, 9> {{"SW1SKULL"}}, EA::Array<char, 9> {{"SW2SKULL"}}, 3},
 
-    {"\0", "\0", 0}};
+    {EA::Array<char, 9> {{"\0"}}, EA::Array<char, 9> {{"\0"}}, 0}};
 
 // switchlist/numswitches now live on the Engine (Sim/SwitchList.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). initSwitchList and changeSwitchTexture each hoist switchList() once
@@ -121,9 +121,9 @@ void initSwitchList()
         if (alphSwitchList[i].episode <= episode)
         {
             list.switchlist[index++] =
-                Doom::textureNumForName(alphSwitchList[i].name1);
+                Doom::textureNumForName(alphSwitchList[i].name1.data());
             list.switchlist[index++] =
-                Doom::textureNumForName(alphSwitchList[i].name2);
+                Doom::textureNumForName(alphSwitchList[i].name2.data());
         }
     }
 }
@@ -192,7 +192,7 @@ void changeSwitchTexture(Line* line, int useAgain)
     {
         if (list.switchlist[i] == texTop)
         {
-            Doom::startSound(specials.buttonlist->soundorg, sound);
+            Doom::startSound(specials.buttonlist.data()->soundorg, sound);
             sides[line->sidenum[0]].toptexture = list.switchlist[i ^ 1];
 
             if (useAgain)
@@ -204,7 +204,7 @@ void changeSwitchTexture(Line* line, int useAgain)
         {
             if (list.switchlist[i] == texMid)
             {
-                Doom::startSound(specials.buttonlist->soundorg, sound);
+                Doom::startSound(specials.buttonlist.data()->soundorg, sound);
                 sides[line->sidenum[0]].midtexture = list.switchlist[i ^ 1];
 
                 if (useAgain)
@@ -216,7 +216,7 @@ void changeSwitchTexture(Line* line, int useAgain)
             {
                 if (list.switchlist[i] == texBot)
                 {
-                    Doom::startSound(specials.buttonlist->soundorg, sound);
+                    Doom::startSound(specials.buttonlist.data()->soundorg, sound);
                     sides[line->sidenum[0]].bottomtexture = list.switchlist[i ^ 1];
 
                     if (useAgain)

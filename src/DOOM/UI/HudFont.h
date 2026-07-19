@@ -3,6 +3,8 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The heads-up font: the small red glyphs the HUD, the menu, the finale and the config's
@@ -25,7 +27,7 @@ struct HudFont
     // ST_NUMFACES).
     static constexpr int fontSize = '_' - '!' + 1;
 
-    Patch* hu_font[fontSize] = {}; // the cached '!'..'_' glyph patches
+    EA::Array<Patch*, fontSize> hu_font = {}; // the cached '!'..'_' glyph patches
 };
 
 // The one HudFont, a view onto the Engine's member - the same pattern as the other clusters

@@ -6,6 +6,8 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The automap's internal view state - what UI/Automap keeps for itself, distinct from the handful
@@ -73,8 +75,8 @@ struct AutomapView
 
     fixed_t scale_ftom {}; // frame -> map scale (1 / scale_mtof)
 
-    Patch* marknums[10] = {}; // the 0-9 mark-number patches
-    MapPoint markpoints[numMarkPoints] = {}; // the placed marks
+    EA::Array<Patch*, 10> marknums = {}; // the 0-9 mark-number patches
+    EA::Array<MapPoint, numMarkPoints> markpoints = {}; // the placed marks
     int markpointnum = 0; // the next mark slot
 
     bool stopped = true; // the automap is closed

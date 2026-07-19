@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The raw input state a tic's command is built from. Doom::gameResponder accumulates it as events
@@ -25,10 +27,11 @@ struct TiccmdInput
     // NUMKEYS: gamekeydown is indexed by key code
     static constexpr int keyCount = 256;
 
-    bool gamekeydown[keyCount] = {}; // which game keys are currently held
+    EA::Array<bool, keyCount> gamekeydown = {}; // which game keys are currently held
     int turnheld = 0; // tics a turn key has been held, for accelerative turning
 
-    bool mousearray[4] = {}; // mouse button state (mousebuttons views &[1])
+    EA::Array<bool, 4> mousearray =
+        {}; // mouse button state (mousebuttons views &[1])
 
     // mouse movement accumulated since the last ticcmd (Doom::gameResponder assigns, Doom::buildTiccmd
     // consumes and zeroes once a tic)
@@ -45,7 +48,8 @@ struct TiccmdInput
 
     int joyxmove = 0; // joystick movement, repeated each tic
     int joyymove = 0;
-    bool joyarray[5] = {}; // joystick button state (joybuttons views &[1])
+    EA::Array<bool, 5> joyarray =
+        {}; // joystick button state (joybuttons views &[1])
 };
 
 // The one TiccmdInput, a view onto the Engine's member - the same pattern as the other Game/

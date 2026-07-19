@@ -40,12 +40,15 @@
 #include "../UI/MenuSettings.h"
 #include "../Render/GraphicsData.h"
 #include "../Sim/Level.h"
-#define FIELDOFVIEW 2048 // Fineangles in the SCREENWIDTH wide window.
 
 // menuSettings().detailLevel/menuSettings().screenblocks are config-backed Engine members (UI/MenuSettings.h); references.
 
 namespace Doom
 {
+
+// Fineangles in the SCREENWIDTH wide window.
+constexpr int FIELDOFVIEW = 2048;
+
 // setdetail now lives on the Engine (Render/RenderMainState.h, moved by the
 // file-scope-statics sweep - REFACTOR.md, Step 5); it was a reference onto that member until the
 // file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired it - setViewSize and executeSetViewSize
@@ -128,8 +131,8 @@ int pointOnSide(fixed_t x, fixed_t y, Node* node)
         return 0;
     }
 
-    left = FixedMul(node->dy >> FRACBITS, dx);
-    right = FixedMul(dy, node->dx >> FRACBITS);
+    left = FixedMul(node->dy >> fracBits, dx);
+    right = FixedMul(dy, node->dx >> fracBits);
 
     if (right < left)
     {
@@ -186,8 +189,8 @@ int pointOnSegSide(fixed_t x, fixed_t y, Seg* line)
         return 0;
     }
 
-    left = FixedMul(ldy >> FRACBITS, dx);
-    right = FixedMul(dy, ldx >> FRACBITS);
+    left = FixedMul(ldy >> fracBits, dx);
+    right = FixedMul(dy, ldx >> fracBits);
 
     if (right < left)
     {
@@ -423,7 +426,7 @@ void initTextureMapping()
         {
             // t is dual-purpose: a raw fixed product here, a screen column below.
             t = FixedMul(finetangent[i], focallength).raw;
-            t = (proj.centerxfrac.raw - t + fracUnit - 1) >> FRACBITS;
+            t = (proj.centerxfrac.raw - t + fracUnit - 1) >> fracBits;
 
             if (t < -1)
                 t = -1;
@@ -692,7 +695,7 @@ void setupFrame(Player& player)
         lights.fixedcolormap =
             colormaps + player.fixedcolormap * 256 * sizeof(LightTable);
 
-        segState().walllights = lights.scalelightfixed;
+        segState().walllights = lights.scalelightfixed.data();
 
         for (int i = 0; i < MAXLIGHTSCALE; i++)
             lights.scalelightfixed[i] = lights.fixedcolormap;

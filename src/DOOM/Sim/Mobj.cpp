@@ -51,8 +51,6 @@
 #include "Weapon.h"
 #include "Random.h"
 #include "ItemRespawnQueue.h"
-#define STOPSPEED (Doom::Fixed {0x1000})
-#define FRICTION (Doom::Fixed {0xe800})
 
 // Defined in g_game (reset a player's state on respawn) and in Clip (the shot range,
 // read by xyMovement's melee check).
@@ -60,6 +58,9 @@ void Doom::playerReborn(int player);
 
 namespace Doom
 {
+
+constexpr fixed_t STOPSPEED {0x1000};
+constexpr fixed_t FRICTION {0xe800};
 
 bool setMobjState(Mobj* mobj, StateNum state)
 {
@@ -682,7 +683,7 @@ void spawnMapThing(MapThing* mthing)
     // count deathmatch start positions
     if (mthing->type == 11)
     {
-        if (spawns.deathmatch_p < &spawns.deathmatchstarts[10])
+        if (spawns.deathmatch_p < &spawns.deathmatchstarts[MAX_DM_STARTS])
         {
             doom_memcpy(spawns.deathmatch_p, mthing, sizeof(*mthing));
             spawns.deathmatch_p++;

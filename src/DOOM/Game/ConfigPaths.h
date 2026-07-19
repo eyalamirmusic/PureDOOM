@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The config file paths: basedefault is the resolved default location (~/.doomrc,
@@ -14,7 +16,7 @@ namespace Doom
 // into the Engine like any other per-run state (REFACTOR.md, Step 5).
 struct ConfigPaths
 {
-    char basedefault[1024] = {}; // default config file location
+    EA::Array<char, 1024> basedefault = {}; // default config file location
     char* defaultfile = nullptr; // the config file actually used
 };
 

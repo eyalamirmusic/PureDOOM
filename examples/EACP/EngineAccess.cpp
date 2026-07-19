@@ -438,7 +438,7 @@ void eacpDoomBindKeys()
     {
         Doom::ConfigDefault* entry = &defaults[i];
 
-        if (entry->defaultvalue != STRING_VALUE
+        if (entry->defaultvalue != Doom::STRING_VALUE
             && doom_strncmp(entry->name, "key_", 4) == 0)
         {
             *entry->location = entry->defaultvalue;
@@ -1510,7 +1510,8 @@ static float eacpWeaponBrightening()
     if (width <= 0)
         return 0.0f;
 
-    return (float) ((Doom::MAXLIGHTSCALE - 1) * Doom::SCREENWIDTH / width / DISTMAP);
+    return (float) ((Doom::MAXLIGHTSCALE - 1) * Doom::SCREENWIDTH / width
+                    / Doom::DISTMAP);
 }
 
 // R_DrawPSprite's choice of colormap, in its own order: a powerup first, then a

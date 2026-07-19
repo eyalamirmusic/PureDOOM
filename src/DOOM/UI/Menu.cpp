@@ -128,7 +128,6 @@ const char* endmsg[Doom::NUM_QUITMESSAGES + 1] = {
 namespace Doom
 {
 
-constexpr int SAVESTRINGSIZE = 24;
 constexpr int SKULLXOFF = -32;
 constexpr int LINEHEIGHT = 16;
 
@@ -709,7 +708,7 @@ void readSaveStrings()
             DOOM_LoadMenu[i].status = 0;
             continue;
         }
-        doom_read(handle, &state.savegamestrings[i], SAVESTRINGSIZE);
+        doom_read(handle, &state.savegamestrings[i], menuSaveStringSize);
         doom_close(handle);
         DOOM_LoadMenu[i].status = 1;
     }
@@ -727,7 +726,8 @@ void drawLoad()
     for (int i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
-        writeText(LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i]);
+        writeText(
+            LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i].data());
     }
 }
 
@@ -801,12 +801,13 @@ void drawSave()
     for (i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
-        writeText(LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i]);
+        writeText(
+            LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i].data());
     }
 
     if (state.saveStringEnter)
     {
-        i = stringWidth(state.savegamestrings[state.saveSlot]);
+        i = stringWidth(state.savegamestrings[state.saveSlot].data());
         writeText(LoadDef.x + i, LoadDef.y + LINEHEIGHT * state.saveSlot, "_");
     }
 }
@@ -818,7 +819,7 @@ void doSave(int slot)
 {
     auto& state = menuState();
 
-    Doom::saveGame(slot, state.savegamestrings[slot]);
+    Doom::saveGame(slot, state.savegamestrings[slot].data());
     clearMenus();
 
     // PICK QUICKSAVE SLOT YET?
@@ -837,11 +838,11 @@ void saveSelect(int choice)
     state.saveStringEnter = 1;
 
     state.saveSlot = choice;
-    doom_strcpy(state.saveOldString, state.savegamestrings[choice]);
-    if (!doom_strcmp(state.savegamestrings[choice], Doom::EMPTYSTRING))
+    doom_strcpy(state.saveOldString.data(), state.savegamestrings[choice].data());
+    if (!doom_strcmp(state.savegamestrings[choice].data(), Doom::EMPTYSTRING))
         state.savegamestrings[choice][0] = 0;
     state.saveCharIndex =
-        static_cast<int>(doom_strlen(state.savegamestrings[choice]));
+        static_cast<int>(doom_strlen(state.savegamestrings[choice].data()));
 }
 
 //
@@ -896,10 +897,11 @@ void quickSave()
         return;
     }
     //doom_sprintf(tempstring, Doom::QSPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring, Doom::QSPROMPT_1);
-    doom_concat(state.tempstring, state.savegamestrings[state.quickSaveSlot]);
-    doom_strcpy(state.tempstring, Doom::QSPROMPT_2);
-    startMessage(state.tempstring, quickSaveResponse, true);
+    doom_strcpy(state.tempstring.data(), Doom::QSPROMPT_1);
+    doom_concat(state.tempstring.data(),
+                state.savegamestrings[state.quickSaveSlot].data());
+    doom_strcpy(state.tempstring.data(), Doom::QSPROMPT_2);
+    startMessage(state.tempstring.data(), quickSaveResponse, true);
 }
 
 //
@@ -930,10 +932,11 @@ void quickLoad()
         return;
     }
     //doom_sprintf(tempstring, Doom::QLPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring, Doom::QLPROMPT_1);
-    doom_concat(state.tempstring, state.savegamestrings[state.quickSaveSlot]);
-    doom_strcpy(state.tempstring, Doom::QLPROMPT_2);
-    startMessage(state.tempstring, quickLoadResponse, true);
+    doom_strcpy(state.tempstring.data(), Doom::QLPROMPT_1);
+    doom_concat(state.tempstring.data(),
+                state.savegamestrings[state.quickSaveSlot].data());
+    doom_strcpy(state.tempstring.data(), Doom::QLPROMPT_2);
+    startMessage(state.tempstring.data(), quickLoadResponse, true);
 }
 
 //
@@ -1344,18 +1347,18 @@ void quitDOOM(int)
     if (gameVersion().language != english)
     {
         //doom_sprintf(endstring, "%s\n\n"DOSY, endmsg[0]);
-        doom_strcpy(state.endstring, endmsg[0]);
-        doom_concat(state.endstring, "\n\n" DOSY);
+        doom_strcpy(state.endstring.data(), endmsg[0]);
+        doom_concat(state.endstring.data(), "\n\n" DOSY);
     }
     else
     {
         //doom_sprintf(endstring, "%s\n\n" DOSY, endmsg[gametic % (NUM_QUITMESSAGES - 2) + 1]);
-        doom_strcpy(state.endstring,
+        doom_strcpy(state.endstring.data(),
                     endmsg[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1]);
-        doom_concat(state.endstring, "\n\n" DOSY);
+        doom_concat(state.endstring.data(), "\n\n" DOSY);
     }
 
-    startMessage(state.endstring, quitResponse, true);
+    startMessage(state.endstring.data(), quitResponse, true);
 }
 
 void changeSensitivity(int choice)
@@ -1686,7 +1689,7 @@ bool menuResponder(Event* ev)
             case KEY_ESCAPE:
                 state.saveStringEnter = 0;
                 doom_strcpy(&state.savegamestrings[state.saveSlot][0],
-                            state.saveOldString);
+                            state.saveOldString.data());
                 break;
 
             case KEY_ENTER:
@@ -1700,9 +1703,10 @@ bool menuResponder(Event* ev)
                 if (ch != 32)
                     if (ch - HU_FONTSTART < 0 || ch - HU_FONTSTART >= HU_FONTSIZE)
                         break;
-                if (ch >= 32 && ch <= 127 && state.saveCharIndex < SAVESTRINGSIZE - 1
-                    && stringWidth(state.savegamestrings[state.saveSlot])
-                           < (SAVESTRINGSIZE - 2) * 8)
+                if (ch >= 32 && ch <= 127
+                    && state.saveCharIndex < menuSaveStringSize - 1
+                    && stringWidth(state.savegamestrings[state.saveSlot].data())
+                           < (menuSaveStringSize - 2) * 8)
                 {
                     state.savegamestrings[state.saveSlot][state.saveCharIndex++] =
                         ch;

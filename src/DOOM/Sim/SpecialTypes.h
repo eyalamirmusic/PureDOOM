@@ -28,6 +28,8 @@
 #include "MapTypes.h"
 #include "../Render/RenderTypes.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
 //
 // End-level timer (-TIMER option)
 //
@@ -131,8 +133,8 @@ namespace Doom
 {
 struct SwitchListEntry
 {
-    char name1[9];
-    char name2[9];
+    EA::Array<char, 9> name1;
+    EA::Array<char, 9> name2;
     short episode;
 };
 } // namespace Doom

@@ -31,8 +31,6 @@
 #include "../Host/System.h"
 #include "Main.h"
 #include "../Render/GraphicsData.h"
-#define HEIGHTBITS 12
-#define HEIGHTUNIT (1 << HEIGHTBITS)
 
 // These are Doom::SegState members (Engine), exported by the r_segs.cpp shim; references onto
 // them - and as references, not plain externs, since Render/Segs writes them (a write through a
@@ -40,6 +38,9 @@
 
 namespace Doom
 {
+
+constexpr int HEIGHTBITS = 12;
+constexpr int HEIGHTUNIT = 1 << HEIGHTBITS;
 
 // The per-wall-segment rendering intermediates now live on the Engine (Render/WallScratch.h, moved
 // by the file-scope-statics sweep - REFACTOR.md, Step 5); read by no other file. All twenty were
@@ -86,11 +87,11 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
         lightnum++;
 
     if (lightnum < 0)
-        seg.walllights = lights.scalelight[0];
+        seg.walllights = lights.scalelight[0].data();
     else if (lightnum >= LIGHTLEVELS)
-        seg.walllights = lights.scalelight[LIGHTLEVELS - 1];
+        seg.walllights = lights.scalelight[LIGHTLEVELS - 1].data();
     else
-        seg.walllights = lights.scalelight[lightnum];
+        seg.walllights = lights.scalelight[lightnum].data();
 
     seg.maskedtexturecol = ds->maskedtexturecol;
 
@@ -176,7 +177,7 @@ void renderSegLoop()
     int yl;
     int yh;
     int mid;
-    // Vanilla declares this fixed_t and shifts it down by FRACBITS in place; by the
+    // Vanilla declares this fixed_t and shifts it down by fracBits in place; by the
     // time anything reads it, it is a whole texture column number.
     int texturecolumn;
     int top;
@@ -458,8 +459,8 @@ void storeWallRange(int start, int stop)
         wall.rw_midtexturemid += bsp.sidedef->rowoffset;
 
         bsp.ds_p->silhouette = SIL_BOTH;
-        bsp.ds_p->sprtopclip = sprites.screenheightarray;
-        bsp.ds_p->sprbottomclip = sprites.negonearray;
+        bsp.ds_p->sprtopclip = sprites.screenheightarray.data();
+        bsp.ds_p->sprbottomclip = sprites.negonearray.data();
         bsp.ds_p->bsilheight = fixed_t {DOOM_MAXINT};
         bsp.ds_p->tsilheight = fixed_t {DOOM_MININT};
     }
@@ -495,14 +496,14 @@ void storeWallRange(int start, int stop)
 
         if (bsp.backsector->ceilingheight <= bsp.frontsector->floorheight)
         {
-            bsp.ds_p->sprbottomclip = sprites.negonearray;
+            bsp.ds_p->sprbottomclip = sprites.negonearray.data();
             bsp.ds_p->bsilheight = fixed_t {DOOM_MAXINT};
             bsp.ds_p->silhouette |= SIL_BOTTOM;
         }
 
         if (bsp.backsector->floorheight >= bsp.frontsector->ceilingheight)
         {
-            bsp.ds_p->sprtopclip = sprites.screenheightarray;
+            bsp.ds_p->sprtopclip = sprites.screenheightarray.data();
             bsp.ds_p->tsilheight = fixed_t {DOOM_MININT};
             bsp.ds_p->silhouette |= SIL_TOP;
         }
@@ -639,11 +640,11 @@ void storeWallRange(int start, int stop)
                 lightnum++;
 
             if (lightnum < 0)
-                seg.walllights = lights.scalelight[0];
+                seg.walllights = lights.scalelight[0].data();
             else if (lightnum >= LIGHTLEVELS)
-                seg.walllights = lights.scalelight[LIGHTLEVELS - 1];
+                seg.walllights = lights.scalelight[LIGHTLEVELS - 1].data();
             else
-                seg.walllights = lights.scalelight[lightnum];
+                seg.walllights = lights.scalelight[lightnum].data();
         }
     }
 
@@ -711,7 +712,7 @@ void storeWallRange(int start, int stop)
         && !bsp.ds_p->sprtopclip)
     {
         doom_memcpy(plane.lastopening,
-                    plane.ceilingclip + start,
+                    plane.ceilingclip.data() + start,
                     2 * (seg.rw_stopx - start));
         bsp.ds_p->sprtopclip = plane.lastopening - start;
         plane.lastopening += seg.rw_stopx - start;
@@ -720,8 +721,9 @@ void storeWallRange(int start, int stop)
     if (((bsp.ds_p->silhouette & SIL_BOTTOM) || wall.maskedtexture)
         && !bsp.ds_p->sprbottomclip)
     {
-        doom_memcpy(
-            plane.lastopening, plane.floorclip + start, 2 * (seg.rw_stopx - start));
+        doom_memcpy(plane.lastopening,
+                    plane.floorclip.data() + start,
+                    2 * (seg.rw_stopx - start));
         bsp.ds_p->sprbottomclip = plane.lastopening - start;
         plane.lastopening += seg.rw_stopx - start;
     }

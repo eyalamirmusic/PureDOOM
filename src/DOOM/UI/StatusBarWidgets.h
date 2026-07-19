@@ -2,6 +2,8 @@
 
 #include "StatusWidgetTypes.h" // StatusNumber, StatusPercent, StatusBinIcon, StatusMultIcon
 
+#include <ea_data_structures/Structures/Array.h>
+
 namespace Doom
 {
 // The status bar's STlib widgets - the drawable elements of the bar. ST_createWidgets binds each
@@ -26,12 +28,12 @@ struct StatusBarWidgets
     StatusNumber w_frags = {}; // deathmatch frags summary (replaces the arms)
     StatusPercent w_health = {}; // health percent
     StatusBinIcon w_armsbg = {}; // arms background (single-player only)
-    StatusMultIcon w_arms[6] = {}; // the six weapon-ownership icons
+    EA::Array<StatusMultIcon, 6> w_arms = {}; // the six weapon-ownership icons
     StatusMultIcon w_faces = {}; // the animated face
-    StatusMultIcon w_keyboxes[3] = {}; // the three key slots
+    EA::Array<StatusMultIcon, 3> w_keyboxes = {}; // the three key slots
     StatusPercent w_armor = {}; // armor percent
-    StatusNumber w_ammo[4] = {}; // the four ammo-type counts
-    StatusNumber w_maxammo[4] = {}; // the four ammo-type caps
+    EA::Array<StatusNumber, 4> w_ammo = {}; // the four ammo-type counts
+    EA::Array<StatusNumber, 4> w_maxammo = {}; // the four ammo-type caps
 
     // The six arms icons' patch indices - the storage w_arms[i].inum points at, refreshed
     // from plyr->weaponowned[i + 1] by drawWidgets immediately before it updates them.
@@ -45,7 +47,7 @@ struct StatusBarWidgets
     // behaviour-identical because updateMultIcon only ever reads through inum, and plyr
     // is assigned in exactly one place - initStatusBarData, immediately before
     // createWidgets - so the two can never disagree about which player is shown.
-    int w_armsindex[6] = {};
+    EA::Array<int, 6> w_armsindex = {};
 
     // The "n/a" sentinel w_ready.num points at when the ready weapon uses no ammo (fist/chainsaw).
     // updateWidgets' own function-local static (the "later function-local pass"); it must persist,

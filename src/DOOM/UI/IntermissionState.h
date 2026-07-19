@@ -6,6 +6,7 @@
 #include "../Render/RenderTypes.h" // Patch
 #include "IntermissionTypes.h" // IntermissionPhase
 
+#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
 namespace Doom
@@ -59,28 +60,28 @@ struct IntermissionState
     IntermissionPlayer* plrs = nullptr; // wbs->plyr[]
 
     // The animated count-up accumulators.
-    int cnt_kills[MAXPLAYERS] = {};
-    int cnt_items[MAXPLAYERS] = {};
-    int cnt_secret[MAXPLAYERS] = {};
+    EA::Array<int, MAXPLAYERS> cnt_kills = {};
+    EA::Array<int, MAXPLAYERS> cnt_items = {};
+    EA::Array<int, MAXPLAYERS> cnt_secret = {};
     int cnt_time = 0;
     int cnt_par = 0;
-    int cnt_frags[MAXPLAYERS] = {};
+    EA::Array<int, MAXPLAYERS> cnt_frags = {};
 
     // Deathmatch tallies and the frag-column flag.
     bool snl_pointeron = false; // the "you are here" pointer is lit this frame
-    int dm_frags[MAXPLAYERS][MAXPLAYERS] = {};
-    int dm_totals[MAXPLAYERS] = {};
+    EA::Array<EA::Array<int, MAXPLAYERS>, MAXPLAYERS> dm_frags = {};
+    EA::Array<int, MAXPLAYERS> dm_totals = {};
     int dofrags = 0; // netgame has frags to show
 
     int NUMCMAPS = 0; // # of commercial levels (set in loadIntermissionData)
 
     // Graphics loaded once by loadIntermissionData, read-only after.
     Patch* bg = nullptr; // background (map of levels)
-    Patch* yah[2] = {}; // "you are here" (two blink frames)
+    EA::Array<Patch*, 2> yah = {}; // "you are here" (two blink frames)
     Patch* splat = nullptr; // splat on completed levels
     Patch* percent = nullptr; // %
     Patch* colon = nullptr; // :
-    Patch* num[10] = {}; // 0-9
+    EA::Array<Patch*, 10> num = {}; // 0-9
     Patch* wiminus = nullptr; // minus sign
     Patch* finished = nullptr; // "Finished!"
     Patch* entering = nullptr; // "Entering"
@@ -97,8 +98,8 @@ struct IntermissionState
     Patch* total = nullptr; // "Total"
     Patch* star = nullptr; // your face
     Patch* bstar = nullptr; // your dead face
-    Patch* p[MAXPLAYERS] = {}; // "red P[1..MAXPLAYERS]"
-    Patch* bp[MAXPLAYERS] = {}; // "gray P[1..MAXPLAYERS]"
+    EA::Array<Patch*, MAXPLAYERS> p = {}; // "red P[1..MAXPLAYERS]"
+    EA::Array<Patch*, MAXPLAYERS> bp = {}; // "gray P[1..MAXPLAYERS]"
 
     // Per-level name graphics, sized and filled by loadIntermissionData. RAII-owned
     // (Step 9): what was a raw doom_malloc'd Patch** is now an owning EA::Vector of

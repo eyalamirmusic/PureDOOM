@@ -44,10 +44,11 @@
 #include "Mobj.h"
 #include "Weapon.h"
 #include "Random.h"
-#define BONUSADD 6
 
 namespace Doom
 {
+
+constexpr int BONUSADD = 6;
 
 //
 // GET STUFF
@@ -649,7 +650,7 @@ void killMobj(Mobj* source, Mobj* target)
             source->player->killcount++;
 
         if (target->player)
-            source->player->frags[target->player - players_.players]++;
+            source->player->frags[target->player - players_.players.data()]++;
     }
     else if (!gameSession().netgame && (target->flags & MF_COUNTKILL))
     {
@@ -662,7 +663,7 @@ void killMobj(Mobj* source, Mobj* target)
     {
         // count environment kills against you
         if (!source)
-            target->player->frags[target->player - players_.players]++;
+            target->player->frags[target->player - players_.players.data()]++;
 
         target->flags &= ~MF_SOLID;
         target->player->playerstate = PST_DEAD;

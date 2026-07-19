@@ -1162,7 +1162,7 @@ void createWidgets()
     Doom::initNum(widgets.w_ready,
                   ST_AMMOX,
                   ST_AMMOY,
-                  gfx.tallnum,
+                  gfx.tallnum.data(),
                   &bar.plyr->ammo[weaponinfo[bar.plyr->readyweapon].ammo],
                   &bar.st_statusbaron,
                   ST_AMMOWIDTH);
@@ -1174,7 +1174,7 @@ void createWidgets()
     Doom::initPercent(widgets.w_health,
                       ST_HEALTHX,
                       ST_HEALTHY,
-                      gfx.tallnum,
+                      gfx.tallnum.data(),
                       &bar.plyr->health,
                       &bar.st_statusbaron,
                       gfx.tallpercent);
@@ -1193,7 +1193,7 @@ void createWidgets()
         Doom::initMultIcon(widgets.w_arms[i],
                            ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
                            ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
-                           gfx.arms[i],
+                           gfx.arms[i].data(),
                            &widgets.w_armsindex[i],
                            &bar.st_armson);
     }
@@ -1202,7 +1202,7 @@ void createWidgets()
     Doom::initNum(widgets.w_frags,
                   ST_FRAGSX,
                   ST_FRAGSY,
-                  gfx.tallnum,
+                  gfx.tallnum.data(),
                   &bar.st_fragscount,
                   &bar.st_fragson,
                   ST_FRAGSWIDTH);
@@ -1211,7 +1211,7 @@ void createWidgets()
     Doom::initMultIcon(widgets.w_faces,
                        ST_FACESX,
                        ST_FACESY,
-                       gfx.faces,
+                       gfx.faces.data(),
                        &statusBarFace().st_faceindex,
                        &bar.st_statusbaron);
 
@@ -1219,7 +1219,7 @@ void createWidgets()
     Doom::initPercent(widgets.w_armor,
                       ST_ARMORX,
                       ST_ARMORY,
-                      gfx.tallnum,
+                      gfx.tallnum.data(),
                       &bar.plyr->armorpoints,
                       &bar.st_statusbaron,
                       gfx.tallpercent);
@@ -1228,21 +1228,21 @@ void createWidgets()
     Doom::initMultIcon(widgets.w_keyboxes[0],
                        ST_KEY0X,
                        ST_KEY0Y,
-                       gfx.keys,
+                       gfx.keys.data(),
                        &bar.keyboxes[0],
                        &bar.st_statusbaron);
 
     Doom::initMultIcon(widgets.w_keyboxes[1],
                        ST_KEY1X,
                        ST_KEY1Y,
-                       gfx.keys,
+                       gfx.keys.data(),
                        &bar.keyboxes[1],
                        &bar.st_statusbaron);
 
     Doom::initMultIcon(widgets.w_keyboxes[2],
                        ST_KEY2X,
                        ST_KEY2Y,
-                       gfx.keys,
+                       gfx.keys.data(),
                        &bar.keyboxes[2],
                        &bar.st_statusbaron);
 
@@ -1250,7 +1250,7 @@ void createWidgets()
     Doom::initNum(widgets.w_ammo[0],
                   ST_AMMO0X,
                   ST_AMMO0Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->ammo[0],
                   &bar.st_statusbaron,
                   ST_AMMO0WIDTH);
@@ -1258,7 +1258,7 @@ void createWidgets()
     Doom::initNum(widgets.w_ammo[1],
                   ST_AMMO1X,
                   ST_AMMO1Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->ammo[1],
                   &bar.st_statusbaron,
                   ST_AMMO1WIDTH);
@@ -1266,7 +1266,7 @@ void createWidgets()
     Doom::initNum(widgets.w_ammo[2],
                   ST_AMMO2X,
                   ST_AMMO2Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->ammo[2],
                   &bar.st_statusbaron,
                   ST_AMMO2WIDTH);
@@ -1274,7 +1274,7 @@ void createWidgets()
     Doom::initNum(widgets.w_ammo[3],
                   ST_AMMO3X,
                   ST_AMMO3Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->ammo[3],
                   &bar.st_statusbaron,
                   ST_AMMO3WIDTH);
@@ -1283,7 +1283,7 @@ void createWidgets()
     Doom::initNum(widgets.w_maxammo[0],
                   ST_MAXAMMO0X,
                   ST_MAXAMMO0Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->maxammo[0],
                   &bar.st_statusbaron,
                   ST_MAXAMMO0WIDTH);
@@ -1291,7 +1291,7 @@ void createWidgets()
     Doom::initNum(widgets.w_maxammo[1],
                   ST_MAXAMMO1X,
                   ST_MAXAMMO1Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->maxammo[1],
                   &bar.st_statusbaron,
                   ST_MAXAMMO1WIDTH);
@@ -1299,7 +1299,7 @@ void createWidgets()
     Doom::initNum(widgets.w_maxammo[2],
                   ST_MAXAMMO2X,
                   ST_MAXAMMO2Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->maxammo[2],
                   &bar.st_statusbaron,
                   ST_MAXAMMO2WIDTH);
@@ -1307,7 +1307,7 @@ void createWidgets()
     Doom::initNum(widgets.w_maxammo[3],
                   ST_MAXAMMO3X,
                   ST_MAXAMMO3Y,
-                  gfx.shortnum,
+                  gfx.shortnum.data(),
                   &bar.plyr->maxammo[3],
                   &bar.st_statusbaron,
                   ST_MAXAMMO3WIDTH);

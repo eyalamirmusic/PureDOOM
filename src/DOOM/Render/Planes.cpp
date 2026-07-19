@@ -154,11 +154,11 @@ void clearPlanes()
         plane.ceilingclip[i] = -1;
     }
 
-    plane.lastvisplane = plane.visplanes;
-    plane.lastopening = plane.openings;
+    plane.lastvisplane = plane.visplanes.data();
+    plane.lastopening = plane.openings.data();
 
     // texture calculation
-    doom_memset(plane.cachedheight, 0, sizeof(plane.cachedheight));
+    doom_memset(plane.cachedheight.data(), 0, sizeof(plane.cachedheight));
 
     // left to right mapping
     const auto angleFine = (viewPoint().viewangle - ang90).fineIndex();
@@ -183,7 +183,7 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
         lightlevel = 0;
     }
 
-    for (check = plane.visplanes; check < plane.lastvisplane; check++)
+    for (check = plane.visplanes.data(); check < plane.lastvisplane; check++)
     {
         if (height == check->height && picnum == check->picnum
             && lightlevel == check->lightlevel)
@@ -195,7 +195,7 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
     if (check < plane.lastvisplane)
         return check;
 
-    if (plane.lastvisplane - plane.visplanes == PlaneScratch::maxVisplanes)
+    if (plane.lastvisplane - plane.visplanes.data() == PlaneScratch::maxVisplanes)
         fatalError("Error: findPlane: no more visplanes");
 
     plane.lastvisplane++;
@@ -206,7 +206,7 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
     check->minx = SCREENWIDTH;
     check->maxx = -1;
 
-    doom_memset(check->top, 0xff, sizeof(check->top));
+    doom_memset(check->top.data(), 0xff, sizeof(check->top));
 
     return check;
 }
@@ -268,7 +268,7 @@ VisPlane* checkPlane(VisPlane* pl, int start, int stop)
     pl->minx = start;
     pl->maxx = stop;
 
-    doom_memset(pl->top, 0xff, sizeof(pl->top));
+    doom_memset(pl->top.data(), 0xff, sizeof(pl->top));
 
     return pl;
 }
@@ -324,19 +324,19 @@ void drawPlanes()
 #ifdef RANGECHECK
     auto& bsp = bspScratch();
 
-    if (bsp.ds_p - bsp.drawsegs > BSPScratch::maxDrawSegs)
+    if (bsp.ds_p - bsp.drawsegs.data() > BSPScratch::maxDrawSegs)
     {
         //fatalError("Error: drawPlanes: drawsegs overflow (%i)",
         //        ds_p - drawsegs);
 
         doom_strcpy(error_buf, "Error: drawPlanes: drawsegs overflow (");
         doom_concat(error_buf,
-                    doom_itoa(static_cast<int>(bsp.ds_p - bsp.drawsegs), 10));
+                    doom_itoa(static_cast<int>(bsp.ds_p - bsp.drawsegs.data()), 10));
         doom_concat(error_buf, ")");
         fatalError(error_buf);
     }
 
-    if (plane.lastvisplane - plane.visplanes > PlaneScratch::maxVisplanes)
+    if (plane.lastvisplane - plane.visplanes.data() > PlaneScratch::maxVisplanes)
     {
         //fatalError("Error: drawPlanes: visplane overflow (%i)",
         //        lastvisplane - visplanes);
@@ -344,12 +344,13 @@ void drawPlanes()
         doom_strcpy(error_buf, "Error: drawPlanes: visplane overflow (");
         doom_concat(
             error_buf,
-            doom_itoa(static_cast<int>(plane.lastvisplane - plane.visplanes), 10));
+            doom_itoa(static_cast<int>(plane.lastvisplane - plane.visplanes.data()),
+                      10));
         doom_concat(error_buf, ")");
         fatalError(error_buf);
     }
 
-    if (plane.lastopening - plane.openings > PlaneScratch::maxOpenings)
+    if (plane.lastopening - plane.openings.data() > PlaneScratch::maxOpenings)
     {
         //fatalError("Error: drawPlanes: opening overflow (%i)",
         //        lastopening - openings);
@@ -357,13 +358,14 @@ void drawPlanes()
         doom_strcpy(error_buf, "Error: drawPlanes: opening overflow (");
         doom_concat(
             error_buf,
-            doom_itoa(static_cast<int>(plane.lastopening - plane.openings), 10));
+            doom_itoa(static_cast<int>(plane.lastopening - plane.openings.data()),
+                      10));
         doom_concat(error_buf, ")");
         fatalError(error_buf);
     }
 #endif
 
-    for (pl = plane.visplanes; pl < plane.lastvisplane; pl++)
+    for (pl = plane.visplanes.data(); pl < plane.lastvisplane; pl++)
     {
         if (pl->minx > pl->maxx)
             continue;
@@ -410,7 +412,7 @@ void drawPlanes()
         if (light < 0)
             light = 0;
 
-        plane.planezlight = lights.zlight[light];
+        plane.planezlight = lights.zlight[light].data();
 
         pl->top[pl->maxx + 1] = 0xff;
         pl->top[pl->minx - 1] = 0xff;
