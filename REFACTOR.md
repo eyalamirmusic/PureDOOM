@@ -738,6 +738,16 @@ Everything above the line is done. What follows is, in the order worth doing it:
      after and `diff` them. Identical here, bar two that appear inside the added
      comments. The goldens agree independently — `menu.frames`, `finale.frames` and
      the demo frames cover most of these strings.
+
+     **`Strings.h` went with it, and it holds a fourth concatenation family.**
+     `SAVEGAMENAME` and `NUM_QUITMESSAGES` converted (the latter is an array bound at
+     `UI/Menu.cpp:99`, which `constexpr int` serves); **`DEVMAPS` and `DEVDATA` stay
+     macros**, because `Game/DoomMain.cpp` builds fifteen dev-mode paths out of them by
+     concatenation — `addWadFile(DEVDATA "doom1.wad")`, `doom_strcpy(file.data(), "~"
+     DEVMAPS "E")`. So the count of names that cannot leave the preprocessor for this
+     reason is **five**, not three, and the fifth family was in a file the three
+     searches above never opened. The pattern really is the recurring one: each pass
+     widened the *scope* and found more.
 7. ~~**Zero the warning count, and treat it as a gate.**~~ **Done — the engine
    builds with exactly one warning**, down from **81** at the start of this session,
    and that one is deliberate. `thintriangle_guy` is why this was worth doing at all
