@@ -1408,7 +1408,7 @@ void loadIntermissionData()
     if (version.gamemode == commercial)
     {
         im.NUMCMAPS = 32;
-        im.lnames = static_cast<Patch**>(doom_malloc(sizeof(Patch*) * im.NUMCMAPS));
+        im.lnames.resize(im.NUMCMAPS);
         for (int i = 0; i < im.NUMCMAPS; i++)
         {
             //doom_sprintf(name, "CWILV%2.2d", i);
@@ -1421,7 +1421,7 @@ void loadIntermissionData()
     }
     else
     {
-        im.lnames = static_cast<Patch**>(doom_malloc(sizeof(Patch*) * NUMMAPS));
+        im.lnames.resize(NUMMAPS);
         for (int i = 0; i < NUMMAPS; i++)
         {
             //doom_sprintf(name, "WILV%d%d", wbs->epsd, i);
@@ -1568,9 +1568,11 @@ void unloadIntermissionData()
     // used to be Z_ChangeTag(..., PU_CACHE) twenty-five times over, which said
     // "purge these if you need the space".
     //
-    // lnames is not a lump. It is the array of pointers *to* the lumps, allocated
-    // by loadIntermissionData, and it is still ours.
-    doom_free(intermissionState().lnames);
+    // lnames is not a lump. It is the array of pointers *to* the lumps, sized by
+    // loadIntermissionData, and it is still ours (RAII-owned, Step 9) - clearing it
+    // drops only the pointer array, not the Patch lumps it points at, which the WAD
+    // owns and keeps regardless.
+    intermissionState().lnames.clear();
 }
 
 void drawIntermission()
@@ -1624,7 +1626,6 @@ void initIntermissionVariables(IntermissionStart* wbstartstruct)
 
     im.acceleratestage = 0;
     im.cnt = im.bcnt = 0;
-    im.firstrefresh = 1;
     im.me = im.wbs->pnum;
     im.plrs = im.wbs->plyr;
 

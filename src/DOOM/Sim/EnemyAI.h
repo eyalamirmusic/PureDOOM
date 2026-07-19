@@ -12,8 +12,8 @@ struct Mobj; // Mobj
 namespace Doom
 {
 // The monster-AI scratch two of the A_* actions keep between their blockmap callbacks: the archvile
-// resurrection (A_VileChase / PIT_VileCheck - the corpse being raised, the archvile raising it, and
-// where it is trying to stand it up) and the DOOM II boss brain (A_BrainInit / A_BrainSpawn - the
+// resurrection (A_VileChase / PIT_VileCheck - the corpse being raised, and where it is trying to
+// stand it up) and the DOOM II boss brain (A_BrainInit / A_BrainSpawn - the
 // list of spawn-cube targets and the cursor into it). The const movement-direction tables beside
 // them (diags / xspeed / yspeed / TRACEANGLE) stay file-local - fixed reference data.
 //
@@ -23,11 +23,12 @@ namespace Doom
 // file-scope reference aliases (REFACTOR.md, Step 9 strand (a)). Both mechanisms are DOOM II content
 // (no archvile or boss brain in the shareware episode), so this is *not* exercised by the demos - but
 // relocating the storage changes nothing observable either way, the same as it did not for the
-// reference aliases this replaces.
+// reference aliases this replaces. vileobj, the archvile raising the corpse, was deleted in a later
+// audit: set by vileChase before the blockmap search, but vileCheck's body never referenced it, in
+// vanilla too (matching AutomapView::min_w/min_h and WeaponScratch::swingx/swingy).
 struct EnemyAI
 {
     Mobj* corpsehit = nullptr; // the corpse A_VileChase is raising
-    Mobj* vileobj = nullptr; // the archvile raising it
     fixed_t viletryx {}; // where it is trying to stand the corpse up
     fixed_t viletryy {};
 

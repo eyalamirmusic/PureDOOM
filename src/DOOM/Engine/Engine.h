@@ -61,7 +61,6 @@
 #include "../Sim/LevelPool.h"
 #include "../Sim/PlayerScratch.h"
 #include "../Sim/Random.h"
-#include "../Sim/SightScratch.h"
 #include "../Sim/SoundTarget.h"
 #include "../Sim/SwitchList.h"
 #include "../Sim/ThinkerList.h"
@@ -119,7 +118,6 @@ struct Engine
     Level level;
     Clip clip;
     ActionScratch actionScratch;
-    SightScratch sightScratch;
     WeaponScratch weaponScratch;
     EnemyAI enemyAI;
     SwitchList switchList;

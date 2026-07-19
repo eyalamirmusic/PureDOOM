@@ -51,12 +51,16 @@ struct NetState
     // counters), folded in here as the file-scope-statics sweep reaches it - the same
     // netcode-bookkeeping owner. Read by no other file, and inert in single-player (the socket
     // code sits behind I_NET_ENABLED), so verified by build + app-link rather than a golden.
+    //
+    // No lastnettic/frametics: both had zero reads *and* zero writes beyond their
+    // own default member initializers, in this rewrite or in vanilla d_net.c.
+    // Verified against the 1993 source in this repository's history; deleted
+    // rather than carried, as no read was lost.
     doom_boolean nodeingame[MAXNETNODES] = {};   // node still in the game
     doom_boolean remoteresend[MAXNETNODES] = {}; // node needs local tics resent
     int resendto[MAXNETNODES] = {};              // next tic to send that node
     int resendcount[MAXNETNODES] = {};           // resend backoff counter
     int nodeforplayer[MAXPLAYERS] = {};          // node index per player
-    int lastnettic = 0;                          // last tic processed
     int skiptics = 0;                            // tics to skip catching up
     int maxsend = 0;                             // BACKUPTICS/(2*ticdup)-1
     doom_boolean reboundpacket = false;          // a loopback packet is queued
@@ -64,7 +68,6 @@ struct NetState
     char exitmsg[80] = {};                       // netgame exit message scratch
     int gametime = 0;                            // currentTic at the last Doom::tryRunTics
     int oldentertics = 0;                        // entertic at the last Doom::tryRunTics (was a static)
-    int frametics[4] = {};                       // per-frame tic counts (rate meter)
     int frameon = 0;                             // rate-meter frame counter
     int frameskip[4] = {};                       // per-frame skip flags (rate meter)
     int oldnettics = 0;                          // nettics at the last rate sample

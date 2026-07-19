@@ -1208,7 +1208,6 @@ void vileChase(Mobj& actor)
         yl = (ai.viletryy - bmaporgy - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
         yh = (ai.viletryy - bmaporgy + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
 
-        ai.vileobj = &actor;
         for (int bx = xl; bx <= xh; bx++)
         {
             for (int by = yl; by <= yh; by++)

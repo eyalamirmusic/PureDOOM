@@ -25,11 +25,10 @@ struct SoundChannel
 namespace Doom
 {
 // Game/Sound's engine-side sound bookkeeping - which sounds occupy the mixing
-// channels, whether music is paused, the music currently playing, and when the next
-// stale-channel cleanup is due. This is the *engine* side of sound (s_sound), the
-// game deciding what should be heard; the actual mixing/MIDI runtime (Host/Sound's
-// mus_offset, handlenums, ...) is host state and deliberately stays out of the Engine,
-// the same split every Host-layer static keeps.
+// channels, whether music is paused, and the music currently playing. This is the
+// *engine* side of sound (s_sound), the game deciding what should be heard; the actual
+// mixing/MIDI runtime (Host/Sound's mus_offset, handlenums, ...) is host state and
+// deliberately stays out of the Engine, the same split every Host-layer static keeps.
 //
 // The volumes and channel count that used to sit beside these are config-backed and
 // already migrated (Game/SoundSettings.h); this is the pure runtime remainder, moved
@@ -38,6 +37,11 @@ namespace Doom
 // these members. Nothing here is hashed - sound is not part of the deterministic
 // simulation and the frame goldens see the picture, not the channels - so gathering
 // it is golden-neutral, a reference alias being pure storage relocation.
+//
+// No nextcleanup: startLevelSound set it to 15 as a "gametic the next channel
+// cleanup is due" schedule that nothing ever checked, in this rewrite or in
+// vanilla s_sound.c. Verified against the 1993 source in this repository's
+// history; deleted rather than carried, as no read was lost.
 struct SoundState
 {
     // the set of mixing channels (numChannels of them, sized at Doom::initSound); a channel's
@@ -49,7 +53,6 @@ struct SoundState
 
     doom_boolean mus_paused = false; // whether songs are paused
     MusicInfo* mus_playing = nullptr; // music currently being played
-    int nextcleanup = 0; // gametic the next channel cleanup is due
 };
 
 // The one SoundState, a view onto the Engine's member - the same pattern as the other

@@ -390,13 +390,11 @@ doom_boolean statusBarResponder(Event* ev)
         switch (ev->data1)
         {
             case AM_MSGENTERED:
-                bar.st_gamestate = AutomapState;
                 bar.st_firsttime = true;
                 break;
 
             case AM_MSGEXITED:
                 //        doom_print("AM exited\n");
-                bar.st_gamestate = FirstPersonState;
                 break;
         }
     }
@@ -832,9 +830,6 @@ void updateWidgets()
             bar.st_fragscount -= bar.plyr->frags[i];
     }
 
-    // get rid of chat window if up because of message
-    if (!--bar.st_msgcounter)
-        bar.st_chat = bar.st_oldchat;
 }
 
 void statusBarTicker()
@@ -842,7 +837,6 @@ void statusBarTicker()
     auto& bar = statusBarState();
     auto& face = statusBarFace();
 
-    bar.st_clock++;
     face.st_randomnumber = Doom::randomness().forMenu();
     updateWidgets();
     face.st_oldhealth = bar.plyr->health;
@@ -926,6 +920,12 @@ void drawWidgets(doom_boolean refresh)
     Doom::updatePercent(widgets.w_armor, refresh);
 
     Doom::updateBinIcon(widgets.w_armsbg, refresh);
+
+    // The arms icons read w_armsindex, not the player directly - see StatusBarWidgets.h.
+    // Refreshed here, immediately before the update, so each icon sees exactly the
+    // weaponowned value the old (int*) pun would have read at this same point.
+    for (int i = 0; i < 6; i++)
+        widgets.w_armsindex[i] = bar.plyr->weaponowned[i + 1];
 
     for (int i = 0; i < 6; i++)
         Doom::updateMultIcon(widgets.w_arms[i], refresh);
@@ -1112,13 +1112,7 @@ void initStatusBarData()
     bar.st_firsttime = true;
     bar.plyr = &players_.players[players_.consoleplayer];
 
-    bar.st_clock = 0;
-    bar.st_chatstate = StartChatState;
-    bar.st_gamestate = FirstPersonState;
-
     bar.st_statusbaron = true;
-    bar.st_oldchat = bar.st_chat = false;
-    bar.st_cursoron = false;
 
     face.st_faceindex = 0;
     bar.st_palette = -1;
@@ -1176,7 +1170,7 @@ void createWidgets()
                            ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
                            ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
                            gfx.arms[i],
-                           (int*) &bar.plyr->weaponowned[i + 1],
+                           &widgets.w_armsindex[i],
                            &bar.st_armson);
     }
 
@@ -1321,7 +1315,6 @@ void stopStatusBar()
 
 void initStatusBar()
 {
-    statusBarState().veryfirsttime = 0;
     loadData();
     // RAII now (Step 9): the status bar back-buffer is a VideoState-owned vector;
     // screens[4] is the raw view onto its data(). initStatusBar runs once at boot.

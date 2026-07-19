@@ -2,19 +2,20 @@
 
 namespace Doom
 {
-// Render/Main's two residual scalars: framecount, bumped once per R_RenderPlayerView (a rendered-
-// frame tally), and setdetail, the pending detail-mode change Doom::setViewSize stashes from the menu
-// for Doom::executeSetViewSize to apply. (The drawer dispatch pointers colfunc/spanfunc/transcolfunc
-// stay in the shim - they are the renderer's shared drawer selection, not Render/Main's own state.)
+// Render/Main's residual scalar: setdetail, the pending detail-mode change Doom::setViewSize
+// stashes from the menu for Doom::executeSetViewSize to apply. (The drawer dispatch pointers
+// colfunc/spanfunc/transcolfunc stay in the shim - they are the renderer's shared drawer
+// selection, not Render/Main's own state.)
 //
-// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Render/Main's own namespace-scope private globals, read by no other file. Both vanilla names were
-// references onto the members until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a))
-// retired them; setViewSize, executeSetViewSize, renderInit and setupFrame each reach the one member
-// they touch through renderMainState() directly. Live frame-golden-covered.
+// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); this was
+// Render/Main's own namespace-scope private global, read by no other file. The vanilla name was
+// a reference onto the member until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a))
+// retired it; setViewSize and executeSetViewSize each reach it through renderMainState()
+// directly. Live frame-golden-covered. framecount, bumped once per R_RenderPlayerView, was
+// deleted in a later audit: a rendered-frame tally read nowhere, in vanilla too (matching
+// AutomapView::min_w/min_h and WeaponScratch::swingx/swingy).
 struct RenderMainState
 {
-    int framecount = 0; // frames rendered so far
     int setdetail = 0; // pending detail-mode change from the menu
 };
 

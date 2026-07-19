@@ -62,11 +62,6 @@ ActionScratch& actionScratch()
     return engine().actionScratch;
 }
 
-SightScratch& sightScratch()
-{
-    return engine().sightScratch;
-}
-
 WeaponScratch& weaponScratch()
 {
     return engine().weaponScratch;

@@ -9,26 +9,25 @@ namespace Doom
 {
 // The transient state of the frame in progress, overwritten continuously as the BSP is
 // walked and never persisted: the current wall segment's projection (rw_distance and
-// the angles Doom::storeWallRange derives, read back by the seg loop), the floor and ceiling
+// the angles Doom::storeWallRange derives, read back by the seg loop), and the floor and ceiling
 // visplanes the current subsector is drawing into (Doom::subsector picks them, the plane
-// code fills them), and the subsector counter. It is pure scratch - every reader writes
+// code fills them). It is pure scratch - every reader writes
 // it just before, so its value between frames means nothing.
 //
 // The sixth cluster off the loose globals into the Engine (REFACTOR.md, Step 5), and the
-// last of the renderer's own per-frame state. All six were externed only in r_state.h
+// last of the renderer's own per-frame state. All were externed only in r_state.h
 // with no reader outside the renderer; the storage moves off the r_segs.cpp / r_plane.cpp
 // / r_main.cpp file-scope globals and the vanilla names are references onto these
 // members. Nothing here is hashed (and being scratch it could not meaningfully be), so
-// gathering it is golden-neutral.
+// gathering it is golden-neutral. sscount, the subsector counter Doom::subsector bumped,
+// was deleted in a later audit: incremented once a subsector but read nowhere, in vanilla
+// too (matching AutomapView::min_w/min_h and WeaponScratch::swingx/swingy).
 struct RenderScratch
 {
     // The current wall segment: its distance and the angles the seg loop reads back.
     fixed_t rw_distance {};
     angle_t rw_normalangle {};
     angle_t rw_angle1 {}; // angle to the line origin
-
-    // Subsector counter, bumped as the BSP is walked.
-    int sscount = 0;
 
     // The visplanes the current subsector draws its floor and ceiling into.
     VisPlane* floorplane = nullptr;

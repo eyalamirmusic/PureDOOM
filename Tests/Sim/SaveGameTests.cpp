@@ -52,4 +52,29 @@ auto tSaveLoadPreservesTheWorld = test("Sim/saveLoadPreservesTheWorld") = []
     check(doomSimSaveLoadPreservesWorld() == 1,
           "archive -> reload -> unarchive brought the world back unchanged");
 };
+
+// Doom::readFile, which the test above does not reach.
+//
+// doomSimSaveLoadPreservesWorld drives save.cursor against its own scratch buffer,
+// so it covers the serialization and never the file layer beneath it - and readFile
+// has exactly one caller in the engine, doLoadGame. That left it uncovered while
+// Step 9 strand (b) rewrote its out-parameter from a doom_malloc'd byte** the caller
+// had to free into an EA::Vector<byte>& it fills itself. This is the property
+// doLoadGame actually depends on: the owner comes back sized to the file, holding
+// the file.
+//
+// It reads the IWAD because that is a real file of known content that is certain to
+// be present (the suite boots from it), and writes nothing - the round trip through
+// writeFile would test the host's file callbacks as much as readFile.
+auto tReadFileFillsTheOwner = test("Sim/readFileFillsItsOwner") = []
+{
+    check(doomSimBoot(0) != 0, "the engine booted headless");
+
+    auto contents = doomSimReadFileIntoOwner(PUREDOOM_ROOT_DIR "/doom1.wad");
+
+    check(contents.length > 0, "the IWAD read back a non-empty file");
+    check(contents.length == contents.ownerSize,
+          "the owner is sized to exactly the length readFile returned");
+    check(contents.magicIsIwad != 0, "the bytes are the IWAD, not zeroes");
+};
 } // namespace

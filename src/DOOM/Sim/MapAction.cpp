@@ -134,8 +134,6 @@ doom_boolean slideTraverse(Intercept* in)
 isblocking:
     if (in->frac < scratch.bestslidefrac)
     {
-        scratch.secondslidefrac = scratch.bestslidefrac;
-        scratch.secondslideline = scratch.bestslideline;
         scratch.bestslidefrac = in->frac;
         scratch.bestslideline = li;
     }

@@ -7,6 +7,8 @@
 #include "../Render/RenderTypes.h" // Patch
 #include "IntermissionTypes.h" // IntermissionPhase
 
+#include <ea_data_structures/Structures/Vector.h>
+
 namespace Doom
 {
 // The level-completion intermission's residual runtime state and loaded graphics - what
@@ -16,7 +18,7 @@ namespace Doom
 // per-stage `dm_state`/`ng_state`/`sp_state`, and the animated count-up accumulators `cnt_*`), the
 // passed-in scoreboard data (`wbs`/`plrs`/`me`), and the patches `loadIntermissionData` reads from the WAD
 // once and the drawers then paint from (`bg`, `num`, `kills`, the player faces, ...) plus the
-// malloc'd `lnames` pointer array.
+// `lnames` pointer array.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were all
 // UI/Intermission's own file-local statics (internal linkage, read by no other file). They were all
@@ -34,6 +36,11 @@ namespace Doom
 // to its own storage does not survive being copied), so that whole animation-data group - the
 // const `lnodes`/`NUMANIMS` alongside the animation-state arrays it indexes - is left for a later
 // pass.
+//
+// No firstrefresh: set to 1 by startIntermission ("refresh everything for one
+// frame") and tested nowhere, in this rewrite or in vanilla wi_stuff.c. Verified
+// against the 1993 source in this repository's history; deleted rather than
+// carried, as no read was lost.
 struct IntermissionState
 {
     // Timing and the count-up state machine.
@@ -42,7 +49,6 @@ struct IntermissionState
         StatCount; // zero-init lands here (NoState is -1); reset by wiInit* before use
     int cnt = 0; // general timing
     int bcnt = 0; // background-animation timing
-    int firstrefresh = 0; // refresh everything for one frame
     int dm_state = 0; // deathmatch table sub-state
     int ng_state = 0; // netgame table sub-state
     int sp_state = 0; // single-player table sub-state
@@ -95,8 +101,13 @@ struct IntermissionState
     Patch* bstar = nullptr; // your dead face
     Patch* p[MAXPLAYERS] = {}; // "red P[1..MAXPLAYERS]"
     Patch* bp[MAXPLAYERS] = {}; // "gray P[1..MAXPLAYERS]"
-    Patch** lnames =
-        nullptr; // per-level name graphics (malloc'd by loadIntermissionData)
+
+    // Per-level name graphics, sized and filled by loadIntermissionData. RAII-owned
+    // (Step 9): what was a raw doom_malloc'd Patch** is now an owning EA::Vector of
+    // pointers - read only within Intermission.cpp, so unlike wipe_melt_offsets this
+    // needs no separate view onto it. The pointed-to Patch lumps themselves are owned
+    // by the WAD (Doom::WadFile), not by this vector, and must not be freed here.
+    EA::Vector<Patch*> lnames;
 };
 
 // The one IntermissionState, a view onto the Engine's member - the same pattern as the other

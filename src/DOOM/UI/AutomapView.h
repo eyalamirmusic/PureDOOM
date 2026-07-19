@@ -31,7 +31,11 @@ struct AutomapView
 {
     static constexpr int numMarkPoints = 10; // AM_NUMMARKPOINTS in UI/Automap
 
-    int leveljuststarted = 1; // kluge until levelInit runs
+    // No leveljuststarted: vanilla's own comment called it a "kluge until
+    // AM_LevelInit() is called", set once by levelInit and read nowhere in either
+    // era. Verified against the 1993 source in this repository's history; deleted
+    // rather than carried, as no read was lost - the same basis min_w/min_h below
+    // were dropped on.
     int finit_width = SCREENWIDTH; // the automap frame's width
     int finit_height = SCREENHEIGHT - 32; // ... and height (above the status bar)
 
@@ -55,7 +59,10 @@ struct AutomapView
 
     fixed_t min_x {}, min_y {}, max_x {}, max_y {}; // the level's map bounds
     fixed_t max_w {}, max_h {}; // max_x - min_x, max_y - min_y
-    fixed_t min_w {}, min_h {}; // smallest window (based on player size)
+    // No min_w/min_h: vanilla am_map.c assigned them 2*PLAYERRADIUS ("const? never
+    // changed?", id's own comment) and read them nowhere - max_scale_mtof below is
+    // computed from the literal, not from them. Verified against the 1993 source in
+    // this repository's history; deleted rather than carried, as no read was lost.
     fixed_t min_scale_mtof {}; // zoom-out limit
     fixed_t max_scale_mtof {}; // zoom-in limit
 

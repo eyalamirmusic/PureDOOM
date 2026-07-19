@@ -9,22 +9,25 @@ namespace Doom
 // The renderer's texture-composition working data - what Doom::initData / Doom::generateComposite build and
 // Doom::getColumn reads: the last flat, and the per-composed-texture column cache (texturewidthmask, texturecompositesize, the
 // texturecolumnlump / texturecolumnofs column tables, and texturecomposite itself, the lazily
-// generated column bytes), plus the flat/texture/sprite memory counters Doom::precacheLevel tallies.
+// generated column bytes).
 // Distinct from GraphicsData (the loaded-once WAD graphics, read-only after Doom::initData): this is the
 // composition machinery over them, generated lazily and mutated as columns are first drawn.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // Render/Data's own namespace-scope private globals, read by no other file (the r_data.cpp shim
-// re-exports the cross-read GraphicsData names, not these). The seven scalars were references onto
+// re-exports the cross-read GraphicsData names, not these). The scalars were references onto
 // the members until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them -
-// initFlats and precacheLevel, the only touchers of lastflat/flatmemory/texturememory/spritememory,
-// each hoist compositeCache() once. firstpatch/lastpatch/numpatches went further: retiring their
-// aliases showed nothing read them and nothing had ever filled them in, so the members are deleted
-// too, the way Step 5 deleted viewangleoffset/linecount/loopcount. The composition tables below are a
-// separate mechanism - RAII-owned vectors with plain-pointer views, not references - and are
-// untouched by that sweep. Live frame-golden-covered - every wall column the demos draw goes through
-// the composite cache - so the byte-identical goldens are a live confirmation, not just build +
-// app-link.
+// initFlats and precacheLevel, the only toucher of lastflat, hoists compositeCache() once.
+// firstpatch/lastpatch/numpatches went further: retiring their aliases showed nothing read them and
+// nothing had ever filled them in, so the members are deleted too, the way Step 5 deleted
+// viewangleoffset/linecount/loopcount. flatmemory/texturememory/spritememory went the same way in a
+// later audit: accumulated by initFlats/precacheLevel but read nowhere, in vanilla too, so the
+// counters themselves are gone and only the doom_memcpy/cacheLumpNum work that fills the cache
+// remains (matching AutomapView::min_w/min_h and WeaponScratch::swingx/swingy). The composition
+// tables below are a separate mechanism - RAII-owned vectors with plain-pointer views, not
+// references - and are untouched by either sweep. Live frame-golden-covered - every wall column the
+// demos draw goes through the composite cache - so the byte-identical goldens are a live
+// confirmation, not just build + app-link.
 struct CompositeCache
 {
     int lastflat = 0; // last flat lump (firstflat/numflats are in GraphicsData)
@@ -39,10 +42,13 @@ struct CompositeCache
     EA::Vector<int> texturewidthmask; // per-texture width-1 tiling mask
     EA::Vector<int> texturecompositesize; // per-texture composite byte size
 
-    EA::Vector<EA::Vector<short>> columnlumpStorage; // per-texture: per-column source lump
+    EA::Vector<EA::Vector<short>>
+        columnlumpStorage; // per-texture: per-column source lump
     EA::Vector<short*> columnlump; // the short** view (texturecolumnlump)
-    EA::Vector<EA::Vector<unsigned short>> columnofsStorage; // per-texture: per-column offset
-    EA::Vector<unsigned short*> columnofs; // the unsigned short** view (texturecolumnofs)
+    EA::Vector<EA::Vector<unsigned short>>
+        columnofsStorage; // per-texture: per-column offset
+    EA::Vector<unsigned short*>
+        columnofs; // the unsigned short** view (texturecolumnofs)
 
     // The lazily-composed column bytes. Each inner vector carries the load-bearing 64-byte zero
     // tail for the renderer's tutti-frutti over-read (REFACTOR.md Step 4), value-initialised to
@@ -50,10 +56,6 @@ struct CompositeCache
     // null entry means "not composed yet" (getColumn's regenerate check).
     EA::Vector<EA::Vector<byte>> compositeStorage;
     EA::Vector<byte*> composite; // the byte** view (texturecomposite)
-
-    int flatmemory = 0; // bytes of flats precached
-    int texturememory = 0; // bytes of textures precached
-    int spritememory = 0; // bytes of sprites precached
 };
 
 // The one CompositeCache, a view onto the Engine's member - the same pattern as the other clusters

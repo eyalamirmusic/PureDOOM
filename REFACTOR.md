@@ -82,12 +82,12 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio (engine side built, externally blocked on an eacp audio stream) and the ongoing globals-into-`Engine` work |
-| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is what is mostly left**, plus the dead `Host/System` zone vestiges and `doom_boolean`. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now nearly done too**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — leaving only `Host/Sound`'s audio-blocked `paddedsfx`, `Sim/Tick`'s level pool (its own reviewed step) and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is what is left**, and its three blockers are now cleared. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**81 tests**, ~21s: `ctest --test-dir build`). Steps
+clean and the suite is green (**82 tests**, ~22s: `ctest --test-dir build`). Steps
 0–4 are complete; 6 and 7 are done; **8 is done** — the whole UI, game loop,
 netcode, utility layer and host boundary are migrated, the zone allocator is deleted,
 the `thinker_t`→`Thinker` virtualisation has landed, and the flat vanilla sources are gone.
@@ -233,6 +233,25 @@ red one.
 
 ### Traps this work added to the list
 
+- **"Its signature can't change" is a claim to check, not assume.** The RAII sweep
+  first bridged `readFile`'s `doom_malloc`'d `byte**` out-parameter into an owner by
+  copying and freeing — treating the signature as fixed. It is not: `readFile` has
+  **one caller** and no users outside `src/DOOM`, so it simply takes the owner now,
+  and the copy and the free both vanish. Count the callers before designing around
+  an interface; in an engine this size the answer is often one.
+- **RAII sweeps meet pointers that own *sometimes*.** `demobuffer` (owned while
+  recording, a borrowed WAD lump on playback) and `SaveGameState::buffer` (owned on
+  load, a framebuffer view on save) both look like plain owners at the allocation
+  site. Converting either in place would free memory the engine does not own. The
+  shape that works: a *separate* owning member, the vanilla name left a raw view —
+  which is also just the RAII rule already stated, that a pointer which merely
+  refers stays raw. Check *every* assignment to a pointer before making it an owner,
+  not the one you are standing on.
+- **An owner-of-owners invalidates views on growth.** Where an inner buffer's
+  `.data()` is published to something that outlives the call (`defaults[].text_location`,
+  `wadfiles[]`), the outer vector must be sized or reserved *before* any inner one is
+  filled. Otherwise filling entry N reallocates and silently dangles the pointer
+  entry 0 handed out.
 - **`Clip::attackrange` looks like a traverse result and is an input.** It is set
   by `lineAttack` *before* the traverse, and `Sim/Mobj`'s `spawnPuff` reads it
   from *inside* that traversal's own call stack — nested, not stale — to pick the
@@ -282,25 +301,57 @@ red one.
 
 Everything above the line is done. What follows is, in the order worth doing it:
 
-1. **The RAII tail — larger than this document used to record.** The two known
-   items were `Host/Sound`'s `paddedsfx` (a `+8`-offset per-sfx cache,
-   audio-blocked and therefore golden-blind) and `Sim/Tick`'s level pool
-   (intrusive-list, variable-sized, polymorphic-`Thinker`, memcpy-serialised by
-   p_saveg — its own reviewed step). A sweep for `doom_malloc`/`doom_free` found
-   six more: `UI/Wipe`'s melt-offset table, `UI/Intermission`'s `lnames`,
+1. **The RAII tail — now down to two blocked items.** ~~Six more~~ *(landed this
+   session, each verified against build + 82/82 + byte-identical goldens + the app
+   link)*: `UI/Wipe`'s melt-offset table and `UI/Intermission`'s `lnames`,
    `Game/Game`'s save and demo buffers, `Game/Config`'s per-string-default
-   `newstring` (leaked once per string default read), and **seven never-freed WAD
-   path strings in `DoomMain::identifyVersion`**, each built with
-   `doom_malloc` + `doom_strcpy` + `doom_concat`.
-2. **Dead code from Step 4 that outlived the zone.** `Host/System`'s `zoneBase`,
-   `heapSize`, `allocLow`, `mb_used`, `beginRead` and `endRead` have **zero
-   callers** anywhere in `src/DOOM`, `Tests/` or `examples/` — the remaining
-   mentions are comments. `zoneBase` would still `doom_malloc` a 12 MB arena and
-   leak it. Delete them.
-3. **`doom_boolean` is still an `int`** — the last big item, 312 sites. **Three
-   blockers must land first**, all three in the section below: `MapTexture::masked`,
-   `deathmatch`'s tri-state, and the ARMS widget's `int` aliasing of
-   `weaponowned`. After that, in this order: **Render** (20 sites, isolated and
+   `newstring`, and the **seven never-freed WAD path strings in
+   `DoomMain::identifyVersion`** plus `addWadFile`'s per-file copy. Notes worth
+   keeping:
+   - **Two of them are dual-ownership and must stay raw views.** `DemoState`'s
+     `demobuffer` is `doom_malloc`'d when *recording* but points straight at a
+     `cacheLumpName` lump when *playing back* — making it an owner would free WAD
+     memory on every demo playback. `SaveGameState`'s `buffer` is the same shape:
+     owned bytes on load, `screens[1] + 0x4000` on save. Each grew a *separate*
+     owning member (`demoRecordBuffer`, `loadStorage`) with the vanilla name left a
+     raw view, per the RAII rule that a pointer which merely refers stays raw.
+   - **`readFile`'s `byte**` out-parameter is gone**: it took a `doom_malloc`'d
+     block the caller had to free by hand, and it has exactly one caller and no
+     users outside `src/DOOM`, so it now fills an `EA::Vector<byte>&` directly. That
+     also retired a manual `doom_free` that an early `return` on a bad savegame
+     version had been skipping. **It had no coverage** — `doomSimSaveLoadPreservesWorld`
+     drives `save.cursor` against its own scratch and never reaches the file layer —
+     so `Sim/readFileFillsItsOwner` was added with it (`Tests/Sim/SaveGameTests.cpp`,
+     via `doomSimReadFileIntoOwner`): it reads the IWAD and requires the owner back
+     sized to exactly the length returned, holding the real bytes. Shown sharp —
+     sizing the owner one byte short fails it on that assertion alone.
+   - **The owner-of-owners cases reserve up front.** `Config`'s string defaults and
+     `DoomMain`'s `wadfiles[]` both hand out `.data()` pointers that outlive the
+     call, so the outer vector is sized/reserved once before any inner one is
+     filled — growth would otherwise invalidate a pointer already published.
+
+   **What is left, both genuinely blocked**: `Host/Sound`'s `paddedsfx` (a
+   `+8`-offset per-sfx cache, audio-blocked and therefore golden-blind) and
+   `Sim/Tick`'s level pool (intrusive-list, variable-sized, polymorphic-`Thinker`,
+   memcpy-serialised by p_saveg — its own reviewed step). Plus one *documented*
+   non-item: `DoomMain::findResponseFile`'s buffer and its `myargv` reallocation.
+   The response file's bytes are tokenised **in place** and each token's address is
+   stored into `myargv[]`, which the whole engine reads for the life of the
+   process — so a scope-owned buffer would dangle every argument parsed from it.
+   That one needs `myargv`'s own ownership rethought, not a container swap, and no
+   test drives `@responsefile` today.
+2. ~~**Dead code from Step 4 that outlived the zone.**~~ **Done.** `Host/System`'s
+   `zoneBase`, `heapSize`, `allocLow`, `mb_used`, `beginRead` and `endRead` had zero
+   callers anywhere in `src/DOOM`, `Tests/` or `examples/` (verified before
+   deleting; the remaining mentions were comments, now corrected). `zoneBase` would
+   still have `doom_malloc`'d a 12 MB arena and leaked it.
+3. **`doom_boolean` is still an `int`** — now the largest remaining item, 312 sites.
+   **Its three blockers are cleared** (see the section below, which records what each
+   one actually was): `MapTexture::masked` and `deathmatch` are now `int`, declared
+   as what their storage always held, and the ARMS widget has its own
+   `StatusBarWidgets::w_armsindex[6]` instead of punning `weaponowned` through
+   `(int*)`. All three were behaviour-neutral by construction and verified so.
+   The flip itself is still to do, in this order: **Render** (20 sites, isolated and
    frame-golden covered), **Host** (4, trivial but golden-blind since audio is),
    then **Sim + Game atomically** (73 + 90 — they share `Player` and
    `SaveGame.cpp`'s whole-struct `doom_memcpy`, so a partial flip corrupts the
@@ -321,14 +372,82 @@ Everything above the line is done. What follows is, in the order worth doing it:
    `Game/Ticcmd.h` carry no `doom_boolean`; the demo header is written a byte at
    a time; `Game.cpp`'s `paused ^= 1` and `Hud.cpp`'s `numplayers +=
    playeringame[i]` are both safe on a `bool`.
-4. **Write-only state: `AutomapView::min_w` / `min_h`.** Assigned by
-   `findMinMaxBoundaries`, read by nothing. This is *not* the dead-member pattern
-   (which requires zero reads **and** zero writes) and was deliberately left
-   alone during the alias sweep. Vanilla's `am_map.c` uses `min_w`/`min_h` to
-   compute the zoom-out limit via `min_scale_mtof`, so the question is whether
-   that computation was rewritten to use something else or whether **a read was
-   lost** — a possible real bug. Worth a sweep for the same pattern across the
-   other `Engine` clusters once this one is understood.
+4. ~~**Write-only state: `AutomapView::min_w` / `min_h`.**~~ **Resolved, and they
+   are deleted.** The suspicion recorded here was that vanilla computed the
+   zoom-out limit from them and that the rewrite had **lost a read** — a real bug.
+   It had not. Checked against the 1993-lineage source preserved in this
+   repository's own history (`git show 110ddbe:src/DOOM/am_map.c` — PureDOOM's C;
+   see the `noblit` note below for why that distinction can matter, though not
+   here: the automap is platform-independent and the transcription is faithful,
+   id's own `// const? never changed?` comment included). They are assigned
+   `2 * PLAYERRADIUS` at lines 404-405 and read **nowhere**, `max_scale_mtof` being
+   computed from the literal `2 * PLAYERRADIUS` instead. So this was a genuine
+   1993 leftover, the same class as
+   `WeaponScratch`'s `swingx`/`swingy`, and carrying it forward preserved nothing.
+
+   **The method is the reusable part**, and it is now the rule for this category:
+   a written-never-read member has two possible causes with opposite responses —
+   an id leftover (delete) or a read this rewrite dropped (fix) — and *only the
+   older source distinguishes them*. Never delete one on the strength of the
+   current tree alone.
+
+   **The sweep across the other clusters has now been done on that basis**: all 84
+   cluster headers, 604 data members, every zero-read candidate run down against
+   `110ddbe`. **The headline is that there are no lost reads — none.** Every
+   write-only member in the C++ is write-only in the older source too. That is the
+   reassuring answer to the question `min_w` raised, and it is worth knowing before
+   anyone goes hunting again.
+
+   The leftovers it found are being deleted (`CompositeCache`'s three memory
+   counters, `RenderScratch::sscount`, `RenderMainState::framecount`,
+   `SightScratch::sightcounts`, `ActionScratch::secondslidefrac`/`secondslideline`,
+   `EnemyAI::vileobj`, `AutomapView::leveljuststarted`, six of `StatusBarState`'s
+   flags, `IntermissionState::firstrefresh`, `LevelStats::levelstarttic`,
+   `SoundState::nextcleanup`, `GameVersion::gamemission`,
+   `NetState::lastnettic`/`frametics`). Two of them are famous vanilla oversights
+   worth knowing about rather than merely deleting: `secondslide*` is the
+   wall-slide runner-up that `P_HitSlideLine` never consults, and `vileobj` is set
+   before the archvile's corpse search by a `PIT_VileCheck` that never reads it.
+
+   **Dead state cascades, and one sweep does not find it.** Deleting
+   `StatusBarState::st_chat` removed the *only read* of two other members at once:
+   the status bar's chat popup was a three-link chain,
+   `st_msgcounter` → `st_chat` → `st_oldchat`, joined by a single statement
+   (`if (!--st_msgcounter) st_chat = st_oldchat;`). Only `st_chat` looked write-only
+   to the audit; the other two were alive *solely because a dead member read them*.
+   Both were then deleted, and a third pass over all 84 clusters came back with
+   nothing new — so the sweep is at a fixpoint, which is the thing to check rather
+   than to assume. The chain was equally dead in vanilla: `st_msgcounter` is
+   declared `= 0` and only ever decremented, nothing sets it positive, so
+   `!--st_msgcounter` came true once every 2³² tics in 1993 too. **That popup has
+   never run, in any DOOM built from this lineage.**
+
+   Deleting `SightScratch::sightcounts` cascaded differently — it emptied the
+   cluster outright. The empty `struct`, its accessor and its `Engine` member were
+   removed too rather than kept "in case cross-call sight bookkeeping is wanted
+   again"; speculative retention is what this step exists to undo.
+
+   **Three are deliberately left**, and the reasons are the point:
+   - **`InputConfig::usemouse` / `usejoystick`** are written only through
+     `Config.cpp`'s `defaults[]` bind, so deleting them would change the *on-disk
+     config surface* (`use_mouse`, `use_joystick` keys) and leave those entries
+     with nothing to bind to. That is a config-format change wearing a dead-code
+     deletion's clothes.
+   - **`IntermissionState::bp`** caches the deathmatch player-face patches whose
+     only draw call is *commented out* — in both eras. Deleting the member means
+     deleting that commented-out draw, which is the only surviving evidence of why
+     the load exists. Four pointers is a cheap price for legible history.
+   - **`RefreshFlags::noblit`** is where the cross-check shows its limit, and this
+     is the caveat to carry: **`110ddbe` is *PureDOOM's* C, not id's original.**
+     `noblit` is set from `-noblit` and read by nothing there — but PureDOOM has no
+     blit at all, so a port that far from the DOS renderer is exactly where a read
+     could have been dropped *before* this fork began. **Not checked against id's
+     own source, which this repository does not contain.** So the general lesson:
+     "the older source never read it" can mean "an earlier port dropped it" rather
+     than "it was always dead". The sweep's result is sound for what it claims —
+     *this* rewrite lost no reads — but it is not evidence a field was never
+     meaningful. `noblit` costs one `int`; left alone pending someone with the DOS
+     source to hand.
 5. The ~1,600 enum constants (`MT_*`, `S_*`, `SPR_*`, `MF_*`) keep their
    prefixes **on purpose** — they are DOOM's data vocabulary, `Sim/Info.cpp`'s
    generated tables are built from them, and renaming them is high-churn and
@@ -340,10 +459,16 @@ Recently finished, for orientation: the 247 file-local reference aliases (strand
 automap and the finale; and the constructible `Engine` with the test that proves
 it.
 
-### Three types that lie, found under `doom_boolean`
+### Three types that lie, found under `doom_boolean` — all three now corrected
 
-Two of these are hard blockers for item 6, and both are the same shape as item 2:
-a declaration that says "boolean" over storage that holds something else.
+These were the hard blockers for the `doom_boolean` flip, and all three are the
+same shape: a declaration that says "boolean" over storage that holds something
+else. Each is now declared as what it actually is. **All three corrections are
+behaviour-neutral by construction** — `doom_boolean` *is* `int` today, so the
+storage, the layout and every value read are unchanged; what the change buys is
+that the flip can no longer reach them. Verified: build clean, 82/82, all six
+goldens byte-identical, app links. What each one was, kept because the *reasons*
+are the load-bearing part:
 
 - **`Render/Data.cpp`'s `MapTexture::masked`** is `doom_boolean` in a struct
   *overlaid directly onto raw `TEXTURE1`/`TEXTURE2` lump bytes*. Its value is
@@ -353,20 +478,26 @@ a declaration that says "boolean" over storage that holds something else.
   every WAD would parse as garbage on the first level load. It is an on-disk
   field, not an application boolean; it should be `int`. (The neighbouring
   `columndirectory` already carries a comment from someone who hit this exact
-  class of bug.)
+  class of bug.) **Now `int`**, with that reasoning recorded on the field.
 - **`Game/GameSession.h`'s `deathmatch` is tri-state**: 0 coop, 1 deathmatch,
   2 altdeath. `DoomMain` assigns 2, `Sim/Interaction` and `Sim/Mobj` gate
   altdeath-only item rules on `!= 2`, and `Game/Net` packs it as a two-bit
   field. A `bool` collapses 1 and 2, silently turning the altdeath rules on for
   plain deathmatch — **and no golden would catch it**, because all three demos
   are single-player with `deathmatch == 0`. This is the clearest case yet of a
-  change the net is blind to; it should be `int`.
+  change the net is blind to. **Now `int`**, with the tri-state spelled out on the
+  member so the next reader cannot mistake it for a flag.
 - **The ARMS widget's `(int*) &plyr->weaponowned[i + 1]`** (`UI/StatusBar.cpp`,
   vanilla's own cast) is the pun `doomtype.h` describes, and it is real:
   `weaponowned` *is* `doom_boolean[NUMWEAPONS]`, and `updateMultIcon`
   dereferences that as a 4-byte `int` index. At one byte it reads three
   neighbouring elements — and for `i = 5`, spills into the `int ammo[]` that
-  follows. The six icons need their own `int` index array before the flip.
+  follows. **Untangled**: the six icons now index
+  `StatusBarWidgets::w_armsindex[6]`, refreshed from `plyr->weaponowned[i + 1]` by
+  `drawWidgets` immediately before it updates them. The copy is behaviour-identical
+  because `updateMultIcon` only ever *reads* through `inum`, and `plyr` is assigned
+  in exactly one place — `initStatusBarData`, immediately before `createWidgets` —
+  so the widget and the player can never disagree about which player is shown.
 
 **A false trap, now corrected.** `Game/PlayerState.h` claimed vanilla makes
 `(int*)` casts into `playeringame` that "rely on `doom_boolean` being

@@ -269,6 +269,22 @@ extern "C"
     // branches are reachable from the booted IWAD rather than assume it.
     int doomSimGameMode();
 
+    // What Doom::readFile made of a path. It fills an EA::Vector<byte> the caller
+    // owns, which a test cannot see, so the three facts worth asserting come back
+    // as plain ints: the length readFile returned, the size of the owner it filled
+    // (the two must agree), and whether the bytes start with the IWAD magic (so a
+    // zeroed buffer of the right size cannot pass).
+    typedef struct DoomSimFileRead
+    {
+        int length;
+        int ownerSize;
+        int magicIsIwad;
+    } DoomSimFileRead;
+
+    // Zeroed if the engine aborted - readFile is fatal, not false, on a bad path.
+    // Must be called after doomSimBoot(0).
+    DoomSimFileRead doomSimReadFileIntoOwner(const char* path);
+
 #ifdef __cplusplus
 }
 #endif

@@ -491,7 +491,6 @@ void subsector(int num)
     auto& scratch = renderScratch();
     auto& pt = viewPoint();
 
-    scratch.sscount++;
     sub = &subsectors[num];
     bsp.frontsector = sub->sector;
     count = sub->numlines;

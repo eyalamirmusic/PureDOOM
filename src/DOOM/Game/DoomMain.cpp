@@ -56,6 +56,7 @@
 #include "ConfigPaths.h"
 
 #include <ea_data_structures/Structures/Array.h>
+#include <ea_data_structures/Structures/Vector.h>
 #include "DemoState.h"
 #include "DisplayState.h"
 #include "EngineParams.h"
@@ -97,6 +98,12 @@
 
 // The boot-time WAD list, file-local: Doom::addWadFile appends to it and Doom::initWadFiles
 // consumes it, and nothing outside this file reads it (its d_main.h extern is gone).
+//
+// wadFileStorage owns each filename; wadfiles is the char* view Doom::initWadFiles wants,
+// refreshed after every push (Step 9 strand (b)). wadFileStorage is reserved to
+// MAXWADFILES up front, in addWadFile, so a push never reallocates the outer vector and
+// never moves an already-published inner buffer out from under a stored view pointer.
+static EA::Vector<EA::Vector<char>> wadFileStorage;
 static char* wadfiles[MAXWADFILES];
 
 // The command-line launch flags are a Doom::LaunchOptions owned by the Engine now; these
@@ -108,10 +115,8 @@ static char* wadfiles[MAXWADFILES];
 // singletics / debugfile are Doom::EngineParams owned by the Engine now; these are references onto
 // it (REFACTOR.md, Step 5).
 
-
 // The new-game defaults are a Doom::StartupDefaults owned by the Engine now; these are
 // references onto it (REFACTOR.md, Step 5).
-
 
 // advancedemo is a Doom::AttractMode member owned by the Engine now; this reference stays
 // because d_main.h still externs it for Tests/SimProbe (REFACTOR.md, Step 5). Its
@@ -558,15 +563,16 @@ void startTitle()
 void addWadFile(const char* file)
 {
     int numwadfiles;
-    char* newfile;
 
     for (numwadfiles = 0; wadfiles[numwadfiles]; numwadfiles++)
         ;
 
-    newfile = static_cast<char*>((doom_malloc(doom_strlen(file) + 1)));
-    doom_strcpy(newfile, file);
+    wadFileStorage.reserveAtLeast(MAXWADFILES);
 
-    wadfiles[numwadfiles] = newfile;
+    auto& newfile = wadFileStorage.create(doom_strlen(file) + 1);
+    doom_strcpy(newfile.data(), file);
+
+    wadfiles[numwadfiles] = newfile.data();
 }
 
 //
@@ -577,15 +583,6 @@ void addWadFile(const char* file)
 //
 void IdentifyVersion()
 {
-    char* doom1wad;
-    char* doomwad;
-    char* doomuwad;
-    char* doom2wad;
-
-    char* doom2fwad;
-    char* plutoniawad;
-    char* tntwad;
-
     char* home;
 
     auto& version = gameVersion();
@@ -597,51 +594,46 @@ void IdentifyVersion()
         doomwaddir = ".";
 
     // Commercial.
-    doom2wad =
-        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1)));
+    EA::Vector<char> doom2wad(doom_strlen(doomwaddir) + 1 + 9 + 1);
     //doom_sprintf(doom2wad, "%s/doom2.wad", doomwaddir);
-    doom_strcpy(doom2wad, doomwaddir);
-    doom_concat(doom2wad, "/doom2.wad");
+    doom_strcpy(doom2wad.data(), doomwaddir);
+    doom_concat(doom2wad.data(), "/doom2.wad");
 
     // Retail.
-    doomuwad =
-        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 8 + 1)));
+    EA::Vector<char> doomuwad(doom_strlen(doomwaddir) + 1 + 8 + 1);
     //doom_sprintf(doomuwad, "%s/doomu.wad", doomwaddir);
-    doom_strcpy(doomuwad, doomwaddir);
-    doom_concat(doomuwad, "/doomu.wad");
+    doom_strcpy(doomuwad.data(), doomwaddir);
+    doom_concat(doomuwad.data(), "/doomu.wad");
 
     // Registered.
-    doomwad = static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 8 + 1)));
+    EA::Vector<char> doomwad(doom_strlen(doomwaddir) + 1 + 8 + 1);
     //doom_sprintf(doomwad, "%s/doom.wad", doomwaddir);
-    doom_strcpy(doomwad, doomwaddir);
-    doom_concat(doomwad, "/doom.wad");
+    doom_strcpy(doomwad.data(), doomwaddir);
+    doom_concat(doomwad.data(), "/doom.wad");
 
     // Shareware.
-    doom1wad =
-        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1)));
+    EA::Vector<char> doom1wad(doom_strlen(doomwaddir) + 1 + 9 + 1);
     //doom_sprintf(doom1wad, "%s/doom1.wad", doomwaddir);
-    doom_strcpy(doom1wad, doomwaddir);
-    doom_concat(doom1wad, "/doom1.wad");
+    doom_strcpy(doom1wad.data(), doomwaddir);
+    doom_concat(doom1wad.data(), "/doom1.wad");
 
     // Bug, dear Shawn.
     // Insufficient malloc, caused spurious realloc errors.
-    plutoniawad = static_cast<char*>(
-        (doom_malloc(doom_strlen(doomwaddir) + 1 + /*9*/ 12 + 1)));
+    EA::Vector<char> plutoniawad(doom_strlen(doomwaddir) + 1 + /*9*/ 12 + 1);
     //doom_sprintf(plutoniawad, "%s/plutonia.wad", doomwaddir);
-    doom_strcpy(plutoniawad, doomwaddir);
-    doom_concat(plutoniawad, "/plutonia.wad");
+    doom_strcpy(plutoniawad.data(), doomwaddir);
+    doom_concat(plutoniawad.data(), "/plutonia.wad");
 
-    tntwad = static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 9 + 1)));
+    EA::Vector<char> tntwad(doom_strlen(doomwaddir) + 1 + 9 + 1);
     //doom_sprintf(tntwad, "%s/tnt.wad", doomwaddir);
-    doom_strcpy(tntwad, doomwaddir);
-    doom_concat(tntwad, "/tnt.wad");
+    doom_strcpy(tntwad.data(), doomwaddir);
+    doom_concat(tntwad.data(), "/tnt.wad");
 
     // French stuff.
-    doom2fwad =
-        static_cast<char*>((doom_malloc(doom_strlen(doomwaddir) + 1 + 10 + 1)));
+    EA::Vector<char> doom2fwad(doom_strlen(doomwaddir) + 1 + 10 + 1);
     //doom_sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
-    doom_strcpy(doom2fwad, doomwaddir);
-    doom_concat(doom2fwad, "/doom2f.wad");
+    doom_strcpy(doom2fwad.data(), doomwaddir);
+    doom_concat(doom2fwad.data(), "/doom2f.wad");
 
 #if !defined(DOOM_WIN32)
     home = doom_getenv("HOME");
@@ -696,7 +688,7 @@ void IdentifyVersion()
     }
 
     void* f;
-    if ((f = doom_open(doom2fwad, "rb")))
+    if ((f = doom_open(doom2fwad.data(), "rb")))
     {
         doom_close(f);
         version.gamemode = commercial;
@@ -704,55 +696,55 @@ void IdentifyVersion()
         // Let's handle languages in config files, okay?
         version.language = french;
         doom_print("French version\n");
-        addWadFile(doom2fwad);
+        addWadFile(doom2fwad.data());
         return;
     }
 
-    if ((f = doom_open(doom2wad, "rb")))
+    if ((f = doom_open(doom2wad.data(), "rb")))
     {
         doom_close(f);
         version.gamemode = commercial;
-        addWadFile(doom2wad);
+        addWadFile(doom2wad.data());
         return;
     }
 
-    if ((f = doom_open(plutoniawad, "rb")))
+    if ((f = doom_open(plutoniawad.data(), "rb")))
     {
         doom_close(f);
         version.gamemode = commercial;
-        addWadFile(plutoniawad);
+        addWadFile(plutoniawad.data());
         return;
     }
 
-    if ((f = doom_open(tntwad, "rb")))
+    if ((f = doom_open(tntwad.data(), "rb")))
     {
         doom_close(f);
         version.gamemode = commercial;
-        addWadFile(tntwad);
+        addWadFile(tntwad.data());
         return;
     }
 
-    if ((f = doom_open(doomuwad, "rb")))
+    if ((f = doom_open(doomuwad.data(), "rb")))
     {
         doom_close(f);
         version.gamemode = retail;
-        addWadFile(doomuwad);
+        addWadFile(doomuwad.data());
         return;
     }
 
-    if ((f = doom_open(doomwad, "rb")))
+    if ((f = doom_open(doomwad.data(), "rb")))
     {
         doom_close(f);
         version.gamemode = registered;
-        addWadFile(doomwad);
+        addWadFile(doomwad.data());
         return;
     }
 
-    if ((f = doom_open(doom1wad, "rb")))
+    if ((f = doom_open(doom1wad.data(), "rb")))
     {
         doom_close(f);
         version.gamemode = shareware;
-        addWadFile(doom1wad);
+        addWadFile(doom1wad.data());
         return;
     }
 

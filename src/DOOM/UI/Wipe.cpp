@@ -24,10 +24,12 @@
 namespace Doom
 {
 
-// The melt's scratch framebuffers live on the Engine (UI/WipeState.h). Every function below
-// reaches them through a hoisted `auto& scratch = wipeState();` local instead of a file-scope
-// alias (REFACTOR.md, Step 9 strand (a)). The exported wipe_scr_start / wipe_melt_offsets /
-// wipe_melt_running stay in the f_wipe.cpp shim, being what the GPU compositor reads.
+// The melt's scratch framebuffers and the per-column offset table live on the Engine
+// (UI/WipeState.h). Every function below reaches them through a hoisted
+// `auto& scratch = wipeState();` local instead of a file-scope alias (REFACTOR.md, Step 9
+// strand (a)). wipe_scr_start / wipe_melt_running stay in the f_wipe.cpp shim outright;
+// wipe_melt_offsets stays there too, but as a view refreshed by initMelt - all three are
+// what the GPU compositor reads.
 
 void colMajorXform(short* array, int width, int height)
 {
@@ -116,7 +118,10 @@ int initMelt(int width, int height, int ticks)
 
     // setup initial column positions
     // (wipe_melt_offsets<0 => not ready to scroll yet)
-    wipe_melt_offsets = static_cast<int*>(doom_malloc(width * sizeof(int)));
+    // RAII-owned (Step 9): scratch.wipe_melt_offsets is the owning vector; the
+    // vanilla name wipe_melt_offsets is a view refreshed here after the resize.
+    scratch.wipe_melt_offsets.resize(width);
+    wipe_melt_offsets = scratch.wipe_melt_offsets.data();
     wipe_melt_offsets[0] = -(Doom::randomness().forMenu() % 16);
     for (int i = 1; i < width; i++)
     {
@@ -191,7 +196,11 @@ int exitMelt(int width, int height, int ticks)
     (void) width;
     (void) height;
     (void) ticks;
-    doom_free(wipe_melt_offsets);
+
+    // Clears the owning vector; the view (wipe_melt_offsets) is deliberately left
+    // unrefreshed, reproducing vanilla's "freed but not nulled" pointer - see the
+    // comment on WipeState::wipe_melt_offsets.
+    wipeState().wipe_melt_offsets.clear();
     return 0;
 }
 
@@ -256,14 +265,16 @@ int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
 // SCREEN WIPE PACKAGE
 //
 
-// Raised while a melt is running, and the only safe thing to test: wipe_exitMelt
-// frees the column table without clearing the pointer to it. (Read by the GPU
-// melt compositor in EngineAccess.)
+// Raised while a melt is running, and the only safe thing to test: exitMelt clears
+// the column table's owning vector without refreshing the pointer to it. (Read by
+// the GPU melt compositor in EngineAccess.)
 doom_boolean wipe_melt_running = 0;
 
 // The outgoing frame, as palette indices; wipe_initMelt leaves it column-major.
 byte* wipe_scr_start;
 
 // How far down each two-pixel column of the outgoing screen has slid so far.
-// Negative means the column has not started moving yet.
+// Negative means the column has not started moving yet. RAII-owned (Step 9): this is
+// now a VIEW onto WipeState::wipe_melt_offsets.data(), refreshed by initMelt; see
+// UI/WipeState.h.
 int* wipe_melt_offsets;

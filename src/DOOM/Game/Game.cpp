@@ -139,8 +139,8 @@ void Doom::executeSetViewSize();
 // The player roster and view selection is a Doom::PlayerState owned by the Engine now;
 // these are references onto it (the arrays as references-to-array) (REFACTOR.md, Step 5).
 
-// The level's progress (levelstarttic + the intermission totals, and leveltime over in
-// p_tick) is a Doom::LevelStats owned by the Engine now; these are references onto it.
+// The level's progress (the intermission totals, and leveltime over in p_tick) is a
+// Doom::LevelStats owned by the Engine now; these are references onto it.
 
 // The demo flags are a Doom::DemoState owned by the Engine now; these vanilla names are
 // references onto it (REFACTOR.md, Step 5). The buffer state (demoname/demobuffer/demo_p/
@@ -446,8 +446,6 @@ void doLoadLevel()
         else if (session.gamemap < 21)
             sky.skytexture = Doom::textureNumForName("SKY2");
     }
-
-    levelStats().levelstarttic = gameClock().gametic; // for time calculation
 
     if (flow.wipegamestate == GS_LEVEL)
         flow.wipegamestate = static_cast<GameState>((-1)); // force a wipe
@@ -1195,7 +1193,10 @@ void doLoadGame()
 
     gameFlow().gameaction = ga_nothing;
 
-    Doom::readFile(save.name, &save.buffer);
+    // readFile() fills the owner directly; buffer is left a view onto it, as it is a
+    // view onto the framebuffer scratch on the save path (see SaveGameState.h).
+    Doom::readFile(save.name, save.loadStorage);
+    save.buffer = save.loadStorage.data();
     save.cursor = save.buffer + SAVESTRINGSIZE;
 
     // skip the description field
@@ -1232,8 +1233,8 @@ void doLoadGame()
     if (*save.cursor != 0x1d)
         fatalError("Error: Bad savegame");
 
-    // done
-    doom_free(save.buffer);
+    // done: loadStorage (not buffer, which also views the save-path framebuffer scratch)
+    // owns this memory now; no manual free needed.
 
     if (viewWindow().setsizeneeded)
         Doom::executeSetViewSize();
@@ -1529,7 +1530,8 @@ void recordDemo(char* name)
     i = Doom::checkParm("-maxdemo");
     if (i && i < myargc - 1)
         maxsize = doom_atoi(myargv[i + 1]) * 1024;
-    demo.demobuffer = static_cast<byte*>((doom_malloc(maxsize)));
+    demo.demoRecordBuffer.resize(maxsize);
+    demo.demobuffer = demo.demoRecordBuffer.data();
     demo.demoend = demo.demobuffer + maxsize;
 
     demo.demorecording = true;
@@ -1698,7 +1700,8 @@ doom_boolean checkDemoStatus()
         Doom::writeFile(demo.demoname,
                         demo.demobuffer,
                         static_cast<int>((demo.demo_p - demo.demobuffer)));
-        doom_free(demo.demobuffer);
+        // demoRecordBuffer (not demobuffer, which also views the playback lump) owns this
+        // memory now; no manual free needed.
         demo.demorecording = false;
         //fatalError("Error: Demo %s recorded", demoname);
 

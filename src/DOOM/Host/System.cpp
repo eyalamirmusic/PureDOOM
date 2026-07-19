@@ -7,10 +7,9 @@
 // terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//        The engine's system seam - timing, the zone's backing allocation,
-//        startup/teardown and the fatal path - over the doom_config host hooks
-//        (doom_gettime, doom_malloc, doom_print, doom_exit). Rewritten from
-//        i_system.cpp, which keeps the vanilla I_ names as shims.
+//        The engine's system seam - timing, startup/teardown and the fatal
+//        path - over the doom_config host hooks (doom_gettime, doom_print,
+//        doom_exit). Rewritten from i_system.cpp.
 //
 //-----------------------------------------------------------------------------
 
@@ -32,7 +31,6 @@
 #include "../Game/DemoState.h"
 namespace Doom
 {
-int mb_used = 6 * (sizeof(void*) / 4);
 Ticcmd emptycmd;
 
 void tactileFeedback(int, int, int) {}
@@ -40,17 +38,6 @@ void tactileFeedback(int, int, int) {}
 Ticcmd* baseTiccmd()
 {
     return &emptycmd;
-}
-
-int heapSize()
-{
-    return mb_used * 1024 * 1024;
-}
-
-byte* zoneBase(int* size)
-{
-    *size = mb_used * 1024 * 1024;
-    return static_cast<byte*>(doom_malloc(*size));
 }
 
 //

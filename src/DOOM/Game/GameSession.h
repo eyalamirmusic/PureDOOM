@@ -8,7 +8,8 @@ namespace Doom
 // The current game's rules, chosen when a game is started and read across the playsim and
 // the game loop: gameskill / gameepisode / gamemap are the skill and the map being played,
 // respawnmonsters has the dead come back (nightmare, or -respawn), netgame is true once
-// packets are being broadcast, and deathmatch true only for a net deathmatch. doomstat.h's
+// packets are being broadcast, and deathmatch selects the free-for-all rules (see the
+// tri-state note on the member - it is not a boolean). doomstat.h's
 // "Selected skill type, map etc." section (the "Selected by user" half) plus the netgame
 // and deathmatch flags beside it.
 //
@@ -26,7 +27,13 @@ struct GameSession
 
     doom_boolean respawnmonsters = 0; // the dead come back (nightmare / -respawn)
     doom_boolean netgame = 0; // packets are being broadcast
-    doom_boolean deathmatch = 0; // started as a net deathmatch
+
+    // TRI-STATE, not a boolean: 0 coop, 1 deathmatch, 2 altdeath. DoomMain assigns 2
+    // for -altdeath, and Sim/Interaction and Sim/Mobj gate the altdeath-only item
+    // rules on `!= 2` while Game/Net packs it as a two-bit field. A bool collapses 1
+    // and 2, silently turning altdeath's rules on for plain deathmatch - and no
+    // golden would catch it, all three demos being single-player with deathmatch 0.
+    int deathmatch = 0; // 0 coop, 1 deathmatch, 2 altdeath
 };
 
 // The one GameSession, a view onto the Engine's member - the same pattern as

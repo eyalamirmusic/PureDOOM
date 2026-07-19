@@ -2,6 +2,8 @@
 
 #include "../doomtype.h" // doom_boolean
 
+#include <ea_data_structures/Structures/Vector.h>
+
 namespace Doom
 {
 // The demo subsystem's state: the flags for whether a demo is in play, and the buffer it plays
@@ -22,6 +24,15 @@ namespace Doom
 // demorecording carries extra file-scope externs (Game/DoomMain.cpp, Host/System.cpp's fatalError
 // demo flush), updated to references in step. None of the fields is hashed, so the move is
 // golden-neutral - and the demo replays drive demobuffer/demo_p end to end, confirming it.
+//
+// demobuffer has dual ownership (REFACTOR.md, Step 9 strand (b)): recordDemo() allocates it to
+// write a demo out, but doPlayDemo() instead points it at Doom::cacheLumpName's return - memory
+// WadFile owns for the run of the process - to read one back. demobuffer can therefore not
+// become an owning vector itself: doing so would make checkDemoStatus's demorecording cleanup
+// free WAD lump memory on every demo playback. demoRecordBuffer is the RAII owner for the
+// recording case only; demobuffer stays a raw VIEW pointer that points at
+// demoRecordBuffer.data() while recording, or at the borrowed lump while playing back, and is
+// never freed directly either way.
 struct DemoState
 {
     doom_boolean usergame = 0; // a real game is running; save / end allowed
@@ -31,7 +42,9 @@ struct DemoState
 
     char demoname[32] = {}; // the demo lump/file name
     doom_boolean netdemo = 0; // the demo in play was recorded over a netgame
-    byte* demobuffer = nullptr; // the demo byte block
+    EA::Vector<byte>
+        demoRecordBuffer; // owns the buffer while recordDemo() is writing one
+    byte* demobuffer = nullptr; // the demo byte block: a view, see the note above
     byte* demo_p = nullptr; // read/write cursor into demobuffer
     byte* demoend = nullptr; // end guard of demobuffer
 };

@@ -270,9 +270,6 @@ void findMinMaxBoundaries()
     map.max_w = map.max_x - map.min_x;
     map.max_h = map.max_y - map.min_y;
 
-    map.min_w = 2 * PLAYERRADIUS; // const? never changed?
-    map.min_h = 2 * PLAYERRADIUS;
-
     a = FixedDiv(Doom::Fixed::fromInt(f_w), map.max_w);
     b = FixedDiv(Doom::Fixed::fromInt(f_h), map.max_h);
 
@@ -396,8 +393,6 @@ void clearMarks()
 void levelInit()
 {
     auto& map = automapView();
-
-    map.leveljuststarted = 0;
 
     f_x = f_y = 0;
     f_w = map.finit_width;

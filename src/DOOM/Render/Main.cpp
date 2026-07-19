@@ -5,7 +5,7 @@
 // and texture-mapping tables, view-size handling, R_SetupFrame/R_RenderPlayerView.
 // r_main.cpp shims the R_ names and owns the view-state globals (viewx/viewangle/...,
 // validcount, the drawer pointers other renderer files switch, the pending-view
-// flags d_main/g_game/DOOM read); r_main's own bookkeeping (framecount, setdetail,
+// flags d_main/g_game/DOOM read); r_main's own bookkeeping (setdetail,
 // transcolfunc) is file-local here. renderInit is Doom::renderInit (renamed to avoid a clash
 // with Setup's init).
 
@@ -46,10 +46,10 @@
 
 namespace Doom
 {
-// framecount/setdetail now live on the Engine (Render/RenderMainState.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5); they were references onto that member until the
-// file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - setViewSize, executeSetViewSize
-// and renderInit each reach them through renderMainState() directly.
+// setdetail now lives on the Engine (Render/RenderMainState.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5); it was a reference onto that member until the
+// file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired it - setViewSize and executeSetViewSize
+// each reach it through renderMainState() directly.
 void (*transcolfunc)();
 
 // Forward declarations so call order needs no rearranging.
@@ -232,7 +232,8 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 1
-                return ANG90 - angle_t {1} - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ANG90 - angle_t {1}
+                       - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
         else
@@ -270,7 +271,8 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 3
-                return ANG180 - angle_t {1} - tantoangle[Doom::slopeDiv(y.raw, x.raw)];
+                return ANG180 - angle_t {1}
+                       - tantoangle[Doom::slopeDiv(y.raw, x.raw)];
             }
             else
             {
@@ -291,7 +293,8 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 5
-                return ANG270 - angle_t {1} - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ANG270 - angle_t {1}
+                       - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
     }
@@ -328,7 +331,8 @@ fixed_t pointToDist(fixed_t x, fixed_t y)
         dy = temp;
     }
 
-    const auto fine = (tantoangle[FixedDiv(dy, dx).raw >> DBITS] + ANG90).fineIndex();
+    const auto fine =
+        (tantoangle[FixedDiv(dy, dx).raw >> DBITS] + ANG90).fineIndex();
 
     // use as cosine
     dist = FixedDiv(dx, finesine[fine]);
@@ -637,8 +641,6 @@ void renderInit()
     doom_print("\nR_InitSkyMap");
     Doom::initTranslationTables();
     doom_print("\nR_InitTranslationsTables");
-
-    renderMainState().framecount = 0;
 }
 
 //
@@ -685,8 +687,6 @@ void setupFrame(Player& player)
     pt.viewsin = finesine[pt.viewangle.fineIndex()];
     pt.viewcos = finecosine[pt.viewangle.fineIndex()];
 
-    renderScratch().sscount = 0;
-
     if (player.fixedcolormap)
     {
         lights.fixedcolormap =
@@ -700,7 +700,6 @@ void setupFrame(Player& player)
     else
         lights.fixedcolormap = nullptr;
 
-    renderMainState().framecount++;
     validCount().validcount++;
 }
 

@@ -197,8 +197,6 @@ void startLevelSound()
     //      mnum -= mus_e3m9;
 
     changeMusic(mnum, true);
-
-    sound.nextcleanup = 15;
 }
 
 void startSoundAtVolume(void* origin_p, int sfx_id, int volume)

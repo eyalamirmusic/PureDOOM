@@ -371,7 +371,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-81 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
+82 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
 in `src/DOOM`.**
 
 Run the binaries through ctest, not bare. NanoTest registers one ctest case per

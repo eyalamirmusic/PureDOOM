@@ -55,7 +55,12 @@ struct MapPatch
 struct MapTexture
 {
     char name[8];
-    doom_boolean masked;
+    // An ON-DISK field, not an application boolean: this struct is overlaid directly
+    // onto raw TEXTURE1/TEXTURE2 lump bytes. The value is never read, but its four
+    // bytes are load-bearing - as a one-byte bool, width/height/columndirectory/
+    // patchcount below would all shift by three and every texture in every WAD would
+    // parse as garbage. Declared int so the doom_boolean->bool flip cannot reach it.
+    int masked;
     short width;
     short height;
     //void **columndirectory; // OBSOLETE
@@ -64,14 +69,15 @@ struct MapTexture
     MapPatch patches[1];
 };
 
-// r_data's own state - the per-texture composite cache, patch/flat bookkeeping and the memory
-// counters - now lives on the Engine (Render/CompositeCache.h, moved by the file-scope-statics
-// sweep - REFACTOR.md, Step 5); read by nothing else. lastflat, flatmemory, texturememory and
-// spritememory were references onto that member until the file-local-alias sweep (REFACTOR.md,
-// Step 9 strand (a)) retired them - initFlats and precacheLevel each hoist compositeCache() once.
-// firstpatch/lastpatch/numpatches were references too, but nothing in this file (or anywhere else)
-// ever read them, so they were simply dropped rather than hoisted; the fields still live on
-// CompositeCache for anyone who wants to fill them in again.
+// r_data's own state - the per-texture composite cache and patch/flat bookkeeping - now lives on
+// the Engine (Render/CompositeCache.h, moved by the file-scope-statics sweep - REFACTOR.md, Step
+// 5); read by nothing else. lastflat was a reference onto that member until the file-local-alias
+// sweep (REFACTOR.md, Step 9 strand (a)) retired it - initFlats and precacheLevel each hoist
+// compositeCache() once. firstpatch/lastpatch/numpatches were references too, but nothing in this
+// file (or anywhere else) ever read them, so they were simply dropped rather than hoisted; the
+// fields still live on CompositeCache for anyone who wants to fill them in again. flatmemory/
+// texturememory/spritememory were dropped the same way in a later audit: accumulated below but
+// read nowhere, in vanilla too, so only the cacheLumpNum calls that actually fill the cache remain.
 // The composition tables are RAII-owned by CompositeCache now (Step 9); these are plain-pointer
 // VIEWS onto the owners' data(), refreshed by initTextures once the vectors are sized (which is
 // before any read - generateLookup runs from initTextures, generateComposite/getColumn at render
@@ -690,7 +696,6 @@ void precacheLevel()
         return;
 
     auto& gd = graphicsData();
-    auto& cc = compositeCache();
 
     // Precache flats.
     auto flatpresent = EA::Vector<char>(gd.numflats);
@@ -701,14 +706,11 @@ void precacheLevel()
         flatpresent[sectors[i].ceilingpic] = 1;
     }
 
-    cc.flatmemory = 0;
-
     for (i = 0; i < gd.numflats; i++)
     {
         if (flatpresent[i])
         {
             lump = gd.firstflat + i;
-            cc.flatmemory += Doom::wad().info(lump).size;
             Doom::cacheLumpNum(lump);
         }
     }
@@ -731,7 +733,6 @@ void precacheLevel()
     //  name.
     texturepresent[skyState().skytexture] = 1;
 
-    cc.texturememory = 0;
     for (i = 0; i < gd.numtextures; i++)
     {
         if (!texturepresent[i])
@@ -742,7 +743,6 @@ void precacheLevel()
         for (j = 0; j < texture->patchcount; j++)
         {
             lump = texture->patches[j].patch;
-            cc.texturememory += Doom::wad().info(lump).size;
             Doom::cacheLumpNum(lump);
         }
     }
@@ -759,7 +759,6 @@ void precacheLevel()
                 1;
     }
 
-    cc.spritememory = 0;
     for (i = 0; i < gd.numsprites; i++)
     {
         if (!spritepresent[i])
@@ -771,7 +770,6 @@ void precacheLevel()
             for (k = 0; k < 8; k++)
             {
                 lump = gd.firstspritelump + sf->lump[k];
-                cc.spritememory += Doom::wad().info(lump).size;
                 Doom::cacheLumpNum(lump);
             }
         }
@@ -786,8 +784,6 @@ void precacheLevel()
 // The renderer's loaded graphics data (textures, flats, sprite lumps, colormaps) is a
 // Doom::GraphicsData owned by the Engine now; these vanilla names are references onto it.
 // R_InitData fills the members once at startup; they are read-only after.
-
-
 
 // A Doom::Texture** view onto GraphicsData's owned texturePointers array (Step 9);
 // R_InitTextures points it at data() after the resize.

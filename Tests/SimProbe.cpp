@@ -21,6 +21,7 @@
 
 #include <DOOM/Game/MapSpawns.h>
 #include <DOOM/Game/DoomMain.h>
+#include <DOOM/Game/Config.h>
 #include <DOOM/Sim/Info.h>
 #include <DOOM/Sim/Random.h>
 #include <DOOM/Sim/SimDefs.h>
@@ -790,4 +791,21 @@ int doomSimFinaleStage()
 int doomSimGameMode()
 {
     return (int) Doom::gameVersion().gamemode;
+}
+
+DoomSimFileRead doomSimReadFileIntoOwner(const char* path)
+{
+    DoomSimFileRead result = {};
+
+    // readFile calls fatalError rather than returning a failure, so a bad path
+    // arrives here as a longjmp and the caller sees the zeroed result.
+    if (setjmp(simAbort))
+        return result;
+
+    EA::Vector<byte> owner;
+    result.length = Doom::readFile(path, owner);
+    result.ownerSize = owner.size();
+    result.magicIsIwad = owner.size() >= 4 && owner[0] == 'I' && owner[1] == 'W'
+                         && owner[2] == 'A' && owner[3] == 'D';
+    return result;
 }

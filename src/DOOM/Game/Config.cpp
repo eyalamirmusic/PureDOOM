@@ -238,13 +238,9 @@ doom_boolean writeFile(char const* name, void* source, int length)
 //
 // readFile
 //
-int readFile(char const* name, byte** buffer)
+int readFile(char const* name, EA::Vector<byte>& buffer)
 {
-    void* handle;
-    int count, length;
-    byte* buf;
-
-    handle = doom_open(name, "rb");
+    void* handle = doom_open(name, "rb");
     if (handle == nullptr)
     {
         //fatalError("Error: Couldn't read file %s", name);
@@ -254,10 +250,13 @@ int readFile(char const* name, byte** buffer)
         fatalError(error_buf);
     }
     doom_seek(handle, 0, DOOM_SEEK_END);
-    length = doom_tell(handle);
+    int length = doom_tell(handle);
     doom_seek(handle, 0, DOOM_SEEK_SET);
-    buf = static_cast<byte*>((doom_malloc(length)));
-    count = doom_read(handle, buf, length);
+
+    // resize zeroes where the old doom_malloc did not, which is unobservable: the
+    // doom_read below fills all `length` bytes or the read is fatal.
+    buffer.resize(length);
+    int count = doom_read(handle, buffer.data(), length);
     doom_close(handle);
 
     if (count < length)
@@ -269,7 +268,6 @@ int readFile(char const* name, byte** buffer)
         fatalError(error_buf);
     }
 
-    *buffer = buf;
     return length;
 }
 
@@ -388,9 +386,22 @@ void loadDefaults()
     void* f;
     EA::Array<char, 80> def;
     EA::Array<char, 100> strparm;
-    char* newstring;
     int parm;
     doom_boolean isstring;
+
+    // Owns the storage for the string-valued defaults (currently the ten
+    // chatmacroN entries) read from ~/.doomrc, in place of what was a
+    // doom_malloc per string that nothing ever freed. Function-local static:
+    // process lifetime, because the pointer this hands to
+    // defaults[i].text_location is read for the life of the program
+    // (Hud.cpp reads chat_macros[] whenever a chat macro fires; saveDefaults
+    // reads it back out to write the file). One slot per defaults[] entry,
+    // sized once up front so filling a later slot never reallocates the
+    // outer vector and invalidates a .data() pointer already handed to an
+    // earlier entry - the same rule columnlumpStorage/columnofsStorage
+    // follow in Render/CompositeCache.h.
+    static EA::Vector<EA::Vector<char>> stringDefaultStorage;
+    stringDefaultStorage.resize(numdefaults);
 
     auto& paths = configPaths();
 
@@ -479,9 +490,7 @@ void loadDefaults()
                     // get a string default
                     isstring = true;
                     len = static_cast<int>(doom_strlen(strparm.data()));
-                    newstring = static_cast<char*>(doom_malloc(len));
                     strparm[len - 1] = 0;
-                    doom_strcpy(newstring, strparm.data() + 1);
                 }
                 else if (strparm[0] == '0' && strparm[1] == 'x')
                 {
@@ -499,7 +508,19 @@ void loadDefaults()
                         if (!isstring)
                             *defaults[i].location = parm;
                         else
-                            *defaults[i].text_location = newstring;
+                        {
+                            // Sized exactly as the doom_malloc(len) this
+                            // replaces: len-2 source chars (the quotes
+                            // stripped) plus a terminator, with the same one
+                            // byte of slack. Keeping the slack is not
+                            // cosmetic - a malformed line of a lone quote
+                            // gives len == 1, and resize(len - 1) would leave
+                            // data() null under the doom_strcpy below.
+                            auto& owned = stringDefaultStorage[i];
+                            owned.resize(len);
+                            doom_strcpy(owned.data(), strparm.data() + 1);
+                            *defaults[i].text_location = owned.data();
+                        }
                         break;
                     }
             }

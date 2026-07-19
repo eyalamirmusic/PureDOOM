@@ -6,7 +6,6 @@
 #include "MapGeometry.h" // DivLine
 #include "SimDefs.h"
 
-#include "SightScratch.h"
 #include "ValidCount.h"
 
 #include "../Host/System.h"
@@ -14,13 +13,12 @@ namespace Doom
 {
 namespace
 {
-// The sight line and its endpoint are per-call locals now, threaded by reference
-// through crossBSPNode/crossSubsector the same way topslope/bottomslope already
-// were - they never escape checkSight's own call chain, so there is nothing for a
-// file-scope alias to buy. sightcounts is different: it is a genuine cross-call
-// counter (REJECT-matrix skips vs. real tests) that outlives any one checkSight
-// call, so it stays a member touched through sightScratch() at its two use sites
-// rather than cached by reference (Sim/SightScratch.h).
+// The sight line and its endpoint are per-call locals now (SightTrace below),
+// threaded by reference through crossBSPNode/crossSubsector the same way
+// topslope/bottomslope already were - they never escape checkSight's own call
+// chain, so there is nothing for a file-scope alias to buy. That emptied the old
+// SightScratch cluster, and its last member (the write-only sightcounts) went in
+// the leftovers audit, so the cluster itself is gone rather than kept empty.
 //
 // P_DivlineSide
 // Returns side 0 (front), 1 (back), or 2 (on).
@@ -306,15 +304,11 @@ bool checkSight(Mobj* t1, Mobj* t2)
     // Check in REJECT table.
     if (rejectmatrix[bytenum] & bitnum)
     {
-        sightScratch().sightcounts[0]++;
-
         // can't possibly be connected
         return false;
     }
 
     // An unobstructed LOS is possible. Now look from eyes of t1 to any part of t2.
-    sightScratch().sightcounts[1]++;
-
     validCount().validcount++;
 
     SightTrace trace;

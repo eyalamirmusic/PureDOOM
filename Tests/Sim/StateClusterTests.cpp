@@ -73,13 +73,10 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
     check(DisplayState {}.oldgamestate == (GameState) (-1)
               && DisplayState {}.borderdrawcount == 0,
           "DisplayState frame-diff defaults");
-    check(StatusBarState {}.veryfirsttime == 1
-              && StatusBarState {}.st_stopped == true,
-          "StatusBarState one-time gate and parked flag");
-    check(AutomapView {}.leveljuststarted == 1 && AutomapView {}.stopped == true
-              && AutomapView {}.finit_width == SCREENWIDTH
+    check(StatusBarState {}.st_stopped == true, "StatusBarState parked flag");
+    check(AutomapView {}.stopped == true && AutomapView {}.finit_width == SCREENWIDTH
               && AutomapView {}.finit_height == SCREENHEIGHT - 32,
-          "AutomapView kluge flag, closed flag and frame size");
+          "AutomapView closed flag and frame size");
     // The one non-zero-looking default: IntermissionPhase zero-init lands on StatCount, since NoState is
     // -1, not 0. A migration that "helpfully" defaulted state to NoState would change the value.
     check(IntermissionState {}.state == StatCount
@@ -124,7 +121,6 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&planeScratch() == &engine().planeScratch, "planeScratch()");
     check(&renderMainState() == &engine().renderMainState, "renderMainState()");
     check(&actionScratch() == &engine().actionScratch, "actionScratch()");
-    check(&sightScratch() == &engine().sightScratch, "sightScratch()");
     check(&weaponScratch() == &engine().weaponScratch, "weaponScratch()");
     check(&enemyAI() == &engine().enemyAI, "enemyAI()");
     check(&switchList() == &engine().switchList, "switchList()");

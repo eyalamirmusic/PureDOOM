@@ -7,8 +7,8 @@ namespace Doom
 {
 // A directed line segment: an origin and a delta. This is vanilla's divline_t -
 // the same four numbers, and now the only spelling of them; the sight, shooting
-// and path-traversal code holds one of these directly (Clip::trace,
-// SightScratch::strace), so no cast bridges the two any more.
+// and path-traversal code holds one of these directly (Clip::trace, and the sight
+// check's own per-call SightTrace), so no cast bridges the two any more.
 struct DivLine
 {
     Vec2 origin;
