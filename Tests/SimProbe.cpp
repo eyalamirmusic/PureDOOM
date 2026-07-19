@@ -9,6 +9,9 @@
 #include <DOOM/Game/OverlayState.h>
 #include <DOOM/Game/PlayerState.h>
 #include <DOOM/Game/SaveGameState.h>
+#include <DOOM/Game/GameVersion.h>
+#include <DOOM/UI/Finale.h>
+#include <DOOM/UI/FinaleState.h>
 #include <DOOM/Sim/Level.h>
 #include <DOOM/Sim/Random.h>
 #include <DOOM/Sim/SaveGame.h>
@@ -371,8 +374,7 @@ int doomSimGeometryViewsConsistent()
            && view(sectors, numsectors, lvl.sectors)
            && view(nodes, numnodes, lvl.nodes) && view(lines, numlines, lvl.lines)
            && view(sides, numsides, lvl.sides) && blocklinks == lvl.blockLinks.data()
-           && bmaporgx == lvl.blockmap.origin.x
-           && bmaporgy == lvl.blockmap.origin.y
+           && bmaporgx == lvl.blockmap.origin.x && bmaporgy == lvl.blockmap.origin.y
            && bmapwidth == lvl.blockmap.width && bmapheight == lvl.blockmap.height
            && blockmap == lvl.blockmap.offsets && blockmaplump == lvl.blockmap.lump;
 }
@@ -433,7 +435,8 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
     if (setjmp(simAbort))
         return -1;
 
-    Doom::Mobj* mobj = Doom::spawnMobj(fixed_t {x}, fixed_t {y}, fixed_t {z}, (Doom::MobjType) type);
+    Doom::Mobj* mobj = Doom::spawnMobj(
+        fixed_t {x}, fixed_t {y}, fixed_t {z}, (Doom::MobjType) type);
 
     if (!mobj)
         return -1;
@@ -767,4 +770,24 @@ int doomSimMenuActive()
 int doomSimAutomapActive()
 {
     return Doom::overlayState().automapactive ? 1 : 0;
+}
+
+// --- The finale harness ------------------------------------------------------
+
+void doomSimStartFinale()
+{
+    if (setjmp(simAbort))
+        return;
+
+    Doom::startFinale();
+}
+
+int doomSimFinaleStage()
+{
+    return Doom::finaleState().finalestage;
+}
+
+int doomSimGameMode()
+{
+    return (int) Doom::gameVersion().gamemode;
 }

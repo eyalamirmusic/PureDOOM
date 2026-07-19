@@ -242,6 +242,33 @@ extern "C"
     // automapactive) - the same shape as doomSimMenuActive above.
     int doomSimAutomapActive();
 
+    // --- The finale harness ----------------------------------------------------
+    //
+    // UI/Finale.cpp is the end-of-episode text crawl, the following art/credit
+    // screen, and (DOOM II only) the character cast call - and it has no demo
+    // coverage either: an attract-mode demo plays a slice of a level, never a
+    // whole episode through to its exit. Reaching a finale the honest way means
+    // completing a level, which is not tractable to drive here, so the harness
+    // takes the tractable route instead: load a level directly (doomSimLoadLevel
+    // above) so gameepisode/gamemap are set, then call Doom::startFinale()
+    // directly - the same entry point Game.cpp's ga_victory case calls - and let
+    // Doom::finaleTicker/Doom::drawFinale run off doomSimStepTic exactly as the
+    // level loop would run them.
+
+    // Calls Doom::startFinale() directly. Must be called after doomSimLoadLevel,
+    // whose gameepisode/gamemap choose the finale's text and background flat.
+    void doomSimStartFinale();
+
+    // Doom::FinaleState's finalestage (0 = text crawl, 1 = the art/credit screen,
+    // 2 = the DOOM II cast call), so a script can drive off the engine's own
+    // transition rather than a hard-coded tic count.
+    int doomSimFinaleStage();
+
+    // Doom::GameVersion's gamemode (Doom::GameMode: shareware=0, registered=1,
+    // commercial=2, retail=3, indetermined=4), so a test can check which finale
+    // branches are reachable from the booted IWAD rather than assume it.
+    int doomSimGameMode();
+
 #ifdef __cplusplus
 }
 #endif
