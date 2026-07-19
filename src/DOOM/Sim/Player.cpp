@@ -71,9 +71,6 @@ void thrust(Player& player, angle_t angle, fixed_t move)
 //
 void calcHeight(Player& player)
 {
-    int angle;
-    fixed_t bob;
-
     // Regular movement bobbing
     // (needs to be calculated for gun swing
     // even if not on ground)
@@ -99,8 +96,8 @@ void calcHeight(Player& player)
         return;
     }
 
-    angle = (fineAngles / 20 * levelStats().leveltime) & fineMask;
-    bob = FixedMul(player.bob / 2, finesine[angle]);
+    int angle = (fineAngles / 20 * levelStats().leveltime) & fineMask;
+    fixed_t bob = FixedMul(player.bob / 2, finesine[angle]);
 
     // move viewheight
     if (player.playerstate == PST_LIVE)
@@ -167,9 +164,6 @@ void movePlayer(Player& player)
 //
 void deathThink(Player& player)
 {
-    angle_t angle;
-    angle_t delta;
-
     movePsprites(player);
 
     // fall to the ground
@@ -185,10 +179,10 @@ void deathThink(Player& player)
 
     if (player.attacker && player.attacker != player.mo)
     {
-        angle = pointToAngle2(
+        angle_t angle = pointToAngle2(
             player.mo->x, player.mo->y, player.attacker->x, player.attacker->y);
 
-        delta = angle - player.mo->angle;
+        angle_t delta = angle - player.mo->angle;
 
         if (delta < ANG5 || delta > -ANG5)
         {
@@ -216,9 +210,6 @@ void deathThink(Player& player)
 //
 void playerThink(Player& player)
 {
-    Ticcmd* cmd;
-    WeaponType newweapon;
-
     // fixme: do this in the cheat code
     if (player.cheats & CF_NOCLIP)
         player.mo->flags |= MF_NOCLIP;
@@ -226,7 +217,7 @@ void playerThink(Player& player)
         player.mo->flags &= ~MF_NOCLIP;
 
     // chain saw run forward
-    cmd = &player.cmd;
+    Ticcmd* cmd = &player.cmd;
     if (player.mo->flags & MF_JUSTATTACKED)
     {
         cmd->angleturn = 0;
@@ -265,8 +256,8 @@ void playerThink(Player& player)
         // The actual changing of the weapon is done
         //  when the weapon psprite can do it
         //  (read: not in the middle of an attack).
-        newweapon = static_cast<WeaponType>((cmd->buttons & BT_WEAPONMASK)
-                                            >> BT_WEAPONSHIFT);
+        WeaponType newweapon = static_cast<WeaponType>((cmd->buttons & BT_WEAPONMASK)
+                                                       >> BT_WEAPONSHIFT);
 
         if (newweapon == wp_fist && player.weaponowned[wp_chainsaw]
             && !(player.readyweapon == wp_chainsaw && player.powers[pw_strength]))

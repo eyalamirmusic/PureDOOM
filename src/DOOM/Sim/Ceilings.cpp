@@ -163,13 +163,8 @@ void moveCeiling(Ceiling& ceiling)
 //
 int doCeiling(Line* line, CeilingType type)
 {
-    int secnum;
-    int rtn;
-    Sector* sec;
-    Ceiling* ceiling;
-
-    secnum = -1;
-    rtn = 0;
+    int secnum = -1;
+    int rtn = 0;
 
     // Reactivate in-stasis ceilings...for certain types.
     switch (type)
@@ -184,13 +179,13 @@ int doCeiling(Line* line, CeilingType type)
 
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        sec = &sectors[secnum];
+        Sector* sec = &sectors[secnum];
         if (sec->specialdata)
             continue;
 
         // new door thinker
         rtn = 1;
-        ceiling = new (levelAlloc(sizeof(*ceiling))) Ceiling {};
+        Ceiling* ceiling = new (levelAlloc(sizeof(*ceiling))) Ceiling {};
         addThinker(ceiling);
         sec->specialdata = ceiling;
         ceiling->sector = sec;
@@ -293,9 +288,7 @@ void activateInStasisCeiling(Line* line)
 //
 int ceilingCrushStop(Line* line)
 {
-    int rtn;
-
-    rtn = 0;
+    int rtn = 0;
     auto& specials = activeSpecials();
     for (int i = 0; i < MAXCEILINGS; i++)
     {

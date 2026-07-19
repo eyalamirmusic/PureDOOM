@@ -197,14 +197,12 @@ MoveResult movePlane(Sector& sector,
 //
 void moveFloor(FloorMove& floor)
 {
-    MoveResult res;
-
-    res = movePlane(*floor.sector,
-                    floor.speed,
-                    floor.floordestheight,
-                    floor.crush,
-                    0,
-                    floor.direction);
+    MoveResult res = movePlane(*floor.sector,
+                               floor.speed,
+                               floor.floordestheight,
+                               floor.crush,
+                               0,
+                               floor.direction);
 
     if (!(levelStats().leveltime & 7))
         startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
@@ -248,16 +246,11 @@ void moveFloor(FloorMove& floor)
 //
 int doFloor(Line* line, FloorType floortype)
 {
-    int secnum;
-    int rtn;
-    Sector* sec;
-    FloorMove* floor;
-
-    secnum = -1;
-    rtn = 0;
+    int secnum = -1;
+    int rtn = 0;
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        sec = &sectors[secnum];
+        Sector* sec = &sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (sec->specialdata)
@@ -265,7 +258,7 @@ int doFloor(Line* line, FloorType floortype)
 
         // new floor thinker
         rtn = 1;
-        floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
+        FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
         addThinker(floor);
         sec->specialdata = floor;
         floor->type = floortype;
@@ -350,7 +343,6 @@ int doFloor(Line* line, FloorType floortype)
             case raiseToTexture:
             {
                 fixed_t minsize {DOOM_MAXINT};
-                Side* side;
 
                 floor->direction = 1;
                 floor->sector = sec;
@@ -359,7 +351,7 @@ int doFloor(Line* line, FloorType floortype)
                 {
                     if (twoSided(secnum, i))
                     {
-                        side = getSide(secnum, i, 0);
+                        Side* side = getSide(secnum, i, 0);
                         if (side->bottomtexture >= 0)
                             if (textureheight[side->bottomtexture] < minsize)
                                 minsize = textureheight[side->bottomtexture];
@@ -421,26 +413,16 @@ int doFloor(Line* line, FloorType floortype)
 //
 int buildStairs(Line* line, StairType type)
 {
-    int secnum;
-    fixed_t height;
-    int newsecnum;
-    int texture;
     int ok;
-    int rtn;
-
-    Sector* sec;
-    Sector* tsec;
-
-    FloorMove* floor;
 
     fixed_t stairsize;
     fixed_t speed;
 
-    secnum = -1;
-    rtn = 0;
+    int secnum = -1;
+    int rtn = 0;
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        sec = &sectors[secnum];
+        Sector* sec = &sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (sec->specialdata)
@@ -448,7 +430,7 @@ int buildStairs(Line* line, StairType type)
 
         // new floor thinker
         rtn = 1;
-        floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
+        FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
         addThinker(floor);
         sec->specialdata = floor;
         floor->direction = 1;
@@ -465,10 +447,10 @@ int buildStairs(Line* line, StairType type)
                 break;
         }
         floor->speed = speed;
-        height = sec->floorheight + stairsize;
+        fixed_t height = sec->floorheight + stairsize;
         floor->floordestheight = height;
 
-        texture = sec->floorpic;
+        int texture = sec->floorpic;
 
         // Find next sector to raise
         // 1.        Find 2-sided line with same sector side[0]
@@ -481,8 +463,8 @@ int buildStairs(Line* line, StairType type)
                 if (!((sec->lines[i])->flags & ML_TWOSIDED))
                     continue;
 
-                tsec = (sec->lines[i])->frontsector;
-                newsecnum = static_cast<int>(tsec - sectors);
+                Sector* tsec = (sec->lines[i])->frontsector;
+                int newsecnum = static_cast<int>(tsec - sectors);
 
                 if (secnum != newsecnum)
                     continue;

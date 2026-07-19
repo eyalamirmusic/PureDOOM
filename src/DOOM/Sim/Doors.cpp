@@ -185,9 +185,7 @@ void verticalDoor(Door& door)
 //
 int doLockedDoor(Line* line, DoorType type, Mobj* thing)
 {
-    Player* p;
-
-    p = thing->player;
+    Player* p = thing->player;
 
     if (!p)
         return 0;
@@ -236,22 +234,18 @@ int doLockedDoor(Line* line, DoorType type, Mobj* thing)
 
 int doDoor(Line* line, DoorType type)
 {
-    int secnum, rtn;
-    Sector* sec;
-    Door* door;
-
-    secnum = -1;
-    rtn = 0;
+    int secnum = -1;
+    int rtn = 0;
 
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        sec = &sectors[secnum];
+        Sector* sec = &sectors[secnum];
         if (sec->specialdata)
             continue;
 
         // new door thinker
         rtn = 1;
-        door = new (levelAlloc(sizeof(*door))) Door {};
+        Door* door = new (levelAlloc(sizeof(*door))) Door {};
         addThinker(door);
         sec->specialdata = door;
 
@@ -320,15 +314,12 @@ int doDoor(Line* line, DoorType type)
 //
 void verticalDoor(Line* line, Mobj* thing)
 {
-    Player* player;
-    Sector* sec;
     Door* door;
-    int side;
 
-    side = 0; // only front sides can be used
+    int side = 0; // only front sides can be used
 
     // Check for locks
-    player = thing->player;
+    Player* player = thing->player;
 
     switch (line->special)
     {
@@ -373,7 +364,7 @@ void verticalDoor(Line* line, Mobj* thing)
     }
 
     // if the sector has an active thinker, use it
-    sec = sides[line->sidenum[side ^ 1]].sector;
+    Sector* sec = sides[line->sidenum[side ^ 1]].sector;
 
     if (sec->specialdata)
     {
@@ -463,9 +454,7 @@ void verticalDoor(Line* line, Mobj* thing)
 //
 void spawnDoorCloseIn30(Sector* sec)
 {
-    Door* door;
-
-    door = new (levelAlloc(sizeof(*door))) Door {};
+    Door* door = new (levelAlloc(sizeof(*door))) Door {};
 
     addThinker(door);
 
@@ -484,9 +473,7 @@ void spawnDoorCloseIn30(Sector* sec)
 //
 void spawnDoorRaiseIn5Mins(Sector* sec, int)
 {
-    Door* door;
-
-    door = new (levelAlloc(sizeof(*door))) Door {};
+    Door* door = new (levelAlloc(sizeof(*door))) Door {};
 
     addThinker(door);
 

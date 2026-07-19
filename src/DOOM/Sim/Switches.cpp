@@ -97,9 +97,7 @@ bool useSpecialLine(Mobj* thing, Line* line, int side);
 
 void initSwitchList()
 {
-    int episode;
-
-    episode = 1;
+    int episode = 1;
 
     const auto& version = gameVersion();
     auto& list = switchList();
@@ -167,22 +165,17 @@ void startButton(Line* line, ButtonWhere w, int texture, int time)
 //
 void changeSwitchTexture(Line* line, int useAgain)
 {
-    int texTop;
-    int texMid;
-    int texBot;
-    int sound;
-
     auto& specials = activeSpecials();
     auto& list = switchList();
 
     if (!useAgain)
         line->special = 0;
 
-    texTop = sides[line->sidenum[0]].toptexture;
-    texMid = sides[line->sidenum[0]].midtexture;
-    texBot = sides[line->sidenum[0]].bottomtexture;
+    int texTop = sides[line->sidenum[0]].toptexture;
+    int texMid = sides[line->sidenum[0]].midtexture;
+    int texBot = sides[line->sidenum[0]].bottomtexture;
 
-    sound = sfx_swtchn;
+    int sound = sfx_swtchn;
 
     // EXIT SWITCH?
     if (line->special == 11)

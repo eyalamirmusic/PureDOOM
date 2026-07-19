@@ -77,19 +77,15 @@ int divlineSide(fixed_t x, fixed_t y, const DivLine& node)
 //
 fixed_t interceptVector2(const DivLine& v2, const DivLine& v1)
 {
-    fixed_t frac;
-    fixed_t num;
-    fixed_t den;
-
-    den = FixedMul(v1.delta.y >> 8, v2.delta.x)
-          - FixedMul(v1.delta.x >> 8, v2.delta.y);
+    fixed_t den = FixedMul(v1.delta.y >> 8, v2.delta.x)
+                  - FixedMul(v1.delta.x >> 8, v2.delta.y);
 
     if (den.isZero())
         return fixed_t {};
 
-    num = FixedMul((v1.origin.x - v2.origin.x) >> 8, v1.delta.y)
-          + FixedMul((v2.origin.y - v1.origin.y) >> 8, v1.delta.x);
-    frac = FixedDiv(num, den);
+    fixed_t num = FixedMul((v1.origin.x - v2.origin.x) >> 8, v1.delta.y)
+                  + FixedMul((v2.origin.y - v1.origin.y) >> 8, v1.delta.x);
+    fixed_t frac = FixedDiv(num, den);
 
     return frac;
 }
@@ -243,9 +239,6 @@ bool crossBSPNode(int bspnum,
                   fixed_t& topslope,
                   fixed_t& bottomslope)
 {
-    Node* bsp;
-    int side;
-
     if (bspnum & NF_SUBSECTOR)
     {
         if (bspnum == -1)
@@ -255,7 +248,7 @@ bool crossBSPNode(int bspnum,
                 bspnum & (~NF_SUBSECTOR), trace, topslope, bottomslope);
     }
 
-    bsp = &nodes[bspnum];
+    Node* bsp = &nodes[bspnum];
 
     // The node's partition line, which vanilla read by casting the node itself to
     // a divline_t - its first four fields are the same four numbers. Named now
@@ -264,7 +257,7 @@ bool crossBSPNode(int bspnum,
                              {Fixed {bsp->dx}, Fixed {bsp->dy}}};
 
     // decide which side the start point is on
-    side = divlineSide(trace.strace.origin.x, trace.strace.origin.y, partition);
+    int side = divlineSide(trace.strace.origin.x, trace.strace.origin.y, partition);
     if (side == 2)
         side = 0; // an "on" should cross both sides
 
@@ -286,20 +279,14 @@ bool crossBSPNode(int bspnum,
 
 bool checkSight(Mobj* t1, Mobj* t2)
 {
-    int s1;
-    int s2;
-    int pnum;
-    int bytenum;
-    int bitnum;
-
     // First check for trivial rejection.
 
     // Determine subsector entries in REJECT table.
-    s1 = static_cast<int>(t1->subsector->sector - sectors);
-    s2 = static_cast<int>(t2->subsector->sector - sectors);
-    pnum = s1 * numsectors + s2;
-    bytenum = pnum >> 3;
-    bitnum = 1 << (pnum & 7);
+    int s1 = static_cast<int>(t1->subsector->sector - sectors);
+    int s2 = static_cast<int>(t2->subsector->sector - sectors);
+    int pnum = s1 * numsectors + s2;
+    int bytenum = pnum >> 3;
+    int bitnum = 1 << (pnum & 7);
 
     // Check in REJECT table.
     if (rejectmatrix[bytenum] & bitnum)

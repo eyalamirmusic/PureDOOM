@@ -57,8 +57,6 @@ void unArchiveSpecials();
 
 void archivePlayers()
 {
-    Player* dest;
-
     auto& save = saveGameState();
     auto& players_ = playerState();
 
@@ -69,7 +67,7 @@ void archivePlayers()
 
         padSaveCursor(save.cursor);
 
-        dest = reinterpret_cast<Player*>(save.cursor);
+        Player* dest = reinterpret_cast<Player*>(save.cursor);
         doom_memcpy(dest, &players_.players[i], sizeof(Player));
         save.cursor += sizeof(Player);
         for (int j = 0; j < NUMPSPRITES; j++)
@@ -126,12 +124,10 @@ void archiveWorld()
     int i;
     Sector* sec;
     Line* li;
-    Side* si;
-    short* put;
 
     auto& save = saveGameState();
 
-    put = reinterpret_cast<short*>(save.cursor);
+    short* put = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
@@ -158,7 +154,7 @@ void archiveWorld()
             if (li->sidenum[j] == -1)
                 continue;
 
-            si = &sides[li->sidenum[j]];
+            Side* si = &sides[li->sidenum[j]];
 
             *put++ = si->textureoffset.toInt();
             *put++ = si->rowoffset.toInt();
@@ -179,12 +175,10 @@ void unArchiveWorld()
     int i;
     Sector* sec;
     Line* li;
-    Side* si;
-    short* get;
 
     auto& save = saveGameState();
 
-    get = reinterpret_cast<short*>(save.cursor);
+    short* get = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
@@ -210,7 +204,7 @@ void unArchiveWorld()
         {
             if (li->sidenum[j] == -1)
                 continue;
-            si = &sides[li->sidenum[j]];
+            Side* si = &sides[li->sidenum[j]];
             si->textureoffset = Fixed::fromInt(*get++);
             si->rowoffset = Fixed::fromInt(*get++);
             si->toptexture = *get++;
@@ -255,14 +249,11 @@ static T* unarchiveThinker()
 //
 void archiveThinkers()
 {
-    Thinker* th;
-    Mobj* mobj;
-
     auto& save = saveGameState();
     auto& thinkers = thinkerList();
 
     // save off the current thinkers
-    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         // A removed-but-not-yet-freed mobj is skipped, as vanilla did (its function
         // was the -1 sentinel, matching no archived type).
@@ -270,7 +261,7 @@ void archiveThinkers()
         {
             *save.cursor++ = tc_mobj;
             padSaveCursor(save.cursor);
-            mobj = reinterpret_cast<Mobj*>(save.cursor);
+            Mobj* mobj = reinterpret_cast<Mobj*>(save.cursor);
             doom_memcpy(mobj, th, sizeof(*mobj));
             save.cursor += sizeof(*mobj);
             mobj->state = reinterpret_cast<State*>(mobj->state - states);
@@ -293,19 +284,16 @@ void archiveThinkers()
 //
 void unArchiveThinkers()
 {
-    byte tclass;
-    Thinker* currentthinker;
-    Thinker* next;
     Mobj* mobj;
 
     auto& save = saveGameState();
     auto& thinkers = thinkerList();
 
     // remove all the current thinkers
-    currentthinker = thinkers.cap.next;
+    Thinker* currentthinker = thinkers.cap.next;
     while (currentthinker != &thinkers.cap)
     {
-        next = currentthinker->next;
+        Thinker* next = currentthinker->next;
 
         if (currentthinker->kind() == ThinkerKind::Mobj)
             removeMobj(reinterpret_cast<Mobj*>(currentthinker));
@@ -319,7 +307,7 @@ void unArchiveThinkers()
     // read in saved thinkers
     while (1)
     {
-        tclass = *save.cursor++;
+        byte tclass = *save.cursor++;
         switch (tclass)
         {
             case tc_end:
@@ -385,20 +373,13 @@ enum
 //
 void archiveSpecials()
 {
-    Thinker* th;
     Ceiling* ceiling;
-    Door* door;
-    FloorMove* floor;
-    Plat* plat;
-    LightFlash* flash;
-    Strobe* strobe;
-    Glow* glow;
 
     auto& save = saveGameState();
     auto& thinkers = thinkerList();
 
     // save off the current thinkers
-    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         // Skip a removed-but-not-yet-freed thinker (vanilla's -1 function matched
         // no type).
@@ -437,7 +418,7 @@ void archiveSpecials()
         {
             *save.cursor++ = tc_door;
             padSaveCursor(save.cursor);
-            door = reinterpret_cast<Door*>(save.cursor);
+            Door* door = reinterpret_cast<Door*>(save.cursor);
             doom_memcpy(door, th, sizeof(*door));
             save.cursor += sizeof(*door);
             door->sector = reinterpret_cast<Sector*>(door->sector - sectors);
@@ -448,7 +429,7 @@ void archiveSpecials()
         {
             *save.cursor++ = tc_floor;
             padSaveCursor(save.cursor);
-            floor = reinterpret_cast<FloorMove*>(save.cursor);
+            FloorMove* floor = reinterpret_cast<FloorMove*>(save.cursor);
             doom_memcpy(floor, th, sizeof(*floor));
             save.cursor += sizeof(*floor);
             floor->sector = reinterpret_cast<Sector*>(floor->sector - sectors);
@@ -459,7 +440,7 @@ void archiveSpecials()
         {
             *save.cursor++ = tc_plat;
             padSaveCursor(save.cursor);
-            plat = reinterpret_cast<Plat*>(save.cursor);
+            Plat* plat = reinterpret_cast<Plat*>(save.cursor);
             doom_memcpy(plat, th, sizeof(*plat));
             save.cursor += sizeof(*plat);
             plat->sector = reinterpret_cast<Sector*>(plat->sector - sectors);
@@ -470,7 +451,7 @@ void archiveSpecials()
         {
             *save.cursor++ = tc_flash;
             padSaveCursor(save.cursor);
-            flash = reinterpret_cast<LightFlash*>(save.cursor);
+            LightFlash* flash = reinterpret_cast<LightFlash*>(save.cursor);
             doom_memcpy(flash, th, sizeof(*flash));
             save.cursor += sizeof(*flash);
             flash->sector = reinterpret_cast<Sector*>(flash->sector - sectors);
@@ -481,7 +462,7 @@ void archiveSpecials()
         {
             *save.cursor++ = tc_strobe;
             padSaveCursor(save.cursor);
-            strobe = reinterpret_cast<Strobe*>(save.cursor);
+            Strobe* strobe = reinterpret_cast<Strobe*>(save.cursor);
             doom_memcpy(strobe, th, sizeof(*strobe));
             save.cursor += sizeof(*strobe);
             strobe->sector = reinterpret_cast<Sector*>(strobe->sector - sectors);
@@ -492,7 +473,7 @@ void archiveSpecials()
         {
             *save.cursor++ = tc_glow;
             padSaveCursor(save.cursor);
-            glow = reinterpret_cast<Glow*>(save.cursor);
+            Glow* glow = reinterpret_cast<Glow*>(save.cursor);
             doom_memcpy(glow, th, sizeof(*glow));
             save.cursor += sizeof(*glow);
             glow->sector = reinterpret_cast<Sector*>(glow->sector - sectors);
@@ -509,7 +490,6 @@ void archiveSpecials()
 //
 void unArchiveSpecials()
 {
-    byte tclass;
     Ceiling* ceiling;
     Door* door;
     FloorMove* floor;
@@ -523,7 +503,7 @@ void unArchiveSpecials()
     // read in saved thinkers
     while (1)
     {
-        tclass = *save.cursor++;
+        byte tclass = *save.cursor++;
         switch (tclass)
         {
             case tc_endspecials:

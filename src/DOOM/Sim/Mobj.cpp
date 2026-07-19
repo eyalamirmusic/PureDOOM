@@ -64,8 +64,6 @@ constexpr fixed_t FRICTION {0xe800};
 
 bool setMobjState(Mobj* mobj, StateNum state)
 {
-    State* st;
-
     do
     {
         if (state == S_NULL)
@@ -75,7 +73,7 @@ bool setMobjState(Mobj* mobj, StateNum state)
             return false;
         }
 
-        st = &states[state];
+        State* st = &states[state];
         mobj->state = st;
         mobj->tics = st->tics;
         mobj->sprite = st->sprite;
@@ -121,9 +119,6 @@ void xyMovement(Mobj* mo)
 {
     fixed_t ptryx;
     fixed_t ptryy;
-    Player* player;
-    fixed_t xmove;
-    fixed_t ymove;
 
     auto& c = clip();
 
@@ -140,7 +135,7 @@ void xyMovement(Mobj* mo)
         return;
     }
 
-    player = mo->player;
+    Player* player = mo->player;
 
     if (mo->momx > MAXMOVE)
         mo->momx = MAXMOVE;
@@ -152,8 +147,8 @@ void xyMovement(Mobj* mo)
     else if (mo->momy < -MAXMOVE)
         mo->momy = -MAXMOVE;
 
-    xmove = mo->momx;
-    ymove = mo->momy;
+    fixed_t xmove = mo->momx;
+    fixed_t ymove = mo->momy;
 
     do
     {
@@ -248,9 +243,6 @@ void xyMovement(Mobj* mo)
 //
 void zMovement(Mobj* mo)
 {
-    fixed_t dist;
-    fixed_t delta;
-
     // check for smooth step up
     if (mo->player && mo->z < mo->floorz)
     {
@@ -267,9 +259,10 @@ void zMovement(Mobj* mo)
         // float down towards target if too close
         if (!(mo->flags & MF_SKULLFLY) && !(mo->flags & MF_INFLOAT))
         {
-            dist = approxDistance(mo->x - mo->target->x, mo->y - mo->target->y);
+            fixed_t dist =
+                approxDistance(mo->x - mo->target->x, mo->y - mo->target->y);
 
-            delta = (mo->target->z + (mo->height >> 1)) - mo->z;
+            fixed_t delta = (mo->target->z + (mo->height >> 1)) - mo->z;
 
             if (delta.isNegative() && dist < -(delta * 3))
                 mo->z -= FLOATSPEED;
@@ -348,15 +341,10 @@ void zMovement(Mobj* mo)
 //
 void nightmareRespawn(Mobj* mobj)
 {
-    fixed_t x;
-    fixed_t y;
     fixed_t z;
-    SubSector* ss;
-    Mobj* mo;
-    MapThing* mthing;
 
-    x = Fixed::fromInt(mobj->spawnpoint.x);
-    y = Fixed::fromInt(mobj->spawnpoint.y);
+    fixed_t x = Fixed::fromInt(mobj->spawnpoint.x);
+    fixed_t y = Fixed::fromInt(mobj->spawnpoint.y);
 
     // somthing is occupying it's position?
     if (!checkPosition(mobj, x, y))
@@ -364,19 +352,20 @@ void nightmareRespawn(Mobj* mobj)
 
     // spawn a teleport fog at old spot
     // because of removal of the body?
-    mo = spawnMobj(mobj->x, mobj->y, mobj->subsector->sector->floorheight, MT_TFOG);
+    Mobj* mo =
+        spawnMobj(mobj->x, mobj->y, mobj->subsector->sector->floorheight, MT_TFOG);
     // initiate teleport sound
     startSound(mo, sfx_telept);
 
     // spawn a teleport fog at the new spot
-    ss = pointInSubsector(x, y);
+    SubSector* ss = pointInSubsector(x, y);
 
     mo = spawnMobj(x, y, ss->sector->floorheight, MT_TFOG);
 
     startSound(mo, sfx_telept);
 
     // spawn the new monster
-    mthing = &mobj->spawnpoint;
+    MapThing* mthing = &mobj->spawnpoint;
 
     // spawn it
     if (mobj->info->flags & MF_SPAWNCEILING)
@@ -461,12 +450,8 @@ void mobjThinker(Mobj* mobj)
 //
 Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
 {
-    Mobj* mobj;
-    State* st;
-    MobjInfo* info;
-
-    mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
-    info = &mobjinfo[type];
+    Mobj* mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
+    MobjInfo* info = &mobjinfo[type];
 
     mobj->type = type;
     mobj->info = info;
@@ -483,7 +468,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     mobj->lastlook = randomness().forPlay() % MAXPLAYERS;
     // do not set the state with setMobjState,
     // because action routines can not be called yet
-    st = &states[info->spawnstate];
+    State* st = &states[info->spawnstate];
 
     mobj->state = st;
     mobj->tics = st->tics;
@@ -542,13 +527,7 @@ void removeMobj(Mobj* mobj)
 //
 void respawnSpecials()
 {
-    fixed_t x;
-    fixed_t y;
     fixed_t z;
-
-    SubSector* ss;
-    Mobj* mo;
-    MapThing* mthing;
 
     int i;
 
@@ -566,14 +545,14 @@ void respawnSpecials()
     if (levelStats().leveltime - queue.itemrespawntime[queue.iquetail] < 30 * 35)
         return;
 
-    mthing = &queue.itemrespawnque[queue.iquetail];
+    MapThing* mthing = &queue.itemrespawnque[queue.iquetail];
 
-    x = Fixed::fromInt(mthing->x);
-    y = Fixed::fromInt(mthing->y);
+    fixed_t x = Fixed::fromInt(mthing->x);
+    fixed_t y = Fixed::fromInt(mthing->y);
 
     // spawn a teleport fog at the new spot
-    ss = pointInSubsector(x, y);
-    mo = spawnMobj(x, y, ss->sector->floorheight, MT_IFOG);
+    SubSector* ss = pointInSubsector(x, y);
+    Mobj* mo = spawnMobj(x, y, ss->sector->floorheight, MT_IFOG);
     startSound(mo, sfx_itmbk);
 
     // find which type to spawn
@@ -605,28 +584,21 @@ void respawnSpecials()
 //
 void spawnPlayer(MapThing* mthing)
 {
-    Player* p;
-    fixed_t x;
-    fixed_t y;
-    fixed_t z;
-
-    Mobj* mobj;
-
     auto& players_ = playerState();
 
     // not playing?
     if (!players_.playeringame[mthing->type - 1])
         return;
 
-    p = &players_.players[mthing->type - 1];
+    Player* p = &players_.players[mthing->type - 1];
 
     if (p->playerstate == PST_REBORN)
         playerReborn(mthing->type - 1);
 
-    x = Fixed::fromInt(mthing->x);
-    y = Fixed::fromInt(mthing->y);
-    z = ONFLOORZ;
-    mobj = spawnMobj(x, y, z, MT_PLAYER);
+    fixed_t x = Fixed::fromInt(mthing->x);
+    fixed_t y = Fixed::fromInt(mthing->y);
+    fixed_t z = ONFLOORZ;
+    Mobj* mobj = spawnMobj(x, y, z, MT_PLAYER);
 
     // set color translations for player sprites
     if (mthing->type > 1)
@@ -672,9 +644,6 @@ void spawnMapThing(MapThing* mthing)
 {
     int i;
     int bit;
-    Mobj* mobj;
-    fixed_t x;
-    fixed_t y;
     fixed_t z;
 
     auto& spawns = mapSpawns();
@@ -749,15 +718,15 @@ void spawnMapThing(MapThing* mthing)
     }
 
     // spawn it
-    x = Fixed::fromInt(mthing->x);
-    y = Fixed::fromInt(mthing->y);
+    fixed_t x = Fixed::fromInt(mthing->x);
+    fixed_t y = Fixed::fromInt(mthing->y);
 
     if (mobjinfo[i].flags & MF_SPAWNCEILING)
         z = ONCEILINGZ;
     else
         z = ONFLOORZ;
 
-    mobj = spawnMobj(x, y, z, static_cast<MobjType>(i));
+    Mobj* mobj = spawnMobj(x, y, z, static_cast<MobjType>(i));
     mobj->spawnpoint = *mthing;
 
     if (mobj->tics > 0)
@@ -783,12 +752,10 @@ void spawnMapThing(MapThing* mthing)
 //
 void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 {
-    Mobj* th;
-
     z += Fixed {(randomness().forPlay() - randomness().forPlay())
                       << 10};
 
-    th = spawnMobj(x, y, z, MT_PUFF);
+    Mobj* th = spawnMobj(x, y, z, MT_PUFF);
     th->momz = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
 
@@ -805,11 +772,9 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 //
 void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 {
-    Mobj* th;
-
     z += Fixed {(randomness().forPlay() - randomness().forPlay())
                       << 10};
-    th = spawnMobj(x, y, z, MT_BLOOD);
+    Mobj* th = spawnMobj(x, y, z, MT_BLOOD);
     th->momz = FRACUNIT * 2;
     th->tics -= randomness().forPlay() & 3;
 
@@ -848,17 +813,13 @@ void checkMissileSpawn(Mobj* th)
 //
 Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 {
-    Mobj* th;
-    angle_t an;
-    int dist;
-
-    th = spawnMobj(source->x, source->y, source->z + 4 * 8 * FRACUNIT, type);
+    Mobj* th = spawnMobj(source->x, source->y, source->z + 4 * 8 * FRACUNIT, type);
 
     if (th->info->seesound)
         startSound(th, th->info->seesound);
 
     th->target = source; // where it came from
-    an = pointToAngle2(source->x, source->y, dest->x, dest->y);
+    angle_t an = pointToAngle2(source->x, source->y, dest->x, dest->y);
 
     // fuzzy player
     if (dest->flags & MF_SHADOW)
@@ -873,7 +834,7 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 
     // dist is vanilla's tic count, not a length: the raw distance divided by the
     // missile's raw speed as plain integers, then used as the divisor for momz.
-    dist = approxDistance(dest->x - source->x, dest->y - source->y).raw;
+    int dist = approxDistance(dest->x - source->x, dest->y - source->y).raw;
     dist = dist / th->info->speed;
 
     if (dist < 1)
@@ -891,18 +852,10 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 //
 void spawnPlayerMissile(Mobj* source, MobjType type)
 {
-    Mobj* th;
-    angle_t an;
-
-    fixed_t x;
-    fixed_t y;
-    fixed_t z;
-    fixed_t slope;
-
     // see which target is to be aimed at
-    an = source->angle;
+    angle_t an = source->angle;
     auto aim = aimLineAttack(source, an, 16 * 64 * FRACUNIT);
-    slope = aim.slope;
+    fixed_t slope = aim.slope;
 
     if (!aim.target)
     {
@@ -924,11 +877,11 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
         }
     }
 
-    x = source->x;
-    y = source->y;
-    z = source->z + 4 * 8 * FRACUNIT;
+    fixed_t x = source->x;
+    fixed_t y = source->y;
+    fixed_t z = source->z + 4 * 8 * FRACUNIT;
 
-    th = spawnMobj(x, y, z, type);
+    Mobj* th = spawnMobj(x, y, z, type);
 
     if (th->info->seesound)
         startSound(th, th->info->seesound);

@@ -35,12 +35,10 @@ void spawnGlowingLight(Sector* sector);
 
 void fireFlicker(FireFlicker& flick)
 {
-    int amount;
-
     if (--flick.count)
         return;
 
-    amount = (randomness().forPlay() & 3) * 16;
+    int amount = (randomness().forPlay() & 3) * 16;
 
     if (flick.sector->lightlevel - amount < flick.minlight)
         flick.sector->lightlevel = flick.minlight;
@@ -55,13 +53,11 @@ void fireFlicker(FireFlicker& flick)
 //
 void spawnFireFlicker(Sector* sector)
 {
-    FireFlicker* flick;
-
     // Note that we are resetting sector attributes.
     // Nothing special about it during gameplay.
     sector->special = 0;
 
-    flick = new (levelAlloc(sizeof(*flick))) FireFlicker {};
+    FireFlicker* flick = new (levelAlloc(sizeof(*flick))) FireFlicker {};
 
     addThinker(flick);
 
@@ -103,12 +99,10 @@ void lightFlash(LightFlash& flash)
 //
 void spawnLightFlash(Sector* sector)
 {
-    LightFlash* flash;
-
     // nothing special about it during gameplay
     sector->special = 0;
 
-    flash = new (levelAlloc(sizeof(*flash))) LightFlash {};
+    LightFlash* flash = new (levelAlloc(sizeof(*flash))) LightFlash {};
 
     addThinker(flash);
 
@@ -152,9 +146,7 @@ void strobeFlash(Strobe& flash)
 //
 void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync)
 {
-    Strobe* flash;
-
-    flash = new (levelAlloc(sizeof(*flash))) Strobe {};
+    Strobe* flash = new (levelAlloc(sizeof(*flash))) Strobe {};
 
     addThinker(flash);
 
@@ -181,13 +173,10 @@ void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync)
 //
 void startLightStrobing(Line* line)
 {
-    int secnum;
-    Sector* sec;
-
-    secnum = -1;
+    int secnum = -1;
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        sec = &sectors[secnum];
+        Sector* sec = &sectors[secnum];
         if (sec->specialdata)
             continue;
 
@@ -200,22 +189,17 @@ void startLightStrobing(Line* line)
 //
 void turnTagLightsOff(Line* line)
 {
-    int min;
-    Sector* sector;
-    Sector* tsec;
-    Line* templine;
-
-    sector = sectors;
+    Sector* sector = sectors;
 
     for (int j = 0; j < numsectors; j++, sector++)
     {
         if (sector->tag == line->tag)
         {
-            min = sector->lightlevel;
+            int min = sector->lightlevel;
             for (int i = 0; i < sector->linecount; i++)
             {
-                templine = sector->lines[i];
-                tsec = getNextSector(templine, sector);
+                Line* templine = sector->lines[i];
+                Sector* tsec = getNextSector(templine, sector);
                 if (!tsec)
                     continue;
                 if (tsec->lightlevel < min)
@@ -231,11 +215,7 @@ void turnTagLightsOff(Line* line)
 //
 void lightTurnOn(Line* line, int bright)
 {
-    Sector* sector;
-    Sector* temp;
-    Line* templine;
-
-    sector = sectors;
+    Sector* sector = sectors;
 
     for (int i = 0; i < numsectors; i++, sector++)
     {
@@ -248,8 +228,8 @@ void lightTurnOn(Line* line, int bright)
             {
                 for (int j = 0; j < sector->linecount; j++)
                 {
-                    templine = sector->lines[j];
-                    temp = getNextSector(templine, sector);
+                    Line* templine = sector->lines[j];
+                    Sector* temp = getNextSector(templine, sector);
 
                     if (!temp)
                         continue;
@@ -294,9 +274,7 @@ void glow(Glow& g)
 
 void spawnGlowingLight(Sector* sector)
 {
-    Glow* g;
-
-    g = new (levelAlloc(sizeof(*g))) Glow {};
+    Glow* g = new (levelAlloc(sizeof(*g))) Glow {};
 
     addThinker(g);
 

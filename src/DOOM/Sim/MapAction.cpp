@@ -44,15 +44,6 @@ void hitSlideLine(Line* ld)
 {
     auto& scratch = actionScratch();
 
-    int side;
-
-    angle_t lineangle;
-    angle_t moveangle;
-    angle_t deltaangle;
-
-    fixed_t movelen;
-    fixed_t newlen;
-
     if (ld->slopetype == ST_HORIZONTAL)
     {
         scratch.tmymove = fixed_t {};
@@ -65,16 +56,16 @@ void hitSlideLine(Line* ld)
         return;
     }
 
-    side = lineSide({scratch.slidemo->x, scratch.slidemo->y}, *ld);
+    int side = lineSide({scratch.slidemo->x, scratch.slidemo->y}, *ld);
 
-    lineangle = pointToAngle2(fixed_t {}, fixed_t {}, ld->dx, ld->dy);
+    angle_t lineangle = pointToAngle2(fixed_t {}, fixed_t {}, ld->dx, ld->dy);
 
     if (side == 1)
         lineangle += ang180;
 
-    moveangle = pointToAngle2(
-        fixed_t {}, fixed_t {}, scratch.tmxmove, scratch.tmymove);
-    deltaangle = moveangle - lineangle;
+    angle_t moveangle =
+        pointToAngle2(fixed_t {}, fixed_t {}, scratch.tmxmove, scratch.tmymove);
+    angle_t deltaangle = moveangle - lineangle;
 
     if (deltaangle > ang180)
         deltaangle += ang180;
@@ -82,8 +73,8 @@ void hitSlideLine(Line* ld)
     const auto lineangleFine = lineangle.fineIndex();
     const auto deltaangleFine = deltaangle.fineIndex();
 
-    movelen = approxDistance(scratch.tmxmove, scratch.tmymove);
-    newlen = FixedMul(movelen, finecosine[deltaangleFine]);
+    fixed_t movelen = approxDistance(scratch.tmxmove, scratch.tmymove);
+    fixed_t newlen = FixedMul(movelen, finecosine[deltaangleFine]);
 
     scratch.tmxmove = FixedMul(newlen, finecosine[lineangleFine]);
     scratch.tmymove = FixedMul(newlen, finesine[lineangleFine]);
@@ -97,12 +88,10 @@ bool slideTraverse(Intercept* in)
     Clip& clip = Doom::clip();
     auto& scratch = actionScratch();
 
-    Line* li;
-
     if (!in->isaline)
         fatalError("Error: PTR_SlideTraverse: not a line?");
 
-    li = in->d.line;
+    Line* li = in->d.line;
 
     if (!(li->flags & ML_TWOSIDED))
     {
@@ -157,16 +146,12 @@ bool aimTraverse(Intercept* in,
 {
     Clip& clip = Doom::clip();
 
-    Line* li;
-    Mobj* th;
     fixed_t slope;
-    fixed_t thingtopslope;
-    fixed_t thingbottomslope;
     fixed_t dist;
 
     if (in->isaline)
     {
-        li = in->d.line;
+        Line* li = in->d.line;
 
         if (!(li->flags & ML_TWOSIDED))
             return false; // stop
@@ -201,7 +186,7 @@ bool aimTraverse(Intercept* in,
     }
 
     // shoot a thing
-    th = in->d.thing;
+    Mobj* th = in->d.thing;
     if (th == shootthing)
         return true; // can't shoot self
 
@@ -210,12 +195,12 @@ bool aimTraverse(Intercept* in,
 
     // check angles to see if the thing can be aimed at
     dist = FixedMul(clip.attackrange, in->frac);
-    thingtopslope = FixedDiv(th->z + th->height - shootz, dist);
+    fixed_t thingtopslope = FixedDiv(th->z + th->height - shootz, dist);
 
     if (thingtopslope < bottomslope)
         return true; // shot over the thing
 
-    thingbottomslope = FixedDiv(th->z - shootz, dist);
+    fixed_t thingbottomslope = FixedDiv(th->z - shootz, dist);
 
     if (thingbottomslope > topslope)
         return true; // shot under the thing
@@ -371,8 +356,6 @@ static bool useTraverse(Intercept* in, Mobj* usething)
 {
     Clip& clip = Doom::clip();
 
-    int side;
-
     if (!in->d.line->special)
     {
         updateLineOpening(*in->d.line);
@@ -387,7 +370,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
         return true;
     }
 
-    side = 0;
+    int side = 0;
     if (lineSide({usething->x, usething->y}, *in->d.line) == 1)
         side = 1;
 
@@ -407,10 +390,6 @@ static bool useTraverse(Intercept* in, Mobj* usething)
 static bool
     radiusAttackThing(Mobj* thing, Mobj* bombspot, Mobj* bombsource, int bombdamage)
 {
-    fixed_t dx;
-    fixed_t dy;
-    fixed_t spread;
-
     if (!(thing->flags & MF_SHOOTABLE))
         return true;
 
@@ -418,10 +397,10 @@ static bool
     if (thing->type == MT_CYBORG || thing->type == MT_SPIDER)
         return true;
 
-    dx = doom_abs(thing->x - bombspot->x);
-    dy = doom_abs(thing->y - bombspot->y);
+    fixed_t dx = doom_abs(thing->x - bombspot->x);
+    fixed_t dy = doom_abs(thing->y - bombspot->y);
 
-    spread = dx > dy ? dx : dy;
+    fixed_t spread = dx > dy ? dx : dy;
 
     // Whole map units from here on - the falloff is subtracted from the damage,
     // which is a plain int. Vanilla keeps this in its fixed_t `dist` after the
@@ -453,8 +432,6 @@ static bool
 //
 static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 {
-    Mobj* mo;
-
     if (thingHeightClip(thing))
     {
         // keep checking
@@ -496,8 +473,8 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
         damageMobj(thing, nullptr, nullptr, 10);
 
         // spray blood in a random direction
-        mo = spawnMobj(
-            thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
+        Mobj* mo =
+            spawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
 
         // Raw: the random difference shifted into the fraction, ~+-16 units/tic.
         mo->momx = fixed_t {
@@ -526,10 +503,9 @@ void slideMove(Mobj* mo)
     fixed_t traily;
     fixed_t newx;
     fixed_t newy;
-    int hitcount;
 
     scratch.slidemo = mo;
-    hitcount = 0;
+    int hitcount = 0;
 
 retry:
     if (++hitcount == 3)
@@ -631,16 +607,13 @@ AimResult aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
 {
     Clip& clip = Doom::clip();
 
-    fixed_t x2;
-    fixed_t y2;
-
     const auto angleFine = angle.fineIndex();
     Mobj* shootthing = t1;
 
     // The range in WHOLE units scales the fixed cosine: an integer product, not a
     // fixed-point one. FixedMul here would divide the reach by 65536.
-    x2 = t1->x + distance.toInt() * finecosine[angleFine];
-    y2 = t1->y + distance.toInt() * finesine[angleFine];
+    fixed_t x2 = t1->x + distance.toInt() * finecosine[angleFine];
+    fixed_t y2 = t1->y + distance.toInt() * finesine[angleFine];
     fixed_t shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
 
     // can't shoot outside view angles
@@ -668,15 +641,12 @@ void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int da
 {
     Clip& clip = Doom::clip();
 
-    fixed_t x2;
-    fixed_t y2;
-
     const auto angleFine = angle.fineIndex();
     Mobj* shootthing = t1;
     int la_damage = damage;
     // Whole units scaling the fixed cosine - an integer product. See aimLineAttack.
-    x2 = t1->x + distance.toInt() * finecosine[angleFine];
-    y2 = t1->y + distance.toInt() * finesine[angleFine];
+    fixed_t x2 = t1->x + distance.toInt() * finecosine[angleFine];
+    fixed_t y2 = t1->y + distance.toInt() * finesine[angleFine];
     fixed_t shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
     clip.attackrange = distance;
     fixed_t aimslope = slope;
@@ -693,20 +663,14 @@ void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int da
 //
 void useLines(Player* player)
 {
-    angle_t angle;
-    fixed_t x1;
-    fixed_t y1;
-    fixed_t x2;
-    fixed_t y2;
-
-    angle = player->mo->angle;
+    angle_t angle = player->mo->angle;
     const auto angleFine = angle.fineIndex();
 
-    x1 = player->mo->x;
-    y1 = player->mo->y;
+    fixed_t x1 = player->mo->x;
+    fixed_t y1 = player->mo->y;
     // USERANGE in whole units scaling the fixed cosine - an integer product.
-    x2 = x1 + USERANGE.toInt() * finecosine[angleFine];
-    y2 = y1 + USERANGE.toInt() * finesine[angleFine];
+    fixed_t x2 = x1 + USERANGE.toInt() * finecosine[angleFine];
+    fixed_t y2 = y1 + USERANGE.toInt() * finesine[angleFine];
 
     Mobj* usething = player->mo;
 
@@ -722,11 +686,6 @@ void useLines(Player* player)
 //
 void radiusAttack(Mobj* spot, Mobj* source, int damage)
 {
-    int xl;
-    int xh;
-    int yl;
-    int yh;
-
     // Vanilla, overflow and all: MAXRADIUS is already a fixed value, so shifting
     // (damage + MAXRADIUS) up by another Doom::fracBits wraps the MAXRADIUS term away
     // and leaves the damage alone as the radius. Kept as the integer expression
@@ -734,10 +693,10 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
     fixed_t dist {(damage + (MAXRADIUS).raw) << fracBits};
 
     // Blockmap cell indices: a raw shift by MAPBLOCKSHIFT, not a conversion.
-    yh = (spot->y + dist - bmaporgy).raw >> MAPBLOCKSHIFT;
-    yl = (spot->y - dist - bmaporgy).raw >> MAPBLOCKSHIFT;
-    xh = (spot->x + dist - bmaporgx).raw >> MAPBLOCKSHIFT;
-    xl = (spot->x - dist - bmaporgx).raw >> MAPBLOCKSHIFT;
+    int yh = (spot->y + dist - bmaporgy).raw >> MAPBLOCKSHIFT;
+    int yl = (spot->y - dist - bmaporgy).raw >> MAPBLOCKSHIFT;
+    int xh = (spot->x + dist - bmaporgx).raw >> MAPBLOCKSHIFT;
+    int xl = (spot->x - dist - bmaporgx).raw >> MAPBLOCKSHIFT;
     const auto hitThing = [spot, source, damage](Mobj* thing)
     { return radiusAttackThing(thing, spot, source, damage); };
 

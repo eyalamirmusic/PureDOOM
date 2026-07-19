@@ -182,7 +182,6 @@ void playerScream(Mobj& mo);
 
 void recursiveSound(Sector* sec, int soundblocks)
 {
-    Line* check;
     Sector* other;
 
     auto& vc = validCount();
@@ -199,7 +198,7 @@ void recursiveSound(Sector* sec, int soundblocks)
 
     for (int i = 0; i < sec->linecount; i++)
     {
-        check = sec->lines[i];
+        Line* check = sec->lines[i];
         if (!(check->flags & ML_TWOSIDED))
             continue;
 
@@ -240,14 +239,11 @@ void noiseAlert(Mobj* target, Mobj& emmiter)
 //
 bool checkMeleeRange(Mobj& actor)
 {
-    Mobj* pl;
-    fixed_t dist;
-
     if (!actor.target)
         return false;
 
-    pl = actor.target;
-    dist = approxDistance(pl->x - actor.x, pl->y - actor.y);
+    Mobj* pl = actor.target;
+    fixed_t dist = approxDistance(pl->x - actor.x, pl->y - actor.y);
 
     if (dist >= MELEERANGE - 20 * FRACUNIT + pl->info->radius)
         return false;
@@ -266,8 +262,6 @@ bool checkMissileRange(Mobj& actor)
     // Vanilla declares dist fixed_t and then shifts it down to whole units
     // half way through, after which every use of it is a plain integer -
     // compared against 14*64, 196, 200, 160 and P_Random's 0..255.
-    fixed_t distance;
-    int dist;
 
     if (!checkSight(&actor, actor.target))
         return false;
@@ -284,13 +278,14 @@ bool checkMissileRange(Mobj& actor)
         return false; // do not attack yet
 
     // OPTIMIZE: get this from a global checksight
-    distance = approxDistance(actor.x - actor.target->x, actor.y - actor.target->y)
-               - 64 * FRACUNIT;
+    fixed_t distance =
+        approxDistance(actor.x - actor.target->x, actor.y - actor.target->y)
+        - 64 * FRACUNIT;
 
     if (!actor.info->meleestate)
         distance -= 128 * FRACUNIT; // no melee attack, so fire more
 
-    dist = distance.toInt();
+    int dist = distance.toInt();
 
     if (actor.type == MT_VILE)
     {
@@ -329,15 +324,8 @@ bool checkMissileRange(Mobj& actor)
 //
 bool move(Mobj& actor)
 {
-    fixed_t tryx;
-    fixed_t tryy;
-
-    Line* ld;
-
     // warning: 'catch', 'throw', and 'try'
     // are all C++ reserved words
-    bool try_ok;
-    bool good;
 
     auto& c = clip();
 
@@ -347,10 +335,10 @@ bool move(Mobj& actor)
     if (static_cast<unsigned>(actor.movedir) >= 8)
         fatalError("Error: Weird actor->movedir!");
 
-    tryx = actor.x + actor.info->speed * xspeed[actor.movedir];
-    tryy = actor.y + actor.info->speed * yspeed[actor.movedir];
+    fixed_t tryx = actor.x + actor.info->speed * xspeed[actor.movedir];
+    fixed_t tryy = actor.y + actor.info->speed * yspeed[actor.movedir];
 
-    try_ok = tryMove(&actor, tryx, tryy);
+    bool try_ok = tryMove(&actor, tryx, tryy);
 
     if (!try_ok)
     {
@@ -371,10 +359,10 @@ bool move(Mobj& actor)
             return false;
 
         actor.movedir = DI_NODIR;
-        good = false;
+        bool good = false;
         while (c.numspechit--)
         {
-            ld = c.spechit[c.numspechit];
+            Line* ld = c.spechit[c.numspechit];
             // if the special is not a door
             // that can be opened,
             // return false
@@ -418,24 +406,18 @@ bool tryWalk(Mobj& actor)
 
 void newChaseDir(Mobj& actor)
 {
-    fixed_t deltax;
-    fixed_t deltay;
-
     EA::Array<DirType, 3> d;
 
     int tdir;
-    DirType olddir;
-
-    DirType turnaround;
 
     if (!actor.target)
         fatalError("Error: newChaseDir: called with no target");
 
-    olddir = static_cast<DirType>(actor.movedir);
-    turnaround = opposite[olddir];
+    DirType olddir = static_cast<DirType>(actor.movedir);
+    DirType turnaround = opposite[olddir];
 
-    deltax = actor.target->x - actor.x;
-    deltay = actor.target->y - actor.y;
+    fixed_t deltax = actor.target->x - actor.x;
+    fixed_t deltay = actor.target->y - actor.y;
 
     if (deltax > 10 * FRACUNIT)
         d[1] = DI_EAST;
@@ -545,14 +527,8 @@ void newChaseDir(Mobj& actor)
 //
 bool lookForPlayers(Mobj& actor, bool allaround)
 {
-    int c;
-    int stop;
-    Player* player;
-    angle_t an;
-    fixed_t dist;
-
-    c = 0;
-    stop = (actor.lastlook - 1) & 3;
+    int c = 0;
+    int stop = (actor.lastlook - 1) & 3;
 
     auto& players_ = playerState();
 
@@ -567,7 +543,7 @@ bool lookForPlayers(Mobj& actor, bool allaround)
             return false;
         }
 
-        player = &players_.players[actor.lastlook];
+        Player* player = &players_.players[actor.lastlook];
 
         if (player->health <= 0)
             continue; // dead
@@ -577,12 +553,13 @@ bool lookForPlayers(Mobj& actor, bool allaround)
 
         if (!allaround)
         {
-            an = pointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
-                 - actor.angle;
+            angle_t an =
+                pointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
+                - actor.angle;
 
             if (an > ang90 && an < ang270)
             {
-                dist =
+                fixed_t dist =
                     approxDistance(player->mo->x - actor.x, player->mo->y - actor.y);
                 // if real close, react anyway
                 if (dist > MELEERANGE)
@@ -604,8 +581,6 @@ bool lookForPlayers(Mobj& actor, bool allaround)
 //
 void keenDie(Mobj& mo)
 {
-    Thinker* th;
-    Mobj* mo2;
     Line junk;
 
     auto& thinkers = thinkerList();
@@ -614,12 +589,12 @@ void keenDie(Mobj& mo)
 
     // scan the remaining thinkers
     // to see if all Keens are dead
-    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         if (th->kind() != ThinkerKind::Mobj || th->removed)
             continue;
 
-        mo2 = reinterpret_cast<Mobj*>(th);
+        Mobj* mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != &mo && mo2->type == mo.type && mo2->health > 0)
         {
             // other Keen not dead
@@ -641,10 +616,8 @@ void keenDie(Mobj& mo)
 //
 void look(Mobj& actor)
 {
-    Mobj* targ;
-
     actor.threshold = 0; // any shot will wake up
-    targ = actor.subsector->sector->soundtarget;
+    Mobj* targ = actor.subsector->sector->soundtarget;
 
     if (targ && (targ->flags & MF_SHOOTABLE))
     {
@@ -709,7 +682,6 @@ void chase(Mobj& actor)
     // signed comparison of an angle difference. As an unsigned raw angle, `> 0`
     // would be true for every non-zero value and the `< 0` branch unreachable -
     // which desyncs demo1 at tic 89, monsters turning the wrong way.
-    int delta;
 
     if (actor.reactiontime)
         actor.reactiontime--;
@@ -729,7 +701,8 @@ void chase(Mobj& actor)
     if (actor.movedir < 8)
     {
         actor.angle = angle_t {actor.angle.raw & (7u << 29)};
-        delta = (int) (actor.angle - angle_t {(unsigned) actor.movedir << 29}).raw;
+        int delta =
+            (int) (actor.angle - angle_t {(unsigned) actor.movedir << 29}).raw;
 
         if (delta > 0)
             actor.angle -= ang90 / 2u;
@@ -832,39 +805,32 @@ void faceTarget(Mobj& actor)
 //
 void posAttack(Mobj& actor)
 {
-    angle_t angle;
-    int damage;
-    fixed_t slope;
-
     if (!actor.target)
         return;
 
     faceTarget(actor);
-    angle = actor.angle;
-    slope = aimLineAttack(&actor, angle, MISSILERANGE).slope;
+    angle_t angle = actor.angle;
+    fixed_t slope = aimLineAttack(&actor, angle, MISSILERANGE).slope;
 
     startSound(&actor, sfx_pistol);
     angle += angle_t {
         (unsigned) (randomness().forPlay() - randomness().forPlay())
         << 20};
-    damage = ((randomness().forPlay() % 5) + 1) * 3;
+    int damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
 void sPosAttack(Mobj& actor)
 {
     angle_t angle {};
-    angle_t bangle;
-    int damage;
-    fixed_t slope;
 
     if (!actor.target)
         return;
 
     startSound(&actor, sfx_shotgn);
     faceTarget(actor);
-    bangle = actor.angle;
-    slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
+    angle_t bangle = actor.angle;
+    fixed_t slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
     for (int i = 0; i < 3; i++)
     {
@@ -872,7 +838,7 @@ void sPosAttack(Mobj& actor)
                 + angle_t {(unsigned) (randomness().forPlay()
                                        - randomness().forPlay())
                            << 20};
-        damage = ((randomness().forPlay() % 5) + 1) * 3;
+        int damage = ((randomness().forPlay() % 5) + 1) * 3;
         lineAttack(&actor, angle, MISSILERANGE, slope, damage);
     }
 }
@@ -880,24 +846,21 @@ void sPosAttack(Mobj& actor)
 void cPosAttack(Mobj& actor)
 {
     angle_t angle {};
-    angle_t bangle;
-    int damage;
-    fixed_t slope;
 
     if (!actor.target)
         return;
 
     startSound(&actor, sfx_shotgn);
     faceTarget(actor);
-    bangle = actor.angle;
-    slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
+    angle_t bangle = actor.angle;
+    fixed_t slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
     angle =
         bangle
         + angle_t {
             (unsigned) (randomness().forPlay() - randomness().forPlay())
             << 20};
-    damage = ((randomness().forPlay() % 5) + 1) * 3;
+    int damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
@@ -947,8 +910,6 @@ void bspiAttack(Mobj& actor)
 //
 void troopAttack(Mobj& actor)
 {
-    int damage;
-
     if (!actor.target)
         return;
 
@@ -956,7 +917,7 @@ void troopAttack(Mobj& actor)
     if (checkMeleeRange(actor))
     {
         startSound(&actor, sfx_claw);
-        damage = (randomness().forPlay() % 8 + 1) * 3;
+        int damage = (randomness().forPlay() % 8 + 1) * 3;
         damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
@@ -967,30 +928,26 @@ void troopAttack(Mobj& actor)
 
 void sargAttack(Mobj& actor)
 {
-    int damage;
-
     if (!actor.target)
         return;
 
     faceTarget(actor);
     if (checkMeleeRange(actor))
     {
-        damage = ((randomness().forPlay() % 10) + 1) * 4;
+        int damage = ((randomness().forPlay() % 10) + 1) * 4;
         damageMobj(actor.target, &actor, &actor, damage);
     }
 }
 
 void headAttack(Mobj& actor)
 {
-    int damage;
-
     if (!actor.target)
         return;
 
     faceTarget(actor);
     if (checkMeleeRange(actor))
     {
-        damage = (randomness().forPlay() % 6 + 1) * 10;
+        int damage = (randomness().forPlay() % 6 + 1) * 10;
         damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
@@ -1010,15 +967,13 @@ void cyberAttack(Mobj& actor)
 
 void bruisAttack(Mobj& actor)
 {
-    int damage;
-
     if (!actor.target)
         return;
 
     if (checkMeleeRange(actor))
     {
         startSound(&actor, sfx_claw);
-        damage = (randomness().forPlay() % 8 + 1) * 10;
+        int damage = (randomness().forPlay() % 8 + 1) * 10;
         damageMobj(actor.target, &actor, &actor, damage);
         return;
     }
@@ -1032,14 +987,12 @@ void bruisAttack(Mobj& actor)
 //
 void skelMissile(Mobj& actor)
 {
-    Mobj* mo;
-
     if (!actor.target)
         return;
 
     faceTarget(actor);
     actor.z += 16 * FRACUNIT; // so missile spawns higher
-    mo = spawnMissile(&actor, actor.target, MT_TRACER);
+    Mobj* mo = spawnMissile(&actor, actor.target, MT_TRACER);
     actor.z -= 16 * FRACUNIT; // back to normal
 
     mo->x += mo->momx;
@@ -1049,13 +1002,8 @@ void skelMissile(Mobj& actor)
 
 void tracer(Mobj& actor)
 {
-    angle_t exact;
     // As in spawnMissile: dist is a tic count once divided by the missile's raw
     // speed, and is then the plain integer divisor of the height difference.
-    int dist;
-    fixed_t slope;
-    Mobj* dest;
-    Mobj* th;
 
     if (gameClock().gametic & 3)
         return;
@@ -1063,8 +1011,8 @@ void tracer(Mobj& actor)
     // spawn a puff of smoke behind the rocket
     spawnPuff(actor.x, actor.y, actor.z);
 
-    th = spawnMobj(
-        actor.x - actor.momx, actor.y - actor.momy, actor.z, MT_SMOKE);
+    Mobj* th =
+        spawnMobj(actor.x - actor.momx, actor.y - actor.momy, actor.z, MT_SMOKE);
 
     th->momz = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
@@ -1072,13 +1020,13 @@ void tracer(Mobj& actor)
         th->tics = 1;
 
     // adjust direction
-    dest = actor.tracer;
+    Mobj* dest = actor.tracer;
 
     if (!dest || dest->health <= 0)
         return;
 
     // change angle
-    exact = pointToAngle2(actor.x, actor.y, dest->x, dest->y);
+    angle_t exact = pointToAngle2(actor.x, actor.y, dest->x, dest->y);
 
     if (exact != actor.angle)
     {
@@ -1101,13 +1049,13 @@ void tracer(Mobj& actor)
     actor.momy = FixedMul(Fixed {actor.info->speed}, finesine[fine]);
 
     // change slope
-    dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
+    int dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
 
     dist = dist / actor.info->speed;
 
     if (dist < 1)
         dist = 1;
-    slope = (dest->z + 40 * FRACUNIT - actor.z) / dist;
+    fixed_t slope = (dest->z + 40 * FRACUNIT - actor.z) / dist;
 
     if (slope < actor.momz)
         actor.momz -= FRACUNIT / 8;
@@ -1126,8 +1074,6 @@ void skelWhoosh(Mobj& actor)
 
 void skelFist(Mobj& actor)
 {
-    int damage;
-
     if (!actor.target)
         return;
 
@@ -1135,7 +1081,7 @@ void skelFist(Mobj& actor)
 
     if (checkMeleeRange(actor))
     {
-        damage = ((randomness().forPlay() % 10) + 1) * 6;
+        int damage = ((randomness().forPlay() % 10) + 1) * 6;
         startSound(&actor, sfx_skepch);
         damageMobj(actor.target, &actor, &actor, damage);
     }
@@ -1147,9 +1093,6 @@ void skelFist(Mobj& actor)
 //
 bool vileCheck(Mobj* thing)
 {
-    fixed_t maxdist;
-    bool check;
-
     auto& ai = enemyAI();
 
     if (!(thing->flags & MF_CORPSE))
@@ -1161,7 +1104,7 @@ bool vileCheck(Mobj* thing)
     if (thing->info->raisestate == S_NULL)
         return true; // monster doesn't have a raise state
 
-    maxdist = thing->info->radius + mobjinfo[MT_VILE].radius;
+    fixed_t maxdist = thing->info->radius + mobjinfo[MT_VILE].radius;
 
     if (doom_abs(thing->x - ai.viletryx) > maxdist
         || doom_abs(thing->y - ai.viletryy) > maxdist)
@@ -1170,7 +1113,7 @@ bool vileCheck(Mobj* thing)
     ai.corpsehit = thing;
     ai.corpsehit->momx = ai.corpsehit->momy = fixed_t {};
     ai.corpsehit->height <<= 2;
-    check = checkPosition(ai.corpsehit, ai.corpsehit->x, ai.corpsehit->y);
+    bool check = checkPosition(ai.corpsehit, ai.corpsehit->x, ai.corpsehit->y);
     ai.corpsehit->height >>= 2;
 
     if (!check)
@@ -1185,14 +1128,6 @@ bool vileCheck(Mobj* thing)
 //
 void vileChase(Mobj& actor)
 {
-    int xl;
-    int xh;
-    int yl;
-    int yh;
-
-    MobjInfo* info;
-    Mobj* temp;
-
     auto& ai = enemyAI();
 
     if (actor.movedir != DI_NODIR)
@@ -1201,10 +1136,10 @@ void vileChase(Mobj& actor)
         ai.viletryx = actor.x + actor.info->speed * xspeed[actor.movedir];
         ai.viletryy = actor.y + actor.info->speed * yspeed[actor.movedir];
 
-        xl = (ai.viletryx - bmaporgx - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        xh = (ai.viletryx - bmaporgx + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        yl = (ai.viletryy - bmaporgy - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        yh = (ai.viletryy - bmaporgy + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        int xl = (ai.viletryx - bmaporgx - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        int xh = (ai.viletryx - bmaporgx + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        int yl = (ai.viletryy - bmaporgy - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        int yh = (ai.viletryy - bmaporgy + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
 
         for (int bx = xl; bx <= xh; bx++)
         {
@@ -1216,14 +1151,14 @@ void vileChase(Mobj& actor)
                 if (!forEachThingInBlock(bx, by, vileCheck))
                 {
                     // got one!
-                    temp = actor.target;
+                    Mobj* temp = actor.target;
                     actor.target = ai.corpsehit;
                     faceTarget(actor);
                     actor.target = temp;
 
                     setMobjState(&actor, S_VILE_HEAL1);
                     startSound(ai.corpsehit, sfx_slop);
-                    info = ai.corpsehit->info;
+                    MobjInfo* info = ai.corpsehit->info;
 
                     setMobjState(ai.corpsehit,
                                        static_cast<StateNum>(info->raisestate));
@@ -1268,9 +1203,7 @@ void fireCrackle(Mobj& actor)
 
 void fire(Mobj& actor)
 {
-    Mobj* dest;
-
-    dest = actor.tracer;
+    Mobj* dest = actor.tracer;
     if (!dest)
         return;
 
@@ -1293,14 +1226,12 @@ void fire(Mobj& actor)
 //
 void vileTarget(Mobj& actor)
 {
-    Mobj* fog;
-
     if (!actor.target)
         return;
 
     faceTarget(actor);
 
-    fog =
+    Mobj* fog =
         spawnMobj(actor.target->x, actor.target->x, actor.target->z, MT_FIRE);
 
     actor.tracer = fog;
@@ -1314,8 +1245,6 @@ void vileTarget(Mobj& actor)
 //
 void vileAttack(Mobj& actor)
 {
-    Mobj* fire;
-
     if (!actor.target)
         return;
 
@@ -1330,7 +1259,7 @@ void vileAttack(Mobj& actor)
 
     const auto anFine = actor.angle.fineIndex();
 
-    fire = actor.tracer;
+    Mobj* fire = actor.tracer;
 
     if (!fire)
         return;
@@ -1355,14 +1284,12 @@ void fatRaise(Mobj& actor)
 
 void fatAttack1(Mobj& actor)
 {
-    Mobj* mo;
-
     faceTarget(actor);
     // Change direction  to ...
     actor.angle += FATSPREAD;
     spawnMissile(&actor, actor.target, MT_FATSHOT);
 
-    mo = spawnMissile(&actor, actor.target, MT_FATSHOT);
+    Mobj* mo = spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle += FATSPREAD;
     const auto an1Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an1Fine]);
@@ -1371,14 +1298,12 @@ void fatAttack1(Mobj& actor)
 
 void fatAttack2(Mobj& actor)
 {
-    Mobj* mo;
-
     faceTarget(actor);
     // Now here choose opposite deviation.
     actor.angle -= FATSPREAD;
     spawnMissile(&actor, actor.target, MT_FATSHOT);
 
-    mo = spawnMissile(&actor, actor.target, MT_FATSHOT);
+    Mobj* mo = spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD * 2;
     const auto an2Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an2Fine]);
@@ -1387,11 +1312,9 @@ void fatAttack2(Mobj& actor)
 
 void fatAttack3(Mobj& actor)
 {
-    Mobj* mo;
-
     faceTarget(actor);
 
-    mo = spawnMissile(&actor, actor.target, MT_FATSHOT);
+    Mobj* mo = spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD / 2;
     const auto an3Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an3Fine]);
@@ -1410,13 +1333,10 @@ void fatAttack3(Mobj& actor)
 //
 void skullAttack(Mobj& actor)
 {
-    Mobj* dest;
-    int dist;
-
     if (!actor.target)
         return;
 
-    dest = actor.target;
+    Mobj* dest = actor.target;
     actor.flags |= MF_SKULLFLY;
 
     startSound(&actor, actor.info->attacksound);
@@ -1424,7 +1344,7 @@ void skullAttack(Mobj& actor)
     const auto fine = actor.angle.fineIndex();
     actor.momx = FixedMul(SKULLSPEED, finecosine[fine]);
     actor.momy = FixedMul(SKULLSPEED, finesine[fine]);
-    dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
+    int dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
     dist = dist / SKULLSPEED.raw;
 
     if (dist < 1)
@@ -1438,21 +1358,12 @@ void skullAttack(Mobj& actor)
 //
 void painShootSkull(Mobj& actor, angle_t angle)
 {
-    fixed_t x;
-    fixed_t y;
-    fixed_t z;
-
-    Mobj* newmobj;
-    fixed_t prestep;
-    int count;
-    Thinker* currentthinker;
-
     auto& thinkers = thinkerList();
 
     // count total number of skull currently on the level
-    count = 0;
+    int count = 0;
 
-    currentthinker = thinkers.cap.next;
+    Thinker* currentthinker = thinkers.cap.next;
     while (currentthinker != &thinkers.cap)
     {
         if (currentthinker->kind() == ThinkerKind::Mobj
@@ -1470,14 +1381,14 @@ void painShootSkull(Mobj& actor, angle_t angle)
     // okay, there's playe for another one
     const auto anFine = angle.fineIndex();
 
-    prestep =
+    fixed_t prestep =
         4 * FRACUNIT + 3 * (actor.info->radius + mobjinfo[MT_SKULL].radius) / 2;
 
-    x = actor.x + FixedMul(prestep, finecosine[anFine]);
-    y = actor.y + FixedMul(prestep, finesine[anFine]);
-    z = actor.z + 8 * FRACUNIT;
+    fixed_t x = actor.x + FixedMul(prestep, finecosine[anFine]);
+    fixed_t y = actor.y + FixedMul(prestep, finesine[anFine]);
+    fixed_t z = actor.z + 8 * FRACUNIT;
 
-    newmobj = spawnMobj(x, y, z, MT_SKULL);
+    Mobj* newmobj = spawnMobj(x, y, z, MT_SKULL);
 
     // Check for movements.
     if (!tryMove(newmobj, newmobj->x, newmobj->y))
@@ -1582,8 +1493,6 @@ void explode(Mobj& thingy)
 //
 void bossDeath(Mobj& mo)
 {
-    Thinker* th;
-    Mobj* mo2;
     Line junk;
     int i;
 
@@ -1665,12 +1574,12 @@ void bossDeath(Mobj& mo)
 
     // scan the remaining thinkers to see
     // if all bosses are dead
-    for (th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         if (th->kind() != ThinkerKind::Mobj || th->removed)
             continue;
 
-        mo2 = reinterpret_cast<Mobj*>(th);
+        Mobj* mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != &mo && mo2->type == mo.type && mo2->health > 0)
         {
             // other boss not dead
@@ -1765,9 +1674,6 @@ void closeShotgun2(Player* player, PspDef* psp)
 
 void brainAwake(Mobj&)
 {
-    Thinker* thinker;
-    Mobj* m;
-
     auto& thinkers = thinkerList();
     auto& ai = enemyAI();
 
@@ -1775,14 +1681,14 @@ void brainAwake(Mobj&)
     ai.numbraintargets = 0;
     ai.braintargeton = 0;
 
-    thinker = thinkers.cap.next;
+    Thinker* thinker = thinkers.cap.next;
     for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
          thinker = thinker->next)
     {
         if (thinker->kind() != ThinkerKind::Mobj || thinker->removed)
             continue; // not a mobj
 
-        m = reinterpret_cast<Mobj*>(thinker);
+        Mobj* m = reinterpret_cast<Mobj*>(thinker);
 
         if (m->type == MT_BOSSTARGET)
         {
@@ -1801,17 +1707,13 @@ void brainPain(Mobj&)
 
 void brainScream(Mobj& mo)
 {
-    fixed_t y;
-    fixed_t z;
-    Mobj* th;
-
     for (fixed_t x = mo.x - 196 * FRACUNIT; x < mo.x + 320 * FRACUNIT;
          x += FRACUNIT * 8)
     {
-        y = mo.y - 320 * FRACUNIT;
+        fixed_t y = mo.y - 320 * FRACUNIT;
         // vanilla's raw 128 added to a whole-unit-scaled random; kept as it stands.
-        z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-        th = spawnMobj(x, y, z, MT_ROCKET);
+        fixed_t z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+        Mobj* th = spawnMobj(x, y, z, MT_ROCKET);
         th->momz = Fixed {randomness().forPlay() * 512};
 
         setMobjState(th, S_BRAINEXPLODE1);
@@ -1826,17 +1728,11 @@ void brainScream(Mobj& mo)
 
 void brainExplode(Mobj& mo)
 {
-    fixed_t x;
-    fixed_t y;
-    fixed_t z;
-    Mobj* th;
-
-    x = mo.x
-        + Fixed {(randomness().forPlay() - randomness().forPlay())
-                       * 2048};
-    y = mo.y;
-    z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-    th = spawnMobj(x, y, z, MT_ROCKET);
+    fixed_t x =
+        mo.x + Fixed {(randomness().forPlay() - randomness().forPlay()) * 2048};
+    fixed_t y = mo.y;
+    fixed_t z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+    Mobj* th = spawnMobj(x, y, z, MT_ROCKET);
     th->momz = Fixed {randomness().forPlay() * 512};
 
     setMobjState(th, S_BRAINEXPLODE1);
@@ -1853,9 +1749,6 @@ void brainDie(Mobj&)
 
 void brainSpit(Mobj& mo)
 {
-    Mobj* targ;
-    Mobj* newmobj;
-
     auto& ai = enemyAI();
 
     ai.brainSpitEasy ^= 1;
@@ -1863,11 +1756,11 @@ void brainSpit(Mobj& mo)
         return;
 
     // shoot a cube at current target
-    targ = ai.braintargets[ai.braintargeton];
+    Mobj* targ = ai.braintargets[ai.braintargeton];
     ai.braintargeton = (ai.braintargeton + 1) % ai.numbraintargets;
 
     // spawn brain missile
-    newmobj = spawnMissile(&mo, targ, MT_SPAWNSHOT);
+    Mobj* newmobj = spawnMissile(&mo, targ, MT_SPAWNSHOT);
     newmobj->target = targ;
     // Vanilla divides the raw values as plain integers here - the result is a tic
     // count, not a length. A fixed-point divide would scale it by 65536.
@@ -1886,23 +1779,19 @@ void spawnSound(Mobj& mo)
 
 void spawnFly(Mobj& mo)
 {
-    Mobj* newmobj;
-    Mobj* fog;
-    Mobj* targ;
-    int r;
     MobjType type;
 
     if (--mo.reactiontime)
         return; // still flying
 
-    targ = mo.target;
+    Mobj* targ = mo.target;
 
     // First spawn teleport fog.
-    fog = spawnMobj(targ->x, targ->y, targ->z, MT_SPAWNFIRE);
+    Mobj* fog = spawnMobj(targ->x, targ->y, targ->z, MT_SPAWNFIRE);
     startSound(fog, sfx_telept);
 
     // Randomly select monster to spawn.
-    r = randomness().forPlay();
+    int r = randomness().forPlay();
 
     // Probability distribution (kind of :),
     // decreasing likelihood.
@@ -1929,7 +1818,7 @@ void spawnFly(Mobj& mo)
     else
         type = MT_BRUISER;
 
-    newmobj = spawnMobj(targ->x, targ->y, targ->z, type);
+    Mobj* newmobj = spawnMobj(targ->x, targ->y, targ->z, type);
     if (lookForPlayers(*newmobj, true))
         setMobjState(newmobj, static_cast<StateNum>(newmobj->info->seestate));
 

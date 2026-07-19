@@ -66,10 +66,6 @@ void init();
 
 void loadVertexes(int lump)
 {
-    byte* data;
-    MapVertex* ml;
-    Vertex* li;
-
     // Determine number of lumps:
     //  total lump length / vertex record length.
     numvertexes = wad().length(lump) / sizeof(MapVertex);
@@ -81,10 +77,10 @@ void loadVertexes(int lump)
     vertexes = level().vertexes.data();
 
     // Load data into cache.
-    data = static_cast<byte*>(cacheLumpNum(lump));
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
 
-    ml = reinterpret_cast<MapVertex*>(data);
-    li = vertexes;
+    MapVertex* ml = reinterpret_cast<MapVertex*>(data);
+    Vertex* li = vertexes;
 
     // Copy and convert vertex coordinates,
     // internal representation as fixed.
@@ -102,20 +98,13 @@ void loadVertexes(int lump)
 //
 void loadSegs(int lump)
 {
-    byte* data;
-    MapSeg* ml;
-    Seg* li;
-    Line* ldef;
-    int linedef;
-    int side;
-
     numsegs = wad().length(lump) / sizeof(MapSeg);
     level().segs.assign(numsegs, Seg {});
     segs = level().segs.data();
-    data = static_cast<byte*>(cacheLumpNum(lump));
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
 
-    ml = reinterpret_cast<MapSeg*>(data);
-    li = segs;
+    MapSeg* ml = reinterpret_cast<MapSeg*>(data);
+    Seg* li = segs;
     for (int i = 0; i < numsegs; i++, li++, ml++)
     {
         li->v1 = &vertexes[littleEndian(ml->v1)];
@@ -123,10 +112,10 @@ void loadSegs(int lump)
 
         li->angle = angle_t {(unsigned) (littleEndian(ml->angle)) << 16};
         li->offset = Fixed::fromInt(littleEndian(ml->offset));
-        linedef = littleEndian(ml->linedef);
-        ldef = &lines[linedef];
+        int linedef = littleEndian(ml->linedef);
+        Line* ldef = &lines[linedef];
         li->linedef = ldef;
-        side = littleEndian(ml->side);
+        int side = littleEndian(ml->side);
         li->sidedef = &sides[ldef->sidenum[side]];
         li->frontsector = sides[ldef->sidenum[side]].sector;
         if (ldef->flags & ML_TWOSIDED)
@@ -141,17 +130,13 @@ void loadSegs(int lump)
 //
 void loadSubsectors(int lump)
 {
-    byte* data;
-    MapSubsector* ms;
-    SubSector* ss;
-
     numsubsectors = wad().length(lump) / sizeof(MapSubsector);
     level().subsectors.assign(numsubsectors, SubSector {});
     subsectors = level().subsectors.data();
-    data = static_cast<byte*>(cacheLumpNum(lump));
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
 
-    ms = reinterpret_cast<MapSubsector*>(data);
-    ss = subsectors;
+    MapSubsector* ms = reinterpret_cast<MapSubsector*>(data);
+    SubSector* ss = subsectors;
 
     for (int i = 0; i < numsubsectors; i++, ss++, ms++)
     {
@@ -165,17 +150,13 @@ void loadSubsectors(int lump)
 //
 void loadSectors(int lump)
 {
-    byte* data;
-    MapSector* ms;
-    Sector* ss;
-
     numsectors = wad().length(lump) / sizeof(MapSector);
     level().sectors.assign(numsectors, Sector {});
     sectors = level().sectors.data();
-    data = static_cast<byte*>(cacheLumpNum(lump));
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
 
-    ms = reinterpret_cast<MapSector*>(data);
-    ss = sectors;
+    MapSector* ms = reinterpret_cast<MapSector*>(data);
+    Sector* ss = sectors;
     for (int i = 0; i < numsectors; i++, ss++, ms++)
     {
         ss->floorheight = Fixed::fromInt(littleEndian(ms->floorheight));
@@ -194,17 +175,13 @@ void loadSectors(int lump)
 //
 void loadNodes(int lump)
 {
-    byte* data;
-    MapNode* mn;
-    Node* no;
-
     numnodes = wad().length(lump) / sizeof(MapNode);
     level().nodes.assign(numnodes, Node {});
     nodes = level().nodes.data();
-    data = static_cast<byte*>(cacheLumpNum(lump));
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
 
-    mn = reinterpret_cast<MapNode*>(data);
-    no = nodes;
+    MapNode* mn = reinterpret_cast<MapNode*>(data);
+    Node* no = nodes;
 
     for (int i = 0; i < numnodes; i++, no++, mn++)
     {
@@ -226,18 +203,13 @@ void loadNodes(int lump)
 //
 void loadThings(int lump)
 {
-    byte* data;
-    MapThing* mt;
-    int numthings;
-    bool spawn;
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
+    int numthings = wad().length(lump) / sizeof(MapThing);
 
-    data = static_cast<byte*>(cacheLumpNum(lump));
-    numthings = wad().length(lump) / sizeof(MapThing);
-
-    mt = reinterpret_cast<MapThing*>(data);
+    MapThing* mt = reinterpret_cast<MapThing*>(data);
     for (int i = 0; i < numthings; i++, mt++)
     {
-        spawn = true;
+        bool spawn = true;
 
         // Do not spawn cool, new monsters if !commercial
         if (gameVersion().gamemode != commercial)
@@ -278,26 +250,20 @@ void loadThings(int lump)
 //
 void loadLineDefs(int lump)
 {
-    byte* data;
-    MapLinedef* mld;
-    Line* ld;
-    Vertex* v1;
-    Vertex* v2;
-
     numlines = wad().length(lump) / sizeof(MapLinedef);
     level().lines.assign(numlines, Line {});
     lines = level().lines.data();
-    data = static_cast<byte*>(cacheLumpNum(lump));
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
 
-    mld = reinterpret_cast<MapLinedef*>(data);
-    ld = lines;
+    MapLinedef* mld = reinterpret_cast<MapLinedef*>(data);
+    Line* ld = lines;
     for (int i = 0; i < numlines; i++, mld++, ld++)
     {
         ld->flags = littleEndian(mld->flags);
         ld->special = littleEndian(mld->special);
         ld->tag = littleEndian(mld->tag);
-        v1 = ld->v1 = &vertexes[littleEndian(mld->v1)];
-        v2 = ld->v2 = &vertexes[littleEndian(mld->v2)];
+        Vertex* v1 = ld->v1 = &vertexes[littleEndian(mld->v1)];
+        Vertex* v2 = ld->v2 = &vertexes[littleEndian(mld->v2)];
         ld->dx = v2->x - v1->x;
         ld->dy = v2->y - v1->y;
 
@@ -355,17 +321,13 @@ void loadLineDefs(int lump)
 //
 void loadSideDefs(int lump)
 {
-    byte* data;
-    MapSidedef* msd;
-    Side* sd;
-
     numsides = wad().length(lump) / sizeof(MapSidedef);
     level().sides.assign(numsides, Side {});
     sides = level().sides.data();
-    data = static_cast<byte*>(cacheLumpNum(lump));
+    byte* data = static_cast<byte*>(cacheLumpNum(lump));
 
-    msd = reinterpret_cast<MapSidedef*>(data);
-    sd = sides;
+    MapSidedef* msd = reinterpret_cast<MapSidedef*>(data);
+    Side* sd = sides;
     for (int i = 0; i < numsides; i++, msd++, sd++)
     {
         sd->textureoffset = Fixed::fromInt(littleEndian(msd->textureoffset));
@@ -382,10 +344,8 @@ void loadSideDefs(int lump)
 //
 void loadBlockMap(int lump)
 {
-    int count;
-
     blockmaplump = static_cast<short*>(cacheLumpNum(lump));
-    count = wad().length(lump) / 2;
+    int count = wad().length(lump) / 2;
 
     for (int i = 0; i < count; i++)
         blockmaplump[i] = littleEndian(blockmaplump[i]);
@@ -419,26 +379,19 @@ void loadBlockMap(int lump)
 //
 void groupLines()
 {
-    Line** linebuffer;
-    int total;
-    Line* li;
-    Sector* sector;
-    SubSector* ss;
-    Seg* seg;
     EA::Array<fixed_t, 4> bbox;
-    int block;
 
     // look up sector number for each subsector
-    ss = subsectors;
+    SubSector* ss = subsectors;
     for (int i = 0; i < numsubsectors; i++, ss++)
     {
-        seg = &segs[ss->firstline];
+        Seg* seg = &segs[ss->firstline];
         ss->sector = seg->sidedef->sector;
     }
 
     // count number of lines in each sector
-    li = lines;
-    total = 0;
+    Line* li = lines;
+    int total = 0;
     for (int i = 0; i < numlines; i++, li++)
     {
         total++;
@@ -455,8 +408,8 @@ void groupLines()
     // slices, owned by the Level (Sim/Level.h); linebuffer walks it as vanilla's
     // did, and sector->lines points into it.
     level().sectorLines.assign(total, nullptr);
-    linebuffer = level().sectorLines.data();
-    sector = sectors;
+    Line** linebuffer = level().sectorLines.data();
+    Sector* sector = sectors;
     for (int i = 0; i < numsectors; i++, sector++)
     {
         clearBox(bbox.data());
@@ -479,7 +432,7 @@ void groupLines()
         sector->soundorg.y = (bbox[BOXTOP] + bbox[BOXBOTTOM]) / 2;
 
         // adjust bounding box to map blocks
-        block = (bbox[BOXTOP] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
+        int block = (bbox[BOXTOP] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block >= bmapheight ? bmapheight - 1 : block;
         sector->blockbox[BOXTOP] = block;
 
@@ -503,7 +456,6 @@ void groupLines()
 void setupLevel(int episode, int map, int, Skill)
 {
     EA::Array<char, 9> lumpname;
-    int lumpnum;
 
     auto& stats = levelStats();
     auto& wminfo_ = intermissionInfo().wminfo;
@@ -560,7 +512,7 @@ void setupLevel(int episode, int map, int, Skill)
         lumpname[4] = 0;
     }
 
-    lumpnum = wad().number(lumpname.data());
+    int lumpnum = wad().number(lumpname.data());
 
     stats.leveltime = 0;
 

@@ -63,8 +63,6 @@ constexpr int BONUSADD = 6;
 
 bool giveAmmo(Player* player, AmmoType ammo, int num)
 {
-    int oldammo;
-
     auto& ammoLimit = ammoLimits();
 
     if (ammo == am_noammo)
@@ -96,7 +94,7 @@ bool giveAmmo(Player* player, AmmoType ammo, int num)
         num <<= 1;
     }
 
-    oldammo = player->ammo[ammo];
+    int oldammo = player->ammo[ammo];
     player->ammo[ammo] += num;
 
     if (player->ammo[ammo] > player->maxammo[ammo])
@@ -304,11 +302,7 @@ bool givePower(Player* player, int /*PowerType*/ power)
 //
 void touchSpecialThing(Mobj* special, Mobj* toucher)
 {
-    Player* player;
-    fixed_t delta;
-    int sound;
-
-    delta = special->z - toucher->z;
+    fixed_t delta = special->z - toucher->z;
 
     if (delta > toucher->height || delta < -8 * FRACUNIT)
     {
@@ -316,8 +310,8 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
         return;
     }
 
-    sound = sfx_itemup;
-    player = toucher->player;
+    int sound = sfx_itemup;
+    Player* player = toucher->player;
 
     const auto& session = gameSession();
 
@@ -631,7 +625,6 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
 void killMobj(Mobj* source, Mobj* target)
 {
     MobjType item;
-    Mobj* mo;
 
     target->flags &= ~(MF_SHOOTABLE | MF_FLOAT | MF_SKULLFLY);
 
@@ -713,7 +706,7 @@ void killMobj(Mobj* source, Mobj* target)
             return;
     }
 
-    mo = spawnMobj(target->x, target->y, ONFLOORZ, item);
+    Mobj* mo = spawnMobj(target->x, target->y, ONFLOORZ, item);
     mo->flags |= MF_DROPPED; // special versions of items
 }
 
@@ -732,9 +725,6 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
 {
     angle_t ang {};
     int saved;
-    Player* player;
-    fixed_t thrust;
-    int temp;
 
     if (!(target->flags & MF_SHOOTABLE))
         return; // shouldn't happen...
@@ -747,7 +737,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         target->momx = target->momy = target->momz = fixed_t {};
     }
 
-    player = target->player;
+    Player* player = target->player;
     if (player && gameSession().gameskill == sk_baby)
         damage >>= 1; // take half damage in trainer mode
 
@@ -760,7 +750,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
     {
         ang = pointToAngle2(inflictor->x, inflictor->y, target->x, target->y);
 
-        thrust = damage * (FRACUNIT >> 3) * 100 / target->info->mass;
+        fixed_t thrust = damage * (FRACUNIT >> 3) * 100 / target->info->mass;
 
         // make fall forwards sometimes
         if (damage < 40 && damage > target->health
@@ -819,7 +809,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         if (player->damagecount > 100)
             player->damagecount = 100; // teleport stomp does 10k points...
 
-        temp = damage < 100 ? damage : 100;
+        int temp = damage < 100 ? damage : 100;
 
         const auto& players_ = playerState();
 

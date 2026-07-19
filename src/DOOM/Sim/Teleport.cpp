@@ -17,15 +17,6 @@ namespace Doom
 
 int teleport(Line* line, int side, Mobj* thing)
 {
-    int tag;
-    Mobj* m;
-    Mobj* fog;
-    Thinker* thinker;
-    Sector* sector;
-    fixed_t oldx;
-    fixed_t oldy;
-    fixed_t oldz;
-
     auto& thinkers = thinkerList();
 
     // don't teleport missiles
@@ -37,12 +28,12 @@ int teleport(Line* line, int side, Mobj* thing)
     if (side == 1)
         return 0;
 
-    tag = line->tag;
+    int tag = line->tag;
     for (int i = 0; i < numsectors; i++)
     {
         if (sectors[i].tag == tag)
         {
-            thinker = thinkers.cap.next;
+            Thinker* thinker = thinkers.cap.next;
             for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
                  thinker = thinker->next)
             {
@@ -50,20 +41,20 @@ int teleport(Line* line, int side, Mobj* thing)
                 if (thinker->kind() != ThinkerKind::Mobj || thinker->removed)
                     continue;
 
-                m = reinterpret_cast<Mobj*>(thinker);
+                Mobj* m = reinterpret_cast<Mobj*>(thinker);
 
                 // not a teleportman
                 if (m->type != MT_TELEPORTMAN)
                     continue;
 
-                sector = m->subsector->sector;
+                Sector* sector = m->subsector->sector;
                 // wrong sector
                 if (sector - sectors != i)
                     continue;
 
-                oldx = thing->x;
-                oldy = thing->y;
-                oldz = thing->z;
+                fixed_t oldx = thing->x;
+                fixed_t oldy = thing->y;
+                fixed_t oldz = thing->z;
 
                 if (!teleportMove(thing, m->x, m->y))
                     return 0;
@@ -73,7 +64,7 @@ int teleport(Line* line, int side, Mobj* thing)
                     thing->player->viewz = thing->z + thing->player->viewheight;
 
                 // spawn teleport fog at source and destination
-                fog = spawnMobj(oldx, oldy, oldz, MT_TFOG);
+                Mobj* fog = spawnMobj(oldx, oldy, oldz, MT_TFOG);
                 startSound(fog, sfx_telept);
                 const auto anFine = m->angle.fineIndex();
                 fog = spawnMobj(m->x + 20 * finecosine[anFine],

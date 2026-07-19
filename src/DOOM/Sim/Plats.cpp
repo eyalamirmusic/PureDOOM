@@ -122,13 +122,8 @@ void platRaise(Plat& plat)
 //
 int doPlat(Line* line, PlatType type, int amount)
 {
-    Plat* plat;
-    int secnum;
-    int rtn;
-    Sector* sec;
-
-    secnum = -1;
-    rtn = 0;
+    int secnum = -1;
+    int rtn = 0;
 
     // Activate all <type> plats that are in_stasis
     switch (type)
@@ -142,14 +137,14 @@ int doPlat(Line* line, PlatType type, int amount)
 
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        sec = &sectors[secnum];
+        Sector* sec = &sectors[secnum];
 
         if (sec->specialdata)
             continue;
 
         // Find lowest & highest floors around sector
         rtn = 1;
-        plat = new (levelAlloc(sizeof(*plat))) Plat {};
+        Plat* plat = new (levelAlloc(sizeof(*plat))) Plat {};
         addThinker(plat);
 
         plat->type = type;
