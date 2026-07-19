@@ -30,7 +30,7 @@ namespace Doom
 {
 struct WeaponInfo
 {
-    Doom::AmmoType ammo;
+    AmmoType ammo;
     int upstate;
     int downstate;
     int readystate;

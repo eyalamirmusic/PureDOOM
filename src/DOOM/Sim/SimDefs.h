@@ -82,8 +82,8 @@ constexpr int BASETHRESHOLD = 100;
 //
 namespace Doom
 {
-constexpr fixed_t ONFLOORZ = Doom::Fixed {DOOM_MININT};
-constexpr fixed_t ONCEILINGZ = Doom::Fixed {DOOM_MAXINT};
+constexpr fixed_t ONFLOORZ = Fixed {DOOM_MININT};
+constexpr fixed_t ONCEILINGZ = Fixed {DOOM_MAXINT};
 
 // Time interval for item respawning.
 constexpr int ITEMQUESIZE = 128;
@@ -114,8 +114,8 @@ struct Intercept
     bool isaline;
     union
     {
-        Doom::Mobj* thing;
-        Doom::Line* line;
+        Mobj* thing;
+        Line* line;
     } d;
 };
 } // namespace Doom

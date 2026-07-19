@@ -58,14 +58,14 @@ Doom::Sector* getNextSector(Doom::Line* line, Doom::Sector* sec);
 //
 namespace Doom
 {
-struct FireFlicker : Doom::Thinker
+struct FireFlicker : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override
+    ThinkerKind kind() const override
     {
-        return Doom::ThinkerKind::FireFlicker;
+        return ThinkerKind::FireFlicker;
     }
-    Doom::Sector* sector;
+    Sector* sector;
     int count;
     int maxlight;
     int minlight;
@@ -74,11 +74,11 @@ struct FireFlicker : Doom::Thinker
 
 namespace Doom
 {
-struct LightFlash : Doom::Thinker
+struct LightFlash : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::LightFlash; }
-    Doom::Sector* sector;
+    ThinkerKind kind() const override { return ThinkerKind::LightFlash; }
+    Sector* sector;
     int count;
     int maxlight;
     int minlight;
@@ -89,14 +89,14 @@ struct LightFlash : Doom::Thinker
 
 namespace Doom
 {
-struct Strobe : Doom::Thinker
+struct Strobe : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override
+    ThinkerKind kind() const override
     {
-        return Doom::ThinkerKind::StrobeFlash;
+        return ThinkerKind::StrobeFlash;
     }
-    Doom::Sector* sector;
+    Sector* sector;
     int count;
     int minlight;
     int maxlight;
@@ -107,11 +107,11 @@ struct Strobe : Doom::Thinker
 
 namespace Doom
 {
-struct Glow : Doom::Thinker
+struct Glow : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Glow; }
-    Doom::Sector* sector;
+    ThinkerKind kind() const override { return ThinkerKind::Glow; }
+    Sector* sector;
     int minlight;
     int maxlight;
     int direction;
@@ -153,11 +153,11 @@ namespace Doom
 {
 struct Button
 {
-    Doom::Line* line;
+    Line* line;
     ButtonWhere where;
     int btexture;
     int btimer;
-    Doom::Mobj* soundorg;
+    Mobj* soundorg;
 };
 } // namespace Doom
 
@@ -203,11 +203,11 @@ enum PlatType
 
 namespace Doom
 {
-struct Plat : Doom::Thinker
+struct Plat : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Plat; }
-    Doom::Sector* sector;
+    ThinkerKind kind() const override { return ThinkerKind::Plat; }
+    Sector* sector;
     fixed_t speed;
     fixed_t low;
     fixed_t high;
@@ -248,12 +248,12 @@ enum DoorType
 
 namespace Doom
 {
-struct Door : Doom::Thinker
+struct Door : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Door; }
+    ThinkerKind kind() const override { return ThinkerKind::Door; }
     DoorType type;
-    Doom::Sector* sector;
+    Sector* sector;
     fixed_t topheight;
     fixed_t speed;
 
@@ -293,12 +293,12 @@ enum CeilingType
 
 namespace Doom
 {
-struct Ceiling : Doom::Thinker
+struct Ceiling : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Ceiling; }
+    ThinkerKind kind() const override { return ThinkerKind::Ceiling; }
     CeilingType type;
-    Doom::Sector* sector;
+    Sector* sector;
     fixed_t bottomheight;
     fixed_t topheight;
     fixed_t speed;
@@ -370,13 +370,13 @@ enum StairType
 
 namespace Doom
 {
-struct FloorMove : Doom::Thinker
+struct FloorMove : Thinker
 {
     void tick() override;
-    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Floor; }
+    ThinkerKind kind() const override { return ThinkerKind::Floor; }
     FloorType type;
     bool crush;
-    Doom::Sector* sector;
+    Sector* sector;
     int direction;
     int newspecial;
     short texture;

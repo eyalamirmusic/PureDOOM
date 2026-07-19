@@ -46,7 +46,7 @@ void moveCeiling(Ceiling& ceiling)
             break;
         case 1:
             // UP
-            res = Doom::movePlane(*ceiling.sector,
+            res = movePlane(*ceiling.sector,
                               ceiling.speed,
                               ceiling.topheight,
                               false,
@@ -60,7 +60,7 @@ void moveCeiling(Ceiling& ceiling)
                     case silentCrushAndRaise:
                         break;
                     default:
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                         // ?
@@ -77,7 +77,7 @@ void moveCeiling(Ceiling& ceiling)
                         break;
 
                     case silentCrushAndRaise:
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case fastCrushAndRaise:
@@ -93,7 +93,7 @@ void moveCeiling(Ceiling& ceiling)
 
         case -1:
             // DOWN
-            res = Doom::movePlane(*ceiling.sector,
+            res = movePlane(*ceiling.sector,
                               ceiling.speed,
                               ceiling.bottomheight,
                               ceiling.crush,
@@ -107,7 +107,7 @@ void moveCeiling(Ceiling& ceiling)
                     case silentCrushAndRaise:
                         break;
                     default:
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
                 }
@@ -118,7 +118,7 @@ void moveCeiling(Ceiling& ceiling)
                 switch (ceiling.type)
                 {
                     case silentCrushAndRaise:
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                     case crushAndRaise:
@@ -182,7 +182,7 @@ int doCeiling(Line* line, CeilingType type)
             break;
     }
 
-    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
         if (sec->specialdata)
@@ -191,7 +191,7 @@ int doCeiling(Line* line, CeilingType type)
         // new door thinker
         rtn = 1;
         ceiling = new (levelAlloc(sizeof(*ceiling))) Ceiling {};
-        Doom::addThinker(ceiling);
+        addThinker(ceiling);
         sec->specialdata = ceiling;
         ceiling->sector = sec;
         ceiling->crush = false;
@@ -220,7 +220,7 @@ int doCeiling(Line* line, CeilingType type)
                 break;
 
             case raiseToHighest:
-                ceiling->topheight = Doom::findHighestCeilingSurrounding(sec);
+                ceiling->topheight = findHighestCeilingSurrounding(sec);
                 ceiling->direction = 1;
                 ceiling->speed = CEILSPEED;
                 break;
@@ -261,7 +261,7 @@ void removeActiveCeiling(Ceiling* c)
         if (specials.activeceilings[i] == c)
         {
             specials.activeceilings[i]->sector->specialdata = nullptr;
-            Doom::removeThinker(specials.activeceilings[i]);
+            removeThinker(specials.activeceilings[i]);
             specials.activeceilings[i] = nullptr;
             break;
         }

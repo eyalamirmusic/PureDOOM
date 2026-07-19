@@ -46,7 +46,7 @@ bool stompThing(Mobj* thing)
     if (!clip.tmthing->player && gameSession().gamemap != 30)
         return false;
 
-    Doom::damageMobj(thing, clip.tmthing, clip.tmthing, 10000);
+    damageMobj(thing, clip.tmthing, clip.tmthing, 10000);
 
     return true;
 }
@@ -139,14 +139,14 @@ bool checkThing(Mobj* thing)
     if (clip.tmthing->flags & MF_SKULLFLY)
     {
         int damage =
-            ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+            ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
 
-        Doom::damageMobj(thing, clip.tmthing, clip.tmthing, damage);
+        damageMobj(thing, clip.tmthing, clip.tmthing, damage);
 
         clip.tmthing->flags &= ~MF_SKULLFLY;
         clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = fixed_t {};
 
-        Doom::setMobjState(clip.tmthing,
+        setMobjState(clip.tmthing,
                            static_cast<StateNum>(clip.tmthing->info->spawnstate));
 
         return false; // stop moving
@@ -188,8 +188,8 @@ bool checkThing(Mobj* thing)
 
         // damage / explode
         int damage =
-            ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
-        Doom::damageMobj(thing, clip.tmthing, clip.tmthing->target, damage);
+            ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+        damageMobj(thing, clip.tmthing, clip.tmthing->target, damage);
 
         // don't traverse any more
         return false;
@@ -202,7 +202,7 @@ bool checkThing(Mobj* thing)
         if (clip.tmflags & MF_PICKUP)
         {
             // can remove thing
-            Doom::touchSpecialThing(thing, clip.tmthing);
+            touchSpecialThing(thing, clip.tmthing);
         }
         return !solid;
     }
@@ -226,7 +226,7 @@ bool checkPosition(Mobj* thing, fixed_t x, fixed_t y)
     clip.tmbbox[BOXRIGHT] = x + clip.tmthing->radius;
     clip.tmbbox[BOXLEFT] = x - clip.tmthing->radius;
 
-    SubSector* newsubsec = Doom::pointInSubsector(x, y);
+    SubSector* newsubsec = pointInSubsector(x, y);
     clip.ceilingline = nullptr;
 
     // The base floor / ceiling is from the subsector that contains the point. Any
@@ -321,7 +321,7 @@ bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
             if (side != oldside)
             {
                 if (ld->special)
-                    Doom::crossSpecialLine(
+                    crossSpecialLine(
                         static_cast<int>(ld - lines), oldside, thing);
             }
         }
@@ -346,7 +346,7 @@ bool teleportMove(Mobj* thing, fixed_t x, fixed_t y)
     clip.tmbbox[BOXRIGHT] = x + clip.tmthing->radius;
     clip.tmbbox[BOXLEFT] = x - clip.tmthing->radius;
 
-    SubSector* newsubsec = Doom::pointInSubsector(x, y);
+    SubSector* newsubsec = pointInSubsector(x, y);
     clip.ceilingline = nullptr;
 
     // The base floor/ceiling is from the subsector that contains the point. Any

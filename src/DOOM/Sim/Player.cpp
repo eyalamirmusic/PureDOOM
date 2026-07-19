@@ -156,7 +156,7 @@ void movePlayer(Player& player)
 
     if ((cmd->forwardmove || cmd->sidemove) && player.mo->state == &states[S_PLAY])
     {
-        Doom::setMobjState(player.mo, S_PLAY_RUN1);
+        setMobjState(player.mo, S_PLAY_RUN1);
     }
 }
 
@@ -185,7 +185,7 @@ void deathThink(Player& player)
 
     if (player.attacker && player.attacker != player.mo)
     {
-        angle = Doom::pointToAngle2(
+        angle = pointToAngle2(
             player.mo->x, player.mo->y, player.attacker->x, player.attacker->y);
 
         delta = angle - player.mo->angle;
@@ -252,7 +252,7 @@ void playerThink(Player& player)
     calcHeight(player);
 
     if (player.mo->subsector->sector->special)
-        Doom::playerInSpecialSector(&player);
+        playerInSpecialSector(&player);
 
     // Check for weapon change.
 
@@ -300,7 +300,7 @@ void playerThink(Player& player)
     {
         if (!player.usedown)
         {
-            Doom::useLines(&player);
+            useLines(&player);
             player.usedown = true;
         }
     }

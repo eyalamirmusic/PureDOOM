@@ -46,21 +46,21 @@ void verticalDoor(Door& door)
                 {
                     case blazeRaise:
                         door.direction = -1; // time to go back down
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_bdcls);
                         break;
 
                     case door_normal:
                         door.direction = -1; // time to go back down
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_dorcls);
                         break;
 
                     case close30ThenOpen:
                         door.direction = 1;
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
@@ -80,7 +80,7 @@ void verticalDoor(Door& door)
                     case raiseIn5Mins:
                         door.direction = 1;
                         door.type = door_normal;
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
@@ -93,7 +93,7 @@ void verticalDoor(Door& door)
 
         case -1:
             // DOWN
-            res = Doom::movePlane(*door.sector,
+            res = movePlane(*door.sector,
                               door.speed,
                               door.sector->floorheight,
                               false,
@@ -106,8 +106,8 @@ void verticalDoor(Door& door)
                     case blazeRaise:
                     case blazeClose:
                         door.sector->specialdata = nullptr;
-                        Doom::removeThinker(&door); // unlink and free
-                        Doom::startSound(
+                        removeThinker(&door); // unlink and free
+                        startSound(
                             reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_bdcls);
                         break;
@@ -115,7 +115,7 @@ void verticalDoor(Door& door)
                     case door_normal:
                     case door_close:
                         door.sector->specialdata = nullptr;
-                        Doom::removeThinker(&door); // unlink and free
+                        removeThinker(&door); // unlink and free
                         break;
 
                     case close30ThenOpen:
@@ -137,7 +137,7 @@ void verticalDoor(Door& door)
 
                     default:
                         door.direction = 1;
-                        Doom::startSound(
+                        startSound(
                             reinterpret_cast<Mobj*>(&door.sector->soundorg),
                             sfx_doropn);
                         break;
@@ -147,7 +147,7 @@ void verticalDoor(Door& door)
 
         case 1:
             // UP
-            res = Doom::movePlane(*door.sector,
+            res = movePlane(*door.sector,
                               door.speed,
                               door.topheight,
                               false,
@@ -168,7 +168,7 @@ void verticalDoor(Door& door)
                     case blazeOpen:
                     case door_open:
                         door.sector->specialdata = nullptr;
-                        Doom::removeThinker(&door); // unlink and free
+                        removeThinker(&door); // unlink and free
                         break;
 
                     default:
@@ -201,7 +201,7 @@ int doLockedDoor(Line* line, DoorType type, Mobj* thing)
             if (!p->cards[it_bluecard] && !p->cards[it_blueskull])
             {
                 p->message = PD_BLUEO;
-                Doom::startSound(nullptr, sfx_oof);
+                startSound(nullptr, sfx_oof);
                 return 0;
             }
             break;
@@ -213,7 +213,7 @@ int doLockedDoor(Line* line, DoorType type, Mobj* thing)
             if (!p->cards[it_redcard] && !p->cards[it_redskull])
             {
                 p->message = PD_REDO;
-                Doom::startSound(nullptr, sfx_oof);
+                startSound(nullptr, sfx_oof);
                 return 0;
             }
             break;
@@ -225,7 +225,7 @@ int doLockedDoor(Line* line, DoorType type, Mobj* thing)
             if (!p->cards[it_yellowcard] && !p->cards[it_yellowskull])
             {
                 p->message = PD_YELLOWO;
-                Doom::startSound(nullptr, sfx_oof);
+                startSound(nullptr, sfx_oof);
                 return 0;
             }
             break;
@@ -243,7 +243,7 @@ int doDoor(Line* line, DoorType type)
     secnum = -1;
     rtn = 0;
 
-    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
         if (sec->specialdata)
@@ -252,7 +252,7 @@ int doDoor(Line* line, DoorType type)
         // new door thinker
         rtn = 1;
         door = new (levelAlloc(sizeof(*door))) Door {};
-        Doom::addThinker(door);
+        addThinker(door);
         sec->specialdata = door;
 
         door->sector = sec;
@@ -263,47 +263,47 @@ int doDoor(Line* line, DoorType type)
         switch (type)
         {
             case blazeClose:
-                door->topheight = Doom::findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 door->speed = VDOORSPEED * 4;
-                Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
+                startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                              sfx_bdcls);
                 break;
 
             case door_close:
-                door->topheight = Doom::findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
-                Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
+                startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                              sfx_dorcls);
                 break;
 
             case close30ThenOpen:
                 door->topheight = sec->ceilingheight;
                 door->direction = -1;
-                Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
+                startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                              sfx_dorcls);
                 break;
 
             case blazeRaise:
             case blazeOpen:
                 door->direction = 1;
-                door->topheight = Doom::findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->speed = VDOORSPEED * 4;
                 if (door->topheight != sec->ceilingheight)
-                    Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
+                    startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                                  sfx_bdopn);
                 break;
 
             case door_normal:
             case door_open:
                 door->direction = 1;
-                door->topheight = Doom::findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(sec);
                 door->topheight -= 4 * FRACUNIT;
                 if (door->topheight != sec->ceilingheight)
-                    Doom::startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
+                    startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                                  sfx_doropn);
                 break;
 
@@ -340,7 +340,7 @@ void verticalDoor(Line* line, Mobj* thing)
             if (!player->cards[it_bluecard] && !player->cards[it_blueskull])
             {
                 player->message = PD_BLUEK;
-                Doom::startSound(nullptr, sfx_oof);
+                startSound(nullptr, sfx_oof);
                 return;
             }
             break;
@@ -353,7 +353,7 @@ void verticalDoor(Line* line, Mobj* thing)
             if (!player->cards[it_yellowcard] && !player->cards[it_yellowskull])
             {
                 player->message = PD_YELLOWK;
-                Doom::startSound(nullptr, sfx_oof);
+                startSound(nullptr, sfx_oof);
                 return;
             }
             break;
@@ -366,7 +366,7 @@ void verticalDoor(Line* line, Mobj* thing)
             if (!player->cards[it_redcard] && !player->cards[it_redskull])
             {
                 player->message = PD_REDK;
-                Doom::startSound(nullptr, sfx_oof);
+                startSound(nullptr, sfx_oof);
                 return;
             }
             break;
@@ -403,22 +403,22 @@ void verticalDoor(Line* line, Mobj* thing)
     {
         case 117: // BLAZING DOOR RAISE
         case 118: // BLAZING DOOR OPEN
-            Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_bdopn);
+            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_bdopn);
             break;
 
         case 1: // NORMAL DOOR SOUND
         case 31:
-            Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
+            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
             break;
 
         default: // LOCKED DOOR SOUND
-            Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
+            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
             break;
     }
 
     // new door thinker
     door = new (levelAlloc(sizeof(*door))) Door {};
-    Doom::addThinker(door);
+    addThinker(door);
     sec->specialdata = door;
     door->sector = sec;
     door->direction = 1;
@@ -454,7 +454,7 @@ void verticalDoor(Line* line, Mobj* thing)
     }
 
     // find the top and bottom of the movement range
-    door->topheight = Doom::findLowestCeilingSurrounding(sec);
+    door->topheight = findLowestCeilingSurrounding(sec);
     door->topheight -= 4 * FRACUNIT;
 }
 
@@ -467,7 +467,7 @@ void spawnDoorCloseIn30(Sector* sec)
 
     door = new (levelAlloc(sizeof(*door))) Door {};
 
-    Doom::addThinker(door);
+    addThinker(door);
 
     sec->specialdata = door;
     sec->special = 0;
@@ -488,7 +488,7 @@ void spawnDoorRaiseIn5Mins(Sector* sec, int)
 
     door = new (levelAlloc(sizeof(*door))) Door {};
 
-    Doom::addThinker(door);
+    addThinker(door);
 
     sec->specialdata = door;
     sec->special = 0;
@@ -497,7 +497,7 @@ void spawnDoorRaiseIn5Mins(Sector* sec, int)
     door->direction = 2;
     door->type = raiseIn5Mins;
     door->speed = VDOORSPEED;
-    door->topheight = Doom::findLowestCeilingSurrounding(sec);
+    door->topheight = findLowestCeilingSurrounding(sec);
     door->topheight -= 4 * FRACUNIT;
     door->topwait = VDOORWAIT;
     door->topcountdown = 5 * 60 * 35;

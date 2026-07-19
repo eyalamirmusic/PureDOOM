@@ -6,8 +6,8 @@ namespace Doom
 {
 // The thinker list and the per-tic ticker; p_tick.cpp keeps the vanilla names.
 void initThinkers();
-void addThinker(Doom::Thinker* thinker);
-void removeThinker(Doom::Thinker* thinker);
+void addThinker(Thinker* thinker);
+void removeThinker(Thinker* thinker);
 void runThinkers();
 void ticker();
 

@@ -67,12 +67,12 @@ void hitSlideLine(Line* ld)
 
     side = lineSide({scratch.slidemo->x, scratch.slidemo->y}, *ld);
 
-    lineangle = Doom::pointToAngle2(fixed_t {}, fixed_t {}, ld->dx, ld->dy);
+    lineangle = pointToAngle2(fixed_t {}, fixed_t {}, ld->dx, ld->dy);
 
     if (side == 1)
         lineangle += ang180;
 
-    moveangle = Doom::pointToAngle2(
+    moveangle = pointToAngle2(
         fixed_t {}, fixed_t {}, scratch.tmxmove, scratch.tmymove);
     deltaangle = moveangle - lineangle;
 
@@ -265,7 +265,7 @@ bool shootTraverse(
         li = in->d.line;
 
         if (li->special)
-            Doom::shootSpecialLine(shootthing, li);
+            shootSpecialLine(shootthing, li);
 
         if (!(li->flags & ML_TWOSIDED))
             goto hitline;
@@ -312,7 +312,7 @@ bool shootTraverse(
         }
 
         // Spawn bullet puffs.
-        Doom::spawnPuff(x, y, z);
+        spawnPuff(x, y, z);
 
         // don't go any farther
         return false;
@@ -348,12 +348,12 @@ bool shootTraverse(
 
     // Spawn bullet puffs or blod spots, depending on target type.
     if (in->d.thing->flags & MF_NOBLOOD)
-        Doom::spawnPuff(x, y, z);
+        spawnPuff(x, y, z);
     else
-        Doom::spawnBlood(x, y, z, la_damage);
+        spawnBlood(x, y, z, la_damage);
 
     if (la_damage)
-        Doom::damageMobj(th, shootthing, shootthing, la_damage);
+        damageMobj(th, shootthing, shootthing, la_damage);
 
     // don't go any farther
     return false;
@@ -378,7 +378,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
         updateLineOpening(*in->d.line);
         if (!clip.openrange.isPositive())
         {
-            Doom::startSound(usething, sfx_noway);
+            startSound(usething, sfx_noway);
 
             // can't use through a wall
             return false;
@@ -391,7 +391,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
     if (lineSide({usething->x, usething->y}, *in->d.line) == 1)
         side = 1;
 
-    Doom::useSpecialLine(usething, in->d.line, side);
+    useSpecialLine(usething, in->d.line, side);
 
     // can't use for than one special line in a row
     return false;
@@ -434,10 +434,10 @@ static bool
     if (dist >= bombdamage)
         return true; // out of range
 
-    if (Doom::checkSight(thing, bombspot))
+    if (checkSight(thing, bombspot))
     {
         // must be in direct path
-        Doom::damageMobj(thing, bombspot, bombsource, bombdamage - dist);
+        damageMobj(thing, bombspot, bombsource, bombdamage - dist);
     }
 
     return true;
@@ -464,7 +464,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     // crunch bodies to giblets
     if (thing->health <= 0)
     {
-        Doom::setMobjState(thing, S_GIBS);
+        setMobjState(thing, S_GIBS);
 
         thing->flags &= ~MF_SOLID;
         thing->height = fixed_t {};
@@ -477,7 +477,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     // crunch dropped items
     if (thing->flags & MF_DROPPED)
     {
-        Doom::removeMobj(thing);
+        removeMobj(thing);
 
         // keep checking
         return true;
@@ -493,17 +493,17 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 
     if (crushchange && !(levelStats().leveltime & 3))
     {
-        Doom::damageMobj(thing, nullptr, nullptr, 10);
+        damageMobj(thing, nullptr, nullptr, 10);
 
         // spray blood in a random direction
-        mo = Doom::spawnMobj(
+        mo = spawnMobj(
             thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
 
         // Raw: the random difference shifted into the fraction, ~+-16 units/tic.
         mo->momx = fixed_t {
-            (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12};
+            (randomness().forPlay() - randomness().forPlay()) << 12};
         mo->momy = fixed_t {
-            (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12};
+            (randomness().forPlay() - randomness().forPlay()) << 12};
     }
 
     // keep checking (crush other things)
@@ -731,7 +731,7 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
     // (damage + MAXRADIUS) up by another Doom::fracBits wraps the MAXRADIUS term away
     // and leaves the damage alone as the radius. Kept as the integer expression
     // it has always been - the demos are recorded against the wrap.
-    fixed_t dist {(damage + (MAXRADIUS).raw) << Doom::fracBits};
+    fixed_t dist {(damage + (MAXRADIUS).raw) << fracBits};
 
     // Blockmap cell indices: a raw shift by MAPBLOCKSHIFT, not a conversion.
     yh = (spot->y + dist - bmaporgy).raw >> MAPBLOCKSHIFT;

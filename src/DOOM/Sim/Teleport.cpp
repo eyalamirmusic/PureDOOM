@@ -20,7 +20,7 @@ int teleport(Line* line, int side, Mobj* thing)
     int tag;
     Mobj* m;
     Mobj* fog;
-    Doom::Thinker* thinker;
+    Thinker* thinker;
     Sector* sector;
     fixed_t oldx;
     fixed_t oldy;
@@ -47,7 +47,7 @@ int teleport(Line* line, int side, Mobj* thing)
                  thinker = thinker->next)
             {
                 // not a mobj
-                if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
+                if (thinker->kind() != ThinkerKind::Mobj || thinker->removed)
                     continue;
 
                 m = reinterpret_cast<Mobj*>(thinker);
@@ -65,7 +65,7 @@ int teleport(Line* line, int side, Mobj* thing)
                 oldy = thing->y;
                 oldz = thing->z;
 
-                if (!Doom::teleportMove(thing, m->x, m->y))
+                if (!teleportMove(thing, m->x, m->y))
                     return 0;
 
                 thing->z = thing->floorz; //fixme: not needed?
@@ -73,16 +73,16 @@ int teleport(Line* line, int side, Mobj* thing)
                     thing->player->viewz = thing->z + thing->player->viewheight;
 
                 // spawn teleport fog at source and destination
-                fog = Doom::spawnMobj(oldx, oldy, oldz, MT_TFOG);
-                Doom::startSound(fog, sfx_telept);
+                fog = spawnMobj(oldx, oldy, oldz, MT_TFOG);
+                startSound(fog, sfx_telept);
                 const auto anFine = m->angle.fineIndex();
-                fog = Doom::spawnMobj(m->x + 20 * finecosine[anFine],
+                fog = spawnMobj(m->x + 20 * finecosine[anFine],
                                   m->y + 20 * finesine[anFine],
                                   thing->z,
                                   MT_TFOG);
 
                 // emit sound, where?
-                Doom::startSound(fog, sfx_telept);
+                startSound(fog, sfx_telept);
 
                 // don't move for a bit
                 if (thing->player)

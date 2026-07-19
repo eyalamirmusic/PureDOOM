@@ -103,7 +103,7 @@ void explodeMissile(Mobj* mo)
 
     setMobjState(mo, static_cast<StateNum>(mobjinfo[mo->type].deathstate));
 
-    mo->tics -= Doom::randomness().forPlay() & 3;
+    mo->tics -= randomness().forPlay() & 3;
 
     if (mo->tics < 1)
         mo->tics = 1;
@@ -111,7 +111,7 @@ void explodeMissile(Mobj* mo)
     mo->flags &= ~MF_MISSILE;
 
     if (mo->info->deathsound)
-        Doom::startSound(mo, mo->info->deathsound);
+        startSound(mo, mo->info->deathsound);
 }
 
 //
@@ -171,12 +171,12 @@ void xyMovement(Mobj* mo)
             xmove = ymove = fixed_t {};
         }
 
-        if (!Doom::tryMove(mo, ptryx, ptryy))
+        if (!tryMove(mo, ptryx, ptryy))
         {
             // blocked move
             if (mo->player)
             { // try to slide along it
-                Doom::slideMove(mo);
+                slideMove(mo);
             }
             else if (mo->flags & MF_MISSILE)
             {
@@ -301,7 +301,7 @@ void zMovement(Mobj* mo)
                 // after hitting the ground (hard),
                 // and utter appropriate sound.
                 mo->player->deltaviewheight = mo->momz >> 3;
-                Doom::startSound(mo, sfx_oof);
+                startSound(mo, sfx_oof);
             }
             mo->momz = fixed_t {};
         }
@@ -355,25 +355,25 @@ void nightmareRespawn(Mobj* mobj)
     Mobj* mo;
     MapThing* mthing;
 
-    x = Doom::Fixed::fromInt(mobj->spawnpoint.x);
-    y = Doom::Fixed::fromInt(mobj->spawnpoint.y);
+    x = Fixed::fromInt(mobj->spawnpoint.x);
+    y = Fixed::fromInt(mobj->spawnpoint.y);
 
     // somthing is occupying it's position?
-    if (!Doom::checkPosition(mobj, x, y))
+    if (!checkPosition(mobj, x, y))
         return; // no respwan
 
     // spawn a teleport fog at old spot
     // because of removal of the body?
     mo = spawnMobj(mobj->x, mobj->y, mobj->subsector->sector->floorheight, MT_TFOG);
     // initiate teleport sound
-    Doom::startSound(mo, sfx_telept);
+    startSound(mo, sfx_telept);
 
     // spawn a teleport fog at the new spot
-    ss = Doom::pointInSubsector(x, y);
+    ss = pointInSubsector(x, y);
 
     mo = spawnMobj(x, y, ss->sector->floorheight, MT_TFOG);
 
-    Doom::startSound(mo, sfx_telept);
+    startSound(mo, sfx_telept);
 
     // spawn the new monster
     mthing = &mobj->spawnpoint;
@@ -449,7 +449,7 @@ void mobjThinker(Mobj* mobj)
         if (levelStats().leveltime & 31)
             return;
 
-        if (Doom::randomness().forPlay() > 4)
+        if (randomness().forPlay() > 4)
             return;
 
         nightmareRespawn(mobj);
@@ -480,7 +480,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     if (gameSession().gameskill != sk_nightmare)
         mobj->reactiontime = info->reactiontime;
 
-    mobj->lastlook = Doom::randomness().forPlay() % MAXPLAYERS;
+    mobj->lastlook = randomness().forPlay() % MAXPLAYERS;
     // do not set the state with setMobjState,
     // because action routines can not be called yet
     st = &states[info->spawnstate];
@@ -503,7 +503,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     else
         mobj->z = z;
 
-    Doom::addThinker(mobj);
+    addThinker(mobj);
 
     return mobj;
 }
@@ -531,10 +531,10 @@ void removeMobj(Mobj* mobj)
     unsetThingPosition(*mobj);
 
     // stop any playing sound
-    Doom::stopSound(mobj);
+    stopSound(mobj);
 
     // free block
-    Doom::removeThinker(reinterpret_cast<Doom::Thinker*>(mobj));
+    removeThinker(reinterpret_cast<Thinker*>(mobj));
 }
 
 //
@@ -568,13 +568,13 @@ void respawnSpecials()
 
     mthing = &queue.itemrespawnque[queue.iquetail];
 
-    x = Doom::Fixed::fromInt(mthing->x);
-    y = Doom::Fixed::fromInt(mthing->y);
+    x = Fixed::fromInt(mthing->x);
+    y = Fixed::fromInt(mthing->y);
 
     // spawn a teleport fog at the new spot
-    ss = Doom::pointInSubsector(x, y);
+    ss = pointInSubsector(x, y);
     mo = spawnMobj(x, y, ss->sector->floorheight, MT_IFOG);
-    Doom::startSound(mo, sfx_itmbk);
+    startSound(mo, sfx_itmbk);
 
     // find which type to spawn
     for (i = 0; i < NUMMOBJTYPES; i++)
@@ -621,10 +621,10 @@ void spawnPlayer(MapThing* mthing)
     p = &players_.players[mthing->type - 1];
 
     if (p->playerstate == PST_REBORN)
-        Doom::playerReborn(mthing->type - 1);
+        playerReborn(mthing->type - 1);
 
-    x = Doom::Fixed::fromInt(mthing->x);
-    y = Doom::Fixed::fromInt(mthing->y);
+    x = Fixed::fromInt(mthing->x);
+    y = Fixed::fromInt(mthing->y);
     z = ONFLOORZ;
     mobj = spawnMobj(x, y, z, MT_PLAYER);
 
@@ -657,9 +657,9 @@ void spawnPlayer(MapThing* mthing)
     if (mthing->type - 1 == players_.consoleplayer)
     {
         // wake up the status bar
-        Doom::startStatusBar();
+        startStatusBar();
         // wake up the heads up text
-        Doom::startHud();
+        startHud();
     }
 }
 
@@ -749,8 +749,8 @@ void spawnMapThing(MapThing* mthing)
     }
 
     // spawn it
-    x = Doom::Fixed::fromInt(mthing->x);
-    y = Doom::Fixed::fromInt(mthing->y);
+    x = Fixed::fromInt(mthing->x);
+    y = Fixed::fromInt(mthing->y);
 
     if (mobjinfo[i].flags & MF_SPAWNCEILING)
         z = ONCEILINGZ;
@@ -761,7 +761,7 @@ void spawnMapThing(MapThing* mthing)
     mobj->spawnpoint = *mthing;
 
     if (mobj->tics > 0)
-        mobj->tics = 1 + (Doom::randomness().forPlay() % mobj->tics);
+        mobj->tics = 1 + (randomness().forPlay() % mobj->tics);
     auto& stats = levelStats();
 
     if (mobj->flags & MF_COUNTKILL)
@@ -785,12 +785,12 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 {
     Mobj* th;
 
-    z += Doom::Fixed {(Doom::randomness().forPlay() - Doom::randomness().forPlay())
+    z += Fixed {(randomness().forPlay() - randomness().forPlay())
                       << 10};
 
     th = spawnMobj(x, y, z, MT_PUFF);
     th->momz = FRACUNIT;
-    th->tics -= Doom::randomness().forPlay() & 3;
+    th->tics -= randomness().forPlay() & 3;
 
     if (th->tics < 1)
         th->tics = 1;
@@ -807,11 +807,11 @@ void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 {
     Mobj* th;
 
-    z += Doom::Fixed {(Doom::randomness().forPlay() - Doom::randomness().forPlay())
+    z += Fixed {(randomness().forPlay() - randomness().forPlay())
                       << 10};
     th = spawnMobj(x, y, z, MT_BLOOD);
     th->momz = FRACUNIT * 2;
-    th->tics -= Doom::randomness().forPlay() & 3;
+    th->tics -= randomness().forPlay() & 3;
 
     if (th->tics < 1)
         th->tics = 1;
@@ -829,7 +829,7 @@ void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 //
 void checkMissileSpawn(Mobj* th)
 {
-    th->tics -= Doom::randomness().forPlay() & 3;
+    th->tics -= randomness().forPlay() & 3;
     if (th->tics < 1)
         th->tics = 1;
 
@@ -839,7 +839,7 @@ void checkMissileSpawn(Mobj* th)
     th->y += (th->momy >> 1);
     th->z += (th->momz >> 1);
 
-    if (!Doom::tryMove(th, th->x, th->y))
+    if (!tryMove(th, th->x, th->y))
         explodeMissile(th);
 }
 
@@ -855,21 +855,21 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
     th = spawnMobj(source->x, source->y, source->z + 4 * 8 * FRACUNIT, type);
 
     if (th->info->seesound)
-        Doom::startSound(th, th->info->seesound);
+        startSound(th, th->info->seesound);
 
     th->target = source; // where it came from
-    an = Doom::pointToAngle2(source->x, source->y, dest->x, dest->y);
+    an = pointToAngle2(source->x, source->y, dest->x, dest->y);
 
     // fuzzy player
     if (dest->flags & MF_SHADOW)
         an += angle_t {
-            (unsigned) (Doom::randomness().forPlay() - Doom::randomness().forPlay())
+            (unsigned) (randomness().forPlay() - randomness().forPlay())
             << 20};
 
     th->angle = an;
     const auto anFine = an.fineIndex();
-    th->momx = FixedMul(Doom::Fixed {th->info->speed}, finecosine[anFine]);
-    th->momy = FixedMul(Doom::Fixed {th->info->speed}, finesine[anFine]);
+    th->momx = FixedMul(Fixed {th->info->speed}, finecosine[anFine]);
+    th->momy = FixedMul(Fixed {th->info->speed}, finesine[anFine]);
 
     // dist is vanilla's tic count, not a length: the raw distance divided by the
     // missile's raw speed as plain integers, then used as the divisor for momz.
@@ -901,19 +901,19 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
 
     // see which target is to be aimed at
     an = source->angle;
-    auto aim = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+    auto aim = aimLineAttack(source, an, 16 * 64 * FRACUNIT);
     slope = aim.slope;
 
     if (!aim.target)
     {
         an += angle_t {1u << 26};
-        aim = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+        aim = aimLineAttack(source, an, 16 * 64 * FRACUNIT);
         slope = aim.slope;
 
         if (!aim.target)
         {
             an -= angle_t {2u << 26};
-            aim = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+            aim = aimLineAttack(source, an, 16 * 64 * FRACUNIT);
             slope = aim.slope;
         }
 
@@ -931,13 +931,13 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
     th = spawnMobj(x, y, z, type);
 
     if (th->info->seesound)
-        Doom::startSound(th, th->info->seesound);
+        startSound(th, th->info->seesound);
 
     th->target = source;
     th->angle = an;
-    th->momx = FixedMul(Doom::Fixed {th->info->speed}, finecosine[an.fineIndex()]);
-    th->momy = FixedMul(Doom::Fixed {th->info->speed}, finesine[an.fineIndex()]);
-    th->momz = FixedMul(Doom::Fixed {th->info->speed}, slope);
+    th->momx = FixedMul(Fixed {th->info->speed}, finecosine[an.fineIndex()]);
+    th->momy = FixedMul(Fixed {th->info->speed}, finesine[an.fineIndex()]);
+    th->momz = FixedMul(Fixed {th->info->speed}, slope);
 
     checkMissileSpawn(th);
 }

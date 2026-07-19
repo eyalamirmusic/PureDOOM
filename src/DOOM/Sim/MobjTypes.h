@@ -207,12 +207,12 @@ enum MobjFlag
 // Map Object definition.
 namespace Doom
 {
-struct Mobj : Doom::Thinker
+struct Mobj : Thinker
 {
     // Was `Doom::Thinker thinker;` as the first member; a mobj now *is* a Thinker.
     // Its per-tic action (vanilla's P_MobjThinker) is tick(), defined in Mobj.cpp.
     void tick() override;
-    Doom::ThinkerKind kind() const override { return Doom::ThinkerKind::Mobj; }
+    ThinkerKind kind() const override { return ThinkerKind::Mobj; }
 
     // Info for drawing: position.
     fixed_t x;
@@ -233,7 +233,7 @@ struct Mobj : Doom::Thinker
     struct Mobj* bnext;
     struct Mobj* bprev;
 
-    Doom::SubSector* subsector;
+    SubSector* subsector;
 
     // The closest interval over all contacted Sectors.
     fixed_t floorz;

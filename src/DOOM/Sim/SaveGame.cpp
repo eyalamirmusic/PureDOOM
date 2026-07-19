@@ -189,8 +189,8 @@ void unArchiveWorld()
     // do sectors
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
     {
-        sec->floorheight = Doom::Fixed::fromInt(*get++);
-        sec->ceilingheight = Doom::Fixed::fromInt(*get++);
+        sec->floorheight = Fixed::fromInt(*get++);
+        sec->ceilingheight = Fixed::fromInt(*get++);
         sec->floorpic = *get++;
         sec->ceilingpic = *get++;
         sec->lightlevel = *get++;
@@ -211,8 +211,8 @@ void unArchiveWorld()
             if (li->sidenum[j] == -1)
                 continue;
             si = &sides[li->sidenum[j]];
-            si->textureoffset = Doom::Fixed::fromInt(*get++);
-            si->rowoffset = Doom::Fixed::fromInt(*get++);
+            si->textureoffset = Fixed::fromInt(*get++);
+            si->rowoffset = Fixed::fromInt(*get++);
             si->toptexture = *get++;
             si->bottomtexture = *get++;
             si->midtexture = *get++;
@@ -255,7 +255,7 @@ static T* unarchiveThinker()
 //
 void archiveThinkers()
 {
-    Doom::Thinker* th;
+    Thinker* th;
     Mobj* mobj;
 
     auto& save = saveGameState();
@@ -266,7 +266,7 @@ void archiveThinkers()
     {
         // A removed-but-not-yet-freed mobj is skipped, as vanilla did (its function
         // was the -1 sentinel, matching no archived type).
-        if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
+        if (th->kind() == ThinkerKind::Mobj && !th->removed)
         {
             *save.cursor++ = tc_mobj;
             padSaveCursor(save.cursor);
@@ -294,8 +294,8 @@ void archiveThinkers()
 void unArchiveThinkers()
 {
     byte tclass;
-    Doom::Thinker* currentthinker;
-    Doom::Thinker* next;
+    Thinker* currentthinker;
+    Thinker* next;
     Mobj* mobj;
 
     auto& save = saveGameState();
@@ -307,14 +307,14 @@ void unArchiveThinkers()
     {
         next = currentthinker->next;
 
-        if (currentthinker->kind() == Doom::ThinkerKind::Mobj)
-            Doom::removeMobj(reinterpret_cast<Mobj*>(currentthinker));
+        if (currentthinker->kind() == ThinkerKind::Mobj)
+            removeMobj(reinterpret_cast<Mobj*>(currentthinker));
         else
             levelFree(currentthinker);
 
         currentthinker = next;
     }
-    Doom::initThinkers();
+    initThinkers();
 
     // read in saved thinkers
     while (1)
@@ -341,7 +341,7 @@ void unArchiveThinkers()
                 mobj->info = &mobjinfo[mobj->type];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;
-                Doom::addThinker(mobj);
+                addThinker(mobj);
                 break;
 
             default:
@@ -385,7 +385,7 @@ enum
 //
 void archiveSpecials()
 {
-    Doom::Thinker* th;
+    Thinker* th;
     Ceiling* ceiling;
     Door* door;
     FloorMove* floor;
@@ -409,7 +409,7 @@ void archiveSpecials()
         // tracked this way; a stopped plat, as in vanilla, is not archived.
         if (th->stopped)
         {
-            if (th->kind() == Doom::ThinkerKind::Ceiling)
+            if (th->kind() == ThinkerKind::Ceiling)
             {
                 *save.cursor++ = tc_ceiling;
                 padSaveCursor(save.cursor);
@@ -422,7 +422,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->kind() == Doom::ThinkerKind::Ceiling)
+        if (th->kind() == ThinkerKind::Ceiling)
         {
             *save.cursor++ = tc_ceiling;
             padSaveCursor(save.cursor);
@@ -433,7 +433,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->kind() == Doom::ThinkerKind::Door)
+        if (th->kind() == ThinkerKind::Door)
         {
             *save.cursor++ = tc_door;
             padSaveCursor(save.cursor);
@@ -444,7 +444,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->kind() == Doom::ThinkerKind::Floor)
+        if (th->kind() == ThinkerKind::Floor)
         {
             *save.cursor++ = tc_floor;
             padSaveCursor(save.cursor);
@@ -455,7 +455,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->kind() == Doom::ThinkerKind::Plat)
+        if (th->kind() == ThinkerKind::Plat)
         {
             *save.cursor++ = tc_plat;
             padSaveCursor(save.cursor);
@@ -466,7 +466,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->kind() == Doom::ThinkerKind::LightFlash)
+        if (th->kind() == ThinkerKind::LightFlash)
         {
             *save.cursor++ = tc_flash;
             padSaveCursor(save.cursor);
@@ -477,7 +477,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->kind() == Doom::ThinkerKind::StrobeFlash)
+        if (th->kind() == ThinkerKind::StrobeFlash)
         {
             *save.cursor++ = tc_strobe;
             padSaveCursor(save.cursor);
@@ -488,7 +488,7 @@ void archiveSpecials()
             continue;
         }
 
-        if (th->kind() == Doom::ThinkerKind::Glow)
+        if (th->kind() == ThinkerKind::Glow)
         {
             *save.cursor++ = tc_glow;
             padSaveCursor(save.cursor);
@@ -536,8 +536,8 @@ void unArchiveSpecials()
                     &sectors[reinterpret_cast<long long>(ceiling->sector)];
                 ceiling->sector->specialdata = ceiling;
 
-                Doom::addThinker(ceiling);
-                Doom::addActiveCeiling(ceiling);
+                addThinker(ceiling);
+                addActiveCeiling(ceiling);
                 break;
 
             case tc_door:
@@ -545,7 +545,7 @@ void unArchiveSpecials()
                 door = unarchiveThinker<Door>();
                 door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
-                Doom::addThinker(door);
+                addThinker(door);
                 break;
 
             case tc_floor:
@@ -553,7 +553,7 @@ void unArchiveSpecials()
                 floor = unarchiveThinker<FloorMove>();
                 floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
-                Doom::addThinker(floor);
+                addThinker(floor);
                 break;
 
             case tc_plat:
@@ -562,15 +562,15 @@ void unArchiveSpecials()
                 plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
 
-                Doom::addThinker(plat);
-                Doom::addActivePlat(plat);
+                addThinker(plat);
+                addActivePlat(plat);
                 break;
 
             case tc_flash:
                 padSaveCursor(save.cursor);
                 flash = unarchiveThinker<LightFlash>();
                 flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
-                Doom::addThinker(flash);
+                addThinker(flash);
                 break;
 
             case tc_strobe:
@@ -578,14 +578,14 @@ void unArchiveSpecials()
                 strobe = unarchiveThinker<Strobe>();
                 strobe->sector =
                     &sectors[reinterpret_cast<long long>(strobe->sector)];
-                Doom::addThinker(strobe);
+                addThinker(strobe);
                 break;
 
             case tc_glow:
                 padSaveCursor(save.cursor);
                 glow = unarchiveThinker<Glow>();
                 glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];
-                Doom::addThinker(glow);
+                addThinker(glow);
                 break;
 
             default:

@@ -194,7 +194,7 @@ bool traverseIntercepts(Traverser func, fixed_t maxfrac)
 void setThingPosition(Mobj& thing)
 {
     // link into subsector
-    SubSector* ss = Doom::pointInSubsector(thing.x, thing.y);
+    SubSector* ss = pointInSubsector(thing.x, thing.y);
     thing.subsector = ss;
 
     if (!(thing.flags & MF_NOSECTOR))

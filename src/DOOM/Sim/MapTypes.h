@@ -74,7 +74,7 @@ struct Line;
 // sound). The Thinker part is otherwise unused: this is never a real thinker.
 namespace Doom
 {
-struct DegenMobj : Doom::Thinker
+struct DegenMobj : Thinker
 {
     fixed_t x;
     fixed_t y;
@@ -167,8 +167,8 @@ namespace Doom
 struct Line
 {
     // Vertices, from v1 to v2.
-    Doom::Vertex* v1;
-    Doom::Vertex* v2;
+    Vertex* v1;
+    Vertex* v2;
 
     // Precalculated v2 - v1 for side checking.
     fixed_t dx;
@@ -227,8 +227,8 @@ namespace Doom
 {
 struct Seg
 {
-    Doom::Vertex* v1;
-    Doom::Vertex* v2;
+    Vertex* v1;
+    Vertex* v2;
 
     fixed_t offset;
 

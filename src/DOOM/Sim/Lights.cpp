@@ -40,7 +40,7 @@ void fireFlicker(FireFlicker& flick)
     if (--flick.count)
         return;
 
-    amount = (Doom::randomness().forPlay() & 3) * 16;
+    amount = (randomness().forPlay() & 3) * 16;
 
     if (flick.sector->lightlevel - amount < flick.minlight)
         flick.sector->lightlevel = flick.minlight;
@@ -63,11 +63,11 @@ void spawnFireFlicker(Sector* sector)
 
     flick = new (levelAlloc(sizeof(*flick))) FireFlicker {};
 
-    Doom::addThinker(flick);
+    addThinker(flick);
 
     flick->sector = sector;
     flick->maxlight = sector->lightlevel;
-    flick->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel) + 16;
+    flick->minlight = findMinSurroundingLight(sector, sector->lightlevel) + 16;
     flick->count = 4;
 }
 
@@ -87,12 +87,12 @@ void lightFlash(LightFlash& flash)
     if (flash.sector->lightlevel == flash.maxlight)
     {
         flash.sector->lightlevel = flash.minlight;
-        flash.count = (Doom::randomness().forPlay() & flash.mintime) + 1;
+        flash.count = (randomness().forPlay() & flash.mintime) + 1;
     }
     else
     {
         flash.sector->lightlevel = flash.maxlight;
-        flash.count = (Doom::randomness().forPlay() & flash.maxtime) + 1;
+        flash.count = (randomness().forPlay() & flash.maxtime) + 1;
     }
 }
 
@@ -110,15 +110,15 @@ void spawnLightFlash(Sector* sector)
 
     flash = new (levelAlloc(sizeof(*flash))) LightFlash {};
 
-    Doom::addThinker(flash);
+    addThinker(flash);
 
     flash->sector = sector;
     flash->maxlight = sector->lightlevel;
 
-    flash->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel);
+    flash->minlight = findMinSurroundingLight(sector, sector->lightlevel);
     flash->maxtime = 64;
     flash->mintime = 7;
-    flash->count = (Doom::randomness().forPlay() & flash->maxtime) + 1;
+    flash->count = (randomness().forPlay() & flash->maxtime) + 1;
 }
 
 //
@@ -156,13 +156,13 @@ void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync)
 
     flash = new (levelAlloc(sizeof(*flash))) Strobe {};
 
-    Doom::addThinker(flash);
+    addThinker(flash);
 
     flash->sector = sector;
     flash->darktime = fastOrSlow;
     flash->brighttime = STROBEBRIGHT;
     flash->maxlight = sector->lightlevel;
-    flash->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel);
+    flash->minlight = findMinSurroundingLight(sector, sector->lightlevel);
 
     if (flash->minlight == flash->maxlight)
         flash->minlight = 0;
@@ -171,7 +171,7 @@ void spawnStrobeFlash(Sector* sector, int fastOrSlow, int inSync)
     sector->special = 0;
 
     if (!inSync)
-        flash->count = (Doom::randomness().forPlay() & 7) + 1;
+        flash->count = (randomness().forPlay() & 7) + 1;
     else
         flash->count = 1;
 }
@@ -185,7 +185,7 @@ void startLightStrobing(Line* line)
     Sector* sec;
 
     secnum = -1;
-    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
         if (sec->specialdata)
@@ -298,10 +298,10 @@ void spawnGlowingLight(Sector* sector)
 
     g = new (levelAlloc(sizeof(*g))) Glow {};
 
-    Doom::addThinker(g);
+    addThinker(g);
 
     g->sector = sector;
-    g->minlight = Doom::findMinSurroundingLight(sector, sector->lightlevel);
+    g->minlight = findMinSurroundingLight(sector, sector->lightlevel);
     g->maxlight = sector->lightlevel;
     g->direction = -1;
 

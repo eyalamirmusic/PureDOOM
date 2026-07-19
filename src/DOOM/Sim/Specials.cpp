@@ -179,19 +179,19 @@ void initPicAnims()
         if (animdefs[i].istexture)
         {
             // different episode ?
-            if (Doom::checkTextureNumForName(animdefs[i].startname) == -1)
+            if (checkTextureNumForName(animdefs[i].startname) == -1)
                 continue;
 
-            surf.lastanim->picnum = Doom::textureNumForName(animdefs[i].endname);
-            surf.lastanim->basepic = Doom::textureNumForName(animdefs[i].startname);
+            surf.lastanim->picnum = textureNumForName(animdefs[i].endname);
+            surf.lastanim->basepic = textureNumForName(animdefs[i].startname);
         }
         else
         {
-            if (Doom::wad().find(animdefs[i].startname) == -1)
+            if (wad().find(animdefs[i].startname) == -1)
                 continue;
 
-            surf.lastanim->picnum = Doom::flatNumForName(animdefs[i].endname);
-            surf.lastanim->basepic = Doom::flatNumForName(animdefs[i].startname);
+            surf.lastanim->picnum = flatNumForName(animdefs[i].endname);
+            surf.lastanim->basepic = flatNumForName(animdefs[i].startname);
         }
 
         surf.lastanim->istexture = animdefs[i].istexture;
@@ -465,409 +465,409 @@ void crossSpecialLine(int linenum, int side, Mobj* thing)
         // All from here to RETRIGGERS.
         case 2:
             // Open Door
-            Doom::doDoor(line, door_open);
+            doDoor(line, door_open);
             line->special = 0;
             break;
 
         case 3:
             // Close Door
-            Doom::doDoor(line, door_close);
+            doDoor(line, door_close);
             line->special = 0;
             break;
 
         case 4:
             // Raise Door
-            Doom::doDoor(line, door_normal);
+            doDoor(line, door_normal);
             line->special = 0;
             break;
 
         case 5:
             // Raise Floor
-            Doom::doFloor(line, raiseFloor);
+            doFloor(line, raiseFloor);
             line->special = 0;
             break;
 
         case 6:
             // Fast Ceiling Crush & Raise
-            Doom::doCeiling(line, fastCrushAndRaise);
+            doCeiling(line, fastCrushAndRaise);
             line->special = 0;
             break;
 
         case 8:
             // Build Stairs
-            Doom::buildStairs(line, build8);
+            buildStairs(line, build8);
             line->special = 0;
             break;
 
         case 10:
             // PlatDownWaitUp
-            Doom::doPlat(line, downWaitUpStay, 0);
+            doPlat(line, downWaitUpStay, 0);
             line->special = 0;
             break;
 
         case 12:
             // Light Turn On - brightest near
-            Doom::lightTurnOn(line, 0);
+            lightTurnOn(line, 0);
             line->special = 0;
             break;
 
         case 13:
             // Light Turn On 255
-            Doom::lightTurnOn(line, 255);
+            lightTurnOn(line, 255);
             line->special = 0;
             break;
 
         case 16:
             // Close Door 30
-            Doom::doDoor(line, close30ThenOpen);
+            doDoor(line, close30ThenOpen);
             line->special = 0;
             break;
 
         case 17:
             // Start Light Strobing
-            Doom::startLightStrobing(line);
+            startLightStrobing(line);
             line->special = 0;
             break;
 
         case 19:
             // Lower Floor
-            Doom::doFloor(line, lowerFloor);
+            doFloor(line, lowerFloor);
             line->special = 0;
             break;
 
         case 22:
             // Raise floor to nearest height and change texture
-            Doom::doPlat(line, raiseToNearestAndChange, 0);
+            doPlat(line, raiseToNearestAndChange, 0);
             line->special = 0;
             break;
 
         case 25:
             // Ceiling Crush and Raise
-            Doom::doCeiling(line, crushAndRaise);
+            doCeiling(line, crushAndRaise);
             line->special = 0;
             break;
 
         case 30:
             // Raise floor to shortest texture height
             //  on either side of lines.
-            Doom::doFloor(line, raiseToTexture);
+            doFloor(line, raiseToTexture);
             line->special = 0;
             break;
 
         case 35:
             // Lights Very Dark
-            Doom::lightTurnOn(line, 35);
+            lightTurnOn(line, 35);
             line->special = 0;
             break;
 
         case 36:
             // Lower Floor (TURBO)
-            Doom::doFloor(line, turboLower);
+            doFloor(line, turboLower);
             line->special = 0;
             break;
 
         case 37:
             // LowerAndChange
-            Doom::doFloor(line, lowerAndChange);
+            doFloor(line, lowerAndChange);
             line->special = 0;
             break;
 
         case 38:
             // Lower Floor To Lowest
-            Doom::doFloor(line, lowerFloorToLowest);
+            doFloor(line, lowerFloorToLowest);
             line->special = 0;
             break;
 
         case 39:
             // TELEPORT!
-            Doom::teleport(line, side, thing);
+            teleport(line, side, thing);
             line->special = 0;
             break;
 
         case 40:
             // RaiseCeilingLowerFloor
-            Doom::doCeiling(line, raiseToHighest);
-            Doom::doFloor(line, lowerFloorToLowest);
+            doCeiling(line, raiseToHighest);
+            doFloor(line, lowerFloorToLowest);
             line->special = 0;
             break;
 
         case 44:
             // Ceiling Crush
-            Doom::doCeiling(line, lowerAndCrush);
+            doCeiling(line, lowerAndCrush);
             line->special = 0;
             break;
 
         case 52:
             // EXIT!
-            Doom::exitLevel();
+            exitLevel();
             break;
 
         case 53:
             // Perpetual Platform Raise
-            Doom::doPlat(line, perpetualRaise, 0);
+            doPlat(line, perpetualRaise, 0);
             line->special = 0;
             break;
 
         case 54:
             // Platform Stop
-            Doom::stopPlat(line);
+            stopPlat(line);
             line->special = 0;
             break;
 
         case 56:
             // Raise Floor Crush
-            Doom::doFloor(line, raiseFloorCrush);
+            doFloor(line, raiseFloorCrush);
             line->special = 0;
             break;
 
         case 57:
             // Ceiling Crush Stop
-            Doom::ceilingCrushStop(line);
+            ceilingCrushStop(line);
             line->special = 0;
             break;
 
         case 58:
             // Raise Floor 24
-            Doom::doFloor(line, raiseFloor24);
+            doFloor(line, raiseFloor24);
             line->special = 0;
             break;
 
         case 59:
             // Raise Floor 24 And Change
-            Doom::doFloor(line, raiseFloor24AndChange);
+            doFloor(line, raiseFloor24AndChange);
             line->special = 0;
             break;
 
         case 104:
             // Turn lights off in sector(tag)
-            Doom::turnTagLightsOff(line);
+            turnTagLightsOff(line);
             line->special = 0;
             break;
 
         case 108:
             // Blazing Door Raise (faster than TURBO!)
-            Doom::doDoor(line, blazeRaise);
+            doDoor(line, blazeRaise);
             line->special = 0;
             break;
 
         case 109:
             // Blazing Door Open (faster than TURBO!)
-            Doom::doDoor(line, blazeOpen);
+            doDoor(line, blazeOpen);
             line->special = 0;
             break;
 
         case 100:
             // Build Stairs Turbo 16
-            Doom::buildStairs(line, turbo16);
+            buildStairs(line, turbo16);
             line->special = 0;
             break;
 
         case 110:
             // Blazing Door Close (faster than TURBO!)
-            Doom::doDoor(line, blazeClose);
+            doDoor(line, blazeClose);
             line->special = 0;
             break;
 
         case 119:
             // Raise floor to nearest surr. floor
-            Doom::doFloor(line, raiseFloorToNearest);
+            doFloor(line, raiseFloorToNearest);
             line->special = 0;
             break;
 
         case 121:
             // Blazing PlatDownWaitUpStay
-            Doom::doPlat(line, blazeDWUS, 0);
+            doPlat(line, blazeDWUS, 0);
             line->special = 0;
             break;
 
         case 124:
             // Secret EXIT
-            Doom::secretExitLevel();
+            secretExitLevel();
             break;
 
         case 125:
             // TELEPORT MonsterONLY
             if (!thing->player)
             {
-                Doom::teleport(line, side, thing);
+                teleport(line, side, thing);
                 line->special = 0;
             }
             break;
 
         case 130:
             // Raise Floor Turbo
-            Doom::doFloor(line, raiseFloorTurbo);
+            doFloor(line, raiseFloorTurbo);
             line->special = 0;
             break;
 
         case 141:
             // Silent Ceiling Crush & Raise
-            Doom::doCeiling(line, silentCrushAndRaise);
+            doCeiling(line, silentCrushAndRaise);
             line->special = 0;
             break;
 
             // RETRIGGERS.  All from here till end.
         case 72:
             // Ceiling Crush
-            Doom::doCeiling(line, lowerAndCrush);
+            doCeiling(line, lowerAndCrush);
             break;
 
         case 73:
             // Ceiling Crush and Raise
-            Doom::doCeiling(line, crushAndRaise);
+            doCeiling(line, crushAndRaise);
             break;
 
         case 74:
             // Ceiling Crush Stop
-            Doom::ceilingCrushStop(line);
+            ceilingCrushStop(line);
             break;
 
         case 75:
             // Close Door
-            Doom::doDoor(line, door_close);
+            doDoor(line, door_close);
             break;
 
         case 76:
             // Close Door 30
-            Doom::doDoor(line, close30ThenOpen);
+            doDoor(line, close30ThenOpen);
             break;
 
         case 77:
             // Fast Ceiling Crush & Raise
-            Doom::doCeiling(line, fastCrushAndRaise);
+            doCeiling(line, fastCrushAndRaise);
             break;
 
         case 79:
             // Lights Very Dark
-            Doom::lightTurnOn(line, 35);
+            lightTurnOn(line, 35);
             break;
 
         case 80:
             // Light Turn On - brightest near
-            Doom::lightTurnOn(line, 0);
+            lightTurnOn(line, 0);
             break;
 
         case 81:
             // Light Turn On 255
-            Doom::lightTurnOn(line, 255);
+            lightTurnOn(line, 255);
             break;
 
         case 82:
             // Lower Floor To Lowest
-            Doom::doFloor(line, lowerFloorToLowest);
+            doFloor(line, lowerFloorToLowest);
             break;
 
         case 83:
             // Lower Floor
-            Doom::doFloor(line, lowerFloor);
+            doFloor(line, lowerFloor);
             break;
 
         case 84:
             // LowerAndChange
-            Doom::doFloor(line, lowerAndChange);
+            doFloor(line, lowerAndChange);
             break;
 
         case 86:
             // Open Door
-            Doom::doDoor(line, door_open);
+            doDoor(line, door_open);
             break;
 
         case 87:
             // Perpetual Platform Raise
-            Doom::doPlat(line, perpetualRaise, 0);
+            doPlat(line, perpetualRaise, 0);
             break;
 
         case 88:
             // PlatDownWaitUp
-            Doom::doPlat(line, downWaitUpStay, 0);
+            doPlat(line, downWaitUpStay, 0);
             break;
 
         case 89:
             // Platform Stop
-            Doom::stopPlat(line);
+            stopPlat(line);
             break;
 
         case 90:
             // Raise Door
-            Doom::doDoor(line, door_normal);
+            doDoor(line, door_normal);
             break;
 
         case 91:
             // Raise Floor
-            Doom::doFloor(line, raiseFloor);
+            doFloor(line, raiseFloor);
             break;
 
         case 92:
             // Raise Floor 24
-            Doom::doFloor(line, raiseFloor24);
+            doFloor(line, raiseFloor24);
             break;
 
         case 93:
             // Raise Floor 24 And Change
-            Doom::doFloor(line, raiseFloor24AndChange);
+            doFloor(line, raiseFloor24AndChange);
             break;
 
         case 94:
             // Raise Floor Crush
-            Doom::doFloor(line, raiseFloorCrush);
+            doFloor(line, raiseFloorCrush);
             break;
 
         case 95:
             // Raise floor to nearest height
             // and change texture.
-            Doom::doPlat(line, raiseToNearestAndChange, 0);
+            doPlat(line, raiseToNearestAndChange, 0);
             break;
 
         case 96:
             // Raise floor to shortest texture height
             // on either side of lines.
-            Doom::doFloor(line, raiseToTexture);
+            doFloor(line, raiseToTexture);
             break;
 
         case 97:
             // TELEPORT!
-            Doom::teleport(line, side, thing);
+            teleport(line, side, thing);
             break;
 
         case 98:
             // Lower Floor (TURBO)
-            Doom::doFloor(line, turboLower);
+            doFloor(line, turboLower);
             break;
 
         case 105:
             // Blazing Door Raise (faster than TURBO!)
-            Doom::doDoor(line, blazeRaise);
+            doDoor(line, blazeRaise);
             break;
 
         case 106:
             // Blazing Door Open (faster than TURBO!)
-            Doom::doDoor(line, blazeOpen);
+            doDoor(line, blazeOpen);
             break;
 
         case 107:
             // Blazing Door Close (faster than TURBO!)
-            Doom::doDoor(line, blazeClose);
+            doDoor(line, blazeClose);
             break;
 
         case 120:
             // Blazing PlatDownWaitUpStay.
-            Doom::doPlat(line, blazeDWUS, 0);
+            doPlat(line, blazeDWUS, 0);
             break;
 
         case 126:
             // TELEPORT MonsterONLY.
             if (!thing->player)
-                Doom::teleport(line, side, thing);
+                teleport(line, side, thing);
             break;
 
         case 128:
             // Raise To Nearest Floor
-            Doom::doFloor(line, raiseFloorToNearest);
+            doFloor(line, raiseFloorToNearest);
             break;
 
         case 129:
             // Raise Floor Turbo
-            Doom::doFloor(line, raiseFloorTurbo);
+            doFloor(line, raiseFloorTurbo);
             break;
     }
 }
@@ -899,20 +899,20 @@ void shootSpecialLine(Mobj* thing, Line* line)
     {
         case 24:
             // RAISE FLOOR
-            Doom::doFloor(line, raiseFloor);
-            Doom::changeSwitchTexture(line, 0);
+            doFloor(line, raiseFloor);
+            changeSwitchTexture(line, 0);
             break;
 
         case 46:
             // OPEN DOOR
-            Doom::doDoor(line, door_open);
-            Doom::changeSwitchTexture(line, 1);
+            doDoor(line, door_open);
+            changeSwitchTexture(line, 1);
             break;
 
         case 47:
             // RAISE FLOOR NEAR AND CHANGE
-            Doom::doPlat(line, raiseToNearestAndChange, 0);
-            Doom::changeSwitchTexture(line, 0);
+            doPlat(line, raiseToNearestAndChange, 0);
+            changeSwitchTexture(line, 0);
             break;
     }
 }
@@ -941,24 +941,24 @@ void playerInSpecialSector(Player* player)
             // HELLSLIME DAMAGE
             if (!player->powers[pw_ironfeet])
                 if (!(stats.leveltime & 0x1f))
-                    Doom::damageMobj(player->mo, 0, 0, 10);
+                    damageMobj(player->mo, 0, 0, 10);
             break;
 
         case 7:
             // NUKAGE DAMAGE
             if (!player->powers[pw_ironfeet])
                 if (!(stats.leveltime & 0x1f))
-                    Doom::damageMobj(player->mo, 0, 0, 5);
+                    damageMobj(player->mo, 0, 0, 5);
             break;
 
         case 16:
             // SUPER HELLSLIME DAMAGE
         case 4:
             // STROBE HURT
-            if (!player->powers[pw_ironfeet] || (Doom::randomness().forPlay() < 5))
+            if (!player->powers[pw_ironfeet] || (randomness().forPlay() < 5))
             {
                 if (!(stats.leveltime & 0x1f))
-                    Doom::damageMobj(player->mo, 0, 0, 20);
+                    damageMobj(player->mo, 0, 0, 20);
             }
             break;
 
@@ -966,7 +966,7 @@ void playerInSpecialSector(Player* player)
             // SECRET SECTOR
             player->secretcount++;
             player->message = "A secret is revealed!";
-            Doom::startSound(nullptr, sfx_getpow);
+            startSound(nullptr, sfx_getpow);
             sector->special = 0;
             break;
 
@@ -975,10 +975,10 @@ void playerInSpecialSector(Player* player)
             player->cheats &= ~CF_GODMODE;
 
             if (!(stats.leveltime & 0x1f))
-                Doom::damageMobj(player->mo, 0, 0, 20);
+                damageMobj(player->mo, 0, 0, 20);
 
             if (player->health <= 10)
-                Doom::exitLevel();
+                exitLevel();
             break;
 
         default:
@@ -1014,7 +1014,7 @@ void updateSpecials()
     {
         timer.levelTimeCount--;
         if (!timer.levelTimeCount)
-            Doom::exitLevel();
+            exitLevel();
     }
 
     // ANIMATE FLATS AND TEXTURES GLOBALLY
@@ -1068,7 +1068,7 @@ void updateSpecials()
                             .bottomtexture = specials.buttonlist[i].btexture;
                         break;
                 }
-                Doom::startSound(
+                startSound(
                     reinterpret_cast<Mobj*>(&specials.buttonlist[i].soundorg),
                     sfx_swtchn);
                 doom_memset(&specials.buttonlist[i], 0, sizeof(Button));
@@ -1102,14 +1102,14 @@ int doDonut(Line* line)
         s2 = getNextSector(s1->lines[0], s1);
         for (int i = 0; i < s2->linecount; i++)
         {
-            if ((!(s2->lines[i]->flags & Doom::ML_TWOSIDED))
+            if ((!(s2->lines[i]->flags & ML_TWOSIDED))
                 || (s2->lines[i]->backsector == s1))
                 continue;
             s3 = s2->lines[i]->backsector;
 
             //        Spawn rising slime
             floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-            Doom::addThinker(floor);
+            addThinker(floor);
             s2->specialdata = floor;
             floor->type = donutRaise;
             floor->crush = false;
@@ -1122,7 +1122,7 @@ int doDonut(Line* line)
 
             //        Spawn lowering donut-hole
             floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-            Doom::addThinker(floor);
+            addThinker(floor);
             s1->specialdata = floor;
             floor->type = lowerFloor;
             floor->crush = false;
@@ -1161,14 +1161,14 @@ void spawnSpecials()
     // See if -TIMER needs to be used.
     timer.levelTimer = false;
 
-    i = Doom::checkParm("-avg");
+    i = checkParm("-avg");
     if (i && session.deathmatch)
     {
         timer.levelTimer = true;
         timer.levelTimeCount = 20 * 60 * 35;
     }
 
-    i = Doom::checkParm("-timer");
+    i = checkParm("-timer");
     if (i && session.deathmatch)
     {
         int time = doom_atoi(myargv[i + 1]) * 60 * 35;
@@ -1187,28 +1187,28 @@ void spawnSpecials()
         {
             case 1:
                 // FLICKERING LIGHTS
-                Doom::spawnLightFlash(sector);
+                spawnLightFlash(sector);
                 break;
 
             case 2:
                 // STROBE FAST
-                Doom::spawnStrobeFlash(sector, FASTDARK, 0);
+                spawnStrobeFlash(sector, FASTDARK, 0);
                 break;
 
             case 3:
                 // STROBE SLOW
-                Doom::spawnStrobeFlash(sector, SLOWDARK, 0);
+                spawnStrobeFlash(sector, SLOWDARK, 0);
                 break;
 
             case 4:
                 // STROBE FAST/DEATH SLIME
-                Doom::spawnStrobeFlash(sector, FASTDARK, 0);
+                spawnStrobeFlash(sector, FASTDARK, 0);
                 sector->special = 4;
                 break;
 
             case 8:
                 // GLOWING LIGHT
-                Doom::spawnGlowingLight(sector);
+                spawnGlowingLight(sector);
                 break;
             case 9:
                 // SECRET SECTOR
@@ -1217,26 +1217,26 @@ void spawnSpecials()
 
             case 10:
                 // DOOR CLOSE IN 30 SECONDS
-                Doom::spawnDoorCloseIn30(sector);
+                spawnDoorCloseIn30(sector);
                 break;
 
             case 12:
                 // SYNC STROBE SLOW
-                Doom::spawnStrobeFlash(sector, SLOWDARK, 1);
+                spawnStrobeFlash(sector, SLOWDARK, 1);
                 break;
 
             case 13:
                 // SYNC STROBE FAST
-                Doom::spawnStrobeFlash(sector, FASTDARK, 1);
+                spawnStrobeFlash(sector, FASTDARK, 1);
                 break;
 
             case 14:
                 // DOOR RAISE IN 5 MINUTES
-                Doom::spawnDoorRaiseIn5Mins(sector, i);
+                spawnDoorRaiseIn5Mins(sector, i);
                 break;
 
             case 17:
-                Doom::spawnFireFlicker(sector);
+                spawnFireFlicker(sector);
                 break;
         }
     }

@@ -43,7 +43,7 @@
 #include "Switches.h"
 #include "../Math/BBox.h"
 #include "ItemRespawnQueue.h"
-void Doom::spawnMapThing(Doom::MapThing* mthing);
+void Doom::spawnMapThing(MapThing* mthing);
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -72,16 +72,16 @@ void loadVertexes(int lump)
 
     // Determine number of lumps:
     //  total lump length / vertex record length.
-    numvertexes = Doom::wad().length(lump) / sizeof(MapVertex);
+    numvertexes = wad().length(lump) / sizeof(MapVertex);
 
     // Owned by the Level now (Sim/Level.h); vertexes is a view onto its vector.
     // assign, not resize, so a shorter second level does not inherit the first
     // level's tail - Z_Malloc handed back fresh zeroed memory every load.
-    Doom::level().vertexes.assign(numvertexes, Vertex {});
-    vertexes = Doom::level().vertexes.data();
+    level().vertexes.assign(numvertexes, Vertex {});
+    vertexes = level().vertexes.data();
 
     // Load data into cache.
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
+    data = static_cast<byte*>(cacheLumpNum(lump));
 
     ml = reinterpret_cast<MapVertex*>(data);
     li = vertexes;
@@ -90,8 +90,8 @@ void loadVertexes(int lump)
     // internal representation as fixed.
     for (int i = 0; i < numvertexes; i++, li++, ml++)
     {
-        li->x = Doom::Fixed::fromInt(littleEndian(ml->x));
-        li->y = Doom::Fixed::fromInt(littleEndian(ml->y));
+        li->x = Fixed::fromInt(littleEndian(ml->x));
+        li->y = Fixed::fromInt(littleEndian(ml->y));
     }
 
     // Free buffer memory.
@@ -109,10 +109,10 @@ void loadSegs(int lump)
     int linedef;
     int side;
 
-    numsegs = Doom::wad().length(lump) / sizeof(MapSeg);
-    Doom::level().segs.assign(numsegs, Seg {});
-    segs = Doom::level().segs.data();
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
+    numsegs = wad().length(lump) / sizeof(MapSeg);
+    level().segs.assign(numsegs, Seg {});
+    segs = level().segs.data();
+    data = static_cast<byte*>(cacheLumpNum(lump));
 
     ml = reinterpret_cast<MapSeg*>(data);
     li = segs;
@@ -122,7 +122,7 @@ void loadSegs(int lump)
         li->v2 = &vertexes[littleEndian(ml->v2)];
 
         li->angle = angle_t {(unsigned) (littleEndian(ml->angle)) << 16};
-        li->offset = Doom::Fixed::fromInt(littleEndian(ml->offset));
+        li->offset = Fixed::fromInt(littleEndian(ml->offset));
         linedef = littleEndian(ml->linedef);
         ldef = &lines[linedef];
         li->linedef = ldef;
@@ -145,10 +145,10 @@ void loadSubsectors(int lump)
     MapSubsector* ms;
     SubSector* ss;
 
-    numsubsectors = Doom::wad().length(lump) / sizeof(MapSubsector);
-    Doom::level().subsectors.assign(numsubsectors, SubSector {});
-    subsectors = Doom::level().subsectors.data();
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
+    numsubsectors = wad().length(lump) / sizeof(MapSubsector);
+    level().subsectors.assign(numsubsectors, SubSector {});
+    subsectors = level().subsectors.data();
+    data = static_cast<byte*>(cacheLumpNum(lump));
 
     ms = reinterpret_cast<MapSubsector*>(data);
     ss = subsectors;
@@ -169,19 +169,19 @@ void loadSectors(int lump)
     MapSector* ms;
     Sector* ss;
 
-    numsectors = Doom::wad().length(lump) / sizeof(MapSector);
-    Doom::level().sectors.assign(numsectors, Sector {});
-    sectors = Doom::level().sectors.data();
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
+    numsectors = wad().length(lump) / sizeof(MapSector);
+    level().sectors.assign(numsectors, Sector {});
+    sectors = level().sectors.data();
+    data = static_cast<byte*>(cacheLumpNum(lump));
 
     ms = reinterpret_cast<MapSector*>(data);
     ss = sectors;
     for (int i = 0; i < numsectors; i++, ss++, ms++)
     {
-        ss->floorheight = Doom::Fixed::fromInt(littleEndian(ms->floorheight));
-        ss->ceilingheight = Doom::Fixed::fromInt(littleEndian(ms->ceilingheight));
-        ss->floorpic = Doom::flatNumForName(ms->floorpic);
-        ss->ceilingpic = Doom::flatNumForName(ms->ceilingpic);
+        ss->floorheight = Fixed::fromInt(littleEndian(ms->floorheight));
+        ss->ceilingheight = Fixed::fromInt(littleEndian(ms->ceilingheight));
+        ss->floorpic = flatNumForName(ms->floorpic);
+        ss->ceilingpic = flatNumForName(ms->ceilingpic);
         ss->lightlevel = littleEndian(ms->lightlevel);
         ss->special = littleEndian(ms->special);
         ss->tag = littleEndian(ms->tag);
@@ -198,25 +198,25 @@ void loadNodes(int lump)
     MapNode* mn;
     Node* no;
 
-    numnodes = Doom::wad().length(lump) / sizeof(MapNode);
-    Doom::level().nodes.assign(numnodes, Node {});
-    nodes = Doom::level().nodes.data();
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
+    numnodes = wad().length(lump) / sizeof(MapNode);
+    level().nodes.assign(numnodes, Node {});
+    nodes = level().nodes.data();
+    data = static_cast<byte*>(cacheLumpNum(lump));
 
     mn = reinterpret_cast<MapNode*>(data);
     no = nodes;
 
     for (int i = 0; i < numnodes; i++, no++, mn++)
     {
-        no->x = Doom::Fixed::fromInt(littleEndian(mn->x));
-        no->y = Doom::Fixed::fromInt(littleEndian(mn->y));
-        no->dx = Doom::Fixed::fromInt(littleEndian(mn->dx));
-        no->dy = Doom::Fixed::fromInt(littleEndian(mn->dy));
+        no->x = Fixed::fromInt(littleEndian(mn->x));
+        no->y = Fixed::fromInt(littleEndian(mn->y));
+        no->dx = Fixed::fromInt(littleEndian(mn->dx));
+        no->dy = Fixed::fromInt(littleEndian(mn->dy));
         for (int j = 0; j < 2; j++)
         {
             no->children[j] = littleEndian(mn->children[j]);
             for (int k = 0; k < 4; k++)
-                no->bbox[j][k] = Doom::Fixed::fromInt(littleEndian(mn->bbox[j][k]));
+                no->bbox[j][k] = Fixed::fromInt(littleEndian(mn->bbox[j][k]));
         }
     }
 }
@@ -231,8 +231,8 @@ void loadThings(int lump)
     int numthings;
     bool spawn;
 
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
-    numthings = Doom::wad().length(lump) / sizeof(MapThing);
+    data = static_cast<byte*>(cacheLumpNum(lump));
+    numthings = wad().length(lump) / sizeof(MapThing);
 
     mt = reinterpret_cast<MapThing*>(data);
     for (int i = 0; i < numthings; i++, mt++)
@@ -268,7 +268,7 @@ void loadThings(int lump)
         mt->type = littleEndian(mt->type);
         mt->options = littleEndian(mt->options);
 
-        Doom::spawnMapThing(mt);
+        spawnMapThing(mt);
     }
 }
 
@@ -284,10 +284,10 @@ void loadLineDefs(int lump)
     Vertex* v1;
     Vertex* v2;
 
-    numlines = Doom::wad().length(lump) / sizeof(MapLinedef);
-    Doom::level().lines.assign(numlines, Line {});
-    lines = Doom::level().lines.data();
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
+    numlines = wad().length(lump) / sizeof(MapLinedef);
+    level().lines.assign(numlines, Line {});
+    lines = level().lines.data();
+    data = static_cast<byte*>(cacheLumpNum(lump));
 
     mld = reinterpret_cast<MapLinedef*>(data);
     ld = lines;
@@ -359,20 +359,20 @@ void loadSideDefs(int lump)
     MapSidedef* msd;
     Side* sd;
 
-    numsides = Doom::wad().length(lump) / sizeof(MapSidedef);
-    Doom::level().sides.assign(numsides, Side {});
-    sides = Doom::level().sides.data();
-    data = static_cast<byte*>(Doom::cacheLumpNum(lump));
+    numsides = wad().length(lump) / sizeof(MapSidedef);
+    level().sides.assign(numsides, Side {});
+    sides = level().sides.data();
+    data = static_cast<byte*>(cacheLumpNum(lump));
 
     msd = reinterpret_cast<MapSidedef*>(data);
     sd = sides;
     for (int i = 0; i < numsides; i++, msd++, sd++)
     {
-        sd->textureoffset = Doom::Fixed::fromInt(littleEndian(msd->textureoffset));
-        sd->rowoffset = Doom::Fixed::fromInt(littleEndian(msd->rowoffset));
-        sd->toptexture = Doom::textureNumForName(msd->toptexture);
-        sd->bottomtexture = Doom::textureNumForName(msd->bottomtexture);
-        sd->midtexture = Doom::textureNumForName(msd->midtexture);
+        sd->textureoffset = Fixed::fromInt(littleEndian(msd->textureoffset));
+        sd->rowoffset = Fixed::fromInt(littleEndian(msd->rowoffset));
+        sd->toptexture = textureNumForName(msd->toptexture);
+        sd->bottomtexture = textureNumForName(msd->bottomtexture);
+        sd->midtexture = textureNumForName(msd->midtexture);
         sd->sector = &sectors[littleEndian(msd->sector)];
     }
 }
@@ -384,19 +384,19 @@ void loadBlockMap(int lump)
 {
     int count;
 
-    blockmaplump = static_cast<short*>(Doom::cacheLumpNum(lump));
-    count = Doom::wad().length(lump) / 2;
+    blockmaplump = static_cast<short*>(cacheLumpNum(lump));
+    count = wad().length(lump) / 2;
 
     for (int i = 0; i < count; i++)
         blockmaplump[i] = littleEndian(blockmaplump[i]);
 
     // Fill the Level's blockmap descriptor from the lump header, then refresh the
     // vanilla globals as views onto it.
-    Doom::Blockmap& bmap = Doom::level().blockmap;
+    Blockmap& bmap = level().blockmap;
     bmap.lump = blockmaplump;
     bmap.offsets = blockmaplump + 4;
-    bmap.origin = {Doom::Fixed {blockmaplump[0] << fracBits},
-                   Doom::Fixed {blockmaplump[1] << fracBits}};
+    bmap.origin = {Fixed {blockmaplump[0] << fracBits},
+                   Fixed {blockmaplump[1] << fracBits}};
     bmap.width = blockmaplump[2];
     bmap.height = blockmaplump[3];
 
@@ -408,8 +408,8 @@ void loadBlockMap(int lump)
 
     // clear out mobj chains. The array is the Level's; the mobjs it will point at
     // are the zone's.
-    Doom::level().blockLinks.assign(bmapwidth * bmapheight, nullptr);
-    blocklinks = Doom::level().blockLinks.data();
+    level().blockLinks.assign(bmapwidth * bmapheight, nullptr);
+    blocklinks = level().blockLinks.data();
 }
 
 //
@@ -454,12 +454,12 @@ void groupLines()
     // build line tables for each sector. One flat array carved into per-sector
     // slices, owned by the Level (Sim/Level.h); linebuffer walks it as vanilla's
     // did, and sector->lines points into it.
-    Doom::level().sectorLines.assign(total, nullptr);
-    linebuffer = Doom::level().sectorLines.data();
+    level().sectorLines.assign(total, nullptr);
+    linebuffer = level().sectorLines.data();
     sector = sectors;
     for (int i = 0; i < numsectors; i++, sector++)
     {
-        Doom::clearBox(bbox.data());
+        clearBox(bbox.data());
         sector->lines = linebuffer;
         li = lines;
         for (int j = 0; j < numlines; j++, li++)
@@ -467,8 +467,8 @@ void groupLines()
             if (li->frontsector == sector || li->backsector == sector)
             {
                 *linebuffer++ = li;
-                Doom::addToBox(bbox.data(), li->v1->x, li->v1->y);
-                Doom::addToBox(bbox.data(), li->v2->x, li->v2->y);
+                addToBox(bbox.data(), li->v1->x, li->v1->y);
+                addToBox(bbox.data(), li->v2->x, li->v2->y);
             }
         }
         if (linebuffer - sector->lines != sector->linecount)
@@ -522,7 +522,7 @@ void setupLevel(int episode, int map, int, Skill)
     players_.players[players_.consoleplayer].viewz = fixed_t {1};
 
     // Make sure all sounds are stopped before the level's allocations go.
-    Doom::startLevelSound();
+    startLevelSound();
 
     // Free the previous level's mobjs and thinker specials - what
     // Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1) reclaimed when they lived in the
@@ -530,10 +530,10 @@ void setupLevel(int episode, int map, int, Skill)
     freeLevelAllocations();
 
     // UNUSED W_Profile ();
-    Doom::initThinkers();
+    initThinkers();
 
     // if working with a devlopment map, reload it
-    Doom::wad().reload();
+    wad().reload();
 
     // find map name
     if (gameVersion().gamemode == commercial)
@@ -560,7 +560,7 @@ void setupLevel(int episode, int map, int, Skill)
         lumpname[4] = 0;
     }
 
-    lumpnum = Doom::wad().number(lumpname.data());
+    lumpnum = wad().number(lumpname.data());
 
     stats.leveltime = 0;
 
@@ -575,7 +575,7 @@ void setupLevel(int episode, int map, int, Skill)
     loadNodes(lumpnum + ML_NODES);
     loadSegs(lumpnum + ML_SEGS);
 
-    rejectmatrix = static_cast<byte*>(Doom::cacheLumpNum(lumpnum + ML_REJECT));
+    rejectmatrix = static_cast<byte*>(cacheLumpNum(lumpnum + ML_REJECT));
     groupLines();
 
     corpseQueue().bodyqueslot = 0;
@@ -590,7 +590,7 @@ void setupLevel(int episode, int map, int, Skill)
             if (players_.playeringame[i])
             {
                 players_.players[i].mo = nullptr;
-                Doom::deathMatchSpawnPlayer(i);
+                deathMatchSpawnPlayer(i);
             }
     }
 
@@ -598,11 +598,11 @@ void setupLevel(int episode, int map, int, Skill)
     itemRespawnQueue().iquehead = itemRespawnQueue().iquetail = 0;
 
     // set up world state
-    Doom::spawnSpecials();
+    spawnSpecials();
 
     // preload graphics
     if (engineParams().precache)
-        Doom::precacheLevel();
+        precacheLevel();
 }
 
 //
@@ -610,9 +610,9 @@ void setupLevel(int episode, int map, int, Skill)
 //
 void init()
 {
-    Doom::initSwitchList();
-    Doom::initPicAnims();
-    Doom::initSprites(sprnames);
+    initSwitchList();
+    initPicAnims();
+    initSprites(sprnames);
 }
 } // namespace Doom
 

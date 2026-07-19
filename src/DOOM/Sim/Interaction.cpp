@@ -181,7 +181,7 @@ bool giveWeapon(Player* player, WeaponType weapon, bool dropped)
         const auto& players_ = playerState();
 
         if (player == &players_.players[players_.consoleplayer])
-            Doom::startSound(nullptr, sfx_wpnup);
+            startSound(nullptr, sfx_wpnup);
         return false;
     }
 
@@ -616,13 +616,13 @@ void touchSpecialThing(Mobj* special, Mobj* toucher)
 
     if (special->flags & MF_COUNTITEM)
         player->itemcount++;
-    Doom::removeMobj(special);
+    removeMobj(special);
     player->bonuscount += BONUSADD;
 
     const auto& players_ = playerState();
 
     if (player == &players_.players[players_.consoleplayer])
-        Doom::startSound(nullptr, sound);
+        startSound(nullptr, sound);
 }
 
 //
@@ -674,17 +674,17 @@ void killMobj(Mobj* source, Mobj* target)
         {
             // don't die in auto map,
             // switch view prior to dying
-            Doom::stopAutomap();
+            stopAutomap();
         }
     }
 
     if (target->health < -target->info->spawnhealth && target->info->xdeathstate)
     {
-        Doom::setMobjState(target, static_cast<StateNum>(target->info->xdeathstate));
+        setMobjState(target, static_cast<StateNum>(target->info->xdeathstate));
     }
     else
-        Doom::setMobjState(target, static_cast<StateNum>(target->info->deathstate));
-    target->tics -= Doom::randomness().forPlay() & 3;
+        setMobjState(target, static_cast<StateNum>(target->info->deathstate));
+    target->tics -= randomness().forPlay() & 3;
 
     if (target->tics < 1)
         target->tics = 1;
@@ -713,7 +713,7 @@ void killMobj(Mobj* source, Mobj* target)
             return;
     }
 
-    mo = Doom::spawnMobj(target->x, target->y, ONFLOORZ, item);
+    mo = spawnMobj(target->x, target->y, ONFLOORZ, item);
     mo->flags |= MF_DROPPED; // special versions of items
 }
 
@@ -758,14 +758,14 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         && (!source || !source->player
             || source->player->readyweapon != wp_chainsaw))
     {
-        ang = Doom::pointToAngle2(inflictor->x, inflictor->y, target->x, target->y);
+        ang = pointToAngle2(inflictor->x, inflictor->y, target->x, target->y);
 
         thrust = damage * (FRACUNIT >> 3) * 100 / target->info->mass;
 
         // make fall forwards sometimes
         if (damage < 40 && damage > target->health
             && target->z - inflictor->z > 64 * FRACUNIT
-            && (Doom::randomness().forPlay() & 1))
+            && (randomness().forPlay() & 1))
         {
             ang += ang180;
             thrust = thrust * 4;
@@ -835,12 +835,12 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         return;
     }
 
-    if ((Doom::randomness().forPlay() < target->info->painchance)
+    if ((randomness().forPlay() < target->info->painchance)
         && !(target->flags & MF_SKULLFLY))
     {
         target->flags |= MF_JUSTHIT; // fight back!
 
-        Doom::setMobjState(target, static_cast<StateNum>(target->info->painstate));
+        setMobjState(target, static_cast<StateNum>(target->info->painstate));
     }
 
     target->reactiontime = 0; // we're awake now...
@@ -854,7 +854,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         target->threshold = BASETHRESHOLD;
         if (target->state == &states[target->info->spawnstate]
             && target->info->seestate != S_NULL)
-            Doom::setMobjState(target,
+            setMobjState(target,
                                static_cast<StateNum>(target->info->seestate));
     }
 }

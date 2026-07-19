@@ -18,37 +18,37 @@
 
 void Doom::Mobj::tick()
 {
-    Doom::mobjThinker(this);
+    mobjThinker(this);
 }
 void Doom::Door::tick()
 {
-    Doom::verticalDoor(*this);
+    verticalDoor(*this);
 }
 void Doom::Ceiling::tick()
 {
-    Doom::moveCeiling(*this);
+    moveCeiling(*this);
 }
 void Doom::FloorMove::tick()
 {
-    Doom::moveFloor(*this);
+    moveFloor(*this);
 }
 void Doom::Plat::tick()
 {
-    Doom::platRaise(*this);
+    platRaise(*this);
 }
 void Doom::FireFlicker::tick()
 {
-    Doom::fireFlicker(*this);
+    fireFlicker(*this);
 }
 void Doom::LightFlash::tick()
 {
-    Doom::lightFlash(*this);
+    lightFlash(*this);
 }
 void Doom::Strobe::tick()
 {
-    Doom::strobeFlash(*this);
+    strobeFlash(*this);
 }
 void Doom::Glow::tick()
 {
-    Doom::glow(*this);
+    glow(*this);
 }

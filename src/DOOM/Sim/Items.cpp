@@ -45,7 +45,7 @@ using namespace Doom;
 // atkstate, i.e. attack/fire/hit frame
 // flashstate, muzzle flash
 //
-Doom::WeaponInfo weaponinfo[Doom::NUMWEAPONS] =
+WeaponInfo weaponinfo[NUMWEAPONS] =
 {
     {
         // fist

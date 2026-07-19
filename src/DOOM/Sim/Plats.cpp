@@ -43,13 +43,13 @@ void platRaise(Plat& plat)
     switch (plat.status)
     {
         case up:
-            res = Doom::movePlane(*plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
+            res = movePlane(*plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
 
             if (plat.type == raiseAndChange
                 || plat.type == raiseToNearestAndChange)
             {
                 if (!(levelStats().leveltime & 7))
-                    Doom::startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
+                    startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                                  sfx_stnmov);
             }
 
@@ -57,7 +57,7 @@ void platRaise(Plat& plat)
             {
                 plat.count = plat.wait;
                 plat.status = down;
-                Doom::startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
+                startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                              sfx_pstart);
             }
             else
@@ -66,7 +66,7 @@ void platRaise(Plat& plat)
                 {
                     plat.count = plat.wait;
                     plat.status = waiting;
-                    Doom::startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
+                    startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                                  sfx_pstop);
 
                     switch (plat.type)
@@ -89,13 +89,13 @@ void platRaise(Plat& plat)
             break;
 
         case down:
-            res = Doom::movePlane(*plat.sector, plat.speed, plat.low, false, 0, -1);
+            res = movePlane(*plat.sector, plat.speed, plat.low, false, 0, -1);
 
             if (res == pastdest)
             {
                 plat.count = plat.wait;
                 plat.status = waiting;
-                Doom::startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
+                startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                              sfx_pstop);
             }
             break;
@@ -107,7 +107,7 @@ void platRaise(Plat& plat)
                     plat.status = up;
                 else
                     plat.status = down;
-                Doom::startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
+                startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                              sfx_pstart);
             }
 
@@ -140,7 +140,7 @@ int doPlat(Line* line, PlatType type, int amount)
             break;
     }
 
-    while ((secnum = Doom::findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
         sec = &sectors[secnum];
 
@@ -150,7 +150,7 @@ int doPlat(Line* line, PlatType type, int amount)
         // Find lowest & highest floors around sector
         rtn = 1;
         plat = new (levelAlloc(sizeof(*plat))) Plat {};
-        Doom::addThinker(plat);
+        addThinker(plat);
 
         plat->type = type;
         plat->sector = sec;
@@ -163,13 +163,13 @@ int doPlat(Line* line, PlatType type, int amount)
             case raiseToNearestAndChange:
                 plat->speed = PLATSPEED / 2;
                 sec->floorpic = sides[line->sidenum[0]].sector->floorpic;
-                plat->high = Doom::findNextHighestFloor(sec, sec->floorheight);
+                plat->high = findNextHighestFloor(sec, sec->floorheight);
                 plat->wait = 0;
                 plat->status = up;
                 // NO MORE DAMAGE, IF APPLICABLE
                 sec->special = 0;
 
-                Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
                 break;
 
             case raiseAndChange:
@@ -179,12 +179,12 @@ int doPlat(Line* line, PlatType type, int amount)
                 plat->wait = 0;
                 plat->status = up;
 
-                Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
                 break;
 
             case downWaitUpStay:
                 plat->speed = PLATSPEED * 4;
-                plat->low = Doom::findLowestFloorSurrounding(sec);
+                plat->low = findLowestFloorSurrounding(sec);
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
@@ -192,12 +192,12 @@ int doPlat(Line* line, PlatType type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = down;
-                Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;
 
             case blazeDWUS:
                 plat->speed = PLATSPEED * 8;
-                plat->low = Doom::findLowestFloorSurrounding(sec);
+                plat->low = findLowestFloorSurrounding(sec);
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
@@ -205,25 +205,25 @@ int doPlat(Line* line, PlatType type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = down;
-                Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;
 
             case perpetualRaise:
                 plat->speed = PLATSPEED;
-                plat->low = Doom::findLowestFloorSurrounding(sec);
+                plat->low = findLowestFloorSurrounding(sec);
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
 
-                plat->high = Doom::findHighestFloorSurrounding(sec);
+                plat->high = findHighestFloorSurrounding(sec);
 
                 if (plat->high < sec->floorheight)
                     plat->high = sec->floorheight;
 
                 plat->wait = 35 * PLATWAIT;
-                plat->status = (PlatState) (Doom::randomness().forPlay() & 1);
+                plat->status = (PlatState) (randomness().forPlay() & 1);
 
-                Doom::startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;
         }
         addActivePlat(plat);
@@ -279,7 +279,7 @@ void removeActivePlat(Plat* plat)
         if (plat == specials.activeplats[i])
         {
             (specials.activeplats[i])->sector->specialdata = nullptr;
-            Doom::removeThinker(specials.activeplats[i]);
+            removeThinker(specials.activeplats[i]);
             specials.activeplats[i] = nullptr;
 
             return;

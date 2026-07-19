@@ -31,8 +31,8 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void initThinkers();
-void addThinker(Doom::Thinker* thinker);
-void removeThinker(Doom::Thinker* thinker);
+void addThinker(Thinker* thinker);
+void removeThinker(Thinker* thinker);
 void runThinkers();
 void ticker();
 
@@ -87,7 +87,7 @@ void levelFree(void* block)
 // trivially destructible, so this frees no resources - it is here because ending
 // the lifetime of a polymorphic object by releasing its storage is only well-defined
 // once its destructor has run.
-static void destroyThinker(Doom::Thinker* thinker)
+static void destroyThinker(Thinker* thinker)
 {
     thinker->~Thinker();
     levelFree(thinker);
@@ -104,7 +104,7 @@ void LevelPool::releaseAll()
     while (chunk)
     {
         LevelChunk* next = chunk->next;
-        reinterpret_cast<Doom::Thinker*>(chunk + 1)->~Thinker();
+        reinterpret_cast<Thinker*>(chunk + 1)->~Thinker();
         doom_free(chunk);
         chunk = next;
     }
@@ -134,7 +134,7 @@ void initThinkers()
 // addThinker
 // Adds a new thinker at the end of the list.
 //
-void addThinker(Doom::Thinker* thinker)
+void addThinker(Thinker* thinker)
 {
     auto& thinkers = thinkerList();
     thinkers.cap.prev->next = thinker;
@@ -148,7 +148,7 @@ void addThinker(Doom::Thinker* thinker)
 // Deallocation is lazy -- it will not actually be freed
 // until its thinking turn comes up.
 //
-void removeThinker(Doom::Thinker* thinker)
+void removeThinker(Thinker* thinker)
 {
     // Deallocation is lazy: mark it, and runThinkers frees it when its turn next
     // comes up. Was `function.acv = (actionf_v) -1`.
@@ -161,7 +161,7 @@ void removeThinker(Doom::Thinker* thinker)
 void runThinkers()
 {
     auto& thinkers = thinkerList();
-    Doom::Thinker* currentthinker = thinkers.cap.next;
+    Thinker* currentthinker = thinkers.cap.next;
     while (currentthinker != &thinkers.cap)
     {
         if (currentthinker->removed)
@@ -171,7 +171,7 @@ void runThinkers()
             // its bytes until reused; a real free() unmaps them, so capture next
             // before releasing (the unlink leaves currentthinker->next intact, so
             // this is the same value vanilla read - only sooner).
-            Doom::Thinker* next = currentthinker->next;
+            Thinker* next = currentthinker->next;
             currentthinker->next->prev = currentthinker->prev;
             currentthinker->prev->next = currentthinker->next;
             destroyThinker(currentthinker);
@@ -215,8 +215,8 @@ void ticker()
             playerThink(players_.players[i]);
 
     runThinkers();
-    Doom::updateSpecials();
-    Doom::respawnSpecials();
+    updateSpecials();
+    respawnSpecials();
 
     // for par times
     levelStats().leveltime++;
