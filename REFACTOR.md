@@ -742,6 +742,35 @@ Everything above the line is done. What follows is, in the order worth doing it:
    because it is the cleanest possible demonstration of why the pile mattered: the
    only warnings in the build that described a real defect looked exactly like the
    seventy that did not.
+8. **Strand (c)'s "C arrays → `EA::Array`" is not done, and the progress row says it
+   is.** Counted rather than estimated: **128 raw fixed-size array members across 43
+   headers**, led by `Render/PlaneScratch.h` (11), `Game/NetState.h` (11),
+   `UI/IntermissionState.h` (10) and `Game/PlayerTypes.h` (9). This is the fourth
+   overstated completeness claim this document has had to walk back, and it is the
+   same failure as the others — the sweep converted the arrays it *touched* while
+   doing something else, and the category was never counted.
+
+   **Do not simply finish it, because part of the remainder is load-bearing:**
+   - **`Wad/MapFormat.h` (7)** are `reinterpret_cast` onto raw lump bytes. These
+     model an on-disk format; they should stay exactly as they are.
+   - **`Game/PlayerTypes.h` (9) and `Sim/MapTypes.h` (4)** are inside structs the
+     savegame writes **whole**: `Sim/SaveGame.cpp` does
+     `doom_memcpy(dest, &players_.players[i], sizeof(Player))` and
+     `doom_memcpy(mobj, th, sizeof(*mobj))`. Any container swap there has to leave
+     `sizeof` and layout untouched or every `.dsg` written by one build is
+     unreadable by the next — and no golden covers that, since
+     `doomSimSaveLoadPreservesWorld` round-trips within a single build where both
+     sides agree by construction.
+
+   `EA::Array<T, N>` is a wrapper over `std::array<T, N>` (`Array() = default`, one
+   `std::array` member), so it *is* size- and layout-identical in practice and
+   trivially copyable — but note that is an **implementation fact about eacp's
+   container**, not a language guarantee, and it is the sort of thing that should be
+   re-checked rather than remembered before it is relied on for a serialised struct.
+
+   For the rest — the scratch and state clusters — the conversion is safe and the
+   value is real but modest. Worth doing per-cluster alongside other work in that
+   file, not as a sweep of its own.
 
 Recently finished, for orientation: **the function-like macro layer, and the
 `thintriangle_guy` bug it uncovered** (the newest work — `SHORT`/`LONG` across 154
