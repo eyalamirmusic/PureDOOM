@@ -110,7 +110,10 @@ a warning count: the transferable lesson is that **a suppression is scoped to on
 compiler and spelled in its dialect, so it fails silently in the direction that looks
 clean.** Two real defects came out of it, both preserved and documented rather than
 fixed (a MUS delay-decode precedence bug, and an intermission background that has
-never drawn since 1993). Two CI configurations remain unmeasured — Ubuntu and MSVC.
+never drawn since 1993). Still unmeasured: Ubuntu's gcc and clang, and MSVC — and
+note that CI's *five* rows are four toolchains, its `macos × gcc` row being Apple
+Clang under another name. CI now reports a per-configuration warning count, so the
+remaining two measure themselves on the next push.
 
 **Steps 0–8 are done**, with one externally blocked item: audio, whose engine side
 is built and which waits on an eacp audio stream. The whole UI, game loop, netcode,
@@ -1288,14 +1291,32 @@ Everything above the line is done. What follows is, in the order worth doing it:
    `-ffp-contract=off` and the one `double` in `FixedDiv2` were supposed to buy and
    which nothing had ever tested.
 
-   **Where `-Werror` stands now: three of the five CI configurations are measured at
-   zero** — Apple Clang `Debug`, Apple Clang `Release`, GCC `Release`. Still
-   unmeasured: **gcc and clang on Ubuntu** (a different libstdc++ and glibc, so a
-   different set of transitive includes — the `<cstdio>` failure above is precisely
-   the kind of thing that differs) and **MSVC on `/W4`**, which is not the same flag
-   set at all. The recommendation is unchanged and now better supported: a CI job that
-   *reports* per-configuration counts without failing, then `-Werror` once all five
-   read zero.
+   **Where `-Werror` stands now — and the "five configurations" this document has
+   been counting are four.** On a macOS runner, bare `gcc`/`g++` resolve to
+   `/usr/bin`, which is **Apple Clang wearing the name** (checked: `/usr/bin/g++
+   --version` prints `Apple clang version 21.0.0`). So the workflow's `macos-latest ×
+   gcc` row has been running the `macos-latest × clang` row a second time since it was
+   written, and the matrix's five rows are **four distinct toolchains**: Ubuntu gcc,
+   Ubuntu clang, Apple Clang twice, MSVC. That is worth knowing beyond the arithmetic:
+   this document has been treating "gcc has never been measured" as a gap in CI's
+   coverage, when in fact CI never had the coverage it appeared to have, and the row
+   that looked like it was closing the gap was the one telling the lie.
+
+   Measured at zero: **Apple Clang, `Debug` and `Release`** (which is what two of the
+   five rows actually are), and **real GCC 16 on macOS, `Release`** — which is *not* a
+   CI row as configured, and is the measurement this session added. Still unmeasured:
+   **gcc and clang on Ubuntu** (a different libstdc++ and glibc, so a different set of
+   transitive includes — the `<cstdio>` failure above is exactly the kind of thing that
+   differs) and **MSVC on `/W4`**, which is not the same flag set at all.
+
+   The recommendation is unchanged and now acted on: `.github/workflows/tests.yml`
+   gained a **Report warning count** step, which captures the build log and prints a
+   per-configuration count into the job summary, failing on nothing. That makes the
+   two unmeasured toolchains self-measuring on the next push instead of waiting for
+   someone with the right machine. `-Werror` once every row has read zero for a while.
+   Pointing the macOS gcc row at a Homebrew `g++-N` would make the matrix honest too,
+   at the cost of pinning a version and a `brew install`; left as a deliberate decision
+   rather than changed in passing, with the reasoning recorded in the workflow.
 
    **The eight `-Wliteral-conversion` warnings are already gone** — they *were*
    `thintriangle_guy`, and fixing the bug removed them. Worth stating plainly,

@@ -37,6 +37,16 @@ jobs:
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
+          # NOTE: this row does not measure what its name says. On a macOS runner
+          # bare `gcc`/`g++` resolve to /usr/bin, which is Apple Clang wearing the
+          # name - so this is the macos/clang row run twice, and these five rows are
+          # four distinct toolchains. Real GCC on macOS is a separate thing, and it
+          # is worth having: the first time it was ever run against this engine it
+          # failed to build and then reported 327 warnings that Apple Clang did not,
+          # 314 of them behind a pragma spelled in Clang's dialect (see REFACTOR.md
+          # item 7). Pointing this row at Homebrew's g++-N would make the matrix
+          # honest, at the cost of pinning a version and a brew install - left as a
+          # deliberate decision rather than changed in passing.
           - os: macos-latest
             c_compiler: gcc
             cpp_compiler: g++
@@ -66,8 +76,40 @@ jobs:
           -DPUREDOOM_BUILD_EACP_EXAMPLE=OFF
           -S ${{ github.workspace }}
 
+      # The build output is captured so the warning count can be reported per
+      # configuration. It is REPORTED, NOT ENFORCED: -Werror is not on, because the
+      # count has only ever been measured on some of these toolchains and turning it
+      # on from a partial measurement would break the branch on push for the rest.
+      # This step is the cheap first move REFACTOR.md item 7 asks for - once every
+      # row here reads 0 for a while, -Werror becomes a decision with evidence
+      # behind it rather than a guess.
+      #
+      # Two counting patterns, because MSVC does not spell it the same way:
+      # gcc/clang emit "warning:", cl emits "warning C4996:".
       - name: Build
-        run: cmake --build ${{ github.workspace }}/build --config ${{ matrix.build_type }}
+        shell: bash
+        run: |
+          set -o pipefail
+          cmake --build "${{ github.workspace }}/build" --config ${{ matrix.build_type }} 2>&1 \
+            | tee "${{ github.workspace }}/build-log.txt"
+
+      - name: Report warning count
+        if: always()
+        shell: bash
+        run: |
+          log="${{ github.workspace }}/build-log.txt"
+          if [ ! -f "$log" ]; then echo "no build log (configure or build failed early)"; exit 0; fi
+          count=$(grep -cE 'warning:|warning C[0-9]{4}' "$log" || true)
+          echo "Warnings: $count"
+          echo "### ${{ matrix.os }} / ${{ matrix.c_compiler }}: $count warning(s)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$count" -gt 0 ]; then
+            echo '<details><summary>warnings</summary>' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E 'warning:|warning C[0-9]{4}' "$log" | sort | uniq -c | sort -rn | head -40 >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '</details>' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Test
         working-directory: ${{ github.workspace }}/build

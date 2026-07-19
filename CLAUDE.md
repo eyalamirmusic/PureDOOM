@@ -747,11 +747,17 @@ while after — `Sim/Weapon.cpp`'s type-erased `states[].action` cast, which is 
 trip and therefore well-defined, and which now sits behind a scoped suppression
 spelled for each compiler. This is a state to hold, not a number to admire.
 
-That zero is measured on **three** of CI's five configurations: Apple Clang `Debug`,
-Apple Clang `Release`, and **GCC `Release`**. Still unmeasured are **Ubuntu's gcc and
-clang** (a different standard library, so a different set of transitive includes) and
-**MSVC on `/W4`**, which is not the same flag set at all. `-Werror` waits on those
-two: see `REFACTOR.md` item 7.
+That zero is measured on Apple Clang (`Debug` and `Release`) and on **real GCC 16**
+(`Release`). Still unmeasured are **Ubuntu's gcc and clang** (a different standard
+library, so a different set of transitive includes) and **MSVC on `/W4`**, which is
+not the same flag set at all. `-Werror` waits on those: see `REFACTOR.md` item 7.
+
+**CI's five rows are four toolchains.** On a macOS runner bare `gcc`/`g++` resolve to
+`/usr/bin`, which is Apple Clang wearing the name — so `.github/workflows/tests.yml`'s
+`macos-latest × gcc` row is the `macos-latest × clang` row run twice. Do not read it
+as gcc coverage. The workflow now has a **Report warning count** step that prints a
+per-configuration count into the job summary and fails on nothing, so the two genuinely
+unmeasured toolchains measure themselves on the next push.
 
 **Two things the first GCC build taught, both of which cost a working day and neither
 of which is visible from a Clang-only measurement:**
