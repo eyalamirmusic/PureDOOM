@@ -159,18 +159,31 @@ padding cache and the `Sim/Tick` level pool). What is otherwise loose is *not wo
    context become captures. A real design win, but hot-path and behaviour-adjacent, so it is its own
    reviewed step rather than part of a sweep.
 
-**Strand (a) is now DONE — the reference-alias layer is retired.** ~290 aliases in all
-(the first survey said 104; it had only scanned the flat `.cpp` files and missed a second
-tier of ~160 defined inside the already-namespaced ones, `Game/Game.cpp` alone holding 81).
-Every reader now reaches its cluster through the owner. The transform is a **per-function
-hoist**, not a token substitution: the accessors are out-of-line functions in `Engine.cpp`,
-so rewriting each `dc_x` as `Doom::drawState().dc_x` would add a call per access inside the
-per-pixel drawers — a regression no golden could catch, since they hash pixels, not time.
-Each function takes `auto& draw = drawState();` once instead. **That releases the
-static-init address pin on `engine()`, so the Engine can be constructed rather than
-booted** — the dividend strand (a) was always for. 11 flat `.cpp` files remain and none is
-a shim: data tables, the pointer-and-count views, the drawer function pointers, and the
+**Strand (a): the *cross-file* alias layer is retired — but a third tier survived, and
+this document claimed the whole job was done when it was not.** ~290 aliases went in that
+pass (the first survey said 104; it had only scanned the flat `.cpp` files and missed a
+second tier of ~160 defined inside the already-namespaced ones, `Game/Game.cpp` alone
+holding 81). The transform is a **per-function hoist**, not a token substitution: the
+accessors are out-of-line functions in `Engine.cpp`, so rewriting each `dc_x` as
+`Doom::drawState().dc_x` would add a call per access inside the per-pixel drawers — a
+regression no golden could catch, since they hash pixels, not time. Each function takes
+`auto& draw = drawState();` once instead. 11 flat `.cpp` files remain and none is a shim:
+data tables, the pointer-and-count views, the drawer function pointers, and the
 `fixed_t`↔`Doom::Fixed` bridge.
+
+**What the claim missed: 247 file-local aliases.** Both of the sweeps above searched for
+the cross-file form, `extern T& x`. Inside the already-namespaced sources the same thing
+is spelled `static T& x = cluster().x;` at file scope, and 247 of those were still
+standing — `UI/Intermission` 48, `UI/StatusBar` 42, `UI/Automap` 30, `Render/Segs` 20,
+`UI/Menu` 19, `UI/Hud` 14, `Sim/MapAction` 11, `UI/Finale` 11, and a long tail. They bind
+member addresses at static-init exactly as the `extern` ones did, so **the address pin was
+never released and the Engine was never constructible** — `Engine.h`'s own comment
+(lines 97–108) still described the pin as live, which is the tell that should have been
+caught. A second syntactic form hides in the same tier and needs its own grep:
+reference-to-array, `static Patch* (&tallnum)[10] = statusBarGraphics().tallnum;` — 46 of
+the 247. The lesson is narrower than "check your greps": **a claim that a category is
+empty should be verified against the category, not against the pattern that found its
+members.** Progress is now tracked in the Step 9 row; the Render batch (40) landed first.
 
 **13 aliases stay, deliberately**: the host callbacks (`doom_print`/`doom_malloc`/…) are
 references onto `Doom::host()`, not the Engine. `host()` is a separate immortal singleton
@@ -200,32 +213,94 @@ retiring them would rewrite ~249 call sites to `host().print(...)` for no gain.
 
 In the order worth doing it:
 
-1. **Two types that still lie.** `MovementSpeeds`' `forwardmove`/`sidemove`/
-   `angleturn` are declared `fixed_t` but hold small *raw integers* (`0x19`,
-   `640`) that `P_MovePlayer` later scales; `VideoState::dirtybox` is `fixed_t`
-   but holds *screen pixels*. Both only compile today because call sites reach
-   for `.raw`. The strong-type migration exposed them and deliberately did not
-   change them — retyping to `int` is behaviour-neutral but touches their
-   readers, and it is exactly the kind of thing this refactor exists to end.
-2. **`aimTraverse` / `shootTraverse`** still route `aimslope` and `linetarget`
-   through `ActionScratch`/`Clip`. Unlike `radiusAttack`'s context, those are
-   *results* the caller reads after the traverse, so they need a small returned
-   struct rather than a capture — a different change from the one that retired
-   the other six globals.
-3. **The RAII tail**: `Host/Sound`'s `paddedsfx` (`+8`-offset per-sfx cache,
-   audio-blocked so golden-blind) and `Sim/Tick`'s level pool (intrusive-list,
-   variable-sized, polymorphic-`Thinker`, memcpy-serialised by p_saveg — its own
-   reviewed step).
-4. **`doom_boolean` is still an `int`.** `doomtype.h` explains at length why;
-   it is a behaviour change, not a spelling one, and belongs to its own step
-   with the demos watching.
-5. The ~1,600 enum constants (`MT_*`, `S_*`, `SPR_*`, `MF_*`) keep their
+1. **The 247 file-local reference aliases** (strand (a) tier 3, above). This is
+   the largest remaining item and the one that actually unblocks the
+   constructible `Engine`. Render's 40 are done.
+2. ~~Two types that still lie.~~ **Done.** `MovementSpeeds`'
+   `forwardmove`/`sidemove`/`angleturn` and `VideoState::dirtybox` are `int`;
+   16 `.raw` reaches and two `fixed_t{}` wraps went with them. `addToBox` keeps
+   its signature and its pinned `else if` — `dirtybox` was its only
+   non-fixed-point caller, and now grows through an int-typed helper.
+3. **`aimTraverse` / `shootTraverse`** still route `aimslope` and `linetarget`
+   through `ActionScratch`/`Clip`. Those are *results* the caller reads after
+   the traverse, so they want a returned `AimResult { slope, target }` rather
+   than a capture; the traversers themselves become capturing lambdas, the
+   pattern `useTraverse`/`radiusAttackThing` already took. **`attackrange` is
+   not part of this** — see the trap below.
+4. **The RAII tail is larger than this document recorded.** Beyond `Host/Sound`'s
+   `paddedsfx` (`+8`-offset per-sfx cache, audio-blocked so golden-blind) and
+   `Sim/Tick`'s level pool (intrusive-list, variable-sized, polymorphic-`Thinker`,
+   memcpy-serialised by p_saveg — its own reviewed step), there are: `UI/Wipe`'s
+   melt-offset table, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo
+   buffers, `Game/Config`'s leaked per-string-default `newstring`, and seven
+   never-freed WAD path strings in `DoomMain::identifyVersion`.
+5. **Dead code from Step 4 that outlived the zone.** `Host/System`'s `zoneBase`,
+   `heapSize`, `allocLow`, `mb_used`, `beginRead` and `endRead` have **zero
+   callers** anywhere in `src/DOOM`, `Tests/` or `examples/`. `zoneBase` would
+   still `doom_malloc` a 12 MB arena and leak it. Delete them.
+6. **`doom_boolean` is still an `int`**, and three blockers must land before the
+   typedef can change at all — see the traps below. After that: Render (20
+   sites), Host (4, golden-blind), then Sim+Game **atomically** (73+90, they
+   share `Player` and `SaveGame.cpp`'s whole-struct memcpy), then UI (124).
+7. The ~1,600 enum constants (`MT_*`, `S_*`, `SPR_*`, `MF_*`) keep their
    prefixes **on purpose** — they are DOOM's data vocabulary, `Sim/Info.cpp`'s
    generated tables are built from them, and renaming them is high-churn and
    zero-value.
 
+### Three types that lie, found under `doom_boolean`
+
+Two of these are hard blockers for item 6, and both are the same shape as item 2:
+a declaration that says "boolean" over storage that holds something else.
+
+- **`Render/Data.cpp`'s `MapTexture::masked`** is `doom_boolean` in a struct
+  *overlaid directly onto raw `TEXTURE1`/`TEXTURE2` lump bytes*. Its value is
+  never read — but its **four bytes are load-bearing**, because `width`,
+  `height`, `columndirectory` and `patchcount` are read through the same overlay
+  and would all shift by three bytes under a one-byte `bool`. Every texture in
+  every WAD would parse as garbage on the first level load. It is an on-disk
+  field, not an application boolean; it should be `int`. (The neighbouring
+  `columndirectory` already carries a comment from someone who hit this exact
+  class of bug.)
+- **`Game/GameSession.h`'s `deathmatch` is tri-state**: 0 coop, 1 deathmatch,
+  2 altdeath. `DoomMain` assigns 2, `Sim/Interaction` and `Sim/Mobj` gate
+  altdeath-only item rules on `!= 2`, and `Game/Net` packs it as a two-bit
+  field. A `bool` collapses 1 and 2, silently turning the altdeath rules on for
+  plain deathmatch — **and no golden would catch it**, because all three demos
+  are single-player with `deathmatch == 0`. This is the clearest case yet of a
+  change the net is blind to; it should be `int`.
+- **The ARMS widget's `(int*) &plyr->weaponowned[i + 1]`** (`UI/StatusBar.cpp`,
+  vanilla's own cast) is the pun `doomtype.h` describes, and it is real:
+  `weaponowned` *is* `doom_boolean[NUMWEAPONS]`, and `updateMultIcon`
+  dereferences that as a 4-byte `int` index. At one byte it reads three
+  neighbouring elements — and for `i = 5`, spills into the `int ammo[]` that
+  follows. The six icons need their own `int` index array before the flip.
+
+**A false trap, now corrected.** `Game/PlayerState.h` claimed vanilla makes
+`(int*)` casts into `playeringame` that "rely on `doom_boolean` being
+int-sized." There are none, anywhere in the tree — the note generalized from
+the `weaponowned` precedent. A wrong warning about a load-bearing quirk is worse
+than no warning: it sends the next reader hunting for a hazard that does not
+exist, or preserves a constraint nothing needs.
+
 ### Traps this work added to the list
 
+- **`Clip::attackrange` looks like a traverse result and is an input.** It is set
+  by `lineAttack` *before* the traverse, and `Sim/Mobj`'s `spawnPuff` reads it
+  from *inside* that traversal's own call stack — nested, not stale — to pick the
+  fist's `S_PUFF3`. So it must **not** move into the returned `AimResult`. It also
+  carries a genuine cross-tic leak that must be preserved: `spawnPuff` has a third
+  caller in no hitscan chain at all — the revenant's homing rocket spawns smoke
+  every 4th tic (`Sim/Enemy`) — which reads whatever the last hitscan left, so a
+  recent punch can flip that smoke to `S_PUFF3`. That is vanilla behaviour sitting
+  under the demo goldens; threading an explicit `false` there is a behaviour change
+  wearing a refactor's clothes.
+- **A category can be "done" while a whole syntactic tier of it stands.** Strand
+  (a) was recorded complete after two sweeps that both searched for `extern T& x`.
+  247 aliases spelled `static T& x = cluster().x;` — plus a reference-to-array form,
+  `static Patch* (&tallnum)[10] = …` — were untouched, and the pin the strand exists
+  to remove was never released. Verify a completeness claim against the *category*,
+  not against the pattern that found its members; and treat a comment that still
+  describes the old state (`Engine.h`'s, here) as evidence, not as staleness.
 - **A reader-count heuristic lies after a hoist.** Agents name the hoisted local
   after the alias it replaces, so a bare-name count reports those locals as
   readers. Delete the definitions and let the **compiler** name the survivors.
