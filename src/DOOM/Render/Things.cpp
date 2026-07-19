@@ -39,11 +39,10 @@ namespace Doom
 {
 
 // File-local scratch, now on the Engine (Render/SpriteScratch.h, moved by the file-scope-statics
-// sweep - REFACTOR.md, Step 5); no other file reads these. spritelights, maxframe, spritename and
-// overflowsprite were references onto that member too until the file-local-alias sweep (REFACTOR.md,
-// Step 9 strand (a)) retired them - each toucher below hoists spriteScratch() and reaches them
-// through it.
-static SpriteFrame (&sprtemp)[29] = spriteScratch().sprtemp;
+// sweep - REFACTOR.md, Step 5); no other file reads these. sprtemp, spritelights, maxframe,
+// spritename and overflowsprite were all references onto that member too until the file-local-alias
+// sweep (REFACTOR.md, Step 9 strand (a)) retired them - each toucher below hoists spriteScratch()
+// and reaches them through it.
 
 // Forward declarations so call order needs no rearranging.
 void installSpriteLump(int lump,
@@ -90,7 +89,7 @@ void installSpriteLump(int lump,
     if (rotation == 0)
     {
         // the lump should be used for all rotations
-        if (sprtemp[frame].rotate == false)
+        if (scratch.sprtemp[frame].rotate == false)
         {
             doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
             doom_concat(error_buf, scratch.spritename);
@@ -100,7 +99,7 @@ void installSpriteLump(int lump,
             fatalError(error_buf);
         }
 
-        if (sprtemp[frame].rotate == true)
+        if (scratch.sprtemp[frame].rotate == true)
         {
             doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
             doom_concat(error_buf, scratch.spritename);
@@ -110,17 +109,17 @@ void installSpriteLump(int lump,
             fatalError(error_buf);
         }
 
-        sprtemp[frame].rotate = false;
+        scratch.sprtemp[frame].rotate = false;
         for (int r = 0; r < 8; r++)
         {
-            sprtemp[frame].lump[r] = lump - gd.firstspritelump;
-            sprtemp[frame].flip[r] = static_cast<byte>(flipped);
+            scratch.sprtemp[frame].lump[r] = lump - gd.firstspritelump;
+            scratch.sprtemp[frame].flip[r] = static_cast<byte>(flipped);
         }
         return;
     }
 
     // the lump is only used for one rotation
-    if (sprtemp[frame].rotate == false)
+    if (scratch.sprtemp[frame].rotate == false)
     {
         doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
         doom_concat(error_buf, scratch.spritename);
@@ -130,11 +129,11 @@ void installSpriteLump(int lump,
         fatalError(error_buf);
     }
 
-    sprtemp[frame].rotate = true;
+    scratch.sprtemp[frame].rotate = true;
 
     // make 0 based
     rotation--;
-    if (sprtemp[frame].lump[rotation] != -1)
+    if (scratch.sprtemp[frame].lump[rotation] != -1)
     {
         doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
         doom_concat(error_buf, scratch.spritename);
@@ -146,8 +145,8 @@ void installSpriteLump(int lump,
         fatalError(error_buf);
     }
 
-    sprtemp[frame].lump[rotation] = lump - gd.firstspritelump;
-    sprtemp[frame].flip[rotation] = static_cast<byte>(flipped);
+    scratch.sprtemp[frame].lump[rotation] = lump - gd.firstspritelump;
+    scratch.sprtemp[frame].flip[rotation] = static_cast<byte>(flipped);
 }
 
 //
@@ -205,7 +204,7 @@ void initSpriteDefs(char** namelist)
     for (i = 0; i < gd.numsprites; i++)
     {
         scratch.spritename = namelist[i];
-        doom_memset(sprtemp, -1, sizeof(sprtemp));
+        doom_memset(scratch.sprtemp, -1, sizeof(scratch.sprtemp));
 
         scratch.maxframe = -1;
         intname = *reinterpret_cast<int*>(namelist[i]);
@@ -248,7 +247,7 @@ void initSpriteDefs(char** namelist)
 
         for (frame = 0; frame < scratch.maxframe; frame++)
         {
-            switch (static_cast<int>(sprtemp[frame].rotate))
+            switch (static_cast<int>(scratch.sprtemp[frame].rotate))
             {
                 case -1:
                 {
@@ -269,7 +268,7 @@ void initSpriteDefs(char** namelist)
                 case 1:
                     // must have all 8 frames
                     for (rotation = 0; rotation < 8; rotation++)
-                        if (sprtemp[frame].lump[rotation] == -1)
+                        if (scratch.sprtemp[frame].lump[rotation] == -1)
                         {
                             doom_strcpy(error_buf,
                                         "Error: Doom::initSprites: Sprite ");
@@ -289,7 +288,7 @@ void initSpriteDefs(char** namelist)
         sprites[i].numframes = scratch.maxframe;
         sprites[i].spriteframes.resize(scratch.maxframe);
         doom_memcpy(sprites[i].spriteframes.data(),
-                    sprtemp,
+                    scratch.sprtemp,
                     scratch.maxframe * sizeof(SpriteFrame));
     }
 }

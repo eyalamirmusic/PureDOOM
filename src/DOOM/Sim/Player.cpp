@@ -48,8 +48,9 @@ namespace Doom
 //
 
 // onground now lives on the Engine (Sim/PlayerScratch.h, moved by the file-scope-statics sweep -
-// REFACTOR.md, Step 5). The vanilla name is a reference onto that member; read by no other file.
-static doom_boolean& onground = playerScratch().onground;
+// REFACTOR.md, Step 5). movePlayer hoists playerScratch() once and reaches it through it; calcHeight
+// and deathThink each touch it exactly once and reach it inline, rather than through a file-scope
+// reference alias (REFACTOR.md, Step 9 strand (a)). Read by no other file.
 
 //
 // thrust
@@ -86,7 +87,7 @@ void calcHeight(Player& player)
     if (player.bob > MAXBOB)
         player.bob = MAXBOB;
 
-    if ((player.cheats & CF_NOMOMENTUM) || !onground)
+    if ((player.cheats & CF_NOMOMENTUM) || !playerScratch().onground)
     {
         player.viewz = player.mo->z + VIEWHEIGHT;
 
@@ -138,16 +139,18 @@ void movePlayer(Player& player)
 {
     Ticcmd* cmd = &player.cmd;
 
+    auto& scratch = playerScratch();
+
     player.mo->angle += angle_t {(unsigned) cmd->angleturn << 16};
 
     // Do not let the player control movement
     //  if not onground.
-    onground = (player.mo->z <= player.mo->floorz);
+    scratch.onground = (player.mo->z <= player.mo->floorz);
 
-    if (cmd->forwardmove && onground)
+    if (cmd->forwardmove && scratch.onground)
         thrust(player, player.mo->angle, fixed_t {cmd->forwardmove * 2048});
 
-    if (cmd->sidemove && onground)
+    if (cmd->sidemove && scratch.onground)
         thrust(player, player.mo->angle - ANG90, fixed_t {cmd->sidemove * 2048});
 
     if ((cmd->forwardmove || cmd->sidemove) && player.mo->state == &states[S_PLAY])
@@ -176,7 +179,7 @@ void deathThink(Player& player)
         player.viewheight = 6 * FRACUNIT;
 
     player.deltaviewheight = fixed_t {};
-    onground = (player.mo->z <= player.mo->floorz);
+    playerScratch().onground = (player.mo->z <= player.mo->floorz);
     calcHeight(player);
 
     if (player.attacker && player.attacker != player.mo)
@@ -342,8 +345,7 @@ void playerThink(Player& player)
     }
     else if (player.powers[pw_infrared])
     {
-        if (player.powers[pw_infrared] > 4 * 32
-            || (player.powers[pw_infrared] & 8))
+        if (player.powers[pw_infrared] > 4 * 32 || (player.powers[pw_infrared] & 8))
         {
             // almost full bright
             player.fixedcolormap = 1;

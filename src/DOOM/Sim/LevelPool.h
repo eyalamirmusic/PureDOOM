@@ -17,7 +17,10 @@ struct LevelChunk
 // The head of that list. Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5)
 // so the level's allocation pool is owned per-Engine rather than by the process - a step toward the
 // engine being *constructed* rather than booted. It was Sim/Tick's own file-local (anonymous-
-// namespace) global, read by no other file; the vanilla name becomes a reference onto head. Live
+// namespace) global, read by no other file; levelAlloc, levelFree and freeLevelAllocations each
+// hoist levelPool() once and reach head through it (pool.head), rather than through a file-scope
+// reference alias (REFACTOR.md, Step 9 strand (a)) - it stays a genuine reference at each hoist
+// site, since pool.head is written directly through the struct rather than copied. Live
 // simulation-golden-covered - every mobj the demos spawn is allocated through this list.
 struct LevelPool
 {

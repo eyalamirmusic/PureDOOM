@@ -36,13 +36,11 @@ void Doom::storeWallRange(int start, int stop);
 namespace Doom
 {
 // ClipRange and the solidsegs/newend clip ranges now live on the Engine (Render/SolidSegs.h, moved
-// by the file-scope-statics sweep - REFACTOR.md, Step 5); solidsegs is a reference onto that member.
-// The type moved to the header so solidsegs could become a member (an anonymous-struct typedef in
-// the .cpp cannot be named there). newend was a reference too until the file-local-alias sweep
-// (REFACTOR.md, Step 9 strand (a)) retired it; clipSolidWallSegment and clearClipSegs each hoist
-// solidSegs() once and reach it as solid.newend.
-
-static ClipRange (&solidsegs)[MAXSEGS] = solidSegs().solidsegs;
+// by the file-scope-statics sweep - REFACTOR.md, Step 5). The type moved to the header so solidsegs
+// could become a member (an anonymous-struct typedef in the .cpp cannot be named there). solidsegs
+// and newend were both references onto the member until the file-local-alias sweep (REFACTOR.md,
+// Step 9 strand (a)) retired them; clipSolidWallSegment, clipPassWallSegment, clearClipSegs and
+// checkBBox each hoist solidSegs() once and reach its members through it.
 
 EA::Array<EA::Array<int, 4>, 12> checkcoord = {{3, 0, 2, 1},
                          {3, 0, 2, 0},
@@ -88,7 +86,7 @@ void clipSolidWallSegment(int first, int last)
 
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
-    start = solidsegs;
+    start = solid.solidsegs;
     while (start->last < first - 1)
         start++;
 
@@ -172,9 +170,11 @@ void clipPassWallSegment(int first, int last)
 {
     ClipRange* start;
 
+    auto& solid = solidSegs();
+
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
-    start = solidsegs;
+    start = solid.solidsegs;
     while (start->last < first - 1)
         start++;
 
@@ -214,11 +214,13 @@ void clipPassWallSegment(int first, int last)
 //
 void clearClipSegs()
 {
-    solidsegs[0].first = -0x7fffffff;
-    solidsegs[0].last = -1;
-    solidsegs[1].first = viewWindow().viewwidth;
-    solidsegs[1].last = 0x7fffffff;
-    solidSegs().newend = solidsegs + 2;
+    auto& solid = solidSegs();
+
+    solid.solidsegs[0].first = -0x7fffffff;
+    solid.solidsegs[0].last = -1;
+    solid.solidsegs[1].first = viewWindow().viewwidth;
+    solid.solidsegs[1].last = 0x7fffffff;
+    solid.newend = solid.solidsegs + 2;
 }
 
 //
@@ -364,6 +366,7 @@ doom_boolean checkBBox(fixed_t* bspcoord)
 
     auto& pt = viewPoint();
     auto& proj = viewProjection();
+    auto& solid = solidSegs();
 
     // Find the corners of the box
     // that define the edges from current viewpoint.
@@ -444,7 +447,7 @@ doom_boolean checkBBox(fixed_t* bspcoord)
         return false;
     sx2--;
 
-    start = solidsegs;
+    start = solid.solidsegs;
     while (start->last < sx2)
         start++;
 

@@ -45,10 +45,9 @@ namespace Doom
 // address, and the total size == width*height*depth/8.
 //
 // These frame-address lookup tables (and fuzzpos below) now live on the Engine (Render/DrawTables.h,
-// moved by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto
-// that member; only the drawers use them, through Doom::initBuffer.
-static byte* (&ylookup)[MAXHEIGHT] = drawTables().ylookup;
-static int (&columnofs)[MAXWIDTH] = drawTables().columnofs;
+// moved by the file-scope-statics sweep - REFACTOR.md, Step 5). Every drawer below hoists
+// drawTables() once and reaches them through it, rather than through file-scope reference aliases
+// (REFACTOR.md, Step 9 strand (a)); only the drawers use them, through Doom::initBuffer.
 
 //
 // A column is a vertical slice/span from a wall texture that, given the DOOM
@@ -59,6 +58,7 @@ static int (&columnofs)[MAXWIDTH] = drawTables().columnofs;
 void drawColumn()
 {
     auto& draw = drawState();
+    auto& tables = drawTables();
 
     int count;
     byte* dest;
@@ -88,7 +88,7 @@ void drawColumn()
     // Framebuffer destination address.
     // Use ylookup LUT to avoid multiply with ScreenWidth.
     // Use columnofs LUT for subwindows?
-    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
+    dest = tables.ylookup[draw.dc_yl] + tables.columnofs[draw.dc_x];
 
     // Determine scaling,
     //  which is the only mapping to be done.
@@ -113,6 +113,7 @@ void drawColumn()
 void drawColumnLow()
 {
     auto& draw = drawState();
+    auto& tables = drawTables();
 
     int count;
     byte* dest;
@@ -142,8 +143,8 @@ void drawColumnLow()
     // Blocky mode, need to multiply by 2.
     draw.dc_x <<= 1;
 
-    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
-    dest2 = ylookup[draw.dc_yl] + columnofs[draw.dc_x + 1];
+    dest = tables.ylookup[draw.dc_yl] + tables.columnofs[draw.dc_x];
+    dest2 = tables.ylookup[draw.dc_yl] + tables.columnofs[draw.dc_x + 1];
 
     fracstep = draw.dc_iscale;
     frac = draw.dc_texturemid + (draw.dc_yl - viewProjection().centery) * fracstep;
@@ -219,7 +220,7 @@ void drawFuzzColumn()
 #endif
 
     // Does not work with blocky mode.
-    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
+    dest = tables.ylookup[draw.dc_yl] + tables.columnofs[draw.dc_x];
 
     // Looks like an attempt at dithering,
     //  using the colormap #6 (of 0-31, a bit
@@ -253,6 +254,7 @@ void drawFuzzColumn()
 void drawTranslatedColumn()
 {
     auto& draw = drawState();
+    auto& tables = drawTables();
 
     int count;
     byte* dest;
@@ -278,7 +280,7 @@ void drawTranslatedColumn()
 #endif
 
     // FIXME. As above.
-    dest = ylookup[draw.dc_yl] + columnofs[draw.dc_x];
+    dest = tables.ylookup[draw.dc_yl] + tables.columnofs[draw.dc_x];
 
     // Looks familiar.
     fracstep = draw.dc_iscale;
@@ -351,6 +353,7 @@ void initTranslationTables()
 void drawSpan()
 {
     auto& draw = drawState();
+    auto& tables = drawTables();
 
     fixed_t xfrac;
     fixed_t yfrac;
@@ -375,7 +378,7 @@ void drawSpan()
     xfrac = draw.ds_xfrac;
     yfrac = draw.ds_yfrac;
 
-    dest = ylookup[draw.ds_y] + columnofs[draw.ds_x1];
+    dest = tables.ylookup[draw.ds_y] + tables.columnofs[draw.ds_x1];
 
     // We do not check for zero spans here?
     count = draw.ds_x2 - draw.ds_x1;
@@ -402,6 +405,7 @@ void drawSpan()
 void drawSpanLow()
 {
     auto& draw = drawState();
+    auto& tables = drawTables();
 
     fixed_t xfrac;
     fixed_t yfrac;
@@ -430,7 +434,7 @@ void drawSpanLow()
     draw.ds_x1 <<= 1;
     draw.ds_x2 <<= 1;
 
-    dest = ylookup[draw.ds_y] + columnofs[draw.ds_x1];
+    dest = tables.ylookup[draw.ds_y] + tables.columnofs[draw.ds_x1];
 
     count = draw.ds_x2 - draw.ds_x1;
     do
@@ -457,6 +461,7 @@ void drawSpanLow()
 void initBuffer(int width, int height)
 {
     auto& view = viewWindow();
+    auto& tables = drawTables();
 
     // Handle resize,
     //  e.g. smaller view windows
@@ -465,7 +470,7 @@ void initBuffer(int width, int height)
 
     // Column offset. For windows.
     for (int i = 0; i < width; i++)
-        columnofs[i] = view.viewwindowx + i;
+        tables.columnofs[i] = view.viewwindowx + i;
 
     // Samw with base row offset.
     if (width == SCREENWIDTH)
@@ -475,7 +480,7 @@ void initBuffer(int width, int height)
 
     // Preclaculate all row offsets.
     for (int i = 0; i < height; i++)
-        ylookup[i] = screens[0] + (i + view.viewwindowy) * SCREENWIDTH;
+        tables.ylookup[i] = screens[0] + (i + view.viewwindowy) * SCREENWIDTH;
 }
 
 //

@@ -148,13 +148,10 @@ EA::Array<AnimDef, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},
                         {-1, "", "", 0}};
 
 // The animated flats/textures and the scrolling-line list now live on the Engine
-// (Sim/AnimatedSurfaces.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla
-// names are references onto that member; read by no other file.
-static SurfaceAnim (&anims)[MAXANIMS] = animatedSurfaces().anims;
-static SurfaceAnim*& lastanim = animatedSurfaces().lastanim;
-
-static short& numlinespecials = animatedSurfaces().numlinespecials;
-static Line* (&linespeciallist)[MAXLINEANIMS] = animatedSurfaces().linespeciallist;
+// (Sim/AnimatedSurfaces.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5).
+// initPicAnims, updateSpecials and spawnSpecials each hoist animatedSurfaces() once and reach its
+// members through it, rather than through file-scope reference aliases (REFACTOR.md, Step 9
+// strand (a)).
 
 // Forward declarations so call order needs no rearranging.
 void initPicAnims();
@@ -174,8 +171,10 @@ void spawnSpecials();
 
 void initPicAnims()
 {
+    auto& surf = animatedSurfaces();
+
     // Init animation
-    lastanim = anims;
+    surf.lastanim = surf.anims;
     for (int i = 0; animdefs[i].istexture != -1; i++)
     {
         if (animdefs[i].istexture)
@@ -184,22 +183,22 @@ void initPicAnims()
             if (Doom::checkTextureNumForName(animdefs[i].startname) == -1)
                 continue;
 
-            lastanim->picnum = Doom::textureNumForName(animdefs[i].endname);
-            lastanim->basepic = Doom::textureNumForName(animdefs[i].startname);
+            surf.lastanim->picnum = Doom::textureNumForName(animdefs[i].endname);
+            surf.lastanim->basepic = Doom::textureNumForName(animdefs[i].startname);
         }
         else
         {
             if (Doom::wad().find(animdefs[i].startname) == -1)
                 continue;
 
-            lastanim->picnum = Doom::flatNumForName(animdefs[i].endname);
-            lastanim->basepic = Doom::flatNumForName(animdefs[i].startname);
+            surf.lastanim->picnum = Doom::flatNumForName(animdefs[i].endname);
+            surf.lastanim->basepic = Doom::flatNumForName(animdefs[i].startname);
         }
 
-        lastanim->istexture = animdefs[i].istexture;
-        lastanim->numpics = lastanim->picnum - lastanim->basepic + 1;
+        surf.lastanim->istexture = animdefs[i].istexture;
+        surf.lastanim->numpics = surf.lastanim->picnum - surf.lastanim->basepic + 1;
 
-        if (lastanim->numpics < 2)
+        if (surf.lastanim->numpics < 2)
         {
             //fatalError("Error: initPicAnims: bad cycle from %s to %s",
             //        animdefs[i].startname,
@@ -212,8 +211,8 @@ void initPicAnims()
             fatalError(error_buf);
         }
 
-        lastanim->speed = animdefs[i].speed;
-        lastanim++;
+        surf.lastanim->speed = animdefs[i].speed;
+        surf.lastanim++;
     }
 }
 
@@ -1009,6 +1008,7 @@ void updateSpecials()
 
     auto& timer = endLevelTimer();
     auto& specials = activeSpecials();
+    auto& surf = animatedSurfaces();
 
     // LEVEL TIMER
     if (timer.levelTimer == true)
@@ -1019,7 +1019,7 @@ void updateSpecials()
     }
 
     // ANIMATE FLATS AND TEXTURES GLOBALLY
-    for (anim = anims; anim < lastanim; anim++)
+    for (anim = surf.anims; anim < surf.lastanim; anim++)
     {
         for (int i = anim->basepic; i < anim->basepic + anim->numpics; i++)
         {
@@ -1033,9 +1033,9 @@ void updateSpecials()
     }
 
     // ANIMATE LINE SPECIALS
-    for (int i = 0; i < numlinespecials; i++)
+    for (int i = 0; i < surf.numlinespecials; i++)
     {
-        line = linespeciallist[i];
+        line = surf.linespeciallist[i];
         switch (line->special)
         {
             case 48:
@@ -1065,8 +1065,8 @@ void updateSpecials()
                         break;
 
                     case bottom:
-                        sides[specials.buttonlist[i].line->sidenum[0]].bottomtexture =
-                            specials.buttonlist[i].btexture;
+                        sides[specials.buttonlist[i].line->sidenum[0]]
+                            .bottomtexture = specials.buttonlist[i].btexture;
                         break;
                 }
                 Doom::startSound(
@@ -1156,6 +1156,7 @@ void spawnSpecials()
 
     auto& timer = endLevelTimer();
     auto& specials = activeSpecials();
+    auto& surf = animatedSurfaces();
     const auto& session = gameSession();
 
     // See if -TIMER needs to be used.
@@ -1242,15 +1243,15 @@ void spawnSpecials()
     }
 
     // Init line EFFECTs
-    numlinespecials = 0;
+    surf.numlinespecials = 0;
     for (i = 0; i < numlines; i++)
     {
         switch (lines[i].special)
         {
             case 48:
                 // EFFECT FIRSTCOL SCROLL+
-                linespeciallist[numlinespecials] = &lines[i];
-                numlinespecials++;
+                surf.linespeciallist[surf.numlinespecials] = &lines[i];
+                surf.numlinespecials++;
                 break;
         }
     }

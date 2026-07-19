@@ -18,11 +18,12 @@ namespace Doom
 // them (diags / xspeed / yspeed / TRACEANGLE) stay file-local - fixed reference data.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were Sim/Enemy's
-// own namespace-scope private globals, read by no other file. The vanilla names become references
-// onto the members (braintargets as a reference-to-array). Both mechanisms are DOOM II content (no
-// archvile or boss brain in the shareware episode), so this is *not* exercised by the demos - but a
-// reference alias is pure storage relocation, behaviour-preserving by construction, verified by build
-// + app-link.
+// own namespace-scope private globals, read by no other file. vileCheck, vileChase, brainAwake and
+// brainSpit each hoist enemyAI() once and reach its members through it, rather than through
+// file-scope reference aliases (REFACTOR.md, Step 9 strand (a)). Both mechanisms are DOOM II content
+// (no archvile or boss brain in the shareware episode), so this is *not* exercised by the demos - but
+// relocating the storage changes nothing observable either way, the same as it did not for the
+// reference aliases this replaces.
 struct EnemyAI
 {
     Mobj* corpsehit = nullptr; // the corpse A_VileChase is raising

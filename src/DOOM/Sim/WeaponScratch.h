@@ -4,19 +4,20 @@
 
 namespace Doom
 {
-// The weapon code's small scratch: the weapon's bob offset this tic (swingx / swingy, set by
-// A_WeaponReady from the player's bob) and the auto-aim vertical slope the fire actions shoot along
-// (bulletslope, set by P_BulletSlope before a hitscan weapon fires).
+// The weapon code's small scratch: the auto-aim vertical slope the fire actions shoot along
+// (bulletslope, set by Doom::computeBulletSlope before a hitscan weapon fires).
 //
-// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Sim/Weapon's own namespace-scope private globals, read by no other file. The vanilla names become
-// references onto the members. Live simulation-golden-covered - the demos fire the pistol, shotgun
-// and chaingun, all of which read bulletslope - so the byte-identical *.hashes are a live
-// confirmation.
+// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); this was
+// Sim/Weapon's own namespace-scope private global, read by no other file. computeBulletSlope
+// hoists weaponScratch() once and reaches it through it, rather than through a file-scope
+// reference alias (REFACTOR.md, Step 9 strand (a)); gunShot and fireShotgun2 each touch it once
+// and reach it inline. Live simulation-golden-covered - the demos fire the pistol, shotgun and
+// chaingun, all of which read bulletslope - so the byte-identical *.hashes are a live
+// confirmation. (swingx/swingy - a weapon bob offset the vanilla comment described as set by
+// A_WeaponReady - were dropped outright in the same sweep: A_WeaponReady computes the bob directly
+// into psp->sx/sy from player->bob, and no reader anywhere ever set or read these two.)
 struct WeaponScratch
 {
-    fixed_t swingx {}; // weapon bob x offset this tic
-    fixed_t swingy {}; // weapon bob y offset this tic
     fixed_t bulletslope {}; // auto-aim vertical slope for a hitscan shot
 };
 

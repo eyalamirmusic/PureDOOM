@@ -30,10 +30,12 @@ struct SurfaceAnim
 // texture linedefs (linespeciallist, numlinespecials of them).
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Sim/Specials' own namespace-scope private globals, read by no other file. The vanilla names become
-// references onto the members (arrays as references-to-array). lastanim points into anims but is
-// reset by Doom::initPicAnims (`lastanim = anims`), not by a self-referential initializer, so it is safe
-// as a member. Live simulation-golden-covered - the demos scroll skies and cross animating floors.
+// Sim/Specials' own namespace-scope private globals, read by no other file. initPicAnims,
+// updateSpecials and spawnSpecials each hoist animatedSurfaces() once and reach its members
+// through it, rather than through file-scope reference aliases (REFACTOR.md, Step 9 strand (a)).
+// lastanim points into anims but is reset by Doom::initPicAnims (`surf.lastanim = surf.anims`), not
+// by a self-referential initializer, so it was always safe to retire. Live simulation-golden-covered
+// - the demos scroll skies and cross animating floors.
 struct AnimatedSurfaces
 {
     static constexpr int maxAnims = 32; // MAXANIMS in Sim/Specials

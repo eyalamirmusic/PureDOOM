@@ -12,7 +12,7 @@
 //
 // Rewritten into namespace Doom out of vanilla p_pspr; p_pspr.cpp keeps the vanilla
 // A_*/P_* names as shims (info.cpp's states reference the A_* by address, so they
-// stay global). swingx/swingy/bulletslope are file-local here now.
+// stay global). bulletslope is file-local here now.
 //
 //-----------------------------------------------------------------------------
 
@@ -49,13 +49,11 @@
 
 namespace Doom
 {
-// Weapon-bob offset and the auto-aim slope of the shot being fired; file-local.
-// The weapon scratch now lives on the Engine (Sim/WeaponScratch.h, moved by the file-scope-statics
-// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
-// file.
-static fixed_t& swingx = weaponScratch().swingx;
-static fixed_t& swingy = weaponScratch().swingy;
-static fixed_t& bulletslope = weaponScratch().bulletslope;
+// The auto-aim slope of the shot being fired; file-local. The weapon scratch now lives on the
+// Engine (Sim/WeaponScratch.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5).
+// computeBulletSlope hoists weaponScratch() once and reaches bulletslope through it; gunShot and
+// fireShotgun2 each touch it exactly once and reach it inline, rather than through file-scope
+// reference aliases (REFACTOR.md, Step 9 strand (a)).
 
 // Forward declarations so call order needs no rearranging.
 void bringUpWeapon(Player* player);
@@ -549,19 +547,20 @@ void computeBulletSlope(Mobj* mo)
     angle_t an;
 
     auto& c = clip();
+    auto& scratch = weaponScratch();
 
     // see which target is to be aimed at
     an = mo->angle;
-    bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
+    scratch.bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
 
     if (!c.linetarget)
     {
         an += angle_t {1u << 26};
-        bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
+        scratch.bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
         if (!c.linetarget)
         {
             an -= angle_t {2u << 26};
-            bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
+            scratch.bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
         }
     }
 }
@@ -582,7 +581,7 @@ void gunShot(Mobj* mo, doom_boolean accurate)
                               - Doom::randomness().forPlay())
                   << 18};
 
-    Doom::lineAttack(mo, angle, MISSILERANGE, bulletslope, damage);
+    Doom::lineAttack(mo, angle, MISSILERANGE, weaponScratch().bulletslope, damage);
 }
 
 //
@@ -652,7 +651,7 @@ void fireShotgun2(Player& player, PspDef&)
         Doom::lineAttack(player.mo,
                      angle,
                      MISSILERANGE,
-                     bulletslope
+                     weaponScratch().bulletslope
                          + fixed_t {(Doom::randomness().forPlay()
                                      - Doom::randomness().forPlay())
                                     << 5},

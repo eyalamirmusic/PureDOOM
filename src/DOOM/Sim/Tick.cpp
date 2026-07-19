@@ -42,21 +42,24 @@ void ticker();
 // swept the whole tag. The header is two pointers, so the returned block stays
 // 16-byte aligned, more than Mobj asks for.
 // LevelChunk and the list head now live on the Engine (Sim/LevelPool.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla name levelChunks is a reference onto
-// that member, so the pool is owned per-Engine. Read by no other file.
-static LevelChunk*& levelChunks = levelPool().head;
+// file-scope-statics sweep - REFACTOR.md, Step 5); levelAlloc, levelFree and freeLevelAllocations
+// each hoist levelPool() once and reach the list head through it (pool.head), so the pool is owned
+// per-Engine, rather than through a file-scope reference alias (REFACTOR.md, Step 9 strand (a)).
+// Read by no other file.
 
 void* levelAlloc(int size)
 {
+    auto& pool = levelPool();
+
     int total = static_cast<int>(sizeof(LevelChunk)) + size;
     LevelChunk* chunk = static_cast<LevelChunk*>(doom_malloc(total));
     doom_memset(chunk, 0, total);
 
     chunk->prev = nullptr;
-    chunk->next = levelChunks;
-    if (levelChunks)
-        levelChunks->prev = chunk;
-    levelChunks = chunk;
+    chunk->next = pool.head;
+    if (pool.head)
+        pool.head->prev = chunk;
+    pool.head = chunk;
 
     return static_cast<void*>(chunk + 1);
 }
@@ -66,11 +69,13 @@ void levelFree(void* block)
     if (!block)
         return;
 
+    auto& pool = levelPool();
+
     LevelChunk* chunk = static_cast<LevelChunk*>(block) - 1;
     if (chunk->prev)
         chunk->prev->next = chunk->next;
     else
-        levelChunks = chunk->next;
+        pool.head = chunk->next;
     if (chunk->next)
         chunk->next->prev = chunk->prev;
 
@@ -90,7 +95,9 @@ static void destroyThinker(Doom::Thinker* thinker)
 
 void freeLevelAllocations()
 {
-    LevelChunk* chunk = levelChunks;
+    auto& pool = levelPool();
+
+    LevelChunk* chunk = pool.head;
     while (chunk)
     {
         LevelChunk* next = chunk->next;
@@ -98,7 +105,7 @@ void freeLevelAllocations()
         doom_free(chunk);
         chunk = next;
     }
-    levelChunks = nullptr;
+    pool.head = nullptr;
 }
 
 void initThinkers()

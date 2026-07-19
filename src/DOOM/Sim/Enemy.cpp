@@ -110,15 +110,10 @@ EA::Array<fixed_t, 8> yspeed = {fixed_t {},
                                 fixed_t {-47000}};
 angle_t TRACEANGLE {0xc000000};
 // The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
-// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
-// file. (The const direction/speed tables above stay file-local.)
-static Mobj*& corpsehit = enemyAI().corpsehit;
-static Mobj*& vileobj = enemyAI().vileobj;
-static fixed_t& viletryx = enemyAI().viletryx;
-static fixed_t& viletryy = enemyAI().viletryy;
-static Mobj* (&braintargets)[32] = enemyAI().braintargets;
-static int& numbraintargets = enemyAI().numbraintargets;
-static int& braintargeton = enemyAI().braintargeton;
+// sweep - REFACTOR.md, Step 5). vileCheck, vileChase, brainAwake and brainSpit each hoist
+// enemyAI() once and reach its members through it, rather than through file-scope reference
+// aliases (REFACTOR.md, Step 9 strand (a)). (The const direction/speed tables above stay
+// file-local.)
 
 // Forward declarations so the file's own call order needs no rearranging.
 void recursiveSound(Sector* sec, int soundblocks);
@@ -1157,6 +1152,8 @@ doom_boolean vileCheck(Mobj* thing)
     fixed_t maxdist;
     doom_boolean check;
 
+    auto& ai = enemyAI();
+
     if (!(thing->flags & MF_CORPSE))
         return true; // not a monster
 
@@ -1168,15 +1165,15 @@ doom_boolean vileCheck(Mobj* thing)
 
     maxdist = thing->info->radius + mobjinfo[MT_VILE].radius;
 
-    if (doom_abs(thing->x - viletryx) > maxdist
-        || doom_abs(thing->y - viletryy) > maxdist)
+    if (doom_abs(thing->x - ai.viletryx) > maxdist
+        || doom_abs(thing->y - ai.viletryy) > maxdist)
         return true; // not actually touching
 
-    corpsehit = thing;
-    corpsehit->momx = corpsehit->momy = fixed_t {};
-    corpsehit->height <<= 2;
-    check = Doom::checkPosition(corpsehit, corpsehit->x, corpsehit->y);
-    corpsehit->height >>= 2;
+    ai.corpsehit = thing;
+    ai.corpsehit->momx = ai.corpsehit->momy = fixed_t {};
+    ai.corpsehit->height <<= 2;
+    check = Doom::checkPosition(ai.corpsehit, ai.corpsehit->x, ai.corpsehit->y);
+    ai.corpsehit->height >>= 2;
 
     if (!check)
         return true; // doesn't fit here
@@ -1198,18 +1195,20 @@ void vileChase(Mobj& actor)
     MobjInfo* info;
     Mobj* temp;
 
+    auto& ai = enemyAI();
+
     if (actor.movedir != DI_NODIR)
     {
         // check for corpses to raise
-        viletryx = actor.x + actor.info->speed * xspeed[actor.movedir];
-        viletryy = actor.y + actor.info->speed * yspeed[actor.movedir];
+        ai.viletryx = actor.x + actor.info->speed * xspeed[actor.movedir];
+        ai.viletryy = actor.y + actor.info->speed * yspeed[actor.movedir];
 
-        xl = (viletryx - bmaporgx - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        xh = (viletryx - bmaporgx + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        yl = (viletryy - bmaporgy - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        yh = (viletryy - bmaporgy + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        xl = (ai.viletryx - bmaporgx - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        xh = (ai.viletryx - bmaporgx + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        yl = (ai.viletryy - bmaporgy - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        yh = (ai.viletryy - bmaporgy + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
 
-        vileobj = &actor;
+        ai.vileobj = &actor;
         for (int bx = xl; bx <= xh; bx++)
         {
             for (int by = yl; by <= yh; by++)
@@ -1221,20 +1220,20 @@ void vileChase(Mobj& actor)
                 {
                     // got one!
                     temp = actor.target;
-                    actor.target = corpsehit;
+                    actor.target = ai.corpsehit;
                     faceTarget(actor);
                     actor.target = temp;
 
                     Doom::setMobjState(&actor, S_VILE_HEAL1);
-                    Doom::startSound(corpsehit, sfx_slop);
-                    info = corpsehit->info;
+                    Doom::startSound(ai.corpsehit, sfx_slop);
+                    info = ai.corpsehit->info;
 
-                    Doom::setMobjState(corpsehit,
-                                   static_cast<StateNum>(info->raisestate));
-                    corpsehit->height <<= 2;
-                    corpsehit->flags = info->flags;
-                    corpsehit->health = info->spawnhealth;
-                    corpsehit->target = nullptr;
+                    Doom::setMobjState(ai.corpsehit,
+                                       static_cast<StateNum>(info->raisestate));
+                    ai.corpsehit->height <<= 2;
+                    ai.corpsehit->flags = info->flags;
+                    ai.corpsehit->health = info->spawnhealth;
+                    ai.corpsehit->target = nullptr;
 
                     return;
                 }
@@ -1779,10 +1778,11 @@ void brainAwake(Mobj&)
     Mobj* m;
 
     auto& thinkers = thinkerList();
+    auto& ai = enemyAI();
 
     // find all the target spots
-    numbraintargets = 0;
-    braintargeton = 0;
+    ai.numbraintargets = 0;
+    ai.braintargeton = 0;
 
     thinker = thinkers.cap.next;
     for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
@@ -1795,8 +1795,8 @@ void brainAwake(Mobj&)
 
         if (m->type == MT_BOSSTARGET)
         {
-            braintargets[numbraintargets] = m;
-            numbraintargets++;
+            ai.braintargets[ai.numbraintargets] = m;
+            ai.numbraintargets++;
         }
     }
 
@@ -1865,15 +1865,15 @@ void brainSpit(Mobj& mo)
     Mobj* targ;
     Mobj* newmobj;
 
-    int& easy = enemyAI().brainSpitEasy;
+    auto& ai = enemyAI();
 
-    easy ^= 1;
-    if (gameSession().gameskill <= sk_easy && (!easy))
+    ai.brainSpitEasy ^= 1;
+    if (gameSession().gameskill <= sk_easy && (!ai.brainSpitEasy))
         return;
 
     // shoot a cube at current target
-    targ = braintargets[braintargeton];
-    braintargeton = (braintargeton + 1) % numbraintargets;
+    targ = ai.braintargets[ai.braintargeton];
+    ai.braintargeton = (ai.braintargeton + 1) % ai.numbraintargets;
 
     // spawn brain missile
     newmobj = Doom::spawnMissile(&mo, targ, MT_SPAWNSHOT);

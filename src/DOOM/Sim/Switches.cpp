@@ -85,10 +85,9 @@ SwitchListEntry alphSwitchList[] = {
     {"\0", "\0", 0}};
 
 // switchlist/numswitches now live on the Engine (Sim/SwitchList.h, moved by the file-scope-statics
-// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
-// file.
-static int (&switchlist)[MAXSWITCHES * 2] = switchList().switchlist;
-static int& numswitches = switchList().numswitches;
+// sweep - REFACTOR.md, Step 5). initSwitchList and changeSwitchTexture each hoist switchList() once
+// and reach its members through it, rather than through file-scope reference aliases (REFACTOR.md,
+// Step 9 strand (a)).
 
 // Forward declarations so the file's own call order needs no rearranging.
 void initSwitchList();
@@ -103,6 +102,7 @@ void initSwitchList()
     episode = 1;
 
     const auto& version = gameVersion();
+    auto& list = switchList();
 
     if (version.gamemode == registered)
         episode = 2;
@@ -113,15 +113,17 @@ void initSwitchList()
     {
         if (!alphSwitchList[i].episode)
         {
-            numswitches = index / 2;
-            switchlist[index] = -1;
+            list.numswitches = index / 2;
+            list.switchlist[index] = -1;
             break;
         }
 
         if (alphSwitchList[i].episode <= episode)
         {
-            switchlist[index++] = Doom::textureNumForName(alphSwitchList[i].name1);
-            switchlist[index++] = Doom::textureNumForName(alphSwitchList[i].name2);
+            list.switchlist[index++] =
+                Doom::textureNumForName(alphSwitchList[i].name1);
+            list.switchlist[index++] =
+                Doom::textureNumForName(alphSwitchList[i].name2);
         }
     }
 }
@@ -171,6 +173,7 @@ void changeSwitchTexture(Line* line, int useAgain)
     int sound;
 
     auto& specials = activeSpecials();
+    auto& list = switchList();
 
     if (!useAgain)
         line->special = 0;
@@ -185,39 +188,39 @@ void changeSwitchTexture(Line* line, int useAgain)
     if (line->special == 11)
         sound = sfx_swtchx;
 
-    for (int i = 0; i < numswitches * 2; i++)
+    for (int i = 0; i < list.numswitches * 2; i++)
     {
-        if (switchlist[i] == texTop)
+        if (list.switchlist[i] == texTop)
         {
             Doom::startSound(specials.buttonlist->soundorg, sound);
-            sides[line->sidenum[0]].toptexture = switchlist[i ^ 1];
+            sides[line->sidenum[0]].toptexture = list.switchlist[i ^ 1];
 
             if (useAgain)
-                startButton(line, top, switchlist[i], BUTTONTIME);
+                startButton(line, top, list.switchlist[i], BUTTONTIME);
 
             return;
         }
         else
         {
-            if (switchlist[i] == texMid)
+            if (list.switchlist[i] == texMid)
             {
                 Doom::startSound(specials.buttonlist->soundorg, sound);
-                sides[line->sidenum[0]].midtexture = switchlist[i ^ 1];
+                sides[line->sidenum[0]].midtexture = list.switchlist[i ^ 1];
 
                 if (useAgain)
-                    startButton(line, middle, switchlist[i], BUTTONTIME);
+                    startButton(line, middle, list.switchlist[i], BUTTONTIME);
 
                 return;
             }
             else
             {
-                if (switchlist[i] == texBot)
+                if (list.switchlist[i] == texBot)
                 {
                     Doom::startSound(specials.buttonlist->soundorg, sound);
-                    sides[line->sidenum[0]].bottomtexture = switchlist[i ^ 1];
+                    sides[line->sidenum[0]].bottomtexture = list.switchlist[i ^ 1];
 
                     if (useAgain)
-                        startButton(line, bottom, switchlist[i], BUTTONTIME);
+                        startButton(line, bottom, list.switchlist[i], BUTTONTIME);
 
                     return;
                 }

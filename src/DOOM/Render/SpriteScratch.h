@@ -12,10 +12,10 @@ namespace Doom
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // Render/Things' own namespace-scope private globals, read by no other file (the cross-read sprite
-// tables sprites/numsprites stay in the r_things.cpp shim, as GraphicsData). sprtemp is a reference
-// onto the member (a reference-to-array); spritelights, maxframe, spritename and overflowsprite were
-// references too until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them -
-// each toucher in Render/Things hoists spriteScratch() once and reaches them through it. Live
+// tables sprites/numsprites stay in the r_things.cpp shim, as GraphicsData). sprtemp, spritelights,
+// maxframe, spritename and overflowsprite were all references onto the member (sprtemp as a
+// reference-to-array) until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired
+// them - each toucher in Render/Things hoists spriteScratch() once and reaches them through it. Live
 // frame-golden-covered - every sprite the demos draw goes through spritelights and the vissprite pool.
 struct SpriteScratch
 {

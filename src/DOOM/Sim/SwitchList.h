@@ -7,9 +7,10 @@ namespace Doom
 // between switchlist[i] and switchlist[i^1]) terminated by a -1, and numswitches counts the pairs.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Sim/Switches' own namespace-scope private globals, read by no other file. The vanilla names become
-// references onto the members (switchlist as a reference-to-array). Live simulation-golden-covered -
-// the demos press switches on E1M1 - so the byte-identical *.hashes are a live confirmation.
+// Sim/Switches' own namespace-scope private globals, read by no other file. initSwitchList and
+// changeSwitchTexture each hoist switchList() once and reach its members through it, rather than
+// through file-scope reference aliases (REFACTOR.md, Step 9 strand (a)). Live simulation-golden-
+// covered - the demos press switches on E1M1 - so the byte-identical *.hashes are a live confirmation.
 struct SwitchList
 {
     static constexpr int maxSwitches = 50; // MAXSWITCHES in p_spec.h
