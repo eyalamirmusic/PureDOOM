@@ -499,7 +499,7 @@ void doom_set_default_string(const char* name, const char* value)
     Doom::ConfigDefault* def = get_default(name);
     if (!def)
         return;
-    def->default_text_value = const_cast<char*>(value);
+    def->default_text_value = value;
 }
 
 void doom_set_print(doom_print_fn print_fn)
