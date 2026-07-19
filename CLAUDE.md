@@ -603,8 +603,20 @@ a second build directory for it and treat the app linking as a fourth gate.
 The engine builds under `-Wall -Wextra -Wpedantic` with **exactly one warning**, and
 that one is deliberate: `Sim/Weapon.cpp`'s type-erased `states[].action` pointer cast
 back to its exact signature, a round trip and therefore well-defined. **Anything else
-is a regression.** It was 81 warnings at the start of the session that cleared them,
-so this is a state to hold, not a number to admire.
+is a regression.** It was 81 warnings before the session that cleared them, so this
+is a state to hold, not a number to admire.
+
+That count is **Apple Clang on macOS**, `Debug` and `Release` alike. CI
+(`.github/workflows/tests.yml`) builds *five* configurations — gcc and clang on
+Ubuntu, gcc and clang on macOS, MSVC on Windows — and MSVC is on `/W4`, a different
+flag set entirely. **The gcc and MSVC counts have never been measured**, which is
+why `-Werror` is not on: see `REFACTOR.md` item 7.
+
+Also worth knowing, since it is easy to develop for a week without noticing: **CI
+builds `Release` and the local instructions above build `Debug`.** The goldens hold
+across both (checked), as they must — the simulation is integer arithmetic plus one
+documented `double` operation — but run `Release` once before trusting a green
+`Debug` on anything that touches optimisation-sensitive code.
 
 This is not tidiness. The refactor's only real behaviour bug — `thintriangle_guy`,
 the shape the automap draws every *thing* with, silently collapsed to a point when

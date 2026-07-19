@@ -95,9 +95,10 @@ behaviour bug — a `double * Fixed` that silently multiplied by zero, from the
 `fixed_t` → `Doom::Fixed` migration — and both of the reasons it survived are
 general: the migration had fixed two of the three sites and left no sign the third
 was outstanding, and the compiler had been printing the exact defect in every build
-inside an 81-warning haystack. **That haystack is gone** — the engine now builds
-with exactly one warning, the deliberate one in `Sim/Weapon.cpp` — so `-Werror` is
-one suppression away and should be turned on before the count is allowed to drift.
+inside an 81-warning haystack. **That haystack is gone** — the engine builds with
+exactly one warning, the deliberate one in `Sim/Weapon.cpp`. Note the measurement's
+scope before reaching for `-Werror`: that count is Apple Clang on macOS, and CI
+builds five configurations including MSVC on a different flag set. See item 7.
 
 **Steps 0–8 are done**, with one externally blocked item: audio, whose engine side
 is built and which waits on an eacp audio stream. The whole UI, game loop, netcode,
@@ -710,10 +711,31 @@ Everything above the line is done. What follows is, in the order worth doing it:
      back to its exact signature, a round-trip and therefore well-defined. It wants
      a narrowly scoped suppression it can be pointed at, not a change to the code.
 
-   **`-Werror` on the engine target is now one warning away**, and turning it on is
-   the point of this item — the counts were only ever the route. Until it is on,
-   *read the build output*: that is the whole lesson of `thintriangle_guy`, and it
-   is the kind of discipline that decays the moment a second warning is tolerated.
+   **`-Werror` is *not* one warning away, and the first draft of this entry said it
+   was.** The correction is recorded rather than quietly made, because it is the same
+   unchecked-claim failure this document exists to catch, committed in the same
+   session that wrote the lesson down.
+
+   The count of **1** is measured on **Apple Clang, macOS, arm64** — both `Debug` and
+   `Release`, which is worth having checked, since optimisation level changes which
+   warnings fire. But `.github/workflows/tests.yml` builds **five** configurations:
+   gcc and clang on Ubuntu, gcc and clang on macOS, and **MSVC on Windows**, all at
+   `Release`. Two of those are a compiler this repository has never measured, and
+   MSVC is not even on the same flags — `src/DOOM/CMakeLists.txt` gives it `/W4`,
+   not `-Wall -Wextra -Wpedantic`, and `/W4` warns about a different set of things
+   (unreferenced formal parameters, signed/unsigned mismatch, conditional-expression-
+   is-constant) that this code has never been held to.
+
+   So the actual prerequisite is: **measure the count on all five, then decide.**
+   Turning `-Werror` on from a one-compiler measurement would break `master` on push
+   for four configurations out of five, which is a worse outcome than the warnings
+   it prevents. A cheap first step is a CI job that *reports* the per-configuration
+   count without failing on it.
+
+   Until then, *read the build output*. That is the whole lesson of
+   `thintriangle_guy`, and it is the kind of discipline that decays the moment a
+   second warning is tolerated — which is an argument for watching the number, not
+   for enforcing it before it is known.
 
    **The eight `-Wliteral-conversion` warnings are already gone** — they *were*
    `thintriangle_guy`, and fixing the bug removed them. Worth stating plainly,
