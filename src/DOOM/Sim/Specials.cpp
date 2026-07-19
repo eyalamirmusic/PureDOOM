@@ -326,7 +326,7 @@ fixed_t findLowestCeilingSurrounding(Sector* sec)
 {
     Line* check;
     Sector* other;
-    fixed_t height = fixed_t {DOOM_MAXINT};
+    auto height = fixed_t {DOOM_MAXINT};
 
     for (int i = 0; i < sec->linecount; i++)
     {

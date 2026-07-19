@@ -52,7 +52,7 @@ void* levelAlloc(int size)
     auto& pool = levelPool();
 
     int total = static_cast<int>(sizeof(LevelChunk)) + size;
-    LevelChunk* chunk = static_cast<LevelChunk*>(doom_malloc(total));
+    auto chunk = static_cast<LevelChunk*>(doom_malloc(total));
     doom_memset(chunk, 0, total);
 
     chunk->prev = nullptr;

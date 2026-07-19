@@ -82,8 +82,8 @@ constexpr int BASETHRESHOLD = 100;
 //
 namespace Doom
 {
-constexpr fixed_t ONFLOORZ = Fixed {DOOM_MININT};
-constexpr fixed_t ONCEILINGZ = Fixed {DOOM_MAXINT};
+constexpr auto ONFLOORZ = Fixed {DOOM_MININT};
+constexpr auto ONCEILINGZ = Fixed {DOOM_MAXINT};
 
 // Time interval for item respawning.
 constexpr int ITEMQUESIZE = 128;
