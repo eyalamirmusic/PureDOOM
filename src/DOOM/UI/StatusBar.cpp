@@ -591,9 +591,9 @@ doom_boolean statusBarResponder(Event* ev)
                 doom_strcpy(buf.data(), "ang=0x");
                 doom_concat(buf.data(), doom_itoa(mo->angle, 16));
                 doom_concat(buf.data(), ";x,y=(0x");
-                doom_concat(buf.data(), doom_itoa(mo->x, 16));
+                doom_concat(buf.data(), doom_itoa(mo->x.raw, 16));
                 doom_concat(buf.data(), ",0x");
-                doom_concat(buf.data(), doom_itoa(mo->y, 16));
+                doom_concat(buf.data(), doom_itoa(mo->y.raw, 16));
                 doom_concat(buf.data(), ")");
                 plyr->message = buf.data();
             }

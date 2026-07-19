@@ -348,7 +348,7 @@ int doFloor(Line* line, FloorType floortype)
 
             case raiseToTexture:
             {
-                int minsize = DOOM_MAXINT;
+                fixed_t minsize {DOOM_MAXINT};
                 Side* side;
 
                 floor->direction = 1;
@@ -421,7 +421,7 @@ int doFloor(Line* line, FloorType floortype)
 int buildStairs(Line* line, StairType type)
 {
     int secnum;
-    int height;
+    fixed_t height;
     int newsecnum;
     int texture;
     int ok;

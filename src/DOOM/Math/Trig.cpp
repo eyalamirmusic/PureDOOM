@@ -2082,7 +2082,16 @@ const EA::Array<std::uint32_t, slopeRange + 1> tanToAngleTable = {
 // Global-scope data that was tables.cpp. It stays at :: scope because these are the
 // vanilla names other translation units (and the eacp port) still link against.
 // ---------------------------------------------------------------------------
-const fixed_t* finesine = Doom::fineSineTable.data();
-const fixed_t* finecosine = Doom::fineSineTable.data() + FINEANGLES / 4;
-const fixed_t* finetangent = Doom::fineTangentTable.data();
+// The tables are stored as raw int32 and read as fixed-point. Fixed is a
+// standard-layout struct wrapping exactly one int32, which the assert pins, so
+// the view can reinterpret rather than copy 10,000 entries.
+static_assert(sizeof(Doom::Fixed) == sizeof(std::int32_t));
+static_assert(alignof(Doom::Fixed) == alignof(std::int32_t));
+
+const fixed_t* finesine =
+    reinterpret_cast<const fixed_t*>(Doom::fineSineTable.data());
+const fixed_t* finecosine =
+    reinterpret_cast<const fixed_t*>(Doom::fineSineTable.data()) + FINEANGLES / 4;
+const fixed_t* finetangent =
+    reinterpret_cast<const fixed_t*>(Doom::fineTangentTable.data());
 const angle_t* tantoangle = Doom::tanToAngleTable.data();

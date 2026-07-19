@@ -2,7 +2,6 @@
 
 #include "MapGeometry.h"
 
-
 #include "Clip.h"
 #include "ValidCount.h"
 #include "../Render/Main.h"
@@ -11,25 +10,22 @@ namespace Doom
 {
 DivLine makeDivLine(const Line& line)
 {
-    return {{Fixed {line.v1->x}, Fixed {line.v1->y}},
-            {Fixed {line.dx}, Fixed {line.dy}}};
+    return {{line.v1->x, line.v1->y}, {line.dx, line.dy}};
 }
 
 int lineSide(Vec2 point, const Line& line)
 {
-    return pointOnLineSide(point,
-                           {Fixed {line.v1->x}, Fixed {line.v1->y}},
-                           {Fixed {line.dx}, Fixed {line.dy}});
+    return pointOnLineSide(point, {line.v1->x, line.v1->y}, {line.dx, line.dy});
 }
 
 int boxLineSide(const fixed_t* box, const Line& line)
 {
-    return boxOnLineSide(Fixed {box[BOXTOP]},
-                         Fixed {box[BOXBOTTOM]},
-                         Fixed {box[BOXLEFT]},
-                         Fixed {box[BOXRIGHT]},
-                         {Fixed {line.v1->x}, Fixed {line.v1->y}},
-                         {Fixed {line.dx}, Fixed {line.dy}},
+    return boxOnLineSide(box[BOXTOP],
+                         box[BOXBOTTOM],
+                         box[BOXLEFT],
+                         box[BOXRIGHT],
+                         {line.v1->x, line.v1->y},
+                         {line.dx, line.dy},
                          line.slopetype);
 }
 
@@ -40,22 +36,22 @@ void updateLineOpening(const Line& linedef)
     if (linedef.sidenum[1] == -1)
     {
         // single sided line
-        clip.openrange = 0;
+        clip.openrange = fixed_t {};
         return;
     }
 
     const Sector& front = *linedef.frontsector;
     const Sector& back = *linedef.backsector;
 
-    const Opening opening = lineOpening(Fixed {front.floorheight},
-                                        Fixed {front.ceilingheight},
-                                        Fixed {back.floorheight},
-                                        Fixed {back.ceilingheight});
+    const Opening opening = lineOpening(front.floorheight,
+                                        front.ceilingheight,
+                                        back.floorheight,
+                                        back.ceilingheight);
 
-    clip.opentop = opening.top.raw;
-    clip.openbottom = opening.bottom.raw;
-    clip.lowfloor = opening.lowFloor.raw;
-    clip.openrange = opening.range.raw;
+    clip.opentop = opening.top;
+    clip.openbottom = opening.bottom;
+    clip.lowfloor = opening.lowFloor;
+    clip.openrange = opening.range;
 }
 
 namespace
@@ -71,11 +67,11 @@ doom_boolean addLineIntercept(Line* ld)
     int s2;
 
     // avoid precision problems with two routines
-    if (trace.delta.x.raw > FRACUNIT * 16 || trace.delta.y.raw > FRACUNIT * 16
-        || trace.delta.x.raw < -FRACUNIT * 16 || trace.delta.y.raw < -FRACUNIT * 16)
+    if (trace.delta.x > FRACUNIT * 16 || trace.delta.y > FRACUNIT * 16
+        || trace.delta.x < -FRACUNIT * 16 || trace.delta.y < -FRACUNIT * 16)
     {
-        s1 = pointOnDivlineSide({Fixed {ld->v1->x}, Fixed {ld->v1->y}}, trace);
-        s2 = pointOnDivlineSide({Fixed {ld->v2->x}, Fixed {ld->v2->y}}, trace);
+        s1 = pointOnDivlineSide({ld->v1->x, ld->v1->y}, trace);
+        s2 = pointOnDivlineSide({ld->v2->x, ld->v2->y}, trace);
     }
     else
     {
@@ -88,9 +84,9 @@ doom_boolean addLineIntercept(Line* ld)
 
     // hit the line
     DivLine dl = makeDivLine(*ld);
-    fixed_t frac = interceptVector(trace, dl).raw;
+    fixed_t frac = interceptVector(trace, dl);
 
-    if (frac < 0)
+    if (frac.isNegative())
         return true; // behind source
 
     // try to early out the check: a solid line before the source is a wall
@@ -137,17 +133,17 @@ doom_boolean addThingIntercept(Mobj* thing)
         y2 = thing->y + thing->radius;
     }
 
-    int s1 = pointOnDivlineSide({Fixed {x1}, Fixed {y1}}, trace);
-    int s2 = pointOnDivlineSide({Fixed {x2}, Fixed {y2}}, trace);
+    int s1 = pointOnDivlineSide({x1, y1}, trace);
+    int s2 = pointOnDivlineSide({x2, y2}, trace);
 
     if (s1 == s2)
         return true; // line isn't crossed
 
-    const DivLine dl {{Fixed {x1}, Fixed {y1}}, {Fixed {x2 - x1}, Fixed {y2 - y1}}};
+    const DivLine dl {{x1, y1}, {x2 - x1, y2 - y1}};
 
-    fixed_t frac = interceptVector(trace, dl).raw;
+    fixed_t frac = interceptVector(trace, dl);
 
-    if (frac < 0)
+    if (frac.isNegative())
         return true; // behind source
 
     clip.interceptPtr->frac = frac;
@@ -170,7 +166,7 @@ bool traverseIntercepts(Traverser func, fixed_t maxfrac)
 
     while (count--)
     {
-        fixed_t dist = DOOM_MAXINT;
+        fixed_t dist {DOOM_MAXINT};
 
         for (Intercept* scan = clip.intercepts; scan < clip.interceptPtr; scan++)
         {
@@ -187,7 +183,7 @@ bool traverseIntercepts(Traverser func, fixed_t maxfrac)
         if (!func(in))
             return false; // don't bother going farther
 
-        in->frac = DOOM_MAXINT;
+        in->frac = fixed_t {DOOM_MAXINT};
     }
 
     return true; // everything was traversed
@@ -219,8 +215,8 @@ void setThingPosition(Mobj& thing)
     {
         // inert things don't need to be in the blockmap
         const Blockmap& bmap = level().blockmap;
-        int blockx = bmap.blockX(Fixed {thing.x});
-        int blocky = bmap.blockY(Fixed {thing.y});
+        int blockx = bmap.blockX(thing.x);
+        int blocky = bmap.blockY(thing.y);
 
         if (bmap.contains(blockx, blocky))
         {
@@ -266,8 +262,8 @@ void unsetThingPosition(Mobj& thing)
         else
         {
             const Blockmap& bmap = level().blockmap;
-            int blockx = bmap.blockX(Fixed {thing.x});
-            int blocky = bmap.blockY(Fixed {thing.y});
+            int blockx = bmap.blockX(thing.x);
+            int blocky = bmap.blockY(thing.y);
 
             if (bmap.contains(blockx, blocky))
                 blocklinks[bmap.index(blockx, blocky)] = thing.bnext;
@@ -285,24 +281,29 @@ bool pathTraverse(
     validCount().validcount++;
     clip.interceptPtr = clip.intercepts;
 
-    if (((x1 - bmaporgx) & (MAPBLOCKSIZE - 1)) == 0)
+    if (((x1 - bmaporgx).raw & (MAPBLOCKSIZE.raw - 1)) == 0)
         x1 += FRACUNIT; // don't side exactly on a line
 
-    if (((y1 - bmaporgy) & (MAPBLOCKSIZE - 1)) == 0)
+    if (((y1 - bmaporgy).raw & (MAPBLOCKSIZE.raw - 1)) == 0)
         y1 += FRACUNIT; // don't side exactly on a line
 
-    clip.trace.origin = {Fixed {x1}, Fixed {y1}};
-    clip.trace.delta = {Fixed {x2 - x1}, Fixed {y2 - y1}};
+    clip.trace.origin = {x1, y1};
+    clip.trace.delta = {x2 - x1, y2 - y1};
 
     x1 -= bmaporgx;
     y1 -= bmaporgy;
-    fixed_t xt1 = x1 >> MAPBLOCKSHIFT;
-    fixed_t yt1 = y1 >> MAPBLOCKSHIFT;
+
+    // Blockmap cell indices, not fixed values: the shift is MAPBLOCKSHIFT
+    // (FRACBITS + 7), which folds the 16.16 point and the 128-unit cell into one
+    // arithmetic shift of the raw bits. Vanilla declares these fixed_t and means
+    // int by it.
+    int xt1 = x1.raw >> MAPBLOCKSHIFT;
+    int yt1 = y1.raw >> MAPBLOCKSHIFT;
 
     x2 -= bmaporgx;
     y2 -= bmaporgy;
-    fixed_t xt2 = x2 >> MAPBLOCKSHIFT;
-    fixed_t yt2 = y2 >> MAPBLOCKSHIFT;
+    int xt2 = x2.raw >> MAPBLOCKSHIFT;
+    int yt2 = y2.raw >> MAPBLOCKSHIFT;
 
     fixed_t partial;
     fixed_t xstep;
@@ -313,13 +314,13 @@ bool pathTraverse(
     if (xt2 > xt1)
     {
         mapxstep = 1;
-        partial = FRACUNIT - ((x1 >> MAPBTOFRAC) & (FRACUNIT - 1));
+        partial = FRACUNIT - fixed_t {(x1.raw >> MAPBTOFRAC) & (fracUnit - 1)};
         ystep = FixedDiv(y2 - y1, doom_abs(x2 - x1));
     }
     else if (xt2 < xt1)
     {
         mapxstep = -1;
-        partial = (x1 >> MAPBTOFRAC) & (FRACUNIT - 1);
+        partial = fixed_t {(x1.raw >> MAPBTOFRAC) & (fracUnit - 1)};
         ystep = FixedDiv(y2 - y1, doom_abs(x2 - x1));
     }
     else
@@ -334,13 +335,13 @@ bool pathTraverse(
     if (yt2 > yt1)
     {
         mapystep = 1;
-        partial = FRACUNIT - ((y1 >> MAPBTOFRAC) & (FRACUNIT - 1));
+        partial = FRACUNIT - fixed_t {(y1.raw >> MAPBTOFRAC) & (fracUnit - 1)};
         xstep = FixedDiv(x2 - x1, doom_abs(y2 - y1));
     }
     else if (yt2 < yt1)
     {
         mapystep = -1;
-        partial = (y1 >> MAPBTOFRAC) & (FRACUNIT - 1);
+        partial = fixed_t {(y1.raw >> MAPBTOFRAC) & (fracUnit - 1)};
         xstep = FixedDiv(x2 - x1, doom_abs(y2 - y1));
     }
     else
@@ -374,12 +375,12 @@ bool pathTraverse(
         if (mapx == xt2 && mapy == yt2)
             break;
 
-        if ((yintercept >> FRACBITS) == mapy)
+        if (yintercept.toInt() == mapy)
         {
             yintercept += ystep;
             mapx += mapxstep;
         }
-        else if ((xintercept >> FRACBITS) == mapx)
+        else if (xintercept.toInt() == mapx)
         {
             xintercept += xstep;
             mapy += mapystep;

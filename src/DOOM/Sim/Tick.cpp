@@ -182,7 +182,7 @@ void ticker()
     // pause if in menu and at least one tic has been run
     if (!gameSession().netgame && overlayState().menuactive
         && !demoState().demoplayback
-        && players_.players[players_.consoleplayer].viewz != 1)
+        && players_.players[players_.consoleplayer].viewz != fixed_t {1})
     {
         return;
     }

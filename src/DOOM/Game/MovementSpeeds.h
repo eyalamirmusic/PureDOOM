@@ -25,9 +25,9 @@ namespace Doom
 // (and -turbo is never passed), so the move is golden-neutral.
 struct MovementSpeeds
 {
-    EA::Array<fixed_t, 2> forwardmove = {0x19, 0x32}; // walk, run
-    EA::Array<fixed_t, 2> sidemove = {0x18, 0x28}; // walk, run
-    EA::Array<fixed_t, 3> angleturn = {640, 1280, 320}; // fast, faster, + slow turn
+    EA::Array<fixed_t, 2> forwardmove = {fixed_t {0x19}, fixed_t {0x32}}; // walk, run
+    EA::Array<fixed_t, 2> sidemove = {fixed_t {0x18}, fixed_t {0x28}}; // walk, run
+    EA::Array<fixed_t, 3> angleturn = {fixed_t {640}, fixed_t {1280}, fixed_t {320}}; // fast, faster, + slow turn
 };
 
 // The one MovementSpeeds, a view onto the Engine's member - the same pattern as the other Game/

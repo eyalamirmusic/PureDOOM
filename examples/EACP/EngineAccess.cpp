@@ -126,12 +126,12 @@ static float eacpAlpha = 0.0f;
 
 static double eacpFixedToDouble(fixed_t value)
 {
-    return (double) value / (double) FRACUNIT;
+    return (double) value.raw / (double) FRACUNIT.raw;
 }
 
 static float eacpFixedToFloat(fixed_t value)
 {
-    return (float) value / (float) FRACUNIT;
+    return (float) value.raw / (float) FRACUNIT.raw;
 }
 
 // The engine deliberately links no libm, so the one square root the texture
@@ -660,7 +660,7 @@ EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
     {
         int lump = id - eacpSpriteBase();
 
-        info.width = spritewidth[lump] >> FRACBITS;
+        info.width = spritewidth[lump].toInt();
         info.height = eacpSpriteHeights[lump];
         info.masked = 1;
     }
@@ -1337,7 +1337,7 @@ static void eacpEmitSprite(
     if (lump < 0 || lump >= gfx.numspritelumps)
         return;
 
-    width = (float) (spritewidth[lump] >> FRACBITS);
+    width = (float) (spritewidth[lump].toInt());
     height = (float) eacpSpriteHeights[lump];
 
     // A thing moves once a tic, so drawing it where the tic left it makes it
@@ -1586,7 +1586,7 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
             continue;
 
         out[i].textureId = eacpSpriteBase() + lump;
-        out[i].width = (float) (spritewidth[lump] >> FRACBITS);
+        out[i].width = (float) (spritewidth[lump].toInt());
         out[i].height = (float) eacpSpriteHeights[lump];
 
         out[i].x =
@@ -1817,12 +1817,12 @@ static void eacpAutomapLine(EacpAutomapEmitter* em,
                             fixed_t y2,
                             int color)
 {
-    double ax = (double) f_x + ((double) x1 - em->originX) * em->scale;
+    double ax = (double) f_x + (eacpFixedToDouble(x1) - em->originX) * em->scale;
     double ay =
-        (double) f_y + (double) f_h - ((double) y1 - em->originY) * em->scale;
-    double bx = (double) f_x + ((double) x2 - em->originX) * em->scale;
+        (double) f_y + (double) f_h - (eacpFixedToDouble(y1) - em->originY) * em->scale;
+    double bx = (double) f_x + (eacpFixedToDouble(x2) - em->originX) * em->scale;
     double by =
-        (double) f_y + (double) f_h - ((double) y2 - em->originY) * em->scale;
+        (double) f_y + (double) f_h - (eacpFixedToDouble(y2) - em->originY) * em->scale;
 
     eacpAutomapFrameLine(em, ax, ay, bx, by, color);
 }
@@ -1912,22 +1912,22 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
 
 static void eacpAutomapGrid(EacpAutomapEmitter* em, int color)
 {
-    fixed_t block = MAPBLOCKUNITS << FRACBITS;
+    fixed_t block = Doom::Fixed::fromInt(MAPBLOCKUNITS);
     fixed_t originX = (fixed_t) em->originX;
     fixed_t originY = (fixed_t) em->originY;
     fixed_t x, y, start, end;
 
     start = originX;
-    if ((start - bmaporgx) % block)
-        start += block - ((start - bmaporgx) % block);
+    if (fixed_t {(start - bmaporgx).raw % block.raw})
+        start += block - (fixed_t {(start - bmaporgx).raw % block.raw});
     end = originX + m_w;
 
     for (x = start; x < end; x += block)
         eacpAutomapLine(em, x, originY, x, originY + m_h, color);
 
     start = originY;
-    if ((start - bmaporgy) % block)
-        start += block - ((start - bmaporgy) % block);
+    if (fixed_t {(start - bmaporgy).raw % block.raw})
+        start += block - (fixed_t {(start - bmaporgy).raw % block.raw});
     end = originY + m_h;
 
     for (y = start; y < end; y += block)
@@ -1951,10 +1951,10 @@ static void eacpAutomapPlayer(EacpAutomapEmitter* em, const EacpDoomCamera* came
 
     if (cheating)
         eacpAutomapLineCharacter(
-            em, cheat_player_arrow, NUMCHEATPLYRLINES, 0, angle, WHITE, x, y);
+            em, cheat_player_arrow, NUMCHEATPLYRLINES, fixed_t {}, angle, WHITE, x, y);
     else
         eacpAutomapLineCharacter(
-            em, player_arrow, NUMPLYRLINES, 0, angle, WHITE, x, y);
+            em, player_arrow, NUMPLYRLINES, fixed_t {}, angle, WHITE, x, y);
 }
 
 static void eacpAutomapThings(EacpAutomapEmitter* em, int color)
@@ -1970,7 +1970,7 @@ static void eacpAutomapThings(EacpAutomapEmitter* em, int color)
             eacpAutomapLineCharacter(em,
                                      thintriangle_guy,
                                      NUMTHINTRIANGLEGUYLINES,
-                                     16 << FRACBITS,
+                                     Doom::Fixed::fromInt(16),
                                      thing->angle,
                                      color + lightlev,
                                      thing->x,
@@ -2006,7 +2006,7 @@ int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
     em.max = maxVertices;
 
     // MTOF in fixed point: a map unit spans scale_mtof / 2^32 frame pixels.
-    em.scale = (double) scale_mtof / 4294967296.0;
+    em.scale = (double) scale_mtof.raw / 4294967296.0;
 
     // Vanilla recentres on the player once a tic and snaps the map to whole
     // frame pixels as it does it (AM_doFollowPlayer's FTOM(MTOF(x))). Following
@@ -2015,13 +2015,13 @@ int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
     // moves, and that still steps.
     if (followplayer && am_plr != 0 && am_plr->mo != 0)
     {
-        em.originX = (double) camera->x * 65536.0 - (double) m_w / 2.0;
-        em.originY = (double) camera->y * 65536.0 - (double) m_h / 2.0;
+        em.originX = (double) camera->x * 65536.0 - (double) m_w.raw / 2.0;
+        em.originY = (double) camera->y * 65536.0 - (double) m_h.raw / 2.0;
     }
     else
     {
-        em.originX = (double) m_x;
-        em.originY = (double) m_y;
+        em.originX = (double) m_x.raw;
+        em.originY = (double) m_y.raw;
     }
 
     if (grid)

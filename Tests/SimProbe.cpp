@@ -323,14 +323,14 @@ int doomSimPlayerX()
 {
     auto& players_ = Doom::playerState();
 
-    return players_.players[0].mo ? players_.players[0].mo->x >> FRACBITS : 0;
+    return players_.players[0].mo ? players_.players[0].mo->x.toInt() : 0;
 }
 
 int doomSimPlayerY()
 {
     auto& players_ = Doom::playerState();
 
-    return players_.players[0].mo ? players_.players[0].mo->y >> FRACBITS : 0;
+    return players_.players[0].mo ? players_.players[0].mo->y.toInt() : 0;
 }
 
 int doomSimPlayerAngleDegrees()
@@ -371,8 +371,8 @@ int doomSimGeometryViewsConsistent()
            && view(sectors, numsectors, lvl.sectors)
            && view(nodes, numnodes, lvl.nodes) && view(lines, numlines, lvl.lines)
            && view(sides, numsides, lvl.sides) && blocklinks == lvl.blockLinks.data()
-           && bmaporgx == lvl.blockmap.origin.x.raw
-           && bmaporgy == lvl.blockmap.origin.y.raw
+           && bmaporgx == lvl.blockmap.origin.x
+           && bmaporgy == lvl.blockmap.origin.y
            && bmapwidth == lvl.blockmap.width && bmapheight == lvl.blockmap.height
            && blockmap == lvl.blockmap.offsets && blockmaplump == lvl.blockmap.lump;
 }
@@ -433,7 +433,7 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
     if (setjmp(simAbort))
         return -1;
 
-    Doom::Mobj* mobj = Doom::spawnMobj(x, y, z, (Doom::MobjType) type);
+    Doom::Mobj* mobj = Doom::spawnMobj(fixed_t {x}, fixed_t {y}, fixed_t {z}, (Doom::MobjType) type);
 
     if (!mobj)
         return -1;
@@ -452,7 +452,7 @@ int doomSimCheckPosition(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return Doom::checkPosition(mobj, x, y) ? 1 : 0;
+    return Doom::checkPosition(mobj, fixed_t {x}, fixed_t {y}) ? 1 : 0;
 }
 
 int doomSimTryMove(int handle, int x, int y)
@@ -465,25 +465,25 @@ int doomSimTryMove(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return Doom::tryMove(mobj, x, y) ? 1 : 0;
+    return Doom::tryMove(mobj, fixed_t {x}, fixed_t {y}) ? 1 : 0;
 }
 
 int doomSimMobjX(int handle)
 {
     Doom::Mobj* mobj = simMobj(handle);
-    return mobj ? mobj->x : 0;
+    return mobj ? mobj->x.raw : 0;
 }
 
 int doomSimMobjY(int handle)
 {
     Doom::Mobj* mobj = simMobj(handle);
-    return mobj ? mobj->y : 0;
+    return mobj ? mobj->y.raw : 0;
 }
 
 int doomSimMobjZ(int handle)
 {
     Doom::Mobj* mobj = simMobj(handle);
-    return mobj ? mobj->z : 0;
+    return mobj ? mobj->z.raw : 0;
 }
 
 int doomSimMobjFlags(int handle)
@@ -521,8 +521,8 @@ int doomSimThingsInBlockOf(int handle)
     if (setjmp(simAbort))
         return -1;
 
-    int blockx = (mobj->x - bmaporgx) >> MAPBLOCKSHIFT;
-    int blocky = (mobj->y - bmaporgy) >> MAPBLOCKSHIFT;
+    int blockx = (mobj->x - bmaporgx).raw >> MAPBLOCKSHIFT;
+    int blocky = (mobj->y - bmaporgy).raw >> MAPBLOCKSHIFT;
 
     simBlockThingCount = 0;
     Doom::forEachThingInBlock(blockx, blocky, simCountThing);
@@ -552,7 +552,7 @@ int doomSimTypeBarrel()
 
 int doomSimOnFloorZ()
 {
-    return ONFLOORZ;
+    return ONFLOORZ.raw;
 }
 
 int doomSimFlagNoClip()

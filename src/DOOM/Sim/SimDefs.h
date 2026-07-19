@@ -87,8 +87,8 @@
 //
 // P_MOBJ
 //
-#define ONFLOORZ DOOM_MININT
-#define ONCEILINGZ DOOM_MAXINT
+#define ONFLOORZ (Doom::Fixed {DOOM_MININT})
+#define ONCEILINGZ (Doom::Fixed {DOOM_MAXINT})
 
 // Time interval for item respawning.
 #define ITEMQUESIZE                128

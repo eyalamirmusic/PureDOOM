@@ -493,7 +493,7 @@ void initTextures()
             j <<= 1;
 
         texturewidthmask[i] = j - 1;
-        textureheight[i] = texture->height << FRACBITS;
+        textureheight[i] = Doom::Fixed::fromInt(texture->height);
     }
 
     // Precalculate whatever possible.
@@ -561,9 +561,9 @@ void initSpriteLumps()
             doom_print(".");
 
         patch = static_cast<Patch*>(Doom::cacheLumpNum(gd.firstspritelump + i));
-        spritewidth[i] = SHORT(patch->width) << FRACBITS;
-        spriteoffset[i] = SHORT(patch->leftoffset) << FRACBITS;
-        spritetopoffset[i] = SHORT(patch->topoffset) << FRACBITS;
+        spritewidth[i] = Doom::Fixed::fromInt(SHORT(patch->width));
+        spriteoffset[i] = Doom::Fixed::fromInt(SHORT(patch->leftoffset));
+        spritetopoffset[i] = Doom::Fixed::fromInt(SHORT(patch->topoffset));
     }
 }
 

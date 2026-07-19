@@ -23,7 +23,7 @@ namespace Doom
 struct RenderScratch
 {
     // The current wall segment: its distance and the angles the seg loop reads back.
-    fixed_t rw_distance = 0;
+    fixed_t rw_distance {};
     angle_t rw_normalangle = 0;
     int rw_angle1 = 0; // angle to the line origin
 

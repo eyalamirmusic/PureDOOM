@@ -102,7 +102,7 @@ void drawColumn()
     {
         // Re-map color indices from wall texture column
         //  using a lighting/special effects LUT.
-        *dest = draw.dc_colormap[draw.dc_source[(frac >> FRACBITS) & 127]];
+        *dest = draw.dc_colormap[draw.dc_source[frac.toInt() & 127]];
 
         dest += SCREENWIDTH;
         frac += fracstep;
@@ -151,7 +151,7 @@ void drawColumnLow()
     do
     {
         // Hack. Does not work corretly.
-        *dest2 = *dest = draw.dc_colormap[draw.dc_source[(frac >> FRACBITS) & 127]];
+        *dest2 = *dest = draw.dc_colormap[draw.dc_source[frac.toInt() & 127]];
         dest += SCREENWIDTH;
         dest2 += SCREENWIDTH;
         frac += fracstep;
@@ -293,8 +293,7 @@ void drawTranslatedColumn()
         //  used with PLAY sprites.
         // Thus the "green" ramp of the player 0 sprite
         //  is mapped to gray, red, black/indigo.
-        *dest =
-            draw.dc_colormap[draw.dc_translation[draw.dc_source[frac >> FRACBITS]]];
+        *dest = draw.dc_colormap[draw.dc_translation[draw.dc_source[frac.toInt()]]];
         dest += SCREENWIDTH;
 
         frac += fracstep;
@@ -385,7 +384,7 @@ void drawSpan()
     do
     {
         // Current texture index in u,v.
-        spot = ((yfrac >> (16 - 6)) & (63 * 64)) + ((xfrac >> 16) & 63);
+        spot = ((yfrac.raw >> (16 - 6)) & (63 * 64)) + ((xfrac.raw >> 16) & 63);
 
         // Lookup pixel from flat texture tile,
         //  re-index using light/colormap.
@@ -437,7 +436,7 @@ void drawSpanLow()
     count = draw.ds_x2 - draw.ds_x1;
     do
     {
-        spot = ((yfrac >> (16 - 6)) & (63 * 64)) + ((xfrac >> 16) & 63);
+        spot = ((yfrac.raw >> (16 - 6)) & (63 * 64)) + ((xfrac.raw >> 16) & 63);
         // Lowres/blocky mode does it twice,
         //  while scale is adjusted appropriately.
         *dest++ = draw.ds_colormap[draw.ds_source[spot]];
@@ -657,7 +656,5 @@ byte* translationtables = nullptr;
 //
 // R_DrawSpan input: r_plane fills these in, the span drawers read them.
 //
-
-
 
 // start of a 64*64 tile image

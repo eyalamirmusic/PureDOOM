@@ -18,10 +18,10 @@ namespace Doom
 // a live confirmation.
 struct SightScratch
 {
-    fixed_t sightzstart = 0; // eye z of the looker
+    fixed_t sightzstart {}; // eye z of the looker
     DivLine strace = {}; // the trace from looker (t1) to target (t2)
-    fixed_t t2x = 0; // target x
-    fixed_t t2y = 0; // target y
+    fixed_t t2x {}; // target x
+    fixed_t t2y {}; // target y
     int sightcounts[2] = {}; // [0] reject-matrix skips, [1] real tests
 };
 

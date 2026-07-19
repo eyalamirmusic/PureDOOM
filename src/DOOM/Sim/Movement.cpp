@@ -138,15 +138,16 @@ doom_boolean checkThing(Mobj* thing)
     // check for skulls slamming into things
     if (clip.tmthing->flags & MF_SKULLFLY)
     {
-        int damage = ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+        int damage =
+            ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
 
         Doom::damageMobj(thing, clip.tmthing, clip.tmthing, damage);
 
         clip.tmthing->flags &= ~MF_SKULLFLY;
-        clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = 0;
+        clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = fixed_t {};
 
         Doom::setMobjState(clip.tmthing,
-                       static_cast<StateNum>(clip.tmthing->info->spawnstate));
+                           static_cast<StateNum>(clip.tmthing->info->spawnstate));
 
         return false; // stop moving
     }
@@ -186,7 +187,8 @@ doom_boolean checkThing(Mobj* thing)
         }
 
         // damage / explode
-        int damage = ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+        int damage =
+            ((Doom::randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
         Doom::damageMobj(thing, clip.tmthing, clip.tmthing->target, damage);
 
         // don't traverse any more
@@ -243,10 +245,10 @@ bool checkPosition(Mobj* thing, fixed_t x, fixed_t y)
     // point, and can overlap into adjacent blocks by up to MAXRADIUS units.
     const Blockmap& bmap = level().blockmap;
 
-    int xl = bmap.blockX(Fixed {clip.tmbbox[BOXLEFT] - MAXRADIUS});
-    int xh = bmap.blockX(Fixed {clip.tmbbox[BOXRIGHT] + MAXRADIUS});
-    int yl = bmap.blockY(Fixed {clip.tmbbox[BOXBOTTOM] - MAXRADIUS});
-    int yh = bmap.blockY(Fixed {clip.tmbbox[BOXTOP] + MAXRADIUS});
+    int xl = bmap.blockX(clip.tmbbox[BOXLEFT] - MAXRADIUS);
+    int xh = bmap.blockX(clip.tmbbox[BOXRIGHT] + MAXRADIUS);
+    int yl = bmap.blockY(clip.tmbbox[BOXBOTTOM] - MAXRADIUS);
+    int yh = bmap.blockY(clip.tmbbox[BOXTOP] + MAXRADIUS);
 
     for (int bx = xl; bx <= xh; bx++)
         for (int by = yl; by <= yh; by++)
@@ -254,10 +256,10 @@ bool checkPosition(Mobj* thing, fixed_t x, fixed_t y)
                 return false;
 
     // check lines
-    xl = bmap.blockX(Fixed {clip.tmbbox[BOXLEFT]});
-    xh = bmap.blockX(Fixed {clip.tmbbox[BOXRIGHT]});
-    yl = bmap.blockY(Fixed {clip.tmbbox[BOXBOTTOM]});
-    yh = bmap.blockY(Fixed {clip.tmbbox[BOXTOP]});
+    xl = bmap.blockX(clip.tmbbox[BOXLEFT]);
+    xh = bmap.blockX(clip.tmbbox[BOXRIGHT]);
+    yl = bmap.blockY(clip.tmbbox[BOXBOTTOM]);
+    yh = bmap.blockY(clip.tmbbox[BOXTOP]);
 
     for (int bx = xl; bx <= xh; bx++)
         for (int by = yl; by <= yh; by++)
@@ -314,12 +316,13 @@ bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
         {
             // see if the line was crossed
             Line* ld = clip.spechit[clip.numspechit];
-            int side = lineSide({Fixed {thing->x}, Fixed {thing->y}}, *ld);
-            int oldside = lineSide({Fixed {oldx}, Fixed {oldy}}, *ld);
+            int side = lineSide({thing->x, thing->y}, *ld);
+            int oldside = lineSide({oldx, oldy}, *ld);
             if (side != oldside)
             {
                 if (ld->special)
-                    Doom::crossSpecialLine(static_cast<int>(ld - lines), oldside, thing);
+                    Doom::crossSpecialLine(
+                        static_cast<int>(ld - lines), oldside, thing);
             }
         }
     }
@@ -354,11 +357,12 @@ bool teleportMove(Mobj* thing, fixed_t x, fixed_t y)
     validCount().validcount++;
     clip.numspechit = 0;
 
-    // stomp on any things contacted
-    int xl = (clip.tmbbox[BOXLEFT] - bmaporgx - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int xh = (clip.tmbbox[BOXRIGHT] - bmaporgx + MAXRADIUS) >> MAPBLOCKSHIFT;
-    int yl = (clip.tmbbox[BOXBOTTOM] - bmaporgy - MAXRADIUS) >> MAPBLOCKSHIFT;
-    int yh = (clip.tmbbox[BOXTOP] - bmaporgy + MAXRADIUS) >> MAPBLOCKSHIFT;
+    // stomp on any things contacted. Blockmap cell indices: the shift is
+    // MAPBLOCKSHIFT over the raw 16.16 bits, not a fixed-to-whole conversion.
+    int xl = (clip.tmbbox[BOXLEFT] - bmaporgx - MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int xh = (clip.tmbbox[BOXRIGHT] - bmaporgx + MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int yl = (clip.tmbbox[BOXBOTTOM] - bmaporgy - MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int yh = (clip.tmbbox[BOXTOP] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
 
     for (int bx = xl; bx <= xh; bx++)
         for (int by = yl; by <= yh; by++)

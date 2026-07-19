@@ -103,7 +103,12 @@
 #include "../Render/Video.h"
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
-#define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1])
+// The run speed, and the cap on the combined forward/side move. Vanilla declares
+// forwardmove[] fixed_t, but the numbers in it (0x19, 0x32) are the small raw
+// integers that go into ticcmd's char fields - P_MovePlayer is what turns them into
+// a velocity, by multiplying by 2048. So the cap is that raw integer, not a whole-unit
+// conversion of it.
+#define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1].raw)
 #define TURBOTHRESHOLD 0x32
 #define SLOWTURNTICS 6
 #define NUMKEYS 256
@@ -263,45 +268,45 @@ void buildTiccmd(Ticcmd* cmd)
     {
         if (input.gamekeydown[config.key_right])
         {
-            side += speeds.sidemove[speed];
+            side += speeds.sidemove[speed].raw;
         }
         if (input.gamekeydown[config.key_left])
         {
-            side -= speeds.sidemove[speed];
+            side -= speeds.sidemove[speed].raw;
         }
         if (input.joyxmove > 0)
-            side += speeds.sidemove[speed];
+            side += speeds.sidemove[speed].raw;
         if (input.joyxmove < 0)
-            side -= speeds.sidemove[speed];
+            side -= speeds.sidemove[speed].raw;
     }
     else
     {
         if (input.gamekeydown[config.key_right])
-            cmd->angleturn -= speeds.angleturn[tspeed];
+            cmd->angleturn -= speeds.angleturn[tspeed].raw;
         if (input.gamekeydown[config.key_left])
-            cmd->angleturn += speeds.angleturn[tspeed];
+            cmd->angleturn += speeds.angleturn[tspeed].raw;
         if (input.joyxmove > 0)
-            cmd->angleturn -= speeds.angleturn[tspeed];
+            cmd->angleturn -= speeds.angleturn[tspeed].raw;
         if (input.joyxmove < 0)
-            cmd->angleturn += speeds.angleturn[tspeed];
+            cmd->angleturn += speeds.angleturn[tspeed].raw;
     }
 
     if (input.gamekeydown[config.key_up])
     {
-        forward += speeds.forwardmove[speed];
+        forward += speeds.forwardmove[speed].raw;
     }
     if (input.gamekeydown[config.key_down])
     {
-        forward -= speeds.forwardmove[speed];
+        forward -= speeds.forwardmove[speed].raw;
     }
     if (input.joyymove < 0)
-        forward += speeds.forwardmove[speed];
+        forward += speeds.forwardmove[speed].raw;
     if (input.joyymove > 0)
-        forward -= speeds.forwardmove[speed];
+        forward -= speeds.forwardmove[speed].raw;
     if (input.gamekeydown[config.key_straferight])
-        side += speeds.sidemove[speed];
+        side += speeds.sidemove[speed].raw;
     if (input.gamekeydown[config.key_strafeleft])
-        side -= speeds.sidemove[speed];
+        side -= speeds.sidemove[speed].raw;
 
     // buttons
     cmd->chatchar = Doom::dequeueChatChar();
@@ -328,7 +333,7 @@ void buildTiccmd(Ticcmd* cmd)
 
     // mouse
     if (mousebuttons[config.mousebforward])
-        forward += speeds.forwardmove[speed];
+        forward += speeds.forwardmove[speed].raw;
 
     // forward double click
     if (mousebuttons[config.mousebforward] != input.dclickstate
@@ -687,7 +692,10 @@ void gameTicker()
                     fatalError(error_buf);
                 }
                 if (players_.players[i].mo)
-                    net.consistancy[i][buf] = players_.players[i].mo->x;
+                    // Vanilla's checksum is the low 16 bits of the raw fixed x,
+                    // truncated into a short - not the whole-unit part of it.
+                    net.consistancy[i][buf] =
+                        static_cast<short>(players_.players[i].mo->x.raw);
                 else
                     net.consistancy[i][buf] = randomness().menuIndex;
             }
@@ -848,14 +856,14 @@ doom_boolean checkSpot(int playernum, MapThing* mthing)
     {
         // first spawn of level, before corpses
         for (int i = 0; i < playernum; i++)
-            if (players_.players[i].mo->x == mthing->x << FRACBITS
-                && players_.players[i].mo->y == mthing->y << FRACBITS)
+            if (players_.players[i].mo->x == Doom::Fixed::fromInt(mthing->x)
+                && players_.players[i].mo->y == Doom::Fixed::fromInt(mthing->y))
                 return false;
         return true;
     }
 
-    x = mthing->x << FRACBITS;
-    y = mthing->y << FRACBITS;
+    x = Doom::Fixed::fromInt(mthing->x);
+    y = Doom::Fixed::fromInt(mthing->y);
 
     if (!Doom::checkPosition(players_.players[playernum].mo, x, y))
         return false;
@@ -876,7 +884,8 @@ doom_boolean checkSpot(int playernum, MapThing* mthing)
                          ss->sector->floorheight,
                          MT_TFOG);
 
-    if (players_.players[players_.consoleplayer].viewz != 1)
+    // viewz is the raw sentinel 1 that Doom::setupLevel plants, not one world unit.
+    if (players_.players[players_.consoleplayer].viewz != fixed_t {1})
         Doom::startSound(mo, sfx_telept); // don't start sound on first frame
 
     return true;
@@ -1410,17 +1419,17 @@ void initNewGame(Skill skill, int episode, int map)
     {
         for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics >>= 1;
-        mobjinfo[MT_BRUISERSHOT].speed = 20 * FRACUNIT;
-        mobjinfo[MT_HEADSHOT].speed = 20 * FRACUNIT;
-        mobjinfo[MT_TROOPSHOT].speed = 20 * FRACUNIT;
+        mobjinfo[MT_BRUISERSHOT].speed = (20 * FRACUNIT).raw;
+        mobjinfo[MT_HEADSHOT].speed = (20 * FRACUNIT).raw;
+        mobjinfo[MT_TROOPSHOT].speed = (20 * FRACUNIT).raw;
     }
     else if (skill != sk_nightmare && session.gameskill == sk_nightmare)
     {
         for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics <<= 1;
-        mobjinfo[MT_BRUISERSHOT].speed = 15 * FRACUNIT;
-        mobjinfo[MT_HEADSHOT].speed = 10 * FRACUNIT;
-        mobjinfo[MT_TROOPSHOT].speed = 10 * FRACUNIT;
+        mobjinfo[MT_BRUISERSHOT].speed = (15 * FRACUNIT).raw;
+        mobjinfo[MT_HEADSHOT].speed = (10 * FRACUNIT).raw;
+        mobjinfo[MT_TROOPSHOT].speed = (10 * FRACUNIT).raw;
     }
 
     // force players to be initialized upon first level load

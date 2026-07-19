@@ -273,7 +273,8 @@ void initSpriteDefs(char** namelist)
                     for (rotation = 0; rotation < 8; rotation++)
                         if (sprtemp[frame].lump[rotation] == -1)
                         {
-                            doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
+                            doom_strcpy(error_buf,
+                                        "Error: Doom::initSprites: Sprite ");
                             doom_concat(error_buf, namelist[i]);
                             doom_concat(error_buf, " frame ");
                             doom_concat(error_buf, doom_ctoa(frame + 'A'));
@@ -289,9 +290,8 @@ void initSpriteDefs(char** namelist)
         // POD sprtemp entries into its storage, as the malloc + memcpy did.
         sprites[i].numframes = maxframe;
         sprites[i].spriteframes.resize(maxframe);
-        doom_memcpy(sprites[i].spriteframes.data(),
-                    sprtemp,
-                    maxframe * sizeof(SpriteFrame));
+        doom_memcpy(
+            sprites[i].spriteframes.data(), sprtemp, maxframe * sizeof(SpriteFrame));
     }
 }
 
@@ -348,8 +348,10 @@ VisSprite* newVisSprite()
 //
 void drawMaskedColumn(Column* column)
 {
-    int topscreen;
-    int bottomscreen;
+    // Vanilla declares these int, but they are fixed-point screen positions
+    // (sprtopscreen and spryscale are both fixed_t).
+    fixed_t topscreen;
+    fixed_t bottomscreen;
     fixed_t basetexturemid;
 
     auto& draw = drawState();
@@ -364,8 +366,8 @@ void drawMaskedColumn(Column* column)
         topscreen = sprState.sprtopscreen + sprState.spryscale * column->topdelta;
         bottomscreen = topscreen + sprState.spryscale * column->length;
 
-        draw.dc_yl = (topscreen + FRACUNIT - 1) >> FRACBITS;
-        draw.dc_yh = (bottomscreen - 1) >> FRACBITS;
+        draw.dc_yl = (topscreen.raw + fracUnit - 1) >> FRACBITS;
+        draw.dc_yh = (bottomscreen.raw - 1) >> FRACBITS;
 
         if (draw.dc_yh >= sprState.mfloorclip[draw.dc_x])
             draw.dc_yh = sprState.mfloorclip[draw.dc_x] - 1;
@@ -375,7 +377,8 @@ void drawMaskedColumn(Column* column)
         if (draw.dc_yl <= draw.dc_yh)
         {
             draw.dc_source = reinterpret_cast<byte*>(column) + 3;
-            draw.dc_texturemid = basetexturemid - (column->topdelta << FRACBITS);
+            draw.dc_texturemid =
+                basetexturemid - Doom::Fixed::fromInt(column->topdelta);
             // dc_source = (byte *)column + 3 - column->topdelta;
 
             // Drawn by either Doom::drawColumn
@@ -383,7 +386,7 @@ void drawMaskedColumn(Column* column)
             colfunc();
         }
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
-                                             + column->length + 4);
+                                           + column->length + 4);
     }
 
     draw.dc_texturemid = basetexturemid;
@@ -431,13 +434,13 @@ void drawVisSprite(VisSprite* vis)
     for (draw.dc_x = vis->x1; draw.dc_x <= vis->x2;
          draw.dc_x++, frac += vis->xiscale)
     {
-        texturecolumn = frac >> FRACBITS;
+        texturecolumn = frac.toInt();
 #ifdef RANGECHECK
         if (texturecolumn < 0 || texturecolumn >= SHORT(patch->width))
             fatalError("Error: R_DrawSpriteRange: bad texturecolumn");
 #endif
-        column = reinterpret_cast<Column*>(
-            reinterpret_cast<byte*>(patch) + LONG(patch->columnofs[texturecolumn]));
+        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
+                                           + LONG(patch->columnofs[texturecolumn]));
         drawMaskedColumn(column);
     }
 
@@ -549,14 +552,14 @@ void projectSprite(Mobj* thing)
 
     // calculate edges of the shape
     tx -= spriteoffset[lump];
-    x1 = (proj.centerxfrac + FixedMul(tx, xscale)) >> FRACBITS;
+    x1 = (proj.centerxfrac + FixedMul(tx, xscale)).toInt();
 
     // off the right side?
     if (x1 > view.viewwidth)
         return;
 
     tx += spritewidth[lump];
-    x2 = ((proj.centerxfrac + FixedMul(tx, xscale)) >> FRACBITS) - 1;
+    x2 = (proj.centerxfrac + FixedMul(tx, xscale)).toInt() - 1;
 
     // off the left side
     if (x2 < 0)
@@ -577,12 +580,12 @@ void projectSprite(Mobj* thing)
 
     if (flip)
     {
-        vis->startfrac = spritewidth[lump] - 1;
+        vis->startfrac = spritewidth[lump] - fixed_t {1};
         vis->xiscale = -iscale;
     }
     else
     {
-        vis->startfrac = 0;
+        vis->startfrac = fixed_t {};
         vis->xiscale = iscale;
     }
 
@@ -610,7 +613,7 @@ void projectSprite(Mobj* thing)
     else
     {
         // diminished light
-        index = xscale >> (LIGHTSCALESHIFT - view.detailshift);
+        index = xscale.raw >> (LIGHTSCALESHIFT - view.detailshift);
 
         if (index >= MAXLIGHTSCALE)
             index = MAXLIGHTSCALE - 1;
@@ -708,14 +711,14 @@ void drawPSprite(PspDef* psp)
     tx = psp->sx - 160 * FRACUNIT;
 
     tx -= spriteoffset[lump];
-    x1 = (proj.centerxfrac + FixedMul(tx, sprState.pspritescale)) >> FRACBITS;
+    x1 = (proj.centerxfrac + FixedMul(tx, sprState.pspritescale)).toInt();
 
     // off the right side
     if (x1 > view.viewwidth)
         return;
 
     tx += spritewidth[lump];
-    x2 = ((proj.centerxfrac + FixedMul(tx, sprState.pspritescale)) >> FRACBITS) - 1;
+    x2 = (proj.centerxfrac + FixedMul(tx, sprState.pspritescale)).toInt() - 1;
 
     // off the left side
     if (x2 < 0)
@@ -724,8 +727,8 @@ void drawPSprite(PspDef* psp)
     // store information in a vissprite
     vis = &avis;
     vis->mobjflags = 0;
-    vis->texturemid =
-        (BASEYCENTER << FRACBITS) + FRACUNIT / 2 - (psp->sy - spritetopoffset[lump]);
+    vis->texturemid = Doom::Fixed::fromInt(BASEYCENTER) + FRACUNIT / 2
+                      - (psp->sy - spritetopoffset[lump]);
     vis->x1 = x1 < 0 ? 0 : x1;
     vis->x2 = x2 >= view.viewwidth ? view.viewwidth - 1 : x2;
     vis->scale = sprState.pspritescale << view.detailshift;
@@ -733,12 +736,12 @@ void drawPSprite(PspDef* psp)
     if (flip)
     {
         vis->xiscale = -sprState.pspriteiscale;
-        vis->startfrac = spritewidth[lump] - 1;
+        vis->startfrac = spritewidth[lump] - fixed_t {1};
     }
     else
     {
         vis->xiscale = sprState.pspriteiscale;
-        vis->startfrac = 0;
+        vis->startfrac = fixed_t {};
     }
 
     if (vis->x1 > x1)
@@ -843,7 +846,7 @@ void sortVisSprites()
         &sprState.vsprsortedhead;
     for (int i = 0; i < count; i++)
     {
-        bestscale = DOOM_MAXINT;
+        bestscale = fixed_t {DOOM_MAXINT};
         for (ds = unsorted.next; ds != &unsorted; ds = ds->next)
         {
             if (ds->scale < bestscale)

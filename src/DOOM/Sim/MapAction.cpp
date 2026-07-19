@@ -65,24 +65,24 @@ void hitSlideLine(Line* ld)
 
     if (ld->slopetype == ST_HORIZONTAL)
     {
-        tmymove = 0;
+        tmymove = fixed_t {};
         return;
     }
 
     if (ld->slopetype == ST_VERTICAL)
     {
-        tmxmove = 0;
+        tmxmove = fixed_t {};
         return;
     }
 
-    side = lineSide({Fixed {slidemo->x}, Fixed {slidemo->y}}, *ld);
+    side = lineSide({slidemo->x, slidemo->y}, *ld);
 
-    lineangle = Doom::pointToAngle2(0, 0, ld->dx, ld->dy);
+    lineangle = Doom::pointToAngle2(fixed_t {}, fixed_t {}, ld->dx, ld->dy);
 
     if (side == 1)
         lineangle += ANG180;
 
-    moveangle = Doom::pointToAngle2(0, 0, tmxmove, tmymove);
+    moveangle = Doom::pointToAngle2(fixed_t {}, fixed_t {}, tmxmove, tmymove);
     deltaangle = moveangle - lineangle;
 
     if (deltaangle > ANG180)
@@ -91,7 +91,7 @@ void hitSlideLine(Line* ld)
     lineangle >>= ANGLETOFINESHIFT;
     deltaangle >>= ANGLETOFINESHIFT;
 
-    movelen = approxDistance(Fixed {tmxmove}, Fixed {tmymove}).raw;
+    movelen = approxDistance(tmxmove, tmymove);
     newlen = FixedMul(movelen, finecosine[deltaangle]);
 
     tmxmove = FixedMul(newlen, finecosine[lineangle]);
@@ -114,7 +114,7 @@ doom_boolean slideTraverse(Intercept* in)
 
     if (!(li->flags & ML_TWOSIDED))
     {
-        if (lineSide({Fixed {slidemo->x}, Fixed {slidemo->y}}, *li))
+        if (lineSide({slidemo->x, slidemo->y}, *li))
         {
             // don't hit the back side
             return true;
@@ -302,8 +302,8 @@ doom_boolean shootTraverse(Intercept* in)
     hitline:
         // position a bit closer
         frac = in->frac - FixedDiv(4 * FRACUNIT, clip.attackrange);
-        x = clip.trace.origin.x.raw + FixedMul(clip.trace.delta.x.raw, frac);
-        y = clip.trace.origin.y.raw + FixedMul(clip.trace.delta.y.raw, frac);
+        x = clip.trace.origin.x + FixedMul(clip.trace.delta.x, frac);
+        y = clip.trace.origin.y + FixedMul(clip.trace.delta.y, frac);
         z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
 
         if (li->frontsector->ceilingpic == sky.skyflatnum)
@@ -348,8 +348,8 @@ doom_boolean shootTraverse(Intercept* in)
     // position a bit closer
     frac = in->frac - FixedDiv(10 * FRACUNIT, clip.attackrange);
 
-    x = clip.trace.origin.x.raw + FixedMul(clip.trace.delta.x.raw, frac);
-    y = clip.trace.origin.y.raw + FixedMul(clip.trace.delta.y.raw, frac);
+    x = clip.trace.origin.x + FixedMul(clip.trace.delta.x, frac);
+    y = clip.trace.origin.y + FixedMul(clip.trace.delta.y, frac);
     z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
 
     // Spawn bullet puffs or blod spots, depending on target type.
@@ -379,7 +379,7 @@ doom_boolean useTraverse(Intercept* in)
     if (!in->d.line->special)
     {
         updateLineOpening(*in->d.line);
-        if (clip.openrange <= 0)
+        if (!clip.openrange.isPositive())
         {
             Doom::startSound(usething, sfx_noway);
 
@@ -391,7 +391,7 @@ doom_boolean useTraverse(Intercept* in)
     }
 
     side = 0;
-    if (lineSide({Fixed {usething->x}, Fixed {usething->y}}, *in->d.line) == 1)
+    if (lineSide({usething->x, usething->y}, *in->d.line) == 1)
         side = 1;
 
     Doom::useSpecialLine(usething, in->d.line, side);
@@ -415,7 +415,7 @@ doom_boolean radiusAttackThing(Mobj* thing)
 {
     fixed_t dx;
     fixed_t dy;
-    fixed_t dist;
+    fixed_t spread;
 
     if (!(thing->flags & MF_SHOOTABLE))
         return true;
@@ -427,8 +427,12 @@ doom_boolean radiusAttackThing(Mobj* thing)
     dx = doom_abs(thing->x - bombspot->x);
     dy = doom_abs(thing->y - bombspot->y);
 
-    dist = dx > dy ? dx : dy;
-    dist = (dist - thing->radius) >> FRACBITS;
+    spread = dx > dy ? dx : dy;
+
+    // Whole map units from here on - the falloff is subtracted from the damage,
+    // which is a plain int. Vanilla keeps this in its fixed_t `dist` after the
+    // shift; the shift is what makes it an integer distance.
+    int dist = (spread - thing->radius).toInt();
 
     if (dist < 0)
         dist = 0;
@@ -467,8 +471,8 @@ doom_boolean changeSectorThing(Mobj* thing)
         Doom::setMobjState(thing, S_GIBS);
 
         thing->flags &= ~MF_SOLID;
-        thing->height = 0;
-        thing->radius = 0;
+        thing->height = fixed_t {};
+        thing->radius = fixed_t {};
 
         // keep checking
         return true;
@@ -496,10 +500,14 @@ doom_boolean changeSectorThing(Mobj* thing)
         Doom::damageMobj(thing, nullptr, nullptr, 10);
 
         // spray blood in a random direction
-        mo = Doom::spawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
+        mo = Doom::spawnMobj(
+            thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
 
-        mo->momx = (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12;
-        mo->momy = (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12;
+        // Raw: the random difference shifted into the fraction, ~+-16 units/tic.
+        mo->momx = fixed_t {
+            (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12};
+        mo->momy = fixed_t {
+            (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 12};
     }
 
     // keep checking (crush other things)
@@ -530,7 +538,7 @@ retry:
         goto stairstep; // don't loop forever
 
     // trace along the three leading corners
-    if (mo->momx > 0)
+    if (mo->momx.isPositive())
     {
         leadx = mo->x + mo->radius;
         trailx = mo->x - mo->radius;
@@ -541,7 +549,7 @@ retry:
         trailx = mo->x + mo->radius;
     }
 
-    if (mo->momy > 0)
+    if (mo->momy.isPositive())
     {
         leady = mo->y + mo->radius;
         traily = mo->y - mo->radius;
@@ -552,7 +560,7 @@ retry:
         traily = mo->y + mo->radius;
     }
 
-    bestslidefrac = FRACUNIT + 1;
+    bestslidefrac = FRACUNIT + fixed_t {1};
 
     pathTraverse(leadx,
                  leady,
@@ -574,7 +582,7 @@ retry:
                  slideTraverse);
 
     // move up to the wall
-    if (bestslidefrac == FRACUNIT + 1)
+    if (bestslidefrac == FRACUNIT + fixed_t {1})
     {
         // the move most have hit the middle, so stairstep
     stairstep:
@@ -584,8 +592,8 @@ retry:
     }
 
     // fudge a bit to make sure it doesn't hit
-    bestslidefrac -= 0x800;
-    if (bestslidefrac > 0)
+    bestslidefrac -= fixed_t {0x800};
+    if (bestslidefrac.isPositive())
     {
         newx = FixedMul(mo->momx, bestslidefrac);
         newy = FixedMul(mo->momy, bestslidefrac);
@@ -596,12 +604,12 @@ retry:
 
     // Now continue along the wall.
     // First calculate remainder.
-    bestslidefrac = FRACUNIT - (bestslidefrac + 0x800);
+    bestslidefrac = FRACUNIT - (bestslidefrac + fixed_t {0x800});
 
     if (bestslidefrac > FRACUNIT)
         bestslidefrac = FRACUNIT;
 
-    if (bestslidefrac <= 0)
+    if (!bestslidefrac.isPositive())
         return;
 
     tmxmove = FixedMul(mo->momx, bestslidefrac);
@@ -631,8 +639,10 @@ fixed_t aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
     angle >>= ANGLETOFINESHIFT;
     shootthing = t1;
 
-    x2 = t1->x + (distance >> FRACBITS) * finecosine[angle];
-    y2 = t1->y + (distance >> FRACBITS) * finesine[angle];
+    // The range in WHOLE units scales the fixed cosine: an integer product, not a
+    // fixed-point one. FixedMul here would divide the reach by 65536.
+    x2 = t1->x + distance.toInt() * finecosine[angle];
+    y2 = t1->y + distance.toInt() * finesine[angle];
     shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
 
     // can't shoot outside view angles
@@ -647,15 +657,14 @@ fixed_t aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
     if (clip.linetarget)
         return aimslope;
 
-    return 0;
+    return fixed_t {};
 }
 
 //
 // Doom::lineAttack
 // If damage == 0, it is just a test trace that will leave linetarget set.
 //
-void lineAttack(
-    Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
+void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
 {
     Clip& clip = Doom::clip();
 
@@ -665,8 +674,9 @@ void lineAttack(
     angle >>= ANGLETOFINESHIFT;
     shootthing = t1;
     la_damage = damage;
-    x2 = t1->x + (distance >> FRACBITS) * finecosine[angle];
-    y2 = t1->y + (distance >> FRACBITS) * finesine[angle];
+    // Whole units scaling the fixed cosine - an integer product. See aimLineAttack.
+    x2 = t1->x + distance.toInt() * finecosine[angle];
+    y2 = t1->y + distance.toInt() * finesine[angle];
     shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
     clip.attackrange = distance;
     aimslope = slope;
@@ -692,8 +702,9 @@ void useLines(Player* player)
 
     x1 = player->mo->x;
     y1 = player->mo->y;
-    x2 = x1 + (USERANGE >> FRACBITS) * finecosine[angle];
-    y2 = y1 + (USERANGE >> FRACBITS) * finesine[angle];
+    // USERANGE in whole units scaling the fixed cosine - an integer product.
+    x2 = x1 + USERANGE.toInt() * finecosine[angle];
+    y2 = y1 + USERANGE.toInt() * finesine[angle];
 
     pathTraverse(x1, y1, x2, y2, PT_ADDLINES, useTraverse);
 }
@@ -709,13 +720,17 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
     int yl;
     int yh;
 
-    fixed_t dist;
+    // Vanilla, overflow and all: MAXRADIUS is already a fixed value, so shifting
+    // (damage + MAXRADIUS) up by another FRACBITS wraps the MAXRADIUS term away
+    // and leaves the damage alone as the radius. Kept as the integer expression
+    // it has always been - the demos are recorded against the wrap.
+    fixed_t dist {(damage + (MAXRADIUS).raw) << FRACBITS};
 
-    dist = (damage + MAXRADIUS) << FRACBITS;
-    yh = (spot->y + dist - bmaporgy) >> MAPBLOCKSHIFT;
-    yl = (spot->y - dist - bmaporgy) >> MAPBLOCKSHIFT;
-    xh = (spot->x + dist - bmaporgx) >> MAPBLOCKSHIFT;
-    xl = (spot->x - dist - bmaporgx) >> MAPBLOCKSHIFT;
+    // Blockmap cell indices: a raw shift by MAPBLOCKSHIFT, not a conversion.
+    yh = (spot->y + dist - bmaporgy).raw >> MAPBLOCKSHIFT;
+    yl = (spot->y - dist - bmaporgy).raw >> MAPBLOCKSHIFT;
+    xh = (spot->x + dist - bmaporgx).raw >> MAPBLOCKSHIFT;
+    xl = (spot->x - dist - bmaporgx).raw >> MAPBLOCKSHIFT;
     bombspot = spot;
     bombsource = source;
     bombdamage = damage;

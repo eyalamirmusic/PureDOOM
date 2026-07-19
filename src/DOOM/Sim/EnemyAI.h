@@ -27,8 +27,8 @@ struct EnemyAI
 {
     Mobj* corpsehit = nullptr; // the corpse A_VileChase is raising
     Mobj* vileobj = nullptr; // the archvile raising it
-    fixed_t viletryx = 0; // where it is trying to stand the corpse up
-    fixed_t viletryy = 0;
+    fixed_t viletryx {}; // where it is trying to stand the corpse up
+    fixed_t viletryy {};
 
     Mobj* braintargets[32] = {}; // the boss brain's spawn-cube targets
     int numbraintargets = 0; // # of targets found

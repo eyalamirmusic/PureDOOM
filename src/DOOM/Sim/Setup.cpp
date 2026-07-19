@@ -90,8 +90,8 @@ void loadVertexes(int lump)
     // internal representation as fixed.
     for (int i = 0; i < numvertexes; i++, li++, ml++)
     {
-        li->x = SHORT(ml->x) << FRACBITS;
-        li->y = SHORT(ml->y) << FRACBITS;
+        li->x = Doom::Fixed::fromInt(SHORT(ml->x));
+        li->y = Doom::Fixed::fromInt(SHORT(ml->y));
     }
 
     // Free buffer memory.
@@ -122,7 +122,7 @@ void loadSegs(int lump)
         li->v2 = &vertexes[SHORT(ml->v2)];
 
         li->angle = (SHORT(ml->angle)) << 16;
-        li->offset = (SHORT(ml->offset)) << 16;
+        li->offset = Doom::Fixed::fromInt(SHORT(ml->offset));
         linedef = SHORT(ml->linedef);
         ldef = &lines[linedef];
         li->linedef = ldef;
@@ -178,8 +178,8 @@ void loadSectors(int lump)
     ss = sectors;
     for (int i = 0; i < numsectors; i++, ss++, ms++)
     {
-        ss->floorheight = SHORT(ms->floorheight) << FRACBITS;
-        ss->ceilingheight = SHORT(ms->ceilingheight) << FRACBITS;
+        ss->floorheight = Doom::Fixed::fromInt(SHORT(ms->floorheight));
+        ss->ceilingheight = Doom::Fixed::fromInt(SHORT(ms->ceilingheight));
         ss->floorpic = Doom::flatNumForName(ms->floorpic);
         ss->ceilingpic = Doom::flatNumForName(ms->ceilingpic);
         ss->lightlevel = SHORT(ms->lightlevel);
@@ -208,15 +208,15 @@ void loadNodes(int lump)
 
     for (int i = 0; i < numnodes; i++, no++, mn++)
     {
-        no->x = SHORT(mn->x) << FRACBITS;
-        no->y = SHORT(mn->y) << FRACBITS;
-        no->dx = SHORT(mn->dx) << FRACBITS;
-        no->dy = SHORT(mn->dy) << FRACBITS;
+        no->x = Doom::Fixed::fromInt(SHORT(mn->x));
+        no->y = Doom::Fixed::fromInt(SHORT(mn->y));
+        no->dx = Doom::Fixed::fromInt(SHORT(mn->dx));
+        no->dy = Doom::Fixed::fromInt(SHORT(mn->dy));
         for (int j = 0; j < 2; j++)
         {
             no->children[j] = SHORT(mn->children[j]);
             for (int k = 0; k < 4; k++)
-                no->bbox[j][k] = SHORT(mn->bbox[j][k]) << FRACBITS;
+                no->bbox[j][k] = Doom::Fixed::fromInt(SHORT(mn->bbox[j][k]));
         }
     }
 }
@@ -307,7 +307,7 @@ void loadLineDefs(int lump)
             ld->slopetype = ST_HORIZONTAL;
         else
         {
-            if (FixedDiv(ld->dy, ld->dx) > 0)
+            if (FixedDiv(ld->dy, ld->dx).isPositive())
                 ld->slopetype = ST_POSITIVE;
             else
                 ld->slopetype = ST_NEGATIVE;
@@ -368,8 +368,8 @@ void loadSideDefs(int lump)
     sd = sides;
     for (int i = 0; i < numsides; i++, msd++, sd++)
     {
-        sd->textureoffset = SHORT(msd->textureoffset) << FRACBITS;
-        sd->rowoffset = SHORT(msd->rowoffset) << FRACBITS;
+        sd->textureoffset = Doom::Fixed::fromInt(SHORT(msd->textureoffset));
+        sd->rowoffset = Doom::Fixed::fromInt(SHORT(msd->rowoffset));
         sd->toptexture = Doom::textureNumForName(msd->toptexture);
         sd->bottomtexture = Doom::textureNumForName(msd->bottomtexture);
         sd->midtexture = Doom::textureNumForName(msd->midtexture);
@@ -401,8 +401,8 @@ void loadBlockMap(int lump)
     bmap.height = blockmaplump[3];
 
     blockmap = bmap.offsets;
-    bmaporgx = bmap.origin.x.raw;
-    bmaporgy = bmap.origin.y.raw;
+    bmaporgx = bmap.origin.x;
+    bmaporgy = bmap.origin.y;
     bmapwidth = bmap.width;
     bmapheight = bmap.height;
 
@@ -479,19 +479,19 @@ void groupLines()
         sector->soundorg.y = (bbox[BOXTOP] + bbox[BOXBOTTOM]) / 2;
 
         // adjust bounding box to map blocks
-        block = (bbox[BOXTOP] - bmaporgy + MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = (bbox[BOXTOP] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block >= bmapheight ? bmapheight - 1 : block;
         sector->blockbox[BOXTOP] = block;
 
-        block = (bbox[BOXBOTTOM] - bmaporgy - MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = (bbox[BOXBOTTOM] - bmaporgy - MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block < 0 ? 0 : block;
         sector->blockbox[BOXBOTTOM] = block;
 
-        block = (bbox[BOXRIGHT] - bmaporgx + MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = (bbox[BOXRIGHT] - bmaporgx + MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block >= bmapwidth ? bmapwidth - 1 : block;
         sector->blockbox[BOXRIGHT] = block;
 
-        block = (bbox[BOXLEFT] - bmaporgx - MAXRADIUS) >> MAPBLOCKSHIFT;
+        block = (bbox[BOXLEFT] - bmaporgx - MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block < 0 ? 0 : block;
         sector->blockbox[BOXLEFT] = block;
     }
@@ -519,7 +519,7 @@ void setupLevel(int episode, int map, int, Skill)
 
     // Initial height of PointOfView
     // will be set by player think.
-    players_.players[players_.consoleplayer].viewz = 1;
+    players_.players[players_.consoleplayer].viewz = fixed_t {1};
 
     // Make sure all sounds are stopped before the level's allocations go.
     Doom::startLevelSound();

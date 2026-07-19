@@ -26,6 +26,7 @@
 
 // Needed for action function pointer handling.
 #include "ActionFunc.h"
+#include "../Math/FixedPoint.h"
 
 
 namespace Doom
@@ -1334,9 +1335,13 @@ struct MobjInfo
     int        deathstate;
     int        xdeathstate;
     int        deathsound;
+    // Dual-typed in vanilla and left that way: a walking monster stores a plain
+    // integer multiplier (8) that scales the xspeed/yspeed unit vectors, while a
+    // missile stores a fixed-point velocity (20*FRACUNIT). The missile sites
+    // reinterpret it with Fixed{...}; do not "fix" this to one type.
     int        speed;
-    int        radius;
-    int        height;
+    fixed_t    radius;
+    fixed_t    height;
     int        mass;
     int        damage;
     int        activesound;

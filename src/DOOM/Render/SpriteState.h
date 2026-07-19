@@ -25,8 +25,8 @@ struct SpriteState
 {
     static constexpr int maxVisSprites = 128; // MAXVISSPRITES in r_things.h
 
-    fixed_t pspritescale = 0;  // player-sprite horizontal scale
-    fixed_t pspriteiscale = 0; // its inverse
+    fixed_t pspritescale {};  // player-sprite horizontal scale
+    fixed_t pspriteiscale {}; // its inverse
 
     short negonearray[SCREENWIDTH] = {};       // all -1 (a "no clip" top)
     short screenheightarray[SCREENWIDTH] = {}; // all SCREENHEIGHT (a "no clip" bottom)
@@ -37,8 +37,8 @@ struct SpriteState
 
     short* mfloorclip = nullptr;   // per-column floor clip for the current sprite
     short* mceilingclip = nullptr; // per-column ceiling clip for the current sprite
-    fixed_t spryscale = 0;         // vertical scale of the current sprite column
-    fixed_t sprtopscreen = 0;      // screen y of the current sprite's top
+    fixed_t spryscale {};         // vertical scale of the current sprite column
+    fixed_t sprtopscreen {};      // screen y of the current sprite's top
 };
 
 SpriteState& spriteState();

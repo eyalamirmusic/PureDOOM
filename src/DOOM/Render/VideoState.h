@@ -27,8 +27,12 @@ namespace Doom
 // (screens[4], Doom::initStatusBar). Each is filled by the drawers, so the frame goldens pin them exactly.
 struct VideoState
 {
-    EA::Array<int, 4> dirtybox =
-        {}; // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP of the drawn region
+    // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP of the drawn region. The numbers in it are
+    // screen pixels, not world units - it is a fixed_t box only because vanilla's
+    // M_AddToBox is typed that way and markRect hands its pixel coordinates straight
+    // to it. Doom::addToBox only compares and assigns, so carrying the pixel counts
+    // as raw fixed values stores exactly what the vanilla int box did.
+    EA::Array<fixed_t, 4> dirtybox = {};
 
     EA::Vector<byte> frame; // screens[0]: the software framebuffer
     EA::Vector<byte> workspace; // the Doom::initVideo base block sliced into screens[0..3]

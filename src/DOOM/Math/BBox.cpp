@@ -18,12 +18,12 @@ static_assert(offsetof(BBox, bottom) == BOXBOTTOM * sizeof(std::int32_t));
 static_assert(offsetof(BBox, left) == BOXLEFT * sizeof(std::int32_t));
 static_assert(offsetof(BBox, right) == BOXRIGHT * sizeof(std::int32_t));
 
-BBox& asBBox(std::int32_t* box) { return *(BBox*) box; }
+BBox& asBBox(Fixed* box) { return *(BBox*) box; }
 
-void clearBox(std::int32_t* box) { asBBox(box) = BBox::empty(); }
+void clearBox(Fixed* box) { asBBox(box) = BBox::empty(); }
 
-void addToBox(std::int32_t* box, std::int32_t x, std::int32_t y)
+void addToBox(Fixed* box, Fixed x, Fixed y)
 {
-    asBBox(box).add(Fixed {x}, Fixed {y});
+    asBBox(box).add(x, y);
 }
 } // namespace Doom

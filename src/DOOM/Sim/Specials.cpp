@@ -160,7 +160,7 @@ static Line* (&linespeciallist)[MAXLINEANIMS] = animatedSurfaces().linespecialli
 void initPicAnims();
 fixed_t findLowestFloorSurrounding(Sector* sec);
 fixed_t findHighestFloorSurrounding(Sector* sec);
-fixed_t findNextHighestFloor(Sector* sec, int currentheight);
+fixed_t findNextHighestFloor(Sector* sec, fixed_t currentheight);
 fixed_t findLowestCeilingSurrounding(Sector* sec);
 fixed_t findHighestCeilingSurrounding(Sector* sec);
 int findSectorFromLineTag(Line* line, int start);
@@ -277,11 +277,11 @@ fixed_t findHighestFloorSurrounding(Sector* sec)
 // findNextHighestFloor
 // FIND NEXT HIGHEST FLOOR IN SURROUNDING SECTORS
 // Note: this should be doable w/o a fixed array.
-fixed_t findNextHighestFloor(Sector* sec, int currentheight)
+fixed_t findNextHighestFloor(Sector* sec, fixed_t currentheight)
 {
     int i;
     int h;
-    int min;
+    fixed_t min;
     Line* check;
     Sector* other;
     fixed_t height = currentheight;
@@ -328,7 +328,7 @@ fixed_t findLowestCeilingSurrounding(Sector* sec)
 {
     Line* check;
     Sector* other;
-    fixed_t height = DOOM_MAXINT;
+    fixed_t height = fixed_t {DOOM_MAXINT};
 
     for (int i = 0; i < sec->linecount; i++)
     {
@@ -352,7 +352,7 @@ fixed_t findHighestCeilingSurrounding(Sector* sec)
 {
     Line* check;
     Sector* other;
-    fixed_t height = 0;
+    fixed_t height {};
 
     for (int i = 0; i < sec->linecount; i++)
     {

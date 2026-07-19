@@ -71,16 +71,19 @@ SubSector* pointInSubsector(fixed_t x, fixed_t y);
 void setupFrame(Player& player);
 void renderPlayerView(Player& player);
 
+// Vanilla takes x/y as plain ints although they are raw fixed-point coordinates
+// (the box is fixed_t). Nothing calls this, so the signature is left alone and the
+// raw values are wrapped here.
 void addPointToBox(int x, int y, fixed_t* box)
 {
-    if (x < box[BOXLEFT])
-        box[BOXLEFT] = x;
-    if (x > box[BOXRIGHT])
-        box[BOXRIGHT] = x;
-    if (y < box[BOXBOTTOM])
-        box[BOXBOTTOM] = y;
-    if (y > box[BOXTOP])
-        box[BOXTOP] = y;
+    if (fixed_t {x} < box[BOXLEFT])
+        box[BOXLEFT] = fixed_t {x};
+    if (fixed_t {x} > box[BOXRIGHT])
+        box[BOXRIGHT] = fixed_t {x};
+    if (fixed_t {y} < box[BOXBOTTOM])
+        box[BOXBOTTOM] = fixed_t {y};
+    if (fixed_t {y} > box[BOXTOP])
+        box[BOXTOP] = fixed_t {y};
 }
 
 //
@@ -99,25 +102,25 @@ int pointOnSide(fixed_t x, fixed_t y, Node* node)
     if (!node->dx)
     {
         if (x <= node->x)
-            return node->dy > 0;
+            return node->dy.isPositive();
 
-        return node->dy < 0;
+        return node->dy.isNegative();
     }
     if (!node->dy)
     {
         if (y <= node->y)
-            return node->dx < 0;
+            return node->dx.isNegative();
 
-        return node->dx > 0;
+        return node->dx.isPositive();
     }
 
     dx = (x - node->x);
     dy = (y - node->y);
 
     // Try to quickly decide by looking at sign bits.
-    if ((node->dy ^ node->dx ^ dx ^ dy) & 0x80000000)
+    if ((node->dy.raw ^ node->dx.raw ^ dx.raw ^ dy.raw) & 0x80000000)
     {
-        if ((node->dy ^ dx) & 0x80000000)
+        if ((node->dy.raw ^ dx.raw) & 0x80000000)
         {
             // (left is negative)
             return 1;
@@ -157,25 +160,25 @@ int pointOnSegSide(fixed_t x, fixed_t y, Seg* line)
     if (!ldx)
     {
         if (x <= lx)
-            return ldy > 0;
+            return ldy.isPositive();
 
-        return ldy < 0;
+        return ldy.isNegative();
     }
     if (!ldy)
     {
         if (y <= ly)
-            return ldx < 0;
+            return ldx.isNegative();
 
-        return ldx > 0;
+        return ldx.isPositive();
     }
 
     dx = (x - lx);
     dy = (y - ly);
 
     // Try to quickly decide by looking at sign bits.
-    if ((ldy ^ ldx ^ dx ^ dy) & 0x80000000)
+    if ((ldy.raw ^ ldx.raw ^ dx.raw ^ dy.raw) & 0x80000000)
     {
-        if ((ldy ^ dx) & 0x80000000)
+        if ((ldy.raw ^ dx.raw) & 0x80000000)
         {
             // (left is negative)
             return 1;
@@ -214,22 +217,22 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
     if ((!x) && (!y))
         return 0;
 
-    if (x >= 0)
+    if (!x.isNegative())
     {
         // x >=0
-        if (y >= 0)
+        if (!y.isNegative())
         {
             // y>= 0
 
             if (x > y)
             {
                 // octant 0
-                return tantoangle[Doom::slopeDiv(y, x)];
+                return tantoangle[Doom::slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 1
-                return ANG90 - 1 - tantoangle[Doom::slopeDiv(x, y)];
+                return ANG90 - 1 - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
         else
@@ -244,7 +247,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
-                return -tantoangle[Doom::slopeDiv(y, x)];
+                return -tantoangle[Doom::slopeDiv(y.raw, x.raw)];
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -252,7 +255,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 7
-                return ANG270 + tantoangle[Doom::slopeDiv(x, y)];
+                return ANG270 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
     }
@@ -261,18 +264,18 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
         // x<0
         x = -x;
 
-        if (y >= 0)
+        if (!y.isNegative())
         {
             // y>= 0
             if (x > y)
             {
                 // octant 3
-                return ANG180 - 1 - tantoangle[Doom::slopeDiv(y, x)];
+                return ANG180 - 1 - tantoangle[Doom::slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 2
-                return ANG90 + tantoangle[Doom::slopeDiv(x, y)];
+                return ANG90 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
         else
@@ -283,12 +286,12 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 4
-                return ANG180 + tantoangle[Doom::slopeDiv(y, x)];
+                return ANG180 + tantoangle[Doom::slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 5
-                return ANG270 - 1 - tantoangle[Doom::slopeDiv(x, y)];
+                return ANG270 - 1 - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
     }
@@ -325,7 +328,7 @@ fixed_t pointToDist(fixed_t x, fixed_t y)
         dy = temp;
     }
 
-    angle = (tantoangle[FixedDiv(dy, dx) >> DBITS] + ANG90) >> ANGLETOFINESHIFT;
+    angle = (tantoangle[FixedDiv(dy, dx).raw >> DBITS] + ANG90) >> ANGLETOFINESHIFT;
 
     // use as cosine
     dist = FixedDiv(dx, finesine[angle]);
@@ -350,10 +353,10 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
     fixed_t scale;
     int anglea;
     int angleb;
-    int sinea;
-    int sineb;
+    fixed_t sinea;
+    fixed_t sineb;
     fixed_t num;
-    int den;
+    fixed_t den;
 
     auto& scratch = renderScratch();
 
@@ -372,8 +375,8 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
 
         if (scale > 64 * FRACUNIT)
             scale = 64 * FRACUNIT;
-        else if (scale < 256)
-            scale = 256;
+        else if (scale < fixed_t {256})
+            scale = fixed_t {256};
     }
     else
         scale = 64 * FRACUNIT;
@@ -415,8 +418,9 @@ void initTextureMapping()
             t = view.viewwidth + 1;
         else
         {
-            t = FixedMul(finetangent[i], focallength);
-            t = (proj.centerxfrac - t + FRACUNIT - 1) >> FRACBITS;
+            // t is dual-purpose: a raw fixed product here, a screen column below.
+            t = FixedMul(finetangent[i], focallength).raw;
+            t = (proj.centerxfrac.raw - t + fracUnit - 1) >> FRACBITS;
 
             if (t < -1)
                 t = -1;
@@ -440,7 +444,7 @@ void initTextureMapping()
     // Take out the fencepost cases from viewangletox.
     for (i = 0; i < FINEANGLES / 2; i++)
     {
-        t = FixedMul(finetangent[i], focallength);
+        t = FixedMul(finetangent[i], focallength).raw;
         t = proj.centerx - t;
 
         if (proj.viewangletox[i] == -1)
@@ -473,7 +477,10 @@ void initLightTables()
         startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
         for (int j = 0; j < MAXLIGHTZ; j++)
         {
-            scale = FixedDiv((SCREENWIDTH / 2 * FRACUNIT), (j + 1) << LIGHTZSHIFT);
+            // scale is dual-purpose: a raw fixed quotient, then a light index.
+            scale = FixedDiv(SCREENWIDTH / 2 * FRACUNIT,
+                             fixed_t {(j + 1) << LIGHTZSHIFT})
+                        .raw;
             scale >>= LIGHTSCALESHIFT;
             level = startmap - scale / DISTMAP;
 
@@ -540,8 +547,8 @@ void executeSetViewSize()
 
     proj.centery = view.viewheight / 2;
     proj.centerx = view.viewwidth / 2;
-    proj.centerxfrac = proj.centerx << FRACBITS;
-    proj.centeryfrac = proj.centery << FRACBITS;
+    proj.centerxfrac = Doom::Fixed::fromInt(proj.centerx);
+    proj.centeryfrac = Doom::Fixed::fromInt(proj.centery);
     proj.projection = proj.centerxfrac;
 
     if (!view.detailshift)
@@ -574,7 +581,7 @@ void executeSetViewSize()
     // planes
     for (i = 0; i < view.viewheight; i++)
     {
-        dy = ((i - view.viewheight / 2) << FRACBITS) + FRACUNIT / 2;
+        dy = Doom::Fixed::fromInt(i - view.viewheight / 2) + FRACUNIT / 2;
         dy = doom_abs(dy);
         plane.yslope[i] =
             FixedDiv((view.viewwidth << view.detailshift) / 2 * FRACUNIT, dy);
@@ -746,16 +753,12 @@ void renderPlayerView(Player& player)
 // vanilla names are references onto it. R_ExecuteSetViewSize (Render/Main.cpp) writes
 // through them when the view size changes.
 
-
 // The subsector counter is a Doom::RenderScratch member (an Engine member) now; a
 // reference onto it.
 
 // The view point (camera) is a Doom::ViewPoint owned by the Engine now; these
 // vanilla names are references onto it for the renderer code still reading them as
 // globals. R_SetupFrame (Render/Main.cpp) writes through them each frame.
-
-
-
 
 // 0 = high, 1 = low. Part of the view-sizing state in Doom::ViewWindow now; a reference
 // onto it.
@@ -775,7 +778,6 @@ void renderPlayerView(Player& player)
 // to the lowest viewangle that maps back to x ranges
 // from clipangle to -clipangle.
 
-
 // References-to-array onto Doom::Lighting, so the type and every indexed read (the
 // walllights = scalelight[light] row assignment included) are unchanged.
 
@@ -784,14 +786,10 @@ void renderPlayerView(Player& player)
 // The pending view-size request, stashed by R_SetViewSize (Render/Main.cpp) for
 // R_ExecuteSetViewSize. Part of Doom::ViewWindow now; references onto it.
 
-
-
-
 void (*colfunc)();
 void (*basecolfunc)();
 void (*fuzzcolfunc)();
 void (*spanfunc)();
-
 
 //
 // R_AddPointToBox

@@ -22,26 +22,26 @@ struct WallScratch
     doom_boolean maskedtexture = false; // the seg has a masked middle texture
 
     angle_t rw_centerangle = 0; // angle from the view to the seg's centre
-    fixed_t rw_offset = 0; // texture x offset along the seg
-    fixed_t rw_scale = 0; // scale at the current column
-    fixed_t rw_scalestep = 0; // per-column scale step
-    fixed_t rw_midtexturemid = 0; // mid-texture vertical anchor
-    fixed_t rw_toptexturemid = 0; // upper-texture vertical anchor
-    fixed_t rw_bottomtexturemid = 0; // lower-texture vertical anchor
+    fixed_t rw_offset {}; // texture x offset along the seg
+    fixed_t rw_scale {}; // scale at the current column
+    fixed_t rw_scalestep {}; // per-column scale step
+    fixed_t rw_midtexturemid {}; // mid-texture vertical anchor
+    fixed_t rw_toptexturemid {}; // upper-texture vertical anchor
+    fixed_t rw_bottomtexturemid {}; // lower-texture vertical anchor
 
-    int worldtop = 0; // seg top edge, world space
-    int worldbottom = 0; // seg bottom edge, world space
-    int worldhigh = 0; // back-sector ceiling edge
-    int worldlow = 0; // back-sector floor edge
+    fixed_t worldtop {}; // seg top edge, world space
+    fixed_t worldbottom {}; // seg bottom edge, world space
+    fixed_t worldhigh {}; // back-sector ceiling edge
+    fixed_t worldlow {}; // back-sector floor edge
 
-    fixed_t pixhigh = 0; // screen y of the upper edge
-    fixed_t pixlow = 0; // screen y of the lower edge
-    fixed_t pixhighstep = 0; // per-column step of pixhigh
-    fixed_t pixlowstep = 0; // per-column step of pixlow
-    fixed_t topfrac = 0; // running top of the wall column
-    fixed_t topstep = 0; // per-column step of topfrac
-    fixed_t bottomfrac = 0; // running bottom of the wall column
-    fixed_t bottomstep = 0; // per-column step of bottomfrac
+    fixed_t pixhigh {}; // screen y of the upper edge
+    fixed_t pixlow {}; // screen y of the lower edge
+    fixed_t pixhighstep {}; // per-column step of pixhigh
+    fixed_t pixlowstep {}; // per-column step of pixlow
+    fixed_t topfrac {}; // running top of the wall column
+    fixed_t topstep {}; // per-column step of topfrac
+    fixed_t bottomfrac {}; // running bottom of the wall column
+    fixed_t bottomstep {}; // per-column step of bottomfrac
 };
 
 // The one WallScratch, a view onto the Engine's member - the same pattern as the other clusters

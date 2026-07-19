@@ -743,7 +743,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
 
     if (target->flags & MF_SKULLFLY)
     {
-        target->momx = target->momy = target->momz = 0;
+        target->momx = target->momy = target->momz = fixed_t {};
     }
 
     player = target->player;
@@ -763,10 +763,11 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
 
         // make fall forwards sometimes
         if (damage < 40 && damage > target->health
-            && target->z - inflictor->z > 64 * FRACUNIT && (Doom::randomness().forPlay() & 1))
+            && target->z - inflictor->z > 64 * FRACUNIT
+            && (Doom::randomness().forPlay() & 1))
         {
             ang += ANG180;
-            thrust *= 4;
+            thrust = thrust * 4;
         }
 
         ang >>= ANGLETOFINESHIFT;
@@ -833,7 +834,8 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         return;
     }
 
-    if ((Doom::randomness().forPlay() < target->info->painchance) && !(target->flags & MF_SKULLFLY))
+    if ((Doom::randomness().forPlay() < target->info->painchance)
+        && !(target->flags & MF_SKULLFLY))
     {
         target->flags |= MF_JUSTHIT; // fight back!
 
@@ -851,7 +853,8 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         target->threshold = BASETHRESHOLD;
         if (target->state == &states[target->info->spawnstate]
             && target->info->seestate != S_NULL)
-            Doom::setMobjState(target, static_cast<StateNum>(target->info->seestate));
+            Doom::setMobjState(target,
+                               static_cast<StateNum>(target->info->seestate));
     }
 }
 } // namespace Doom

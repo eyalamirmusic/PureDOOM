@@ -28,8 +28,8 @@ struct DrawState
     int dc_x = 0; // screen column being drawn
     int dc_yl = 0; // column top (inclusive)
     int dc_yh = 0; // column bottom (inclusive)
-    fixed_t dc_iscale = 0; // inverse scale (texels per pixel)
-    fixed_t dc_texturemid = 0; // texture vertical anchor
+    fixed_t dc_iscale {}; // inverse scale (texels per pixel)
+    fixed_t dc_texturemid {}; // texture vertical anchor
     byte* dc_source = nullptr; // the column's source texels
     byte* dc_translation = nullptr; // colour-translation row for sprites
 
@@ -43,10 +43,10 @@ struct DrawState
     int ds_x1 = 0; // span start column
     int ds_x2 = 0; // span stop column
     LightTable* ds_colormap = nullptr; // colormap row for the span
-    fixed_t ds_xfrac = 0; // texture x position
-    fixed_t ds_yfrac = 0; // texture y position
-    fixed_t ds_xstep = 0; // texture x step per pixel
-    fixed_t ds_ystep = 0; // texture y step per pixel
+    fixed_t ds_xfrac {}; // texture x position
+    fixed_t ds_yfrac {}; // texture y position
+    fixed_t ds_xstep {}; // texture x step per pixel
+    fixed_t ds_ystep {}; // texture y step per pixel
     byte* ds_source = nullptr; // the flat's source texels
 };
 

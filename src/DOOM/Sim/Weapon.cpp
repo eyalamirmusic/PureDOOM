@@ -110,8 +110,8 @@ void setPsprite(Player* player, int position, StateNum stnum)
         if (state->misc1)
         {
             // coordinate set
-            psp->sx = state->misc1 << FRACBITS;
-            psp->sy = state->misc2 << FRACBITS;
+            psp->sx = Doom::Fixed::fromInt(state->misc1);
+            psp->sy = Doom::Fixed::fromInt(state->misc2);
         }
 
         // Call action routine. The action is stored type-erased; a weapon state
@@ -433,7 +433,7 @@ void punch(Player& player, PspDef&)
 {
     angle_t angle;
     int damage;
-    int slope;
+    fixed_t slope;
 
     auto& c = clip();
 
@@ -463,7 +463,7 @@ void saw(Player& player, PspDef&)
 {
     angle_t angle;
     int damage;
-    int slope;
+    fixed_t slope;
 
     auto& c = clip();
 
@@ -472,8 +472,8 @@ void saw(Player& player, PspDef&)
     angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
 
     // use meleerange + 1 se the puff doesn't skip the flash
-    slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE + 1);
-    Doom::lineAttack(player.mo, angle, MELEERANGE + 1, slope, damage);
+    slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE + fixed_t {1});
+    Doom::lineAttack(player.mo, angle, MELEERANGE + fixed_t {1}, slope, damage);
 
     if (!c.linetarget)
     {
@@ -644,7 +644,10 @@ void fireShotgun2(Player& player, PspDef&)
         Doom::lineAttack(player.mo,
                      angle,
                      MISSILERANGE,
-                     bulletslope + ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 5),
+                     bulletslope
+                         + fixed_t {(Doom::randomness().forPlay()
+                                     - Doom::randomness().forPlay())
+                                    << 5},
                      damage);
     }
 }

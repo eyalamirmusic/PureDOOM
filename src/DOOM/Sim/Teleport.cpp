@@ -90,7 +90,7 @@ int teleport(Line* line, int side, Mobj* thing)
                     thing->reactiontime = 18;
 
                 thing->angle = m->angle;
-                thing->momx = thing->momy = thing->momz = 0;
+                thing->momx = thing->momy = thing->momz = fixed_t {};
                 return 1;
             }
         }

@@ -35,8 +35,8 @@
 #include "Weapon.h"
 #define INVERSECOLORMAP 32
 
-// 16 pixels of bob
-#define MAXBOB 0x100000
+// 16 pixels of bob (a raw fixed value: 0x100000 is 16.0)
+#define MAXBOB (fixed_t {0x100000})
 
 #define ANG5 (ANG90 / 18)
 
@@ -108,21 +108,21 @@ void calcHeight(Player& player)
         if (player.viewheight > VIEWHEIGHT)
         {
             player.viewheight = VIEWHEIGHT;
-            player.deltaviewheight = 0;
+            player.deltaviewheight = fixed_t {};
         }
 
         if (player.viewheight < VIEWHEIGHT / 2)
         {
             player.viewheight = VIEWHEIGHT / 2;
-            if (player.deltaviewheight <= 0)
-                player.deltaviewheight = 1;
+            if (!player.deltaviewheight.isPositive())
+                player.deltaviewheight = fixed_t {1};
         }
 
         if (player.deltaviewheight)
         {
             player.deltaviewheight += FRACUNIT / 4;
             if (!player.deltaviewheight)
-                player.deltaviewheight = 1;
+                player.deltaviewheight = fixed_t {1};
         }
     }
     player.viewz = player.mo->z + player.viewheight + bob;
@@ -145,10 +145,10 @@ void movePlayer(Player& player)
     onground = (player.mo->z <= player.mo->floorz);
 
     if (cmd->forwardmove && onground)
-        thrust(player, player.mo->angle, cmd->forwardmove * 2048);
+        thrust(player, player.mo->angle, fixed_t {cmd->forwardmove * 2048});
 
     if (cmd->sidemove && onground)
-        thrust(player, player.mo->angle - ANG90, cmd->sidemove * 2048);
+        thrust(player, player.mo->angle - ANG90, fixed_t {cmd->sidemove * 2048});
 
     if ((cmd->forwardmove || cmd->sidemove) && player.mo->state == &states[S_PLAY])
     {
@@ -175,7 +175,7 @@ void deathThink(Player& player)
     if (player.viewheight < 6 * FRACUNIT)
         player.viewheight = 6 * FRACUNIT;
 
-    player.deltaviewheight = 0;
+    player.deltaviewheight = fixed_t {};
     onground = (player.mo->z <= player.mo->floorz);
     calcHeight(player);
 

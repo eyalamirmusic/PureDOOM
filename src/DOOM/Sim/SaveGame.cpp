@@ -129,8 +129,10 @@ void archiveWorld()
     // do sectors
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
     {
-        *put++ = sec->floorheight >> FRACBITS;
-        *put++ = sec->ceilingheight >> FRACBITS;
+        // The on-disk format stores heights in WHOLE map units, as vanilla's
+        // `>> FRACBITS` into a short did - so toInt(), not raw.
+        *put++ = sec->floorheight.toInt();
+        *put++ = sec->ceilingheight.toInt();
         *put++ = sec->floorpic;
         *put++ = sec->ceilingpic;
         *put++ = sec->lightlevel;
@@ -151,8 +153,8 @@ void archiveWorld()
 
             si = &sides[li->sidenum[j]];
 
-            *put++ = si->textureoffset >> FRACBITS;
-            *put++ = si->rowoffset >> FRACBITS;
+            *put++ = si->textureoffset.toInt();
+            *put++ = si->rowoffset.toInt();
             *put++ = si->toptexture;
             *put++ = si->bottomtexture;
             *put++ = si->midtexture;
@@ -180,8 +182,8 @@ void unArchiveWorld()
     // do sectors
     for (i = 0, sec = sectors; i < numsectors; i++, sec++)
     {
-        sec->floorheight = *get++ << FRACBITS;
-        sec->ceilingheight = *get++ << FRACBITS;
+        sec->floorheight = Doom::Fixed::fromInt(*get++);
+        sec->ceilingheight = Doom::Fixed::fromInt(*get++);
         sec->floorpic = *get++;
         sec->ceilingpic = *get++;
         sec->lightlevel = *get++;
@@ -202,8 +204,8 @@ void unArchiveWorld()
             if (li->sidenum[j] == -1)
                 continue;
             si = &sides[li->sidenum[j]];
-            si->textureoffset = *get++ << FRACBITS;
-            si->rowoffset = *get++ << FRACBITS;
+            si->textureoffset = Doom::Fixed::fromInt(*get++);
+            si->rowoffset = Doom::Fixed::fromInt(*get++);
             si->toptexture = *get++;
             si->bottomtexture = *get++;
             si->midtexture = *get++;

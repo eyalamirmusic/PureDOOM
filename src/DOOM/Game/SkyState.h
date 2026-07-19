@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Math/FixedPoint.h"
 namespace Doom
 {
 // The lump number of the sky flat (F_SKY1). Doom::initFlats resolves it once at startup, and it
@@ -21,7 +22,7 @@ struct SkyState
 {
     int skyflatnum = 0;    // lump number of the sky flat (F_SKY1)
     int skytexture = 0;    // texture number of the current map's sky
-    int skytexturemid = 0; // vertical offset the sky is drawn at
+    fixed_t skytexturemid {}; // vertical offset the sky is drawn at
 };
 
 // The one SkyState, a view onto the Engine's member - the same pattern as

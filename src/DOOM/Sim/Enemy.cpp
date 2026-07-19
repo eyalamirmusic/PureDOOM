@@ -91,10 +91,23 @@ EA::Array<DirType, 9> opposite = {DI_WEST,
 EA::Array<DirType, 4> diags = {
     DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
 
-EA::Array<fixed_t, 8> xspeed = {
-    FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000, 0, 47000};
-EA::Array<fixed_t, 8> yspeed = {
-    0, 47000, FRACUNIT, 47000, 0, -47000, -FRACUNIT, -47000};
+// Raw fixed values: 47000 is FRACUNIT * cos(45) rounded, as vanilla wrote it.
+EA::Array<fixed_t, 8> xspeed = {FRACUNIT,
+                                fixed_t {47000},
+                                fixed_t {},
+                                fixed_t {-47000},
+                                -FRACUNIT,
+                                fixed_t {-47000},
+                                fixed_t {},
+                                fixed_t {47000}};
+EA::Array<fixed_t, 8> yspeed = {fixed_t {},
+                                fixed_t {47000},
+                                FRACUNIT,
+                                fixed_t {47000},
+                                fixed_t {},
+                                fixed_t {-47000},
+                                -FRACUNIT,
+                                fixed_t {-47000}};
 int TRACEANGLE = 0xc000000;
 // The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
@@ -199,7 +212,7 @@ void recursiveSound(Sector* sec, int soundblocks)
 
         updateLineOpening(*check);
 
-        if (clip().openrange <= 0)
+        if (!clip().openrange.isPositive())
             continue; // closed door
 
         if (sides[check->sidenum[0]].sector == sec)
@@ -241,7 +254,7 @@ doom_boolean checkMeleeRange(Mobj& actor)
         return false;
 
     pl = actor.target;
-    dist = approxDistance(Fixed {pl->x - actor.x}, Fixed {pl->y - actor.y}).raw;
+    dist = approxDistance(pl->x - actor.x, pl->y - actor.y);
 
     if (dist >= MELEERANGE - 20 * FRACUNIT + pl->info->radius)
         return false;
@@ -257,7 +270,11 @@ doom_boolean checkMeleeRange(Mobj& actor)
 //
 doom_boolean checkMissileRange(Mobj& actor)
 {
-    fixed_t dist;
+    // Vanilla declares dist fixed_t and then shifts it down to whole units
+    // half way through, after which every use of it is a plain integer -
+    // compared against 14*64, 196, 200, 160 and P_Random's 0..255.
+    fixed_t distance;
+    int dist;
 
     if (!Doom::checkSight(&actor, actor.target))
         return false;
@@ -274,15 +291,13 @@ doom_boolean checkMissileRange(Mobj& actor)
         return false; // do not attack yet
 
     // OPTIMIZE: get this from a global checksight
-    dist = approxDistance(Fixed {actor.x - actor.target->x},
-                          Fixed {actor.y - actor.target->y})
-               .raw
-           - 64 * FRACUNIT;
+    distance = approxDistance(actor.x - actor.target->x, actor.y - actor.target->y)
+               - 64 * FRACUNIT;
 
     if (!actor.info->meleestate)
-        dist -= 128 * FRACUNIT; // no melee attack, so fire more
+        distance -= 128 * FRACUNIT; // no melee attack, so fire more
 
-    dist >>= 16;
+    dist = distance.toInt();
 
     if (actor.type == MT_VILE)
     {
@@ -447,7 +462,7 @@ void newChaseDir(Mobj& actor)
     // try direct route
     if (d[1] != DI_NODIR && d[2] != DI_NODIR)
     {
-        actor.movedir = diags[((deltay < 0) << 1) + (deltax > 0)];
+        actor.movedir = diags[(deltay.isNegative() << 1) + deltax.isPositive()];
         if (actor.movedir != turnaround && tryWalk(actor))
             return;
     }
@@ -575,9 +590,8 @@ doom_boolean lookForPlayers(Mobj& actor, doom_boolean allaround)
 
             if (an > ANG90 && an < ANG270)
             {
-                dist = approxDistance(Fixed {player->mo->x - actor.x},
-                                      Fixed {player->mo->y - actor.y})
-                           .raw;
+                dist =
+                    approxDistance(player->mo->x - actor.x, player->mo->y - actor.y);
                 // if real close, react anyway
                 if (dist > MELEERANGE)
                     continue; // behind back
@@ -822,7 +836,7 @@ void posAttack(Mobj& actor)
 {
     int angle;
     int damage;
-    int slope;
+    fixed_t slope;
 
     if (!actor.target)
         return;
@@ -842,7 +856,7 @@ void sPosAttack(Mobj& actor)
     int angle;
     int bangle;
     int damage;
-    int slope;
+    fixed_t slope;
 
     if (!actor.target)
         return;
@@ -865,7 +879,7 @@ void cPosAttack(Mobj& actor)
     int angle;
     int bangle;
     int damage;
-    int slope;
+    fixed_t slope;
 
     if (!actor.target)
         return;
@@ -1029,7 +1043,9 @@ void skelMissile(Mobj& actor)
 void tracer(Mobj& actor)
 {
     angle_t exact;
-    fixed_t dist;
+    // As in spawnMissile: dist is a tic count once divided by the missile's raw
+    // speed, and is then the plain integer divisor of the height difference.
+    int dist;
     fixed_t slope;
     Mobj* dest;
     Mobj* th;
@@ -1074,11 +1090,11 @@ void tracer(Mobj& actor)
     }
 
     exact = actor.angle >> ANGLETOFINESHIFT;
-    actor.momx = FixedMul(actor.info->speed, finecosine[exact]);
-    actor.momy = FixedMul(actor.info->speed, finesine[exact]);
+    actor.momx = FixedMul(Doom::Fixed {actor.info->speed}, finecosine[exact]);
+    actor.momy = FixedMul(Doom::Fixed {actor.info->speed}, finesine[exact]);
 
     // change slope
-    dist = approxDistance(Fixed {dest->x - actor.x}, Fixed {dest->y - actor.y}).raw;
+    dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
 
     dist = dist / actor.info->speed;
 
@@ -1124,7 +1140,7 @@ void skelFist(Mobj& actor)
 //
 doom_boolean vileCheck(Mobj* thing)
 {
-    int maxdist;
+    fixed_t maxdist;
     doom_boolean check;
 
     if (!(thing->flags & MF_CORPSE))
@@ -1143,7 +1159,7 @@ doom_boolean vileCheck(Mobj* thing)
         return true; // not actually touching
 
     corpsehit = thing;
-    corpsehit->momx = corpsehit->momy = 0;
+    corpsehit->momx = corpsehit->momy = fixed_t {};
     corpsehit->height <<= 2;
     check = Doom::checkPosition(corpsehit, corpsehit->x, corpsehit->y);
     corpsehit->height >>= 2;
@@ -1174,10 +1190,10 @@ void vileChase(Mobj& actor)
         viletryx = actor.x + actor.info->speed * xspeed[actor.movedir];
         viletryy = actor.y + actor.info->speed * yspeed[actor.movedir];
 
-        xl = (viletryx - bmaporgx - MAXRADIUS * 2) >> MAPBLOCKSHIFT;
-        xh = (viletryx - bmaporgx + MAXRADIUS * 2) >> MAPBLOCKSHIFT;
-        yl = (viletryy - bmaporgy - MAXRADIUS * 2) >> MAPBLOCKSHIFT;
-        yh = (viletryy - bmaporgy + MAXRADIUS * 2) >> MAPBLOCKSHIFT;
+        xl = (viletryx - bmaporgx - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        xh = (viletryx - bmaporgx + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        yl = (viletryy - bmaporgy - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        yh = (viletryy - bmaporgy + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
 
         vileobj = &actor;
         for (int bx = xl; bx <= xh; bx++)
@@ -1341,8 +1357,8 @@ void fatAttack1(Mobj& actor)
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle += FATSPREAD;
     an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(mo->info->speed, finecosine[an]);
-    mo->momy = FixedMul(mo->info->speed, finesine[an]);
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
 }
 
 void fatAttack2(Mobj& actor)
@@ -1358,8 +1374,8 @@ void fatAttack2(Mobj& actor)
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD * 2;
     an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(mo->info->speed, finecosine[an]);
-    mo->momy = FixedMul(mo->info->speed, finesine[an]);
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
 }
 
 void fatAttack3(Mobj& actor)
@@ -1372,14 +1388,14 @@ void fatAttack3(Mobj& actor)
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD / 2;
     an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(mo->info->speed, finecosine[an]);
-    mo->momy = FixedMul(mo->info->speed, finesine[an]);
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
 
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle += FATSPREAD / 2;
     an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(mo->info->speed, finecosine[an]);
-    mo->momy = FixedMul(mo->info->speed, finesine[an]);
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
 }
 
 //
@@ -1403,8 +1419,8 @@ void skullAttack(Mobj& actor)
     an = actor.angle >> ANGLETOFINESHIFT;
     actor.momx = FixedMul(SKULLSPEED, finecosine[an]);
     actor.momy = FixedMul(SKULLSPEED, finesine[an]);
-    dist = approxDistance(Fixed {dest->x - actor.x}, Fixed {dest->y - actor.y}).raw;
-    dist = dist / SKULLSPEED;
+    dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
+    dist = dist / SKULLSPEED.raw;
 
     if (dist < 1)
         dist = 1;
@@ -1423,7 +1439,7 @@ void painShootSkull(Mobj& actor, angle_t angle)
 
     Mobj* newmobj;
     angle_t an;
-    int prestep;
+    fixed_t prestep;
     int count;
     Doom::Thinker* currentthinker;
 
@@ -1780,17 +1796,18 @@ void brainPain(Mobj&)
 
 void brainScream(Mobj& mo)
 {
-    int y;
-    int z;
+    fixed_t y;
+    fixed_t z;
     Mobj* th;
 
-    for (int x = mo.x - 196 * FRACUNIT; x < mo.x + 320 * FRACUNIT;
+    for (fixed_t x = mo.x - 196 * FRACUNIT; x < mo.x + 320 * FRACUNIT;
          x += FRACUNIT * 8)
     {
         y = mo.y - 320 * FRACUNIT;
-        z = 128 + Doom::randomness().forPlay() * 2 * FRACUNIT;
+        // vanilla's raw 128 added to a whole-unit-scaled random; kept as it stands.
+        z = Doom::Fixed {128} + Doom::randomness().forPlay() * 2 * FRACUNIT;
         th = Doom::spawnMobj(x, y, z, MT_ROCKET);
-        th->momz = Doom::randomness().forPlay() * 512;
+        th->momz = Doom::Fixed {Doom::randomness().forPlay() * 512};
 
         Doom::setMobjState(th, S_BRAINEXPLODE1);
 
@@ -1804,16 +1821,18 @@ void brainScream(Mobj& mo)
 
 void brainExplode(Mobj& mo)
 {
-    int x;
-    int y;
-    int z;
+    fixed_t x;
+    fixed_t y;
+    fixed_t z;
     Mobj* th;
 
-    x = mo.x + (Doom::randomness().forPlay() - Doom::randomness().forPlay()) * 2048;
+    x = mo.x
+        + Doom::Fixed {(Doom::randomness().forPlay() - Doom::randomness().forPlay())
+                       * 2048};
     y = mo.y;
-    z = 128 + Doom::randomness().forPlay() * 2 * FRACUNIT;
+    z = Doom::Fixed {128} + Doom::randomness().forPlay() * 2 * FRACUNIT;
     th = Doom::spawnMobj(x, y, z, MT_ROCKET);
-    th->momz = Doom::randomness().forPlay() * 512;
+    th->momz = Doom::Fixed {Doom::randomness().forPlay() * 512};
 
     Doom::setMobjState(th, S_BRAINEXPLODE1);
 
@@ -1845,8 +1864,10 @@ void brainSpit(Mobj& mo)
     // spawn brain missile
     newmobj = Doom::spawnMissile(&mo, targ, MT_SPAWNSHOT);
     newmobj->target = targ;
+    // Vanilla divides the raw values as plain integers here - the result is a tic
+    // count, not a length. A fixed-point divide would scale it by 65536.
     newmobj->reactiontime =
-        ((targ->y - mo.y) / newmobj->momy) / newmobj->state->tics;
+        ((targ->y - mo.y).raw / newmobj->momy.raw) / newmobj->state->tics;
 
     Doom::startSound(0, sfx_bospit);
 }

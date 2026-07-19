@@ -13,7 +13,13 @@
 #include "../DOOM.h"
 
 
-#define doom_abs(x) ((x) < 0 ? -(x) : (x))
+// A template rather than a macro so it works on Doom::Fixed as well as on ints
+// (and evaluates its argument once, which the macro did not).
+template <typename T>
+constexpr T doom_abs(T x)
+{
+    return x < T {} ? -x : x;
+}
 
 
 extern char error_buf[260];

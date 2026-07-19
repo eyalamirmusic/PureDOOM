@@ -33,9 +33,9 @@ struct PlaneScratch
     int spanstart[SCREENHEIGHT] = {}; // current span's start column, per row
     int spanstop[SCREENHEIGHT] = {}; // current span's stop column, per row
     LightTable** planezlight = nullptr; // light row for the current plane
-    fixed_t planeheight = 0; // height of the plane being mapped
-    fixed_t basexscale = 0; // base horizontal texture scale
-    fixed_t baseyscale = 0; // base vertical texture scale
+    fixed_t planeheight {}; // height of the plane being mapped
+    fixed_t basexscale {}; // base horizontal texture scale
+    fixed_t baseyscale {}; // base vertical texture scale
     fixed_t cachedheight[SCREENHEIGHT] = {}; // Doom::mapPlane memo: plane height per row
     fixed_t cacheddistance[SCREENHEIGHT] = {}; // ... distance per row
     fixed_t cachedxstep[SCREENHEIGHT] = {}; // ... x step per row

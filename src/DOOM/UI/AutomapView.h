@@ -46,22 +46,22 @@ struct AutomapView
         0; // Doom::automapTicker: cursor into the fuse brightness ramp
 
     MapPoint m_paninc = {}; // window pan per tic (map coords)
-    fixed_t mtof_zoommul = 0; // window zoom per tic (map -> frame)
-    fixed_t ftom_zoommul = 0; // window zoom per tic (frame -> map)
+    fixed_t mtof_zoommul {}; // window zoom per tic (map -> frame)
+    fixed_t ftom_zoommul {}; // window zoom per tic (frame -> map)
 
-    fixed_t m_x2 = 0, m_y2 = 0; // the window's upper-right corner (map coords)
+    fixed_t m_x2 {}, m_y2 {}; // the window's upper-right corner (map coords)
 
-    fixed_t min_x = 0, min_y = 0, max_x = 0, max_y = 0; // the level's map bounds
-    fixed_t max_w = 0, max_h = 0; // max_x - min_x, max_y - min_y
-    fixed_t min_w = 0, min_h = 0; // smallest window (based on player size)
-    fixed_t min_scale_mtof = 0; // zoom-out limit
-    fixed_t max_scale_mtof = 0; // zoom-in limit
+    fixed_t min_x {}, min_y {}, max_x {}, max_y {}; // the level's map bounds
+    fixed_t max_w {}, max_h {}; // max_x - min_x, max_y - min_y
+    fixed_t min_w {}, min_h {}; // smallest window (based on player size)
+    fixed_t min_scale_mtof {}; // zoom-out limit
+    fixed_t max_scale_mtof {}; // zoom-in limit
 
-    fixed_t old_m_w = 0, old_m_h = 0; // saved window for resize recovery
-    fixed_t old_m_x = 0, old_m_y = 0;
+    fixed_t old_m_w {}, old_m_h {}; // saved window for resize recovery
+    fixed_t old_m_x {}, old_m_y {};
     MapPoint f_oldloc = {}; // the follower's previous location
 
-    fixed_t scale_ftom = 0; // frame -> map scale (1 / scale_mtof)
+    fixed_t scale_ftom {}; // frame -> map scale (1 / scale_mtof)
 
     Patch* marknums[10] = {}; // the 0-9 mark-number patches
     MapPoint markpoints[numMarkPoints] = {}; // the placed marks

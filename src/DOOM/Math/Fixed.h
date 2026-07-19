@@ -53,6 +53,26 @@ struct Fixed
 
     Fixed operator/(Fixed other) const;
 
+    // Raw shifts. DOOM halves and doubles fixed values with these all over the
+    // playsim and the renderer; they scale the value, they do not convert it.
+    // (Converting to and from whole units is toInt() / fromInt().)
+    constexpr Fixed operator>>(int shift) const { return Fixed {raw >> shift}; }
+    constexpr Fixed operator<<(int shift) const { return Fixed {raw << shift}; }
+    constexpr Fixed& operator>>=(int shift) { return *this = *this >> shift; }
+    constexpr Fixed& operator<<=(int shift) { return *this = *this << shift; }
+
+    // Sign tests. Spelled out rather than allowing comparison against a bare int,
+    // which would silently read the literal as a raw value: `x > 1` would mean
+    // 1/65536 of a unit, not one unit.
+    constexpr bool isNegative() const { return raw < 0; }
+
+    // Explicit, so `if (momx)` and `while (xmove || ymove)` read as they always
+    // did - a fixed value is "true" when it is non-zero - without letting a Fixed
+    // silently become an int in arithmetic.
+    constexpr explicit operator bool() const { return raw != 0; }
+    constexpr bool isPositive() const { return raw > 0; }
+    constexpr bool isZero() const { return raw == 0; }
+
     Fixed& operator*=(Fixed other) { return *this = *this * other; }
     Fixed& operator/=(Fixed other) { return *this = *this / other; }
 };
@@ -68,6 +88,14 @@ constexpr Fixed operator*(Fixed value, int scale)
 constexpr Fixed operator*(int scale, Fixed value)
 {
     return value * scale;
+}
+
+// Integer division of a fixed value - scaling it down by a whole number, as in
+// FRACUNIT / 4 or MAXMOVE / 2. Distinct from Fixed / Fixed, which is the
+// saturating fixed-point divide.
+constexpr Fixed operator/(Fixed value, int divisor)
+{
+    return Fixed {value.raw / divisor};
 }
 
 constexpr Fixed abs(Fixed value)

@@ -11,7 +11,7 @@ namespace Doom
 void initPicAnims();
 fixed_t findLowestFloorSurrounding(Sector* sec);
 fixed_t findHighestFloorSurrounding(Sector* sec);
-fixed_t findNextHighestFloor(Sector* sec, int currentheight);
+fixed_t findNextHighestFloor(Sector* sec, fixed_t currentheight);
 fixed_t findLowestCeilingSurrounding(Sector* sec);
 fixed_t findHighestCeilingSurrounding(Sector* sec);
 int findSectorFromLineTag(Line* line, int start);

@@ -31,17 +31,17 @@ struct Clip
     DivLine trace = {};
 
     // updateLineOpening's window.
-    fixed_t opentop = 0;
-    fixed_t openbottom = 0;
-    fixed_t openrange = 0;
-    fixed_t lowfloor = 0;
+    fixed_t opentop {};
+    fixed_t openbottom {};
+    fixed_t openrange {};
+    fixed_t lowfloor {};
 
     // Doom::checkPosition / Doom::tryMove clipping state (vanilla's tm*). The mover being
     // clipped, its flags and centre, and the bounding box its radius sweeps.
     Mobj* tmthing = nullptr;
     int tmflags = 0;
-    fixed_t tmx = 0;
-    fixed_t tmy = 0;
+    fixed_t tmx {};
+    fixed_t tmy {};
     fixed_t tmbbox[4] = {};
 
     // floatok: the move would fit if the mobj sat between tmfloorz and tmceilingz.
@@ -49,9 +49,9 @@ struct Clip
 
     // The floor/ceiling the contacted lines leave for the mover, and the lowest
     // floor under it (a dropoff a monster refuses to walk off).
-    fixed_t tmfloorz = 0;
-    fixed_t tmceilingz = 0;
-    fixed_t tmdropoffz = 0;
+    fixed_t tmfloorz {};
+    fixed_t tmceilingz {};
+    fixed_t tmdropoffz {};
 
     // The line that lowered the ceiling, kept so missiles don't explode against
     // sky-hack walls.
@@ -68,13 +68,13 @@ struct Clip
     // locked onto (0 if none), and the range of the shot in progress. p_mobj and
     // p_pspr read both; the rest of the attack scratch is file-local to MapAction.
     Mobj* linetarget = nullptr;
-    fixed_t attackrange = 0;
+    fixed_t attackrange {};
 
     // The slope window narrowed as a trace crosses two-sided lines. DOOM reuses one
     // pair for two jobs it never runs at once: the auto-aim in MapAction and the
     // line-of-sight check in Sight. Both write and read them here.
-    fixed_t topslope = 0;
-    fixed_t bottomslope = 0;
+    fixed_t topslope {};
+    fixed_t bottomslope {};
 };
 
 // The one Clip, a view onto the Engine's member - the same pattern as level(),

@@ -23,15 +23,15 @@ namespace Doom
 // readers resolving unchanged until each file takes an Engine& of its own.
 struct ViewPoint
 {
-    fixed_t viewx = 0;
-    fixed_t viewy = 0;
-    fixed_t viewz = 0;
+    fixed_t viewx {};
+    fixed_t viewy {};
+    fixed_t viewz {};
 
     angle_t viewangle = 0;
 
     // sin/cos of viewangle, sampled from the fine tables alongside it.
-    fixed_t viewcos = 0;
-    fixed_t viewsin = 0;
+    fixed_t viewcos {};
+    fixed_t viewsin {};
 
     Player* viewplayer = nullptr;
 };

@@ -88,20 +88,20 @@ namespace Doom
 #define AM_NUMMARKPOINTS 10
 
 // scale on entry
-#define INITSCALEMTOF (.2 * FRACUNIT)
+#define INITSCALEMTOF (fixed_t {(std::int32_t) (.2 * FRACUNIT.raw)})
 // how much the automap moves window per tic in frame-buffer coordinates
 // moves 140 pixels in 1 second
 #define F_PANINC 4
 // how much zoom-in per tic
 // goes to 2x in 1 second
-#define M_ZOOMIN ((int) (1.02 * FRACUNIT))
+#define M_ZOOMIN (fixed_t {(std::int32_t) (1.02 * FRACUNIT.raw)})
 // how much zoom-out per tic
 // pulls out to 0.5x in 1 second
-#define M_ZOOMOUT ((int) (FRACUNIT / 1.02))
+#define M_ZOOMOUT (fixed_t {(std::int32_t) (FRACUNIT.raw / 1.02)})
 
 // translates between frame-buffer and map distances
-#define FTOM(x) FixedMul(((x) << 16), scale_ftom)
-#define MTOF(x) (FixedMul((x), scale_mtof) >> 16)
+#define FTOM(x) FixedMul(Doom::Fixed::fromInt(x), scale_ftom)
+#define MTOF(x) (FixedMul((x), scale_mtof).toInt())
 // translates between frame-buffer and map coordinates
 #define CXMTOF(x) (f_x + MTOF((x) - m_x))
 #define CYMTOF(y) (f_y + (f_h - MTOF((y) - m_y)))
@@ -127,12 +127,17 @@ struct ISlope
 // starting from the middle.
 //
 
-#define R (FRACUNIT)
+// Scale a double by the raw unit and truncate - what the old
+// static_cast<fixed_t>(-.867 * R) did when fixed_t was an int.
+#define AM_FIXED(expr) (fixed_t {(std::int32_t) (expr)})
+#define R_UNIT (FRACUNIT.raw)
+
+#define R (FRACUNIT.raw)
 EA::Array<MapLine, 3> triangle_guy = {
-    {{static_cast<fixed_t>(-.867 * R), static_cast<fixed_t>(-.5 * R)},
-     {static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}},
-    {{static_cast<fixed_t>(.867 * R), static_cast<fixed_t>(-.5 * R)}, {0, R}},
-    {{0, R}, {static_cast<fixed_t>(-.867 * R), static_cast<fixed_t>(-.5 * R)}}};
+    {{AM_FIXED(-.867 * R), AM_FIXED(-.5 * R)},
+     {AM_FIXED(.867 * R), AM_FIXED(-.5 * R)}},
+    {{AM_FIXED(.867 * R), AM_FIXED(-.5 * R)}, {fixed_t {}, fixed_t {R}}},
+    {{fixed_t {}, fixed_t {R}}, {AM_FIXED(-.867 * R), AM_FIXED(-.5 * R)}}};
 #undef R
 #define NUMTRIANGLEGUYLINES (sizeof(triangle_guy) / sizeof(MapLine))
 
@@ -206,16 +211,16 @@ static doom_boolean& stopped = automapView().stopped;
 // that it can be used with the brain-dead drawing stuff.
 void getIslope(MapLine* ml, ISlope* is)
 {
-    int dx, dy;
+    fixed_t dx, dy;
 
     dy = ml->a.y - ml->b.y;
     dx = ml->b.x - ml->a.x;
     if (!dy)
-        is->islp = (dx < 0 ? -DOOM_MAXINT : DOOM_MAXINT);
+        is->islp = dx.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
     else
         is->islp = FixedDiv(dx, dy);
     if (!dx)
-        is->slp = (dy < 0 ? -DOOM_MAXINT : DOOM_MAXINT);
+        is->slp = dy.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
     else
         is->slp = FixedDiv(dy, dx);
 }
@@ -267,7 +272,7 @@ void restoreScaleAndLoc()
     m_y2 = m_y + m_h;
 
     // Change the scaling multipliers
-    scale_mtof = FixedDiv(f_w << FRACBITS, m_w);
+    scale_mtof = FixedDiv(Doom::Fixed::fromInt(f_w), m_w);
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 }
 
@@ -290,8 +295,8 @@ void findMinMaxBoundaries()
     fixed_t a;
     fixed_t b;
 
-    min_x = min_y = DOOM_MAXINT;
-    max_x = max_y = -DOOM_MAXINT;
+    min_x = min_y = fixed_t {DOOM_MAXINT};
+    max_x = max_y = fixed_t {-DOOM_MAXINT};
 
     for (int i = 0; i < numvertexes; i++)
     {
@@ -312,11 +317,11 @@ void findMinMaxBoundaries()
     min_w = 2 * PLAYERRADIUS; // const? never changed?
     min_h = 2 * PLAYERRADIUS;
 
-    a = FixedDiv(f_w << FRACBITS, max_w);
-    b = FixedDiv(f_h << FRACBITS, max_h);
+    a = FixedDiv(Doom::Fixed::fromInt(f_w), max_w);
+    b = FixedDiv(Doom::Fixed::fromInt(f_h), max_h);
 
     min_scale_mtof = a < b ? a : b;
-    max_scale_mtof = FixedDiv(f_h << FRACBITS, 2 * PLAYERRADIUS);
+    max_scale_mtof = FixedDiv(Doom::Fixed::fromInt(f_h), 2 * PLAYERRADIUS);
 }
 
 //
@@ -327,7 +332,7 @@ void changeWindowLoc()
     if (m_paninc.x || m_paninc.y)
     {
         followplayer = 0;
-        f_oldloc.x = DOOM_MAXINT;
+        f_oldloc.x = fixed_t {DOOM_MAXINT};
     }
 
     m_x += m_paninc.x;
@@ -358,11 +363,11 @@ void initAutomapVariables()
     overlayState().automapactive = true;
     fb = screens[0];
 
-    f_oldloc.x = DOOM_MAXINT;
+    f_oldloc.x = fixed_t {DOOM_MAXINT};
     amclock = 0;
     lightlev = 0;
 
-    m_paninc.x = m_paninc.y = 0;
+    m_paninc.x = m_paninc.y = fixed_t {};
     ftom_zoommul = FRACUNIT;
     mtof_zoommul = FRACUNIT;
 
@@ -416,7 +421,7 @@ void unloadPics()
 void clearMarks()
 {
     for (int i = 0; i < AM_NUMMARKPOINTS; i++)
-        markpoints[i].x = -1; // means empty
+        markpoints[i].x = fixed_t {-1}; // means empty
     markpointnum = 0;
 }
 
@@ -435,7 +440,7 @@ void levelInit()
     clearMarks();
 
     findMinMaxBoundaries();
-    scale_mtof = FixedDiv(min_scale_mtof, static_cast<int>(0.7 * FRACUNIT));
+    scale_mtof = FixedDiv(min_scale_mtof, AM_FIXED(0.7 * R_UNIT));
     if (scale_mtof > max_scale_mtof)
         scale_mtof = min_scale_mtof;
     scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
@@ -572,7 +577,7 @@ doom_boolean automapResponder(Event* ev)
                 break;
             case AM_FOLLOWKEY:
                 followplayer = !followplayer;
-                f_oldloc.x = DOOM_MAXINT;
+                f_oldloc.x = fixed_t {DOOM_MAXINT};
                 am_plr->message = const_cast<char*>(followplayer ? AMSTR_FOLLOWON
                                                                  : AMSTR_FOLLOWOFF);
                 break;
@@ -610,19 +615,19 @@ doom_boolean automapResponder(Event* ev)
         {
             case AM_PANRIGHTKEY:
                 if (!followplayer)
-                    m_paninc.x = 0;
+                    m_paninc.x = fixed_t {};
                 break;
             case AM_PANLEFTKEY:
                 if (!followplayer)
-                    m_paninc.x = 0;
+                    m_paninc.x = fixed_t {};
                 break;
             case AM_PANUPKEY:
                 if (!followplayer)
-                    m_paninc.y = 0;
+                    m_paninc.y = fixed_t {};
                 break;
             case AM_PANDOWNKEY:
                 if (!followplayer)
-                    m_paninc.y = 0;
+                    m_paninc.y = fixed_t {};
                 break;
             case AM_ZOOMOUTKEY:
             case AM_ZOOMINKEY:
@@ -952,17 +957,20 @@ void drawGrid(int color)
     fixed_t start, end;
     MapLine ml;
 
+    // One blockmap cell, in fixed-point map units.
+    const auto blockSpacing = Doom::Fixed::fromInt(MAPBLOCKUNITS);
+
     // Figure out start of vertical gridlines
     start = m_x;
-    if ((start - bmaporgx) % (MAPBLOCKUNITS << FRACBITS))
-        start += (MAPBLOCKUNITS << FRACBITS)
-                 - ((start - bmaporgx) % (MAPBLOCKUNITS << FRACBITS));
+    if (fixed_t {(start - bmaporgx).raw % blockSpacing.raw})
+        start += blockSpacing
+                 - (fixed_t {(start - bmaporgx).raw % blockSpacing.raw});
     end = m_x + m_w;
 
     // draw vertical gridlines
     ml.a.y = m_y;
     ml.b.y = m_y + m_h;
-    for (x = start; x < end; x += (MAPBLOCKUNITS << FRACBITS))
+    for (x = start; x < end; x += blockSpacing)
     {
         ml.a.x = x;
         ml.b.x = x;
@@ -971,15 +979,15 @@ void drawGrid(int color)
 
     // Figure out start of horizontal gridlines
     start = m_y;
-    if ((start - bmaporgy) % (MAPBLOCKUNITS << FRACBITS))
-        start += (MAPBLOCKUNITS << FRACBITS)
-                 - ((start - bmaporgy) % (MAPBLOCKUNITS << FRACBITS));
+    if (fixed_t {(start - bmaporgy).raw % blockSpacing.raw})
+        start += blockSpacing
+                 - (fixed_t {(start - bmaporgy).raw % blockSpacing.raw});
     end = m_y + m_h;
 
     // draw horizontal gridlines
     ml.a.x = m_x;
     ml.b.x = m_x + m_w;
-    for (y = start; y < end; y += (MAPBLOCKUNITS << FRACBITS))
+    for (y = start; y < end; y += blockSpacing)
     {
         ml.a.y = y;
         ml.b.y = y;
@@ -1123,7 +1131,7 @@ void drawPlayers()
         if (cheating)
             drawLineCharacter(cheat_player_arrow,
                               NUMCHEATPLYRLINES,
-                              0,
+                              fixed_t {},
                               am_plr->mo->angle,
                               WHITE,
                               am_plr->mo->x,
@@ -1131,7 +1139,7 @@ void drawPlayers()
         else
             drawLineCharacter(player_arrow,
                               NUMPLYRLINES,
-                              0,
+                              fixed_t {},
                               am_plr->mo->angle,
                               WHITE,
                               am_plr->mo->x,
@@ -1158,7 +1166,7 @@ void drawPlayers()
             color = their_colors[their_color];
 
         drawLineCharacter(
-            player_arrow, NUMPLYRLINES, 0, p->mo->angle, color, p->mo->x, p->mo->y);
+            player_arrow, NUMPLYRLINES, fixed_t {}, p->mo->angle, color, p->mo->x, p->mo->y);
     }
 }
 
@@ -1173,7 +1181,7 @@ void drawThings(int colors)
         {
             drawLineCharacter(thintriangle_guy,
                               NUMTHINTRIANGLEGUYLINES,
-                              16 << FRACBITS,
+                              Doom::Fixed::fromInt(16),
                               t->angle,
                               colors + lightlev,
                               t->x,
@@ -1189,7 +1197,7 @@ void drawAutomapMarks()
 
     for (int i = 0; i < AM_NUMMARKPOINTS; i++)
     {
-        if (markpoints[i].x != -1)
+        if (markpoints[i].x != fixed_t {-1})
         {
             //      w = SHORT(marknums[i]->width);
             //      h = SHORT(marknums[i]->height);
@@ -1237,31 +1245,31 @@ void drawAutomap()
 
 #define R ((8 * PLAYERRADIUS) / 7)
 Doom::MapLine player_arrow[] = {
-    { { -R + R / 8, 0 }, { R, 0 } }, // -----
-    { { R, 0 }, { R - R / 2, R / 4 } },  // ----->
-    { { R, 0 }, { R - R / 2, -R / 4 } },
-    { { -R + R / 8, 0 }, { -R - R / 8, R / 4 } }, // >---->
-    { { -R + R / 8, 0 }, { -R - R / 8, -R / 4 } },
-    { { -R + 3 * R / 8, 0 }, { -R + R / 8, R / 4 } }, // >>--->
-    { { -R + 3 * R / 8, 0 }, { -R + R / 8, -R / 4 } }
+    { { -R + R / 8, fixed_t {} }, { R, fixed_t {} } }, // -----
+    { { R, fixed_t {} }, { R - R / 2, R / 4 } },  // ----->
+    { { R, fixed_t {} }, { R - R / 2, -R / 4 } },
+    { { -R + R / 8, fixed_t {} }, { -R - R / 8, R / 4 } }, // >---->
+    { { -R + R / 8, fixed_t {} }, { -R - R / 8, -R / 4 } },
+    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, R / 4 } }, // >>--->
+    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, -R / 4 } }
 };
 #undef R
 
 #define R ((8 * PLAYERRADIUS) / 7)
 Doom::MapLine cheat_player_arrow[] = {
-    { { -R + R / 8, 0 }, { R, 0 } }, // -----
-    { { R, 0 }, { R - R / 2, R / 6 } },  // ----->
-    { { R, 0 }, { R - R / 2, -R / 6 } },
-    { { -R + R / 8, 0 }, { -R - R / 8, R / 6 } }, // >----->
-    { { -R + R / 8, 0 }, { -R - R / 8, -R / 6 } },
-    { { -R + 3 * R / 8, 0 }, { -R + R / 8, R / 6 } }, // >>----->
-    { { -R + 3 * R / 8, 0 }, { -R + R / 8, -R / 6 } },
-    { { -R / 2, 0 }, { -R / 2, -R / 6 } }, // >>-d--->
+    { { -R + R / 8, fixed_t {} }, { R, fixed_t {} } }, // -----
+    { { R, fixed_t {} }, { R - R / 2, R / 6 } },  // ----->
+    { { R, fixed_t {} }, { R - R / 2, -R / 6 } },
+    { { -R + R / 8, fixed_t {} }, { -R - R / 8, R / 6 } }, // >----->
+    { { -R + R / 8, fixed_t {} }, { -R - R / 8, -R / 6 } },
+    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, R / 6 } }, // >>----->
+    { { -R + 3 * R / 8, fixed_t {} }, { -R + R / 8, -R / 6 } },
+    { { -R / 2, fixed_t {} }, { -R / 2, -R / 6 } }, // >>-d--->
     { { -R / 2, -R / 6 }, { -R / 2 + R / 6, -R / 6 } },
     { { -R / 2 + R / 6, -R / 6 }, { -R / 2 + R / 6, R / 4 } },
-    { { -R / 6, 0 }, { -R / 6, -R / 6 } }, // >>-dd-->
-    { { -R / 6, -R / 6 }, { 0, -R / 6 } },
-    { { 0, -R / 6 }, { 0, R / 4 } },
+    { { -R / 6, fixed_t {} }, { -R / 6, -R / 6 } }, // >>-dd-->
+    { { -R / 6, -R / 6 }, { fixed_t {}, -R / 6 } },
+    { { fixed_t {}, -R / 6 }, { fixed_t {}, R / 4 } },
     { { R / 6, R / 4 }, { R / 6, -R / 7 } }, // >>-ddt->
     { { R / 6, -R / 7 }, { R / 6 + R / 32, -R / 7 - R / 32 } },
     { { R / 6 + R / 32, -R / 7 - R / 32 }, { R / 6 + R / 10, -R / 7 } }
@@ -1270,8 +1278,8 @@ Doom::MapLine cheat_player_arrow[] = {
 
 #define R (FRACUNIT)
 Doom::MapLine thintriangle_guy[] = {
-    { { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) }, { R, 0 } },
-    { { R, 0 }, { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) } },
+    { { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) }, { R, fixed_t {} } },
+    { { R, fixed_t {} }, { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) } },
     { { (fixed_t)(-.5 * R), (fixed_t)(.7 * R) }, { (fixed_t)(-.5 * R), (fixed_t)(-.7 * R) } }
 };
 #undef R
@@ -1281,7 +1289,7 @@ fixed_t m_x, m_y;
 fixed_t m_w;
 fixed_t m_h;
 
-#define INITSCALEMTOF (.2 * FRACUNIT)
+#define INITSCALEMTOF (fixed_t {(std::int32_t) (.2 * FRACUNIT.raw)})
 fixed_t scale_mtof = (fixed_t) INITSCALEMTOF;
 
 // Frame-window position/size (screen coords).

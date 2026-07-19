@@ -1,45 +1,26 @@
-// Emacs style mode select   -*- C++ -*- 
-//-----------------------------------------------------------------------------
-//
-// $Id:$
-//
-// Copyright (C) 1993-1996 by id Software, Inc.
-//
-// This source is available for distribution and/or modification
-// only under the terms of the DOOM Source Code License as
-// published by id Software. All rights reserved.
-//
-// The source is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// FITNESS FOR A PARTICULAR PURPOSE. See the DOOM Source Code License
-// for more details.
-//
-// DESCRIPTION:
-//        Fixed point arithemtics, implementation.
-//
-//-----------------------------------------------------------------------------
-
 #pragma once
 
+#include "Fixed.h"
 
+// The vanilla spelling of the fixed-point type and its unit.
 //
-// Fixed point, 32bit as 16.16.
+// fixed_t IS Doom::Fixed now - the strong type - rather than a bare int. That is
+// what stops a raw integer being used where a 16.16 fixed-point value is meant,
+// which is a whole class of DOOM bug the compiler could not see before.
 //
+// FRACUNIT is a Fixed of value 1.0 rather than the integer 65536, and that is
+// load-bearing for the migration: the engine writes `24 * FRACUNIT` in ~380
+// places to mean "24.0", and operator*(int, Fixed) gives exactly that. FRACBITS
+// stays an integer because it is a shift count.
+using fixed_t = Doom::Fixed;
+
 #define FRACBITS 16
-#define FRACUNIT (1<<FRACBITS)
+#define FRACUNIT (Doom::Fixed {1 << FRACBITS})
 
-
-typedef int fixed_t;
-
-
-fixed_t FixedMul(fixed_t a, fixed_t b);
-fixed_t FixedDiv(fixed_t a, fixed_t b);
-fixed_t FixedDiv2(fixed_t a, fixed_t b);
-
-
-
-//-----------------------------------------------------------------------------
-//
-// $Log:$
-//
-//-----------------------------------------------------------------------------
+// Vanilla's three arithmetic entry points. They are now thin spellings of the
+// operators - kept because 150-odd call sites read better as FixedMul(a, b) than
+// as (a * b) in the middle of a projection, and because FixedDiv's saturating
+// behaviour is a documented engine dependency distinct from FixedDiv2's.
+inline fixed_t FixedMul(fixed_t a, fixed_t b) { return a * b; }
+inline fixed_t FixedDiv(fixed_t a, fixed_t b) { return Doom::fixedDiv(a, b); }
+inline fixed_t FixedDiv2(fixed_t a, fixed_t b) { return Doom::fixedDivUnchecked(a, b); }

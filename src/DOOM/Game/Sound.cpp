@@ -46,15 +46,17 @@
 
 // when to clip out sounds
 // Does not fit the large outdoor areas.
-#define S_CLIPPING_DIST (1200 * 0x10000)
+#define S_CLIPPING_DIST (1200 * FRACUNIT)
 
 // Distance tp origin when sounds should be maxed out.
 // This should relate to movement clipping resolution
 // (see BLOCKMAP handling).
 // Originally: (200*0x10000).
-#define S_CLOSE_DIST (160 * 0x10000)
+#define S_CLOSE_DIST (160 * FRACUNIT)
 
-#define S_ATTENUATOR ((S_CLIPPING_DIST - S_CLOSE_DIST) >> FRACBITS)
+// A plain integer divisor in whole map units (1040), not a fixed value: the volume
+// ramp below divides a whole-unit distance by it.
+#define S_ATTENUATOR ((S_CLIPPING_DIST - S_CLOSE_DIST).toInt())
 
 // Adjustable by menu.
 #define NORM_VOLUME snd_MaxVolume
@@ -64,7 +66,7 @@
 #define NORM_SEP 128
 
 #define S_PITCH_PERTURB 1
-#define S_STEREO_SWING (96 * 0x10000)
+#define S_STEREO_SWING (96 * FRACUNIT)
 
 // percent attenuation from front to back
 #define S_IFRACVOL 30
@@ -619,7 +621,7 @@ int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pit
     angle >>= ANGLETOFINESHIFT;
 
     // stereo separation
-    *sep = 128 - (FixedMul(S_STEREO_SWING, finesine[angle]) >> FRACBITS);
+    *sep = 128 - FixedMul(S_STEREO_SWING, finesine[angle]).toInt();
 
     // volume calculation
     if (approx_dist < S_CLOSE_DIST)
@@ -633,13 +635,13 @@ int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pit
 
         *vol = 15
                + ((sndset.sfxVolume - 15)
-                  * ((S_CLIPPING_DIST - approx_dist) >> FRACBITS))
+                  * (S_CLIPPING_DIST - approx_dist).toInt())
                      / S_ATTENUATOR;
     }
     else
     {
         // distance effect
-        *vol = (sndset.sfxVolume * ((S_CLIPPING_DIST - approx_dist) >> FRACBITS))
+        *vol = (sndset.sfxVolume * (S_CLIPPING_DIST - approx_dist).toInt())
                / S_ATTENUATOR;
     }
 

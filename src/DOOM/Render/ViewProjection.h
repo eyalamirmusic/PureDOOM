@@ -26,9 +26,9 @@ struct ViewProjection
     int centerx = 0;
     int centery = 0;
 
-    fixed_t centerxfrac = 0;
-    fixed_t centeryfrac = 0;
-    fixed_t projection = 0;
+    fixed_t centerxfrac {};
+    fixed_t centeryfrac {};
+    fixed_t projection {};
 
     // The field-of-view edge angle (xtoviewangle[0]), clipped against per seg.
     angle_t clipangle = 0;

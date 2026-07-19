@@ -51,8 +51,8 @@
 #include "Weapon.h"
 #include "Random.h"
 #include "ItemRespawnQueue.h"
-#define STOPSPEED 0x1000
-#define FRICTION 0xe800
+#define STOPSPEED (Doom::Fixed {0x1000})
+#define FRICTION (Doom::Fixed {0xe800})
 
 // Defined in g_game (reset a player's state on respawn) and in Clip (the shot range,
 // read by xyMovement's melee check).
@@ -98,7 +98,7 @@ doom_boolean setMobjState(Mobj* mobj, StateNum state)
 //
 void explodeMissile(Mobj* mo)
 {
-    mo->momx = mo->momy = mo->momz = 0;
+    mo->momx = mo->momy = mo->momz = fixed_t {};
 
     setMobjState(mo, static_cast<StateNum>(mobjinfo[mo->type].deathstate));
 
@@ -132,7 +132,7 @@ void xyMovement(Mobj* mo)
         {
             // the skull slammed into something
             mo->flags &= ~MF_SKULLFLY;
-            mo->momx = mo->momy = mo->momz = 0;
+            mo->momx = mo->momy = mo->momz = fixed_t {};
 
             setMobjState(mo, static_cast<StateNum>(mo->info->spawnstate));
         }
@@ -167,7 +167,7 @@ void xyMovement(Mobj* mo)
         {
             ptryx = mo->x + xmove;
             ptryy = mo->y + ymove;
-            xmove = ymove = 0;
+            xmove = ymove = fixed_t {};
         }
 
         if (!Doom::tryMove(mo, ptryx, ptryy))
@@ -193,7 +193,7 @@ void xyMovement(Mobj* mo)
                 explodeMissile(mo);
             }
             else
-                mo->momx = mo->momy = 0;
+                mo->momx = mo->momy = fixed_t {};
         }
     } while (xmove || ymove);
 
@@ -201,7 +201,7 @@ void xyMovement(Mobj* mo)
     if (player && player->cheats & CF_NOMOMENTUM)
     {
         // debug option for no sliding at all
-        mo->momx = mo->momy = 0;
+        mo->momx = mo->momy = fixed_t {};
         return;
     }
 
@@ -232,8 +232,8 @@ void xyMovement(Mobj* mo)
             && static_cast<unsigned>((player->mo->state - states) - S_PLAY_RUN1) < 4)
             setMobjState(player->mo, S_PLAY);
 
-        mo->momx = 0;
-        mo->momy = 0;
+        mo->momx = fixed_t {};
+        mo->momy = fixed_t {};
     }
     else
     {
@@ -266,15 +266,13 @@ void zMovement(Mobj* mo)
         // float down towards target if too close
         if (!(mo->flags & MF_SKULLFLY) && !(mo->flags & MF_INFLOAT))
         {
-            dist = approxDistance(Fixed {mo->x - mo->target->x},
-                                  Fixed {mo->y - mo->target->y})
-                       .raw;
+            dist = approxDistance(mo->x - mo->target->x, mo->y - mo->target->y);
 
             delta = (mo->target->z + (mo->height >> 1)) - mo->z;
 
-            if (delta < 0 && dist < -(delta * 3))
+            if (delta.isNegative() && dist < -(delta * 3))
                 mo->z -= FLOATSPEED;
-            else if (delta > 0 && dist < (delta * 3))
+            else if (delta.isPositive() && dist < (delta * 3))
                 mo->z += FLOATSPEED;
         }
     }
@@ -293,7 +291,7 @@ void zMovement(Mobj* mo)
             mo->momz = -mo->momz;
         }
 
-        if (mo->momz < 0)
+        if (mo->momz.isNegative())
         {
             if (mo->player && mo->momz < -GRAVITY * 8)
             {
@@ -304,7 +302,7 @@ void zMovement(Mobj* mo)
                 mo->player->deltaviewheight = mo->momz >> 3;
                 Doom::startSound(mo, sfx_oof);
             }
-            mo->momz = 0;
+            mo->momz = fixed_t {};
         }
         mo->z = mo->floorz;
 
@@ -316,7 +314,7 @@ void zMovement(Mobj* mo)
     }
     else if (!(mo->flags & MF_NOGRAVITY))
     {
-        if (mo->momz == 0)
+        if (mo->momz.isZero())
             mo->momz = -GRAVITY * 2;
         else
             mo->momz -= GRAVITY;
@@ -325,8 +323,8 @@ void zMovement(Mobj* mo)
     if (mo->z + mo->height > mo->ceilingz)
     {
         // hit the ceiling
-        if (mo->momz > 0)
-            mo->momz = 0;
+        if (mo->momz.isPositive())
+            mo->momz = fixed_t {};
         {
             mo->z = mo->ceilingz - mo->height;
         }
@@ -356,8 +354,8 @@ void nightmareRespawn(Mobj* mobj)
     Mobj* mo;
     MapThing* mthing;
 
-    x = mobj->spawnpoint.x << FRACBITS;
-    y = mobj->spawnpoint.y << FRACBITS;
+    x = Doom::Fixed::fromInt(mobj->spawnpoint.x);
+    y = Doom::Fixed::fromInt(mobj->spawnpoint.y);
 
     // somthing is occupying it's position?
     if (!Doom::checkPosition(mobj, x, y))
@@ -570,8 +568,8 @@ void respawnSpecials()
 
     mthing = &queue.itemrespawnque[queue.iquetail];
 
-    x = mthing->x << FRACBITS;
-    y = mthing->y << FRACBITS;
+    x = Doom::Fixed::fromInt(mthing->x);
+    y = Doom::Fixed::fromInt(mthing->y);
 
     // spawn a teleport fog at the new spot
     ss = Doom::pointInSubsector(x, y);
@@ -625,8 +623,8 @@ void spawnPlayer(MapThing* mthing)
     if (p->playerstate == PST_REBORN)
         Doom::playerReborn(mthing->type - 1);
 
-    x = mthing->x << FRACBITS;
-    y = mthing->y << FRACBITS;
+    x = Doom::Fixed::fromInt(mthing->x);
+    y = Doom::Fixed::fromInt(mthing->y);
     z = ONFLOORZ;
     mobj = spawnMobj(x, y, z, MT_PLAYER);
 
@@ -751,8 +749,8 @@ void spawnMapThing(MapThing* mthing)
     }
 
     // spawn it
-    x = mthing->x << FRACBITS;
-    y = mthing->y << FRACBITS;
+    x = Doom::Fixed::fromInt(mthing->x);
+    y = Doom::Fixed::fromInt(mthing->y);
 
     if (mobjinfo[i].flags & MF_SPAWNCEILING)
         z = ONCEILINGZ;
@@ -787,7 +785,8 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 {
     Mobj* th;
 
-    z += ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 10);
+    z += Doom::Fixed {(Doom::randomness().forPlay() - Doom::randomness().forPlay())
+                      << 10};
 
     th = spawnMobj(x, y, z, MT_PUFF);
     th->momz = FRACUNIT;
@@ -808,7 +807,8 @@ void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 {
     Mobj* th;
 
-    z += ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 10);
+    z += Doom::Fixed {(Doom::randomness().forPlay() - Doom::randomness().forPlay())
+                      << 10};
     th = spawnMobj(x, y, z, MT_BLOOD);
     th->momz = FRACUNIT * 2;
     th->tics -= Doom::randomness().forPlay() & 3;
@@ -866,11 +866,12 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 
     th->angle = an;
     an >>= ANGLETOFINESHIFT;
-    th->momx = FixedMul(th->info->speed, finecosine[an]);
-    th->momy = FixedMul(th->info->speed, finesine[an]);
+    th->momx = FixedMul(Doom::Fixed {th->info->speed}, finecosine[an]);
+    th->momy = FixedMul(Doom::Fixed {th->info->speed}, finesine[an]);
 
-    dist =
-        approxDistance(Fixed {dest->x - source->x}, Fixed {dest->y - source->y}).raw;
+    // dist is vanilla's tic count, not a length: the raw distance divided by the
+    // missile's raw speed as plain integers, then used as the divisor for momz.
+    dist = approxDistance(dest->x - source->x, dest->y - source->y).raw;
     dist = dist / th->info->speed;
 
     if (dist < 1)
@@ -916,7 +917,7 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
         if (!c.linetarget)
         {
             an = source->angle;
-            slope = 0;
+            slope = fixed_t {};
         }
     }
 
@@ -931,9 +932,11 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
 
     th->target = source;
     th->angle = an;
-    th->momx = FixedMul(th->info->speed, finecosine[an >> ANGLETOFINESHIFT]);
-    th->momy = FixedMul(th->info->speed, finesine[an >> ANGLETOFINESHIFT]);
-    th->momz = FixedMul(th->info->speed, slope);
+    th->momx =
+        FixedMul(Doom::Fixed {th->info->speed}, finecosine[an >> ANGLETOFINESHIFT]);
+    th->momy =
+        FixedMul(Doom::Fixed {th->info->speed}, finesine[an >> ANGLETOFINESHIFT]);
+    th->momz = FixedMul(Doom::Fixed {th->info->speed}, slope);
 
     checkMissileSpawn(th);
 }

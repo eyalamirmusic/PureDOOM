@@ -76,7 +76,7 @@ enum
     BOXRIGHT
 };
 
-BBox& asBBox(std::int32_t* box);
-void clearBox(std::int32_t* box);
-void addToBox(std::int32_t* box, std::int32_t x, std::int32_t y);
+BBox& asBBox(Fixed* box);
+void clearBox(Fixed* box);
+void addToBox(Fixed* box, Fixed x, Fixed y);
 } // namespace Doom

@@ -77,24 +77,13 @@ auto tFixedDivSaturates = test("Fixed/divideSaturatesRatherThanOverflowing") = [
     check(Fixed::fromInt(12) / Fixed::fromInt(4) == Fixed::fromInt(3));
 };
 
-// The new type must agree with the old function on every input the old function
-// is ever handed, which is the whole claim the shim makes.
-auto tFixedAgreesWithVanilla = test("Fixed/agreesWithVanillaFixedMul") = []
-{
-    for (auto a = -8; a <= 8; ++a)
-    {
-        for (auto b = -8; b <= 8; ++b)
-        {
-            auto x = Fixed {a * 12345};
-            auto y = Fixed {b * 6789};
-
-            check((x * y).raw == FixedMul(x.raw, y.raw));
-
-            if (y.raw != 0)
-                check(fixedDiv(x, y).raw == FixedDiv(x.raw, y.raw));
-        }
-    }
-};
+// (Fixed/agreesWithVanillaFixedMul lived here. It held Doom::Fixed's operators
+// against the vanilla FixedMul/FixedDiv functions - the claim the shim layer
+// made. fixed_t IS Doom::Fixed now and FixedMul(a, b) is literally `a * b`, so
+// the comparison has become `(x * y).raw == (x * y).raw`. There is no longer
+// anything for it to disagree about. The numeric behaviour it guarded is pinned
+// by Fixed/multiplyWidensToAvoidOverflow and Fixed/divideSaturates above, which
+// assert actual values rather than agreement between two spellings.)
 
 // ---------------------------------------------------------------------------
 // Angle
@@ -210,14 +199,14 @@ auto tBBoxMatchesVanilla = test("BBox/matchesVanillaAddToBox") = []
 
     for (const auto& p: points)
     {
-        Doom::addToBox(vanilla, Fixed::fromInt(p[0]).raw, Fixed::fromInt(p[1]).raw);
+        Doom::addToBox(vanilla, Fixed::fromInt(p[0]), Fixed::fromInt(p[1]));
         box.add(Fixed::fromInt(p[0]), Fixed::fromInt(p[1]));
     }
 
-    check(box.top.raw == vanilla[BOXTOP]);
-    check(box.bottom.raw == vanilla[BOXBOTTOM]);
-    check(box.left.raw == vanilla[BOXLEFT]);
-    check(box.right.raw == vanilla[BOXRIGHT]);
+    check(box.top == vanilla[BOXTOP]);
+    check(box.bottom == vanilla[BOXBOTTOM]);
+    check(box.left == vanilla[BOXLEFT]);
+    check(box.right == vanilla[BOXRIGHT]);
 };
 
 // ---------------------------------------------------------------------------

@@ -1219,7 +1219,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_TRACEEXP1, // deathstate
         S_NULL, // xdeathstate
         sfx_barexp, // deathsound
-        10 * FRACUNIT, // speed
+        (10 * FRACUNIT).raw, // speed
         11 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1297,7 +1297,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_FATSHOTX1, // deathstate
         S_NULL, // xdeathstate
         sfx_firxpl, // deathsound
-        20 * FRACUNIT, // speed
+        (20 * FRACUNIT).raw, // speed
         6 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1479,7 +1479,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_BRBALLX1, // deathstate
         S_NULL, // xdeathstate
         sfx_firxpl, // deathsound
-        15 * FRACUNIT, // speed
+        (15 * FRACUNIT).raw, // speed
         6 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1791,7 +1791,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_NULL, // deathstate
         S_NULL, // xdeathstate
         sfx_firxpl, // deathsound
-        10 * FRACUNIT, // speed
+        (10 * FRACUNIT).raw, // speed
         6 * FRACUNIT, // radius
         32 * FRACUNIT, // height
         100, // mass
@@ -1869,7 +1869,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_TBALLX1, // deathstate
         S_NULL, // xdeathstate
         sfx_firxpl, // deathsound
-        10 * FRACUNIT, // speed
+        (10 * FRACUNIT).raw, // speed
         6 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1895,7 +1895,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_RBALLX1, // deathstate
         S_NULL, // xdeathstate
         sfx_firxpl, // deathsound
-        10 * FRACUNIT, // speed
+        (10 * FRACUNIT).raw, // speed
         6 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1921,7 +1921,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_EXPLODE1, // deathstate
         S_NULL, // xdeathstate
         sfx_barexp, // deathsound
-        20 * FRACUNIT, // speed
+        (20 * FRACUNIT).raw, // speed
         11 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1947,7 +1947,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_PLASEXP, // deathstate
         S_NULL, // xdeathstate
         sfx_firxpl, // deathsound
-        25 * FRACUNIT, // speed
+        (25 * FRACUNIT).raw, // speed
         13 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1973,7 +1973,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_BFGLAND, // deathstate
         S_NULL, // xdeathstate
         sfx_rxplod, // deathsound
-        25 * FRACUNIT, // speed
+        (25 * FRACUNIT).raw, // speed
         13 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass
@@ -1999,7 +1999,7 @@ Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES] = {
         S_ARACH_PLEX, // deathstate
         S_NULL, // xdeathstate
         sfx_firxpl, // deathsound
-        25 * FRACUNIT, // speed
+        (25 * FRACUNIT).raw, // speed
         13 * FRACUNIT, // radius
         8 * FRACUNIT, // height
         100, // mass

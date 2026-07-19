@@ -150,8 +150,10 @@ namespace Doom
 //
 void markRect(int x, int y, int width, int height)
 {
-    Doom::addToBox(videoState().dirtybox.data(), x, y);
-    Doom::addToBox(videoState().dirtybox.data(), x + width - 1, y + height - 1);
+    Doom::addToBox(videoState().dirtybox.data(), fixed_t {x}, fixed_t {y});
+    Doom::addToBox(videoState().dirtybox.data(),
+                   fixed_t {x + width - 1},
+                   fixed_t {y + height - 1});
 }
 
 //

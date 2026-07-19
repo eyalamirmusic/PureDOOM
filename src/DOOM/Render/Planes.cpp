@@ -131,7 +131,7 @@ void mapPlane(int y, int x1, int x2)
         draw.ds_colormap = lights.fixedcolormap;
     else
     {
-        index = distance >> LIGHTZSHIFT;
+        index = distance.raw >> LIGHTZSHIFT;
 
         if (index >= MAXLIGHTZ)
             index = MAXLIGHTZ - 1;
@@ -189,7 +189,7 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
 
     if (picnum == skyState().skyflatnum)
     {
-        height = 0; // all skys map together
+        height = fixed_t {}; // all skys map together
         lightlevel = 0;
     }
 

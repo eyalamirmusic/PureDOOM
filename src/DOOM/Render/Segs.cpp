@@ -54,10 +54,10 @@ static fixed_t& rw_midtexturemid = wallScratch().rw_midtexturemid;
 static fixed_t& rw_toptexturemid = wallScratch().rw_toptexturemid;
 static fixed_t& rw_bottomtexturemid = wallScratch().rw_bottomtexturemid;
 
-static int& worldtop = wallScratch().worldtop;
-static int& worldbottom = wallScratch().worldbottom;
-static int& worldhigh = wallScratch().worldhigh;
-static int& worldlow = wallScratch().worldlow;
+static fixed_t& worldtop = wallScratch().worldtop;
+static fixed_t& worldbottom = wallScratch().worldbottom;
+static fixed_t& worldhigh = wallScratch().worldhigh;
+static fixed_t& worldlow = wallScratch().worldlow;
 
 static fixed_t& pixhigh = wallScratch().pixhigh;
 static fixed_t& pixlow = wallScratch().pixlow;
@@ -147,7 +147,7 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
         {
             if (!lights.fixedcolormap)
             {
-                index = sprites.spryscale >> LIGHTSCALESHIFT;
+                index = sprites.spryscale.raw >> LIGHTSCALESHIFT;
 
                 if (index >= MAXLIGHTSCALE)
                     index = MAXLIGHTSCALE - 1;
@@ -157,7 +157,8 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
 
             sprites.sprtopscreen = viewProjection().centeryfrac
                                    - FixedMul(draw.dc_texturemid, sprites.spryscale);
-            draw.dc_iscale = 0xffffffffu / static_cast<unsigned>(sprites.spryscale);
+            draw.dc_iscale = fixed_t {static_cast<std::int32_t>(
+                0xffffffffu / static_cast<unsigned>(sprites.spryscale.raw))};
 
             // draw the texture
             col = (Column*) ((byte*) Doom::getColumn(texnum,
@@ -193,14 +194,16 @@ void renderSegLoop()
     int yl;
     int yh;
     int mid;
-    fixed_t texturecolumn;
+    // Vanilla declares this fixed_t and shifts it down by FRACBITS in place; by the
+    // time anything reads it, it is a whole texture column number.
+    int texturecolumn;
     int top;
     int bottom;
 
     for (; seg.rw_x < seg.rw_stopx; seg.rw_x++)
     {
         // mark floor / ceiling areas
-        yl = (topfrac + HEIGHTUNIT - 1) >> HEIGHTBITS;
+        yl = (topfrac.raw + HEIGHTUNIT - 1) >> HEIGHTBITS;
 
         // no space above wall?
         if (yl < plane.ceilingclip[seg.rw_x] + 1)
@@ -221,7 +224,7 @@ void renderSegLoop()
             }
         }
 
-        yh = bottomfrac >> HEIGHTBITS;
+        yh = bottomfrac.raw >> HEIGHTBITS;
 
         if (yh >= plane.floorclip[seg.rw_x])
             yh = plane.floorclip[seg.rw_x] - 1;
@@ -246,17 +249,18 @@ void renderSegLoop()
             angle =
                 (rw_centerangle + proj.xtoviewangle[seg.rw_x]) >> ANGLETOFINESHIFT;
             texturecolumn =
-                rw_offset - FixedMul(finetangent[angle], scratch.rw_distance);
-            texturecolumn >>= FRACBITS;
+                (rw_offset - FixedMul(finetangent[angle], scratch.rw_distance))
+                    .toInt();
             // calculate lighting
-            index = rw_scale >> LIGHTSCALESHIFT;
+            index = rw_scale.raw >> LIGHTSCALESHIFT;
 
             if (index >= MAXLIGHTSCALE)
                 index = MAXLIGHTSCALE - 1;
 
             draw.dc_colormap = seg.walllights[index];
             draw.dc_x = seg.rw_x;
-            draw.dc_iscale = 0xffffffffu / static_cast<unsigned>(rw_scale);
+            draw.dc_iscale = fixed_t {static_cast<std::int32_t>(
+                0xffffffffu / static_cast<unsigned>(rw_scale.raw))};
         }
 
         // draw the wall tiers
@@ -277,7 +281,7 @@ void renderSegLoop()
             if (seg.toptexture)
             {
                 // top wall
-                mid = pixhigh >> HEIGHTBITS;
+                mid = pixhigh.raw >> HEIGHTBITS;
                 pixhigh += pixhighstep;
 
                 if (mid >= plane.floorclip[seg.rw_x])
@@ -305,7 +309,7 @@ void renderSegLoop()
             if (seg.bottomtexture)
             {
                 // bottom wall
-                mid = (pixlow + HEIGHTUNIT - 1) >> HEIGHTBITS;
+                mid = (pixlow.raw + HEIGHTUNIT - 1) >> HEIGHTBITS;
                 pixlow += pixlowstep;
 
                 // no space above wall?
@@ -473,8 +477,8 @@ void storeWallRange(int start, int stop)
         bsp.ds_p->silhouette = SIL_BOTH;
         bsp.ds_p->sprtopclip = sprites.screenheightarray;
         bsp.ds_p->sprbottomclip = sprites.negonearray;
-        bsp.ds_p->bsilheight = DOOM_MAXINT;
-        bsp.ds_p->tsilheight = DOOM_MININT;
+        bsp.ds_p->bsilheight = fixed_t {DOOM_MAXINT};
+        bsp.ds_p->tsilheight = fixed_t {DOOM_MININT};
     }
     else
     {
@@ -490,7 +494,7 @@ void storeWallRange(int start, int stop)
         else if (bsp.backsector->floorheight > pt.viewz)
         {
             bsp.ds_p->silhouette = SIL_BOTTOM;
-            bsp.ds_p->bsilheight = DOOM_MAXINT;
+            bsp.ds_p->bsilheight = fixed_t {DOOM_MAXINT};
             // ds_p->sprbottomclip = negonearray;
         }
 
@@ -502,21 +506,21 @@ void storeWallRange(int start, int stop)
         else if (bsp.backsector->ceilingheight < pt.viewz)
         {
             bsp.ds_p->silhouette |= SIL_TOP;
-            bsp.ds_p->tsilheight = DOOM_MININT;
+            bsp.ds_p->tsilheight = fixed_t {DOOM_MININT};
             // ds_p->sprtopclip = screenheightarray;
         }
 
         if (bsp.backsector->ceilingheight <= bsp.frontsector->floorheight)
         {
             bsp.ds_p->sprbottomclip = sprites.negonearray;
-            bsp.ds_p->bsilheight = DOOM_MAXINT;
+            bsp.ds_p->bsilheight = fixed_t {DOOM_MAXINT};
             bsp.ds_p->silhouette |= SIL_BOTTOM;
         }
 
         if (bsp.backsector->floorheight >= bsp.frontsector->ceilingheight)
         {
             bsp.ds_p->sprtopclip = sprites.screenheightarray;
-            bsp.ds_p->tsilheight = DOOM_MININT;
+            bsp.ds_p->tsilheight = fixed_t {DOOM_MININT};
             bsp.ds_p->silhouette |= SIL_TOP;
         }
 
@@ -738,12 +742,12 @@ void storeWallRange(int start, int stop)
     if (maskedtexture && !(bsp.ds_p->silhouette & SIL_TOP))
     {
         bsp.ds_p->silhouette |= SIL_TOP;
-        bsp.ds_p->tsilheight = DOOM_MININT;
+        bsp.ds_p->tsilheight = fixed_t {DOOM_MININT};
     }
     if (maskedtexture && !(bsp.ds_p->silhouette & SIL_BOTTOM))
     {
         bsp.ds_p->silhouette |= SIL_BOTTOM;
-        bsp.ds_p->bsilheight = DOOM_MAXINT;
+        bsp.ds_p->bsilheight = fixed_t {DOOM_MAXINT};
     }
     bsp.ds_p++;
 }

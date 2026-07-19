@@ -36,38 +36,37 @@ int (&sightcounts)[2] = sightScratch().sightcounts;
 // load-bearing - every recorded demo's monster wake-ups went through it.
 int divlineSide(fixed_t x, fixed_t y, const DivLine& node)
 {
-    fixed_t dx;
-    fixed_t dy;
-    fixed_t left;
-    fixed_t right;
-
-    if (!node.delta.x.raw)
+    if (!node.delta.x)
     {
-        if (x == node.origin.x.raw)
+        if (x == node.origin.x)
             return 2;
 
-        if (x <= node.origin.x.raw)
-            return node.delta.y.raw > 0;
+        if (x <= node.origin.x)
+            return node.delta.y.isPositive();
 
-        return node.delta.y.raw < 0;
+        return node.delta.y.isNegative();
     }
 
-    if (!node.delta.y.raw)
+    if (!node.delta.y)
     {
-        if (x == node.origin.y.raw)
+        if (x == node.origin.y)
             return 2;
 
-        if (y <= node.origin.y.raw)
-            return node.delta.x.raw < 0;
+        if (y <= node.origin.y)
+            return node.delta.x.isNegative();
 
-        return node.delta.x.raw > 0;
+        return node.delta.x.isPositive();
     }
 
-    dx = (x - node.origin.x.raw);
-    dy = (y - node.origin.y.raw);
+    const auto dx = x - node.origin.x;
+    const auto dy = y - node.origin.y;
 
-    left = (node.delta.y.raw >> FRACBITS) * (dx >> FRACBITS);
-    right = (dy >> FRACBITS) * (node.delta.x.raw >> FRACBITS);
+    // These are INTEGER products of the shifted-down values, not a fixed-point
+    // multiply: vanilla declares them fixed_t but never treats them as such, and
+    // Fixed::operator* would shift the product back down by FRACBITS and give a
+    // different answer. Kept as plain ints on the raw bits.
+    const int left = (node.delta.y.raw >> FRACBITS) * (dx.raw >> FRACBITS);
+    const int right = (dy.raw >> FRACBITS) * (node.delta.x.raw >> FRACBITS);
 
     if (right < left)
         return 0; // front side
@@ -88,14 +87,14 @@ fixed_t interceptVector2(const DivLine& v2, const DivLine& v1)
     fixed_t num;
     fixed_t den;
 
-    den = FixedMul(v1.delta.y.raw >> 8, v2.delta.x.raw)
-          - FixedMul(v1.delta.x.raw >> 8, v2.delta.y.raw);
+    den = FixedMul(v1.delta.y >> 8, v2.delta.x)
+          - FixedMul(v1.delta.x >> 8, v2.delta.y);
 
-    if (den == 0)
-        return 0;
+    if (den.isZero())
+        return fixed_t {};
 
-    num = FixedMul((v1.origin.x.raw - v2.origin.x.raw) >> 8, v1.delta.y.raw)
-          + FixedMul((v2.origin.y.raw - v1.origin.y.raw) >> 8, v1.delta.x.raw);
+    num = FixedMul((v1.origin.x - v2.origin.x) >> 8, v1.delta.y)
+          + FixedMul((v2.origin.y - v1.origin.y) >> 8, v1.delta.x);
     frac = FixedDiv(num, den);
 
     return frac;
@@ -165,7 +164,7 @@ doom_boolean crossSubsector(int num)
 
         divl.origin = {Fixed {v1->x}, Fixed {v1->y}};
         divl.delta = {Fixed {v2->x - v1->x}, Fixed {v2->y - v1->y}};
-        s1 = divlineSide(strace.origin.x.raw, strace.origin.y.raw, divl);
+        s1 = divlineSide(strace.origin.x, strace.origin.y, divl);
         s2 = divlineSide(t2x, t2y, divl);
 
         // line isn't crossed?
@@ -253,7 +252,7 @@ doom_boolean crossBSPNode(int bspnum)
                              {Fixed {bsp->dx}, Fixed {bsp->dy}}};
 
     // decide which side the start point is on
-    side = divlineSide(strace.origin.x.raw, strace.origin.y.raw, partition);
+    side = divlineSide(strace.origin.x, strace.origin.y, partition);
     if (side == 2)
         side = 0; // an "on" should cross both sides
 

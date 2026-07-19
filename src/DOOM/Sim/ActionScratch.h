@@ -35,18 +35,18 @@ namespace Doom
 struct ActionScratch
 {
     // Doom::slideMove.
-    fixed_t bestslidefrac = 0; // closest slide so far along the move
-    fixed_t secondslidefrac = 0; // runner-up
+    fixed_t bestslidefrac {}; // closest slide so far along the move
+    fixed_t secondslidefrac {}; // runner-up
     Line* bestslideline = nullptr; // the wall slid against
     Line* secondslideline = nullptr; // the runner-up wall
     Mobj* slidemo = nullptr; // the mobj sliding
-    fixed_t tmxmove = 0; // residual x move after the slide
-    fixed_t tmymove = 0; // residual y move after the slide
+    fixed_t tmxmove {}; // residual x move after the slide
+    fixed_t tmymove {}; // residual y move after the slide
 
     // The hitscan attacks (Doom::aimLineAttack / Doom::lineAttack).
-    fixed_t aimslope = 0; // vertical slope to the aimed target
+    fixed_t aimslope {}; // vertical slope to the aimed target
     Mobj* shootthing = nullptr; // the mobj firing
-    fixed_t shootz = 0; // z the shot leaves from
+    fixed_t shootz {}; // z the shot leaves from
     int la_damage = 0; // hitscan damage
 
     // Doom::useLines.

@@ -15,9 +15,9 @@ namespace Doom
 // confirmation.
 struct WeaponScratch
 {
-    fixed_t swingx = 0; // weapon bob x offset this tic
-    fixed_t swingy = 0; // weapon bob y offset this tic
-    fixed_t bulletslope = 0; // auto-aim vertical slope for a hitscan shot
+    fixed_t swingx {}; // weapon bob x offset this tic
+    fixed_t swingy {}; // weapon bob y offset this tic
+    fixed_t bulletslope {}; // auto-aim vertical slope for a hitscan shot
 };
 
 // The one WeaponScratch, a view onto the Engine's member - the same pattern as the other clusters
