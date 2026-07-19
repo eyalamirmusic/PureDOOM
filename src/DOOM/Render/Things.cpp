@@ -84,7 +84,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
     if (rotation == 0)
     {
         // the lump should be used for all rotations
-        if (scratch.sprtemp[frame].rotate == false)
+        if (scratch.sprtemp[frame].rotate == singleRotation)
         {
             doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
             doom_concat(error_buf, scratch.spritename);
@@ -94,7 +94,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
             fatalError(error_buf);
         }
 
-        if (scratch.sprtemp[frame].rotate == true)
+        if (scratch.sprtemp[frame].rotate == eightRotations)
         {
             doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
             doom_concat(error_buf, scratch.spritename);
@@ -104,7 +104,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
             fatalError(error_buf);
         }
 
-        scratch.sprtemp[frame].rotate = false;
+        scratch.sprtemp[frame].rotate = singleRotation;
         for (int r = 0; r < 8; r++)
         {
             scratch.sprtemp[frame].lump[r] = lump - gd.firstspritelump;
@@ -114,7 +114,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
     }
 
     // the lump is only used for one rotation
-    if (scratch.sprtemp[frame].rotate == false)
+    if (scratch.sprtemp[frame].rotate == singleRotation)
     {
         doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
         doom_concat(error_buf, scratch.spritename);
@@ -124,7 +124,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
         fatalError(error_buf);
     }
 
-    scratch.sprtemp[frame].rotate = true;
+    scratch.sprtemp[frame].rotate = eightRotations;
 
     // make 0 based
     rotation--;
@@ -244,7 +244,7 @@ void initSpriteDefs(const char** namelist)
         {
             switch (static_cast<int>(scratch.sprtemp[frame].rotate))
             {
-                case -1:
+                case noRotationsSeen:
                 {
                     // no rotations were found for that frame at all
                     doom_strcpy(error_buf,
@@ -326,7 +326,11 @@ VisSprite* newVisSprite()
 {
     auto& sprState = spriteState();
 
-    if (sprState.vissprite_p == &sprState.vissprites[SpriteState::maxVisSprites])
+    // data() + N rather than &vissprites[N] - the one-past-the-end address, which
+    // is an out-of-range subscript on the EA::Array (std::array) this now is, and
+    // which MSVC's debug STL asserts on. See the same change in Sim/Mobj.cpp.
+    if (sprState.vissprite_p
+        == sprState.vissprites.data() + SpriteState::maxVisSprites)
         return &spriteScratch().overflowsprite;
 
     sprState.vissprite_p++;

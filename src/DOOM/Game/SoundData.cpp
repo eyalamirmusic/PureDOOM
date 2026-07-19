@@ -22,6 +22,7 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
 
 #include "../doomtype.h"
@@ -37,8 +38,8 @@ using namespace Doom;
 // guard the layout from clang-format and quiet the warning that legitimate
 // data of this shape raises under -Wall.
 // clang-format off
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+DOOM_DIAGNOSTIC_PUSH
+DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 
 
 //
@@ -234,5 +235,5 @@ Doom::SfxInfo S_sfx[] =
     { "radio", false, 60, 0, -1, -1, 0 }
 };
 
-#pragma GCC diagnostic pop
+DOOM_DIAGNOSTIC_POP
 // clang-format on

@@ -7,6 +7,26 @@ option(PUREDOOM_BUILD_TESTS "" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
+# C++20, and the *same* C++20 on every toolchain. Set here rather than per
+# subdirectory so a target added anywhere inherits it, and so the three settings
+# that make it portable travel together:
+#
+#   STANDARD_REQUIRED  - a compiler that cannot do C++20 is an error rather than
+#                        a silent downgrade to whatever it can do. Without it
+#                        CMake drops to C++17 and the failure surfaces later, as
+#                        a confusing diagnostic in code that assumed C++20.
+#   EXTENSIONS OFF     - asks GCC/Clang for -std=c++20 instead of their default
+#                        -std=gnu++20. With extensions on, the engine compiles
+#                        against a slightly different language on the GNU-driver
+#                        platforms than on the MSVC ones, which is exactly the
+#                        kind of difference that is invisible until it isn't.
+#
+# doom-engine additionally states cxx_std_20 as a target_compile_feature, which
+# is what propagates the requirement to anything linking it.
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Nothing here is a C++20 module, but CMake scans for them anyway on any target
 # built as C++20, which costs a scan pass per translation unit and - on GCC -
 # breaks the build outright. The scan is what puts `-fmodules-ts` on the command
@@ -21,13 +41,34 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 # C++20, and pulls in nothing else - no eacp, no graphics. The engine uses them
 # in its rewritten code, so it is added here, ahead of the engine, rather than
 # inside examples/EACP (which configures after src/DOOM). CPM dedupes by NAME, so
-# eacp's own find_package(EADataStructures) reuses this one when the app is built,
-# and the tests keep linking doom-engine (plus this header-only target) alone.
+# eacp's own find_package(EADataStructures) reuses this one, and the engine itself
+# still links nothing but this header-only target.
 include(CPM)
 CPMAddPackage(
         NAME EADataStructures
         GITHUB_REPOSITORY eyalamirmusic/cpp_data_structures
         GIT_TAG main)
+
+# eacp proper. Added here rather than inside examples/EACP because the tests want
+# it too: eacp-core carries <eacp/Core/Utils/Environment.h>, which is how anything
+# in this repository reads or writes a process environment variable. That is not a
+# nicety - std::getenv is deprecated by Microsoft's CRT, and setting a variable has
+# no portable spelling at all (_putenv_s against setenv), so every call site that
+# did it by hand carried an #ifdef and a suppression. eacp answers both.
+#
+# The heavy half is gated on whether the app is actually being built. With
+# EACP_BUILD_GRAPHICS OFF this compiles Core, SIMD and Network and stops - no
+# Graphics, GPU, WebView, Camera or Video - so the engine-only test loop
+# (-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF, which is also what CI builds) stays a
+# CPU-only build that needs no GPU. CPM dedupes by NAME, so the app's own
+# requirements are expressed here and examples/EACP just links the targets.
+CPMAddPackage(
+        NAME eacp
+        GITHUB_REPOSITORY eyalamirmusic/eacp
+        GIT_TAG main
+        OPTIONS
+        "EACP_BUILD_GRAPHICS ${PUREDOOM_BUILD_EACP_EXAMPLE}"
+        "EACP_BUILD_WEBVIEW OFF")
 
 # The engine. Everything else links it.
 add_subdirectory(src/DOOM)

@@ -46,9 +46,11 @@ What is left of the whole refactor is a short, named, mostly *deliberate* tail:
 audio (blocked outside this repository) and `Host/Sound`'s `paddedsfx` behind it;
 `findResponseFile`/`myargv`, a real ownership question with no test driving it; the
 ~55 dead-in-both-eras macros whose deletion is a judgement call reserved for a
-human; and measuring the warning count on the **two** CI configurations still
-unmeasured (Ubuntu's gcc/clang, and MSVC on `/W4`), which is the prerequisite for
-`-Werror`. The runtime-accessor macros are converted — and the list of "six" this
+human; and measuring the warning count on the **one** CI configuration still
+unmeasured (Ubuntu's gcc/clang), which is the prerequisite for `-Werror`. Windows
+is now measured on both toolchains — see **Windows** below, because getting there
+turned up three real memory defects and none of them was a portability nicety.
+The runtime-accessor macros are converted — and the list of "six" this
 paragraph used to name was wrong in both directions: two of them were dead in both
 eras and belong to the ~55 pile, and one that had to be converted was missing from
 it. Four were live and are now functions.
@@ -324,6 +326,29 @@ apparatus:
     the one that hides — `player - players_.players` computes a player index in four
     places and none was in any survey. The compiler catches each individually, which
     makes this one of the few sweeps here that the build verifies for you.
+  - **`&arr[N]` — the one-past-the-end pointer — is the exception to "`&arr[i]` is
+    fine", and no compiler catches it.** On a raw C array it is the ordinary way to
+    write an end pointer. On `EA::Array` it is `std::array::operator[]` with an
+    out-of-range index, and **MSVC's debug STL asserts on it** — which is a *runtime*
+    failure, in `Debug` only, on one toolchain, in code that compiles cleanly and
+    runs correctly everywhere else. Three sites had it (`Sim/Mobj.cpp`'s
+    `deathmatchstarts`, `Render/Segs.cpp`'s `drawsegs`, `Render/Things.cpp`'s
+    `vissprites`); all are `.data() + N` now. `grep -nE '&[A-Za-z_.>-]+\[[A-Za-z_:]*(max|MAX|NUM)'`
+    finds the family.
+
+    Its cousin is the **deliberate** out-of-bounds subscript, which needs the same
+    treatment for the same reason: `Render/Planes.cpp` writes a sentinel at
+    `top[minx - 1]` and `top[maxx + 1]` and the span loop reads both ends, which is
+    exactly what `VisPlane`'s `pad1`..`pad4` exist to absorb — but `operator[]`
+    checks the *declared* extent and cannot know about the padding. Reached through
+    `.data()` now; identical bytes, no assertion.
+
+    **How this presented is the part worth remembering.** The debug CRT reports
+    through a modal dialog, so under ctest the binary stopped dead with no output, no
+    exit code and no CPU, and the suite hung on demo1 looking exactly like an
+    infinite loop in the engine. `Tests/TestMain.cpp` now routes `_CRT_WARN`/
+    `_CRT_ERROR`/`_CRT_ASSERT` to stderr so the next one fails loudly and says what
+    it is.
   - **`EA::Array<char, N>` is not an aggregate**, so a bare string literal in a table
     stops binding: `Sim/Switches.cpp`'s `alphSwitchList[]` needs
     `EA::Array<char, 9> {{"SW1BRCOM"}}`. Verify any bulk string change by extracting
@@ -536,9 +561,20 @@ test binaries link so the shim is compiled once rather than per binary. You neve
 invoke that last one directly; it builds as their dependency. There are only two
 build options, `PUREDOOM_BUILD_TESTS` and `PUREDOOM_BUILD_EACP_EXAMPLE`.
 
-The tests need no GPU and no eacp — they link `doom-engine` alone — so
-`-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast engine-only loop while
-refactoring. That is also what CI builds, for the same reason.
+The tests need **no GPU**, so `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` still gives a
+fast loop while refactoring, and that is what CI builds. They do **not** link
+`doom-engine` alone any more, and neither does the engine: both link **`eacp-core`**,
+for the platform work they would otherwise hand-roll per OS (today
+`<eacp/Core/Utils/Environment.h>` — reading and writing an environment variable has
+no portable spelling, and `std::getenv` is deprecated outright by Microsoft's CRT).
+
+That flag now controls more than the app: with it `OFF` the root `CMakeLists.txt`
+passes `EACP_BUILD_GRAPHICS OFF`, so eacp compiles Core, SIMD and Network and stops
+— no Graphics, GPU, WebView, Camera or Video. `doom-engine` links `eacp-core`
+**PRIVATE**: it is an implementation choice, `DOOM.h` stays a plain `extern "C"`
+header with no eacp type in it, and an embedder still overrides any of it through
+the `doom_set_*` callbacks. The tests name `eacp-core` themselves because they use
+it directly.
 
 **Build it with a second compiler before believing a warning count.** GCC catches
 things Apple Clang does not, and — as of the session that first tried it — the
@@ -739,6 +775,52 @@ never compiles `examples/EACP`, and `EngineAccess.cpp` includes engine headers
 directly, so an engine change can break the app with every test still green. Keep
 a second build directory for it and treat the app linking as a fourth gate.
 
+### Windows, and the three memory bugs it found
+
+The engine builds and passes all 87 tests on **Windows arm64**, under both
+**clang-cl** and **MSVC**, in `Debug` and `Release`. Getting there was not a
+portability exercise: the platform surfaced three genuine defects that macOS and
+Linux had been absorbing, and **none of them was visible to any gate in this
+repository**, because the goldens hash the world and the picture and all three were
+correct right up until the heap gave out.
+
+- **A one-byte heap overflow, every boot.** `IdentifyVersion` sized seven WAD search
+  paths by hand as `strlen(dir) + 1 + <basename length> + 1`, with the length written
+  as a literal — and `"doomu.wad"` is nine characters counted as eight. The
+  terminating NUL landed one byte past the allocation. On macOS the block's padding
+  absorbed it; on Windows arm64 it corrupted the following block and demo1 and demo3
+  **segfaulted** before rendering a frame. AddressSanitizer names it in one line. The
+  literals are gone — `joinWadPath` measures the string it is about to write.
+- **The tutti-frutti guard was too small**, which is written up under
+  **The primitive tests give locality** above. 64 → 256, no golden re-recorded.
+- **Three one-past-the-end `&arr[N]` subscripts** and one deliberate out-of-bounds
+  write, all tripping MSVC's debug STL — see the `EA::Array` notes under **Layout**.
+
+Two lessons generalise past Windows:
+
+- **`Debug` and `Release` fail differently, and `Debug` fails worse.** Release
+  segfaulted, which at least says *something*. Debug hung: the debug CRT reports a
+  corrupted heap or a failed assertion through a **modal dialog**, which under ctest
+  reaches no desktop, so the binary stopped with no output, no exit code and **no
+  CPU**, indistinguishable from an infinite loop. Flat CPU is the tell — a slow test
+  burns CPU, a blocked one does not. `Tests/TestMain.cpp` now routes those reports to
+  stderr.
+- **Run AddressSanitizer when a golden moves for no reason.** It found the overflow
+  immediately, with a stack, after an afternoon of reasoning had not. On Windows arm64
+  the *LLVM* toolchain ships no ASan runtime (only `clang_rt.builtins`), but **MSVC's
+  does** — build with `cl /fsanitize=address` and `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL`
+  (ASan cannot link the debug runtime). Note that overriding `CMAKE_CXX_FLAGS` drops
+  CMake's injected `/DWIN32`, which is its own trap; see `Host/Platform.h`.
+
+`_WIN32` is the macro to test, never bare `WIN32`. `WIN32` is not a compiler macro at
+all — it arrives from the Windows SDK or from a build system that adds `-DWIN32`,
+which CMake happens to do for MSVC-style drivers. `Host/Platform.h` and `Host/Api.cpp`
+both tested it, so every Windows build was one build system away from silently taking
+the `DOOM_LINUX` branch and failing to compile on `<sys/time.h>`. Both test `_WIN32`
+now. (`Host/Api.cpp` also included `<winsock.h>` — Winsock *1* — purely to reach
+`windows.h` for `GetSystemTime`, which would conflict with `Host/Net.cpp`'s
+`<WinSock2.h>`; it includes `<windows.h>` directly now.)
+
 ### Read the warnings — they are a fifth gate
 
 The engine builds under `-Wall -Wextra -Wpedantic` with **zero warnings**. **Anything
@@ -747,10 +829,33 @@ while after — `Sim/Weapon.cpp`'s type-erased `states[].action` cast, which is 
 trip and therefore well-defined, and which now sits behind a scoped suppression
 spelled for each compiler. This is a state to hold, not a number to admire.
 
-That zero is measured on Apple Clang (`Debug` and `Release`) and on **real GCC 16**
-(`Release`). Still unmeasured are **Ubuntu's gcc and clang** (a different standard
-library, so a different set of transitive includes) and **MSVC on `/W4`**, which is
-not the same flag set at all. `-Werror` waits on those: see `REFACTOR.md` item 7.
+That zero is measured on Apple Clang (`Debug` and `Release`), on **real GCC 16**
+(`Release`), and now on **Windows arm64 with both clang-cl and MSVC** (`Debug` and
+`Release`, all 87 tests green on each). Only **Ubuntu's gcc and clang** are still
+unmeasured — a different standard library, so a different set of transitive
+includes. `-Werror` waits on that: see `REFACTOR.md` item 7.
+
+**The flags are chosen by the driver, not by the compiler's name, and getting that
+wrong is not a no-op.** `src/DOOM/CMakeLists.txt` used to select them with
+`$<CXX_COMPILER_ID:MSVC>`. clang-cl's `CMAKE_CXX_COMPILER_ID` is **`Clang`** with
+`CMAKE_CXX_COMPILER_FRONTEND_VARIANT` **`MSVC`** — so it took the GNU branch and fed
+`-Wall -Wextra -Wpedantic` to an MSVC-style driver, where **`-Wall` means `/Wall`,
+which clang implements as `-Weverything`**. That one substitution produced **~44,000
+warnings**, nearly all `-Wold-style-cast`, `-Wpadded` and `-Wunsafe-buffer-usage`, and
+most of them raised inside eacp's headers rather than in any code here. It also
+silently dropped `-ffp-contract=off` ("unknown argument ignored in clang-cl", once per
+TU, lost in the noise) — so the determinism guarantee the goldens rest on was *not*
+in force on the one Windows toolchain most likely to contract. Ask
+`CMAKE_CXX_COMPILER_FRONTEND_VARIANT`; clang-cl takes `/clang:-ffp-contract=off`.
+
+**MSVC's `/W4` is not `-Wall -Wextra`, and six of its warnings are switched off on
+purpose** (`/wd4244 /wd4267 /wd4459 /wd4457 /wd4702 /wd4805`). Each corresponds to a
+GCC/Clang flag this project has deliberately *not* enabled — `-Wconversion`,
+`-Wshadow`, `-Wunreachable-code` — so leaving them on would make "zero warnings" mean
+something different on each toolchain rather than the same thing everywhere. 121 of
+the 136 were `C4244`, DOOM's pervasive and load-bearing int→short/byte truncation.
+Raising that bar is a real decision, and it should be taken for all compilers at once
+rather than arrived at by accident on one; the reasoning is written out at the flags.
 
 **CI's five rows are four toolchains.** On a macOS runner bare `gcc`/`g++` resolve to
 `/usr/bin`, which is Apple Clang wearing the name — so `.github/workflows/tests.yml`'s
@@ -842,10 +947,23 @@ Three of them pin things that look like bugs and are not. A refactor will want t
   fixed.** A wall texture shorter than the column it fills makes the renderer draw
   whatever memory follows the patch; the value is undefined and was the same on
   every machine only because the old zone was one contiguous arena. `WadFile::data`
-  keeps that true by giving each lump a 64-byte zero tail, so the over-read still
-  happens but draws a deterministic zero everywhere. Do not "fix" the over-read in
-  the renderer — it is a visible 1993 behaviour, and the frame goldens are recorded
-  with it.
+  keeps that true by giving each lump a **256-byte** zero tail, so the over-read
+  still happens but draws a deterministic zero everywhere. Do not "fix" the
+  over-read in the renderer — it is a visible 1993 behaviour, and the frame goldens
+  are recorded with it.
+
+  **It was 64, and 64 was not enough — this is the worked example of why a bound
+  should be read off the code rather than sampled.** The comment said the over-read
+  was "under that, measured". It is not: `drawColumn` and `drawColumnLow` index
+  `dc_source` with `frac.toInt() & 127`, so 128 is reachable *by inspection*, and
+  `drawTranslatedColumn` does not mask at all (a patch post's length is a byte, so
+  255). The measurement had been taken on macOS, where the bytes past the tail
+  happened to be zero anyway — so the frame goldens recorded there were **correct**;
+  they simply could not distinguish the guard from the allocator's luck. On Windows
+  arm64 the same over-read found non-zero heap, and demo1 at tic 5328 and demo2 at
+  tic 392 drew differently. Raising the tail to 256 made all 87 tests pass on both
+  Windows toolchains **with no golden re-recorded**, which is the proof that the
+  goldens were right and the guard was wrong.
 - **`pointOnLineSide` and `pointOnDivlineSide` are different formulae** (both in
   `Sim/MapGeometry.h`) and must stay different. The line version shifts one factor
   of the cross product by `FRACBITS`; the divline version shifts both by 8 and has

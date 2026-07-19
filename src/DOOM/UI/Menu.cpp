@@ -22,6 +22,7 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
 #include "../Render/GraphicsData.h"
 
@@ -199,8 +200,8 @@ EA::Array<EA::Array<char, /*8*/ 9>, 2> skullName = {
 // purpose: a {0} terminates a custom-text segment list, and a {-1,"",0} marks a
 // non-selectable spacer row. Both leave trailing fields defaulted, which is what
 // they mean - so the warning about it is silenced just over the data.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+DOOM_DIAGNOSTIC_PUSH
+DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 
 // We create new menu text by cutting into existing graphics and pasting them to create the new text.
 // This way we don't ship code with embeded graphics that come from WAD files.
@@ -650,7 +651,7 @@ EA::Array<MenuItem, 6> SaveMenu = {{1, "", saveSelect, '1'},
 
 MenuDef SaveDef = {load_end, &MainDef, SaveMenu.data(), drawSave, 80, 54, 0};
 
-#pragma GCC diagnostic pop
+DOOM_DIAGNOSTIC_POP
 
 //
 // drawCustomMenuText

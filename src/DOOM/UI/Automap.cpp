@@ -744,7 +744,12 @@ bool clipMline(MapLine* ml, FLine* fl)
     int outcode2 = 0;
     int outside;
 
-    FPoint tmp;
+    // Initialized because the four-way clip below is an if/else-if chain with no
+    // final else: it covers every bit `outside` can carry, but only because
+    // computeOutcode sets no others and the loop has already established it is
+    // nonzero. That is a real invariant and an invisible one, so MSVC reads the
+    // chain as leaving tmp unwritten.
+    FPoint tmp {};
     int dx;
     int dy;
 

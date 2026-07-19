@@ -1303,17 +1303,31 @@ Everything above the line is done. What follows is, in the order worth doing it:
    that looked like it was closing the gap was the one telling the lie.
 
    Measured at zero: **Apple Clang, `Debug` and `Release`** (which is what two of the
-   five rows actually are), and **real GCC 16 on macOS, `Release`** — which is *not* a
-   CI row as configured, and is the measurement this session added. Still unmeasured:
-   **gcc and clang on Ubuntu** (a different libstdc++ and glibc, so a different set of
-   transitive includes — the `<cstdio>` failure above is exactly the kind of thing that
-   differs) and **MSVC on `/W4`**, which is not the same flag set at all.
+   five rows actually are), **real GCC 16 on macOS, `Release`** — which is *not* a
+   CI row as configured — and, as of the Windows session, **clang-cl and MSVC on
+   Windows arm64, `Debug` and `Release`, with all 87 tests green on each**. Still
+   unmeasured: **gcc and clang on Ubuntu** (a different libstdc++ and glibc, so a
+   different set of transitive includes — the `<cstdio>` failure above is exactly the
+   kind of thing that differs). That is the last one.
+
+   **Two corrections to what this item used to say about Windows.** First, the flags
+   were never reaching clang-cl as written: the selector was `$<CXX_COMPILER_ID:MSVC>`,
+   and clang-cl's compiler ID is `Clang` (its *frontend variant* is MSVC), so it took
+   the GNU branch — where `-Wall` means `/Wall`, which clang implements as
+   `-Weverything`. The count was **~44,000**, not a number anyone would have predicted
+   from "MSVC uses `/W4`", and it dragged `-ffp-contract=off` down with it as an
+   ignored argument. Second, `/W4` genuinely is not the same flag set, and the honest
+   response was to switch off the six warnings whose GNU equivalents this project has
+   not enabled (`-Wconversion`, `-Wshadow`, `-Wunreachable-code`) rather than to let
+   "zero warnings" mean a different thing per toolchain. Both are written up at the
+   flags in `src/DOOM/CMakeLists.txt`.
 
    The recommendation is unchanged and now acted on: `.github/workflows/tests.yml`
    gained a **Report warning count** step, which captures the build log and prints a
    per-configuration count into the job summary, failing on nothing. That makes the
-   two unmeasured toolchains self-measuring on the next push instead of waiting for
-   someone with the right machine. `-Werror` once every row has read zero for a while.
+   remaining unmeasured toolchain self-measuring on the next push instead of waiting
+   for someone with the right machine. `-Werror` once every row has read zero for a
+   while.
    Pointing the macOS gcc row at a Homebrew `g++-N` would make the matrix honest too,
    at the cost of pinning a version and a `brew install`; left as a deliberate decision
    rather than changed in passing, with the reasoning recorded in the workflow.
@@ -2389,11 +2403,23 @@ Three bugs surfaced, and they are the reason this half took the work it did:
   quirk, undefined by design and allocator-dependent. The old self-contained zone
   made that garbage the same on every machine; a per-lump `std::vector` would read
   heap-adjacent bytes that differ across platforms. So `WadFile::data` gives each
-  lump a **64-byte zero tail** (measured: the over-read is under that): the quirk
-  still happens, deterministically, reading zero everywhere. The frame goldens were
-  re-recorded once against that — 3 lines total, demo1 #1332 and demo2 #168/#957.
-  This was settled by building the pre-Step-4 commit in a worktree and diffing the
-  actual pixels, not by argument.
+  lump a zero tail: the quirk still happens, deterministically, reading zero
+  everywhere. The frame goldens were re-recorded once against that — 3 lines total,
+  demo1 #1332 and demo2 #168/#957. This was settled by building the pre-Step-4 commit
+  in a worktree and diffing the actual pixels, not by argument.
+
+  **The tail was 64 bytes and that was too small — corrected to 256 in the Windows
+  session, and the reasoning is the lesson.** The parenthetical here used to read
+  "(measured: the over-read is under that)". It was not: `drawColumn` and
+  `drawColumnLow` index `dc_source` with `frac.toInt() & 127`, so 128 is reachable
+  *by reading the code*, and `drawTranslatedColumn` does not mask at all. The
+  measurement had been taken on macOS, where the bytes past the tail happened to be
+  zero anyway — so it could not distinguish the guard working from the allocator
+  being kind. On Windows arm64 the same over-read found live heap and two frames drew
+  differently (demo1 tic 5328, demo2 tic 392). Raising the tail to 256 turned all 87
+  tests green on both Windows toolchains **with no golden re-recorded**, which is the
+  proof that the goldens were right and the guard was wrong. A bound belongs to
+  whatever the code can reach, not to whatever a run happened to reach.
 
 The one that looked like a third bug and was not: `R_GetColumn` tests
 `if (!texturecomposite[tex])` on a `Z_Malloc`'d array that is never explicitly

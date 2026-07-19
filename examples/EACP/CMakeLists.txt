@@ -1,13 +1,4 @@
-set(CMAKE_CXX_STANDARD 20)
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
-include(CPM)
-
-CPMAddPackage(
-        NAME eacp
-        GITHUB_REPOSITORY eyalamirmusic/eacp
-        GIT_TAG main
-        OPTIONS "EACP_BUILD_WEBVIEW OFF")
+# eacp itself is added at the root, where the tests can reach eacp-core too.
 
 # eacp only runs eacp_default_setup() when it is the top-level project, so as
 # a CPM dependency it never sets the bundle plist template that

@@ -16,8 +16,6 @@
 #include "../Sim/SimDefs.h"
 #include "../Wad/WadFile.h"
 
-#include <alloca.h>
-
 #include "../Game/SkyState.h"
 #include "../Sim/ThinkerList.h"
 #include "CompositeCache.h"

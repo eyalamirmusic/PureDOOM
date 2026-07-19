@@ -185,18 +185,29 @@ struct VisSprite
 //
 namespace Doom
 {
+// The three states SpriteFrame::rotate can hold. See the field itself for why it
+// is an int with a sentinel rather than the bool vanilla declared.
+constexpr int noRotationsSeen = -1;
+constexpr int singleRotation = 0;
+constexpr int eightRotations = 1;
+
 struct SpriteFrame
 {
-    // If 0, use lump 0 for any position - the sprite is drawn the same from
-    // every angle. If 1, the eight rotations are all present.
+    // One of the three SpriteFrame::rotate values below - singleRotation,
+    // eightRotations, or noRotationsSeen.
     //
     // Not a boolean, despite vanilla's type: R_InitSpriteDefs memsets sprtemp to
     // -1, and -1 means "no lump seen for this frame yet". R_InstallSpriteLump
-    // relies on the third state - it tests `== false` and `== true` separately,
-    // and a frame that is still -1 must match neither. As a C++ bool the -1 would
-    // read back as true, every sprite with rotations would look like a frame that
-    // already had a rot=0 lump, and the engine would Doom::fatalError on the very first
-    // one it loaded (TROO frame I).
+    // relies on the third state - it tests the two real values separately, and a
+    // frame that is still -1 must match neither. As a C++ bool the -1 would read
+    // back as true, every sprite with rotations would look like a frame that
+    // already had a rot=0 lump, and the engine would Doom::fatalError on the very
+    // first one it loaded (TROO frame I).
+    //
+    // Those tests were spelled `== false` and `== true` until MSVC objected to
+    // mixing bool with int, which was the honest complaint rather than a nuisance:
+    // the field is not a bool, and writing it as one hid the very state the
+    // comment above exists to explain.
     int rotate;
 
     // Lump to use for view angles 0-7.
@@ -269,10 +280,17 @@ static_assert(
     "sentinel writes; that requires EA::Array to add no storage of its own");
 // A companion offsetof() assertion — that pad2 sits immediately after top[] — was written here and
 // then deliberately removed. offsetof on a non-standard-layout class is only conditionally
-// supported, and this repository has measured its warning count on **Apple Clang alone**: CI builds
-// gcc and MSVC as well, MSVC on /W4, and neither has ever been measured (REFACTOR.md item 7).
-// Introducing a construct that might warn on four configurations out of five, to check something
-// the sizeof assertion above already implies, is a bad trade.
+// supported, and it would check something the sizeof assertion above already implies.
+//
+// (The reason originally given for removing it — that the warning count had been measured on Apple
+// Clang alone, so a new construct might warn on four configurations out of five — has since expired:
+// gcc, clang-cl and MSVC on /W4 are all measured at zero now. The trade still looks bad on its own
+// merits, so it stays removed, but not for that reason.)
+//
+// What the pads do NOT protect against is std::array::operator[] itself. MSVC's debug STL bounds-
+// checks the subscript against the *declared* extent and knows nothing of the padding beyond it, so
+// Planes.cpp reaches these four accesses through .data() rather than operator[]. Same bytes, no
+// assertion. See the note at that site.
 } // namespace Doom
 
 //-----------------------------------------------------------------------------

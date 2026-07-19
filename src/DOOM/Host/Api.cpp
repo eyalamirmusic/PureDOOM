@@ -1,6 +1,10 @@
-#if defined(WIN32)
+// _WIN32, not WIN32 - see the note in Platform.h. Bare WIN32 is not a compiler
+// macro; it reaches this file only because CMake adds -DWIN32 for MSVC-style
+// drivers, so this block was one build system away from silently not applying.
+// It is load-bearing: the default file I/O below is fopen/fread/fseek, which
+// Microsoft's CRT deprecates in favour of its _s variants.
+#if defined(_WIN32)
 #define _CRT_SECURE_NO_WARNINGS
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
 #endif
 
@@ -19,6 +23,15 @@
 #include "../Game/OverlayState.h"
 #include "../Render/ViewWindow.h"
 #include "Sound.h"
+
+// Doom::currentTic, Doom::gameFlow and Doom::inputConfig, used by doom_update and
+// the input entry points at the bottom of this file. They used to be included
+// inside the DOOM_IMPLEMENT_GETENV block, which a getenv wrapper has no use for:
+// turning that one flag off would have stopped the file compiling for reasons
+// several hundred lines away from the flag.
+#include "System.h"
+#include "../Game/GameFlow.h"
+#include "../Game/InputConfig.h"
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -57,7 +70,6 @@ doom_eof_fn& doom_eof = Doom::host().eof;
 doom_gettime_fn& doom_gettime = Doom::host().gettime;
 doom_exit_fn& doom_exit = Doom::host().exit;
 doom_getenv_fn& doom_getenv = Doom::host().getenv;
-
 
 #if defined(DOOM_IMPLEMENT_PRINT)
 #include <stdio.h>
@@ -146,14 +158,18 @@ int doom_eof_impl(void* handle)
 #endif
 
 #if defined(DOOM_IMPLEMENT_GETTIME)
-#if defined(WIN32)
-#include <winsock.h>
+// <windows.h>, not <winsock.h>. This wants SYSTEMTIME/FILETIME/GetSystemTime,
+// which are plain Win32 - winsock.h reached them only by including windows.h on
+// its way past, while also declaring Winsock *1*, which then conflicts with the
+// <WinSock2.h> in Host/Net.cpp if the two ever meet in one translation unit.
+#if defined(_WIN32)
+#include <windows.h>
 #else
 #include <sys/time.h>
 #endif
 void doom_gettime_impl(int* sec, int* usec)
 {
-#if defined(WIN32)
+#if defined(_WIN32)
     static const unsigned long long EPOCH =
         ((unsigned long long) 116444736000000000ULL);
     SYSTEMTIME system_time;
@@ -198,13 +214,38 @@ void doom_exit_impl(int code) {}
 #endif
 
 #if defined(DOOM_IMPLEMENT_GETENV)
-#include <stdlib.h>
-#include "System.h"
-#include "../Game/GameFlow.h"
-#include "../Game/InputConfig.h"
+#include <eacp/Core/Utils/Environment.h>
+
+#include <map>
+#include <string>
+
 char* doom_getenv_impl(const char* var)
 {
-    return getenv(var);
+    // eacp::getEnv answers the platform question - std::getenv is deprecated by
+    // Microsoft's CRT, and there is no portable spelling of the setter at all -
+    // but it returns by value, and doom_getenv_fn hands back a bare char* the
+    // caller reads at its leisure.
+    //
+    // So each name gets its own slot. A map is what makes that safe rather than
+    // a single static buffer: references into a std::map survive inserting other
+    // keys, and DoomMain genuinely holds two of these alive at once - DOOMWADDIR
+    // is still being used to build the seven WAD search paths when HOME is read
+    // for the config path. One shared buffer would have the second call quietly
+    // rewrite the first caller's string.
+    //
+    // The value is re-read every call rather than cached, so this stays a view of
+    // the environment as it stands and not a snapshot of it at first use.
+    static auto values = std::map<std::string, std::string, std::less<>> {};
+
+    auto value = eacp::getEnv(var);
+
+    if (!value)
+        return nullptr;
+
+    auto& slot = values[var];
+    slot = std::move(*value);
+
+    return slot.data();
 }
 #else
 char* doom_getenv_impl(const char* var)
@@ -611,11 +652,12 @@ void doom_force_update()
 
 const unsigned char* doom_get_framebuffer(int channels)
 {
-    doom_memcpy(screen_buffer.data(), screens[0], Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
-
+    doom_memcpy(
+        screen_buffer.data(), screens[0], Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
 
     // Draw Doom::inputConfig().crosshair
-    if (Doom::inputConfig().crosshair && !Doom::overlayState().menuactive && Doom::gameFlow().gamestate == Doom::GS_LEVEL
+    if (Doom::inputConfig().crosshair && !Doom::overlayState().menuactive
+        && Doom::gameFlow().gamestate == Doom::GS_LEVEL
         && !Doom::overlayState().automapactive)
     {
         int y;
@@ -630,8 +672,10 @@ const unsigned char* doom_get_framebuffer(int channels)
         }
         for (int i = 0; i < 2; ++i)
         {
-            screen_buffer[Doom::SCREENWIDTH / 2 + (y - 2 - i) * Doom::SCREENWIDTH] = 4;
-            screen_buffer[Doom::SCREENWIDTH / 2 + (y + 2 + i) * Doom::SCREENWIDTH] = 4;
+            screen_buffer[Doom::SCREENWIDTH / 2 + (y - 2 - i) * Doom::SCREENWIDTH] =
+                4;
+            screen_buffer[Doom::SCREENWIDTH / 2 + (y + 2 + i) * Doom::SCREENWIDTH] =
+                4;
         }
     }
 

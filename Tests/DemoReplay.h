@@ -2,10 +2,12 @@
 
 #include "Common.h"
 
+#include <eacp/Core/Utils/Environment.h>
+
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -76,8 +78,8 @@ inline std::string goldenPath(const std::string& demo, const std::string& kind)
 // golden moves under it, the refactor was wrong.
 inline bool updatingGoldens()
 {
-    const auto* flag = std::getenv("DOOM_UPDATE_GOLDENS");
-    return flag && flag[0] == '1';
+    // getEnvValue rather than getEnv: unset and empty mean the same thing here.
+    return eacp::getEnvValue("DOOM_UPDATE_GOLDENS") == "1";
 }
 
 inline void writeGolden(const std::string& demo,

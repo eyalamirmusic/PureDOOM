@@ -576,6 +576,20 @@ void addWadFile(const char* file)
     wadfiles[numwadfiles] = newfile.data();
 }
 
+// Joins the WAD directory and a leading-slash basename into one owned string.
+// The point of it is that the size comes from the two strings themselves rather
+// than from a number written beside them - see the note at the call sites, where
+// one of seven such numbers was wrong and overflowed the buffer by a byte.
+static EA::Vector<char> joinWadPath(const char* directory, const char* file)
+{
+    EA::Vector<char> path(doom_strlen(directory) + doom_strlen(file) + 1);
+
+    doom_strcpy(path.data(), directory);
+    doom_concat(path.data(), file);
+
+    return path;
+}
+
 //
 // IdentifyVersion
 // Checks availability of IWAD files by name,
@@ -584,7 +598,10 @@ void addWadFile(const char* file)
 //
 void IdentifyVersion()
 {
-    char* home;
+    // const because the Windows branch assigns a string literal to it. Writing
+    // through a char* aimed at one is undefined, and only ever compiled at all
+    // because C++ allowed the conversion until C++11 removed it.
+    const char* home;
 
     auto& version = gameVersion();
     auto& opts = launchOptions();
@@ -594,47 +611,29 @@ void IdentifyVersion()
     if (!doomwaddir)
         doomwaddir = ".";
 
-    // Commercial.
-    EA::Vector<char> doom2wad(doom_strlen(doomwaddir) + 1 + 9 + 1);
-    //doom_sprintf(doom2wad, "%s/doom2.wad", doomwaddir);
-    doom_strcpy(doom2wad.data(), doomwaddir);
-    doom_concat(doom2wad.data(), "/doom2.wad");
-
-    // Retail.
-    EA::Vector<char> doomuwad(doom_strlen(doomwaddir) + 1 + 8 + 1);
-    //doom_sprintf(doomuwad, "%s/doomu.wad", doomwaddir);
-    doom_strcpy(doomuwad.data(), doomwaddir);
-    doom_concat(doomuwad.data(), "/doomu.wad");
-
-    // Registered.
-    EA::Vector<char> doomwad(doom_strlen(doomwaddir) + 1 + 8 + 1);
-    //doom_sprintf(doomwad, "%s/doom.wad", doomwaddir);
-    doom_strcpy(doomwad.data(), doomwaddir);
-    doom_concat(doomwad.data(), "/doom.wad");
-
-    // Shareware.
-    EA::Vector<char> doom1wad(doom_strlen(doomwaddir) + 1 + 9 + 1);
-    //doom_sprintf(doom1wad, "%s/doom1.wad", doomwaddir);
-    doom_strcpy(doom1wad.data(), doomwaddir);
-    doom_concat(doom1wad.data(), "/doom1.wad");
-
-    // Bug, dear Shawn.
-    // Insufficient malloc, caused spurious realloc errors.
-    EA::Vector<char> plutoniawad(doom_strlen(doomwaddir) + 1 + /*9*/ 12 + 1);
-    //doom_sprintf(plutoniawad, "%s/plutonia.wad", doomwaddir);
-    doom_strcpy(plutoniawad.data(), doomwaddir);
-    doom_concat(plutoniawad.data(), "/plutonia.wad");
-
-    EA::Vector<char> tntwad(doom_strlen(doomwaddir) + 1 + 9 + 1);
-    //doom_sprintf(tntwad, "%s/tnt.wad", doomwaddir);
-    doom_strcpy(tntwad.data(), doomwaddir);
-    doom_concat(tntwad.data(), "/tnt.wad");
-
-    // French stuff.
-    EA::Vector<char> doom2fwad(doom_strlen(doomwaddir) + 1 + 10 + 1);
-    //doom_sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
-    doom_strcpy(doom2fwad.data(), doomwaddir);
-    doom_concat(doom2fwad.data(), "/doom2f.wad");
+    // Each of these was sized by hand, as `strlen(dir) + 1 + <basename> + 1`
+    // with the basename's length written out as a literal - and one of the seven
+    // had it wrong. "doomu.wad" is nine characters and was counted as eight, so
+    // building the retail path wrote its terminating NUL one byte past the
+    // allocation, every single boot.
+    //
+    // It went unseen because it depends entirely on what the allocator puts
+    // there: on macOS the block's own padding absorbed it, while on Windows
+    // arm64 it corrupted the following block and demo1 and demo3 died with a
+    // segfault before rendering a frame. AddressSanitizer names it in one line.
+    // Nothing above the allocator could see it - the goldens hash the world and
+    // the picture, and both were correct right up until the heap gave out.
+    //
+    // So the literal is gone rather than corrected: joinWadPath measures the
+    // string it is about to write, which is the only count that cannot disagree
+    // with it.
+    const auto doom2wad = joinWadPath(doomwaddir, "/doom2.wad"); // Commercial.
+    const auto doomuwad = joinWadPath(doomwaddir, "/doomu.wad"); // Retail.
+    const auto doomwad = joinWadPath(doomwaddir, "/doom.wad"); // Registered.
+    const auto doom1wad = joinWadPath(doomwaddir, "/doom1.wad"); // Shareware.
+    const auto plutoniawad = joinWadPath(doomwaddir, "/plutonia.wad");
+    const auto tntwad = joinWadPath(doomwaddir, "/tnt.wad");
+    const auto doom2fwad = joinWadPath(doomwaddir, "/doom2f.wad"); // French.
 
 #if !defined(DOOM_WIN32)
     home = doom_getenv("HOME");

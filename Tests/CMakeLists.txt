@@ -1,4 +1,3 @@
-set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_FOLDER Tests)
 
 find_package(NanoTest REQUIRED)
@@ -6,7 +5,13 @@ find_package(NanoTest REQUIRED)
 # The window into the running simulation. A library of its own so every test
 # binary links the same shim rather than recompiling it.
 add_library(doom-sim-probe STATIC SimProbe.cpp SimProbe.h)
-target_link_libraries(doom-sim-probe PUBLIC doom-engine)
+
+# eacp-core is named here rather than inherited: doom-engine links it PRIVATE,
+# because it is the engine's own implementation choice. The tests use
+# <eacp/Core/Utils/Environment.h> directly - TestMain points DOOMWADDIR at the
+# repository, DemoReplay reads DOOM_UPDATE_GOLDENS - so they depend on it in
+# their own right and say so.
+target_link_libraries(doom-sim-probe PUBLIC doom-engine eacp-core)
 target_include_directories(doom-sim-probe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # The probe boots the engine with -config Tests/doom-tests.cfg. Without it,

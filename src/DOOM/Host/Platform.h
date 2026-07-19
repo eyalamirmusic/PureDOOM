@@ -1,7 +1,12 @@
 #pragma once
 
-
-#if defined(WIN32)
+// _WIN32 is the macro every Windows compiler predefines, on 32- and 64-bit and
+// on ARM64 alike. Bare WIN32 is not a compiler macro at all - it arrives from
+// the Windows SDK, or from a build system that adds -DWIN32 by hand, which CMake
+// does happen to do for MSVC-style drivers. Testing for it therefore worked here
+// only by way of CMake's default flags: compile this engine any other way and
+// every Windows build silently took the DOOM_LINUX branch.
+#if defined(_WIN32)
 #define DOOM_WIN32
 #elif defined(__APPLE__)
 #define DOOM_APPLE
@@ -9,9 +14,7 @@
 #define DOOM_LINUX
 #endif
 
-
 #include "../DOOM.h"
-
 
 // A template rather than a macro so it works on Doom::Fixed as well as on ints
 // (and evaluates its argument once, which the macro did not).
@@ -20,7 +23,6 @@ constexpr T doom_abs(T x)
 {
     return x < T {} ? -x : x;
 }
-
 
 extern char error_buf[260];
 extern int doom_flags;
@@ -42,7 +44,6 @@ extern doom_gettime_fn& doom_gettime;
 extern doom_exit_fn& doom_exit;
 extern doom_getenv_fn& doom_getenv;
 
-
 const char* doom_itoa(int i, int radix);
 const char* doom_ctoa(char c);
 const char* doom_ptoa(void* p);
@@ -60,5 +61,3 @@ int doom_strncasecmp(const char* str1, const char* str2, int n);
 int doom_atoi(const char* str);
 int doom_atox(const char* str);
 int doom_toupper(int c);
-
-

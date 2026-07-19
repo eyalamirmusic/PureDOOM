@@ -652,7 +652,13 @@ void spawnMapThing(MapThing* mthing)
     // count deathmatch start positions
     if (mthing->type == 11)
     {
-        if (spawns.deathmatch_p < &spawns.deathmatchstarts[MAX_DM_STARTS])
+        // data() + N, not &deathmatchstarts[N]. Both name the one-past-the-end
+        // address, and on the raw C array this used to be that was the ordinary
+        // way to write it - but subscripting at N is out of range for the
+        // EA::Array (std::array) it is now, and MSVC's debug STL asserts on it.
+        // The bound stays MAX_DM_STARTS, the same token that sizes the array in
+        // MapSpawns.h, so raising it cannot move one without the other.
+        if (spawns.deathmatch_p < spawns.deathmatchstarts.data() + MAX_DM_STARTS)
         {
             doom_memcpy(spawns.deathmatch_p, mthing, sizeof(*mthing));
             spawns.deathmatch_p++;
@@ -752,8 +758,7 @@ void spawnMapThing(MapThing* mthing)
 //
 void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 {
-    z += Fixed {(randomness().forPlay() - randomness().forPlay())
-                      << 10};
+    z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
 
     Mobj* th = spawnMobj(x, y, z, MT_PUFF);
     th->momz = FRACUNIT;
@@ -772,8 +777,7 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 //
 void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 {
-    z += Fixed {(randomness().forPlay() - randomness().forPlay())
-                      << 10};
+    z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
     Mobj* th = spawnMobj(x, y, z, MT_BLOOD);
     th->momz = FRACUNIT * 2;
     th->tics -= randomness().forPlay() & 3;
@@ -823,9 +827,8 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 
     // fuzzy player
     if (dest->flags & MF_SHADOW)
-        an += angle_t {
-            (unsigned) (randomness().forPlay() - randomness().forPlay())
-            << 20};
+        an += angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                       << 20};
 
     th->angle = an;
     const auto anFine = an.fineIndex();

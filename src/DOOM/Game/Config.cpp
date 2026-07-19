@@ -33,6 +33,7 @@
 // paths are read straight off Doom::configPaths() (Game/ConfigPaths.h).
 // loadDefaults reads the test config, so the frame goldens pin it.
 
+#include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
 
 #include "GameDefs.h"
@@ -121,8 +122,8 @@ extern byte scantokey[128];
 // ConfigDefault::name became a const char* and has been removed - it named a
 // warning this table can no longer raise, in Clang's spelling of the flag, which
 // GCC then warned about not recognising.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+DOOM_DIAGNOSTIC_PUSH
+DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 Doom::ConfigDefault defaults[] = {
     // These config-backed globals are Engine members reached through references, so their
     // location is bound to the member at runtime (bindEngineDefaults) rather than captured
@@ -239,7 +240,7 @@ Doom::ConfigDefault defaults[] = {
      &chat_macros[9],
      Doom::HUSTR_CHATMACRO9}};
 
-#pragma GCC diagnostic pop
+DOOM_DIAGNOSTIC_POP
 int numdefaults = sizeof(defaults) / sizeof(Doom::ConfigDefault);
 
 namespace Doom
@@ -444,12 +445,18 @@ void saveDefaults()
 void loadDefaults()
 {
     int i;
-    int len;
     void* f;
     EA::Array<char, 80> def;
     EA::Array<char, 100> strparm;
-    int parm;
     bool isstring;
+
+    // Initialized because only one of the two is written per line parsed - a
+    // quoted value sets len, anything else sets parm - and which one gets read
+    // back is decided by isstring further down. That correlation is real but no
+    // compiler can see it, so MSVC reports both as possibly-uninitialized reads.
+    // Giving them values costs nothing and makes the guarantee local.
+    int len = 0;
+    int parm = 0;
 
     // Owns the storage for the string-valued defaults (currently the ten
     // chatmacroN entries) read from ~/.doomrc, in place of what was a

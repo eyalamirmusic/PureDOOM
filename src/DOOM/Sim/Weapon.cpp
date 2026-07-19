@@ -16,6 +16,7 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
 
 #include "../Game/Event.h"
@@ -51,29 +52,20 @@ namespace
 // sibling cast in Sim/Mobj.cpp draws no warning: void(*)(Mobj*) keeps the one
 // parameter, so only this two-parameter one differs in shape.)
 //
-// The suppression is scoped to this one function and spelled for each compiler,
-// which is the point of the wrapper: the two disagree on the flag's name, and
-// naming the wrong one is itself a warning - GCC raises -Wpragmas for Clang's
-// spelling, which is how three stale suppressions in this tree were found. Clang
-// must be tested before GCC, since it defines __GNUC__ as well.
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcast-function-type-mismatch"
-#elif defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-function-type"
-#endif
+// The suppression is scoped to this one function, and its spelling lives in
+// Host/Diagnostics.h: the compilers disagree on the flag's name, naming the
+// wrong one is itself a warning (GCC raises -Wpragmas for Clang's spelling,
+// which is how three stale suppressions in this tree were found), and MSVC
+// understands none of the spellings at all.
+DOOM_DIAGNOSTIC_PUSH
+DOOM_IGNORE_CAST_FUNCTION_TYPE
 
 void callWeaponAction(actionf_p1 action, Player* player, PspDef* psp)
 {
     reinterpret_cast<void (*)(Player*, PspDef*)>(action)(player, psp);
 }
 
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+DOOM_DIAGNOSTIC_POP
 } // namespace
 
 constexpr fixed_t LOWERSPEED = FRACUNIT * 6;

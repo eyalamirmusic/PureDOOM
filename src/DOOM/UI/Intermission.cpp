@@ -30,6 +30,7 @@
 // the shim. No attract demo reaches the intermission, so this is a faithful
 // transcription.
 
+#include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
 
 #include "../Game/MapSpawns.h"
@@ -220,8 +221,8 @@ static EA::Array<EA::Array<Point, NUMMAPS>, NUMEPISODES> lnodes = {
 // ctr, ...) uninitialised; the struct comment above says they "must be
 // initialized to zero before use", which aggregate init does. Silence the
 // -Wmissing-field-initializers that legitimate 1993 idiom raises.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+DOOM_DIAGNOSTIC_PUSH
+DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 static EA::Array<anim_t_wi_stuff, 10> epsd0animinfo = {
     {ANIM_ALWAYS, TICRATE / 3, 3, {224, 104}},
     {ANIM_ALWAYS, TICRATE / 3, 3, {184, 160}},
@@ -252,7 +253,7 @@ static EA::Array<anim_t_wi_stuff, 6> epsd2animinfo = {
     {ANIM_ALWAYS, TICRATE / 3, 3, {104, 80}},
     {ANIM_ALWAYS, TICRATE / 3, 3, {120, 32}},
     {ANIM_ALWAYS, TICRATE / 4, 3, {40, 0}}};
-#pragma GCC diagnostic pop
+DOOM_DIAGNOSTIC_POP
 
 static EA::Array<int, NUMEPISODES> NUMANIMS = {
     epsd0animinfo.size(), epsd1animinfo.size(), epsd2animinfo.size()};
@@ -577,9 +578,18 @@ void drawTime(int x, int y, int t)
     }
 }
 
+// Defined below, after the loader it undoes. Declared here at namespace scope
+// rather than inside endIntermission's body, which is where vanilla put it: a
+// block-scope `extern` function declaration is a 1993 C idiom that C++ still
+// accepts but resolves by a rule nobody should have to reason about, and MSVC
+// resolves it the other way - it took the name to be ::unloadIntermissionData
+// and left the reference unresolved at link time, so the whole test suite failed
+// to link on that toolchain alone. The declaration belongs where the definition
+// lives, and then every compiler agrees.
+void unloadIntermissionData();
+
 void endIntermission()
 {
-    void unloadIntermissionData();
     unloadIntermissionData();
 }
 

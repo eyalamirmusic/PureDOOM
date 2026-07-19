@@ -24,6 +24,7 @@
 //-----------------------------------------------------------------------------
 
 
+#include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
 
 #include "../Game/SoundData.h" // Data.
@@ -50,9 +51,9 @@ using namespace Doom;
 // (actionf_p1) cast (see d_think.h), which is a cast between function-pointer
 // types.
 // clang-format off
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-function-type"
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+DOOM_DIAGNOSTIC_PUSH
+DOOM_IGNORE_CAST_FUNCTION_TYPE
+DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 
 
 const char* sprnames[NUMSPRITES + 1] = {
@@ -4609,5 +4610,5 @@ MobjInfo mobjinfo[NUMMOBJTYPES] = {
     }
 };
 
-#pragma GCC diagnostic pop
+DOOM_DIAGNOSTIC_POP
 // clang-format on

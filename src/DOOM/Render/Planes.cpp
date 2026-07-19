@@ -414,16 +414,33 @@ void drawPlanes()
 
         plane.planezlight = lights.zlight[light].data();
 
-        pl->top[pl->maxx + 1] = 0xff;
-        pl->top[pl->minx - 1] = 0xff;
+        // Deliberately one outside the declared bounds at each end - see VisPlane
+        // in RenderTypes.h, where pad1..pad4 exist to absorb exactly these
+        // accesses and a static_assert pins the layout that puts them in the
+        // padding. Both the sentinel writes and the loop's [x - 1] / [x] reads
+        // step outside: x runs to maxx + 1, so top and bottom are each touched at
+        // [minx - 1] and [maxx + 1].
+        //
+        // Reached through .data() rather than operator[] because EA::Array wraps
+        // std::array, and MSVC's debug STL bounds-checks std::array::operator[]
+        // against the *declared* extent - it cannot know about the padding, and
+        // aborts on the very access this design intends. The bytes touched are
+        // identical either way; only the assertion goes.
+        //
+        // It did not present as an assertion, either. The debug CRT reports
+        // through a modal dialog, so under ctest the binary stopped dead with no
+        // output and no CPU and the whole suite hung on demo1. Tests/TestMain.cpp
+        // now routes those reports to stderr so the next one says what it is.
+        auto* top = pl->top.data();
+        auto* bottom = pl->bottom.data();
+
+        top[pl->maxx + 1] = 0xff;
+        top[pl->minx - 1] = 0xff;
 
         stop = pl->maxx + 1;
 
         for (int x = pl->minx; x <= stop; x++)
-        {
-            makeSpans(
-                x, pl->top[x - 1], pl->bottom[x - 1], pl->top[x], pl->bottom[x]);
-        }
+            makeSpans(x, top[x - 1], bottom[x - 1], top[x], bottom[x]);
     }
 }
 } // namespace Doom

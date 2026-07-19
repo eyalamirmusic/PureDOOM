@@ -365,7 +365,10 @@ void storeWallRange(int start, int stop)
     int lightnum;
 
     // don't overflow and crash
-    if (bsp.ds_p == &bsp.drawsegs[BSPScratch::maxDrawSegs])
+    // data() + N rather than &drawsegs[N] - the one-past-the-end address, which
+    // is an out-of-range subscript on the EA::Array (std::array) this now is, and
+    // which MSVC's debug STL asserts on. See the same change in Sim/Mobj.cpp.
+    if (bsp.ds_p == bsp.drawsegs.data() + BSPScratch::maxDrawSegs)
         return;
 
 #ifdef RANGECHECK

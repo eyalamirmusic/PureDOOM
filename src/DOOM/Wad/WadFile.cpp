@@ -270,10 +270,24 @@ const std::byte* WadFile::data(int lump)
         // heap memory that differs from platform to platform, and the rendered
         // frame would stop being reproducible.
         //
-        // Sixty-four zero bytes is enough (the over-read is under that, measured),
-        // so the quirk still happens - a wall still tutti-fruttis - but it now
-        // draws a deterministic zero everywhere instead of undefined heap.
-        constexpr auto overReadGuard = 64;
+        // How far past the end can it read? Not a number to measure and hope -
+        // the drawers say. drawColumn and drawColumnLow index dc_source with
+        // `frac.toInt() & 127`, so neither can reach beyond 128 bytes.
+        // drawTranslatedColumn is the loose one: its index is unmasked, bounded
+        // only by the column it walks, and a patch post carries its length in a
+        // single byte, so 255. 256 covers every drawer in Render/Draw.cpp with
+        // the bound taken from the code rather than from a sample.
+        //
+        // It was 64, with a comment saying the over-read was "under that,
+        // measured". It is not: 128 is reachable by inspection, and demo1 at tic
+        // 5328 and demo2 at tic 392 do reach past 64. That measurement was taken
+        // on macOS, where the bytes beyond the guard happened to be zero anyway,
+        // so the frame goldens recorded there were *correct* - they simply could
+        // not tell the guard from the allocator's luck. On Windows arm64 the same
+        // over-read found non-zero heap and those two frames drew differently,
+        // which is what a golden recorded on one platform and run on another is
+        // for. AddressSanitizer names the read; the size comes from the mask.
+        constexpr auto overReadGuard = 256;
 
         bytes.resize(length(lump) + overReadGuard, std::byte {0});
         read(lump, bytes.data());
