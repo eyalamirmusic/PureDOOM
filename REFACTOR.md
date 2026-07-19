@@ -82,15 +82,29 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio (engine side built, externally blocked on an eacp audio stream) and the ongoing globals-into-`Engine` work |
-| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — moving the state into the `Engine` (Steps 4–5) made it *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) **retire the ~489 reference-alias shims** (`extern T& viewx = engine().viewPoint.viewx`) so every reader reaches state through an owner/accessor rather than a static-init-bound global alias — which also removes the fixed-address pin, so the Engine becomes cheaply **constructible** (a heap-owned `OwningPointer<Engine>` dropped and remade), not just booted; (b) the **RAII sweep** over the remaining manual `doom_malloc`/`doom_free` owners (the level pool in `Sim/Tick`, the renderer's `PU_STATIC`/scratch buffers, the host's screen buffers) into `EA::Vector`/`OwningPointer`; (c) the **idiom cleanup** over the code already in `namespace Doom` (the cross-cutting stylistic pass began this — see the handoff). Every increment holds the four goldens byte-identical, the same net as always. **Landed so far:** the one-function scratch buffers off manual `doom_malloc`/`doom_free` (`Render/Data`'s `patchcount`/`patchlookup`/precache present-arrays — fixing a real leak on `generateLookup`'s early return; `UI/Wipe`'s transpose buffer; `Game/Config`'s PCX buffer) → `EA::Vector`; and the first **persistent cluster owners** via the unified strand-(a)+(b) recipe — `GraphicsData`'s `spritewidth`/`spriteoffset`/`spritetopoffset`, then `textureheight`/`texturetranslation`/`flattranslation` — moved from raw never-freed pointers to owned `EA::Vector`s, with the vanilla names becoming plain-pointer **views** onto `data()` refreshed after the fill (the same owner/view split `Level`'s geometry uses), which RAII-owns the arrays *and* retires their reference-alias shims in one move. The recipe then extended to **aligned** views — `GraphicsData`'s `colormaps` and `DrawState`'s `translationtables` were raw `doom_malloc(len + 255)` with a 256-byte-aligned working pointer (never freed); the cluster now owns the backing `EA::Vector` and the vanilla name is the aligned view into `data()`, byte-identical alignment preserved. And the first **host buffer**: `Host/Api`'s `screen_buffer`/`final_screen_buffer` (the embedder's framebuffer snapshots) → `EA::Vector`, returned as `.data()`. The recipe then reached the **nested** owners — `GraphicsData`'s `sprites` (`spritedef_t.spriteframes`: raw `spriteframe_t*` → `EA::Vector<spriteframe_t>`; the table → `EA::Vector<spritedef_t>`) and `textures` (`texture_t`'s **flexible-array-member** `patches[1]` → `EA::Vector<texpatch_t>`, so a `texture_t` is fixed-size; the table → an owned `EA::Vector<texture_t>` by value, with a `texture_t*` pointer array the `textures` `texture_t**` view points at, so every `textures[i]->field` reader across the renderer *and the app* is unchanged). The vanilla structs `spritedef_t`/`texture_t` (in `r_defs.h`/`r_data.h`) now hold owned vectors and the arrays free with the Engine. **The deep tail is now mostly cleared:** `CompositeCache`'s per-texture column/composite tables (the five `doom_malloc` tables — `texturewidthmask`/`texturecompositesize` as flat `EA::Vector<int>`s, the three `T**` `texturecolumnlump`/`texturecolumnofs`/`texturecomposite` as nested owners with the pointer-array view) are owned now, the **load-bearing tutti-frutti over-read preserved** — the lazily-composed column bytes keep their 64-byte zero tail, value-initialised to zero by `assign` exactly as the old `doom_malloc` + `doom_memset(0)` block was; the **software framebuffers** behind `screens[]` (`frame`/`workspace`/`statusBar` on `VideoState`, the boot-once `I_InitGraphics`/`V_Init`/`ST_Init` blocks) are `EA::Vector`s, with `screens[]` itself kept a raw *view* array because the eacp port legitimately reseats `screens[0]`; and two host buffers — the **net comms block** `doomcom` (a `doomcom_t` held by value on `NetState`, the vanilla name a view, `netbuffer` a stable pointer into the member) and the **sound mixing channels** `channels` (an `EA::Vector<channel_t>` on `SoundState`, `channel_t` promoted to the header to own by value). **What is left of the deep tail:** the `Host/Sound` per-sfx padding cache (`paddedsfx`, a `+8`-offset per-sound cache, fully audio-blocked so golden-blind — left for an audio session), and the level pool (`Sim/Tick`'s intrusive-list, variable-sized, polymorphic-`Thinker` mobj/thinker allocator, whose memcpy-serialised p_saveg coupling makes it its own reviewed step). **A codebase-wide idiom-modernization pass (strand (c)) then landed, four transforms:** (1) **`#pragma once`** across all 63 remaining vanilla headers (a nesting-tracking converter that removes the *matching* `#endif`); (2) **every `typedef struct/enum/union {…} T;` → `struct/enum/union T {…};`** — all 106 sites, incl. the 9 anonymous Thinker-inheriting specials and the 6 tagged core types (`player_s`/`mobj_s`/`line_s`/`subsector_s`/`drawseg_s`/`vissprite_s`/`sfxinfo_struct` — tag renamed to the `_t` name so the `_s` tag is eliminated and the `using X_t = X_s;` aliases dropped); (3) **`T[N]` C arrays → `EA::Array<T,N>`** with idiomatic use (`.data()` only at C-API/shim boundaries, range-for where a loop indexes one array, `sizeof/sizeof → .size()`), owner→container / non-owning-view→raw-pointer per the RAII rules — **all `.cpp` file-local scratch/lookup/table arrays across the whole engine are done** (fanned out to golden-verified subagent batches: Render/Sim/UI/Game/Host), plus the cross-file `VideoState::dirtybox`/`gammatable`, `MovementSpeeds`, `doomcom` already covered; the trap that `EA::Array<char,N>` has no string-literal ctor (use `EA::Array<const char*,M>` or `{{"…"}}` per element) is recorded. **What is left of transform (3):** the cross-file tier — the Engine cluster-header state arrays (aliased through shims: `NetState`/`PlaneScratch`/`IntermissionState`/`MenuState`/… — moderate) and the deeply load-bearing vanilla struct arrays (`player_t`'s type-punned `weaponowned`, `doomdata.h`'s WAD on-disk structs, save-format-memcpy'd fields), the data tables (`states[]`/`mobjinfo[]`/`sprnames[]`/`weaponinfo[]`), and the cross-TU globals (`defaults[]`/`error_buf`/`mixbuffer`), several of which are skip+log candidates. (4) **pointer→reference where provably non-null and non-reseated** — the safe subset is bounded (most playsim pointers are legitimately nullable — `mobj->target/tracer`, a line's back sector — and stay pointers), so a survey first identified the genuinely-safe candidates: the `namespace Doom` functions whose self-object pointer is dereferenced unconditionally, never reseated, and reached only through their vanilla `T_*`/`A_*`/`P_*`/`R_*` shim with a structurally non-null object (the thinker's `this`, `&players[i]`, the linked thing) — **blast radius 1**, the shim keeping its pointer signature and derefing `*ptr`. Landed on that basis (golden-verified, first-arrow-only rule): the **8 special move thinkers** (`moveCeiling`/`moveFloor`/`movePlane`/`platRaise`/`verticalDoor`/`fireFlicker`/`lightFlash`/`strobeFlash`/`glow`); **`playerThink`** + its 4 helpers, **`renderPlayerView`**/**`setupFrame`**, **`setThingPosition`**/**`unsetThingPosition`**; and the first of the **bulk self-param family** — all **23 weapon actions** (`Sim/Weapon`), each `A_*` shim-only with a non-null `player`/`psp`. Nullable fields and multi-caller helpers stay pointers. **Left as a well-specified follow-up (same proven `A_*`-shim-only pattern):** the **~55 enemy actions** in `Sim/Enemy` (self-param `actor`/`mo`, blast radius 1) — a survey confirmed them safe; a first attempt landed the `Sim/Enemy.{h,cpp}` signatures/bodies but the `p_enemy.cpp` shim derefs were not yet applied, so it was reverted to keep the tree green. Every transform held all four goldens byte-identical, 80/80, and the app linking **A naming-and-idiom session then landed the whole of the vanilla-name retirement.** (i) Every **C-style `(void)` parameter list** is gone (326 sites). (ii) **All ~440 vanilla-prefixed functions are retired**: the flat `src/DOOM/*.cpp` shims that forwarded `R_DrawPlanes`→`Doom::drawPlanes` were deleted and their ~2,549 call sites now call the namespaced function directly. Crucially this needed a second half — **134 of the namespaced *targets* still carried the prefix as an initialism** (`Doom::dDisplay`, `Doom::amTicker`) or outright (`Doom::I_Error`), so they were renamed to real names (`displayFrame`, `automapTicker`, `fatalError`); a further **158 internal functions** inside already-namespaced files were unprefixed too, and those were worse than they looked — an earlier pass had 'dropped' prefixes by lowercasing and concatenating them (`ST_refreshBackground` → `strefreshBackground`), which reads as unprefixed to a grep for `_`. Nine name collisions had to be resolved, one (`M_Options` vs the unscoped enum constant `options`) invisible to grep and caught only by the build. Two families keep an adapter because they are pinned **by address**: the 75 state actions moved to `Sim/Actions.{h,cpp}` as `Doom::Actions::look`-style forwards (`states[]` needs one pointer shape), while the 8 `T_*` thinkers were deleted outright since only `ThinkerDispatch` called them. **No vanilla-prefixed function name remains in `src/DOOM`.** (iii) **All 107 vanilla `_t` types are PascalCase in `namespace Doom`** (`mobj_t`→`Doom::Mobj`, `line_t`→`Doom::Line`, `vldoor_t`→`Doom::Door`, …), ~2,540 references, landed in six verified batches. Namespacing an unscoped enum moves its enumerators, so the three **verbatim generated tables** (`Sim/Info.cpp`, `Sim/Items.cpp`, `Game/SoundData.cpp`) took a file-scope `using namespace Doom;` rather than 500 qualifications inside data this refactor promised to keep byte-for-byte. Four types stay `_t` **deliberately**: `doom_key_t`/`doom_button_t`/`doom_seek_t` (the public `extern "C"` API), and `fixed_t`/`angle_t` — `Doom::Fixed`/`Doom::Angle` already exist as *strong* types, so moving 862 uses onto them is a semantic migration that changes arithmetic, and is its own step. (iv) The **last two flat files with real logic are gone**: `w_wad.cpp`'s lump ownership moved into `Doom::WadFile`, and `p_maputl.cpp`'s `P_MakeDivline` — which had no namespaced counterpart at all — was *written* as `Doom::makeDivLine`. **`divline_t` and `Doom::DivLine` are merged**, so the `reinterpret_cast` bridge in `asDivLine()` is gone; `W_CacheLumpNum`'s dead `tag` parameter went with it, taking all 150 `PU_*` arguments and the eight `PU_*` macros — the last vestige of the zone allocator. (v) The **enemy-action pointer→reference follow-up this row previously recorded as reverted is now green** (58 functions), and the last six pointer adapters (`R_SetupFrame`, `P_PlayerThink`, …) are retired by passing references at their call sites. (vi) **`MenuState::messageRoutine` is a `std::function`** with a no-op default, which removed `startMessage`'s `void*` parameter and the six `reinterpret_cast<void*>` at its call sites. Deliberately *not* converted: the renderer's `colfunc`/`spanfunc` (per-column inner loop), `states[]`'s ~1000-entry table (cost), `Doom::Host`'s 13 callbacks (an `extern "C"` plugin table), and `Host/Net`'s `netget`/`netsend` (inside `#if defined(I_NET_ENABLED)`, which nothing defines). **35 flat `.cpp` files became 31 and then 0 functions**: what is left of them is *only* the ~104 reference-alias data shims, which is strand (a) and now the single remaining piece of the shim layer. Every increment held all four goldens byte-identical, 80/80, and the app linking. **STATUS: the naming and strong-type halves are DONE; see 'Where Step 9 actually stands' in the handoff for the authoritative state.** In short: no vanilla-prefixed function name and no vanilla `_t` type survives; the flat layer is gone (`src/DOOM` is eight subsystem directories plus `DOOM.h` and `doomtype.h`); **strand (a) is complete** - all ~290 reference aliases retired, which releases the static-init address pin and makes the Engine constructible; `fixed_t` IS `Doom::Fixed` and `angle_t` IS `Doom::Angle`; and the blockmap callbacks carry their own context. **`aimTraverse`/`shootTraverse` now return an `AimResult { slope, target }` by value instead of routing it through `ActionScratch`/`Clip`** — the last case where a result, not just context, crossed a bare-function-pointer callback — and the seven slide-move scratch fields (`bestslidefrac`/…) that shared `Sim/MapAction.cpp`'s file scope with them lost their reference aliases too, each function hoisting its own `auto& scratch = actionScratch();` instead; `Sight.cpp`'s `topslope`/`bottomslope` (shared with the aim trace, never a result) became per-call locals threaded by reference through `crossBSPNode`/`crossSubsector`. That was the last 11 file-local reference aliases anywhere in `src/DOOM` — **strand (a) is now completely done, not just claimed to be**, with the sole surviving `Clip` member from that cluster, `attackrange`, kept exactly where it was because it is a genuine input (`Doom::lineAttack` sets it, `Sim/Mobj.cpp`'s `spawnPuff` reads it from inside that same traversal) with a load-bearing cross-tic leak into the revenant's tracer smoke-puff, not a result wearing a result's clothes. What remains of Step 9 is strand (b)'s tail (the `Host/Sound` padding cache and the `Sim/Tick` level pool), two types that still lie (`MovementSpeeds`, `VideoState::dirtybox`), and `doom_boolean`. |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is what is mostly left**, plus the dead `Host/System` zone vestiges and `doom_boolean`. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**78 tests**, ~21s: `ctest --test-dir build`). Steps
+clean and the suite is green (**81 tests**, ~21s: `ctest --test-dir build`). Steps
 0–4 are complete; 6 and 7 are done; **8 is done** — the whole UI, game loop,
 netcode, utility layer and host boundary are migrated, the zone allocator is deleted,
 the `thinker_t`→`Thinker` virtualisation has landed, and the flat vanilla sources are gone.
+
+Build the tests with `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` for a fast engine-only
+loop — but **that configuration never compiles `examples/EACP`**, and
+`EngineAccess.cpp` reaches into engine headers directly, so a refactor can break
+the app without a single test noticing. Keep a second build directory
+(`cmake -B build-app -DPUREDOOM_BUILD_TESTS=OFF -DCPM_eacp_SOURCE=$HOME/Code/eacp`)
+and build `PureDoomEACP` from it as a fourth gate, alongside build, tests and goldens.
+
+**The golden set is now six, not four** — `demo1/2/3.{hashes,frames}` plus
+`doom1.lumps`, `menu.frames`, and, new this session, `automap.frames` and
+`finale.frames`. Older sections below say "all four goldens"; that was true when
+written. The rule is unchanged and applies to every one of them: a `*.hashes`
+golden is **never** re-recorded, and a `*.frames` golden only for a change whose
+moved pixels are provably not part of any lump.
 
 ### Where Step 9 actually stands
 
@@ -114,84 +128,140 @@ Concretely, all of the following are **done**:
 - **All 107 vanilla `_t` types are PascalCase in `namespace Doom`**, and their
   headers are rehomed — `r_defs.h` split by owner into `Sim/MapTypes.h` and
   `Render/RenderTypes.h`, the rest merged into the unit that owns them.
-- **Strand (a) is complete**: ~290 reference aliases retired across two tiers
-  (the first survey found 104 because it scanned only the flat files; there were
-  ~160 more inside the namespaced ones). Every reader reaches state through its
-  owner, hoisting a local reference once per function. **The static-init address
-  pin on `engine()` is released, so the Engine can now be constructed rather
-  than booted** — the dividend strand (a) was always for.
 - **`fixed_t` IS `Doom::Fixed` and `angle_t` IS `Doom::Angle`.** These were the
   last two raw typedefs and the only genuinely *semantic* migration in the
   refactor.
 - **Blockmap callbacks carry their own context**, so six globals that existed
   only to bridge a call are gone, and `pathTraverse` takes a
   `Doom::FunctionRef` rather than a bare function pointer.
+- **Strand (a) is finished — genuinely this time, and verified.** See below; it
+  took seven batches and 247 aliases after this document had already declared it
+  complete twice.
+- **The `Engine` is constructible.** `engine()` is a heap-owned
+  `EA::OwningPointer<Engine>`; `resetEngine()` drops the live instance and builds
+  a fresh one. `Engine/resetEngineMakesAFreshInstance` proves it — checking both
+  that the address changed *and* that the state is clean, since either alone
+  passes for the wrong reason. At `-O2` the new `engine()` compiles to a body
+  byte-identical to the old function-local static: `Engine` is ~293 KB with ~90
+  non-trivial members, so Clang was already lowering that static to a guarded
+  heap allocation behind a pointer slot. Naming it cost nothing.
 
-**The naming half of the goal is finished.** No vanilla-prefixed function name
-(`R_`/`P_`/`D_`/`G_`/`M_`/`S_`/`V_`/`W_`/`I_`/`EV_`/`T_`/`HU_`/`ST_`/`AM_`/`WI_`/`F_`/`HUlib_`/
-`STlib_`) survives anywhere in `src/DOOM`, and all 107 vanilla `_t` types are PascalCase inside
-`namespace Doom`. The flat `.cpp` shims are deleted — **53 of them at the start of that session, 26
-now, and not one of the 26 contains a single function definition.**
+### Strand (a), and the three times it was called done
 
-**[SUPERSEDED - the alias layer has since been retired entirely; see the strand (a) note
-below. What follows described the state before that.] What those 26 files still held was
-~104 reference-alias data shims** (`fixed_t& viewx = engine().viewPoint.viewx`), concentrated in
-`r_draw.cpp` (22), `r_main.cpp` (20), `r_segs.cpp` (13), `r_things.cpp` (9), `p_map.cpp` (7),
-`r_data.cpp`/`r_bsp.cpp` (6 each). Retiring them so every reader goes through an owner — which also
-removes the fixed-address pin that keeps the Engine from being *constructed* — is **strand (a), and it
-is now the whole of what is left of Step 9's shim work**, alongside the RAII tail (the `Host/Sound`
-padding cache and the `Sim/Tick` level pool). What is otherwise loose is *not world* (the
-`mypos`-cheat scratch, the Host-layer runtime statics) or externally blocked (audio).
+This is worth reading before trusting any completeness claim in this document,
+because the same mistake was made three times in a row.
 
-**The obvious next steps, in the order they make sense:**
+**The work itself.** ~290 cross-file aliases went first (`extern T& viewx =
+engine().viewPoint.viewx`), then 247 file-local ones. The transform is a
+**per-function hoist**, not a token substitution: the accessors are out-of-line
+functions in `Engine.cpp`, so rewriting each `dc_x` as `Doom::drawState().dc_x`
+adds a call per access inside the per-pixel drawers — a regression **no golden
+could catch, since they hash pixels and not time**. Each function takes
+`auto& draw = drawState();` once instead.
 
-1. **The ~104 reference aliases** (strand (a)). Retiring them empties the last 21 flat `.cpp` files
-   and lets the flat headers — now only type and extern declarations — be deleted or rehomed into the
-   subsystem directories, which is the last structural difference between this tree and the stated
-   end state.
-2. **`fixed_t`/`angle_t` onto `Doom::Fixed`/`Doom::Angle`.** These strong types already exist and are
-   used by `Math/`, `Sim/MapGeometry` and a few `Sim/` files, but 862 uses are still the raw typedef.
-   This is a *semantic* migration, not a rename: it changes what the arithmetic operators do, so it
-   wants its own session, done subsystem by subsystem with the demo goldens watched at each step.
-   `FixedDiv2` going through `double` (rule 4) is the specific hazard.
-3. **The `P_BlockLinesIterator`/`P_PathTraverse` callbacks.** They pass context through globals
-   precisely because a bare function pointer cannot capture; a callable parameter would let that
-   context become captures. A real design win, but hot-path and behaviour-adjacent, so it is its own
-   reviewed step rather than part of a sweep.
+The 247 fell in seven batches: Render 40, StatusBar+Intermission 90,
+Menu+Hud+Wipe 46, Render+Sim remainder 31, Automap 35, Finale 12, MapAction 11.
 
-**Strand (a): the *cross-file* alias layer is retired — but a third tier survived, and
-this document claimed the whole job was done when it was not.** ~290 aliases went in that
-pass (the first survey said 104; it had only scanned the flat `.cpp` files and missed a
-second tier of ~160 defined inside the already-namespaced ones, `Game/Game.cpp` alone
-holding 81). The transform is a **per-function hoist**, not a token substitution: the
-accessors are out-of-line functions in `Engine.cpp`, so rewriting each `dc_x` as
-`Doom::drawState().dc_x` would add a call per access inside the per-pixel drawers — a
-regression no golden could catch, since they hash pixels, not time. Each function takes
-`auto& draw = drawState();` once instead. 11 flat `.cpp` files remain and none is a shim:
-data tables, the pointer-and-count views, the drawer function pointers, and the
-`fixed_t`↔`Doom::Fixed` bridge.
+**Why it kept being declared finished.** Each sweep searched for the *spelling it
+had just learned about* and generalized the result to the *category*. Six
+distinct forms hid aliases from a search that looked exhaustive:
 
-**What the claim missed: 247 file-local aliases.** Both of the sweeps above searched for
-the cross-file form, `extern T& x`. Inside the already-namespaced sources the same thing
-is spelled `static T& x = cluster().x;` at file scope, and 247 of those were still
-standing — `UI/Intermission` 48, `UI/StatusBar` 42, `UI/Automap` 30, `Render/Segs` 20,
-`UI/Menu` 19, `UI/Hud` 14, `Sim/MapAction` 11, `UI/Finale` 11, and a long tail. They bind
-member addresses at static-init exactly as the `extern` ones did, so **the address pin was
-never released and the Engine was never constructible** — `Engine.h`'s own comment
-(lines 97–108) still described the pin as live, which is the tell that should have been
-caught. A second syntactic form hides in the same tier and needs its own grep:
-reference-to-array, `static Patch* (&tallnum)[10] = statusBarGraphics().tallnum;` — 46 of
-the 247. The lesson is narrower than "check your greps": **a claim that a category is
-empty should be verified against the category, not against the pattern that found its
-members.** Progress is now tracked in the Step 9 row; the Render batch (40) landed first.
+| # | Form | Why the search missed it |
+|---|---|---|
+| 1 | `extern T& x = cluster().x;` in a flat `.cpp` | — (the original tier) |
+| 2 | the same, inside an already-namespaced file | survey only scanned flat files |
+| 3 | `static T& x = cluster().x;` at file scope | searches looked for `extern` |
+| 4 | `static Patch* (&tallnum)[10] = …` | reference-to-array; no type-shaped regex admits it |
+| 5 | `static std::function<void(int)>& r = …` | the *type* contains parentheses |
+| 6 | `T& x = cluster().x;` with no `static` | pattern required `static` |
+
+Two more hid from *any* definition search: an initializer wrapping to the next
+line (invisible to a line-oriented count), and a **macro** reading an alias —
+`UI/Automap`'s `PUTDOT` read one *per pixel* inside a Bresenham loop, and a macro
+is a declaration of nothing.
+
+Form 6 was the dangerous one. Five such aliases in `Sim/Sight.cpp` survived every
+sweep and would have made `resetEngine()` actively unsafe — `checkSight` reading
+through a dangling reference into a destroyed `Engine`. **Writing the test is
+what found them**; a green build had shipped happily over them for months.
+
+**The counting method that finally held**: a brace-depth scan that assumes
+nothing about the spelling — walk the file tracking `{}` depth, split on `;`, and
+match any statement at depth 0 that binds a reference to `accessor().member`,
+where the accessor may be qualified. It finds exactly the 13 deliberate
+references onto `Doom::host()` and none onto the `Engine`.
+
+**The lesson, stated once**: verify a completeness claim against the **category**,
+not against the pattern that found its members — and prefer a claim a *test* can
+fail over one only a grep can support. `Engine.h`'s own comment still described
+the address pin as live all the way through, which was the available evidence
+that the claim was wrong, sitting in the file the claim was about.
 
 **13 aliases stay, deliberately**: the host callbacks (`doom_print`/`doom_malloc`/…) are
 references onto `Doom::host()`, not the Engine. `host()` is a separate immortal singleton
-that must not be reset with a fresh Engine, so pinning its address blocks nothing, and
-retiring them would rewrite ~249 call sites to `host().print(...)` for no gain.
+that must *not* be reset with a fresh Engine, so pinning its address blocks nothing —
+in fact `resetEngine()` depends on that split — and retiring them would rewrite ~249
+call sites to `host().print(...)` for no gain.
 
-**Four traps this added to the list:**
+### Coverage was not what it looked like
 
+Two files had **no test coverage of any kind**, and the demo goldens' green was
+silent about both. Retiring their aliases under that green would have been
+honest-looking and meaningless.
+
+- **`UI/Automap.cpp`** — no demo opens the automap. Vanilla's `D_Display` skips
+  `R_RenderPlayerView` entirely while the map is up, which is exactly why this
+  port had to add `eacpDoomRevealAutomap`. `StateClusterTests` only checked
+  `AutomapView{}`'s default field values.
+- **`UI/Finale.cpp`** — no demo reaches a finale.
+
+Both now have frame goldens (`automap.frames`, `finale.frames`), built on the
+`m_menu` precedent — **recorded against the unmodified file, before the sweep**,
+which is the only ordering that proves anything. Each was then shown to be
+*sharp* and *non-redundant*: a one-palette-index change to `WALLCOLORS` fails
+`Sim/automap` and leaves all six demo goldens green; `TEXTSPEED` 3→4, or the text
+crawl's start `y` moved one pixel, fails `Sim/finale` alone.
+
+`FinaleReplay.h` is worth copying from in one respect: the cast call and bunny
+scroll are DOOM II / episode-3 only, and rather than *assert in a comment* that
+they are unreachable, the test asserts the game mode is shareware — so the
+"deliberately uncovered" claim is enforced rather than aspirational.
+
+**The rule this establishes**: before refactoring a file, check what actually
+covers it. A suite that is green because it never runs the code is worse than a
+red one.
+
+### Traps this work added to the list
+
+- **`Clip::attackrange` looks like a traverse result and is an input.** It is set
+  by `lineAttack` *before* the traverse, and `Sim/Mobj`'s `spawnPuff` reads it
+  from *inside* that traversal's own call stack — nested, not stale — to pick the
+  fist's `S_PUFF3`. It must **not** move into `AimResult`. It also carries a
+  genuine cross-tic leak that must be preserved: `spawnPuff` has a third caller in
+  no hitscan chain at all — the revenant's homing rocket spawns smoke every 4th
+  tic (`Sim/Enemy`'s `tracer`) — which reads whatever the last hitscan left, so a
+  recent punch can flip that smoke to `S_PUFF3`. That is vanilla behaviour sitting
+  under the demo goldens; threading an explicit "no range" through the tracer is a
+  behaviour change wearing a refactor's clothes.
+- **`aimLineAttack`'s slope of 0 is ambiguous with a genuine horizontal shot.**
+  Callers test the *target*, never the slope, to decide whether anything was
+  found. `AimResult::target` preserves that exactly; "improving" a caller to test
+  `slope != 0` would be wrong in a way no compiler would mention.
+- **The app-link gate is invisible to the test configuration.** `examples/EACP`
+  is not built with `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF`, and `EngineAccess.cpp`
+  reaches into engine headers. Several names it reads (`m_x`, `scale_mtof`,
+  `f_w`, `wipe_melt_offsets`) sit in files this work swept; they survived only
+  because they are a *deliberate exported carve-out* declared in
+  `AutomapTypes.h`, not aliases. Check the app builds; do not infer it.
+- **Retiring an alias is a good way to find state nothing reads.** Eight members
+  were deleted outright once the alias in front of them was gone:
+  `CompositeCache`'s `firstpatch`/`lastpatch`/`numpatches`, `MenuState`'s
+  `messx`/`messy`, `PlaneScratch::spanstop`, and `WeaponScratch`'s
+  `swingx`/`swingy` — the last a genuine 1993 leftover, declared in vanilla's
+  `p_pspr.c` and unused there too. **The bar is zero reads *and* zero writes.**
+  A member that is written and never read is a *different* finding — possibly a
+  lost read — and wants investigating, not deleting: see `AutomapView`'s
+  `min_w`/`min_h` under "What is left".
 - **A reader-count heuristic lies after a hoist.** Agents legitimately name the hoisted
   local after the alias it replaces, so a bare-name count reports those locals as readers
   (`Net.cpp`'s local `debugfile` copy alone showed 70). Delete the definitions and let the
@@ -207,52 +277,68 @@ retiring them would rewrite ~249 call sites to `host().print(...)` for no gain.
 - **A test can assert the very thing being removed.** `Random/vanillaNamesAliasTheObject`
   existed to check `&prndindex == &randomness().playIndex`. Converting it mechanically
   yields `&x == &x` — green forever, testing nothing. It was deleted, with a comment
-  recording where its surviving coverage lives. **The suite is 79 tests now, not 80.**
-
+  recording where its surviving coverage lives.
 ### What is left
 
-In the order worth doing it:
+Everything above the line is done. What follows is, in the order worth doing it:
 
-1. ~~The 247 file-local reference aliases~~ (strand (a) tier 3, above). **Done** —
-   the last 11, `Sim/MapAction.cpp`'s slide-move and hitscan scratch, went with
-   item 3 below. Strand (a) is now fully retired everywhere in `src/DOOM`, and
-   the fixed-address pin on `engine()` is released for good.
-2. ~~Two types that still lie.~~ **Done.** `MovementSpeeds`'
-   `forwardmove`/`sidemove`/`angleturn` and `VideoState::dirtybox` are `int`;
-   16 `.raw` reaches and two `fixed_t{}` wraps went with them. `addToBox` keeps
-   its signature and its pinned `else if` — `dirtybox` was its only
-   non-fixed-point caller, and now grows through an int-typed helper.
-3. ~~`aimTraverse` / `shootTraverse` route `aimslope` and `linetarget` through
-   `ActionScratch`/`Clip`.~~ **Done.** Both traversers gained explicit
-   parameters for their captured scratch (shooter, shot z, the narrowing slope
-   window by reference) and `aimLineAttack` now returns `AimResult { slope,
-   target }` by value; every external reader (`Sim/Weapon.cpp`'s `punch`/`saw`/
-   `computeBulletSlope`/`bfgSpray`, `Sim/Mobj.cpp`'s `spawnPlayerMissile`,
-   `Sim/Enemy.cpp`'s three posture attacks) reads `.target`/`.slope` off the
-   result instead of `Clip::linetarget`/a shared `aimslope`. `Sight.cpp`'s
-   `topslope`/`bottomslope` — shared scratch, never a result — became locals in
-   `checkSight`, threaded by reference through `crossBSPNode`/`crossSubsector`.
-   `Clip::attackrange` stayed exactly where it was: it is an input, not a
-   result, and its comment now says so — see the trap below.
-4. **The RAII tail is larger than this document recorded.** Beyond `Host/Sound`'s
-   `paddedsfx` (`+8`-offset per-sfx cache, audio-blocked so golden-blind) and
-   `Sim/Tick`'s level pool (intrusive-list, variable-sized, polymorphic-`Thinker`,
-   memcpy-serialised by p_saveg — its own reviewed step), there are: `UI/Wipe`'s
-   melt-offset table, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo
-   buffers, `Game/Config`'s leaked per-string-default `newstring`, and seven
-   never-freed WAD path strings in `DoomMain::identifyVersion`.
-5. **Dead code from Step 4 that outlived the zone.** `Host/System`'s `zoneBase`,
+1. **The RAII tail — larger than this document used to record.** The two known
+   items were `Host/Sound`'s `paddedsfx` (a `+8`-offset per-sfx cache,
+   audio-blocked and therefore golden-blind) and `Sim/Tick`'s level pool
+   (intrusive-list, variable-sized, polymorphic-`Thinker`, memcpy-serialised by
+   p_saveg — its own reviewed step). A sweep for `doom_malloc`/`doom_free` found
+   six more: `UI/Wipe`'s melt-offset table, `UI/Intermission`'s `lnames`,
+   `Game/Game`'s save and demo buffers, `Game/Config`'s per-string-default
+   `newstring` (leaked once per string default read), and **seven never-freed WAD
+   path strings in `DoomMain::identifyVersion`**, each built with
+   `doom_malloc` + `doom_strcpy` + `doom_concat`.
+2. **Dead code from Step 4 that outlived the zone.** `Host/System`'s `zoneBase`,
    `heapSize`, `allocLow`, `mb_used`, `beginRead` and `endRead` have **zero
-   callers** anywhere in `src/DOOM`, `Tests/` or `examples/`. `zoneBase` would
-   still `doom_malloc` a 12 MB arena and leak it. Delete them.
-6. **`doom_boolean` is still an `int`**, and three blockers must land before the
-   typedef can change at all — see the traps below. After that: Render (20
-   sites), Host (4, golden-blind), then Sim+Game **atomically** (73+90, they
-   share `Player` and `SaveGame.cpp`'s whole-struct memcpy), then UI (124).
-7. The ~1,600 enum constants (`MT_*`, `S_*`, `SPR_*`, `MF_*`) keep their
+   callers** anywhere in `src/DOOM`, `Tests/` or `examples/` — the remaining
+   mentions are comments. `zoneBase` would still `doom_malloc` a 12 MB arena and
+   leak it. Delete them.
+3. **`doom_boolean` is still an `int`** — the last big item, 312 sites. **Three
+   blockers must land first**, all three in the section below: `MapTexture::masked`,
+   `deathmatch`'s tri-state, and the ARMS widget's `int` aliasing of
+   `weaponowned`. After that, in this order: **Render** (20 sites, isolated and
+   frame-golden covered), **Host** (4, trivial but golden-blind since audio is),
+   then **Sim + Game atomically** (73 + 90 — they share `Player` and
+   `SaveGame.cpp`'s whole-struct `doom_memcpy`, so a partial flip corrupts the
+   save round-trip), then **UI** (124, largest but shallowest once the ARMS
+   widget is untangled).
+
+   The save format is only ever round-tripped within one build — `Tests/Goldens`
+   holds no save file — so a layout change is self-consistent *provided every
+   `doom_boolean`-carrying struct flips in one commit*. Consider bumping the
+   savegame version so an older `.dsg` is rejected rather than silently misread.
+   `Tests/SimProbe.cpp` uses `doom_boolean` as a `Traverser` return type and
+   needs updating in lockstep.
+
+   Verified **not** hazards, so they need no special handling: `TiccmdInput`'s
+   `mousebuttons`/`joybuttons` are same-type interior views; the config
+   `defaults[]` table binds `int*` onto members that are already `int`; there is
+   no `union` and no `#pragma pack` anywhere in `src/DOOM`; `Wad/MapFormat.h` and
+   `Game/Ticcmd.h` carry no `doom_boolean`; the demo header is written a byte at
+   a time; `Game.cpp`'s `paused ^= 1` and `Hud.cpp`'s `numplayers +=
+   playeringame[i]` are both safe on a `bool`.
+4. **Write-only state: `AutomapView::min_w` / `min_h`.** Assigned by
+   `findMinMaxBoundaries`, read by nothing. This is *not* the dead-member pattern
+   (which requires zero reads **and** zero writes) and was deliberately left
+   alone during the alias sweep. Vanilla's `am_map.c` uses `min_w`/`min_h` to
+   compute the zoom-out limit via `min_scale_mtof`, so the question is whether
+   that computation was rewritten to use something else or whether **a read was
+   lost** — a possible real bug. Worth a sweep for the same pattern across the
+   other `Engine` clusters once this one is understood.
+5. The ~1,600 enum constants (`MT_*`, `S_*`, `SPR_*`, `MF_*`) keep their
    prefixes **on purpose** — they are DOOM's data vocabulary, `Sim/Info.cpp`'s
    generated tables are built from them, and renaming them is high-churn and
    zero-value.
+
+Recently finished, for orientation: the 247 file-local reference aliases (strand
+(a), seven batches); `MovementSpeeds` and `VideoState::dirtybox` retyped to
+`int`; the hitscan traversers returning `AimResult`; frame goldens for the
+automap and the finale; and the constructible `Engine` with the test that proves
+it.
 
 ### Three types that lie, found under `doom_boolean`
 
@@ -289,37 +375,8 @@ the `weaponowned` precedent. A wrong warning about a load-bearing quirk is worse
 than no warning: it sends the next reader hunting for a hazard that does not
 exist, or preserves a constraint nothing needs.
 
-### Traps this work added to the list
+### Traps carried from earlier sessions
 
-- **`Clip::attackrange` looks like a traverse result and is an input.** It is set
-  by `lineAttack` *before* the traverse, and `Sim/Mobj`'s `spawnPuff` reads it
-  from *inside* that traversal's own call stack — nested, not stale — to pick the
-  fist's `S_PUFF3`. So it must **not** move into the returned `AimResult`. It also
-  carries a genuine cross-tic leak that must be preserved: `spawnPuff` has a third
-  caller in no hitscan chain at all — the revenant's homing rocket spawns smoke
-  every 4th tic (`Sim/Enemy`) — which reads whatever the last hitscan left, so a
-  recent punch can flip that smoke to `S_PUFF3`. That is vanilla behaviour sitting
-  under the demo goldens; threading an explicit `false` there is a behaviour change
-  wearing a refactor's clothes.
-- **A category can be "done" while a whole syntactic tier of it stands.** Strand
-  (a) was recorded complete after two sweeps that both searched for `extern T& x`.
-  247 aliases spelled `static T& x = cluster().x;` — plus a reference-to-array form,
-  `static Patch* (&tallnum)[10] = …` — were untouched, and the pin the strand exists
-  to remove was never released. Verify a completeness claim against the *category*,
-  not against the pattern that found its members; and treat a comment that still
-  describes the old state (`Engine.h`'s, here) as evidence, not as staleness.
-- **A reader-count heuristic lies after a hoist.** Agents name the hoisted local
-  after the alias it replaces, so a bare-name count reports those locals as
-  readers. Delete the definitions and let the **compiler** name the survivors.
-- **`extern` declarations are not only in headers.** Several sat in `.cpp` files
-  and three inside function bodies. A header-only sweep leaves dangling ones.
-- **A test can assert the very thing being removed.** Two died this way:
-  `Random/vanillaNamesAliasTheObject` (checked `&prndindex ==
-  &randomness().playIndex`) and `Fixed/agreesWithVanillaFixedMul` (held the
-  strong type against the vanilla functions). Converted mechanically each
-  becomes `x == x` — green forever, testing nothing. Both were deleted with a
-  comment saying where their real coverage lives. **That is why the suite is 78,
-  not 80.**
 - **A two-pass rename can orphan what it meant to delete.** Where the vanilla and
   namespaced names are the same identifier (`I_Error`), pass 1 renamed the shim's
   own definition and pass 2 then found nothing to delete — leaving 48 dead global

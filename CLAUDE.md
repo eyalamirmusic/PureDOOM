@@ -371,7 +371,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Roughly two seconds for the lot. **Run it before and after anything you change
+81 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
 in `src/DOOM`.**
 
 Run the binaries through ctest, not bare. NanoTest registers one ctest case per
@@ -456,13 +456,44 @@ after a single load: that `vertexes`/`numsegs`/… still equal their `Level` vec
 
 ### What the tests do not cover
 
-Audio, and the eacp platform layer and GPU renderer. The **menu** used to be
-here — nothing in a demo opens one — but it now has its own frame golden
-(`Tests/Goldens/menu.frames`, via `Tests/MenuReplay.h`): synthetic `doom_key_down`
-events drive a scripted walk through the menus over the title screen, hashed every
-tic, the same Step-0 technique the renderer got. That golden was built *before*
-`m_menu` was rewritten into `UI/Menu` and holds it byte-identical. The rest still
-needs the app run and looked at.
+Audio, and the eacp platform layer and GPU renderer. That is now the whole list —
+the three screens a demo never reaches each have their own frame golden, all
+built the same way and all built *before* the code they cover was rewritten:
+
+- **The menu** (`Tests/Goldens/menu.frames`, via `Tests/MenuReplay.h`) — nothing
+  in a demo opens one. Synthetic `doom_key_down` events drive a scripted walk
+  through the menus over the title screen, hashed every tic, the same Step-0
+  technique the renderer got. Built before `m_menu` became `UI/Menu`, and holds
+  it byte-identical.
+- **The automap** (`automap.frames`, via `Tests/AutomapReplay.h`) — no demo opens
+  it either, and for a reason worth knowing: `D_Display` skips
+  `R_RenderPlayerView` entirely while the map is up, which is the same quirk that
+  made `eacpDoomRevealAutomap` necessary. Loads E1M1 directly, then walks the map
+  — follow on and off, hand-panning, zoom, the big overview, the grid, marks —
+  asserting the map actually opened at each transition rather than assuming a
+  keypress landed.
+- **The finale** (`finale.frames`, via `Tests/FinaleReplay.h`) — reached by
+  calling `startFinale` after loading E1M8, that being the map whose completion
+  triggers it. Hashes the text crawl, the stage-transition wipe and the settled
+  screen. The cast call and bunny scroll are DOOM II / episode-3 only, so the
+  test *asserts* the game mode is shareware rather than leaving "unreachable" as
+  a comment.
+
+Each was demonstrated **sharp and non-redundant** when recorded: a
+one-palette-index change to `WALLCOLORS` fails only `Sim/automap`, and
+`TEXTSPEED` 3→4 fails only `Sim/finale`, with the demo goldens green through
+both. That matters — a golden recorded *after* a rewrite pins whatever the
+rewrite did, and a golden that no plausible change would fail is worse than none,
+because it reads as coverage.
+
+**Before refactoring a file, check what actually covers it.** Two of these three
+were found only because a sweep was about to land under a green suite that never
+ran the code.
+
+The `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` fast loop has its own blind spot: it
+never compiles `examples/EACP`, and `EngineAccess.cpp` includes engine headers
+directly, so an engine change can break the app with every test still green. Keep
+a second build directory for it and treat the app linking as a fourth gate.
 
 ### The WAD directory has its own golden
 
