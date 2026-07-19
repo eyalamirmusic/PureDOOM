@@ -289,7 +289,8 @@ int eacpDoomStatusBarVisible()
 
 float eacpDoomViewRows()
 {
-    return eacpDoomStatusBarVisible() ? (float) Doom::ST_Y : (float) Doom::SCREENHEIGHT;
+    return eacpDoomStatusBarVisible() ? (float) Doom::ST_Y
+                                      : (float) Doom::SCREENHEIGHT;
 }
 
 void eacpDoomRevealAutomap()
@@ -1298,8 +1299,11 @@ static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s
 // projection would put it: the sprite's left edge sits its own offset to the
 // left of the thing's position along the view plane, and its top sits the
 // sprite's top offset above the thing's feet.
-static void eacpEmitSprite(
-    EacpEmitter* em, Doom::Mobj* thing, Doom::Mobj* viewer, double rightX, double rightY)
+static void eacpEmitSprite(EacpEmitter* em,
+                           Doom::Mobj* thing,
+                           Doom::Mobj* viewer,
+                           double rightX,
+                           double rightY)
 {
     auto& gfx = Doom::graphicsData();
 
@@ -1328,7 +1332,7 @@ static void eacpEmitSprite(
     if (frame->rotate)
     {
         angle_t seen = Doom::pointToAngle2(viewer->x, viewer->y, thing->x, thing->y);
-        rotation = ((seen - thing->angle + (ANG45 / 2u) * 9u) >> 29).raw;
+        rotation = ((seen - thing->angle + (Doom::ang45 / 2u) * 9u) >> 29).raw;
     }
 
     lump = frame->lump[rotation];
@@ -1394,8 +1398,9 @@ static angle_t eacpAngleFromRadians(float radians)
                                              * (2147483648.0 / 3.14159265358979));
 }
 
-static void
-    eacpEmitSprites(EacpEmitter* em, Doom::Mobj* viewer, const EacpDoomCamera* camera)
+static void eacpEmitSprites(EacpEmitter* em,
+                            Doom::Mobj* viewer,
+                            const EacpDoomCamera* camera)
 {
     auto& thinkers = Doom::thinkerList();
 
@@ -1459,18 +1464,14 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
         angle_t a0 = (angle_t) i << 26;
         angle_t a1 = (angle_t) (i + 1) << 26;
 
-        double x0 = camX
-                    + EACP_SKY_RADIUS
-                          * eacpFixedToDouble(finecosine[a0.fineIndex()]);
+        double x0 =
+            camX + EACP_SKY_RADIUS * eacpFixedToDouble(finecosine[a0.fineIndex()]);
         double y0 =
-            camY
-            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a0.fineIndex()]);
-        double x1 = camX
-                    + EACP_SKY_RADIUS
-                          * eacpFixedToDouble(finecosine[a1.fineIndex()]);
+            camY + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a0.fineIndex()]);
+        double x1 =
+            camX + EACP_SKY_RADIUS * eacpFixedToDouble(finecosine[a1.fineIndex()]);
         double y1 =
-            camY
-            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a1.fineIndex()]);
+            camY + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a1.fineIndex()]);
 
         float u0 = 4.0f * (float) i / (float) EACP_SKY_SEGMENTS;
         float u1 = 4.0f * (float) (i + 1) / (float) EACP_SKY_SEGMENTS;
@@ -1818,11 +1819,11 @@ static void eacpAutomapLine(EacpAutomapEmitter* em,
                             int color)
 {
     double ax = (double) f_x + (eacpFixedToDouble(x1) - em->originX) * em->scale;
-    double ay =
-        (double) f_y + (double) f_h - (eacpFixedToDouble(y1) - em->originY) * em->scale;
+    double ay = (double) f_y + (double) f_h
+                - (eacpFixedToDouble(y1) - em->originY) * em->scale;
     double bx = (double) f_x + (eacpFixedToDouble(x2) - em->originX) * em->scale;
-    double by =
-        (double) f_y + (double) f_h - (eacpFixedToDouble(y2) - em->originY) * em->scale;
+    double by = (double) f_y + (double) f_h
+                - (eacpFixedToDouble(y2) - em->originY) * em->scale;
 
     eacpAutomapFrameLine(em, ax, ay, bx, by, color);
 }
@@ -1950,8 +1951,14 @@ static void eacpAutomapPlayer(EacpAutomapEmitter* em, const EacpDoomCamera* came
     angle = eacpAngleFromRadians(camera->angle);
 
     if (cheating)
-        eacpAutomapLineCharacter(
-            em, cheat_player_arrow, NUMCHEATPLYRLINES, fixed_t {}, angle, WHITE, x, y);
+        eacpAutomapLineCharacter(em,
+                                 cheat_player_arrow,
+                                 NUMCHEATPLYRLINES,
+                                 fixed_t {},
+                                 angle,
+                                 WHITE,
+                                 x,
+                                 y);
     else
         eacpAutomapLineCharacter(
             em, player_arrow, NUMPLYRLINES, fixed_t {}, angle, WHITE, x, y);

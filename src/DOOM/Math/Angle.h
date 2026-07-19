@@ -38,14 +38,17 @@ struct Angle
     // Which of the 8192 fine-angle buckets this lands in - the index the trig
     // tables are read with.
     // Raw shifts. DOOM indexes its lookup tables by shifting an angle down, and
-    // scales/divides angles by whole numbers (ANG45 * (thing->angle / 45)).
+    // scales/divides angles by whole numbers (ang45 * (thing->angle / 45)).
     constexpr Angle operator>>(int shift) const { return Angle {raw >> shift}; }
     constexpr Angle operator<<(int shift) const { return Angle {raw << shift}; }
     constexpr Angle& operator>>=(int shift) { return *this = *this >> shift; }
     constexpr Angle& operator<<=(int shift) { return *this = *this << shift; }
 
     constexpr Angle operator*(unsigned scale) const { return Angle {raw * scale}; }
-    constexpr Angle operator/(unsigned divisor) const { return Angle {raw / divisor}; }
+    constexpr Angle operator/(unsigned divisor) const
+    {
+        return Angle {raw / divisor};
+    }
 
     // Explicit, so `if (angle)` reads as it always did without letting an Angle
     // decay to an integer in arithmetic.

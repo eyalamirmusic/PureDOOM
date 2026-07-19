@@ -874,7 +874,7 @@ bool checkSpot(int playernum, MapThing* mthing)
 
     // spawn a teleport fog
     ss = Doom::pointInSubsector(x, y);
-    const auto anFine = (ANG45 * (mthing->angle / 45)).fineIndex();
+    const auto anFine = (ang45 * (mthing->angle / 45)).fineIndex();
 
     mo = Doom::spawnMobj(x + 20 * finecosine[anFine],
                          y + 20 * finesine[anFine],

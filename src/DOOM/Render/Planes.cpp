@@ -163,7 +163,7 @@ void clearPlanes()
     doom_memset(plane.cachedheight, 0, sizeof(plane.cachedheight));
 
     // left to right mapping
-    const auto angleFine = (viewPoint().viewangle - ANG90).fineIndex();
+    const auto angleFine = (viewPoint().viewangle - ang90).fineIndex();
 
     // scale will be unit scale at SCREENWIDTH/2 distance
     plane.basexscale = FixedDiv(finecosine[angleFine], proj.centerxfrac);

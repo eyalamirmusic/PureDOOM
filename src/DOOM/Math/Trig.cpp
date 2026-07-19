@@ -2091,7 +2091,8 @@ static_assert(alignof(Doom::Fixed) == alignof(std::int32_t));
 const fixed_t* finesine =
     reinterpret_cast<const fixed_t*>(Doom::fineSineTable.data());
 const fixed_t* finecosine =
-    reinterpret_cast<const fixed_t*>(Doom::fineSineTable.data()) + FINEANGLES / 4;
+    reinterpret_cast<const fixed_t*>(Doom::fineSineTable.data())
+    + Doom::fineAngles / 4;
 const fixed_t* finetangent =
     reinterpret_cast<const fixed_t*>(Doom::fineTangentTable.data());
 static_assert(sizeof(Doom::Angle) == sizeof(std::uint32_t));

@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -17,7 +17,7 @@
 // DESCRIPTION:
 //        Lookup tables.
 //        Do not try to look them up :-).
-//        In the order of appearance: 
+//        In the order of appearance:
 //
 //        int finetangent[4096]        - Tangens LUT.
 //         Should work with BAM fairly well (12 of 16bit,
@@ -25,30 +25,23 @@
 //
 //        int finesine[10240]                - Sine lookup.
 //         Guess what, serves as cosine, too.
-//         Remarkable thing is, how to use BAMs with this? 
+//         Remarkable thing is, how to use BAMs with this?
 //
 //        int tantoangle[2049]        - ArcTan LUT,
-//          maps tan(angle) to angle fast. Gotta search.        
-//    
+//          maps tan(angle) to angle fast. Gotta search.
+//
 //-----------------------------------------------------------------------------
 
 #pragma once
 
-
-#ifdef LINUX
-
-#else
-#define PI 3.141592657
-#endif
-
 #include "FixedPoint.h"
 #include "Angle.h"
+#include "Trig.h"
 
-#define FINEANGLES 8192
-#define FINEMASK (FINEANGLES-1)
-
-// 0x100000000 to 0x2000
-#define ANGLETOFINESHIFT 19                
+// This header is the vanilla-named view of the trig tables and nothing else.
+// The constants that go with them - fineAngles, fineMask, slopeRange, slopeBits,
+// slopeToFixedShift, ang45/ang90/ang180/ang270, Angle::angleToFineShift - belong
+// to Math/Trig.h and Math/Angle.h. Read them from there.
 
 // Views onto the tables in Math/Trig.h, which owns them. Pointers rather than
 // arrays, because there is one copy of the data and this is the vanilla name for
@@ -60,23 +53,12 @@ extern const fixed_t* finesine;
 // Re-use data, is just PI/2 pahse shift.
 extern const fixed_t* finecosine;
 
-
 // Effective size is 4096.
 extern const fixed_t* finetangent;
 
-// Binary Angle Measument, BAM.
-#define ANG45 (Doom::Angle {0x20000000})
-#define ANG90 (Doom::Angle {0x40000000})
-#define ANG180 (Doom::Angle {0x80000000})
-#define ANG270 (Doom::Angle {0xc0000000})
-
-#define SLOPERANGE 2048
-#define SLOPEBITS 11
-#define DBITS (FRACBITS - SLOPEBITS)
-
 // angle_t IS Doom::Angle - Binary Angle Measurement, a whole turn in 2^32 units
-// so it wraps by itself. The ANG* constants are Angles, which is what lets the
-// engine keep writing `ANG45 * (thing->angle / 45)` unchanged.
+// so it wraps by itself. The ang* constants (Math/Angle.h) are Angles, which is
+// what lets the engine keep writing `ang45 * (thing->angle / 45)` unchanged.
 using angle_t = Doom::Angle;
 
 // Effective size is 2049;
@@ -84,11 +66,8 @@ using angle_t = Doom::Angle;
 //  without additional checking.
 extern const angle_t* tantoangle;
 
-
 // Utility function,
 //  called by Doom::pointToAngle.
-
-
 
 //-----------------------------------------------------------------------------
 //

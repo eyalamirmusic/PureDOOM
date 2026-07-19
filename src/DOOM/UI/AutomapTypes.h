@@ -29,9 +29,9 @@
 
 // Used by ST StatusBar stuff.
 //
-// Everything this header declares stays at global scope, macro or not: it is the
-// deliberate carve-out examples/EACP/EngineAccess.cpp reads by bare name, and it
-// is not built as part of namespace Doom.
+// Everything this header declares is at global scope, not in namespace Doom:
+// examples/EACP/EngineAccess.cpp is an ordinary translation unit and reads these
+// by bare name. Keep new declarations here at :: scope for the same reason.
 constexpr int AM_MSGHEADER = ('a' << 24) + ('m' << 16);
 constexpr int AM_MSGENTERED = AM_MSGHEADER | ('e' << 8);
 constexpr int AM_MSGEXITED = AM_MSGHEADER | ('x' << 8);
@@ -105,9 +105,9 @@ constexpr int XHAIRCOLORS = GRAYS;
 // A line the map never draws, whatever the player has seen.
 constexpr int LINE_NEVERSEE = ML_DONTDRAW;
 
-// The line drawings the map is made of. Their sizes are asserted against the
-// definitions in am_map.c: a count that drifts is a compile error, not a
-// renderer walking off the end of an array.
+// The line drawings the map is made of. These counts are the array bounds the
+// tables in UI/Automap.cpp are defined against, so a count that drifts from its
+// table is a compile error rather than a renderer walking off the end of it.
 constexpr int NUMPLYRLINES = 7;
 constexpr int NUMCHEATPLYRLINES = 16;
 constexpr int NUMTHINTRIANGLEGUYLINES = 3;

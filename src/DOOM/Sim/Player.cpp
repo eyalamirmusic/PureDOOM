@@ -42,7 +42,7 @@ constexpr int INVERSECOLORMAP = 32;
 // 16 pixels of bob (a raw fixed value: 0x100000 is 16.0)
 constexpr fixed_t MAXBOB {0x100000};
 
-constexpr angle_t ANG5 = ANG90 / 18;
+constexpr angle_t ANG5 = ang90 / 18;
 
 //
 // Movement.
@@ -99,7 +99,7 @@ void calcHeight(Player& player)
         return;
     }
 
-    angle = (FINEANGLES / 20 * levelStats().leveltime) & FINEMASK;
+    angle = (fineAngles / 20 * levelStats().leveltime) & fineMask;
     bob = FixedMul(player.bob / 2, finesine[angle]);
 
     // move viewheight
@@ -152,7 +152,7 @@ void movePlayer(Player& player)
         thrust(player, player.mo->angle, fixed_t {cmd->forwardmove * 2048});
 
     if (cmd->sidemove && scratch.onground)
-        thrust(player, player.mo->angle - ANG90, fixed_t {cmd->sidemove * 2048});
+        thrust(player, player.mo->angle - ang90, fixed_t {cmd->sidemove * 2048});
 
     if ((cmd->forwardmove || cmd->sidemove) && player.mo->state == &states[S_PLAY])
     {
@@ -199,7 +199,7 @@ void deathThink(Player& player)
             if (player.damagecount)
                 player.damagecount--;
         }
-        else if (delta < ANG180)
+        else if (delta < ang180)
             player.mo->angle += ANG5;
         else
             player.mo->angle -= ANG5;

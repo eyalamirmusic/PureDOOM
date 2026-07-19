@@ -318,9 +318,9 @@ void weaponReady(Player& player, PspDef& psp)
         player.attackdown = false;
 
     // bob the weapon based on movement speed
-    angle = (128 * levelStats().leveltime) & FINEMASK;
+    angle = (128 * levelStats().leveltime) & fineMask;
     psp.sx = FRACUNIT + FixedMul(player.bob, finecosine[angle]);
-    angle &= FINEANGLES / 2 - 1;
+    angle &= fineAngles / 2 - 1;
     psp.sy = WEAPONTOP + FixedMul(player.bob, finesine[angle]);
 }
 
@@ -480,19 +480,19 @@ void saw(Player& player, PspDef&)
     // turn to face target
     angle = Doom::pointToAngle2(
         player.mo->x, player.mo->y, aim.target->x, aim.target->y);
-    if (angle - player.mo->angle > ANG180)
+    if (angle - player.mo->angle > ang180)
     {
-        if (angle - player.mo->angle < static_cast<angle_t>(-ANG90 / 20))
-            player.mo->angle = angle + ANG90 / 21;
+        if (angle - player.mo->angle < static_cast<angle_t>(-ang90 / 20))
+            player.mo->angle = angle + ang90 / 21;
         else
-            player.mo->angle -= ANG90 / 20;
+            player.mo->angle -= ang90 / 20;
     }
     else
     {
-        if (angle - player.mo->angle > ANG90 / 20)
-            player.mo->angle = angle - ANG90 / 21;
+        if (angle - player.mo->angle > ang90 / 20)
+            player.mo->angle = angle - ang90 / 21;
         else
-            player.mo->angle += ANG90 / 20;
+            player.mo->angle += ang90 / 20;
     }
     player.mo->flags |= MF_JUSTATTACKED;
 }
@@ -707,7 +707,7 @@ void bfgSpray(Mobj* mo)
     // offset angles from its attack angle
     for (int i = 0; i < 40; i++)
     {
-        an = mo->angle - ANG90 / 2 + ANG90 / 40 * i;
+        an = mo->angle - ang90 / 2 + ang90 / 40 * i;
 
         // mo->target is the originator (player)
         //  of the missile

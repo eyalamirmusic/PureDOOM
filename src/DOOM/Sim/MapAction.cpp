@@ -70,14 +70,14 @@ void hitSlideLine(Line* ld)
     lineangle = Doom::pointToAngle2(fixed_t {}, fixed_t {}, ld->dx, ld->dy);
 
     if (side == 1)
-        lineangle += ANG180;
+        lineangle += ang180;
 
     moveangle = Doom::pointToAngle2(
         fixed_t {}, fixed_t {}, scratch.tmxmove, scratch.tmymove);
     deltaangle = moveangle - lineangle;
 
-    if (deltaangle > ANG180)
-        deltaangle += ANG180;
+    if (deltaangle > ang180)
+        deltaangle += ang180;
 
     const auto lineangleFine = lineangle.fineIndex();
     const auto deltaangleFine = deltaangle.fineIndex();

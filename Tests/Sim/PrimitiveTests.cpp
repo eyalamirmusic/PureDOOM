@@ -231,7 +231,7 @@ auto tFineCosineIsFineSineShifted = test("Tables/cosineIsSineQuarterTurnOn") = [
 {
     // Not an accident of layout but the definition: finecosine points a quarter
     // of a circle into finesine, which is why finesine is 5/4 of a table long.
-    check(finecosine == finesine + FINEANGLES / 4);
+    check(finecosine == finesine + Doom::fineAngles / 4);
 };
 
 // The table is sampled at the CENTRE of each fine-angle bucket, not at its edge:
@@ -247,20 +247,21 @@ auto tFineSineIsSampledAtBucketCentres =
     test("Tables/sineIsSampledAtBucketCentres") = []
 {
     check(finesine[0] == fixed_t {25}); // sin(~0.02 deg)
-    check(finesine[FINEANGLES / 4] == fixed_t {65535}); // sin(~90 deg), not 65536
-    check(finesine[FINEANGLES / 2] == fixed_t {-25}); // sin(~180 deg)
-    check(finesine[3 * FINEANGLES / 4] == fixed_t {-65535}); // sin(~270 deg)
+    check(finesine[Doom::fineAngles / 4]
+          == fixed_t {65535}); // sin(~90 deg), not 65536
+    check(finesine[Doom::fineAngles / 2] == fixed_t {-25}); // sin(~180 deg)
+    check(finesine[3 * Doom::fineAngles / 4] == fixed_t {-65535}); // sin(~270 deg)
 
     check(finecosine[0] == fixed_t {65535}); // cos(~0 deg)
-    check(finecosine[FINEANGLES / 4] == fixed_t {-25}); // cos(~90 deg)
+    check(finecosine[Doom::fineAngles / 4] == fixed_t {-25}); // cos(~90 deg)
 
     // Near enough to the real thing to be the real thing, one part in 65536.
-    check(finesine[FINEANGLES / 4] > FRACUNIT - fixed_t {4});
+    check(finesine[Doom::fineAngles / 4] > FRACUNIT - fixed_t {4});
 };
 
 auto tFineSineStaysInUnitRange = test("Tables/sineStaysInUnitRange") = []
 {
-    for (auto i = 0; i < FINEANGLES; ++i)
+    for (auto i = 0; i < Doom::fineAngles; ++i)
         check(finesine[i] >= -FRACUNIT && finesine[i] <= FRACUNIT);
 };
 
@@ -269,23 +270,23 @@ auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []
     // The table turns a slope into an angle, so it must never go backwards - a
     // steeper slope is always a wider angle. Doom::pointToAngle indexes straight
     // into it and would aim the player wrongly if it did.
-    for (auto i = 1; i <= SLOPERANGE; ++i)
+    for (auto i = 1; i <= Doom::slopeRange; ++i)
         check(tantoangle[i] >= tantoangle[i - 1]);
 
     check(tantoangle[0] == angle_t {0});
 };
 
 // Doom::slopeDiv gives up rather than divide by anything under 512 - it answers
-// SLOPERANGE, the steepest slope it can name, whatever the numerator. So
+// Doom::slopeRange, the steepest slope it can name, whatever the numerator. So
 // Doom::slopeDiv(0, 1) is 2048 and not 0, which reads as a bug and is not one: the
 // result indexes tantoangle, the guard is what keeps the index in the table, and
 // Doom::pointToAngle only ever calls it with a denominator it has already made large.
 auto tSlopeDivGivesUpOnSmallDenominators =
     test("Tables/slopeDivGivesUpOnSmallDenominators") = []
 {
-    check(Doom::slopeDiv(0, 1) == SLOPERANGE);
-    check(Doom::slopeDiv(1, 1) == SLOPERANGE);
-    check(Doom::slopeDiv(0, 511) == SLOPERANGE);
+    check(Doom::slopeDiv(0, 1) == Doom::slopeRange);
+    check(Doom::slopeDiv(1, 1) == Doom::slopeRange);
+    check(Doom::slopeDiv(0, 511) == Doom::slopeRange);
 
     // At 512 it starts actually dividing.
     check(Doom::slopeDiv(0, 512) == 0);
@@ -294,11 +295,11 @@ auto tSlopeDivGivesUpOnSmallDenominators =
 auto tSlopeDivStaysInTable = test("Tables/slopeDivStaysInTable") = []
 {
     // Whatever it is handed, the answer must index tantoangle, whose last entry
-    // is SLOPERANGE. Anything past that reads off the end of the table.
-    check(Doom::slopeDiv(1000000, 512) == SLOPERANGE);
+    // is Doom::slopeRange. Anything past that reads off the end of the table.
+    check(Doom::slopeDiv(1000000, 512) == Doom::slopeRange);
     check(Doom::slopeDiv(1, 1000000) == 0);
-    check(Doom::slopeDiv(1000000, 1000000) <= SLOPERANGE);
-    check(Doom::slopeDiv(0, 1000000) <= SLOPERANGE);
+    check(Doom::slopeDiv(1000000, 1000000) <= Doom::slopeRange);
+    check(Doom::slopeDiv(0, 1000000) <= Doom::slopeRange);
 };
 
 // ---------------------------------------------------------------------------
@@ -327,39 +328,52 @@ auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
 };
 
 // Doom::pointToAngle inherits the trig table's half-bucket offset, so it lands one
-// unit BELOW the exact cardinal - due north is 0x3fffffff, not ANG90. (Due south
+// unit BELOW the exact cardinal - due north is 0x3fffffff, not Doom::ang90. (Due south
 // is exact, because it is reached by negating rather than by a lookup.) An angle
 // is 1/2^32 of a circle, so one unit is nothing to look at and everything to
 // replay: it is what the recorded demos were aimed with.
 auto tPointToAngleCardinals = test("Geometry/pointToAngleCardinals") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, fixed_t {}) == angle_t {}); // east, exact
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, one) == ANG90 - angle_t {1}); // north
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, fixed_t {}) == ANG180 - angle_t {1}); // west
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, -one) == ANG270); // south, exact
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, fixed_t {})
+          == angle_t {}); // east, exact
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, one)
+          == Doom::ang90 - angle_t {1}); // north
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, fixed_t {})
+          == Doom::ang180 - angle_t {1}); // west
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, -one)
+          == Doom::ang270); // south, exact
 };
 
 auto tPointToAngleDiagonal = test("Geometry/pointToAngleDiagonal") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one) == ANG45 - angle_t {1});
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one) == ANG90 + ANG45);
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one)
+          == Doom::ang45 - angle_t {1});
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one)
+          == Doom::ang90 + Doom::ang45);
 };
 
 // Whatever the exact values, the four quadrants must at least be the four
 // quadrants - this is the property a rewrite would actually break.
 auto tPointToAngleQuadrants = test("Geometry/pointToAngleQuadrants") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one) < ANG90); // NE
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one) > ANG90); // NW
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one) < ANG180);
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, -one) > ANG180); // SW
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, -one) < ANG270);
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, -one) > ANG270); // SE
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one) < Doom::ang90); // NE
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one)
+          > Doom::ang90); // NW
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one) < Doom::ang180);
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, -one)
+          > Doom::ang180); // SW
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, -one) < Doom::ang270);
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, -one)
+          > Doom::ang270); // SE
 };
 
 // The same point is no angle at all, rather than an out-of-range index.
 auto tPointToAngleDegenerate = test("Geometry/pointToAngleAtSamePoint") = []
-{ check(Doom::pointToAngle2(fixed_t {100}, fixed_t {100}, fixed_t {100}, fixed_t {100}) == angle_t {}); };
+{
+    check(Doom::pointToAngle2(
+              fixed_t {100}, fixed_t {100}, fixed_t {100}, fixed_t {100})
+          == angle_t {});
+};
 
 // ---------------------------------------------------------------------------
 // The tables, whole.
@@ -379,7 +393,7 @@ auto tFineSineTableIsIntact = test("Tables/fineSineIsIntact") = []
 {
     auto sum = Checksum {};
 
-    for (auto i = 0; i < 5 * FINEANGLES / 4; ++i)
+    for (auto i = 0; i < 5 * Doom::fineAngles / 4; ++i)
         sum << finesine[i].raw;
 
     checkTable("finesine", sum, 0xd68e94130bb61a68ULL);
@@ -389,7 +403,7 @@ auto tFineTangentTableIsIntact = test("Tables/fineTangentIsIntact") = []
 {
     auto sum = Checksum {};
 
-    for (auto i = 0; i < FINEANGLES / 2; ++i)
+    for (auto i = 0; i < Doom::fineAngles / 2; ++i)
         sum << finetangent[i].raw;
 
     checkTable("finetangent", sum, 0xa0ba8deb9438b0dbULL);
@@ -399,7 +413,7 @@ auto tTanToAngleTableIsIntact = test("Tables/tanToAngleIsIntact") = []
 {
     auto sum = Checksum {};
 
-    for (auto i = 0; i <= SLOPERANGE; ++i)
+    for (auto i = 0; i <= Doom::slopeRange; ++i)
         sum << tantoangle[i].raw;
 
     checkTable("tantoangle", sum, 0x373392e3c4a34270ULL);

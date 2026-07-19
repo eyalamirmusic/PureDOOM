@@ -714,19 +714,19 @@ void updateFaceWidget()
                 {
                     // whether right or left
                     diffang = badguyangle - bar.plyr->mo->angle;
-                    i = diffang > ANG180;
+                    i = diffang > ang180;
                 }
                 else
                 {
                     // whether left or right
                     diffang = bar.plyr->mo->angle - badguyangle;
-                    i = diffang <= ANG180;
+                    i = diffang <= ang180;
                 } // confusing, aint it?
 
                 face.st_facecount = ST_TURNCOUNT;
                 face.st_faceindex = calcPainOffset();
 
-                if (diffang < ANG45)
+                if (diffang < ang45)
                 {
                     // head-on
                     face.st_faceindex += ST_RAMPAGEOFFSET;

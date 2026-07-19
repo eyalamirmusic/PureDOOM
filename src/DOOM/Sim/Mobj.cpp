@@ -386,7 +386,7 @@ void nightmareRespawn(Mobj* mobj)
     // inherit attributes from deceased one
     mo = spawnMobj(x, y, z, mobj->type);
     mo->spawnpoint = mobj->spawnpoint;
-    mo->angle = ANG45 * (mthing->angle / 45);
+    mo->angle = ang45 * (mthing->angle / 45);
 
     if (mthing->options & MTF_AMBUSH)
         mo->flags |= MF_AMBUSH;
@@ -590,7 +590,7 @@ void respawnSpecials()
 
     mo = spawnMobj(x, y, z, static_cast<MobjType>(i));
     mo->spawnpoint = *mthing;
-    mo->angle = ANG45 * (mthing->angle / 45);
+    mo->angle = ang45 * (mthing->angle / 45);
 
     // pull it from the que
     queue.iquetail = (queue.iquetail + 1) & (ITEMQUESIZE - 1);
@@ -631,7 +631,7 @@ void spawnPlayer(MapThing* mthing)
     if (mthing->type > 1)
         mobj->flags |= (mthing->type - 1) << MF_TRANSSHIFT;
 
-    mobj->angle = ANG45 * (mthing->angle / 45);
+    mobj->angle = ang45 * (mthing->angle / 45);
     mobj->player = p;
     mobj->health = p->health;
 
@@ -768,7 +768,7 @@ void spawnMapThing(MapThing* mthing)
     if (mobj->flags & MF_COUNTITEM)
         stats.totalitems++;
 
-    mobj->angle = ANG45 * (mthing->angle / 45);
+    mobj->angle = ang45 * (mthing->angle / 45);
     if (mthing->options & MTF_AMBUSH)
         mobj->flags |= MF_AMBUSH;
 }

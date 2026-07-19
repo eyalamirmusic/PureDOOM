@@ -232,7 +232,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 1
-                return ANG90 - angle_t {1}
+                return ang90 - angle_t {1}
                        - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
@@ -256,7 +256,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 7
-                return ANG270 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ang270 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
     }
@@ -271,13 +271,13 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 3
-                return ANG180 - angle_t {1}
+                return ang180 - angle_t {1}
                        - tantoangle[Doom::slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 2
-                return ANG90 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ang90 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
         else
@@ -288,12 +288,12 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 4
-                return ANG180 + tantoangle[Doom::slopeDiv(y.raw, x.raw)];
+                return ang180 + tantoangle[Doom::slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 5
-                return ANG270 - angle_t {1}
+                return ang270 - angle_t {1}
                        - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
@@ -331,7 +331,7 @@ fixed_t pointToDist(fixed_t x, fixed_t y)
     }
 
     const auto fine =
-        (tantoangle[FixedDiv(dy, dx).raw >> DBITS] + ANG90).fineIndex();
+        (tantoangle[FixedDiv(dy, dx).raw >> slopeToFixedShift] + ang90).fineIndex();
 
     // use as cosine
     dist = FixedDiv(dx, finesine[fine]);
@@ -363,8 +363,8 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
 
     auto& scratch = renderScratch();
 
-    anglea = ANG90 + (visangle - viewPoint().viewangle);
-    angleb = ANG90 + (visangle - scratch.rw_normalangle);
+    anglea = ang90 + (visangle - viewPoint().viewangle);
+    angleb = ang90 + (visangle - scratch.rw_normalangle);
 
     // both sines are allways positive
     sinea = finesine[anglea.fineIndex()];
@@ -411,9 +411,9 @@ void initTextureMapping()
     // Calc focallength
     // so FIELDOFVIEW angles covers SCREENWIDTH.
     focallength =
-        FixedDiv(proj.centerxfrac, finetangent[FINEANGLES / 4 + FIELDOFVIEW / 2]);
+        FixedDiv(proj.centerxfrac, finetangent[fineAngles / 4 + FIELDOFVIEW / 2]);
 
-    for (i = 0; i < FINEANGLES / 2; i++)
+    for (i = 0; i < fineAngles / 2; i++)
     {
         if (finetangent[i] > FRACUNIT * 2)
             t = -1;
@@ -441,11 +441,12 @@ void initTextureMapping()
         i = 0;
         while (proj.viewangletox[i] > x)
             i++;
-        proj.xtoviewangle[x] = angle_t {(unsigned) i << ANGLETOFINESHIFT} - ANG90;
+        proj.xtoviewangle[x] =
+            angle_t {(unsigned) i << Angle::angleToFineShift} - ang90;
     }
 
     // Take out the fencepost cases from viewangletox.
-    for (i = 0; i < FINEANGLES / 2; i++)
+    for (i = 0; i < fineAngles / 2; i++)
     {
         t = FixedMul(finetangent[i], focallength).raw;
         t = proj.centerx - t;
@@ -767,7 +768,7 @@ void renderPlayerView(Player& player)
 // resolves exactly as before.
 //
 
-// The viewangletox[viewangle + FINEANGLES/4] lookup
+// The viewangletox[viewangle + fineAngles/4] lookup
 // maps the visible view angles to screen X coordinates,
 // flattening the arc to a flat projection plane.
 // There will be many angles mapped to the same X.

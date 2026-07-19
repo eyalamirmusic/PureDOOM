@@ -766,7 +766,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
             && target->z - inflictor->z > 64 * FRACUNIT
             && (Doom::randomness().forPlay() & 1))
         {
-            ang += ANG180;
+            ang += ang180;
             thrust = thrust * 4;
         }
 

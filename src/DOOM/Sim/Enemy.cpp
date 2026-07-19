@@ -58,7 +58,7 @@
 
 namespace Doom
 {
-constexpr angle_t FATSPREAD = ANG90 / 8;
+constexpr angle_t FATSPREAD = ang90 / 8;
 constexpr fixed_t SKULLSPEED = 20 * FRACUNIT;
 
 // P_NewChaseDir movement LUTs and the transient targets the AI threads through its
@@ -581,7 +581,7 @@ bool lookForPlayers(Mobj& actor, bool allaround)
             an = Doom::pointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
                  - actor.angle;
 
-            if (an > ANG90 && an < ANG270)
+            if (an > ang90 && an < ang270)
             {
                 dist =
                     approxDistance(player->mo->x - actor.x, player->mo->y - actor.y);
@@ -733,9 +733,9 @@ void chase(Mobj& actor)
         delta = (int) (actor.angle - angle_t {(unsigned) actor.movedir << 29}).raw;
 
         if (delta > 0)
-            actor.angle -= ANG90 / 2u;
+            actor.angle -= ang90 / 2u;
         else if (delta < 0)
-            actor.angle += ANG90 / 2u;
+            actor.angle += ang90 / 2u;
     }
 
     if (!actor.target || !(actor.target->flags & MF_SHOOTABLE))
@@ -1083,16 +1083,16 @@ void tracer(Mobj& actor)
 
     if (exact != actor.angle)
     {
-        if (exact - actor.angle > ANG180)
+        if (exact - actor.angle > ang180)
         {
             actor.angle -= TRACEANGLE;
-            if (exact - actor.angle < ANG180)
+            if (exact - actor.angle < ang180)
                 actor.angle = exact;
         }
         else
         {
             actor.angle += TRACEANGLE;
-            if (exact - actor.angle > ANG180)
+            if (exact - actor.angle > ang180)
                 actor.angle = exact;
         }
     }
@@ -1508,9 +1508,9 @@ void painAttack(Mobj& actor)
 void painDie(Mobj& actor)
 {
     fall(actor);
-    painShootSkull(actor, actor.angle + ANG90);
-    painShootSkull(actor, actor.angle + ANG180);
-    painShootSkull(actor, actor.angle + ANG270);
+    painShootSkull(actor, actor.angle + ang90);
+    painShootSkull(actor, actor.angle + ang180);
+    painShootSkull(actor, actor.angle + ang270);
 }
 
 void scream(Mobj& actor)

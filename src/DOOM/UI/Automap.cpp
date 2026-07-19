@@ -60,14 +60,8 @@ namespace Doom
 // Colours, the line-drawing shapes and the view state now live in am_map.h,
 // so a renderer can draw the same map without rasterising it.
 
-// The seven colour-range constants that sat here - YOURRANGE, TSWALLRANGE,
-// FDWALLRANGE, CDWALLRANGE, THINGRANGE, SECRETWALLRANGE, GRIDRANGE - are gone
-// rather than converted. Each was read nowhere, and per the standing rule for
-// this category they were checked against the 1993-lineage source before being
-// deleted: all seven are equally dead in `git show 110ddbe:src/DOOM/am_map.c`.
-// THINGRANGE is the one that looks alive there and is not - it is passed as
-// AM_drawThings' `colorrange` parameter, which that function's body never reads.
-// The ranges the port genuinely does read stay in AutomapTypes.h.
+// The colour ranges the map draws with are in AutomapTypes.h, alongside the
+// colours themselves, because the eacp compositor reads them too.
 
 // drawing stuff
 constexpr int FB = 0;
@@ -149,14 +143,9 @@ static constexpr fixed_t amFixed(double value)
 {
     return fixed_t {(std::int32_t) value};
 }
-// The raw fixed-point unit, as an int32 rather than a Fixed, because every use
-// of it scales a `double` literal and the result is truncated by amFixed. That
-// distinction is the whole of the thintriangle_guy bug: see the comment on that
-// table, at the bottom of this file.
-//
-// This is the one name the three shape tables share. Each of them used to
-// `#define R` it, use it, and `#undef R` - one short-lived spelling reused with
-// two different meanings, which is exactly the shape that let the bug in.
+// The raw fixed-point unit, as an int32 and NOT a Fixed. Scale a `double`
+// literal by this and truncate with amFixed; scaling FRACUNIT itself converts
+// the literal to `int` first, so anything below 1.0 becomes zero.
 constexpr std::int32_t R_UNIT = FRACUNIT.raw;
 
 EA::Array<MapLine, 3> triangle_guy = {
@@ -1259,8 +1248,7 @@ void drawAutomap()
 // Stays at :: scope because those are the names it links against.
 // ---------------------------------------------------------------------------
 
-// The player arrow's radius, a Fixed. Both arrow tables are drawn to the same
-// one; it was `#define R` twice, with the identical body, and #undef'd between.
+// The player arrow's radius, a Fixed. Both arrow tables are drawn to it.
 constexpr fixed_t R = (8 * Doom::PLAYERRADIUS) / 7;
 
 Doom::MapLine player_arrow[] = {
@@ -1290,21 +1278,14 @@ Doom::MapLine cheat_player_arrow[] = {
     {{R / 6, -R / 7}, {R / 6 + R / 32, -R / 7 - R / 32}},
     {{R / 6 + R / 32, -R / 7 - R / 32}, {R / 6 + R / 10, -R / 7}}};
 
-// This table scales Doom::R_UNIT -- the RAW unit, an int32 -- and not the Fixed
-// `R` the arrows above use, and the scaled vertices go through amFixed. That is
-// the same shape triangle_guy uses, and for the reason recorded there. When this
-// table said `#define R (FRACUNIT)` the multiplications were `double * Fixed`, so
-// each -.5 and .7 was converted to `int` 0 before it ever reached the multiply and
-// every scaled vertex collapsed to the origin: the "thin triangle" was one
-// degenerate line from (0,0) to (65536,0). Vanilla's fixed_t was a plain int, so
-// -.5 * 65536 truncated to -32768 as intended; the strong-type migration is what
-// silently changed the meaning. No golden saw it -- drawThings needs `cheating ==
-// 2` (IDDT twice) and no test or demo cheats -- so Automap/shapeTablesAreScaled
-// pins these values directly instead.
+// Scales Doom::R_UNIT, the raw int32 unit, and NOT the Fixed `R` the arrows
+// above use: these vertices are fractions of the unit, and `-.5 * FRACUNIT` is
+// `double * Fixed`, which converts -.5 to `int` 0 before multiplying and
+// collapses the shape to a point. Scale R_UNIT and truncate with amFixed.
 //
-// The two meanings now have two names. They had one, `R`, redefined between the
-// tables, which is what made "the neighbouring table is right" so easy to read as
-// "this one is too".
+// No frame golden reaches this table - drawThings needs `cheating == 2` (IDDT
+// twice) and no test or demo cheats - so Automap/shapeTablesAreScaled asserts
+// the vertex values directly. Change these numbers and that is what fails.
 Doom::MapLine thintriangle_guy[] = {
     {{Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(-.7 * Doom::R_UNIT)},
      {fixed_t {Doom::R_UNIT}, fixed_t {}}},
@@ -1318,10 +1299,6 @@ fixed_t m_x, m_y;
 fixed_t m_w;
 fixed_t m_h;
 
-// INITSCALEMTOF is the one defined at the top of the file; this used to redefine it
-// verbatim right here, which was legal only because the two texts were identical.
-// As a constexpr it cannot be redefined at all, and it is already a fixed_t, so the
-// cast that used to launder the macro's expansion goes too.
 fixed_t scale_mtof = Doom::INITSCALEMTOF;
 
 // Frame-window position/size (screen coords).

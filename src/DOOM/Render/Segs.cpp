@@ -380,15 +380,15 @@ void storeWallRange(int start, int stop)
     bsp.linedef->flags |= ML_MAPPED;
 
     // calculate rw_distance for scale calculation
-    scratch.rw_normalangle = bsp.curline->angle + ANG90;
+    scratch.rw_normalangle = bsp.curline->angle + ang90;
     offsetangle = scratch.rw_normalangle - scratch.rw_angle1;
-    if (offsetangle > ANG180)
+    if (offsetangle > ang180)
         offsetangle = -offsetangle; // offsetangle = abs(rw_normalangle - rw_angle1)
 
-    if (offsetangle > ANG90)
-        offsetangle = ANG90;
+    if (offsetangle > ang90)
+        offsetangle = ang90;
 
-    distangle = ANG90 - offsetangle;
+    distangle = ang90 - offsetangle;
     hyp = Doom::pointToDist(bsp.curline->v1->x, bsp.curline->v1->y);
     sineval = finesine[distangle.fineIndex()];
     scratch.rw_distance = FixedMul(hyp, sineval);
@@ -602,7 +602,7 @@ void storeWallRange(int start, int stop)
     {
         offsetangle = scratch.rw_normalangle - scratch.rw_angle1;
 
-        if (offsetangle > ANG180)
+        if (offsetangle > ang180)
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4146)
@@ -612,17 +612,17 @@ void storeWallRange(int start, int stop)
 #pragma warning(pop)
 #endif
 
-        if (offsetangle > ANG90)
-            offsetangle = ANG90;
+        if (offsetangle > ang90)
+            offsetangle = ang90;
 
         sineval = finesine[offsetangle.fineIndex()];
         wall.rw_offset = FixedMul(hyp, sineval);
 
-        if (scratch.rw_normalangle - scratch.rw_angle1 < ANG180)
+        if (scratch.rw_normalangle - scratch.rw_angle1 < ang180)
             wall.rw_offset = -wall.rw_offset;
 
         wall.rw_offset += bsp.sidedef->textureoffset + bsp.curline->offset;
-        wall.rw_centerangle = ANG90 + pt.viewangle - scratch.rw_normalangle;
+        wall.rw_centerangle = ang90 + pt.viewangle - scratch.rw_normalangle;
 
         // calculate light table
         //  use different light tables

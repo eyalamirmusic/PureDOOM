@@ -2,7 +2,7 @@
 
 #include "../Game/GameDefs.h" // SCREENWIDTH
 #include "../Math/FixedPoint.h" // fixed_t
-#include "../Math/TrigTables.h" // angle_t, FINEANGLES
+#include "../Math/TrigTables.h" // angle_t, fineAngles
 
 namespace Doom
 {
@@ -34,7 +34,7 @@ struct ViewProjection
     angle_t clipangle {};
 
     // Doom::initTextureMapping's angle<->column maps.
-    int viewangletox[FINEANGLES / 2] = {};
+    int viewangletox[fineAngles / 2] = {};
     angle_t xtoviewangle[SCREENWIDTH + 1] = {};
 };
 

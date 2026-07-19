@@ -252,7 +252,7 @@ void addLine(Seg* line)
     span = angle1 - angle2;
 
     // Back side? I.e. backface culling?
-    if (span >= ANG180)
+    if (span >= ang180)
         return;
 
     // Global angle needed by segcalc.
@@ -291,8 +291,8 @@ void addLine(Seg* line)
 
     // The seg is in the view range,
     // but not necessarily visible.
-    const auto fine1 = (angle1 + ANG90).fineIndex();
-    const auto fine2 = (angle2 + ANG90).fineIndex();
+    const auto fine1 = (angle1 + ang90).fineIndex();
+    const auto fine2 = (angle2 + ang90).fineIndex();
     x1 = proj.viewangletox[fine1];
     x2 = proj.viewangletox[fine2];
 
@@ -400,7 +400,7 @@ bool checkBBox(fixed_t* bspcoord)
     span = angle1 - angle2;
 
     // Sitting on a line?
-    if (span >= ANG180)
+    if (span >= ang180)
         return true;
 
     tspan = angle1 + proj.clipangle;
@@ -437,8 +437,8 @@ bool checkBBox(fixed_t* bspcoord)
     // Find the first clippost
     //  that touches the source post
     //  (adjacent pixels are touching).
-    const auto angle1Fine = (angle1 + ANG90).fineIndex();
-    const auto angle2Fine = (angle2 + ANG90).fineIndex();
+    const auto angle1Fine = (angle1 + ang90).fineIndex();
+    const auto angle2Fine = (angle2 + ang90).fineIndex();
     sx1 = proj.viewangletox[angle1Fine];
     sx2 = proj.viewangletox[angle2Fine];
 

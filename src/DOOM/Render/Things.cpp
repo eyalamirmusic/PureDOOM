@@ -431,8 +431,9 @@ void drawVisSprite(VisSprite* vis)
         if (texturecolumn < 0 || texturecolumn >= littleEndian(patch->width))
             fatalError("Error: R_DrawSpriteRange: bad texturecolumn");
 #endif
-        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                           + littleEndian(patch->columnofs[texturecolumn]));
+        column = reinterpret_cast<Column*>(
+            reinterpret_cast<byte*>(patch)
+            + littleEndian(patch->columnofs[texturecolumn]));
         drawMaskedColumn(column);
     }
 
@@ -531,7 +532,7 @@ void projectSprite(Mobj* thing)
     {
         // choose a different rotation based on player view
         ang = Doom::pointToAngle(thing->x, thing->y);
-        rot = ((ang - thing->angle + (ANG45 / 2u) * 9u) >> 29).raw;
+        rot = ((ang - thing->angle + (ang45 / 2u) * 9u) >> 29).raw;
         lump = sprframe->lump[rot];
         flip = static_cast<bool>(sprframe->flip[rot]);
     }
