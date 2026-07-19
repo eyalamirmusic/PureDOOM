@@ -283,13 +283,13 @@ int eacpDoomStatusBarVisible()
     // Doom::drawStatusBar's own st_statusbaron, which is private to it: Doom::displayFrame asks for
     // a bar-less frame once the view fills all 200 rows, and the automap keeps
     // the bar whatever the screen size says.
-    return Doom::viewWindow().viewheight != SCREENHEIGHT
+    return Doom::viewWindow().viewheight != Doom::SCREENHEIGHT
            || Doom::overlayState().automapactive;
 }
 
 float eacpDoomViewRows()
 {
-    return eacpDoomStatusBarVisible() ? (float) Doom::ST_Y : (float) SCREENHEIGHT;
+    return eacpDoomStatusBarVisible() ? (float) Doom::ST_Y : (float) Doom::SCREENHEIGHT;
 }
 
 void eacpDoomRevealAutomap()
@@ -456,7 +456,7 @@ double eacpDoomTicTime()
     // omits the engine's private start-of-run offset, which only shifts the
     // count by a whole number of tics and so changes neither the steps nor the
     // fraction.
-    return (double) sec * TICRATE + (double) usec * TICRATE / 1000000.0;
+    return (double) sec * Doom::TICRATE + (double) usec * Doom::TICRATE / 1000000.0;
 }
 
 int eacpDoomIsWiping()
@@ -1508,7 +1508,7 @@ static float eacpWeaponBrightening()
     if (width <= 0)
         return 0.0f;
 
-    return (float) ((Doom::MAXLIGHTSCALE - 1) * SCREENWIDTH / width / DISTMAP);
+    return (float) ((Doom::MAXLIGHTSCALE - 1) * Doom::SCREENWIDTH / width / DISTMAP);
 }
 
 // R_DrawPSprite's choice of colormap, in its own order: a powerup first, then a

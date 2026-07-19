@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,19 +21,20 @@
 
 #pragma once
 
-
 #include "../Game/Event.h"
 #include "../Game/PlayerTypes.h"
 #include "../Wad/MapFormat.h"
 #include "../Math/FixedPoint.h"
 #include "../Math/TrigTables.h"
 
-
 // Used by ST StatusBar stuff.
-#define AM_MSGHEADER (('a'<<24)+('m'<<16))
-#define AM_MSGENTERED (AM_MSGHEADER | ('e'<<8))
-#define AM_MSGEXITED (AM_MSGHEADER | ('x'<<8))
-
+//
+// Everything this header declares stays at global scope, macro or not: it is the
+// deliberate carve-out examples/EACP/EngineAccess.cpp reads by bare name, and it
+// is not built as part of namespace Doom.
+constexpr int AM_MSGHEADER = ('a' << 24) + ('m' << 16);
+constexpr int AM_MSGENTERED = AM_MSGHEADER | ('e' << 8);
+constexpr int AM_MSGEXITED = AM_MSGHEADER | ('x' << 8);
 
 // Called by main loop.
 
@@ -44,7 +45,6 @@
 
 // Called to force the automap to quit
 // if the level is completed while it is up.
-
 
 //
 // What the automap is made of, for a renderer that wants to draw it as
@@ -65,7 +65,6 @@ struct MapPoint
 };
 } // namespace Doom
 
-
 namespace Doom
 {
 struct MapLine
@@ -74,51 +73,48 @@ struct MapLine
 };
 } // namespace Doom
 
-
 // The automap's palette. It picks raw colour indices rather than texturing
 // anything, and these are the ones it picks.
-#define REDS        (256-5*16)
-#define REDRANGE    16
-#define BLUES       (256-4*16+8)
-#define BLUERANGE   8
-#define GREENS      (7*16)
-#define GREENRANGE  16
-#define GRAYS       (6*16)
-#define GRAYSRANGE  16
-#define BROWNS      (4*16)
-#define BROWNRANGE  16
-#define YELLOWS     (256-32+7)
-#define YELLOWRANGE 1
-#define BLACK       0
-#define WHITE       (256-47)
+constexpr int REDS = 256 - 5 * 16;
+constexpr int REDRANGE = 16;
+constexpr int BLUES = 256 - 4 * 16 + 8;
+constexpr int BLUERANGE = 8;
+constexpr int GREENS = 7 * 16;
+constexpr int GREENRANGE = 16;
+constexpr int GRAYS = 6 * 16;
+constexpr int GRAYSRANGE = 16;
+constexpr int BROWNS = 4 * 16;
+constexpr int BROWNRANGE = 16;
+constexpr int YELLOWS = 256 - 32 + 7;
+constexpr int YELLOWRANGE = 1;
+constexpr int BLACK = 0;
+constexpr int WHITE = 256 - 47;
 
-#define BACKGROUND          BLACK
-#define YOURCOLORS          WHITE
-#define WALLCOLORS          REDS
-#define WALLRANGE           REDRANGE
-#define TSWALLCOLORS        GRAYS
-#define FDWALLCOLORS        BROWNS
-#define CDWALLCOLORS        YELLOWS
-#define THINGCOLORS         GREENS
-#define SECRETWALLCOLORS    WALLCOLORS
-#define GRIDCOLORS          (GRAYS + GRAYSRANGE/2)
-#define XHAIRCOLORS         GRAYS
+constexpr int BACKGROUND = BLACK;
+constexpr int YOURCOLORS = WHITE;
+constexpr int WALLCOLORS = REDS;
+constexpr int WALLRANGE = REDRANGE;
+constexpr int TSWALLCOLORS = GRAYS;
+constexpr int FDWALLCOLORS = BROWNS;
+constexpr int CDWALLCOLORS = YELLOWS;
+constexpr int THINGCOLORS = GREENS;
+constexpr int SECRETWALLCOLORS = WALLCOLORS;
+constexpr int GRIDCOLORS = GRAYS + GRAYSRANGE / 2;
+constexpr int XHAIRCOLORS = GRAYS;
 
 // A line the map never draws, whatever the player has seen.
-#define LINE_NEVERSEE ML_DONTDRAW
-
+constexpr int LINE_NEVERSEE = ML_DONTDRAW;
 
 // The line drawings the map is made of. Their sizes are asserted against the
 // definitions in am_map.c: a count that drifts is a compile error, not a
 // renderer walking off the end of an array.
-#define NUMPLYRLINES 7
-#define NUMCHEATPLYRLINES 16
-#define NUMTHINTRIANGLEGUYLINES 3
+constexpr int NUMPLYRLINES = 7;
+constexpr int NUMCHEATPLYRLINES = 16;
+constexpr int NUMTHINTRIANGLEGUYLINES = 3;
 
 extern Doom::MapLine player_arrow[NUMPLYRLINES];
 extern Doom::MapLine cheat_player_arrow[NUMCHEATPLYRLINES];
 extern Doom::MapLine thintriangle_guy[NUMTHINTRIANGLEGUYLINES];
-
 
 // Where the map is looking, and how far in. m_x/m_y is the lower-left corner in
 // map coordinates; scale_mtof converts a map distance to a frame one.
@@ -143,13 +139,10 @@ extern int grid;
 // Wall brightness, which the map strobes.
 extern int lightlev;
 
-
 // Turns a map point about the origin. The automap's own, used as it stands, so a
 // renderer puts the player arrow through exactly the rotation AM_Drawer would.
 
 // Draws the player's marks into the frame.
-
-
 
 //-----------------------------------------------------------------------------
 //

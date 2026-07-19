@@ -26,10 +26,10 @@
 // Global parameters/defines.
 //
 // DOOM version
-enum
+namespace Doom
 {
-    VERSION = 110
-};
+constexpr int VERSION = 110;
+} // namespace Doom
 
 // Game mode handling - identify IWAD version
 //  to handle IWAD dependend animations etc.
@@ -72,38 +72,38 @@ enum Language
 } // namespace Doom
 
 // If rangecheck is undefined,
-// most parameter validation debugging code will not be compiled
+// most parameter validation debugging code will not be compiled.
+// This one stays a macro: it is a feature toggle read by #ifdef, not a value.
 #define RANGECHECK
 
+namespace Doom
+{
 //
 // For resize of screen, at start of game.
 // It will not work dynamically, see visplanes.
 //
-#define BASE_WIDTH 320
+constexpr int BASE_WIDTH = 320;
 
 // It is educational but futile to change this
 //  scaling e.g. to 2. Drawing of status bar,
 //  menues etc. is tied to the scale implied
 //  by the graphics.
-#define SCREEN_MUL 1
+constexpr int SCREEN_MUL = 1;
 
-// Defines suck. C sucks.
-// C++ might sucks for OOP, but it sure is a better C.
-// So there.
-// extern int SCREENWIDTH;
-#define SCREENWIDTH 320
-#define SCREENHEIGHT 200
+constexpr int SCREENWIDTH = 320;
+constexpr int SCREENHEIGHT = 200;
 
 // The maximum number of players, multiplayer/networking.
-#define MAXPLAYERS 4
+constexpr int MAXPLAYERS = 4;
 
 // Doom::State updates, number of tics / second.
 #if defined(DOOM_FAST_TICK)
-#define TICKMUL 2
+constexpr int TICKMUL = 2;
 #else
-#define TICKMUL 1
+constexpr int TICKMUL = 1;
 #endif
-#define TICRATE (35 * TICKMUL)
+constexpr int TICRATE = 35 * TICKMUL;
+} // namespace Doom
 
 // The current state of the game: whether we are
 // playing, gazing at the intermission screen,
@@ -123,13 +123,16 @@ enum GameState
 // Difficulty/skill settings/filters.
 //
 
+namespace Doom
+{
 // Doom::Skill flags.
-#define MTF_EASY 1
-#define MTF_NORMAL 2
-#define MTF_HARD 4
+constexpr int MTF_EASY = 1;
+constexpr int MTF_NORMAL = 2;
+constexpr int MTF_HARD = 4;
 
 // Deaf monsters/do not react to sound.
-#define MTF_AMBUSH 8
+constexpr int MTF_AMBUSH = 8;
+} // namespace Doom
 
 namespace Doom
 {
@@ -232,37 +235,40 @@ enum PowerDuration
 // This is the stuff configured by Setup.Exe.
 // Most key data are simple ascii (uppercased).
 //
-#define KEY_RIGHTARROW 0xae
-#define KEY_LEFTARROW 0xac
-#define KEY_UPARROW 0xad
-#define KEY_DOWNARROW 0xaf
-#define KEY_ESCAPE 27
-#define KEY_ENTER 13
-#define KEY_TAB 9
-#define KEY_F1 (0x80 + 0x3b)
-#define KEY_F2 (0x80 + 0x3c)
-#define KEY_F3 (0x80 + 0x3d)
-#define KEY_F4 (0x80 + 0x3e)
-#define KEY_F5 (0x80 + 0x3f)
-#define KEY_F6 (0x80 + 0x40)
-#define KEY_F7 (0x80 + 0x41)
-#define KEY_F8 (0x80 + 0x42)
-#define KEY_F9 (0x80 + 0x43)
-#define KEY_F10 (0x80 + 0x44)
-#define KEY_F11 (0x80 + 0x57)
-#define KEY_F12 (0x80 + 0x58)
+namespace Doom
+{
+constexpr int KEY_RIGHTARROW = 0xae;
+constexpr int KEY_LEFTARROW = 0xac;
+constexpr int KEY_UPARROW = 0xad;
+constexpr int KEY_DOWNARROW = 0xaf;
+constexpr int KEY_ESCAPE = 27;
+constexpr int KEY_ENTER = 13;
+constexpr int KEY_TAB = 9;
+constexpr int KEY_F1 = 0x80 + 0x3b;
+constexpr int KEY_F2 = 0x80 + 0x3c;
+constexpr int KEY_F3 = 0x80 + 0x3d;
+constexpr int KEY_F4 = 0x80 + 0x3e;
+constexpr int KEY_F5 = 0x80 + 0x3f;
+constexpr int KEY_F6 = 0x80 + 0x40;
+constexpr int KEY_F7 = 0x80 + 0x41;
+constexpr int KEY_F8 = 0x80 + 0x42;
+constexpr int KEY_F9 = 0x80 + 0x43;
+constexpr int KEY_F10 = 0x80 + 0x44;
+constexpr int KEY_F11 = 0x80 + 0x57;
+constexpr int KEY_F12 = 0x80 + 0x58;
 
-#define KEY_BACKSPACE 127
-#define KEY_PAUSE 0xff
+constexpr int KEY_BACKSPACE = 127;
+constexpr int KEY_PAUSE = 0xff;
 
-#define KEY_EQUALS 0x3d
-#define KEY_MINUS 0x2d
+constexpr int KEY_EQUALS = 0x3d;
+constexpr int KEY_MINUS = 0x2d;
 
-#define KEY_RSHIFT (0x80 + 0x36)
-#define KEY_RCTRL (0x80 + 0x1d)
-#define KEY_RALT (0x80 + 0x38)
+constexpr int KEY_RSHIFT = 0x80 + 0x36;
+constexpr int KEY_RCTRL = 0x80 + 0x1d;
+constexpr int KEY_RALT = 0x80 + 0x38;
 
-#define KEY_LALT KEY_RALT
+constexpr int KEY_LALT = KEY_RALT;
+} // namespace Doom
 
 //-----------------------------------------------------------------------------
 //

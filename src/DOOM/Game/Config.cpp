@@ -133,17 +133,17 @@ Doom::ConfigDefault defaults[] = {
 
     // The control bindings are bound to their Doom::InputConfig members at runtime
     // (bindEngineDefaults); a static &member here would race that binding across TUs.
-    {"key_right", 0, KEY_RIGHTARROW},
-    {"key_left", 0, KEY_LEFTARROW},
-    {"key_up", 0, KEY_UPARROW},
-    {"key_down", 0, KEY_DOWNARROW},
+    {"key_right", 0, Doom::KEY_RIGHTARROW},
+    {"key_left", 0, Doom::KEY_LEFTARROW},
+    {"key_up", 0, Doom::KEY_UPARROW},
+    {"key_down", 0, Doom::KEY_DOWNARROW},
     {"key_strafeleft", 0, ','},
     {"key_straferight", 0, '.'},
 
-    {"key_fire", 0, KEY_RCTRL},
+    {"key_fire", 0, Doom::KEY_RCTRL},
     {"key_use", 0, ' '},
-    {"key_strafe", 0, KEY_RALT},
-    {"key_speed", 0, KEY_RSHIFT},
+    {"key_strafe", 0, Doom::KEY_RALT},
+    {"key_speed", 0, Doom::KEY_RSHIFT},
 
     {"use_mouse", 0, 1},
     {"mouseb_fire", 0, 0},

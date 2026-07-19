@@ -482,8 +482,8 @@ void doom_set_resolution(int width, int height)
 {
     if (width <= 0 || height <= 0)
         return;
-    // SCREENWIDTH = width;
-    // SCREENHEIGHT = height;
+    // Doom::SCREENWIDTH = width;
+    // Doom::SCREENHEIGHT = height;
 }
 
 void doom_set_default_int(const char* name, int value)
@@ -574,8 +574,8 @@ void doom_init(int argc, char** argv, int flags)
     if (!doom_getenv)
         doom_getenv = doom_getenv_impl;
 
-    screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT);
-    final_screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT * 4);
+    screen_buffer.resize(Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
+    final_screen_buffer.resize(Doom::SCREENWIDTH * Doom::SCREENHEIGHT * 4);
     last_update_time = Doom::currentTic();
 
     myargc = argc;
@@ -611,7 +611,7 @@ void doom_force_update()
 
 const unsigned char* doom_get_framebuffer(int channels)
 {
-    doom_memcpy(screen_buffer.data(), screens[0], SCREENWIDTH * SCREENHEIGHT);
+    doom_memcpy(screen_buffer.data(), screens[0], Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
 
 
     // Draw Doom::inputConfig().crosshair
@@ -620,18 +620,18 @@ const unsigned char* doom_get_framebuffer(int channels)
     {
         int y;
         if (Doom::viewWindow().setblocks == 11)
-            y = SCREENHEIGHT / 2 + 8;
+            y = Doom::SCREENHEIGHT / 2 + 8;
         else
-            y = SCREENHEIGHT / 2 - 8;
+            y = Doom::SCREENHEIGHT / 2 - 8;
         for (int i = 0; i < 2; ++i)
         {
-            screen_buffer[SCREENWIDTH / 2 - 2 - i + y * SCREENWIDTH] = 4;
-            screen_buffer[SCREENWIDTH / 2 + 2 + i + y * SCREENWIDTH] = 4;
+            screen_buffer[Doom::SCREENWIDTH / 2 - 2 - i + y * Doom::SCREENWIDTH] = 4;
+            screen_buffer[Doom::SCREENWIDTH / 2 + 2 + i + y * Doom::SCREENWIDTH] = 4;
         }
         for (int i = 0; i < 2; ++i)
         {
-            screen_buffer[SCREENWIDTH / 2 + (y - 2 - i) * SCREENWIDTH] = 4;
-            screen_buffer[SCREENWIDTH / 2 + (y + 2 + i) * SCREENWIDTH] = 4;
+            screen_buffer[Doom::SCREENWIDTH / 2 + (y - 2 - i) * Doom::SCREENWIDTH] = 4;
+            screen_buffer[Doom::SCREENWIDTH / 2 + (y + 2 + i) * Doom::SCREENWIDTH] = 4;
         }
     }
 
@@ -641,7 +641,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
     else if (channels == 3)
     {
-        for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
+        for (int i = 0, len = Doom::SCREENWIDTH * Doom::SCREENHEIGHT; i < len; ++i)
         {
             int k = i * 3;
             int kpal = screen_buffer[i] * 3;
@@ -653,7 +653,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
     else if (channels == 4)
     {
-        for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
+        for (int i = 0, len = Doom::SCREENWIDTH * Doom::SCREENHEIGHT; i < len; ++i)
         {
             int k = i * 4;
             int kpal = screen_buffer[i] * 3;

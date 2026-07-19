@@ -266,7 +266,7 @@ unsigned long long doomSimFrameHash()
     // index per pixel. The palette goes in beside it because it is live: a
     // damage flash or an invulnerability sphere changes what those same indices
     // resolve to without changing a single one of them.
-    simMix(screens[0], SCREENWIDTH * SCREENHEIGHT);
+    simMix(screens[0], Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
     simMix(screen_palette, 256 * 3);
 
     return simHash;
@@ -626,7 +626,7 @@ static unsigned long long simWorldHash()
 
     // Players - the scalar state Doom::archivePlayers/Doom::unArchivePlayers round-trip
     // (pointers like mo/attacker/message are fixed up or nulled on load).
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (int i = 0; i < Doom::MAXPLAYERS; i++)
     {
         if (!players_.playeringame[i])
             continue;
