@@ -24,10 +24,11 @@
 // Rewritten out of vanilla f_finale into namespace Doom.
 //
 // The end-of-episode finale: the scrolling text screen, the character cast call,
-// and the DOOM II bunny scroll. f_finale.cpp shims the four F_ names. All the
-// finale state is file-local here (nothing outside reads it); the two externs are
-// other subsystems' globals. Not covered by any golden (no demo reaches a
-// finale), so this is a faithful transcription.
+// and the DOOM II bunny scroll. The finale's runtime state is a Doom::FinaleState
+// owned by the Engine (UI/FinaleState.h), reached through a hoisted local per
+// function; the two externs below are other subsystems' globals. It has its own
+// frame golden now (Tests/Goldens/finale.frames, via Tests/FinaleReplay.h - no
+// demo reaches a finale, so nothing else covers this file).
 
 #include "../Host/Platform.h"
 
@@ -68,16 +69,13 @@ struct CastInfo
     MobjType type;
 };
 
-// The finale's runtime state now lives on the Engine (UI/FinaleState.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names below are references onto that
-// member, so every use is unchanged. The immutable reference data - the per-ending text pointers
-// and the castorder[] cast list - stays file-local: it is fixed constants, not per-run state.
-
-// Stage of animation:
-//  0 = text, 1 = art screen, 2 = character cast
-static int& finalestage = finaleState().finalestage;
-
-static int& finalecount = finaleState().finalecount;
+// The finale's runtime state lives on the Engine (UI/FinaleState.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5). It used to be reached through file-scope
+// `static T& x = finaleState().x;` reference aliases until the file-local-alias sweep (REFACTOR.md,
+// Step 9 strand (a)) retired them; every function below reaches finaleState() through a hoisted
+// local instead (or inline where a function touches it exactly once). The immutable reference data -
+// the per-ending text pointers and the castorder[] cast list - stays file-local: it is fixed
+// constants, not per-run state, and never moved onto FinaleState.
 
 const char* e1text = E1TEXT;
 const char* e2text = E2TEXT;
@@ -105,9 +103,6 @@ const char* t4text = T4TEXT;
 const char* t5text = T5TEXT;
 const char* t6text = T6TEXT;
 
-static const char*& finaletext = finaleState().finaletext;
-static const char*& finaleflat = finaleState().finaleflat;
-
 EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
                                        {CC_SHOTGUN, MT_SHOTGUY},
                                        {CC_HEAVY, MT_CHAINGUY},
@@ -128,14 +123,6 @@ EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
 
                                        {0, static_cast<MobjType>(0)}};
 
-static int& castnum = finaleState().castnum;
-static int& casttics = finaleState().casttics;
-static State*& caststate = finaleState().caststate;
-static doom_boolean& castdeath = finaleState().castdeath;
-static int& castframes = finaleState().castframes;
-static int& castonmelee = finaleState().castonmelee;
-static doom_boolean& castattacking = finaleState().castattacking;
-
 //
 // startCast
 //
@@ -151,6 +138,7 @@ void castDrawer();
 void startFinale()
 {
     auto& flow = gameFlow();
+    auto& fin = finaleState();
 
     flow.gameaction = ga_nothing;
     flow.gamestate = GS_FINALE;
@@ -172,20 +160,20 @@ void startFinale()
             switch (gameSession().gameepisode)
             {
                 case 1:
-                    finaleflat = "FLOOR4_8";
-                    finaletext = e1text;
+                    fin.finaleflat = "FLOOR4_8";
+                    fin.finaletext = e1text;
                     break;
                 case 2:
-                    finaleflat = "SFLR6_1";
-                    finaletext = e2text;
+                    fin.finaleflat = "SFLR6_1";
+                    fin.finaletext = e2text;
                     break;
                 case 3:
-                    finaleflat = "MFLR8_4";
-                    finaletext = e3text;
+                    fin.finaleflat = "MFLR8_4";
+                    fin.finaletext = e3text;
                     break;
                 case 4:
-                    finaleflat = "MFLR8_3";
-                    finaletext = e4text;
+                    fin.finaleflat = "MFLR8_3";
+                    fin.finaletext = e4text;
                     break;
                 default:
                     // Ouch.
@@ -202,28 +190,28 @@ void startFinale()
             switch (gameSession().gamemap)
             {
                 case 6:
-                    finaleflat = "SLIME16";
-                    finaletext = c1text;
+                    fin.finaleflat = "SLIME16";
+                    fin.finaletext = c1text;
                     break;
                 case 11:
-                    finaleflat = "RROCK14";
-                    finaletext = c2text;
+                    fin.finaleflat = "RROCK14";
+                    fin.finaletext = c2text;
                     break;
                 case 20:
-                    finaleflat = "RROCK07";
-                    finaletext = c3text;
+                    fin.finaleflat = "RROCK07";
+                    fin.finaletext = c3text;
                     break;
                 case 30:
-                    finaleflat = "RROCK17";
-                    finaletext = c4text;
+                    fin.finaleflat = "RROCK17";
+                    fin.finaletext = c4text;
                     break;
                 case 15:
-                    finaleflat = "RROCK13";
-                    finaletext = c5text;
+                    fin.finaleflat = "RROCK13";
+                    fin.finaletext = c5text;
                     break;
                 case 31:
-                    finaleflat = "RROCK19";
-                    finaletext = c6text;
+                    fin.finaleflat = "RROCK19";
+                    fin.finaletext = c6text;
                     break;
                 default:
                     // Ouch.
@@ -235,18 +223,18 @@ void startFinale()
         // Indeterminate.
         default:
             Doom::changeMusic(mus_read_m, true);
-            finaleflat = "F_SKY1"; // Not used anywhere else.
-            finaletext = c1text; // FIXME - other text, music?
+            fin.finaleflat = "F_SKY1"; // Not used anywhere else.
+            fin.finaletext = c1text; // FIXME - other text, music?
             break;
     }
 
-    finalestage = 0;
-    finalecount = 0;
+    fin.finalestage = 0;
+    fin.finalecount = 0;
 }
 
 doom_boolean finaleResponder(Event* event)
 {
-    if (finalestage == 2)
+    if (finaleState().finalestage == 2)
         return castResponder(event);
 
     return false;
@@ -261,9 +249,10 @@ void finaleTicker()
 
     const auto& version = gameVersion();
     const auto& players_ = playerState();
+    auto& fin = finaleState();
 
     // check for skipping
-    if ((version.gamemode == commercial) && (finalecount > 50))
+    if ((version.gamemode == commercial) && (fin.finalecount > 50))
     {
         // go on to the next level
         for (i = 0; i < MAXPLAYERS; i++)
@@ -280,9 +269,9 @@ void finaleTicker()
     }
 
     // advance animation
-    finalecount++;
+    fin.finalecount++;
 
-    if (finalestage == 2)
+    if (fin.finalestage == 2)
     {
         castTicker();
         return;
@@ -291,10 +280,11 @@ void finaleTicker()
     if (version.gamemode == commercial)
         return;
 
-    if (!finalestage && finalecount > doom_strlen(finaletext) * TEXTSPEED + TEXTWAIT)
+    if (!fin.finalestage
+        && fin.finalecount > doom_strlen(fin.finaletext) * TEXTSPEED + TEXTWAIT)
     {
-        finalecount = 0;
-        finalestage = 1;
+        fin.finalecount = 0;
+        fin.finalestage = 1;
         gameFlow().wipegamestate = static_cast<GameState>(-1); // force a wipe
         if (gameSession().gameepisode == 3)
             Doom::startMusic(mus_bunny);
@@ -307,6 +297,7 @@ void finaleTicker()
 void textWrite()
 {
     auto& font = hudFont();
+    auto& fin = finaleState();
 
     byte* src;
     byte* dest;
@@ -319,7 +310,7 @@ void textWrite()
     int cy;
 
     // erase the entire screen to a tiled background
-    src = static_cast<byte*>(Doom::cacheLumpName(finaleflat));
+    src = static_cast<byte*>(Doom::cacheLumpName(fin.finaleflat));
     dest = screens[0];
 
     for (int y = 0; y < SCREENHEIGHT; y++)
@@ -341,9 +332,9 @@ void textWrite()
     // draw some of the text onto the screen
     cx = 10;
     cy = 10;
-    ch = finaletext;
+    ch = fin.finaletext;
 
-    count = (finalecount - 10) / TEXTSPEED;
+    count = (fin.finalecount - 10) / TEXTSPEED;
     if (count < 0)
         count = 0;
     for (; count; count--)
@@ -380,15 +371,17 @@ void textWrite()
 //
 void startCast()
 {
+    auto& fin = finaleState();
+
     gameFlow().wipegamestate = static_cast<GameState>(-1); // force a screen wipe
-    castnum = 0;
-    caststate = &states[mobjinfo[castorder[castnum].type].seestate];
-    casttics = caststate->tics;
-    castdeath = false;
-    finalestage = 2;
-    castframes = 0;
-    castonmelee = 0;
-    castattacking = false;
+    fin.castnum = 0;
+    fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
+    fin.casttics = fin.caststate->tics;
+    fin.castdeath = false;
+    fin.finalestage = 2;
+    fin.castframes = 0;
+    fin.castonmelee = 0;
+    fin.castattacking = false;
     Doom::changeMusic(mus_evil, true);
 }
 
@@ -397,32 +390,34 @@ void startCast()
 //
 void castTicker()
 {
+    auto& fin = finaleState();
+
     int st;
     int sfx;
 
-    if (--casttics > 0)
+    if (--fin.casttics > 0)
         return; // not time to change state yet
 
-    if (caststate->tics == -1 || caststate->nextstate == S_NULL)
+    if (fin.caststate->tics == -1 || fin.caststate->nextstate == S_NULL)
     {
         // switch from deathstate to next monster
-        castnum++;
-        castdeath = false;
-        if (castorder[castnum].name == nullptr)
-            castnum = 0;
-        if (mobjinfo[castorder[castnum].type].seesound)
-            Doom::startSound(0, mobjinfo[castorder[castnum].type].seesound);
-        caststate = &states[mobjinfo[castorder[castnum].type].seestate];
-        castframes = 0;
+        fin.castnum++;
+        fin.castdeath = false;
+        if (castorder[fin.castnum].name == nullptr)
+            fin.castnum = 0;
+        if (mobjinfo[castorder[fin.castnum].type].seesound)
+            Doom::startSound(0, mobjinfo[castorder[fin.castnum].type].seesound);
+        fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
+        fin.castframes = 0;
     }
     else
     {
         // just advance to next state in animation
-        if (caststate == &states[S_PLAY_ATK1])
+        if (fin.caststate == &states[S_PLAY_ATK1])
             goto stopattack; // Oh, gross hack!
-        st = caststate->nextstate;
-        caststate = &states[st];
-        castframes++;
+        st = fin.caststate->nextstate;
+        fin.caststate = &states[st];
+        fin.castframes++;
 
         // sound hacks....
         switch (st)
@@ -496,39 +491,44 @@ void castTicker()
             Doom::startSound(0, sfx);
     }
 
-    if (castframes == 12)
+    if (fin.castframes == 12)
     {
         // go into attack frame
-        castattacking = true;
-        if (castonmelee)
-            caststate = &states[mobjinfo[castorder[castnum].type].meleestate];
+        fin.castattacking = true;
+        if (fin.castonmelee)
+            fin.caststate =
+                &states[mobjinfo[castorder[fin.castnum].type].meleestate];
         else
-            caststate = &states[mobjinfo[castorder[castnum].type].missilestate];
-        castonmelee ^= 1;
-        if (caststate == &states[S_NULL])
+            fin.caststate =
+                &states[mobjinfo[castorder[fin.castnum].type].missilestate];
+        fin.castonmelee ^= 1;
+        if (fin.caststate == &states[S_NULL])
         {
-            if (castonmelee)
-                caststate = &states[mobjinfo[castorder[castnum].type].meleestate];
+            if (fin.castonmelee)
+                fin.caststate =
+                    &states[mobjinfo[castorder[fin.castnum].type].meleestate];
             else
-                caststate = &states[mobjinfo[castorder[castnum].type].missilestate];
+                fin.caststate =
+                    &states[mobjinfo[castorder[fin.castnum].type].missilestate];
         }
     }
 
-    if (castattacking)
+    if (fin.castattacking)
     {
-        if (castframes == 24
-            || caststate == &states[mobjinfo[castorder[castnum].type].seestate])
+        if (fin.castframes == 24
+            || fin.caststate
+                   == &states[mobjinfo[castorder[fin.castnum].type].seestate])
         {
         stopattack:
-            castattacking = false;
-            castframes = 0;
-            caststate = &states[mobjinfo[castorder[castnum].type].seestate];
+            fin.castattacking = false;
+            fin.castframes = 0;
+            fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
         }
     }
 
-    casttics = caststate->tics;
-    if (casttics == -1)
-        casttics = 15;
+    fin.casttics = fin.caststate->tics;
+    if (fin.casttics == -1)
+        fin.casttics = 15;
 }
 
 //
@@ -536,20 +536,22 @@ void castTicker()
 //
 doom_boolean castResponder(Event* ev)
 {
+    auto& fin = finaleState();
+
     if (ev->type != ev_keydown)
         return false;
 
-    if (castdeath)
+    if (fin.castdeath)
         return true; // already in dying frames
 
     // go into death frame
-    castdeath = true;
-    caststate = &states[mobjinfo[castorder[castnum].type].deathstate];
-    casttics = caststate->tics;
-    castframes = 0;
-    castattacking = false;
-    if (mobjinfo[castorder[castnum].type].deathsound)
-        Doom::startSound(0, mobjinfo[castorder[castnum].type].deathsound);
+    fin.castdeath = true;
+    fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].deathstate];
+    fin.casttics = fin.caststate->tics;
+    fin.castframes = 0;
+    fin.castattacking = false;
+    if (mobjinfo[castorder[fin.castnum].type].deathsound)
+        Doom::startSound(0, mobjinfo[castorder[fin.castnum].type].deathsound);
 
     return true;
 }
@@ -610,6 +612,8 @@ void castPrint(const char* text)
 //
 void castDrawer()
 {
+    auto& fin = finaleState();
+
     SpriteDef* sprdef;
     SpriteFrame* sprframe;
     int lump;
@@ -619,11 +623,11 @@ void castDrawer()
     // erase the entire screen to a background
     Doom::drawPatch(0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("BOSSBACK")));
 
-    castPrint(castorder[castnum].name);
+    castPrint(castorder[fin.castnum].name);
 
     // draw the current frame in the middle of the screen
-    sprdef = &sprites[caststate->sprite];
-    sprframe = &sprdef->spriteframes[caststate->frame & FF_FRAMEMASK];
+    sprdef = &sprites[fin.caststate->sprite];
+    sprframe = &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
     lump = sprframe->lump[0];
     flip = static_cast<doom_boolean>(sprframe->flip[0]);
 
@@ -672,19 +676,20 @@ void drawPatchCol(int x, Patch* patch, int col)
 //
 void bunnyScroll()
 {
+    auto& fin = finaleState();
+
     int scrolled;
     Patch* p1;
     Patch* p2;
     EA::Array<char, 10> name;
     int stage;
-    int& laststage = finaleState().laststage;
 
     p1 = static_cast<Patch*>(Doom::cacheLumpName("PFUB2"));
     p2 = static_cast<Patch*>(Doom::cacheLumpName("PFUB1"));
 
     Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
-    scrolled = 320 - (finalecount - 230) / 2;
+    scrolled = 320 - (fin.finalecount - 230) / 2;
     if (scrolled > 320)
         scrolled = 320;
     if (scrolled < 0)
@@ -698,25 +703,25 @@ void bunnyScroll()
             drawPatchCol(x, p2, x + scrolled - 320);
     }
 
-    if (finalecount < 1130)
+    if (fin.finalecount < 1130)
         return;
-    if (finalecount < 1180)
+    if (fin.finalecount < 1180)
     {
         Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
                         (SCREENHEIGHT - 8 * 8) / 2,
                         0,
                         static_cast<Patch*>(Doom::cacheLumpName("END0")));
-        laststage = 0;
+        fin.laststage = 0;
         return;
     }
 
-    stage = (finalecount - 1180) / 5;
+    stage = (fin.finalecount - 1180) / 5;
     if (stage > 6)
         stage = 6;
-    if (stage > laststage)
+    if (stage > fin.laststage)
     {
         Doom::startSound(0, sfx_pistol);
-        laststage = stage;
+        fin.laststage = stage;
     }
 
     //doom_sprintf(name, "END%i", stage);
@@ -733,13 +738,15 @@ void bunnyScroll()
 //
 void drawFinale()
 {
-    if (finalestage == 2)
+    auto& fin = finaleState();
+
+    if (fin.finalestage == 2)
     {
         castDrawer();
         return;
     }
 
-    if (!finalestage)
+    if (!fin.finalestage)
         textWrite();
     else
     {

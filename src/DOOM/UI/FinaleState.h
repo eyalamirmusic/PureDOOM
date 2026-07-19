@@ -12,11 +12,12 @@ namespace Doom
 // death/attack flags and the frame counters).
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// UI/Finale's own namespace-scope globals, read by no other file. The vanilla names become
-// references onto the members. No attract demo or menu replay reaches a finale, so this is not
-// golden-covered - but a reference alias is pure storage relocation (the compiler binds each name
-// to its same-named member), so it is behaviour-preserving by construction, verified by build +
-// app-link.
+// UI/Finale's own namespace-scope globals, read by no other file. The vanilla names were
+// references onto the members until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a))
+// retired them; UI/Finale.cpp now reaches finaleState() through a hoisted local per function
+// instead. No attract demo or menu replay reaches a finale, but it has its own frame golden now
+// (Tests/Goldens/finale.frames, via Tests/FinaleReplay.h), which is what made retiring these
+// aliases safe to verify by more than build + app-link.
 //
 // The finale's immutable reference data stays file-local in UI/Finale and does *not* move in here:
 // the per-ending text pointers (e1text..t6text, each aliasing a string-literal macro) and the
