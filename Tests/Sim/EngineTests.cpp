@@ -48,4 +48,31 @@ auto tEngineIsAValue = test("Engine/aFreshEngineIsIndependent") = []
     check(other.random.playIndex == 2, "the second Engine's random advanced");
     check(engine().random.playIndex == 0, "the global engine's random did not");
 };
+
+// The dividend Step 9 strand (a) was for: retiring the reference-alias layer
+// removed the static-init address pin, so engine() can hand out a genuinely
+// different instance mid-process rather than only ever the one built on first
+// touch. Proves both halves - a new address, and that the new instance carries
+// none of the old one's state - because either alone would pass for the wrong
+// reason: a placement-new reset would clear the state but keep the address, and a
+// reset that merely re-pointed without reconstructing could keep stale state at a
+// new address.
+auto tResetEngineIsGenuine = test("Engine/resetEngineMakesAFreshInstance") = []
+{
+    auto* before = &engine();
+
+    randomness().forPlay();
+    randomness().forPlay();
+    randomness().forPlay();
+    check(randomness().playIndex == 3,
+          "the live engine's random advanced before reset");
+
+    resetEngine();
+
+    auto* after = &engine();
+
+    check(before != after, "resetEngine() gave the engine a new address");
+    check(randomness().playIndex == 0,
+          "the post-reset engine's random is clean, not carried over");
+};
 } // namespace

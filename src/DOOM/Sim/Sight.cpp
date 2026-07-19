@@ -3,6 +3,7 @@
 
 #include "../Host/Platform.h" // error_buf, doom_itoa (RANGECHECK)
 #include "../Game/GameDefs.h"
+#include "MapGeometry.h" // DivLine
 #include "SimDefs.h"
 
 #include "SightScratch.h"
@@ -13,20 +14,13 @@ namespace Doom
 {
 namespace
 {
-// The sight line and its endpoint; p_sight's own scratch. The vertical slope window
-// (topslope/bottomslope) it narrows as it walks the BSP is *not* here - it is a
-// per-call local in checkSight now, threaded by reference through crossBSPNode/
-// crossSubsector, since it never escapes this call chain (REFACTOR.md, Step 9
-// strand (a)). Now on the Engine (Sim/SightScratch.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are
-// references onto that member (sightcounts as a reference-to-array).
-fixed_t& sightzstart = sightScratch().sightzstart; // eye z of looker
-DivLine& strace = sightScratch().strace; // from t1 to t2
-fixed_t& t2x = sightScratch().t2x;
-fixed_t& t2y = sightScratch().t2y;
-
-int (&sightcounts)[2] = sightScratch().sightcounts;
-
+// The sight line and its endpoint are per-call locals now, threaded by reference
+// through crossBSPNode/crossSubsector the same way topslope/bottomslope already
+// were - they never escape checkSight's own call chain, so there is nothing for a
+// file-scope alias to buy. sightcounts is different: it is a genuine cross-call
+// counter (REJECT-matrix skips vs. real tests) that outlives any one checkSight
+// call, so it stays a member touched through sightScratch() at its two use sites
+// rather than cached by reference (Sim/SightScratch.h).
 //
 // P_DivlineSide
 // Returns side 0 (front), 1 (back), or 2 (on).
@@ -102,6 +96,16 @@ fixed_t interceptVector2(const DivLine& v2, const DivLine& v1)
     return frac;
 }
 
+// The sight line and its endpoint - set once in checkSight and read-only from here
+// down, so it travels as one const reference rather than four.
+struct SightTrace
+{
+    fixed_t sightzstart; // eye z of looker
+    DivLine strace; // from t1 to t2
+    fixed_t t2x;
+    fixed_t t2y;
+};
+
 //
 // P_CrossSubsector
 // Returns true if strace crosses the given subsector successfully. topslope/
@@ -109,7 +113,10 @@ fixed_t interceptVector2(const DivLine& v2, const DivLine& v1)
 // not Clip - threaded down by reference the same way the aim trace threads its
 // own through aimTraverse (Sim/MapAction.cpp).
 //
-doom_boolean crossSubsector(int num, fixed_t& topslope, fixed_t& bottomslope)
+doom_boolean crossSubsector(int num,
+                            const SightTrace& trace,
+                            fixed_t& topslope,
+                            fixed_t& bottomslope)
 {
     Seg* seg;
     Line* line;
@@ -158,8 +165,8 @@ doom_boolean crossSubsector(int num, fixed_t& topslope, fixed_t& bottomslope)
 
         v1 = line->v1;
         v2 = line->v2;
-        s1 = divlineSide(v1->x, v1->y, strace);
-        s2 = divlineSide(v2->x, v2->y, strace);
+        s1 = divlineSide(v1->x, v1->y, trace.strace);
+        s2 = divlineSide(v2->x, v2->y, trace.strace);
 
         // line isn't crossed?
         if (s1 == s2)
@@ -167,8 +174,8 @@ doom_boolean crossSubsector(int num, fixed_t& topslope, fixed_t& bottomslope)
 
         divl.origin = {Fixed {v1->x}, Fixed {v1->y}};
         divl.delta = {Fixed {v2->x - v1->x}, Fixed {v2->y - v1->y}};
-        s1 = divlineSide(strace.origin.x, strace.origin.y, divl);
-        s2 = divlineSide(t2x, t2y, divl);
+        s1 = divlineSide(trace.strace.origin.x, trace.strace.origin.y, divl);
+        s2 = divlineSide(trace.t2x, trace.t2y, divl);
 
         // line isn't crossed?
         if (s1 == s2)
@@ -205,18 +212,18 @@ doom_boolean crossSubsector(int num, fixed_t& topslope, fixed_t& bottomslope)
         if (openbottom >= opentop)
             return false; // stop
 
-        frac = interceptVector2(strace, divl);
+        frac = interceptVector2(trace.strace, divl);
 
         if (front->floorheight != back->floorheight)
         {
-            slope = FixedDiv(openbottom - sightzstart, frac);
+            slope = FixedDiv(openbottom - trace.sightzstart, frac);
             if (slope > bottomslope)
                 bottomslope = slope;
         }
 
         if (front->ceilingheight != back->ceilingheight)
         {
-            slope = FixedDiv(opentop - sightzstart, frac);
+            slope = FixedDiv(opentop - trace.sightzstart, frac);
             if (slope < topslope)
                 topslope = slope;
         }
@@ -233,7 +240,10 @@ doom_boolean crossSubsector(int num, fixed_t& topslope, fixed_t& bottomslope)
 // P_CrossBSPNode
 // Returns true if strace crosses the given node successfully.
 //
-doom_boolean crossBSPNode(int bspnum, fixed_t& topslope, fixed_t& bottomslope)
+doom_boolean crossBSPNode(int bspnum,
+                          const SightTrace& trace,
+                          fixed_t& topslope,
+                          fixed_t& bottomslope)
 {
     Node* bsp;
     int side;
@@ -241,9 +251,10 @@ doom_boolean crossBSPNode(int bspnum, fixed_t& topslope, fixed_t& bottomslope)
     if (bspnum & NF_SUBSECTOR)
     {
         if (bspnum == -1)
-            return crossSubsector(0, topslope, bottomslope);
+            return crossSubsector(0, trace, topslope, bottomslope);
         else
-            return crossSubsector(bspnum & (~NF_SUBSECTOR), topslope, bottomslope);
+            return crossSubsector(
+                bspnum & (~NF_SUBSECTOR), trace, topslope, bottomslope);
     }
 
     bsp = &nodes[bspnum];
@@ -255,23 +266,23 @@ doom_boolean crossBSPNode(int bspnum, fixed_t& topslope, fixed_t& bottomslope)
                              {Fixed {bsp->dx}, Fixed {bsp->dy}}};
 
     // decide which side the start point is on
-    side = divlineSide(strace.origin.x, strace.origin.y, partition);
+    side = divlineSide(trace.strace.origin.x, trace.strace.origin.y, partition);
     if (side == 2)
         side = 0; // an "on" should cross both sides
 
     // cross the starting side
-    if (!crossBSPNode(bsp->children[side], topslope, bottomslope))
+    if (!crossBSPNode(bsp->children[side], trace, topslope, bottomslope))
         return false;
 
     // the partition plane is crossed here
-    if (side == divlineSide(t2x, t2y, partition))
+    if (side == divlineSide(trace.t2x, trace.t2y, partition))
     {
         // the line doesn't touch the other side
         return true;
     }
 
     // cross the ending side
-    return crossBSPNode(bsp->children[side ^ 1], topslope, bottomslope);
+    return crossBSPNode(bsp->children[side ^ 1], trace, topslope, bottomslope);
 }
 } // namespace
 
@@ -295,27 +306,28 @@ bool checkSight(Mobj* t1, Mobj* t2)
     // Check in REJECT table.
     if (rejectmatrix[bytenum] & bitnum)
     {
-        sightcounts[0]++;
+        sightScratch().sightcounts[0]++;
 
         // can't possibly be connected
         return false;
     }
 
     // An unobstructed LOS is possible. Now look from eyes of t1 to any part of t2.
-    sightcounts[1]++;
+    sightScratch().sightcounts[1]++;
 
     validCount().validcount++;
 
-    sightzstart = t1->z + t1->height - (t1->height >> 2);
-    fixed_t topslope = (t2->z + t2->height) - sightzstart;
-    fixed_t bottomslope = (t2->z) - sightzstart;
+    SightTrace trace;
+    trace.sightzstart = t1->z + t1->height - (t1->height >> 2);
+    fixed_t topslope = (t2->z + t2->height) - trace.sightzstart;
+    fixed_t bottomslope = (t2->z) - trace.sightzstart;
 
-    strace.origin = {Fixed {t1->x}, Fixed {t1->y}};
-    t2x = t2->x;
-    t2y = t2->y;
-    strace.delta = {Fixed {t2->x - t1->x}, Fixed {t2->y - t1->y}};
+    trace.strace.origin = {Fixed {t1->x}, Fixed {t1->y}};
+    trace.t2x = t2->x;
+    trace.t2y = t2->y;
+    trace.strace.delta = {Fixed {t2->x - t1->x}, Fixed {t2->y - t1->y}};
 
     // the head node is the last node output
-    return crossBSPNode(numnodes - 1, topslope, bottomslope);
+    return crossBSPNode(numnodes - 1, trace, topslope, bottomslope);
 }
 } // namespace Doom

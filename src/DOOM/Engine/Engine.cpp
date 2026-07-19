@@ -1,15 +1,37 @@
 #include "Engine.h"
 
+#include <ea_data_structures/Pointers/OwningPointer.h>
+
 namespace Doom
 {
-// A function-local static, so it is constructed on the first call whoever makes
-// it, regardless of translation-unit init order. That matters: m_random.cpp binds
-// `int& rndindex = randomness().menuIndex` at static-init time, which reaches
-// through here before main() runs.
+namespace
+{
+// The one Engine, heap-owned so resetEngine() can drop it and make a fresh one.
+// Still a function-local static, so the *pointer itself* is constructed on first
+// touch regardless of translation-unit init order - the same guarantee the plain
+// `static auto instance = Engine{}` this replaced gave m_random.cpp's static-init
+// reference (since retired; REFACTOR.md, Step 9 strand (a)), kept here for
+// whatever future static-init-time caller wants it.
+EA::OwningPointer<Engine>& enginePointer()
+{
+    static auto instance = EA::OwningPointer<Engine> {};
+    return instance;
+}
+} // namespace
+
 Engine& engine()
 {
-    static auto instance = Engine {};
-    return instance;
+    return enginePointer().getOrCreate();
+}
+
+// Test/embedder facility - see the comment on Engine (Engine.h) for what this is
+// for. new Engine{} runs before the old one is deleted, so the two briefly coexist;
+// that costs one extra Engine's worth of memory for the duration of one call and
+// nothing else, this being neither hot nor reentrant (the engine is
+// single-threaded).
+void resetEngine()
+{
+    enginePointer().create();
 }
 
 // The vanilla free functions, now views onto the one Engine's members rather than

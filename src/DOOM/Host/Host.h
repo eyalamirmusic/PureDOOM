@@ -10,13 +10,13 @@ namespace Doom
 //
 // Unlike the Engine's state - which *is* the world, and which a test wants a fresh copy
 // of - these are host/platform state: set once by the embedder and the same whichever
-// world is running. So when engine() eventually becomes a constructed instance rather
-// than a singleton, the Host must NOT be reset with it; it therefore lives in its own
-// singleton, host(), parallel to engine() but deliberately separate (REFACTOR.md, the
-// doom_config->Host fold). This is a loose-global cleanup: the 13 callbacks were
-// file-scope globals in Api.cpp, gathered here into one owner. The vanilla names
-// doom_print / doom_malloc / ... become references onto these members (doom_config.h),
-// so the ~380 call sites and the doom_set_* API are unchanged.
+// world is running. Now that engine() is a heap-owned instance a test can drop and
+// remake (resetEngine(), Engine.h), the Host must NOT be reset with it; it therefore
+// lives in its own singleton, host(), parallel to engine() but deliberately separate
+// (REFACTOR.md, the doom_config->Host fold). This is a loose-global cleanup: the 13
+// callbacks were file-scope globals in Api.cpp, gathered here into one owner. The
+// vanilla names doom_print / doom_malloc / ... become references onto these members
+// (doom_config.h), so the ~380 call sites and the doom_set_* API are unchanged.
 struct Host
 {
     doom_print_fn print = nullptr;
