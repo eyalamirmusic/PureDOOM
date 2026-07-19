@@ -695,11 +695,49 @@ Everything above the line is done. What follows is, in the order worth doing it:
        contorting to `MAPBLOCKSIZE.raw - 1` to convert at all. **A constant that has
        to be rewritten to compile has not been evaluated in years**; that is the
        signal to check whether anything reads it before finding it a new spelling.
-   - **The string tables** (`Game/StringsEnglish.h` 293, `Game/StringsFrench.h` 199)
-     are the large remainder and the least urgent. They are two alternative bodies
-     for one set of names, so `constexpr` works only if exactly one is ever included;
-     check that before starting, and check for literal concatenation (`"a" MACRO "b"`),
-     which a variable cannot do.
+   - **The string tables** are the large remainder and the least urgent, and they are
+     now fully scoped. Not yet converted; what follows is what a session picking this
+     up needs, and it is more than it looks.
+
+     **Convert `Game/StringsEnglish.h` (293) only. Leave `Game/StringsFrench.h` (199)
+     alone.** `FRENCH` is defined nowhere in the repository, so that header is
+     compiled by no build here and a change to it could not be verified by any gate —
+     the same reasoning that leaves `Host/Net.cpp`'s `ntohl`/`ntohs` alone. Being two
+     mutually exclusive bodies for one set of names (`Strings.h` picks with
+     `#ifdef FRENCH`) is what makes `constexpr` safe in a header at all; it is not a
+     reason to convert the one nothing builds.
+
+     **Ten entries concatenate against another macro and two macros must therefore
+     stay.** `PRESSKEY` and `PRESSYN` (lines 39-40) are string-literal building
+     blocks, and `LOADNET`, `QLOADNET`, `QSAVESPOT`, `SAVEDEAD`, `QSPROMPT`,
+     `QLPROMPT`, `QSPROMPT_2`, `QLPROMPT_2`, `NETEND` and `ENDGAME` each end in one:
+
+         #define ENDGAME "are you sure you want to end the game?\n\n" PRESSYN
+
+     Adjacent-literal concatenation is a translation-phase-6 thing; a `constexpr
+     const char*` cannot do it. Keeping those two as macros resolves all ten with no
+     other change — the dependents convert normally and still concatenate.
+
+     **That fact was got wrong once already, in this document, by the person writing
+     this entry.** The first scoping said "there is exactly one instance of
+     concatenation and it is inside `#if 0`". There are ten, all live. The search had
+     been for `MACRO "literal"` and every real instance is `"literal" MACRO` — the
+     same category, the opposite order. It is the fifth completeness error recorded
+     here and the first committed *while* documenting the rule against it, which is
+     worth saying plainly: **an ordering assumption inside a regex is invisible in
+     its result.** The grep looked exhaustive and returned one honest hit.
+
+     Remaining shapes, all straightforward: single-line string literals (the bulk),
+     four `char` constants (`HUSTR_KEYGREEN`/`INDIGO`/`BROWN`/`RED`), and ~20
+     multi-line entries (`E1TEXT`, `C1TEXT`, `P1TEXT`, `NEWGAME`, `NIGHTMARE`,
+     `SWSTRING`, …) whose backslash continuations become adjacent literals inside the
+     initializer. `UI/Hud.cpp`'s global-scope `mapnames`/`chat_macros`/`player_names`
+     read ~55 of these names and will need `Doom::` qualifying.
+
+     Coverage is better here than it looks, which is the one encouraging note:
+     `menu.frames` covers the menu strings, `finale.frames` the text crawl, and the
+     demo frame goldens the HUD pickup messages — so a typo in the bulk of this file
+     fails a golden rather than shipping.
 7. ~~**Zero the warning count, and treat it as a gate.**~~ **Done — the engine
    builds with exactly one warning**, down from **81** at the start of this session,
    and that one is deliberate. `thintriangle_guy` is why this was worth doing at all
