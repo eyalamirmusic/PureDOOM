@@ -246,10 +246,10 @@ void renderSegLoop()
         if (seg.segtextured)
         {
             // calculate texture offset
-            angle =
-                (rw_centerangle + proj.xtoviewangle[seg.rw_x]) >> ANGLETOFINESHIFT;
+            const auto angleFine =
+                (rw_centerangle + proj.xtoviewangle[seg.rw_x]).fineIndex();
             texturecolumn =
-                (rw_offset - FixedMul(finetangent[angle], scratch.rw_distance))
+                (rw_offset - FixedMul(finetangent[angleFine], scratch.rw_distance))
                     .toInt();
             // calculate lighting
             index = rw_scale.raw >> LIGHTSCALESHIFT;
@@ -407,7 +407,7 @@ void storeWallRange(int start, int stop)
 
     distangle = ANG90 - offsetangle;
     hyp = Doom::pointToDist(bsp.curline->v1->x, bsp.curline->v1->y);
-    sineval = finesine[distangle >> ANGLETOFINESHIFT];
+    sineval = finesine[distangle.fineIndex()];
     scratch.rw_distance = FixedMul(hyp, sineval);
 
     bsp.ds_p->x1 = seg.rw_x = start;
@@ -632,7 +632,7 @@ void storeWallRange(int start, int stop)
         if (offsetangle > ANG90)
             offsetangle = ANG90;
 
-        sineval = finesine[offsetangle >> ANGLETOFINESHIFT];
+        sineval = finesine[offsetangle.fineIndex()];
         rw_offset = FixedMul(hyp, sineval);
 
         if (scratch.rw_normalangle - scratch.rw_angle1 < ANG180)

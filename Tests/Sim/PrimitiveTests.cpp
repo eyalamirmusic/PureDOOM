@@ -272,7 +272,7 @@ auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []
     for (auto i = 1; i <= SLOPERANGE; ++i)
         check(tantoangle[i] >= tantoangle[i - 1]);
 
-    check(tantoangle[0] == 0);
+    check(tantoangle[0] == angle_t {0});
 };
 
 // Doom::slopeDiv gives up rather than divide by anything under 512 - it answers
@@ -333,15 +333,15 @@ auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
 // replay: it is what the recorded demos were aimed with.
 auto tPointToAngleCardinals = test("Geometry/pointToAngleCardinals") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, fixed_t {}) == 0); // east, exact
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, one) == ANG90 - 1); // north
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, fixed_t {}) == ANG180 - 1); // west
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, fixed_t {}) == angle_t {}); // east, exact
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, one) == ANG90 - angle_t {1}); // north
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, fixed_t {}) == ANG180 - angle_t {1}); // west
     check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, -one) == ANG270); // south, exact
 };
 
 auto tPointToAngleDiagonal = test("Geometry/pointToAngleDiagonal") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one) == ANG45 - 1);
+    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one) == ANG45 - angle_t {1});
     check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one) == ANG90 + ANG45);
 };
 
@@ -359,7 +359,7 @@ auto tPointToAngleQuadrants = test("Geometry/pointToAngleQuadrants") = []
 
 // The same point is no angle at all, rather than an out-of-range index.
 auto tPointToAngleDegenerate = test("Geometry/pointToAngleAtSamePoint") = []
-{ check(Doom::pointToAngle2(fixed_t {100}, fixed_t {100}, fixed_t {100}, fixed_t {100}) == 0); };
+{ check(Doom::pointToAngle2(fixed_t {100}, fixed_t {100}, fixed_t {100}, fixed_t {100}) == angle_t {}); };
 
 // ---------------------------------------------------------------------------
 // The tables, whole.
@@ -400,7 +400,7 @@ auto tTanToAngleTableIsIntact = test("Tables/tanToAngleIsIntact") = []
     auto sum = Checksum {};
 
     for (auto i = 0; i <= SLOPERANGE; ++i)
-        sum << tantoangle[i];
+        sum << tantoangle[i].raw;
 
     checkTable("tantoangle", sum, 0x373392e3c4a34270ULL);
 };

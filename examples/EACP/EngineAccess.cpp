@@ -485,7 +485,7 @@ EacpDoomCamera eacpDoomGetCamera()
 
     // angle_t maps the full circle onto 32 bits; 2^31 is half a turn.
     camera.angle =
-        (float) ((double) player->mo->angle * (3.14159265358979 / 2147483648.0));
+        (float) ((double) player->mo->angle.raw * (3.14159265358979 / 2147483648.0));
     return camera;
 }
 
@@ -1328,7 +1328,7 @@ static void eacpEmitSprite(
     if (frame->rotate)
     {
         angle_t seen = Doom::pointToAngle2(viewer->x, viewer->y, thing->x, thing->y);
-        rotation = (seen - thing->angle + (unsigned) (ANG45 / 2) * 9) >> 29;
+        rotation = ((seen - thing->angle + (ANG45 / 2u) * 9u) >> 29).raw;
     }
 
     lump = frame->lump[rotation];
@@ -1405,8 +1405,8 @@ static void
     // along, so the billboards stay square-on to the camera being drawn.
     angle_t facing = eacpAngleFromRadians(camera->angle);
 
-    double rightX = eacpFixedToDouble(finesine[facing >> ANGLETOFINESHIFT]);
-    double rightY = -eacpFixedToDouble(finecosine[facing >> ANGLETOFINESHIFT]);
+    double rightX = eacpFixedToDouble(finesine[facing.fineIndex()]);
+    double rightY = -eacpFixedToDouble(finecosine[facing.fineIndex()]);
 
     for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
          thinker = thinker->next)
@@ -1461,16 +1461,16 @@ static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
 
         double x0 = camX
                     + EACP_SKY_RADIUS
-                          * eacpFixedToDouble(finecosine[a0 >> ANGLETOFINESHIFT]);
+                          * eacpFixedToDouble(finecosine[a0.fineIndex()]);
         double y0 =
             camY
-            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a0 >> ANGLETOFINESHIFT]);
+            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a0.fineIndex()]);
         double x1 = camX
                     + EACP_SKY_RADIUS
-                          * eacpFixedToDouble(finecosine[a1 >> ANGLETOFINESHIFT]);
+                          * eacpFixedToDouble(finecosine[a1.fineIndex()]);
         double y1 =
             camY
-            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a1 >> ANGLETOFINESHIFT]);
+            + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a1.fineIndex()]);
 
         float u0 = 4.0f * (float) i / (float) EACP_SKY_SEGMENTS;
         float u1 = 4.0f * (float) (i + 1) / (float) EACP_SKY_SEGMENTS;

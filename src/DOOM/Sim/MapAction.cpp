@@ -88,14 +88,14 @@ void hitSlideLine(Line* ld)
     if (deltaangle > ANG180)
         deltaangle += ANG180;
 
-    lineangle >>= ANGLETOFINESHIFT;
-    deltaangle >>= ANGLETOFINESHIFT;
+    const auto lineangleFine = lineangle.fineIndex();
+    const auto deltaangleFine = deltaangle.fineIndex();
 
     movelen = approxDistance(tmxmove, tmymove);
-    newlen = FixedMul(movelen, finecosine[deltaangle]);
+    newlen = FixedMul(movelen, finecosine[deltaangleFine]);
 
-    tmxmove = FixedMul(newlen, finecosine[lineangle]);
-    tmymove = FixedMul(newlen, finesine[lineangle]);
+    tmxmove = FixedMul(newlen, finecosine[lineangleFine]);
+    tmymove = FixedMul(newlen, finesine[lineangleFine]);
 }
 
 //
@@ -642,13 +642,13 @@ fixed_t aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
     fixed_t x2;
     fixed_t y2;
 
-    angle >>= ANGLETOFINESHIFT;
+    const auto angleFine = angle.fineIndex();
     shootthing = t1;
 
     // The range in WHOLE units scales the fixed cosine: an integer product, not a
     // fixed-point one. FixedMul here would divide the reach by 65536.
-    x2 = t1->x + distance.toInt() * finecosine[angle];
-    y2 = t1->y + distance.toInt() * finesine[angle];
+    x2 = t1->x + distance.toInt() * finecosine[angleFine];
+    y2 = t1->y + distance.toInt() * finesine[angleFine];
     shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
 
     // can't shoot outside view angles
@@ -677,12 +677,12 @@ void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int da
     fixed_t x2;
     fixed_t y2;
 
-    angle >>= ANGLETOFINESHIFT;
+    const auto angleFine = angle.fineIndex();
     shootthing = t1;
     la_damage = damage;
     // Whole units scaling the fixed cosine - an integer product. See aimLineAttack.
-    x2 = t1->x + distance.toInt() * finecosine[angle];
-    y2 = t1->y + distance.toInt() * finesine[angle];
+    x2 = t1->x + distance.toInt() * finecosine[angleFine];
+    y2 = t1->y + distance.toInt() * finesine[angleFine];
     shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
     clip.attackrange = distance;
     aimslope = slope;
@@ -696,19 +696,20 @@ void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int da
 //
 void useLines(Player* player)
 {
-    int angle;
+    angle_t angle;
     fixed_t x1;
     fixed_t y1;
     fixed_t x2;
     fixed_t y2;
 
-    angle = player->mo->angle >> ANGLETOFINESHIFT;
+    angle = player->mo->angle;
+    const auto angleFine = angle.fineIndex();
 
     x1 = player->mo->x;
     y1 = player->mo->y;
     // USERANGE in whole units scaling the fixed cosine - an integer product.
-    x2 = x1 + USERANGE.toInt() * finecosine[angle];
-    y2 = y1 + USERANGE.toInt() * finesine[angle];
+    x2 = x1 + USERANGE.toInt() * finecosine[angleFine];
+    y2 = y1 + USERANGE.toInt() * finesine[angleFine];
 
     Mobj* usething = player->mo;
 

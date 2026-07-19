@@ -27,7 +27,7 @@ struct ViewPoint
     fixed_t viewy {};
     fixed_t viewz {};
 
-    angle_t viewangle = 0;
+    angle_t viewangle {};
 
     // sin/cos of viewangle, sampled from the fine tables alongside it.
     fixed_t viewcos {};

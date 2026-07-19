@@ -215,7 +215,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
     y -= pt.viewy;
 
     if ((!x) && (!y))
-        return 0;
+        return angle_t {};
 
     if (!x.isNegative())
     {
@@ -232,7 +232,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 1
-                return ANG90 - 1 - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ANG90 - angle_t {1} - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
         else
@@ -270,7 +270,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 3
-                return ANG180 - 1 - tantoangle[Doom::slopeDiv(y.raw, x.raw)];
+                return ANG180 - angle_t {1} - tantoangle[Doom::slopeDiv(y.raw, x.raw)];
             }
             else
             {
@@ -291,11 +291,11 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 5
-                return ANG270 - 1 - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ANG270 - angle_t {1} - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
             }
         }
     }
-    return 0;
+    return angle_t {};
 }
 
 angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2)
@@ -328,10 +328,10 @@ fixed_t pointToDist(fixed_t x, fixed_t y)
         dy = temp;
     }
 
-    angle = (tantoangle[FixedDiv(dy, dx).raw >> DBITS] + ANG90) >> ANGLETOFINESHIFT;
+    const auto fine = (tantoangle[FixedDiv(dy, dx).raw >> DBITS] + ANG90).fineIndex();
 
     // use as cosine
-    dist = FixedDiv(dx, finesine[angle]);
+    dist = FixedDiv(dx, finesine[fine]);
 
     return dist;
 }
@@ -351,8 +351,8 @@ void initPointToAngle() {}
 fixed_t scaleFromGlobalAngle(angle_t visangle)
 {
     fixed_t scale;
-    int anglea;
-    int angleb;
+    angle_t anglea {};
+    angle_t angleb {};
     fixed_t sinea;
     fixed_t sineb;
     fixed_t num;
@@ -364,8 +364,8 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
     angleb = ANG90 + (visangle - scratch.rw_normalangle);
 
     // both sines are allways positive
-    sinea = finesine[anglea >> ANGLETOFINESHIFT];
-    sineb = finesine[angleb >> ANGLETOFINESHIFT];
+    sinea = finesine[anglea.fineIndex()];
+    sineb = finesine[angleb.fineIndex()];
     num = FixedMul(viewProjection().projection, sineb) << viewWindow().detailshift;
     den = FixedMul(scratch.rw_distance, sinea);
 
@@ -438,7 +438,7 @@ void initTextureMapping()
         i = 0;
         while (proj.viewangletox[i] > x)
             i++;
-        proj.xtoviewangle[x] = (i << ANGLETOFINESHIFT) - ANG90;
+        proj.xtoviewangle[x] = angle_t {(unsigned) i << ANGLETOFINESHIFT} - ANG90;
     }
 
     // Take out the fencepost cases from viewangletox.
@@ -589,7 +589,7 @@ void executeSetViewSize()
 
     for (i = 0; i < view.viewwidth; i++)
     {
-        cosadj = doom_abs(finecosine[proj.xtoviewangle[i] >> ANGLETOFINESHIFT]);
+        cosadj = doom_abs(finecosine[proj.xtoviewangle[i].fineIndex()]);
         plane.distscale[i] = FixedDiv(FRACUNIT, cosadj);
     }
 
@@ -682,8 +682,8 @@ void setupFrame(Player& player)
 
     pt.viewz = player.viewz;
 
-    pt.viewsin = finesine[pt.viewangle >> ANGLETOFINESHIFT];
-    pt.viewcos = finecosine[pt.viewangle >> ANGLETOFINESHIFT];
+    pt.viewsin = finesine[pt.viewangle.fineIndex()];
+    pt.viewcos = finecosine[pt.viewangle.fineIndex()];
 
     renderScratch().sscount = 0;
 

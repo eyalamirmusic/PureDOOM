@@ -443,7 +443,9 @@ void punch(Player& player, PspDef&)
         damage *= 10;
 
     angle = player.mo->angle;
-    angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
+    angle += angle_t {(unsigned) (Doom::randomness().forPlay()
+                              - Doom::randomness().forPlay())
+                  << 18};
     slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE);
     Doom::lineAttack(player.mo, angle, MELEERANGE, slope, damage);
 
@@ -469,7 +471,9 @@ void saw(Player& player, PspDef&)
 
     damage = 2 * (Doom::randomness().forPlay() % 10 + 1);
     angle = player.mo->angle;
-    angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
+    angle += angle_t {(unsigned) (Doom::randomness().forPlay()
+                              - Doom::randomness().forPlay())
+                  << 18};
 
     // use meleerange + 1 se the puff doesn't skip the flash
     slope = Doom::aimLineAttack(player.mo, angle, MELEERANGE + fixed_t {1});
@@ -552,11 +556,11 @@ void computeBulletSlope(Mobj* mo)
 
     if (!c.linetarget)
     {
-        an += 1 << 26;
+        an += angle_t {1u << 26};
         bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
         if (!c.linetarget)
         {
-            an -= 2 << 26;
+            an -= angle_t {2u << 26};
             bulletslope = Doom::aimLineAttack(mo, an, 16 * 64 * FRACUNIT);
         }
     }
@@ -574,7 +578,9 @@ void gunShot(Mobj* mo, doom_boolean accurate)
     angle = mo->angle;
 
     if (!accurate)
-        angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 18;
+        angle += angle_t {(unsigned) (Doom::randomness().forPlay()
+                              - Doom::randomness().forPlay())
+                  << 18};
 
     Doom::lineAttack(mo, angle, MISSILERANGE, bulletslope, damage);
 }
@@ -640,7 +646,9 @@ void fireShotgun2(Player& player, PspDef&)
     {
         damage = 5 * (Doom::randomness().forPlay() % 3 + 1);
         angle = player.mo->angle;
-        angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 19;
+        angle += angle_t {(unsigned) (Doom::randomness().forPlay()
+                              - Doom::randomness().forPlay())
+                  << 19};
         Doom::lineAttack(player.mo,
                      angle,
                      MISSILERANGE,

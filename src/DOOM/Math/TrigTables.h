@@ -42,6 +42,7 @@
 #endif
 
 #include "FixedPoint.h"
+#include "Angle.h"
 
 #define FINEANGLES 8192
 #define FINEMASK (FINEANGLES-1)
@@ -64,16 +65,19 @@ extern const fixed_t* finecosine;
 extern const fixed_t* finetangent;
 
 // Binary Angle Measument, BAM.
-#define ANG45 0x20000000
-#define ANG90 0x40000000
-#define ANG180 0x80000000
-#define ANG270 0xc0000000
+#define ANG45 (Doom::Angle {0x20000000})
+#define ANG90 (Doom::Angle {0x40000000})
+#define ANG180 (Doom::Angle {0x80000000})
+#define ANG270 (Doom::Angle {0xc0000000})
 
 #define SLOPERANGE 2048
 #define SLOPEBITS 11
 #define DBITS (FRACBITS - SLOPEBITS)
 
-typedef unsigned angle_t;
+// angle_t IS Doom::Angle - Binary Angle Measurement, a whole turn in 2^32 units
+// so it wraps by itself. The ANG* constants are Angles, which is what lets the
+// engine keep writing `ANG45 * (thing->angle / 45)` unchanged.
+using angle_t = Doom::Angle;
 
 // Effective size is 2049;
 // The +1 size is to handle the case when x==y

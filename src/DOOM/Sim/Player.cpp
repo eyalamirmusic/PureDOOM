@@ -57,10 +57,10 @@ static doom_boolean& onground = playerScratch().onground;
 //
 void thrust(Player& player, angle_t angle, fixed_t move)
 {
-    angle >>= ANGLETOFINESHIFT;
+    const auto angleFine = angle.fineIndex();
 
-    player.mo->momx += FixedMul(move, finecosine[angle]);
-    player.mo->momy += FixedMul(move, finesine[angle]);
+    player.mo->momx += FixedMul(move, finecosine[angleFine]);
+    player.mo->momy += FixedMul(move, finesine[angleFine]);
 }
 
 //
@@ -138,7 +138,7 @@ void movePlayer(Player& player)
 {
     Ticcmd* cmd = &player.cmd;
 
-    player.mo->angle += (cmd->angleturn << 16);
+    player.mo->angle += angle_t {(unsigned) cmd->angleturn << 16};
 
     // Do not let the player control movement
     //  if not onground.
@@ -186,7 +186,7 @@ void deathThink(Player& player)
 
         delta = angle - player.mo->angle;
 
-        if (delta < ANG5 || delta > static_cast<unsigned>(-ANG5))
+        if (delta < ANG5 || delta > -ANG5)
         {
             // Looking at killer,
             //  so fade damage flash down.

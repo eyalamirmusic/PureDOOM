@@ -729,7 +729,7 @@ void killMobj(Mobj* source, Mobj* target)
 //
 void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
 {
-    unsigned ang;
+    angle_t ang {};
     int saved;
     Player* player;
     fixed_t thrust;
@@ -770,9 +770,9 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
             thrust = thrust * 4;
         }
 
-        ang >>= ANGLETOFINESHIFT;
-        target->momx += FixedMul(thrust, finecosine[ang]);
-        target->momy += FixedMul(thrust, finesine[ang]);
+        const auto angFine = ang.fineIndex();
+        target->momx += FixedMul(thrust, finecosine[angFine]);
+        target->momy += FixedMul(thrust, finesine[angFine]);
     }
 
     // player specific

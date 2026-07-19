@@ -539,7 +539,7 @@ void projectSprite(Mobj* thing)
     {
         // choose a different rotation based on player view
         ang = Doom::pointToAngle(thing->x, thing->y);
-        rot = (ang - thing->angle + static_cast<unsigned>(ANG45 / 2) * 9) >> 29;
+        rot = ((ang - thing->angle + (ANG45 / 2u) * 9u) >> 29).raw;
         lump = sprframe->lump[rot];
         flip = static_cast<doom_boolean>(sprframe->flip[rot]);
     }

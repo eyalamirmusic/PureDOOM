@@ -849,7 +849,7 @@ doom_boolean checkSpot(int playernum, MapThing* mthing)
     fixed_t x;
     fixed_t y;
     SubSector* ss;
-    unsigned an;
+    angle_t an {};
     Mobj* mo;
 
     if (!players_.players[playernum].mo)
@@ -877,10 +877,10 @@ doom_boolean checkSpot(int playernum, MapThing* mthing)
 
     // spawn a teleport fog
     ss = Doom::pointInSubsector(x, y);
-    an = (ANG45 * (mthing->angle / 45)) >> ANGLETOFINESHIFT;
+    const auto anFine = (ANG45 * (mthing->angle / 45)).fineIndex();
 
-    mo = Doom::spawnMobj(x + 20 * finecosine[an],
-                         y + 20 * finesine[an],
+    mo = Doom::spawnMobj(x + 20 * finecosine[anFine],
+                         y + 20 * finesine[anFine],
                          ss->sector->floorheight,
                          MT_TFOG);
 

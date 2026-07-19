@@ -24,8 +24,8 @@ struct RenderScratch
 {
     // The current wall segment: its distance and the angles the seg loop reads back.
     fixed_t rw_distance {};
-    angle_t rw_normalangle = 0;
-    int rw_angle1 = 0; // angle to the line origin
+    angle_t rw_normalangle {};
+    angle_t rw_angle1 {}; // angle to the line origin
 
     // Subsector counter, bumped as the BSP is walked.
     int sscount = 0;

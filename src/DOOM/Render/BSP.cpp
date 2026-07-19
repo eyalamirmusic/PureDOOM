@@ -258,9 +258,9 @@ void addLine(Seg* line)
     angle2 -= pt.viewangle;
 
     tspan = angle1 + proj.clipangle;
-    if (tspan > 2 * proj.clipangle)
+    if (tspan > proj.clipangle * 2u)
     {
-        tspan -= 2 * proj.clipangle;
+        tspan -= proj.clipangle * 2u;
 
         // Totally off the left edge?
         if (tspan >= span)
@@ -269,9 +269,9 @@ void addLine(Seg* line)
         angle1 = proj.clipangle;
     }
     tspan = proj.clipangle - angle2;
-    if (tspan > 2 * proj.clipangle)
+    if (tspan > proj.clipangle * 2u)
     {
-        tspan -= 2 * proj.clipangle;
+        tspan -= proj.clipangle * 2u;
 
         // Totally off the left edge?
         if (tspan >= span)
@@ -288,10 +288,10 @@ void addLine(Seg* line)
 
     // The seg is in the view range,
     // but not necessarily visible.
-    angle1 = (angle1 + ANG90) >> ANGLETOFINESHIFT;
-    angle2 = (angle2 + ANG90) >> ANGLETOFINESHIFT;
-    x1 = proj.viewangletox[angle1];
-    x2 = proj.viewangletox[angle2];
+    const auto fine1 = (angle1 + ANG90).fineIndex();
+    const auto fine2 = (angle2 + ANG90).fineIndex();
+    x1 = proj.viewangletox[fine1];
+    x2 = proj.viewangletox[fine2];
 
     // Does not cross a pixel?
     if (x1 == x2)
@@ -401,9 +401,9 @@ doom_boolean checkBBox(fixed_t* bspcoord)
 
     tspan = angle1 + proj.clipangle;
 
-    if (tspan > 2 * proj.clipangle)
+    if (tspan > proj.clipangle * 2u)
     {
-        tspan -= 2 * proj.clipangle;
+        tspan -= proj.clipangle * 2u;
 
         // Totally off the left edge?
         if (tspan >= span)
@@ -412,9 +412,9 @@ doom_boolean checkBBox(fixed_t* bspcoord)
         angle1 = proj.clipangle;
     }
     tspan = proj.clipangle - angle2;
-    if (tspan > 2 * proj.clipangle)
+    if (tspan > proj.clipangle * 2u)
     {
-        tspan -= 2 * proj.clipangle;
+        tspan -= proj.clipangle * 2u;
 
         // Totally off the left edge?
         if (tspan >= span)
@@ -433,10 +433,10 @@ doom_boolean checkBBox(fixed_t* bspcoord)
     // Find the first clippost
     //  that touches the source post
     //  (adjacent pixels are touching).
-    angle1 = (angle1 + ANG90) >> ANGLETOFINESHIFT;
-    angle2 = (angle2 + ANG90) >> ANGLETOFINESHIFT;
-    sx1 = proj.viewangletox[angle1];
-    sx2 = proj.viewangletox[angle2];
+    const auto angle1Fine = (angle1 + ANG90).fineIndex();
+    const auto angle2Fine = (angle2 + ANG90).fineIndex();
+    sx1 = proj.viewangletox[angle1Fine];
+    sx2 = proj.viewangletox[angle2Fine];
 
     // Does not cross a pixel.
     if (sx1 == sx2)

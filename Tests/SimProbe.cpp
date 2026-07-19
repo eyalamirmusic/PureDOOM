@@ -341,7 +341,7 @@ int doomSimPlayerAngleDegrees()
         return 0;
 
     // angle_t spans a circle in 2^32 units.
-    return (int) (players_.players[0].mo->angle / (ANG45 / 45));
+    return (int) (players_.players[0].mo->angle.raw / (ANG45.raw / 45));
 }
 
 int doomSimMobjCount()

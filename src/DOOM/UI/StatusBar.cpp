@@ -589,7 +589,7 @@ doom_boolean statusBarResponder(Event* ev)
                 const auto* mo = players_.players[players_.consoleplayer].mo;
 
                 doom_strcpy(buf.data(), "ang=0x");
-                doom_concat(buf.data(), doom_itoa(mo->angle, 16));
+                doom_concat(buf.data(), doom_itoa((int) mo->angle.raw, 16));
                 doom_concat(buf.data(), ";x,y=(0x");
                 doom_concat(buf.data(), doom_itoa(mo->x.raw, 16));
                 doom_concat(buf.data(), ",0x");

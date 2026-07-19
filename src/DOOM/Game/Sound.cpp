@@ -616,12 +616,12 @@ int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pit
     if (angle > listener->angle)
         angle = angle - listener->angle;
     else
-        angle = angle + (0xffffffff - listener->angle);
+        angle = angle + (angle_t {0xffffffff} - listener->angle);
 
-    angle >>= ANGLETOFINESHIFT;
+    const auto angleFine = angle.fineIndex();
 
     // stereo separation
-    *sep = 128 - FixedMul(S_STEREO_SWING, finesine[angle]).toInt();
+    *sep = 128 - FixedMul(S_STEREO_SWING, finesine[angleFine]).toInt();
 
     // volume calculation
     if (approx_dist < S_CLOSE_DIST)

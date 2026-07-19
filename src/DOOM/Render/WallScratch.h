@@ -21,7 +21,7 @@ struct WallScratch
 {
     doom_boolean maskedtexture = false; // the seg has a masked middle texture
 
-    angle_t rw_centerangle = 0; // angle from the view to the seg's centre
+    angle_t rw_centerangle {}; // angle from the view to the seg's centre
     fixed_t rw_offset {}; // texture x offset along the seg
     fixed_t rw_scale {}; // scale at the current column
     fixed_t rw_scalestep {}; // per-column scale step

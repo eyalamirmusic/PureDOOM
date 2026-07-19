@@ -121,7 +121,7 @@ void loadSegs(int lump)
         li->v1 = &vertexes[SHORT(ml->v1)];
         li->v2 = &vertexes[SHORT(ml->v2)];
 
-        li->angle = (SHORT(ml->angle)) << 16;
+        li->angle = angle_t {(unsigned) (SHORT(ml->angle)) << 16};
         li->offset = Doom::Fixed::fromInt(SHORT(ml->offset));
         linedef = SHORT(ml->linedef);
         ldef = &lines[linedef];

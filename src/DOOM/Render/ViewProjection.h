@@ -31,7 +31,7 @@ struct ViewProjection
     fixed_t projection {};
 
     // The field-of-view edge angle (xtoviewangle[0]), clipped against per seg.
-    angle_t clipangle = 0;
+    angle_t clipangle {};
 
     // Doom::initTextureMapping's angle<->column maps.
     int viewangletox[FINEANGLES / 2] = {};

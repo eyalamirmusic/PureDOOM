@@ -76,9 +76,9 @@ int teleport(Line* line, int side, Mobj* thing)
                 // spawn teleport fog at source and destination
                 fog = Doom::spawnMobj(oldx, oldy, oldz, MT_TFOG);
                 Doom::startSound(fog, sfx_telept);
-                an = m->angle >> ANGLETOFINESHIFT;
-                fog = Doom::spawnMobj(m->x + 20 * finecosine[an],
-                                  m->y + 20 * finesine[an],
+                const auto anFine = m->angle.fineIndex();
+                fog = Doom::spawnMobj(m->x + 20 * finecosine[anFine],
+                                  m->y + 20 * finesine[anFine],
                                   thing->z,
                                   MT_TFOG);
 

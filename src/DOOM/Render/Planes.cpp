@@ -123,9 +123,9 @@ void mapPlane(int y, int x1, int x2)
     }
 
     length = FixedMul(distance, plane.distscale[x1]);
-    angle = (pt.viewangle + viewProjection().xtoviewangle[x1]) >> ANGLETOFINESHIFT;
-    draw.ds_xfrac = pt.viewx + FixedMul(finecosine[angle], length);
-    draw.ds_yfrac = -pt.viewy - FixedMul(finesine[angle], length);
+    const auto angleFine = (pt.viewangle + viewProjection().xtoviewangle[x1]).fineIndex();
+    draw.ds_xfrac = pt.viewx + FixedMul(finecosine[angleFine], length);
+    draw.ds_yfrac = -pt.viewy - FixedMul(finesine[angleFine], length);
 
     if (lights.fixedcolormap)
         draw.ds_colormap = lights.fixedcolormap;
@@ -173,11 +173,11 @@ void clearPlanes()
     doom_memset(cachedheight, 0, sizeof(cachedheight));
 
     // left to right mapping
-    angle = (viewPoint().viewangle - ANG90) >> ANGLETOFINESHIFT;
+    const auto angleFine = (viewPoint().viewangle - ANG90).fineIndex();
 
     // scale will be unit scale at SCREENWIDTH/2 distance
-    basexscale = FixedDiv(finecosine[angle], proj.centerxfrac);
-    baseyscale = -FixedDiv(finesine[angle], proj.centerxfrac);
+    basexscale = FixedDiv(finecosine[angleFine], proj.centerxfrac);
+    baseyscale = -FixedDiv(finesine[angleFine], proj.centerxfrac);
 }
 
 //
@@ -390,7 +390,7 @@ void drawPlanes()
 
                 if (draw.dc_yl <= draw.dc_yh)
                 {
-                    angle = (pt.viewangle + proj.xtoviewangle[x]) >> ANGLETOSKYSHIFT;
+                    angle = ((pt.viewangle + proj.xtoviewangle[x]) >> ANGLETOSKYSHIFT).raw;
                     draw.dc_x = x;
                     draw.dc_source = Doom::getColumn(sky.skytexture, angle);
                     colfunc();

@@ -108,7 +108,7 @@ EA::Array<fixed_t, 8> yspeed = {fixed_t {},
                                 fixed_t {-47000},
                                 -FRACUNIT,
                                 fixed_t {-47000}};
-int TRACEANGLE = 0xc000000;
+angle_t TRACEANGLE {0xc000000};
 // The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by no other
 // file. (The const direction/speed tables above stay file-local.)
@@ -713,6 +713,10 @@ seeyou:
 //
 void chase(Mobj& actor)
 {
+    // SIGNED on purpose: vanilla declares this int, so the two tests below are a
+    // signed comparison of an angle difference. As an unsigned raw angle, `> 0`
+    // would be true for every non-zero value and the `< 0` branch unreachable -
+    // which desyncs demo1 at tic 89, monsters turning the wrong way.
     int delta;
 
     if (actor.reactiontime)
@@ -732,13 +736,13 @@ void chase(Mobj& actor)
     // turn towards movement direction if not there yet
     if (actor.movedir < 8)
     {
-        actor.angle &= (7 << 29);
-        delta = actor.angle - (actor.movedir << 29);
+        actor.angle = angle_t {actor.angle.raw & (7u << 29)};
+        delta = (int) (actor.angle - angle_t {(unsigned) actor.movedir << 29}).raw;
 
         if (delta > 0)
-            actor.angle -= ANG90 / 2;
+            actor.angle -= ANG90 / 2u;
         else if (delta < 0)
-            actor.angle += ANG90 / 2;
+            actor.angle += ANG90 / 2u;
     }
 
     if (!actor.target || !(actor.target->flags & MF_SHOOTABLE))
@@ -826,7 +830,9 @@ void faceTarget(Mobj& actor)
         Doom::pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
 
     if (actor.target->flags & MF_SHADOW)
-        actor.angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 21;
+        actor.angle += angle_t {(unsigned) (Doom::randomness().forPlay()
+                                    - Doom::randomness().forPlay())
+                        << 21};
 }
 
 //
@@ -834,7 +840,7 @@ void faceTarget(Mobj& actor)
 //
 void posAttack(Mobj& actor)
 {
-    int angle;
+    angle_t angle;
     int damage;
     fixed_t slope;
 
@@ -846,15 +852,17 @@ void posAttack(Mobj& actor)
     slope = Doom::aimLineAttack(&actor, angle, MISSILERANGE);
 
     Doom::startSound(&actor, sfx_pistol);
-    angle += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20;
+    angle += angle_t {(unsigned) (Doom::randomness().forPlay()
+                              - Doom::randomness().forPlay())
+                  << 20};
     damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
 
 void sPosAttack(Mobj& actor)
 {
-    int angle;
-    int bangle;
+    angle_t angle {};
+    angle_t bangle;
     int damage;
     fixed_t slope;
 
@@ -868,7 +876,10 @@ void sPosAttack(Mobj& actor)
 
     for (int i = 0; i < 3; i++)
     {
-        angle = bangle + ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20);
+        angle = bangle
+                + angle_t {(unsigned) (Doom::randomness().forPlay()
+                                       - Doom::randomness().forPlay())
+                           << 20};
         damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
         Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
     }
@@ -876,8 +887,8 @@ void sPosAttack(Mobj& actor)
 
 void cPosAttack(Mobj& actor)
 {
-    int angle;
-    int bangle;
+    angle_t angle {};
+    angle_t bangle;
     int damage;
     fixed_t slope;
 
@@ -889,7 +900,10 @@ void cPosAttack(Mobj& actor)
     bangle = actor.angle;
     slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE);
 
-    angle = bangle + ((Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20);
+    angle = bangle
+                + angle_t {(unsigned) (Doom::randomness().forPlay()
+                                       - Doom::randomness().forPlay())
+                           << 20};
     damage = ((Doom::randomness().forPlay() % 5) + 1) * 3;
     Doom::lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
@@ -1075,23 +1089,23 @@ void tracer(Mobj& actor)
 
     if (exact != actor.angle)
     {
-        if (exact - actor.angle > 0x80000000)
+        if (exact - actor.angle > ANG180)
         {
             actor.angle -= TRACEANGLE;
-            if (exact - actor.angle < 0x80000000)
+            if (exact - actor.angle < ANG180)
                 actor.angle = exact;
         }
         else
         {
             actor.angle += TRACEANGLE;
-            if (exact - actor.angle > 0x80000000)
+            if (exact - actor.angle > ANG180)
                 actor.angle = exact;
         }
     }
 
-    exact = actor.angle >> ANGLETOFINESHIFT;
-    actor.momx = FixedMul(Doom::Fixed {actor.info->speed}, finecosine[exact]);
-    actor.momy = FixedMul(Doom::Fixed {actor.info->speed}, finesine[exact]);
+    const auto fine = actor.angle.fineIndex();
+    actor.momx = FixedMul(Doom::Fixed {actor.info->speed}, finecosine[fine]);
+    actor.momy = FixedMul(Doom::Fixed {actor.info->speed}, finesine[fine]);
 
     // change slope
     dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
@@ -1269,11 +1283,11 @@ void fire(Mobj& actor)
     if (!Doom::checkSight(actor.target, dest))
         return;
 
-    an = dest->angle >> ANGLETOFINESHIFT;
+    const auto anFine = dest->angle.fineIndex();
 
     unsetThingPosition(actor);
-    actor.x = dest->x + FixedMul(24 * FRACUNIT, finecosine[an]);
-    actor.y = dest->y + FixedMul(24 * FRACUNIT, finesine[an]);
+    actor.x = dest->x + FixedMul(24 * FRACUNIT, finecosine[anFine]);
+    actor.y = dest->y + FixedMul(24 * FRACUNIT, finesine[anFine]);
     actor.z = dest->z;
     setThingPosition(actor);
 }
@@ -1319,7 +1333,7 @@ void vileAttack(Mobj& actor)
     Doom::damageMobj(actor.target, &actor, &actor, 20);
     actor.target->momz = 1000 * FRACUNIT / actor.target->info->mass;
 
-    an = actor.angle >> ANGLETOFINESHIFT;
+    const auto anFine = actor.angle.fineIndex();
 
     fire = actor.tracer;
 
@@ -1327,8 +1341,8 @@ void vileAttack(Mobj& actor)
         return;
 
     // move the fire between the vile and the player
-    fire->x = actor.target->x - FixedMul(24 * FRACUNIT, finecosine[an]);
-    fire->y = actor.target->y - FixedMul(24 * FRACUNIT, finesine[an]);
+    fire->x = actor.target->x - FixedMul(24 * FRACUNIT, finecosine[anFine]);
+    fire->y = actor.target->y - FixedMul(24 * FRACUNIT, finesine[anFine]);
     Doom::radiusAttack(fire, &actor, 70);
 }
 
@@ -1356,9 +1370,9 @@ void fatAttack1(Mobj& actor)
 
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle += FATSPREAD;
-    an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
-    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
+    const auto an1Fine = mo->angle.fineIndex();
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an1Fine]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an1Fine]);
 }
 
 void fatAttack2(Mobj& actor)
@@ -1373,9 +1387,9 @@ void fatAttack2(Mobj& actor)
 
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD * 2;
-    an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
-    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
+    const auto an2Fine = mo->angle.fineIndex();
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an2Fine]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an2Fine]);
 }
 
 void fatAttack3(Mobj& actor)
@@ -1387,15 +1401,15 @@ void fatAttack3(Mobj& actor)
 
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle -= FATSPREAD / 2;
-    an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
-    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
+    const auto an3Fine = mo->angle.fineIndex();
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an3Fine]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an3Fine]);
 
     mo = Doom::spawnMissile(&actor, actor.target, MT_FATSHOT);
     mo->angle += FATSPREAD / 2;
-    an = mo->angle >> ANGLETOFINESHIFT;
-    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an]);
-    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an]);
+    const auto an4Fine = mo->angle.fineIndex();
+    mo->momx = FixedMul(Doom::Fixed {mo->info->speed}, finecosine[an4Fine]);
+    mo->momy = FixedMul(Doom::Fixed {mo->info->speed}, finesine[an4Fine]);
 }
 
 //
@@ -1416,9 +1430,9 @@ void skullAttack(Mobj& actor)
 
     Doom::startSound(&actor, actor.info->attacksound);
     faceTarget(actor);
-    an = actor.angle >> ANGLETOFINESHIFT;
-    actor.momx = FixedMul(SKULLSPEED, finecosine[an]);
-    actor.momy = FixedMul(SKULLSPEED, finesine[an]);
+    const auto fine = actor.angle.fineIndex();
+    actor.momx = FixedMul(SKULLSPEED, finecosine[fine]);
+    actor.momy = FixedMul(SKULLSPEED, finesine[fine]);
     dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
     dist = dist / SKULLSPEED.raw;
 
@@ -1464,13 +1478,13 @@ void painShootSkull(Mobj& actor, angle_t angle)
         return;
 
     // okay, there's playe for another one
-    an = angle >> ANGLETOFINESHIFT;
+    const auto anFine = angle.fineIndex();
 
     prestep =
         4 * FRACUNIT + 3 * (actor.info->radius + mobjinfo[MT_SKULL].radius) / 2;
 
-    x = actor.x + FixedMul(prestep, finecosine[an]);
-    y = actor.y + FixedMul(prestep, finesine[an]);
+    x = actor.x + FixedMul(prestep, finecosine[anFine]);
+    y = actor.y + FixedMul(prestep, finesine[anFine]);
     z = actor.z + 8 * FRACUNIT;
 
     newmobj = Doom::spawnMobj(x, y, z, MT_SKULL);

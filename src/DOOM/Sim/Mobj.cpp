@@ -862,12 +862,14 @@ Mobj* spawnMissile(Mobj* source, Mobj* dest, MobjType type)
 
     // fuzzy player
     if (dest->flags & MF_SHADOW)
-        an += (Doom::randomness().forPlay() - Doom::randomness().forPlay()) << 20;
+        an += angle_t {(unsigned) (Doom::randomness().forPlay()
+                           - Doom::randomness().forPlay())
+               << 20};
 
     th->angle = an;
-    an >>= ANGLETOFINESHIFT;
-    th->momx = FixedMul(Doom::Fixed {th->info->speed}, finecosine[an]);
-    th->momy = FixedMul(Doom::Fixed {th->info->speed}, finesine[an]);
+    const auto anFine = an.fineIndex();
+    th->momx = FixedMul(Doom::Fixed {th->info->speed}, finecosine[anFine]);
+    th->momy = FixedMul(Doom::Fixed {th->info->speed}, finesine[anFine]);
 
     // dist is vanilla's tic count, not a length: the raw distance divided by the
     // missile's raw speed as plain integers, then used as the divisor for momz.
@@ -905,12 +907,12 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
 
     if (!c.linetarget)
     {
-        an += 1 << 26;
+        an += angle_t {1u << 26};
         slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
 
         if (!c.linetarget)
         {
-            an -= 2 << 26;
+            an -= angle_t {2u << 26};
             slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
         }
 
@@ -933,9 +935,9 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
     th->target = source;
     th->angle = an;
     th->momx =
-        FixedMul(Doom::Fixed {th->info->speed}, finecosine[an >> ANGLETOFINESHIFT]);
+        FixedMul(Doom::Fixed {th->info->speed}, finecosine[an.fineIndex()]);
     th->momy =
-        FixedMul(Doom::Fixed {th->info->speed}, finesine[an >> ANGLETOFINESHIFT]);
+        FixedMul(Doom::Fixed {th->info->speed}, finesine[an.fineIndex()]);
     th->momz = FixedMul(Doom::Fixed {th->info->speed}, slope);
 
     checkMissileSpawn(th);
