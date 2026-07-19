@@ -11,9 +11,11 @@ namespace Doom
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // Render/Draw's own namespace-scope private globals, read by no other file (every apparent cross-read
-// of "columnofs" is the Patch::columnofs struct member). The vanilla names become references onto
-// the members (the tables as references-to-array). Live frame-golden-covered - every column and span
-// the demos draw is addressed through these.
+// of "columnofs" is the Patch::columnofs struct member). ylookup and columnofs are references onto
+// the members (the tables as references-to-array); fuzzpos was a reference too until the
+// file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired it - drawFuzzColumn, its only
+// toucher, hoists drawTables() once. Live frame-golden-covered - every column and span the demos
+// draw is addressed through these.
 struct DrawTables
 {
     static constexpr int maxHeight = 832; // MAXHEIGHT in Render/Draw

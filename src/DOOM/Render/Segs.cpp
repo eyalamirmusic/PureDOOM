@@ -42,31 +42,12 @@ namespace Doom
 {
 
 // The per-wall-segment rendering intermediates now live on the Engine (Render/WallScratch.h, moved
-// by the file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto that
-// member; read by no other file.
-static doom_boolean& maskedtexture = wallScratch().maskedtexture;
-
-static angle_t& rw_centerangle = wallScratch().rw_centerangle;
-static fixed_t& rw_offset = wallScratch().rw_offset;
-static fixed_t& rw_scale = wallScratch().rw_scale;
-static fixed_t& rw_scalestep = wallScratch().rw_scalestep;
-static fixed_t& rw_midtexturemid = wallScratch().rw_midtexturemid;
-static fixed_t& rw_toptexturemid = wallScratch().rw_toptexturemid;
-static fixed_t& rw_bottomtexturemid = wallScratch().rw_bottomtexturemid;
-
-static fixed_t& worldtop = wallScratch().worldtop;
-static fixed_t& worldbottom = wallScratch().worldbottom;
-static fixed_t& worldhigh = wallScratch().worldhigh;
-static fixed_t& worldlow = wallScratch().worldlow;
-
-static fixed_t& pixhigh = wallScratch().pixhigh;
-static fixed_t& pixlow = wallScratch().pixlow;
-static fixed_t& pixhighstep = wallScratch().pixhighstep;
-static fixed_t& pixlowstep = wallScratch().pixlowstep;
-static fixed_t& topfrac = wallScratch().topfrac;
-static fixed_t& topstep = wallScratch().topstep;
-static fixed_t& bottomfrac = wallScratch().bottomfrac;
-static fixed_t& bottomstep = wallScratch().bottomstep;
+// by the file-scope-statics sweep - REFACTOR.md, Step 5); read by no other file. All twenty were
+// references onto that member until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a))
+// retired them - renderMaskedSegRange, renderSegLoop and storeWallRange each hoist wallScratch() once
+// (renderSegLoop is the per-column inner loop, so this matters for more than style: a per-access
+// wallScratch() call there would be a real per-pixel cost no golden would catch) and reach every
+// member through it.
 
 // Forward declarations so call order needs no rearranging.
 void renderMaskedSegRange(DrawSeg* ds, int x1, int x2);
@@ -81,6 +62,7 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
     auto& lights = lighting();
     auto& sprites = spriteState();
     auto& pt = viewPoint();
+    auto& wall = wallScratch();
 
     unsigned index;
     Column* col;
@@ -112,8 +94,8 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
 
     seg.maskedtexturecol = ds->maskedtexturecol;
 
-    rw_scalestep = ds->scalestep;
-    sprites.spryscale = ds->scale1 + (x1 - ds->x1) * rw_scalestep;
+    wall.rw_scalestep = ds->scalestep;
+    sprites.spryscale = ds->scale1 + (x1 - ds->x1) * wall.rw_scalestep;
     sprites.mfloorclip = ds->sprbottomclip;
     sprites.mceilingclip = ds->sprtopclip;
 
@@ -168,7 +150,7 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
             Doom::drawMaskedColumn(col);
             seg.maskedtexturecol[draw.dc_x] = DOOM_MAXSHORT;
         }
-        sprites.spryscale += rw_scalestep;
+        sprites.spryscale += wall.rw_scalestep;
     }
 }
 
@@ -188,6 +170,7 @@ void renderSegLoop()
     auto& scratch = renderScratch();
     auto& proj = viewProjection();
     auto& view = viewWindow();
+    auto& wall = wallScratch();
 
     angle_t angle;
     unsigned index;
@@ -203,7 +186,7 @@ void renderSegLoop()
     for (; seg.rw_x < seg.rw_stopx; seg.rw_x++)
     {
         // mark floor / ceiling areas
-        yl = (topfrac.raw + HEIGHTUNIT - 1) >> HEIGHTBITS;
+        yl = (wall.topfrac.raw + HEIGHTUNIT - 1) >> HEIGHTBITS;
 
         // no space above wall?
         if (yl < plane.ceilingclip[seg.rw_x] + 1)
@@ -224,7 +207,7 @@ void renderSegLoop()
             }
         }
 
-        yh = bottomfrac.raw >> HEIGHTBITS;
+        yh = wall.bottomfrac.raw >> HEIGHTBITS;
 
         if (yh >= plane.floorclip[seg.rw_x])
             yh = plane.floorclip[seg.rw_x] - 1;
@@ -247,12 +230,12 @@ void renderSegLoop()
         {
             // calculate texture offset
             const auto angleFine =
-                (rw_centerangle + proj.xtoviewangle[seg.rw_x]).fineIndex();
-            texturecolumn =
-                (rw_offset - FixedMul(finetangent[angleFine], scratch.rw_distance))
-                    .toInt();
+                (wall.rw_centerangle + proj.xtoviewangle[seg.rw_x]).fineIndex();
+            texturecolumn = (wall.rw_offset
+                             - FixedMul(finetangent[angleFine], scratch.rw_distance))
+                                .toInt();
             // calculate lighting
-            index = rw_scale.raw >> LIGHTSCALESHIFT;
+            index = wall.rw_scale.raw >> LIGHTSCALESHIFT;
 
             if (index >= MAXLIGHTSCALE)
                 index = MAXLIGHTSCALE - 1;
@@ -260,7 +243,7 @@ void renderSegLoop()
             draw.dc_colormap = seg.walllights[index];
             draw.dc_x = seg.rw_x;
             draw.dc_iscale = fixed_t {static_cast<std::int32_t>(
-                0xffffffffu / static_cast<unsigned>(rw_scale.raw))};
+                0xffffffffu / static_cast<unsigned>(wall.rw_scale.raw))};
         }
 
         // draw the wall tiers
@@ -269,7 +252,7 @@ void renderSegLoop()
             // single sided line
             draw.dc_yl = yl;
             draw.dc_yh = yh;
-            draw.dc_texturemid = rw_midtexturemid;
+            draw.dc_texturemid = wall.rw_midtexturemid;
             draw.dc_source = Doom::getColumn(seg.midtexture, texturecolumn);
             colfunc();
             plane.ceilingclip[seg.rw_x] = view.viewheight;
@@ -281,8 +264,8 @@ void renderSegLoop()
             if (seg.toptexture)
             {
                 // top wall
-                mid = pixhigh.raw >> HEIGHTBITS;
-                pixhigh += pixhighstep;
+                mid = wall.pixhigh.raw >> HEIGHTBITS;
+                wall.pixhigh += wall.pixhighstep;
 
                 if (mid >= plane.floorclip[seg.rw_x])
                     mid = plane.floorclip[seg.rw_x] - 1;
@@ -291,7 +274,7 @@ void renderSegLoop()
                 {
                     draw.dc_yl = yl;
                     draw.dc_yh = mid;
-                    draw.dc_texturemid = rw_toptexturemid;
+                    draw.dc_texturemid = wall.rw_toptexturemid;
                     draw.dc_source = Doom::getColumn(seg.toptexture, texturecolumn);
                     colfunc();
                     plane.ceilingclip[seg.rw_x] = mid;
@@ -309,8 +292,8 @@ void renderSegLoop()
             if (seg.bottomtexture)
             {
                 // bottom wall
-                mid = (pixlow.raw + HEIGHTUNIT - 1) >> HEIGHTBITS;
-                pixlow += pixlowstep;
+                mid = (wall.pixlow.raw + HEIGHTUNIT - 1) >> HEIGHTBITS;
+                wall.pixlow += wall.pixlowstep;
 
                 // no space above wall?
                 if (mid <= plane.ceilingclip[seg.rw_x])
@@ -320,7 +303,7 @@ void renderSegLoop()
                 {
                     draw.dc_yl = mid;
                     draw.dc_yh = yh;
-                    draw.dc_texturemid = rw_bottomtexturemid;
+                    draw.dc_texturemid = wall.rw_bottomtexturemid;
                     draw.dc_source =
                         Doom::getColumn(seg.bottomtexture, texturecolumn);
                     colfunc();
@@ -336,7 +319,7 @@ void renderSegLoop()
                     plane.floorclip[seg.rw_x] = yh + 1;
             }
 
-            if (maskedtexture)
+            if (wall.maskedtexture)
             {
                 // save texturecol
                 //  for backdrawing of masked mid texture
@@ -344,9 +327,9 @@ void renderSegLoop()
             }
         }
 
-        rw_scale += rw_scalestep;
-        topfrac += topstep;
-        bottomfrac += bottomstep;
+        wall.rw_scale += wall.rw_scalestep;
+        wall.topfrac += wall.topstep;
+        wall.bottomfrac += wall.bottomstep;
     }
 }
 
@@ -366,6 +349,7 @@ void storeWallRange(int start, int stop)
     auto& pt = viewPoint();
     auto& proj = viewProjection();
     auto& sky = skyState();
+    auto& wall = wallScratch();
 
     fixed_t hyp;
     fixed_t sineval;
@@ -416,15 +400,15 @@ void storeWallRange(int start, int stop)
     seg.rw_stopx = stop + 1;
 
     // calculate scale at both ends and step
-    bsp.ds_p->scale1 = rw_scale =
+    bsp.ds_p->scale1 = wall.rw_scale =
         Doom::scaleFromGlobalAngle(pt.viewangle + proj.xtoviewangle[start]);
 
     if (stop > start)
     {
         bsp.ds_p->scale2 =
             Doom::scaleFromGlobalAngle(pt.viewangle + proj.xtoviewangle[stop]);
-        bsp.ds_p->scalestep = rw_scalestep =
-            (bsp.ds_p->scale2 - rw_scale) / (stop - start);
+        bsp.ds_p->scalestep = wall.rw_scalestep =
+            (bsp.ds_p->scale2 - wall.rw_scale) / (stop - start);
     }
     else
     {
@@ -448,10 +432,10 @@ void storeWallRange(int start, int stop)
 
     // calculate texture boundaries
     //  and decide if floor / ceiling marks are needed
-    worldtop = bsp.frontsector->ceilingheight - pt.viewz;
-    worldbottom = bsp.frontsector->floorheight - pt.viewz;
+    wall.worldtop = bsp.frontsector->ceilingheight - pt.viewz;
+    wall.worldbottom = bsp.frontsector->floorheight - pt.viewz;
 
-    seg.midtexture = seg.toptexture = seg.bottomtexture = maskedtexture = 0;
+    seg.midtexture = seg.toptexture = seg.bottomtexture = wall.maskedtexture = 0;
     bsp.ds_p->maskedtexturecol = nullptr;
 
     if (!bsp.backsector)
@@ -465,14 +449,14 @@ void storeWallRange(int start, int stop)
             vtop = bsp.frontsector->floorheight
                    + textureheight[bsp.sidedef->midtexture];
             // bottom of texture at bottom
-            rw_midtexturemid = vtop - pt.viewz;
+            wall.rw_midtexturemid = vtop - pt.viewz;
         }
         else
         {
             // top of texture at top
-            rw_midtexturemid = worldtop;
+            wall.rw_midtexturemid = wall.worldtop;
         }
-        rw_midtexturemid += bsp.sidedef->rowoffset;
+        wall.rw_midtexturemid += bsp.sidedef->rowoffset;
 
         bsp.ds_p->silhouette = SIL_BOTH;
         bsp.ds_p->sprtopclip = sprites.screenheightarray;
@@ -524,17 +508,17 @@ void storeWallRange(int start, int stop)
             bsp.ds_p->silhouette |= SIL_TOP;
         }
 
-        worldhigh = bsp.backsector->ceilingheight - pt.viewz;
-        worldlow = bsp.backsector->floorheight - pt.viewz;
+        wall.worldhigh = bsp.backsector->ceilingheight - pt.viewz;
+        wall.worldlow = bsp.backsector->floorheight - pt.viewz;
 
         // hack to allow height changes in outdoor areas
         if (bsp.frontsector->ceilingpic == sky.skyflatnum
             && bsp.backsector->ceilingpic == sky.skyflatnum)
         {
-            worldtop = worldhigh;
+            wall.worldtop = wall.worldhigh;
         }
 
-        if (worldlow != worldbottom
+        if (wall.worldlow != wall.worldbottom
             || bsp.backsector->floorpic != bsp.frontsector->floorpic
             || bsp.backsector->lightlevel != bsp.frontsector->lightlevel)
         {
@@ -546,7 +530,7 @@ void storeWallRange(int start, int stop)
             seg.markfloor = false;
         }
 
-        if (worldhigh != worldtop
+        if (wall.worldhigh != wall.worldtop
             || bsp.backsector->ceilingpic != bsp.frontsector->ceilingpic
             || bsp.backsector->lightlevel != bsp.frontsector->lightlevel)
         {
@@ -565,14 +549,14 @@ void storeWallRange(int start, int stop)
             seg.markceiling = seg.markfloor = true;
         }
 
-        if (worldhigh < worldtop)
+        if (wall.worldhigh < wall.worldtop)
         {
             // top texture
             seg.toptexture = texturetranslation[bsp.sidedef->toptexture];
             if (bsp.linedef->flags & ML_DONTPEGTOP)
             {
                 // top of texture at top
-                rw_toptexturemid = worldtop;
+                wall.rw_toptexturemid = wall.worldtop;
             }
             else
             {
@@ -580,10 +564,10 @@ void storeWallRange(int start, int stop)
                        + textureheight[bsp.sidedef->toptexture];
 
                 // bottom of texture
-                rw_toptexturemid = vtop - pt.viewz;
+                wall.rw_toptexturemid = vtop - pt.viewz;
             }
         }
-        if (worldlow > worldbottom)
+        if (wall.worldlow > wall.worldbottom)
         {
             // bottom texture
             seg.bottomtexture = texturetranslation[bsp.sidedef->bottomtexture];
@@ -592,19 +576,19 @@ void storeWallRange(int start, int stop)
             {
                 // bottom of texture at bottom
                 // top of texture at top
-                rw_bottomtexturemid = worldtop;
+                wall.rw_bottomtexturemid = wall.worldtop;
             }
             else // top of texture at top
-                rw_bottomtexturemid = worldlow;
+                wall.rw_bottomtexturemid = wall.worldlow;
         }
-        rw_toptexturemid += bsp.sidedef->rowoffset;
-        rw_bottomtexturemid += bsp.sidedef->rowoffset;
+        wall.rw_toptexturemid += bsp.sidedef->rowoffset;
+        wall.rw_bottomtexturemid += bsp.sidedef->rowoffset;
 
         // allocate space for masked texture tables
         if (bsp.sidedef->midtexture)
         {
             // masked midtexture
-            maskedtexture = true;
+            wall.maskedtexture = true;
             bsp.ds_p->maskedtexturecol = seg.maskedtexturecol =
                 plane.lastopening - seg.rw_x;
             plane.lastopening += seg.rw_stopx - seg.rw_x;
@@ -613,7 +597,7 @@ void storeWallRange(int start, int stop)
 
     // calculate rw_offset (only needed for textured lines)
     seg.segtextured =
-        seg.midtexture | seg.toptexture | seg.bottomtexture | maskedtexture;
+        seg.midtexture | seg.toptexture | seg.bottomtexture | wall.maskedtexture;
 
     if (seg.segtextured)
     {
@@ -633,13 +617,13 @@ void storeWallRange(int start, int stop)
             offsetangle = ANG90;
 
         sineval = finesine[offsetangle.fineIndex()];
-        rw_offset = FixedMul(hyp, sineval);
+        wall.rw_offset = FixedMul(hyp, sineval);
 
         if (scratch.rw_normalangle - scratch.rw_angle1 < ANG180)
-            rw_offset = -rw_offset;
+            wall.rw_offset = -wall.rw_offset;
 
-        rw_offset += bsp.sidedef->textureoffset + bsp.curline->offset;
-        rw_centerangle = ANG90 + pt.viewangle - scratch.rw_normalangle;
+        wall.rw_offset += bsp.sidedef->textureoffset + bsp.curline->offset;
+        wall.rw_centerangle = ANG90 + pt.viewangle - scratch.rw_normalangle;
 
         // calculate light table
         //  use different light tables
@@ -682,30 +666,33 @@ void storeWallRange(int start, int stop)
     }
 
     // calculate incremental stepping values for texture edges
-    worldtop >>= 4;
-    worldbottom >>= 4;
+    wall.worldtop >>= 4;
+    wall.worldbottom >>= 4;
 
-    topstep = -FixedMul(rw_scalestep, worldtop);
-    topfrac = (proj.centeryfrac >> 4) - FixedMul(worldtop, rw_scale);
+    wall.topstep = -FixedMul(wall.rw_scalestep, wall.worldtop);
+    wall.topfrac = (proj.centeryfrac >> 4) - FixedMul(wall.worldtop, wall.rw_scale);
 
-    bottomstep = -FixedMul(rw_scalestep, worldbottom);
-    bottomfrac = (proj.centeryfrac >> 4) - FixedMul(worldbottom, rw_scale);
+    wall.bottomstep = -FixedMul(wall.rw_scalestep, wall.worldbottom);
+    wall.bottomfrac =
+        (proj.centeryfrac >> 4) - FixedMul(wall.worldbottom, wall.rw_scale);
 
     if (bsp.backsector)
     {
-        worldhigh >>= 4;
-        worldlow >>= 4;
+        wall.worldhigh >>= 4;
+        wall.worldlow >>= 4;
 
-        if (worldhigh < worldtop)
+        if (wall.worldhigh < wall.worldtop)
         {
-            pixhigh = (proj.centeryfrac >> 4) - FixedMul(worldhigh, rw_scale);
-            pixhighstep = -FixedMul(rw_scalestep, worldhigh);
+            wall.pixhigh =
+                (proj.centeryfrac >> 4) - FixedMul(wall.worldhigh, wall.rw_scale);
+            wall.pixhighstep = -FixedMul(wall.rw_scalestep, wall.worldhigh);
         }
 
-        if (worldlow > worldbottom)
+        if (wall.worldlow > wall.worldbottom)
         {
-            pixlow = (proj.centeryfrac >> 4) - FixedMul(worldlow, rw_scale);
-            pixlowstep = -FixedMul(rw_scalestep, worldlow);
+            wall.pixlow =
+                (proj.centeryfrac >> 4) - FixedMul(wall.worldlow, wall.rw_scale);
+            wall.pixlowstep = -FixedMul(wall.rw_scalestep, wall.worldlow);
         }
     }
 
@@ -721,7 +708,8 @@ void storeWallRange(int start, int stop)
     renderSegLoop();
 
     // save sprite clipping info
-    if (((bsp.ds_p->silhouette & SIL_TOP) || maskedtexture) && !bsp.ds_p->sprtopclip)
+    if (((bsp.ds_p->silhouette & SIL_TOP) || wall.maskedtexture)
+        && !bsp.ds_p->sprtopclip)
     {
         doom_memcpy(plane.lastopening,
                     plane.ceilingclip + start,
@@ -730,7 +718,7 @@ void storeWallRange(int start, int stop)
         plane.lastopening += seg.rw_stopx - start;
     }
 
-    if (((bsp.ds_p->silhouette & SIL_BOTTOM) || maskedtexture)
+    if (((bsp.ds_p->silhouette & SIL_BOTTOM) || wall.maskedtexture)
         && !bsp.ds_p->sprbottomclip)
     {
         doom_memcpy(
@@ -739,12 +727,12 @@ void storeWallRange(int start, int stop)
         plane.lastopening += seg.rw_stopx - start;
     }
 
-    if (maskedtexture && !(bsp.ds_p->silhouette & SIL_TOP))
+    if (wall.maskedtexture && !(bsp.ds_p->silhouette & SIL_TOP))
     {
         bsp.ds_p->silhouette |= SIL_TOP;
         bsp.ds_p->tsilheight = fixed_t {DOOM_MININT};
     }
-    if (maskedtexture && !(bsp.ds_p->silhouette & SIL_BOTTOM))
+    if (wall.maskedtexture && !(bsp.ds_p->silhouette & SIL_BOTTOM))
     {
         bsp.ds_p->silhouette |= SIL_BOTTOM;
         bsp.ds_p->bsilheight = fixed_t {DOOM_MAXINT};

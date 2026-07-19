@@ -15,10 +15,13 @@ namespace Doom
 // which lands here too so lastopening stays in the same cluster as the openings it points into.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Render/Planes' own namespace-scope private globals, read by no other file. The vanilla names become
-// references onto the members (arrays as references-to-array). lastvisplane points into visplanes,
-// but is reset by Doom::clearPlanes each frame (not a self-referential initializer), so it is safe as a
-// member. (The dead vestigial `ceilingfunc` - defined, never read, distinct from the shim's externed
+// Render/Planes' own namespace-scope private globals, read by no other file. The array members are
+// references onto the members (references-to-array). lastvisplane, planezlight, planeheight,
+// basexscale and baseyscale were references too until the file-local-alias sweep (REFACTOR.md,
+// Step 9 strand (a)) retired them - mapPlane, clearPlanes, findPlane, checkPlane and drawPlanes each
+// hoist planeScratch() once and reach them through it (lastvisplane points into visplanes, but is
+// reset by Doom::clearPlanes each frame rather than bound at static-init, so it was always safe to
+// retire). (The dead vestigial `ceilingfunc` - defined, never read, distinct from the shim's externed
 // `ceilingfunc_t` - was deleted rather than migrated.) Live frame-golden-covered - every floor and
 // ceiling the demos draw is batched and mapped through these.
 struct PlaneScratch

@@ -36,12 +36,11 @@ void Doom::storeWallRange(int start, int stop);
 namespace Doom
 {
 // ClipRange and the solidsegs/newend clip ranges now live on the Engine (Render/SolidSegs.h, moved
-// by the file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are references onto that
-// member. The type moved to the header so solidsegs could become a member (an anonymous-struct
-// typedef in the .cpp cannot be named there).
-
-// newend is one past the last valid seg
-static ClipRange*& newend = solidSegs().newend;
+// by the file-scope-statics sweep - REFACTOR.md, Step 5); solidsegs is a reference onto that member.
+// The type moved to the header so solidsegs could become a member (an anonymous-struct typedef in
+// the .cpp cannot be named there). newend was a reference too until the file-local-alias sweep
+// (REFACTOR.md, Step 9 strand (a)) retired it; clipSolidWallSegment and clearClipSegs each hoist
+// solidSegs() once and reach it as solid.newend.
 
 static ClipRange (&solidsegs)[MAXSEGS] = solidSegs().solidsegs;
 
@@ -85,6 +84,8 @@ void clipSolidWallSegment(int first, int last)
     ClipRange* next;
     ClipRange* start;
 
+    auto& solid = solidSegs();
+
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
     start = solidsegs;
@@ -98,8 +99,8 @@ void clipSolidWallSegment(int first, int last)
             // Post is entirely visible (above start),
             //  so insert a new clippost.
             Doom::storeWallRange(first, last);
-            next = newend;
-            newend++;
+            next = solid.newend;
+            solid.newend++;
 
             while (next != start)
             {
@@ -151,13 +152,13 @@ crunch:
         return;
     }
 
-    while (next++ != newend)
+    while (next++ != solid.newend)
     {
         // Remove a post.
         *++start = *next;
     }
 
-    newend = start + 1;
+    solid.newend = start + 1;
 }
 
 //
@@ -217,7 +218,7 @@ void clearClipSegs()
     solidsegs[0].last = -1;
     solidsegs[1].first = viewWindow().viewwidth;
     solidsegs[1].last = 0x7fffffff;
-    newend = solidsegs + 2;
+    solidSegs().newend = solidsegs + 2;
 }
 
 //

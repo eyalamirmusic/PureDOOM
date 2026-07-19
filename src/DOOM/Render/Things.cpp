@@ -39,15 +39,11 @@ namespace Doom
 {
 
 // File-local scratch, now on the Engine (Render/SpriteScratch.h, moved by the file-scope-statics
-// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; no other file
-// reads these.
-static LightTable**& spritelights = spriteScratch().spritelights;
-
+// sweep - REFACTOR.md, Step 5); no other file reads these. spritelights, maxframe, spritename and
+// overflowsprite were references onto that member too until the file-local-alias sweep (REFACTOR.md,
+// Step 9 strand (a)) retired them - each toucher below hoists spriteScratch() and reaches them
+// through it.
 static SpriteFrame (&sprtemp)[29] = spriteScratch().sprtemp;
-static int& maxframe = spriteScratch().maxframe;
-static char*& spritename = spriteScratch().spritename;
-
-static VisSprite& overflowsprite = spriteScratch().overflowsprite;
 
 // Forward declarations so call order needs no rearranging.
 void installSpriteLump(int lump,
@@ -78,6 +74,7 @@ void installSpriteLump(int lump,
                        doom_boolean flipped)
 {
     auto& gd = graphicsData();
+    auto& scratch = spriteScratch();
 
     if (frame >= 29 || rotation > 8)
     {
@@ -87,8 +84,8 @@ void installSpriteLump(int lump,
         fatalError(error_buf);
     }
 
-    if (static_cast<int>(frame) > maxframe)
-        maxframe = frame;
+    if (static_cast<int>(frame) > scratch.maxframe)
+        scratch.maxframe = frame;
 
     if (rotation == 0)
     {
@@ -96,7 +93,7 @@ void installSpriteLump(int lump,
         if (sprtemp[frame].rotate == false)
         {
             doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-            doom_concat(error_buf, spritename);
+            doom_concat(error_buf, scratch.spritename);
             doom_concat(error_buf, " frame ");
             doom_concat(error_buf, doom_ctoa('A' + frame));
             doom_concat(error_buf, " has multip rot=0 lump");
@@ -106,7 +103,7 @@ void installSpriteLump(int lump,
         if (sprtemp[frame].rotate == true)
         {
             doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-            doom_concat(error_buf, spritename);
+            doom_concat(error_buf, scratch.spritename);
             doom_concat(error_buf, " frame ");
             doom_concat(error_buf, doom_ctoa('A' + frame));
             doom_concat(error_buf, " has rotations ");
@@ -126,7 +123,7 @@ void installSpriteLump(int lump,
     if (sprtemp[frame].rotate == false)
     {
         doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-        doom_concat(error_buf, spritename);
+        doom_concat(error_buf, scratch.spritename);
         doom_concat(error_buf, " frame ");
         doom_concat(error_buf, doom_ctoa('A' + frame));
         doom_concat(error_buf, " has rotations ");
@@ -140,7 +137,7 @@ void installSpriteLump(int lump,
     if (sprtemp[frame].lump[rotation] != -1)
     {
         doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-        doom_concat(error_buf, spritename);
+        doom_concat(error_buf, scratch.spritename);
         doom_concat(error_buf, " : ");
         doom_concat(error_buf, doom_ctoa('A' + frame));
         doom_concat(error_buf, " : ");
@@ -181,6 +178,7 @@ void initSpriteDefs(char** namelist)
     int patched;
 
     auto& gd = graphicsData();
+    auto& scratch = spriteScratch();
 
     // count the number of sprite names
     check = namelist;
@@ -206,10 +204,10 @@ void initSpriteDefs(char** namelist)
     // Just compare 4 characters as ints
     for (i = 0; i < gd.numsprites; i++)
     {
-        spritename = namelist[i];
+        scratch.spritename = namelist[i];
         doom_memset(sprtemp, -1, sizeof(sprtemp));
 
-        maxframe = -1;
+        scratch.maxframe = -1;
         intname = *reinterpret_cast<int*>(namelist[i]);
 
         // scan the lumps,
@@ -240,15 +238,15 @@ void initSpriteDefs(char** namelist)
         }
 
         // check the frames that were found for completeness
-        if (maxframe == -1)
+        if (scratch.maxframe == -1)
         {
             sprites[i].numframes = 0;
             continue;
         }
 
-        maxframe++;
+        scratch.maxframe++;
 
-        for (frame = 0; frame < maxframe; frame++)
+        for (frame = 0; frame < scratch.maxframe; frame++)
         {
             switch (static_cast<int>(sprtemp[frame].rotate))
             {
@@ -288,10 +286,11 @@ void initSpriteDefs(char** namelist)
         // allocate space for the frames present and copy sprtemp to it. The frames
         // vector is RAII-owned by the SpriteDef now (Step 9); resize then copy the
         // POD sprtemp entries into its storage, as the malloc + memcpy did.
-        sprites[i].numframes = maxframe;
-        sprites[i].spriteframes.resize(maxframe);
-        doom_memcpy(
-            sprites[i].spriteframes.data(), sprtemp, maxframe * sizeof(SpriteFrame));
+        sprites[i].numframes = scratch.maxframe;
+        sprites[i].spriteframes.resize(scratch.maxframe);
+        doom_memcpy(sprites[i].spriteframes.data(),
+                    sprtemp,
+                    scratch.maxframe * sizeof(SpriteFrame));
     }
 }
 
@@ -334,7 +333,7 @@ VisSprite* newVisSprite()
     auto& sprState = spriteState();
 
     if (sprState.vissprite_p == &sprState.vissprites[MAXVISSPRITES])
-        return &overflowsprite;
+        return &spriteScratch().overflowsprite;
 
     sprState.vissprite_p++;
     return sprState.vissprite_p - 1;
@@ -618,7 +617,7 @@ void projectSprite(Mobj* thing)
         if (index >= MAXLIGHTSCALE)
             index = MAXLIGHTSCALE - 1;
 
-        vis->colormap = spritelights[index];
+        vis->colormap = spriteScratch().spritelights[index];
     }
 }
 
@@ -633,6 +632,7 @@ void addSprites(Sector* sec)
 
     auto& valid = validCount();
     auto& lights = lighting();
+    auto& scratch = spriteScratch();
 
     // BSP is traversed by subsector.
     // A sector might have been split into several
@@ -647,11 +647,11 @@ void addSprites(Sector* sec)
     lightnum = (sec->lightlevel >> LIGHTSEGSHIFT) + lights.extralight;
 
     if (lightnum < 0)
-        spritelights = lights.scalelight[0];
+        scratch.spritelights = lights.scalelight[0];
     else if (lightnum >= LIGHTLEVELS)
-        spritelights = lights.scalelight[LIGHTLEVELS - 1];
+        scratch.spritelights = lights.scalelight[LIGHTLEVELS - 1];
     else
-        spritelights = lights.scalelight[lightnum];
+        scratch.spritelights = lights.scalelight[lightnum];
 
     // Handle all things in sector.
     for (thing = sec->thinglist; thing; thing = thing->snext)
@@ -768,7 +768,7 @@ void drawPSprite(PspDef* psp)
     else
     {
         // local light
-        vis->colormap = spritelights[MAXLIGHTSCALE - 1];
+        vis->colormap = spriteScratch().spritelights[MAXLIGHTSCALE - 1];
     }
 
     drawVisSprite(vis);
@@ -786,17 +786,18 @@ void drawPlayerSprites()
     auto& pt = viewPoint();
     auto& lights = lighting();
     auto& sprState = spriteState();
+    auto& scratch = spriteScratch();
 
     // get light level
     lightnum = (pt.viewplayer->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT)
                + lights.extralight;
 
     if (lightnum < 0)
-        spritelights = lights.scalelight[0];
+        scratch.spritelights = lights.scalelight[0];
     else if (lightnum >= LIGHTLEVELS)
-        spritelights = lights.scalelight[LIGHTLEVELS - 1];
+        scratch.spritelights = lights.scalelight[LIGHTLEVELS - 1];
     else
-        spritelights = lights.scalelight[lightnum];
+        scratch.spritelights = lights.scalelight[lightnum];
 
     // clip to screen bounds
     sprState.mfloorclip = sprState.screenheightarray;

@@ -66,12 +66,12 @@ struct MapTexture
 
 // r_data's own state - the per-texture composite cache, patch/flat bookkeeping and the memory
 // counters - now lives on the Engine (Render/CompositeCache.h, moved by the file-scope-statics
-// sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member; read by nothing
-// else.
-static int& lastflat = compositeCache().lastflat;
-static int& firstpatch = compositeCache().firstpatch;
-static int& lastpatch = compositeCache().lastpatch;
-static int& numpatches = compositeCache().numpatches;
+// sweep - REFACTOR.md, Step 5); read by nothing else. lastflat, flatmemory, texturememory and
+// spritememory were references onto that member until the file-local-alias sweep (REFACTOR.md,
+// Step 9 strand (a)) retired them - initFlats and precacheLevel each hoist compositeCache() once.
+// firstpatch/lastpatch/numpatches were references too, but nothing in this file (or anywhere else)
+// ever read them, so they were simply dropped rather than hoisted; the fields still live on
+// CompositeCache for anyone who wants to fill them in again.
 // The composition tables are RAII-owned by CompositeCache now (Step 9); these are plain-pointer
 // VIEWS onto the owners' data(), refreshed by initTextures once the vectors are sized (which is
 // before any read - generateLookup runs from initTextures, generateComposite/getColumn at render
@@ -82,9 +82,6 @@ static int* texturecompositesize = nullptr;
 static short** texturecolumnlump = nullptr;
 static unsigned short** texturecolumnofs = nullptr;
 static byte** texturecomposite = nullptr;
-static int& flatmemory = compositeCache().flatmemory;
-static int& texturememory = compositeCache().texturememory;
-static int& spritememory = compositeCache().spritememory;
 
 // Forward declarations so call order needs no rearranging.
 void drawColumnInCache(Column* patch, byte* cache, int originy, int cacheheight);
@@ -514,10 +511,11 @@ void initTextures()
 void initFlats()
 {
     auto& gd = graphicsData();
+    auto& cc = compositeCache();
 
     gd.firstflat = Doom::wad().number("F_START") + 1;
-    lastflat = Doom::wad().number("F_END") - 1;
-    gd.numflats = lastflat - gd.firstflat + 1;
+    cc.lastflat = Doom::wad().number("F_END") - 1;
+    gd.numflats = cc.lastflat - gd.firstflat + 1;
 
     // Create translation table for global animation. GraphicsData owns it (Step 9);
     // flattranslation is a view onto data() (P_ animation writes through it).
@@ -692,6 +690,7 @@ void precacheLevel()
         return;
 
     auto& gd = graphicsData();
+    auto& cc = compositeCache();
 
     // Precache flats.
     auto flatpresent = EA::Vector<char>(gd.numflats);
@@ -702,14 +701,14 @@ void precacheLevel()
         flatpresent[sectors[i].ceilingpic] = 1;
     }
 
-    flatmemory = 0;
+    cc.flatmemory = 0;
 
     for (i = 0; i < gd.numflats; i++)
     {
         if (flatpresent[i])
         {
             lump = gd.firstflat + i;
-            flatmemory += Doom::wad().info(lump).size;
+            cc.flatmemory += Doom::wad().info(lump).size;
             Doom::cacheLumpNum(lump);
         }
     }
@@ -732,7 +731,7 @@ void precacheLevel()
     //  name.
     texturepresent[skyState().skytexture] = 1;
 
-    texturememory = 0;
+    cc.texturememory = 0;
     for (i = 0; i < gd.numtextures; i++)
     {
         if (!texturepresent[i])
@@ -743,7 +742,7 @@ void precacheLevel()
         for (j = 0; j < texture->patchcount; j++)
         {
             lump = texture->patches[j].patch;
-            texturememory += Doom::wad().info(lump).size;
+            cc.texturememory += Doom::wad().info(lump).size;
             Doom::cacheLumpNum(lump);
         }
     }
@@ -760,7 +759,7 @@ void precacheLevel()
                 1;
     }
 
-    spritememory = 0;
+    cc.spritememory = 0;
     for (i = 0; i < gd.numsprites; i++)
     {
         if (!spritepresent[i])
@@ -772,7 +771,7 @@ void precacheLevel()
             for (k = 0; k < 8; k++)
             {
                 lump = gd.firstspritelump + sf->lump[k];
-                spritememory += Doom::wad().info(lump).size;
+                cc.spritememory += Doom::wad().info(lump).size;
                 Doom::cacheLumpNum(lump);
             }
         }

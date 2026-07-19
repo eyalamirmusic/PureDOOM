@@ -15,8 +15,12 @@ namespace Doom
 // extern.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); read by no other
-// file. The vanilla names become references onto the members. Live frame-golden-covered - every wall
-// the demos draw is laid down through these - so the byte-identical goldens are a live confirmation.
+// file. All twenty vanilla names were references onto the members until the file-local-alias sweep
+// (REFACTOR.md, Step 9 strand (a)) retired them; Render/Segs's three functions each hoist
+// wallScratch() once and read/write through it, renderSegLoop (the per-column inner loop) included -
+// a per-access wallScratch() call there would be a real per-pixel cost. Live frame-golden-covered -
+// every wall the demos draw is laid down through these - so the byte-identical goldens are a live
+// confirmation.
 struct WallScratch
 {
     doom_boolean maskedtexture = false; // the seg has a masked middle texture

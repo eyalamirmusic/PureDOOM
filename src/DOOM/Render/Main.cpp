@@ -47,9 +47,9 @@
 namespace Doom
 {
 // framecount/setdetail now live on the Engine (Render/RenderMainState.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are references onto that member.
-static int& framecount = renderMainState().framecount;
-static int& setdetail = renderMainState().setdetail;
+// file-scope-statics sweep - REFACTOR.md, Step 5); they were references onto that member until the
+// file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - setViewSize, executeSetViewSize
+// and renderInit each reach them through renderMainState() directly.
 void (*transcolfunc)();
 
 // Forward declarations so call order needs no rearranging.
@@ -508,7 +508,7 @@ void setViewSize(int blocks, int detail)
 
     view.setsizeneeded = true;
     view.setblocks = blocks;
-    setdetail = detail;
+    renderMainState().setdetail = detail;
 }
 
 //
@@ -542,7 +542,7 @@ void executeSetViewSize()
         view.viewheight = (view.setblocks * 168 / 10) & ~7;
     }
 
-    view.detailshift = setdetail;
+    view.detailshift = renderMainState().setdetail;
     view.viewwidth = view.scaledviewwidth >> view.detailshift;
 
     proj.centery = view.viewheight / 2;
@@ -638,7 +638,7 @@ void renderInit()
     Doom::initTranslationTables();
     doom_print("\nR_InitTranslationsTables");
 
-    framecount = 0;
+    renderMainState().framecount = 0;
 }
 
 //
@@ -700,7 +700,7 @@ void setupFrame(Player& player)
     else
         lights.fixedcolormap = nullptr;
 
-    framecount++;
+    renderMainState().framecount++;
     validCount().validcount++;
 }
 

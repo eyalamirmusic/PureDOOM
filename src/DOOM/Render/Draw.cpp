@@ -181,12 +181,11 @@ EA::Array<int, FUZZTABLE> fuzzoffset = {
     -FUZZOFF, FUZZOFF,  FUZZOFF,  FUZZOFF,  FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,
     -FUZZOFF, FUZZOFF};
 
-static int& fuzzpos = drawTables().fuzzpos;
-
 void drawFuzzColumn()
 {
     auto& draw = drawState();
     auto& view = viewWindow();
+    auto& tables = drawTables();
 
     int count;
     byte* dest;
@@ -232,11 +231,11 @@ void drawFuzzColumn()
         //  a pixel that is either one column
         //  left or right of the current one.
         // Add index from colormap to index.
-        *dest = colormaps[6 * 256 + dest[fuzzoffset[fuzzpos]]];
+        *dest = colormaps[6 * 256 + dest[fuzzoffset[tables.fuzzpos]]];
 
         // Clamp table lookup index.
-        if (++fuzzpos == FUZZTABLE)
-            fuzzpos = 0;
+        if (++tables.fuzzpos == FUZZTABLE)
+            tables.fuzzpos = 0;
 
         dest += SCREENWIDTH;
     } while (count--);

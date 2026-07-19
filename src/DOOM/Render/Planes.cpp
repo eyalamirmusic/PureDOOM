@@ -34,18 +34,16 @@
 namespace Doom
 {
 // The visplane and span machinery now lives on the Engine (Render/PlaneScratch.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names are references onto that member;
-// read by no other file. (The header-externed lastopening stays in the r_plane shim; the dead
-// vestigial `ceilingfunc` was deleted.)
+// file-scope-statics sweep - REFACTOR.md, Step 5); the array members below are references onto that
+// member. lastvisplane, planezlight, planeheight, basexscale and baseyscale were references too until
+// the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - mapPlane, clearPlanes,
+// findPlane, checkPlane and drawPlanes each hoist planeScratch() once and reach them through it.
+// (The header-externed lastopening stays in the r_plane shim; the dead vestigial `ceilingfunc` was
+// deleted.)
 static VisPlane (&visplanes)[MAXVISPLANES] = planeScratch().visplanes;
-static VisPlane*& lastvisplane = planeScratch().lastvisplane;
 static short (&openings)[MAXOPENINGS] = planeScratch().openings;
 static int (&spanstart)[SCREENHEIGHT] = planeScratch().spanstart;
 static int (&spanstop)[SCREENHEIGHT] = planeScratch().spanstop;
-static LightTable**& planezlight = planeScratch().planezlight;
-static fixed_t& planeheight = planeScratch().planeheight;
-static fixed_t& basexscale = planeScratch().basexscale;
-static fixed_t& baseyscale = planeScratch().baseyscale;
 static fixed_t (&cachedheight)[SCREENHEIGHT] = planeScratch().cachedheight;
 static fixed_t (&cacheddistance)[SCREENHEIGHT] = planeScratch().cacheddistance;
 static fixed_t (&cachedxstep)[SCREENHEIGHT] = planeScratch().cachedxstep;
@@ -108,12 +106,12 @@ void mapPlane(int y, int x1, int x2)
     }
 #endif
 
-    if (planeheight != cachedheight[y])
+    if (plane.planeheight != cachedheight[y])
     {
-        cachedheight[y] = planeheight;
-        distance = cacheddistance[y] = FixedMul(planeheight, plane.yslope[y]);
-        draw.ds_xstep = cachedxstep[y] = FixedMul(distance, basexscale);
-        draw.ds_ystep = cachedystep[y] = FixedMul(distance, baseyscale);
+        cachedheight[y] = plane.planeheight;
+        distance = cacheddistance[y] = FixedMul(plane.planeheight, plane.yslope[y]);
+        draw.ds_xstep = cachedxstep[y] = FixedMul(distance, plane.basexscale);
+        draw.ds_ystep = cachedystep[y] = FixedMul(distance, plane.baseyscale);
     }
     else
     {
@@ -136,7 +134,7 @@ void mapPlane(int y, int x1, int x2)
         if (index >= MAXLIGHTZ)
             index = MAXLIGHTZ - 1;
 
-        draw.ds_colormap = planezlight[index];
+        draw.ds_colormap = plane.planezlight[index];
     }
 
     draw.ds_y = y;
@@ -166,7 +164,7 @@ void clearPlanes()
         plane.ceilingclip[i] = -1;
     }
 
-    lastvisplane = visplanes;
+    plane.lastvisplane = visplanes;
     plane.lastopening = openings;
 
     // texture calculation
@@ -176,8 +174,8 @@ void clearPlanes()
     const auto angleFine = (viewPoint().viewangle - ANG90).fineIndex();
 
     // scale will be unit scale at SCREENWIDTH/2 distance
-    basexscale = FixedDiv(finecosine[angleFine], proj.centerxfrac);
-    baseyscale = -FixedDiv(finesine[angleFine], proj.centerxfrac);
+    plane.basexscale = FixedDiv(finecosine[angleFine], proj.centerxfrac);
+    plane.baseyscale = -FixedDiv(finesine[angleFine], proj.centerxfrac);
 }
 
 //
@@ -187,13 +185,15 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
 {
     VisPlane* check;
 
+    auto& plane = planeScratch();
+
     if (picnum == skyState().skyflatnum)
     {
         height = fixed_t {}; // all skys map together
         lightlevel = 0;
     }
 
-    for (check = visplanes; check < lastvisplane; check++)
+    for (check = visplanes; check < plane.lastvisplane; check++)
     {
         if (height == check->height && picnum == check->picnum
             && lightlevel == check->lightlevel)
@@ -202,13 +202,13 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
         }
     }
 
-    if (check < lastvisplane)
+    if (check < plane.lastvisplane)
         return check;
 
-    if (lastvisplane - visplanes == MAXVISPLANES)
+    if (plane.lastvisplane - visplanes == MAXVISPLANES)
         fatalError("Error: findPlane: no more visplanes");
 
-    lastvisplane++;
+    plane.lastvisplane++;
 
     check->height = height;
     check->picnum = picnum;
@@ -231,6 +231,8 @@ VisPlane* checkPlane(VisPlane* pl, int start, int stop)
     int unionl;
     int unionh;
     int x;
+
+    auto& plane = planeScratch();
 
     if (start < pl->minx)
     {
@@ -268,11 +270,11 @@ VisPlane* checkPlane(VisPlane* pl, int start, int stop)
     }
 
     // make a new visplane
-    lastvisplane->height = pl->height;
-    lastvisplane->picnum = pl->picnum;
-    lastvisplane->lightlevel = pl->lightlevel;
+    plane.lastvisplane->height = pl->height;
+    plane.lastvisplane->picnum = pl->picnum;
+    plane.lastvisplane->lightlevel = pl->lightlevel;
 
-    pl = lastvisplane++;
+    pl = plane.lastvisplane++;
     pl->minx = start;
     pl->maxx = stop;
 
@@ -320,6 +322,7 @@ void drawPlanes()
     auto& pt = viewPoint();
     auto& proj = viewProjection();
     auto& lights = lighting();
+    auto& plane = planeScratch();
 
     VisPlane* pl;
     int light;
@@ -341,14 +344,14 @@ void drawPlanes()
         fatalError(error_buf);
     }
 
-    if (lastvisplane - visplanes > MAXVISPLANES)
+    if (plane.lastvisplane - visplanes > MAXVISPLANES)
     {
         //fatalError("Error: drawPlanes: visplane overflow (%i)",
         //        lastvisplane - visplanes);
 
         doom_strcpy(error_buf, "Error: drawPlanes: visplane overflow (");
         doom_concat(error_buf,
-                    doom_itoa(static_cast<int>(lastvisplane - visplanes), 10));
+                    doom_itoa(static_cast<int>(plane.lastvisplane - visplanes), 10));
         doom_concat(error_buf, ")");
         fatalError(error_buf);
     }
@@ -367,7 +370,7 @@ void drawPlanes()
     }
 #endif
 
-    for (pl = visplanes; pl < lastvisplane; pl++)
+    for (pl = visplanes; pl < plane.lastvisplane; pl++)
     {
         if (pl->minx > pl->maxx)
             continue;
@@ -403,7 +406,7 @@ void drawPlanes()
         draw.ds_source = static_cast<byte*>(Doom::cacheLumpNum(
             graphicsData().firstflat + flattranslation[pl->picnum]));
 
-        planeheight = doom_abs(pl->height - pt.viewz);
+        plane.planeheight = doom_abs(pl->height - pt.viewz);
         light = (pl->lightlevel >> LIGHTSEGSHIFT) + lights.extralight;
 
         if (light >= LIGHTLEVELS)
@@ -412,7 +415,7 @@ void drawPlanes()
         if (light < 0)
             light = 0;
 
-        planezlight = lights.zlight[light];
+        plane.planezlight = lights.zlight[light];
 
         pl->top[pl->maxx + 1] = 0xff;
         pl->top[pl->minx - 1] = 0xff;

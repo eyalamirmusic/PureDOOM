@@ -7,8 +7,7 @@
 namespace Doom
 {
 // The renderer's texture-composition working data - what Doom::initData / Doom::generateComposite build and
-// Doom::getColumn reads: the PNAMES patch-directory bounds (firstpatch / lastpatch / numpatches) and the
-// last flat, and the per-composed-texture column cache (texturewidthmask, texturecompositesize, the
+// Doom::getColumn reads: the last flat, and the per-composed-texture column cache (texturewidthmask, texturecompositesize, the
 // texturecolumnlump / texturecolumnofs column tables, and texturecomposite itself, the lazily
 // generated column bytes), plus the flat/texture/sprite memory counters Doom::precacheLevel tallies.
 // Distinct from GraphicsData (the loaded-once WAD graphics, read-only after Doom::initData): this is the
@@ -16,15 +15,19 @@ namespace Doom
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
 // Render/Data's own namespace-scope private globals, read by no other file (the r_data.cpp shim
-// re-exports the cross-read GraphicsData names, not these). The vanilla names become references onto
-// the members. Live frame-golden-covered - every wall column the demos draw goes through the
-// composite cache - so the byte-identical goldens are a live confirmation, not just build + app-link.
+// re-exports the cross-read GraphicsData names, not these). The seven scalars were references onto
+// the members until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them -
+// initFlats and precacheLevel, the only touchers of lastflat/flatmemory/texturememory/spritememory,
+// each hoist compositeCache() once. firstpatch/lastpatch/numpatches went further: retiring their
+// aliases showed nothing read them and nothing had ever filled them in, so the members are deleted
+// too, the way Step 5 deleted viewangleoffset/linecount/loopcount. The composition tables below are a
+// separate mechanism - RAII-owned vectors with plain-pointer views, not references - and are
+// untouched by that sweep. Live frame-golden-covered - every wall column the demos draw goes through
+// the composite cache - so the byte-identical goldens are a live confirmation, not just build +
+// app-link.
 struct CompositeCache
 {
     int lastflat = 0; // last flat lump (firstflat/numflats are in GraphicsData)
-    int firstpatch = 0; // first PNAMES patch lump
-    int lastpatch = 0; // last PNAMES patch lump
-    int numpatches = 0; // # of patches
 
     // The per-texture composition tables, RAII-owned (Step 9) - what were raw never-freed
     // doom_malloc pointers. The vanilla names in Data.cpp are plain-pointer VIEWS onto these,

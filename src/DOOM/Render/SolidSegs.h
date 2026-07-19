@@ -13,10 +13,12 @@ namespace Doom
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were Render/BSP's
 // own namespace-scope private globals, read by no other file (its const checkcoord corner table stays
-// file-local). The vanilla names become references onto the members (solidsegs as a reference-to-
-// array). newend points into solidsegs but is set at runtime by Doom::clearClipSegs, not by a self-
-// referential initializer, so it is safe as a member. Live frame-golden-covered - every frame the
-// demos draw walks the BSP through these.
+// file-local). solidsegs is a reference onto the member (a reference-to-array). newend was a
+// reference too - it points into solidsegs but is set at runtime by Doom::clearClipSegs, not by a
+// self-referential initializer, so it was safe as one - until the file-local-alias sweep
+// (REFACTOR.md, Step 9 strand (a)) retired it; clipSolidWallSegment and clearClipSegs each hoist
+// solidSegs() once and reach it as solid.newend. Live frame-golden-covered - every frame the demos
+// draw walks the BSP through these.
 struct ClipRange
 {
     int first;

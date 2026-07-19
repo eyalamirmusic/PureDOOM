@@ -8,8 +8,10 @@ namespace Doom
 // stay in the shim - they are the renderer's shared drawer selection, not Render/Main's own state.)
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Render/Main's own namespace-scope private globals, read by no other file. The vanilla names become
-// references onto the members. Live frame-golden-covered.
+// Render/Main's own namespace-scope private globals, read by no other file. Both vanilla names were
+// references onto the members until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a))
+// retired them; setViewSize, executeSetViewSize, renderInit and setupFrame each reach the one member
+// they touch through renderMainState() directly. Live frame-golden-covered.
 struct RenderMainState
 {
     int framecount = 0; // frames rendered so far
