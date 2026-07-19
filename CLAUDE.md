@@ -33,12 +33,21 @@ step by step. **`REFACTOR.md` is the plan and the running state of it**: which
 step we are on, what each one changes, and the rules the whole thing rests on.
 Read it before touching `src/DOOM`, and update its progress table as steps land.
 
-The end state: no C left, no `PureDOOM.h`, no zone allocator, and no ~684
-globals — an `Engine` object constructed rather than booted. (Scenario tests, once
-thought to depend on that, do not: the engine already runs many scenarios per
-process — see `Tests/Sim/ReplayTests.cpp` — because loading a level resets the
-simulation cleanly. The `Engine` object is what retires the loose globals, not
-what unblocks the tests.)
+**That end state has largely arrived.** It was stated as: no C left, no
+`PureDOOM.h`, no zone allocator, no ~684 loose globals, and an `Engine` object
+constructed rather than booted. All five are true today — Steps 0–8 are done and
+`Engine/resetEngineMakesAFreshInstance` proves the last one. **Step 9 is the only
+open front**: modern C++ / RAII across the board, of which the idiom cleanup and
+the alias retirement are finished and the RAII sweep is down to one audio-blocked
+owner. Read `REFACTOR.md`'s progress table for the current state rather than
+assuming from this paragraph — and if the two ever disagree, the table is the
+one that gets updated as work lands.
+
+(Scenario tests, once thought to depend on the constructible `Engine`, never did:
+the engine runs many scenarios per process because loading a level resets the
+simulation cleanly — see `Tests/Sim/ReplayTests.cpp`. They exist now, in
+`Tests/Sim/ScenarioTests.cpp`. The `Engine` object is what retired the loose
+globals, not what unblocked the tests.)
 
 The four rules that matter most, because breaking one silently defeats the whole
 apparatus:
@@ -55,13 +64,19 @@ apparatus:
    exists for intended behaviour changes, of which this refactor has none.
 2. **The simulation probe's hash is append-only.** `Tests/SimProbe` may change
    *how* it finds state; it may never change *what* it mixes, or in what order.
-3. A file leaves the engine's blanket `-w` and comes under `clang-format` the
-   moment it is genuinely rewritten, and not before. Vanilla filenames stay until
-   then, so a half-refactored file is still diffable against the 1993 source.
+3. ~~A file leaves the engine's blanket `-w` and comes under `clang-format` the
+   moment it is genuinely rewritten, and not before.~~ **Spent — every file is on
+   the far side of it.** The rule governed a boundary that no longer has anything
+   on the vanilla side: nothing is exempt from `-Wall -Wextra -Wpedantic` or from
+   clang-format, and no vanilla filename survives to be diffed against the 1993
+   source. New code is written to the strict flags without asking.
 4. Some things that look like bugs are load-bearing and must survive: `FixedDiv2`
    goes through `double`; the trig tables are sampled at bucket centres;
-   `SlopeDiv` gives up under 512; `R_PointToAngle2` lands one unit below north.
-   `Tests/Sim/PrimitiveTests.cpp` pins three of the four on purpose.
+   `SlopeDiv` gives up under 512; `pointToAngle2` lands one unit below north; and
+   `BBox::add` is `else if`, not an independent min and max.
+   `Tests/Sim/PrimitiveTests.cpp` and `Tests/Sim/MathTests.cpp` pin these on
+   purpose — a refactor will want to "fix" all of them, and each would desync
+   every demo ever recorded.
 
 ## Layout
 
@@ -70,28 +85,42 @@ apparatus:
   simulation reaches both and neither can run code the other is not.
 
   It is **C++20 as of Step 2 of `REFACTOR.md`**, and there is no C left anywhere
-  in the repository. The flat files are no longer 1993 C either: all the logic has
-  moved into the subdirectories, and what is left of them is the reference-alias
-  data layer described below.
+  in the repository. **There is no flat layer left either**: `src/DOOM` holds
+  exactly two files at top level — `DOOM.h`, the public `extern "C"` interface an
+  embedder includes, and `doomtype.h`, the `byte` foundation every layer including
+  `Math/` depends on. Zero `.cpp` files. The last one, `info.cpp`, became
+  `Sim/Info.cpp`.
 
-  **The subdirectories are the rewrite.** `Math/` (`Fixed`, `Angle`, `Trig`,
-  `BBox`, `Vec2`), `Sim/` (`Random`, `Level`, `MapGeometry`), `Wad/` (`WadFile`)
-  and `Engine/` (`Engine`, the composition root that owns `Random`/`WadFile`/
-  `Level`) are real C++ in `namespace Doom`, and a file moves into one the moment
-  it stops being vanilla.
-  Progress is the flat list getting shorter. The two are compiled differently on
-  purpose: rewritten sources get `-Wall -Wextra -Wpedantic` and clang-format from
-  their first line; vanilla keeps a blanket `-w` and its formatting exemption until
-  someone rewrites it. Both are set per-file in `src/DOOM/CMakeLists.txt`, so the
-  line moves as the work does.
+  **The eight subdirectories *are* the engine**, all real C++ in `namespace Doom`:
+
+  | Directory | Files | What it is |
+  |---|---|---|
+  | `Sim/` | 73 | the whole playsim — `Mobj`, `Movement`, `MapAction`, `Enemy`, `Player`, `Weapon`, `Sight`, `Interaction`, the eight specials, `Thinker`, `Tick`, `Setup`, `SaveGame`, `Info`, plus `Random`/`Level`/`MapGeometry` |
+  | `Game/` | 56 | game loop, netcode, config, args, sound dispatch, and most of the `Engine`'s state clusters |
+  | `UI/` | 42 | menu, HUD, status bar, automap, intermission, finale, screen melt, cheats |
+  | `Render/` | 37 | the software renderer, all eight units — `Main`, `BSP`, `Segs`, `Planes`, `Things`, `Draw`, `Data`, `Sky`, plus `Video` |
+  | `Math/` | 12 | `Fixed`, `Angle`, `Trig`, `BBox`, `Vec2`, `Swap` |
+  | `Host/` | 12 | the platform boundary — `Video`, `System`, `Sound`, `Net`, `Api` (the public C API), `Host` |
+  | `Wad/` | 3 | `WadFile` |
+  | `Engine/` | 2 | `Engine`, the composition root |
+
+  `src/DOOM/CMakeLists.txt` still splits compile flags between a "vanilla" bucket
+  (blanket `-w`, formatting exemption) and a "rewritten" one (`-Wall -Wextra
+  -Wpedantic`, clang-format from the first line). That split has now *finished
+  moving*: the vanilla glob matches only those two top-level headers and no
+  translation unit at all, so in practice everything compiled is under the strict
+  flags. Keep the machinery — it costs nothing and documents the rule — but do not
+  read it as evidence that unrewritten code remains.
 
   **The vanilla *function* API is gone.** `R_DrawPlanes`, `P_TryMove`, `D_Display`,
   `I_Error`, `W_CacheLumpNum`, `EV_DoDoor`, `HUlib_drawSText` and the other ~440
   prefixed names were retired: every call site calls the namespaced function
   (`Doom::drawPlanes`, `Doom::tryMove`, `Doom::displayFrame`, `Doom::fatalError`,
-  `Doom::cacheLumpNum`, …). Where the namespaced name still carried the prefix as an
-  initialism — `Doom::dDisplay`, `Doom::amTicker`, `Doom::I_Error` — it was renamed
-  too; retiring the shim alone would only have moved the prefix, not removed it.
+  `Doom::cacheLumpNum`, …). Retiring the shims was only half of it: 134 of the
+  namespaced *targets* still carried the prefix as an initialism, and those were
+  renamed again — `Doom::dDisplay` → `Doom::displayFrame`, `Doom::amTicker` →
+  `Doom::automapTicker`, `Doom::I_Error` → `Doom::fatalError`. None of the middle
+  spellings survive; do not go looking for them.
   Two families are pinned *by address* and therefore keep an adapter, though not a
   prefixed one: the 75 state actions are `Doom::Actions::look`-style forwards in
   `Sim/Actions.{h,cpp}` (because `Sim/Info.cpp`'s `states[]` stores them and every
@@ -100,19 +129,29 @@ apparatus:
 
   **The vanilla *types* are gone too** — all 107 are PascalCase in `namespace Doom`:
   `mobj_t`→`Doom::Mobj`, `line_t`→`Doom::Line`, `sector_t`→`Doom::Sector`,
-  `player_t`→`Doom::Player`, `vldoor_t`→`Doom::Door`, and so on. Four exceptions are
-  deliberate: `doom_key_t`/`doom_button_t`/`doom_seek_t` are the public `extern "C"`
-  API, and **`fixed_t`/`angle_t` stay raw typedefs** because `Doom::Fixed`/`Doom::Angle`
-  already exist as *strong* types — moving 862 uses onto them changes arithmetic, so it
-  is a semantic migration with its own verification, not a rename.
+  `player_t`→`Doom::Player`, `vldoor_t`→`Doom::Door`, and so on. Three exceptions are
+  deliberate, and all three are the public `extern "C"` API: `doom_key_t`,
+  `doom_button_t`, `doom_seek_t`.
 
-  **The reference-alias layer is gone too.** ~290 aliases
-  (`fixed_t& viewx = engine().viewPoint.viewx`) stood between readers and the state they
-  read; every one is retired and every reader reaches its cluster through the owner,
-  hoisting a local reference once per function (`auto& draw = drawState();`) rather than
-  calling the out-of-line accessor per access — which matters in the per-pixel drawers.
-  That releases the static-init address pin on `engine()`, so the Engine can now be
-  **constructed** rather than booted, which was the point of Step 9 strand (a).
+  **`fixed_t` and `angle_t` are done too, and that one was semantic.** They are now
+  `using fixed_t = Doom::Fixed;` and `using angle_t = Doom::Angle;` — aliases onto the
+  strong types, not raw typedefs beside them. Moving those ~862 uses changed
+  arithmetic rather than spelling, which is why it needed its own verification; it is
+  finished, not pending. `FixedMul`/`FixedDiv` survive as thin operator wrappers for
+  readability at ~150 call sites, no longer a bridge between two representations.
+
+  **The reference-alias layer is gone too**, in two waves: ~290 *cross-file* aliases
+  (`fixed_t& viewx = engine().viewPoint.viewx`) first, then 247 *file-local* ones —
+  ~537 in all. Every reader now reaches its cluster through the owner, hoisting a
+  local reference once per function (`auto& draw = drawState();`) rather than calling
+  the out-of-line accessor per access, which matters in the per-pixel drawers.
+
+  It was the **file-local** wave that mattered structurally: those were the last
+  bindings pinning the `Engine` to a fixed address at static-init, so retiring them is
+  what let the Engine be **constructed** rather than booted. That is Step 9 strand (a),
+  and it is worth knowing it was declared finished twice while a whole syntactic tier
+  of aliases still stood — `REFACTOR.md` records the six spellings that hid from an
+  apparently exhaustive search.
 
   **13 aliases survive on purpose**: the host callbacks (`doom_print`, `doom_malloc`, …)
   are references onto `Doom::host()`, not onto the Engine. `host()` is deliberately a
@@ -120,25 +159,33 @@ apparatus:
   its address costs nothing, and they are the bridge the public `extern "C"` `doom_set_*`
   API writes through.
 
-  What is left in the 11 flat `.cpp` files is not a shim layer but **data and views**:
-  `am_map`'s vector shapes and `hu_stuff`'s chat macros; the pointer-and-count views
-  (`vertexes`/`numsegs`/`sectors`/… onto `Doom::Level`, the `textures`/`sprites` tables
-  onto `GraphicsData`, `finesine`/`finecosine` onto `Math/Trig`), each refreshed by its
-  loader after filling the owning vector; the drawer function pointers; and
-  `FixedMul`/`FixedDiv`, the `fixed_t`↔`Doom::Fixed` bridge.
+  **What survives as loose names is data and views, and it lives inside the
+  subdirectories** — there is no flat file holding any of it. The pointer-and-count
+  views (`vertexes`/`numsegs`/`sectors`/… onto `Doom::Level`, defined in `Sim/Setup.cpp`;
+  the `textures`/`sprites` tables onto `GraphicsData` in `Render/`; `finesine`/`finecosine`
+  onto `Math/Trig`) are each refreshed by their loader after it fills the owning vector.
+  The drawer function pointers `colfunc`/`spanfunc` stay raw in `Render/Main`. The
+  automap's vector shapes and the melt's state are deliberate exported carve-outs
+  (`UI/AutomapTypes.h`, `UI/Wipe.h`) that the eacp compositor reads by name.
 
-  Those three owners live inside one `Doom::Engine` now (`Engine/Engine.h`), and
-  `randomness()`/`wad()`/`level()` are accessors into the single `engine()`
-  instance. The `Engine` is the composition root that the ~684 scalar globals
-  (`doomstat.h`, `r_state.h`, `p_local.h`) migrate into — but each cluster moves
-  *with* the subsystem that owns it, as Steps 6–8 rewrite that code to take an
-  `Engine&`, not speculatively ahead of it.
+  **The `Engine` is the composition root, and it is no longer three owners.**
+  `Engine/Engine.h` aggregates ~83 state clusters reached through free accessors into
+  the one `engine()` instance — `randomness()`/`wad()`/`level()`, and alongside them
+  the renderer's (`viewPoint`, `graphicsData`, `drawState`, `spriteState`, …), the UI's
+  (`menuState`, `automapView`, `hudState`, `statusBarState`, `wipeState`, …) and the
+  game's (`gameSession`, `playerState`, `demoState`, `netState`, …).
+
+  The globals this replaced are **in**, not migrating: `doomstat.h`, `r_state.h` and
+  `p_local.h` no longer exist. The `~684` figure `REFACTOR.md` quotes is the Step-0
+  *starting* count, not a live backlog. Each cluster moved with the subsystem that
+  owned it as Steps 6–8 rewrote that code, which is why those steps and this one
+  finished together.
 
   Three constraints died with the single header in Step 1, and the code may now
   rely on their absence: **two files may share a file-scope name** (the header
-  concatenated every `.c` into one translation unit, which is why `am_map.cpp`'s
-  `plr` had to become `am_plr`); a source file may include a system header; and
-  the header include graph need not be acyclic.
+  concatenated every `.c` into one translation unit, which is why the automap's
+  `plr` had to become `am_plr` — still its name, now in `UI/Automap.cpp`); a source
+  file may include a system header; and the header include graph need not be acyclic.
 
   **`doom_boolean` is gone** — the last vanilla type. All ~288 uses are a real
   `bool`, and the typedef is deleted, so a boolean in this engine is a boolean.
@@ -341,9 +388,11 @@ cmake --build build --target PureDoomEACP
 ```
 
 Targets: `doom-engine` (the engine, from `src/DOOM`), `PureDoomEACP` (the game),
-`SimTests` and `PrimitiveTests` (see **Testing**), and `record-goldens`. That is
-all of them — there are only two build options left, `PUREDOOM_BUILD_TESTS` and
-`PUREDOOM_BUILD_EACP_EXAMPLE`.
+`SimTests` and `PrimitiveTests` (see **Testing**), `record-goldens`, and
+`doom-sim-probe` — the static library holding `Tests/SimProbe.cpp`, which both
+test binaries link so the shim is compiled once rather than per binary. You never
+invoke that last one directly; it builds as their dependency. There are only two
+build options, `PUREDOOM_BUILD_TESTS` and `PUREDOOM_BUILD_EACP_EXAMPLE`.
 
 The tests need no GPU and no eacp — they link `doom-engine` alone — so
 `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast engine-only loop while
@@ -378,6 +427,38 @@ ctest --test-dir build --output-on-failure
 
 83 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
 in `src/DOOM`.**
+
+Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
+the engine, and only it links `Tests/TestMain.cpp`, which points `DOOMWADDIR` at
+the repository root — so **any test that boots belongs there**. **`PrimitiveTests`**
+takes NanoTest's default `main` and covers what needs no boot. A booting test put
+in `PrimitiveTests` finds the IWAD when you run the binary by hand from the repo
+root and fails under ctest, which runs it from elsewhere; that reads as flakiness
+and is not.
+
+What each source covers, since the sections below do not name them all:
+
+| File | Binary | What it holds |
+|---|---|---|
+| `Sim/DemoTests.cpp` | SimTests | the three attract demos, world + frame goldens |
+| `Sim/ReplayTests.cpp` | SimTests | replay-twice and load-a-second-demo; the per-level reset |
+| `Sim/LevelTests.cpp` | SimTests | the geometry-view invariant after a load |
+| `Sim/WadTests.cpp` | SimTests | all 1,264 lumps against `doom1.lumps` |
+| `Sim/MenuTests.cpp` `Sim/AutomapTests.cpp` `Sim/FinaleTests.cpp` | SimTests | the three screens no demo reaches |
+| `Sim/ScenarioTests.cpp` | SimTests | place a mobj, move it, assert — see **Layers still to build** |
+| `Sim/SaveGameTests.cpp` | SimTests | the save/load round trip, and `readFile`'s owner |
+| `Sim/OwnershipTests.cpp` | SimTests | that destroying an `Engine` gives the memory back |
+| `Sim/PrimitiveTests.cpp` `Sim/MathTests.cpp` `Sim/GeometryTests.cpp` | PrimitiveTests | the arithmetic underneath the simulation |
+| `Sim/EngineTests.cpp` | PrimitiveTests | the composition root, and that `resetEngine` is genuine |
+| `Sim/StateClusterTests.cpp` | PrimitiveTests | the `Engine`'s state clusters and accessor identity |
+
+`Sim/OwnershipTests.cpp` is the odd one and worth knowing about: it is the only
+test that can see a **leak**. The goldens hash the world and the picture, so
+memory that is never given back changes nothing they measure until the process
+runs out. It installs a counting `doom_malloc`/`doom_free` through the public
+`doom_set_malloc` and asserts that live blocks after `resetEngine()` fall back to
+the post-boot figure — which is how the level pool's missing destructor was
+found.
 
 Run the binaries through ctest, not bare. NanoTest registers one ctest case per
 test and re-runs the binary with `--test <name>`, so every test gets a fresh
@@ -571,15 +652,18 @@ and differs between builds of the same engine.)
 
 ### Layers still to build
 
-- **Scenario tests**: load a level, place mobjs, run tics, assert. `P_TryMove`
-  into a wall, `P_DamageMobj`, `P_CheckSight`, door and lift specials. Write
-  these per-subsystem *as* you refactor it — they are how you get locality on
-  code the demos only cover in aggregate. **Unblocked** as of Step 4: the engine
-  runs many scenarios per process (it never needed re-`doom_init`, only a clean
-  per-level reset, which the `Level` object completed — see
-  `Tests/Sim/ReplayTests.cpp`). What is still missing is only *probe surface* —
-  functions to place a mobj, set the player, read back a result — which is
-  additive and lands with the playsim rewrite.
+- **Scenario tests — started, not finished.** The pattern (load a level, place
+  mobjs, run tics, assert) is live in `Tests/Sim/ScenarioTests.cpp`, and the
+  probe surface this entry used to call the missing piece has landed with it
+  (`doomSimSpawnMobj`, `doomSimCheckPosition`, `doomSimTryMove`,
+  `doomSimSetThingPosition`, `doomSimThingsInBlockOf`, …). Four cases run today,
+  covering `Doom::tryMove`/`Doom::checkPosition`, a solid thing blocking a spot,
+  `MF_NOCLIP` bypassing it, and blockmap linking.
+
+  **Still uncovered, and the reason to keep writing these**: `P_DamageMobj`,
+  `P_CheckSight`, and the door and lift specials. Write them per-subsystem *as*
+  you refactor it — they are how you get locality on code the demos only cover
+  in aggregate.
 - **Port-layer tests**: `View`'s tic/interpolation state machine is still not
   testable, because it lives inside a `GPU::GPUView` whose members construct GPU
   textures from `GPU::Device::shared()`. Extracting it into a plain GPU-free
