@@ -899,24 +899,25 @@ void spawnPlayerMissile(Mobj* source, MobjType type)
     fixed_t z;
     fixed_t slope;
 
-    auto& c = clip();
-
     // see which target is to be aimed at
     an = source->angle;
-    slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+    auto aim = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+    slope = aim.slope;
 
-    if (!c.linetarget)
+    if (!aim.target)
     {
         an += angle_t {1u << 26};
-        slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+        aim = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+        slope = aim.slope;
 
-        if (!c.linetarget)
+        if (!aim.target)
         {
             an -= angle_t {2u << 26};
-            slope = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+            aim = Doom::aimLineAttack(source, an, 16 * 64 * FRACUNIT);
+            slope = aim.slope;
         }
 
-        if (!c.linetarget)
+        if (!aim.target)
         {
             an = source->angle;
             slope = fixed_t {};

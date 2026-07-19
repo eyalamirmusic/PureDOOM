@@ -29,24 +29,12 @@ namespace Doom
 namespace
 {
 //
-// The p_map action scratch now lives on the Engine (Sim/ActionScratch.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5). The vanilla names below (grouped by the action
-// that uses them: slide, hitscan, use, radius, change-sector) are references onto that member; read
-// by no other file.
-
-// SLIDE MOVE scratch - the best (and second-best) wall the momentum hit, and the
-// move being clipped along it.
-//
-static fixed_t& bestslidefrac = actionScratch().bestslidefrac;
-static fixed_t& secondslidefrac = actionScratch().secondslidefrac;
-
-static Line*& bestslideline = actionScratch().bestslideline;
-static Line*& secondslideline = actionScratch().secondslideline;
-
-static Mobj*& slidemo = actionScratch().slidemo;
-
-static fixed_t& tmxmove = actionScratch().tmxmove;
-static fixed_t& tmymove = actionScratch().tmymove;
+// The p_map action scratch now lives on the Engine (Sim/ActionScratch.h, moved by
+// the file-scope-statics sweep - REFACTOR.md, Step 5). slideMove is the one action
+// still threaded through a bare function pointer (PTR_SlideTraverse), so it alone
+// still needs a home there rather than a capture; each function hoists its own
+// `auto& scratch = actionScratch();` once, rather than reaching the members through
+// file-scope reference aliases (REFACTOR.md, Step 9 strand (a)).
 
 //
 // P_HitSlideLine
@@ -54,6 +42,8 @@ static fixed_t& tmymove = actionScratch().tmymove;
 //
 void hitSlideLine(Line* ld)
 {
+    auto& scratch = actionScratch();
+
     int side;
 
     angle_t lineangle;
@@ -65,24 +55,25 @@ void hitSlideLine(Line* ld)
 
     if (ld->slopetype == ST_HORIZONTAL)
     {
-        tmymove = fixed_t {};
+        scratch.tmymove = fixed_t {};
         return;
     }
 
     if (ld->slopetype == ST_VERTICAL)
     {
-        tmxmove = fixed_t {};
+        scratch.tmxmove = fixed_t {};
         return;
     }
 
-    side = lineSide({slidemo->x, slidemo->y}, *ld);
+    side = lineSide({scratch.slidemo->x, scratch.slidemo->y}, *ld);
 
     lineangle = Doom::pointToAngle2(fixed_t {}, fixed_t {}, ld->dx, ld->dy);
 
     if (side == 1)
         lineangle += ANG180;
 
-    moveangle = Doom::pointToAngle2(fixed_t {}, fixed_t {}, tmxmove, tmymove);
+    moveangle = Doom::pointToAngle2(
+        fixed_t {}, fixed_t {}, scratch.tmxmove, scratch.tmymove);
     deltaangle = moveangle - lineangle;
 
     if (deltaangle > ANG180)
@@ -91,11 +82,11 @@ void hitSlideLine(Line* ld)
     const auto lineangleFine = lineangle.fineIndex();
     const auto deltaangleFine = deltaangle.fineIndex();
 
-    movelen = approxDistance(tmxmove, tmymove);
+    movelen = approxDistance(scratch.tmxmove, scratch.tmymove);
     newlen = FixedMul(movelen, finecosine[deltaangleFine]);
 
-    tmxmove = FixedMul(newlen, finecosine[lineangleFine]);
-    tmymove = FixedMul(newlen, finesine[lineangleFine]);
+    scratch.tmxmove = FixedMul(newlen, finecosine[lineangleFine]);
+    scratch.tmymove = FixedMul(newlen, finesine[lineangleFine]);
 }
 
 //
@@ -104,6 +95,7 @@ void hitSlideLine(Line* ld)
 doom_boolean slideTraverse(Intercept* in)
 {
     Clip& clip = Doom::clip();
+    auto& scratch = actionScratch();
 
     Line* li;
 
@@ -114,7 +106,7 @@ doom_boolean slideTraverse(Intercept* in)
 
     if (!(li->flags & ML_TWOSIDED))
     {
-        if (lineSide({slidemo->x, slidemo->y}, *li))
+        if (lineSide({scratch.slidemo->x, scratch.slidemo->y}, *li))
         {
             // don't hit the back side
             return true;
@@ -125,13 +117,13 @@ doom_boolean slideTraverse(Intercept* in)
     // set openrange, opentop, openbottom
     updateLineOpening(*li);
 
-    if (clip.openrange < slidemo->height)
+    if (clip.openrange < scratch.slidemo->height)
         goto isblocking; // doesn't fit
 
-    if (clip.opentop - slidemo->z < slidemo->height)
+    if (clip.opentop - scratch.slidemo->z < scratch.slidemo->height)
         goto isblocking; // mobj is too high
 
-    if (clip.openbottom - slidemo->z > 24 * FRACUNIT)
+    if (clip.openbottom - scratch.slidemo->z > 24 * FRACUNIT)
         goto isblocking; // too big a step up
 
     // this line doesn't block movement
@@ -140,12 +132,12 @@ doom_boolean slideTraverse(Intercept* in)
     // the line does block movement,
     // see if it is closer than best so far
 isblocking:
-    if (in->frac < bestslidefrac)
+    if (in->frac < scratch.bestslidefrac)
     {
-        secondslidefrac = bestslidefrac;
-        secondslideline = bestslideline;
-        bestslidefrac = in->frac;
-        bestslideline = li;
+        scratch.secondslidefrac = scratch.bestslidefrac;
+        scratch.secondslideline = scratch.bestslideline;
+        scratch.bestslidefrac = in->frac;
+        scratch.bestslideline = li;
     }
 
     return false; // stop
@@ -153,17 +145,17 @@ isblocking:
 
 //
 // PTR_AimTraverse
-// Sets linetarget and aimslope when a target is aimed at.
+// Finds the auto-aim target and slope, if any. The hitscan's own scratch (the
+// shooter, the shot's z, the narrowing slope window) rides along as captures from
+// aimLineAttack now, and the result - which used to be Clip::linetarget/aimslope -
+// is written into `result` by reference (REFACTOR.md, Step 9 strand (a)).
 //
-static fixed_t& aimslope = actionScratch().aimslope;
-static Mobj*& shootthing = actionScratch().shootthing;
-
-// Height if not aiming up or down.
-static fixed_t& shootz = actionScratch().shootz;
-
-static int& la_damage = actionScratch().la_damage;
-
-doom_boolean aimTraverse(Intercept* in)
+doom_boolean aimTraverse(Intercept* in,
+                         Mobj* shootthing,
+                         fixed_t shootz,
+                         fixed_t& topslope,
+                         fixed_t& bottomslope,
+                         AimResult& result)
 {
     Clip& clip = Doom::clip();
 
@@ -193,18 +185,18 @@ doom_boolean aimTraverse(Intercept* in)
         if (li->frontsector->floorheight != li->backsector->floorheight)
         {
             slope = FixedDiv(clip.openbottom - shootz, dist);
-            if (slope > clip.bottomslope)
-                clip.bottomslope = slope;
+            if (slope > bottomslope)
+                bottomslope = slope;
         }
 
         if (li->frontsector->ceilingheight != li->backsector->ceilingheight)
         {
             slope = FixedDiv(clip.opentop - shootz, dist);
-            if (slope < clip.topslope)
-                clip.topslope = slope;
+            if (slope < topslope)
+                topslope = slope;
         }
 
-        if (clip.topslope <= clip.bottomslope)
+        if (topslope <= bottomslope)
             return false; // stop
 
         return true; // shot continues
@@ -222,31 +214,35 @@ doom_boolean aimTraverse(Intercept* in)
     dist = FixedMul(clip.attackrange, in->frac);
     thingtopslope = FixedDiv(th->z + th->height - shootz, dist);
 
-    if (thingtopslope < clip.bottomslope)
+    if (thingtopslope < bottomslope)
         return true; // shot over the thing
 
     thingbottomslope = FixedDiv(th->z - shootz, dist);
 
-    if (thingbottomslope > clip.topslope)
+    if (thingbottomslope > topslope)
         return true; // shot under the thing
 
     // this thing can be hit!
-    if (thingtopslope > clip.topslope)
-        thingtopslope = clip.topslope;
+    if (thingtopslope > topslope)
+        thingtopslope = topslope;
 
-    if (thingbottomslope < clip.bottomslope)
-        thingbottomslope = clip.bottomslope;
+    if (thingbottomslope < bottomslope)
+        thingbottomslope = bottomslope;
 
-    aimslope = (thingtopslope + thingbottomslope) / 2;
-    clip.linetarget = th;
+    result.slope = (thingtopslope + thingbottomslope) / 2;
+    result.target = th;
 
     return false; // don't go any farther
 }
 
 //
 // PTR_ShootTraverse
+// The hitscan's own scratch (the shooter, the shot's z, the fixed aim slope and
+// the damage) rides along as captures from lineAttack now (REFACTOR.md, Step 9
+// strand (a)).
 //
-doom_boolean shootTraverse(Intercept* in)
+doom_boolean shootTraverse(
+    Intercept* in, Mobj* shootthing, fixed_t shootz, fixed_t aimslope, int la_damage)
 {
     Clip& clip = Doom::clip();
 
@@ -410,10 +406,8 @@ static doom_boolean useTraverse(Intercept* in, Mobj* usething)
 // cannot carry context; it is a lambda over those three now, so the globals are
 // gone (REFACTOR.md, Step 9).
 //
-static doom_boolean radiusAttackThing(Mobj* thing,
-                                      Mobj* bombspot,
-                                      Mobj* bombsource,
-                                      int bombdamage)
+static doom_boolean
+    radiusAttackThing(Mobj* thing, Mobj* bombspot, Mobj* bombsource, int bombdamage)
 {
     fixed_t dx;
     fixed_t dy;
@@ -459,9 +453,8 @@ static doom_boolean radiusAttackThing(Mobj* thing,
 // context in and nofit a global carrying the answer back out; they are a capture
 // and an out-parameter now.
 //
-static doom_boolean changeSectorThing(Mobj* thing,
-                                      doom_boolean crushchange,
-                                      doom_boolean& nofit)
+static doom_boolean
+    changeSectorThing(Mobj* thing, doom_boolean crushchange, doom_boolean& nofit)
 {
     Mobj* mo;
 
@@ -528,6 +521,8 @@ static doom_boolean changeSectorThing(Mobj* thing,
 //
 void slideMove(Mobj* mo)
 {
+    auto& scratch = actionScratch();
+
     fixed_t leadx;
     fixed_t leady;
     fixed_t trailx;
@@ -536,7 +531,7 @@ void slideMove(Mobj* mo)
     fixed_t newy;
     int hitcount;
 
-    slidemo = mo;
+    scratch.slidemo = mo;
     hitcount = 0;
 
 retry:
@@ -566,7 +561,7 @@ retry:
         traily = mo->y + mo->radius;
     }
 
-    bestslidefrac = FRACUNIT + fixed_t {1};
+    scratch.bestslidefrac = FRACUNIT + fixed_t {1};
 
     pathTraverse(leadx,
                  leady,
@@ -588,7 +583,7 @@ retry:
                  slideTraverse);
 
     // move up to the wall
-    if (bestslidefrac == FRACUNIT + fixed_t {1})
+    if (scratch.bestslidefrac == FRACUNIT + fixed_t {1})
     {
         // the move most have hit the middle, so stairstep
     stairstep:
@@ -598,11 +593,11 @@ retry:
     }
 
     // fudge a bit to make sure it doesn't hit
-    bestslidefrac -= fixed_t {0x800};
-    if (bestslidefrac.isPositive())
+    scratch.bestslidefrac -= fixed_t {0x800};
+    if (scratch.bestslidefrac.isPositive())
     {
-        newx = FixedMul(mo->momx, bestslidefrac);
-        newy = FixedMul(mo->momy, bestslidefrac);
+        newx = FixedMul(mo->momx, scratch.bestslidefrac);
+        newy = FixedMul(mo->momy, scratch.bestslidefrac);
 
         if (!tryMove(mo, mo->x + newx, mo->y + newy))
             goto stairstep;
@@ -610,23 +605,23 @@ retry:
 
     // Now continue along the wall.
     // First calculate remainder.
-    bestslidefrac = FRACUNIT - (bestslidefrac + fixed_t {0x800});
+    scratch.bestslidefrac = FRACUNIT - (scratch.bestslidefrac + fixed_t {0x800});
 
-    if (bestslidefrac > FRACUNIT)
-        bestslidefrac = FRACUNIT;
+    if (scratch.bestslidefrac > FRACUNIT)
+        scratch.bestslidefrac = FRACUNIT;
 
-    if (!bestslidefrac.isPositive())
+    if (!scratch.bestslidefrac.isPositive())
         return;
 
-    tmxmove = FixedMul(mo->momx, bestslidefrac);
-    tmymove = FixedMul(mo->momy, bestslidefrac);
+    scratch.tmxmove = FixedMul(mo->momx, scratch.bestslidefrac);
+    scratch.tmymove = FixedMul(mo->momy, scratch.bestslidefrac);
 
-    hitSlideLine(bestslideline); // clip the moves
+    hitSlideLine(scratch.bestslideline); // clip the moves
 
-    mo->momx = tmxmove;
-    mo->momy = tmymove;
+    mo->momx = scratch.tmxmove;
+    mo->momy = scratch.tmymove;
 
-    if (!tryMove(mo, mo->x + tmxmove, mo->y + tmymove))
+    if (!tryMove(mo, mo->x + scratch.tmxmove, mo->y + scratch.tmymove))
     {
         goto retry;
     }
@@ -635,7 +630,7 @@ retry:
 //
 // Doom::aimLineAttack
 //
-fixed_t aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
+AimResult aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
 {
     Clip& clip = Doom::clip();
 
@@ -643,32 +638,34 @@ fixed_t aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
     fixed_t y2;
 
     const auto angleFine = angle.fineIndex();
-    shootthing = t1;
+    Mobj* shootthing = t1;
 
     // The range in WHOLE units scales the fixed cosine: an integer product, not a
     // fixed-point one. FixedMul here would divide the reach by 65536.
     x2 = t1->x + distance.toInt() * finecosine[angleFine];
     y2 = t1->y + distance.toInt() * finesine[angleFine];
-    shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
+    fixed_t shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
 
     // can't shoot outside view angles
-    clip.topslope = 100 * FRACUNIT / 160;
-    clip.bottomslope = -100 * FRACUNIT / 160;
+    fixed_t topslope = 100 * FRACUNIT / 160;
+    fixed_t bottomslope = -100 * FRACUNIT / 160;
 
     clip.attackrange = distance;
-    clip.linetarget = nullptr;
 
-    pathTraverse(t1->x, t1->y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, aimTraverse);
+    AimResult result;
 
-    if (clip.linetarget)
-        return aimslope;
+    const auto tryAim =
+        [shootthing, shootz, &topslope, &bottomslope, &result](Intercept* in)
+    { return aimTraverse(in, shootthing, shootz, topslope, bottomslope, result); };
 
-    return fixed_t {};
+    pathTraverse(t1->x, t1->y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryAim);
+
+    return result;
 }
 
 //
 // Doom::lineAttack
-// If damage == 0, it is just a test trace that will leave linetarget set.
+// If damage == 0, it is just a test trace used only to find an aim target.
 //
 void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
 {
@@ -678,16 +675,19 @@ void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int da
     fixed_t y2;
 
     const auto angleFine = angle.fineIndex();
-    shootthing = t1;
-    la_damage = damage;
+    Mobj* shootthing = t1;
+    int la_damage = damage;
     // Whole units scaling the fixed cosine - an integer product. See aimLineAttack.
     x2 = t1->x + distance.toInt() * finecosine[angleFine];
     y2 = t1->y + distance.toInt() * finesine[angleFine];
-    shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
+    fixed_t shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
     clip.attackrange = distance;
-    aimslope = slope;
+    fixed_t aimslope = slope;
 
-    pathTraverse(t1->x, t1->y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, shootTraverse);
+    const auto tryShoot = [shootthing, shootz, aimslope, la_damage](Intercept* in)
+    { return shootTraverse(in, shootthing, shootz, aimslope, la_damage); };
+
+    pathTraverse(t1->x, t1->y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryShoot);
 }
 
 //

@@ -64,17 +64,21 @@ struct Clip
     Line* spechit[maxSpecialCross] = {};
     int numspechit = 0;
 
-    // Hitscan results read outside the attack code: the thing a Doom::aimLineAttack
-    // locked onto (0 if none), and the range of the shot in progress. p_mobj and
-    // p_pspr read both; the rest of the attack scratch is file-local to MapAction.
-    Mobj* linetarget = nullptr;
+    // The range of the shot in progress. This looks like a result and is not: it is
+    // an INPUT that Doom::lineAttack sets before its pathTraverse runs, and
+    // Sim/Mobj.cpp's spawnPuff reads it from *inside* that same traversal's call
+    // stack (nested, not stale) to give a punch's puff its S_PUFF3. aimTraverse and
+    // shootTraverse's actual results (the aim slope, the locked-on target) are
+    // returned by value from Doom::aimLineAttack now - see AimResult in MapAction.h.
+    //
+    // attackrange also carries a genuine cross-tic leak that is load-bearing vanilla
+    // behaviour: spawnPuff has a third caller in no hitscan chain at all - the
+    // revenant's homing rocket spawns a smoke puff every 4th tic (Sim/Enemy.cpp's
+    // tracer) - which reads whatever attackrange the last hitscan left behind, so a
+    // recent punch can flip that smoke to S_PUFF3 too. Threading an explicit "no
+    // range" through the tracer would be a behaviour change wearing a refactor's
+    // clothes, not a fix - leave it leaking.
     fixed_t attackrange {};
-
-    // The slope window narrowed as a trace crosses two-sided lines. DOOM reuses one
-    // pair for two jobs it never runs at once: the auto-aim in MapAction and the
-    // line-of-sight check in Sight. Both write and read them here.
-    fixed_t topslope {};
-    fixed_t bottomslope {};
 };
 
 // The one Clip, a view onto the Engine's member - the same pattern as level(),

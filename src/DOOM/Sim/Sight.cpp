@@ -5,7 +5,6 @@
 #include "../Game/GameDefs.h"
 #include "SimDefs.h"
 
-#include "Clip.h"
 #include "SightScratch.h"
 #include "ValidCount.h"
 
@@ -14,10 +13,13 @@ namespace Doom
 {
 namespace
 {
-// The sight line and its endpoint; p_sight's own scratch (unlike topslope/
-// bottomslope, which it shares with the aim and so live in Clip). Now on the Engine
-// (Sim/SightScratch.h, moved by the file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla
-// names are references onto that member (sightcounts as a reference-to-array).
+// The sight line and its endpoint; p_sight's own scratch. The vertical slope window
+// (topslope/bottomslope) it narrows as it walks the BSP is *not* here - it is a
+// per-call local in checkSight now, threaded by reference through crossBSPNode/
+// crossSubsector, since it never escapes this call chain (REFACTOR.md, Step 9
+// strand (a)). Now on the Engine (Sim/SightScratch.h, moved by the
+// file-scope-statics sweep - REFACTOR.md, Step 5); the vanilla names are
+// references onto that member (sightcounts as a reference-to-array).
 fixed_t& sightzstart = sightScratch().sightzstart; // eye z of looker
 DivLine& strace = sightScratch().strace; // from t1 to t2
 fixed_t& t2x = sightScratch().t2x;
@@ -102,12 +104,13 @@ fixed_t interceptVector2(const DivLine& v2, const DivLine& v1)
 
 //
 // P_CrossSubsector
-// Returns true if strace crosses the given subsector successfully.
+// Returns true if strace crosses the given subsector successfully. topslope/
+// bottomslope are this sight check's own narrowing window - local to checkSight,
+// not Clip - threaded down by reference the same way the aim trace threads its
+// own through aimTraverse (Sim/MapAction.cpp).
 //
-doom_boolean crossSubsector(int num)
+doom_boolean crossSubsector(int num, fixed_t& topslope, fixed_t& bottomslope)
 {
-    Clip& clip = Doom::clip();
-
     Seg* seg;
     Line* line;
     int s1;
@@ -207,18 +210,18 @@ doom_boolean crossSubsector(int num)
         if (front->floorheight != back->floorheight)
         {
             slope = FixedDiv(openbottom - sightzstart, frac);
-            if (slope > clip.bottomslope)
-                clip.bottomslope = slope;
+            if (slope > bottomslope)
+                bottomslope = slope;
         }
 
         if (front->ceilingheight != back->ceilingheight)
         {
             slope = FixedDiv(opentop - sightzstart, frac);
-            if (slope < clip.topslope)
-                clip.topslope = slope;
+            if (slope < topslope)
+                topslope = slope;
         }
 
-        if (clip.topslope <= clip.bottomslope)
+        if (topslope <= bottomslope)
             return false; // stop
     }
 
@@ -230,7 +233,7 @@ doom_boolean crossSubsector(int num)
 // P_CrossBSPNode
 // Returns true if strace crosses the given node successfully.
 //
-doom_boolean crossBSPNode(int bspnum)
+doom_boolean crossBSPNode(int bspnum, fixed_t& topslope, fixed_t& bottomslope)
 {
     Node* bsp;
     int side;
@@ -238,9 +241,9 @@ doom_boolean crossBSPNode(int bspnum)
     if (bspnum & NF_SUBSECTOR)
     {
         if (bspnum == -1)
-            return crossSubsector(0);
+            return crossSubsector(0, topslope, bottomslope);
         else
-            return crossSubsector(bspnum & (~NF_SUBSECTOR));
+            return crossSubsector(bspnum & (~NF_SUBSECTOR), topslope, bottomslope);
     }
 
     bsp = &nodes[bspnum];
@@ -257,7 +260,7 @@ doom_boolean crossBSPNode(int bspnum)
         side = 0; // an "on" should cross both sides
 
     // cross the starting side
-    if (!crossBSPNode(bsp->children[side]))
+    if (!crossBSPNode(bsp->children[side], topslope, bottomslope))
         return false;
 
     // the partition plane is crossed here
@@ -268,14 +271,12 @@ doom_boolean crossBSPNode(int bspnum)
     }
 
     // cross the ending side
-    return crossBSPNode(bsp->children[side ^ 1]);
+    return crossBSPNode(bsp->children[side ^ 1], topslope, bottomslope);
 }
 } // namespace
 
 bool checkSight(Mobj* t1, Mobj* t2)
 {
-    Clip& clip = Doom::clip();
-
     int s1;
     int s2;
     int pnum;
@@ -306,8 +307,8 @@ bool checkSight(Mobj* t1, Mobj* t2)
     validCount().validcount++;
 
     sightzstart = t1->z + t1->height - (t1->height >> 2);
-    clip.topslope = (t2->z + t2->height) - sightzstart;
-    clip.bottomslope = (t2->z) - sightzstart;
+    fixed_t topslope = (t2->z + t2->height) - sightzstart;
+    fixed_t bottomslope = (t2->z) - sightzstart;
 
     strace.origin = {Fixed {t1->x}, Fixed {t1->y}};
     t2x = t2->x;
@@ -315,6 +316,6 @@ bool checkSight(Mobj* t1, Mobj* t2)
     strace.delta = {Fixed {t2->x - t1->x}, Fixed {t2->y - t1->y}};
 
     // the head node is the last node output
-    return crossBSPNode(numnodes - 1);
+    return crossBSPNode(numnodes - 1, topslope, bottomslope);
 }
 } // namespace Doom

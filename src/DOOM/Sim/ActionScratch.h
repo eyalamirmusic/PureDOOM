@@ -18,20 +18,20 @@ struct Line; // Line
 namespace Doom
 {
 
-// The p_map "action" scratch - the working state Doom::slideMove, the hitscan attacks, Doom::useLines,
-// Doom::radiusAttack and Doom::changeSector each set up and read back within one call, but which vanilla
-// kept as globals because the PIT_* callbacks the blockmap iterators invoke need to see them:
-//  - slide: the best/second slide fractions and lines, the sliding mobj, and the residual move;
-//  - hitscan: the aim slope, the shooter, the shot's z and its damage;
-//  - use: the mobj working a line;
-//  - radius: the blast's source, centre and damage;
-//  - change-sector: whether anything failed to fit and whether to crush.
+// The p_map "action" scratch - the working state Doom::slideMove sets up and reads
+// back within one call, but which vanilla kept as globals because PTR_SlideTraverse,
+// the blockmap iterator's callback, needs to see it: the best/second slide fractions
+// and lines, the sliding mobj, and the residual move.
 //
-// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Sim/MapAction's own namespace-scope private globals, read by no other file (only linetarget and
-// attackrange, which p_mobj/p_pspr read, stayed - as Clip members). The vanilla names become
-// references onto the members. Live simulation-golden-covered - the demos slide along walls, fire
-// hitscans, use doors and set off barrels - so the byte-identical *.hashes are a live confirmation.
+// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); this
+// was Sim/MapAction's own namespace-scope private globals, read by no other file.
+// The hitscan attack's equivalent scratch (the aim slope, the shooter, the shot's z
+// and damage) and the use/radius/change-sector callbacks' context are captures now
+// (REFACTOR.md, Step 9 strand (a)) - only slideMove's, threaded through
+// PTR_SlideTraverse's bare function pointer, still needs a home here. The vanilla
+// names become references onto the members. Live simulation-golden-covered - the
+// demos slide along walls constantly - so the byte-identical *.hashes are a live
+// confirmation.
 struct ActionScratch
 {
     // Doom::slideMove.
@@ -42,18 +42,6 @@ struct ActionScratch
     Mobj* slidemo = nullptr; // the mobj sliding
     fixed_t tmxmove {}; // residual x move after the slide
     fixed_t tmymove {}; // residual y move after the slide
-
-    // The hitscan attacks (Doom::aimLineAttack / Doom::lineAttack).
-    fixed_t aimslope {}; // vertical slope to the aimed target
-    Mobj* shootthing = nullptr; // the mobj firing
-    fixed_t shootz {}; // z the shot leaves from
-    int la_damage = 0; // hitscan damage
-
-    // Doom::useLines.
-
-    // Doom::radiusAttack.
-
-    // Doom::changeSector.
 };
 
 // The one ActionScratch, a view onto the Engine's member - the same pattern as the other clusters

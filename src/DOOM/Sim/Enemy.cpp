@@ -844,7 +844,7 @@ void posAttack(Mobj& actor)
 
     faceTarget(actor);
     angle = actor.angle;
-    slope = Doom::aimLineAttack(&actor, angle, MISSILERANGE);
+    slope = Doom::aimLineAttack(&actor, angle, MISSILERANGE).slope;
 
     Doom::startSound(&actor, sfx_pistol);
     angle += angle_t {(unsigned) (Doom::randomness().forPlay()
@@ -867,7 +867,7 @@ void sPosAttack(Mobj& actor)
     Doom::startSound(&actor, sfx_shotgn);
     faceTarget(actor);
     bangle = actor.angle;
-    slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE);
+    slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
     for (int i = 0; i < 3; i++)
     {
@@ -893,7 +893,7 @@ void cPosAttack(Mobj& actor)
     Doom::startSound(&actor, sfx_shotgn);
     faceTarget(actor);
     bangle = actor.angle;
-    slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE);
+    slope = Doom::aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
     angle = bangle
                 + angle_t {(unsigned) (Doom::randomness().forPlay()
