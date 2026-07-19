@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // fixed_t
-
 #include <ea_data_structures/Structures/Array.h>
 
 namespace Doom
@@ -11,6 +9,10 @@ namespace Doom
 // (indexed by whether the run key is held), and angleturn[tspeed] the per-tic turn amount (fast,
 // faster, and a slow-turn value used for the first few tics of a key press). MAXPLMOVE is
 // forwardmove[1], the run speed, which also caps the combined forward/side move.
+//
+// These are plain int, not fixed_t: the numbers in them (0x19, 0x32, ...) are the small raw
+// integers that go straight into a ticcmd's char/short fields, and Doom::movePlayer is what turns
+// them into a velocity, by multiplying by 2048. Nothing here is ever a fixed-point quantity.
 //
 // forwardmove/sidemove are not purely fixed reference data: Doom::doomLoop's -turbo handling scales
 // both at startup (forwardmove[i] = forwardmove[i] * scale / 100), so they are genuine per-session
@@ -25,9 +27,9 @@ namespace Doom
 // (and -turbo is never passed), so the move is golden-neutral.
 struct MovementSpeeds
 {
-    EA::Array<fixed_t, 2> forwardmove = {fixed_t {0x19}, fixed_t {0x32}}; // walk, run
-    EA::Array<fixed_t, 2> sidemove = {fixed_t {0x18}, fixed_t {0x28}}; // walk, run
-    EA::Array<fixed_t, 3> angleturn = {fixed_t {640}, fixed_t {1280}, fixed_t {320}}; // fast, faster, + slow turn
+    EA::Array<int, 2> forwardmove = {0x19, 0x32}; // walk, run
+    EA::Array<int, 2> sidemove = {0x18, 0x28}; // walk, run
+    EA::Array<int, 3> angleturn = {640, 1280, 320}; // fast, faster, + slow turn
 };
 
 // The one MovementSpeeds, a view onto the Engine's member - the same pattern as the other Game/

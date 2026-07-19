@@ -48,6 +48,9 @@
 byte* screens[5];
 
 // videoState().dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
+// It holds screen pixels, not a fixed-point box, so it is grown by addToDirtyBox below rather
+// than by Doom::addToBox (Math/BBox.h is still included for the BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP
+// index names addToDirtyBox uses).
 
 // Now where did these came from?
 EA::Array<EA::Array<byte, 256>, 5> gammatable = {
@@ -145,15 +148,33 @@ EA::Array<EA::Array<byte, 256>, 5> gammatable = {
 namespace Doom
 {
 
+namespace
+{
+// Grows dirtybox by one point. The same else-if update Doom::BBox::add (Math/BBox.h)
+// uses, but on plain screen-pixel ints - dirtybox is not a real fixed-point box.
+void addToDirtyBox(int x, int y)
+{
+    auto& box = videoState().dirtybox;
+
+    if (x < box[BOXLEFT])
+        box[BOXLEFT] = x;
+    else if (x > box[BOXRIGHT])
+        box[BOXRIGHT] = x;
+
+    if (y < box[BOXBOTTOM])
+        box[BOXBOTTOM] = y;
+    else if (y > box[BOXTOP])
+        box[BOXTOP] = y;
+}
+} // namespace
+
 //
 // markRect
 //
 void markRect(int x, int y, int width, int height)
 {
-    Doom::addToBox(videoState().dirtybox.data(), fixed_t {x}, fixed_t {y});
-    Doom::addToBox(videoState().dirtybox.data(),
-                   fixed_t {x + width - 1},
-                   fixed_t {y + height - 1});
+    addToDirtyBox(x, y);
+    addToDirtyBox(x + width - 1, y + height - 1);
 }
 
 //

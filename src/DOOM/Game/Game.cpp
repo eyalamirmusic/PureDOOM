@@ -103,12 +103,11 @@
 #include "../Render/Video.h"
 #define SAVEGAMESIZE 0x2c000
 #define SAVESTRINGSIZE 24
-// The run speed, and the cap on the combined forward/side move. Vanilla declares
-// forwardmove[] fixed_t, but the numbers in it (0x19, 0x32) are the small raw
-// integers that go into ticcmd's char fields - P_MovePlayer is what turns them into
-// a velocity, by multiplying by 2048. So the cap is that raw integer, not a whole-unit
-// conversion of it.
-#define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1].raw)
+// The run speed, and the cap on the combined forward/side move. forwardmove[]
+// holds the small raw integers that go into ticcmd's char fields - P_MovePlayer is
+// what turns them into a velocity, by multiplying by 2048. So the cap is that raw
+// integer, not a whole-unit conversion of it.
+#define MAXPLMOVE (Doom::movementSpeeds().forwardmove[1])
 #define TURBOTHRESHOLD 0x32
 #define SLOWTURNTICS 6
 #define NUMKEYS 256
@@ -137,11 +136,8 @@ void Doom::executeSetViewSize();
 // usergame (with the demo flags below) is a Doom::DemoState owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
 
-
-
 // The player roster and view selection is a Doom::PlayerState owned by the Engine now;
 // these are references onto it (the arrays as references-to-array) (REFACTOR.md, Step 5).
-
 
 // The level's progress (levelstarttic + the intermission totals, and leveltime over in
 // p_tick) is a Doom::LevelStats owned by the Engine now; these are references onto it.
@@ -177,7 +173,6 @@ void* statcopy; // for statistics driver
 doom_boolean secretexit;
 
 const char* defdemoname;
-
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
@@ -268,45 +263,45 @@ void buildTiccmd(Ticcmd* cmd)
     {
         if (input.gamekeydown[config.key_right])
         {
-            side += speeds.sidemove[speed].raw;
+            side += speeds.sidemove[speed];
         }
         if (input.gamekeydown[config.key_left])
         {
-            side -= speeds.sidemove[speed].raw;
+            side -= speeds.sidemove[speed];
         }
         if (input.joyxmove > 0)
-            side += speeds.sidemove[speed].raw;
+            side += speeds.sidemove[speed];
         if (input.joyxmove < 0)
-            side -= speeds.sidemove[speed].raw;
+            side -= speeds.sidemove[speed];
     }
     else
     {
         if (input.gamekeydown[config.key_right])
-            cmd->angleturn -= speeds.angleturn[tspeed].raw;
+            cmd->angleturn -= speeds.angleturn[tspeed];
         if (input.gamekeydown[config.key_left])
-            cmd->angleturn += speeds.angleturn[tspeed].raw;
+            cmd->angleturn += speeds.angleturn[tspeed];
         if (input.joyxmove > 0)
-            cmd->angleturn -= speeds.angleturn[tspeed].raw;
+            cmd->angleturn -= speeds.angleturn[tspeed];
         if (input.joyxmove < 0)
-            cmd->angleturn += speeds.angleturn[tspeed].raw;
+            cmd->angleturn += speeds.angleturn[tspeed];
     }
 
     if (input.gamekeydown[config.key_up])
     {
-        forward += speeds.forwardmove[speed].raw;
+        forward += speeds.forwardmove[speed];
     }
     if (input.gamekeydown[config.key_down])
     {
-        forward -= speeds.forwardmove[speed].raw;
+        forward -= speeds.forwardmove[speed];
     }
     if (input.joyymove < 0)
-        forward += speeds.forwardmove[speed].raw;
+        forward += speeds.forwardmove[speed];
     if (input.joyymove > 0)
-        forward -= speeds.forwardmove[speed].raw;
+        forward -= speeds.forwardmove[speed];
     if (input.gamekeydown[config.key_straferight])
-        side += speeds.sidemove[speed].raw;
+        side += speeds.sidemove[speed];
     if (input.gamekeydown[config.key_strafeleft])
-        side -= speeds.sidemove[speed].raw;
+        side -= speeds.sidemove[speed];
 
     // buttons
     cmd->chatchar = Doom::dequeueChatChar();
@@ -333,7 +328,7 @@ void buildTiccmd(Ticcmd* cmd)
 
     // mouse
     if (mousebuttons[config.mousebforward])
-        forward += speeds.forwardmove[speed].raw;
+        forward += speeds.forwardmove[speed];
 
     // forward double click
     if (mousebuttons[config.mousebforward] != input.dclickstate

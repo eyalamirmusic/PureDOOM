@@ -5,12 +5,11 @@
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
-#include "../Math/BBox.h"
 namespace Doom
 {
 // Render/Video's dirty-rectangle accumulator: Doom::markRect grows dirtybox to cover every region
-// drawn since the last blit (left/bottom/right/top via M_AddToBox). PureDOOM's host reads
-// screens[0] whole, so nothing consumes it today, but it is still written every frame.
+// drawn since the last blit (left/bottom/right/top). PureDOOM's host reads screens[0] whole, so
+// nothing consumes it today, but it is still written every frame.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); externed in
 // v_video.h but read only within Render/Video, so the vanilla name becomes a reference onto this
@@ -27,12 +26,11 @@ namespace Doom
 // (screens[4], Doom::initStatusBar). Each is filled by the drawers, so the frame goldens pin them exactly.
 struct VideoState
 {
-    // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP of the drawn region. The numbers in it are
-    // screen pixels, not world units - it is a fixed_t box only because vanilla's
-    // M_AddToBox is typed that way and markRect hands its pixel coordinates straight
-    // to it. Doom::addToBox only compares and assigns, so carrying the pixel counts
-    // as raw fixed values stores exactly what the vanilla int box did.
-    EA::Array<fixed_t, 4> dirtybox = {};
+    // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP (Math/BBox.h) of the drawn region, in screen
+    // pixels. It is plain int, not fixed_t - there is no fixed-point quantity here,
+    // only pixel coordinates - so Render/Video.cpp grows it with its own int-typed
+    // else-if update rather than Doom::addToBox, which is typed for a real Doom::BBox.
+    EA::Array<int, 4> dirtybox = {};
 
     EA::Vector<byte> frame; // screens[0]: the software framebuffer
     EA::Vector<byte> workspace; // the Doom::initVideo base block sliced into screens[0..3]

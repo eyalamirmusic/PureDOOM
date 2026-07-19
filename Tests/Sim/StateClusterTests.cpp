@@ -41,10 +41,10 @@ auto tMovementSpeeds = test("StateClusters/movementSpeedsMatchVanilla") = []
 {
     auto m = MovementSpeeds {};
 
-    check(m.forwardmove[0] == fixed_t {0x19} && m.forwardmove[1] == fixed_t {0x32},
+    check(m.forwardmove[0] == 0x19 && m.forwardmove[1] == 0x32,
           "forwardmove walk/run");
-    check(m.sidemove[0] == fixed_t {0x18} && m.sidemove[1] == fixed_t {0x28}, "sidemove walk/run");
-    check(m.angleturn[0] == fixed_t {640} && m.angleturn[1] == fixed_t {1280} && m.angleturn[2] == fixed_t {320},
+    check(m.sidemove[0] == 0x18 && m.sidemove[1] == 0x28, "sidemove walk/run");
+    check(m.angleturn[0] == 640 && m.angleturn[1] == 1280 && m.angleturn[2] == 320,
           "angleturn fast/faster/slow");
 };
 
