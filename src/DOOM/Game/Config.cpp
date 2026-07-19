@@ -166,16 +166,16 @@ Doom::ConfigDefault defaults[] = {
 
     {"usegamma", 0, 0}, // bound to menuSettings().usegamma at runtime
 
-    {"chatmacro0", 0, STRING_VALUE, 0, 0, &chat_macros[0], HUSTR_CHATMACRO0},
-    {"chatmacro1", 0, STRING_VALUE, 0, 0, &chat_macros[1], HUSTR_CHATMACRO1},
-    {"chatmacro2", 0, STRING_VALUE, 0, 0, &chat_macros[2], HUSTR_CHATMACRO2},
-    {"chatmacro3", 0, STRING_VALUE, 0, 0, &chat_macros[3], HUSTR_CHATMACRO3},
-    {"chatmacro4", 0, STRING_VALUE, 0, 0, &chat_macros[4], HUSTR_CHATMACRO4},
-    {"chatmacro5", 0, STRING_VALUE, 0, 0, &chat_macros[5], HUSTR_CHATMACRO5},
-    {"chatmacro6", 0, STRING_VALUE, 0, 0, &chat_macros[6], HUSTR_CHATMACRO6},
-    {"chatmacro7", 0, STRING_VALUE, 0, 0, &chat_macros[7], HUSTR_CHATMACRO7},
-    {"chatmacro8", 0, STRING_VALUE, 0, 0, &chat_macros[8], HUSTR_CHATMACRO8},
-    {"chatmacro9", 0, STRING_VALUE, 0, 0, &chat_macros[9], HUSTR_CHATMACRO9}};
+    {"chatmacro0", 0, STRING_VALUE, 0, 0, &chat_macros[0], Doom::HUSTR_CHATMACRO0},
+    {"chatmacro1", 0, STRING_VALUE, 0, 0, &chat_macros[1], Doom::HUSTR_CHATMACRO1},
+    {"chatmacro2", 0, STRING_VALUE, 0, 0, &chat_macros[2], Doom::HUSTR_CHATMACRO2},
+    {"chatmacro3", 0, STRING_VALUE, 0, 0, &chat_macros[3], Doom::HUSTR_CHATMACRO3},
+    {"chatmacro4", 0, STRING_VALUE, 0, 0, &chat_macros[4], Doom::HUSTR_CHATMACRO4},
+    {"chatmacro5", 0, STRING_VALUE, 0, 0, &chat_macros[5], Doom::HUSTR_CHATMACRO5},
+    {"chatmacro6", 0, STRING_VALUE, 0, 0, &chat_macros[6], Doom::HUSTR_CHATMACRO6},
+    {"chatmacro7", 0, STRING_VALUE, 0, 0, &chat_macros[7], Doom::HUSTR_CHATMACRO7},
+    {"chatmacro8", 0, STRING_VALUE, 0, 0, &chat_macros[8], Doom::HUSTR_CHATMACRO8},
+    {"chatmacro9", 0, STRING_VALUE, 0, 0, &chat_macros[9], Doom::HUSTR_CHATMACRO9}};
 
 #pragma GCC diagnostic pop
 int numdefaults = sizeof(defaults) / sizeof(Doom::ConfigDefault);

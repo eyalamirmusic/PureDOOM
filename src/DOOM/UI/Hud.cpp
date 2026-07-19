@@ -79,7 +79,8 @@ extern EA::Array<const char*, 45> mapnames;
 #define HU_INPUTTOGGLE 't'
 #define HU_INPUTX HU_MSGX
 #define HU_INPUTY                                                                   \
-    (HU_MSGY + HU_MSGHEIGHT * (Doom::littleEndian(Doom::hudFont().hu_font[0]->height) + 1))
+    (HU_MSGY                                                                        \
+     + HU_MSGHEIGHT * (Doom::littleEndian(Doom::hudFont().hu_font[0]->height) + 1))
 #define HU_INPUTWIDTH 64
 #define HU_INPUTHEIGHT 1
 #define QUEUESIZE 128
@@ -182,34 +183,42 @@ EA::Array<char, 128> frenchKeyMap = {
 //
 
 EA::Array<const char*, 32> mapnames2 = // DOOM 2 map names.
-    {HUSTR_1,  HUSTR_2,  HUSTR_3,  HUSTR_4,  HUSTR_5,  HUSTR_6,
-     HUSTR_7,  HUSTR_8,  HUSTR_9,  HUSTR_10, HUSTR_11,
+    {Doom::HUSTR_1,  Doom::HUSTR_2,  Doom::HUSTR_3,  Doom::HUSTR_4,  Doom::HUSTR_5,
+     Doom::HUSTR_6,  Doom::HUSTR_7,  Doom::HUSTR_8,  Doom::HUSTR_9,  Doom::HUSTR_10,
+     Doom::HUSTR_11,
 
-     HUSTR_12, HUSTR_13, HUSTR_14, HUSTR_15, HUSTR_16, HUSTR_17,
-     HUSTR_18, HUSTR_19, HUSTR_20,
+     Doom::HUSTR_12, Doom::HUSTR_13, Doom::HUSTR_14, Doom::HUSTR_15, Doom::HUSTR_16,
+     Doom::HUSTR_17, Doom::HUSTR_18, Doom::HUSTR_19, Doom::HUSTR_20,
 
-     HUSTR_21, HUSTR_22, HUSTR_23, HUSTR_24, HUSTR_25, HUSTR_26,
-     HUSTR_27, HUSTR_28, HUSTR_29, HUSTR_30, HUSTR_31, HUSTR_32};
+     Doom::HUSTR_21, Doom::HUSTR_22, Doom::HUSTR_23, Doom::HUSTR_24, Doom::HUSTR_25,
+     Doom::HUSTR_26, Doom::HUSTR_27, Doom::HUSTR_28, Doom::HUSTR_29, Doom::HUSTR_30,
+     Doom::HUSTR_31, Doom::HUSTR_32};
 
 EA::Array<const char*, 32> mapnamesp = // Plutonia WAD map names.
-    {PHUSTR_1,  PHUSTR_2,  PHUSTR_3,  PHUSTR_4,  PHUSTR_5,  PHUSTR_6,
-     PHUSTR_7,  PHUSTR_8,  PHUSTR_9,  PHUSTR_10, PHUSTR_11,
+    {Doom::PHUSTR_1,  Doom::PHUSTR_2,  Doom::PHUSTR_3,  Doom::PHUSTR_4,
+     Doom::PHUSTR_5,  Doom::PHUSTR_6,  Doom::PHUSTR_7,  Doom::PHUSTR_8,
+     Doom::PHUSTR_9,  Doom::PHUSTR_10, Doom::PHUSTR_11,
 
-     PHUSTR_12, PHUSTR_13, PHUSTR_14, PHUSTR_15, PHUSTR_16, PHUSTR_17,
-     PHUSTR_18, PHUSTR_19, PHUSTR_20,
+     Doom::PHUSTR_12, Doom::PHUSTR_13, Doom::PHUSTR_14, Doom::PHUSTR_15,
+     Doom::PHUSTR_16, Doom::PHUSTR_17, Doom::PHUSTR_18, Doom::PHUSTR_19,
+     Doom::PHUSTR_20,
 
-     PHUSTR_21, PHUSTR_22, PHUSTR_23, PHUSTR_24, PHUSTR_25, PHUSTR_26,
-     PHUSTR_27, PHUSTR_28, PHUSTR_29, PHUSTR_30, PHUSTR_31, PHUSTR_32};
+     Doom::PHUSTR_21, Doom::PHUSTR_22, Doom::PHUSTR_23, Doom::PHUSTR_24,
+     Doom::PHUSTR_25, Doom::PHUSTR_26, Doom::PHUSTR_27, Doom::PHUSTR_28,
+     Doom::PHUSTR_29, Doom::PHUSTR_30, Doom::PHUSTR_31, Doom::PHUSTR_32};
 
 EA::Array<const char*, 32> mapnamest = // TNT WAD map names.
-    {THUSTR_1,  THUSTR_2,  THUSTR_3,  THUSTR_4,  THUSTR_5,  THUSTR_6,
-     THUSTR_7,  THUSTR_8,  THUSTR_9,  THUSTR_10, THUSTR_11,
+    {Doom::THUSTR_1,  Doom::THUSTR_2,  Doom::THUSTR_3,  Doom::THUSTR_4,
+     Doom::THUSTR_5,  Doom::THUSTR_6,  Doom::THUSTR_7,  Doom::THUSTR_8,
+     Doom::THUSTR_9,  Doom::THUSTR_10, Doom::THUSTR_11,
 
-     THUSTR_12, THUSTR_13, THUSTR_14, THUSTR_15, THUSTR_16, THUSTR_17,
-     THUSTR_18, THUSTR_19, THUSTR_20,
+     Doom::THUSTR_12, Doom::THUSTR_13, Doom::THUSTR_14, Doom::THUSTR_15,
+     Doom::THUSTR_16, Doom::THUSTR_17, Doom::THUSTR_18, Doom::THUSTR_19,
+     Doom::THUSTR_20,
 
-     THUSTR_21, THUSTR_22, THUSTR_23, THUSTR_24, THUSTR_25, THUSTR_26,
-     THUSTR_27, THUSTR_28, THUSTR_29, THUSTR_30, THUSTR_31, THUSTR_32};
+     Doom::THUSTR_21, Doom::THUSTR_22, Doom::THUSTR_23, Doom::THUSTR_24,
+     Doom::THUSTR_25, Doom::THUSTR_26, Doom::THUSTR_27, Doom::THUSTR_28,
+     Doom::THUSTR_29, Doom::THUSTR_30, Doom::THUSTR_31, Doom::THUSTR_32};
 
 char foreignTranslation(unsigned char ch)
 {
@@ -421,7 +430,7 @@ void queueChatChar(char c)
 
     if (((chat.head + 1) & (QUEUESIZE - 1)) == chat.tail)
     {
-        hudState().plr->message = HUSTR_MSGU;
+        hudState().plr->message = Doom::HUSTR_MSGU;
     }
     else
     {
@@ -461,8 +470,10 @@ bool hudResponder(Event* ev)
     unsigned char c;
     int numplayers;
 
-    static EA::Array<char, MAXPLAYERS> destination_keys = {
-        HUSTR_KEYGREEN, HUSTR_KEYINDIGO, HUSTR_KEYBROWN, HUSTR_KEYRED};
+    static EA::Array<char, MAXPLAYERS> destination_keys = {Doom::HUSTR_KEYGREEN,
+                                                           Doom::HUSTR_KEYINDIGO,
+                                                           Doom::HUSTR_KEYBROWN,
+                                                           Doom::HUSTR_KEYRED};
 
     auto& players_ = playerState();
 
@@ -515,15 +526,15 @@ bool hudResponder(Event* ev)
                     {
                         chat.num_nobrainers++;
                         if (chat.num_nobrainers < 3)
-                            state.plr->message = HUSTR_TALKTOSELF1;
+                            state.plr->message = Doom::HUSTR_TALKTOSELF1;
                         else if (chat.num_nobrainers < 6)
-                            state.plr->message = HUSTR_TALKTOSELF2;
+                            state.plr->message = Doom::HUSTR_TALKTOSELF2;
                         else if (chat.num_nobrainers < 9)
-                            state.plr->message = HUSTR_TALKTOSELF3;
+                            state.plr->message = Doom::HUSTR_TALKTOSELF3;
                         else if (chat.num_nobrainers < 32)
-                            state.plr->message = HUSTR_TALKTOSELF4;
+                            state.plr->message = Doom::HUSTR_TALKTOSELF4;
                         else
-                            state.plr->message = HUSTR_TALKTOSELF5;
+                            state.plr->message = Doom::HUSTR_TALKTOSELF5;
                     }
                 }
             }
@@ -598,20 +609,22 @@ bool hudResponder(Event* ev)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.
 
 // The chat macros (m_misc persists them in the config).
-EA::Array<const char*, 10> chat_macros = {HUSTR_CHATMACRO0,
-                                          HUSTR_CHATMACRO1,
-                                          HUSTR_CHATMACRO2,
-                                          HUSTR_CHATMACRO3,
-                                          HUSTR_CHATMACRO4,
-                                          HUSTR_CHATMACRO5,
-                                          HUSTR_CHATMACRO6,
-                                          HUSTR_CHATMACRO7,
-                                          HUSTR_CHATMACRO8,
-                                          HUSTR_CHATMACRO9};
+EA::Array<const char*, 10> chat_macros = {Doom::HUSTR_CHATMACRO0,
+                                          Doom::HUSTR_CHATMACRO1,
+                                          Doom::HUSTR_CHATMACRO2,
+                                          Doom::HUSTR_CHATMACRO3,
+                                          Doom::HUSTR_CHATMACRO4,
+                                          Doom::HUSTR_CHATMACRO5,
+                                          Doom::HUSTR_CHATMACRO6,
+                                          Doom::HUSTR_CHATMACRO7,
+                                          Doom::HUSTR_CHATMACRO8,
+                                          Doom::HUSTR_CHATMACRO9};
 
 // The player colour names (g_game uses them for obituary messages).
-EA::Array<const char*, 4> player_names = {
-    HUSTR_PLRGREEN, HUSTR_PLRINDIGO, HUSTR_PLRBROWN, HUSTR_PLRRED};
+EA::Array<const char*, 4> player_names = {Doom::HUSTR_PLRGREEN,
+                                          Doom::HUSTR_PLRINDIGO,
+                                          Doom::HUSTR_PLRBROWN,
+                                          Doom::HUSTR_PLRRED};
 
 //
 // Builtin map names. The actual names can be found in dstrings.h. st_stuff reads
@@ -619,17 +632,22 @@ EA::Array<const char*, 4> player_names = {
 //
 EA::Array<const char*, 45>
     mapnames = // DOOM shareware/registered/retail (Ultimate) names.
-    {HUSTR_E1M1, HUSTR_E1M2, HUSTR_E1M3, HUSTR_E1M4, HUSTR_E1M5,
-     HUSTR_E1M6, HUSTR_E1M7, HUSTR_E1M8, HUSTR_E1M9,
+    {Doom::HUSTR_E1M1, Doom::HUSTR_E1M2, Doom::HUSTR_E1M3,
+     Doom::HUSTR_E1M4, Doom::HUSTR_E1M5, Doom::HUSTR_E1M6,
+     Doom::HUSTR_E1M7, Doom::HUSTR_E1M8, Doom::HUSTR_E1M9,
 
-     HUSTR_E2M1, HUSTR_E2M2, HUSTR_E2M3, HUSTR_E2M4, HUSTR_E2M5,
-     HUSTR_E2M6, HUSTR_E2M7, HUSTR_E2M8, HUSTR_E2M9,
+     Doom::HUSTR_E2M1, Doom::HUSTR_E2M2, Doom::HUSTR_E2M3,
+     Doom::HUSTR_E2M4, Doom::HUSTR_E2M5, Doom::HUSTR_E2M6,
+     Doom::HUSTR_E2M7, Doom::HUSTR_E2M8, Doom::HUSTR_E2M9,
 
-     HUSTR_E3M1, HUSTR_E3M2, HUSTR_E3M3, HUSTR_E3M4, HUSTR_E3M5,
-     HUSTR_E3M6, HUSTR_E3M7, HUSTR_E3M8, HUSTR_E3M9,
+     Doom::HUSTR_E3M1, Doom::HUSTR_E3M2, Doom::HUSTR_E3M3,
+     Doom::HUSTR_E3M4, Doom::HUSTR_E3M5, Doom::HUSTR_E3M6,
+     Doom::HUSTR_E3M7, Doom::HUSTR_E3M8, Doom::HUSTR_E3M9,
 
-     HUSTR_E4M1, HUSTR_E4M2, HUSTR_E4M3, HUSTR_E4M4, HUSTR_E4M5,
-     HUSTR_E4M6, HUSTR_E4M7, HUSTR_E4M8, HUSTR_E4M9,
+     Doom::HUSTR_E4M1, Doom::HUSTR_E4M2, Doom::HUSTR_E4M3,
+     Doom::HUSTR_E4M4, Doom::HUSTR_E4M5, Doom::HUSTR_E4M6,
+     Doom::HUSTR_E4M7, Doom::HUSTR_E4M8, Doom::HUSTR_E4M9,
 
-     "NEWLEVEL", "NEWLEVEL", "NEWLEVEL", "NEWLEVEL", "NEWLEVEL",
-     "NEWLEVEL", "NEWLEVEL", "NEWLEVEL", "NEWLEVEL"};
+     "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL",
+     "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL",
+     "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL"};

@@ -37,20 +37,31 @@
 
 
 // Misc. other strings.
-#define SAVEGAMENAME "doomsav"
+namespace Doom
+{
+constexpr const char* SAVEGAMENAME = "doomsav";
+} // namespace Doom
 
 //
 // File locations,
 //  relative to current position.
 // Path names are OS-sensitive.
 //
+// DEVMAPS/DEVDATA stay macros deliberately: Game/DoomMain.cpp's -shdev/-regdev/
+// -comdev paths and its -wart handling build wad/config paths with adjacent-literal
+// concatenation ("~" DEVMAPS "E", DEVDATA "doom1.wad", ...), which happens at
+// translation phase 6 and which a constexpr const char* cannot do. Same reason as
+// StringsEnglish.h's PRESSKEY/PRESSYN and DOSY.
 #define DEVMAPS "devmaps"
 #define DEVDATA "devdata"
 
 // Not done in french?
 
 // QuitDOOM messages
-#define NUM_QUITMESSAGES   22
+namespace Doom
+{
+constexpr int NUM_QUITMESSAGES = 22;
+} // namespace Doom
 
 
 extern const char* endmsg[];

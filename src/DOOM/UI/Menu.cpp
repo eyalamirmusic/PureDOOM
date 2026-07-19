@@ -96,9 +96,9 @@ extern unsigned char screen_palette[256 * 3]; // i_video, no header
 // The quit-screen taunts, drawn by quitDOOM. Declared in dstrings.h, read only
 // here, so their definition moved out of dstrings.cpp to sit with their one
 // reader. ::-scoped for the extern; const so the literals stay off -Wwritable.
-const char* endmsg[NUM_QUITMESSAGES + 1] = {
+const char* endmsg[Doom::NUM_QUITMESSAGES + 1] = {
     // DOOM1
-    QUITMSG,
+    Doom::QUITMSG,
     "please don't leave, there's more\ndemons to toast!",
     "let's beat it -- this is turning\ninto a bloodbath!",
     "i wouldn't leave if i were you.\ndos is much worse.",
@@ -181,11 +181,14 @@ struct MenuCustomText
 // detailNames / msgNames / quitsounds / menu_custom_texts) and the self-referential menu-definition
 // apparatus further down stay file-local.
 
-EA::Array<EA::Array<char, 26>, 5> gammamsg = {EA::Array<char, 26> {{GAMMALVL0}},
-                                              EA::Array<char, 26> {{GAMMALVL1}},
-                                              EA::Array<char, 26> {{GAMMALVL2}},
-                                              EA::Array<char, 26> {{GAMMALVL3}},
-                                              EA::Array<char, 26> {{GAMMALVL4}}};
+// Was EA::Array<EA::Array<char, 26>, 5>, a fixed 26-byte buffer per message that
+// only existed because these were string-literal macros. Its one reader wants a
+// const char*, so it holds pointers now and the 26 cannot silently truncate.
+EA::Array<const char*, 5> gammamsg = {Doom::GAMMALVL0,
+                                      Doom::GAMMALVL1,
+                                      Doom::GAMMALVL2,
+                                      Doom::GAMMALVL3,
+                                      Doom::GAMMALVL4};
 
 // graphic name of skulls
 // warning: initializer-string for array of chars is too long
@@ -701,7 +704,7 @@ void readSaveStrings()
         handle = doom_open(name.data(), "r");
         if (handle == nullptr)
         {
-            doom_strcpy(&state.savegamestrings[i][0], EMPTYSTRING);
+            doom_strcpy(&state.savegamestrings[i][0], Doom::EMPTYSTRING);
             DOOM_LoadMenu[i].status = 0;
             continue;
         }
@@ -775,7 +778,7 @@ void loadGameMenu(int)
 {
     if (gameSession().netgame)
     {
-        startMessage(LOADNET, {}, false);
+        startMessage(Doom::LOADNET, {}, false);
         return;
     }
 
@@ -834,7 +837,7 @@ void saveSelect(int choice)
 
     state.saveSlot = choice;
     doom_strcpy(state.saveOldString, state.savegamestrings[choice]);
-    if (!doom_strcmp(state.savegamestrings[choice], EMPTYSTRING))
+    if (!doom_strcmp(state.savegamestrings[choice], Doom::EMPTYSTRING))
         state.savegamestrings[choice][0] = 0;
     state.saveCharIndex =
         static_cast<int>(doom_strlen(state.savegamestrings[choice]));
@@ -847,7 +850,7 @@ void saveGameMenu(int)
 {
     if (!demoState().usergame)
     {
-        startMessage(SAVEDEAD, {}, false);
+        startMessage(Doom::SAVEDEAD, {}, false);
         return;
     }
 
@@ -891,10 +894,10 @@ void quickSave()
         state.quickSaveSlot = -2; // means to pick a slot now
         return;
     }
-    //doom_sprintf(tempstring, QSPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring, QSPROMPT_1);
+    //doom_sprintf(tempstring, Doom::QSPROMPT, savegamestrings[quickSaveSlot]);
+    doom_strcpy(state.tempstring, Doom::QSPROMPT_1);
     doom_concat(state.tempstring, state.savegamestrings[state.quickSaveSlot]);
-    doom_strcpy(state.tempstring, QSPROMPT_2);
+    doom_strcpy(state.tempstring, Doom::QSPROMPT_2);
     startMessage(state.tempstring, quickSaveResponse, true);
 }
 
@@ -916,19 +919,19 @@ void quickLoad()
 
     if (gameSession().netgame)
     {
-        startMessage(QLOADNET, {}, false);
+        startMessage(Doom::QLOADNET, {}, false);
         return;
     }
 
     if (state.quickSaveSlot < 0)
     {
-        startMessage(QSAVESPOT, {}, false);
+        startMessage(Doom::QSAVESPOT, {}, false);
         return;
     }
-    //doom_sprintf(tempstring, QLPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring, QLPROMPT_1);
+    //doom_sprintf(tempstring, Doom::QLPROMPT, savegamestrings[quickSaveSlot]);
+    doom_strcpy(state.tempstring, Doom::QLPROMPT_1);
     doom_concat(state.tempstring, state.savegamestrings[state.quickSaveSlot]);
-    doom_strcpy(state.tempstring, QLPROMPT_2);
+    doom_strcpy(state.tempstring, Doom::QLPROMPT_2);
     startMessage(state.tempstring, quickLoadResponse, true);
 }
 
@@ -1087,7 +1090,7 @@ void newGame(int)
 {
     if (gameSession().netgame && !demoState().demoplayback)
     {
-        startMessage(NEWGAME, {}, false);
+        startMessage(Doom::NEWGAME, {}, false);
         return;
     }
 
@@ -1119,7 +1122,7 @@ void chooseSkill(int choice)
 {
     if (choice == nightmare)
     {
-        startMessage(NIGHTMARE, verifyNightmare, true);
+        startMessage(Doom::NIGHTMARE, verifyNightmare, true);
         return;
     }
 
@@ -1133,7 +1136,7 @@ void episode(int choice)
 
     if ((version.gamemode == shareware) && choice)
     {
-        startMessage(SWSTRING, {}, false);
+        startMessage(Doom::SWSTRING, {}, false);
         setupNextMenu(&ReadDef1);
         return;
     }
@@ -1218,9 +1221,9 @@ void changeMessages(int)
     settings.showMessages = 1 - settings.showMessages;
 
     if (!settings.showMessages)
-        players_.players[players_.consoleplayer].message = MSGOFF;
+        players_.players[players_.consoleplayer].message = Doom::MSGOFF;
     else
-        players_.players[players_.consoleplayer].message = MSGON;
+        players_.players[players_.consoleplayer].message = Doom::MSGON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1236,9 +1239,9 @@ void changeCrosshair(int)
     input.crosshair = 1 - input.crosshair;
 
     if (!input.crosshair)
-        players_.players[players_.consoleplayer].message = CROSSOFF;
+        players_.players[players_.consoleplayer].message = Doom::CROSSOFF;
     else
-        players_.players[players_.consoleplayer].message = CROSSON;
+        players_.players[players_.consoleplayer].message = Doom::CROSSON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1254,9 +1257,9 @@ void changeAlwaysRun(int)
     input.always_run = 1 - input.always_run;
 
     if (!input.always_run)
-        players_.players[players_.consoleplayer].message = ALWAYSRUNOFF;
+        players_.players[players_.consoleplayer].message = Doom::ALWAYSRUNOFF;
     else
-        players_.players[players_.consoleplayer].message = ALWAYSRUNON;
+        players_.players[players_.consoleplayer].message = Doom::ALWAYSRUNON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1286,11 +1289,11 @@ void endGame(int)
 
     if (gameSession().netgame)
     {
-        startMessage(NETEND, {}, false);
+        startMessage(Doom::NETEND, {}, false);
         return;
     }
 
-    startMessage(ENDGAME, endGameResponse, true);
+    startMessage(Doom::ENDGAME, endGameResponse, true);
 }
 
 //
@@ -1820,7 +1823,7 @@ bool menuResponder(Event* ev)
                 if (settings.usegamma > 4)
                     settings.usegamma = 0;
                 players_.players[players_.consoleplayer].message =
-                    gammamsg[settings.usegamma].data();
+                    gammamsg[settings.usegamma];
                 setPalette(static_cast<byte*>(Doom::cacheLumpName("PLAYPAL")));
                 return true;
         }
