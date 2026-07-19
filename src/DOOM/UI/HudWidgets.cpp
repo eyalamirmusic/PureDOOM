@@ -67,22 +67,18 @@ bool delCharFromTextLine(HudTextLine& t)
 
 void drawTextLine(HudTextLine& l, bool drawcursor)
 {
-    int i;
-    int w;
-    int x;
-    unsigned char c;
-
     // draw the new stuff
-    x = l.x;
-    for (i = 0; i < l.len; i++)
+    auto x = l.x;
+
+    for (int i = 0; i < l.len; i++)
     {
-        c = doom_toupper(l.l[i]);
+        unsigned char c = doom_toupper(l.l[i]);
         if (c != ' ' && c >= l.sc && c <= '_')
         {
-            w = littleEndian(l.f[c - l.sc]->width);
+            int w = littleEndian(l.f[c - l.sc]->width);
             if (x + w > SCREENWIDTH)
                 break;
-            Doom::drawPatchDirect(x, l.y, FG, l.f[c - l.sc]);
+            drawPatchDirect(x, l.y, FG, l.f[c - l.sc]);
             x += w;
         }
         else
@@ -96,7 +92,7 @@ void drawTextLine(HudTextLine& l, bool drawcursor)
     // draw the cursor if requested
     if (drawcursor && x + littleEndian(l.f['_' - l.sc]->width) <= SCREENWIDTH)
     {
-        Doom::drawPatchDirect(x, l.y, FG, l.f['_' - l.sc]);
+        drawPatchDirect(x, l.y, FG, l.f['_' - l.sc]);
     }
 }
 
@@ -105,7 +101,6 @@ void eraseTextLine(HudTextLine& l)
 {
     auto& view = viewWindow();
 
-    int lh;
     int y;
     int yoffset;
 
@@ -115,16 +110,16 @@ void eraseTextLine(HudTextLine& l)
 
     if (!overlayState().automapactive && view.viewwindowx && l.needsupdate)
     {
-        lh = littleEndian(l.f[0]->height) + 1;
+        int lh = littleEndian(l.f[0]->height) + 1;
         for (y = l.y, yoffset = y * SCREENWIDTH; y < l.y + lh;
              y++, yoffset += SCREENWIDTH)
         {
             if (y < view.viewwindowy || y >= view.viewwindowy + view.viewheight)
-                Doom::videoErase(yoffset, SCREENWIDTH); // erase entire line
+                videoErase(yoffset, SCREENWIDTH); // erase entire line
             else
             {
-                Doom::videoErase(yoffset, view.viewwindowx); // erase left border
-                Doom::videoErase(yoffset + view.viewwindowx + view.viewwidth,
+                videoErase(yoffset, view.viewwindowx); // erase left border
+                videoErase(yoffset + view.viewwindowx + view.viewwidth,
                                  view.viewwindowx);
                 // erase right border
             }
@@ -138,28 +133,24 @@ void eraseTextLine(HudTextLine& l)
 void initSText(
     HudScrollingText& s, int x, int y, int h, Patch** font, int startchar, bool* on)
 {
-    int i;
-
     s.h = h;
     s.on = on;
     s.laston = true;
     s.cl = 0;
-    for (i = 0; i < h; i++)
+    for (int i = 0; i < h; i++)
         initTextLine(
             s.l[i], x, y - i * (littleEndian(font[0]->height) + 1), font, startchar);
 }
 
 void addLineToSText(HudScrollingText& s)
 {
-    int i;
-
     // add a clear line
     if (++s.cl == s.h)
         s.cl = 0;
     clearTextLine(s.l[s.cl]);
 
     // everything needs updating
-    for (i = 0; i < s.h; i++)
+    for (int i = 0; i < s.h; i++)
         s.l[i].needsupdate = 4;
 }
 
@@ -176,15 +167,13 @@ void addMessageToSText(HudScrollingText& s, const char* prefix, const char* msg)
 
 void drawSText(HudScrollingText& s)
 {
-    int i, idx;
-
     if (!*s.on)
         return; // if not on, don't draw
 
     // draw everything
-    for (i = 0; i < s.h; i++)
+    for (int i = 0; i < s.h; i++)
     {
-        idx = s.cl - i;
+        int idx = s.cl - i;
         if (idx < 0)
             idx += s.h; // handle queue of lines
 
@@ -195,9 +184,7 @@ void drawSText(HudScrollingText& s)
 
 void eraseSText(HudScrollingText& s)
 {
-    int i;
-
-    for (i = 0; i < s.h; i++)
+    for (int i = 0; i < s.h; i++)
     {
         if (s.laston && !*s.on)
             s.l[i].needsupdate = 4;

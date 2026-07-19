@@ -280,7 +280,7 @@ static EA::Array<anim_t_wi_stuff*, NUMEPISODES> anims_wi_stuff = {
 void slamBackground()
 {
     doom_memcpy(screens[0], screens[1], SCREENWIDTH * SCREENHEIGHT);
-    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 }
 
 // The ticker is used to detect keys
@@ -298,7 +298,7 @@ void drawLF()
     int y = WI_TITLEY;
 
     // draw <LevelName>
-    Doom::drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->last]->width)) / 2,
+    drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->last]->width)) / 2,
                     y,
                     FB,
                     im.lnames[im.wbs->last]);
@@ -306,7 +306,7 @@ void drawLF()
     // draw "Finished!"
     y += (5 * littleEndian(im.lnames[im.wbs->last]->height)) / 4;
 
-    Doom::drawPatch(
+    drawPatch(
         (SCREENWIDTH - littleEndian(im.finished->width)) / 2, y, FB, im.finished);
 }
 
@@ -318,13 +318,13 @@ void drawEL()
     int y = WI_TITLEY;
 
     // draw "Entering"
-    Doom::drawPatch(
+    drawPatch(
         (SCREENWIDTH - littleEndian(im.entering->width)) / 2, y, FB, im.entering);
 
     // draw level
     y += (5 * littleEndian(im.lnames[im.wbs->next]->height)) / 4;
 
-    Doom::drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->next]->width)) / 2,
+    drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->next]->width)) / 2,
                     y,
                     FB,
                     im.lnames[im.wbs->next]);
@@ -334,20 +334,15 @@ void drawOnLnode(int n, Patch* c[])
 {
     auto& im = intermissionState();
 
-    int i;
-    int left;
-    int top;
-    int right;
-    int bottom;
     bool fits = false;
 
-    i = 0;
+    int i = 0;
     do
     {
-        left = lnodes[im.wbs->epsd][n].x - littleEndian(c[i]->leftoffset);
-        top = lnodes[im.wbs->epsd][n].y - littleEndian(c[i]->topoffset);
-        right = left + littleEndian(c[i]->width);
-        bottom = top + littleEndian(c[i]->height);
+        int left = lnodes[im.wbs->epsd][n].x - littleEndian(c[i]->leftoffset);
+        int top = lnodes[im.wbs->epsd][n].y - littleEndian(c[i]->topoffset);
+        int right = left + littleEndian(c[i]->width);
+        int bottom = top + littleEndian(c[i]->height);
 
         if (left >= 0 && right < SCREENWIDTH && top >= 0 && bottom < SCREENHEIGHT)
         {
@@ -361,7 +356,7 @@ void drawOnLnode(int n, Patch* c[])
 
     if (fits && i < 2)
     {
-        Doom::drawPatch(
+        drawPatch(
             lnodes[im.wbs->epsd][n].x, lnodes[im.wbs->epsd][n].y, FB, c[i]);
     }
     else
@@ -377,8 +372,6 @@ void initAnimatedBack()
 {
     auto& im = intermissionState();
 
-    anim_t_wi_stuff* a;
-
     if (gameVersion().gamemode == commercial)
         return;
 
@@ -387,17 +380,17 @@ void initAnimatedBack()
 
     for (int i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
     {
-        a = &anims_wi_stuff[im.wbs->epsd][i];
+        anim_t_wi_stuff* a = &anims_wi_stuff[im.wbs->epsd][i];
 
         // init variables
         a->ctr = -1;
 
         // specify the next time to draw it
         if (a->type == ANIM_ALWAYS)
-            a->nexttic = im.bcnt + 1 + (Doom::randomness().forMenu() % a->period);
+            a->nexttic = im.bcnt + 1 + (randomness().forMenu() % a->period);
         else if (a->type == ANIM_RANDOM)
             a->nexttic =
-                im.bcnt + 1 + a->data2 + (Doom::randomness().forMenu() % a->data1);
+                im.bcnt + 1 + a->data2 + (randomness().forMenu() % a->data1);
         else if (a->type == ANIM_LEVEL)
             a->nexttic = im.bcnt + 1;
     }
@@ -407,8 +400,6 @@ void updateAnimatedBack()
 {
     auto& im = intermissionState();
 
-    anim_t_wi_stuff* a;
-
     if (gameVersion().gamemode == commercial)
         return;
 
@@ -417,7 +408,7 @@ void updateAnimatedBack()
 
     for (int i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
     {
-        a = &anims_wi_stuff[im.wbs->epsd][i];
+        anim_t_wi_stuff* a = &anims_wi_stuff[im.wbs->epsd][i];
 
         if (im.bcnt == a->nexttic)
         {
@@ -435,7 +426,7 @@ void updateAnimatedBack()
                     {
                         a->ctr = -1;
                         a->nexttic = im.bcnt + a->data2
-                                     + (Doom::randomness().forMenu() % a->data1);
+                                     + (randomness().forMenu() % a->data1);
                     }
                     else
                         a->nexttic = im.bcnt + a->period;
@@ -474,7 +465,7 @@ void drawAnimatedBack()
         a = &anims_wi_stuff[im.wbs->epsd][i];
 
         if (a->ctr >= 0)
-            Doom::drawPatch(a->loc.x, a->loc.y, FB, a->p[a->ctr]);
+            drawPatch(a->loc.x, a->loc.y, FB, a->p[a->ctr]);
     }
 }
 
@@ -489,8 +480,6 @@ int drawIntermissionNum(int x, int y, int n, int digits)
     auto& im = intermissionState();
 
     int fontwidth = littleEndian(im.num[0]->width);
-    int neg;
-    int temp;
 
     if (digits < 0)
     {
@@ -503,7 +492,7 @@ int drawIntermissionNum(int x, int y, int n, int digits)
         {
             // figure out # of digits in #
             digits = 0;
-            temp = n;
+            int temp = n;
 
             while (temp)
             {
@@ -513,7 +502,7 @@ int drawIntermissionNum(int x, int y, int n, int digits)
         }
     }
 
-    neg = n < 0;
+    int neg = n < 0;
     if (neg)
         n = -n;
 
@@ -525,13 +514,13 @@ int drawIntermissionNum(int x, int y, int n, int digits)
     while (digits--)
     {
         x -= fontwidth;
-        Doom::drawPatch(x, y, FB, im.num[n % 10]);
+        drawPatch(x, y, FB, im.num[n % 10]);
         n /= 10;
     }
 
     // draw a minus sign if necessary
     if (neg)
-        Doom::drawPatch(x -= 8, y, FB, im.wiminus);
+        drawPatch(x -= 8, y, FB, im.wiminus);
 
     return x;
 }
@@ -541,7 +530,7 @@ void drawPercent(int x, int y, int p)
     if (p < 0)
         return;
 
-    Doom::drawPatch(x, y, FB, intermissionState().percent);
+    drawPatch(x, y, FB, intermissionState().percent);
     drawIntermissionNum(x, y, p, -1);
 }
 
@@ -553,32 +542,29 @@ void drawTime(int x, int y, int t)
 {
     auto& im = intermissionState();
 
-    int div;
-    int n;
-
     if (t < 0)
         return;
 
     if (t <= 61 * 59)
     {
-        div = 1;
+        int div = 1;
 
         do
         {
-            n = (t / div) % 60;
+            int n = (t / div) % 60;
             x = drawIntermissionNum(x, y, n, 2) - littleEndian(im.colon->width);
             div *= 60;
 
             // draw
             if (div == 60 || t / div)
-                Doom::drawPatch(x, y, FB, im.colon);
+                drawPatch(x, y, FB, im.colon);
 
         } while (t / div);
     }
     else
     {
         // "sucks"
-        Doom::drawPatch(x - littleEndian(im.sucks->width), y, FB, im.sucks);
+        drawPatch(x - littleEndian(im.sucks->width), y, FB, im.sucks);
     }
 }
 
@@ -604,7 +590,7 @@ void updateNoState()
     if (!--intermissionState().cnt)
     {
         endIntermission();
-        Doom::worldDone();
+        worldDone();
     }
 }
 
@@ -636,8 +622,6 @@ void drawShowNextLoc()
     auto& im = intermissionState();
     const auto& version = gameVersion();
 
-    int last;
-
     slamBackground();
 
     // draw animated background
@@ -651,7 +635,7 @@ void drawShowNextLoc()
             return;
         }
 
-        last = (im.wbs->last == 8) ? im.wbs->next - 1 : im.wbs->last;
+        int last = (im.wbs->last == 8) ? im.wbs->next - 1 : im.wbs->last;
 
         // draw a splat on taken cities.
         for (int i = 0; i <= last; i++)
@@ -730,8 +714,6 @@ void updateDeathmatchStats()
     auto& im = intermissionState();
     const auto& players_ = playerState();
 
-    bool stillticking;
-
     updateAnimatedBack();
 
     if (im.acceleratestage && im.dm_state != 4)
@@ -750,16 +732,16 @@ void updateDeathmatchStats()
             }
         }
 
-        Doom::startSound(0, sfx_barexp);
+        startSound(0, sfx_barexp);
         im.dm_state = 4;
     }
 
     if (im.dm_state == 2)
     {
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
-        stillticking = false;
+        bool stillticking = false;
 
         for (int i = 0; i < MAXPLAYERS; i++)
         {
@@ -795,7 +777,7 @@ void updateDeathmatchStats()
         }
         if (!stillticking)
         {
-            Doom::startSound(0, sfx_barexp);
+            startSound(0, sfx_barexp);
             im.dm_state++;
         }
     }
@@ -803,7 +785,7 @@ void updateDeathmatchStats()
     {
         if (im.acceleratestage)
         {
-            Doom::startSound(0, sfx_slop);
+            startSound(0, sfx_slop);
 
             if (gameVersion().gamemode == commercial)
                 initNoState();
@@ -826,10 +808,6 @@ void drawDeathmatchStats()
     auto& im = intermissionState();
     const auto& players_ = playerState();
 
-    int x;
-    int y;
-    int w;
-
     slamBackground();
 
     // draw animated background
@@ -837,38 +815,38 @@ void drawDeathmatchStats()
     drawLF();
 
     // draw stat titles (top line)
-    Doom::drawPatch(DM_TOTALSX - littleEndian(im.total->width) / 2,
+    drawPatch(DM_TOTALSX - littleEndian(im.total->width) / 2,
                     DM_MATRIXY - WI_SPACINGY + 10,
                     FB,
                     im.total);
 
-    Doom::drawPatch(DM_KILLERSX, DM_KILLERSY, FB, im.killers);
-    Doom::drawPatch(DM_VICTIMSX, DM_VICTIMSY, FB, im.victims);
+    drawPatch(DM_KILLERSX, DM_KILLERSY, FB, im.killers);
+    drawPatch(DM_VICTIMSX, DM_VICTIMSY, FB, im.victims);
 
     // draw P?
-    x = DM_MATRIXX + DM_SPACINGX;
-    y = DM_MATRIXY;
+    int x = DM_MATRIXX + DM_SPACINGX;
+    int y = DM_MATRIXY;
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (players_.playeringame[i])
         {
-            Doom::drawPatch(x - littleEndian(im.p[i]->width) / 2,
+            drawPatch(x - littleEndian(im.p[i]->width) / 2,
                             DM_MATRIXY - WI_SPACINGY,
                             FB,
                             im.p[i]);
 
-            Doom::drawPatch(
+            drawPatch(
                 DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.p[i]);
 
             if (i == im.me)
             {
-                Doom::drawPatch(x - littleEndian(im.p[i]->width) / 2,
+                drawPatch(x - littleEndian(im.p[i]->width) / 2,
                                 DM_MATRIXY - WI_SPACINGY,
                                 FB,
                                 im.bstar);
 
-                Doom::drawPatch(
+                drawPatch(
                     DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.star);
             }
         }
@@ -885,7 +863,7 @@ void drawDeathmatchStats()
 
     // draw stats
     y = DM_MATRIXY + 10;
-    w = littleEndian(im.num[0]->width);
+    int w = littleEndian(im.num[0]->width);
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -958,14 +936,14 @@ void updateNetgameStats()
             if (im.dofrags)
                 im.cnt_frags[i] = fragSum(i);
         }
-        Doom::startSound(0, sfx_barexp);
+        startSound(0, sfx_barexp);
         im.ng_state = 10;
     }
 
     if (im.ng_state == 2)
     {
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -984,14 +962,14 @@ void updateNetgameStats()
 
         if (!stillticking)
         {
-            Doom::startSound(0, sfx_barexp);
+            startSound(0, sfx_barexp);
             im.ng_state++;
         }
     }
     else if (im.ng_state == 4)
     {
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -1008,14 +986,14 @@ void updateNetgameStats()
         }
         if (!stillticking)
         {
-            Doom::startSound(0, sfx_barexp);
+            startSound(0, sfx_barexp);
             im.ng_state++;
         }
     }
     else if (im.ng_state == 6)
     {
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -1034,14 +1012,14 @@ void updateNetgameStats()
 
         if (!stillticking)
         {
-            Doom::startSound(0, sfx_barexp);
+            startSound(0, sfx_barexp);
             im.ng_state += 1 + 2 * !im.dofrags;
         }
     }
     else if (im.ng_state == 8)
     {
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         stillticking = false;
 
@@ -1060,7 +1038,7 @@ void updateNetgameStats()
 
         if (!stillticking)
         {
-            Doom::startSound(0, sfx_pldeth);
+            startSound(0, sfx_pldeth);
             im.ng_state++;
         }
     }
@@ -1068,7 +1046,7 @@ void updateNetgameStats()
     {
         if (im.acceleratestage)
         {
-            Doom::startSound(0, sfx_sgcock);
+            startSound(0, sfx_sgcock);
             if (gameVersion().gamemode == commercial)
                 initNoState();
             else
@@ -1091,8 +1069,6 @@ void drawNetgameStats()
 
     const int statsX = 32 + littleEndian(im.star->width) / 2 + 32 * !im.dofrags;
 
-    int x;
-    int y;
     int pwidth = littleEndian(im.percent->width);
 
     slamBackground();
@@ -1103,40 +1079,40 @@ void drawNetgameStats()
     drawLF();
 
     // draw stat titles (top line)
-    Doom::drawPatch(statsX + NG_SPACINGX - littleEndian(im.kills->width),
+    drawPatch(statsX + NG_SPACINGX - littleEndian(im.kills->width),
                     NG_STATSY,
                     FB,
                     im.kills);
 
-    Doom::drawPatch(statsX + 2 * NG_SPACINGX - littleEndian(im.items->width),
+    drawPatch(statsX + 2 * NG_SPACINGX - littleEndian(im.items->width),
                     NG_STATSY,
                     FB,
                     im.items);
 
-    Doom::drawPatch(statsX + 3 * NG_SPACINGX - littleEndian(im.secret->width),
+    drawPatch(statsX + 3 * NG_SPACINGX - littleEndian(im.secret->width),
                     NG_STATSY,
                     FB,
                     im.secret);
 
     if (im.dofrags)
-        Doom::drawPatch(statsX + 4 * NG_SPACINGX - littleEndian(im.frags->width),
+        drawPatch(statsX + 4 * NG_SPACINGX - littleEndian(im.frags->width),
                         NG_STATSY,
                         FB,
                         im.frags);
 
     // draw stats
-    y = NG_STATSY + littleEndian(im.kills->height);
+    int y = NG_STATSY + littleEndian(im.kills->height);
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         if (!playerState().playeringame[i])
             continue;
 
-        x = statsX;
-        Doom::drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.p[i]);
+        int x = statsX;
+        drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.p[i]);
 
         if (i == im.me)
-            Doom::drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.star);
+            drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.star);
 
         x += NG_SPACINGX;
         drawPercent(x - pwidth, y + 10, im.cnt_kills[i]);
@@ -1181,7 +1157,7 @@ void updateStats()
         im.cnt_secret[0] = (im.plrs[im.me].ssecret * 100) / im.wbs->maxsecret;
         im.cnt_time = im.plrs[im.me].stime / TICRATE;
         im.cnt_par = im.wbs->partime / TICRATE;
-        Doom::startSound(0, sfx_barexp);
+        startSound(0, sfx_barexp);
         im.sp_state = 10;
     }
 
@@ -1190,12 +1166,12 @@ void updateStats()
         im.cnt_kills[0] += 2;
 
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         if (im.cnt_kills[0] >= (im.plrs[im.me].skills * 100) / im.wbs->maxkills)
         {
             im.cnt_kills[0] = (im.plrs[im.me].skills * 100) / im.wbs->maxkills;
-            Doom::startSound(0, sfx_barexp);
+            startSound(0, sfx_barexp);
             im.sp_state++;
         }
     }
@@ -1204,12 +1180,12 @@ void updateStats()
         im.cnt_items[0] += 2;
 
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         if (im.cnt_items[0] >= (im.plrs[im.me].sitems * 100) / im.wbs->maxitems)
         {
             im.cnt_items[0] = (im.plrs[im.me].sitems * 100) / im.wbs->maxitems;
-            Doom::startSound(0, sfx_barexp);
+            startSound(0, sfx_barexp);
             im.sp_state++;
         }
     }
@@ -1218,12 +1194,12 @@ void updateStats()
         im.cnt_secret[0] += 2;
 
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         if (im.cnt_secret[0] >= (im.plrs[im.me].ssecret * 100) / im.wbs->maxsecret)
         {
             im.cnt_secret[0] = (im.plrs[im.me].ssecret * 100) / im.wbs->maxsecret;
-            Doom::startSound(0, sfx_barexp);
+            startSound(0, sfx_barexp);
             im.sp_state++;
         }
     }
@@ -1231,7 +1207,7 @@ void updateStats()
     else if (im.sp_state == 8)
     {
         if (!(im.bcnt & 3))
-            Doom::startSound(0, sfx_pistol);
+            startSound(0, sfx_pistol);
 
         im.cnt_time += 3;
 
@@ -1246,7 +1222,7 @@ void updateStats()
 
             if (im.cnt_time >= im.plrs[im.me].stime / TICRATE)
             {
-                Doom::startSound(0, sfx_barexp);
+                startSound(0, sfx_barexp);
                 im.sp_state++;
             }
         }
@@ -1255,7 +1231,7 @@ void updateStats()
     {
         if (im.acceleratestage)
         {
-            Doom::startSound(0, sfx_sgcock);
+            startSound(0, sfx_sgcock);
 
             if (gameVersion().gamemode == commercial)
                 initNoState();
@@ -1278,9 +1254,8 @@ void drawStats()
     auto& im = intermissionState();
 
     // line height
-    int lh;
 
-    lh = (3 * littleEndian(im.num[0]->height)) / 2;
+    int lh = (3 * littleEndian(im.num[0]->height)) / 2;
 
     slamBackground();
 
@@ -1289,21 +1264,21 @@ void drawStats()
 
     drawLF();
 
-    Doom::drawPatch(SP_STATSX, SP_STATSY, FB, im.kills);
+    drawPatch(SP_STATSX, SP_STATSY, FB, im.kills);
     drawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY, im.cnt_kills[0]);
 
-    Doom::drawPatch(SP_STATSX, SP_STATSY + lh, FB, im.items);
+    drawPatch(SP_STATSX, SP_STATSY + lh, FB, im.items);
     drawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY + lh, im.cnt_items[0]);
 
-    Doom::drawPatch(SP_STATSX, SP_STATSY + 2 * lh, FB, im.sp_secret);
+    drawPatch(SP_STATSX, SP_STATSY + 2 * lh, FB, im.sp_secret);
     drawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY + 2 * lh, im.cnt_secret[0]);
 
-    Doom::drawPatch(SP_TIMEX, SP_TIMEY, FB, im.time_patch);
+    drawPatch(SP_TIMEX, SP_TIMEY, FB, im.time_patch);
     drawTime(SCREENWIDTH / 2 - SP_TIMEX, SP_TIMEY, im.cnt_time);
 
     if (im.wbs->epsd < 3)
     {
-        Doom::drawPatch(SCREENWIDTH / 2 + SP_TIMEX, SP_TIMEY, FB, im.par);
+        drawPatch(SCREENWIDTH / 2 + SP_TIMEX, SP_TIMEY, FB, im.par);
         drawTime(SCREENWIDTH - SP_TIMEX, SP_TIMEY, im.cnt_par);
     }
 }
@@ -1354,9 +1329,9 @@ void intermissionTicker()
     {
         // intermission music
         if (gameVersion().gamemode == commercial)
-            Doom::changeMusic(mus_dm2int, true);
+            changeMusic(mus_dm2int, true);
         else
-            Doom::changeMusic(mus_inter, true);
+            changeMusic(mus_inter, true);
     }
 
     checkForAccelerate();
@@ -1389,7 +1364,6 @@ void loadIntermissionData()
     const auto& version = gameVersion();
 
     EA::Array<char, 9> name;
-    anim_t_wi_stuff* a;
 
     if (version.gamemode == commercial)
         doom_strcpy(name.data(), "INTERPIC");
@@ -1407,8 +1381,8 @@ void loadIntermissionData()
     }
 
     // background
-    im.bg = static_cast<Patch*>(Doom::cacheLumpName(name.data()));
-    Doom::drawPatch(0, 0, 1, im.bg);
+    im.bg = static_cast<Patch*>(cacheLumpName(name.data()));
+    drawPatch(0, 0, 1, im.bg);
 
     if (version.gamemode == commercial)
     {
@@ -1421,7 +1395,7 @@ void loadIntermissionData()
             if (i < 10)
                 doom_concat(name.data(), "0");
             doom_concat(name.data(), doom_itoa(i, 10));
-            im.lnames[i] = static_cast<Patch*>(Doom::cacheLumpName(name.data()));
+            im.lnames[i] = static_cast<Patch*>(cacheLumpName(name.data()));
         }
     }
     else
@@ -1433,23 +1407,23 @@ void loadIntermissionData()
             doom_strcpy(name.data(), "WILV");
             doom_concat(name.data(), doom_itoa(im.wbs->epsd, 10));
             doom_concat(name.data(), doom_itoa(i, 10));
-            im.lnames[i] = static_cast<Patch*>(Doom::cacheLumpName(name.data()));
+            im.lnames[i] = static_cast<Patch*>(cacheLumpName(name.data()));
         }
 
         // you are here
-        im.yah[0] = static_cast<Patch*>(Doom::cacheLumpName("WIURH0"));
+        im.yah[0] = static_cast<Patch*>(cacheLumpName("WIURH0"));
 
         // you are here (alt.)
-        im.yah[1] = static_cast<Patch*>(Doom::cacheLumpName("WIURH1"));
+        im.yah[1] = static_cast<Patch*>(cacheLumpName("WIURH1"));
 
         // splat
-        im.splat = static_cast<Patch*>(Doom::cacheLumpName("WISPLAT"));
+        im.splat = static_cast<Patch*>(cacheLumpName("WISPLAT"));
 
         if (im.wbs->epsd < 3)
         {
             for (int j = 0; j < NUMANIMS[im.wbs->epsd]; j++)
             {
-                a = &anims_wi_stuff[im.wbs->epsd][j];
+                anim_t_wi_stuff* a = &anims_wi_stuff[im.wbs->epsd][j];
                 for (int i = 0; i < a->nanims; i++)
                 {
                     // MONDO HACK!
@@ -1466,7 +1440,7 @@ void loadIntermissionData()
                             doom_concat(name.data(), "0");
                         doom_concat(name.data(), doom_itoa(i, 10));
                         a->p[i] =
-                            static_cast<Patch*>(Doom::cacheLumpName(name.data()));
+                            static_cast<Patch*>(cacheLumpName(name.data()));
                     }
                     else
                     {
@@ -1479,7 +1453,7 @@ void loadIntermissionData()
     }
 
     // More hacks on minus sign.
-    im.wiminus = static_cast<Patch*>(Doom::cacheLumpName("WIMINUS"));
+    im.wiminus = static_cast<Patch*>(cacheLumpName("WIMINUS"));
 
     for (int i = 0; i < 10; i++)
     {
@@ -1487,68 +1461,68 @@ void loadIntermissionData()
         //doom_sprintf(name, "WINUM%d", i);
         doom_strcpy(name.data(), "WINUM");
         doom_concat(name.data(), doom_itoa(i, 10));
-        im.num[i] = static_cast<Patch*>(Doom::cacheLumpName(name.data()));
+        im.num[i] = static_cast<Patch*>(cacheLumpName(name.data()));
     }
 
     // percent sign
-    im.percent = static_cast<Patch*>(Doom::cacheLumpName("WIPCNT"));
+    im.percent = static_cast<Patch*>(cacheLumpName("WIPCNT"));
 
     // "finished"
-    im.finished = static_cast<Patch*>(Doom::cacheLumpName("WIF"));
+    im.finished = static_cast<Patch*>(cacheLumpName("WIF"));
 
     // "entering"
-    im.entering = static_cast<Patch*>(Doom::cacheLumpName("WIENTER"));
+    im.entering = static_cast<Patch*>(cacheLumpName("WIENTER"));
 
     // "kills"
-    im.kills = static_cast<Patch*>(Doom::cacheLumpName("WIOSTK"));
+    im.kills = static_cast<Patch*>(cacheLumpName("WIOSTK"));
 
     // "scrt"
-    im.secret = static_cast<Patch*>(Doom::cacheLumpName("WIOSTS"));
+    im.secret = static_cast<Patch*>(cacheLumpName("WIOSTS"));
 
     // "secret"
-    im.sp_secret = static_cast<Patch*>(Doom::cacheLumpName("WISCRT2"));
+    im.sp_secret = static_cast<Patch*>(cacheLumpName("WISCRT2"));
 
     // Yuck.
     if (french)
     {
         // "items"
         if (session.netgame && !session.deathmatch)
-            im.items = static_cast<Patch*>(Doom::cacheLumpName("WIOBJ"));
+            im.items = static_cast<Patch*>(cacheLumpName("WIOBJ"));
         else
-            im.items = static_cast<Patch*>(Doom::cacheLumpName("WIOSTI"));
+            im.items = static_cast<Patch*>(cacheLumpName("WIOSTI"));
     }
     else
-        im.items = static_cast<Patch*>(Doom::cacheLumpName("WIOSTI"));
+        im.items = static_cast<Patch*>(cacheLumpName("WIOSTI"));
 
     // "frgs"
-    im.frags = static_cast<Patch*>(Doom::cacheLumpName("WIFRGS"));
+    im.frags = static_cast<Patch*>(cacheLumpName("WIFRGS"));
 
     // ":"
-    im.colon = static_cast<Patch*>(Doom::cacheLumpName("WICOLON"));
+    im.colon = static_cast<Patch*>(cacheLumpName("WICOLON"));
 
     // "time"
-    im.time_patch = static_cast<Patch*>(Doom::cacheLumpName("WITIME"));
+    im.time_patch = static_cast<Patch*>(cacheLumpName("WITIME"));
 
     // "sucks"
-    im.sucks = static_cast<Patch*>(Doom::cacheLumpName("WISUCKS"));
+    im.sucks = static_cast<Patch*>(cacheLumpName("WISUCKS"));
 
     // "par"
-    im.par = static_cast<Patch*>(Doom::cacheLumpName("WIPAR"));
+    im.par = static_cast<Patch*>(cacheLumpName("WIPAR"));
 
     // "killers" (vertical)
-    im.killers = static_cast<Patch*>(Doom::cacheLumpName("WIKILRS"));
+    im.killers = static_cast<Patch*>(cacheLumpName("WIKILRS"));
 
     // "victims" (horiz)
-    im.victims = static_cast<Patch*>(Doom::cacheLumpName("WIVCTMS"));
+    im.victims = static_cast<Patch*>(cacheLumpName("WIVCTMS"));
 
     // "total"
-    im.total = static_cast<Patch*>(Doom::cacheLumpName("WIMSTT"));
+    im.total = static_cast<Patch*>(cacheLumpName("WIMSTT"));
 
     // your face
-    im.star = static_cast<Patch*>(Doom::cacheLumpName("STFST01"));
+    im.star = static_cast<Patch*>(cacheLumpName("STFST01"));
 
     // dead face
-    im.bstar = static_cast<Patch*>(Doom::cacheLumpName("STFDEAD0"));
+    im.bstar = static_cast<Patch*>(cacheLumpName("STFDEAD0"));
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -1556,13 +1530,13 @@ void loadIntermissionData()
         //doom_sprintf(name, "STPB%d", i);
         doom_strcpy(name.data(), "STPB");
         doom_concat(name.data(), doom_itoa(i, 10));
-        im.p[i] = static_cast<Patch*>(Doom::cacheLumpName(name.data()));
+        im.p[i] = static_cast<Patch*>(cacheLumpName(name.data()));
 
         // "1,2,3,4"
         //doom_sprintf(name, "WIBP%d", i + 1);
         doom_strcpy(name.data(), "WIBP");
         doom_concat(name.data(), doom_itoa(i + 1, 10));
-        im.bp[i] = static_cast<Patch*>(Doom::cacheLumpName(name.data()));
+        im.bp[i] = static_cast<Patch*>(cacheLumpName(name.data()));
     }
 }
 

@@ -189,42 +189,42 @@ EA::Array<char, 128> frenchKeyMap = {
 //
 
 EA::Array<const char*, 32> mapnames2 = // DOOM 2 map names.
-    {Doom::HUSTR_1,  Doom::HUSTR_2,  Doom::HUSTR_3,  Doom::HUSTR_4,  Doom::HUSTR_5,
-     Doom::HUSTR_6,  Doom::HUSTR_7,  Doom::HUSTR_8,  Doom::HUSTR_9,  Doom::HUSTR_10,
-     Doom::HUSTR_11,
+    {HUSTR_1,  HUSTR_2,  HUSTR_3,  HUSTR_4,  HUSTR_5,
+     HUSTR_6,  HUSTR_7,  HUSTR_8,  HUSTR_9,  HUSTR_10,
+     HUSTR_11,
 
-     Doom::HUSTR_12, Doom::HUSTR_13, Doom::HUSTR_14, Doom::HUSTR_15, Doom::HUSTR_16,
-     Doom::HUSTR_17, Doom::HUSTR_18, Doom::HUSTR_19, Doom::HUSTR_20,
+     HUSTR_12, HUSTR_13, HUSTR_14, HUSTR_15, HUSTR_16,
+     HUSTR_17, HUSTR_18, HUSTR_19, HUSTR_20,
 
-     Doom::HUSTR_21, Doom::HUSTR_22, Doom::HUSTR_23, Doom::HUSTR_24, Doom::HUSTR_25,
-     Doom::HUSTR_26, Doom::HUSTR_27, Doom::HUSTR_28, Doom::HUSTR_29, Doom::HUSTR_30,
-     Doom::HUSTR_31, Doom::HUSTR_32};
+     HUSTR_21, HUSTR_22, HUSTR_23, HUSTR_24, HUSTR_25,
+     HUSTR_26, HUSTR_27, HUSTR_28, HUSTR_29, HUSTR_30,
+     HUSTR_31, HUSTR_32};
 
 EA::Array<const char*, 32> mapnamesp = // Plutonia WAD map names.
-    {Doom::PHUSTR_1,  Doom::PHUSTR_2,  Doom::PHUSTR_3,  Doom::PHUSTR_4,
-     Doom::PHUSTR_5,  Doom::PHUSTR_6,  Doom::PHUSTR_7,  Doom::PHUSTR_8,
-     Doom::PHUSTR_9,  Doom::PHUSTR_10, Doom::PHUSTR_11,
+    {PHUSTR_1,  PHUSTR_2,  PHUSTR_3,  PHUSTR_4,
+     PHUSTR_5,  PHUSTR_6,  PHUSTR_7,  PHUSTR_8,
+     PHUSTR_9,  PHUSTR_10, PHUSTR_11,
 
-     Doom::PHUSTR_12, Doom::PHUSTR_13, Doom::PHUSTR_14, Doom::PHUSTR_15,
-     Doom::PHUSTR_16, Doom::PHUSTR_17, Doom::PHUSTR_18, Doom::PHUSTR_19,
-     Doom::PHUSTR_20,
+     PHUSTR_12, PHUSTR_13, PHUSTR_14, PHUSTR_15,
+     PHUSTR_16, PHUSTR_17, PHUSTR_18, PHUSTR_19,
+     PHUSTR_20,
 
-     Doom::PHUSTR_21, Doom::PHUSTR_22, Doom::PHUSTR_23, Doom::PHUSTR_24,
-     Doom::PHUSTR_25, Doom::PHUSTR_26, Doom::PHUSTR_27, Doom::PHUSTR_28,
-     Doom::PHUSTR_29, Doom::PHUSTR_30, Doom::PHUSTR_31, Doom::PHUSTR_32};
+     PHUSTR_21, PHUSTR_22, PHUSTR_23, PHUSTR_24,
+     PHUSTR_25, PHUSTR_26, PHUSTR_27, PHUSTR_28,
+     PHUSTR_29, PHUSTR_30, PHUSTR_31, PHUSTR_32};
 
 EA::Array<const char*, 32> mapnamest = // TNT WAD map names.
-    {Doom::THUSTR_1,  Doom::THUSTR_2,  Doom::THUSTR_3,  Doom::THUSTR_4,
-     Doom::THUSTR_5,  Doom::THUSTR_6,  Doom::THUSTR_7,  Doom::THUSTR_8,
-     Doom::THUSTR_9,  Doom::THUSTR_10, Doom::THUSTR_11,
+    {THUSTR_1,  THUSTR_2,  THUSTR_3,  THUSTR_4,
+     THUSTR_5,  THUSTR_6,  THUSTR_7,  THUSTR_8,
+     THUSTR_9,  THUSTR_10, THUSTR_11,
 
-     Doom::THUSTR_12, Doom::THUSTR_13, Doom::THUSTR_14, Doom::THUSTR_15,
-     Doom::THUSTR_16, Doom::THUSTR_17, Doom::THUSTR_18, Doom::THUSTR_19,
-     Doom::THUSTR_20,
+     THUSTR_12, THUSTR_13, THUSTR_14, THUSTR_15,
+     THUSTR_16, THUSTR_17, THUSTR_18, THUSTR_19,
+     THUSTR_20,
 
-     Doom::THUSTR_21, Doom::THUSTR_22, Doom::THUSTR_23, Doom::THUSTR_24,
-     Doom::THUSTR_25, Doom::THUSTR_26, Doom::THUSTR_27, Doom::THUSTR_28,
-     Doom::THUSTR_29, Doom::THUSTR_30, Doom::THUSTR_31, Doom::THUSTR_32};
+     THUSTR_21, THUSTR_22, THUSTR_23, THUSTR_24,
+     THUSTR_25, THUSTR_26, THUSTR_27, THUSTR_28,
+     THUSTR_29, THUSTR_30, THUSTR_31, THUSTR_32};
 
 char foreignTranslation(unsigned char ch)
 {
@@ -235,7 +235,6 @@ void initHud()
 {
     auto& font = hudFont();
 
-    int j;
     EA::Array<char, 9> buffer;
 
     if (french)
@@ -244,7 +243,7 @@ void initHud()
         shiftxform = english_shiftxform.data();
 
     // load the heads-up font
-    j = HU_FONTSTART;
+    int j = HU_FONTSTART;
     for (int i = 0; i < HU_FONTSIZE; i++)
     {
         //if (j == 40) __debugbreak();
@@ -255,7 +254,7 @@ void initHud()
         if (j < 10)
             doom_concat(buffer.data(), "0");
         doom_concat(buffer.data(), doom_itoa(j++, 10));
-        font.hu_font[i] = static_cast<Patch*>(Doom::cacheLumpName(buffer.data()));
+        font.hu_font[i] = static_cast<Patch*>(cacheLumpName(buffer.data()));
     }
 }
 
@@ -286,7 +285,7 @@ void startHud()
     hud.chat_on = false;
 
     // create the message widget
-    Doom::initSText(msg.w_message,
+    initSText(msg.w_message,
                     HU_MSGX,
                     HU_MSGY,
                     HU_MSGHEIGHT,
@@ -295,7 +294,7 @@ void startHud()
                     &msg.message_on);
 
     // create the map title widget
-    Doom::initTextLine(
+    initTextLine(
         state.w_title, HU_TITLEX, HU_TITLEY, font.hu_font.data(), HU_FONTSTART);
 
     switch (gameVersion().gamemode)
@@ -322,10 +321,10 @@ void startHud()
     }
 
     while (*s)
-        Doom::addCharToTextLine(state.w_title, *(s++));
+        addCharToTextLine(state.w_title, *(s++));
 
     // create the chat widget
-    Doom::initIText(chat.w_chat,
+    initIText(chat.w_chat,
                     HU_INPUTX,
                     HU_INPUTY,
                     font.hu_font.data(),
@@ -334,24 +333,24 @@ void startHud()
 
     // create the inputbuffer widgets
     for (int i = 0; i < MAXPLAYERS; i++)
-        Doom::initIText(chat.w_inputbuffer[i], 0, 0, 0, 0, &chat.always_off);
+        initIText(chat.w_inputbuffer[i], 0, 0, 0, 0, &chat.always_off);
 
     state.headsupactive = true;
 }
 
 void drawHud()
 {
-    Doom::drawSText(hudMessage().w_message);
-    Doom::drawIText(hudChat().w_chat);
+    drawSText(hudMessage().w_message);
+    drawIText(hudChat().w_chat);
     if (overlayState().automapactive)
-        Doom::drawTextLine(hudState().w_title, false);
+        drawTextLine(hudState().w_title, false);
 }
 
 void eraseHud()
 {
-    Doom::eraseSText(hudMessage().w_message);
-    Doom::eraseIText(hudChat().w_chat);
-    Doom::eraseTextLine(hudState().w_title);
+    eraseSText(hudMessage().w_message);
+    eraseIText(hudChat().w_chat);
+    eraseTextLine(hudState().w_title);
 }
 
 void hudTicker()
@@ -361,7 +360,6 @@ void hudTicker()
     auto& chat = hudChat();
     auto& plr = *hudState().plr;
 
-    int rc;
     char c;
 
     // tick down message counter if message is up
@@ -377,7 +375,7 @@ void hudTicker()
         if ((plr.message && !msg.message_nottobefuckedwith)
             || (plr.message && hud.message_dontfuckwithme))
         {
-            Doom::addMessageToSText(msg.w_message, 0, plr.message);
+            addMessageToSText(msg.w_message, 0, plr.message);
             plr.message = nullptr;
             msg.message_on = true;
             msg.message_counter = HU_MSGTIMEOUT;
@@ -406,14 +404,14 @@ void hudTicker()
                     if (c >= 'a' && c <= 'z')
                         c = static_cast<char>(
                             shiftxform[static_cast<unsigned char>(c)]);
-                    rc = Doom::keyInIText(chat.w_inputbuffer[i], c);
+                    int rc = keyInIText(chat.w_inputbuffer[i], c);
                     if (rc && c == KEY_ENTER)
                     {
                         if (chat.w_inputbuffer[i].l.len
                             && (chat.chat_dest[i] == players_.consoleplayer + 1
                                 || chat.chat_dest[i] == HU_BROADCAST))
                         {
-                            Doom::addMessageToSText(
+                            addMessageToSText(
                                 msg.w_message,
                                 player_names[i],
                                 chat.w_inputbuffer[i].l.l.data());
@@ -422,11 +420,11 @@ void hudTicker()
                             msg.message_on = true;
                             msg.message_counter = HU_MSGTIMEOUT;
                             if (gameVersion().gamemode == commercial)
-                                Doom::startSound(0, sfx_radio);
+                                startSound(0, sfx_radio);
                             else
-                                Doom::startSound(0, sfx_tink);
+                                startSound(0, sfx_tink);
                         }
-                        Doom::resetIText(chat.w_inputbuffer[i]);
+                        resetIText(chat.w_inputbuffer[i]);
                     }
                 }
                 players_.players[i].cmd.chatchar = 0;
@@ -441,7 +439,7 @@ void queueChatChar(char c)
 
     if (((chat.head + 1) & (QUEUESIZE - 1)) == chat.tail)
     {
-        hudState().plr->message = Doom::HUSTR_MSGU;
+        hudState().plr->message = HUSTR_MSGU;
     }
     else
     {
@@ -476,19 +474,16 @@ bool hudResponder(Event* ev)
     auto& msg = hudMessage();
     auto& state = hudState();
 
-    const char* macromessage;
     bool eatkey = false;
-    unsigned char c;
-    int numplayers;
 
-    static EA::Array<char, MAXPLAYERS> destination_keys = {Doom::HUSTR_KEYGREEN,
-                                                           Doom::HUSTR_KEYINDIGO,
-                                                           Doom::HUSTR_KEYBROWN,
-                                                           Doom::HUSTR_KEYRED};
+    static EA::Array<char, MAXPLAYERS> destination_keys = {HUSTR_KEYGREEN,
+                                                           HUSTR_KEYINDIGO,
+                                                           HUSTR_KEYBROWN,
+                                                           HUSTR_KEYRED};
 
     auto& players_ = playerState();
 
-    numplayers = 0;
+    int numplayers = 0;
     for (int i = 0; i < MAXPLAYERS; i++)
         numplayers += players_.playeringame[i];
 
@@ -517,7 +512,7 @@ bool hudResponder(Event* ev)
         else if (gameSession().netgame && ev->data1 == HU_INPUTTOGGLE)
         {
             eatkey = hud.chat_on = true;
-            Doom::resetIText(chat.w_chat);
+            resetIText(chat.w_chat);
             queueChatChar(HU_BROADCAST);
         }
         else if (gameSession().netgame && numplayers > 2)
@@ -529,7 +524,7 @@ bool hudResponder(Event* ev)
                     if (players_.playeringame[i] && i != players_.consoleplayer)
                     {
                         eatkey = hud.chat_on = true;
-                        Doom::resetIText(chat.w_chat);
+                        resetIText(chat.w_chat);
                         queueChatChar(i + 1);
                         break;
                     }
@@ -537,15 +532,15 @@ bool hudResponder(Event* ev)
                     {
                         chat.num_nobrainers++;
                         if (chat.num_nobrainers < 3)
-                            state.plr->message = Doom::HUSTR_TALKTOSELF1;
+                            state.plr->message = HUSTR_TALKTOSELF1;
                         else if (chat.num_nobrainers < 6)
-                            state.plr->message = Doom::HUSTR_TALKTOSELF2;
+                            state.plr->message = HUSTR_TALKTOSELF2;
                         else if (chat.num_nobrainers < 9)
-                            state.plr->message = Doom::HUSTR_TALKTOSELF3;
+                            state.plr->message = HUSTR_TALKTOSELF3;
                         else if (chat.num_nobrainers < 32)
-                            state.plr->message = Doom::HUSTR_TALKTOSELF4;
+                            state.plr->message = HUSTR_TALKTOSELF4;
                         else
-                            state.plr->message = Doom::HUSTR_TALKTOSELF5;
+                            state.plr->message = HUSTR_TALKTOSELF5;
                     }
                 }
             }
@@ -553,14 +548,14 @@ bool hudResponder(Event* ev)
     }
     else
     {
-        c = ev->data1;
+        unsigned char c = ev->data1;
         // send a macro
         if (chat.altdown)
         {
             c = c - '0';
             if (c > 9)
                 return false;
-            macromessage = chat_macros[c];
+            const char* macromessage = chat_macros[c];
 
             // kill last message with a '\n'
             queueChatChar(KEY_ENTER); // DEBUG!!!
@@ -582,7 +577,7 @@ bool hudResponder(Event* ev)
                 c = foreignTranslation(c);
             if (chat.shiftdown || (c >= 'a' && c <= 'z'))
                 c = shiftxform[c];
-            eatkey = Doom::keyInIText(chat.w_chat, c);
+            eatkey = keyInIText(chat.w_chat, c);
             if (eatkey)
             {
                 queueChatChar(c);

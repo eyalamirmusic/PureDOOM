@@ -95,7 +95,7 @@ constexpr fixed_t M_ZOOMOUT {(std::int32_t) (FRACUNIT.raw / 1.02)};
 // translates between frame-buffer and map distances
 static inline fixed_t frameToMap(const AutomapView& view, int x)
 {
-    return FixedMul(Doom::Fixed::fromInt(x), view.scale_ftom);
+    return FixedMul(Fixed::fromInt(x), view.scale_ftom);
 }
 
 static inline int mapToFrame(fixed_t x)
@@ -170,10 +170,8 @@ static CheatSequence cheat_amap = {cheat_amap_seq.data(), 0};
 // that it can be used with the brain-dead drawing stuff.
 void getIslope(MapLine* ml, ISlope* is)
 {
-    fixed_t dx, dy;
-
-    dy = ml->a.y - ml->b.y;
-    dx = ml->b.x - ml->a.x;
+    fixed_t dy = ml->a.y - ml->b.y;
+    fixed_t dx = ml->b.x - ml->a.x;
     if (!dy)
         is->islp = dx.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
     else
@@ -237,7 +235,7 @@ void restoreScaleAndLoc()
     map.m_y2 = m_y + m_h;
 
     // Change the scaling multipliers
-    scale_mtof = FixedDiv(Doom::Fixed::fromInt(f_w), m_w);
+    scale_mtof = FixedDiv(Fixed::fromInt(f_w), m_w);
     map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 }
 
@@ -261,9 +259,6 @@ void findMinMaxBoundaries()
 {
     auto& map = automapView();
 
-    fixed_t a;
-    fixed_t b;
-
     map.min_x = map.min_y = fixed_t {DOOM_MAXINT};
     map.max_x = map.max_y = fixed_t {-DOOM_MAXINT};
 
@@ -283,11 +278,11 @@ void findMinMaxBoundaries()
     map.max_w = map.max_x - map.min_x;
     map.max_h = map.max_y - map.min_y;
 
-    a = FixedDiv(Doom::Fixed::fromInt(f_w), map.max_w);
-    b = FixedDiv(Doom::Fixed::fromInt(f_h), map.max_h);
+    fixed_t a = FixedDiv(Fixed::fromInt(f_w), map.max_w);
+    fixed_t b = FixedDiv(Fixed::fromInt(f_h), map.max_h);
 
     map.min_scale_mtof = a < b ? a : b;
-    map.max_scale_mtof = FixedDiv(Doom::Fixed::fromInt(f_h), 2 * PLAYERRADIUS);
+    map.max_scale_mtof = FixedDiv(Fixed::fromInt(f_h), 2 * PLAYERRADIUS);
 }
 
 //
@@ -364,7 +359,7 @@ void initAutomapVariables()
     map.old_m_h = m_h;
 
     // inform the status bar of the change
-    Doom::statusBarResponder(&st_notify);
+    statusBarResponder(&st_notify);
 }
 
 //
@@ -379,7 +374,7 @@ void loadPics()
     for (int i = 0; i < 10; i++)
     {
         doom_concat(doom_strcpy(namebuf.data(), "AMMNUM"), doom_itoa(i, 10));
-        map.marknums[i] = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+        map.marknums[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
     }
 }
 
@@ -429,7 +424,7 @@ void stopAutomap()
 
     unloadPics();
     overlayState().automapactive = false;
-    Doom::statusBarResponder(&st_notify);
+    statusBarResponder(&st_notify);
     automapView().stopped = true;
 }
 
@@ -486,10 +481,9 @@ bool automapResponder(Event* ev)
 {
     auto& map = automapView();
 
-    int rc;
     static EA::Array<char, 20> buffer;
 
-    rc = false;
+    int rc = false;
 
     if (!overlayState().automapactive)
     {
@@ -579,7 +573,7 @@ bool automapResponder(Event* ev)
             default:
                 rc = false;
         }
-        if (!gameSession().deathmatch && Doom::checkCheat(&cheat_amap, ev->data1))
+        if (!gameSession().deathmatch && checkCheat(&cheat_amap, ev->data1))
         {
             rc = false;
             cheating = (cheating + 1) % 3;
@@ -949,24 +943,22 @@ void drawMline(MapLine* ml, int color)
 //
 void drawGrid(int color)
 {
-    fixed_t x, y;
-    fixed_t start, end;
     MapLine ml;
 
     // One blockmap cell, in fixed-point map units.
-    const auto blockSpacing = Doom::Fixed::fromInt(MAPBLOCKUNITS);
+    const auto blockSpacing = Fixed::fromInt(MAPBLOCKUNITS);
 
     // Figure out start of vertical gridlines
-    start = m_x;
+    fixed_t start = m_x;
     if (fixed_t {(start - bmaporgx).raw % blockSpacing.raw})
         start +=
             blockSpacing - (fixed_t {(start - bmaporgx).raw % blockSpacing.raw});
-    end = m_x + m_w;
+    fixed_t end = m_x + m_w;
 
     // draw vertical gridlines
     ml.a.y = m_y;
     ml.b.y = m_y + m_h;
-    for (x = start; x < end; x += blockSpacing)
+    for (fixed_t x = start; x < end; x += blockSpacing)
     {
         ml.a.x = x;
         ml.b.x = x;
@@ -983,7 +975,7 @@ void drawGrid(int color)
     // draw horizontal gridlines
     ml.a.x = m_x;
     ml.b.x = m_x + m_w;
-    for (y = start; y < end; y += blockSpacing)
+    for (fixed_t y = start; y < end; y += blockSpacing)
     {
         ml.a.y = y;
         ml.b.y = y;
@@ -1056,10 +1048,8 @@ void drawWalls()
 //
 void rotateAutomapPoint(fixed_t* x, fixed_t* y, angle_t a)
 {
-    fixed_t tmpx;
-
-    tmpx = FixedMul(*x, finecosine[a.fineIndex()])
-           - FixedMul(*y, finesine[a.fineIndex()]);
+    fixed_t tmpx = FixedMul(*x, finecosine[a.fineIndex()])
+                   - FixedMul(*y, finesine[a.fineIndex()]);
 
     *y = FixedMul(*x, finesine[a.fineIndex()])
          + FixedMul(*y, finecosine[a.fineIndex()]);
@@ -1115,7 +1105,6 @@ void drawLineCharacter(MapLine* lineguy,
 
 void drawPlayers()
 {
-    Player* p;
     static EA::Array<int, 4> their_colors = {GREENS, GRAYS, BROWNS, REDS};
     int their_color = -1;
     int color;
@@ -1148,7 +1137,7 @@ void drawPlayers()
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         their_color++;
-        p = &players_.players[i];
+        Player* p = &players_.players[i];
 
         if ((session.deathmatch && !demoState().singledemo) && p != am_plr)
             continue;
@@ -1173,16 +1162,14 @@ void drawPlayers()
 
 void drawThings(int colors)
 {
-    Mobj* t;
-
     for (int i = 0; i < numsectors; i++)
     {
-        t = sectors[i].thinglist;
+        Mobj* t = sectors[i].thinglist;
         while (t)
         {
             drawLineCharacter(thintriangle_guy,
                               NUMTHINTRIANGLEGUYLINES,
-                              Doom::Fixed::fromInt(16),
+                              Fixed::fromInt(16),
                               t->angle,
                               colors + lightlev,
                               t->x,
@@ -1196,20 +1183,18 @@ void drawAutomapMarks()
 {
     auto& map = automapView();
 
-    int fx, fy, w, h;
-
     for (int i = 0; i < AutomapView::numMarkPoints; i++)
     {
         if (map.markpoints[i].x != fixed_t {-1})
         {
             //      w = littleEndian(marknums[i]->width);
             //      h = littleEndian(marknums[i]->height);
-            w = 5; // because something's wrong with the wad, i guess
-            h = 6; // because something's wrong with the wad, i guess
-            fx = mapXToFrame(map.markpoints[i].x);
-            fy = mapYToFrame(map.markpoints[i].y);
+            int w = 5; // because something's wrong with the wad, i guess
+            int h = 6; // because something's wrong with the wad, i guess
+            int fx = mapXToFrame(map.markpoints[i].x);
+            int fy = mapYToFrame(map.markpoints[i].y);
             if (fx >= f_x && fx <= f_w - w && fy >= f_y && fy <= f_h - h)
-                Doom::drawPatch(fx, fy, FB, map.marknums[i]);
+                drawPatch(fx, fy, FB, map.marknums[i]);
         }
     }
 }
@@ -1235,7 +1220,7 @@ void drawAutomap()
 
     drawAutomapMarks();
 
-    Doom::markRect(f_x, f_y, f_w, f_h);
+    markRect(f_x, f_y, f_w, f_h);
 }
 
 } // namespace Doom

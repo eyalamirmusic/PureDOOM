@@ -32,7 +32,7 @@ void drawNum(StatusNumber& n);
 
 void initStatusWidgets()
 {
-    sttminus = static_cast<Patch*>(Doom::cacheLumpName("STTMINUS"));
+    sttminus = static_cast<Patch*>(cacheLumpName("STTMINUS"));
 }
 
 void initNum(
@@ -61,11 +61,9 @@ void drawNum(StatusNumber& n)
     int h = littleEndian(n.p[0]->height);
     int x = n.x;
 
-    int neg;
-
     n.oldnum = *n.num;
 
-    neg = num < 0;
+    int neg = num < 0;
 
     if (neg)
     {
@@ -83,7 +81,7 @@ void drawNum(StatusNumber& n)
     if (n.y - ST_Y < 0)
         fatalError("Error: drawNum: n->y - ST_Y < 0");
 
-    Doom::copyRect(x, n.y - ST_Y, STLIB_BG, w * numdigits, h, x, n.y, STLIB_FG);
+    copyRect(x, n.y - ST_Y, STLIB_BG, w * numdigits, h, x, n.y, STLIB_FG);
 
     // if non-number, do not draw it
     if (num == 1994)
@@ -93,19 +91,19 @@ void drawNum(StatusNumber& n)
 
     // in the special case of 0, you draw 0
     if (!num)
-        Doom::drawPatch(x - w, n.y, STLIB_FG, n.p[0]);
+        drawPatch(x - w, n.y, STLIB_FG, n.p[0]);
 
     // draw the new number
     while (num && numdigits--)
     {
         x -= w;
-        Doom::drawPatch(x, n.y, STLIB_FG, n.p[num % 10]);
+        drawPatch(x, n.y, STLIB_FG, n.p[num % 10]);
         num /= 10;
     }
 
     // draw a minus sign if necessary
     if (neg)
-        Doom::drawPatch(x - 8, n.y, STLIB_FG, sttminus);
+        drawPatch(x - 8, n.y, STLIB_FG, sttminus);
 }
 
 void updateNum(StatusNumber& n, [[maybe_unused]] bool refresh)
@@ -124,7 +122,7 @@ void initPercent(
 void updatePercent(StatusPercent& per, int refresh)
 {
     if (refresh && *per.n.on)
-        Doom::drawPatch(per.n.x, per.n.y, STLIB_FG, per.p);
+        drawPatch(per.n.x, per.n.y, STLIB_FG, per.p);
 
     updateNum(per.n, refresh);
 }
@@ -141,26 +139,21 @@ void initMultIcon(StatusMultIcon& i, int x, int y, Patch** il, int* inum, bool* 
 
 void updateMultIcon(StatusMultIcon& mi, bool refresh)
 {
-    int w;
-    int h;
-    int x;
-    int y;
-
     if (*mi.on && (mi.oldinum != *mi.inum || refresh) && (*mi.inum != -1))
     {
         if (mi.oldinum != -1)
         {
-            x = mi.x - littleEndian(mi.p[mi.oldinum]->leftoffset);
-            y = mi.y - littleEndian(mi.p[mi.oldinum]->topoffset);
-            w = littleEndian(mi.p[mi.oldinum]->width);
-            h = littleEndian(mi.p[mi.oldinum]->height);
+            int x = mi.x - littleEndian(mi.p[mi.oldinum]->leftoffset);
+            int y = mi.y - littleEndian(mi.p[mi.oldinum]->topoffset);
+            int w = littleEndian(mi.p[mi.oldinum]->width);
+            int h = littleEndian(mi.p[mi.oldinum]->height);
 
             if (y - ST_Y < 0)
                 fatalError("Error: updateMultIcon: y - ST_Y < 0");
 
-            Doom::copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
+            copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
         }
-        Doom::drawPatch(mi.x, mi.y, STLIB_FG, mi.p[*mi.inum]);
+        drawPatch(mi.x, mi.y, STLIB_FG, mi.p[*mi.inum]);
         mi.oldinum = *mi.inum;
     }
 }
@@ -177,25 +170,20 @@ void initBinIcon(StatusBinIcon& b, int x, int y, Patch* i, bool* val, bool* on)
 
 void updateBinIcon(StatusBinIcon& bi, bool refresh)
 {
-    int x;
-    int y;
-    int w;
-    int h;
-
     if (*bi.on && (bi.oldval != *bi.val || refresh))
     {
-        x = bi.x - littleEndian(bi.p->leftoffset);
-        y = bi.y - littleEndian(bi.p->topoffset);
-        w = littleEndian(bi.p->width);
-        h = littleEndian(bi.p->height);
+        int x = bi.x - littleEndian(bi.p->leftoffset);
+        int y = bi.y - littleEndian(bi.p->topoffset);
+        int w = littleEndian(bi.p->width);
+        int h = littleEndian(bi.p->height);
 
         if (y - ST_Y < 0)
             fatalError("Error: updateBinIcon: y - ST_Y < 0");
 
         if (*bi.val)
-            Doom::drawPatch(bi.x, bi.y, STLIB_FG, bi.p);
+            drawPatch(bi.x, bi.y, STLIB_FG, bi.p);
         else
-            Doom::copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
+            copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
 
         bi.oldval = *bi.val;
     }

@@ -55,7 +55,7 @@
 
 // Other subsystems' globals/functions this file reads.
 #include "../Game/Sound.h"
-void Doom::drawPatchFlipped(int x, int y, int scrn, Doom::Patch* patch); // v_video
+void Doom::drawPatchFlipped(int x, int y, int scrn, Patch* patch); // v_video
 
 namespace Doom
 {
@@ -155,7 +155,7 @@ void startFinale()
         case registered:
         case retail:
         {
-            Doom::changeMusic(mus_victor, true);
+            changeMusic(mus_victor, true);
 
             switch (gameSession().gameepisode)
             {
@@ -185,7 +185,7 @@ void startFinale()
         // DOOM II and missions packs with E1, M34
         case commercial:
         {
-            Doom::changeMusic(mus_read_m, true);
+            changeMusic(mus_read_m, true);
 
             switch (gameSession().gamemap)
             {
@@ -222,7 +222,7 @@ void startFinale()
 
         // Indeterminate.
         default:
-            Doom::changeMusic(mus_read_m, true);
+            changeMusic(mus_read_m, true);
             fin.finaleflat = "F_SKY1"; // Not used anywhere else.
             fin.finaletext = c1text; // FIXME - other text, music?
             break;
@@ -287,7 +287,7 @@ void finaleTicker()
         fin.finalestage = 1;
         gameFlow().wipegamestate = static_cast<GameState>(-1); // force a wipe
         if (gameSession().gameepisode == 3)
-            Doom::startMusic(mus_bunny);
+            startMusic(mus_bunny);
     }
 }
 
@@ -299,19 +299,9 @@ void textWrite()
     auto& font = hudFont();
     auto& fin = finaleState();
 
-    byte* src;
-    byte* dest;
-
-    int w;
-    int count;
-    const char* ch;
-    int c;
-    int cx;
-    int cy;
-
     // erase the entire screen to a tiled background
-    src = static_cast<byte*>(Doom::cacheLumpName(fin.finaleflat));
-    dest = screens[0];
+    byte* src = static_cast<byte*>(cacheLumpName(fin.finaleflat));
+    byte* dest = screens[0];
 
     for (int y = 0; y < SCREENHEIGHT; y++)
     {
@@ -327,19 +317,19 @@ void textWrite()
         }
     }
 
-    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
     // draw some of the text onto the screen
-    cx = 10;
-    cy = 10;
-    ch = fin.finaletext;
+    int cx = 10;
+    int cy = 10;
+    const char* ch = fin.finaletext;
 
-    count = (fin.finalecount - 10) / TEXTSPEED;
+    int count = (fin.finalecount - 10) / TEXTSPEED;
     if (count < 0)
         count = 0;
     for (; count; count--)
     {
-        c = *ch++;
+        int c = *ch++;
         if (!c)
             break;
         if (c == '\n')
@@ -356,10 +346,10 @@ void textWrite()
             continue;
         }
 
-        w = littleEndian(font.hu_font[c]->width);
+        int w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        Doom::drawPatch(cx, cy, 0, font.hu_font[c]);
+        drawPatch(cx, cy, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -382,7 +372,7 @@ void startCast()
     fin.castframes = 0;
     fin.castonmelee = 0;
     fin.castattacking = false;
-    Doom::changeMusic(mus_evil, true);
+    changeMusic(mus_evil, true);
 }
 
 //
@@ -406,7 +396,7 @@ void castTicker()
         if (castorder[fin.castnum].name == nullptr)
             fin.castnum = 0;
         if (mobjinfo[castorder[fin.castnum].type].seesound)
-            Doom::startSound(0, mobjinfo[castorder[fin.castnum].type].seesound);
+            startSound(0, mobjinfo[castorder[fin.castnum].type].seesound);
         fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
         fin.castframes = 0;
     }
@@ -488,7 +478,7 @@ void castTicker()
         }
 
         if (sfx)
-            Doom::startSound(0, sfx);
+            startSound(0, sfx);
     }
 
     if (fin.castframes == 12)
@@ -551,7 +541,7 @@ bool castResponder(Event* ev)
     fin.castframes = 0;
     fin.castattacking = false;
     if (mobjinfo[castorder[fin.castnum].type].deathsound)
-        Doom::startSound(0, mobjinfo[castorder[fin.castnum].type].deathsound);
+        startSound(0, mobjinfo[castorder[fin.castnum].type].deathsound);
 
     return true;
 }
@@ -560,15 +550,12 @@ void castPrint(const char* text)
 {
     auto& font = hudFont();
 
-    const char* ch;
     int c;
-    int cx;
     int w;
-    int width;
 
     // find width
-    ch = text;
-    width = 0;
+    const char* ch = text;
+    int width = 0;
 
     while (ch)
     {
@@ -587,7 +574,7 @@ void castPrint(const char* text)
     }
 
     // draw it
-    cx = 160 - width / 2;
+    int cx = 160 - width / 2;
     ch = text;
     while (ch)
     {
@@ -602,7 +589,7 @@ void castPrint(const char* text)
         }
 
         w = littleEndian(font.hu_font[c]->width);
-        Doom::drawPatch(cx, 180, 0, font.hu_font[c]);
+        drawPatch(cx, 180, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -614,29 +601,24 @@ void castDrawer()
 {
     auto& fin = finaleState();
 
-    SpriteDef* sprdef;
-    SpriteFrame* sprframe;
-    int lump;
-    bool flip;
-    Patch* patch;
-
     // erase the entire screen to a background
-    Doom::drawPatch(0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("BOSSBACK")));
+    drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("BOSSBACK")));
 
     castPrint(castorder[fin.castnum].name);
 
     // draw the current frame in the middle of the screen
-    sprdef = &sprites[fin.caststate->sprite];
-    sprframe = &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
-    lump = sprframe->lump[0];
-    flip = static_cast<bool>(sprframe->flip[0]);
+    SpriteDef* sprdef = &sprites[fin.caststate->sprite];
+    SpriteFrame* sprframe =
+        &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
+    int lump = sprframe->lump[0];
+    bool flip = static_cast<bool>(sprframe->flip[0]);
 
-    patch = static_cast<Patch*>(
-        Doom::cacheLumpNum(lump + graphicsData().firstspritelump));
+    Patch* patch = static_cast<Patch*>(
+        cacheLumpNum(lump + graphicsData().firstspritelump));
     if (flip)
-        Doom::drawPatchFlipped(160, 170, 0, patch);
+        drawPatchFlipped(160, 170, 0, patch);
     else
-        Doom::drawPatch(160, 170, 0, patch);
+        drawPatch(160, 170, 0, patch);
 }
 
 //
@@ -644,22 +626,16 @@ void castDrawer()
 //
 void drawPatchCol(int x, Patch* patch, int col)
 {
-    Column* column;
-    byte* source;
-    byte* dest;
-    byte* desttop;
-    int count;
-
-    column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                       + littleEndian(patch->columnofs[col]));
-    desttop = screens[0] + x;
+    Column* column = reinterpret_cast<Column*>(
+        reinterpret_cast<byte*>(patch) + littleEndian(patch->columnofs[col]));
+    byte* desttop = screens[0] + x;
 
     // step through the posts in a column
     while (column->topdelta != 0xff)
     {
-        source = reinterpret_cast<byte*>(column) + 3;
-        dest = desttop + column->topdelta * SCREENWIDTH;
-        count = column->length;
+        byte* source = reinterpret_cast<byte*>(column) + 3;
+        byte* dest = desttop + column->topdelta * SCREENWIDTH;
+        int count = column->length;
 
         while (count--)
         {
@@ -678,18 +654,14 @@ void bunnyScroll()
 {
     auto& fin = finaleState();
 
-    int scrolled;
-    Patch* p1;
-    Patch* p2;
     EA::Array<char, 10> name;
-    int stage;
 
-    p1 = static_cast<Patch*>(Doom::cacheLumpName("PFUB2"));
-    p2 = static_cast<Patch*>(Doom::cacheLumpName("PFUB1"));
+    Patch* p1 = static_cast<Patch*>(cacheLumpName("PFUB2"));
+    Patch* p2 = static_cast<Patch*>(cacheLumpName("PFUB1"));
 
-    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
-    scrolled = 320 - (fin.finalecount - 230) / 2;
+    int scrolled = 320 - (fin.finalecount - 230) / 2;
     if (scrolled > 320)
         scrolled = 320;
     if (scrolled < 0)
@@ -707,30 +679,30 @@ void bunnyScroll()
         return;
     if (fin.finalecount < 1180)
     {
-        Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
+        drawPatch((SCREENWIDTH - 13 * 8) / 2,
                         (SCREENHEIGHT - 8 * 8) / 2,
                         0,
-                        static_cast<Patch*>(Doom::cacheLumpName("END0")));
+                        static_cast<Patch*>(cacheLumpName("END0")));
         fin.laststage = 0;
         return;
     }
 
-    stage = (fin.finalecount - 1180) / 5;
+    int stage = (fin.finalecount - 1180) / 5;
     if (stage > 6)
         stage = 6;
     if (stage > fin.laststage)
     {
-        Doom::startSound(0, sfx_pistol);
+        startSound(0, sfx_pistol);
         fin.laststage = stage;
     }
 
     //doom_sprintf(name, "END%i", stage);
     doom_strcpy(name.data(), "END");
     doom_concat(name.data(), doom_itoa(stage, 10));
-    Doom::drawPatch((SCREENWIDTH - 13 * 8) / 2,
+    drawPatch((SCREENWIDTH - 13 * 8) / 2,
                     (SCREENHEIGHT - 8 * 8) / 2,
                     0,
-                    static_cast<Patch*>(Doom::cacheLumpName(name.data())));
+                    static_cast<Patch*>(cacheLumpName(name.data())));
 }
 
 //
@@ -754,22 +726,22 @@ void drawFinale()
         {
             case 1:
                 if (gameVersion().gamemode == retail)
-                    Doom::drawPatch(
-                        0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("CREDIT")));
+                    drawPatch(
+                        0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
                 else
-                    Doom::drawPatch(
-                        0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("HELP2")));
+                    drawPatch(
+                        0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
                 break;
             case 2:
-                Doom::drawPatch(
-                    0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("VICTORY2")));
+                drawPatch(
+                    0, 0, 0, static_cast<Patch*>(cacheLumpName("VICTORY2")));
                 break;
             case 3:
                 bunnyScroll();
                 break;
             case 4:
-                Doom::drawPatch(
-                    0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("ENDPIC")));
+                drawPatch(
+                    0, 0, 0, static_cast<Patch*>(cacheLumpName("ENDPIC")));
                 break;
         }
     }

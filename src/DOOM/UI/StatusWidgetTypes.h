@@ -62,7 +62,7 @@ struct StatusNumber
     bool* on;
 
     // list of patches for 0-9
-    Doom::Patch** p;
+    Patch** p;
 
     // user data
     int data;
@@ -79,7 +79,7 @@ struct StatusPercent
     StatusNumber n;
 
     // percent sign graphic
-    Doom::Patch* p;
+    Patch* p;
 };
 } // namespace Doom
 
@@ -103,7 +103,7 @@ struct StatusMultIcon
     bool* on;
 
     // list of icons
-    Doom::Patch** p;
+    Patch** p;
 
     // user data
     int data;
@@ -129,7 +129,7 @@ struct StatusBinIcon
     //  stating whether to update icon
     bool* on;
 
-    Doom::Patch* p; // icon
+    Patch* p; // icon
     int data; // user data
 };
 } // namespace Doom

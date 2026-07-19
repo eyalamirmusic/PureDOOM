@@ -394,12 +394,12 @@ void refreshBackground()
     {
         auto& gfx = statusBarGraphics();
 
-        Doom::drawPatch(ST_X, 0, STLIB_BG, gfx.sbar);
+        drawPatch(ST_X, 0, STLIB_BG, gfx.sbar);
 
         if (gameSession().netgame)
-            Doom::drawPatch(ST_FX, 0, STLIB_BG, gfx.faceback);
+            drawPatch(ST_FX, 0, STLIB_BG, gfx.faceback);
 
-        Doom::copyRect(ST_X, 0, STLIB_BG, ST_WIDTH, ST_HEIGHT, ST_X, ST_Y, STLIB_FG);
+        copyRect(ST_X, 0, STLIB_BG, ST_WIDTH, ST_HEIGHT, ST_X, ST_Y, STLIB_FG);
     }
 }
 
@@ -433,7 +433,7 @@ bool statusBarResponder(Event* ev)
             // if (gameskill != sk_nightmare) {
 
             // 'dqd' cheat for toggleable god mode
-            if (Doom::checkCheat(&cheat_god, ev->data1))
+            if (checkCheat(&cheat_god, ev->data1))
             {
                 bar.plyr->cheats ^= CF_GODMODE;
                 if (bar.plyr->cheats & CF_GODMODE)
@@ -448,7 +448,7 @@ bool statusBarResponder(Event* ev)
                     bar.plyr->message = STSTR_DQDOFF;
             }
             // 'fa' cheat for killer fucking arsenal
-            else if (Doom::checkCheat(&cheat_ammonokey, ev->data1))
+            else if (checkCheat(&cheat_ammonokey, ev->data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -462,7 +462,7 @@ bool statusBarResponder(Event* ev)
                 bar.plyr->message = STSTR_FAADDED;
             }
             // 'kfa' cheat for key full ammo
-            else if (Doom::checkCheat(&cheat_ammo, ev->data1))
+            else if (checkCheat(&cheat_ammo, ev->data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -479,13 +479,13 @@ bool statusBarResponder(Event* ev)
                 bar.plyr->message = STSTR_KFAADDED;
             }
             // 'mus' cheat for changing music
-            else if (Doom::checkCheat(&cheat_mus, ev->data1))
+            else if (checkCheat(&cheat_mus, ev->data1))
             {
                 EA::Array<char, 3> buf;
                 int musnum;
 
                 bar.plyr->message = STSTR_MUS;
-                Doom::getParam(&cheat_mus, buf.data());
+                getParam(&cheat_mus, buf.data());
 
                 if (gameVersion().gamemode == commercial)
                 {
@@ -494,7 +494,7 @@ bool statusBarResponder(Event* ev)
                     if (((buf[0] - '0') * 10 + buf[1] - '0') > 35)
                         bar.plyr->message = STSTR_NOMUS;
                     else
-                        Doom::changeMusic(musnum, 1);
+                        changeMusic(musnum, 1);
                 }
                 else
                 {
@@ -503,13 +503,13 @@ bool statusBarResponder(Event* ev)
                     if (((buf[0] - '1') * 9 + buf[1] - '1') > 31)
                         bar.plyr->message = STSTR_NOMUS;
                     else
-                        Doom::changeMusic(musnum, 1);
+                        changeMusic(musnum, 1);
                 }
             }
             // Simplified, accepting both "noclip" and "idspispopd".
             // no clipping mode cheat
-            else if (Doom::checkCheat(&cheat_noclip, ev->data1)
-                     || Doom::checkCheat(&cheat_commercial_noclip, ev->data1))
+            else if (checkCheat(&cheat_noclip, ev->data1)
+                     || checkCheat(&cheat_commercial_noclip, ev->data1))
             {
                 bar.plyr->cheats ^= CF_NOCLIP;
 
@@ -521,10 +521,10 @@ bool statusBarResponder(Event* ev)
             // 'behold?' power-up cheats
             for (int i = 0; i < 6; i++)
             {
-                if (Doom::checkCheat(&cheat_powerup[i], ev->data1))
+                if (checkCheat(&cheat_powerup[i], ev->data1))
                 {
                     if (!bar.plyr->powers[i])
-                        Doom::givePower(bar.plyr, i);
+                        givePower(bar.plyr, i);
                     else if (i != pw_strength)
                         bar.plyr->powers[i] = 1;
                     else
@@ -535,19 +535,19 @@ bool statusBarResponder(Event* ev)
             }
 
             // 'behold' power-up menu
-            if (Doom::checkCheat(&cheat_powerup[6], ev->data1))
+            if (checkCheat(&cheat_powerup[6], ev->data1))
             {
                 bar.plyr->message = STSTR_BEHOLD;
             }
             // 'choppers' invulnerability & chainsaw
-            else if (Doom::checkCheat(&cheat_choppers, ev->data1))
+            else if (checkCheat(&cheat_choppers, ev->data1))
             {
                 bar.plyr->weaponowned[wp_chainsaw] = true;
                 bar.plyr->powers[pw_invulnerability] = true;
                 bar.plyr->message = STSTR_CHOPPERS;
             }
             // 'mypos' for player position
-            else if (Doom::checkCheat(&cheat_mypos, ev->data1))
+            else if (checkCheat(&cheat_mypos, ev->data1))
             {
                 static EA::Array<char, ST_MSGWIDTH> buf;
                 //doom_sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
@@ -569,13 +569,13 @@ bool statusBarResponder(Event* ev)
         }
 
         // 'clev' change-level cheat
-        if (Doom::checkCheat(&cheat_clev, ev->data1))
+        if (checkCheat(&cheat_clev, ev->data1))
         {
             EA::Array<char, 3> buf;
             int epsd;
             int map;
 
-            Doom::getParam(&cheat_clev, buf.data());
+            getParam(&cheat_clev, buf.data());
 
             const auto& version = gameVersion();
 
@@ -612,7 +612,7 @@ bool statusBarResponder(Event* ev)
 
             // So be it.
             bar.plyr->message = STSTR_CLEV;
-            Doom::deferInitNew(gameSession().gameskill, epsd, map);
+            deferInitNew(gameSession().gameskill, epsd, map);
         }
     }
     return false;
@@ -620,14 +620,13 @@ bool statusBarResponder(Event* ev)
 
 int calcPainOffset()
 {
-    int health;
     // The pain-offset cache: Doom::StatusBarFace members (Engine) now, reached by a local
     // reference (formerly function-local statics, never reset - identical persistence).
     int& lastcalc = statusBarFace().lastcalc;
     int& oldhealth = statusBarFace().oldhealth;
     auto& bar = statusBarState();
 
-    health = bar.plyr->health > 100 ? 100 : bar.plyr->health;
+    int health = bar.plyr->health > 100 ? 100 : bar.plyr->health;
 
     if (health != oldhealth)
     {
@@ -646,13 +645,11 @@ int calcPainOffset()
 void updateFaceWidget()
 {
     int i;
-    angle_t badguyangle;
     angle_t diffang;
     // The face state machine's carry: Doom::StatusBarFace members (Engine) now, reached by a
     // hoisted local (formerly function-local statics, never reset - identical persistence).
     auto& face = statusBarFace();
     auto& bar = statusBarState();
-    bool doevilgrin;
 
     if (face.priority < 10)
     {
@@ -670,7 +667,7 @@ void updateFaceWidget()
         if (bar.plyr->bonuscount)
         {
             // picking up bonus
-            doevilgrin = false;
+            bool doevilgrin = false;
 
             for (i = 0; i < NUMWEAPONS; i++)
             {
@@ -705,10 +702,10 @@ void updateFaceWidget()
             }
             else
             {
-                badguyangle = Doom::pointToAngle2(bar.plyr->mo->x,
-                                                  bar.plyr->mo->y,
-                                                  bar.plyr->attacker->x,
-                                                  bar.plyr->attacker->y);
+                angle_t badguyangle = pointToAngle2(bar.plyr->mo->x,
+                                                          bar.plyr->mo->y,
+                                                          bar.plyr->attacker->x,
+                                                          bar.plyr->attacker->y);
 
                 if (badguyangle > bar.plyr->mo->angle)
                 {
@@ -861,7 +858,7 @@ void statusBarTicker()
     auto& bar = statusBarState();
     auto& face = statusBarFace();
 
-    face.st_randomnumber = Doom::randomness().forMenu();
+    face.st_randomnumber = randomness().forMenu();
     updateWidgets();
     face.st_oldhealth = bar.plyr->health;
 }
@@ -871,16 +868,13 @@ void doPaletteStuff()
     auto& bar = statusBarState();
 
     int palette;
-    byte* pal;
-    int cnt;
-    int bzc;
 
-    cnt = bar.plyr->damagecount;
+    int cnt = bar.plyr->damagecount;
 
     if (bar.plyr->powers[pw_strength])
     {
         // slowly fade the berzerk out
-        bzc = 12 - (bar.plyr->powers[pw_strength] >> 6);
+        int bzc = 12 - (bar.plyr->powers[pw_strength] >> 6);
 
         if (bzc > cnt)
             cnt = bzc;
@@ -915,7 +909,8 @@ void doPaletteStuff()
     if (palette != bar.st_palette)
     {
         bar.st_palette = palette;
-        pal = static_cast<byte*>(Doom::cacheLumpNum(bar.lu_palette)) + palette * 768;
+        byte* pal =
+            static_cast<byte*>(cacheLumpNum(bar.lu_palette)) + palette * 768;
         setPalette(pal);
     }
 }
@@ -932,18 +927,18 @@ void drawWidgets(bool refresh)
     // used by w_frags widget
     bar.st_fragson = session.deathmatch && bar.st_statusbaron;
 
-    Doom::updateNum(widgets.w_ready, refresh);
+    updateNum(widgets.w_ready, refresh);
 
     for (int i = 0; i < 4; i++)
     {
-        Doom::updateNum(widgets.w_ammo[i], refresh);
-        Doom::updateNum(widgets.w_maxammo[i], refresh);
+        updateNum(widgets.w_ammo[i], refresh);
+        updateNum(widgets.w_maxammo[i], refresh);
     }
 
-    Doom::updatePercent(widgets.w_health, refresh);
-    Doom::updatePercent(widgets.w_armor, refresh);
+    updatePercent(widgets.w_health, refresh);
+    updatePercent(widgets.w_armor, refresh);
 
-    Doom::updateBinIcon(widgets.w_armsbg, refresh);
+    updateBinIcon(widgets.w_armsbg, refresh);
 
     // The arms icons read w_armsindex, not the player directly - see StatusBarWidgets.h.
     // Refreshed here, immediately before the update, so each icon sees exactly the
@@ -952,14 +947,14 @@ void drawWidgets(bool refresh)
         widgets.w_armsindex[i] = bar.plyr->weaponowned[i + 1];
 
     for (int i = 0; i < 6; i++)
-        Doom::updateMultIcon(widgets.w_arms[i], refresh);
+        updateMultIcon(widgets.w_arms[i], refresh);
 
-    Doom::updateMultIcon(widgets.w_faces, refresh);
+    updateMultIcon(widgets.w_faces, refresh);
 
     for (int i = 0; i < 3; i++)
-        Doom::updateMultIcon(widgets.w_keyboxes[i], refresh);
+        updateMultIcon(widgets.w_keyboxes[i], refresh);
 
-    Doom::updateNum(widgets.w_frags, refresh);
+    updateNum(widgets.w_frags, refresh);
 }
 
 void doRefresh()
@@ -1006,7 +1001,6 @@ void drawStatusBar(bool fullscreen, bool refresh)
 
 void loadGraphics()
 {
-    int facenum;
     auto& gfx = statusBarGraphics();
 
     EA::Array<char, 9> namebuf;
@@ -1017,17 +1011,17 @@ void loadGraphics()
         //doom_sprintf(namebuf, "STTNUM%d", i);
         doom_strcpy(namebuf.data(), "STTNUM");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
-        gfx.tallnum[i] = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+        gfx.tallnum[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
 
         //doom_sprintf(namebuf, "STYSNUM%d", i);
         doom_strcpy(namebuf.data(), "STYSNUM");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
-        gfx.shortnum[i] = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+        gfx.shortnum[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
     }
 
     // Load percent key.
     //Note: why not load STMINUS here, too?
-    gfx.tallpercent = static_cast<Patch*>(Doom::cacheLumpName("STTPRCNT"));
+    gfx.tallpercent = static_cast<Patch*>(cacheLumpName("STTPRCNT"));
 
     // key cards
     for (int i = 0; i < NUMCARDS; i++)
@@ -1035,11 +1029,11 @@ void loadGraphics()
         //doom_sprintf(namebuf, "STKEYS%d", i);
         doom_strcpy(namebuf.data(), "STKEYS");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
-        gfx.keys[i] = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+        gfx.keys[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
     }
 
     // arms background
-    gfx.armsbg = static_cast<Patch*>(Doom::cacheLumpName("STARMS"));
+    gfx.armsbg = static_cast<Patch*>(cacheLumpName("STARMS"));
 
     // arms ownership widgets
     for (int i = 0; i < 6; i++)
@@ -1049,7 +1043,7 @@ void loadGraphics()
         doom_concat(namebuf.data(), doom_itoa(i + 2, 10));
 
         // gray #
-        gfx.arms[i][0] = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+        gfx.arms[i][0] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
 
         // yellow #
         gfx.arms[i][1] = gfx.shortnum[i + 2];
@@ -1059,13 +1053,13 @@ void loadGraphics()
     //doom_sprintf(namebuf, "STFB%d", consoleplayer);
     doom_strcpy(namebuf.data(), "STFB");
     doom_concat(namebuf.data(), doom_itoa(playerState().consoleplayer, 10));
-    gfx.faceback = static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+    gfx.faceback = static_cast<Patch*>(cacheLumpName(namebuf.data()));
 
     // status bar background bits
-    gfx.sbar = static_cast<Patch*>(Doom::cacheLumpName("STBAR"));
+    gfx.sbar = static_cast<Patch*>(cacheLumpName("STBAR"));
 
     // face states
-    facenum = 0;
+    int facenum = 0;
     for (int i = 0; i < ST_NUMPAINFACES; i++)
     {
         for (int j = 0; j < ST_NUMSTRAIGHTFACES; j++)
@@ -1075,43 +1069,43 @@ void loadGraphics()
             doom_concat(namebuf.data(), doom_itoa(i, 10));
             doom_concat(namebuf.data(), doom_itoa(j, 10));
             gfx.faces[facenum++] =
-                static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+                static_cast<Patch*>(cacheLumpName(namebuf.data()));
         }
         //doom_sprintf(namebuf, "STFTR%d0", i);        // turn right
         doom_strcpy(namebuf.data(), "STFTR");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         doom_concat(namebuf.data(), "0");
         gfx.faces[facenum++] =
-            static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+            static_cast<Patch*>(cacheLumpName(namebuf.data()));
         //doom_sprintf(namebuf, "STFTL%d0", i);        // turn left
         doom_strcpy(namebuf.data(), "STFTL");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         doom_concat(namebuf.data(), "0");
         gfx.faces[facenum++] =
-            static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+            static_cast<Patch*>(cacheLumpName(namebuf.data()));
         //doom_sprintf(namebuf, "STFOUCH%d", i);        // ouch!
         doom_strcpy(namebuf.data(), "STFOUCH");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         gfx.faces[facenum++] =
-            static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+            static_cast<Patch*>(cacheLumpName(namebuf.data()));
         //doom_sprintf(namebuf, "STFEVL%d", i);        // evil grin ;)
         doom_strcpy(namebuf.data(), "STFEVL");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         gfx.faces[facenum++] =
-            static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+            static_cast<Patch*>(cacheLumpName(namebuf.data()));
         //doom_sprintf(namebuf, "STFKILL%d", i);        // pissed off
         doom_strcpy(namebuf.data(), "STFKILL");
         doom_concat(namebuf.data(), doom_itoa(i, 10));
         gfx.faces[facenum++] =
-            static_cast<Patch*>(Doom::cacheLumpName(namebuf.data()));
+            static_cast<Patch*>(cacheLumpName(namebuf.data()));
     }
-    gfx.faces[facenum++] = static_cast<Patch*>(Doom::cacheLumpName("STFGOD0"));
-    gfx.faces[facenum++] = static_cast<Patch*>(Doom::cacheLumpName("STFDEAD0"));
+    gfx.faces[facenum++] = static_cast<Patch*>(cacheLumpName("STFGOD0"));
+    gfx.faces[facenum++] = static_cast<Patch*>(cacheLumpName("STFDEAD0"));
 }
 
 void loadData()
 {
-    statusBarState().lu_palette = Doom::wad().number("PLAYPAL");
+    statusBarState().lu_palette = wad().number("PLAYPAL");
     loadGraphics();
 }
 
@@ -1149,7 +1143,7 @@ void initStatusBarData()
     for (int i = 0; i < 3; i++)
         bar.keyboxes[i] = -1;
 
-    Doom::initStatusWidgets();
+    initStatusWidgets();
 }
 
 void createWidgets()
@@ -1159,7 +1153,7 @@ void createWidgets()
     auto& gfx = statusBarGraphics();
 
     // ready weapon ammo
-    Doom::initNum(widgets.w_ready,
+    initNum(widgets.w_ready,
                   ST_AMMOX,
                   ST_AMMOY,
                   gfx.tallnum.data(),
@@ -1171,7 +1165,7 @@ void createWidgets()
     widgets.w_ready.data = bar.plyr->readyweapon;
 
     // health percentage
-    Doom::initPercent(widgets.w_health,
+    initPercent(widgets.w_health,
                       ST_HEALTHX,
                       ST_HEALTHY,
                       gfx.tallnum.data(),
@@ -1180,7 +1174,7 @@ void createWidgets()
                       gfx.tallpercent);
 
     // arms background
-    Doom::initBinIcon(widgets.w_armsbg,
+    initBinIcon(widgets.w_armsbg,
                       ST_ARMSBGX,
                       ST_ARMSBGY,
                       gfx.armsbg,
@@ -1190,7 +1184,7 @@ void createWidgets()
     // weapons owned
     for (int i = 0; i < 6; i++)
     {
-        Doom::initMultIcon(widgets.w_arms[i],
+        initMultIcon(widgets.w_arms[i],
                            ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
                            ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
                            gfx.arms[i].data(),
@@ -1199,7 +1193,7 @@ void createWidgets()
     }
 
     // frags sum
-    Doom::initNum(widgets.w_frags,
+    initNum(widgets.w_frags,
                   ST_FRAGSX,
                   ST_FRAGSY,
                   gfx.tallnum.data(),
@@ -1208,7 +1202,7 @@ void createWidgets()
                   ST_FRAGSWIDTH);
 
     // faces
-    Doom::initMultIcon(widgets.w_faces,
+    initMultIcon(widgets.w_faces,
                        ST_FACESX,
                        ST_FACESY,
                        gfx.faces.data(),
@@ -1216,7 +1210,7 @@ void createWidgets()
                        &bar.st_statusbaron);
 
     // armor percentage - should be colored later
-    Doom::initPercent(widgets.w_armor,
+    initPercent(widgets.w_armor,
                       ST_ARMORX,
                       ST_ARMORY,
                       gfx.tallnum.data(),
@@ -1225,21 +1219,21 @@ void createWidgets()
                       gfx.tallpercent);
 
     // keyboxes 0-2
-    Doom::initMultIcon(widgets.w_keyboxes[0],
+    initMultIcon(widgets.w_keyboxes[0],
                        ST_KEY0X,
                        ST_KEY0Y,
                        gfx.keys.data(),
                        &bar.keyboxes[0],
                        &bar.st_statusbaron);
 
-    Doom::initMultIcon(widgets.w_keyboxes[1],
+    initMultIcon(widgets.w_keyboxes[1],
                        ST_KEY1X,
                        ST_KEY1Y,
                        gfx.keys.data(),
                        &bar.keyboxes[1],
                        &bar.st_statusbaron);
 
-    Doom::initMultIcon(widgets.w_keyboxes[2],
+    initMultIcon(widgets.w_keyboxes[2],
                        ST_KEY2X,
                        ST_KEY2Y,
                        gfx.keys.data(),
@@ -1247,7 +1241,7 @@ void createWidgets()
                        &bar.st_statusbaron);
 
     // ammo count (all four kinds)
-    Doom::initNum(widgets.w_ammo[0],
+    initNum(widgets.w_ammo[0],
                   ST_AMMO0X,
                   ST_AMMO0Y,
                   gfx.shortnum.data(),
@@ -1255,7 +1249,7 @@ void createWidgets()
                   &bar.st_statusbaron,
                   ST_AMMO0WIDTH);
 
-    Doom::initNum(widgets.w_ammo[1],
+    initNum(widgets.w_ammo[1],
                   ST_AMMO1X,
                   ST_AMMO1Y,
                   gfx.shortnum.data(),
@@ -1263,7 +1257,7 @@ void createWidgets()
                   &bar.st_statusbaron,
                   ST_AMMO1WIDTH);
 
-    Doom::initNum(widgets.w_ammo[2],
+    initNum(widgets.w_ammo[2],
                   ST_AMMO2X,
                   ST_AMMO2Y,
                   gfx.shortnum.data(),
@@ -1271,7 +1265,7 @@ void createWidgets()
                   &bar.st_statusbaron,
                   ST_AMMO2WIDTH);
 
-    Doom::initNum(widgets.w_ammo[3],
+    initNum(widgets.w_ammo[3],
                   ST_AMMO3X,
                   ST_AMMO3Y,
                   gfx.shortnum.data(),
@@ -1280,7 +1274,7 @@ void createWidgets()
                   ST_AMMO3WIDTH);
 
     // max ammo count (all four kinds)
-    Doom::initNum(widgets.w_maxammo[0],
+    initNum(widgets.w_maxammo[0],
                   ST_MAXAMMO0X,
                   ST_MAXAMMO0Y,
                   gfx.shortnum.data(),
@@ -1288,7 +1282,7 @@ void createWidgets()
                   &bar.st_statusbaron,
                   ST_MAXAMMO0WIDTH);
 
-    Doom::initNum(widgets.w_maxammo[1],
+    initNum(widgets.w_maxammo[1],
                   ST_MAXAMMO1X,
                   ST_MAXAMMO1Y,
                   gfx.shortnum.data(),
@@ -1296,7 +1290,7 @@ void createWidgets()
                   &bar.st_statusbaron,
                   ST_MAXAMMO1WIDTH);
 
-    Doom::initNum(widgets.w_maxammo[2],
+    initNum(widgets.w_maxammo[2],
                   ST_MAXAMMO2X,
                   ST_MAXAMMO2Y,
                   gfx.shortnum.data(),
@@ -1304,7 +1298,7 @@ void createWidgets()
                   &bar.st_statusbaron,
                   ST_MAXAMMO2WIDTH);
 
-    Doom::initNum(widgets.w_maxammo[3],
+    initNum(widgets.w_maxammo[3],
                   ST_MAXAMMO3X,
                   ST_MAXAMMO3Y,
                   gfx.shortnum.data(),
@@ -1332,7 +1326,7 @@ void stopStatusBar()
     if (bar.st_stopped)
         return;
 
-    setPalette(static_cast<byte*>(Doom::cacheLumpNum(bar.lu_palette)));
+    setPalette(static_cast<byte*>(cacheLumpNum(bar.lu_palette)));
 
     bar.st_stopped = true;
 }

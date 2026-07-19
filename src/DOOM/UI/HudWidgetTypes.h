@@ -50,7 +50,7 @@ struct HudTextLine
     int x;
     int y;
 
-    Doom::Patch** f; // font
+    Patch** f; // font
     int sc; // start character
     EA::Array<char, HU_MAXLINELENGTH + 1> l; // line of text
     int len; // current line length

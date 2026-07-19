@@ -53,14 +53,11 @@ int doColorXForm(int width, int height, int ticks)
 {
     auto& scratch = wipeState();
 
-    bool changed;
-    byte* w;
-    byte* e;
     int newval;
 
-    changed = false;
-    w = scratch.wipe_scr;
-    e = scratch.wipe_scr_end;
+    bool changed = false;
+    byte* w = scratch.wipe_scr;
+    byte* e = scratch.wipe_scr_end;
 
     while (w != scratch.wipe_scr + width * height)
     {
@@ -103,7 +100,6 @@ int initMelt(int width, int height, [[maybe_unused]] int ticks)
 {
     auto& scratch = wipeState();
 
-    int r;
     // copy start screen to main screen
     doom_memcpy(scratch.wipe_scr, wipe_scr_start, width * height);
 
@@ -118,10 +114,10 @@ int initMelt(int width, int height, [[maybe_unused]] int ticks)
     // vanilla name wipe_melt_offsets is a view refreshed here after the resize.
     scratch.wipe_melt_offsets.resize(width);
     wipe_melt_offsets = scratch.wipe_melt_offsets.data();
-    wipe_melt_offsets[0] = -(Doom::randomness().forMenu() % 16);
+    wipe_melt_offsets[0] = -(randomness().forMenu() % 16);
     for (int i = 1; i < width; i++)
     {
-        r = (Doom::randomness().forMenu() % 3) - 1;
+        int r = (randomness().forMenu() % 3) - 1;
         wipe_melt_offsets[i] = wipe_melt_offsets[i - 1] + r;
         if (wipe_melt_offsets[i] > 0)
             wipe_melt_offsets[i] = 0;
@@ -136,11 +132,6 @@ int doMelt(int width, int height, int ticks)
 {
     auto& scratch = wipeState();
 
-    int dy;
-    int idx;
-
-    short* s;
-    short* d;
     bool done = true;
 
     width /= 2;
@@ -156,14 +147,14 @@ int doMelt(int width, int height, int ticks)
             }
             else if (wipe_melt_offsets[i] < height)
             {
-                dy = (wipe_melt_offsets[i] < 16) ? wipe_melt_offsets[i] + 1 : 8;
+                int dy = (wipe_melt_offsets[i] < 16) ? wipe_melt_offsets[i] + 1 : 8;
                 if (wipe_melt_offsets[i] + dy >= height)
                     dy = height - wipe_melt_offsets[i];
-                s = &(reinterpret_cast<short*>(
+                short* s = &(reinterpret_cast<short*>(
                     scratch.wipe_scr_end))[i * height + wipe_melt_offsets[i]];
-                d = &(reinterpret_cast<short*>(
+                short* d = &(reinterpret_cast<short*>(
                     scratch.wipe_scr))[wipe_melt_offsets[i] * width + i];
-                idx = 0;
+                int idx = 0;
                 for (int j = dy; j; j--)
                 {
                     d[idx] = *(s++);
@@ -214,7 +205,7 @@ int endScreen(int x, int y, int width, int height)
 
     scratch.wipe_scr_end = screens[3];
     readScreen(scratch.wipe_scr_end);
-    Doom::drawBlock(x, y, 0, width, height, wipe_scr_start); // restore start scr.
+    drawBlock(x, y, 0, width, height, wipe_scr_start); // restore start scr.
     return 0;
 }
 
@@ -225,7 +216,6 @@ int screenWipe(int wipeno,
                int height,
                int ticks)
 {
-    int rc;
     static int (*wipes[])(int, int, int) = {
         initColorXForm, doColorXForm, exitColorXForm, initMelt, doMelt, exitMelt};
 
@@ -238,8 +228,8 @@ int screenWipe(int wipeno,
     }
 
     // do a piece of wipe-in
-    Doom::markRect(0, 0, width, height);
-    rc = (*wipes[wipeno * 3 + 1])(width, height, ticks);
+    markRect(0, 0, width, height);
+    int rc = (*wipes[wipeno * 3 + 1])(width, height, ticks);
 
     // final stuff
     if (rc)

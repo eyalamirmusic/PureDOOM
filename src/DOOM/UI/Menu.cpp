@@ -184,11 +184,11 @@ struct MenuCustomText
 // Was EA::Array<EA::Array<char, 26>, 5>, a fixed 26-byte buffer per message that
 // only existed because these were string-literal macros. Its one reader wants a
 // const char*, so it holds pointers now and the 26 cannot silently truncate.
-EA::Array<const char*, 5> gammamsg = {Doom::GAMMALVL0,
-                                      Doom::GAMMALVL1,
-                                      Doom::GAMMALVL2,
-                                      Doom::GAMMALVL3,
-                                      Doom::GAMMALVL4};
+EA::Array<const char*, 5> gammamsg = {GAMMALVL0,
+                                      GAMMALVL1,
+                                      GAMMALVL2,
+                                      GAMMALVL3,
+                                      GAMMALVL4};
 
 // graphic name of skulls
 // warning: initializer-string for array of chars is too long
@@ -666,8 +666,8 @@ void drawCustomMenuText(const char* name, int x, int y)
             MenuCustomTextSeg* seg = custom_text->segs;
             while (seg->lump)
             {
-                void* lump = Doom::cacheLumpName(seg->lump);
-                Doom::drawPatchRectDirect(
+                void* lump = cacheLumpName(seg->lump);
+                drawPatchRectDirect(
                     x + seg->offx, y, 0, static_cast<Patch*>(lump), seg->x, seg->w);
                 ++seg;
             }
@@ -704,7 +704,7 @@ void readSaveStrings()
         handle = doom_open(name.data(), "r");
         if (handle == nullptr)
         {
-            doom_strcpy(&state.savegamestrings[i][0], Doom::EMPTYSTRING);
+            doom_strcpy(&state.savegamestrings[i][0], EMPTYSTRING);
             DOOM_LoadMenu[i].status = 0;
             continue;
         }
@@ -721,8 +721,8 @@ void drawLoad()
 {
     auto& state = menuState();
 
-    Doom::drawPatchDirect(
-        72, 28, 0, static_cast<Patch*>(Doom::cacheLumpName("M_LOADG")));
+    drawPatchDirect(
+        72, 28, 0, static_cast<Patch*>(cacheLumpName("M_LOADG")));
     for (int i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
@@ -736,18 +736,18 @@ void drawLoad()
 //
 void drawSaveLoadBorder(int x, int y)
 {
-    Doom::drawPatchDirect(
-        x - 8, y + 7, 0, static_cast<Patch*>(Doom::cacheLumpName("M_LSLEFT")));
+    drawPatchDirect(
+        x - 8, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSLEFT")));
 
     for (int i = 0; i < 24; i++)
     {
-        Doom::drawPatchDirect(
-            x, y + 7, 0, static_cast<Patch*>(Doom::cacheLumpName("M_LSCNTR")));
+        drawPatchDirect(
+            x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSCNTR")));
         x += 8;
     }
 
-    Doom::drawPatchDirect(
-        x, y + 7, 0, static_cast<Patch*>(Doom::cacheLumpName("M_LSRGHT")));
+    drawPatchDirect(
+        x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSRGHT")));
 }
 
 //
@@ -768,7 +768,7 @@ void loadSelect(int choice)
         doom_concat(name.data(), doom_itoa(choice, 10));
         doom_concat(name.data(), ".dsg");
     }
-    Doom::loadGame(name.data());
+    loadGame(name.data());
     clearMenus();
 }
 
@@ -779,7 +779,7 @@ void loadGameMenu(int)
 {
     if (gameSession().netgame)
     {
-        startMessage(Doom::LOADNET, {}, false);
+        startMessage(LOADNET, {}, false);
         return;
     }
 
@@ -796,8 +796,8 @@ void drawSave()
 
     int i;
 
-    Doom::drawPatchDirect(
-        72, 28, 0, static_cast<Patch*>(Doom::cacheLumpName("M_SAVEG")));
+    drawPatchDirect(
+        72, 28, 0, static_cast<Patch*>(cacheLumpName("M_SAVEG")));
     for (i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
@@ -819,7 +819,7 @@ void doSave(int slot)
 {
     auto& state = menuState();
 
-    Doom::saveGame(slot, state.savegamestrings[slot].data());
+    saveGame(slot, state.savegamestrings[slot].data());
     clearMenus();
 
     // PICK QUICKSAVE SLOT YET?
@@ -839,7 +839,7 @@ void saveSelect(int choice)
 
     state.saveSlot = choice;
     doom_strcpy(state.saveOldString.data(), state.savegamestrings[choice].data());
-    if (!doom_strcmp(state.savegamestrings[choice].data(), Doom::EMPTYSTRING))
+    if (!doom_strcmp(state.savegamestrings[choice].data(), EMPTYSTRING))
         state.savegamestrings[choice][0] = 0;
     state.saveCharIndex =
         static_cast<int>(doom_strlen(state.savegamestrings[choice].data()));
@@ -852,7 +852,7 @@ void saveGameMenu(int)
 {
     if (!demoState().usergame)
     {
-        startMessage(Doom::SAVEDEAD, {}, false);
+        startMessage(SAVEDEAD, {}, false);
         return;
     }
 
@@ -871,7 +871,7 @@ void quickSaveResponse(int ch)
     if (ch == 'y')
     {
         doSave(menuState().quickSaveSlot);
-        Doom::startSound(0, sfx_swtchx);
+        startSound(0, sfx_swtchx);
     }
 }
 
@@ -881,7 +881,7 @@ void quickSave()
 
     if (!demoState().usergame)
     {
-        Doom::startSound(0, sfx_oof);
+        startSound(0, sfx_oof);
         return;
     }
 
@@ -897,10 +897,10 @@ void quickSave()
         return;
     }
     //doom_sprintf(tempstring, Doom::QSPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring.data(), Doom::QSPROMPT_1);
+    doom_strcpy(state.tempstring.data(), QSPROMPT_1);
     doom_concat(state.tempstring.data(),
                 state.savegamestrings[state.quickSaveSlot].data());
-    doom_strcpy(state.tempstring.data(), Doom::QSPROMPT_2);
+    doom_strcpy(state.tempstring.data(), QSPROMPT_2);
     startMessage(state.tempstring.data(), quickSaveResponse, true);
 }
 
@@ -912,7 +912,7 @@ void quickLoadResponse(int ch)
     if (ch == 'y')
     {
         loadSelect(menuState().quickSaveSlot);
-        Doom::startSound(0, sfx_swtchx);
+        startSound(0, sfx_swtchx);
     }
 }
 
@@ -922,20 +922,20 @@ void quickLoad()
 
     if (gameSession().netgame)
     {
-        startMessage(Doom::QLOADNET, {}, false);
+        startMessage(QLOADNET, {}, false);
         return;
     }
 
     if (state.quickSaveSlot < 0)
     {
-        startMessage(Doom::QSAVESPOT, {}, false);
+        startMessage(QSAVESPOT, {}, false);
         return;
     }
     //doom_sprintf(tempstring, Doom::QLPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring.data(), Doom::QLPROMPT_1);
+    doom_strcpy(state.tempstring.data(), QLPROMPT_1);
     doom_concat(state.tempstring.data(),
                 state.savegamestrings[state.quickSaveSlot].data());
-    doom_strcpy(state.tempstring.data(), Doom::QLPROMPT_2);
+    doom_strcpy(state.tempstring.data(), QLPROMPT_2);
     startMessage(state.tempstring.data(), quickLoadResponse, true);
 }
 
@@ -949,14 +949,14 @@ void drawReadThis1()
     switch (gameVersion().gamemode)
     {
         case commercial:
-            Doom::drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("HELP")));
+            drawPatchDirect(
+                0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP")));
             break;
         case shareware:
         case registered:
         case retail:
-            Doom::drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("HELP1")));
+            drawPatchDirect(
+                0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP1")));
             break;
         default:
             break;
@@ -975,13 +975,13 @@ void drawReadThis2()
         case retail:
         case commercial:
             // This hack keeps us from having to change menus.
-            Doom::drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("CREDIT")));
+            drawPatchDirect(
+                0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
             break;
         case shareware:
         case registered:
-            Doom::drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(Doom::cacheLumpName("HELP2")));
+            drawPatchDirect(
+                0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
             break;
         default:
             break;
@@ -996,8 +996,8 @@ void drawSound()
 {
     auto& sndset = soundSettings();
 
-    Doom::drawPatchDirect(
-        60, 38, 0, static_cast<Patch*>(Doom::cacheLumpName("M_SVOL")));
+    drawPatchDirect(
+        60, 38, 0, static_cast<Patch*>(cacheLumpName("M_SVOL")));
 
     if (!(doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
     {
@@ -1048,7 +1048,7 @@ void sfxVol(int choice)
             break;
     }
 
-    Doom::setSfxVolume(sndset.sfxVolume /* *8 */);
+    setSfxVolume(sndset.sfxVolume /* *8 */);
 }
 
 void musicVol(int choice)
@@ -1067,7 +1067,7 @@ void musicVol(int choice)
             break;
     }
 
-    Doom::setMusicVolumeLevel(sndset.musicVolume /* *8 */);
+    setMusicVolumeLevel(sndset.musicVolume /* *8 */);
 }
 
 //
@@ -1075,8 +1075,8 @@ void musicVol(int choice)
 //
 void drawMainMenu()
 {
-    Doom::drawPatchDirect(
-        94, 2, 0, static_cast<Patch*>(Doom::cacheLumpName("M_DOOM")));
+    drawPatchDirect(
+        94, 2, 0, static_cast<Patch*>(cacheLumpName("M_DOOM")));
 }
 
 //
@@ -1084,17 +1084,17 @@ void drawMainMenu()
 //
 void drawNewGame()
 {
-    Doom::drawPatchDirect(
-        96, 14, 0, static_cast<Patch*>(Doom::cacheLumpName("M_NEWG")));
-    Doom::drawPatchDirect(
-        54, 38, 0, static_cast<Patch*>(Doom::cacheLumpName("M_SKILL")));
+    drawPatchDirect(
+        96, 14, 0, static_cast<Patch*>(cacheLumpName("M_NEWG")));
+    drawPatchDirect(
+        54, 38, 0, static_cast<Patch*>(cacheLumpName("M_SKILL")));
 }
 
 void newGame(int)
 {
     if (gameSession().netgame && !demoState().demoplayback)
     {
-        startMessage(Doom::NEWGAME, {}, false);
+        startMessage(NEWGAME, {}, false);
         return;
     }
 
@@ -1109,8 +1109,8 @@ void newGame(int)
 //
 void drawEpisode()
 {
-    Doom::drawPatchDirect(
-        54, 38, 0, static_cast<Patch*>(Doom::cacheLumpName("M_EPISOD")));
+    drawPatchDirect(
+        54, 38, 0, static_cast<Patch*>(cacheLumpName("M_EPISOD")));
 }
 
 void verifyNightmare(int ch)
@@ -1118,7 +1118,7 @@ void verifyNightmare(int ch)
     if (ch != 'y')
         return;
 
-    Doom::deferInitNew(static_cast<Skill>(nightmare), menuState().epi + 1, 1);
+    deferInitNew(static_cast<Skill>(nightmare), menuState().epi + 1, 1);
     clearMenus();
 }
 
@@ -1126,11 +1126,11 @@ void chooseSkill(int choice)
 {
     if (choice == nightmare)
     {
-        startMessage(Doom::NIGHTMARE, verifyNightmare, true);
+        startMessage(NIGHTMARE, verifyNightmare, true);
         return;
     }
 
-    Doom::deferInitNew(static_cast<Skill>(choice), menuState().epi + 1, 1);
+    deferInitNew(static_cast<Skill>(choice), menuState().epi + 1, 1);
     clearMenus();
 }
 
@@ -1140,7 +1140,7 @@ void episode(int choice)
 
     if ((version.gamemode == shareware) && choice)
     {
-        startMessage(Doom::SWSTRING, {}, false);
+        startMessage(SWSTRING, {}, false);
         setupNextMenu(&ReadDef1);
         return;
     }
@@ -1163,29 +1163,29 @@ void drawOptions()
 {
     auto& input = inputConfig();
 
-    Doom::drawPatchDirect(
-        108, 15, 0, static_cast<Patch*>(Doom::cacheLumpName("M_OPTTTL")));
+    drawPatchDirect(
+        108, 15, 0, static_cast<Patch*>(cacheLumpName("M_OPTTTL")));
 
     //Doom::drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
     //                Doom::cacheLumpName(detailNames[detailLevel])); // Details do nothing?
 
-    Doom::drawPatchDirect(OptionsDef.x + 120,
+    drawPatchDirect(OptionsDef.x + 120,
                           OptionsDef.y + LINEHEIGHT * messages,
                           0,
-                          static_cast<Patch*>(Doom::cacheLumpName(
+                          static_cast<Patch*>(cacheLumpName(
                               msgNames[menuSettings().showMessages].data())));
 
-    Doom::drawPatchDirect(
+    drawPatchDirect(
         OptionsDef.x + 131,
         OptionsDef.y + LINEHEIGHT * crosshair_opt,
         0,
-        static_cast<Patch*>(Doom::cacheLumpName(msgNames[input.crosshair].data())));
+        static_cast<Patch*>(cacheLumpName(msgNames[input.crosshair].data())));
 
-    Doom::drawPatchDirect(
+    drawPatchDirect(
         OptionsDef.x + 147,
         OptionsDef.y + LINEHEIGHT * always_run_opt,
         0,
-        static_cast<Patch*>(Doom::cacheLumpName(msgNames[input.always_run].data())));
+        static_cast<Patch*>(cacheLumpName(msgNames[input.always_run].data())));
 
     drawThermo(OptionsDef.x,
                OptionsDef.y + LINEHEIGHT * (scrnsize + 1),
@@ -1197,10 +1197,10 @@ void drawMouseOptions()
 {
     drawCustomMenuText("TXT_MOPT", 74, 45);
 
-    Doom::drawPatchDirect(MouseOptionsDef.x + 149,
+    drawPatchDirect(MouseOptionsDef.x + 149,
                           MouseOptionsDef.y + LINEHEIGHT * mousemov,
                           0,
-                          static_cast<Patch*>(Doom::cacheLumpName(
+                          static_cast<Patch*>(cacheLumpName(
                               msgNames[inputConfig().mousemove].data())));
 
     drawThermo(MouseOptionsDef.x,
@@ -1225,9 +1225,9 @@ void changeMessages(int)
     settings.showMessages = 1 - settings.showMessages;
 
     if (!settings.showMessages)
-        players_.players[players_.consoleplayer].message = Doom::MSGOFF;
+        players_.players[players_.consoleplayer].message = MSGOFF;
     else
-        players_.players[players_.consoleplayer].message = Doom::MSGON;
+        players_.players[players_.consoleplayer].message = MSGON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1243,9 +1243,9 @@ void changeCrosshair(int)
     input.crosshair = 1 - input.crosshair;
 
     if (!input.crosshair)
-        players_.players[players_.consoleplayer].message = Doom::CROSSOFF;
+        players_.players[players_.consoleplayer].message = CROSSOFF;
     else
-        players_.players[players_.consoleplayer].message = Doom::CROSSON;
+        players_.players[players_.consoleplayer].message = CROSSON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1261,9 +1261,9 @@ void changeAlwaysRun(int)
     input.always_run = 1 - input.always_run;
 
     if (!input.always_run)
-        players_.players[players_.consoleplayer].message = Doom::ALWAYSRUNOFF;
+        players_.players[players_.consoleplayer].message = ALWAYSRUNOFF;
     else
-        players_.players[players_.consoleplayer].message = Doom::ALWAYSRUNON;
+        players_.players[players_.consoleplayer].message = ALWAYSRUNON;
 
     hudFlags().message_dontfuckwithme = true;
 }
@@ -1280,24 +1280,24 @@ void endGameResponse(int ch)
 
     state.currentMenu->lastOn = state.itemOn;
     clearMenus();
-    Doom::startTitle();
+    startTitle();
 }
 
 void endGame(int)
 {
     if (!demoState().usergame)
     {
-        Doom::startSound(0, sfx_oof);
+        startSound(0, sfx_oof);
         return;
     }
 
     if (gameSession().netgame)
     {
-        startMessage(Doom::NETEND, {}, false);
+        startMessage(NETEND, {}, false);
         return;
     }
 
-    startMessage(Doom::ENDGAME, endGameResponse, true);
+    startMessage(ENDGAME, endGameResponse, true);
 }
 
 //
@@ -1330,9 +1330,9 @@ void quitResponse(int ch)
     if (!gameSession().netgame)
     {
         if (gameVersion().gamemode == commercial)
-            Doom::startSound(0, quitsounds2[(clock.gametic >> 2) & 7]);
+            startSound(0, quitsounds2[(clock.gametic >> 2) & 7]);
         else
-            Doom::startSound(0, quitsounds[(clock.gametic >> 2) & 7]);
+            startSound(0, quitsounds[(clock.gametic >> 2) & 7]);
         waitVBlank(105);
     }
     quitGame();
@@ -1420,7 +1420,7 @@ void sizeDisplay(int choice)
             break;
     }
 
-    Doom::setViewSize(settings.screenblocks, settings.detailLevel);
+    setViewSize(settings.screenblocks, settings.detailLevel);
 }
 
 //
@@ -1428,41 +1428,39 @@ void sizeDisplay(int choice)
 //
 void drawThermo(int x, int y, int thermWidth, int thermDot)
 {
-    int xx;
-
-    xx = x;
-    Doom::drawPatchDirect(
-        xx, y, 0, static_cast<Patch*>(Doom::cacheLumpName("M_THERML")));
+    int xx = x;
+    drawPatchDirect(
+        xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERML")));
     xx += 8;
     for (int i = 0; i < thermWidth; i++)
     {
-        Doom::drawPatchDirect(
-            xx, y, 0, static_cast<Patch*>(Doom::cacheLumpName("M_THERMM")));
+        drawPatchDirect(
+            xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMM")));
         xx += 8;
     }
-    Doom::drawPatchDirect(
-        xx, y, 0, static_cast<Patch*>(Doom::cacheLumpName("M_THERMR")));
+    drawPatchDirect(
+        xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMR")));
 
-    Doom::drawPatchDirect((x + 8) + thermDot * 8,
+    drawPatchDirect((x + 8) + thermDot * 8,
                           y,
                           0,
-                          static_cast<Patch*>(Doom::cacheLumpName("M_THERMO")));
+                          static_cast<Patch*>(cacheLumpName("M_THERMO")));
 }
 
 void drawEmptyCell(MenuDef* menu, int item)
 {
-    Doom::drawPatchDirect(menu->x - 10,
+    drawPatchDirect(menu->x - 10,
                           menu->y + item * LINEHEIGHT - 1,
                           0,
-                          static_cast<Patch*>(Doom::cacheLumpName("M_CELL1")));
+                          static_cast<Patch*>(cacheLumpName("M_CELL1")));
 }
 
 void drawSelCell(MenuDef* menu, int item)
 {
-    Doom::drawPatchDirect(menu->x - 10,
+    drawPatchDirect(menu->x - 10,
                           menu->y + item * LINEHEIGHT - 1,
                           0,
-                          static_cast<Patch*>(Doom::cacheLumpName("M_CELL2")));
+                          static_cast<Patch*>(cacheLumpName("M_CELL2")));
 }
 
 void startMessage(const char* string, std::function<void(int)> routine, bool input)
@@ -1493,11 +1491,10 @@ void stopMessage()
 int stringWidth(const char* string)
 {
     int w = 0;
-    int c;
 
     for (int i = 0; i < doom_strlen(string); i++)
     {
-        c = doom_toupper(string[i]) - HU_FONTSTART;
+        int c = doom_toupper(string[i]) - HU_FONTSTART;
         if (c < 0 || c >= HU_FONTSIZE)
             w += 4;
         else
@@ -1512,10 +1509,9 @@ int stringWidth(const char* string)
 //
 int stringHeight(const char* string)
 {
-    int h;
     int height = littleEndian(hudFont().hu_font[0]->height);
 
-    h = height;
+    int h = height;
     for (int i = 0; i < doom_strlen(string); i++)
         if (string[i] == '\n')
             h += height;
@@ -1530,19 +1526,13 @@ void writeText(int x, int y, const char* string)
 {
     auto& font = hudFont();
 
-    int w;
-    const char* ch;
-    int c;
-    int cx;
-    int cy;
-
-    ch = string;
-    cx = x;
-    cy = y;
+    const char* ch = string;
+    int cx = x;
+    int cy = y;
 
     while (1)
     {
-        c = *ch++;
+        int c = *ch++;
         if (!c)
             break;
         if (c == '\n')
@@ -1559,10 +1549,10 @@ void writeText(int x, int y, const char* string)
             continue;
         }
 
-        w = littleEndian(font.hu_font[c]->width);
+        int w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        Doom::drawPatchDirect(cx, cy, 0, font.hu_font[c]);
+        drawPatchDirect(cx, cy, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -1580,10 +1570,9 @@ bool menuResponder(Event* ev)
     auto& players_ = playerState();
     auto& settings = menuSettings();
 
-    int ch;
     auto& state = menuState();
 
-    ch = -1;
+    int ch = -1;
 
     if (ev->type == ev_joystick && state.joywait < currentTic())
     {
@@ -1729,13 +1718,13 @@ bool menuResponder(Event* ev)
         state.messageRoutine(ch);
 
         overlay.menuactive = false;
-        Doom::startSound(0, sfx_swtchx);
+        startSound(0, sfx_swtchx);
         return true;
     }
 
     if (launchOptions().devparm && ch == KEY_F1)
     {
-        Doom::takeScreenshot();
+        takeScreenshot();
         return true;
     }
 
@@ -1747,14 +1736,14 @@ bool menuResponder(Event* ev)
                 if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(0);
-                Doom::startSound(0, sfx_stnmov);
+                startSound(0, sfx_stnmov);
                 return true;
 
             case KEY_EQUALS: // Screen size up
                 if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(1);
-                Doom::startSound(0, sfx_stnmov);
+                startSound(0, sfx_stnmov);
                 return true;
 
             case KEY_F1: // Help key
@@ -1766,18 +1755,18 @@ bool menuResponder(Event* ev)
                     state.currentMenu = &ReadDef1;
 
                 state.itemOn = 0;
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 return true;
 
             case KEY_F2: // Save
                 startControlPanel();
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 saveGameMenu(0);
                 return true;
 
             case KEY_F3: // Load
                 startControlPanel();
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 loadGameMenu(0);
                 return true;
 
@@ -1785,7 +1774,7 @@ bool menuResponder(Event* ev)
                 startControlPanel();
                 state.currentMenu = &SoundDef;
                 state.itemOn = sfx_vol;
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 return true;
 
                 // case KEY_F5:            // Detail toggle
@@ -1795,31 +1784,31 @@ bool menuResponder(Event* ev)
 
             case KEY_F5: // Crosshair toggle
                 changeCrosshair(0);
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 return true;
 
             case KEY_F6: // Quicksave
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 quickSave();
                 return true;
 
             case KEY_F7: // End game
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 endGame(0);
                 return true;
 
             case KEY_F8: // Toggle messages
                 changeMessages(0);
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 return true;
 
             case KEY_F9: // Quickload
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 quickLoad();
                 return true;
 
             case KEY_F10: // Quit DOOM
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
                 quitDOOM(0);
                 return true;
 
@@ -1829,7 +1818,7 @@ bool menuResponder(Event* ev)
                     settings.usegamma = 0;
                 players_.players[players_.consoleplayer].message =
                     gammamsg[settings.usegamma];
-                setPalette(static_cast<byte*>(Doom::cacheLumpName("PLAYPAL")));
+                setPalette(static_cast<byte*>(cacheLumpName("PLAYPAL")));
                 return true;
         }
 
@@ -1839,7 +1828,7 @@ bool menuResponder(Event* ev)
         if (ch == KEY_ESCAPE)
         {
             startControlPanel();
-            Doom::startSound(0, sfx_swtchn);
+            startSound(0, sfx_swtchn);
             return true;
         }
         return false;
@@ -1855,7 +1844,7 @@ bool menuResponder(Event* ev)
                     state.itemOn = 0;
                 else
                     state.itemOn++;
-                Doom::startSound(0, sfx_pstop);
+                startSound(0, sfx_pstop);
             } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
@@ -1866,7 +1855,7 @@ bool menuResponder(Event* ev)
                     state.itemOn = state.currentMenu->numitems - 1;
                 else
                     state.itemOn--;
-                Doom::startSound(0, sfx_pstop);
+                startSound(0, sfx_pstop);
             } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
@@ -1874,7 +1863,7 @@ bool menuResponder(Event* ev)
             if (state.currentMenu->menuitems[state.itemOn].routine
                 && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
-                Doom::startSound(0, sfx_stnmov);
+                startSound(0, sfx_stnmov);
                 state.currentMenu->menuitems[state.itemOn].routine(0);
             }
             return true;
@@ -1883,7 +1872,7 @@ bool menuResponder(Event* ev)
             if (state.currentMenu->menuitems[state.itemOn].routine
                 && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
-                Doom::startSound(0, sfx_stnmov);
+                startSound(0, sfx_stnmov);
                 state.currentMenu->menuitems[state.itemOn].routine(1);
             }
             return true;
@@ -1897,12 +1886,12 @@ bool menuResponder(Event* ev)
                 {
                     state.currentMenu->menuitems[state.itemOn].routine(
                         1); // right arrow
-                    Doom::startSound(0, sfx_stnmov);
+                    startSound(0, sfx_stnmov);
                 }
                 else
                 {
                     state.currentMenu->menuitems[state.itemOn].routine(state.itemOn);
-                    Doom::startSound(0, sfx_pistol);
+                    startSound(0, sfx_pistol);
                 }
             }
             return true;
@@ -1910,7 +1899,7 @@ bool menuResponder(Event* ev)
         case KEY_ESCAPE:
             state.currentMenu->lastOn = state.itemOn;
             clearMenus();
-            Doom::startSound(0, sfx_swtchx);
+            startSound(0, sfx_swtchx);
             return true;
 
         case KEY_BACKSPACE:
@@ -1919,7 +1908,7 @@ bool menuResponder(Event* ev)
             {
                 state.currentMenu = state.currentMenu->prevMenu;
                 state.itemOn = state.currentMenu->lastOn;
-                Doom::startSound(0, sfx_swtchn);
+                startSound(0, sfx_swtchn);
             }
             return true;
 
@@ -1928,14 +1917,14 @@ bool menuResponder(Event* ev)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
-                    Doom::startSound(0, sfx_pstop);
+                    startSound(0, sfx_pstop);
                     return true;
                 }
             for (int i = 0; i <= state.itemOn; i++)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
-                    Doom::startSound(0, sfx_pstop);
+                    startSound(0, sfx_pstop);
                     return true;
                 }
             break;
@@ -1974,16 +1963,14 @@ void drawMenu()
     static short x;
     static short y;
     short i;
-    short max;
     EA::Array<char, 40> string;
-    int start;
 
     overlay.inhelpscreens = false;
 
     // Horiz. & Vertically center string and print it.
     if (messageToPrint)
     {
-        start = 0;
+        int start = 0;
         y = 100 - stringHeight(state.messageString) / 2;
         while (*(state.messageString + start))
         {
@@ -2029,7 +2016,7 @@ void drawMenu()
     // DRAW MENU
     x = state.currentMenu->x;
     y = state.currentMenu->y;
-    max = state.currentMenu->numitems;
+    short max = state.currentMenu->numitems;
 
     for (i = 0; i < max; i++)
     {
@@ -2042,21 +2029,21 @@ void drawMenu()
             }
             else
             {
-                Doom::drawPatchDirect(
+                drawPatchDirect(
                     x,
                     y,
                     0,
-                    static_cast<Patch*>(Doom::cacheLumpName(menuitem->name)));
+                    static_cast<Patch*>(cacheLumpName(menuitem->name)));
             }
         }
         y += LINEHEIGHT;
     }
 
     // DRAW SKULL
-    Doom::drawPatchDirect(x + SKULLXOFF,
+    drawPatchDirect(x + SKULLXOFF,
                           state.currentMenu->y - 5 + state.itemOn * LINEHEIGHT,
                           0,
-                          static_cast<Patch*>(Doom::cacheLumpName(
+                          static_cast<Patch*>(cacheLumpName(
                               skullName[state.whichSkull].data())));
 }
 

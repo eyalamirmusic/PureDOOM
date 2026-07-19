@@ -67,9 +67,9 @@ int checkCheat(CheatSequence* cht, char key)
 
 void getParam(CheatSequence* cht, char* buffer)
 {
-    unsigned char *p, c;
+    unsigned char c;
 
-    p = cht->sequence;
+    unsigned char* p = cht->sequence;
     while (*(p++) != 1)
     {
     }
