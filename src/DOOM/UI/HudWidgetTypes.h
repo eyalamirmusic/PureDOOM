@@ -26,14 +26,13 @@
 
 // background and foreground screen numbers
 // different from other modules.
-#define BG 1
-#define FG 0
+namespace Doom
+{
+constexpr int FG = 0;
 
-// font stuff
-#define HU_CHARERASE KEY_BACKSPACE
-
-#define HU_MAXLINES 4
-#define HU_MAXLINELENGTH 80
+constexpr int HU_MAXLINES = 4;
+constexpr int HU_MAXLINELENGTH = 80;
+} // namespace Doom
 
 //
 // Typedefs of widgets

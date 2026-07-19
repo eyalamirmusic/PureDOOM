@@ -289,7 +289,7 @@ int eacpDoomStatusBarVisible()
 
 float eacpDoomViewRows()
 {
-    return eacpDoomStatusBarVisible() ? (float) ST_Y : (float) SCREENHEIGHT;
+    return eacpDoomStatusBarVisible() ? (float) Doom::ST_Y : (float) SCREENHEIGHT;
 }
 
 void eacpDoomRevealAutomap()
@@ -787,16 +787,16 @@ static EacpLight eacpSectorLight(int lightlevel, int contrast)
         return eacpFixedLight(eacpFixedRow());
 
     lightnum =
-        (lightlevel >> LIGHTSEGSHIFT) + Doom::lighting().extralight + contrast;
+        (lightlevel >> Doom::LIGHTSEGSHIFT) + Doom::lighting().extralight + contrast;
 
     if (lightnum < 0)
         lightnum = 0;
 
-    if (lightnum >= LIGHTLEVELS)
-        lightnum = LIGHTLEVELS - 1;
+    if (lightnum >= Doom::LIGHTLEVELS)
+        lightnum = Doom::LIGHTLEVELS - 1;
 
-    light.row =
-        (float) ((LIGHTLEVELS - 1 - lightnum) * 2 * NUMCOLORMAPS / LIGHTLEVELS);
+    light.row = (float) ((Doom::LIGHTLEVELS - 1 - lightnum) * 2 * Doom::NUMCOLORMAPS
+                         / Doom::LIGHTLEVELS);
     light.falloff = 1.0f;
 
     return light;
@@ -1508,7 +1508,7 @@ static float eacpWeaponBrightening()
     if (width <= 0)
         return 0.0f;
 
-    return (float) ((MAXLIGHTSCALE - 1) * SCREENWIDTH / width / DISTMAP);
+    return (float) ((Doom::MAXLIGHTSCALE - 1) * SCREENWIDTH / width / DISTMAP);
 }
 
 // R_DrawPSprite's choice of colormap, in its own order: a powerup first, then a

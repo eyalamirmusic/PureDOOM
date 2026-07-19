@@ -28,9 +28,12 @@
 
 // Size of statusbar.
 // Now sensitive for scaling.
-#define ST_HEIGHT (32 * SCREEN_MUL)
-#define ST_WIDTH SCREENWIDTH
-#define ST_Y (SCREENHEIGHT - ST_HEIGHT)
+namespace Doom
+{
+constexpr int ST_HEIGHT = 32 * SCREEN_MUL;
+constexpr int ST_WIDTH = SCREENWIDTH;
+constexpr int ST_Y = SCREENHEIGHT - ST_HEIGHT;
+} // namespace Doom
 
 
 //
