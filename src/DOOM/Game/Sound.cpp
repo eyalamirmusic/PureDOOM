@@ -583,14 +583,14 @@ void stopChannel(int cnum)
 // If the sound is not audible, returns a 0.
 // Otherwise, modifies parameters and returns 1.
 //
-int adjustSoundParams(Mobj* listener, Mobj* source, int* vol, int* sep, int* pitch)
+// pitch is unused: vanilla leaves its pitch adjustment commented out.
+int adjustSoundParams(
+    Mobj* listener, Mobj* source, int* vol, int* sep, [[maybe_unused]] int* pitch)
 {
     fixed_t approx_dist;
     fixed_t adx;
     fixed_t ady;
     angle_t angle;
-
-    (void) pitch; // vanilla leaves pitch adjustment commented out
 
     auto& sndset = soundSettings();
     auto& session = gameSession();

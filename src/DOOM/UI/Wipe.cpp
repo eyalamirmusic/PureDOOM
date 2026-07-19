@@ -43,9 +43,8 @@ void colMajorXform(short* array, int width, int height)
     doom_memcpy(array, dest.data(), width * height * 2);
 }
 
-int initColorXForm(int width, int height, int ticks)
+int initColorXForm(int width, int height, [[maybe_unused]] int ticks)
 {
-    (void) ticks;
     doom_memcpy(wipeState().wipe_scr, wipe_scr_start, width * height);
     return 0;
 }
@@ -93,21 +92,18 @@ int doColorXForm(int width, int height, int ticks)
     return !changed;
 }
 
-int exitColorXForm(int width, int height, int ticks)
+int exitColorXForm([[maybe_unused]] int width,
+                   [[maybe_unused]] int height,
+                   [[maybe_unused]] int ticks)
 {
-    (void) width;
-    (void) height;
-    (void) ticks;
     return 0;
 }
 
-int initMelt(int width, int height, int ticks)
+int initMelt(int width, int height, [[maybe_unused]] int ticks)
 {
     auto& scratch = wipeState();
 
     int r;
-    (void) ticks;
-
     // copy start screen to main screen
     doom_memcpy(scratch.wipe_scr, wipe_scr_start, width * height);
 
@@ -191,12 +187,10 @@ int doMelt(int width, int height, int ticks)
     return done;
 }
 
-int exitMelt(int width, int height, int ticks)
+int exitMelt([[maybe_unused]] int width,
+             [[maybe_unused]] int height,
+             [[maybe_unused]] int ticks)
 {
-    (void) width;
-    (void) height;
-    (void) ticks;
-
     // Clears the owning vector; the view (wipe_melt_offsets) is deliberately left
     // unrefreshed, reproducing vanilla's "freed but not nulled" pointer - see the
     // comment on WipeState::wipe_melt_offsets.
@@ -204,12 +198,11 @@ int exitMelt(int width, int height, int ticks)
     return 0;
 }
 
-int startScreen(int x, int y, int width, int height)
+int startScreen([[maybe_unused]] int x,
+                [[maybe_unused]] int y,
+                [[maybe_unused]] int width,
+                [[maybe_unused]] int height)
 {
-    (void) x;
-    (void) y;
-    (void) width;
-    (void) height;
     wipe_scr_start = screens[2];
     readScreen(wipe_scr_start);
     return 0;
@@ -225,10 +218,13 @@ int endScreen(int x, int y, int width, int height)
     return 0;
 }
 
-int screenWipe(int wipeno, int x, int y, int width, int height, int ticks)
+int screenWipe(int wipeno,
+               [[maybe_unused]] int x,
+               [[maybe_unused]] int y,
+               int width,
+               int height,
+               int ticks)
 {
-    (void) x;
-    (void) y;
     int rc;
     static int (*wipes[])(int, int, int) = {
         initColorXForm, doColorXForm, exitColorXForm, initMelt, doMelt, exitMelt};

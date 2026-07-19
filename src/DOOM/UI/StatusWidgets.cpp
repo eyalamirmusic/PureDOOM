@@ -108,9 +108,8 @@ void drawNum(StatusNumber& n)
         Doom::drawPatch(x - 8, n.y, STLIB_FG, sttminus);
 }
 
-void updateNum(StatusNumber& n, bool refresh)
+void updateNum(StatusNumber& n, [[maybe_unused]] bool refresh)
 {
-    (void) refresh;
     if (*n.on)
         drawNum(n);
 }
