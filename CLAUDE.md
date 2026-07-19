@@ -72,7 +72,7 @@ apparatus:
    source. New code is written to the strict flags without asking.
 4. Some things that look like bugs are load-bearing and must survive: `FixedDiv2`
    goes through `double`; the trig tables are sampled at bucket centres;
-   `SlopeDiv` gives up under 512; `pointToAngle2` lands one unit below north; and
+   `slopeDiv` gives up under 512; `pointToAngle2` lands one unit below north; and
    `BBox::add` is `else if`, not an independent min and max.
    `Tests/Sim/PrimitiveTests.cpp` and `Tests/Sim/MathTests.cpp` pin these on
    purpose — a refactor will want to "fix" all of them, and each would desync
@@ -194,15 +194,42 @@ apparatus:
   inside `#if defined(I_NET_ENABLED) && !defined(DOOM_APPLE)`, so **no build in this
   repository compiles them** and no gate here could check a change to them.
 
-  The *constant* macros are part-way: `Sim/SimDefs.h` and `Sim/SpecialTypes.h` are
-  `constexpr` in `namespace Doom`, the rest are not. Two things to know before
-  converting another header. A `constexpr` is implicitly parenthesized and several
-  vanilla bodies are **not** (`PLAYERRADIUS 16 * FRACUNIT`), so equivalence is a
-  fact to establish per call site rather than assume. And the name moves into
-  `namespace Doom`, which breaks *global-scope* readers — `Tests/SimProbe.cpp`,
-  `examples/EACP/EngineAccess.cpp` and the exported carve-outs at the bottom of
-  `UI/Automap.cpp` all needed qualifying, and the last kind is invisible without
-  the app-link gate.
+  The *constant* macros are **well advanced — 629 → 312 across `src/DOOM`**, and 199
+  of that remainder is `Game/StringsFrench.h`, which no build here compiles. Every
+  header is done and so is every `.cpp` pile. What is left is named in `REFACTOR.md`
+  item 6: ~25 in the one- and two-macro files, `UI/StatusBar`'s 42 dead ones, and six
+  object-like macros whose bodies call a runtime accessor (`HU_TITLE`, `MAXPLMOVE`)
+  and therefore cannot be `constexpr` at all.
+
+  Four things to know before converting another one:
+
+  - **Ask whether the constant already exists — eleven did, and five of those were a
+    latent overrun.** A fixed-size array in a state cluster is sized by that cluster's
+    own constant (`PlaneScratch::maxVisplanes`/`maxOpenings`,
+    `SpriteState::maxVisSprites`, `BSPScratch::maxDrawSegs`, `SolidSegs::maxSegs`,
+    `DrawTables::maxWidth`/`maxHeight`, `SwitchList::maxSwitches`,
+    `AnimatedSurfaces::maxAnims`/`maxLineAnims`, `AutomapView::numMarkPoints`,
+    `Clip::maxSpecialCross`). **Every overflow guard must test that same constant**,
+    not a second one of equal value — otherwise raising the bound moves the array and
+    leaves the guard behind, silently and with no diagnostic. `Math/TrigTables.h` is
+    the same rule at the other end: it holds the table *views* only, and the
+    constants that go with them belong to `Math/Trig.h` and `Math/Angle.h`
+    (`fineAngles`, `fineMask`, `slopeRange`, `slopeBits`, `slopeToFixedShift`,
+    `ang45`/`ang90`/`ang180`/`ang270`, `Angle::angleToFineShift`). Do not add a
+    second spelling of any of these.
+  - **A `constexpr` is implicitly parenthesized and several vanilla bodies are not**
+    (`PLAYERRADIUS 16 * FRACUNIT` is the surviving example), so equivalence is a fact
+    to establish per call site rather than assume. What breaks is dividing by, or
+    taking `.`/`->`/`[]` off, a bare macro.
+  - **The name moves into `namespace Doom`, which breaks *global-scope* readers.**
+    `Tests/SimProbe.cpp`, `examples/EACP/EngineAccess.cpp`, `Host/Api.cpp`'s
+    `extern "C"` block, `Game/Config.cpp`'s `defaults[]` table and the carve-outs at
+    the bottom of `UI/Automap.cpp` have all needed qualifying. `UI/AutomapTypes.h` is
+    deliberately **all** at `::` scope for this reason; keep it that way.
+  - **Not every macro can go.** Feature toggles read by `#ifdef` (`RANGECHECK`,
+    `Host/Platform.h`'s three), string-literal building blocks that rely on
+    translation-phase-6 concatenation (`PRESSKEY`, `DOSY`, `DEVDATA`, `DEVMAPS`), and
+    bodies that call runtime accessors all stay.
 
   **`doom_boolean` is gone** — the last vanilla type. All ~288 uses are a real
   `bool`, and the typedef is deleted, so a boolean in this engine is a boolean.
@@ -656,11 +683,11 @@ Three of them pin things that look like bugs and are not. A refactor will want t
 
 - **The trig tables are sampled at bucket centres**, so `finesine[0]` is 25 and
   not 0, and `sin(90°)` comes out as 65535 rather than 65536.
-- **`SlopeDiv` gives up on any denominator under 512** and answers `SLOPERANGE`,
-  so `SlopeDiv(0, 1)` is 2048, not 0.
-- **`R_PointToAngle2` lands one unit below the exact cardinal** — due north is
-  `ANG90 - 1` — inheriting the same half-bucket offset. (Due south is exact, being
-  reached by negating rather than by a lookup.)
+- **`slopeDiv` gives up on any denominator under 512** and answers
+  `Doom::slopeRange`, so `slopeDiv(0, 1)` is 2048, not 0.
+- **`pointToAngle2` lands one unit below the exact cardinal** — due north is
+  `Doom::ang90 - 1` — inheriting the same half-bucket offset. (Due south is exact,
+  being reached by negating rather than by a lookup.)
 - **`M_AddToBox` / `BBox::add` is `else if`, not an independent min and max.** On
   a fresh (inverted) box, one point moves `left` and leaves `right` at its
   sentinel — a point cannot be both below the minimum and above the maximum in a
