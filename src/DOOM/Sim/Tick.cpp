@@ -93,11 +93,14 @@ static void destroyThinker(Doom::Thinker* thinker)
     levelFree(thinker);
 }
 
-void freeLevelAllocations()
+// Every payload is a Thinker (a mobj or a special), so each is destroyed as one
+// before its storage goes back - ending a polymorphic object's lifetime by
+// releasing its storage is only well-defined once its destructor has run. The
+// destructors are defaulted and every field trivially destructible, so this frees
+// no resources of its own; it is the storage that is being reclaimed.
+void LevelPool::releaseAll()
 {
-    auto& pool = levelPool();
-
-    LevelChunk* chunk = pool.head;
+    LevelChunk* chunk = head;
     while (chunk)
     {
         LevelChunk* next = chunk->next;
@@ -105,7 +108,20 @@ void freeLevelAllocations()
         doom_free(chunk);
         chunk = next;
     }
-    pool.head = nullptr;
+    head = nullptr;
+}
+
+// The whole point of the RAII change: teardown needs no cooperation from anybody.
+// Destroying an Engine returns the level's blocks whether or not a level was ever
+// unloaded, which is what resetEngine() depends on.
+LevelPool::~LevelPool()
+{
+    releaseAll();
+}
+
+void freeLevelAllocations()
+{
+    levelPool().releaseAll();
 }
 
 void initThinkers()

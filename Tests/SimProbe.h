@@ -82,6 +82,16 @@ extern "C"
     // one tic per call.
     unsigned long long doomSimFrameHash();
 
+    // Allocation accounting, for the RAII net. doomSimCountAllocations installs a
+    // counting doom_malloc/doom_free pair through the public API and must be called
+    // before doomSimBoot, so that every block the engine takes is one this counter
+    // saw; doomSimLiveAllocations is then the number outstanding. Together they let
+    // a test assert what no golden can see - that destroying an Engine gives the
+    // memory back - which is the only check that reaches an owner whose whole job
+    // is to release something.
+    void doomSimCountAllocations();
+    int doomSimLiveAllocations();
+
     // The WAD directory as the reader sees it, so that tearing the zone
     // allocator out from under Doom::cacheLumpNum has something to answer to. The
     // hash is over the lump's bytes.

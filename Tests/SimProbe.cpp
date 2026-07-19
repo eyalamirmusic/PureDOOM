@@ -33,6 +33,7 @@
 
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdlib.h> // malloc / free, for the counting allocator
 
 #include <vector>
 
@@ -269,6 +270,39 @@ unsigned long long doomSimFrameHash()
     simMix(screen_palette, 256 * 3);
 
     return simHash;
+}
+
+// Allocation accounting. Deliberately counts blocks rather than bytes: the point
+// is whether an owner released what it took, and a block is the unit an owner
+// deals in. Installed through the public doom_set_malloc, so it sees exactly what
+// the engine sees and nothing else - the counter can only go negative if the
+// engine frees a block it did not allocate through the host, which is itself worth
+// failing on.
+static long simLiveBlocks = 0;
+
+static void* simCountingMalloc(int size)
+{
+    void* block = malloc((size_t) size);
+    if (block)
+        ++simLiveBlocks;
+    return block;
+}
+
+static void simCountingFree(void* ptr)
+{
+    if (ptr)
+        --simLiveBlocks;
+    free(ptr);
+}
+
+void doomSimCountAllocations()
+{
+    doom_set_malloc(simCountingMalloc, simCountingFree);
+}
+
+int doomSimLiveAllocations()
+{
+    return (int) simLiveBlocks;
 }
 
 int doomSimLumpCount()

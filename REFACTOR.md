@@ -82,12 +82,12 @@ is re-recorded only when the pixels that moved are provably not part of any lump
 | 6 | The playsim | **done** — **every** `p_*.cpp` is now a shim over a `namespace Doom` `Sim/` unit: the actor core (`MapUtil`/`Movement`/`MapAction`/`Sight`/`Interaction`/`Player`/`Mobj`/`Weapon`/`Enemy`), the specials (`Lights`/`Plats`/`Ceilings`/`Floors`/`Doors`/`Switches`/`Teleport`/`Specials`), `Tick`, `Setup` and `SaveGame`. The `thinker_t` function-pointer union is kept — the `T_*`/`P_MobjThinker` addresses stay global shims so p_saveg's pointer-identity serialisation is untouched — and virtualising it into a real `Thinker` with a virtual `tick()` has since **landed in Step 8** |
 | 7 | The renderer | **done** — all 8: `r_sky`→`Sky`, `r_data`→`Data`, `r_main`→`Main`, `r_plane`→`Planes`, `r_bsp`→`BSP`, `r_segs`→`Segs`, `r_things`→`Things`, `r_draw`→`Draw`, all holding the frame goldens byte-identical and the app linking |
 | 8 | UI, game loop, host boundary; `thinker_t`→`Thinker`; delete the zone | **in progress** — UI (menu included), game loop and utils done: `f_wipe`→`UI/Wipe`, `hu_lib`→`UI/HudWidgets`, `st_lib`→`UI/StatusWidgets`, `hu_stuff`→`UI/Hud`, `st_stuff`→`UI/StatusBar`, `f_finale`→`UI/Finale`, `am_map`→`UI/Automap`, `wi_stuff`→`UI/Intermission`, `m_cheat`→`UI/Cheat`, `m_menu`→`UI/Menu` (behind a new frame golden built for it first); `g_game`→`Game/Game`, `d_main`→`Game/DoomMain`, `d_net`→`Game/Net`, `m_argv`→`Game/Args`, `m_misc`→`Game/Config`, `s_sound`→`Game/Sound`; `v_video`→`Render/Video`. **The host boundary is now complete**: `i_video`→`Host/Video`, `i_system`→`Host/System`, `i_sound`→`Host/Sound`, `i_net`→`Host/Net`, and `DOOM.cpp`→`Host/Api` (the public `doom_*` C API — no shim, its `extern "C"` symbols stay global). The small remainders are done (`m_swap`→`Math/Swap.h`, `doomstat`→`Game/State`, `dstrings`' `endmsg` folded into `UI/Menu`, empty `doomdef.cpp` deleted), as are the two ready data tables (`d_items`→`Sim/Items`, `sounds`→`Game/SoundData`). **The p_saveg save/load net is built** (`Tests/Sim/SaveGameTests.cpp` + `doomSimSaveLoadPreservesWorld`), and on it **the zone was deleted** (Step 4 above): mobjs/specials to a level pool, renderer `PU_STATIC`/scratch to `doom_malloc`, `z_zone` gone. The flat vanilla list was down to the shims plus `info.cpp` alone. **The `thinker_t`→`Thinker` virtualisation is now done**: `Doom::Thinker` (`Sim/Thinker.h`) is a real base with a virtual `tick()`/`kind()`, `mobj_t` and the eight specials inherit it, `P_RunThinkers` dispatches virtually, the old function-pointer sentinels became base flags (`removed` = the `-1` sentinel, `stopped` = null/stasis), the ~15 `function.acp1 == P_MobjThinker` identity tests became `kind() == Mobj && !removed`, spawners `placement-new` (the vtable sets up dispatch), and p_saveg keeps its whole-struct memcpy but preserves the vtable pointer across the copy (`unarchiveThinker`). **A load-bearing trap it turned on:** `mobj_t : Thinker` reuses the base's tail padding, placing its first field 4 bytes earlier than a `thinker_t thinker` *member* would — so `degenmobj_t` (a sector's sound origin, cast to `mobj_t*` by the sound code) had to inherit `Thinker` too, or the origin's x/y read from the wrong offset (it silently made a door sound inaudible and dropped one `M_Random`, the whole simulation otherwise bit-identical). **And `info.cpp` — the last real vanilla source — is now migrated too** (`Sim/Info.cpp`, the generated state/mobjinfo/sprite-name tables kept verbatim; the `states[].action` function-pointer *union* retired for a single type-erased pointer the two dispatch sites cast back to the exact signature), so **the flat vanilla list is now *only* the shims**. **The `doom_config`→`Host` fold is now done too** — the 13 host callbacks live in a `Doom::Host` singleton (`Host/Host.h`, `host()`), deliberately separate from `engine()` (embedder-set platform state, not world state); the vanilla names are references onto it, so no call site or `doom_set_*` API changed. Left: audio (engine side built, externally blocked on an eacp audio stream) and the ongoing globals-into-`Engine` work |
-| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now nearly done too**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — leaving only `Host/Sound`'s audio-blocked `paddedsfx`, `Sim/Tick`'s level pool (its own reviewed step) and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
+| 9 | Modern C++ / RAII across the board — the second half of the goal | **in progress** — Steps 4–5 made the state *owned*; this makes it *read like C++ someone wrote*. Three strands: (a) retire the reference-alias layer so every reader reaches state through an owner, which unpins the `Engine`'s address; (b) the RAII sweep over the manual `doom_malloc`/`doom_free` owners; (c) the idiom cleanup over code already in `namespace Doom`. **(c) is done** — `#pragma once`, `typedef struct {…} T;` → `struct T {…};` (106 sites), C arrays → `EA::Array`, `(void)` parameter lists (326), pointer→reference where provably safe — as is the whole vanilla-name retirement: no prefixed function name and no `_t` type survives, the flat layer is gone, and `fixed_t`/`angle_t` **are** `Doom::Fixed`/`Doom::Angle`. **(a) is done**, after being declared done twice while a whole syntactic tier stood: 247 file-local aliases fell in seven batches, and on that the **`Engine` is constructible** with a test that proves it. `MovementSpeeds`/`VideoState::dirtybox` are `int`; the hitscan traversers return `AimResult`; `UI/Automap` and `UI/Finale` gained the frame goldens they never had. **(b) is now done bar one audio-blocked item**: the eight remaining manual `doom_malloc`/`doom_free` owners are RAII-owned (`UI/Wipe`'s melt offsets, `UI/Intermission`'s `lnames`, `Game/Game`'s save and demo buffers, `Game/Config`'s string defaults, `DoomMain`'s seven WAD paths + `addWadFile`), `readFile`'s `byte**` out-parameter is retired, and the dead `Host/System` zone vestiges are deleted — and the level pool has a destructor now (it was leaking every mobj on `resetEngine()`), leaving only `Host/Sound`'s audio-blocked `paddedsfx` and `findResponseFile`/`myargv` (a real ownership question, documented). `AutomapView::min_w`/`min_h` were investigated against the 1993 source and deleted as an id leftover, not a lost read. **`doom_boolean` is now done too** — all ~288 uses are a real `bool` and the typedef is deleted, in four verified batches (Render 19, Host 4, UI 104, Sim+Game 161), leaving four deliberate `int`s that only look like flags. **See "Where Step 9 actually stands" in the handoff for the authoritative state** — this row is a summary, and the handoff is where the detail and the traps live. |
 
 ## Where this is — session handoff
 
 Everything below is committed on branch **`C++Refactor`**; the working tree is
-clean and the suite is green (**82 tests**, ~22s: `ctest --test-dir build`). Steps
+clean and the suite is green (**83 tests**, ~22s: `ctest --test-dir build`). Steps
 0–4 are complete; 6 and 7 are done; **8 is done** — the whole UI, game loop,
 netcode, utility layer and host boundary are migrated, the zone allocator is deleted,
 the `thinker_t`→`Thinker` virtualisation has landed, and the flat vanilla sources are gone.
@@ -332,11 +332,47 @@ Everything above the line is done. What follows is, in the order worth doing it:
      call, so the outer vector is sized/reserved once before any inner one is
      filled — growth would otherwise invalidate a pointer already published.
 
-   **What is left, both genuinely blocked**: `Host/Sound`'s `paddedsfx` (a
-   `+8`-offset per-sfx cache, audio-blocked and therefore golden-blind) and
-   `Sim/Tick`'s level pool (intrusive-list, variable-sized, polymorphic-`Thinker`,
-   memcpy-serialised by p_saveg — its own reviewed step). Plus one *documented*
-   non-item: `DoomMain::findResponseFile`'s buffer and its `myargv` reallocation.
+   **The level pool is now done too, and it was hiding a real leak.** `Sim/LevelPool`
+   was a bare `{ LevelChunk* head; }` with no destructor: `loadLevel` calls
+   `freeLevelAllocations` on *reload*, but nothing did on *teardown*, so destroying an
+   `Engine` with a level loaded leaked every mobj and thinker special on the list.
+   Harmless while the Engine outlived the process — and **made reachable by strand (a)**,
+   which is the point worth carrying: making the `Engine` constructible turned a
+   latent ownership gap into a live leak, and nothing failed. `resetEngine()` returned
+   **none** of the 120 blocks one E1M1 load takes.
+
+   It is fixed by a destructor, not a container, and the distinction is the whole
+   lesson of this item. The blocks are variable-sized, hold polymorphic `Thinker`s
+   whose addresses `Sim/SaveGame` serialises and the thinker list threads, and so can
+   never be moved or relocated — an `EA::Vector` is not available at any price.
+   **RAII here means owning the release, not owning the layout**, which is a shape
+   worth recognising rather than treating as a failure to convert. `LevelPool` now has
+   `releaseAll()`, a `~LevelPool()` that calls it, and deleted copy operations (raw
+   ownership, so a copy would double-free); `freeLevelAllocations` delegates to the
+   same routine, so reload and teardown cannot drift apart.
+
+   **It needed a new kind of test, because no golden can see a leak.** The goldens hash
+   the world and the picture, and leaked memory changes neither until the process runs
+   out. `Tests/Sim/OwnershipTests.cpp` installs a counting `doom_malloc`/`doom_free`
+   through the public `doom_set_malloc` (probe: `doomSimCountAllocations` /
+   `doomSimLiveAllocations`) and asserts that live blocks after `resetEngine()` fall
+   back to the post-boot figure. It is sharp *because* the RAII sweep already
+   succeeded elsewhere: nearly everything else is an `EA::Vector` allocating through
+   `operator new`, so `doom_malloc` is now almost exclusively the pool's own allocator.
+   Shown sharp by gutting the destructor — it fails on exactly that assertion.
+
+   One trap it cost, recorded because it produces a *green* mistake: the test first
+   went into `Sim/EngineTests.cpp`, which builds into **`PrimitiveTests`**, and that
+   binary takes NanoTest's default `main`. Only `SimTests` links `Tests/TestMain.cpp`,
+   which sets `DOOMWADDIR` from `PUREDOOM_ROOT_DIR`. A booting test in `PrimitiveTests`
+   therefore **passes when the binary is run from the repository root by hand and fails
+   under ctest**, which runs it from elsewhere — the opposite of the usual failure, and
+   easy to misread as flakiness. Booting tests go in `SimTests`.
+
+   **What is left, one genuinely blocked item**: `Host/Sound`'s `paddedsfx` (a
+   `+8`-offset per-sfx cache, audio-blocked and therefore golden-blind). Plus one
+   *documented* non-item: `DoomMain::findResponseFile`'s buffer and its `myargv`
+   reallocation.
    The response file's bytes are tokenised **in place** and each token's address is
    stored into `myargv[]`, which the whole engine reads for the life of the
    process — so a scope-owned buffer would dangle every argument parsed from it.

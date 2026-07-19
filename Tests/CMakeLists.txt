@@ -35,6 +35,7 @@ nano_add_executable(SimTests
         Sim/ReplayTests.cpp
         Sim/ScenarioTests.cpp
         Sim/SaveGameTests.cpp
+        Sim/OwnershipTests.cpp
         Sim/MenuTests.cpp
         Sim/AutomapTests.cpp
         Sim/FinaleTests.cpp
