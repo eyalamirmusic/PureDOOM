@@ -53,6 +53,8 @@
 #include "../Game/PlayerState.h"
 #include "../Game/Sound.h"
 #include "../Sim/Random.h"
+
+#include <algorithm>
 namespace Doom
 {
 
@@ -775,22 +777,14 @@ void updateDeathmatchStats()
                         else
                             im.dm_frags[i][j]++;
 
-                        if (im.dm_frags[i][j] > 99)
-                            im.dm_frags[i][j] = 99;
-
-                        if (im.dm_frags[i][j] < -99)
-                            im.dm_frags[i][j] = -99;
+                        im.dm_frags[i][j] = std::clamp(im.dm_frags[i][j], -99, 99);
 
                         stillticking = true;
                     }
                 }
                 im.dm_totals[i] = fragSum(i);
 
-                if (im.dm_totals[i] > 99)
-                    im.dm_totals[i] = 99;
-
-                if (im.dm_totals[i] < -99)
-                    im.dm_totals[i] = -99;
+                im.dm_totals[i] = std::clamp(im.dm_totals[i], -99, 99);
             }
         }
         if (!stillticking)

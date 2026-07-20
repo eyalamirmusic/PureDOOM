@@ -56,6 +56,8 @@
 
 // Other subsystems' globals/functions this file reads.
 #include "../Game/Sound.h"
+
+#include <algorithm>
 void Doom::drawPatchFlipped(int x, int y, int scrn, Patch* patch); // v_video
 
 namespace Doom
@@ -656,10 +658,7 @@ void bunnyScroll()
     markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
     int scrolled = 320 - (fin.finalecount - 230) / 2;
-    if (scrolled > 320)
-        scrolled = 320;
-    if (scrolled < 0)
-        scrolled = 0;
+    scrolled = std::clamp(scrolled, 0, 320);
 
     for (int x = 0; x < SCREENWIDTH; x++)
     {

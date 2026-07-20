@@ -69,6 +69,8 @@
 #include "../Sim/Interaction.h"
 #include "../Sim/Random.h"
 
+#include <algorithm>
+
 // mapnames (hu_stuff) and doom_flags are other subsystems' globals this file reads.
 extern Doom::Array<std::string_view, 45> mapnames;
 extern int doom_flags;
@@ -880,16 +882,14 @@ void doPaletteStuff()
         // slowly fade the berzerk out
         int bzc = 12 - (bar.plyr->powers[pw_strength] >> 6);
 
-        if (bzc > cnt)
-            cnt = bzc;
+        cnt = std::max(cnt, bzc);
     }
 
     if (cnt)
     {
         palette = (cnt + 7) >> 3;
 
-        if (palette >= NUMREDPALS)
-            palette = NUMREDPALS - 1;
+        palette = std::min(palette, NUMREDPALS - 1);
 
         palette += STARTREDPALS;
     }
@@ -898,8 +898,7 @@ void doPaletteStuff()
     {
         palette = (bar.plyr->bonuscount + 7) >> 3;
 
-        if (palette >= NUMBONUSPALS)
-            palette = NUMBONUSPALS - 1;
+        palette = std::min(palette, NUMBONUSPALS - 1);
 
         palette += STARTBONUSPALS;
     }

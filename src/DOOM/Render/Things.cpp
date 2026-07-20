@@ -33,6 +33,8 @@
 #include "Main.h"
 #include "../Game/GameVersion.h"
 
+#include <algorithm>
+
 namespace Doom
 {
 
@@ -76,8 +78,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
                    lump);
     }
 
-    if (static_cast<int>(frame) > scratch.maxframe)
-        scratch.maxframe = frame;
+    scratch.maxframe = std::max(scratch.maxframe, static_cast<int>(frame));
 
     if (rotation == 0)
     {
@@ -592,8 +593,7 @@ void projectSprite(Mobj* thing)
         // diminished light
         index = xscale.raw >> (LIGHTSCALESHIFT - view.detailshift);
 
-        if (index >= MAXLIGHTSCALE)
-            index = MAXLIGHTSCALE - 1;
+        index = std::min(index, MAXLIGHTSCALE - 1);
 
         vis->colormap = spriteScratch().spritelights[index];
     }
@@ -792,52 +792,38 @@ void drawPlayerSprites()
 //
 void sortVisSprites()
 {
-    int count;
-    VisSprite* ds;
-    VisSprite* best = nullptr;
-    VisSprite unsorted;
-    fixed_t bestscale;
-
     auto& sprState = spriteState();
+    auto& head = sprState.vsprsortedhead;
 
-    count = static_cast<int>(sprState.vissprite_p - sprState.vissprites.data());
+    head.next = head.prev = &head;
 
-    unsorted.next = unsorted.prev = &unsorted;
-
-    if (!count)
+    if (sprState.vissprite_p == sprState.vissprites.data())
         return;
 
-    for (ds = sprState.vissprites.data(); ds < sprState.vissprite_p; ds++)
-    {
-        ds->next = ds + 1;
-        ds->prev = ds - 1;
-    }
+    // Ascending by scale, so drawMasked's forward walk paints far to near.
+    //
+    // stable_sort, not sort, and that is load-bearing rather than fastidious.
+    // Vanilla selection-sorted with a strict <, so a later sprite at exactly the
+    // same scale never displaced the incumbent and equal-depth sprites kept the
+    // order they were added to vissprites in. Which of an equal-depth pair paints
+    // over the other is a visible pixel.
+    //
+    // Measured, not assumed: swapping this for std::sort moves the *frame* golden
+    // at demo2 tic 412 and demo3 tic 232, and leaves the simulation hashes
+    // untouched. Equal fixed-point scales are common enough to hit twice in three
+    // demos.
+    std::stable_sort(sprState.vissprites.data(),
+                     sprState.vissprite_p,
+                     [](const VisSprite& a, const VisSprite& b)
+                     { return a.scale < b.scale; });
 
-    sprState.vissprites[0].prev = &unsorted;
-    unsorted.next = &sprState.vissprites[0];
-    (sprState.vissprite_p - 1)->next = &unsorted;
-    unsorted.prev = sprState.vissprite_p - 1;
-
-    // pull the vissprites out by scale
-    sprState.vsprsortedhead.next = sprState.vsprsortedhead.prev =
-        &sprState.vsprsortedhead;
-    for (int i = 0; i < count; i++)
+    for (auto* sprite = sprState.vissprites.data(); sprite < sprState.vissprite_p;
+         sprite++)
     {
-        bestscale = fixed_t {DOOM_MAXINT};
-        for (ds = unsorted.next; ds != &unsorted; ds = ds->next)
-        {
-            if (ds->scale < bestscale)
-            {
-                bestscale = ds->scale;
-                best = ds;
-            }
-        }
-        best->next->prev = best->prev;
-        best->prev->next = best->next;
-        best->next = &sprState.vsprsortedhead;
-        best->prev = sprState.vsprsortedhead.prev;
-        sprState.vsprsortedhead.prev->next = best;
-        sprState.vsprsortedhead.prev = best;
+        sprite->next = &head;
+        sprite->prev = head.prev;
+        head.prev->next = sprite;
+        head.prev = sprite;
     }
 }
 

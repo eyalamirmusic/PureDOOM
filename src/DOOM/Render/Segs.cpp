@@ -32,6 +32,8 @@
 #include "Main.h"
 #include "../Render/GraphicsData.h"
 
+#include <algorithm>
+
 // These are Doom::SegState members (Engine), exported by the r_segs.cpp shim; references onto
 // them - and as references, not plain externs, since Render/Segs writes them (a write through a
 // plain extern would clobber the reference's pointer, the skytexturemid trap).
@@ -132,8 +134,7 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
             {
                 index = sprites.spryscale.raw >> LIGHTSCALESHIFT;
 
-                if (index >= MAXLIGHTSCALE)
-                    index = MAXLIGHTSCALE - 1;
+                index = std::min(index, static_cast<unsigned>(MAXLIGHTSCALE - 1));
 
                 draw.dc_colormap = seg.walllights[index];
             }
@@ -244,8 +245,7 @@ void renderSegLoop()
             // calculate lighting
             index = wall.rw_scale.raw >> LIGHTSCALESHIFT;
 
-            if (index >= MAXLIGHTSCALE)
-                index = MAXLIGHTSCALE - 1;
+            index = std::min(index, static_cast<unsigned>(MAXLIGHTSCALE - 1));
 
             draw.dc_colormap = seg.walllights[index];
             draw.dc_x = seg.rw_x;
