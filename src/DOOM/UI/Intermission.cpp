@@ -32,6 +32,7 @@
 
 #include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
+#include "../Host/Text.h"
 
 #include "../Game/MapSpawns.h"
 #include "../Sim/Random.h"
@@ -300,9 +301,9 @@ void drawLF()
 
     // draw <LevelName>
     drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->last]->width)) / 2,
-                    y,
-                    FB,
-                    im.lnames[im.wbs->last]);
+              y,
+              FB,
+              im.lnames[im.wbs->last]);
 
     // draw "Finished!"
     y += (5 * littleEndian(im.lnames[im.wbs->last]->height)) / 4;
@@ -326,9 +327,9 @@ void drawEL()
     y += (5 * littleEndian(im.lnames[im.wbs->next]->height)) / 4;
 
     drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->next]->width)) / 2,
-                    y,
-                    FB,
-                    im.lnames[im.wbs->next]);
+              y,
+              FB,
+              im.lnames[im.wbs->next]);
 }
 
 void drawOnLnode(int n, Patch* c[])
@@ -357,15 +358,13 @@ void drawOnLnode(int n, Patch* c[])
 
     if (fits && i < 2)
     {
-        drawPatch(
-            lnodes[im.wbs->epsd][n].x, lnodes[im.wbs->epsd][n].y, FB, c[i]);
+        drawPatch(lnodes[im.wbs->epsd][n].x, lnodes[im.wbs->epsd][n].y, FB, c[i]);
     }
     else
     {
         // DEBUG
         //doom_print("Could not place patch on level %d", n + 1);
-        doom_print("Could not place patch on level ");
-        doom_print(doom_itoa(n + 1, 10));
+        print("Could not place patch on level ", n + 1);
     }
 }
 
@@ -426,8 +425,8 @@ void updateAnimatedBack()
                     if (a->ctr == a->nanims)
                     {
                         a->ctr = -1;
-                        a->nexttic = im.bcnt + a->data2
-                                     + (randomness().forMenu() % a->data1);
+                        a->nexttic =
+                            im.bcnt + a->data2 + (randomness().forMenu() % a->data1);
                     }
                     else
                         a->nexttic = im.bcnt + a->period;
@@ -835,9 +834,9 @@ void drawDeathmatchStats()
 
     // draw stat titles (top line)
     drawPatch(DM_TOTALSX - littleEndian(im.total->width) / 2,
-                    DM_MATRIXY - WI_SPACINGY + 10,
-                    FB,
-                    im.total);
+              DM_MATRIXY - WI_SPACINGY + 10,
+              FB,
+              im.total);
 
     drawPatch(DM_KILLERSX, DM_KILLERSY, FB, im.killers);
     drawPatch(DM_VICTIMSX, DM_VICTIMSY, FB, im.victims);
@@ -851,19 +850,18 @@ void drawDeathmatchStats()
         if (players_.playeringame[i])
         {
             drawPatch(x - littleEndian(im.p[i]->width) / 2,
-                            DM_MATRIXY - WI_SPACINGY,
-                            FB,
-                            im.p[i]);
+                      DM_MATRIXY - WI_SPACINGY,
+                      FB,
+                      im.p[i]);
 
-            drawPatch(
-                DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.p[i]);
+            drawPatch(DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.p[i]);
 
             if (i == im.me)
             {
                 drawPatch(x - littleEndian(im.p[i]->width) / 2,
-                                DM_MATRIXY - WI_SPACINGY,
-                                FB,
-                                im.bstar);
+                          DM_MATRIXY - WI_SPACINGY,
+                          FB,
+                          im.bstar);
 
                 drawPatch(
                     DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.star);
@@ -1099,25 +1097,25 @@ void drawNetgameStats()
 
     // draw stat titles (top line)
     drawPatch(statsX + NG_SPACINGX - littleEndian(im.kills->width),
-                    NG_STATSY,
-                    FB,
-                    im.kills);
+              NG_STATSY,
+              FB,
+              im.kills);
 
     drawPatch(statsX + 2 * NG_SPACINGX - littleEndian(im.items->width),
-                    NG_STATSY,
-                    FB,
-                    im.items);
+              NG_STATSY,
+              FB,
+              im.items);
 
     drawPatch(statsX + 3 * NG_SPACINGX - littleEndian(im.secret->width),
-                    NG_STATSY,
-                    FB,
-                    im.secret);
+              NG_STATSY,
+              FB,
+              im.secret);
 
     if (im.dofrags)
         drawPatch(statsX + 4 * NG_SPACINGX - littleEndian(im.frags->width),
-                        NG_STATSY,
-                        FB,
-                        im.frags);
+                  NG_STATSY,
+                  FB,
+                  im.frags);
 
     // draw stats
     int y = NG_STATSY + littleEndian(im.kills->height);
@@ -1382,25 +1380,21 @@ void loadIntermissionData()
     const auto& session = gameSession();
     const auto& version = gameVersion();
 
-    EA::Array<char, 9> name;
+    auto name = std::string {};
 
     if (version.gamemode == commercial)
-        doom_strcpy(name.data(), "INTERPIC");
+        name = "INTERPIC";
     else
-    {
-        //doom_sprintf(name, "WIMAP%d", wbs->epsd);
-        doom_strcpy(name.data(), "WIMAP");
-        doom_concat(name.data(), doom_itoa(im.wbs->epsd, 10));
-    }
+        name = concat("WIMAP", im.wbs->epsd);
 
     if (version.gamemode == retail)
     {
         if (im.wbs->epsd == 3)
-            doom_strcpy(name.data(), "INTERPIC");
+            name = "INTERPIC";
     }
 
     // background
-    im.bg = static_cast<Patch*>(cacheLumpName(name.data()));
+    im.bg = static_cast<Patch*>(cacheLumpName(name));
     drawPatch(0, 0, 1, im.bg);
 
     if (version.gamemode == commercial)
@@ -1409,12 +1403,11 @@ void loadIntermissionData()
         im.lnames.resize(im.NUMCMAPS);
         for (int i = 0; i < im.NUMCMAPS; i++)
         {
-            //doom_sprintf(name, "CWILV%2.2d", i);
-            doom_strcpy(name.data(), "CWILV");
+            name = "CWILV";
             if (i < 10)
-                doom_concat(name.data(), "0");
-            doom_concat(name.data(), doom_itoa(i, 10));
-            im.lnames[i] = static_cast<Patch*>(cacheLumpName(name.data()));
+                name += "0";
+            name += std::to_string(i);
+            im.lnames[i] = static_cast<Patch*>(cacheLumpName(name));
         }
     }
     else
@@ -1422,11 +1415,8 @@ void loadIntermissionData()
         im.lnames.resize(NUMMAPS);
         for (int i = 0; i < NUMMAPS; i++)
         {
-            //doom_sprintf(name, "WILV%d%d", wbs->epsd, i);
-            doom_strcpy(name.data(), "WILV");
-            doom_concat(name.data(), doom_itoa(im.wbs->epsd, 10));
-            doom_concat(name.data(), doom_itoa(i, 10));
-            im.lnames[i] = static_cast<Patch*>(cacheLumpName(name.data()));
+            im.lnames[i] =
+                static_cast<Patch*>(cacheLumpName(concat("WILV", im.wbs->epsd, i)));
         }
 
         // you are here
@@ -1449,17 +1439,14 @@ void loadIntermissionData()
                     if (im.wbs->epsd != 1 || j != 8)
                     {
                         // animations
-                        //doom_sprintf(name, "WIA%d%.2d%.2d", wbs->epsd, j, i);
-                        doom_strcpy(name.data(), "WIA");
-                        doom_concat(name.data(), doom_itoa(im.wbs->epsd, 10));
+                        name = concat("WIA", im.wbs->epsd);
                         if (j < 10)
-                            doom_concat(name.data(), "0");
-                        doom_concat(name.data(), doom_itoa(j, 10));
+                            name += "0";
+                        name += std::to_string(j);
                         if (i < 10)
-                            doom_concat(name.data(), "0");
-                        doom_concat(name.data(), doom_itoa(i, 10));
-                        a->p[i] =
-                            static_cast<Patch*>(cacheLumpName(name.data()));
+                            name += "0";
+                        name += std::to_string(i);
+                        a->p[i] = static_cast<Patch*>(cacheLumpName(name));
                     }
                     else
                     {
@@ -1477,10 +1464,7 @@ void loadIntermissionData()
     for (int i = 0; i < 10; i++)
     {
         // numbers 0-9
-        //doom_sprintf(name, "WINUM%d", i);
-        doom_strcpy(name.data(), "WINUM");
-        doom_concat(name.data(), doom_itoa(i, 10));
-        im.num[i] = static_cast<Patch*>(cacheLumpName(name.data()));
+        im.num[i] = static_cast<Patch*>(cacheLumpName(concat("WINUM", i)));
     }
 
     // percent sign
@@ -1546,16 +1530,10 @@ void loadIntermissionData()
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         // "1,2,3,4"
-        //doom_sprintf(name, "STPB%d", i);
-        doom_strcpy(name.data(), "STPB");
-        doom_concat(name.data(), doom_itoa(i, 10));
-        im.p[i] = static_cast<Patch*>(cacheLumpName(name.data()));
+        im.p[i] = static_cast<Patch*>(cacheLumpName(concat("STPB", i)));
 
         // "1,2,3,4"
-        //doom_sprintf(name, "WIBP%d", i + 1);
-        doom_strcpy(name.data(), "WIBP");
-        doom_concat(name.data(), doom_itoa(i + 1, 10));
-        im.bp[i] = static_cast<Patch*>(cacheLumpName(name.data()));
+        im.bp[i] = static_cast<Patch*>(cacheLumpName(concat("WIBP", i + 1)));
     }
 }
 

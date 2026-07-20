@@ -31,6 +31,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <cstring>
+
 // Needed for calling the actual sound output.
 #include "System.h"
 #include "../Game/GameClock.h"
@@ -188,14 +190,11 @@ void* getsfx(const char* sfxname, int* len)
     int i;
     int size;
     int paddedsize;
-    EA::Array<char, 20> name;
     int sfxlump;
 
     // Get the sound data from the WAD, allocate lump
     //  in zone memory.
-    //doom_sprintf(name, "ds%s", sfxname);
-    doom_strcpy(name.data(), "ds");
-    doom_concat(name.data(), sfxname);
+    auto name = concat("ds", sfxname);
 
     // Now, there is a severe problem with the
     //  sound handling, in it is not (yet/anymore)
@@ -207,10 +206,10 @@ void* getsfx(const char* sfxname, int* len)
     // I do not do runtime patches to that
     //  variable. Instead, we will use a
     //  default sound for replacement.
-    if (Doom::wad().find(name.data()) == -1)
+    if (Doom::wad().find(name) == -1)
         sfxlump = Doom::wad().number("dspistol");
     else
-        sfxlump = Doom::wad().number(name.data());
+        sfxlump = Doom::wad().number(name);
 
     size = Doom::wad().length(sfxlump);
 
@@ -384,11 +383,8 @@ void setChannels()
 #if 0
     for (i = -128; i < 128; i++)
     {
-        doom_print("steptablemid[");
-        doom_print(doom_itoa(i, 10));
-        doom_print("] = ");
-        doom_print(doom_itoa(static_cast<int>(pow(2.0, (i / 64.0)) * 65536.0), 10));
-        doom_print(";\n");
+        print("steptablemid[", i, "] = ",
+              static_cast<int>(pow(2.0, (i / 64.0)) * 65536.0), ";\n");
         //steptablemid[i] = (int)(pow(2.0, (i / 64.0)) * 65536.0);
     }
 #endif
@@ -688,11 +684,7 @@ void setMusicVolume(int volume)
 //
 int sfxLumpNum(SfxInfo* sfx)
 {
-    EA::Array<char, 9> namebuf;
-    //doom_sprintf(namebuf, "ds%s", sfx->name);
-    doom_strcpy(namebuf.data(), "ds");
-    doom_concat(namebuf.data(), sfx->name);
-    return Doom::wad().number(namebuf.data());
+    return Doom::wad().number(concat("ds", sfx->name));
 }
 
 //
@@ -874,7 +866,7 @@ void shutdownSoundHost()
     int i;
 
     // FIXME (below).
-    doom_print("shutdownSoundHost: NOT finishing pending sounds\n");
+    print("shutdownSoundHost: NOT finishing pending sounds\n");
 
     while (!done)
     {
@@ -895,10 +887,10 @@ void initSoundHost()
     int i;
 
     // Secure and configure sound device first.
-    doom_print("initSoundHost: ");
+    print("initSoundHost: ");
 
     // Initialize external data (all sounds) at start, keep static.
-    doom_print("initSoundHost: ");
+    print("initSoundHost: ");
 
     for (i = 1; i < NUMSFX; i++)
     {
@@ -922,14 +914,14 @@ void initSoundHost()
         }
     }
 
-    doom_print(" pre-cached all sound data\n");
+    print(" pre-cached all sound data\n");
 
     // Now initialize mixbuffer with zero.
     for (i = 0; i < MIXBUFFERSIZE; i++)
         mixbuffer[i] = 0;
 
     // Finished initialization.
-    doom_print("initSoundHost: sound module ready\n");
+    print("initSoundHost: sound module ready\n");
 }
 
 //
@@ -983,7 +975,7 @@ void unregisterSong(int handle)
 int registerSong(void* data)
 {
     doom_memcpy(&mus_header, data, sizeof(MusHeader));
-    if (doom_strncmp(mus_header.ID, "MUS", 3) != 0 || mus_header.ID[3] != 0x1A)
+    if (std::memcmp(mus_header.ID, "MUS", 3) != 0 || mus_header.ID[3] != 0x1A)
         return 0;
 
     mus_data = (unsigned char*) data;

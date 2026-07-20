@@ -110,10 +110,11 @@ apparatus:
 
   It is **C++20 as of Step 2 of `REFACTOR.md`**, and there is no C left anywhere
   in the repository. **There is no flat layer left either**: `src/DOOM` holds
-  exactly two files at top level — `DOOM.h`, the public `extern "C"` interface an
-  embedder includes, and `doomtype.h`, the `byte` foundation every layer including
-  `Math/` depends on. Zero `.cpp` files. The last one, `info.cpp`, became
-  `Sim/Info.cpp`.
+  exactly two files at top level — `DOOM.h`, the public interface an embedder
+  includes (a plain C++ header in `namespace Doom` since the string refactor —
+  the `extern "C"` block is gone), and `doomtype.h`, the `byte` foundation every
+  layer including `Math/` depends on. Zero `.cpp` files. The last one,
+  `info.cpp`, became `Sim/Info.cpp`.
 
   **The eight subdirectories *are* the engine**, all real C++ in `namespace Doom`:
 
@@ -153,9 +154,11 @@ apparatus:
 
   **The vanilla *types* are gone too** — all 107 are PascalCase in `namespace Doom`:
   `mobj_t`→`Doom::Mobj`, `line_t`→`Doom::Line`, `sector_t`→`Doom::Sector`,
-  `player_t`→`Doom::Player`, `vldoor_t`→`Doom::Door`, and so on. Three exceptions are
-  deliberate, and all three are the public `extern "C"` API: `doom_key_t`,
-  `doom_button_t`, `doom_seek_t`.
+  `player_t`→`Doom::Player`, `vldoor_t`→`Doom::Door`, and so on. The last three
+  exceptions (`doom_key_t`, `doom_button_t`, `doom_seek_t`) went with the
+  `extern "C"` API: they are `Doom::Key`, `Doom::MouseButton` and
+  `Doom::SeekOrigin` now, their enumerators (`DOOM_KEY_*`, `DOOM_SEEK_*`, the
+  button names) keeping their spellings inside `namespace Doom`.
 
   **`fixed_t` and `angle_t` are done too, and that one was semantic.** They are now
   `using fixed_t = Doom::Fixed;` and `using angle_t = Doom::Angle;` — aliases onto the
@@ -180,8 +183,12 @@ apparatus:
   **13 aliases survive on purpose**: the host callbacks (`doom_print`, `doom_malloc`, …)
   are references onto `Doom::host()`, not onto the Engine. `host()` is deliberately a
   separate immortal singleton that must *not* be reset with a fresh Engine, so pinning
-  its address costs nothing, and they are the bridge the public `extern "C"` `doom_set_*`
-  API writes through.
+  its address costs nothing. The members are `std::function`s now, constructed with
+  working defaults (stdio, `gettimeofday`, `eacp::getEnv` — `Host/Host.cpp`), and an
+  embedder overrides them by assigning `Doom::host().print = …` directly; the old
+  `doom_set_*` setter functions are gone with the `extern "C"` block. String-shaped
+  hooks take `std::string_view` (`print`, `open`, `getenv` — the last returning
+  `std::optional<std::string>`).
 
   **What survives as loose names is data and views, and it lives inside the
   subdirectories** — there is no flat file holding any of it. The pointer-and-count
@@ -350,9 +357,11 @@ apparatus:
     `_CRT_ERROR`/`_CRT_ASSERT` to stderr so the next one fails loudly and says what
     it is.
   - **`EA::Array<char, N>` is not an aggregate**, so a bare string literal in a table
-    stops binding: `Sim/Switches.cpp`'s `alphSwitchList[]` needs
-    `EA::Array<char, 9> {{"SW1BRCOM"}}`. Verify any bulk string change by extracting
-    every literal before and after and diffing them.
+    stops binding — the reason `Sim/Switches.cpp`'s `alphSwitchList[]` once spelled
+    every row `EA::Array<char, 9> {{"SW1BRCOM"}}`. (The string refactor has since made
+    those name tables `std::string_view`, which binds literals plainly; the quirk
+    still holds for any `EA::Array<char, N>` that remains.) Verify any bulk string
+    change by extracting every literal before and after and diffing them.
 
   **`doom_boolean` is gone** — the last vanilla type. All ~288 uses are a real
   `bool`, and the typedef is deleted, so a boolean in this engine is a boolean.
@@ -366,10 +375,48 @@ apparatus:
   a whole word back through it). `doomtype.h` keeps that list. The ARMS widget's
   `(int*) &plyr->weaponowned[i + 1]` pun — vanilla's own cast, and the reason the
   flip was blocked for so long — is untangled into `StatusBarWidgets::w_armsindex[6]`.
+
+  **The strings are `std::string`/`std::string_view` now, and the C string layer is
+  gone with the `extern "C"` API.** The `doom_strcpy`/`doom_concat`/`doom_itoa`/
+  `doom_strlen`/`doom_strcmp`/`doom_toupper`/`doom_atoi` family is deleted;
+  `Host/Text.h` is what replaced it — `concat(parts...)` (string-ish parts as text,
+  `char` as one character, integrals via `std::to_string`), variadic `print(...)`/
+  `printTo(handle, ...)`, variadic `fatalError(...)` (`Host/System.h`),
+  `hexString`, `toUpper`/`equalsIgnoreCase`, and `parseInt`/`parseHex` (exact ports
+  of `doom_atoi`/`doom_atox`, sign handling and all — the goldens pin their
+  no-sign behaviour). The global `error_buf` and its ~250 build-then-abort chains
+  are single `fatalError(...)` calls now; lump-name composition (`"STTNUM"+i`,
+  `"WIMAP"+epsd`, `"ds"+sfxname`, `E?M?`) is `concat(...)` straight into the WAD
+  lookups, which take `std::string_view`.
+
+  Four things to know before touching strings here:
+
+  - **An 8-byte WAD name field is NOT NUL-terminated when full**, and a
+    `std::string_view` built from a bare `const char*` runs `strlen` off its end.
+    `nameView(ptr, 8)` (`Host/Text.h`) is the bounded view; `WadFile.h` and
+    `Render/Data.h` both say so at their lookup declarations, and `Sim/Setup.cpp`'s
+    map-loader calls are the worked example.
+  - **Fixed-width on-disk fields stay fixed-width**: the savegame's 24-byte
+    description and 16-byte version fields are written with `fillField`
+    (`Host/Text.h`) — zero-padded, deterministic — and read back bounded. The menu's
+    `savegamestrings` are `std::string` in memory and a fixed field only at the
+    file boundary.
+  - **A message pointer needs storage that outlives the frame.** `Player::message`
+    is still `const char*` (the `Player` struct is memcpy'd whole by savegames);
+    everything assigned to it is a literal or an Engine-owned/static `std::string`'s
+    `.c_str()` (`turbomessage`, the IDMYPOS buffer, `NetState::exitmsg`, HUD chat's
+    `lastmessage`) — reassigned in the same breath as the pointer, never freed.
+  - **What deliberately stays raw**: the cheat sequences (`unsigned char` streams
+    with in-band `0`/`1`/`0xff` markers that `checkCheat` *writes into*), the WAD
+    overlay structs (`Wad/MapFormat.h`), `Game/PlayerTypes.h`'s memcpy'd arrays,
+    `doom_memset`/`doom_memcpy`, and the five translation-phase-6 string-literal
+    macro families (`PRESSKEY` and friends). The two lineage bugs the sweep found —
+    quicksave/quickload's third call is `strcpy` where `concat` was meant, so the
+    prompt never shows the savegame name — are **preserved and documented at their
+    sites**, not fixed, like the MUS-delay and `drawAnimatedBack` precedents.
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
-  eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the plain-C
-  snapshot interface to engine internals (camera, wall geometry, view state).
+  eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the plain-data  snapshot interface to engine internals (camera, wall geometry, view state).
   `EngineAccess.cpp` is an ordinary translation unit that includes the engine's
   headers; nothing DOOM-typed leaks out through the `.h`.
 
@@ -571,7 +618,7 @@ no portable spelling, and `std::getenv` is deprecated outright by Microsoft's CR
 That flag now controls more than the app: with it `OFF` the root `CMakeLists.txt`
 passes `EACP_BUILD_GRAPHICS OFF`, so eacp compiles Core, SIMD and Network and stops
 — no Graphics, GPU, WebView, Camera or Video. `doom-engine` links `eacp-core`
-**PRIVATE**: it is an implementation choice, `DOOM.h` stays a plain `extern "C"`
+**PRIVATE**: it is an implementation choice, `DOOM.h` stays a standard-library-only
 header with no eacp type in it, and an embedder still overrides any of it through
 the `doom_set_*` callbacks. The tests name `eacp-core` themselves because they use
 it directly.
@@ -619,7 +666,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-87 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
+94 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
 in `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -649,15 +696,14 @@ What each source covers, since the sections below do not name them all:
 `Sim/OwnershipTests.cpp` is the odd one and worth knowing about: it is the only
 test that can see a **leak**. The goldens hash the world and the picture, so
 memory that is never given back changes nothing they measure until the process
-runs out. It installs a counting `doom_malloc`/`doom_free` through the public
-`doom_set_malloc` and asserts that live blocks after `resetEngine()` fall back to
-the post-boot figure — which is how the level pool's missing destructor was
-found.
+runs out. It installs a counting `malloc`/`free` pair on `Doom::host()` and
+asserts that live blocks after `resetEngine()` fall back to the post-boot
+figure — which is how the level pool's missing destructor was found.
 
 Run the binaries through ctest, not bare. NanoTest registers one ctest case per
 test and re-runs the binary with `--test <name>`, so every test gets a fresh
 process — which the engine needs, being several hundred globals and a zone
-allocator that `doom_init` does not undo. A bare `./SimTests` puts all of them in
+allocator that `Doom::initGame` does not undo. A bare `./SimTests` puts all of them in
 one process and only the first can boot; it says so rather than quietly passing.
 
 ### The demo tests are the safety net
@@ -1076,10 +1122,10 @@ and differs between builds of the same engine.)
   now builds no command when `singletics` is set (it still drains events). This
   took the aim's input-to-screen lag from 163ms to 17ms, and stopped the player
   coasting for five tics after a movement key was released.
-- The engine is single-threaded: `doom_init`, `doom_update`,
-  `doom_get_framebuffer` and all input calls happen on the main thread. Audio,
+- The engine is single-threaded: `Doom::initGame`, `Doom::updateGame`,
+  `Doom::framebuffer` and all input calls happen on the main thread. Audio,
   once wired, is the only exception — it is pulled from the audio callback, on
-  another thread, and must take a lock against `doom_update`.
+  another thread, and must take a lock against `Doom::updateGame`.
 
 ### What the engine expects of its host
 
@@ -1089,20 +1135,21 @@ broken rather than fail outright.
 - **Audio, when it is wired** (nothing here plays a sound yet — gap-log item 1).
   This is what the deleted SDL example demonstrated and nothing else in the
   repository records. Sound is a **pull** model: run an output stream at
-  `DOOM_SAMPLERATE` (11025 Hz), 16-bit stereo, 512 samples — 2,048 bytes a
-  buffer — and call `doom_get_sound_buffer(len)` from the audio callback, taking
-  the engine lock around it, because `doom_update` is on another thread. Music is
-  a **push** model: a 140 Hz timer (`DOOM_MIDI_RATE`) draining `doom_tick_midi()`
-  into a synth for as long as it keeps returning messages. Resample if your device
-  wants another rate; the engine only ever produces that one.
+  `Doom::DOOM_SAMPLERATE` (11025 Hz), 16-bit stereo, 512 samples — 2,048 bytes a
+  buffer — and call `Doom::soundBuffer()` from the audio callback, taking the
+  engine lock around it, because `Doom::updateGame` is on another thread. Music is
+  a **push** model: a 140 Hz timer (`Doom::DOOM_MIDI_RATE`) draining
+  `Doom::tickMidi()` into a synth for as long as it keeps returning messages.
+  Resample if your device wants another rate; the engine only ever produces that
+  one.
 
 - **The keys the app asks for do not stick by themselves.** DOOM cannot rebind a
   key from inside the game, yet it still writes every binding out to `~/.doomrc`
-  and, at startup, reads them back *over* whatever `doom_set_default_int` asked
+  and, at startup, reads them back *over* whatever `Doom::setDefaultInt` asked
   for. A config left behind by an older build therefore pins that build's keys
   for good, and changing the binding in `Main.cpp` silently does nothing at all —
   the game keeps the old key with no sign anything was ignored. `Main.cpp` calls
-  `eacpDoomBindKeys()` after `doom_init` to apply them again once the config has
+  `eacpDoomBindKeys()` after `Doom::initGame` to apply them again once the config has
   been read. What the player *can* change from the menu (mouse sensitivity,
   screen size, volumes) is left alone and still persists.
 
@@ -1225,8 +1272,8 @@ found by comparing against GZDoom:
 
 1. **No audio subsystem.** Sound effects need a pull-model PCM output stream
    (`DOOM_SAMPLERATE` = 11025 Hz, 16-bit stereo, mixed via
-   `doom_get_sound_buffer()`); music needs a 140 Hz (`DOOM_MIDI_RATE`) tick
-   draining `doom_tick_midi()` into a synth. Both are unwired; the game runs
+   `Doom::soundBuffer()`); music needs a 140 Hz (`Doom::DOOM_MIDI_RATE`) tick
+   draining `Doom::tickMidi()` into a synth. Both are unwired; the game runs
    silent.
 2. **Modifier keys produce no key events**, on any platform — DOOM binds them as
    ordinary keys (Ctrl = fire, Shift = run, Alt = strafe). Workaround: they are

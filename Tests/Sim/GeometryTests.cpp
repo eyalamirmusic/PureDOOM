@@ -8,8 +8,8 @@
 // and they pin the two quirks that a "cleanup" would flatten - pointOnLineSide and
 // pointOnDivlineSide are different formulae and must stay different.
 //
-// Pure functions over values, so no doom_init - they share the PrimitiveTests
-// process.
+// Pure functions over values, so no Doom::initGame - they share the
+// PrimitiveTests process.
 
 #include "../Common.h"
 

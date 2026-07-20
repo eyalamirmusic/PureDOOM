@@ -246,17 +246,16 @@ int numdefaults = sizeof(defaults) / sizeof(Doom::ConfigDefault);
 namespace Doom
 {
 
-int drawText(int x, int y, bool direct, char* string)
+int drawText(int x, int y, bool direct, std::string_view string)
 {
     auto& font = hudFont();
 
     int c;
     int w;
 
-    while (*string)
+    for (auto character: string)
     {
-        c = doom_toupper(*string) - HU_FONTSTART;
-        string++;
+        c = toUpper(character) - HU_FONTSTART;
         if (c < 0 || c > HU_FONTSIZE)
         {
             x += 4;
@@ -306,11 +305,7 @@ int readFile(char const* name, EA::Vector<byte>& buffer)
     void* handle = doom_open(name, "rb");
     if (handle == nullptr)
     {
-        //fatalError("Error: Couldn't read file %s", name);
-
-        doom_strcpy(error_buf, "Error: Couldn't read file ");
-        doom_concat(error_buf, name);
-        fatalError(error_buf);
+        fatalError("Error: Couldn't read file ", name);
     }
     doom_seek(handle, 0, DOOM_SEEK_END);
     int length = doom_tell(handle);
@@ -324,11 +319,7 @@ int readFile(char const* name, EA::Vector<byte>& buffer)
 
     if (count < length)
     {
-        //fatalError("Error: Couldn't read file %s", name);
-
-        doom_strcpy(error_buf, "Error: Couldn't read file ");
-        doom_concat(error_buf, name);
-        fatalError(error_buf);
+        fatalError("Error: Couldn't read file ", name);
     }
 
     return length;
@@ -340,10 +331,10 @@ int readFile(char const* name, EA::Vector<byte>& buffer)
 // bound at dynamic-init time: a static &member would race that binding across
 // translation units (it segfaulted every test when tried). Idempotent, so both
 // loadDefaults and saveDefaults call it before touching a location pointer.
-static void bindEngineDefault(const char* name, int* location)
+static void bindEngineDefault(std::string_view name, int* location)
 {
     for (int i = 0; i < numdefaults; i++)
-        if (!doom_strcmp(defaults[i].name, name))
+        if (name == defaults[i].name)
         {
             defaults[i].location = location;
             return;
@@ -410,7 +401,7 @@ void saveDefaults()
 
     bindEngineDefaults();
 
-    f = doom_open(configPaths().defaultfile, "w");
+    f = doom_open(configPaths().defaultfile.c_str(), "w");
     if (!f)
         return; // can't write the file, but don't complain
 
@@ -420,19 +411,14 @@ void saveDefaults()
         {
             v = *defaults[i].location;
             //fprintf(f, "%s\t\t%i\n", defaults[i].name, v);
-            doom_fprint(f, defaults[i].name);
-            doom_fprint(f, "\t\t");
-            doom_fprint(f, doom_itoa(v, 10));
-            doom_fprint(f, "\n");
+            printTo(f, defaults[i].name, "\t\t", v, "\n");
         }
         else
         {
             //fprintf(f, "%s\t\t\"%s\"\n", defaults[i].name,
             //        *(char**)(defaults[i].text_location));
-            doom_fprint(f, defaults[i].name);
-            doom_fprint(f, "\t\t\"");
-            doom_fprint(f, *defaults[i].text_location);
-            doom_fprint(f, "\"\n");
+            printTo(
+                f, defaults[i].name, "\t\t\"", *defaults[i].text_location, "\"\n");
         }
     }
 
@@ -446,16 +432,9 @@ void loadDefaults()
 {
     int i;
     void* f;
-    EA::Array<char, 80> def;
-    EA::Array<char, 100> strparm;
+    auto def = std::string {};
+    auto strparm = std::string {};
     bool isstring;
-
-    // Initialized because only one of the two is written per line parsed - a
-    // quoted value sets len, anything else sets parm - and which one gets read
-    // back is decided by isstring further down. That correlation is real but no
-    // compiler can see it, so MSVC reports both as possibly-uninitialized reads.
-    // Giving them values costs nothing and makes the guarantee local.
-    int len = 0;
     int parm = 0;
 
     // Owns the storage for the string-valued defaults (currently the ten
@@ -466,10 +445,10 @@ void loadDefaults()
     // (Hud.cpp reads chat_macros[] whenever a chat macro fires; saveDefaults
     // reads it back out to write the file). One slot per defaults[] entry,
     // sized once up front so filling a later slot never reallocates the
-    // outer vector and invalidates a .data() pointer already handed to an
-    // earlier entry - the same rule columnlumpStorage/columnofsStorage
-    // follow in Render/CompositeCache.h.
-    static EA::Vector<EA::Vector<char>> stringDefaultStorage;
+    // outer vector; reassigning one slot's string never moves another's
+    // buffer, which is what keeps every .c_str() already handed to an
+    // earlier entry valid.
+    static EA::Vector<std::string> stringDefaultStorage;
     stringDefaultStorage.resize(numdefaults);
 
     auto& paths = configPaths();
@@ -492,15 +471,13 @@ void loadDefaults()
     {
         paths.defaultfile = myargv[i + 1];
         //doom_print("        default file: %s\n", defaultfile);
-        doom_print("        default file: ");
-        doom_print(paths.defaultfile);
-        doom_print("\n");
+        print("        default file: ", paths.defaultfile, "\n");
     }
     else
-        paths.defaultfile = paths.basedefault.data();
+        paths.defaultfile = paths.basedefault;
 
     // read the file in, overriding any set defaults
-    f = doom_open(paths.defaultfile, "r");
+    f = doom_open(paths.defaultfile.c_str(), "r");
     if (f)
     {
         while (!doom_eof(f))
@@ -508,6 +485,7 @@ void loadDefaults()
             // def
             int arg_read = 0;
             char c;
+            def.clear();
             for (i = 0; i < 79; ++i)
             {
                 doom_read(f, &c, 1);
@@ -517,11 +495,11 @@ void loadDefaults()
                         arg_read++;
                     break;
                 }
-                def[i] = c;
+                def += c;
             }
-            def[i] = '\0';
 
             // Ignore spaces
+            strparm.clear();
             if (c != '\n')
             {
                 while (1)
@@ -532,22 +510,20 @@ void loadDefaults()
                 }
 
                 // strparam
-                i = 0;
                 if (c != '\n')
                 {
-                    for (; i < 260;)
+                    while (static_cast<int>(strparm.size()) < 260)
                     {
-                        strparm[i++] = c;
+                        strparm += c;
                         doom_read(f, &c, 1);
                         if (c == '\n')
                         {
-                            if (i > 0)
+                            if (!strparm.empty())
                                 arg_read++;
                             break;
                         }
                     }
                 }
-                strparm[i] = '\0';
             }
 
             isstring = false;
@@ -556,39 +532,32 @@ void loadDefaults()
             {
                 if (strparm[0] == '"')
                 {
-                    // get a string default
+                    // get a string default: strip the closing quote
                     isstring = true;
-                    len = static_cast<int>(doom_strlen(strparm.data()));
-                    strparm[len - 1] = 0;
+                    strparm.pop_back();
                 }
                 else if (strparm[0] == '0' && strparm[1] == 'x')
                 {
                     //sscanf(strparm + 2, "%x", &parm);
-                    parm = doom_atox(strparm.data() + 2);
+                    parm = parseHex(std::string_view {strparm}.substr(2));
                 }
                 else
                 {
                     //sscanf(strparm, "%i", &parm);
-                    parm = doom_atoi(strparm.data());
+                    parm = parseInt(strparm);
                 }
                 for (i = 0; i < numdefaults; i++)
-                    if (!doom_strcmp(def.data(), defaults[i].name))
+                    if (def == defaults[i].name)
                     {
                         if (!isstring)
                             *defaults[i].location = parm;
                         else
                         {
-                            // Sized exactly as the doom_malloc(len) this
-                            // replaces: len-2 source chars (the quotes
-                            // stripped) plus a terminator, with the same one
-                            // byte of slack. Keeping the slack is not
-                            // cosmetic - a malformed line of a lone quote
-                            // gives len == 1, and resize(len - 1) would leave
-                            // data() null under the doom_strcpy below.
+                            // Strip the opening quote too; the slot owns the
+                            // copy for the life of the process.
                             auto& owned = stringDefaultStorage[i];
-                            owned.resize(len);
-                            doom_strcpy(owned.data(), strparm.data() + 1);
-                            *defaults[i].text_location = owned.data();
+                            owned = strparm.substr(1);
+                            *defaults[i].text_location = owned.c_str();
                         }
                         break;
                     }
@@ -602,7 +571,8 @@ void loadDefaults()
 //
 // WritePCXfile
 //
-void WritePCXfile(char* filename, byte* data, int width, int height, byte* palette)
+void WritePCXfile(
+    const char* filename, byte* data, int width, int height, byte* palette)
 {
     int length;
     byte* pack;
@@ -659,7 +629,6 @@ void writeScreenshot()
 {
     int i;
     byte* linear;
-    EA::Array<char, 12> lbmname;
     void* f;
 
     // munge planar buffer to linear
@@ -667,13 +636,13 @@ void writeScreenshot()
     readScreen(linear);
 
     // find a file name to save it to
-    doom_strcpy(lbmname.data(), "DOOM00.pcx");
+    auto lbmname = std::string {"DOOM00.pcx"};
 
     for (i = 0; i <= 99; i++)
     {
-        lbmname[4] = i / 10 + '0';
-        lbmname[5] = i % 10 + '0';
-        if ((f = doom_open(lbmname.data(), "wb")) == nullptr)
+        lbmname[4] = static_cast<char>(i / 10 + '0');
+        lbmname[5] = static_cast<char>(i % 10 + '0');
+        if ((f = doom_open(lbmname.c_str(), "wb")) == nullptr)
             break; // file doesn't exist
         doom_close(f);
     }
@@ -681,7 +650,7 @@ void writeScreenshot()
         fatalError("Error: writeScreenshot: Couldn't create a PCX");
 
     // save the pcx file
-    WritePCXfile(lbmname.data(),
+    WritePCXfile(lbmname.c_str(),
                  linear,
                  SCREENWIDTH,
                  SCREENHEIGHT,

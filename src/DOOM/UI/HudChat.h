@@ -5,6 +5,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string>
+
 namespace Doom
 {
 // The heads-up chat state (multiplayer talk). w_chat is the input line you type into; the local
@@ -38,8 +40,7 @@ struct HudChat
     int tail = 0; // chatchars ring tail
 
     // Doom::hudResponder's own send-path state, folded in from its function-local statics.
-    EA::Array<char, HU_MAXLINELENGTH + 1> lastmessage =
-        {}; // the last message sent (HU_MSGREFRESH)
+    std::string lastmessage; // the last message sent (HU_MSGREFRESH)
     bool shiftdown = false; // shift held (chat input)
     bool altdown = false; // alt held (chat input)
     int num_nobrainers = 0; // consecutive "no-brainer" chat macro sends

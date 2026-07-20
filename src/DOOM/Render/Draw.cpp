@@ -73,13 +73,12 @@ void drawColumn()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
-        doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
-        doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
-        fatalError(error_buf);
+        fatalError("Error: Doom::drawColumn: ",
+                   draw.dc_yl,
+                   " to ",
+                   draw.dc_yh,
+                   " at ",
+                   draw.dc_x);
     }
 #endif
 
@@ -129,13 +128,12 @@ void drawColumnLow()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
-        doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
-        doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
-        fatalError(error_buf);
+        fatalError("Error: Doom::drawColumn: ",
+                   draw.dc_yl,
+                   " to ",
+                   draw.dc_yh,
+                   " at ",
+                   draw.dc_x);
     }
 #endif
     // Blocky mode, need to multiply by 2.
@@ -207,13 +205,12 @@ void drawFuzzColumn()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: Doom::drawFuzzColumn: ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
-        doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
-        doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
-        fatalError(error_buf);
+        fatalError("Error: Doom::drawFuzzColumn: ",
+                   draw.dc_yl,
+                   " to ",
+                   draw.dc_yh,
+                   " at ",
+                   draw.dc_x);
     }
 #endif
 
@@ -267,13 +264,12 @@ void drawTranslatedColumn()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: Doom::drawColumn: ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yl, 10));
-        doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(draw.dc_yh, 10));
-        doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(draw.dc_x, 10));
-        fatalError(error_buf);
+        fatalError("Error: Doom::drawColumn: ",
+                   draw.dc_yl,
+                   " to ",
+                   draw.dc_yh,
+                   " at ",
+                   draw.dc_x);
     }
 #endif
 
@@ -363,13 +359,12 @@ void drawSpan()
     if (draw.ds_x2 < draw.ds_x1 || draw.ds_x1 < 0 || draw.ds_x2 >= SCREENWIDTH
         || static_cast<unsigned>(draw.ds_y) > SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: Doom::drawSpan: ");
-        doom_concat(error_buf, doom_itoa(draw.ds_x1, 10));
-        doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(draw.ds_x2, 10));
-        doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(draw.ds_y, 10));
-        fatalError(error_buf);
+        fatalError("Error: Doom::drawSpan: ",
+                   draw.ds_x1,
+                   " to ",
+                   draw.ds_x2,
+                   " at ",
+                   draw.ds_y);
     }
 #endif
 
@@ -415,13 +410,12 @@ void drawSpanLow()
     if (draw.ds_x2 < draw.ds_x1 || draw.ds_x1 < 0 || draw.ds_x2 >= SCREENWIDTH
         || static_cast<unsigned>(draw.ds_y) > SCREENHEIGHT)
     {
-        doom_strcpy(error_buf, "Error: Doom::drawSpan: ");
-        doom_concat(error_buf, doom_itoa(draw.ds_x1, 10));
-        doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(draw.ds_x2, 10));
-        doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(draw.ds_y, 10));
-        fatalError(error_buf);
+        fatalError("Error: Doom::drawSpan: ",
+                   draw.ds_x1,
+                   " to ",
+                   draw.ds_x2,
+                   " at ",
+                   draw.ds_y);
     }
 #endif
 

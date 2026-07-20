@@ -4,6 +4,9 @@
 
 namespace PureDoom
 {
+using enum Doom::Key;
+using enum Doom::MouseButton;
+
 // The printable keys, mapped from the *positional* KeyCode rather than from the
 // character the event carries.
 //
@@ -37,7 +40,7 @@ namespace PureDoom
 struct DoomKeyMapping
 {
     std::uint16_t keyCode;
-    doom_key_t doomKey;
+    Doom::Key doomKey;
 };
 
 inline constexpr DoomKeyMapping printableKeys[] = {
@@ -90,7 +93,7 @@ inline constexpr DoomKeyMapping printableKeys[] = {
     {Graphics::KeyCode::Slash, DOOM_KEY_SLASH},
 };
 
-inline doom_key_t toDoomKey(const Graphics::KeyEvent& event)
+inline Doom::Key toDoomKey(const Graphics::KeyEvent& event)
 {
     using namespace Graphics;
 
@@ -168,13 +171,13 @@ inline doom_key_t toDoomKey(const Graphics::KeyEvent& event)
             character = (char) (character - 'A' + 'a');
 
         if (character >= ' ' && character <= '~')
-            return (doom_key_t) character;
+            return (Doom::Key) character;
     }
 
     return DOOM_KEY_UNKNOWN;
 }
 
-inline doom_button_t toDoomButton(Graphics::MouseButton button)
+inline Doom::MouseButton toDoomButton(Graphics::MouseButton button)
 {
     switch (button)
     {

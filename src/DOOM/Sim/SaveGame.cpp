@@ -361,10 +361,7 @@ void unArchiveThinkers()
             {
                 //fatalError("Error: Unknown tclass %i in savegame", tclass);
 
-                doom_strcpy(error_buf, "Error: Unknown tclass ");
-                doom_concat(error_buf, doom_itoa(tclass, 10));
-                doom_concat(error_buf, " in savegame");
-                fatalError(error_buf);
+                fatalError("Error: Unknown tclass ", tclass, " in savegame");
             }
         }
     }
@@ -563,10 +560,9 @@ void unArchiveSpecials()
                 //fatalError("Error: P_UnarchiveSpecials:Unknown tclass %i "
                 //        "in savegame", tclass);
 
-                doom_strcpy(error_buf, "Error: P_UnarchiveSpecials:Unknown tclass ");
-                doom_concat(error_buf, doom_itoa(tclass, 10));
-                doom_concat(error_buf, " in savegame");
-                fatalError(error_buf);
+                fatalError("Error: P_UnarchiveSpecials:Unknown tclass ",
+                           tclass,
+                           " in savegame");
             }
         }
     }

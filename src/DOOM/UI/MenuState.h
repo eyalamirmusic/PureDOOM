@@ -2,6 +2,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string>
+
 #include <functional>
 
 namespace Doom
@@ -76,13 +78,10 @@ struct MenuState
     // The savegame string editor.
     int saveStringEnter = 0; // editing a savegame description
     int saveSlot = 0; // which slot to save in
-    int saveCharIndex = 0; // which char we're editing
-    EA::Array<char, menuSaveStringSize> saveOldString =
-        {}; // description before the edit
-    EA::Array<EA::Array<char, menuSaveStringSize>, 10> savegamestrings =
-        {}; // the ten slot descriptions
+    std::string saveOldString; // description before the edit
+    EA::Array<std::string, 10> savegamestrings; // the ten slot descriptions
 
-    EA::Array<char, 160> endstring = {}; // built quit/end-game confirmation text
+    std::string endstring; // built quit/end-game confirmation text
 
     // The skull cursor.
     short itemOn = 0; // menu item the skull is on
@@ -92,7 +91,7 @@ struct MenuState
     MenuDef* currentMenu =
         nullptr; // the menu currently shown (into a file-local table)
 
-    EA::Array<char, 80> tempstring = {}; // scratch for building confirmation strings
+    std::string tempstring; // scratch for building confirmation strings
     int epi = 0; // episode picked in the new-game flow
 };
 

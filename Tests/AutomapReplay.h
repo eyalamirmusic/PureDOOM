@@ -12,7 +12,7 @@
 // the map (vanilla's D_Display skips R_RenderPlayerView entirely while it is up,
 // which is why this port had to add its own eacpDoomRevealAutomap). It gets the
 // same net m_menu got before its own rewrite: drive synthetic key events through
-// the real host path (doom_key_down -> Doom::postEvent -> Doom::gameResponder ->
+// the real host path (Doom::keyDown -> Doom::postEvent -> Doom::gameResponder ->
 // Doom::automapResponder), let Doom::automapTicker and Doom::drawAutomap run, and
 // hash the finished software frame every tic.
 //
@@ -47,6 +47,8 @@ using AutomapScript = std::vector<AutomapStep>;
 // doomSimAutomapActive rather than assumed.
 inline AutomapScript automapScript()
 {
+    using enum Doom::Key;
+
     constexpr auto RIGHT = DOOM_KEY_RIGHT_ARROW; // AM_PANRIGHTKEY
     constexpr auto LEFT = DOOM_KEY_LEFT_ARROW; // AM_PANLEFTKEY
     constexpr auto UP = DOOM_KEY_UP_ARROW; // AM_PANUPKEY
@@ -179,8 +181,8 @@ inline Hashes runAutomapScript()
     // rather than assuming a keypress landed - Doom::gameResponder only reaches
     // Doom::automapResponder while gamestate is GS_LEVEL (Game.cpp,
     // gameResponder), so this doubles as proof the level really is up.
-    doomSimPostKeyDown(DOOM_KEY_TAB);
-    doomSimPostKeyUp(DOOM_KEY_TAB);
+    doomSimPostKeyDown(Doom::DOOM_KEY_TAB);
+    doomSimPostKeyUp(Doom::DOOM_KEY_TAB);
     nano::check(doomSimStepTic() != 0, "the tic ran");
     frames.push_back(doomSimFrameHash());
     nano::check(doomSimAutomapActive() != 0, "AM_STARTKEY opened the automap");
@@ -199,8 +201,8 @@ inline Hashes runAutomapScript()
 
     // Close the map with AM_ENDKEY (the same physical key as AM_STARTKEY) and
     // check it actually closed.
-    doomSimPostKeyDown(DOOM_KEY_TAB);
-    doomSimPostKeyUp(DOOM_KEY_TAB);
+    doomSimPostKeyDown(Doom::DOOM_KEY_TAB);
+    doomSimPostKeyUp(Doom::DOOM_KEY_TAB);
     nano::check(doomSimStepTic() != 0, "the tic ran");
     frames.push_back(doomSimFrameHash());
     nano::check(!doomSimAutomapActive(), "AM_ENDKEY closed the automap");
@@ -230,7 +232,8 @@ inline void checkAutomapMatchesGolden()
 
     if (golden.empty())
     {
-        std::printf("\nNo automap golden. Record one with DOOM_UPDATE_GOLDENS=1\n\n");
+        std::printf(
+            "\nNo automap golden. Record one with DOOM_UPDATE_GOLDENS=1\n\n");
         nano::check(false, "automap golden exists");
         return;
     }
@@ -256,6 +259,7 @@ inline void checkAutomapMatchesGolden()
                     frames.size(),
                     golden.size());
 
-    nano::check(frames.size() == golden.size(), "the automap walk is the same length");
+    nano::check(frames.size() == golden.size(),
+                "the automap walk is the same length");
 }
 } // namespace DoomTests

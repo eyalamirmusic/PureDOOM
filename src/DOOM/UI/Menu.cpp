@@ -140,7 +140,7 @@ struct MenuItem
     // 0 = no cursor here, 1 = ok, 2 = arrows ok
     short status;
 
-    char name[10];
+    std::string_view name;
 
     // choice = menu item #.
     // if status = 2,
@@ -164,7 +164,7 @@ struct MenuDef
 
 struct MenuCustomTextSeg
 {
-    const char* lump;
+    std::string_view lump;
     int x, w;
     int offx;
     int offy;
@@ -172,7 +172,7 @@ struct MenuCustomTextSeg
 
 struct MenuCustomText
 {
-    const char* name;
+    std::string_view name;
     MenuCustomTextSeg segs[16];
 };
 
@@ -185,16 +185,11 @@ struct MenuCustomText
 // Was EA::Array<EA::Array<char, 26>, 5>, a fixed 26-byte buffer per message that
 // only existed because these were string-literal macros. Its one reader wants a
 // const char*, so it holds pointers now and the 26 cannot silently truncate.
-EA::Array<const char*, 5> gammamsg = {GAMMALVL0,
-                                      GAMMALVL1,
-                                      GAMMALVL2,
-                                      GAMMALVL3,
-                                      GAMMALVL4};
+EA::Array<const char*, 5> gammamsg = {
+    GAMMALVL0, GAMMALVL1, GAMMALVL2, GAMMALVL3, GAMMALVL4};
 
 // graphic name of skulls
-// warning: initializer-string for array of chars is too long
-EA::Array<EA::Array<char, /*8*/ 9>, 2> skullName = {
-    EA::Array<char, 9> {{"M_SKULL1"}}, EA::Array<char, 9> {{"M_SKULL2"}}};
+EA::Array<std::string_view, 2> skullName = {"M_SKULL1", "M_SKULL2"};
 
 // The menu-definition tables below lean on partial aggregate initializers on
 // purpose: a {0} terminates a custom-text segment list, and a {-1,"",0} marks a
@@ -212,11 +207,11 @@ EA::Array<MenuCustomText, 4> menu_custom_texts = {
       {"M_MSENS", 160, 14, 83 + 31, 0}, // v
       {"M_MSENS", 60, 14, 83 + 31 + 14, 0}, // e
       {"M_DETAIL", 169, 5, 83 + 31 + 14 + 14, 0}, // :
-      {0}}},
+      {}}},
     {"TXT_MOPT",
      {{"M_MSENS", 0, 74, 0, 0}, // Mouse
       {"M_OPTION", 0, 92, 74 + 9, 0}, // Options
-      {0}}},
+      {}}},
     {"TXT_CROS",
      {{"M_SKILL", 0, 16, 0, 0}, // C
       {"M_DETAIL", 14, 15, 16, 0}, // r
@@ -226,7 +221,7 @@ EA::Array<MenuCustomText, 4> menu_custom_texts = {
       {"M_DETAIL", 140, 19, 16 + 15 + 30 + 14 + 15, 0}, // ai
       {"M_DETAIL", 14, 15, 16 + 15 + 30 + 14 + 15 + 19, 0}, // r
       {"M_DETAIL", 169, 5, 16 + 15 + 30 + 14 + 15 + 19 + 15, 0}, // :
-      {0}}},
+      {}}},
     {"TXT_ARUN",
      {{"M_SGTTL", 90, 17, 0, 0}, // A
       {"M_GDLOW", 0, 10, 17, 3}, // l
@@ -237,15 +232,13 @@ EA::Array<MenuCustomText, 4> menu_custom_texts = {
       {"M_SFXVOL", 90, 15, 17 + 10 + 16 + 30 + 14 + 7 + 16, 0}, // u
       {"M_OPTION", 62, 15, 17 + 10 + 16 + 30 + 14 + 7 + 16 + 15, 0}, // n
       {"M_DETAIL", 169, 5, 17 + 10 + 16 + 30 + 14 + 7 + 16 + 15 + 15, 0}, // :
-      {0}}},
+      {}}},
 };
 
 const int custom_texts_count = sizeof(menu_custom_texts) / sizeof(MenuCustomText);
 
-EA::Array<EA::Array<char, 9>, 2> detailNames = {EA::Array<char, 9> {{"M_GDHIGH"}},
-                                                EA::Array<char, 9> {{"M_GDLOW"}}};
-EA::Array<EA::Array<char, 9>, 2> msgNames = {EA::Array<char, 9> {{"M_MSGOFF"}},
-                                             EA::Array<char, 9> {{"M_MSGON"}}};
+EA::Array<std::string_view, 2> detailNames = {"M_GDHIGH", "M_GDLOW"};
+EA::Array<std::string_view, 2> msgNames = {"M_MSGOFF", "M_MSGON"};
 
 EA::Array<int, 8> quitsounds = {sfx_pldeth,
                                 sfx_dmpain,
@@ -315,9 +308,9 @@ void setupNextMenu(MenuDef* menudef);
 void drawThermo(int x, int y, int thermWidth, int thermDot);
 void drawEmptyCell(MenuDef* menu, int item);
 void drawSelCell(MenuDef* menu, int item);
-void writeText(int x, int y, const char* string);
-int stringWidth(const char* string);
-int stringHeight(const char* string);
+void writeText(int x, int y, std::string_view string);
+int stringWidth(std::string_view string);
+int stringHeight(std::string_view string);
 void startControlPanel();
 void startMessage(const char* string, std::function<void(int)> routine, bool input);
 void stopMessage();
@@ -657,15 +650,15 @@ DOOM_DIAGNOSTIC_POP
 // drawCustomMenuText
 //  Draw several segments of patches to make up new text
 //
-void drawCustomMenuText(const char* name, int x, int y)
+void drawCustomMenuText(std::string_view name, int x, int y)
 {
     for (int i = 0; i < custom_texts_count; ++i)
     {
         MenuCustomText* custom_text = menu_custom_texts.data() + i;
-        if (doom_strcmp(custom_text->name, name) == 0)
+        if (custom_text->name == name)
         {
             MenuCustomTextSeg* seg = custom_text->segs;
-            while (seg->lump)
+            while (!seg->lump.empty())
             {
                 void* lump = cacheLumpName(seg->lump);
                 drawPatchRectDirect(
@@ -686,30 +679,25 @@ void readSaveStrings()
     auto& state = menuState();
 
     void* handle;
-    EA::Array<char, 256> name;
 
     for (int i = 0; i < load_end; i++)
     {
-#if 0
-        if (Doom::checkParm("-cdrom"))
-            //doom_sprintf(name, "c:\\doomdata\\" SAVEGAMENAME "%d.dsg", i);
-        else
-#endif
-        {
-            //doom_sprintf(name, SAVEGAMENAME"%d.dsg", i);
-            doom_strcpy(name.data(), SAVEGAMENAME);
-            doom_concat(name.data(), doom_itoa(i, 10));
-            doom_concat(name.data(), ".dsg");
-        }
+        //doom_sprintf(name, SAVEGAMENAME"%d.dsg", i);
+        auto name = concat(SAVEGAMENAME, i, ".dsg");
 
-        handle = doom_open(name.data(), "r");
+        handle = doom_open(name.c_str(), "r");
         if (handle == nullptr)
         {
-            doom_strcpy(&state.savegamestrings[i][0], EMPTYSTRING);
+            state.savegamestrings[i] = EMPTYSTRING;
             DOOM_LoadMenu[i].status = 0;
             continue;
         }
-        doom_read(handle, &state.savegamestrings[i], menuSaveStringSize);
+
+        // The description is a fixed menuSaveStringSize-byte field on disk,
+        // zero-padded; keep the text up to its first NUL.
+        EA::Array<char, menuSaveStringSize> field = {};
+        doom_read(handle, field.data(), menuSaveStringSize);
+        state.savegamestrings[i] = nameView(field.data(), menuSaveStringSize);
         doom_close(handle);
         DOOM_LoadMenu[i].status = 1;
     }
@@ -722,8 +710,7 @@ void drawLoad()
 {
     auto& state = menuState();
 
-    drawPatchDirect(
-        72, 28, 0, static_cast<Patch*>(cacheLumpName("M_LOADG")));
+    drawPatchDirect(72, 28, 0, static_cast<Patch*>(cacheLumpName("M_LOADG")));
     for (int i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
@@ -737,18 +724,15 @@ void drawLoad()
 //
 void drawSaveLoadBorder(int x, int y)
 {
-    drawPatchDirect(
-        x - 8, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSLEFT")));
+    drawPatchDirect(x - 8, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSLEFT")));
 
     for (int i = 0; i < 24; i++)
     {
-        drawPatchDirect(
-            x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSCNTR")));
+        drawPatchDirect(x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSCNTR")));
         x += 8;
     }
 
-    drawPatchDirect(
-        x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSRGHT")));
+    drawPatchDirect(x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSRGHT")));
 }
 
 //
@@ -756,20 +740,8 @@ void drawSaveLoadBorder(int x, int y)
 //
 void loadSelect(int choice)
 {
-    EA::Array<char, 256> name;
-
-#if 0
-    if (Doom::checkParm("-cdrom"))
-        //doom_sprintf(name, "c:\\doomdata\\"SAVEGAMENAME"%d.dsg", choice);
-    else
-#endif
-    {
-        //doom_sprintf(name, SAVEGAMENAME"%d.dsg", choice);
-        doom_strcpy(name.data(), SAVEGAMENAME);
-        doom_concat(name.data(), doom_itoa(choice, 10));
-        doom_concat(name.data(), ".dsg");
-    }
-    loadGame(name.data());
+    //doom_sprintf(name, SAVEGAMENAME"%d.dsg", choice);
+    loadGame(concat(SAVEGAMENAME, choice, ".dsg"));
     clearMenus();
 }
 
@@ -797,18 +769,17 @@ void drawSave()
 
     int i;
 
-    drawPatchDirect(
-        72, 28, 0, static_cast<Patch*>(cacheLumpName("M_SAVEG")));
+    drawPatchDirect(72, 28, 0, static_cast<Patch*>(cacheLumpName("M_SAVEG")));
     for (i = 0; i < load_end; i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
         writeText(
-            LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i].data());
+            LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i].c_str());
     }
 
     if (state.saveStringEnter)
     {
-        i = stringWidth(state.savegamestrings[state.saveSlot].data());
+        i = stringWidth(state.savegamestrings[state.saveSlot].c_str());
         writeText(LoadDef.x + i, LoadDef.y + LINEHEIGHT * state.saveSlot, "_");
     }
 }
@@ -820,7 +791,7 @@ void doSave(int slot)
 {
     auto& state = menuState();
 
-    saveGame(slot, state.savegamestrings[slot].data());
+    saveGame(slot, state.savegamestrings[slot]);
     clearMenus();
 
     // PICK QUICKSAVE SLOT YET?
@@ -839,11 +810,9 @@ void saveSelect(int choice)
     state.saveStringEnter = 1;
 
     state.saveSlot = choice;
-    doom_strcpy(state.saveOldString.data(), state.savegamestrings[choice].data());
-    if (!doom_strcmp(state.savegamestrings[choice].data(), EMPTYSTRING))
-        state.savegamestrings[choice][0] = 0;
-    state.saveCharIndex =
-        static_cast<int>(doom_strlen(state.savegamestrings[choice].data()));
+    state.saveOldString = state.savegamestrings[choice];
+    if (state.savegamestrings[choice] == EMPTYSTRING)
+        state.savegamestrings[choice].clear();
 }
 
 //
@@ -898,11 +867,13 @@ void quickSave()
         return;
     }
     //doom_sprintf(tempstring, Doom::QSPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring.data(), QSPROMPT_1);
-    doom_concat(state.tempstring.data(),
-                state.savegamestrings[state.quickSaveSlot].data());
-    doom_strcpy(state.tempstring.data(), QSPROMPT_2);
-    startMessage(state.tempstring.data(), quickSaveResponse, true);
+    // The lineage's last call was doom_strcpy where concat was meant, so the
+    // prompt it shows is QSPROMPT_2 alone and the savegame name never appears.
+    // Preserved, not fixed - restoring the name is a behaviour change.
+    state.tempstring =
+        concat(QSPROMPT_1, state.savegamestrings[state.quickSaveSlot]);
+    state.tempstring = QSPROMPT_2;
+    startMessage(state.tempstring.c_str(), quickSaveResponse, true);
 }
 
 //
@@ -933,11 +904,12 @@ void quickLoad()
         return;
     }
     //doom_sprintf(tempstring, Doom::QLPROMPT, savegamestrings[quickSaveSlot]);
-    doom_strcpy(state.tempstring.data(), QLPROMPT_1);
-    doom_concat(state.tempstring.data(),
-                state.savegamestrings[state.quickSaveSlot].data());
-    doom_strcpy(state.tempstring.data(), QLPROMPT_2);
-    startMessage(state.tempstring.data(), quickLoadResponse, true);
+    // Same lineage bug as quickSave above: the last doom_strcpy overwrote the
+    // name it just built. Preserved, not fixed.
+    state.tempstring =
+        concat(QLPROMPT_1, state.savegamestrings[state.quickSaveSlot]);
+    state.tempstring = QLPROMPT_2;
+    startMessage(state.tempstring.c_str(), quickLoadResponse, true);
 }
 
 //
@@ -950,14 +922,12 @@ void drawReadThis1()
     switch (gameVersion().gamemode)
     {
         case commercial:
-            drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP")));
+            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP")));
             break;
         case shareware:
         case registered:
         case retail:
-            drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP1")));
+            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP1")));
             break;
         default:
             break;
@@ -976,13 +946,11 @@ void drawReadThis2()
         case retail:
         case commercial:
             // This hack keeps us from having to change menus.
-            drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
+            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
             break;
         case shareware:
         case registered:
-            drawPatchDirect(
-                0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
+            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
             break;
         default:
             break;
@@ -997,8 +965,7 @@ void drawSound()
 {
     auto& sndset = soundSettings();
 
-    drawPatchDirect(
-        60, 38, 0, static_cast<Patch*>(cacheLumpName("M_SVOL")));
+    drawPatchDirect(60, 38, 0, static_cast<Patch*>(cacheLumpName("M_SVOL")));
 
     if (!(doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
     {
@@ -1076,8 +1043,7 @@ void musicVol(int choice)
 //
 void drawMainMenu()
 {
-    drawPatchDirect(
-        94, 2, 0, static_cast<Patch*>(cacheLumpName("M_DOOM")));
+    drawPatchDirect(94, 2, 0, static_cast<Patch*>(cacheLumpName("M_DOOM")));
 }
 
 //
@@ -1085,10 +1051,8 @@ void drawMainMenu()
 //
 void drawNewGame()
 {
-    drawPatchDirect(
-        96, 14, 0, static_cast<Patch*>(cacheLumpName("M_NEWG")));
-    drawPatchDirect(
-        54, 38, 0, static_cast<Patch*>(cacheLumpName("M_SKILL")));
+    drawPatchDirect(96, 14, 0, static_cast<Patch*>(cacheLumpName("M_NEWG")));
+    drawPatchDirect(54, 38, 0, static_cast<Patch*>(cacheLumpName("M_SKILL")));
 }
 
 void newGame(int)
@@ -1110,8 +1074,7 @@ void newGame(int)
 //
 void drawEpisode()
 {
-    drawPatchDirect(
-        54, 38, 0, static_cast<Patch*>(cacheLumpName("M_EPISOD")));
+    drawPatchDirect(54, 38, 0, static_cast<Patch*>(cacheLumpName("M_EPISOD")));
 }
 
 void verifyNightmare(int ch)
@@ -1149,7 +1112,7 @@ void episode(int choice)
     // Yet another hack...
     if ((version.gamemode == registered) && (choice > 2))
     {
-        doom_print("episode: 4th episode requires UltimateDOOM\n");
+        print("episode: 4th episode requires UltimateDOOM\n");
         choice = 0;
     }
 
@@ -1164,29 +1127,26 @@ void drawOptions()
 {
     auto& input = inputConfig();
 
-    drawPatchDirect(
-        108, 15, 0, static_cast<Patch*>(cacheLumpName("M_OPTTTL")));
+    drawPatchDirect(108, 15, 0, static_cast<Patch*>(cacheLumpName("M_OPTTTL")));
 
     //Doom::drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
     //                Doom::cacheLumpName(detailNames[detailLevel])); // Details do nothing?
 
-    drawPatchDirect(OptionsDef.x + 120,
-                          OptionsDef.y + LINEHEIGHT * messages,
-                          0,
-                          static_cast<Patch*>(cacheLumpName(
-                              msgNames[menuSettings().showMessages].data())));
-
     drawPatchDirect(
-        OptionsDef.x + 131,
-        OptionsDef.y + LINEHEIGHT * crosshair_opt,
+        OptionsDef.x + 120,
+        OptionsDef.y + LINEHEIGHT * messages,
         0,
-        static_cast<Patch*>(cacheLumpName(msgNames[input.crosshair].data())));
+        static_cast<Patch*>(cacheLumpName(msgNames[menuSettings().showMessages])));
 
-    drawPatchDirect(
-        OptionsDef.x + 147,
-        OptionsDef.y + LINEHEIGHT * always_run_opt,
-        0,
-        static_cast<Patch*>(cacheLumpName(msgNames[input.always_run].data())));
+    drawPatchDirect(OptionsDef.x + 131,
+                    OptionsDef.y + LINEHEIGHT * crosshair_opt,
+                    0,
+                    static_cast<Patch*>(cacheLumpName(msgNames[input.crosshair])));
+
+    drawPatchDirect(OptionsDef.x + 147,
+                    OptionsDef.y + LINEHEIGHT * always_run_opt,
+                    0,
+                    static_cast<Patch*>(cacheLumpName(msgNames[input.always_run])));
 
     drawThermo(OptionsDef.x,
                OptionsDef.y + LINEHEIGHT * (scrnsize + 1),
@@ -1198,11 +1158,11 @@ void drawMouseOptions()
 {
     drawCustomMenuText("TXT_MOPT", 74, 45);
 
-    drawPatchDirect(MouseOptionsDef.x + 149,
-                          MouseOptionsDef.y + LINEHEIGHT * mousemov,
-                          0,
-                          static_cast<Patch*>(cacheLumpName(
-                              msgNames[inputConfig().mousemove].data())));
+    drawPatchDirect(
+        MouseOptionsDef.x + 149,
+        MouseOptionsDef.y + LINEHEIGHT * mousemov,
+        0,
+        static_cast<Patch*>(cacheLumpName(msgNames[inputConfig().mousemove])));
 
     drawThermo(MouseOptionsDef.x,
                MouseOptionsDef.y + LINEHEIGHT * (mousesens + 1),
@@ -1348,18 +1308,16 @@ void quitDOOM(int)
     if (gameVersion().language != english)
     {
         //doom_sprintf(endstring, "%s\n\n"DOSY, endmsg[0]);
-        doom_strcpy(state.endstring.data(), endmsg[0]);
-        doom_concat(state.endstring.data(), "\n\n" DOSY);
+        state.endstring = concat(endmsg[0], "\n\n" DOSY);
     }
     else
     {
         //doom_sprintf(endstring, "%s\n\n" DOSY, endmsg[gametic % (NUM_QUITMESSAGES - 2) + 1]);
-        doom_strcpy(state.endstring.data(),
-                    endmsg[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1]);
-        doom_concat(state.endstring.data(), "\n\n" DOSY);
+        state.endstring = concat(
+            endmsg[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1], "\n\n" DOSY);
     }
 
-    startMessage(state.endstring.data(), quitResponse, true);
+    startMessage(state.endstring.c_str(), quitResponse, true);
 }
 
 void changeSensitivity(int choice)
@@ -1395,7 +1353,7 @@ void changeDetail(int)
     settings.detailLevel = 1 - settings.detailLevel;
 
     // FIXME - does not work. Remove anyway?
-    doom_print("changeDetail: low detail mode n.a.\n");
+    print("changeDetail: low detail mode n.a.\n");
 }
 
 void sizeDisplay(int choice)
@@ -1430,38 +1388,35 @@ void sizeDisplay(int choice)
 void drawThermo(int x, int y, int thermWidth, int thermDot)
 {
     int xx = x;
-    drawPatchDirect(
-        xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERML")));
+    drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERML")));
     xx += 8;
     for (int i = 0; i < thermWidth; i++)
     {
-        drawPatchDirect(
-            xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMM")));
+        drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMM")));
         xx += 8;
     }
-    drawPatchDirect(
-        xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMR")));
+    drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMR")));
 
     drawPatchDirect((x + 8) + thermDot * 8,
-                          y,
-                          0,
-                          static_cast<Patch*>(cacheLumpName("M_THERMO")));
+                    y,
+                    0,
+                    static_cast<Patch*>(cacheLumpName("M_THERMO")));
 }
 
 void drawEmptyCell(MenuDef* menu, int item)
 {
     drawPatchDirect(menu->x - 10,
-                          menu->y + item * LINEHEIGHT - 1,
-                          0,
-                          static_cast<Patch*>(cacheLumpName("M_CELL1")));
+                    menu->y + item * LINEHEIGHT - 1,
+                    0,
+                    static_cast<Patch*>(cacheLumpName("M_CELL1")));
 }
 
 void drawSelCell(MenuDef* menu, int item)
 {
     drawPatchDirect(menu->x - 10,
-                          menu->y + item * LINEHEIGHT - 1,
-                          0,
-                          static_cast<Patch*>(cacheLumpName("M_CELL2")));
+                    menu->y + item * LINEHEIGHT - 1,
+                    0,
+                    static_cast<Patch*>(cacheLumpName("M_CELL2")));
 }
 
 void startMessage(const char* string, std::function<void(int)> routine, bool input)
@@ -1489,13 +1444,13 @@ void stopMessage()
 //
 // Find string width from hu_font chars
 //
-int stringWidth(const char* string)
+int stringWidth(std::string_view string)
 {
     int w = 0;
 
-    for (int i = 0; i < doom_strlen(string); i++)
+    for (auto character: string)
     {
-        int c = doom_toupper(string[i]) - HU_FONTSTART;
+        int c = toUpper(character) - HU_FONTSTART;
         if (c < 0 || c >= HU_FONTSIZE)
             w += 4;
         else
@@ -1508,13 +1463,13 @@ int stringWidth(const char* string)
 //
 // Find string height from hu_font chars
 //
-int stringHeight(const char* string)
+int stringHeight(std::string_view string)
 {
     int height = littleEndian(hudFont().hu_font[0]->height);
 
     int h = height;
-    for (int i = 0; i < doom_strlen(string); i++)
-        if (string[i] == '\n')
+    for (auto character: string)
+        if (character == '\n')
             h += height;
 
     return h;
@@ -1523,27 +1478,23 @@ int stringHeight(const char* string)
 //
 // Write a string using the hu_font
 //
-void writeText(int x, int y, const char* string)
+void writeText(int x, int y, std::string_view string)
 {
     auto& font = hudFont();
 
-    const char* ch = string;
     int cx = x;
     int cy = y;
 
-    while (1)
+    for (auto character: string)
     {
-        int c = *ch++;
-        if (!c)
-            break;
-        if (c == '\n')
+        if (character == '\n')
         {
             cx = x;
             cy += 12;
             continue;
         }
 
-        c = doom_toupper(c) - HU_FONTSTART;
+        int c = toUpper(character) - HU_FONTSTART;
         if (c < 0 || c >= HU_FONTSIZE)
         {
             cx += 4;
@@ -1666,41 +1617,36 @@ bool menuResponder(Event* ev)
     // Save Game string input
     if (state.saveStringEnter)
     {
+        auto& entry = state.savegamestrings[state.saveSlot];
+
         switch (ch)
         {
             case KEY_BACKSPACE:
-                if (state.saveCharIndex > 0)
-                {
-                    state.saveCharIndex--;
-                    state.savegamestrings[state.saveSlot][state.saveCharIndex] = 0;
-                }
+                if (!entry.empty())
+                    entry.pop_back();
                 break;
 
             case KEY_ESCAPE:
                 state.saveStringEnter = 0;
-                doom_strcpy(&state.savegamestrings[state.saveSlot][0],
-                            state.saveOldString.data());
+                entry = state.saveOldString;
                 break;
 
             case KEY_ENTER:
                 state.saveStringEnter = 0;
-                if (state.savegamestrings[state.saveSlot][0])
+                if (!entry.empty())
                     doSave(state.saveSlot);
                 break;
 
             default:
-                ch = doom_toupper(ch);
+                ch = toUpper(ch);
                 if (ch != 32)
                     if (ch - HU_FONTSTART < 0 || ch - HU_FONTSTART >= HU_FONTSIZE)
                         break;
                 if (ch >= 32 && ch <= 127
-                    && state.saveCharIndex < menuSaveStringSize - 1
-                    && stringWidth(state.savegamestrings[state.saveSlot].data())
-                           < (menuSaveStringSize - 2) * 8)
+                    && static_cast<int>(entry.size()) < menuSaveStringSize - 1
+                    && stringWidth(entry.c_str()) < (menuSaveStringSize - 2) * 8)
                 {
-                    state.savegamestrings[state.saveSlot][state.saveCharIndex++] =
-                        ch;
-                    state.savegamestrings[state.saveSlot][state.saveCharIndex] = 0;
+                    entry += static_cast<char>(ch);
                 }
                 break;
         }
@@ -1964,34 +1910,23 @@ void drawMenu()
     static short x;
     static short y;
     short i;
-    EA::Array<char, 40> string;
 
     overlay.inhelpscreens = false;
 
     // Horiz. & Vertically center string and print it.
     if (messageToPrint)
     {
-        int start = 0;
+        auto message = std::string_view {state.messageString};
         y = 100 - stringHeight(state.messageString) / 2;
-        while (*(state.messageString + start))
+        while (!message.empty())
         {
-            for (i = 0; i < doom_strlen(state.messageString + start); i++)
-                if (*(state.messageString + start + i) == '\n')
-                {
-                    doom_memset(string.data(), 0, 40);
-                    doom_strncpy(string.data(), state.messageString + start, i);
-                    start += i + 1;
-                    break;
-                }
+            auto lineEnd = message.find('\n');
+            auto line = std::string {message.substr(0, lineEnd)};
+            message.remove_prefix(lineEnd == std::string_view::npos ? message.size()
+                                                                    : lineEnd + 1);
 
-            if (i == doom_strlen(state.messageString + start))
-            {
-                doom_strcpy(string.data(), state.messageString + start);
-                start += i;
-            }
-
-            x = 160 - stringWidth(string.data()) / 2;
-            writeText(x, y, string.data());
+            x = 160 - stringWidth(line.c_str()) / 2;
+            writeText(x, y, line.c_str());
             y += littleEndian(hudFont().hu_font[0]->height);
         }
         return;
@@ -2022,19 +1957,16 @@ void drawMenu()
     for (i = 0; i < max; i++)
     {
         MenuItem* menuitem = state.currentMenu->menuitems + i;
-        if (menuitem->name[0])
+        if (!menuitem->name.empty())
         {
-            if (doom_strncmp(menuitem->name, "TXT_", 4) == 0)
+            if (menuitem->name.starts_with("TXT_"))
             {
                 drawCustomMenuText(menuitem->name, x, y);
             }
             else
             {
                 drawPatchDirect(
-                    x,
-                    y,
-                    0,
-                    static_cast<Patch*>(cacheLumpName(menuitem->name)));
+                    x, y, 0, static_cast<Patch*>(cacheLumpName(menuitem->name)));
             }
         }
         y += LINEHEIGHT;
@@ -2042,10 +1974,9 @@ void drawMenu()
 
     // DRAW SKULL
     drawPatchDirect(x + SKULLXOFF,
-                          state.currentMenu->y - 5 + state.itemOn * LINEHEIGHT,
-                          0,
-                          static_cast<Patch*>(cacheLumpName(
-                              skullName[state.whichSkull].data())));
+                    state.currentMenu->y - 5 + state.itemOn * LINEHEIGHT,
+                    0,
+                    static_cast<Patch*>(cacheLumpName(skullName[state.whichSkull])));
 }
 
 //

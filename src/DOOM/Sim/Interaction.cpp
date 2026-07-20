@@ -72,9 +72,7 @@ bool giveAmmo(Player* player, AmmoType ammo, int num)
     {
         //fatalError ("giveAmmo: bad type %i", ammo);
 
-        doom_strcpy(error_buf, "giveAmmo: bad type ");
-        doom_concat(error_buf, doom_itoa(ammo, 10));
-        fatalError(error_buf);
+        fatalError("giveAmmo: bad type ", static_cast<int>(ammo));
     }
 
     if (player->ammo[ammo] == player->maxammo[ammo])
@@ -844,8 +842,7 @@ void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage)
         target->threshold = BASETHRESHOLD;
         if (target->state == &states[target->info->spawnstate]
             && target->info->seestate != S_NULL)
-            setMobjState(target,
-                               static_cast<StateNum>(target->info->seestate));
+            setMobjState(target, static_cast<StateNum>(target->info->seestate));
     }
 }
 } // namespace Doom

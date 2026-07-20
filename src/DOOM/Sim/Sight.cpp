@@ -1,7 +1,6 @@
 #include "Sight.h"
 #include "Level.h"
 
-#include "../Host/Platform.h" // error_buf, doom_itoa (RANGECHECK)
 #include "../Game/GameDefs.h"
 #include "MapGeometry.h" // DivLine
 #include "SimDefs.h"
@@ -131,11 +130,8 @@ bool crossSubsector(int num,
 #ifdef RANGECHECK
     if (num >= numsubsectors)
     {
-        doom_strcpy(error_buf, "Error: P_CrossSubsector: ss ");
-        doom_concat(error_buf, doom_itoa(num, 10));
-        doom_concat(error_buf, " with numss = ");
-        doom_concat(error_buf, doom_itoa(numsubsectors, 10));
-        fatalError(error_buf);
+        fatalError(
+            "Error: P_CrossSubsector: ss ", num, " with numss = ", numsubsectors);
     }
 #endif
 

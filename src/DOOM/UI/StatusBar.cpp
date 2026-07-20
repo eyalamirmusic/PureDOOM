@@ -63,6 +63,7 @@
 #include "../Game/OverlayState.h"
 #include "../Game/PlayerState.h"
 #include "../Game/Sound.h"
+#include "../Host/Text.h"
 #include "../Host/Video.h"
 #include "../Render/Main.h"
 #include "../Sim/Interaction.h"
@@ -297,9 +298,6 @@ constexpr int ST_MAXAMMO2Y = 191;
 constexpr int ST_MAXAMMO3WIDTH = ST_MAXAMMO0WIDTH;
 constexpr int ST_MAXAMMO3X = 314;
 constexpr int ST_MAXAMMO3Y = 185;
-
-// Dimensions given in characters.
-constexpr int ST_MSGWIDTH = 52;
 
 // The status bar's residual runtime state is a Doom::StatusBarState owned by the Engine
 // (StatusBarState.h); the loaded patches are a Doom::StatusBarGraphics (StatusBarGraphics.h,
@@ -557,7 +555,7 @@ bool statusBarResponder(Event* ev)
             // 'mypos' for player position
             else if (checkCheat(&cheat_mypos, ev->data1))
             {
-                static EA::Array<char, ST_MSGWIDTH> buf;
+                static std::string buf;
                 //doom_sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
                 //        players[consoleplayer].mo->angle,
                 //        players[consoleplayer].mo->x,
@@ -565,14 +563,14 @@ bool statusBarResponder(Event* ev)
                 auto& players_ = playerState();
                 const auto* mo = players_.players[players_.consoleplayer].mo;
 
-                doom_strcpy(buf.data(), "ang=0x");
-                doom_concat(buf.data(), doom_itoa((int) mo->angle.raw, 16));
-                doom_concat(buf.data(), ";x,y=(0x");
-                doom_concat(buf.data(), doom_itoa(mo->x.raw, 16));
-                doom_concat(buf.data(), ",0x");
-                doom_concat(buf.data(), doom_itoa(mo->y.raw, 16));
-                doom_concat(buf.data(), ")");
-                bar.plyr->message = buf.data();
+                buf = concat("ang=0x",
+                             hexString((int) mo->angle.raw),
+                             ";x,y=(0x",
+                             hexString(mo->x.raw),
+                             ",0x",
+                             hexString(mo->y.raw),
+                             ")");
+                bar.plyr->message = buf.c_str();
             }
         }
 
@@ -711,9 +709,9 @@ void updateFaceWidget()
             else
             {
                 angle_t badguyangle = pointToAngle2(bar.plyr->mo->x,
-                                                          bar.plyr->mo->y,
-                                                          bar.plyr->attacker->x,
-                                                          bar.plyr->attacker->y);
+                                                    bar.plyr->mo->y,
+                                                    bar.plyr->attacker->x,
+                                                    bar.plyr->attacker->y);
 
                 if (badguyangle > bar.plyr->mo->angle)
                 {
@@ -917,8 +915,7 @@ void doPaletteStuff()
     if (palette != bar.st_palette)
     {
         bar.st_palette = palette;
-        byte* pal =
-            static_cast<byte*>(cacheLumpNum(bar.lu_palette)) + palette * 768;
+        byte* pal = static_cast<byte*>(cacheLumpNum(bar.lu_palette)) + palette * 768;
         setPalette(pal);
     }
 }
@@ -1011,20 +1008,11 @@ void loadGraphics()
 {
     auto& gfx = statusBarGraphics();
 
-    EA::Array<char, 9> namebuf;
-
     // Load the numbers, tall and short
     for (int i = 0; i < 10; i++)
     {
-        //doom_sprintf(namebuf, "STTNUM%d", i);
-        doom_strcpy(namebuf.data(), "STTNUM");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
-        gfx.tallnum[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
-
-        //doom_sprintf(namebuf, "STYSNUM%d", i);
-        doom_strcpy(namebuf.data(), "STYSNUM");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
-        gfx.shortnum[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
+        gfx.tallnum[i] = static_cast<Patch*>(cacheLumpName(concat("STTNUM", i)));
+        gfx.shortnum[i] = static_cast<Patch*>(cacheLumpName(concat("STYSNUM", i)));
     }
 
     // Load percent key.
@@ -1034,10 +1022,7 @@ void loadGraphics()
     // key cards
     for (int i = 0; i < NUMCARDS; i++)
     {
-        //doom_sprintf(namebuf, "STKEYS%d", i);
-        doom_strcpy(namebuf.data(), "STKEYS");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
-        gfx.keys[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
+        gfx.keys[i] = static_cast<Patch*>(cacheLumpName(concat("STKEYS", i)));
     }
 
     // arms background
@@ -1046,22 +1031,16 @@ void loadGraphics()
     // arms ownership widgets
     for (int i = 0; i < 6; i++)
     {
-        //doom_sprintf(namebuf, "STGNUM%d", i + 2);
-        doom_strcpy(namebuf.data(), "STGNUM");
-        doom_concat(namebuf.data(), doom_itoa(i + 2, 10));
-
         // gray #
-        gfx.arms[i][0] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
+        gfx.arms[i][0] = static_cast<Patch*>(cacheLumpName(concat("STGNUM", i + 2)));
 
         // yellow #
         gfx.arms[i][1] = gfx.shortnum[i + 2];
     }
 
     // face backgrounds for different color players
-    //doom_sprintf(namebuf, "STFB%d", consoleplayer);
-    doom_strcpy(namebuf.data(), "STFB");
-    doom_concat(namebuf.data(), doom_itoa(playerState().consoleplayer, 10));
-    gfx.faceback = static_cast<Patch*>(cacheLumpName(namebuf.data()));
+    gfx.faceback = static_cast<Patch*>(
+        cacheLumpName(concat("STFB", playerState().consoleplayer)));
 
     // status bar background bits
     gfx.sbar = static_cast<Patch*>(cacheLumpName("STBAR"));
@@ -1072,40 +1051,24 @@ void loadGraphics()
     {
         for (int j = 0; j < ST_NUMSTRAIGHTFACES; j++)
         {
-            //doom_sprintf(namebuf, "STFST%d%d", i, j);
-            doom_strcpy(namebuf.data(), "STFST");
-            doom_concat(namebuf.data(), doom_itoa(i, 10));
-            doom_concat(namebuf.data(), doom_itoa(j, 10));
             gfx.faces[facenum++] =
-                static_cast<Patch*>(cacheLumpName(namebuf.data()));
+                static_cast<Patch*>(cacheLumpName(concat("STFST", i, j)));
         }
-        //doom_sprintf(namebuf, "STFTR%d0", i);        // turn right
-        doom_strcpy(namebuf.data(), "STFTR");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
-        doom_concat(namebuf.data(), "0");
+        // turn right
         gfx.faces[facenum++] =
-            static_cast<Patch*>(cacheLumpName(namebuf.data()));
-        //doom_sprintf(namebuf, "STFTL%d0", i);        // turn left
-        doom_strcpy(namebuf.data(), "STFTL");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
-        doom_concat(namebuf.data(), "0");
+            static_cast<Patch*>(cacheLumpName(concat("STFTR", i, "0")));
+        // turn left
         gfx.faces[facenum++] =
-            static_cast<Patch*>(cacheLumpName(namebuf.data()));
-        //doom_sprintf(namebuf, "STFOUCH%d", i);        // ouch!
-        doom_strcpy(namebuf.data(), "STFOUCH");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
+            static_cast<Patch*>(cacheLumpName(concat("STFTL", i, "0")));
+        // ouch!
         gfx.faces[facenum++] =
-            static_cast<Patch*>(cacheLumpName(namebuf.data()));
-        //doom_sprintf(namebuf, "STFEVL%d", i);        // evil grin ;)
-        doom_strcpy(namebuf.data(), "STFEVL");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
+            static_cast<Patch*>(cacheLumpName(concat("STFOUCH", i)));
+        // evil grin ;)
         gfx.faces[facenum++] =
-            static_cast<Patch*>(cacheLumpName(namebuf.data()));
-        //doom_sprintf(namebuf, "STFKILL%d", i);        // pissed off
-        doom_strcpy(namebuf.data(), "STFKILL");
-        doom_concat(namebuf.data(), doom_itoa(i, 10));
+            static_cast<Patch*>(cacheLumpName(concat("STFEVL", i)));
+        // pissed off
         gfx.faces[facenum++] =
-            static_cast<Patch*>(cacheLumpName(namebuf.data()));
+            static_cast<Patch*>(cacheLumpName(concat("STFKILL", i)));
     }
     gfx.faces[facenum++] = static_cast<Patch*>(cacheLumpName("STFGOD0"));
     gfx.faces[facenum++] = static_cast<Patch*>(cacheLumpName("STFDEAD0"));
@@ -1162,157 +1125,157 @@ void createWidgets()
 
     // ready weapon ammo
     initNum(widgets.w_ready,
-                  ST_AMMOX,
-                  ST_AMMOY,
-                  gfx.tallnum.data(),
-                  &bar.plyr->ammo[weaponinfo[bar.plyr->readyweapon].ammo],
-                  &bar.st_statusbaron,
-                  ST_AMMOWIDTH);
+            ST_AMMOX,
+            ST_AMMOY,
+            gfx.tallnum.data(),
+            &bar.plyr->ammo[weaponinfo[bar.plyr->readyweapon].ammo],
+            &bar.st_statusbaron,
+            ST_AMMOWIDTH);
 
     // the last weapon type
     widgets.w_ready.data = bar.plyr->readyweapon;
 
     // health percentage
     initPercent(widgets.w_health,
-                      ST_HEALTHX,
-                      ST_HEALTHY,
-                      gfx.tallnum.data(),
-                      &bar.plyr->health,
-                      &bar.st_statusbaron,
-                      gfx.tallpercent);
+                ST_HEALTHX,
+                ST_HEALTHY,
+                gfx.tallnum.data(),
+                &bar.plyr->health,
+                &bar.st_statusbaron,
+                gfx.tallpercent);
 
     // arms background
     initBinIcon(widgets.w_armsbg,
-                      ST_ARMSBGX,
-                      ST_ARMSBGY,
-                      gfx.armsbg,
-                      &bar.st_notdeathmatch,
-                      &bar.st_statusbaron);
+                ST_ARMSBGX,
+                ST_ARMSBGY,
+                gfx.armsbg,
+                &bar.st_notdeathmatch,
+                &bar.st_statusbaron);
 
     // weapons owned
     for (int i = 0; i < 6; i++)
     {
         initMultIcon(widgets.w_arms[i],
-                           ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
-                           ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
-                           gfx.arms[i].data(),
-                           &widgets.w_armsindex[i],
-                           &bar.st_armson);
+                     ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
+                     ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
+                     gfx.arms[i].data(),
+                     &widgets.w_armsindex[i],
+                     &bar.st_armson);
     }
 
     // frags sum
     initNum(widgets.w_frags,
-                  ST_FRAGSX,
-                  ST_FRAGSY,
-                  gfx.tallnum.data(),
-                  &bar.st_fragscount,
-                  &bar.st_fragson,
-                  ST_FRAGSWIDTH);
+            ST_FRAGSX,
+            ST_FRAGSY,
+            gfx.tallnum.data(),
+            &bar.st_fragscount,
+            &bar.st_fragson,
+            ST_FRAGSWIDTH);
 
     // faces
     initMultIcon(widgets.w_faces,
-                       ST_FACESX,
-                       ST_FACESY,
-                       gfx.faces.data(),
-                       &statusBarFace().st_faceindex,
-                       &bar.st_statusbaron);
+                 ST_FACESX,
+                 ST_FACESY,
+                 gfx.faces.data(),
+                 &statusBarFace().st_faceindex,
+                 &bar.st_statusbaron);
 
     // armor percentage - should be colored later
     initPercent(widgets.w_armor,
-                      ST_ARMORX,
-                      ST_ARMORY,
-                      gfx.tallnum.data(),
-                      &bar.plyr->armorpoints,
-                      &bar.st_statusbaron,
-                      gfx.tallpercent);
+                ST_ARMORX,
+                ST_ARMORY,
+                gfx.tallnum.data(),
+                &bar.plyr->armorpoints,
+                &bar.st_statusbaron,
+                gfx.tallpercent);
 
     // keyboxes 0-2
     initMultIcon(widgets.w_keyboxes[0],
-                       ST_KEY0X,
-                       ST_KEY0Y,
-                       gfx.keys.data(),
-                       &bar.keyboxes[0],
-                       &bar.st_statusbaron);
+                 ST_KEY0X,
+                 ST_KEY0Y,
+                 gfx.keys.data(),
+                 &bar.keyboxes[0],
+                 &bar.st_statusbaron);
 
     initMultIcon(widgets.w_keyboxes[1],
-                       ST_KEY1X,
-                       ST_KEY1Y,
-                       gfx.keys.data(),
-                       &bar.keyboxes[1],
-                       &bar.st_statusbaron);
+                 ST_KEY1X,
+                 ST_KEY1Y,
+                 gfx.keys.data(),
+                 &bar.keyboxes[1],
+                 &bar.st_statusbaron);
 
     initMultIcon(widgets.w_keyboxes[2],
-                       ST_KEY2X,
-                       ST_KEY2Y,
-                       gfx.keys.data(),
-                       &bar.keyboxes[2],
-                       &bar.st_statusbaron);
+                 ST_KEY2X,
+                 ST_KEY2Y,
+                 gfx.keys.data(),
+                 &bar.keyboxes[2],
+                 &bar.st_statusbaron);
 
     // ammo count (all four kinds)
     initNum(widgets.w_ammo[0],
-                  ST_AMMO0X,
-                  ST_AMMO0Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->ammo[0],
-                  &bar.st_statusbaron,
-                  ST_AMMO0WIDTH);
+            ST_AMMO0X,
+            ST_AMMO0Y,
+            gfx.shortnum.data(),
+            &bar.plyr->ammo[0],
+            &bar.st_statusbaron,
+            ST_AMMO0WIDTH);
 
     initNum(widgets.w_ammo[1],
-                  ST_AMMO1X,
-                  ST_AMMO1Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->ammo[1],
-                  &bar.st_statusbaron,
-                  ST_AMMO1WIDTH);
+            ST_AMMO1X,
+            ST_AMMO1Y,
+            gfx.shortnum.data(),
+            &bar.plyr->ammo[1],
+            &bar.st_statusbaron,
+            ST_AMMO1WIDTH);
 
     initNum(widgets.w_ammo[2],
-                  ST_AMMO2X,
-                  ST_AMMO2Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->ammo[2],
-                  &bar.st_statusbaron,
-                  ST_AMMO2WIDTH);
+            ST_AMMO2X,
+            ST_AMMO2Y,
+            gfx.shortnum.data(),
+            &bar.plyr->ammo[2],
+            &bar.st_statusbaron,
+            ST_AMMO2WIDTH);
 
     initNum(widgets.w_ammo[3],
-                  ST_AMMO3X,
-                  ST_AMMO3Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->ammo[3],
-                  &bar.st_statusbaron,
-                  ST_AMMO3WIDTH);
+            ST_AMMO3X,
+            ST_AMMO3Y,
+            gfx.shortnum.data(),
+            &bar.plyr->ammo[3],
+            &bar.st_statusbaron,
+            ST_AMMO3WIDTH);
 
     // max ammo count (all four kinds)
     initNum(widgets.w_maxammo[0],
-                  ST_MAXAMMO0X,
-                  ST_MAXAMMO0Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->maxammo[0],
-                  &bar.st_statusbaron,
-                  ST_MAXAMMO0WIDTH);
+            ST_MAXAMMO0X,
+            ST_MAXAMMO0Y,
+            gfx.shortnum.data(),
+            &bar.plyr->maxammo[0],
+            &bar.st_statusbaron,
+            ST_MAXAMMO0WIDTH);
 
     initNum(widgets.w_maxammo[1],
-                  ST_MAXAMMO1X,
-                  ST_MAXAMMO1Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->maxammo[1],
-                  &bar.st_statusbaron,
-                  ST_MAXAMMO1WIDTH);
+            ST_MAXAMMO1X,
+            ST_MAXAMMO1Y,
+            gfx.shortnum.data(),
+            &bar.plyr->maxammo[1],
+            &bar.st_statusbaron,
+            ST_MAXAMMO1WIDTH);
 
     initNum(widgets.w_maxammo[2],
-                  ST_MAXAMMO2X,
-                  ST_MAXAMMO2Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->maxammo[2],
-                  &bar.st_statusbaron,
-                  ST_MAXAMMO2WIDTH);
+            ST_MAXAMMO2X,
+            ST_MAXAMMO2Y,
+            gfx.shortnum.data(),
+            &bar.plyr->maxammo[2],
+            &bar.st_statusbaron,
+            ST_MAXAMMO2WIDTH);
 
     initNum(widgets.w_maxammo[3],
-                  ST_MAXAMMO3X,
-                  ST_MAXAMMO3Y,
-                  gfx.shortnum.data(),
-                  &bar.plyr->maxammo[3],
-                  &bar.st_statusbaron,
-                  ST_MAXAMMO3WIDTH);
+            ST_MAXAMMO3X,
+            ST_MAXAMMO3Y,
+            gfx.shortnum.data(),
+            &bar.plyr->maxammo[3],
+            &bar.st_statusbaron,
+            ST_MAXAMMO3WIDTH);
 }
 
 void startStatusBar()

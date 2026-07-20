@@ -161,8 +161,8 @@ void loadSectors(int lump)
     {
         ss->floorheight = Fixed::fromInt(littleEndian(ms->floorheight));
         ss->ceilingheight = Fixed::fromInt(littleEndian(ms->ceilingheight));
-        ss->floorpic = flatNumForName(ms->floorpic);
-        ss->ceilingpic = flatNumForName(ms->ceilingpic);
+        ss->floorpic = flatNumForName(nameView(ms->floorpic, 8));
+        ss->ceilingpic = flatNumForName(nameView(ms->ceilingpic, 8));
         ss->lightlevel = littleEndian(ms->lightlevel);
         ss->special = littleEndian(ms->special);
         ss->tag = littleEndian(ms->tag);
@@ -332,9 +332,9 @@ void loadSideDefs(int lump)
     {
         sd->textureoffset = Fixed::fromInt(littleEndian(msd->textureoffset));
         sd->rowoffset = Fixed::fromInt(littleEndian(msd->rowoffset));
-        sd->toptexture = textureNumForName(msd->toptexture);
-        sd->bottomtexture = textureNumForName(msd->bottomtexture);
-        sd->midtexture = textureNumForName(msd->midtexture);
+        sd->toptexture = textureNumForName(nameView(msd->toptexture, 8));
+        sd->bottomtexture = textureNumForName(nameView(msd->bottomtexture, 8));
+        sd->midtexture = textureNumForName(nameView(msd->midtexture, 8));
         sd->sector = &sectors[littleEndian(msd->sector)];
     }
 }
@@ -455,8 +455,6 @@ void groupLines()
 //
 void setupLevel(int episode, int map, int, Skill)
 {
-    EA::Array<char, 9> lumpname;
-
     auto& stats = levelStats();
     auto& wminfo_ = intermissionInfo().wminfo;
     auto& players_ = playerState();
@@ -488,31 +486,19 @@ void setupLevel(int episode, int map, int, Skill)
     wad().reload();
 
     // find map name
+    auto lumpname = std::string {};
+
     if (gameVersion().gamemode == commercial)
     {
         if (map < 10)
-        {
-            //doom_sprintf(lumpname, "map0%i", map);
-            doom_strcpy(lumpname.data(), "map0");
-            doom_concat(lumpname.data(), doom_itoa(map, 10));
-        }
+            lumpname = concat("map0", map);
         else
-        {
-            //doom_sprintf(lumpname, "map%i", map);
-            doom_strcpy(lumpname.data(), "map");
-            doom_concat(lumpname.data(), doom_itoa(map, 10));
-        }
+            lumpname = concat("map", map);
     }
     else
-    {
-        lumpname[0] = 'E';
-        lumpname[1] = '0' + episode;
-        lumpname[2] = 'M';
-        lumpname[3] = '0' + map;
-        lumpname[4] = 0;
-    }
+        lumpname = concat('E', char('0' + episode), 'M', char('0' + map));
 
-    int lumpnum = wad().number(lumpname.data());
+    int lumpnum = wad().number(lumpname);
 
     stats.leveltime = 0;
 

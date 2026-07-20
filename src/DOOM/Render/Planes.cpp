@@ -86,13 +86,7 @@ void mapPlane(int y, int x1, int x2)
     {
         //fatalError("Error: mapPlane: %i, %i at %i", x1, x2, y);
 
-        doom_strcpy(error_buf, "Error: mapPlane: ");
-        doom_concat(error_buf, doom_itoa(x1, 10));
-        doom_concat(error_buf, ", ");
-        doom_concat(error_buf, doom_itoa(x2, 10));
-        doom_concat(error_buf, " at ");
-        doom_concat(error_buf, doom_itoa(y, 10));
-        fatalError(error_buf);
+        fatalError("Error: mapPlane: ", x1, ", ", x2, " at ", y);
     }
 #endif
 
@@ -329,11 +323,9 @@ void drawPlanes()
         //fatalError("Error: drawPlanes: drawsegs overflow (%i)",
         //        ds_p - drawsegs);
 
-        doom_strcpy(error_buf, "Error: drawPlanes: drawsegs overflow (");
-        doom_concat(error_buf,
-                    doom_itoa(static_cast<int>(bsp.ds_p - bsp.drawsegs.data()), 10));
-        doom_concat(error_buf, ")");
-        fatalError(error_buf);
+        fatalError("Error: drawPlanes: drawsegs overflow (",
+                   static_cast<int>(bsp.ds_p - bsp.drawsegs.data()),
+                   ")");
     }
 
     if (plane.lastvisplane - plane.visplanes.data() > PlaneScratch::maxVisplanes)
@@ -341,13 +333,9 @@ void drawPlanes()
         //fatalError("Error: drawPlanes: visplane overflow (%i)",
         //        lastvisplane - visplanes);
 
-        doom_strcpy(error_buf, "Error: drawPlanes: visplane overflow (");
-        doom_concat(
-            error_buf,
-            doom_itoa(static_cast<int>(plane.lastvisplane - plane.visplanes.data()),
-                      10));
-        doom_concat(error_buf, ")");
-        fatalError(error_buf);
+        fatalError("Error: drawPlanes: visplane overflow (",
+                   static_cast<int>(plane.lastvisplane - plane.visplanes.data()),
+                   ")");
     }
 
     if (plane.lastopening - plane.openings.data() > PlaneScratch::maxOpenings)
@@ -355,13 +343,9 @@ void drawPlanes()
         //fatalError("Error: drawPlanes: opening overflow (%i)",
         //        lastopening - openings);
 
-        doom_strcpy(error_buf, "Error: drawPlanes: opening overflow (");
-        doom_concat(
-            error_buf,
-            doom_itoa(static_cast<int>(plane.lastopening - plane.openings.data()),
-                      10));
-        doom_concat(error_buf, ")");
-        fatalError(error_buf);
+        fatalError("Error: drawPlanes: opening overflow (",
+                   static_cast<int>(plane.lastopening - plane.openings.data()),
+                   ")");
     }
 #endif
 

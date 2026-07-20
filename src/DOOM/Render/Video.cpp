@@ -181,13 +181,13 @@ void markRect(int x, int y, int width, int height)
 // copyRect
 //
 void copyRect(int srcx,
-               int srcy,
-               int srcscrn,
-               int width,
-               int height,
-               int destx,
-               int desty,
-               int destscrn)
+              int srcy,
+              int srcscrn,
+              int width,
+              int height,
+              int destx,
+              int desty,
+              int destscrn)
 {
     byte* src;
     byte* dest;
@@ -236,13 +236,9 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
         || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch at %d,%d exceeds LFB\n", x, y);
-        doom_print("Patch at ");
-        doom_print(doom_itoa(x, 10));
-        doom_print(",");
-        doom_print(doom_itoa(y, 10));
-        doom_print(" exceeds LFB\n");
+        print("Patch at ", x, ",", y, " exceeds LFB\n");
         // No fatalError abort - what is up with TNT.WAD?
-        doom_print("drawPatch: bad patch (ignored)\n");
+        print("drawPatch: bad patch (ignored)\n");
         return;
     }
 #endif
@@ -258,7 +254,7 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
     for (; col < w; x++, col++, desttop++)
     {
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                             + littleEndian(patch->columnofs[col]));
+                                           + littleEndian(patch->columnofs[col]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
@@ -273,7 +269,7 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
                 dest += SCREENWIDTH;
             }
             column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
-                                                 + column->length + 4);
+                                               + column->length + 4);
         }
     }
 }
@@ -301,11 +297,7 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
         || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch origin %d,%d exceeds LFB\n", x, y);
-        doom_print("Patch origin ");
-        doom_print(doom_itoa(x, 10));
-        doom_print(",");
-        doom_print(doom_itoa(y, 10));
-        doom_print(" exceeds LFB\n");
+        print("Patch origin ", x, ",", y, " exceeds LFB\n");
         fatalError("Error: Bad drawPatch in drawPatchFlipped");
     }
 #endif
@@ -320,8 +312,9 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                             + littleEndian(patch->columnofs[w - 1 - col]));
+        column =
+            reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
+                                      + littleEndian(patch->columnofs[w - 1 - col]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
@@ -336,7 +329,7 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
                 dest += SCREENWIDTH;
             }
             column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
-                                                 + column->length + 4);
+                                               + column->length + 4);
         }
     }
 }
@@ -347,8 +340,7 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 // swap. The SHORT() this had inherited from the surrounding patch-width reads was
 // identity on a little-endian host and would have swapped a screen-space width on
 // a big-endian one.
-void drawPatchRectDirect(
-    int x, int y, int scrn, Patch* patch, int src_x, int src_w)
+void drawPatchRectDirect(int x, int y, int scrn, Patch* patch, int src_x, int src_w)
 {
     int count;
     int col;
@@ -366,13 +358,9 @@ void drawPatchRectDirect(
         || static_cast<unsigned>(scrn) > 4)
     {
         //doom_print("Patch at %d,%d exceeds LFB\n", x, y);
-        doom_print("Patch at ");
-        doom_print(doom_itoa(x, 10));
-        doom_print(",");
-        doom_print(doom_itoa(y, 10));
-        doom_print(" exceeds LFB\n");
+        print("Patch at ", x, ",", y, " exceeds LFB\n");
         // No fatalError abort - what is up with TNT.WAD?
-        doom_print("drawPatch: bad patch (ignored)\n");
+        print("drawPatch: bad patch (ignored)\n");
         return;
     }
 #endif
@@ -387,8 +375,9 @@ void drawPatchRectDirect(
 
     for (; col < w; x++, col++, desttop++)
     {
-        column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
-                                             + littleEndian(patch->columnofs[col + src_x]));
+        column =
+            reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
+                                      + littleEndian(patch->columnofs[col + src_x]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
@@ -403,7 +392,7 @@ void drawPatchRectDirect(
                 dest += SCREENWIDTH;
             }
             column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
-                                                 + column->length + 4);
+                                               + column->length + 4);
         }
     }
 }

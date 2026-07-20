@@ -95,11 +95,10 @@ void waitVBlank(int)
 //
 // fatalError
 //
-void fatalError(const char* error)
+void fatalError(const std::string& error)
 {
     // Message first.
-    if (error)
-        doom_print(error);
+    doom_print(error);
     doom_print("\n");
 
     // Shutdown. Here might be other errors.

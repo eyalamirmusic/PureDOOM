@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include <string>
 
 namespace Doom
 {
@@ -16,8 +16,8 @@ namespace Doom
 // into the Engine like any other per-run state (REFACTOR.md, Step 5).
 struct ConfigPaths
 {
-    EA::Array<char, 1024> basedefault = {}; // default config file location
-    char* defaultfile = nullptr; // the config file actually used
+    std::string basedefault; // default config file location
+    std::string defaultfile; // the config file actually used
 };
 
 ConfigPaths& configPaths();

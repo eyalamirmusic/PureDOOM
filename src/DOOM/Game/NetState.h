@@ -7,6 +7,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string>
+
 namespace Doom
 {
 // The netcode's buffers and tic bookkeeping. doomcom is the driver's shared comms block and
@@ -67,7 +69,7 @@ struct NetState
     int maxsend = 0; // BACKUPTICS/(2*ticdup)-1
     bool reboundpacket = false; // a loopback packet is queued
     NetPacket reboundstore = {}; // the loopback packet
-    EA::Array<char, 80> exitmsg = {}; // netgame exit message scratch
+    std::string exitmsg; // netgame exit message scratch; players[].message views it
     int gametime = 0; // currentTic at the last Doom::tryRunTics
     int oldentertics = 0; // entertic at the last Doom::tryRunTics (was a static)
     int frameon = 0; // rate-meter frame counter

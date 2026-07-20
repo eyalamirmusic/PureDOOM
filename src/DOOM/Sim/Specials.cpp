@@ -111,8 +111,8 @@ struct AnimDef
     // terminator would quietly become `true`, never be recognised, and the loop
     // would run off the end of the array.
     int istexture; // 0 a flat, 1 a texture, -1 ends the table
-    char endname[9];
-    char startname[9];
+    std::string_view endname;
+    std::string_view startname;
     int speed;
 };
 
@@ -203,11 +203,10 @@ void initPicAnims()
             //        animdefs[i].startname,
             //        animdefs[i].endname);
 
-            doom_strcpy(error_buf, "Error: initPicAnims: bad cycle from ");
-            doom_concat(error_buf, animdefs[i].startname);
-            doom_concat(error_buf, " to ");
-            doom_concat(error_buf, animdefs[i].endname);
-            fatalError(error_buf);
+            fatalError("Error: initPicAnims: bad cycle from ",
+                       animdefs[i].startname,
+                       " to ",
+                       animdefs[i].endname);
         }
 
         surf.lastanim->speed = animdefs[i].speed;
@@ -293,7 +292,7 @@ fixed_t findNextHighestFloor(Sector* sec, fixed_t currentheight)
         // Check for overflow. Exit.
         if (h >= MAX_ADJOINING_SECTORS)
         {
-            doom_print("Sector with more than 20 adjoining sectors\n");
+            print("Sector with more than 20 adjoining sectors\n");
             break;
         }
     }
@@ -965,9 +964,8 @@ void playerInSpecialSector(Player* player)
             //        "unknown special %i",
             //        sector->special);
 
-            doom_strcpy(error_buf, "Error: playerInSpecialSector: unknown special ");
-            doom_concat(error_buf, doom_itoa(sector->special, 10));
-            fatalError(error_buf);
+            fatalError("Error: playerInSpecialSector: unknown special ",
+                       sector->special);
             break;
         }
     };
@@ -1042,9 +1040,8 @@ void updateSpecials()
                             .bottomtexture = specials.buttonlist[i].btexture;
                         break;
                 }
-                startSound(
-                    reinterpret_cast<Mobj*>(&specials.buttonlist[i].soundorg),
-                    sfx_swtchn);
+                startSound(reinterpret_cast<Mobj*>(&specials.buttonlist[i].soundorg),
+                           sfx_swtchn);
                 doom_memset(&specials.buttonlist[i], 0, sizeof(Button));
             }
         }
@@ -1135,7 +1132,7 @@ void spawnSpecials()
     i = checkParm("-timer");
     if (i && session.deathmatch)
     {
-        int time = doom_atoi(myargv[i + 1]) * 60 * 35;
+        int time = parseInt(myargv[i + 1]) * 60 * 35;
         timer.levelTimer = true;
         timer.levelTimeCount = time;
     }

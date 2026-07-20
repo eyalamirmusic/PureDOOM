@@ -30,6 +30,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string_view>
+
 //
 // End-level timer (-TIMER option)
 //
@@ -61,10 +63,7 @@ namespace Doom
 struct FireFlicker : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override
-    {
-        return ThinkerKind::FireFlicker;
-    }
+    ThinkerKind kind() const override { return ThinkerKind::FireFlicker; }
     Sector* sector;
     int count;
     int maxlight;
@@ -92,10 +91,7 @@ namespace Doom
 struct Strobe : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override
-    {
-        return ThinkerKind::StrobeFlash;
-    }
+    ThinkerKind kind() const override { return ThinkerKind::StrobeFlash; }
     Sector* sector;
     int count;
     int minlight;
@@ -133,8 +129,8 @@ namespace Doom
 {
 struct SwitchListEntry
 {
-    EA::Array<char, 9> name1;
-    EA::Array<char, 9> name2;
+    std::string_view name1;
+    std::string_view name2;
     short episode;
 };
 } // namespace Doom

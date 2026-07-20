@@ -4,11 +4,13 @@
 
 #include <ea_data_structures/Structures/Vector.h>
 
+#include <string_view>
+
 namespace Doom
 {
 // Config I/O, file I/O, screenshots, Doom::drawText; m_misc.cpp keeps the M_ names
 // as shims.
-int drawText(int x, int y, bool direct, char* string);
+int drawText(int x, int y, bool direct, std::string_view string);
 bool writeFile(char const* name, void* source, int length);
 
 // Reads the whole file into buffer, sized to fit, and returns its length. Takes the

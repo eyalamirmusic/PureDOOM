@@ -7,6 +7,7 @@
 // the frame goldens (messages and the level name land in screens[0]).
 
 #include "../Host/Platform.h"
+#include "../Host/Text.h"
 
 #include "../Game/GameDefs.h"
 #include "HudWidgetTypes.h"
@@ -26,8 +27,7 @@ void initWidgets() {}
 
 void clearTextLine(HudTextLine& t)
 {
-    t.len = 0;
-    t.l[0] = 0;
+    t.l.clear();
     t.needsupdate = true;
 }
 
@@ -42,12 +42,11 @@ void initTextLine(HudTextLine& t, int x, int y, Patch** f, int sc)
 
 bool addCharToTextLine(HudTextLine& t, char ch)
 {
-    if (t.len == HU_MAXLINELENGTH)
+    if (static_cast<int>(t.l.size()) == HU_MAXLINELENGTH)
         return false;
     else
     {
-        t.l[t.len++] = ch;
-        t.l[t.len] = 0;
+        t.l.push_back(ch);
         t.needsupdate = 4;
         return true;
     }
@@ -55,11 +54,11 @@ bool addCharToTextLine(HudTextLine& t, char ch)
 
 bool delCharFromTextLine(HudTextLine& t)
 {
-    if (!t.len)
+    if (t.l.empty())
         return false;
     else
     {
-        t.l[--t.len] = 0;
+        t.l.pop_back();
         t.needsupdate = 4;
         return true;
     }
@@ -70,9 +69,9 @@ void drawTextLine(HudTextLine& l, bool drawcursor)
     // draw the new stuff
     auto x = l.x;
 
-    for (int i = 0; i < l.len; i++)
+    for (int i = 0; i < static_cast<int>(l.l.size()); i++)
     {
-        unsigned char c = doom_toupper(l.l[i]);
+        auto c = static_cast<unsigned char>(toUpper(l.l[i]));
         if (c != ' ' && c >= l.sc && c <= '_')
         {
             int w = littleEndian(l.f[c - l.sc]->width);
@@ -120,7 +119,7 @@ void eraseTextLine(HudTextLine& l)
             {
                 videoErase(yoffset, view.viewwindowx); // erase left border
                 videoErase(yoffset + view.viewwindowx + view.viewwidth,
-                                 view.viewwindowx);
+                           view.viewwindowx);
                 // erase right border
             }
         }
@@ -204,13 +203,13 @@ void initIText(HudInputText& it, int x, int y, Patch** font, int startchar, bool
 // The following deletion routines adhere to the left margin restriction
 void delCharFromIText(HudInputText& it)
 {
-    if (it.l.len != it.lm)
+    if (static_cast<int>(it.l.l.size()) != it.lm)
         delCharFromTextLine(it.l);
 }
 
 void eraseLineFromIText(HudInputText& it)
 {
-    while (it.lm != it.l.len)
+    while (it.lm != static_cast<int>(it.l.l.size()))
         delCharFromTextLine(it.l);
 }
 
@@ -225,7 +224,7 @@ void addPrefixToIText(HudInputText& it, char* str)
 {
     while (*str)
         addCharToTextLine(it.l, *(str++));
-    it.lm = it.l.len;
+    it.lm = static_cast<int>(it.l.l.size());
 }
 
 // wrapper function for handling general keyed input.

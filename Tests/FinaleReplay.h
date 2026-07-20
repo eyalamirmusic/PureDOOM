@@ -84,7 +84,7 @@ constexpr auto finaleStageText = 0;
 // harnesses warm the same kind of wipe out unhashed for the same reason. The
 // stage-transition wipe (text -> HELP2) is different: that one IS part of what
 // this golden pins, and Doom::finaleTicker does not run while is_wiping_screen
-// is set (doom_force_update calls Doom::updateWipe instead of Doom::doomLoop),
+// is set (Doom::forceUpdateGame calls Doom::updateWipe instead of Doom::doomLoop),
 // so it costs nothing to leave it alone and hash it with everything else.
 inline void runWipeUnhashed()
 {
@@ -127,7 +127,7 @@ inline Hashes runFinaleScript()
 
     // From here every tic is hashed. E1TEXT is long enough that
     // Doom::finaleTicker does not advance finalestage off the text crawl for
-    // about 1,570 tics (doom_strlen(finaletext) * TEXTSPEED + TEXTWAIT) - this
+    // about 1,570 tics (finaletext.size() * TEXTSPEED + TEXTWAIT) - this
     // loop drives however many that turns out to be, off the engine's own
     // finalestage rather than a hard-coded count, with headroom against a loop
     // that never advances.

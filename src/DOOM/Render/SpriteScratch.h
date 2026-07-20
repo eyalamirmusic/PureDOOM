@@ -5,6 +5,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string_view>
+
 namespace Doom
 {
 // Render/Things' private sprite state: the light-table row for the sprite being drawn
@@ -25,7 +27,7 @@ struct SpriteScratch
         nullptr; // colormap row for the current sprite's light
     EA::Array<SpriteFrame, 29> sprtemp = {}; // R_InitSpriteDefs working frames
     int maxframe = 0; // highest frame index seen while installing
-    const char* spritename = nullptr; // the sprite name being installed
+    std::string_view spritename; // the sprite name being installed
     VisSprite overflowsprite = {}; // sink for the (maxVisSprites + 1)th sprite
 };
 

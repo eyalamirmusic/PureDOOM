@@ -26,6 +26,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string>
+
 // background and foreground screen numbers
 // different from other modules.
 namespace Doom
@@ -52,8 +54,7 @@ struct HudTextLine
 
     Patch** f; // font
     int sc; // start character
-    EA::Array<char, HU_MAXLINELENGTH + 1> l; // line of text
-    int len; // current line length
+    std::string l; // line of text
 
     // whether this line needs to be udpated
     int needsupdate;

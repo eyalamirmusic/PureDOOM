@@ -29,8 +29,8 @@ struct FinaleState
     int finalestage = 0; // 0 = text, 1 = art screen, 2 = character cast
     int finalecount = 0; // tics since the stage began
 
-    const char* finaletext = nullptr; // the scrolling text for this ending
-    const char* finaleflat = nullptr; // the tiled background flat
+    std::string_view finaletext; // the scrolling text for this ending
+    std::string_view finaleflat; // the tiled background flat
 
     // The DOOM II cast call.
     int castnum = 0; // which monster in castorder is on screen

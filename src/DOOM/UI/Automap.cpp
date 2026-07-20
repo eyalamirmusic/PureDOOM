@@ -44,6 +44,7 @@
 #include "../Game/OverlayState.h"
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
+#include "../Host/Text.h"
 #include "../Wad/WadFile.h"
 
 #include "Automap.h"
@@ -369,12 +370,9 @@ void loadPics()
 {
     auto& map = automapView();
 
-    EA::Array<char, 9> namebuf;
-
     for (int i = 0; i < 10; i++)
     {
-        doom_concat(doom_strcpy(namebuf.data(), "AMMNUM"), doom_itoa(i, 10));
-        map.marknums[i] = static_cast<Patch*>(cacheLumpName(namebuf.data()));
+        map.marknums[i] = static_cast<Patch*>(cacheLumpName(concat("AMMNUM", i)));
     }
 }
 
@@ -481,7 +479,7 @@ bool automapResponder(Event* ev)
 {
     auto& map = automapView();
 
-    static EA::Array<char, 20> buffer;
+    static std::string buffer;
 
     int rc = false;
 
@@ -559,11 +557,9 @@ bool automapResponder(Event* ev)
                     const_cast<char*>(grid ? AMSTR_GRIDON : AMSTR_GRIDOFF);
                 break;
             case AM_MARKKEY:
-                doom_strcpy(buffer.data(), AMSTR_MARKEDSPOT);
-                doom_concat(buffer.data(), " ");
-                doom_concat(buffer.data(), doom_itoa(map.markpointnum, 10));
                 //doom_sprintf(buffer, "%s %d", AMSTR_MARKEDSPOT, markpointnum);
-                am_plr->message = buffer.data();
+                buffer = concat(AMSTR_MARKEDSPOT, " ", map.markpointnum);
+                am_plr->message = buffer.c_str();
                 addMark();
                 break;
             case AM_CLEARMARKKEY:
@@ -878,9 +874,7 @@ void drawFline(FLine* fl, int color)
         || fl->b.x < 0 || fl->b.x >= f_w
         || fl->b.y < 0 || fl->b.y >= f_h)
     {
-        doom_print("fuck ");
-        doom_print(doom_itoa(fuck++, 10));
-        doom_print("\r");
+        print("fuck ", fuck++, "\r");
         return;
     }
 #endif

@@ -50,15 +50,15 @@ inline float turnFor(float movement)
     return -movement * sensitivity * pi / 4096.0f;
 }
 
-inline void syncModifierKey(bool pressed, bool wasPressed, doom_key_t key)
+inline void syncModifierKey(bool pressed, bool wasPressed, Doom::Key key)
 {
     if (pressed == wasPressed)
         return;
 
     if (pressed)
-        doom_key_down(key);
+        Doom::keyDown(key);
     else
-        doom_key_up(key);
+        Doom::keyUp(key);
 }
 
 // The game's window contents: it steps the engine when the engine's own clock
@@ -144,7 +144,7 @@ struct View final : GPU::GPUView
         previousHud = hud;
 
         eacpDoomSnapshotTic();
-        doom_update();
+        Doom::updateGame();
 
         // The engine reveals a wall on the map by drawing it, and draws nothing
         // while the map is up - so vanilla's map stops filling in the moment it
@@ -221,7 +221,7 @@ struct View final : GPU::GPUView
         if (x == 0 && y == 0)
             return;
 
-        doom_mouse_move(x, y);
+        Doom::mouseMove(x, y);
 
         // Keep the fraction, so slow movement accumulates instead of rounding
         // away to nothing.
@@ -235,7 +235,7 @@ struct View final : GPU::GPUView
         // has actually run.
         if (frameChanged)
         {
-            framebuffer.update(doom_get_framebuffer(1));
+            framebuffer.update(Doom::framebuffer(1));
             updatePalette();
             updateOverlay();
             updateWipe();
@@ -570,13 +570,13 @@ struct View final : GPU::GPUView
         }
 
         if (auto key = toDoomKey(event); key != DOOM_KEY_UNKNOWN)
-            doom_key_down(key);
+            Doom::keyDown(key);
     }
 
     void keyUp(const Graphics::KeyEvent& event) override
     {
         if (auto key = toDoomKey(event); key != DOOM_KEY_UNKNOWN)
-            doom_key_up(key);
+            Doom::keyUp(key);
     }
 
     void mouseDown(const Graphics::MouseEvent& event) override
@@ -587,13 +587,13 @@ struct View final : GPU::GPUView
             return;
         }
 
-        doom_button_down(toDoomButton(event.button));
+        Doom::buttonDown(toDoomButton(event.button));
     }
 
     void mouseUp(const Graphics::MouseEvent& event) override
     {
         if (window.isMouseLocked())
-            doom_button_up(toDoomButton(event.button));
+            Doom::buttonUp(toDoomButton(event.button));
     }
 
     void mouseMoved(const Graphics::MouseEvent& event) override { aim(event); }

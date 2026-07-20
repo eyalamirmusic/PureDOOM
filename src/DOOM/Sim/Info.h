@@ -27,6 +27,10 @@
 #include "ActionFunc.h"
 #include "../Math/FixedPoint.h"
 
+#include <ea_data_structures/Structures/Array.h>
+
+#include <string_view>
+
 namespace Doom
 {
 enum SpriteNum
@@ -1162,7 +1166,7 @@ struct State
 } // namespace Doom
 
 extern Doom::State states[Doom::NUMSTATES];
-extern const char* sprnames[Doom::NUMSPRITES + 1];
+extern const EA::Array<std::string_view, Doom::NUMSPRITES> sprnames;
 
 namespace Doom
 {

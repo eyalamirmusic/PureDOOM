@@ -2,11 +2,10 @@
 
 #include "Event.h" // Event
 
+#include <string_view>
+
 namespace Doom
 {
-// How many WADs -file may add. Was d_main.h.
-constexpr int MAXWADFILES = 20;
-
 // DOOM startup + the main game loop; d_main.cpp keeps the vanilla D_ names as
 // shims. The core state d_main owns is defined at file scope in DoomMain.cpp
 // (above its namespace).
@@ -20,6 +19,6 @@ void drawPage();
 void advanceDemo();
 void doAdvanceDemo();
 void startTitle();
-void addWadFile(const char* file);
+void addWadFile(std::string_view file);
 void doomMain();
 } // namespace Doom

@@ -39,6 +39,7 @@
 #include "Hud.h"
 #include "../Math/Swap.h"
 #include "../Game/SoundData.h"
+#include "../Host/Text.h"
 #include "../Wad/WadFile.h"
 
 #include <ea_data_structures/Structures/Array.h>
@@ -181,42 +182,34 @@ EA::Array<char, 128> frenchKeyMap = {
 //
 
 EA::Array<const char*, 32> mapnames2 = // DOOM 2 map names.
-    {HUSTR_1,  HUSTR_2,  HUSTR_3,  HUSTR_4,  HUSTR_5,
-     HUSTR_6,  HUSTR_7,  HUSTR_8,  HUSTR_9,  HUSTR_10,
-     HUSTR_11,
+    {HUSTR_1,  HUSTR_2,  HUSTR_3,  HUSTR_4,  HUSTR_5,  HUSTR_6,
+     HUSTR_7,  HUSTR_8,  HUSTR_9,  HUSTR_10, HUSTR_11,
 
-     HUSTR_12, HUSTR_13, HUSTR_14, HUSTR_15, HUSTR_16,
-     HUSTR_17, HUSTR_18, HUSTR_19, HUSTR_20,
+     HUSTR_12, HUSTR_13, HUSTR_14, HUSTR_15, HUSTR_16, HUSTR_17,
+     HUSTR_18, HUSTR_19, HUSTR_20,
 
-     HUSTR_21, HUSTR_22, HUSTR_23, HUSTR_24, HUSTR_25,
-     HUSTR_26, HUSTR_27, HUSTR_28, HUSTR_29, HUSTR_30,
-     HUSTR_31, HUSTR_32};
+     HUSTR_21, HUSTR_22, HUSTR_23, HUSTR_24, HUSTR_25, HUSTR_26,
+     HUSTR_27, HUSTR_28, HUSTR_29, HUSTR_30, HUSTR_31, HUSTR_32};
 
 EA::Array<const char*, 32> mapnamesp = // Plutonia WAD map names.
-    {PHUSTR_1,  PHUSTR_2,  PHUSTR_3,  PHUSTR_4,
-     PHUSTR_5,  PHUSTR_6,  PHUSTR_7,  PHUSTR_8,
-     PHUSTR_9,  PHUSTR_10, PHUSTR_11,
+    {PHUSTR_1,  PHUSTR_2,  PHUSTR_3,  PHUSTR_4,  PHUSTR_5,  PHUSTR_6,
+     PHUSTR_7,  PHUSTR_8,  PHUSTR_9,  PHUSTR_10, PHUSTR_11,
 
-     PHUSTR_12, PHUSTR_13, PHUSTR_14, PHUSTR_15,
-     PHUSTR_16, PHUSTR_17, PHUSTR_18, PHUSTR_19,
-     PHUSTR_20,
+     PHUSTR_12, PHUSTR_13, PHUSTR_14, PHUSTR_15, PHUSTR_16, PHUSTR_17,
+     PHUSTR_18, PHUSTR_19, PHUSTR_20,
 
-     PHUSTR_21, PHUSTR_22, PHUSTR_23, PHUSTR_24,
-     PHUSTR_25, PHUSTR_26, PHUSTR_27, PHUSTR_28,
-     PHUSTR_29, PHUSTR_30, PHUSTR_31, PHUSTR_32};
+     PHUSTR_21, PHUSTR_22, PHUSTR_23, PHUSTR_24, PHUSTR_25, PHUSTR_26,
+     PHUSTR_27, PHUSTR_28, PHUSTR_29, PHUSTR_30, PHUSTR_31, PHUSTR_32};
 
 EA::Array<const char*, 32> mapnamest = // TNT WAD map names.
-    {THUSTR_1,  THUSTR_2,  THUSTR_3,  THUSTR_4,
-     THUSTR_5,  THUSTR_6,  THUSTR_7,  THUSTR_8,
-     THUSTR_9,  THUSTR_10, THUSTR_11,
+    {THUSTR_1,  THUSTR_2,  THUSTR_3,  THUSTR_4,  THUSTR_5,  THUSTR_6,
+     THUSTR_7,  THUSTR_8,  THUSTR_9,  THUSTR_10, THUSTR_11,
 
-     THUSTR_12, THUSTR_13, THUSTR_14, THUSTR_15,
-     THUSTR_16, THUSTR_17, THUSTR_18, THUSTR_19,
-     THUSTR_20,
+     THUSTR_12, THUSTR_13, THUSTR_14, THUSTR_15, THUSTR_16, THUSTR_17,
+     THUSTR_18, THUSTR_19, THUSTR_20,
 
-     THUSTR_21, THUSTR_22, THUSTR_23, THUSTR_24,
-     THUSTR_25, THUSTR_26, THUSTR_27, THUSTR_28,
-     THUSTR_29, THUSTR_30, THUSTR_31, THUSTR_32};
+     THUSTR_21, THUSTR_22, THUSTR_23, THUSTR_24, THUSTR_25, THUSTR_26,
+     THUSTR_27, THUSTR_28, THUSTR_29, THUSTR_30, THUSTR_31, THUSTR_32};
 
 // The level title for the current map, and the two positions derived from the HUD
 // font's height. These were macros until Step 9's last pass - not for any reason
@@ -261,8 +254,6 @@ void initHud()
 {
     auto& font = hudFont();
 
-    EA::Array<char, 9> buffer;
-
     if (french)
         shiftxform = french_shiftxform.data();
     else
@@ -272,15 +263,16 @@ void initHud()
     int j = HU_FONTSTART;
     for (int i = 0; i < HU_FONTSIZE; i++)
     {
-        //if (j == 40) __debugbreak();
-        //doom_sprintf(buffer, "STCFN%.3d", j++);
-        doom_strcpy(buffer.data(), "STCFN");
+        auto name = std::string {"STCFN"};
+
         if (j < 100)
-            doom_concat(buffer.data(), "0");
+            name += "0";
+
         if (j < 10)
-            doom_concat(buffer.data(), "0");
-        doom_concat(buffer.data(), doom_itoa(j++, 10));
-        font.hu_font[i] = static_cast<Patch*>(cacheLumpName(buffer.data()));
+            name += "0";
+
+        name += std::to_string(j++);
+        font.hu_font[i] = static_cast<Patch*>(cacheLumpName(name));
     }
 }
 
@@ -312,12 +304,12 @@ void startHud()
 
     // create the message widget
     initSText(msg.w_message,
-                    HU_MSGX,
-                    HU_MSGY,
-                    HU_MSGHEIGHT,
-                    font.hu_font.data(),
-                    HU_FONTSTART,
-                    &msg.message_on);
+              HU_MSGX,
+              HU_MSGY,
+              HU_MSGHEIGHT,
+              font.hu_font.data(),
+              HU_FONTSTART,
+              &msg.message_on);
 
     // create the map title widget
     initTextLine(
@@ -433,14 +425,13 @@ void hudTicker()
                     int rc = keyInIText(chat.w_inputbuffer[i], c);
                     if (rc && c == KEY_ENTER)
                     {
-                        if (chat.w_inputbuffer[i].l.len
+                        if (!chat.w_inputbuffer[i].l.l.empty()
                             && (chat.chat_dest[i] == players_.consoleplayer + 1
                                 || chat.chat_dest[i] == HU_BROADCAST))
                         {
-                            addMessageToSText(
-                                msg.w_message,
-                                player_names[i],
-                                chat.w_inputbuffer[i].l.l.data());
+                            addMessageToSText(msg.w_message,
+                                              player_names[i],
+                                              chat.w_inputbuffer[i].l.l.c_str());
 
                             msg.message_nottobefuckedwith = true;
                             msg.message_on = true;
@@ -502,10 +493,8 @@ bool hudResponder(Event* ev)
 
     bool eatkey = false;
 
-    static EA::Array<char, MAXPLAYERS> destination_keys = {HUSTR_KEYGREEN,
-                                                           HUSTR_KEYINDIGO,
-                                                           HUSTR_KEYBROWN,
-                                                           HUSTR_KEYRED};
+    static EA::Array<char, MAXPLAYERS> destination_keys = {
+        HUSTR_KEYGREEN, HUSTR_KEYINDIGO, HUSTR_KEYBROWN, HUSTR_KEYRED};
 
     auto& players_ = playerState();
 
@@ -593,8 +582,8 @@ bool hudResponder(Event* ev)
 
             // leave chat mode and notify that it was sent
             hud.chat_on = false;
-            doom_strcpy(chat.lastmessage.data(), chat_macros[c]);
-            state.plr->message = chat.lastmessage.data();
+            chat.lastmessage = chat_macros[c];
+            state.plr->message = chat.lastmessage.c_str();
             eatkey = true;
         }
         else
@@ -611,10 +600,10 @@ bool hudResponder(Event* ev)
             if (c == KEY_ENTER)
             {
                 hud.chat_on = false;
-                if (chat.w_chat.l.len)
+                if (!chat.w_chat.l.l.empty())
                 {
-                    doom_strcpy(chat.lastmessage.data(), chat.w_chat.l.l.data());
-                    state.plr->message = chat.lastmessage.data();
+                    chat.lastmessage = chat.w_chat.l.l;
+                    state.plr->message = chat.lastmessage.c_str();
                 }
             }
             else if (c == KEY_ESCAPE)

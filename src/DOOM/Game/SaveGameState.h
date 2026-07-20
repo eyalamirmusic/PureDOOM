@@ -2,8 +2,9 @@
 
 #include "../doomtype.h"
 
-#include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
+
+#include <string>
 
 namespace Doom
 {
@@ -39,7 +40,7 @@ struct SaveGameState
     EA::Vector<byte>
         loadStorage; // owns doLoadGame()'s bytes; buffer views it, see above
     byte* buffer = nullptr; // savebuffer: the block cursor walks
-    EA::Array<char, 256> name = {}; // savename: the file being saved/loaded
+    std::string name; // savename: the file being saved/loaded
 };
 
 // The one SaveGameState, a view onto the Engine's member - the same pattern as the

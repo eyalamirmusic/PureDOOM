@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -22,7 +22,6 @@
 //        This one is the original DOOM version, preserved.
 //
 //-----------------------------------------------------------------------------
-
 
 #include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
@@ -56,7 +55,7 @@ DOOM_IGNORE_CAST_FUNCTION_TYPE
 DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 
 
-const char* sprnames[NUMSPRITES + 1] = {
+const EA::Array<std::string_view, NUMSPRITES> sprnames = {
     "TROO","SHTG","PUNG","PISG","PISF","SHTF","SHT2","CHGG","CHGF","MISG",
     "MISF","SAWG","PLSG","PLSF","BFGG","BFGF","BLUD","PUFF","BAL1","BAL2",
     "PLSS","PLSE","MISL","BFS1","BFE1","BFE2","TFOG","IFOG","PLAY","POSS",
@@ -70,7 +69,7 @@ const char* sprnames[NUMSPRITES + 1] = {
     "POL3","POL1","POL6","GOR2","GOR3","GOR4","GOR5","SMIT","COL1","COL2",
     "COL3","COL4","CAND","CBRA","COL6","TRE1","TRE2","ELEC","CEYE","FSKU",
     "COL5","TBLU","TGRN","TRED","SMBT","SMGT","SMRT","HDB1","HDB2","HDB3",
-    "HDB4","HDB5","HDB6","POB1","POB2","BRS1","TLMP","TLP2",0
+    "HDB4","HDB5","HDB6","POB1","POB2","BRS1","TLMP","TLP2"
 };
 
 

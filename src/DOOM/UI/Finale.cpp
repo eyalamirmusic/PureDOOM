@@ -31,6 +31,7 @@
 // demo reaches a finale, so nothing else covers this file).
 
 #include "../Host/Platform.h"
+#include "../Host/Text.h"
 
 #include "../Game/MapSpawns.h"
 #include "../Game/Strings.h" // Data.
@@ -65,7 +66,7 @@ constexpr int TEXTWAIT = 250;
 
 struct CastInfo
 {
-    const char* name;
+    std::string_view name;
     MobjType type;
 };
 
@@ -121,7 +122,7 @@ EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
                                      {CC_CYBER, MT_CYBORG},
                                      {CC_HERO, MT_PLAYER},
 
-                                     {0, static_cast<MobjType>(0)}};
+                                     {{}, static_cast<MobjType>(0)}};
 
 //
 // startCast
@@ -281,7 +282,8 @@ void finaleTicker()
         return;
 
     if (!fin.finalestage
-        && fin.finalecount > doom_strlen(fin.finaletext) * TEXTSPEED + TEXTWAIT)
+        && fin.finalecount
+               > static_cast<int>(fin.finaletext.size()) * TEXTSPEED + TEXTWAIT)
     {
         fin.finalecount = 0;
         fin.finalestage = 1;
@@ -322,16 +324,17 @@ void textWrite()
     // draw some of the text onto the screen
     int cx = 10;
     int cy = 10;
-    const char* ch = fin.finaletext;
+    auto text = fin.finaletext;
+    std::size_t position = 0;
 
     int count = (fin.finalecount - 10) / TEXTSPEED;
     if (count < 0)
         count = 0;
     for (; count; count--)
     {
-        int c = *ch++;
-        if (!c)
+        if (position == text.size())
             break;
+        int c = text[position++];
         if (c == '\n')
         {
             cx = 10;
@@ -339,7 +342,7 @@ void textWrite()
             continue;
         }
 
-        c = doom_toupper(c) - HU_FONTSTART;
+        c = toUpper(static_cast<char>(c)) - HU_FONTSTART;
         if (c < 0 || c > HU_FONTSIZE)
         {
             cx += 4;
@@ -393,7 +396,7 @@ void castTicker()
         // switch from deathstate to next monster
         fin.castnum++;
         fin.castdeath = false;
-        if (castorder[fin.castnum].name == nullptr)
+        if (castorder[fin.castnum].name.empty())
             fin.castnum = 0;
         if (mobjinfo[castorder[fin.castnum].type].seesound)
             startSound(0, mobjinfo[castorder[fin.castnum].type].seesound);
@@ -546,7 +549,7 @@ bool castResponder(Event* ev)
     return true;
 }
 
-void castPrint(const char* text)
+void castPrint(std::string_view text)
 {
     auto& font = hudFont();
 
@@ -554,15 +557,11 @@ void castPrint(const char* text)
     int w;
 
     // find width
-    const char* ch = text;
     int width = 0;
 
-    while (ch)
+    for (auto character: text)
     {
-        c = *ch++;
-        if (!c)
-            break;
-        c = doom_toupper(c) - HU_FONTSTART;
+        c = toUpper(character) - HU_FONTSTART;
         if (c < 0 || c > HU_FONTSIZE)
         {
             width += 4;
@@ -575,13 +574,10 @@ void castPrint(const char* text)
 
     // draw it
     int cx = 160 - width / 2;
-    ch = text;
-    while (ch)
+
+    for (auto character: text)
     {
-        c = *ch++;
-        if (!c)
-            break;
-        c = doom_toupper(c) - HU_FONTSTART;
+        c = toUpper(character) - HU_FONTSTART;
         if (c < 0 || c > HU_FONTSIZE)
         {
             cx += 4;
@@ -654,8 +650,6 @@ void bunnyScroll()
 {
     auto& fin = finaleState();
 
-    EA::Array<char, 10> name;
-
     Patch* p1 = static_cast<Patch*>(cacheLumpName("PFUB2"));
     Patch* p2 = static_cast<Patch*>(cacheLumpName("PFUB1"));
 
@@ -696,13 +690,10 @@ void bunnyScroll()
         fin.laststage = stage;
     }
 
-    //doom_sprintf(name, "END%i", stage);
-    doom_strcpy(name.data(), "END");
-    doom_concat(name.data(), doom_itoa(stage, 10));
     drawPatch((SCREENWIDTH - 13 * 8) / 2,
               (SCREENHEIGHT - 8 * 8) / 2,
               0,
-              static_cast<Patch*>(cacheLumpName(name.data())));
+              static_cast<Patch*>(cacheLumpName(concat("END", stage))));
 }
 
 //

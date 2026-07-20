@@ -5,6 +5,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string_view>
+
 // The composed-texture types. Were r_data.h.
 namespace Doom
 {
@@ -83,8 +85,11 @@ void initFlats();
 void initSpriteLumps();
 void initColormaps();
 void initData();
-int flatNumForName(const char* name);
-int checkTextureNumForName(const char* name);
-int textureNumForName(const char* name);
+// A raw 8-byte map-lump name field is NOT NUL-terminated when it fills all
+// eight bytes: wrap it in nameView(field, 8) rather than letting string_view
+// run off its end (Sim/Setup.cpp is the caller this warning exists for).
+int flatNumForName(std::string_view name);
+int checkTextureNumForName(std::string_view name);
+int textureNumForName(std::string_view name);
 void precacheLevel();
 } // namespace Doom

@@ -38,22 +38,12 @@ target_link_libraries(doom-engine PUBLIC ea_data_structures)
 # that wants eacp itself links eacp itself.
 target_link_libraries(doom-engine PRIVATE eacp-core)
 
-# The engine reaches its host through function pointers, and Host/Api.cpp carries
-# a default implementation of each, gated on these. A host that wants its own
-# (audio, say) sets the pointer after doom_init instead.
-#
-# DOOM_IMPLEMENT_SOCKETS used to be in this list and is not a sixth flag: no line
-# of source has ever read it. The socket code in Host/Net.cpp gates on
-# I_NET_ENABLED, which nothing defines - so the netcode is dead in every build
-# here, and defining this said otherwise.
-target_compile_definitions(doom-engine
-        PRIVATE
-        DOOM_IMPLEMENT_PRINT
-        DOOM_IMPLEMENT_MALLOC
-        DOOM_IMPLEMENT_FILE_IO
-        DOOM_IMPLEMENT_GETTIME
-        DOOM_IMPLEMENT_EXIT
-        DOOM_IMPLEMENT_GETENV)
+# The DOOM_IMPLEMENT_* gates went with the extern "C" API: Doom::Host's
+# constructor (Host/Host.cpp) installs working defaults unconditionally, and an
+# embedder overrides members of Doom::host() instead of pre-setting pointers.
+# (Every build here defined all six, so the unconditional defaults change
+# nothing. DOOM_IMPLEMENT_SOCKETS was never read by any line of source; the
+# socket code gates on I_NET_ENABLED, which nothing defines.)
 
 # Consumers include <DOOM/DOOM.h>. The engine's own files include each other by
 # bare name, which resolves next to them.

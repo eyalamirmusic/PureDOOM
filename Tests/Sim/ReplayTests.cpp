@@ -1,6 +1,6 @@
 // The engine runs more than one scenario per process.
 //
-// The suite has always booted a fresh process per test, because doom_init cannot
+// The suite has always booted a fresh process per test, because Doom::initGame cannot
 // run twice - Z_Init would leak the 12 MB arena. That is still true. But it turns
 // out the engine never needed re-initialising to run a second scenario: loading a
 // level (Doom::initNewGame -> Doom::setupLevel) resets the whole simulation, and since Step 4

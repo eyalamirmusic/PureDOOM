@@ -3,7 +3,7 @@
 // The demo tests say *whether* the world changed. These say *what* changed: when
 // a demo desyncs at tic 48, the useful question is which primitive stopped
 // agreeing with itself, and a failing case in here answers it directly. They
-// need no WAD and no doom_init - every one of these is a pure function over a
+// need no WAD and no Doom::initGame - every one of these is a pure function over a
 // table the engine ships with - so they run in microseconds and can all share a
 // process.
 

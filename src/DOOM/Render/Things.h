@@ -3,6 +3,9 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Column, Sector
 
+#include <span>
+#include <string_view>
+
 // The vissprite pool's size. Was r_things.h.
 
 namespace Doom
@@ -11,7 +14,7 @@ namespace Doom
 void drawMaskedColumn(Column* column);
 void sortVisSprites();
 void addSprites(Sector* sec);
-void initSprites(const char** namelist);
+void initSprites(std::span<const std::string_view> namelist);
 void clearSprites();
 void drawMasked();
 } // namespace Doom

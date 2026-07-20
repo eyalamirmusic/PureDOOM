@@ -128,9 +128,7 @@ void stopChannel(int cnum);
 void initSound(int sfxVolume, int musicVolume)
 {
     //doom_print("initSound: default sfx volume %d\n", sfxVolume);
-    doom_print("initSound: default sfx volume ");
-    doom_print(doom_itoa(sfxVolume, 10));
-    doom_print("\n");
+    print("initSound: default sfx volume ", sfxVolume, "\n");
 
     // Whatever these did with DMX, these are rather dummies now.
     setChannels();
@@ -229,10 +227,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     // check for bogus sound #
     if (sfx_id < 1 || sfx_id > NUMSFX)
     {
-        //fatalError("Error: Bad sfx #: %d", sfx_id);
-        doom_strcpy(error_buf, "Error: Bad sfx #: ");
-        doom_concat(error_buf, doom_itoa(sfx_id, 10));
-        fatalError(error_buf);
+        fatalError("Error: Bad sfx #: ", sfx_id);
     }
 
     sfx = &S_sfx[sfx_id];
@@ -322,7 +317,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     // cache data if necessary
     if (!sfx->data)
     {
-        doom_print("startSoundAtVolume: 16bit and not pre-cached - wtf?\n");
+        print("startSoundAtVolume: 16bit and not pre-cached - wtf?\n");
 
         // DOS remains, 8bit handling
         //sfx->data = (void *) Doom::cacheLumpNum(sfx->lumpnum);
@@ -466,11 +461,7 @@ void setMusicVolumeLevel(int volume)
 {
     if (volume < 0 || volume > 127)
     {
-        //fatalError("Error: Attempt to set music volume at %d",
-        //        volume);
-        doom_strcpy(error_buf, "Error: Attempt to set music volume at ");
-        doom_concat(error_buf, doom_itoa(volume, 10));
-        fatalError(error_buf);
+        fatalError("Error: Attempt to set music volume at ", volume);
     }
 
     setMusicVolume(127);
@@ -482,10 +473,7 @@ void setSfxVolume(int volume)
 {
     if (volume < 0 || volume > 127)
     {
-        //fatalError("Error: Attempt to set sfx volume at %d", volume);
-        doom_strcpy(error_buf, "Error: Attempt to set sfx volume at ");
-        doom_concat(error_buf, doom_itoa(volume, 10));
-        fatalError(error_buf);
+        fatalError("Error: Attempt to set sfx volume at ", volume);
     }
 
     soundSettings().sfxVolume = volume;
@@ -502,16 +490,12 @@ void startMusic(int m_id)
 void changeMusic(int musicnum, int looping)
 {
     MusicInfo* music = nullptr;
-    EA::Array<char, 9> namebuf;
 
     auto& sound = soundState();
 
     if ((musicnum <= mus_None) || (musicnum >= NUMMUSIC))
     {
-        //fatalError("Error: Bad music number %d", musicnum);
-        doom_strcpy(error_buf, "Error: Bad music number ");
-        doom_concat(error_buf, doom_itoa(musicnum, 10));
-        fatalError(error_buf);
+        fatalError("Error: Bad music number ", musicnum);
     }
     else
         music = &S_music[musicnum];
@@ -524,12 +508,7 @@ void changeMusic(int musicnum, int looping)
 
     // get lumpnum if neccessary
     if (!music->lumpnum)
-    {
-        //doom_sprintf(namebuf, "d_%s", music->name);
-        doom_strcpy(namebuf.data(), "d_");
-        doom_concat(namebuf.data(), music->name);
-        music->lumpnum = Doom::wad().number(namebuf.data());
-    }
+        music->lumpnum = Doom::wad().number(concat("d_", music->name));
 
     // load & it
     music->data = (void*) Doom::cacheLumpNum(music->lumpnum);
@@ -569,7 +548,7 @@ void stopChannel(int cnum)
         {
 #ifdef SAWDEBUG
             if (c.sfxinfo == &S_sfx[sfx_sawful])
-                doom_print("stopped\n");
+                print("stopped\n");
 #endif
             stopSoundHost(c.handle);
         }

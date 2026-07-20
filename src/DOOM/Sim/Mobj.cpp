@@ -702,14 +702,13 @@ void spawnMapThing(MapThing* mthing)
         //        mthing->type,
         //        mthing->x, mthing->y);
 
-        doom_strcpy(error_buf, "Error: spawnMapThing: Unknown type ");
-        doom_concat(error_buf, doom_itoa(mthing->type, 10));
-        doom_concat(error_buf, " at (");
-        doom_concat(error_buf, doom_itoa(mthing->x, 10));
-        doom_concat(error_buf, ", ");
-        doom_concat(error_buf, doom_itoa(mthing->y, 10));
-        doom_concat(error_buf, ")");
-        fatalError(error_buf);
+        fatalError("Error: spawnMapThing: Unknown type ",
+                   mthing->type,
+                   " at (",
+                   mthing->x,
+                   ", ",
+                   mthing->y,
+                   ")");
     }
 
     // don't spawn keycards and players in deathmatch

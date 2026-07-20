@@ -2,7 +2,7 @@
 // (Doom::Random, Doom::WadFile, Doom::Level), with the vanilla free functions as
 // views onto its members.
 //
-// These need no doom_init - the Engine's members are trivially constructible, so
+// These need no Doom::initGame - the Engine's members are trivially constructible, so
 // engine() builds a blank one on first touch. They pin two things: that the free
 // accessors really do reach the one Engine's members (a future change that made
 // randomness() a separate singleton again would silently split the world in two,

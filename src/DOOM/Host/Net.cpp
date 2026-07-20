@@ -107,9 +107,7 @@ SOCKET UDPsocket()
     {
         // fatalError("Error: can't create socket: %s", strerror(errno));
 
-        doom_strcpy(error_buf, "Error: can't create socket: ");
-        doom_concat(error_buf, strerror(errno));
-        fatalError(error_buf);
+        fatalError("Error: can't create socket: ", strerror(errno));
     }
 
     return s;
@@ -135,9 +133,7 @@ void BindToLocalPort(SOCKET s, int port)
     {
         // fatalError("Error: BindToPort: bind: %s", strerror(errno));
 
-        doom_strcpy(error_buf, "Error: BindToPort: bind: ");
-        doom_concat(error_buf, strerror(errno));
-        fatalError(error_buf);
+        fatalError("Error: BindToPort: bind: ", strerror(errno));
     }
 }
 #endif
@@ -212,18 +208,14 @@ void PacketGet()
         {
             // fatalError("Error: GetPacket: %i", r);
 
-            doom_strcpy(error_buf, "Error: GetPacket: ");
-            doom_concat(error_buf, doom_itoa(r, 10));
-            fatalError(error_buf);
+            fatalError("Error: GetPacket: ", r);
         }
 #else
         if (errno != EWOULDBLOCK)
         {
             // fatalError("Error: GetPacket: %s", strerror(errno));
 
-            doom_strcpy(error_buf, "Error: GetPacket: ");
-            doom_concat(error_buf, strerror(errno));
-            fatalError(error_buf);
+            fatalError("Error: GetPacket: ", strerror(errno));
         }
 #endif
         net.doomcom->remotenode = -1; // no packet
@@ -236,13 +228,13 @@ void PacketGet()
         {
             // doom_print("len=%d:p=[0x%x 0x%x] \n", c, *(int*)&sw, *((int*)&sw
             // + 1));
-            doom_print("len=");
-            doom_print(doom_itoa(c, 10));
-            doom_print(":p=[0x");
-            doom_print(doom_itoa(*(int*) &sw, 16));
-            doom_print(" 0x");
-            doom_print(doom_itoa(*((int*) &sw + 1), 16));
-            doom_print("] \n");
+            print("len=",
+                  c,
+                  ":p=[0x",
+                  hexString(*(int*) &sw),
+                  " 0x",
+                  hexString(*((int*) &sw + 1)),
+                  "] \n");
         }
         first = 0;
     }
@@ -294,15 +286,14 @@ int GetLocalAddress()
     {
         // fatalError("Error: GetLocalAddress : gethostname: errno %d", errno);
 
-        doom_strcpy(error_buf, "Error: GetLocalAddress : gethostname: errno ");
-        doom_concat(error_buf, strerror(errno));
-        fatalError(error_buf);
+        fatalError("Error: GetLocalAddress : gethostname: errno ", strerror(errno));
     }
 
     hostentry = gethostbyname(hostname);
     if (!hostentry)
     {
-        fatalError("Error: GetLocalAddress : gethostbyname: couldn't get local host");
+        fatalError(
+            "Error: GetLocalAddress : gethostbyname: couldn't get local host");
     }
 
     return *(int*) hostentry->h_addr_list[0];
@@ -361,21 +352,17 @@ void initNetwork()
     p = Doom::checkParm("-port");
     if (p && p < myargc - 1)
     {
-        DOOMPORT = doom_atoi(myargv[p + 1]);
+        DOOMPORT = parseInt(myargv[p + 1]);
         // doom_print("using alternate port %i\n", DOOMPORT);
-        doom_print("using alternate port ");
-        doom_print(doom_itoa(DOOMPORT, 10));
-        doom_print("\n");
+        print("using alternate port ", DOOMPORT, "\n");
     }
 
     p = Doom::checkParm("-sendport");
     if (p && p < myargc - 1)
     {
-        DOOMPORT_SEND = doom_atoi(myargv[p + 1]);
+        DOOMPORT_SEND = parseInt(myargv[p + 1]);
         // doom_print("using alternate send port %i\n", DOOMPORT_SEND);
-        doom_print("using alternate send port ");
-        doom_print(doom_itoa(DOOMPORT_SEND, 10));
-        doom_print("\n");
+        print("using alternate send port ", DOOMPORT_SEND, "\n");
     }
 
     // parse network game options,
@@ -419,9 +406,7 @@ void initNetwork()
             {
                 // fatalError("Error: gethostbyname: couldn't find %s", myargv[i]);
 
-                doom_strcpy(error_buf, "Error: gethostbyname: couldn't find ");
-                doom_concat(error_buf, myargv[i]);
-                fatalError(error_buf);
+                fatalError("Error: gethostbyname: couldn't find ", myargv[i]);
             }
             sendaddress[net.doomcom->numnodes].sin_addr.s_addr =
                 *(int*) hostentry->h_addr_list[0];
@@ -462,9 +447,7 @@ void netCommand()
     {
         // fatalError("Error: Bad net cmd: %i\n", doomcom->command);
 
-        doom_strcpy(error_buf, "Error: Bad net cmd: ");
-        doom_concat(error_buf, doom_itoa(net.doomcom->command, 10));
-        fatalError(error_buf);
+        fatalError("Error: Bad net cmd: ", net.doomcom->command);
     }
 #endif
 }

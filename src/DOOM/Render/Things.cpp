@@ -47,8 +47,8 @@ constexpr int BASEYCENTER = 100;
 
 // Forward declarations so call order needs no rearranging.
 void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped);
-void initSpriteDefs(const char** namelist);
-void initSprites(const char** namelist);
+void initSpriteDefs(std::span<const std::string_view> namelist);
+void initSprites(std::span<const std::string_view> namelist);
 void clearSprites();
 VisSprite* newVisSprite();
 void drawMaskedColumn(Column* column);
@@ -72,10 +72,8 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
 
     if (frame >= 29 || rotation > 8)
     {
-        doom_strcpy(error_buf,
-                    "Error: R_InstallSpriteLump: Bad frame characters in lump ");
-        doom_concat(error_buf, doom_itoa(lump, 10));
-        fatalError(error_buf);
+        fatalError("Error: R_InstallSpriteLump: Bad frame characters in lump ",
+                   lump);
     }
 
     if (static_cast<int>(frame) > scratch.maxframe)
@@ -86,22 +84,20 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
         // the lump should be used for all rotations
         if (scratch.sprtemp[frame].rotate == singleRotation)
         {
-            doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-            doom_concat(error_buf, scratch.spritename);
-            doom_concat(error_buf, " frame ");
-            doom_concat(error_buf, doom_ctoa('A' + frame));
-            doom_concat(error_buf, " has multip rot=0 lump");
-            fatalError(error_buf);
+            fatalError("Error: Doom::initSprites: Sprite ",
+                       scratch.spritename,
+                       " frame ",
+                       char('A' + frame),
+                       " has multip rot=0 lump");
         }
 
         if (scratch.sprtemp[frame].rotate == eightRotations)
         {
-            doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-            doom_concat(error_buf, scratch.spritename);
-            doom_concat(error_buf, " frame ");
-            doom_concat(error_buf, doom_ctoa('A' + frame));
-            doom_concat(error_buf, " has rotations ");
-            fatalError(error_buf);
+            fatalError("Error: Doom::initSprites: Sprite ",
+                       scratch.spritename,
+                       " frame ",
+                       char('A' + frame),
+                       " has rotations ");
         }
 
         scratch.sprtemp[frame].rotate = singleRotation;
@@ -116,12 +112,11 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
     // the lump is only used for one rotation
     if (scratch.sprtemp[frame].rotate == singleRotation)
     {
-        doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-        doom_concat(error_buf, scratch.spritename);
-        doom_concat(error_buf, " frame ");
-        doom_concat(error_buf, doom_ctoa('A' + frame));
-        doom_concat(error_buf, " has rotations ");
-        fatalError(error_buf);
+        fatalError("Error: Doom::initSprites: Sprite ",
+                   scratch.spritename,
+                   " frame ",
+                   char('A' + frame),
+                   " has rotations ");
     }
 
     scratch.sprtemp[frame].rotate = eightRotations;
@@ -130,14 +125,13 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
     rotation--;
     if (scratch.sprtemp[frame].lump[rotation] != -1)
     {
-        doom_strcpy(error_buf, "Error: Doom::initSprites: Sprite ");
-        doom_concat(error_buf, scratch.spritename);
-        doom_concat(error_buf, " : ");
-        doom_concat(error_buf, doom_ctoa('A' + frame));
-        doom_concat(error_buf, " : ");
-        doom_concat(error_buf, doom_ctoa('1' + rotation));
-        doom_concat(error_buf, " ");
-        fatalError(error_buf);
+        fatalError("Error: Doom::initSprites: Sprite ",
+                   scratch.spritename,
+                   " : ",
+                   char('A' + frame),
+                   " : ",
+                   char('1' + rotation),
+                   " ");
     }
 
     scratch.sprtemp[frame].lump[rotation] = lump - gd.firstspritelump;
@@ -159,9 +153,8 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
 //  letter/number appended.
 // The rotation character can be 0 to signify no rotations.
 //
-void initSpriteDefs(const char** namelist)
+void initSpriteDefs(std::span<const std::string_view> namelist)
 {
-    const char** check;
     int i;
     int l;
     int intname;
@@ -174,12 +167,7 @@ void initSpriteDefs(const char** namelist)
     auto& gd = graphicsData();
     auto& scratch = spriteScratch();
 
-    // count the number of sprite names
-    check = namelist;
-    while (*check != nullptr)
-        check++;
-
-    gd.numsprites = static_cast<int>(check - namelist);
+    gd.numsprites = static_cast<int>(namelist.size());
 
     if (!gd.numsprites)
         return;
@@ -202,7 +190,7 @@ void initSpriteDefs(const char** namelist)
         doom_memset(scratch.sprtemp.data(), -1, sizeof(scratch.sprtemp));
 
         scratch.maxframe = -1;
-        intname = *reinterpret_cast<const int*>(namelist[i]);
+        intname = *reinterpret_cast<const int*>(namelist[i].data());
 
         // scan the lumps,
         //  filling in the frames for whatever is found
@@ -216,7 +204,7 @@ void initSpriteDefs(const char** namelist)
                 rotation = entry.name[5] - '0';
 
                 if (gameVersion().modifiedgame)
-                    patched = Doom::wad().number(entry.name.data());
+                    patched = Doom::wad().number(nameView(entry.name.data(), 8));
                 else
                     patched = l;
 
@@ -247,12 +235,10 @@ void initSpriteDefs(const char** namelist)
                 case noRotationsSeen:
                 {
                     // no rotations were found for that frame at all
-                    doom_strcpy(error_buf,
-                                "Error: Doom::initSprites: No patches found for ");
-                    doom_concat(error_buf, namelist[i]);
-                    doom_concat(error_buf, " frame ");
-                    doom_concat(error_buf, doom_ctoa(frame + 'A'));
-                    fatalError(error_buf);
+                    fatalError("Error: Doom::initSprites: No patches found for ",
+                               namelist[i],
+                               " frame ",
+                               char(frame + 'A'));
                     break;
                 }
 
@@ -265,13 +251,11 @@ void initSpriteDefs(const char** namelist)
                     for (rotation = 0; rotation < 8; rotation++)
                         if (scratch.sprtemp[frame].lump[rotation] == -1)
                         {
-                            doom_strcpy(error_buf,
-                                        "Error: Doom::initSprites: Sprite ");
-                            doom_concat(error_buf, namelist[i]);
-                            doom_concat(error_buf, " frame ");
-                            doom_concat(error_buf, doom_ctoa(frame + 'A'));
-                            doom_concat(error_buf, " is missing rotations");
-                            fatalError(error_buf);
+                            fatalError("Error: Doom::initSprites: Sprite ",
+                                       namelist[i],
+                                       " frame ",
+                                       char(frame + 'A'),
+                                       " is missing rotations");
                         }
                     break;
             }
@@ -296,7 +280,7 @@ void initSpriteDefs(const char** namelist)
 // initSprites
 // Called at program start.
 //
-void initSprites(const char** namelist)
+void initSprites(std::span<const std::string_view> namelist)
 {
     auto& sprState = spriteState();
 
@@ -513,22 +497,20 @@ void projectSprite(Mobj* thing)
     if (static_cast<unsigned>(thing->sprite)
         >= static_cast<unsigned>(graphicsData().numsprites))
     {
-        doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
-        doom_concat(error_buf, doom_itoa(thing->sprite, 10));
-        doom_concat(error_buf, " ");
-        fatalError(error_buf);
+        fatalError("Error: R_ProjectSprite: invalid sprite number ",
+                   static_cast<int>(thing->sprite),
+                   " ");
     }
 #endif
     sprdef = &sprites[thing->sprite];
 #ifdef RANGECHECK
     if ((thing->frame & FF_FRAMEMASK) >= sprdef->numframes)
     {
-        doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite frame ");
-        doom_concat(error_buf, doom_itoa(thing->sprite, 10));
-        doom_concat(error_buf, " : ");
-        doom_concat(error_buf, doom_itoa(thing->frame, 10));
-        doom_concat(error_buf, " ");
-        fatalError(error_buf);
+        fatalError("Error: R_ProjectSprite: invalid sprite frame ",
+                   static_cast<int>(thing->sprite),
+                   " : ",
+                   thing->frame,
+                   " ");
     }
 #endif
     sprframe = &sprdef->spriteframes[thing->frame & FF_FRAMEMASK];
@@ -683,22 +665,20 @@ void drawPSprite(PspDef* psp)
     if (static_cast<unsigned>(psp->state->sprite)
         >= static_cast<unsigned>(graphicsData().numsprites))
     {
-        doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite number ");
-        doom_concat(error_buf, doom_itoa(psp->state->sprite, 10));
-        doom_concat(error_buf, " ");
-        fatalError(error_buf);
+        fatalError("Error: R_ProjectSprite: invalid sprite number ",
+                   static_cast<int>(psp->state->sprite),
+                   " ");
     }
 #endif
     sprdef = &sprites[psp->state->sprite];
 #ifdef RANGECHECK
     if ((psp->state->frame & FF_FRAMEMASK) >= sprdef->numframes)
     {
-        doom_strcpy(error_buf, "Error: R_ProjectSprite: invalid sprite frame ");
-        doom_concat(error_buf, doom_itoa(psp->state->sprite, 10));
-        doom_concat(error_buf, " : ");
-        doom_concat(error_buf, doom_itoa(psp->state->frame, 10));
-        doom_concat(error_buf, " ");
-        fatalError(error_buf);
+        fatalError("Error: R_ProjectSprite: invalid sprite frame ",
+                   static_cast<int>(psp->state->sprite),
+                   " : ",
+                   psp->state->frame,
+                   " ");
     }
 #endif
     sprframe = &sprdef->spriteframes[psp->state->frame & FF_FRAMEMASK];

@@ -23,7 +23,7 @@ target_compile_definitions(doom-sim-probe PUBLIC
 
 # NanoTest registers one ctest case per test and re-runs the binary with
 # --test <name>, so each of these gets a fresh process and therefore a fresh
-# doom_init. That matters more than it sounds: the engine is a few hundred
+# Doom::initGame. That matters more than it sounds: the engine is a few hundred
 # globals and a zone allocator, and tests that shared a process would have to be
 # ordered by hand.
 nano_add_executable(SimTests

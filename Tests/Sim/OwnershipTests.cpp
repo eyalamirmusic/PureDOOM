@@ -30,7 +30,8 @@ namespace
 // never be moved. RAII there means owning the *release*, which is a destructor - and
 // this is what holds it.
 //
-// It is sharp because doom_malloc is now almost exclusively the pool's own allocator:
+// It is sharp because Doom::host().malloc is now almost exclusively the pool's own
+// allocator:
 // the RAII sweep moved nearly everything else onto EA::Vector, which allocates through
 // operator new and is not counted here. What the counter still sees besides the pool
 // is host-side and deliberately outlives the Engine - Host/System's buffer,

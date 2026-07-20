@@ -1,39 +1,31 @@
-// _WIN32, not WIN32 - see the note in Platform.h. Bare WIN32 is not a compiler
-// macro; it reaches this file only because CMake adds -DWIN32 for MSVC-style
-// drivers, so this block was one build system away from silently not applying.
-// It is load-bearing: the default file I/O below is fopen/fread/fseek, which
-// Microsoft's CRT deprecates in favour of its _s variants.
-#if defined(_WIN32)
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_NONSTDC_NO_DEPRECATE
-#endif
+// The public interface's implementation (DOOM.h): boot, the per-frame update,
+// the framebuffer/sound/midi accessors and the input entry points, plus the
+// doom_* reference bridge the engine's ~380 internal call sites go through.
+// The platform hook defaults live in Host.cpp.
 
 #include "../DOOM.h"
 
 #include "Host.h" // Doom::host(), the owner of the 13 callbacks below
 
-#include "Platform.h" // the 13 host pointers / helpers we define, for drift
+#include "Platform.h" // the 13 host references / helpers we define, for drift
 #include "../Game/DoomMain.h"
 #include "../Game/GameDefs.h"
 #include "../doomtype.h"
 #include "../Game/Args.h"
 #include "../Game/ConfigTypes.h"
 
-#include "../Game/DoomMain.h"
 #include "../Game/OverlayState.h"
 #include "../Render/ViewWindow.h"
 #include "Sound.h"
 
-// Doom::currentTic, Doom::gameFlow and Doom::inputConfig, used by doom_update and
-// the input entry points at the bottom of this file. They used to be included
-// inside the DOOM_IMPLEMENT_GETENV block, which a getenv wrapper has no use for:
-// turning that one flag off would have stopped the file compiling for reasons
-// several hundred lines away from the flag.
 #include "System.h"
 #include "../Game/GameFlow.h"
 #include "../Game/InputConfig.h"
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
+
+#include <map>
+#include <string>
 
 extern byte* screens[5];
 extern unsigned char screen_palette[256 * 3];
@@ -42,217 +34,32 @@ extern int numdefaults;
 extern signed short mixbuffer[2048];
 
 // The host output buffers, RAII-owned (Step 9): the 8-bit palette-index snapshot the
-// embedder reads, and the RGB(A)-expanded frame. Sized once in doom_init and returned
+// embedder reads, and the RGB(A)-expanded frame. Sized once in initGame and returned
 // to the embedder as raw pointers into data(), which is stable (never resized after).
 static EA::Vector<unsigned char> screen_buffer;
 static EA::Vector<unsigned char> final_screen_buffer;
 static int last_update_time = 0;
 static EA::Array<int, 3> button_states = {0};
-static EA::Array<char, 20> itoa_buf;
 
-char error_buf[260];
 int doom_flags = 0;
 
-// The 13 host callbacks now live in Doom::host() (Host.h); the vanilla names are
-// references onto its members, so doom_set_* below, doom_init's defaulting, and every
-// call site (doom_print(...), doom_malloc(...)) resolve unchanged. Bound at static-init
-// time, which constructs the host() singleton before main().
-doom_print_fn& doom_print = Doom::host().print;
-doom_malloc_fn& doom_malloc = Doom::host().malloc;
-doom_free_fn& doom_free = Doom::host().free;
-doom_open_fn& doom_open = Doom::host().open;
-doom_close_fn& doom_close = Doom::host().close;
-doom_read_fn& doom_read = Doom::host().read;
-doom_write_fn& doom_write = Doom::host().write;
-doom_seek_fn& doom_seek = Doom::host().seek;
-doom_tell_fn& doom_tell = Doom::host().tell;
-doom_eof_fn& doom_eof = Doom::host().eof;
-doom_gettime_fn& doom_gettime = Doom::host().gettime;
-doom_exit_fn& doom_exit = Doom::host().exit;
-doom_getenv_fn& doom_getenv = Doom::host().getenv;
-
-#if defined(DOOM_IMPLEMENT_PRINT)
-#include <stdio.h>
-static void doom_print_impl(const char* str)
-{
-    printf("%s", str);
-}
-#else
-static void doom_print_impl(const char* str) {}
-#endif
-
-#if defined(DOOM_IMPLEMENT_MALLOC)
-#include <stdlib.h>
-static void* doom_malloc_impl(int size)
-{
-    return malloc(static_cast<size_t>(size));
-}
-static void doom_free_impl(void* ptr)
-{
-    free(ptr);
-}
-#else
-static void* doom_malloc_impl(int size)
-{
-    return nullptr;
-}
-static void doom_free_impl(void* ptr) {}
-#endif
-
-#if defined(DOOM_IMPLEMENT_FILE_IO)
-#include <stdio.h>
-void* doom_open_impl(const char* filename, const char* mode)
-{
-    return fopen(filename, mode);
-}
-void doom_close_impl(void* handle)
-{
-    fclose(static_cast<FILE*>(handle));
-}
-int doom_read_impl(void* handle, void* buf, int count)
-{
-    return static_cast<int>(fread(buf, 1, count, static_cast<FILE*>(handle)));
-}
-int doom_write_impl(void* handle, const void* buf, int count)
-{
-    return static_cast<int>(fwrite(buf, 1, count, static_cast<FILE*>(handle)));
-}
-int doom_seek_impl(void* handle, int offset, doom_seek_t origin)
-{
-    return fseek(static_cast<FILE*>(handle), offset, origin);
-}
-int doom_tell_impl(void* handle)
-{
-    return static_cast<int>(ftell(static_cast<FILE*>(handle)));
-}
-int doom_eof_impl(void* handle)
-{
-    return feof(static_cast<FILE*>(handle));
-}
-#else
-void* doom_open_impl(const char* filename, const char* mode)
-{
-    return nullptr;
-}
-void doom_close_impl(void* handle) {}
-int doom_read_impl(void* handle, void* buf, int count)
-{
-    return -1;
-}
-int doom_write_impl(void* handle, const void* buf, int count)
-{
-    return -1;
-}
-int doom_seek_impl(void* handle, int offset, doom_seek_t origin)
-{
-    return -1;
-}
-int doom_tell_impl(void* handle)
-{
-    return -1;
-}
-int doom_eof_impl(void* handle)
-{
-    return 1;
-}
-#endif
-
-#if defined(DOOM_IMPLEMENT_GETTIME)
-// <windows.h>, not <winsock.h>. This wants SYSTEMTIME/FILETIME/GetSystemTime,
-// which are plain Win32 - winsock.h reached them only by including windows.h on
-// its way past, while also declaring Winsock *1*, which then conflicts with the
-// <WinSock2.h> in Host/Net.cpp if the two ever meet in one translation unit.
-#if defined(_WIN32)
-#include <windows.h>
-#else
-#include <sys/time.h>
-#endif
-void doom_gettime_impl(int* sec, int* usec)
-{
-#if defined(_WIN32)
-    static const unsigned long long EPOCH =
-        ((unsigned long long) 116444736000000000ULL);
-    SYSTEMTIME system_time;
-    FILETIME file_time;
-    unsigned long long time;
-    GetSystemTime(&system_time);
-    SystemTimeToFileTime(&system_time, &file_time);
-    time = ((unsigned long long) file_time.dwLowDateTime);
-    time += ((unsigned long long) file_time.dwHighDateTime) << 32;
-    *sec = (int) ((time - EPOCH) / 10000000L);
-    *usec = (int) (system_time.wMilliseconds * 1000);
-#else
-    struct timeval tp;
-
-#ifdef __linux__
-    gettimeofday(&tp, nullptr);
-#else
-    struct timezone tzp;
-    gettimeofday(&tp, &tzp);
-#endif
-
-    *sec = static_cast<int>(tp.tv_sec);
-    *usec = static_cast<int>(tp.tv_usec);
-#endif
-}
-#else
-void doom_gettime_impl(int* sec, int* usec)
-{
-    *sec = 0;
-    *usec = 0;
-}
-#endif
-
-#if defined(DOOM_IMPLEMENT_EXIT)
-#include <stdlib.h>
-void doom_exit_impl(int code)
-{
-    exit(code);
-}
-#else
-void doom_exit_impl(int code) {}
-#endif
-
-#if defined(DOOM_IMPLEMENT_GETENV)
-#include <eacp/Core/Utils/Environment.h>
-
-#include <map>
-#include <string>
-
-char* doom_getenv_impl(const char* var)
-{
-    // eacp::getEnv answers the platform question - std::getenv is deprecated by
-    // Microsoft's CRT, and there is no portable spelling of the setter at all -
-    // but it returns by value, and doom_getenv_fn hands back a bare char* the
-    // caller reads at its leisure.
-    //
-    // So each name gets its own slot. A map is what makes that safe rather than
-    // a single static buffer: references into a std::map survive inserting other
-    // keys, and DoomMain genuinely holds two of these alive at once - DOOMWADDIR
-    // is still being used to build the seven WAD search paths when HOME is read
-    // for the config path. One shared buffer would have the second call quietly
-    // rewrite the first caller's string.
-    //
-    // The value is re-read every call rather than cached, so this stays a view of
-    // the environment as it stands and not a snapshot of it at first use.
-    static auto values = std::map<std::string, std::string, std::less<>> {};
-
-    auto value = eacp::getEnv(var);
-
-    if (!value)
-        return nullptr;
-
-    auto& slot = values[var];
-    slot = std::move(*value);
-
-    return slot.data();
-}
-#else
-char* doom_getenv_impl(const char* var)
-{
-    return 0;
-}
-#endif
+// The 13 host callbacks live in Doom::host() (DOOM.h); these names are
+// references onto its members, so every internal call site (doom_print(...),
+// doom_malloc(...)) resolves unchanged. Bound at static-init time, which
+// constructs the host() singleton before main().
+Doom::PrintHandler& doom_print = Doom::host().print;
+Doom::MallocHandler& doom_malloc = Doom::host().malloc;
+Doom::FreeHandler& doom_free = Doom::host().free;
+Doom::OpenHandler& doom_open = Doom::host().open;
+Doom::CloseHandler& doom_close = Doom::host().close;
+Doom::ReadHandler& doom_read = Doom::host().read;
+Doom::WriteHandler& doom_write = Doom::host().write;
+Doom::SeekHandler& doom_seek = Doom::host().seek;
+Doom::TellHandler& doom_tell = Doom::host().tell;
+Doom::EofHandler& doom_eof = Doom::host().eof;
+Doom::GetTimeHandler& doom_gettime = Doom::host().gettime;
+Doom::ExitHandler& doom_exit = Doom::host().exit;
+Doom::GetEnvHandler& doom_getenv = Doom::host().getenv;
 
 void doom_memset(void* ptr, int value, int num)
 {
@@ -276,250 +83,19 @@ void* doom_memcpy(void* destination, const void* source, int num)
     return destination;
 }
 
-int doom_strlen(const char* str)
+namespace Doom
 {
-    int len = 0;
-    while (*str++)
-        ++len;
-    return len;
-}
-
-char* doom_concat(char* dst, const char* src)
-{
-    char* ret = dst;
-    dst += doom_strlen(dst);
-
-    while (*src)
-        *dst++ = *src++;
-    *dst = *src; // \0
-
-    return ret;
-}
-
-char* doom_strcpy(char* dst, const char* src)
-{
-    char* ret = dst;
-
-    while (*src)
-        *dst++ = *src++;
-    *dst = *src; // \0
-
-    return ret;
-}
-
-char* doom_strncpy(char* dst, const char* src, int num)
-{
-    int i = 0;
-
-    for (; i < num; ++i)
-    {
-        if (!src[i])
-            break;
-        dst[i] = src[i];
-    }
-
-    while (i < num)
-        dst[i++] = '\0';
-
-    return dst;
-}
-
-int doom_strcmp(const char* str1, const char* str2)
-{
-    int ret = 0;
-
-    while (!(ret = *(unsigned char*) str1 - *(unsigned char*) str2) && *str1)
-        ++str1, ++str2;
-
-    if (ret < 0)
-        ret = -1;
-    else if (ret > 0)
-        ret = 1;
-
-    return (ret);
-}
-
-int doom_strncmp(const char* str1, const char* str2, int n)
-{
-    int ret = 0;
-    int count = 1;
-
-    while (!(ret = *(unsigned char*) str1 - *(unsigned char*) str2) && *str1
-           && count++ < n)
-        ++str1, ++str2;
-
-    if (ret < 0)
-        ret = -1;
-    else if (ret > 0)
-        ret = 1;
-
-    return (ret);
-}
-
-int doom_toupper(int c)
-{
-    if (c >= 'a' && c <= 'z')
-        return c - 'a' + 'A';
-    return c;
-}
-
-int doom_strcasecmp(const char* str1, const char* str2)
-{
-    int ret = 0;
-
-    while (!(ret = doom_toupper(*(unsigned char*) str1)
-                   - doom_toupper(*(unsigned char*) str2))
-           && *str1)
-        ++str1, ++str2;
-
-    if (ret < 0)
-        ret = -1;
-    else if (ret > 0)
-        ret = 1;
-
-    return (ret);
-}
-
-int doom_strncasecmp(const char* str1, const char* str2, int n)
-{
-    int ret = 0;
-    int count = 1;
-
-    while (!(ret = doom_toupper(*(unsigned char*) str1)
-                   - doom_toupper(*(unsigned char*) str2))
-           && *str1 && count++ < n)
-        ++str1, ++str2;
-
-    if (ret < 0)
-        ret = -1;
-    else if (ret > 0)
-        ret = 1;
-
-    return (ret);
-}
-
-int doom_atoi(const char* str)
-{
-    int i = 0;
-    int c;
-
-    while ((c = *str++) != 0)
-    {
-        i *= 10;
-        i += c - '0';
-    }
-
-    return i;
-}
-
-int doom_atox(const char* str)
-{
-    int i = 0;
-    int c;
-
-    while ((c = *str++) != 0)
-    {
-        i *= 16;
-        if (c >= '0' && c <= '9')
-            i += c - '0';
-        else
-            i += c - 'A' + 10;
-    }
-
-    return i;
-}
-
-const char* doom_itoa(int k, int radix)
-{
-    int i = k < 0 ? -k : k;
-    if (i == 0)
-    {
-        itoa_buf[0] = '0';
-        itoa_buf[1] = '\0';
-        return itoa_buf.data();
-    }
-
-    int idx = k < 0 ? 1 : 0;
-    int j = i;
-    while (j)
-    {
-        j /= radix;
-        idx++;
-    }
-    itoa_buf[idx] = '\0';
-
-    if (radix == 10)
-    {
-        while (i)
-        {
-            itoa_buf[--idx] = '0' + (i % 10);
-            i /= 10;
-        }
-    }
-    else
-    {
-        while (i)
-        {
-            int k = (i & 0xF);
-            if (k >= 10)
-                itoa_buf[--idx] = 'A' + ((i & 0xF) - 10);
-            else
-                itoa_buf[--idx] = '0' + (i & 0xF);
-            i >>= 4;
-        }
-    }
-
-    if (k < 0)
-        itoa_buf[0] = '-';
-
-    return itoa_buf.data();
-}
-
-const char* doom_ctoa(char c)
-{
-    itoa_buf[0] = c;
-    itoa_buf[1] = '\0';
-    return itoa_buf.data();
-}
-
-const char* doom_ptoa(void* p)
-{
-    int idx = 0;
-    unsigned long long i = (unsigned long long) p;
-
-    itoa_buf[idx++] = '0';
-    itoa_buf[idx++] = 'x';
-
-    while (i)
-    {
-        int k = (i & 0xF);
-        if (k >= 10)
-            itoa_buf[idx++] = 'A' + ((i & 0xF) - 10);
-        else
-            itoa_buf[idx++] = '0' + (i & 0xF);
-        i >>= 4;
-    }
-
-    itoa_buf[idx] = '\0';
-    return itoa_buf.data();
-}
-
-int doom_fprint(void* handle, const char* str)
-{
-    return doom_write(handle, str, doom_strlen(str));
-}
-
-static Doom::ConfigDefault* get_default(const char* name)
+static ConfigDefault* getDefault(std::string_view name)
 {
     for (int i = 0; i < numdefaults; ++i)
     {
-        if (doom_strcmp(defaults[i].name, name) == 0)
+        if (name == defaults[i].name)
             return &defaults[i];
     }
-    return 0;
+    return nullptr;
 }
 
-void doom_set_resolution(int width, int height)
+void setResolution(int width, int height)
 {
     if (width <= 0 || height <= 0)
         return;
@@ -527,155 +103,87 @@ void doom_set_resolution(int width, int height)
     // Doom::SCREENHEIGHT = height;
 }
 
-void doom_set_default_int(const char* name, int value)
+void setDefaultInt(std::string_view name, int value)
 {
-    Doom::ConfigDefault* def = get_default(name);
+    ConfigDefault* def = getDefault(name);
     if (!def)
         return;
     def->defaultvalue = value;
 }
 
-void doom_set_default_string(const char* name, const char* value)
+void setDefaultString(std::string_view name, std::string_view value)
 {
-    Doom::ConfigDefault* def = get_default(name);
+    ConfigDefault* def = getDefault(name);
     if (!def)
         return;
-    def->default_text_value = value;
+
+    // The table stores a const char* read for the life of the process; own a
+    // copy per name (map nodes never move, so the pointer stays valid).
+    static auto overrides = std::map<std::string, std::string, std::less<>> {};
+    auto& owned = overrides[std::string {name}];
+    owned = value;
+    def->default_text_value = owned.c_str();
 }
 
-void doom_set_print(doom_print_fn print_fn)
+void initGame(int argc, char** argv, int flags)
 {
-    doom_print = print_fn;
-}
-
-void doom_set_malloc(doom_malloc_fn malloc_fn, doom_free_fn free_fn)
-{
-    doom_malloc = malloc_fn;
-    doom_free = free_fn;
-}
-
-void doom_set_file_io(doom_open_fn open_fn,
-                      doom_close_fn close_fn,
-                      doom_read_fn read_fn,
-                      doom_write_fn write_fn,
-                      doom_seek_fn seek_fn,
-                      doom_tell_fn tell_fn,
-                      doom_eof_fn eof_fn)
-{
-    doom_open = open_fn;
-    doom_close = close_fn;
-    doom_read = read_fn;
-    doom_write = write_fn;
-    doom_seek = seek_fn;
-    doom_tell = tell_fn;
-    doom_eof = eof_fn;
-}
-
-void doom_set_gettime(doom_gettime_fn gettime_fn)
-{
-    doom_gettime = gettime_fn;
-}
-
-void doom_set_exit(doom_exit_fn exit_fn)
-{
-    doom_exit = exit_fn;
-}
-
-void doom_set_getenv(doom_getenv_fn getenv_fn)
-{
-    doom_getenv = getenv_fn;
-}
-
-void doom_init(int argc, char** argv, int flags)
-{
-    if (!doom_print)
-        doom_print = doom_print_impl;
-    if (!doom_malloc)
-        doom_malloc = doom_malloc_impl;
-    if (!doom_free)
-        doom_free = doom_free_impl;
-    if (!doom_open)
-        doom_open = doom_open_impl;
-    if (!doom_close)
-        doom_close = doom_close_impl;
-    if (!doom_read)
-        doom_read = doom_read_impl;
-    if (!doom_write)
-        doom_write = doom_write_impl;
-    if (!doom_seek)
-        doom_seek = doom_seek_impl;
-    if (!doom_tell)
-        doom_tell = doom_tell_impl;
-    if (!doom_eof)
-        doom_eof = doom_eof_impl;
-    if (!doom_gettime)
-        doom_gettime = doom_gettime_impl;
-    if (!doom_exit)
-        doom_exit = doom_exit_impl;
-    if (!doom_getenv)
-        doom_getenv = doom_getenv_impl;
-
-    screen_buffer.resize(Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
-    final_screen_buffer.resize(Doom::SCREENWIDTH * Doom::SCREENHEIGHT * 4);
-    last_update_time = Doom::currentTic();
+    screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT);
+    final_screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT * 4);
+    last_update_time = currentTic();
 
     myargc = argc;
     myargv = argv;
     doom_flags = flags;
 
-    Doom::doomMain();
+    doomMain();
 }
 
-void doom_update()
+void updateGame()
 {
-    int now = Doom::currentTic();
+    int now = currentTic();
     int delta_time = now - last_update_time;
 
     while (delta_time-- > 0)
     {
-        if (Doom::gameFlow().is_wiping_screen)
-            Doom::updateWipe();
+        if (gameFlow().is_wiping_screen)
+            updateWipe();
         else
-            Doom::doomLoop();
+            doomLoop();
     }
 
     last_update_time = now;
 }
 
-void doom_force_update()
+void forceUpdateGame()
 {
-    if (Doom::gameFlow().is_wiping_screen)
-        Doom::updateWipe();
+    if (gameFlow().is_wiping_screen)
+        updateWipe();
     else
-        Doom::doomLoop();
+        doomLoop();
 }
 
-const unsigned char* doom_get_framebuffer(int channels)
+const unsigned char* framebuffer(int channels)
 {
-    doom_memcpy(
-        screen_buffer.data(), screens[0], Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
+    doom_memcpy(screen_buffer.data(), screens[0], SCREENWIDTH * SCREENHEIGHT);
 
     // Draw Doom::inputConfig().crosshair
-    if (Doom::inputConfig().crosshair && !Doom::overlayState().menuactive
-        && Doom::gameFlow().gamestate == Doom::GS_LEVEL
-        && !Doom::overlayState().automapactive)
+    if (inputConfig().crosshair && !overlayState().menuactive
+        && gameFlow().gamestate == GS_LEVEL && !overlayState().automapactive)
     {
         int y;
-        if (Doom::viewWindow().setblocks == 11)
-            y = Doom::SCREENHEIGHT / 2 + 8;
+        if (viewWindow().setblocks == 11)
+            y = SCREENHEIGHT / 2 + 8;
         else
-            y = Doom::SCREENHEIGHT / 2 - 8;
+            y = SCREENHEIGHT / 2 - 8;
         for (int i = 0; i < 2; ++i)
         {
-            screen_buffer[Doom::SCREENWIDTH / 2 - 2 - i + y * Doom::SCREENWIDTH] = 4;
-            screen_buffer[Doom::SCREENWIDTH / 2 + 2 + i + y * Doom::SCREENWIDTH] = 4;
+            screen_buffer[SCREENWIDTH / 2 - 2 - i + y * SCREENWIDTH] = 4;
+            screen_buffer[SCREENWIDTH / 2 + 2 + i + y * SCREENWIDTH] = 4;
         }
         for (int i = 0; i < 2; ++i)
         {
-            screen_buffer[Doom::SCREENWIDTH / 2 + (y - 2 - i) * Doom::SCREENWIDTH] =
-                4;
-            screen_buffer[Doom::SCREENWIDTH / 2 + (y + 2 + i) * Doom::SCREENWIDTH] =
-                4;
+            screen_buffer[SCREENWIDTH / 2 + (y - 2 - i) * SCREENWIDTH] = 4;
+            screen_buffer[SCREENWIDTH / 2 + (y + 2 + i) * SCREENWIDTH] = 4;
         }
     }
 
@@ -685,7 +193,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
     else if (channels == 3)
     {
-        for (int i = 0, len = Doom::SCREENWIDTH * Doom::SCREENHEIGHT; i < len; ++i)
+        for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
         {
             int k = i * 3;
             int kpal = screen_buffer[i] * 3;
@@ -697,7 +205,7 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
     else if (channels == 4)
     {
-        for (int i = 0, len = Doom::SCREENWIDTH * Doom::SCREENHEIGHT; i < len; ++i)
+        for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
         {
             int k = i * 4;
             int kpal = screen_buffer[i] * 3;
@@ -714,51 +222,51 @@ const unsigned char* doom_get_framebuffer(int channels)
     }
 }
 
-unsigned long doom_tick_midi()
+unsigned long tickMidi()
 {
-    return Doom::tickSong();
+    return tickSong();
 }
 
-short* doom_get_sound_buffer()
+short* soundBuffer()
 {
-    Doom::updateSound();
+    updateSound();
     return mixbuffer;
 }
 
-void doom_key_down(doom_key_t key)
+void keyDown(Key key)
 {
-    Doom::Event event;
-    event.type = Doom::ev_keydown;
+    Event event;
+    event.type = ev_keydown;
     event.data1 = static_cast<int>(key);
-    Doom::postEvent(&event);
+    postEvent(&event);
 }
 
-void doom_key_up(doom_key_t key)
+void keyUp(Key key)
 {
-    Doom::Event event;
-    event.type = Doom::ev_keyup;
+    Event event;
+    event.type = ev_keyup;
     event.data1 = static_cast<int>(key);
-    Doom::postEvent(&event);
+    postEvent(&event);
 }
 
-void doom_button_down(doom_button_t button)
+void buttonDown(MouseButton button)
 {
     button_states[button] = 1;
 
-    Doom::Event event;
-    event.type = Doom::ev_mouse;
+    Event event;
+    event.type = ev_mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = event.data3 = 0;
-    Doom::postEvent(&event);
+    postEvent(&event);
 }
 
-void doom_button_up(doom_button_t button)
+void buttonUp(MouseButton button)
 {
     button_states[button] = 0;
 
-    Doom::Event event;
-    event.type = Doom::ev_mouse;
+    Event event;
+    event.type = ev_mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
 
@@ -766,21 +274,22 @@ void doom_button_up(doom_button_t button)
                   ^ (button_states[1] ? 2 : 0) ^ (button_states[2] ? 4 : 0);
 
     event.data2 = event.data3 = 0;
-    Doom::postEvent(&event);
+    postEvent(&event);
 }
 
-void doom_mouse_move(int delta_x, int delta_y)
+void mouseMove(int deltaX, int deltaY)
 {
-    Doom::Event event;
+    Event event;
 
-    event.type = Doom::ev_mouse;
+    event.type = ev_mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
-    event.data2 = delta_x;
-    event.data3 = -delta_y;
+    event.data2 = deltaX;
+    event.data3 = -deltaY;
 
     if (event.data2 || event.data3)
     {
-        Doom::postEvent(&event);
+        postEvent(&event);
     }
 }
+} // namespace Doom

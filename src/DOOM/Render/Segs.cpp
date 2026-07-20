@@ -376,11 +376,7 @@ void storeWallRange(int start, int stop)
     {
         //fatalError("Error: Bad R_RenderWallRange: %i to %i", start, stop);
 
-        doom_strcpy(error_buf, "Error: Bad R_RenderWallRange: ");
-        doom_concat(error_buf, doom_itoa(start, 10));
-        doom_concat(error_buf, " to ");
-        doom_concat(error_buf, doom_itoa(stop, 10));
-        fatalError(error_buf);
+        fatalError("Error: Bad R_RenderWallRange: ", start, " to ", stop);
     }
 #endif
 

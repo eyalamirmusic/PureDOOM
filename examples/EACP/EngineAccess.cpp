@@ -46,6 +46,8 @@
 #include <DOOM/UI/MenuSettings.h>
 #include <DOOM/Wad/WadFile.h>
 
+#include <cstring>
+
 // Engine globals that no header declares. DOOM.c reaches them the same way, so
 #include <DOOM/UI/Menu.h>
 // this is the house style rather than a workaround - but they are the natural
@@ -325,7 +327,7 @@ int eacpDoomDarkenRow()
     // Doom::drawMenu only reaches its darkening once it is actually showing a menu: a
     // confirmation prompt draws its text and returns before then.
     if (Doom::overlayState().menuactive && !messageToPrint
-        && (doom_flags & DOOM_FLAG_MENU_DARKEN_BG))
+        && (doom_flags & Doom::DOOM_FLAG_MENU_DARKEN_BG))
         return EACP_DOOM_MENU_DARKEN_ROW;
 
     return 0;
@@ -402,7 +404,7 @@ int eacpDoomBuildOverlay(unsigned char* outRgba)
     // Left to the GPU view, which can darken at full resolution and exactly (see
     // eacpDoomDarkenRow). Were it left on, it would write to all 64000 pixels and
     // the whole screen would come back as covered.
-    doom_flags &= ~DOOM_FLAG_MENU_DARKEN_BG;
+    doom_flags &= ~Doom::DOOM_FLAG_MENU_DARKEN_BG;
 
     eacpCaptureLayer(eacpDrawUnderLayers, eacpUnderIndex, eacpUnderMask);
     eacpCaptureLayer(Doom::drawMenu, eacpMenuIndex, eacpMenuMask);
@@ -439,7 +441,7 @@ void eacpDoomBindKeys()
         Doom::ConfigDefault* entry = &defaults[i];
 
         if (entry->defaultvalue != Doom::STRING_VALUE
-            && doom_strncmp(entry->name, "key_", 4) == 0)
+            && std::strncmp(entry->name, "key_", 4) == 0)
         {
             *entry->location = entry->defaultvalue;
         }

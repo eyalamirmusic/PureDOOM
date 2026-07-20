@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h> // malloc / free, for the counting allocator
 
+#include <string_view>
 #include <vector>
 
 // The live palette. i_video.c defines it and no header declares it; DOOM.c and
@@ -49,9 +50,9 @@
 #include <DOOM/Sim/Movement.h>
 extern unsigned char screen_palette[256 * 3];
 
-// Doom::fatalError reports through doom_exit, which by default takes the process with
-// it. A test wants the failure, not the corpse, so the engine is entered under
-// a setjmp and an abort unwinds back out to the caller.
+// Doom::fatalError reports through Doom::host().exit, which by default takes the
+// process with it. A test wants the failure, not the corpse, so the engine is
+// entered under a setjmp and an abort unwinds back out to the caller.
 static jmp_buf simAbort;
 static int simBooted;
 
@@ -62,12 +63,12 @@ static void simOnExit(int code)
 }
 
 // The engine narrates its startup at length, which drowns the test output.
-static void simOnPrint(const char* text)
+static void simOnPrint(std::string_view text)
 {
     (void) text;
 }
 
-// The engine does not copy its argv - doom_init keeps the pointer, and
+// The engine does not copy its argv - Doom::initGame keeps the pointer, and
 // Doom::checkParm walks it for the rest of the run. Doom::spawnSpecials asks for "-avg"
 // on every level load, which is long after the function that booted the engine
 // has returned, so the array has to outlive it. Static, therefore, and not on
@@ -87,15 +88,15 @@ static char* simArgv[] = {simProgram, simConfigFlag, simConfigFile};
 // script to run over.
 static int simBootInternal(const char* demoLump, int keepAttract)
 {
-    // The engine is several hundred globals and a zone allocator, and doom_init
-    // does not undo any of it: a second boot in one process quietly simulates
-    // nothing. Each test therefore needs a process of its own, which is what
-    // NanoTest's ctest integration gives it - one case per test, re-running the
-    // binary with --test. Running the binary bare puts every test in one
-    // process, so say so rather than record an empty golden.
+    // The engine is several hundred globals and a zone allocator, and
+    // Doom::initGame does not undo any of it: a second boot in one process
+    // quietly simulates nothing. Each test therefore needs a process of its own,
+    // which is what NanoTest's ctest integration gives it - one case per test,
+    // re-running the binary with --test. Running the binary bare puts every test
+    // in one process, so say so rather than record an empty golden.
     if (simBooted)
     {
-        // Not through doom_print: the first boot silenced it.
+        // Not through Doom::host().print: the first boot silenced it.
         fputs("\nThe engine cannot be booted twice in one process.\n"
               "Run these through ctest, which gives each test its own:\n"
               "    ctest --test-dir build-tests -R Sim\n"
@@ -107,17 +108,18 @@ static int simBootInternal(const char* demoLump, int keepAttract)
     if (setjmp(simAbort))
         return 0;
 
-    doom_set_exit(simOnExit);
-    doom_set_print(simOnPrint);
+    Doom::host().exit = simOnExit;
+    Doom::host().print = simOnPrint;
 
-    doom_init((int) (sizeof(simArgv) / sizeof(simArgv[0])), simArgv, 0);
+    Doom::initGame((int) (sizeof(simArgv) / sizeof(simArgv[0])), simArgv, 0);
 
-    // doom_init ends in Doom::startTitle, which raises the attract loop's flag. Left
-    // alone, Doom::doAdvanceDemo runs on the very first tic, clears gameaction and
-    // starts the title sequence - which then plays demo1, the credits, demo2 and
-    // so on. A demo boot lowers the flag so the game runs only the demo we hand
-    // it; a title boot (keepAttract) leaves it up, so the first tic brings up
-    // TITLEPIC and the attract loop then holds there for ~170 tics.
+    // Doom::initGame ends in Doom::startTitle, which raises the attract loop's
+    // flag. Left alone, Doom::doAdvanceDemo runs on the very first tic, clears
+    // gameaction and starts the title sequence - which then plays demo1, the
+    // credits, demo2 and so on. A demo boot lowers the flag so the game runs
+    // only the demo we hand it; a title boot (keepAttract) leaves it up, so the
+    // first tic brings up TITLEPIC and the attract loop then holds there for
+    // ~170 tics.
     if (!keepAttract)
         Doom::attractMode().advancedemo = false;
 
@@ -158,7 +160,7 @@ int doomSimRunTic()
     if (setjmp(simAbort))
         return 0;
 
-    doom_force_update();
+    Doom::forceUpdateGame();
 
     if (Doom::demoState().demoplayback)
     {
@@ -277,7 +279,7 @@ unsigned long long doomSimFrameHash()
 
 // Allocation accounting. Deliberately counts blocks rather than bytes: the point
 // is whether an owner released what it took, and a block is the unit an owner
-// deals in. Installed through the public doom_set_malloc, so it sees exactly what
+// deals in. Installed through the public Doom::host(), so it sees exactly what
 // the engine sees and nothing else - the counter can only go negative if the
 // engine frees a block it did not allocate through the host, which is itself worth
 // failing on.
@@ -300,7 +302,8 @@ static void simCountingFree(void* ptr)
 
 void doomSimCountAllocations()
 {
-    doom_set_malloc(simCountingMalloc, simCountingFree);
+    Doom::host().malloc = simCountingMalloc;
+    Doom::host().free = simCountingFree;
 }
 
 int doomSimLiveAllocations()
@@ -771,12 +774,12 @@ int doomSimSaveLoadPreservesWorld()
 
 void doomSimPostKeyDown(int key)
 {
-    doom_key_down((doom_key_t) key);
+    Doom::keyDown((Doom::Key) key);
 }
 
 void doomSimPostKeyUp(int key)
 {
-    doom_key_up((doom_key_t) key);
+    Doom::keyUp((Doom::Key) key);
 }
 
 int doomSimStepTic()
@@ -784,7 +787,7 @@ int doomSimStepTic()
     if (setjmp(simAbort))
         return 0;
 
-    doom_force_update();
+    Doom::forceUpdateGame();
     return 1;
 }
 

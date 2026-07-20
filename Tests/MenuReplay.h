@@ -10,7 +10,7 @@
 // The menu is the one part of the engine no demo reaches - nothing in a .lmp
 // opens one - so before m_menu is rewritten it gets the same kind of net the
 // renderer got in Step 0: drive synthetic key events through the real host path
-// (doom_key_down -> Doom::postEvent -> Doom::menuResponder), let Doom::menuTicker blink the skull
+// (Doom::keyDown -> Doom::postEvent -> Doom::menuResponder), let Doom::menuTicker blink the skull
 // and Doom::drawMenu paint, and hash the finished software frame every tic.
 //
 // The background is the attract-mode title screen (TITLEPIC), a static picture,
@@ -27,12 +27,14 @@ namespace DoomTests
 {
 // A step is a key to press this tic, or 0 to let a tic pass with no input (which
 // is how the skull's blink, on an 8-tic Doom::menuTicker cycle, gets into the golden).
-// Keys are doom_key_t values: doom_key_down posts them as event.data1, and the
+// Keys are Doom::Key values: Doom::keyDown posts them as event.data1, and the
 // responder compares that against the identical KEY_* codes.
 using MenuScript = std::vector<int>;
 
 inline MenuScript menuScript()
 {
+    using enum Doom::Key;
+
     constexpr auto ESC = DOOM_KEY_ESCAPE;
     constexpr auto ENT = DOOM_KEY_ENTER;
     constexpr auto UP = DOOM_KEY_UP_ARROW;

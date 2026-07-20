@@ -161,7 +161,7 @@ bool* mousebuttons = &Doom::ticcmdInput().mousearray[1];
 bool* joybuttons = &Doom::ticcmdInput().joyarray[1];
 
 int savegameslot;
-EA::Array<char, 32> savedescription;
+std::string savedescription;
 
 // bodyqueslot is a Doom::CorpseQueue owned by the Engine now; this is a reference onto it
 // (doomstat.h externs it, bodyque[] alongside it does not need one) (REFACTOR.md, Step 5).
@@ -170,7 +170,7 @@ void* statcopy; // for statistics driver
 
 bool secretexit;
 
-const char* defdemoname;
+std::string defdemoname;
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
@@ -685,12 +685,11 @@ void gameTicker()
             if (cmd->forwardmove > TURBOTHRESHOLD && !(clock.gametic & 31)
                 && ((clock.gametic >> 5) & 3) == i)
             {
-                static EA::Array<char, 80> turbomessage;
+                static std::string turbomessage;
                 //doom_sprintf(turbomessage, "%s is turbo!", player_names[i]);
-                doom_strcpy(turbomessage.data(), player_names[i]);
-                doom_concat(turbomessage.data(), " is turbo!");
+                turbomessage = concat(player_names[i], " is turbo!");
                 players_.players[players_.consoleplayer].message =
-                    turbomessage.data();
+                    turbomessage.c_str();
             }
 
             if (gameSession().netgame && !demo.netdemo
@@ -699,15 +698,11 @@ void gameTicker()
                 if (clock.gametic > BACKUPTICS
                     && net.consistancy[i][buf] != cmd->consistancy)
                 {
-                    //fatalError("Error: consistency failure (%i should be %i)",
-                    //        cmd->consistancy, consistancy[i][buf]);
-
-                    doom_strcpy(error_buf, "Error: consistency failure (");
-                    doom_concat(error_buf, doom_itoa(cmd->consistancy, 10));
-                    doom_concat(error_buf, " should be ");
-                    doom_concat(error_buf, doom_itoa(net.consistancy[i][buf], 10));
-                    doom_concat(error_buf, ")");
-                    fatalError(error_buf);
+                    fatalError("Error: consistency failure (",
+                               cmd->consistancy,
+                               " should be ",
+                               net.consistancy[i][buf],
+                               ")");
                 }
                 if (players_.players[i].mo)
                     // Vanilla's checksum is the low 16 bits of the raw fixed x,
@@ -738,8 +733,8 @@ void gameTicker()
                         break;
 
                     case BTS_SAVEGAME:
-                        if (!savedescription[0])
-                            doom_strcpy(savedescription.data(), "NET GAME");
+                        if (savedescription.empty())
+                            savedescription = "NET GAME";
                         savegameslot =
                             (players_.players[i].cmd.buttons & BTS_SAVEMASK)
                             >> BTS_SAVESHIFT;
@@ -924,12 +919,7 @@ void deathMatchSpawnPlayer(int playernum)
         static_cast<int>((spawns.deathmatch_p - spawns.deathmatchstarts.data()));
     if (selections < 4)
     {
-        //fatalError("Error: Only %i deathmatch spots, 4 required", selections);
-
-        doom_strcpy(error_buf, "Error: Only ");
-        doom_concat(error_buf, doom_itoa(selections, 10));
-        doom_concat(error_buf, " deathmatch spots, 4 required");
-        fatalError(error_buf);
+        fatalError("Error: Only ", selections, " deathmatch spots, 4 required");
     }
 
     for (int j = 0; j < 20; j++)
@@ -1211,9 +1201,9 @@ void doWorldDone()
 // Can be called by the startup code or the menu task.
 //
 
-void loadGame(char* name)
+void loadGame(std::string_view name)
 {
-    doom_strcpy(saveGameState().name.data(), name);
+    saveGameState().name = name;
     gameFlow().gameaction = ga_loadgame;
 }
 
@@ -1224,23 +1214,19 @@ void doLoadGame()
     auto& players_ = playerState();
 
     int a, b, c;
-    EA::Array<char, VERSIONSIZE> vcheck;
 
     gameFlow().gameaction = ga_nothing;
 
     // readFile() fills the owner directly; buffer is left a view onto it, as it is a
     // view onto the framebuffer scratch on the save path (see SaveGameState.h).
-    Doom::readFile(save.name.data(), save.loadStorage);
+    Doom::readFile(save.name.c_str(), save.loadStorage);
     save.buffer = save.loadStorage.data();
     save.cursor = save.buffer + SAVESTRINGSIZE;
 
     // skip the description field
-    doom_memset(vcheck.data(), 0, sizeof(vcheck));
     //doom_sprintf(vcheck, "version %i", VERSION);
-    doom_strcpy(vcheck.data(), "version ");
-    doom_concat(vcheck.data(), doom_itoa(VERSION, 10));
-    if (doom_strcmp(reinterpret_cast<const char*>(save.cursor),
-                    const_cast<const char*>(vcheck.data())))
+    auto vcheck = concat("version ", VERSION);
+    if (vcheck != reinterpret_cast<const char*>(save.cursor))
         return; // bad version
     save.cursor += VERSIONSIZE;
 
@@ -1283,10 +1269,10 @@ void doLoadGame()
 // Called by the menu task.
 // Description is a 24 byte text string
 //
-void saveGame(int slot, char* description)
+void saveGame(int slot, std::string_view description)
 {
     savegameslot = slot;
-    doom_strcpy(savedescription.data(), description);
+    savedescription = description;
     pendingCommands().sendsave = true;
 }
 
@@ -1297,33 +1283,21 @@ void doSaveGame()
     auto& session = gameSession();
     auto& players_ = playerState();
 
-    EA::Array<char, 100> name;
-    EA::Array<char, VERSIONSIZE> name2;
-    char* description;
     int length;
 
 #if 0
     if (Doom::checkParm("-cdrom"))
         doom_sprintf(name, "c:\\doomdata\\"SAVEGAMENAME"%d.dsg", savegameslot);
-    else
 #endif
-    {
-        //doom_sprintf(name, SAVEGAMENAME"%d.dsg", savegameslot);
-        doom_strcpy(name.data(), SAVEGAMENAME);
-        doom_concat(name.data(), doom_itoa(savegameslot, 10));
-        doom_concat(name.data(), ".dsg");
-    }
-    description = savedescription.data();
+    //doom_sprintf(name, SAVEGAMENAME"%d.dsg", savegameslot);
+    auto name = concat(SAVEGAMENAME, savegameslot, ".dsg");
 
     save.cursor = save.buffer = screens[1] + 0x4000;
 
-    doom_memcpy(save.cursor, description, SAVESTRINGSIZE);
+    fillField(save.cursor, SAVESTRINGSIZE, savedescription);
     save.cursor += SAVESTRINGSIZE;
-    doom_memset(name2.data(), 0, sizeof(name2));
     //doom_sprintf(name2, "version %i", VERSION);
-    doom_strcpy(name2.data(), "version ");
-    doom_concat(name2.data(), doom_itoa(VERSION, 10));
-    doom_memcpy(save.cursor, name2.data(), VERSIONSIZE);
+    fillField(save.cursor, VERSIONSIZE, concat("version ", VERSION));
     save.cursor += VERSIONSIZE;
 
     *save.cursor++ = session.gameskill;
@@ -1345,9 +1319,9 @@ void doSaveGame()
     length = static_cast<int>((save.cursor - save.buffer));
     if (length > SAVEGAMESIZE)
         fatalError("Error: Savegame buffer overrun");
-    Doom::writeFile(name.data(), save.buffer, length);
+    Doom::writeFile(name.c_str(), save.buffer, length);
     gameFlow().gameaction = ga_nothing;
-    savedescription[0] = 0;
+    savedescription.clear();
 
     players_.players[players_.consoleplayer].message = GGSAVED;
 
@@ -1551,7 +1525,7 @@ void writeDemoTiccmd(Ticcmd* cmd)
 //
 // recordDemo
 //
-void recordDemo(char* name)
+void recordDemo(std::string_view name)
 {
     auto& demo = demoState();
 
@@ -1559,12 +1533,11 @@ void recordDemo(char* name)
     int maxsize;
 
     demo.usergame = false;
-    doom_strcpy(demo.demoname.data(), name);
-    doom_concat(demo.demoname.data(), ".lmp");
+    demo.demoname = concat(name, ".lmp");
     maxsize = 0x20000;
     i = Doom::checkParm("-maxdemo");
     if (i && i < myargc - 1)
-        maxsize = doom_atoi(myargv[i + 1]) * 1024;
+        maxsize = parseInt(myargv[i + 1]) * 1024;
     demo.demoRecordBuffer.resize(maxsize);
     demo.demobuffer = demo.demoRecordBuffer.data();
     demo.demoend = demo.demobuffer + maxsize;
@@ -1599,7 +1572,7 @@ void beginRecording()
 // gPlayDemo
 //
 
-void deferPlayDemo(const char* name)
+void deferPlayDemo(std::string_view name)
 {
     defdemoname = name;
     gameFlow().gameaction = ga_playdemo;
@@ -1624,11 +1597,11 @@ void doPlayDemo()
         && demo_version != 109) // Demos seem to run fine with version 109
     {
         //doom_print("Demo is from a different game version! Demo Verson = %i, this version = %i\n", (int)demo_version, VERSION);
-        doom_print("Demo is from a different game version! Demo Verson = ");
-        doom_print(doom_itoa(static_cast<int>(demo_version), 10));
-        doom_print(", this version = ");
-        doom_print(doom_itoa(VERSION, 10));
-        doom_print("\n");
+        print("Demo is from a different game version! Demo Verson = ",
+              static_cast<int>(demo_version),
+              ", this version = ",
+              VERSION,
+              "\n");
         flow.gameaction = ga_nothing;
         return;
     }
@@ -1662,7 +1635,7 @@ void doPlayDemo()
 //
 // startTimeDemo
 //
-void startTimeDemo(char* name)
+void startTimeDemo(std::string_view name)
 {
     auto& refresh = refreshFlags();
 
@@ -1695,15 +1668,11 @@ bool checkDemoStatus()
     if (timedemo.timingdemo)
     {
         endtime = currentTic();
-        //fatalError("Error: timed %i gametics in %i realtics", gametic
-        //        , endtime - starttime);
-
-        doom_strcpy(error_buf, "Error: timed ");
-        doom_concat(error_buf, doom_itoa(gameClock().gametic, 10));
-        doom_concat(error_buf, " gametics in ");
-        doom_concat(error_buf, doom_itoa(endtime - timedemo.starttime, 10));
-        doom_concat(error_buf, " realtics");
-        fatalError(error_buf);
+        fatalError("Error: timed ",
+                   gameClock().gametic,
+                   " gametics in ",
+                   endtime - timedemo.starttime,
+                   " realtics");
     }
 
     if (demo.demoplayback)
@@ -1732,18 +1701,13 @@ bool checkDemoStatus()
     if (demo.demorecording)
     {
         *demo.demo_p++ = DEMOMARKER;
-        Doom::writeFile(demo.demoname.data(),
+        Doom::writeFile(demo.demoname.c_str(),
                         demo.demobuffer,
                         static_cast<int>((demo.demo_p - demo.demobuffer)));
         // demoRecordBuffer (not demobuffer, which also views the playback lump) owns this
         // memory now; no manual free needed.
         demo.demorecording = false;
-        //fatalError("Error: Demo %s recorded", demoname);
-
-        doom_strcpy(error_buf, "Error: Demo ");
-        doom_concat(error_buf, demo.demoname.data());
-        doom_concat(error_buf, " recorded");
-        fatalError(error_buf);
+        fatalError("Error: Demo ", demo.demoname, " recorded");
     }
 
     return false;

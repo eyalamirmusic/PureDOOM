@@ -14,65 +14,51 @@
 //-----------------------------------------------------------------------------
 /* The engine's public interface to whatever is hosting it.
 
-   Link the `doom-engine` library and #include <DOOM/DOOM.h>. Call doom_init
-   once, doom_update every frame, and hand it input as it arrives.
+   Link the `doom-engine` library and #include <DOOM/DOOM.h>. Call
+   Doom::initGame once, Doom::updateGame every frame, and hand it input as it
+   arrives. Platform hooks (printing, allocation, file I/O, the clock, exit,
+   getenv) are the members of Doom::host() - assign any of them before
+   initGame; each has a working default.
 
-   This was once a single header you defined DOOM_IMPLEMENTATION in front of.
-   It is a library now, and the header that was generated from it is gone.
-
+   This was extern "C" once, for embedders that were not C++. The engine and
+   every consumer of it are C++ now, so the interface is a plain namespace.
 */
 //-----------------------------------------------------------------------------
 
-
 #pragma once
 
+#include <functional>
+#include <optional>
+#include <string>
+#include <string_view>
 
+namespace Doom
+{
 // Sample rate of sound samples from doom
-#define DOOM_SAMPLERATE 11025
+inline constexpr int DOOM_SAMPLERATE = 11025;
 
 // MIDI tick needs to be called 140 times per seconds
-#define DOOM_MIDI_RATE 140
+inline constexpr int DOOM_MIDI_RATE = 140;
 
 // Hide menu options. If for say your platform doesn't support mouse or
 // MIDI playback, you can hide these settings from the menu.
-#define DOOM_FLAG_HIDE_MOUSE_OPTIONS 1 // Remove mouse options from menu
-#define DOOM_FLAG_HIDE_SOUND_OPTIONS 2 // Remove sound options from menu
-#define DOOM_FLAG_HIDE_MUSIC_OPTIONS 4 // Remove music options from menu
+inline constexpr int DOOM_FLAG_HIDE_MOUSE_OPTIONS = 1;
+inline constexpr int DOOM_FLAG_HIDE_SOUND_OPTIONS = 2;
+inline constexpr int DOOM_FLAG_HIDE_MUSIC_OPTIONS = 4;
 
 // Darken background when menu is open, making it more readable. This
 // uses a bit more CPU and redraws the HUD every frame
-#define DOOM_FLAG_MENU_DARKEN_BG 8
+inline constexpr int DOOM_FLAG_MENU_DARKEN_BG = 8;
 
-
-#if __cplusplus
-extern "C" {
-#endif
-
-enum doom_seek_t
+enum SeekOrigin
 {
     DOOM_SEEK_CUR = 1,
     DOOM_SEEK_END = 2,
     DOOM_SEEK_SET = 0
 };
 
-
-typedef void(*doom_print_fn)(const char* str);
-typedef void*(*doom_malloc_fn)(int size);
-typedef void(*doom_free_fn)(void* ptr);
-typedef void*(*doom_open_fn)(const char* filename, const char* mode);
-typedef void(*doom_close_fn)(void* handle);
-typedef int(*doom_read_fn)(void* handle, void *buf, int count);
-typedef int(*doom_write_fn)(void* handle, const void *buf, int count);
-typedef int(*doom_seek_fn)(void* handle, int offset, doom_seek_t origin);
-typedef int(*doom_tell_fn)(void* handle);
-typedef int(*doom_eof_fn)(void* handle);
-typedef void(*doom_gettime_fn)(int* sec, int* usec);
-typedef void(*doom_exit_fn)(int code);
-typedef char*(*doom_getenv_fn)(const char* var);
-
-
 // Doom key mapping
-enum doom_key_t
+enum Key
 {
     DOOM_KEY_UNKNOWN = -1,
     DOOM_KEY_TAB = 9,
@@ -148,63 +134,88 @@ enum doom_key_t
     DOOM_KEY_PAUSE = 0xff
 };
 
-
 // Mouse button mapping
-enum doom_button_t
+enum MouseButton
 {
     DOOM_LEFT_BUTTON = 0,
     DOOM_RIGHT_BUTTON = 1,
     DOOM_MIDDLE_BUTTON = 2
 };
 
+// The platform hooks the embedder may override, all pre-filled with working
+// defaults (stdio file I/O, gettimeofday, printf, malloc; see Host.cpp).
+// Assign members of Doom::host() before initGame. Every hook is invoked
+// without a null check - keep them non-null, eacp style.
+using PrintHandler = std::function<void(std::string_view text)>;
+using MallocHandler = std::function<void*(int size)>;
+using FreeHandler = std::function<void(void* pointer)>;
+using OpenHandler =
+    std::function<void*(std::string_view filename, std::string_view mode)>;
+using CloseHandler = std::function<void(void* handle)>;
+using ReadHandler = std::function<int(void* handle, void* buffer, int count)>;
+using WriteHandler = std::function<int(void* handle, const void* buffer, int count)>;
+using SeekHandler = std::function<int(void* handle, int offset, SeekOrigin origin)>;
+using TellHandler = std::function<int(void* handle)>;
+using EofHandler = std::function<int(void* handle)>;
+using GetTimeHandler = std::function<void(int* sec, int* usec)>;
+using ExitHandler = std::function<void(int code)>;
+using GetEnvHandler =
+    std::function<std::optional<std::string>(std::string_view name)>;
+
+struct Host
+{
+    PrintHandler print;
+    MallocHandler malloc;
+    FreeHandler free;
+    OpenHandler open;
+    CloseHandler close;
+    ReadHandler read;
+    WriteHandler write;
+    SeekHandler seek;
+    TellHandler tell;
+    EofHandler eof;
+    GetTimeHandler gettime;
+    ExitHandler exit;
+    GetEnvHandler getenv;
+
+    Host();
+};
+
+// The one Host. Deliberately separate from the Engine: platform hooks are set
+// once by the embedder and survive resetEngine().
+Host& host();
 
 // For the software renderer. Default is 320x200
-void doom_set_resolution(int width, int height);
+void setResolution(int width, int height);
 
-// Set default configurations. Lets say, changing arrows to WASD as default controls
-void doom_set_default_int(const char* name, int value);
-void doom_set_default_string(const char* name, const char* value);
+// Set default configurations. Lets say, changing arrows to WASD as default
+// controls. A string value is kept as the view given - pass a literal or
+// storage that outlives the engine.
+void setDefaultInt(std::string_view name, int value);
+void setDefaultString(std::string_view name, std::string_view value);
 
-// set callbacks
-void doom_set_print(doom_print_fn print_fn);
-void doom_set_malloc(doom_malloc_fn malloc_fn, doom_free_fn free_fn);
-void doom_set_file_io(doom_open_fn open_fn,
-                      doom_close_fn close_fn,
-                      doom_read_fn read_fn,
-                      doom_write_fn write_fn,
-                      doom_seek_fn seek_fn,
-                      doom_tell_fn tell_fn,
-                      doom_eof_fn eof_fn);
-void doom_set_gettime(doom_gettime_fn gettime_fn);
-void doom_set_exit(doom_exit_fn exit_fn);
-void doom_set_getenv(doom_getenv_fn getenv_fn);
-
-// Initializes DOOM and start things up. Call only call one
-void doom_init(int argc, char** argv, int flags);
+// Initializes DOOM and starts things up. Call only once. argv is main()'s,
+// kept by the engine (not copied).
+void initGame(int argc, char** argv, int flags);
 
 // Call this every frame
-void doom_update(); // This will update at 35 FPS
-void doom_force_update(); // This will run a frame everytime it's called, regardless of FPS.
+void updateGame(); // This will update at 35 FPS
+void forceUpdateGame(); // Runs a frame every call, regardless of FPS.
 
 // Channels: 1 = indexed, 3 = RGB, 4 = RGBA
-const unsigned char* doom_get_framebuffer(int channels);
+const unsigned char* framebuffer(int channels);
 
 // It is always 2048 bytes in size
-short* doom_get_sound_buffer();
+short* soundBuffer();
 
-// Call this 140 times per second. Or about every 7ms. 
+// Call this 140 times per second. Or about every 7ms.
 // Returns midi message. Keep calling it until it returns 0.
-unsigned long doom_tick_midi();
+unsigned long tickMidi();
 
 // Events
-void doom_key_down(doom_key_t key);
-void doom_key_up(doom_key_t key);
-void doom_button_down(doom_button_t button);
-void doom_button_up(doom_button_t button);
-void doom_mouse_move(int delta_x, int delta_y);
-
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
+void keyDown(Key key);
+void keyUp(Key key);
+void buttonDown(MouseButton button);
+void buttonUp(MouseButton button);
+void mouseMove(int deltaX, int deltaY);
+} // namespace Doom

@@ -5,6 +5,7 @@
 // defined at file scope here, above the namespace (still ::-scoped).
 
 #include "../Host/Platform.h"
+#include "../Host/Text.h"
 
 #include "Args.h"
 
@@ -19,11 +20,11 @@ namespace Doom
 // Checks for the given parameter in the program's command line arguments.
 // Returns the argument number (1 to argc-1) or 0 if not present.
 //
-int checkParm(const char* check)
+int checkParm(std::string_view check)
 {
     for (int i = 1; i < myargc; i++)
     {
-        if (!doom_strcasecmp(check, myargv[i]))
+        if (equalsIgnoreCase(check, myargv[i]))
             return i;
     }
 

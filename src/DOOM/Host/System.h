@@ -1,9 +1,9 @@
 #pragma once
 
-
-
 #include "../doomtype.h"
 #include "../Game/Ticcmd.h"
+#include "Text.h"
+
 namespace Doom
 {
 // The engine's system seam: timing (currentTic), startup and teardown
@@ -16,5 +16,12 @@ int currentTic();
 void initHost();
 void quitGame();
 void waitVBlank(int count);
-void fatalError(const char* error);
+void fatalError(const std::string& error);
+
+template <typename... Parts>
+    requires(sizeof...(Parts) >= 2)
+void fatalError(const Parts&... parts)
+{
+    fatalError(concat(parts...));
+}
 } // namespace Doom

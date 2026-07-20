@@ -274,9 +274,9 @@ void generateLookup(int texnum)
         {
             //doom_print("generateLookup: column without a patch (%s)\n",
             //    texture->name);
-            doom_print("generateLookup: column without a patch (");
-            doom_print(texture->name.data());
-            doom_print(")\n");
+            print("generateLookup: column without a patch (",
+                  nameView(texture->name.data(), 8),
+                  ")\n");
             return;
         }
         // fatalError ("generateLookup: column without a patch");
@@ -292,10 +292,7 @@ void generateLookup(int texnum)
                 //fatalError("Error: generateLookup: texture %i is >64k",
                 //        texnum);
 
-                doom_strcpy(error_buf, "Error: generateLookup: texture ");
-                doom_concat(error_buf, doom_itoa(texnum, 10));
-                doom_concat(error_buf, " is >64k");
-                fatalError(error_buf);
+                fatalError("Error: generateLookup: texture ", texnum, " is >64k");
             }
 
             texturecompositesize[texnum] += texture->height;
@@ -341,7 +338,6 @@ void initTextures()
     int* maptex2;
     int* maptex1;
 
-    EA::Array<char, 9> name;
     char* names;
     char* name_p;
 
@@ -361,17 +357,13 @@ void initTextures()
     auto& gd = graphicsData();
 
     // Load the patch names from pnames.lmp.
-    name[8] = 0;
     names = static_cast<char*>(Doom::cacheLumpName("PNAMES"));
     nummappatches = littleEndian(*(reinterpret_cast<int*>(names)));
     name_p = names + 4;
     auto patchlookup = EA::Vector<int>(nummappatches);
 
     for (i = 0; i < nummappatches; i++)
-    {
-        doom_strncpy(name.data(), name_p + i * 8, 8);
-        patchlookup[i] = Doom::wad().find(name.data());
-    }
+        patchlookup[i] = Doom::wad().find(nameView(name_p + i * 8, 8));
 
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
@@ -431,18 +423,18 @@ void initTextures()
     temp1 = Doom::wad().number("S_START"); // P_???????
     temp2 = Doom::wad().number("S_END") - 1;
     temp3 = ((temp2 - temp1 + 63) / 64) + ((gd.numtextures + 63) / 64);
-    doom_print("[");
+    print("[");
     for (i = 0; i < temp3; i++)
-        doom_print(" ");
-    doom_print("         ]");
+        print(" ");
+    print("         ]");
     for (i = 0; i < temp3; i++)
-        doom_print("\x8");
-    doom_print("\x8\x8\x8\x8\x8\x8\x8\x8\x8\x8");
+        print("\x8");
+    print("\x8\x8\x8\x8\x8\x8\x8\x8\x8\x8");
 
     for (i = 0; i < gd.numtextures; i++, directory++)
     {
         if (!(i & 63))
-            doom_print(".");
+            print(".");
 
         if (i == numtextures1)
         {
@@ -496,10 +488,8 @@ void initTextures()
                 //fatalError("Error: initTextures: Missing patch in texture %s",
                 //        texture->name);
 
-                doom_strcpy(error_buf,
-                            "Error: initTextures: Missing patch in texture ");
-                doom_concat(error_buf, texture->name.data());
-                fatalError(error_buf);
+                fatalError("Error: initTextures: Missing patch in texture ",
+                           nameView(texture->name.data(), 8));
             }
         }
         cc.columnlumpStorage[i].resize(texture->width);
@@ -578,7 +568,7 @@ void initSpriteLumps()
     for (int i = 0; i < gd.numspritelumps; i++)
     {
         if (!(i & 63))
-            doom_print(".");
+            print(".");
 
         patch = static_cast<Patch*>(Doom::cacheLumpNum(gd.firstspritelump + i));
         spritewidth[i] = Doom::Fixed::fromInt(littleEndian(patch->width));
@@ -617,38 +607,49 @@ void initColormaps()
 void initData()
 {
     initTextures();
-    doom_print("\nInitTextures");
+    print("\nInitTextures");
     initFlats();
-    doom_print("\nInitFlats");
+    print("\nInitFlats");
     initSpriteLumps();
-    doom_print("\nInitSprites");
+    print("\nInitSprites");
     initColormaps();
-    doom_print("\nInitColormaps");
+    print("\nInitColormaps");
 }
 
 //
 // flatNumForName
 // Retrieval, get a flat number for a flat name.
 //
-int flatNumForName(const char* name)
+int flatNumForName(std::string_view name)
 {
-    int i;
-    EA::Array<char, 9> namet;
-
-    i = Doom::wad().find(name);
+    int i = Doom::wad().find(name);
 
     if (i == -1)
     {
-        namet[8] = 0;
-        doom_memcpy(namet.data(), name, 8);
         //fatalError("Error: flatNumForName: %s not found", namet);
-
-        doom_strcpy(error_buf, "Error: flatNumForName: ");
-        doom_concat(error_buf, namet.data());
-        doom_concat(error_buf, " not found");
-        fatalError(error_buf);
+        fatalError("Error: flatNumForName: ", name, " not found");
     }
     return i - graphicsData().firstflat;
+}
+
+// What doom_strncasecmp(stored, name, 8) == 0 answered: case-insensitive over
+// the eight columns, the stored name zero-padded when short. A NUL in either
+// place has to meet a NUL in the other.
+static bool textureNameMatches(const EA::Array<char, 8>& stored,
+                               std::string_view name)
+{
+    for (int i = 0; i < 8; ++i)
+    {
+        auto wanted = i < static_cast<int>(name.size()) ? name[i] : char(0);
+
+        if (toUpper(stored[i]) != toUpper(wanted))
+            return false;
+
+        if (wanted == 0)
+            return true;
+    }
+
+    return true;
 }
 
 //
@@ -656,16 +657,16 @@ int flatNumForName(const char* name)
 // Check whether texture is available.
 // Filter out NoTexture indicator.
 //
-int checkTextureNumForName(const char* name)
+int checkTextureNumForName(std::string_view name)
 {
     // "NoTexture" marker.
-    if (name[0] == '-')
+    if (!name.empty() && name.front() == '-')
         return 0;
 
     auto& gd = graphicsData();
 
     for (int i = 0; i < gd.numtextures; i++)
-        if (!doom_strncasecmp(textures[i]->name.data(), name, 8))
+        if (textureNameMatches(textures[i]->name, name))
             return i;
 
     return -1;
@@ -676,7 +677,7 @@ int checkTextureNumForName(const char* name)
 // Calls checkTextureNumForName,
 //  aborts with error message.
 //
-int textureNumForName(const char* name)
+int textureNumForName(std::string_view name)
 {
     int i = checkTextureNumForName(name);
 
@@ -685,10 +686,7 @@ int textureNumForName(const char* name)
         //fatalError("Error: textureNumForName: %s not found",
         //        name);
 
-        doom_strcpy(error_buf, "Error: textureNumForName: ");
-        doom_concat(error_buf, name);
-        doom_concat(error_buf, " not found");
-        fatalError(error_buf);
+        fatalError("Error: textureNumForName: ", name, " not found");
     }
     return i;
 }

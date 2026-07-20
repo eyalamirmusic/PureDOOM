@@ -5,6 +5,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <string_view>
 
 namespace Doom
 {
@@ -42,17 +44,20 @@ public:
     // Vanilla's rules: a `.wad` is a directory of lumps, anything else is a
     // single lump named after the file, and a leading `~` marks the file
     // reloadable (see reload()).
-    void addFile(const char* path);
+    void addFile(std::string_view path);
 
     int count() const { return lumps.size(); }
 
     // -1 when there is no such lump, which is a question several callers ask -
     // the engine checks for TEXTURE2 before deciding it is playing DOOM II.
-    int find(const char* name) const;
+    // A directory Lump's own 8-byte name is NOT NUL-terminated when it fills
+    // them: wrap it in nameView(name.data(), 8) rather than letting the
+    // string_view constructor run off its end.
+    int find(std::string_view name) const;
 
     // The same, but a missing lump is fatal. Most callers want this one: a WAD
     // without PLAYPAL is not a WAD anyone can render.
-    int number(const char* name) const;
+    int number(std::string_view name) const;
 
     int length(int lump) const;
 
@@ -73,9 +78,8 @@ public:
     void reload();
 
 private:
-    void addSingleLump(const char* path, void* handle);
-    void addDirectory(const char* path, void* handle);
-    void openFile(const char* path, bool reloadable);
+    void addSingleLump(std::string_view path, void* handle);
+    void addDirectory(std::string_view path, void* handle);
 
     EA::Vector<Lump> lumps;
 
@@ -86,7 +90,7 @@ private:
 
     EA::Vector<void*> handles;
 
-    const char* reloadName = nullptr;
+    std::string reloadName;
     int reloadLump = 0;
 };
 
@@ -96,7 +100,7 @@ WadFile& wad();
 // The boot-time WAD list: add every file in turn, and refuse to go on if the lot
 // of them yielded no lumps at all. Doom::addWadFile builds the list this consumes;
 // nothing else calls it.
-void initWadFiles(char** filenames);
+void initWadFiles(const EA::Vector<std::string>& filenames);
 
 // A lump's bytes, cached and owned. Vanilla's W_CacheLumpNum / W_CacheLumpName
 // took a purge tag as well; there is nothing to purge now that WadFile owns every
@@ -104,5 +108,5 @@ void initWadFiles(char** filenames);
 // caller casts it to the structure it knows is in there - a Patch, the palette, a
 // column of a composite texture.
 void* cacheLumpNum(int lump);
-void* cacheLumpName(const char* name);
+void* cacheLumpName(std::string_view name);
 } // namespace Doom

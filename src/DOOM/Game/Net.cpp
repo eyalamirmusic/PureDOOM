@@ -138,11 +138,8 @@ int expandTics(int low)
         return (net.maketic & ~0xff) + 256 + low;
 
     //fatalError("Error: expandTics: strange value %i at maketic %i", low, maketic);
-    doom_strcpy(error_buf, "Error: expandTics: strange value ");
-    doom_concat(error_buf, doom_itoa(low, 10));
-    doom_concat(error_buf, " at maketic ");
-    doom_concat(error_buf, doom_itoa(net.maketic, 10));
-    fatalError(error_buf);
+    fatalError(
+        "Error: expandTics: strange value ", low, " at maketic ", net.maketic);
     return 0;
 }
 
@@ -185,27 +182,25 @@ void hSendPacket(int node, int flags)
             //fprintf(debugfile, "send (%i + %i, R %i) [%i] ",
             //        expandTics(netbuffer->starttic),
             //        netbuffer->numtics, realretrans, doomcom->datalength);
-            doom_fprint(debugfile, "send (");
-            doom_fprint(debugfile,
-                        doom_itoa(expandTics(net.netbuffer->starttic), 10));
-            doom_fprint(debugfile, " + ");
-            doom_fprint(debugfile, doom_itoa(net.netbuffer->numtics, 10));
-            doom_fprint(debugfile, ", R ");
-            doom_fprint(debugfile, doom_itoa(realretrans, 10));
-            doom_fprint(debugfile, ") [");
-            doom_fprint(debugfile, doom_itoa(net.doomcom->datalength, 10));
-            doom_fprint(debugfile, "] ");
+            printTo(debugfile,
+                    "send (",
+                    expandTics(net.netbuffer->starttic),
+                    " + ",
+                    net.netbuffer->numtics,
+                    ", R ",
+                    realretrans,
+                    ") [",
+                    net.doomcom->datalength,
+                    "] ");
         }
 
         for (int i = 0; i < net.doomcom->datalength; i++)
         {
             //fprintf(debugfile, "%i ", ((byte*)netbuffer)[i]);
-            doom_fprint(debugfile,
-                        doom_itoa((reinterpret_cast<byte*>(net.netbuffer))[i], 10));
-            doom_fprint(debugfile, " ");
+            printTo(debugfile, (reinterpret_cast<byte*>(net.netbuffer))[i], " ");
         }
 
-        doom_fprint(debugfile, "\n");
+        printTo(debugfile, "\n");
     }
 
     netCommand();
@@ -245,9 +240,7 @@ bool hGetPacket()
         if (debugfile)
         {
             //fprintf(debugfile, "bad packet length %i\n", doomcom->datalength);
-            doom_fprint(debugfile, "bad packet length ");
-            doom_fprint(debugfile, doom_itoa(net.doomcom->datalength, 10));
-            doom_fprint(debugfile, "\n");
+            printTo(debugfile, "bad packet length ", net.doomcom->datalength, "\n");
         }
         return false;
     }
@@ -256,7 +249,7 @@ bool hGetPacket()
     {
         if (debugfile)
         {
-            doom_fprint(debugfile, "bad packet checksum\n");
+            printTo(debugfile, "bad packet checksum\n");
         }
         return false;
     }
@@ -267,7 +260,7 @@ bool hGetPacket()
 
         if (net.netbuffer->checksum & NCMD_SETUP)
         {
-            doom_fprint(debugfile, "setup packet\n");
+            printTo(debugfile, "setup packet\n");
         }
         else
         {
@@ -281,29 +274,26 @@ bool hGetPacket()
                 //        doomcom->remotenode,
                 //        expandTics(netbuffer->starttic),
                 //        netbuffer->numtics, realretrans, doomcom->datalength);
-                doom_fprint(debugfile, "get ");
-                doom_fprint(debugfile, doom_itoa(net.doomcom->remotenode, 10));
-                doom_fprint(debugfile, " = (");
-                doom_fprint(debugfile,
-                            doom_itoa(expandTics(net.netbuffer->starttic), 10));
-                doom_fprint(debugfile, " + ");
-                doom_fprint(debugfile, doom_itoa(net.netbuffer->numtics, 10));
-                doom_fprint(debugfile, ", R ");
-                doom_fprint(debugfile, doom_itoa(realretrans, 10));
-                doom_fprint(debugfile, ")[");
-                doom_fprint(debugfile, doom_itoa(net.doomcom->datalength, 10));
-                doom_fprint(debugfile, "] ");
+                printTo(debugfile,
+                        "get ",
+                        net.doomcom->remotenode,
+                        " = (",
+                        expandTics(net.netbuffer->starttic),
+                        " + ",
+                        net.netbuffer->numtics,
+                        ", R ",
+                        realretrans,
+                        ")[",
+                        net.doomcom->datalength,
+                        "] ");
             }
 
             for (int i = 0; i < net.doomcom->datalength; i++)
             {
                 //fprintf(debugfile, "%i ", ((byte*)netbuffer)[i]);
-                doom_fprint(
-                    debugfile,
-                    doom_itoa((reinterpret_cast<byte*>(net.netbuffer))[i], 10));
-                doom_fprint(debugfile, " ");
+                printTo(debugfile, (reinterpret_cast<byte*>(net.netbuffer))[i], " ");
             }
-            doom_fprint(debugfile, "\n");
+            printTo(debugfile, "\n");
         }
     }
     return true;
@@ -344,9 +334,9 @@ void getPackets()
                 continue;
             net.nodeingame[netnode] = false;
             state.playeringame[netconsole] = false;
-            doom_strcpy(net.exitmsg.data(), "Player 1 left the game");
-            net.exitmsg[7] += netconsole;
-            state.players[state.consoleplayer].message = net.exitmsg.data();
+            net.exitmsg = "Player 1 left the game";
+            net.exitmsg[7] += static_cast<char>(netconsole);
+            state.players[state.consoleplayer].message = net.exitmsg.c_str();
             if (demoState().demorecording)
                 Doom::checkDemoStatus();
             continue;
@@ -366,9 +356,7 @@ void getPackets()
             if (debugfile)
             {
                 //fprintf(debugfile, "retransmit from %i\n", resendto[netnode]);
-                doom_fprint(debugfile, "retransmit from ");
-                doom_fprint(debugfile, doom_itoa(net.resendto[netnode], 10));
-                doom_fprint(debugfile, "\n");
+                printTo(debugfile, "retransmit from ", net.resendto[netnode], "\n");
             }
             net.resendcount[netnode] = RESENDCOUNT;
         }
@@ -386,11 +374,12 @@ void getPackets()
                 //fprintf(debugfile,
                 //        "out of order packet (%i + %i)\n",
                 //        realstart, netbuffer->numtics);
-                doom_fprint(debugfile, "out of order packet (");
-                doom_fprint(debugfile, doom_itoa(realstart, 10));
-                doom_fprint(debugfile, " + ");
-                doom_fprint(debugfile, doom_itoa(net.netbuffer->numtics, 10));
-                doom_fprint(debugfile, ")\n");
+                printTo(debugfile,
+                        "out of order packet (",
+                        realstart,
+                        " + ",
+                        net.netbuffer->numtics,
+                        ")\n");
             }
             continue;
         }
@@ -404,13 +393,14 @@ void getPackets()
                 //fprintf(debugfile,
                 //        "missed tics from %i (%i - %i)\n",
                 //        netnode, realstart, nettics[netnode]);
-                doom_fprint(debugfile, "missed tics from ");
-                doom_fprint(debugfile, doom_itoa(netnode, 10));
-                doom_fprint(debugfile, " (");
-                doom_fprint(debugfile, doom_itoa(realstart, 10));
-                doom_fprint(debugfile, " - ");
-                doom_fprint(debugfile, doom_itoa(net.nettics[netnode], 10));
-                doom_fprint(debugfile, ")\n");
+                printTo(debugfile,
+                        "missed tics from ",
+                        netnode,
+                        " (",
+                        realstart,
+                        " - ",
+                        net.nettics[netnode],
+                        ")\n");
             }
             net.remoteresend[netnode] = true;
             continue;
@@ -579,7 +569,7 @@ void dArbitrateNetStart()
     if (net.doomcom->consoleplayer)
     {
         // listen for setup info from key player
-        doom_print("listening for network start info...\n");
+        print("listening for network start info...\n");
         while (1)
         {
             checkAbort();
@@ -605,7 +595,7 @@ void dArbitrateNetStart()
     else
     {
         // key player, send the setup info
-        doom_print("sending network start info...\n");
+        print("sending network start info...\n");
         do
         {
             checkAbort();
@@ -678,15 +668,15 @@ void checkNetGame()
 
     //doom_print("startskill %i  deathmatch: %i  startmap: %i  startepisode: %i\n",
     //       startskill, deathmatch, startmap, startepisode);
-    doom_print("startskill ");
-    doom_print(doom_itoa(defaults_.startskill, 10));
-    doom_print("  deathmatch: ");
-    doom_print(doom_itoa(session.deathmatch, 10));
-    doom_print("  startmap: ");
-    doom_print(doom_itoa(defaults_.startmap, 10));
-    doom_print("  startepisode: ");
-    doom_print(doom_itoa(defaults_.startepisode, 10));
-    doom_print("\n");
+    print("startskill ",
+          static_cast<int>(defaults_.startskill),
+          "  deathmatch: ",
+          session.deathmatch,
+          "  startmap: ",
+          defaults_.startmap,
+          "  startepisode: ",
+          defaults_.startepisode,
+          "\n");
 
     // read values out of doomcom
     net.ticdup = net.doomcom->ticdup;
@@ -701,13 +691,13 @@ void checkNetGame()
 
     //doom_print("player %i of %i (%i nodes)\n",
     //       consoleplayer + 1, doomcom->numplayers, doomcom->numnodes);
-    doom_print("player ");
-    doom_print(doom_itoa(state.consoleplayer + 1, 10));
-    doom_print(" of ");
-    doom_print(doom_itoa(net.doomcom->numplayers, 10));
-    doom_print(" (");
-    doom_print(doom_itoa(net.doomcom->numnodes, 10));
-    doom_print(" nodes)\n");
+    print("player ",
+          state.consoleplayer + 1,
+          " of ",
+          net.doomcom->numplayers,
+          " (",
+          net.doomcom->numnodes,
+          " nodes)\n");
 }
 
 //
@@ -795,13 +785,14 @@ void tryRunTics()
         //fprintf(debugfile,
         //        "=======real: %i  avail: %i  game: %i\n",
         //        realtics, availabletics, counts);
-        doom_fprint(debugfile, "=======real: ");
-        doom_fprint(debugfile, doom_itoa(realtics, 10));
-        doom_fprint(debugfile, "  avail: ");
-        doom_fprint(debugfile, doom_itoa(availabletics, 10));
-        doom_fprint(debugfile, "  game: ");
-        doom_fprint(debugfile, doom_itoa(counts, 10));
-        doom_fprint(debugfile, "\n");
+        printTo(debugfile,
+                "=======real: ",
+                realtics,
+                "  avail: ",
+                availabletics,
+                "  game: ",
+                counts,
+                "\n");
     }
 
     if (!demoState().demoplayback)
