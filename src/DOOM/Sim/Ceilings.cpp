@@ -47,11 +47,11 @@ void moveCeiling(Ceiling& ceiling)
         case 1:
             // UP
             res = movePlane(*ceiling.sector,
-                              ceiling.speed,
-                              ceiling.topheight,
-                              false,
-                              1,
-                              ceiling.direction);
+                            ceiling.speed,
+                            ceiling.topheight,
+                            false,
+                            1,
+                            ceiling.direction);
 
             if (!(stats.leveltime & 7))
             {
@@ -95,11 +95,11 @@ void moveCeiling(Ceiling& ceiling)
         case -1:
             // DOWN
             res = movePlane(*ceiling.sector,
-                              ceiling.speed,
-                              ceiling.bottomheight,
-                              ceiling.crush,
-                              1,
-                              ceiling.direction);
+                            ceiling.speed,
+                            ceiling.bottomheight,
+                            ceiling.crush,
+                            1,
+                            ceiling.direction);
 
             if (!(stats.leveltime & 7))
             {
@@ -239,11 +239,11 @@ int doCeiling(Line* line, CeilingType type)
 void addActiveCeiling(Ceiling* c)
 {
     auto& specials = activeSpecials();
-    for (int i = 0; i < MAXCEILINGS; i++)
+    for (auto*& ceiling: specials.activeceilings)
     {
-        if (specials.activeceilings[i] == nullptr)
+        if (ceiling == nullptr)
         {
-            specials.activeceilings[i] = c;
+            ceiling = c;
             return;
         }
     }
@@ -255,13 +255,13 @@ void addActiveCeiling(Ceiling* c)
 void removeActiveCeiling(Ceiling* c)
 {
     auto& specials = activeSpecials();
-    for (int i = 0; i < MAXCEILINGS; i++)
+    for (auto*& ceiling: specials.activeceilings)
     {
-        if (specials.activeceilings[i] == c)
+        if (ceiling == c)
         {
-            specials.activeceilings[i]->sector->specialdata = nullptr;
-            removeThinker(specials.activeceilings[i]);
-            specials.activeceilings[i] = nullptr;
+            ceiling->sector->specialdata = nullptr;
+            removeThinker(ceiling);
+            ceiling = nullptr;
             break;
         }
     }
@@ -273,15 +273,12 @@ void removeActiveCeiling(Ceiling* c)
 void activateInStasisCeiling(Line* line)
 {
     auto& specials = activeSpecials();
-    for (int i = 0; i < MAXCEILINGS; i++)
+    for (auto* ceiling: specials.activeceilings)
     {
-        if (specials.activeceilings[i]
-            && (specials.activeceilings[i]->tag == line->tag)
-            && (specials.activeceilings[i]->direction == 0))
+        if (ceiling && ceiling->tag == line->tag && ceiling->direction == 0)
         {
-            specials.activeceilings[i]->direction =
-                specials.activeceilings[i]->olddirection;
-            specials.activeceilings[i]->stopped = false;
+            ceiling->direction = ceiling->olddirection;
+            ceiling->stopped = false;
         }
     }
 }
@@ -294,16 +291,13 @@ int ceilingCrushStop(Line* line)
 {
     int rtn = 0;
     auto& specials = activeSpecials();
-    for (int i = 0; i < MAXCEILINGS; i++)
+    for (auto* ceiling: specials.activeceilings)
     {
-        if (specials.activeceilings[i]
-            && (specials.activeceilings[i]->tag == line->tag)
-            && (specials.activeceilings[i]->direction != 0))
+        if (ceiling && ceiling->tag == line->tag && ceiling->direction != 0)
         {
-            specials.activeceilings[i]->olddirection =
-                specials.activeceilings[i]->direction;
-            specials.activeceilings[i]->stopped = true;
-            specials.activeceilings[i]->direction = 0; // in-stasis
+            ceiling->olddirection = ceiling->direction;
+            ceiling->stopped = true;
+            ceiling->direction = 0; // in-stasis
             rtn = 1;
         }
     }

@@ -949,13 +949,13 @@ void drawWidgets(bool refresh)
     for (int i = 0; i < 6; i++)
         widgets.w_armsindex[i] = bar.plyr->weaponowned[i + 1];
 
-    for (int i = 0; i < 6; i++)
-        updateMultIcon(widgets.w_arms[i], refresh);
+    for (auto& arm: widgets.w_arms)
+        updateMultIcon(arm, refresh);
 
     updateMultIcon(widgets.w_faces, refresh);
 
-    for (int i = 0; i < 3; i++)
-        updateMultIcon(widgets.w_keyboxes[i], refresh);
+    for (auto& keybox: widgets.w_keyboxes)
+        updateMultIcon(keybox, refresh);
 
     updateNum(widgets.w_frags, refresh);
 }
@@ -1109,8 +1109,7 @@ void initStatusBarData()
     for (int i = 0; i < NUMWEAPONS; i++)
         face.oldweaponsowned[i] = bar.plyr->weaponowned[i];
 
-    for (int i = 0; i < 3; i++)
-        bar.keyboxes[i] = -1;
+    bar.keyboxes.fill(-1);
 
     initStatusWidgets();
 }

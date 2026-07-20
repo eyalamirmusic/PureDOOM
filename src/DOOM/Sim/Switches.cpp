@@ -33,6 +33,8 @@
 #include "../Host/System.h"
 #include "Doors.h"
 #include "Floors.h"
+
+#include <algorithm>
 namespace Doom
 {
 SwitchListEntry alphSwitchList[] = {
@@ -130,25 +132,24 @@ void startButton(Line* line, ButtonWhere w, int texture, int time)
 {
     auto& specials = activeSpecials();
 
-    // See if button is already pressed
-    for (int i = 0; i < MAXBUTTONS; i++)
-    {
-        if (specials.buttonlist[i].btimer && specials.buttonlist[i].line == line)
-        {
-            return;
-        }
-    }
+    const auto isThisButton = [line](const Button& button)
+    { return button.btimer && button.line == line; };
 
-    for (int i = 0; i < MAXBUTTONS; i++)
+    if (std::any_of(
+            specials.buttonlist.begin(), specials.buttonlist.end(), isThisButton))
+        return;
+
+    for (auto& button: specials.buttonlist)
     {
-        if (!specials.buttonlist[i].btimer)
+        if (!button.btimer)
         {
-            specials.buttonlist[i].line = line;
-            specials.buttonlist[i].where = w;
-            specials.buttonlist[i].btexture = texture;
-            specials.buttonlist[i].btimer = time;
-            specials.buttonlist[i].soundorg =
-                reinterpret_cast<Mobj*>(&line->frontsector->soundorg);
+            button.line = line;
+            button.where = w;
+            button.btexture = texture;
+            button.btimer = time;
+            // vanilla's degenmobj pun: the sound source is the address of the
+            // sector's soundorg member, not a Mobj.
+            button.soundorg = reinterpret_cast<Mobj*>(&line->frontsector->soundorg);
             return;
         }
     }

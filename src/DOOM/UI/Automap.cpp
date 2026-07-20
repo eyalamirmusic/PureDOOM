@@ -387,8 +387,8 @@ void clearMarks()
 {
     auto& map = automapView();
 
-    for (int i = 0; i < AutomapView::numMarkPoints; i++)
-        map.markpoints[i].x = fixed_t {-1}; // means empty
+    for (auto& mark: map.markpoints)
+        mark.x = fixed_t {-1}; // means empty
     map.markpointnum = 0;
 }
 

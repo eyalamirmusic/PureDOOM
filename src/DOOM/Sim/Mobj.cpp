@@ -623,8 +623,8 @@ void spawnPlayer(MapThing* mthing)
 
     // give all cards in death match mode
     if (gameSession().deathmatch)
-        for (int i = 0; i < NUMCARDS; i++)
-            p->cards[i] = true;
+        for (bool& card: p->cards)
+            card = true;
 
     if (mthing->type - 1 == players_.consoleplayer)
     {

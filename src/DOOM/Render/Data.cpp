@@ -695,13 +695,10 @@ int textureNumForName(std::string_view name)
 void precacheLevel()
 {
     int i;
-    int j;
-    int k;
     int lump;
 
     Texture* texture;
     Doom::Thinker* th;
-    SpriteFrame* sf;
 
     if (demoState().demoplayback)
         return;
@@ -751,11 +748,8 @@ void precacheLevel()
 
         texture = textures[i];
 
-        for (j = 0; j < texture->patchcount; j++)
-        {
-            lump = texture->patches[j].patch;
-            Doom::cacheLumpNum(lump);
-        }
+        for (const auto& patch: texture->patches)
+            Doom::cacheLumpNum(patch.patch);
     }
 
     // Precache sprites.
@@ -774,15 +768,9 @@ void precacheLevel()
         if (!spritepresent[i])
             continue;
 
-        for (j = 0; j < sprites[i].numframes; j++)
-        {
-            sf = &sprites[i].spriteframes[j];
-            for (k = 0; k < 8; k++)
-            {
-                lump = gd.firstspritelump + sf->lump[k];
-                Doom::cacheLumpNum(lump);
-            }
-        }
+        for (const auto& frame: sprites[i].spriteframes)
+            for (short spriteLump: frame.lump)
+                Doom::cacheLumpNum(gd.firstspritelump + spriteLump);
     }
 }
 } // namespace Doom

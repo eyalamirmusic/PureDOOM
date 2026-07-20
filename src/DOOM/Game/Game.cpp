@@ -102,6 +102,8 @@
 #include "../Sim/Random.h"
 #include "../Render/Sky.h"
 #include "../Render/Video.h"
+
+#include <algorithm>
 // The run speed, and the cap on the combined forward/side move. forwardmove[]
 // holds the small raw integers that go into ticcmd's char fields - P_MovePlayer is
 // what turns them into a velocity, by multiplying by 2048. So the cap is that raw
@@ -490,13 +492,16 @@ void doLoadLevel()
     flow.gameaction = ga_nothing;
 
     // clear cmd building stuff
-    doom_memset(input.gamekeydown.data(), 0, sizeof(input.gamekeydown));
+    input.gamekeydown.fill(false);
     input.joyxmove = input.joyymove = 0;
     input.mousex = input.mousey = 0;
     pendingCommands().sendpause = pendingCommands().sendsave =
         refreshFlags().paused = false;
-    doom_memset(mousebuttons, 0, sizeof(*mousebuttons) * 3);
-    doom_memset(joybuttons, 0, sizeof(*joybuttons) * 4);
+    // Both views start at [1] so that a [-1] index is legal, which is why they run
+    // one short of their arrays - and why the count comes off the array rather than
+    // being written out again here.
+    std::fill_n(mousebuttons, input.mousearray.size() - 1, false);
+    std::fill_n(joybuttons, input.joyarray.size() - 1, false);
 }
 
 //
@@ -1038,8 +1043,8 @@ void doCompleted()
                 flow.gameaction = ga_victory;
                 return;
             case 9:
-                for (int i = 0; i < MAXPLAYERS; i++)
-                    players_.players[i].didsecret = true;
+                for (auto& player: players_.players)
+                    player.didsecret = true;
                 break;
         }
 
@@ -1053,8 +1058,8 @@ void doCompleted()
     if ((session.gamemap == 9) && (mode != commercial))
     {
         // exit secret level
-        for (int i = 0; i < MAXPLAYERS; i++)
-            players_.players[i].didsecret = true;
+        for (auto& player: players_.players)
+            player.didsecret = true;
     }
 
     wminfo_.didsecret = players_.players[players_.consoleplayer].didsecret;
@@ -1235,8 +1240,8 @@ void doLoadGame()
     session.gameskill = static_cast<Skill>((*save.cursor++));
     session.gameepisode = *save.cursor++;
     session.gamemap = *save.cursor++;
-    for (int i = 0; i < MAXPLAYERS; i++)
-        players_.playeringame[i] = *save.cursor++;
+    for (bool& ingame: players_.playeringame)
+        ingame = *save.cursor++;
 
     // load a base level
     initNewGame(session.gameskill, session.gameepisode, session.gamemap);
@@ -1305,8 +1310,8 @@ void doSaveGame()
     *save.cursor++ = session.gameskill;
     *save.cursor++ = session.gameepisode;
     *save.cursor++ = session.gamemap;
-    for (int i = 0; i < MAXPLAYERS; i++)
-        *save.cursor++ = players_.playeringame[i];
+    for (bool ingame: players_.playeringame)
+        *save.cursor++ = ingame;
     *save.cursor++ = stats.leveltime >> 16;
     *save.cursor++ = stats.leveltime >> 8;
     *save.cursor++ = stats.leveltime;
@@ -1440,8 +1445,8 @@ void initNewGame(Skill skill, int episode, int map)
     }
 
     // force players to be initialized upon first level load
-    for (int i = 0; i < MAXPLAYERS; i++)
-        playerState().players[i].playerstate = PST_REBORN;
+    for (auto& player: playerState().players)
+        player.playerstate = PST_REBORN;
 
     demoState().usergame = true; // will be set false if a demo
     refresh.paused = false;
@@ -1566,8 +1571,8 @@ void beginRecording()
     *demo.demo_p++ = opts.nomonsters;
     *demo.demo_p++ = players_.consoleplayer;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
-        *demo.demo_p++ = players_.playeringame[i];
+    for (bool ingame: players_.playeringame)
+        *demo.demo_p++ = ingame;
 }
 
 //
@@ -1617,8 +1622,8 @@ void doPlayDemo()
     opts.nomonsters = *demo.demo_p++;
     players_.consoleplayer = *demo.demo_p++;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
-        players_.playeringame[i] = *demo.demo_p++;
+    for (bool& ingame: players_.playeringame)
+        ingame = *demo.demo_p++;
     if (players_.playeringame[1])
     {
         session.netgame = true;

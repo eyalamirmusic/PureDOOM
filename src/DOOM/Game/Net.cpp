@@ -866,9 +866,9 @@ void tryRunTics()
                 int buf;
 
                 buf = (clock.gametic / net.ticdup) % BACKUPTICS;
-                for (int j = 0; j < MAXPLAYERS; j++)
+                for (auto& playerCmds: net.netcmds)
                 {
-                    cmd = &net.netcmds[j][buf];
+                    cmd = &playerCmds[buf];
                     cmd->chatchar = 0;
                     if (cmd->buttons & BT_SPECIAL)
                         cmd->buttons = 0;

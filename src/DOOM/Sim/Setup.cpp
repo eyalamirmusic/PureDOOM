@@ -461,11 +461,8 @@ void setupLevel(int episode, int map, int, Skill)
 
     stats.totalkills = stats.totalitems = stats.totalsecret = wminfo_.maxfrags = 0;
     wminfo_.partime = 180;
-    for (int i = 0; i < MAXPLAYERS; i++)
-    {
-        players_.players[i].killcount = players_.players[i].secretcount =
-            players_.players[i].itemcount = 0;
-    }
+    for (auto& player: players_.players)
+        player.killcount = player.secretcount = player.itemcount = 0;
 
     // Initial height of PointOfView
     // will be set by player think.

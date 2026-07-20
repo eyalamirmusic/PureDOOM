@@ -1018,32 +1018,31 @@ void updateSpecials()
     }
 
     // DO BUTTONS
-    for (int i = 0; i < MAXBUTTONS; i++)
-        if (specials.buttonlist[i].btimer)
+    for (auto& button: specials.buttonlist)
+        if (button.btimer)
         {
-            specials.buttonlist[i].btimer--;
-            if (!specials.buttonlist[i].btimer)
+            button.btimer--;
+            if (!button.btimer)
             {
-                switch (specials.buttonlist[i].where)
+                switch (button.where)
                 {
                     case top:
-                        sides[specials.buttonlist[i].line->sidenum[0]].toptexture =
-                            specials.buttonlist[i].btexture;
+                        sides[button.line->sidenum[0]].toptexture = button.btexture;
                         break;
 
                     case middle:
-                        sides[specials.buttonlist[i].line->sidenum[0]].midtexture =
-                            specials.buttonlist[i].btexture;
+                        sides[button.line->sidenum[0]].midtexture = button.btexture;
                         break;
 
                     case bottom:
-                        sides[specials.buttonlist[i].line->sidenum[0]]
-                            .bottomtexture = specials.buttonlist[i].btexture;
+                        sides[button.line->sidenum[0]].bottomtexture =
+                            button.btexture;
                         break;
                 }
-                startSound(reinterpret_cast<Mobj*>(&specials.buttonlist[i].soundorg),
-                           sfx_swtchn);
-                doom_memset(&specials.buttonlist[i], 0, sizeof(Button));
+                // vanilla's degenmobj pun: the sound source is the address of the
+                // soundorg member, not the pointer it holds.
+                startSound(reinterpret_cast<Mobj*>(&button.soundorg), sfx_swtchn);
+                button = {};
             }
         }
 }
@@ -1217,13 +1216,8 @@ void spawnSpecials()
     }
 
     // Init other misc stuff
-    for (i = 0; i < MAXCEILINGS; i++)
-        specials.activeceilings[i] = nullptr;
-
-    for (i = 0; i < MAXPLATS; i++)
-        specials.activeplats[i] = nullptr;
-
-    for (i = 0; i < MAXBUTTONS; i++)
-        doom_memset(&specials.buttonlist[i], 0, sizeof(Button));
+    specials.activeceilings.fill(nullptr);
+    specials.activeplats.fill(nullptr);
+    specials.buttonlist.fill({});
 }
 } // namespace Doom

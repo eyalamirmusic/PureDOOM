@@ -697,8 +697,7 @@ void setupFrame(Player& player)
 
         segState().walllights = lights.scalelightfixed.data();
 
-        for (int i = 0; i < MAXLIGHTSCALE; i++)
-            lights.scalelightfixed[i] = lights.fixedcolormap;
+        lights.scalelightfixed.fill(lights.fixedcolormap);
     }
     else
         lights.fixedcolormap = nullptr;

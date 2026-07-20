@@ -149,12 +149,12 @@ void archiveWorld()
         *put++ = li->flags;
         *put++ = li->special;
         *put++ = li->tag;
-        for (int j = 0; j < 2; j++)
+        for (short sidenum: li->sidenum)
         {
-            if (li->sidenum[j] == -1)
+            if (sidenum == -1)
                 continue;
 
-            Side* si = &sides[li->sidenum[j]];
+            Side* si = &sides[sidenum];
 
             *put++ = si->textureoffset.toInt();
             *put++ = si->rowoffset.toInt();
@@ -200,11 +200,11 @@ void unArchiveWorld()
         li->flags = *get++;
         li->special = *get++;
         li->tag = *get++;
-        for (int j = 0; j < 2; j++)
+        for (short sidenum: li->sidenum)
         {
-            if (li->sidenum[j] == -1)
+            if (sidenum == -1)
                 continue;
-            Side* si = &sides[li->sidenum[j]];
+            Side* si = &sides[sidenum];
             si->textureoffset = Fixed::fromInt(*get++);
             si->rowoffset = Fixed::fromInt(*get++);
             si->toptexture = *get++;

@@ -59,6 +59,8 @@
 
 #include "../Game/Sound.h"
 
+#include <algorithm>
+
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 // externs): the config-persisted chat macros, the player names and the level-name
 // tables (st_stuff reads mapnames).
@@ -261,7 +263,7 @@ void initHud()
 
     // load the heads-up font
     int j = HU_FONTSTART;
-    for (int i = 0; i < HU_FONTSIZE; i++)
+    for (auto*& glyph: font.hu_font)
     {
         auto name = std::string {"STCFN"};
 
@@ -272,7 +274,7 @@ void initHud()
             name += "0";
 
         name += std::to_string(j++);
-        font.hu_font[i] = static_cast<Patch*>(cacheLumpName(name));
+        glyph = static_cast<Patch*>(cacheLumpName(name));
     }
 }
 
@@ -350,8 +352,8 @@ void startHud()
               &hud.chat_on);
 
     // create the inputbuffer widgets
-    for (int i = 0; i < MAXPLAYERS; i++)
-        initIText(chat.w_inputbuffer[i], 0, 0, nullptr, 0, &chat.always_off);
+    for (auto& buffer: chat.w_inputbuffer)
+        initIText(buffer, 0, 0, nullptr, 0, &chat.always_off);
 
     state.headsupactive = true;
 }
@@ -498,9 +500,8 @@ bool hudResponder(Event* ev)
 
     auto& players_ = playerState();
 
-    int numplayers = 0;
-    for (int i = 0; i < MAXPLAYERS; i++)
-        numplayers += players_.playeringame[i];
+    const auto numplayers = static_cast<int>(std::count(
+        players_.playeringame.begin(), players_.playeringame.end(), true));
 
     if (ev->data1 == KEY_RSHIFT)
     {

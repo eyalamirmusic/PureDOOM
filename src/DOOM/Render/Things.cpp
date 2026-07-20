@@ -248,8 +248,8 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
 
                 case 1:
                     // must have all 8 frames
-                    for (rotation = 0; rotation < 8; rotation++)
-                        if (scratch.sprtemp[frame].lump[rotation] == -1)
+                    for (short lump: scratch.sprtemp[frame].lump)
+                        if (lump == -1)
                         {
                             fatalError("Error: Doom::initSprites: Sprite ",
                                        namelist[i],
@@ -284,10 +284,7 @@ void initSprites(std::span<const std::string_view> namelist)
 {
     auto& sprState = spriteState();
 
-    for (int i = 0; i < SCREENWIDTH; i++)
-    {
-        sprState.negonearray[i] = -1;
-    }
+    sprState.negonearray.fill(-1);
 
     initSpriteDefs(namelist);
 }

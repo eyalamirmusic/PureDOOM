@@ -1486,7 +1486,6 @@ void explode(Mobj& thingy)
 void bossDeath(Mobj& mo)
 {
     Line junk;
-    int i;
 
     auto& thinkers = thinkerList();
     const auto& version = gameVersion();
@@ -1557,11 +1556,16 @@ void bossDeath(Mobj& mo)
     }
 
     // make sure there is a player alive for victory
-    for (i = 0; i < MAXPLAYERS; i++)
-        if (players_.playeringame[i] && players_.players[i].health > 0)
-            break;
+    const auto anyPlayerAlive = [&players_]
+    {
+        for (int i = 0; i < MAXPLAYERS; i++)
+            if (players_.playeringame[i] && players_.players[i].health > 0)
+                return true;
 
-    if (i == MAXPLAYERS)
+        return false;
+    };
+
+    if (!anyPlayerAlive())
         return; // no one left alive, so do not end game
 
     // scan the remaining thinkers to see

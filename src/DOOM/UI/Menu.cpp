@@ -235,8 +235,6 @@ Array<MenuCustomText, 4> menu_custom_texts = {
       {}}},
 };
 
-const int custom_texts_count = sizeof(menu_custom_texts) / sizeof(MenuCustomText);
-
 Array<std::string_view, 2> detailNames = {"M_GDHIGH", "M_GDLOW"};
 Array<std::string_view, 2> msgNames = {"M_MSGOFF", "M_MSGON"};
 
@@ -654,12 +652,11 @@ DOOM_DIAGNOSTIC_POP
 //
 void drawCustomMenuText(std::string_view name, int x, int y)
 {
-    for (int i = 0; i < custom_texts_count; ++i)
+    for (auto& custom_text: menu_custom_texts)
     {
-        MenuCustomText* custom_text = menu_custom_texts.data() + i;
-        if (custom_text->name == name)
+        if (custom_text.name == name)
         {
-            MenuCustomTextSeg* seg = custom_text->segs;
+            MenuCustomTextSeg* seg = custom_text.segs;
             while (!seg->lump.empty())
             {
                 void* lump = cacheLumpName(seg->lump);

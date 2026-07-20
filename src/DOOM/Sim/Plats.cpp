@@ -45,12 +45,11 @@ void platRaise(Plat& plat)
         case up:
             res = movePlane(*plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
 
-            if (plat.type == raiseAndChange
-                || plat.type == raiseToNearestAndChange)
+            if (plat.type == raiseAndChange || plat.type == raiseToNearestAndChange)
             {
                 if (!(levelStats().leveltime & 7))
                     startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                                 sfx_stnmov);
+                               sfx_stnmov);
             }
 
             if (res == crushed && (!plat.crush))
@@ -58,7 +57,7 @@ void platRaise(Plat& plat)
                 plat.count = plat.wait;
                 plat.status = down;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                             sfx_pstart);
+                           sfx_pstart);
             }
             else
             {
@@ -67,7 +66,7 @@ void platRaise(Plat& plat)
                     plat.count = plat.wait;
                     plat.status = waiting;
                     startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                                 sfx_pstop);
+                               sfx_pstop);
 
                     switch (plat.type)
                     {
@@ -96,7 +95,7 @@ void platRaise(Plat& plat)
                 plat.count = plat.wait;
                 plat.status = waiting;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                             sfx_pstop);
+                           sfx_pstop);
             }
             break;
 
@@ -108,7 +107,7 @@ void platRaise(Plat& plat)
                 else
                     plat.status = down;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                             sfx_pstart);
+                           sfx_pstart);
             }
 
         case in_stasis:
@@ -230,38 +229,33 @@ int doPlat(Line* line, PlatType type, int amount)
 void activateInStasis(int tag)
 {
     auto& specials = activeSpecials();
-    for (int i = 0; i < MAXPLATS; i++)
-        if (specials.activeplats[i] && (specials.activeplats[i])->tag == tag
-            && (specials.activeplats[i])->status == in_stasis)
+    for (auto* plat: specials.activeplats)
+        if (plat && plat->tag == tag && plat->status == in_stasis)
         {
-            (specials.activeplats[i])->status =
-                (specials.activeplats[i])->oldstatus;
-            (specials.activeplats[i])->stopped = false;
+            plat->status = plat->oldstatus;
+            plat->stopped = false;
         }
 }
 
 void stopPlat(Line* line)
 {
     auto& specials = activeSpecials();
-    for (int j = 0; j < MAXPLATS; j++)
-        if (specials.activeplats[j]
-            && ((specials.activeplats[j])->status != in_stasis)
-            && ((specials.activeplats[j])->tag == line->tag))
+    for (auto* plat: specials.activeplats)
+        if (plat && plat->status != in_stasis && plat->tag == line->tag)
         {
-            (specials.activeplats[j])->oldstatus =
-                (specials.activeplats[j])->status;
-            (specials.activeplats[j])->status = in_stasis;
-            (specials.activeplats[j])->stopped = true;
+            plat->oldstatus = plat->status;
+            plat->status = in_stasis;
+            plat->stopped = true;
         }
 }
 
 void addActivePlat(Plat* plat)
 {
     auto& specials = activeSpecials();
-    for (int i = 0; i < MAXPLATS; i++)
-        if (specials.activeplats[i] == nullptr)
+    for (auto*& slot: specials.activeplats)
+        if (slot == nullptr)
         {
-            specials.activeplats[i] = plat;
+            slot = plat;
             return;
         }
     fatalError("Error: addActivePlat: no more plats!");
@@ -270,12 +264,12 @@ void addActivePlat(Plat* plat)
 void removeActivePlat(Plat* plat)
 {
     auto& specials = activeSpecials();
-    for (int i = 0; i < MAXPLATS; i++)
-        if (plat == specials.activeplats[i])
+    for (auto*& slot: specials.activeplats)
+        if (plat == slot)
         {
-            (specials.activeplats[i])->sector->specialdata = nullptr;
-            removeThinker(specials.activeplats[i]);
-            specials.activeplats[i] = nullptr;
+            slot->sector->specialdata = nullptr;
+            removeThinker(slot);
+            slot = nullptr;
 
             return;
         }

@@ -69,9 +69,9 @@ void drawTextLine(HudTextLine& l, bool drawcursor)
     // draw the new stuff
     auto x = l.x;
 
-    for (int i = 0; i < static_cast<int>(l.l.size()); i++)
+    for (char character: l.l)
     {
-        auto c = static_cast<unsigned char>(toUpper(l.l[i]));
+        auto c = static_cast<unsigned char>(toUpper(character));
         if (c != ' ' && c >= l.sc && c <= '_')
         {
             int w = littleEndian(l.f[c - l.sc]->width);
