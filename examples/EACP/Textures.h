@@ -4,6 +4,11 @@
 
 namespace PureDoom
 {
+// How a texture is sampled is not set here: it belongs to the shader that
+// samples it, as a GPU::TextureSampling on its texture uniform, fixed when the
+// shader compiles. Every texture below wants what that defaults to - nearest,
+// clamped - so only the two shaders sampling makeWorldTexture say anything.
+
 // The engine's own framebuffer, one palette index per pixel.
 inline GPU::Texture makeIndexTexture()
 {
@@ -11,7 +16,6 @@ inline GPU::Texture makeIndexTexture()
     descriptor.width = doomWidth;
     descriptor.height = doomHeight;
     descriptor.format = GPU::TextureFormat::R8Unorm;
-    descriptor.filter = GPU::TextureFilter::Nearest;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
@@ -21,20 +25,19 @@ inline GPU::Texture makePaletteTexture()
     auto descriptor = GPU::TextureDescriptor {};
     descriptor.width = 256;
     descriptor.height = 1;
-    descriptor.filter = GPU::TextureFilter::Nearest;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
-// One row per light level. Clamped, so a surface too bright or too far simply
-// lands on the first or the last row and the shader needs no clamp of its own.
+// One row per light level. The shaders sample it clamped, so a surface too
+// bright or too far simply lands on the first or the last row and none of them
+// needs a clamp of its own.
 inline GPU::Texture makeColormapTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
     descriptor.width = 256;
     descriptor.height = EACP_DOOM_COLORMAP_ROWS;
     descriptor.format = GPU::TextureFormat::R8Unorm;
-    descriptor.filter = GPU::TextureFilter::Nearest;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
@@ -48,7 +51,6 @@ inline GPU::Texture makeOverlayTexture()
     descriptor.width = EACP_DOOM_SCREEN_WIDTH;
     descriptor.height = EACP_DOOM_SCREEN_HEIGHT;
     descriptor.format = GPU::TextureFormat::RGBA8Unorm;
-    descriptor.filter = GPU::TextureFilter::Nearest;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
@@ -61,15 +63,15 @@ inline GPU::Texture makeWipeOffsetTexture()
     descriptor.width = EACP_DOOM_WIPE_COLUMNS;
     descriptor.height = 1;
     descriptor.format = GPU::TextureFormat::R8Unorm;
-    descriptor.filter = GPU::TextureFilter::Nearest;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
-// Wall textures, flats and sprites tile across a surface, so they repeat; they
-// carry palette indices, which must never be blended, so they sample nearest. A
-// masked one needs a second channel for its coverage, so it goes up as RGBA -
-// index in red, coverage in alpha - while the rest stay one byte per pixel.
+// Wall textures, flats and sprites tile across a surface, so WorldShader and
+// HudShader declare them repeating; they carry palette indices, which must never
+// be blended, so those shaders sample them nearest. A masked one needs a second
+// channel for its coverage, so it goes up as RGBA - index in red, coverage in
+// alpha - while the rest stay one byte per pixel.
 inline GPU::Texture
     makeWorldTexture(int width, int height, bool masked, const std::uint8_t* pixels)
 {
@@ -78,8 +80,6 @@ inline GPU::Texture
     descriptor.height = height;
     descriptor.format =
         masked ? GPU::TextureFormat::RGBA8Unorm : GPU::TextureFormat::R8Unorm;
-    descriptor.filter = GPU::TextureFilter::Nearest;
-    descriptor.addressMode = GPU::TextureAddressMode::Repeat;
 
     return GPU::Device::shared().makeTexture(descriptor, pixels);
 }

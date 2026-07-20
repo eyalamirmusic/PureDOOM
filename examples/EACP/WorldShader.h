@@ -11,7 +11,21 @@ namespace PureDoom
 // letterbox bars alone.
 struct WorldShader final : DoomShader
 {
-    WorldShader() { compile(); }
+    WorldShader()
+    {
+        // Wall textures and flats tile across a surface, so they repeat. A floor
+        // needs it most: its UVs are world coordinates over 64, running to
+        // hundreds, where clamping would sample one texel and draw the whole
+        // surface a single flat colour.
+        //
+        // Declared here rather than on the Texture because the sampler is fixed
+        // when the shader compiles - see GPU::TextureSampling. Set before
+        // compile(), which is what reads it.
+        texture.sampling = {GPU::TextureFilter::Nearest,
+                            GPU::TextureAddressMode::Repeat};
+
+        compile();
+    }
 
     void define() override
     {

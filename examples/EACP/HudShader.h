@@ -9,7 +9,16 @@ namespace PureDoom
 // without the perspective.
 struct HudShader final : ScreenQuadShader
 {
-    HudShader() { compile(); }
+    HudShader()
+    {
+        // The weapon sprites go up through makeWorldTexture like every other
+        // world texture, so they repeat for consistency; a HUD sprite's own UVs
+        // stay inside [0,1], so nothing here depends on it.
+        texture.sampling = {GPU::TextureFilter::Nearest,
+                            GPU::TextureAddressMode::Repeat};
+
+        compile();
+    }
 
     void define() override
     {
