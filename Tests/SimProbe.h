@@ -279,6 +279,38 @@ extern "C"
     // branches are reachable from the booted IWAD rather than assume it.
     int doomSimGameMode();
 
+    // --- The intermission harness ---------------------------------------------
+    //
+    // UI/Intermission.cpp is the between-levels scoreboard, and it is the one
+    // screen with no coverage of any kind: an attract demo replays a slice of a
+    // level and never completes it, so nothing drives doCompleted ->
+    // Doom::startIntermission -> Doom::drawIntermission. Unlike the finale there
+    // is no need to call the screen's entry point directly: Doom::exitLevel() is
+    // the real thing - the same call an exit switch makes - and everything from
+    // there (doCompleted's wminfo fill, the scoreboard, worldDone loading the
+    // next level) runs off doomSimStepTic exactly as the game loop would.
+
+    // Calls Doom::exitLevel(), which queues ga_completed for the next tic's
+    // gameTicker. Must be called with a level loaded (doomSimLoadLevel).
+    void doomSimExitLevel();
+
+    // IntermissionState's phase (Doom::IntermissionPhase: NoState=-1,
+    // StatCount=0, ShowNextLoc=1), so a script can drive off the engine's own
+    // transitions rather than hard-coded tic counts.
+    int doomSimIntermissionPhase();
+
+    // The size of IntermissionState's lnames - the per-level name patch table
+    // loadIntermissionData fills and drawEL reads - so a test can pin that the
+    // table outlives the intermission's *last* draw. That is not a given:
+    // updateNoState's expiry runs endIntermission before gamestate leaves
+    // GS_INTERMISSION, and displayFrame still draws that same tic.
+    int doomSimIntermissionLnameCount();
+
+    // GameSession's gameepisode/gamemap, so a transition test can assert the
+    // intermission actually delivered the next level rather than assume it.
+    int doomSimGameEpisode();
+    int doomSimGameMap();
+
     // The texture table as Doom::initTextures decoded it out of TEXTURE1. The
     // lump packs records at whatever byte offset its directory names - usually
     // not aligned for the record's int fields (BIGDOOR1's sits at offset % 4 ==

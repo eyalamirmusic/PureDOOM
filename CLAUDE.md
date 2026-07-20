@@ -737,8 +737,9 @@ after a single load: that `vertexes`/`numsegs`/… still equal their `Level` vec
 ### What the tests do not cover
 
 Audio, and the eacp platform layer and GPU renderer. That is now the whole list —
-the three screens a demo never reaches each have their own frame golden, all
-built the same way and all built *before* the code they cover was rewritten:
+the four screens a demo never reaches each have their own harness: the first
+three a frame golden, all built the same way and all built *before* the code they
+cover was rewritten, and the fourth a transition test awaiting its golden:
 
 - **The menu** (`Tests/Goldens/menu.frames`, via `Tests/MenuReplay.h`) — nothing
   in a demo opens one. Synthetic `doom_key_down` events drive a scripted walk
@@ -758,6 +759,27 @@ built the same way and all built *before* the code they cover was rewritten:
   screen. The cast call and bunny scroll are DOOM II / episode-3 only, so the
   test *asserts* the game mode is shareware rather than leaving "unreachable" as
   a comment.
+- **The intermission** (`Tests/Sim/IntermissionTests.cpp`, via
+  `Tests/IntermissionReplay.h`) — the fourth screen, found uncovered *after* the
+  list above was declared complete: no demo completes a level, so nothing had
+  ever run `doCompleted`, `drawIntermission`, or `doWorldDone`. Unlike the other
+  three it needs no direct entry-point call — `Doom::exitLevel()` is the real
+  thing, so it drives the genuine E1M1 → scoreboard → E1M2 transition and asserts
+  the state machine rather than frames. Its first sanitizer run caught a real
+  refactor-era defect: the intermission's last tic draws *after*
+  `endIntermission()` has run — `updateNoState` unloads and queues `ga_worlddone`,
+  but gamestate stays `GS_INTERMISSION` until the next tic's `doWorldDone` — so
+  `drawEL` read a `lnames` the unload had just cleared. Vanilla has the identical
+  call order and survived it because `WI_unloadData` was `Z_ChangeTag(PU_CACHE)`,
+  which left the memory readable; the Step-9 RAII conversion turned that harmless
+  1993 idiom into a read past a vector's size that only worked because `clear()`
+  keeps the old buffer. Fixed at `unloadIntermissionData` (which now deliberately
+  keeps the table), and pinned twice: `Sim/intermission` re-reads it under any
+  sanitizer run, and `Sim/intermissionLastDraw` asserts the drawer's
+  precondition — a tic that ends still on the intermission drew it, so the
+  level-name table must still be filled — which is red in *any* build if the
+  unload order regresses. **No frame golden yet**: recording one is the natural
+  follow-up now that the sanitizers run clean through the transition.
 
 Each was demonstrated **sharp and non-redundant** when recorded: a
 one-palette-index change to `WALLCOLORS` fails only `Sim/automap`, and

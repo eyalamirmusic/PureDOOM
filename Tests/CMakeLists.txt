@@ -34,6 +34,7 @@ nano_add_executable(SimTests
         MenuReplay.h
         AutomapReplay.h
         FinaleReplay.h
+        IntermissionReplay.h
         Sim/DemoTests.cpp
         Sim/WadTests.cpp
         Sim/LevelTests.cpp
@@ -45,6 +46,7 @@ nano_add_executable(SimTests
         Sim/MenuTests.cpp
         Sim/AutomapTests.cpp
         Sim/FinaleTests.cpp
+        Sim/IntermissionTests.cpp
         Port/GeometryTests.cpp
         ${CMAKE_SOURCE_DIR}/examples/EACP/EngineAccess.cpp
         TARGETS doom-sim-probe)

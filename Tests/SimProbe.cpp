@@ -14,6 +14,7 @@
 #include <DOOM/Game/GameVersion.h>
 #include <DOOM/UI/Finale.h>
 #include <DOOM/UI/FinaleState.h>
+#include <DOOM/UI/IntermissionState.h>
 #include <DOOM/Sim/Level.h>
 #include <DOOM/Sim/Random.h>
 #include <DOOM/Sim/SaveGame.h>
@@ -827,6 +828,36 @@ int doomSimFinaleStage()
 int doomSimGameMode()
 {
     return (int) Doom::gameVersion().gamemode;
+}
+
+// --- The intermission harness -------------------------------------------------
+
+void doomSimExitLevel()
+{
+    if (setjmp(simAbort))
+        return;
+
+    Doom::exitLevel();
+}
+
+int doomSimIntermissionPhase()
+{
+    return (int) Doom::intermissionState().state;
+}
+
+int doomSimIntermissionLnameCount()
+{
+    return Doom::intermissionState().lnames.size();
+}
+
+int doomSimGameEpisode()
+{
+    return Doom::gameSession().gameepisode;
+}
+
+int doomSimGameMap()
+{
+    return Doom::gameSession().gamemap;
 }
 
 int doomSimTextureCount()

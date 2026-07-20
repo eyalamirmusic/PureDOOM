@@ -1566,11 +1566,18 @@ void unloadIntermissionData()
     // used to be Z_ChangeTag(..., PU_CACHE) twenty-five times over, which said
     // "purge these if you need the space".
     //
-    // lnames is not a lump. It is the array of pointers *to* the lumps, sized by
-    // loadIntermissionData, and it is still ours (RAII-owned, Step 9) - clearing it
-    // drops only the pointer array, not the Patch lumps it points at, which the WAD
-    // owns and keeps regardless.
-    intermissionState().lnames.clear();
+    // lnames - the pointer array, the one thing here the intermission does own
+    // (RAII-owned, Step 9) - must NOT be cleared here, and this function's call
+    // site is why: updateNoState runs endIntermission and worldDone on the
+    // intermission's last tic, but gamestate stays GS_INTERMISSION until the
+    // *next* tic's doWorldDone, so displayFrame draws one more intermission
+    // frame after this ran and drawEL reads lnames[wbs->next]. Vanilla had the
+    // identical order and survived it because PU_CACHE left the memory readable;
+    // an actual clear() turned that last draw into a read past the vector's size
+    // (found by ASAN on the first level transition;
+    // Tests/Sim/IntermissionTests.cpp pins it now). The next
+    // loadIntermissionData resizes and refills the vector, so nothing is leaked
+    // or stale by leaving it be - the Engine's destructor is its owner.
 }
 
 void drawIntermission()
