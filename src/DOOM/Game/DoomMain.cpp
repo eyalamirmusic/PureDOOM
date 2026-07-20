@@ -236,7 +236,7 @@ void displayFrame()
     if (view.setsizeneeded)
     {
         Doom::executeSetViewSize();
-        oldgamestate = static_cast<GameState>((-1)); // force background redraw
+        oldgamestate = GS_FORCE_WIPE; // force background redraw
         borderdrawcount = 3;
     }
 

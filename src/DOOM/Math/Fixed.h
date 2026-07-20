@@ -25,16 +25,40 @@ struct Fixed
     {
     }
 
+    // Addition, subtraction and negation wrap at 32 bits, and the engine leans
+    // on it: storeWallRange legitimately overflows a texture offset on E1M1's
+    // first attract-mode frame, and the goldens are recorded against the
+    // wrapped value. Signed overflow being UB, the wrap is computed in
+    // unsigned - where it is defined - and converted back: the same bits, now
+    // guaranteed. Tests/Sim/MathTests.cpp pins the wrapped answers.
+    static constexpr std::uint32_t bits(std::int32_t value)
+    {
+        return static_cast<std::uint32_t>(value);
+    }
+
+    static constexpr std::int32_t wrapped(std::uint32_t value)
+    {
+        return static_cast<std::int32_t>(value);
+    }
+
     static constexpr Fixed fromInt(int value)
     {
-        return Fixed {(std::int32_t) (value * fracUnit)};
+        return Fixed {wrapped(bits(value) * fracUnit)};
     }
 
     constexpr int toInt() const { return raw >> fracBits; }
 
-    constexpr Fixed operator+(Fixed other) const { return Fixed {raw + other.raw}; }
-    constexpr Fixed operator-(Fixed other) const { return Fixed {raw - other.raw}; }
-    constexpr Fixed operator-() const { return Fixed {-raw}; }
+    constexpr Fixed operator+(Fixed other) const
+    {
+        return Fixed {wrapped(bits(raw) + bits(other.raw))};
+    }
+
+    constexpr Fixed operator-(Fixed other) const
+    {
+        return Fixed {wrapped(bits(raw) - bits(other.raw))};
+    }
+
+    constexpr Fixed operator-() const { return Fixed {wrapped(0u - bits(raw))}; }
 
     constexpr Fixed& operator+=(Fixed other) { return *this = *this + other; }
     constexpr Fixed& operator-=(Fixed other) { return *this = *this - other; }
@@ -82,7 +106,7 @@ constexpr auto fracUnit = Fixed::fracUnit;
 
 constexpr Fixed operator*(Fixed value, int scale)
 {
-    return Fixed {(std::int32_t) (value.raw * scale)};
+    return Fixed {Fixed::wrapped(Fixed::bits(value.raw) * Fixed::bits(scale))};
 }
 
 constexpr Fixed operator*(int scale, Fixed value)
@@ -100,7 +124,7 @@ constexpr Fixed operator/(Fixed value, int divisor)
 
 constexpr Fixed abs(Fixed value)
 {
-    return value.raw < 0 ? Fixed {-value.raw} : value;
+    return value.raw < 0 ? -value : value;
 }
 
 // The division that does NOT saturate, and the one place the simulation leaves

@@ -835,6 +835,16 @@ That zero is measured on Apple Clang (`Debug` and `Release`), on **real GCC 16**
 unmeasured — a different standard library, so a different set of transitive
 includes. `-Werror` waits on that: see `REFACTOR.md` item 7.
 
+On Clang the zero now also includes **`-Wshorten-64-to-32`**, appended to
+`DOOM_WARNINGS_ON` in `src/DOOM/CMakeLists.txt`. The Xcode generator passes that
+flag on its own (it is an Xcode project default), which is how 15 `long`→`int`
+narrowings sat visible in Xcode builds while every Ninja build read zero — most
+of them `State`'s `long` fields (`tics`/`frame`/`misc1`/`misc2`, now `int`, the
+value-mixing checksum in `Tests/Sim/PrimitiveTests.cpp` proving the table
+unchanged). Pinning the flag makes the two generators agree on what zero means;
+GCC has no such flag, and its nearest spelling (`-Wconversion`) stays the
+deliberate future decision of `REFACTOR.md` item 7.
+
 **The flags are chosen by the driver, not by the compiler's name, and getting that
 wrong is not a no-op.** `src/DOOM/CMakeLists.txt` used to select them with
 `$<CXX_COMPILER_ID:MSVC>`. clang-cl's `CMAKE_CXX_COMPILER_ID` is **`Clang`** with
@@ -1266,6 +1276,18 @@ found by comparing against GZDoom:
    works because a `Window` needs no content view to exist. A `View::getWindow()`,
    or a window reference given to the view on `setContentView`, would settle it
    properly for every view that locks the mouse.
+10. **`-fno-gnu-unique` is added for every language.** eacp's top-level CMake
+    adds it via `add_compile_options` when the CXX compiler is GCC, but the
+    option lands on all languages — including the OBJCXX its Apple platform
+    files compile, and OBJCXX on macOS is always Apple Clang, which rejects the
+    GCC-only flag as an unknown-argument *error*. A macOS GCC build (the
+    second-compiler gate above) then dies inside `eacp-core` before any engine
+    code compiles. Workaround: the root `CMakeLists.txt` rewrites the flag to
+    `$<$<COMPILE_LANGUAGE:CXX>:-fno-gnu-unique>` on every target under eacp's
+    directory tree after `CPMAddPackage` — on the targets, not the directories,
+    because a target snapshots its directory's `COMPILE_OPTIONS` at creation.
+    The proper fix in eacp is to scope the `add_compile_options` call the same
+    way.
 
 ## Code Style
 

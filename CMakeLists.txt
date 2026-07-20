@@ -21,7 +21,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 #                        platforms than on the MSVC ones, which is exactly the
 #                        kind of difference that is invisible until it isn't.
 #
-# doom-engine additionally states cxx_std_20 as a target_compile_feature, which
+# doom-engine aditionally states cxx_std_20 as a target_compile_feature, which
 # is what propagates the requirement to anything linking it.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -69,6 +69,36 @@ CPMAddPackage(
         OPTIONS
         "EACP_BUILD_GRAPHICS ${PUREDOOM_BUILD_EACP_EXAMPLE}"
         "EACP_BUILD_WEBVIEW OFF")
+
+# eacp guards GCC's STB_GNU_UNIQUE emission with add_compile_options(-fno-gnu-unique),
+# keyed on the CXX compiler being GCC - but add_compile_options lands on every
+# language, including the OBJCXX its Apple platform files compile, and OBJCXX on
+# macOS is always Apple Clang, which rejects the GCC-only flag as an unknown
+# argument. A macOS GCC build (the second-compiler gate CLAUDE.md asks for) then
+# fails inside eacp-core before compiling any engine code. Until eacp scopes the
+# flag itself (gap log item 10), rewrite it across eacp's directory tree to apply
+# to C++ only: the same flag on every GCC-compiled TU, none on the clang .mm ones.
+# A target snapshots its directory's COMPILE_OPTIONS when it is created, so the
+# rewrite has to visit the targets themselves, not the directory properties.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    function(puredoom_scope_gnu_unique_flag dir)
+        get_directory_property(targets DIRECTORY ${dir} BUILDSYSTEM_TARGETS)
+        foreach (target ${targets})
+            get_target_property(options ${target} COMPILE_OPTIONS)
+            if (options)
+                list(TRANSFORM options REPLACE "^-fno-gnu-unique$"
+                        "$<$<COMPILE_LANGUAGE:CXX>:-fno-gnu-unique>")
+                set_target_properties(${target}
+                        PROPERTIES COMPILE_OPTIONS "${options}")
+            endif ()
+        endforeach ()
+        get_directory_property(subdirs DIRECTORY ${dir} SUBDIRECTORIES)
+        foreach (subdir ${subdirs})
+            puredoom_scope_gnu_unique_flag(${subdir})
+        endforeach ()
+    endfunction()
+    puredoom_scope_gnu_unique_flag(${eacp_SOURCE_DIR})
+endif ()
 
 # The engine. Everything else links it.
 add_subdirectory(src/DOOM)

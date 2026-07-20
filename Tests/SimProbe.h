@@ -279,6 +279,21 @@ extern "C"
     // branches are reachable from the booted IWAD rather than assume it.
     int doomSimGameMode();
 
+    // The texture table as Doom::initTextures decoded it out of TEXTURE1. The
+    // lump packs records at whatever byte offset its directory names - usually
+    // not aligned for the record's int fields (BIGDOOR1's sits at offset % 4 ==
+    // 2) - so the decode reads through aligned copies, and these let a test hold
+    // the parsed table against values read from the lump by hand. All must be
+    // called after doomSimBoot; the name lookup is fatal, not -1, on a missing
+    // name, exactly as the engine's own lookups are.
+    int doomSimTextureCount();
+    int doomSimTextureNumForName(const char* name);
+    int doomSimTextureWidth(int texture);
+    int doomSimTextureHeight(int texture);
+    int doomSimTexturePatchCount(int texture);
+    int doomSimTexturePatchOriginX(int texture, int patch);
+    int doomSimTexturePatchOriginY(int texture, int patch);
+
     // What Doom::readFile made of a path. It fills an EA::Vector<byte> the caller
     // owns, which a test cannot see, so the three facts worth asserting come back
     // as plain ints: the length readFile returned, the size of the owner it filled

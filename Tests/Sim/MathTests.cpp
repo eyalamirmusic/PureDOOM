@@ -78,6 +78,29 @@ auto tFixedDivSaturates = test("Fixed/divideSaturatesRatherThanOverflowing") = [
     check(Fixed::fromInt(12) / Fixed::fromInt(4) == Fixed::fromInt(3));
 };
 
+// Addition, subtraction and negation wrap at 32 bits, and the engine leans on
+// that: storeWallRange legitimately overflows a texture offset accumulating
+// rowoffset on E1M1's first attract-mode frame (UBSan caught the exact sum
+// pinned first below), and the frame goldens are recorded against the wrapped
+// value. Signed overflow being UB, the operators compute in unsigned - where
+// wrap is defined - and convert back; these hold them to the two's-complement
+// answers so the overflow can neither trap nor saturate.
+auto tFixedWrapsAt32Bits = test("Fixed/arithmeticWrapsAt32Bits") = []
+{
+    check(Fixed {2144993280} + Fixed {5767168} == Fixed {-2144206848});
+
+    check(Fixed {DOOM_MAXINT} + Fixed {1} == Fixed {DOOM_MININT});
+    check(Fixed {DOOM_MININT} - Fixed {1} == Fixed {DOOM_MAXINT});
+
+    // The one value with no positive counterpart negates to itself.
+    check(-Fixed {DOOM_MININT} == Fixed {DOOM_MININT});
+    check(abs(Fixed {DOOM_MININT}) == Fixed {DOOM_MININT});
+
+    // The int-scale multiply and the unit conversion wrap the same way.
+    check(Fixed {0x40000000} * 4 == Fixed {0});
+    check(Fixed::fromInt(40000) == Fixed {-1673527296});
+};
+
 // (Fixed/agreesWithVanillaFixedMul lived here. It held Doom::Fixed's operators
 // against the vanilla FixedMul/FixedDiv functions - the claim the shim layer
 // made. fixed_t IS Doom::Fixed now and FixedMul(a, b) is literally `a * b`, so

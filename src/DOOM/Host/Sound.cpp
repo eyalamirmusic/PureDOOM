@@ -912,7 +912,13 @@ void initSoundHost()
         {
             // Previously loaded already?
             S_sfx[i].data = S_sfx[i].link->data;
-            lengths[i] = lengths[(S_sfx[i].link - S_sfx) / sizeof(SfxInfo)];
+            // Vanilla's own defect, preserved: the pointer difference is already
+            // an element index, so dividing it by sizeof lands on entry 0 rather
+            // than on the link target. No build here plays audio, so no gate
+            // could check the fix; the cast narrows the index, it does not
+            // correct it.
+            lengths[i] =
+                lengths[static_cast<int>((S_sfx[i].link - S_sfx) / sizeof(SfxInfo))];
         }
     }
 

@@ -23,7 +23,7 @@ struct DisplayState
     bool inhelpscreensstate = false; // last frame's inhelpscreens
     bool fullscreen = false; // last frame's full-view (viewheight == 200)
     GameState oldgamestate =
-        static_cast<GameState>(-1); // last drawn gamestate, -1 forces a redraw
+        GS_FORCE_WIPE; // last drawn gamestate; the sentinel forces the first redraw
     int borderdrawcount = 0; // frames of view-border redraw still owed
 };
 

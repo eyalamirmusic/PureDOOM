@@ -191,8 +191,8 @@ void doom_gettime_impl(int* sec, int* usec)
     gettimeofday(&tp, &tzp);
 #endif
 
-    *sec = tp.tv_sec;
-    *usec = tp.tv_usec;
+    *sec = static_cast<int>(tp.tv_sec);
+    *usec = static_cast<int>(tp.tv_usec);
 #endif
 }
 #else

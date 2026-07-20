@@ -244,6 +244,27 @@ static T* unarchiveThinker()
     return obj;
 }
 
+// The archive counterpart, for the specials: the record memcpy'd whole, its
+// sector pointer rewritten to an index. It is composed in an aligned local and
+// copied out finished, rather than fixed up in place: the save buffer is only
+// 4-aligned (padSaveCursor reproduces vanilla's PADSAVEP) while the record's
+// pointers want 8 on a 64-bit host, so writing through a pointer into the
+// buffer was UB (UBSan flagged each such store). The bytes written are
+// identical.
+template <typename T>
+static void archiveSectorThinker(const Thinker* th)
+{
+    auto& save = saveGameState();
+    padSaveCursor(save.cursor);
+
+    T record {};
+    doom_memcpy(&record, th, sizeof(record));
+    record.sector = reinterpret_cast<Sector*>(record.sector - sectors);
+
+    doom_memcpy(save.cursor, &record, sizeof(record));
+    save.cursor += sizeof(record);
+}
+
 //
 // archiveThinkers
 //
@@ -261,14 +282,19 @@ void archiveThinkers()
         {
             *save.cursor++ = tc_mobj;
             padSaveCursor(save.cursor);
-            Mobj* mobj = reinterpret_cast<Mobj*>(save.cursor);
-            doom_memcpy(mobj, th, sizeof(*mobj));
-            save.cursor += sizeof(*mobj);
-            mobj->state = reinterpret_cast<State*>(mobj->state - states);
 
-            if (mobj->player)
-                mobj->player = reinterpret_cast<Player*>(
-                    (mobj->player - playerState().players.data()) + 1);
+            // Composed in an aligned local for the reason archiveSectorThinker
+            // gives; the state and player pointers become indices in the copy.
+            Mobj mobj {};
+            doom_memcpy(&mobj, th, sizeof(mobj));
+            mobj.state = reinterpret_cast<State*>(mobj.state - states);
+
+            if (mobj.player)
+                mobj.player = reinterpret_cast<Player*>(
+                    (mobj.player - playerState().players.data()) + 1);
+
+            doom_memcpy(save.cursor, &mobj, sizeof(mobj));
+            save.cursor += sizeof(mobj);
             continue;
         }
 
@@ -320,9 +346,8 @@ void unArchiveThinkers()
                 mobj->target = nullptr;
                 if (mobj->player)
                 {
-                    mobj->player =
-                        &playerState()
-                             .players[reinterpret_cast<long long>(mobj->player) - 1];
+                    mobj->player = &playerState().players[static_cast<int>(
+                        reinterpret_cast<long long>(mobj->player) - 1)];
                     mobj->player->mo = mobj;
                 }
                 setThingPosition(*mobj);
@@ -373,8 +398,6 @@ enum
 //
 void archiveSpecials()
 {
-    Ceiling* ceiling;
-
     auto& save = saveGameState();
     auto& thinkers = thinkerList();
 
@@ -393,12 +416,7 @@ void archiveSpecials()
             if (th->kind() == ThinkerKind::Ceiling)
             {
                 *save.cursor++ = tc_ceiling;
-                padSaveCursor(save.cursor);
-                ceiling = reinterpret_cast<Ceiling*>(save.cursor);
-                doom_memcpy(ceiling, th, sizeof(*ceiling));
-                save.cursor += sizeof(*ceiling);
-                ceiling->sector =
-                    reinterpret_cast<Sector*>(ceiling->sector - sectors);
+                archiveSectorThinker<Ceiling>(th);
             }
             continue;
         }
@@ -406,77 +424,49 @@ void archiveSpecials()
         if (th->kind() == ThinkerKind::Ceiling)
         {
             *save.cursor++ = tc_ceiling;
-            padSaveCursor(save.cursor);
-            ceiling = reinterpret_cast<Ceiling*>(save.cursor);
-            doom_memcpy(ceiling, th, sizeof(*ceiling));
-            save.cursor += sizeof(*ceiling);
-            ceiling->sector = reinterpret_cast<Sector*>(ceiling->sector - sectors);
+            archiveSectorThinker<Ceiling>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Door)
         {
             *save.cursor++ = tc_door;
-            padSaveCursor(save.cursor);
-            Door* door = reinterpret_cast<Door*>(save.cursor);
-            doom_memcpy(door, th, sizeof(*door));
-            save.cursor += sizeof(*door);
-            door->sector = reinterpret_cast<Sector*>(door->sector - sectors);
+            archiveSectorThinker<Door>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Floor)
         {
             *save.cursor++ = tc_floor;
-            padSaveCursor(save.cursor);
-            FloorMove* floor = reinterpret_cast<FloorMove*>(save.cursor);
-            doom_memcpy(floor, th, sizeof(*floor));
-            save.cursor += sizeof(*floor);
-            floor->sector = reinterpret_cast<Sector*>(floor->sector - sectors);
+            archiveSectorThinker<FloorMove>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Plat)
         {
             *save.cursor++ = tc_plat;
-            padSaveCursor(save.cursor);
-            Plat* plat = reinterpret_cast<Plat*>(save.cursor);
-            doom_memcpy(plat, th, sizeof(*plat));
-            save.cursor += sizeof(*plat);
-            plat->sector = reinterpret_cast<Sector*>(plat->sector - sectors);
+            archiveSectorThinker<Plat>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::LightFlash)
         {
             *save.cursor++ = tc_flash;
-            padSaveCursor(save.cursor);
-            LightFlash* flash = reinterpret_cast<LightFlash*>(save.cursor);
-            doom_memcpy(flash, th, sizeof(*flash));
-            save.cursor += sizeof(*flash);
-            flash->sector = reinterpret_cast<Sector*>(flash->sector - sectors);
+            archiveSectorThinker<LightFlash>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::StrobeFlash)
         {
             *save.cursor++ = tc_strobe;
-            padSaveCursor(save.cursor);
-            Strobe* strobe = reinterpret_cast<Strobe*>(save.cursor);
-            doom_memcpy(strobe, th, sizeof(*strobe));
-            save.cursor += sizeof(*strobe);
-            strobe->sector = reinterpret_cast<Sector*>(strobe->sector - sectors);
+            archiveSectorThinker<Strobe>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Glow)
         {
             *save.cursor++ = tc_glow;
-            padSaveCursor(save.cursor);
-            Glow* glow = reinterpret_cast<Glow*>(save.cursor);
-            doom_memcpy(glow, th, sizeof(*glow));
-            save.cursor += sizeof(*glow);
-            glow->sector = reinterpret_cast<Sector*>(glow->sector - sectors);
+            archiveSectorThinker<Glow>(th);
             continue;
         }
     }

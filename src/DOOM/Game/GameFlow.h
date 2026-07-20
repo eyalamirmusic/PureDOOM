@@ -31,7 +31,7 @@ struct GameFlow
     GameState gamestate =
         GS_LEVEL; // which screen we are on (vanilla zero-inits this)
     GameState wipegamestate =
-        GS_DEMOSCREEN; // the last drawn frame's state; -1 forces a wipe
+        GS_DEMOSCREEN; // the last drawn frame's state; GS_FORCE_WIPE forces a wipe
 
     // A screen melt is currently animating: Doom::displayFrame raises it, doom_update drains
     // it via Doom::updateWipe instead of Doom::doomLoop, and the eacp compositor reads it.

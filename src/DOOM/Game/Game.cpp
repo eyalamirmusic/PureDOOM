@@ -473,7 +473,7 @@ void doLoadLevel()
     }
 
     if (flow.wipegamestate == GS_LEVEL)
-        flow.wipegamestate = static_cast<GameState>((-1)); // force a wipe
+        flow.wipegamestate = GS_FORCE_WIPE;
 
     flow.gamestate = GS_LEVEL;
 

@@ -22,6 +22,7 @@
 #include "Data.h"
 #include "GraphicsData.h"
 
+#include <cstddef>
 #include <ea_data_structures/Structures/Array.h>
 #include <ea_data_structures/Structures/Vector.h>
 
@@ -67,6 +68,12 @@ struct MapTexture
     short patchcount;
     MapPatch patches[1];
 };
+
+// initTextures decodes lump bytes through these types (by aligned copy - see
+// there), so their layout must equal the on-disk one: 10-byte patch records
+// starting 22 bytes into each texture record.
+static_assert(sizeof(MapPatch) == 10);
+static_assert(offsetof(MapTexture, patches) == 22);
 
 // r_data's own state - the per-texture composite cache and patch/flat bookkeeping - now lives on
 // the Engine (Render/CompositeCache.h, moved by the file-scope-statics sweep - REFACTOR.md, Step
@@ -324,9 +331,7 @@ byte* getColumn(int tex, int col)
 //
 void initTextures()
 {
-    MapTexture* mtexture;
     Texture* texture;
-    MapPatch* mpatch;
     TexPatch* patch;
 
     int i;
@@ -452,28 +457,40 @@ void initTextures()
         if (offset > maxoff)
             fatalError("Error: initTextures: bad texture directory");
 
-        mtexture =
-            reinterpret_cast<MapTexture*>(reinterpret_cast<byte*>(maptex) + offset);
+        // The record sits at whatever byte offset the directory names, which is
+        // usually not aligned for MapTexture's int members (BIGDOOR1's record
+        // sits at offset % 4 == 2, and UBSan flagged every read through an
+        // overlaid pointer). So the record is decoded through aligned copies -
+        // the header first, then each patch record. Tests/Sim/TextureTests.cpp
+        // holds the decode against the lump's own bytes.
+        const byte* rawTexture = reinterpret_cast<byte*>(maptex) + offset;
+
+        MapTexture mtexture;
+        doom_memcpy(&mtexture, rawTexture, offsetof(MapTexture, patches));
 
         // The struct lives in textureStorage now; point the view entry at it and size
         // its patches vector (RAII, Step 9) instead of the old variable-length malloc.
         texture = &gd.textureStorage[i];
         gd.texturePointers[i] = texture;
 
-        texture->width = littleEndian(mtexture->width);
-        texture->height = littleEndian(mtexture->height);
-        texture->patchcount = littleEndian(mtexture->patchcount);
+        texture->width = littleEndian(mtexture.width);
+        texture->height = littleEndian(mtexture.height);
+        texture->patchcount = littleEndian(mtexture.patchcount);
         texture->patches.resize(texture->patchcount);
 
-        doom_memcpy(texture->name.data(), mtexture->name, sizeof(texture->name));
-        mpatch = &mtexture->patches[0];
+        doom_memcpy(texture->name.data(), mtexture.name, sizeof(texture->name));
+        const byte* rawPatch = rawTexture + offsetof(MapTexture, patches);
         patch = &texture->patches[0];
 
-        for (j = 0; j < texture->patchcount; j++, mpatch++, patch++)
+        for (j = 0; j < texture->patchcount;
+             j++, rawPatch += sizeof(MapPatch), patch++)
         {
-            patch->originx = littleEndian(mpatch->originx);
-            patch->originy = littleEndian(mpatch->originy);
-            patch->patch = patchlookup[littleEndian(mpatch->patch)];
+            MapPatch mpatch;
+            doom_memcpy(&mpatch, rawPatch, sizeof(MapPatch));
+
+            patch->originx = littleEndian(mpatch.originx);
+            patch->originy = littleEndian(mpatch.originy);
+            patch->patch = patchlookup[littleEndian(mpatch.patch)];
             if (patch->patch == -1)
             {
                 //fatalError("Error: initTextures: Missing patch in texture %s",

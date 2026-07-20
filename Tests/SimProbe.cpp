@@ -1,4 +1,6 @@
 #include "SimProbe.h"
+#include <DOOM/Render/Data.h>
+#include <DOOM/Render/GraphicsData.h>
 #include <DOOM/Render/Video.h>
 
 #include <DOOM/Game/AttractMode.h>
@@ -825,6 +827,41 @@ int doomSimFinaleStage()
 int doomSimGameMode()
 {
     return (int) Doom::gameVersion().gamemode;
+}
+
+int doomSimTextureCount()
+{
+    return Doom::graphicsData().numtextures;
+}
+
+int doomSimTextureNumForName(const char* name)
+{
+    return Doom::textureNumForName(name);
+}
+
+int doomSimTextureWidth(int texture)
+{
+    return Doom::graphicsData().textureStorage[texture].width;
+}
+
+int doomSimTextureHeight(int texture)
+{
+    return Doom::graphicsData().textureStorage[texture].height;
+}
+
+int doomSimTexturePatchCount(int texture)
+{
+    return Doom::graphicsData().textureStorage[texture].patchcount;
+}
+
+int doomSimTexturePatchOriginX(int texture, int patch)
+{
+    return Doom::graphicsData().textureStorage[texture].patches[patch].originx;
+}
+
+int doomSimTexturePatchOriginY(int texture, int patch)
+{
+    return Doom::graphicsData().textureStorage[texture].patches[patch].originy;
 }
 
 DoomSimFileRead doomSimReadFileIntoOwner(const char* path)

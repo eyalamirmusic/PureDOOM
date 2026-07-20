@@ -285,7 +285,7 @@ void finaleTicker()
     {
         fin.finalecount = 0;
         fin.finalestage = 1;
-        gameFlow().wipegamestate = static_cast<GameState>(-1); // force a wipe
+        gameFlow().wipegamestate = GS_FORCE_WIPE;
         if (gameSession().gameepisode == 3)
             startMusic(mus_bunny);
     }
@@ -363,7 +363,7 @@ void startCast()
 {
     auto& fin = finaleState();
 
-    gameFlow().wipegamestate = static_cast<GameState>(-1); // force a screen wipe
+    gameFlow().wipegamestate = GS_FORCE_WIPE;
     fin.castnum = 0;
     fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
     fin.casttics = fin.caststate->tics;
@@ -613,8 +613,8 @@ void castDrawer()
     int lump = sprframe->lump[0];
     bool flip = static_cast<bool>(sprframe->flip[0]);
 
-    Patch* patch = static_cast<Patch*>(
-        cacheLumpNum(lump + graphicsData().firstspritelump));
+    Patch* patch =
+        static_cast<Patch*>(cacheLumpNum(lump + graphicsData().firstspritelump));
     if (flip)
         drawPatchFlipped(160, 170, 0, patch);
     else
@@ -680,9 +680,9 @@ void bunnyScroll()
     if (fin.finalecount < 1180)
     {
         drawPatch((SCREENWIDTH - 13 * 8) / 2,
-                        (SCREENHEIGHT - 8 * 8) / 2,
-                        0,
-                        static_cast<Patch*>(cacheLumpName("END0")));
+                  (SCREENHEIGHT - 8 * 8) / 2,
+                  0,
+                  static_cast<Patch*>(cacheLumpName("END0")));
         fin.laststage = 0;
         return;
     }
@@ -700,9 +700,9 @@ void bunnyScroll()
     doom_strcpy(name.data(), "END");
     doom_concat(name.data(), doom_itoa(stage, 10));
     drawPatch((SCREENWIDTH - 13 * 8) / 2,
-                    (SCREENHEIGHT - 8 * 8) / 2,
-                    0,
-                    static_cast<Patch*>(cacheLumpName(name.data())));
+              (SCREENHEIGHT - 8 * 8) / 2,
+              0,
+              static_cast<Patch*>(cacheLumpName(name.data())));
 }
 
 //
@@ -726,22 +726,18 @@ void drawFinale()
         {
             case 1:
                 if (gameVersion().gamemode == retail)
-                    drawPatch(
-                        0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
+                    drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
                 else
-                    drawPatch(
-                        0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
+                    drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
                 break;
             case 2:
-                drawPatch(
-                    0, 0, 0, static_cast<Patch*>(cacheLumpName("VICTORY2")));
+                drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("VICTORY2")));
                 break;
             case 3:
                 bunnyScroll();
                 break;
             case 4:
-                drawPatch(
-                    0, 0, 0, static_cast<Patch*>(cacheLumpName("ENDPIC")));
+                drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("ENDPIC")));
                 break;
         }
     }

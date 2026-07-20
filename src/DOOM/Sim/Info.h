@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -23,11 +23,9 @@
 
 #pragma once
 
-
 // Needed for action function pointer handling.
 #include "ActionFunc.h"
 #include "../Math/FixedPoint.h"
-
 
 namespace Doom
 {
@@ -174,7 +172,6 @@ enum SpriteNum
     NUMSPRITES
 };
 } // namespace Doom
-
 
 namespace Doom
 {
@@ -1151,20 +1148,18 @@ enum StateNum
 };
 } // namespace Doom
 
-
 namespace Doom
 {
 struct State
 {
     SpriteNum sprite;
-    long frame;
-    long tics;
+    int frame;
+    int tics;
     ActionFunc action;
     StateNum nextstate;
-    long misc1, misc2;
+    int misc1, misc2;
 };
 } // namespace Doom
-
 
 extern Doom::State states[Doom::NUMSTATES];
 extern const char* sprnames[Doom::NUMSPRITES + 1];
@@ -1314,45 +1309,41 @@ enum MobjType
 };
 } // namespace Doom
 
-
 namespace Doom
 {
 struct MobjInfo
 {
-    int        doomednum;
-    int        spawnstate;
-    int        spawnhealth;
-    int        seestate;
-    int        seesound;
-    int        reactiontime;
-    int        attacksound;
-    int        painstate;
-    int        painchance;
-    int        painsound;
-    int        meleestate;
-    int        missilestate;
-    int        deathstate;
-    int        xdeathstate;
-    int        deathsound;
+    int doomednum;
+    int spawnstate;
+    int spawnhealth;
+    int seestate;
+    int seesound;
+    int reactiontime;
+    int attacksound;
+    int painstate;
+    int painchance;
+    int painsound;
+    int meleestate;
+    int missilestate;
+    int deathstate;
+    int xdeathstate;
+    int deathsound;
     // Dual-typed in vanilla and left that way: a walking monster stores a plain
     // integer multiplier (8) that scales the xspeed/yspeed unit vectors, while a
     // missile stores a fixed-point velocity (20*FRACUNIT). The missile sites
     // reinterpret it with Fixed{...}; do not "fix" this to one type.
-    int        speed;
-    fixed_t    radius;
-    fixed_t    height;
-    int        mass;
-    int        damage;
-    int        activesound;
-    int        flags;
-    int        raisestate;
+    int speed;
+    fixed_t radius;
+    fixed_t height;
+    int mass;
+    int damage;
+    int activesound;
+    int flags;
+    int raisestate;
 };
 } // namespace Doom
 
-
 extern Doom::MobjInfo mobjinfo[Doom::NUMMOBJTYPES];
-
-
 
 //-----------------------------------------------------------------------------
 //

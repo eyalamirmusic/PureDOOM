@@ -105,6 +105,15 @@ if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
 else ()
     set(DOOM_WARNINGS_OFF -w)
     set(DOOM_WARNINGS_ON -Wall -Wextra -Wpedantic)
+
+    # The Xcode generator passes this on its own (it is an Xcode project
+    # default), which is how 15 long->int narrowings surfaced there while every
+    # Ninja build sat at zero. Pinning it here makes the two generators agree on
+    # what zero means. Clang-only: GCC's nearest spelling is -Wconversion, which
+    # is the wider, deliberate decision REFACTOR.md item 7 reserves.
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        list(APPEND DOOM_WARNINGS_ON -Wshorten-64-to-32)
+    endif ()
 endif ()
 
 # 1993 C compiled as C++: it warns copiously and none of it is news. The blanket

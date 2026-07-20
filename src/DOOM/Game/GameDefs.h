@@ -110,13 +110,23 @@ constexpr int TICRATE = 35 * TICKMUL;
 // the game final animation, or a demo.
 namespace Doom
 {
-enum GameState
+// The underlying type is stated because the enum also carries GS_FORCE_WIPE
+// below, which is outside the enumerators' range - and without a fixed type,
+// holding a value outside that range is UB (UBSan flagged every load of it).
+enum GameState : int
 {
     GS_LEVEL,
     GS_INTERMISSION,
     GS_FINALE,
     GS_DEMOSCREEN
 };
+
+// The force-wipe/redraw sentinel: no real screen, written to wipegamestate (and
+// to DisplayState::oldgamestate) so the next displayFrame sees a state change
+// whatever the real state is. Vanilla spelled it as a bare -1 at every site.
+// Deliberately not an enumerator: the switches over gamestate handle exactly
+// the four real screens, and a fifth case would put an unreachable arm in each.
+constexpr auto GS_FORCE_WIPE = static_cast<GameState>(-1);
 } // namespace Doom
 
 //
