@@ -13,6 +13,8 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <string>
+
 namespace Doom
 {
 
@@ -33,7 +35,7 @@ static constexpr unsigned char scramble(int a)
 // Called in st_stuff module, which handles the input.
 // Returns a 1 if the cheat was successful, 0 if failed.
 //
-int checkCheat(CheatSequence* cht, char key)
+int checkCheat(CheatSequence& cht, char key)
 {
     int rc = 0;
 
@@ -44,45 +46,51 @@ int checkCheat(CheatSequence* cht, char key)
             cheat_xlate_table[i] = scramble(i);
     }
 
-    if (!cht->p)
-        cht->p = cht->sequence; // initialize if first time
+    auto& sequence = cht.sequence;
+    auto& position = cht.position;
 
-    if (*cht->p == 0)
-        *(cht->p++) = key;
-    else if (cheat_xlate_table[static_cast<unsigned char>(key)] == *cht->p)
-        cht->p++;
+    if (sequence[position] == 0)
+        sequence[position++] = static_cast<unsigned char>(key);
+    else if (cheat_xlate_table[static_cast<unsigned char>(key)]
+             == sequence[position])
+        position++;
     else
-        cht->p = cht->sequence;
+        position = 0;
 
-    if (*cht->p == 1)
-        cht->p++;
-    else if (*cht->p == 0xff) // end of sequence character
+    if (sequence[position] == 1)
+        position++;
+    else if (sequence[position] == 0xff) // end of sequence character
     {
-        cht->p = cht->sequence;
+        position = 0;
         rc = 1;
     }
 
     return rc;
 }
 
-void getParam(CheatSequence* cht, char* buffer)
+// The parameter the player typed after the cheat's `1` marker, as text - and it
+// clears the slots on the way out, exactly as vanilla did, so the sequence is
+// ready to match again.
+std::string getParam(CheatSequence& cht)
 {
-    unsigned char c;
+    auto& sequence = cht.sequence;
 
-    unsigned char* p = cht->sequence;
-    while (*(p++) != 1)
+    auto index = 0;
+    while (sequence[index++] != 1)
     {
     }
 
+    auto parameter = std::string {};
+    unsigned char c = 0;
+
     do
     {
-        c = *p;
-        *(buffer++) = c;
-        *(p++) = 0;
-    } while (c && *p != 0xff);
+        c = sequence[index];
+        parameter += static_cast<char>(c);
+        sequence[index++] = 0;
+    } while (c && sequence[index] != 0xff);
 
-    if (*p == 0xff)
-        *buffer = 0;
+    return parameter;
 }
 
 } // namespace Doom

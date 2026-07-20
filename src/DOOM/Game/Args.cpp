@@ -9,8 +9,7 @@
 
 #include "Args.h"
 
-int myargc;
-char** myargv;
+std::vector<std::string> myargv;
 
 namespace Doom
 {
@@ -22,7 +21,7 @@ namespace Doom
 //
 int checkParm(std::string_view check)
 {
-    for (int i = 1; i < myargc; i++)
+    for (int i = 1; i < myargCount(); i++)
     {
         if (equalsIgnoreCase(check, myargv[i]))
             return i;

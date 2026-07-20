@@ -467,7 +467,7 @@ void loadDefaults()
 
     // check for a custom default file
     i = Doom::checkParm("-config");
-    if (i && i < myargc - 1)
+    if (i && i < myargCount() - 1)
     {
         paths.defaultfile = myargv[i + 1];
         //doom_print("        default file: %s\n", defaultfile);

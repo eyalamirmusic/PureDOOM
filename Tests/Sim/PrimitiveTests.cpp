@@ -53,16 +53,17 @@ struct Checksum
 
 // Says what the table now checksums to, not merely that it disagrees. A table is
 // 16,000 numbers and "false is not true" would leave you with nothing to do next.
-void checkTable(const char* table, const Checksum& sum, std::uint64_t expected)
+void checkTable(std::string_view table, const Checksum& sum, std::uint64_t expected)
 {
     if (sum.value != expected)
-        std::printf("\n%s has changed.\n"
+        std::printf("\n%.*s has changed.\n"
                     "  expected 0x%016llx\n"
                     "  now      0x%016llx\n"
                     "  If the table was rewritten and this was intended, put the\n"
                     "  new checksum in PrimitiveTests.cpp - on purpose, and having\n"
                     "  looked at what moved.\n\n",
-                    table,
+                    static_cast<int>(table.size()),
+                    table.data(),
                     (unsigned long long) expected,
                     (unsigned long long) sum.value);
 

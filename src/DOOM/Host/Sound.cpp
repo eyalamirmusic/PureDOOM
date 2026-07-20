@@ -31,7 +31,9 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <algorithm>
 #include <cstring>
+#include <vector>
 
 // Needed for calling the actual sound output.
 #include "System.h"
@@ -111,7 +113,7 @@ struct MusHeader
 // audio writes. Probably redundant with gameClock().gametic.
 [[maybe_unused]] static int flag = 0;
 
-static unsigned char* mus_data = 0;
+static const unsigned char* mus_data = nullptr;
 static MusHeader mus_header;
 static int mus_offset = 0;
 static int mus_delay = 0;
@@ -179,15 +181,24 @@ EA::Array<unsigned long, MAX_QUEUED_MIDI_MSGS> queued_midi_msgs;
 int queue_midi_head = 0;
 int queue_midi_tail = 0;
 
+// The padded sample buffers. These hold 11kHz 8-bit PCM, not text, so they are
+// byte vectors and no string type belongs anywhere near them.
+//
+// Ownership sits here rather than in SfxInfo::data because a linked sound (the
+// chaingun onto the pistol) deliberately points at its target's buffer, so the
+// table can only ever hold a view. It was a doom_malloc per sound that nothing
+// freed - ~107 buffers leaked on every boot, and initSoundHost runs at boot.
+//
+// Pointers into the inner vectors survive the outer one reallocating: moving a
+// std::vector transfers its buffer rather than copying it.
+std::vector<std::vector<unsigned char>> sfxBuffers;
+
 //
 // This function loads the sound data from the WAD lump,
 //  for single sound.
 //
 void* getsfx(std::string_view sfxname, int* len)
 {
-    unsigned char* sfx;
-    unsigned char* paddedsfx;
-    int i;
     int size;
     int paddedsize;
     int sfxlump;
@@ -213,30 +224,22 @@ void* getsfx(std::string_view sfxname, int* len)
 
     size = Doom::wad().length(sfxlump);
 
-    sfx = (unsigned char*) Doom::cacheLumpNum(sfxlump);
+    const auto* sfx = static_cast<const unsigned char*>(Doom::cacheLumpNum(sfxlump));
 
     // Pads the sound effect out to the mixing buffer size.
     // The original realloc would interfere with zone memory.
     paddedsize = ((size - 8 + (SAMPLECOUNT - 1)) / SAMPLECOUNT) * SAMPLECOUNT;
 
-    // Allocate from zone memory.
-    paddedsfx = (unsigned char*) doom_malloc(paddedsize + 8);
-    // ddt: (unsigned char *) realloc(sfx, paddedsize+8);
-    // This should interfere with zone memory handling,
-    //  which does not kick in in the soundserver.
-
-    // Now copy and pad.
-    doom_memcpy(paddedsfx, sfx, size);
-    for (i = size; i < paddedsize + 8; i++)
-        paddedsfx[i] = 128;
-
-    // Remove the cached lump.
+    // Filled with 128 - the 8-bit silence level - and then overwritten by the
+    // lump's own bytes, which is the copy-then-pad loop the other way round.
+    auto& paddedsfx = sfxBuffers.emplace_back(paddedsize + 8, 128);
+    std::copy(sfx, sfx + size, paddedsfx.begin());
 
     // Preserve padded length.
     *len = paddedsize;
 
-    // Return allocated padded data.
-    return static_cast<void*>(paddedsfx + 8);
+    // The eight-byte lump header is skipped; the buffer outlives the return.
+    return paddedsfx.data() + 8;
 }
 
 //
@@ -892,6 +895,10 @@ void initSoundHost()
     // Initialize external data (all sounds) at start, keep static.
     print("initSoundHost: ");
 
+    // Booting a second time in one process refills the table, so the previous
+    // boot's buffers go now rather than accumulating.
+    sfxBuffers.clear();
+
     for (i = 1; i < NUMSFX; i++)
     {
         // Alias? Example is the chaingun sound linked to pistol.
@@ -978,7 +985,7 @@ int registerSong(void* data)
     if (std::memcmp(mus_header.ID, "MUS", 3) != 0 || mus_header.ID[3] != 0x1A)
         return 0;
 
-    mus_data = (unsigned char*) data;
+    mus_data = static_cast<const unsigned char*>(data);
     mus_delay = 0;
     mus_offset = mus_header.scoreStart;
     mus_playing = false;

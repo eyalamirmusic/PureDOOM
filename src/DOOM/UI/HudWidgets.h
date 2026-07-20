@@ -28,7 +28,7 @@ void initIText(
 void delCharFromIText(HudInputText& it);
 void eraseLineFromIText(HudInputText& it);
 void resetIText(HudInputText& it);
-void addPrefixToIText(HudInputText& it, char* str);
+void addPrefixToIText(HudInputText& it, std::string_view str);
 bool keyInIText(HudInputText& it, unsigned char ch);
 void drawIText(HudInputText& it);
 void eraseIText(HudInputText& it);

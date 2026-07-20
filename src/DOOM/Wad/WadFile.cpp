@@ -5,7 +5,9 @@
 
 #include <ea_data_structures/Structures/Array.h>
 
+#include <algorithm>
 #include <cstring>
+#include <string>
 
 #include "../Host/System.h"
 namespace Doom
@@ -30,26 +32,26 @@ struct WadHeader
 
 // A file that is not a .wad becomes a single lump named after itself: the base
 // name, up to eight characters, upper-cased.
-void extractFileBase(std::string_view path, char* destination)
+std::string extractFileBase(std::string_view path)
 {
     auto lastSlash = path.find_last_of("/\\");
     auto base =
         lastSlash == std::string_view::npos ? path : path.substr(lastSlash + 1);
 
-    doom_memset(destination, 0, 8);
-
-    auto length = 0;
+    auto name = std::string {};
 
     for (auto character: base)
     {
         if (character == '.')
             break;
 
-        if (++length == 9)
+        if (name.size() == 8)
             fatalError("Error: Filename base of  >8 chars");
 
-        *destination++ = static_cast<char>(toUpper(character));
+        name += static_cast<char>(toUpper(character));
     }
+
+    return name;
 }
 
 // The lump name as eight upper-case bytes, zero-padded - which is how the
@@ -141,8 +143,10 @@ void WadFile::addSingleLump(std::string_view path, void* handle)
 
     doom_seek(handle, 0, DOOM_SEEK_SET);
 
-    // The lump is named after the file it came from.
-    extractFileBase(path, lump.name.data());
+    // The lump is named after the file it came from. Lump::name is eight bytes,
+    // zero-padded (value-initialised above), and NOT terminated when full.
+    auto base = extractFileBase(path);
+    std::copy(base.begin(), base.end(), lump.name.begin());
 
     lumps.push_back(lump);
 }

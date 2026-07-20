@@ -25,12 +25,19 @@
 // CHEAT SEQUENCE PACKAGE
 //
 
+#include <span>
+
 namespace Doom
 {
+// The target of one cheat: scrambled key codes ending in an 0xff sentinel, with
+// an in-band 1 marking where typed parameters begin and zero slots waiting to
+// receive them. checkCheat writes the typed keys into those slots and getParam
+// reads them back out and clears them, so this is a mutable byte buffer with
+// markers in it - deliberately not text, and not a string type.
 struct CheatSequence
 {
-    unsigned char* sequence;
-    unsigned char* p;
+    std::span<unsigned char> sequence;
+    int position = 0; // was the `p` cursor; 0 is the un-started state
 };
 } // namespace Doom
 

@@ -222,10 +222,11 @@ void resetIText(HudInputText& it)
     clearTextLine(it.l);
 }
 
-void addPrefixToIText(HudInputText& it, char* str)
+void addPrefixToIText(HudInputText& it, std::string_view str)
 {
-    while (*str)
-        addCharToTextLine(it.l, *(str++));
+    for (auto character: str)
+        addCharToTextLine(it.l, character);
+
     it.lm = static_cast<int>(it.l.l.size());
 }
 

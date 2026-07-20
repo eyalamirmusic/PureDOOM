@@ -146,8 +146,6 @@ void Doom::buildTiccmd(Doom::Ticcmd* cmd);
 namespace Doom
 {
 
-constexpr int MAXARGVS = 100;
-
 // Forward declarations so call order needs no rearranging.
 void doomLoop();
 void processEvents();
@@ -723,73 +721,69 @@ void IdentifyVersion()
 //
 // Find a Response File
 //
-void FindResponseFile()
+void findResponseFile()
 {
-    for (int i = 1; i < myargc; i++)
-        if (myargv[i][0] == '@')
+    for (int i = 1; i < myargCount(); i++)
+    {
+        if (myargv[i][0] != '@')
+            continue;
+
+        auto responseFile = myargv[i].substr(1);
+
+        // READ THE RESPONSE FILE INTO MEMORY
+        auto* handle = doom_open(responseFile, "rb");
+
+        if (!handle)
         {
-            void* handle = nullptr;
-            int size;
-            int k;
-            int index;
-            int indexinfile;
-            char* infile;
-            char* file;
-            char* moreargs[20];
-            char* firstargv;
-
-            // READ THE RESPONSE FILE INTO MEMORY
-            handle = doom_open(&myargv[i][1], "rb");
-            if (!handle)
-            {
-                print("\nNo such response file!");
-                doom_exit(1);
-            }
-            print("Found response file %s!\n", &myargv[i][1], "!\n");
-            doom_seek(handle, 0, DOOM_SEEK_END);
-            size = doom_tell(handle);
-            doom_seek(handle, 0, DOOM_SEEK_SET);
-            file = static_cast<char*>((doom_malloc(size)));
-            doom_read(handle, file, size * 1);
-            doom_close(handle);
-
-            // KEEP ALL CMDLINE ARGS FOLLOWING @RESPONSEFILE ARG
-            for (index = 0, k = i + 1; k < myargc; k++)
-                moreargs[index++] = myargv[k];
-
-            firstargv = myargv[0];
-            myargv = static_cast<char**>((doom_malloc(sizeof(char*) * MAXARGVS)));
-            doom_memset(myargv, 0, sizeof(char*) * MAXARGVS);
-            myargv[0] = firstargv;
-
-            infile = file;
-            indexinfile = k = 0;
-            indexinfile++; // SKIP PAST ARGV[0] (KEEP IT)
-            do
-            {
-                myargv[indexinfile++] = infile + k;
-                while (k < size
-                       && ((*(infile + k) >= ' ' + 1) && (*(infile + k) <= 'z')))
-                    k++;
-                *(infile + k) = 0;
-                while (k < size && ((*(infile + k) <= ' ') || (*(infile + k) > 'z')))
-                    k++;
-            } while (k < size);
-
-            for (k = 0; k < index; k++)
-                myargv[indexinfile++] = moreargs[k];
-            myargc = indexinfile;
-
-            // DISPLAY ARGS
-            print(myargc, " command-line args:\n");
-            for (k = 1; k < myargc; k++)
-            {
-                //doom_print("%s\n", myargv[k]);
-                print(myargv[k], "\n");
-            }
-
-            break;
+            print("\nNo such response file!");
+            doom_exit(1);
         }
+
+        print("Found response file ", responseFile, "!\n");
+
+        doom_seek(handle, 0, DOOM_SEEK_END);
+        auto size = doom_tell(handle);
+        doom_seek(handle, 0, DOOM_SEEK_SET);
+
+        auto contents = std::string(static_cast<std::size_t>(size), '\0');
+        doom_read(handle, contents.data(), size);
+        doom_close(handle);
+
+        // KEEP ALL CMDLINE ARGS FOLLOWING @RESPONSEFILE ARG
+        auto moreargs =
+            std::vector<std::string>(myargv.begin() + i + 1, myargv.end());
+
+        auto rebuilt = std::vector<std::string> {myargv[0]}; // KEEP ARGV[0]
+
+        // Tokenised on vanilla's own character class: a token runs while the byte
+        // is above ' ' and not past 'z', and the run of anything else between
+        // tokens is skipped. An empty leading token is kept, as it was.
+        auto k = 0;
+
+        while (k < size)
+        {
+            auto start = k;
+
+            while (k < size && contents[k] >= ' ' + 1 && contents[k] <= 'z')
+                k++;
+
+            rebuilt.emplace_back(contents, start, k - start);
+
+            while (k < size && (contents[k] <= ' ' || contents[k] > 'z'))
+                k++;
+        }
+
+        rebuilt.insert(rebuilt.end(), moreargs.begin(), moreargs.end());
+        myargv = std::move(rebuilt);
+
+        // DISPLAY ARGS
+        print(myargCount(), " command-line args:\n");
+
+        for (auto arg = 1; arg < myargCount(); arg++)
+            print(myargv[arg], "\n");
+
+        break;
+    }
 }
 
 //
@@ -805,7 +799,7 @@ void doomMain()
     auto& session = gameSession();
     auto& defaults_ = startupDefaults();
 
-    FindResponseFile();
+    findResponseFile();
 
     IdentifyVersion();
 
@@ -901,7 +895,7 @@ void doomMain()
     {
         int scale = 200;
 
-        if (p < myargc - 1)
+        if (p < myargCount() - 1)
             scale = parseInt(myargv[p + 1]);
         if (scale < 10)
             scale = 10;
@@ -964,7 +958,7 @@ void doomMain()
         // the parms after p are wadfile/lump names,
         // until end of parms or another - preceded parm
         version.modifiedgame = true; // homebrew levels
-        while (++p != myargc && myargv[p][0] != '-')
+        while (++p != myargCount() && myargv[p][0] != '-')
             addWadFile(myargv[p]);
     }
 
@@ -973,7 +967,7 @@ void doomMain()
     if (!p)
         p = Doom::checkParm("-timedemo");
 
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         file = concat(myargv[p + 1], ".lmp");
         addWadFile(file.c_str());
@@ -988,14 +982,14 @@ void doomMain()
     defaults_.autostart = false;
 
     p = Doom::checkParm("-skill");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         defaults_.startskill = static_cast<Skill>((myargv[p + 1][0] - '1'));
         defaults_.autostart = true;
     }
 
     p = Doom::checkParm("-episode");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         defaults_.startepisode = myargv[p + 1][0] - '0';
         defaults_.startmap = 1;
@@ -1003,7 +997,7 @@ void doomMain()
     }
 
     p = Doom::checkParm("-timer");
-    if (p && p < myargc - 1 && session.deathmatch)
+    if (p && p < myargCount() - 1 && session.deathmatch)
     {
         int time = parseInt(myargv[p + 1]);
         //doom_print("Levels will end after %d minute", time);
@@ -1014,11 +1008,11 @@ void doomMain()
     }
 
     p = Doom::checkParm("-avg");
-    if (p && p < myargc - 1 && session.deathmatch)
+    if (p && p < myargCount() - 1 && session.deathmatch)
         doom_print("Austin Virtual Gaming: Levels will end after 20 minutes\n");
 
     p = Doom::checkParm("-warp");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         if (version.gamemode == commercial)
             defaults_.startmap = parseInt(myargv[p + 1]);
@@ -1129,10 +1123,10 @@ void doomMain()
     // check for a driver that wants intermission stats
 #if 0 // [pd] Unsure how to test this
     p = Doom::checkParm("-statcopy");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         // for statistics driver
-        statcopy = (void*)atoll(myargv[p + 1]);
+        statcopy = (void*)atoll(myargv[p + 1].c_str());
         doom_print("External statistics registered.\n");
     }
 #endif
@@ -1140,14 +1134,14 @@ void doomMain()
     // start the apropriate game based on parms
     p = Doom::checkParm("-record");
 
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         Doom::recordDemo(myargv[p + 1]);
         defaults_.autostart = true;
     }
 
     p = Doom::checkParm("-playdemo");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         demoState().singledemo = true; // quit after one demo
         Doom::deferPlayDemo(myargv[p + 1]);
@@ -1155,14 +1149,14 @@ void doomMain()
     }
 
     p = Doom::checkParm("-timedemo");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         Doom::startTimeDemo(myargv[p + 1]);
         doomLoop(); // never returns
     }
 
     p = Doom::checkParm("-loadgame");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
 #if 0 // [pd] We don't support the cdrom flag
         if (Doom::checkParm("-cdrom"))

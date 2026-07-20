@@ -31,6 +31,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace Doom
 {
@@ -194,9 +195,13 @@ void setResolution(int width, int height);
 void setDefaultInt(std::string_view name, int value);
 void setDefaultString(std::string_view name, std::string_view value);
 
-// Initializes DOOM and starts things up. Call only once. argv is main()'s,
-// kept by the engine (not copied).
+// Initializes DOOM and starts things up. Call only once.
+//
+// The first form takes main()'s argv as the OS shaped it; the engine copies the
+// arguments, so the host is free to let them go. The second is what a host that
+// is not forwarding main() should use.
 void initGame(int argc, char** argv, int flags);
+void initGame(const std::vector<std::string>& args, int flags);
 
 // Call this every frame
 void updateGame(); // This will update at 35 FPS

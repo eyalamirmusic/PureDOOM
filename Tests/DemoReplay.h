@@ -146,7 +146,7 @@ inline void reportDivergence(const std::string& demo, int tic, int goldenTics)
 inline void checkAgainstGolden(const std::string& demo,
                                const std::string& kind,
                                const Hashes& actual,
-                               const char* subject)
+                               std::string_view subject)
 {
     auto golden = readGolden(demo, kind);
 

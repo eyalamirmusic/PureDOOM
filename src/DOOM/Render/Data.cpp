@@ -335,8 +335,10 @@ void initTextures()
     int* maptex2;
     int* maptex1;
 
-    char* names;
-    char* name_p;
+    // Raw lump bytes, not a string: an int count followed by fixed 8-byte name
+    // fields that nameView bounds. Read-only, hence const.
+    const char* names;
+    const char* name_p;
 
     int nummappatches;
     int offset;
@@ -354,8 +356,8 @@ void initTextures()
     auto& gd = graphicsData();
 
     // Load the patch names from pnames.lmp.
-    names = static_cast<char*>(Doom::cacheLumpName("PNAMES"));
-    nummappatches = littleEndian(*(reinterpret_cast<int*>(names)));
+    names = static_cast<const char*>(Doom::cacheLumpName("PNAMES"));
+    nummappatches = littleEndian(*(reinterpret_cast<const int*>(names)));
     name_p = names + 4;
     auto patchlookup = EA::Vector<int>(nummappatches);
 

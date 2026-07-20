@@ -1,4 +1,5 @@
 #include "SimProbe.h"
+#include <DOOM/Host/Text.h>
 #include <DOOM/Render/Data.h>
 #include <DOOM/Render/GraphicsData.h>
 #include <DOOM/Render/Video.h>
@@ -68,19 +69,14 @@ static void simOnPrint(std::string_view text)
     (void) text;
 }
 
-// The engine does not copy its argv - Doom::initGame keeps the pointer, and
-// Doom::checkParm walks it for the rest of the run. Doom::spawnSpecials asks for "-avg"
-// on every level load, which is long after the function that booted the engine
-// has returned, so the array has to outlive it. Static, therefore, and not on
-// doomSimBoot's stack.
-//
-// It went unnoticed until this file passed a second argument: with argc at 1,
-// Doom::checkParm's loop never dereferenced myargv at all, and the dangling pointer
-// was harmless.
-static char simProgram[] = "doom-tests";
-static char simConfigFlag[] = "-config";
-static char simConfigFile[] = PUREDOOM_TESTS_DIR "/doom-tests.cfg";
-static char* simArgv[] = {simProgram, simConfigFlag, simConfigFile};
+// The engine owns its arguments now (myargv is a std::vector<std::string>), so
+// these need no lifetime of their own. They used to: Doom::initGame kept the
+// char** it was handed, and Doom::checkParm walked it for the rest of the run -
+// Doom::spawnSpecials asks for "-avg" on every level load, long after the
+// function that booted the engine has returned - so the array had to be static
+// rather than live on doomSimBoot's stack.
+static const std::vector<std::string> simArgs = {
+    "doom-tests", "-config", PUREDOOM_TESTS_DIR "/doom-tests.cfg"};
 
 // The two boots below share everything but what they do with the attract loop.
 // A demo boot lowers advancedemo so the game runs only the demo we hand it; a
@@ -111,7 +107,7 @@ static int simBootInternal(std::string_view demoLump, int keepAttract)
     Doom::host().exit = simOnExit;
     Doom::host().print = simOnPrint;
 
-    Doom::initGame((int) (sizeof(simArgv) / sizeof(simArgv[0])), simArgv, 0);
+    Doom::initGame(simArgs, 0);
 
     // Doom::initGame ends in Doom::startTitle, which raises the attract loop's
     // flag. Left alone, Doom::doAdvanceDemo runs on the very first tic, clears
@@ -316,15 +312,13 @@ int doomSimLumpCount()
     return Doom::wad().count();
 }
 
-void doomSimLumpName(int lump, char* nameOut)
+std::string doomSimLumpName(int lump)
 {
-    int i;
+    // A lump name is eight bytes and is only null-terminated if it is shorter,
+    // so it is read through the bounded view rather than as a C string.
+    const auto& name = Doom::wad().info(lump).name;
 
-    // A lump name is eight bytes and is only null-terminated if it is shorter.
-    for (i = 0; i < 8; ++i)
-        nameOut[i] = Doom::wad().info(lump).name[i];
-
-    nameOut[8] = '\0';
+    return std::string {Doom::nameView(name.data(), 8)};
 }
 
 int doomSimLumpSize(int lump)

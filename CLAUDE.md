@@ -43,8 +43,7 @@ counted), the alias retirement, and the RAII sweep, that last one bar a single
 audio-blocked owner.
 
 What is left of the whole refactor is a short, named, mostly *deliberate* tail:
-audio (blocked outside this repository) and `Host/Sound`'s `paddedsfx` behind it;
-`findResponseFile`/`myargv`, a real ownership question with no test driving it; the
+audio (blocked outside this repository); the
 ~55 dead-in-both-eras macros whose deletion is a judgement call reserved for a
 human; and measuring the warning count on the **one** CI configuration still
 unmeasured (Ubuntu's gcc/clang), which is the prerequisite for `-Werror`. Windows
@@ -392,7 +391,10 @@ apparatus:
   **The raw `const char*` layer is gone too, and that was a second pass.** The string
   refactor above retired the C string *functions*; it left ~363 `const char*`/`char
   const*` declarations standing, which the follow-up sweep took to **10, four of them
-  comments**. What moved: the file-I/O and name-taking parameters (`readFile`,
+  comments**, and a third pass has since taken it to **zero that carry text** — every
+  `char*` left in the repository is a byte cursor, an OS entry-point signature or a
+  cast a C API demands, and they are listed under **What deliberately stays raw**
+  below. What moved: the file-I/O and name-taking parameters (`readFile`,
   `writeFile`, `WritePCXfile`, `getsfx`, `addMessageToSText`, the probe's boot and
   lookup entry points), the static name and message tables (`mapnames` and its three
   siblings, `player_names`, `gammamsg`, `endmsg`, `chat_macros`, `SfxInfo::name`,
@@ -443,22 +445,83 @@ apparatus:
     compile-time pickup constants into a heap-allocating object to express what is
     already a literal. **The constraint is trivially copyable, not `const char*`** —
     that applies to every other field of `Player` too.
-  - **What deliberately stays raw**: the cheat sequences (`unsigned char` streams
-    with in-band `0`/`1`/`0xff` markers that `checkCheat` *writes into*), the WAD
-    overlay structs (`Wad/MapFormat.h`) and `WadFile`'s `matches` (a `memcmp` over 8
-    raw directory bytes), `Game/PlayerTypes.h`'s memcpy'd arrays,
-    `doom_memset`/`doom_memcpy`, `nameView`/`fillField`'s own raw parameters,
-    `Host/Net.cpp`'s `setsockopt` casts, `initGame`'s `char** argv`, `myargv` and
-    `findResponseFile` (the open ownership question, unchanged), `UI/Hud.cpp`'s
-    `shiftxform` (a 128-entry translation *table*, not a string), the PNAMES lump
-    walk in `Render/Data.cpp`, and the five translation-phase-6 string-literal
-    macro families (`PRESSKEY` and friends). `addPrefixToIText` keeps its `char*`
-    because it is dead in both eras — converting it would dress dead code as live,
-    the same mistake that had ten `[[maybe_unused]] constexpr`s reverted.
+  - **What deliberately stays raw, and the rule that decides it.** The question is
+    never "is this a `char*`" but **"does it carry text"**. Every survivor answers no:
+    the WAD overlay structs (`Wad/MapFormat.h`) and `WadFile`'s `matches` (a `memcmp`
+    over 8 raw directory bytes), `Game/PlayerTypes.h`'s memcpy'd arrays,
+    `doom_memset`/`doom_memcpy`, `nameView`/`fillField`'s own raw parameters (they
+    are the primitives that *bound* raw bytes into a `string_view`, so they cannot
+    take one), `Host/Net.cpp`'s `setsockopt` casts, `main`'s `char** argv` and the
+    `initGame` overload that exists to receive it, `UI/Hud.cpp`'s `shiftxform` (a
+    128-entry translation *table*), the PNAMES lump walk in `Render/Data.cpp` (raw
+    lump bytes, `const` now, feeding `nameView`), `Host/Sound.cpp`'s PCM and MUS
+    cursors (11kHz 8-bit samples — the thing that most *looks* like a string here
+    and is furthest from one), and the five translation-phase-6 string-literal macro
+    families (`PRESSKEY` and friends).
+
+    Three that used to be on this list have come off it, and each for a different
+    reason, which is worth knowing before adding a fourth:
+    - **The cheat sequences** were listed as permanently raw because `checkCheat`
+      *writes into* them. That ruled out `std::string`, not a raw pointer:
+      `CheatSequence` is a `std::span<unsigned char>` plus an `int position` now
+      (`UI/CheatTypes.h`), which keeps every in-band `0`/`1`/`0xff` marker and the
+      write-back exactly as it was. "It is mutable" is an argument against an
+      *owning immutable* type, not against a typed view.
+    - **`myargv`/`findResponseFile`**, called an open ownership question with no
+      test driving it, was resolved by making `myargv` a `std::vector<std::string>`
+      — see **The command line owns itself now** below.
+    - **`addPrefixToIText`** kept its `char*` on the grounds that converting dead
+      code dresses it as live. That reasoning was borrowed from the ten reverted
+      `[[maybe_unused]] constexpr`s and does not transfer: an attribute whose only
+      job is to silence an unused-warning is evidence the thing is dead, whereas a
+      parameter type is not evidence of anything. It is `std::string_view`.
+      (If dead code is the objection, the answer is deletion, not a worse type.)
+
     The two lineage bugs the sweep found —
     quicksave/quickload's third call is `strcpy` where `concat` was meant, so the
     prompt never shows the savegame name — are **preserved and documented at their
     sites**, not fixed, like the MUS-delay and `drawAnimatedBack` precedents.
+
+  **The command line owns itself now.** `myargv` is a `std::vector<std::string>`
+  (`Game/Args.h`), and `initGame` copies what the host hands it rather than keeping
+  the pointer — `DOOM.h` carries a `std::vector<std::string>` overload for hosts not
+  forwarding `main()`, and `Tests/SimProbe.cpp`'s three `static char[]`s, which
+  existed *only* because the engine kept the pointer, are one `std::vector` now.
+  What that resolved was not a spelling:
+
+  - `findResponseFile` did two `doom_malloc`s that nothing ever freed — the file's
+    contents and a fresh `MAXARGVS`-sized pointer array — and the second replaced
+    `myargv` wholesale, so the original was leaked too.
+  - It wrote a NUL terminator **one byte past** the contents buffer whenever the
+    last token ran to EOF (`*(infile + k) = 0` with `k == size`). Same family as
+    the `doomu.wad` overflow the Windows port found, and equally invisible here.
+  - Two silent ceilings: `MAXARGVS` (100) tokens, and **20** arguments following
+    the `@file`. Both walked off the end rather than reporting anything.
+
+  All four are gone with the raw pointers, and the tokeniser keeps vanilla's own
+  character class (a token runs while the byte is `>= ' '+1` and `<= 'z'`), empty
+  leading token included. `myargc` is retired in favour of `myargCount()`, which
+  returns `myargv.size()` — the count and the container cannot drift, which is the
+  same rule the overflow-guard note above states for array bounds.
+
+  **`Host/Sound.cpp`'s `paddedsfx` was the audio-blocked RAII owner, and it was
+  also a live leak.** `initSoundHost` runs at *boot* (`Host/System.cpp`), not when
+  audio starts, so every boot `doom_malloc`'d ~107 padded sample buffers and freed
+  none — the buffers are a `std::vector<std::vector<unsigned char>>` now. Two things
+  made this look blocked when it was not: nothing plays audio, so no gate could
+  *hear* a regression; and `Sim/OwnershipTests.cpp` counts blocks from a post-boot
+  baseline, so a leak taken during boot is subtracted out by construction. Ownership
+  lives beside the table rather than in `SfxInfo::data` because a linked sound (the
+  chaingun onto the pistol) deliberately points at its target's buffer — making the
+  member owning would have turned that alias into a copy.
+
+  **One latent bug found and deliberately left**: `UI/Hud.cpp`'s chat responder
+  indexes `shiftxform` — 128 entries — with an `unsigned char`, so `chat.shiftdown`
+  plus any key code above 127 reads past the table. Vanilla's own defect, in a
+  multiplayer path no test reaches. It is also why `shiftxform` stays a raw pointer:
+  as a `std::span` the same read becomes an **MSVC debug-STL assertion**, which is
+  the Debug-only, one-toolchain, modal-dialog failure mode documented under
+  **Windows** — a worse outcome than the silent read, arrived at by accident.
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
   eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the plain-data  snapshot interface to engine internals (camera, wall geometry, view state).
@@ -711,7 +774,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-94 tests, roughly twenty seconds for the lot. **Run it before and after anything you change
+98 tests, roughly thirty seconds for the lot. **Run it before and after anything you change
 in `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -735,6 +798,7 @@ What each source covers, since the sections below do not name them all:
 | `Sim/SaveGameTests.cpp` | SimTests | the save/load round trip, and `readFile`'s owner |
 | `Sim/OwnershipTests.cpp` | SimTests | that destroying an `Engine` gives the memory back |
 | `Sim/PrimitiveTests.cpp` `Sim/MathTests.cpp` `Sim/GeometryTests.cpp` | PrimitiveTests | the arithmetic underneath the simulation — including the endian swaps, which matter out of proportion to their size because `littleEndian()` is the identity on every machine this builds on, so a typo in `swap16`/`swap32` would surface only on a big-endian host |
+| `Sim/CheatTests.cpp` | PrimitiveTests | the cheat-sequence matcher — the in-band `1`/`0xff` marker protocol, the parameter slots `checkCheat` writes and `getParam` clears, and the restart on a wrong key |
 | `Sim/EngineTests.cpp` | PrimitiveTests | the composition root, and that `resetEngine` is genuine |
 | `Sim/StateClusterTests.cpp` | PrimitiveTests | the `Engine`'s state clusters and accessor identity |
 
@@ -828,7 +892,18 @@ after a single load: that `vertexes`/`numsegs`/… still equal their `Level` vec
 ### What the tests do not cover
 
 Audio, and the eacp platform layer and GPU renderer. That is now the whole list —
-the four screens a demo never reaches each have their own harness: the first
+but it was wrong until recently, and the way it was wrong is the lesson. **The
+cheat matcher** (`UI/Cheat.cpp`) was live engine code with no gate over it at all:
+no demo enters a cheat, and none of the four screen harnesses below types one
+either. It went unlisted because this section was organised around *screens*, and
+`checkCheat` is not a screen — so a category nobody had thought to name could not
+show up as missing. It has `Tests/Sim/CheatTests.cpp` now, written when the
+`CheatSequence` was converted and demonstrated sharp against two mutations (drop
+`getParam`'s slot clearing → `Cheat/canBeEnteredTwice` fails; drop the restart on a
+wrong key → `Cheat/wrongKeyRestartsTheMatch` fails). **Before refactoring anything,
+check what covers it by running the code, not by reading a list like this one.**
+
+The four screens a demo never reaches each have their own harness: the first
 three a frame golden, all built the same way and all built *before* the code they
 cover was rewritten, and the fourth a transition test awaiting its golden:
 

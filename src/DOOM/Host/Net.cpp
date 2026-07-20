@@ -333,7 +333,7 @@ void initNetwork()
 
     // set up for network
     i = Doom::checkParm("-dup");
-    if (i && i < myargc - 1)
+    if (i && i < myargCount() - 1)
     {
         net.doomcom->ticdup = myargv[i + 1][0] - '0';
         if (net.doomcom->ticdup < 1)
@@ -350,7 +350,7 @@ void initNetwork()
         net.doomcom->extratics = 0;
 
     p = Doom::checkParm("-port");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         DOOMPORT = parseInt(myargv[p + 1]);
         // doom_print("using alternate port %i\n", DOOMPORT);
@@ -358,7 +358,7 @@ void initNetwork()
     }
 
     p = Doom::checkParm("-sendport");
-    if (p && p < myargc - 1)
+    if (p && p < myargCount() - 1)
     {
         DOOMPORT_SEND = parseInt(myargv[p + 1]);
         // doom_print("using alternate send port %i\n", DOOMPORT_SEND);
@@ -390,18 +390,18 @@ void initNetwork()
     net.doomcom->numnodes = 1; // this node for sure
 
     i++;
-    while (++i < myargc && myargv[i][0] != '-')
+    while (++i < myargCount() && myargv[i][0] != '-')
     {
         sendaddress[net.doomcom->numnodes].sin_family = AF_INET;
         sendaddress[net.doomcom->numnodes].sin_port = htons(DOOMPORT);
         if (myargv[i][0] == '.')
         {
             sendaddress[net.doomcom->numnodes].sin_addr.s_addr =
-                inet_addr(myargv[i] + 1);
+                inet_addr(myargv[i].c_str() + 1);
         }
         else
         {
-            hostentry = gethostbyname(myargv[i]);
+            hostentry = gethostbyname(myargv[i].c_str());
             if (!hostentry)
             {
                 // fatalError("Error: gethostbyname: couldn't find %s", myargv[i]);

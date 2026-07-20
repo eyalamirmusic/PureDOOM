@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <string_view>
 
 // A plain-data window into the running simulation, for the tests.
@@ -94,7 +95,7 @@ int doomSimLiveAllocations();
 // allocator out from under Doom::cacheLumpNum has something to answer to. The
 // hash is over the lump's bytes.
 int doomSimLumpCount();
-void doomSimLumpName(int lump, char* nameOut);
+std::string doomSimLumpName(int lump);
 int doomSimLumpSize(int lump);
 unsigned long long doomSimLumpHash(int lump);
 

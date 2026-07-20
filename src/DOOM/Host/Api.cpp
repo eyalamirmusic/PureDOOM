@@ -129,12 +129,18 @@ void setDefaultString(std::string_view name, std::string_view value)
 
 void initGame(int argc, char** argv, int flags)
 {
+    // Copied, not aliased: the host makes no promise about how long its argv
+    // outlives this call, and findResponseFile may replace the whole vector.
+    initGame(std::vector<std::string>(argv, argv + argc), flags);
+}
+
+void initGame(const std::vector<std::string>& args, int flags)
+{
     screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT);
     final_screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT * 4);
     last_update_time = currentTic();
 
-    myargc = argc;
-    myargv = argv;
+    myargv = args;
     doom_flags = flags;
 
     doomMain();

@@ -72,6 +72,7 @@ nano_add_executable(PrimitiveTests
         Sim/EngineTests.cpp
         Sim/StateClusterTests.cpp
         Sim/GeometryTests.cpp
+        Sim/CheatTests.cpp
         TARGETS doom-sim-probe)
 
 # Re-records the goldens - one demo per process, because the engine only boots

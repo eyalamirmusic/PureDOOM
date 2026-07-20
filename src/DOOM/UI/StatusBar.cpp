@@ -369,25 +369,24 @@ EA::Array<unsigned char, 8> cheat_mypos_seq = {
 };
 
 // Now what?
-CheatSequence cheat_mus = {cheat_mus_seq.data(), nullptr};
-CheatSequence cheat_god = {cheat_god_seq.data(), nullptr};
-CheatSequence cheat_ammo = {cheat_ammo_seq.data(), nullptr};
-CheatSequence cheat_ammonokey = {cheat_ammonokey_seq.data(), nullptr};
-CheatSequence cheat_noclip = {cheat_noclip_seq.data(), nullptr};
-CheatSequence cheat_commercial_noclip = {cheat_commercial_noclip_seq.data(),
-                                         nullptr};
+CheatSequence cheat_mus = {{cheat_mus_seq}};
+CheatSequence cheat_god = {{cheat_god_seq}};
+CheatSequence cheat_ammo = {{cheat_ammo_seq}};
+CheatSequence cheat_ammonokey = {{cheat_ammonokey_seq}};
+CheatSequence cheat_noclip = {{cheat_noclip_seq}};
+CheatSequence cheat_commercial_noclip = {{cheat_commercial_noclip_seq}};
 
-EA::Array<CheatSequence, 7> cheat_powerup = {{cheat_powerup_seq[0].data(), nullptr},
-                                             {cheat_powerup_seq[1].data(), nullptr},
-                                             {cheat_powerup_seq[2].data(), nullptr},
-                                             {cheat_powerup_seq[3].data(), nullptr},
-                                             {cheat_powerup_seq[4].data(), nullptr},
-                                             {cheat_powerup_seq[5].data(), nullptr},
-                                             {cheat_powerup_seq[6].data(), nullptr}};
+EA::Array<CheatSequence, 7> cheat_powerup = {CheatSequence {{cheat_powerup_seq[0]}},
+                                             CheatSequence {{cheat_powerup_seq[1]}},
+                                             CheatSequence {{cheat_powerup_seq[2]}},
+                                             CheatSequence {{cheat_powerup_seq[3]}},
+                                             CheatSequence {{cheat_powerup_seq[4]}},
+                                             CheatSequence {{cheat_powerup_seq[5]}},
+                                             CheatSequence {{cheat_powerup_seq[6]}}};
 
-CheatSequence cheat_choppers = {cheat_choppers_seq.data(), nullptr};
-CheatSequence cheat_clev = {cheat_clev_seq.data(), nullptr};
-CheatSequence cheat_mypos = {cheat_mypos_seq.data(), nullptr};
+CheatSequence cheat_choppers = {{cheat_choppers_seq}};
+CheatSequence cheat_clev = {{cheat_clev_seq}};
+CheatSequence cheat_mypos = {{cheat_mypos_seq}};
 
 void stopStatusBar();
 
@@ -440,7 +439,7 @@ bool statusBarResponder(Event* ev)
             // if (gameskill != sk_nightmare) {
 
             // 'dqd' cheat for toggleable god mode
-            if (checkCheat(&cheat_god, ev->data1))
+            if (checkCheat(cheat_god, ev->data1))
             {
                 bar.plyr->cheats ^= CF_GODMODE;
                 if (bar.plyr->cheats & CF_GODMODE)
@@ -455,7 +454,7 @@ bool statusBarResponder(Event* ev)
                     bar.plyr->message = STSTR_DQDOFF;
             }
             // 'fa' cheat for killer fucking arsenal
-            else if (checkCheat(&cheat_ammonokey, ev->data1))
+            else if (checkCheat(cheat_ammonokey, ev->data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -469,7 +468,7 @@ bool statusBarResponder(Event* ev)
                 bar.plyr->message = STSTR_FAADDED;
             }
             // 'kfa' cheat for key full ammo
-            else if (checkCheat(&cheat_ammo, ev->data1))
+            else if (checkCheat(cheat_ammo, ev->data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -486,13 +485,12 @@ bool statusBarResponder(Event* ev)
                 bar.plyr->message = STSTR_KFAADDED;
             }
             // 'mus' cheat for changing music
-            else if (checkCheat(&cheat_mus, ev->data1))
+            else if (checkCheat(cheat_mus, ev->data1))
             {
-                EA::Array<char, 3> buf;
                 int musnum;
 
                 bar.plyr->message = STSTR_MUS;
-                getParam(&cheat_mus, buf.data());
+                const auto buf = getParam(cheat_mus);
 
                 if (gameVersion().gamemode == commercial)
                 {
@@ -515,8 +513,8 @@ bool statusBarResponder(Event* ev)
             }
             // Simplified, accepting both "noclip" and "idspispopd".
             // no clipping mode cheat
-            else if (checkCheat(&cheat_noclip, ev->data1)
-                     || checkCheat(&cheat_commercial_noclip, ev->data1))
+            else if (checkCheat(cheat_noclip, ev->data1)
+                     || checkCheat(cheat_commercial_noclip, ev->data1))
             {
                 bar.plyr->cheats ^= CF_NOCLIP;
 
@@ -528,7 +526,7 @@ bool statusBarResponder(Event* ev)
             // 'behold?' power-up cheats
             for (int i = 0; i < 6; i++)
             {
-                if (checkCheat(&cheat_powerup[i], ev->data1))
+                if (checkCheat(cheat_powerup[i], ev->data1))
                 {
                     if (!bar.plyr->powers[i])
                         givePower(bar.plyr, i);
@@ -542,19 +540,19 @@ bool statusBarResponder(Event* ev)
             }
 
             // 'behold' power-up menu
-            if (checkCheat(&cheat_powerup[6], ev->data1))
+            if (checkCheat(cheat_powerup[6], ev->data1))
             {
                 bar.plyr->message = STSTR_BEHOLD;
             }
             // 'choppers' invulnerability & chainsaw
-            else if (checkCheat(&cheat_choppers, ev->data1))
+            else if (checkCheat(cheat_choppers, ev->data1))
             {
                 bar.plyr->weaponowned[wp_chainsaw] = true;
                 bar.plyr->powers[pw_invulnerability] = true;
                 bar.plyr->message = STSTR_CHOPPERS;
             }
             // 'mypos' for player position
-            else if (checkCheat(&cheat_mypos, ev->data1))
+            else if (checkCheat(cheat_mypos, ev->data1))
             {
                 static std::string buf;
                 //doom_sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
@@ -576,13 +574,12 @@ bool statusBarResponder(Event* ev)
         }
 
         // 'clev' change-level cheat
-        if (checkCheat(&cheat_clev, ev->data1))
+        if (checkCheat(cheat_clev, ev->data1))
         {
-            EA::Array<char, 3> buf;
             int epsd;
             int map;
 
-            getParam(&cheat_clev, buf.data());
+            const auto buf = getParam(cheat_clev);
 
             const auto& version = gameVersion();
 

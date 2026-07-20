@@ -50,11 +50,8 @@ Directory readDirectory()
 
     for (auto lump = 0; lump < doomSimLumpCount(); ++lump)
     {
-        auto name = std::array<char, 9> {};
-        doomSimLumpName(lump, name.data());
-
         directory.push_back(
-            {name.data(), doomSimLumpSize(lump), doomSimLumpHash(lump)});
+            {doomSimLumpName(lump), doomSimLumpSize(lump), doomSimLumpHash(lump)});
     }
 
     return directory;

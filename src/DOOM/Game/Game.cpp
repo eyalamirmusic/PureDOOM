@@ -1538,7 +1538,7 @@ void recordDemo(std::string_view name)
     demo.demoname = concat(name, ".lmp");
     maxsize = 0x20000;
     i = Doom::checkParm("-maxdemo");
-    if (i && i < myargc - 1)
+    if (i && i < myargCount() - 1)
         maxsize = parseInt(myargv[i + 1]) * 1024;
     demo.demoRecordBuffer.resize(maxsize);
     demo.demobuffer = demo.demoRecordBuffer.data();
