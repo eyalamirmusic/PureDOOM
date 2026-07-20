@@ -78,31 +78,31 @@ struct CastInfo
 // the per-ending text pointers and the castorder[] cast list - stays file-local: it is fixed
 // constants, not per-run state, and never moved onto FinaleState.
 
-const char* e1text = E1TEXT;
-const char* e2text = E2TEXT;
-const char* e3text = E3TEXT;
-const char* e4text = E4TEXT;
+std::string_view e1text = E1TEXT;
+std::string_view e2text = E2TEXT;
+std::string_view e3text = E3TEXT;
+std::string_view e4text = E4TEXT;
 
-const char* c1text = C1TEXT;
-const char* c2text = C2TEXT;
-const char* c3text = C3TEXT;
-const char* c4text = C4TEXT;
-const char* c5text = C5TEXT;
-const char* c6text = C6TEXT;
+std::string_view c1text = C1TEXT;
+std::string_view c2text = C2TEXT;
+std::string_view c3text = C3TEXT;
+std::string_view c4text = C4TEXT;
+std::string_view c5text = C5TEXT;
+std::string_view c6text = C6TEXT;
 
-const char* p1text = P1TEXT;
-const char* p2text = P2TEXT;
-const char* p3text = P3TEXT;
-const char* p4text = P4TEXT;
-const char* p5text = P5TEXT;
-const char* p6text = P6TEXT;
+std::string_view p1text = P1TEXT;
+std::string_view p2text = P2TEXT;
+std::string_view p3text = P3TEXT;
+std::string_view p4text = P4TEXT;
+std::string_view p5text = P5TEXT;
+std::string_view p6text = P6TEXT;
 
-const char* t1text = T1TEXT;
-const char* t2text = T2TEXT;
-const char* t3text = T3TEXT;
-const char* t4text = T4TEXT;
-const char* t5text = T5TEXT;
-const char* t6text = T6TEXT;
+std::string_view t1text = T1TEXT;
+std::string_view t2text = T2TEXT;
+std::string_view t3text = T3TEXT;
+std::string_view t4text = T4TEXT;
+std::string_view t5text = T5TEXT;
+std::string_view t6text = T6TEXT;
 
 EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
                                      {CC_SHOTGUN, MT_SHOTGUY},

@@ -70,7 +70,7 @@
 #include "../Sim/Random.h"
 
 // mapnames (hu_stuff) and doom_flags are other subsystems' globals this file reads.
-extern EA::Array<const char*, 45> mapnames;
+extern EA::Array<std::string_view, 45> mapnames;
 extern int doom_flags;
 
 //
@@ -570,7 +570,7 @@ bool statusBarResponder(Event* ev)
                              ",0x",
                              hexString(mo->y.raw),
                              ")");
-                bar.plyr->message = buf.c_str();
+                bar.plyr->message = buf;
             }
         }
 

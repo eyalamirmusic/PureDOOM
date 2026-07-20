@@ -2,6 +2,8 @@
 
 #include "../Sim/Info.h" // State
 
+#include <string_view>
+
 namespace Doom
 {
 // The end-of-episode finale's runtime state - what UI/Finale keeps as the scrolling text screen,

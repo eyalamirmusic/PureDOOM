@@ -183,7 +183,7 @@ int queue_midi_tail = 0;
 // This function loads the sound data from the WAD lump,
 //  for single sound.
 //
-void* getsfx(const char* sfxname, int* len)
+void* getsfx(std::string_view sfxname, int* len)
 {
     unsigned char* sfx;
     unsigned char* paddedsfx;

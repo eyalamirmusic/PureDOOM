@@ -101,7 +101,7 @@ void unArchivePlayers()
 
         // will be set when unarc thinker
         players_.players[i].mo = nullptr;
-        players_.players[i].message = nullptr;
+        players_.players[i].message = {};
         players_.players[i].attacker = nullptr;
 
         for (int j = 0; j < NUMPSPRITES; j++)

@@ -98,7 +98,7 @@ inline void pressFire()
 
 inline void checkLevelTransition()
 {
-    nano::check(doomSimBoot(0) != 0, "engine booted headless, no demo queued");
+    nano::check(doomSimBoot() != 0, "engine booted headless, no demo queued");
     nano::check(doomSimLoadLevel(interEpisode, interMap, interSkill) != 0,
                 "E1M1 loaded and the player spawned");
 
@@ -188,7 +188,7 @@ inline void checkLevelTransition()
 // the hand-over.
 inline void checkIntermissionDataOutlivesItsLastDraw()
 {
-    nano::check(doomSimBoot(0) != 0, "engine booted headless, no demo queued");
+    nano::check(doomSimBoot() != 0, "engine booted headless, no demo queued");
     nano::check(doomSimLoadLevel(interEpisode, interMap, interSkill) != 0,
                 "E1M1 loaded and the player spawned");
 

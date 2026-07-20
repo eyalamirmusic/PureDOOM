@@ -389,28 +389,73 @@ apparatus:
   `"WIMAP"+epsd`, `"ds"+sfxname`, `E?M?`) is `concat(...)` straight into the WAD
   lookups, which take `std::string_view`.
 
-  Four things to know before touching strings here:
+  **The raw `const char*` layer is gone too, and that was a second pass.** The string
+  refactor above retired the C string *functions*; it left ~363 `const char*`/`char
+  const*` declarations standing, which the follow-up sweep took to **10, four of them
+  comments**. What moved: the file-I/O and name-taking parameters (`readFile`,
+  `writeFile`, `WritePCXfile`, `getsfx`, `addMessageToSText`, the probe's boot and
+  lookup entry points), the static name and message tables (`mapnames` and its three
+  siblings, `player_names`, `gammamsg`, `endmsg`, `chat_macros`, `SfxInfo::name`,
+  `MusicInfo::name`, `Finale`'s 22 per-ending text pointers), the config table's text
+  plumbing (`ConfigDefault::name`/`text_location`/`default_text_value`), the two
+  message-box holders (`MenuState::messageString`, `AttractMode::pagename`), and all
+  **287** of `StringsEnglish.h`'s constants, which are `constexpr std::string_view`
+  now. `StringsFrench.h` was deliberately left alone — it is still `#define`s, and no
+  build here compiles it.
+
+  Five things to know before touching strings here:
 
   - **An 8-byte WAD name field is NOT NUL-terminated when full**, and a
     `std::string_view` built from a bare `const char*` runs `strlen` off its end.
     `nameView(ptr, 8)` (`Host/Text.h`) is the bounded view; `WadFile.h` and
     `Render/Data.h` both say so at their lookup declarations, and `Sim/Setup.cpp`'s
-    map-loader calls are the worked example.
+    map-loader calls are the worked example. `Game/Game.cpp`'s savegame version
+    check reads its 16-byte field through it for the same reason.
+  - **A `std::string_view` built from a null pointer is UB, and the null arrives as a
+    literal `0` that no grep for `nullptr` will find.** This is the one hazard the
+    `const char*` → `std::string_view` sweep actually hit, twice, and both times the
+    failure was a segfault a long way from the edit. `Game/SoundData.cpp`'s
+    `S_music[0]` dummy entry was spelled `{ 0 }` — a null *name*, harmless as a
+    pointer nothing dereferenced, fatal at static-init as a view (it is `{ "", 0 }`
+    now). `Tests/SimProbe.h`'s "boot with no demo" was spelled `doomSimBoot(0)` at 13
+    call sites, and 16 tests segfaulted at once; the parameter is defaulted
+    (`doomSimBoot()`) rather than passed an empty literal, because "no demo" should
+    not read as "a demo named nothing". **Before converting a pointer that carries a
+    string, grep its writers for a bare `0` as well as for `nullptr`** — and remember
+    that a null `const char*` guard (`if (prefix)`) becomes `.empty()`, not a
+    truthiness test that no longer compiles.
   - **Fixed-width on-disk fields stay fixed-width**: the savegame's 24-byte
     description and 16-byte version fields are written with `fillField`
     (`Host/Text.h`) — zero-padded, deterministic — and read back bounded. The menu's
     `savegamestrings` are `std::string` in memory and a fixed field only at the
     file boundary.
   - **A message pointer needs storage that outlives the frame.** `Player::message`
-    is still `const char*` (the `Player` struct is memcpy'd whole by savegames);
-    everything assigned to it is a literal or an Engine-owned/static `std::string`'s
-    `.c_str()` (`turbomessage`, the IDMYPOS buffer, `NetState::exitmsg`, HUD chat's
-    `lastmessage`) — reassigned in the same breath as the pointer, never freed.
+    is a `std::string_view` — everything assigned to it is a string constant or an
+    Engine-owned/static `std::string` (`turbomessage`, the IDMYPOS buffer,
+    `NetState::exitmsg`, HUD chat's `lastmessage`), reassigned in the same breath as
+    the view and never freed. It was `const char*` for a long time and the reason
+    given was that `Sim/SaveGame.cpp` memcpy's the whole `Player`, but that argument
+    only rules out an *owning* type: memcpy'ing a `std::string` would double-free on
+    load, while a view is trivially copyable and copies as safely as the pointer did.
+    `unArchivePlayers` clears it right after the memcpy, next to `mo` and `attacker`,
+    so nothing stale survives a load either way. The same reasoning rejects
+    `std::string*`, which would work mechanically but force each of the ~69
+    compile-time pickup constants into a heap-allocating object to express what is
+    already a literal. **The constraint is trivially copyable, not `const char*`** —
+    that applies to every other field of `Player` too.
   - **What deliberately stays raw**: the cheat sequences (`unsigned char` streams
     with in-band `0`/`1`/`0xff` markers that `checkCheat` *writes into*), the WAD
-    overlay structs (`Wad/MapFormat.h`), `Game/PlayerTypes.h`'s memcpy'd arrays,
-    `doom_memset`/`doom_memcpy`, and the five translation-phase-6 string-literal
-    macro families (`PRESSKEY` and friends). The two lineage bugs the sweep found —
+    overlay structs (`Wad/MapFormat.h`) and `WadFile`'s `matches` (a `memcmp` over 8
+    raw directory bytes), `Game/PlayerTypes.h`'s memcpy'd arrays,
+    `doom_memset`/`doom_memcpy`, `nameView`/`fillField`'s own raw parameters,
+    `Host/Net.cpp`'s `setsockopt` casts, `initGame`'s `char** argv`, `myargv` and
+    `findResponseFile` (the open ownership question, unchanged), `UI/Hud.cpp`'s
+    `shiftxform` (a 128-entry translation *table*, not a string), the PNAMES lump
+    walk in `Render/Data.cpp`, and the five translation-phase-6 string-literal
+    macro families (`PRESSKEY` and friends). `addPrefixToIText` keeps its `char*`
+    because it is dead in both eras — converting it would dress dead code as live,
+    the same mistake that had ten `[[maybe_unused]] constexpr`s reverted.
+    The two lineage bugs the sweep found —
     quicksave/quickload's third call is `strcpy` where `concat` was meant, so the
     prompt never shows the savegame name — are **preserved and documented at their
     sites**, not fixed, like the MUS-delay and `drawAnimatedBack` precedents.

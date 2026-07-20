@@ -441,7 +441,7 @@ void eacpDoomBindKeys()
         Doom::ConfigDefault* entry = &defaults[i];
 
         if (entry->defaultvalue != Doom::STRING_VALUE
-            && std::strncmp(entry->name, "key_", 4) == 0)
+            && entry->name.starts_with("key_"))
         {
             *entry->location = entry->defaultvalue;
         }

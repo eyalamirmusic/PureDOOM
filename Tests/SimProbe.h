@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 // A plain-data window into the running simulation, for the tests.
 //
 // The engine's state lives in globals its own headers declare, so this reaches
@@ -8,7 +10,7 @@
 // integers and one hash.
 
 // Boots the engine headless against the shareware WAD and queues a demo
-// ("demo1", "demo2", "demo3"), or none at all if demoLump is null - which is
+// ("demo1", "demo2", "demo3"), or none at all if demoLump is empty - which is
 // what a test of something other than the simulation wants. Returns 0 if the
 // engine aborted on the way up - a missing WAD, a bad lump - rather than
 // leaving the test to crash in the wreckage.
@@ -27,7 +29,7 @@
 // table walked by an index - so the same input must produce the same world,
 // tic for tic. Anything that changes the world therefore desyncs the demo,
 // which is exactly the property a refactor wants watched.
-int doomSimBoot(const char* demoLump);
+int doomSimBoot(std::string_view demoLump = {});
 
 // Runs one tic. Returns 0 once the demo has played out.
 int doomSimRunTic();
@@ -43,7 +45,7 @@ int doomSimRunTic();
 // the leftover mobjs and specials (Z_FreeTags). So a second scenario runs on a
 // clean world in the same process. Replaying one demo twice and getting the
 // same tics both times is what proves that reset is clean.
-void doomSimReplayDemo(const char* demoLump);
+void doomSimReplayDemo(std::string_view demoLump);
 
 // Whether the demo is actually driving a level yet: the engine spends a few
 // tics on the title screen first.
@@ -135,7 +137,7 @@ int doomSimMobjCount();
 
 // Loads episode/map at the given skill directly (Doom::initNewGame), no demo, and
 // forces single-player so the player mobj spawns. Returns 1 on success, 0 if
-// the engine aborted. Must be called after doomSimBoot(0).
+// the engine aborted. Must be called after doomSimBoot().
 int doomSimLoadLevel(int episode, int map, int skill);
 
 // The player-1 mobj as a handle (0), or -1 if no level is loaded.
@@ -316,7 +318,7 @@ int doomSimGameMap();
 // called after doomSimBoot; the name lookup is fatal, not -1, on a missing
 // name, exactly as the engine's own lookups are.
 int doomSimTextureCount();
-int doomSimTextureNumForName(const char* name);
+int doomSimTextureNumForName(std::string_view name);
 int doomSimTextureWidth(int texture);
 int doomSimTextureHeight(int texture);
 int doomSimTexturePatchCount(int texture);
@@ -336,5 +338,5 @@ typedef struct DoomSimFileRead
 } DoomSimFileRead;
 
 // Zeroed if the engine aborted - readFile is fatal, not false, on a bad path.
-// Must be called after doomSimBoot(0).
-DoomSimFileRead doomSimReadFileIntoOwner(const char* path);
+// Must be called after doomSimBoot().
+DoomSimFileRead doomSimReadFileIntoOwner(std::string_view path);

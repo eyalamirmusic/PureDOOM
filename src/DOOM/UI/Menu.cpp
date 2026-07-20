@@ -94,7 +94,7 @@ extern unsigned char screen_palette[256 * 3]; // i_video, no header
 // The quit-screen taunts, drawn by quitDOOM. Declared in dstrings.h, read only
 // here, so their definition moved out of dstrings.cpp to sit with their one
 // reader. ::-scoped for the extern; const so the literals stay off -Wwritable.
-const char* endmsg[Doom::NUM_QUITMESSAGES + 1] = {
+std::string_view endmsg[Doom::NUM_QUITMESSAGES + 1] = {
     // DOOM1
     Doom::QUITMSG,
     "please don't leave, there's more\ndemons to toast!",
@@ -183,9 +183,9 @@ struct MenuCustomText
 // apparatus further down stay file-local.
 
 // Was EA::Array<EA::Array<char, 26>, 5>, a fixed 26-byte buffer per message that
-// only existed because these were string-literal macros. Its one reader wants a
-// const char*, so it holds pointers now and the 26 cannot silently truncate.
-EA::Array<const char*, 5> gammamsg = {
+// only existed because these were string-literal macros. Views now, so the 26
+// cannot silently truncate and no length is recomputed at each use.
+EA::Array<std::string_view, 5> gammamsg = {
     GAMMALVL0, GAMMALVL1, GAMMALVL2, GAMMALVL3, GAMMALVL4};
 
 // graphic name of skulls
@@ -312,7 +312,9 @@ void writeText(int x, int y, std::string_view string);
 int stringWidth(std::string_view string);
 int stringHeight(std::string_view string);
 void startControlPanel();
-void startMessage(const char* string, std::function<void(int)> routine, bool input);
+void startMessage(std::string_view string,
+                  std::function<void(int)> routine,
+                  bool input);
 void stopMessage();
 void clearMenus();
 void drawMouseOptions();
@@ -779,7 +781,7 @@ void drawSave()
 
     if (state.saveStringEnter)
     {
-        i = stringWidth(state.savegamestrings[state.saveSlot].c_str());
+        i = stringWidth(state.savegamestrings[state.saveSlot]);
         writeText(LoadDef.x + i, LoadDef.y + LINEHEIGHT * state.saveSlot, "_");
     }
 }
@@ -873,7 +875,7 @@ void quickSave()
     state.tempstring =
         concat(QSPROMPT_1, state.savegamestrings[state.quickSaveSlot]);
     state.tempstring = QSPROMPT_2;
-    startMessage(state.tempstring.c_str(), quickSaveResponse, true);
+    startMessage(state.tempstring, quickSaveResponse, true);
 }
 
 //
@@ -909,7 +911,7 @@ void quickLoad()
     state.tempstring =
         concat(QLPROMPT_1, state.savegamestrings[state.quickSaveSlot]);
     state.tempstring = QLPROMPT_2;
-    startMessage(state.tempstring.c_str(), quickLoadResponse, true);
+    startMessage(state.tempstring, quickLoadResponse, true);
 }
 
 //
@@ -1317,7 +1319,7 @@ void quitDOOM(int)
             endmsg[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1], "\n\n" DOSY);
     }
 
-    startMessage(state.endstring.c_str(), quitResponse, true);
+    startMessage(state.endstring, quitResponse, true);
 }
 
 void changeSensitivity(int choice)
@@ -1419,7 +1421,9 @@ void drawSelCell(MenuDef* menu, int item)
                     static_cast<Patch*>(cacheLumpName("M_CELL2")));
 }
 
-void startMessage(const char* string, std::function<void(int)> routine, bool input)
+void startMessage(std::string_view string,
+                  std::function<void(int)> routine,
+                  bool input)
 {
     auto& overlay = overlayState();
     auto& state = menuState();
@@ -1644,7 +1648,7 @@ bool menuResponder(Event* ev)
                         break;
                 if (ch >= 32 && ch <= 127
                     && static_cast<int>(entry.size()) < menuSaveStringSize - 1
-                    && stringWidth(entry.c_str()) < (menuSaveStringSize - 2) * 8)
+                    && stringWidth(entry) < (menuSaveStringSize - 2) * 8)
                 {
                     entry += static_cast<char>(ch);
                 }
@@ -1916,17 +1920,17 @@ void drawMenu()
     // Horiz. & Vertically center string and print it.
     if (messageToPrint)
     {
-        auto message = std::string_view {state.messageString};
+        auto message = state.messageString;
         y = 100 - stringHeight(state.messageString) / 2;
         while (!message.empty())
         {
             auto lineEnd = message.find('\n');
-            auto line = std::string {message.substr(0, lineEnd)};
+            auto line = message.substr(0, lineEnd);
             message.remove_prefix(lineEnd == std::string_view::npos ? message.size()
                                                                     : lineEnd + 1);
 
-            x = 160 - stringWidth(line.c_str()) / 2;
-            writeText(x, y, line.c_str());
+            x = 160 - stringWidth(line) / 2;
+            writeText(x, y, line);
             y += littleEndian(hudFont().hu_font[0]->height);
         }
         return;
@@ -2062,7 +2066,7 @@ void initMenu()
     state.skullAnimCounter = 10;
     state.screenSize = menuSettings().screenblocks - 3;
     messageToPrint = 0;
-    state.messageString = nullptr;
+    state.messageString = {};
     state.messageLastMenuActive = overlay.menuactive;
     state.quickSaveSlot = -1;
 

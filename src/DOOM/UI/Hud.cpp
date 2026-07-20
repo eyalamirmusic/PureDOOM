@@ -62,9 +62,9 @@
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 // externs): the config-persisted chat macros, the player names and the level-name
 // tables (st_stuff reads mapnames).
-extern EA::Array<const char*, 10> chat_macros;
-extern EA::Array<const char*, 4> player_names;
-extern EA::Array<const char*, 45> mapnames;
+extern EA::Array<std::string_view, 10> chat_macros;
+extern EA::Array<std::string_view, 4> player_names;
+extern EA::Array<std::string_view, 45> mapnames;
 
 //
 // Locally used constants, shortcuts.
@@ -181,7 +181,7 @@ EA::Array<char, 128> frenchKeyMap = {
 // The actual names can be found in DStrings.h.
 //
 
-EA::Array<const char*, 32> mapnames2 = // DOOM 2 map names.
+EA::Array<std::string_view, 32> mapnames2 = // DOOM 2 map names.
     {HUSTR_1,  HUSTR_2,  HUSTR_3,  HUSTR_4,  HUSTR_5,  HUSTR_6,
      HUSTR_7,  HUSTR_8,  HUSTR_9,  HUSTR_10, HUSTR_11,
 
@@ -191,7 +191,7 @@ EA::Array<const char*, 32> mapnames2 = // DOOM 2 map names.
      HUSTR_21, HUSTR_22, HUSTR_23, HUSTR_24, HUSTR_25, HUSTR_26,
      HUSTR_27, HUSTR_28, HUSTR_29, HUSTR_30, HUSTR_31, HUSTR_32};
 
-EA::Array<const char*, 32> mapnamesp = // Plutonia WAD map names.
+EA::Array<std::string_view, 32> mapnamesp = // Plutonia WAD map names.
     {PHUSTR_1,  PHUSTR_2,  PHUSTR_3,  PHUSTR_4,  PHUSTR_5,  PHUSTR_6,
      PHUSTR_7,  PHUSTR_8,  PHUSTR_9,  PHUSTR_10, PHUSTR_11,
 
@@ -201,7 +201,7 @@ EA::Array<const char*, 32> mapnamesp = // Plutonia WAD map names.
      PHUSTR_21, PHUSTR_22, PHUSTR_23, PHUSTR_24, PHUSTR_25, PHUSTR_26,
      PHUSTR_27, PHUSTR_28, PHUSTR_29, PHUSTR_30, PHUSTR_31, PHUSTR_32};
 
-EA::Array<const char*, 32> mapnamest = // TNT WAD map names.
+EA::Array<std::string_view, 32> mapnamest = // TNT WAD map names.
     {THUSTR_1,  THUSTR_2,  THUSTR_3,  THUSTR_4,  THUSTR_5,  THUSTR_6,
      THUSTR_7,  THUSTR_8,  THUSTR_9,  THUSTR_10, THUSTR_11,
 
@@ -219,13 +219,13 @@ EA::Array<const char*, 32> mapnamest = // TNT WAD map names.
 //
 // The Plutonia and TNT variants (mapnamesp/mapnamest) have no function: their only
 // callers are inside a commented-out FIXME in initHud, in both eras.
-const char* hudTitle()
+std::string_view hudTitle()
 {
     const auto& session = gameSession();
     return mapnames[(session.gameepisode - 1) * 9 + session.gamemap - 1];
 }
 
-const char* hudTitle2()
+std::string_view hudTitle2()
 {
     return mapnames2[gameSession().gamemap - 1];
 }
@@ -289,7 +289,7 @@ void startHud()
     auto& chat = hudChat();
     auto& msg = hudMessage();
 
-    const char* s;
+    std::string_view s;
 
     if (state.headsupactive)
         stopHud();
@@ -338,8 +338,8 @@ void startHud()
             break;
     }
 
-    while (*s)
-        addCharToTextLine(state.w_title, *(s++));
+    for (auto character: s)
+        addCharToTextLine(state.w_title, character);
 
     // create the chat widget
     initIText(chat.w_chat,
@@ -390,11 +390,11 @@ void hudTicker()
     if (menuSettings().showMessages || hud.message_dontfuckwithme)
     {
         // display message if necessary
-        if ((plr.message && !msg.message_nottobefuckedwith)
-            || (plr.message && hud.message_dontfuckwithme))
+        if ((!plr.message.empty() && !msg.message_nottobefuckedwith)
+            || (!plr.message.empty() && hud.message_dontfuckwithme))
         {
-            addMessageToSText(msg.w_message, 0, plr.message);
-            plr.message = nullptr;
+            addMessageToSText(msg.w_message, "", plr.message);
+            plr.message = {};
             msg.message_on = true;
             msg.message_counter = HU_MSGTIMEOUT;
             msg.message_nottobefuckedwith = hud.message_dontfuckwithme;
@@ -431,7 +431,7 @@ void hudTicker()
                         {
                             addMessageToSText(msg.w_message,
                                               player_names[i],
-                                              chat.w_inputbuffer[i].l.l.c_str());
+                                              chat.w_inputbuffer[i].l.l);
 
                             msg.message_nottobefuckedwith = true;
                             msg.message_on = true;
@@ -570,20 +570,20 @@ bool hudResponder(Event* ev)
             c = c - '0';
             if (c > 9)
                 return false;
-            const char* macromessage = chat_macros[c];
+            auto macromessage = chat_macros[c];
 
             // kill last message with a '\n'
             queueChatChar(KEY_ENTER); // DEBUG!!!
 
             // send the macro message
-            while (*macromessage)
-                queueChatChar(*macromessage++);
+            for (auto character: macromessage)
+                queueChatChar(character);
             queueChatChar(KEY_ENTER);
 
             // leave chat mode and notify that it was sent
             hud.chat_on = false;
             chat.lastmessage = chat_macros[c];
-            state.plr->message = chat.lastmessage.c_str();
+            state.plr->message = chat.lastmessage;
             eatkey = true;
         }
         else
@@ -603,7 +603,7 @@ bool hudResponder(Event* ev)
                 if (!chat.w_chat.l.l.empty())
                 {
                     chat.lastmessage = chat.w_chat.l.l;
-                    state.plr->message = chat.lastmessage.c_str();
+                    state.plr->message = chat.lastmessage;
                 }
             }
             else if (c == KEY_ESCAPE)
@@ -630,28 +630,28 @@ bool hudResponder(Event* ev)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.
 
 // The chat macros (m_misc persists them in the config).
-EA::Array<const char*, 10> chat_macros = {Doom::HUSTR_CHATMACRO0,
-                                          Doom::HUSTR_CHATMACRO1,
-                                          Doom::HUSTR_CHATMACRO2,
-                                          Doom::HUSTR_CHATMACRO3,
-                                          Doom::HUSTR_CHATMACRO4,
-                                          Doom::HUSTR_CHATMACRO5,
-                                          Doom::HUSTR_CHATMACRO6,
-                                          Doom::HUSTR_CHATMACRO7,
-                                          Doom::HUSTR_CHATMACRO8,
-                                          Doom::HUSTR_CHATMACRO9};
+EA::Array<std::string_view, 10> chat_macros = {Doom::HUSTR_CHATMACRO0,
+                                               Doom::HUSTR_CHATMACRO1,
+                                               Doom::HUSTR_CHATMACRO2,
+                                               Doom::HUSTR_CHATMACRO3,
+                                               Doom::HUSTR_CHATMACRO4,
+                                               Doom::HUSTR_CHATMACRO5,
+                                               Doom::HUSTR_CHATMACRO6,
+                                               Doom::HUSTR_CHATMACRO7,
+                                               Doom::HUSTR_CHATMACRO8,
+                                               Doom::HUSTR_CHATMACRO9};
 
 // The player colour names (g_game uses them for obituary messages).
-EA::Array<const char*, 4> player_names = {Doom::HUSTR_PLRGREEN,
-                                          Doom::HUSTR_PLRINDIGO,
-                                          Doom::HUSTR_PLRBROWN,
-                                          Doom::HUSTR_PLRRED};
+EA::Array<std::string_view, 4> player_names = {Doom::HUSTR_PLRGREEN,
+                                               Doom::HUSTR_PLRINDIGO,
+                                               Doom::HUSTR_PLRBROWN,
+                                               Doom::HUSTR_PLRRED};
 
 //
 // Builtin map names. The actual names can be found in dstrings.h. st_stuff reads
 // mapnames for the deathmatch/coop level title.
 //
-EA::Array<const char*, 45>
+EA::Array<std::string_view, 45>
     mapnames = // DOOM shareware/registered/retail (Ultimate) names.
     {Doom::HUSTR_E1M1, Doom::HUSTR_E1M2, Doom::HUSTR_E1M3,
      Doom::HUSTR_E1M4, Doom::HUSTR_E1M5, Doom::HUSTR_E1M6,

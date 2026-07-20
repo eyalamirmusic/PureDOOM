@@ -23,6 +23,8 @@
 
 #include "../doomtype.h"
 
+#include <string_view>
+
 //
 // MISC
 //
@@ -30,15 +32,18 @@ namespace Doom
 {
 struct ConfigDefault
 {
-    const char* name;
+    std::string_view name;
     int* location;
     int defaultvalue;
     int scantranslate; // PC scan code hack
     int untranslated; // lousy hack
-    const char**
-        text_location; // [pd] int* location was used to store text pointer. Can't change to intptr_t unless we change all settings type
-    const char*
-        default_text_value; // [pd] So we don't change defaultvalue behavior for int to intptr_t
+
+    // A text-valued default (defaultvalue == STRING_VALUE) writes through
+    // text_location instead of location. The view does not own what it points at:
+    // before the config file is read that is default_text_value's literal, and
+    // after it is a slot of loadDefaults' process-lifetime string storage.
+    std::string_view* text_location;
+    std::string_view default_text_value;
 };
 } // namespace Doom
 

@@ -19,7 +19,7 @@ namespace
 {
 auto tTextureDirectory = test("Sim/textureDirectoryDecodes") = []
 {
-    check(doomSimBoot(nullptr) != 0, "engine booted");
+    check(doomSimBoot() != 0, "engine booted");
 
     check(doomSimTextureCount() == 125, "the shareware TEXTURE1 names 125 textures");
 

@@ -47,7 +47,10 @@ DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 //
 Doom::MusicInfo S_music[] =
 {
-    { 0 },
+    // mus_None. Was `{ 0 }` - a null name, which no reachable path dereferenced
+    // (changeMusic builds "d_" + name and is never called with mus_None). An empty
+    // name says the same thing without a null std::string_view, which is UB.
+    { "", 0 },
     { "e1m1", 0 },
     { "e1m2", 0 },
     { "e1m3", 0 },

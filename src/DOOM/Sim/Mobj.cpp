@@ -611,7 +611,7 @@ void spawnPlayer(MapThing* mthing)
     p->mo = mobj;
     p->playerstate = PST_LIVE;
     p->refire = 0;
-    p->message = nullptr;
+    p->message = {};
     p->damagecount = 0;
     p->bonuscount = 0;
     p->extralight = 0;

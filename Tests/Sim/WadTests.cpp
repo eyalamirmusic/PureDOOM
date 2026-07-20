@@ -100,7 +100,7 @@ Directory readGoldenDirectory()
 
 auto tWadDirectory = test("Sim/wadDirectory") = []
 {
-    check(doomSimBoot(nullptr) != 0, "engine booted");
+    check(doomSimBoot() != 0, "engine booted");
 
     auto directory = readDirectory();
     check(!directory.empty(), "the WAD has lumps in it");

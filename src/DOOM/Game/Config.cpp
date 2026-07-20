@@ -110,7 +110,7 @@ struct PcxHeader
 // sound params below, their defaults[] entries are bound to those members at runtime by
 // bindEngineDefaults() rather than capturing their addresses here at static-init.
 
-extern EA::Array<const char*, 10> chat_macros;
+extern EA::Array<std::string_view, 10> chat_macros;
 
 extern byte scantokey[128];
 
@@ -119,9 +119,9 @@ extern byte scantokey[128];
 
 // Only the trailing fields are given, so the rest are zero-initialized. The
 // writable-strings suppression that used to sit here went stale when
-// ConfigDefault::name became a const char* and has been removed - it named a
-// warning this table can no longer raise, in Clang's spelling of the flag, which
-// GCC then warned about not recognising.
+// ConfigDefault::name stopped being a writable char* and has been removed - it
+// named a warning this table can no longer raise, in Clang's spelling of the flag,
+// which GCC then warned about not recognising.
 DOOM_DIAGNOSTIC_PUSH
 DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 Doom::ConfigDefault defaults[] = {
@@ -278,7 +278,7 @@ int drawText(int x, int y, bool direct, std::string_view string)
 //
 // writeFile
 //
-bool writeFile(char const* name, void* source, int length)
+bool writeFile(std::string_view name, void* source, int length)
 {
     void* handle;
     int count;
@@ -300,7 +300,7 @@ bool writeFile(char const* name, void* source, int length)
 //
 // readFile
 //
-int readFile(char const* name, EA::Vector<byte>& buffer)
+int readFile(std::string_view name, EA::Vector<byte>& buffer)
 {
     void* handle = doom_open(name, "rb");
     if (handle == nullptr)
@@ -350,7 +350,7 @@ static void bindEngineDefaults()
     // Engine exists). A local table keeps the pairing readable.
     struct Bind
     {
-        const char* name;
+        std::string_view name;
         int* location;
     };
 
@@ -557,7 +557,7 @@ void loadDefaults()
                             // copy for the life of the process.
                             auto& owned = stringDefaultStorage[i];
                             owned = strparm.substr(1);
-                            *defaults[i].text_location = owned.c_str();
+                            *defaults[i].text_location = owned;
                         }
                         break;
                     }
@@ -572,7 +572,7 @@ void loadDefaults()
 // WritePCXfile
 //
 void WritePCXfile(
-    const char* filename, byte* data, int width, int height, byte* palette)
+    std::string_view filename, byte* data, int width, int height, byte* palette)
 {
     int length;
     byte* pack;
@@ -642,7 +642,7 @@ void writeScreenshot()
     {
         lbmname[4] = static_cast<char>(i / 10 + '0');
         lbmname[5] = static_cast<char>(i % 10 + '0');
-        if ((f = doom_open(lbmname.c_str(), "wb")) == nullptr)
+        if ((f = doom_open(lbmname, "wb")) == nullptr)
             break; // file doesn't exist
         doom_close(f);
     }
@@ -650,7 +650,7 @@ void writeScreenshot()
         fatalError("Error: writeScreenshot: Couldn't create a PCX");
 
     // save the pcx file
-    WritePCXfile(lbmname.c_str(),
+    WritePCXfile(lbmname,
                  linear,
                  SCREENWIDTH,
                  SCREENHEIGHT,

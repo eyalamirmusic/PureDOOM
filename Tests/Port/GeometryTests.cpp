@@ -100,7 +100,7 @@ int horizontalTrianglesIn(const std::vector<EacpDoomVertex>& vertices,
 // walls all in view.
 auto tWorldGeometryHasFloors = test("Port/worldGeometryHasFloors") = []
 {
-    check(doomSimBoot(0) != 0, "the engine booted");
+    check(doomSimBoot() != 0, "the engine booted");
     check(doomSimLoadLevel(e1, m1, skillMedium) != 0, "E1M1 loaded");
 
     auto vertices = std::vector<EacpDoomVertex>(maxVertices);
@@ -147,7 +147,7 @@ auto tWorldGeometryHasFloors = test("Port/worldGeometryHasFloors") = []
 // check on the call's return.
 auto tFloorTexturesAreReadable = test("Port/floorTexturesAreReadable") = []
 {
-    check(doomSimBoot(0) != 0, "the engine booted");
+    check(doomSimBoot() != 0, "the engine booted");
     check(doomSimLoadLevel(e1, m1, skillMedium) != 0, "E1M1 loaded");
 
     auto vertices = std::vector<EacpDoomVertex>(maxVertices);
@@ -236,7 +236,7 @@ auto tFloorTexturesAreReadable = test("Port/floorTexturesAreReadable") = []
 // in a frame, since a wrong texture still draws something.
 auto tWorldGeometryDrawsAreInRange = test("Port/worldGeometryDrawsAreInRange") = []
 {
-    check(doomSimBoot(0) != 0, "the engine booted");
+    check(doomSimBoot() != 0, "the engine booted");
     check(doomSimLoadLevel(e1, m1, skillMedium) != 0, "E1M1 loaded");
 
     auto vertices = std::vector<EacpDoomVertex>(maxVertices);

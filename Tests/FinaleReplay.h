@@ -100,7 +100,7 @@ inline Hashes runFinaleScript()
 {
     auto frames = Hashes {};
 
-    nano::check(doomSimBoot(0) != 0, "engine booted headless, no demo queued");
+    nano::check(doomSimBoot() != 0, "engine booted headless, no demo queued");
     nano::check(doomSimGameMode() == gmShareware,
                 "the booted IWAD is shareware - the cast call and the other "
                 "episodes' art screens are unreachable from it");

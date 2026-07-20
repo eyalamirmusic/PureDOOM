@@ -161,7 +161,7 @@ inline Hashes runAutomapScript()
 {
     auto frames = Hashes {};
 
-    nano::check(doomSimBoot(0) != 0, "engine booted headless, no demo queued");
+    nano::check(doomSimBoot() != 0, "engine booted headless, no demo queued");
     nano::check(doomSimLoadLevel(automapEpisode, automapMap, automapSkill) != 0,
                 "E1M1 loaded and the player spawned");
 

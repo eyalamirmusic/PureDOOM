@@ -35,7 +35,7 @@ constexpr int skillMedium = 2;
 // which is the case a naive "re-run Doom::setupLevel" restore would get wrong.
 auto tSaveLoadPreservesTheWorld = test("Sim/saveLoadPreservesTheWorld") = []
 {
-    check(doomSimBoot(0) != 0, "the engine booted headless");
+    check(doomSimBoot() != 0, "the engine booted headless");
     check(doomSimLoadLevel(e1, m1, skillMedium) != 0,
           "E1M1 loaded and the player spawned");
 
@@ -68,7 +68,7 @@ auto tSaveLoadPreservesTheWorld = test("Sim/saveLoadPreservesTheWorld") = []
 // writeFile would test the host's file callbacks as much as readFile.
 auto tReadFileFillsTheOwner = test("Sim/readFileFillsItsOwner") = []
 {
-    check(doomSimBoot(0) != 0, "the engine booted headless");
+    check(doomSimBoot() != 0, "the engine booted headless");
 
     auto contents = doomSimReadFileIntoOwner(PUREDOOM_ROOT_DIR "/doom1.wad");
 

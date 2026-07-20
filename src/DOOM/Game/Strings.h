@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <string_view>
 
 // All important printed strings.
 // Doom::Language selection (message strings).
@@ -35,11 +36,10 @@
 #include "StringsEnglish.h"
 #endif
 
-
 // Misc. other strings.
 namespace Doom
 {
-constexpr const char* SAVEGAMENAME = "doomsav";
+constexpr std::string_view SAVEGAMENAME = "doomsav";
 } // namespace Doom
 
 //
@@ -50,7 +50,7 @@ constexpr const char* SAVEGAMENAME = "doomsav";
 // DEVMAPS/DEVDATA stay macros deliberately: Game/DoomMain.cpp's -shdev/-regdev/
 // -comdev paths and its -wart handling build wad/config paths with adjacent-literal
 // concatenation ("~" DEVMAPS "E", DEVDATA "doom1.wad", ...), which happens at
-// translation phase 6 and which a constexpr const char* cannot do. Same reason as
+// translation phase 6 and which a constexpr std::string_view cannot do. Same reason as
 // StringsEnglish.h's PRESSKEY/PRESSYN and DOSY.
 #define DEVMAPS "devmaps"
 #define DEVDATA "devdata"
@@ -63,10 +63,7 @@ namespace Doom
 constexpr int NUM_QUITMESSAGES = 22;
 } // namespace Doom
 
-
-extern const char* endmsg[];
-
-
+extern std::string_view endmsg[];
 
 //-----------------------------------------------------------------------------
 //

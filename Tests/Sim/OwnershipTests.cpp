@@ -49,7 +49,7 @@ auto tResetEngineReleasesTheLevelPool =
     // Before the boot, so every block the engine takes is one this counter saw.
     doomSimCountAllocations();
 
-    check(doomSimBoot(0) != 0, "the engine booted");
+    check(doomSimBoot() != 0, "the engine booted");
     const int afterBoot = doomSimLiveAllocations();
 
     check(doomSimLoadLevel(1, 1, 2) != 0, "E1M1 loaded");

@@ -153,15 +153,17 @@ void addLineToSText(HudScrollingText& s)
         s.l[i].needsupdate = 4;
 }
 
-void addMessageToSText(HudScrollingText& s, const char* prefix, const char* msg)
+void addMessageToSText(HudScrollingText& s,
+                       std::string_view prefix,
+                       std::string_view msg)
 {
     addLineToSText(s);
-    if (prefix)
-        while (*prefix)
-            addCharToTextLine(s.l[s.cl], *(prefix++));
 
-    while (*msg)
-        addCharToTextLine(s.l[s.cl], *(msg++));
+    for (auto character: prefix)
+        addCharToTextLine(s.l[s.cl], character);
+
+    for (auto character: msg)
+        addCharToTextLine(s.l[s.cl], character);
 }
 
 void drawSText(HudScrollingText& s)

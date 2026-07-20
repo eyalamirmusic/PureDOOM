@@ -117,12 +117,14 @@ void setDefaultString(std::string_view name, std::string_view value)
     if (!def)
         return;
 
-    // The table stores a const char* read for the life of the process; own a
-    // copy per name (map nodes never move, so the pointer stays valid).
+    // The table holds a non-owning view read for the life of the process; own a
+    // copy per name (map nodes never move, so the view stays valid). Assigning the
+    // view after `owned` is written is what keeps it pointing at the live buffer if
+    // the same name is set twice.
     static auto overrides = std::map<std::string, std::string, std::less<>> {};
     auto& owned = overrides[std::string {name}];
     owned = value;
-    def->default_text_value = owned.c_str();
+    def->default_text_value = owned;
 }
 
 void initGame(int argc, char** argv, int flags)

@@ -39,7 +39,7 @@ constexpr int skillMedium = 2;
 
 bool loadE1M1()
 {
-    return doomSimBoot(0) != 0 && doomSimLoadLevel(e1, m1, skillMedium) != 0;
+    return doomSimBoot() != 0 && doomSimLoadLevel(e1, m1, skillMedium) != 0;
 }
 
 // A solid thing standing where the player wants to be makes the spot illegal -

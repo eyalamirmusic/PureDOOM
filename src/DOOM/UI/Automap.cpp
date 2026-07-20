@@ -548,18 +548,16 @@ bool automapResponder(Event* ev)
             case AM_FOLLOWKEY:
                 followplayer = !followplayer;
                 map.f_oldloc.x = fixed_t {DOOM_MAXINT};
-                am_plr->message = const_cast<char*>(followplayer ? AMSTR_FOLLOWON
-                                                                 : AMSTR_FOLLOWOFF);
+                am_plr->message = followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF;
                 break;
             case AM_GRIDKEY:
                 grid = !grid;
-                am_plr->message =
-                    const_cast<char*>(grid ? AMSTR_GRIDON : AMSTR_GRIDOFF);
+                am_plr->message = grid ? AMSTR_GRIDON : AMSTR_GRIDOFF;
                 break;
             case AM_MARKKEY:
                 //doom_sprintf(buffer, "%s %d", AMSTR_MARKEDSPOT, markpointnum);
                 buffer = concat(AMSTR_MARKEDSPOT, " ", map.markpointnum);
-                am_plr->message = buffer.c_str();
+                am_plr->message = buffer;
                 addMark();
                 break;
             case AM_CLEARMARKKEY:

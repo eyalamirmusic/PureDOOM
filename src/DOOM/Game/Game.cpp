@@ -174,7 +174,7 @@ std::string defdemoname;
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
-extern EA::Array<const char*, 4> player_names; // hu_stuff
+extern EA::Array<std::string_view, 4> player_names; // hu_stuff
 
 namespace Doom
 {
@@ -1219,14 +1219,16 @@ void doLoadGame()
 
     // readFile() fills the owner directly; buffer is left a view onto it, as it is a
     // view onto the framebuffer scratch on the save path (see SaveGameState.h).
-    Doom::readFile(save.name.c_str(), save.loadStorage);
+    Doom::readFile(save.name, save.loadStorage);
     save.buffer = save.loadStorage.data();
     save.cursor = save.buffer + SAVESTRINGSIZE;
 
     // skip the description field
     //doom_sprintf(vcheck, "version %i", VERSION);
     auto vcheck = concat("version ", VERSION);
-    if (vcheck != reinterpret_cast<const char*>(save.cursor))
+    // Bounded: the on-disk version field is VERSIONSIZE bytes zero-padded by
+    // fillField, so it is only NUL-terminated when short of the full width.
+    if (vcheck != nameView(reinterpret_cast<const char*>(save.cursor), VERSIONSIZE))
         return; // bad version
     save.cursor += VERSIONSIZE;
 
@@ -1319,7 +1321,7 @@ void doSaveGame()
     length = static_cast<int>((save.cursor - save.buffer));
     if (length > SAVEGAMESIZE)
         fatalError("Error: Savegame buffer overrun");
-    Doom::writeFile(name.c_str(), save.buffer, length);
+    Doom::writeFile(name, save.buffer, length);
     gameFlow().gameaction = ga_nothing;
     savedescription.clear();
 
@@ -1701,7 +1703,7 @@ bool checkDemoStatus()
     if (demo.demorecording)
     {
         *demo.demo_p++ = DEMOMARKER;
-        Doom::writeFile(demo.demoname.c_str(),
+        Doom::writeFile(demo.demoname,
                         demo.demobuffer,
                         static_cast<int>((demo.demo_p - demo.demobuffer)));
         // demoRecordBuffer (not demobuffer, which also views the playback lump) owns this

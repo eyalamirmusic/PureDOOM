@@ -105,9 +105,6 @@ void initFlats();
 void initSpriteLumps();
 void initColormaps();
 void initData();
-int flatNumForName(const char* name);
-int checkTextureNumForName(const char* name);
-int textureNumForName(const char* name);
 void precacheLevel();
 
 void drawColumnInCache(Column* patch, byte* cache, int originy, int cacheheight)

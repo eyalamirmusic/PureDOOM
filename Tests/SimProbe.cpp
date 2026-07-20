@@ -86,7 +86,7 @@ static char* simArgv[] = {simProgram, simConfigFlag, simConfigFile};
 // A demo boot lowers advancedemo so the game runs only the demo we hand it; a
 // title boot leaves it up so the first tic brings up the title screen for a menu
 // script to run over.
-static int simBootInternal(const char* demoLump, int keepAttract)
+static int simBootInternal(std::string_view demoLump, int keepAttract)
 {
     // The engine is several hundred globals and a zone allocator, and
     // Doom::initGame does not undo any of it: a second boot in one process
@@ -128,21 +128,21 @@ static int simBootInternal(const char* demoLump, int keepAttract)
     // test run scribble on the config. Deferring the demo by hand lets the
     // engine retire it the ordinary way, by clearing demoplayback, and touches
     // nothing outside the process.
-    if (demoLump)
-        Doom::deferPlayDemo((char*) demoLump);
+    if (!demoLump.empty())
+        Doom::deferPlayDemo(demoLump);
 
     simBooted = 1;
     return 1;
 }
 
-int doomSimBoot(const char* demoLump)
+int doomSimBoot(std::string_view demoLump)
 {
     return simBootInternal(demoLump, 0);
 }
 
 int doomSimBootToTitle()
 {
-    return simBootInternal(0, 1);
+    return simBootInternal({}, 1);
 }
 
 int doomSimInLevel()
@@ -171,7 +171,7 @@ int doomSimRunTic()
     return !simDemoStarted;
 }
 
-void doomSimReplayDemo(const char* demoLump)
+void doomSimReplayDemo(std::string_view demoLump)
 {
     // The previous demo has ended (Doom::checkDemoStatus cleared demoplayback and
     // advanced the attract loop), so this is a fresh start. Lower advancedemo
@@ -179,7 +179,7 @@ void doomSimReplayDemo(const char* demoLump)
     // ran so doomSimRunTic's "finished" test starts over.
     simDemoStarted = 0;
     Doom::attractMode().advancedemo = false;
-    Doom::deferPlayDemo((char*) demoLump);
+    Doom::deferPlayDemo(demoLump);
 }
 
 static unsigned long long simHash;
@@ -868,7 +868,7 @@ int doomSimTextureCount()
     return Doom::graphicsData().numtextures;
 }
 
-int doomSimTextureNumForName(const char* name)
+int doomSimTextureNumForName(std::string_view name)
 {
     return Doom::textureNumForName(name);
 }
@@ -898,7 +898,7 @@ int doomSimTexturePatchOriginY(int texture, int patch)
     return Doom::graphicsData().textureStorage[texture].patches[patch].originy;
 }
 
-DoomSimFileRead doomSimReadFileIntoOwner(const char* path)
+DoomSimFileRead doomSimReadFileIntoOwner(std::string_view path)
 {
     DoomSimFileRead result = {};
 

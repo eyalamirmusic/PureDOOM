@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 namespace Doom
 {
 // The attract-mode demo loop - what the game shows when no one is playing. With no game
@@ -21,7 +23,7 @@ struct AttractMode
     bool advancedemo = false; // request to advance the loop next tic
     int demosequence = 0; // which entry of the attract cycle we are on
     int pagetic = 0; // tics the current page lingers
-    const char* pagename = nullptr; // lump name of the current page graphic
+    std::string_view pagename; // lump name of the current page graphic
 };
 
 // The one AttractMode, a view onto the Engine's member - the same pattern as the other

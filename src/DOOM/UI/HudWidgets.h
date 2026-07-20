@@ -2,6 +2,8 @@
 
 #include "HudWidgetTypes.h" // HudTextLine / HudScrollingText / HudInputText, Patch
 
+#include <string_view>
+
 namespace Doom
 {
 // Heads-up text widgets. The vanilla HUlib_ names that used to shim these
@@ -16,7 +18,9 @@ void eraseTextLine(HudTextLine& l);
 void initSText(
     HudScrollingText& s, int x, int y, int h, Patch** font, int startchar, bool* on);
 void addLineToSText(HudScrollingText& s);
-void addMessageToSText(HudScrollingText& s, const char* prefix, const char* msg);
+void addMessageToSText(HudScrollingText& s,
+                       std::string_view prefix,
+                       std::string_view msg);
 void drawSText(HudScrollingText& s);
 void eraseSText(HudScrollingText& s);
 void initIText(

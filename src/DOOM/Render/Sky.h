@@ -1,10 +1,12 @@
 #pragma once
 
+#include <string_view>
+
 namespace Doom
 {
 // The flat that means "draw the sky here", and the shift turning a view angle into
 // a sky texture column. Were r_sky.h.
-constexpr const char* SKYFLATNAME = "F_SKY1";
+constexpr std::string_view SKYFLATNAME = "F_SKY1";
 constexpr int ANGLETOSKYSHIFT = 22;
 
 // Sky rendering setup. The DOOM sky is a texture wrapping around - 1024 columns to

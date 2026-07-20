@@ -492,20 +492,15 @@ void fillBackScreen()
     Patch* patch;
 
     // DOOM border patch.
-    char name1[] = "FLOOR7_2";
+    constexpr auto name1 = std::string_view {"FLOOR7_2"};
 
     // DOOM II border patch.
-    char name2[] = "GRNROCK";
-
-    char* name;
+    constexpr auto name2 = std::string_view {"GRNROCK"};
 
     if (view.scaledviewwidth == 320)
         return;
 
-    if (gameVersion().gamemode == commercial)
-        name = name2;
-    else
-        name = name1;
+    auto name = gameVersion().gamemode == commercial ? name2 : name1;
 
     src = static_cast<byte*>(Doom::cacheLumpName(name));
     dest = screens[1];

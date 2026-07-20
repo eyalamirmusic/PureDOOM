@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <string_view>
+
 // The player data structure depends on a number
 // of other structs: items (internal inventory),
 // animation states (closely tied to the sprites
@@ -130,9 +132,12 @@ struct Player
     int itemcount;
     int secretcount;
 
-    // Hint messages. const: these are always string literals (the GOT*/STSTR*
-    // macros), so rewritten code can assign them without a writable-strings cast.
-    const char* message;
+    // The hint message shown on the HUD this tic, and cleared by the HUD once it
+    // has been drawn. A non-owning view, so whatever is assigned to it must outlive
+    // the frame: every writer passes a string constant or an Engine-owned
+    // std::string. unArchivePlayers clears it after the memcpy, alongside mo and
+    // attacker, so a loaded game never inherits a stale one.
+    std::string_view message;
 
     // For screen flashing (red or bright).
     int damagecount;

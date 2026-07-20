@@ -3,6 +3,7 @@
 #include <ea_data_structures/Structures/Array.h>
 
 #include <string>
+#include <string_view>
 
 #include <functional>
 
@@ -67,7 +68,7 @@ struct MenuState
     int lastx = 0; // mouse X at the last step
 
     // The pop-up message box.
-    const char* messageString = nullptr; // the message text
+    std::string_view messageString; // the message text
     int messageLastMenuActive = 0; // menuactive as the message opened
     bool messageNeedsInput = false; // timed message = no user input
     // Answers the message. Given a non-null default (eacp style) so the responder

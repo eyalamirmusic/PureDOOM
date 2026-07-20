@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <string_view>
 
 //
 // SoundFX struct.
@@ -31,7 +32,7 @@ namespace Doom
 struct SfxInfo
 {
     // up to 6-character name
-    const char* name;
+    std::string_view name;
 
     // Sfx singularity (only one at a time)
     int singularity;
@@ -61,7 +62,6 @@ struct SfxInfo
 };
 } // namespace Doom
 
-
 //
 // Doom::MusicInfo struct.
 //
@@ -70,7 +70,7 @@ namespace Doom
 struct MusicInfo
 {
     // up to 6-character name
-    const char* name;
+    std::string_view name;
 
     // lump number of music
     int lumpnum;
@@ -82,7 +82,6 @@ struct MusicInfo
     int handle;
 };
 } // namespace Doom
-
 
 // the complete set of sound effects
 extern Doom::SfxInfo S_sfx[];
@@ -168,7 +167,6 @@ enum MusicEnum
     NUMMUSIC
 };
 } // namespace Doom
-
 
 //
 // Identifiers for all sfx in game.
@@ -289,7 +287,6 @@ enum SfxEnum
     NUMSFX
 };
 } // namespace Doom
-
 
 //-----------------------------------------------------------------------------
 //
