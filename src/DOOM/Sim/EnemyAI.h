@@ -34,8 +34,12 @@ struct EnemyAI
     fixed_t viletryx {}; // where it is trying to stand the corpse up
     fixed_t viletryy {};
 
-    Array<Mobj*, 32> braintargets = {}; // the boss brain's spawn-cube targets
-    int numbraintargets = 0; // # of targets found
+    // The boss brain's spawn-cube targets: however many MT_BOSSTARGET things the
+    // map placed, so a Vector rather than the vanilla cap of 32 - which had no
+    // overflow guard at all, and would have written past the array on a map with
+    // more. braintargeton stays: it is a persistent cursor across A_BrainSpit
+    // calls, not a count, and size() cannot express it.
+    Vector<Mobj*> braintargets;
     int braintargeton = 0; // the next target to aim a cube at
 
     // A_BrainSpit's skill parity, toggled every call: on easy skill the brain spits

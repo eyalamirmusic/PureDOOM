@@ -21,7 +21,7 @@
 #include <DOOM/UI/Cheat.h>
 #include <DOOM/UI/CheatTypes.h>
 
-#include <ea_data_structures/Structures/Array.h>
+#include <DOOM/Containers.h>
 
 #include <string_view>
 
@@ -34,7 +34,7 @@ namespace
 // end-of-sequence 0xff. Copied from UI/StatusBar.cpp's cheat_clev_seq: the bytes
 // are the scrambled forms of the letters, which is what checkCheat compares the
 // typed key against.
-using ClevSequence = EA::Array<unsigned char, 10>;
+using ClevSequence = Doom::Array<unsigned char, 10>;
 
 ClevSequence clevSeq()
 {
@@ -59,11 +59,13 @@ auto tCheatMatches = test("Cheat/matchesAndYieldsParam") = []
     auto cheat = CheatSequence {{sequence}};
 
     check(type(cheat, "idcle") == 0, "an incomplete sequence does not fire");
-    check(type(cheat, "v") == 0, "the letters alone do not fire - the params follow");
+    check(type(cheat, "v") == 0,
+          "the letters alone do not fire - the params follow");
     check(type(cheat, "3") == 0, "nor does the first parameter digit");
     check(type(cheat, "4") == 1, "the second digit completes it");
 
-    check(getParam(cheat) == "34", "the parameter is the two digits that were typed");
+    check(getParam(cheat) == "34",
+          "the parameter is the two digits that were typed");
 };
 
 // getParam clears the slots on the way out, which is what lets the same cheat be

@@ -1670,7 +1670,7 @@ void brainAwake(Mobj&)
     auto& ai = enemyAI();
 
     // find all the target spots
-    ai.numbraintargets = 0;
+    ai.braintargets.clear();
     ai.braintargeton = 0;
 
     Thinker* thinker = thinkers.cap.next;
@@ -1684,8 +1684,7 @@ void brainAwake(Mobj&)
 
         if (m->type == MT_BOSSTARGET)
         {
-            ai.braintargets[ai.numbraintargets] = m;
-            ai.numbraintargets++;
+            ai.braintargets.add(m);
         }
     }
 
@@ -1749,7 +1748,7 @@ void brainSpit(Mobj& mo)
 
     // shoot a cube at current target
     Mobj* targ = ai.braintargets[ai.braintargeton];
-    ai.braintargeton = (ai.braintargeton + 1) % ai.numbraintargets;
+    ai.braintargeton = (ai.braintargeton + 1) % ai.braintargets.size();
 
     // spawn brain missile
     Mobj* newmobj = spawnMissile(&mo, targ, MT_SPAWNSHOT);

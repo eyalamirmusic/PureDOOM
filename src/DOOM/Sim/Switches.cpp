@@ -107,19 +107,18 @@ void initSwitchList()
     else if (version.gamemode == commercial)
         episode = 3;
 
-    for (int index = 0, i = 0; i < SwitchList::maxSwitches; i++)
-    {
-        if (!alphSwitchList[i].episode)
-        {
-            list.numswitches = index / 2;
-            list.switchlist[index] = -1;
-            break;
-        }
+    list.switchlist.clear();
 
-        if (alphSwitchList[i].episode <= episode)
+    for (const auto& entry: alphSwitchList)
+    {
+        // The table ends on a zero-episode row rather than on its own extent.
+        if (!entry.episode)
+            break;
+
+        if (entry.episode <= episode)
         {
-            list.switchlist[index++] = textureNumForName(alphSwitchList[i].name1);
-            list.switchlist[index++] = textureNumForName(alphSwitchList[i].name2);
+            list.switchlist.add(textureNumForName(entry.name1));
+            list.switchlist.add(textureNumForName(entry.name2));
         }
     }
 }
@@ -179,7 +178,9 @@ void changeSwitchTexture(Line* line, int useAgain)
     if (line->special == 11)
         sound = sfx_swtchx;
 
-    for (int i = 0; i < list.numswitches * 2; i++)
+    // Not a ranged-for: the index is load-bearing, switchlist[i ^ 1] being the
+    // texture this one flips to.
+    for (int i = 0; i < list.switchlist.size(); i++)
     {
         if (list.switchlist[i] == texTop)
         {

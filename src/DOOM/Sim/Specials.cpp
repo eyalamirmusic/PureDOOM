@@ -173,31 +173,33 @@ void initPicAnims()
     auto& surf = animatedSurfaces();
 
     // Init animation
-    surf.lastanim = surf.anims.data();
+    surf.anims.clear();
     for (int i = 0; animdefs[i].istexture != -1; i++)
     {
+        auto anim = SurfaceAnim {};
+
         if (animdefs[i].istexture)
         {
             // different episode ?
             if (checkTextureNumForName(animdefs[i].startname) == -1)
                 continue;
 
-            surf.lastanim->picnum = textureNumForName(animdefs[i].endname);
-            surf.lastanim->basepic = textureNumForName(animdefs[i].startname);
+            anim.picnum = textureNumForName(animdefs[i].endname);
+            anim.basepic = textureNumForName(animdefs[i].startname);
         }
         else
         {
             if (wad().find(animdefs[i].startname) == -1)
                 continue;
 
-            surf.lastanim->picnum = flatNumForName(animdefs[i].endname);
-            surf.lastanim->basepic = flatNumForName(animdefs[i].startname);
+            anim.picnum = flatNumForName(animdefs[i].endname);
+            anim.basepic = flatNumForName(animdefs[i].startname);
         }
 
-        surf.lastanim->istexture = animdefs[i].istexture;
-        surf.lastanim->numpics = surf.lastanim->picnum - surf.lastanim->basepic + 1;
+        anim.istexture = animdefs[i].istexture;
+        anim.numpics = anim.picnum - anim.basepic + 1;
 
-        if (surf.lastanim->numpics < 2)
+        if (anim.numpics < 2)
         {
             //fatalError("Error: initPicAnims: bad cycle from %s to %s",
             //        animdefs[i].startname,
@@ -209,8 +211,8 @@ void initPicAnims()
                        animdefs[i].endname);
         }
 
-        surf.lastanim->speed = animdefs[i].speed;
-        surf.lastanim++;
+        anim.speed = animdefs[i].speed;
+        surf.anims.add(anim);
     }
 }
 
@@ -990,13 +992,13 @@ void updateSpecials()
     }
 
     // ANIMATE FLATS AND TEXTURES GLOBALLY
-    for (SurfaceAnim* anim = surf.anims.data(); anim < surf.lastanim; anim++)
+    for (auto& anim: surf.anims)
     {
-        for (int i = anim->basepic; i < anim->basepic + anim->numpics; i++)
+        for (int i = anim.basepic; i < anim.basepic + anim.numpics; i++)
         {
-            int pic = anim->basepic
-                      + ((levelStats().leveltime / anim->speed + i) % anim->numpics);
-            if (anim->istexture)
+            int pic = anim.basepic
+                      + ((levelStats().leveltime / anim.speed + i) % anim.numpics);
+            if (anim.istexture)
                 texturetranslation[i] = pic;
             else
                 flattranslation[i] = pic;
@@ -1004,9 +1006,8 @@ void updateSpecials()
     }
 
     // ANIMATE LINE SPECIALS
-    for (int i = 0; i < surf.numlinespecials; i++)
+    for (auto* line: surf.linespeciallist)
     {
-        Line* line = surf.linespeciallist[i];
         switch (line->special)
         {
             case 48:
@@ -1203,15 +1204,14 @@ void spawnSpecials()
     }
 
     // Init line EFFECTs
-    surf.numlinespecials = 0;
+    surf.linespeciallist.clear();
     for (i = 0; i < numlines; i++)
     {
         switch (lines[i].special)
         {
             case 48:
                 // EFFECT FIRSTCOL SCROLL+
-                surf.linespeciallist[surf.numlinespecials] = &lines[i];
-                surf.numlinespecials++;
+                surf.linespeciallist.add(&lines[i]);
                 break;
         }
     }

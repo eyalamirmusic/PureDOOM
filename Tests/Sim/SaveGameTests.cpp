@@ -59,7 +59,7 @@ auto tSaveLoadPreservesTheWorld = test("Sim/saveLoadPreservesTheWorld") = []
 // so it covers the serialization and never the file layer beneath it - and readFile
 // has exactly one caller in the engine, doLoadGame. That left it uncovered while
 // Step 9 strand (b) rewrote its out-parameter from a host-malloc'd byte** the caller
-// had to free into an EA::Vector<byte>& it fills itself. This is the property
+// had to free into an Doom::Vector<byte>& it fills itself. This is the property
 // doLoadGame actually depends on: the owner comes back sized to the file, holding
 // the file.
 //

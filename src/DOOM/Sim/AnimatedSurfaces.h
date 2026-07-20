@@ -34,18 +34,20 @@ struct SurfaceAnim
 // Sim/Specials' own namespace-scope private globals, read by no other file. initPicAnims,
 // updateSpecials and spawnSpecials each hoist animatedSurfaces() once and reach its members
 // through it, rather than through file-scope reference aliases (REFACTOR.md, Step 9 strand (a)).
-// lastanim points into anims but is reset by Doom::initPicAnims (`surf.lastanim = surf.anims`), not
-// by a self-referential initializer, so it was always safe to retire. Live simulation-golden-covered
-// - the demos scroll skies and cross animating floors.
+// Live simulation-golden-covered - the demos scroll skies and cross animating floors.
+//
+// Both members are Vectors rather than capped Arrays because both are genuinely
+// data-driven: anims holds only those animdefs whose textures exist in this WAD
+// (initPicAnims skips the rest), and linespeciallist only the map's scrolling
+// linedefs. The vanilla caps of 32 and 64 sized the worst case and the code then
+// carried a cursor and a count to say how much was live - `size()` says it now.
+// Neither is memcpy'd, neither hands out an interior pointer, and nothing walks
+// past the live end, which is what made them safe to convert where the renderer's
+// similarly-shaped pools were not.
 struct AnimatedSurfaces
 {
-    static constexpr int maxAnims = 32; // sizes anims below
-    static constexpr int maxLineAnims = 64; // sizes linespeciallist below
-
-    Array<SurfaceAnim, maxAnims> anims = {}; // the level's animating flats/textures
-    SurfaceAnim* lastanim = nullptr; // one past the last animation in use
-    short numlinespecials = 0; // # of scrolling-texture linedefs
-    Array<Line*, maxLineAnims> linespeciallist = {}; // those linedefs
+    Vector<SurfaceAnim> anims; // the level's animating flats/textures
+    Vector<Line*> linespeciallist; // the scrolling-texture linedefs
 };
 
 // The one AnimatedSurfaces, a view onto the Engine's member - the same pattern as the other clusters.

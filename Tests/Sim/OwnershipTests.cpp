@@ -32,7 +32,7 @@ namespace
 //
 // It is sharp because Doom::host().malloc is now almost exclusively the pool's own
 // allocator:
-// the RAII sweep moved nearly everything else onto EA::Vector, which allocates through
+// the RAII sweep moved nearly everything else onto Doom::Vector, which allocates through
 // operator new and is not counted here. What the counter still sees besides the pool
 // is host-side and deliberately outlives the Engine - Host/System's buffer,
 // Host/Sound's audio-blocked paddedsfx, DoomMain's response-file argv - so the

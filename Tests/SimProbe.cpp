@@ -901,7 +901,7 @@ DoomSimFileRead doomSimReadFileIntoOwner(std::string_view path)
     if (setjmp(simAbort))
         return result;
 
-    EA::Vector<byte> owner;
+    Doom::Vector<byte> owner;
     result.length = Doom::readFile(path, owner);
     result.ownerSize = owner.size();
     result.magicIsIwad = owner.size() >= 4 && owner[0] == 'I' && owner[1] == 'W'

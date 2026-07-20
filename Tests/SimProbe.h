@@ -326,7 +326,7 @@ int doomSimTexturePatchCount(int texture);
 int doomSimTexturePatchOriginX(int texture, int patch);
 int doomSimTexturePatchOriginY(int texture, int patch);
 
-// What Doom::readFile made of a path. It fills an EA::Vector<byte> the caller
+// What Doom::readFile made of a path. It fills an Doom::Vector<byte> the caller
 // owns, which a test cannot see, so the three facts worth asserting come back
 // as plain ints: the length readFile returned, the size of the owner it filled
 // (the two must agree), and whether the bytes start with the IWAD magic (so a
