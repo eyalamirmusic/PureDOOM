@@ -54,8 +54,7 @@
 #include "ConfigPaths.h"
 #include "InputConfig.h"
 #include "PlayerState.h"
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include "../Host/Video.h"
 #include "../Host/System.h"
@@ -110,7 +109,7 @@ struct PcxHeader
 // sound params below, their defaults[] entries are bound to those members at runtime by
 // bindEngineDefaults() rather than capturing their addresses here at static-init.
 
-extern EA::Array<std::string_view, 10> chat_macros;
+extern Doom::Array<std::string_view, 10> chat_macros;
 
 extern byte scantokey[128];
 
@@ -300,7 +299,7 @@ bool writeFile(std::string_view name, void* source, int length)
 //
 // readFile
 //
-int readFile(std::string_view name, EA::Vector<byte>& buffer)
+int readFile(std::string_view name, Vector<byte>& buffer)
 {
     void* handle = doom_open(name, "rb");
     if (handle == nullptr)
@@ -354,7 +353,7 @@ static void bindEngineDefaults()
         int* location;
     };
 
-    const EA::Array<Bind, 30> binds = {
+    const Array<Bind, 30> binds = {
         {"sfx_volume", &e.soundSettings.sfxVolume},
         {"music_volume", &e.soundSettings.musicVolume},
         {"snd_channels", &e.soundSettings.numChannels},
@@ -448,7 +447,7 @@ void loadDefaults()
     // outer vector; reassigning one slot's string never moves another's
     // buffer, which is what keeps every .c_str() already handed to an
     // earlier entry valid.
-    static EA::Vector<std::string> stringDefaultStorage;
+    static Vector<std::string> stringDefaultStorage;
     stringDefaultStorage.resize(numdefaults);
 
     auto& paths = configPaths();
@@ -579,7 +578,7 @@ void WritePCXfile(
 
     // RAII scratch: the PCX header + packed image is built into this buffer and
     // written out, then released on return. pcx is a view onto it.
-    auto pcxbuf = EA::Vector<byte>(width * height * 2 + 1000);
+    auto pcxbuf = Vector<byte>(width * height * 2 + 1000);
     auto* pcx = reinterpret_cast<PcxHeader*>(pcxbuf.data());
 
     pcx->manufacturer = 0x0a; // PCX id

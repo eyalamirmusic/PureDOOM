@@ -4,7 +4,7 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -30,13 +30,12 @@ struct StatusBarGraphics
 
     Patch* sbar = nullptr; // main bar, left half
     Patch* armsbg = nullptr; // main bar, right half (arms panel)
-    EA::Array<Patch*, 10> tallnum = {}; // 0-9, the tall health/armor/ammo digits
+    Array<Patch*, 10> tallnum = {}; // 0-9, the tall health/armor/ammo digits
     Patch* tallpercent = nullptr; // the tall % sign
-    EA::Array<Patch*, 10> shortnum = {}; // 0-9, the small yellow arms-count digits
-    EA::Array<Patch*, NUMCARDS> keys = {}; // the key-card and skull icons
-    EA::Array<EA::Array<Patch*, 2>, 6> arms =
-        {}; // the six weapons' on/off ownership glyphs
-    EA::Array<Patch*, numFaces> faces = {}; // the animated-face patches
+    Array<Patch*, 10> shortnum = {}; // 0-9, the small yellow arms-count digits
+    Array<Patch*, NUMCARDS> keys = {}; // the key-card and skull icons
+    Array<Array<Patch*, 2>, 6> arms = {}; // the six weapons' on/off ownership glyphs
+    Array<Patch*, numFaces> faces = {}; // the animated-face patches
     Patch* faceback = nullptr; // the face backdrop (deathmatch)
 };
 

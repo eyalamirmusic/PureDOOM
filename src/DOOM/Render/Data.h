@@ -3,7 +3,7 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Column, byte
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <string_view>
 
@@ -29,7 +29,7 @@ namespace Doom
 struct Texture
 {
     // Keep name for switch changing, etc.
-    EA::Array<char, 8> name;
+    Array<char, 8> name;
     short width;
     short height;
 
@@ -39,7 +39,7 @@ struct Texture
     //  now an owned vector, so a Texture is fixed-size and frees its own patches.
     //  Readers index it as before (patches[j], &patches[0]).
     short patchcount;
-    EA::Vector<TexPatch> patches;
+    Vector<TexPatch> patches;
 };
 } // namespace Doom
 

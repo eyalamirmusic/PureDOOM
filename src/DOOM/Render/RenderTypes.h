@@ -30,8 +30,7 @@
 #include "../Math/FixedPoint.h"
 #include "../Sim/MapTypes.h"
 
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -211,10 +210,10 @@ struct SpriteFrame
     int rotate;
 
     // Lump to use for view angles 0-7.
-    EA::Array<short, 8> lump;
+    Array<short, 8> lump;
 
     // Flip bit (1 = flip) to use for view angles 0-7.
-    EA::Array<byte, 8> flip;
+    Array<byte, 8> flip;
 };
 } // namespace Doom
 
@@ -230,7 +229,7 @@ struct SpriteDef
     // The animation frames, RAII-owned (Step 9): was a raw malloc'd SpriteFrame*,
     // now an owned vector freed with the sprite. Readers index it as before
     // (spriteframes[frame], &spriteframes[frame]).
-    EA::Vector<SpriteFrame> spriteframes;
+    Vector<SpriteFrame> spriteframes;
 };
 } // namespace Doom
 
@@ -252,11 +251,11 @@ struct VisPlane
     byte pad1;
     // Here lies the rub for all
     //  dynamic resize/change of resolution.
-    EA::Array<byte, SCREENWIDTH> top;
+    Array<byte, SCREENWIDTH> top;
     byte pad2;
     byte pad3;
     // See above.
-    EA::Array<byte, SCREENWIDTH> bottom;
+    Array<byte, SCREENWIDTH> bottom;
     byte pad4;
 };
 
@@ -269,15 +268,15 @@ struct VisPlane
 // 1993 trick, it is what pad1..pad4 exist to absorb, and it only works while `top` and `bottom`
 // occupy exactly SCREENWIDTH bytes each with the pads immediately either side.
 //
-// Converting them to EA::Array kept that true, because EA::Array holds a single std::array and
+// Converting them to Array kept that true, because Array holds a single std::array and
 // nothing else - but that is an *implementation fact about a dependency*, not a language
 // guarantee, and REFACTOR.md item 8 explicitly says it should be re-checked rather than
 // remembered before anything is relied on. This is the one place in the engine that relies on it,
 // so it is checked here, at compile time, instead of being remembered:
 static_assert(
-    sizeof(EA::Array<byte, SCREENWIDTH>) == SCREENWIDTH * sizeof(byte),
+    sizeof(Array<byte, SCREENWIDTH>) == SCREENWIDTH * sizeof(byte),
     "VisPlane's pad1..pad4 absorb Planes.cpp's deliberate [minx-1]/[maxx+1] "
-    "sentinel writes; that requires EA::Array to add no storage of its own");
+    "sentinel writes; that requires Array to add no storage of its own");
 // A companion offsetof() assertion — that pad2 sits immediately after top[] — was written here and
 // then deliberately removed. offsetof on a non-standard-layout class is only conditionally
 // supported, and it would check something the sizeof assertion above already implies.

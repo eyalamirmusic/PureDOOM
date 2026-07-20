@@ -99,7 +99,7 @@ namespace Doom
 // out a different one.
 //
 // It does exactly that: engine() is a heap-owned instance
-// (EA::OwningPointer<Engine>, Engine.cpp), and resetEngine() drops it and makes a
+// (OwningPointer<Engine>, Engine.cpp), and resetEngine() drops it and makes a
 // fresh one in its place. A test can therefore own a genuinely clean world
 // mid-process - dirty some state, reset, and find the new instance has none of it -
 // rather than relying on the per-level reset Doom::Level already does, which resets

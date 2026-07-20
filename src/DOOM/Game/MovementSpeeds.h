@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -27,9 +27,9 @@ namespace Doom
 // (and -turbo is never passed), so the move is golden-neutral.
 struct MovementSpeeds
 {
-    EA::Array<int, 2> forwardmove = {0x19, 0x32}; // walk, run
-    EA::Array<int, 2> sidemove = {0x18, 0x28}; // walk, run
-    EA::Array<int, 3> angleturn = {640, 1280, 320}; // fast, faster, + slow turn
+    Array<int, 2> forwardmove = {0x19, 0x32}; // walk, run
+    Array<int, 2> sidemove = {0x18, 0x28}; // walk, run
+    Array<int, 3> angleturn = {640, 1280, 320}; // fast, faster, + slow turn
 };
 
 // The one MovementSpeeds, a view onto the Engine's member - the same pattern as the other Game/

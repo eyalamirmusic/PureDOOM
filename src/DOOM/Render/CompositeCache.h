@@ -2,7 +2,7 @@
 
 #include "../doomtype.h" // byte
 
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -39,23 +39,22 @@ struct CompositeCache
     // the three T** tables are nested owners - an inner vector per texture holds the bytes and a
     // pointer array is the T** the view points at (as GraphicsData's textureStorage/
     // texturePointers do for textures[]).
-    EA::Vector<int> texturewidthmask; // per-texture width-1 tiling mask
-    EA::Vector<int> texturecompositesize; // per-texture composite byte size
+    Vector<int> texturewidthmask; // per-texture width-1 tiling mask
+    Vector<int> texturecompositesize; // per-texture composite byte size
 
-    EA::Vector<EA::Vector<short>>
-        columnlumpStorage; // per-texture: per-column source lump
-    EA::Vector<short*> columnlump; // the short** view (texturecolumnlump)
-    EA::Vector<EA::Vector<unsigned short>>
+    Vector<Vector<short>> columnlumpStorage; // per-texture: per-column source lump
+    Vector<short*> columnlump; // the short** view (texturecolumnlump)
+    Vector<Vector<unsigned short>>
         columnofsStorage; // per-texture: per-column offset
-    EA::Vector<unsigned short*>
+    Vector<unsigned short*>
         columnofs; // the unsigned short** view (texturecolumnofs)
 
     // The lazily-composed column bytes. Each inner vector carries the load-bearing 64-byte zero
     // tail for the renderer's tutti-frutti over-read (REFACTOR.md Step 4), value-initialised to
     // zero as the old doom_malloc + doom_memset(0) block was. composite is the byte** view; a
     // null entry means "not composed yet" (getColumn's regenerate check).
-    EA::Vector<EA::Vector<byte>> compositeStorage;
-    EA::Vector<byte*> composite; // the byte** view (texturecomposite)
+    Vector<Vector<byte>> compositeStorage;
+    Vector<byte*> composite; // the byte** view (texturecomposite)
 };
 
 // The one CompositeCache, a view onto the Engine's member - the same pattern as the other clusters

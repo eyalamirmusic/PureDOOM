@@ -2,7 +2,7 @@
 
 #include "../doomtype.h" // byte
 
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -38,7 +38,7 @@ struct WipeState
     // "go" flag) is the only thing ever safe to test, not the pointer's validity. A
     // freed-but-unrefreshed raw pointer and a cleared-but-unrefreshed view pointer
     // are equally unsafe to read and equally never read, so behaviour is unchanged.
-    EA::Vector<int> wipe_melt_offsets;
+    Vector<int> wipe_melt_offsets;
 };
 
 // The one WipeState, a view onto the Engine's member - the same pattern as the other clusters

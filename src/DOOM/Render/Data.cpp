@@ -23,8 +23,7 @@
 #include "GraphicsData.h"
 
 #include <cstddef>
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include "../Host/System.h"
 #include "../Game/DemoState.h"
@@ -240,7 +239,7 @@ void generateLookup(int texnum)
     //  with only a single patch are all done.
     // RAII scratch: value-initialised to zero and released on every exit, including
     // the early "column without a patch" return below (which the manual free leaked).
-    auto patchcount = EA::Vector<byte>(texture->width);
+    auto patchcount = Vector<byte>(texture->width);
     patch = texture->patches.data();
 
     for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
@@ -359,7 +358,7 @@ void initTextures()
     names = static_cast<const char*>(Doom::cacheLumpName("PNAMES"));
     nummappatches = littleEndian(*(reinterpret_cast<const int*>(names)));
     name_p = names + 4;
-    auto patchlookup = EA::Vector<int>(nummappatches);
+    auto patchlookup = Vector<int>(nummappatches);
 
     for (i = 0; i < nummappatches; i++)
         patchlookup[i] = Doom::wad().find(nameView(name_p + i * 8, 8));
@@ -394,7 +393,7 @@ void initTextures()
     gd.texturePointers.resize(gd.numtextures);
     textures = gd.texturePointers.data();
 
-    // The composition tables are CompositeCache-owned EA::Vectors now (Step 9); size them once
+    // The composition tables are CompositeCache-owned Vectors now (Step 9); size them once
     // here and point the views at their data(). columnlump/ofs/composite own an inner vector per
     // texture (filled below / lazily); composite is null-initialised, which getColumn keys on.
     auto& cc = compositeCache();
@@ -634,8 +633,7 @@ int flatNumForName(std::string_view name)
 // What doom_strncasecmp(stored, name, 8) == 0 answered: case-insensitive over
 // the eight columns, the stored name zero-padded when short. A NUL in either
 // place has to meet a NUL in the other.
-static bool textureNameMatches(const EA::Array<char, 8>& stored,
-                               std::string_view name)
+static bool textureNameMatches(const Array<char, 8>& stored, std::string_view name)
 {
     for (int i = 0; i < 8; ++i)
     {
@@ -711,7 +709,7 @@ void precacheLevel()
     auto& gd = graphicsData();
 
     // Precache flats.
-    auto flatpresent = EA::Vector<char>(gd.numflats);
+    auto flatpresent = Vector<char>(gd.numflats);
 
     for (i = 0; i < numsectors; i++)
     {
@@ -729,7 +727,7 @@ void precacheLevel()
     }
 
     // Precache textures.
-    auto texturepresent = EA::Vector<char>(gd.numtextures);
+    auto texturepresent = Vector<char>(gd.numtextures);
 
     for (i = 0; i < numsides; i++)
     {
@@ -761,7 +759,7 @@ void precacheLevel()
     }
 
     // Precache sprites.
-    auto spritepresent = EA::Vector<char>(gd.numsprites);
+    auto spritepresent = Vector<char>(gd.numsprites);
 
     auto& cap = thinkerList().cap;
 
@@ -801,16 +799,16 @@ void precacheLevel()
 // R_InitTextures points it at data() after the resize.
 Doom::Texture** textures = nullptr;
 
-// needed for texture pegging. A view onto GraphicsData's owned EA::Vector (Step 9);
+// needed for texture pegging. A view onto GraphicsData's owned Vector (Step 9);
 // initTextures points it at data() after the resize.
 fixed_t* textureheight = nullptr;
 
-// for global animation. Views onto GraphicsData's owned EA::Vectors (Step 9), set to
+// for global animation. Views onto GraphicsData's owned Vectors (Step 9), set to
 // data() by initTextures / initFlats; P_ animation writes through them.
 int* flattranslation = nullptr;
 int* texturetranslation = nullptr;
 
-// needed for pre rendering. Plain-pointer views onto GraphicsData's owned EA::Vectors
+// needed for pre rendering. Plain-pointer views onto GraphicsData's owned Vectors
 // (Step 9); initSpriteLumps points them at data() after filling the vectors.
 fixed_t* spritewidth = nullptr;
 fixed_t* spriteoffset = nullptr;

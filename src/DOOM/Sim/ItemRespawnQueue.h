@@ -3,7 +3,7 @@
 #include "../Wad/MapFormat.h" // MapThing
 #include "SimDefs.h" // ITEMQUESIZE
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -21,9 +21,9 @@ namespace Doom
 // the reference bindings are mechanical, so the move is golden-neutral.
 struct ItemRespawnQueue
 {
-    EA::Array<MapThing, ITEMQUESIZE> itemrespawnque =
+    Array<MapThing, ITEMQUESIZE> itemrespawnque =
         {}; // the picked-up items awaiting respawn
-    EA::Array<int, ITEMQUESIZE> itemrespawntime =
+    Array<int, ITEMQUESIZE> itemrespawntime =
         {}; // the leveltime each was collected at
 
     int iquehead = 0; // append cursor

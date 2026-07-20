@@ -55,8 +55,7 @@
 #include "DoomMain.h"
 #include "ConfigPaths.h"
 
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 #include "DemoState.h"
 #include "DisplayState.h"
 #include "EngineParams.h"
@@ -97,7 +96,7 @@
 
 // The boot-time WAD list, file-local: Doom::addWadFile appends to it and Doom::initWadFiles
 // consumes it, and nothing outside this file reads it (its d_main.h extern is gone).
-static EA::Vector<std::string> wadfiles;
+static Doom::Vector<std::string> wadfiles;
 
 // The command-line launch flags are a Doom::LaunchOptions owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
@@ -375,7 +374,7 @@ void doomLoop()
 
     if (Doom::checkParm("-debugfile"))
     {
-        EA::Array<char, 20> filename;
+        Array<char, 20> filename;
         //doom_sprintf(filename, "debug%i.txt", consoleplayer);
         doom_print("debug output to: %s\n", filename.data());
         debugfile = doom_open(filename.data(), "w");
@@ -1039,7 +1038,7 @@ void doomMain()
     {
         // These are the lumps that will be checked in IWAD,
         // if any one is not present, execution will be aborted.
-        EA::Array<std::string_view, 23> name = {
+        Array<std::string_view, 23> name = {
             "e2m1",   "e2m2",   "e2m3",   "e2m4",   "e2m5",    "e2m6",
             "e2m7",   "e2m8",   "e2m9",   "e3m1",   "e3m3",    "e3m3",
             "e3m4",   "e3m5",   "e3m6",   "e3m7",   "e3m8",    "e3m9",

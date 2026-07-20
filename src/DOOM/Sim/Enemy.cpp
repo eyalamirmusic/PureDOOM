@@ -32,7 +32,7 @@
 #include "ThinkerList.h"
 #include "ValidCount.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "../Game/Game.h"
 #include "../Game/GameClock.h"
@@ -77,36 +77,35 @@ enum DirType
     NUMDIRS
 };
 
-EA::Array<DirType, 9> opposite = {DI_WEST,
-                                  DI_SOUTHWEST,
-                                  DI_SOUTH,
-                                  DI_SOUTHEAST,
-                                  DI_EAST,
-                                  DI_NORTHEAST,
-                                  DI_NORTH,
-                                  DI_NORTHWEST,
-                                  DI_NODIR};
+Array<DirType, 9> opposite = {DI_WEST,
+                              DI_SOUTHWEST,
+                              DI_SOUTH,
+                              DI_SOUTHEAST,
+                              DI_EAST,
+                              DI_NORTHEAST,
+                              DI_NORTH,
+                              DI_NORTHWEST,
+                              DI_NODIR};
 
-EA::Array<DirType, 4> diags = {
-    DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
+Array<DirType, 4> diags = {DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
 
 // Raw fixed values: 47000 is FRACUNIT * cos(45) rounded, as vanilla wrote it.
-EA::Array<fixed_t, 8> xspeed = {FRACUNIT,
-                                fixed_t {47000},
-                                fixed_t {},
-                                fixed_t {-47000},
-                                -FRACUNIT,
-                                fixed_t {-47000},
-                                fixed_t {},
-                                fixed_t {47000}};
-EA::Array<fixed_t, 8> yspeed = {fixed_t {},
-                                fixed_t {47000},
-                                FRACUNIT,
-                                fixed_t {47000},
-                                fixed_t {},
-                                fixed_t {-47000},
-                                -FRACUNIT,
-                                fixed_t {-47000}};
+Array<fixed_t, 8> xspeed = {FRACUNIT,
+                            fixed_t {47000},
+                            fixed_t {},
+                            fixed_t {-47000},
+                            -FRACUNIT,
+                            fixed_t {-47000},
+                            fixed_t {},
+                            fixed_t {47000}};
+Array<fixed_t, 8> yspeed = {fixed_t {},
+                            fixed_t {47000},
+                            FRACUNIT,
+                            fixed_t {47000},
+                            fixed_t {},
+                            fixed_t {-47000},
+                            -FRACUNIT,
+                            fixed_t {-47000}};
 angle_t TRACEANGLE {0xc000000};
 // The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). vileCheck, vileChase, brainAwake and brainSpit each hoist
@@ -406,7 +405,7 @@ bool tryWalk(Mobj& actor)
 
 void newChaseDir(Mobj& actor)
 {
-    EA::Array<DirType, 3> d;
+    Array<DirType, 3> d;
 
     int tdir;
 
@@ -761,8 +760,7 @@ void chase(Mobj& actor)
     // ?
 nomissile:
     // possibly choose another target
-    if (session.netgame && !actor.threshold
-        && !checkSight(&actor, actor.target))
+    if (session.netgame && !actor.threshold && !checkSight(&actor, actor.target))
     {
         if (lookForPlayers(actor, true))
             return; // got a new target
@@ -791,13 +789,11 @@ void faceTarget(Mobj& actor)
 
     actor.flags &= ~MF_AMBUSH;
 
-    actor.angle =
-        pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
+    actor.angle = pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
 
     if (actor.target->flags & MF_SHADOW)
         actor.angle += angle_t {
-            (unsigned) (randomness().forPlay() - randomness().forPlay())
-            << 21};
+            (unsigned) (randomness().forPlay() - randomness().forPlay()) << 21};
 }
 
 //
@@ -813,9 +809,8 @@ void posAttack(Mobj& actor)
     fixed_t slope = aimLineAttack(&actor, angle, MISSILERANGE).slope;
 
     startSound(&actor, sfx_pistol);
-    angle += angle_t {
-        (unsigned) (randomness().forPlay() - randomness().forPlay())
-        << 20};
+    angle +=
+        angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
@@ -834,10 +829,10 @@ void sPosAttack(Mobj& actor)
 
     for (int i = 0; i < 3; i++)
     {
-        angle = bangle
-                + angle_t {(unsigned) (randomness().forPlay()
-                                       - randomness().forPlay())
-                           << 20};
+        angle =
+            bangle
+            + angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                       << 20};
         int damage = ((randomness().forPlay() % 5) + 1) * 3;
         lineAttack(&actor, angle, MISSILERANGE, slope, damage);
     }
@@ -855,11 +850,9 @@ void cPosAttack(Mobj& actor)
     angle_t bangle = actor.angle;
     fixed_t slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
-    angle =
-        bangle
-        + angle_t {
-            (unsigned) (randomness().forPlay() - randomness().forPlay())
-            << 20};
+    angle = bangle
+            + angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                       << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(&actor, angle, MISSILERANGE, slope, damage);
 }
@@ -1161,7 +1154,7 @@ void vileChase(Mobj& actor)
                     MobjInfo* info = ai.corpsehit->info;
 
                     setMobjState(ai.corpsehit,
-                                       static_cast<StateNum>(info->raisestate));
+                                 static_cast<StateNum>(info->raisestate));
                     ai.corpsehit->height <<= 2;
                     ai.corpsehit->flags = info->flags;
                     ai.corpsehit->health = info->spawnhealth;
@@ -1366,8 +1359,7 @@ void painShootSkull(Mobj& actor, angle_t angle)
     Thinker* currentthinker = thinkers.cap.next;
     while (currentthinker != &thinkers.cap)
     {
-        if (currentthinker->kind() == ThinkerKind::Mobj
-            && !currentthinker->removed
+        if (currentthinker->kind() == ThinkerKind::Mobj && !currentthinker->removed
             && (reinterpret_cast<Mobj*>(currentthinker))->type == MT_SKULL)
             count++;
         currentthinker = currentthinker->next;

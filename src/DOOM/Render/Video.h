@@ -5,13 +5,13 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Patch
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // Was v_video.h. CENTERY is dead, and dead in 1993 too, so it stays a macro with
 // the ~55 others REFACTOR.md item 6 deliberately leaves alone.
 #define CENTERY (SCREENHEIGHT / 2)
 extern byte* screens[5];
-extern EA::Array<EA::Array<byte, 256>, 5> gammatable;
+extern Doom::Array<Doom::Array<byte, 256>, 5> gammatable;
 
 namespace Doom
 {

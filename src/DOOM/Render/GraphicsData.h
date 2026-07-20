@@ -1,8 +1,6 @@
 #pragma once
 
-
-#include <ea_data_structures/Structures/Vector.h>
-
+#include "../Containers.h"
 
 // Plain-pointer views onto the GraphicsData vectors above, refreshed by each
 #include "../Render/Data.h"
@@ -44,44 +42,43 @@ struct GraphicsData
     // name `textures` (a Texture** view, r_data.cpp) points at, so readers using
     // textures[i]->field are unchanged. Both sized once by Doom::initTextures.
     int numtextures = 0;
-    EA::Vector<Texture> textureStorage;
-    EA::Vector<Texture*> texturePointers;
-    EA::Vector<fixed_t>
-        textureheight; // RAII-owned (Step 9); r_data's name is a view
-    EA::Vector<int>
+    Vector<Texture> textureStorage;
+    Vector<Texture*> texturePointers;
+    Vector<fixed_t> textureheight; // RAII-owned (Step 9); r_data's name is a view
+    Vector<int>
         texturetranslation; // RAII-owned (Step 9); animation writes through the view
 
     // Flats: the first flat lump, the flat count, and the flat animation redirect.
     int firstflat = 0;
     int numflats = 0;
-    EA::Vector<int>
+    Vector<int>
         flattranslation; // RAII-owned (Step 9); animation writes through the view
 
     // Sprite lumps: the lump range they occupy, and each lump's width and offsets,
     // measured once so the renderer need not re-read the patch headers. RAII-owned
-    // (Step 9): the arrays are EA::Vectors here, and the vanilla names (r_data.cpp)
+    // (Step 9): the arrays are Vectors here, and the vanilla names (r_data.cpp)
     // are plain-pointer views onto data(), refreshed by initSpriteLumps after the fill
     // - the same owner/view split Level's geometry uses.
     int firstspritelump = 0;
     int lastspritelump = 0;
     int numspritelumps = 0;
-    EA::Vector<fixed_t> spritewidth;
-    EA::Vector<fixed_t> spriteoffset;
-    EA::Vector<fixed_t> spritetopoffset;
+    Vector<fixed_t> spritewidth;
+    Vector<fixed_t> spriteoffset;
+    Vector<fixed_t> spritetopoffset;
 
     // Sprite frames: the per-sprite frame/rotation table Doom::initSprites builds.
-    // RAII-owned (Step 9): the sprite table is an EA::Vector of spritedef_ts, each
+    // RAII-owned (Step 9): the sprite table is an Vector of spritedef_ts, each
     // owning its own frames vector; the vanilla name `sprites` (r_things.cpp) is a
     // plain-pointer view onto data(), refreshed by R_InitSpriteDefs.
     int numsprites = 0;
-    EA::Vector<SpriteDef> sprites;
+    Vector<SpriteDef> sprites;
 
     // The COLORMAP lump: the base every light row (see Lighting) indexes into.
     // RAII-owned (Step 9): this vector is the backing buffer, and the vanilla name
     // `colormaps` (r_data.cpp) is a 256-byte-aligned VIEW into its data() that
     // initColormaps sets after reading the lump. The +255 slack for that alignment is
     // part of this buffer's length, as the original doom_malloc(length + 255) was.
-    EA::Vector<LightTable> colormapStorage;
+    Vector<LightTable> colormapStorage;
 };
 
 // The one GraphicsData, a view onto the Engine's member - the same pattern as

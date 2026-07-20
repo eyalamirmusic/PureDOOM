@@ -655,7 +655,7 @@ void spawnMapThing(MapThing* mthing)
         // data() + N, not &deathmatchstarts[N]. Both name the one-past-the-end
         // address, and on the raw C array this used to be that was the ordinary
         // way to write it - but subscripting at N is out of range for the
-        // EA::Array (std::array) it is now, and MSVC's debug STL asserts on it.
+        // Array (std::array) it is now, and MSVC's debug STL asserts on it.
         // The bound stays MAX_DM_STARTS, the same token that sizes the array in
         // MapSpawns.h, so raising it cannot move one without the other.
         if (spawns.deathmatch_p < spawns.deathmatchstarts.data() + MAX_DM_STARTS)

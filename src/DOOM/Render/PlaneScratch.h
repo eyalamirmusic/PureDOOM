@@ -5,7 +5,7 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // VisPlane, LightTable
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -33,33 +33,30 @@ struct PlaneScratch
     static constexpr int maxOpenings =
         SCREENWIDTH * 64; // sizes openings; Render/Planes guards on it
 
-    EA::Array<VisPlane, maxVisplanes> visplanes =
-        {}; // the frame's floor/ceiling planes
+    Array<VisPlane, maxVisplanes> visplanes = {}; // the frame's floor/ceiling planes
     VisPlane* lastvisplane = nullptr; // one past the last used plane
-    EA::Array<short, maxOpenings> openings =
-        {}; // per-column silhouette clip scratch
-    EA::Array<int, SCREENHEIGHT> spanstart =
-        {}; // current span's start column, per row
+    Array<short, maxOpenings> openings = {}; // per-column silhouette clip scratch
+    Array<int, SCREENHEIGHT> spanstart = {}; // current span's start column, per row
     LightTable** planezlight = nullptr; // light row for the current plane
     fixed_t planeheight {}; // height of the plane being mapped
     fixed_t basexscale {}; // base horizontal texture scale
     fixed_t baseyscale {}; // base vertical texture scale
-    EA::Array<fixed_t, SCREENHEIGHT> cachedheight =
+    Array<fixed_t, SCREENHEIGHT> cachedheight =
         {}; // Doom::mapPlane memo: plane height per row
-    EA::Array<fixed_t, SCREENHEIGHT> cacheddistance = {}; // ... distance per row
-    EA::Array<fixed_t, SCREENHEIGHT> cachedxstep = {}; // ... x step per row
-    EA::Array<fixed_t, SCREENHEIGHT> cachedystep = {}; // ... y step per row
+    Array<fixed_t, SCREENHEIGHT> cacheddistance = {}; // ... distance per row
+    Array<fixed_t, SCREENHEIGHT> cachedxstep = {}; // ... x step per row
+    Array<fixed_t, SCREENHEIGHT> cachedystep = {}; // ... y step per row
 
     // The cross-read plane state r_plane.h exports (read by Render/Segs and Render/Main),
     // bound in the r_plane.cpp shim rather than here. lastopening lives with openings so the
     // "points into a sibling array, reset by Doom::clearPlanes each frame" argument holds within
     // one cluster (a cross-cluster pointer would dangle on Engine copy).
     short* lastopening = nullptr; // next free slot in openings
-    EA::Array<short, SCREENWIDTH> floorclip =
+    Array<short, SCREENWIDTH> floorclip =
         {}; // solid pixel bounding the floor, per column
-    EA::Array<short, SCREENWIDTH> ceilingclip = {}; // ... the ceiling, per column
-    EA::Array<fixed_t, SCREENHEIGHT> yslope = {}; // projection y-slope, per row
-    EA::Array<fixed_t, SCREENWIDTH> distscale = {}; // distance scale, per column
+    Array<short, SCREENWIDTH> ceilingclip = {}; // ... the ceiling, per column
+    Array<fixed_t, SCREENHEIGHT> yslope = {}; // projection y-slope, per row
+    Array<fixed_t, SCREENWIDTH> distscale = {}; // distance scale, per column
 };
 
 // The one PlaneScratch, a view onto the Engine's member - the same pattern as the other clusters.

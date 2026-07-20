@@ -3,7 +3,7 @@
 #include "Event.h" // Event, MAXEVENTS
 #include "DoomMain.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -20,7 +20,7 @@ namespace Doom
 // identical slot.
 struct EventQueue
 {
-    EA::Array<Event, MAXEVENTS> events = {}; // the pending input events
+    Array<Event, MAXEVENTS> events = {}; // the pending input events
     int eventhead = 0; // where the next posted event lands
     int eventtail = 0; // where the next drained event is read
 };

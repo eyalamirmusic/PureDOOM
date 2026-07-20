@@ -2,7 +2,7 @@
 
 #include "../doomtype.h"
 
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include <string>
 
@@ -37,7 +37,7 @@ namespace Doom
 struct SaveGameState
 {
     byte* cursor = nullptr; // save_p: the read/write cursor
-    EA::Vector<byte>
+    Vector<byte>
         loadStorage; // owns doLoadGame()'s bytes; buffer views it, see above
     byte* buffer = nullptr; // savebuffer: the block cursor walks
     std::string name; // savename: the file being saved/loaded

@@ -33,7 +33,7 @@
 
 #include "../Render/Things.h"
 #include "Specials.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // Doom::spawnMapThing is Doom::Mobj's now (global shim); the things loader calls it.
 #include "../Game/Game.h"
@@ -379,7 +379,7 @@ void loadBlockMap(int lump)
 //
 void groupLines()
 {
-    EA::Array<fixed_t, 4> bbox;
+    Array<fixed_t, 4> bbox;
 
     // look up sector number for each subsector
     SubSector* ss = subsectors;

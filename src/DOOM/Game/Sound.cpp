@@ -36,7 +36,7 @@
 #include "SoundSettings.h"
 #include "SoundState.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "../Host/Sound.h"
 #include "../Host/System.h"

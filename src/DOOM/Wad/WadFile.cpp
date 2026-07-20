@@ -3,7 +3,7 @@
 #include "../Host/Platform.h"
 #include "../Math/Swap.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <algorithm>
 #include <cstring>
@@ -59,7 +59,7 @@ std::string extractFileBase(std::string_view path)
 // eight is NOT terminated.
 struct LumpName
 {
-    EA::Array<char, 9> text = {};
+    Array<char, 9> text = {};
 
     explicit LumpName(std::string_view name)
     {
@@ -163,7 +163,7 @@ void WadFile::addDirectory(std::string_view path, void* handle)
     }
 
     auto lumpCount = littleEndian(header.numlumps);
-    auto entries = EA::Vector<FileLump>(lumpCount);
+    auto entries = Vector<FileLump>(lumpCount);
 
     doom_seek(handle, littleEndian(header.infotableofs), DOOM_SEEK_SET);
     doom_read(
@@ -307,7 +307,7 @@ void WadFile::reload()
     doom_read(handle, &header, sizeof(header));
 
     auto lumpCount = littleEndian(header.numlumps);
-    auto entries = EA::Vector<FileLump>(lumpCount);
+    auto entries = Vector<FileLump>(lumpCount);
 
     doom_seek(handle, littleEndian(header.infotableofs), DOOM_SEEK_SET);
     doom_read(
@@ -327,7 +327,7 @@ void WadFile::reload()
     }
 }
 
-void initWadFiles(const EA::Vector<std::string>& filenames)
+void initWadFiles(const Vector<std::string>& filenames)
 {
     for (const auto& filename: filenames)
         wad().addFile(filename);

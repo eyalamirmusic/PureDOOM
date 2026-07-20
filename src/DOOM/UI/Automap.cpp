@@ -53,7 +53,7 @@
 #include "../Render/Video.h"
 #include "Cheat.h"
 #include "StatusBar.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -147,7 +147,7 @@ static constexpr fixed_t amFixed(double value)
 // the literal to `int` first, so anything below 1.0 becomes zero.
 constexpr std::int32_t R_UNIT = FRACUNIT.raw;
 
-EA::Array<MapLine, 3> triangle_guy = {
+Array<MapLine, 3> triangle_guy = {
     {{amFixed(-.867 * R_UNIT), amFixed(-.5 * R_UNIT)},
      {amFixed(.867 * R_UNIT), amFixed(-.5 * R_UNIT)}},
     {{amFixed(.867 * R_UNIT), amFixed(-.5 * R_UNIT)},
@@ -163,7 +163,7 @@ EA::Array<MapLine, 3> triangle_guy = {
 // function touches it exactly once). frameToMap, the one helper that read a member (scale_ftom), now
 // takes the view explicitly. The "iddt" cheat below stays a file-local static.
 
-static EA::Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
+static Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
 static CheatSequence cheat_amap = {{cheat_amap_seq}};
 
 // Calculates the slope and slope according to the x-axis of a line
@@ -651,7 +651,7 @@ void updateLightLev()
     auto& map = automapView();
 
     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
-    static EA::Array<int, 8> litelevels = {0, 4, 7, 10, 12, 14, 15, 15};
+    static Array<int, 8> litelevels = {0, 4, 7, 10, 12, 14, 15, 15};
 
     // Change light level
     if (map.amclock > map.nexttic)
@@ -1102,7 +1102,7 @@ void drawLineCharacter(MapLine* lineguy,
 
 void drawPlayers()
 {
-    static EA::Array<int, 4> their_colors = {GREENS, GRAYS, BROWNS, REDS};
+    static Array<int, 4> their_colors = {GREENS, GRAYS, BROWNS, REDS};
     int their_color = -1;
     int color;
 

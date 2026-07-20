@@ -3,7 +3,7 @@
 #include "../Game/GameDefs.h" // MAXPLAYERS
 #include "HudWidgetTypes.h" // HudInputText
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <string>
 
@@ -29,12 +29,12 @@ struct HudChat
         128; // QUEUESIZE in UI/Hud: the chatchars ring size
 
     HudInputText w_chat = {}; // the local input line being typed
-    EA::Array<HudInputText, MAXPLAYERS> w_inputbuffer =
+    Array<HudInputText, MAXPLAYERS> w_inputbuffer =
         {}; // each remote player's incoming text
     bool always_off = false; // the input buffers' cursor, wired permanently off
-    EA::Array<char, MAXPLAYERS> chat_dest = {}; // who each player is addressing
+    Array<char, MAXPLAYERS> chat_dest = {}; // who each player is addressing
 
-    EA::Array<char, queueSize> chatchars =
+    Array<char, queueSize> chatchars =
         {}; // outgoing local keystrokes, awaiting send
     int head = 0; // chatchars ring head
     int tail = 0; // chatchars ring tail

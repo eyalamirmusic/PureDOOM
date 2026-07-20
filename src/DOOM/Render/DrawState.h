@@ -5,7 +5,7 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // LightTable
 
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -37,7 +37,7 @@ struct DrawState
     // this vector is the backing buffer and the vanilla name `translationtables`
     // (r_draw.cpp) is a 256-byte-aligned view into its data(), set by
     // Doom::initTranslationTables. dc_translation indexes a colour row of that view.
-    EA::Vector<byte> translationTableStorage;
+    Vector<byte> translationTableStorage;
 
     int ds_y = 0; // screen row of the current span
     int ds_x1 = 0; // span start column

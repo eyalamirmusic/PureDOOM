@@ -58,7 +58,7 @@
 #include "../Game/Args.h"
 #include "../Game/DoomMain.h"
 #include "../Render/Video.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "../Host/Video.h"
 #include "../Game/Game.h"
@@ -182,14 +182,14 @@ struct MenuCustomText
 // detailNames / msgNames / quitsounds / menu_custom_texts) and the self-referential menu-definition
 // apparatus further down stay file-local.
 
-// Was EA::Array<EA::Array<char, 26>, 5>, a fixed 26-byte buffer per message that
+// Was Array<Array<char, 26>, 5>, a fixed 26-byte buffer per message that
 // only existed because these were string-literal macros. Views now, so the 26
 // cannot silently truncate and no length is recomputed at each use.
-EA::Array<std::string_view, 5> gammamsg = {
+Array<std::string_view, 5> gammamsg = {
     GAMMALVL0, GAMMALVL1, GAMMALVL2, GAMMALVL3, GAMMALVL4};
 
 // graphic name of skulls
-EA::Array<std::string_view, 2> skullName = {"M_SKULL1", "M_SKULL2"};
+Array<std::string_view, 2> skullName = {"M_SKULL1", "M_SKULL2"};
 
 // The menu-definition tables below lean on partial aggregate initializers on
 // purpose: a {0} terminates a custom-text segment list, and a {-1,"",0} marks a
@@ -200,7 +200,7 @@ DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 
 // We create new menu text by cutting into existing graphics and pasting them to create the new text.
 // This way we don't ship code with embeded graphics that come from WAD files.
-EA::Array<MenuCustomText, 4> menu_custom_texts = {
+Array<MenuCustomText, 4> menu_custom_texts = {
     {"TXT_MMOV",
      {{"M_MSENS", 0, 74, 0, 0}, // Mouse
       {"M_MSENS", 0, 31, 83, 0}, // Mo
@@ -237,26 +237,26 @@ EA::Array<MenuCustomText, 4> menu_custom_texts = {
 
 const int custom_texts_count = sizeof(menu_custom_texts) / sizeof(MenuCustomText);
 
-EA::Array<std::string_view, 2> detailNames = {"M_GDHIGH", "M_GDLOW"};
-EA::Array<std::string_view, 2> msgNames = {"M_MSGOFF", "M_MSGON"};
+Array<std::string_view, 2> detailNames = {"M_GDHIGH", "M_GDLOW"};
+Array<std::string_view, 2> msgNames = {"M_MSGOFF", "M_MSGON"};
 
-EA::Array<int, 8> quitsounds = {sfx_pldeth,
-                                sfx_dmpain,
-                                sfx_popain,
-                                sfx_slop,
-                                sfx_telept,
-                                sfx_posit1,
-                                sfx_posit3,
-                                sfx_sgtatk};
+Array<int, 8> quitsounds = {sfx_pldeth,
+                            sfx_dmpain,
+                            sfx_popain,
+                            sfx_slop,
+                            sfx_telept,
+                            sfx_posit1,
+                            sfx_posit3,
+                            sfx_sgtatk};
 
-EA::Array<int, 8> quitsounds2 = {sfx_vilact,
-                                 sfx_getpow,
-                                 sfx_boscub,
-                                 sfx_slop,
-                                 sfx_skeswg,
-                                 sfx_kntdth,
-                                 sfx_bspact,
-                                 sfx_sgtatk};
+Array<int, 8> quitsounds2 = {sfx_vilact,
+                             sfx_getpow,
+                             sfx_boscub,
+                             sfx_slop,
+                             sfx_skeswg,
+                             sfx_kntdth,
+                             sfx_bspact,
+                             sfx_sgtatk};
 
 //
 // PROTOTYPES
@@ -333,13 +333,13 @@ enum
     main_end
 };
 
-EA::Array<MenuItem, 6> MainMenu = {{1, "M_NGAME", newGame, 'n'},
-                                   {1, "M_OPTION", optionsMenu, 'o'},
-                                   {1, "M_LOADG", loadGameMenu, 'l'},
-                                   {1, "M_SAVEG", saveGameMenu, 's'},
-                                   // Another hickup with Special edition.
-                                   {1, "M_RDTHIS", readThis, 'r'},
-                                   {1, "M_QUITG", quitDOOM, 'q'}};
+Array<MenuItem, 6> MainMenu = {{1, "M_NGAME", newGame, 'n'},
+                               {1, "M_OPTION", optionsMenu, 'o'},
+                               {1, "M_LOADG", loadGameMenu, 'l'},
+                               {1, "M_SAVEG", saveGameMenu, 's'},
+                               // Another hickup with Special edition.
+                               {1, "M_RDTHIS", readThis, 'r'},
+                               {1, "M_QUITG", quitDOOM, 'q'}};
 
 MenuDef MainDef = {main_end, nullptr, MainMenu.data(), drawMainMenu, 97, 64, 0};
 
@@ -355,10 +355,10 @@ enum
     ep_end
 };
 
-EA::Array<MenuItem, 4> EpisodeMenu = {{1, "M_EPI1", episode, 'k'},
-                                      {1, "M_EPI2", episode, 't'},
-                                      {1, "M_EPI3", episode, 'i'},
-                                      {1, "M_EPI4", episode, 't'}};
+Array<MenuItem, 4> EpisodeMenu = {{1, "M_EPI1", episode, 'k'},
+                                  {1, "M_EPI2", episode, 't'},
+                                  {1, "M_EPI3", episode, 'i'},
+                                  {1, "M_EPI4", episode, 't'}};
 
 MenuDef EpiDef = {
     ep_end, // # of menu items
@@ -383,11 +383,11 @@ enum
     newg_end
 };
 
-EA::Array<MenuItem, 5> NewGameMenu = {{1, "M_JKILL", chooseSkill, 'i'},
-                                      {1, "M_ROUGH", chooseSkill, 'h'},
-                                      {1, "M_HURT", chooseSkill, 'h'},
-                                      {1, "M_ULTRA", chooseSkill, 'u'},
-                                      {1, "M_NMARE", chooseSkill, 'n'}};
+Array<MenuItem, 5> NewGameMenu = {{1, "M_JKILL", chooseSkill, 'i'},
+                                  {1, "M_ROUGH", chooseSkill, 'h'},
+                                  {1, "M_HURT", chooseSkill, 'h'},
+                                  {1, "M_ULTRA", chooseSkill, 'u'},
+                                  {1, "M_NMARE", chooseSkill, 'n'}};
 
 MenuDef NewDef = {
     newg_end, // # of menu items
@@ -418,7 +418,7 @@ enum
     opt_end
 };
 
-EA::Array<MenuItem, 8> OptionsMenuFull = {
+Array<MenuItem, 8> OptionsMenuFull = {
     {1, "M_ENDGAM", endGame, 'e'},
     {1, "M_MESSG", changeMessages, 'm'},
     {1, "TXT_CROS", changeCrosshair, 'c'},
@@ -445,7 +445,7 @@ enum
     opt_end_no_mouse
 };
 
-EA::Array<MenuItem, 7> OptionsMenuNoMouse = {
+Array<MenuItem, 7> OptionsMenuNoMouse = {
     {1, "M_ENDGAM", endGame, 'e'},
     {1, "M_MESSG", changeMessages, 'm'},
     {1, "TXT_CROS", changeCrosshair, 'c'},
@@ -471,7 +471,7 @@ enum
     opt_end_no_sound
 };
 
-EA::Array<MenuItem, 7> OptionsMenuNoSound = {
+Array<MenuItem, 7> OptionsMenuNoSound = {
     {1, "M_ENDGAM", endGame, 'e'},
     {1, "M_MESSG", changeMessages, 'm'},
     {1, "TXT_CROS", changeCrosshair, 'c'},
@@ -496,7 +496,7 @@ enum
     opt_end_no_sound_no_mouse
 };
 
-EA::Array<MenuItem, 6> OptionsMenuNoSoundNoMouse = {
+Array<MenuItem, 6> OptionsMenuNoSoundNoMouse = {
     {1, "M_ENDGAM", endGame, 'e'},
     {1, "M_MESSG", changeMessages, 'm'},
     {1, "TXT_CROS", changeCrosshair, 'c'},
@@ -524,7 +524,7 @@ enum
     mouse_opt_end
 };
 
-EA::Array<MenuItem, 3> MouseOptionsMenu = {
+Array<MenuItem, 3> MouseOptionsMenu = {
     {1, "TXT_MMOV", mouseMove, 'f'},
     {2, "M_MSENS", changeSensitivity, 'm'},
     {-1, "", nullptr},
@@ -547,7 +547,7 @@ enum
     read1_end
 };
 
-EA::Array<MenuItem, 1> ReadMenu1 = {{1, "", readThis2, 0}};
+Array<MenuItem, 1> ReadMenu1 = {{1, "", readThis2, 0}};
 
 MenuDef ReadDef1 = {
     read1_end, &MainDef, ReadMenu1.data(), drawReadThis1, 280, 185, 0};
@@ -558,7 +558,7 @@ enum
     read2_end
 };
 
-EA::Array<MenuItem, 1> ReadMenu2 = {{1, "", finishReadThis, 0}};
+Array<MenuItem, 1> ReadMenu2 = {{1, "", finishReadThis, 0}};
 
 MenuDef ReadDef2 = {
     read2_end, &ReadDef1, ReadMenu2.data(), drawReadThis2, 330, 175, 0};
@@ -577,10 +577,10 @@ enum
     sound_end
 };
 
-EA::Array<MenuItem, 4> SoundMenuFull = {{2, "M_SFXVOL", sfxVol, 's'},
-                                        {-1, "", nullptr},
-                                        {2, "M_MUSVOL", musicVol, 'm'},
-                                        {-1, "", nullptr}};
+Array<MenuItem, 4> SoundMenuFull = {{2, "M_SFXVOL", sfxVol, 's'},
+                                    {-1, "", nullptr},
+                                    {2, "M_MUSVOL", musicVol, 'm'},
+                                    {-1, "", nullptr}};
 
 MenuDef SoundDef = {
     sound_end, &OptionsDef, SoundMenuFull.data(), drawSound, 80, 64, 0};
@@ -592,8 +592,8 @@ enum
     sound_end_no_sfx
 };
 
-EA::Array<MenuItem, 2> SoundMenuNoSFX = {{2, "M_MUSVOL", musicVol, 'm'},
-                                         {-1, "", nullptr}};
+Array<MenuItem, 2> SoundMenuNoSFX = {{2, "M_MUSVOL", musicVol, 'm'},
+                                     {-1, "", nullptr}};
 
 MenuDef SoundNoSFXDef = {
     sound_end_no_sfx, &OptionsDef, SoundMenuNoSFX.data(), drawSound, 80, 64, 0};
@@ -605,8 +605,8 @@ enum
     sound_end_no_music
 };
 
-EA::Array<MenuItem, 2> SoundMenuNoMusic = {{2, "M_SFXVOL", sfxVol, 's'},
-                                           {-1, "", nullptr}};
+Array<MenuItem, 2> SoundMenuNoMusic = {{2, "M_SFXVOL", sfxVol, 's'},
+                                       {-1, "", nullptr}};
 
 MenuDef SoundNoMusicDef = {
     sound_end_no_music, &OptionsDef, SoundMenuNoMusic.data(), drawSound, 80, 64, 0};
@@ -625,24 +625,24 @@ enum
     load_end
 };
 
-EA::Array<MenuItem, 6> DOOM_LoadMenu = {{1, "", loadSelect, '1'},
-                                        {1, "", loadSelect, '2'},
-                                        {1, "", loadSelect, '3'},
-                                        {1, "", loadSelect, '4'},
-                                        {1, "", loadSelect, '5'},
-                                        {1, "", loadSelect, '6'}};
+Array<MenuItem, 6> DOOM_LoadMenu = {{1, "", loadSelect, '1'},
+                                    {1, "", loadSelect, '2'},
+                                    {1, "", loadSelect, '3'},
+                                    {1, "", loadSelect, '4'},
+                                    {1, "", loadSelect, '5'},
+                                    {1, "", loadSelect, '6'}};
 
 MenuDef LoadDef = {load_end, &MainDef, DOOM_LoadMenu.data(), drawLoad, 80, 54, 0};
 
 //
 // SAVE GAME MENU
 //
-EA::Array<MenuItem, 6> SaveMenu = {{1, "", saveSelect, '1'},
-                                   {1, "", saveSelect, '2'},
-                                   {1, "", saveSelect, '3'},
-                                   {1, "", saveSelect, '4'},
-                                   {1, "", saveSelect, '5'},
-                                   {1, "", saveSelect, '6'}};
+Array<MenuItem, 6> SaveMenu = {{1, "", saveSelect, '1'},
+                               {1, "", saveSelect, '2'},
+                               {1, "", saveSelect, '3'},
+                               {1, "", saveSelect, '4'},
+                               {1, "", saveSelect, '5'},
+                               {1, "", saveSelect, '6'}};
 
 MenuDef SaveDef = {load_end, &MainDef, SaveMenu.data(), drawSave, 80, 54, 0};
 
@@ -697,7 +697,7 @@ void readSaveStrings()
 
         // The description is a fixed menuSaveStringSize-byte field on disk,
         // zero-padded; keep the text up to its first NUL.
-        EA::Array<char, menuSaveStringSize> field = {};
+        Array<char, menuSaveStringSize> field = {};
         doom_read(handle, field.data(), menuSaveStringSize);
         state.savegamestrings[i] = nameView(field.data(), menuSaveStringSize);
         doom_close(handle);

@@ -21,7 +21,7 @@
 
 #include "Planes.h"
 #include "Things.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // Doom::storeWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
 #include "Segs.h"
@@ -40,17 +40,17 @@ namespace Doom
 // Step 9 strand (a)) retired them; clipSolidWallSegment, clipPassWallSegment, clearClipSegs and
 // checkBBox each hoist solidSegs() once and reach its members through it.
 
-EA::Array<EA::Array<int, 4>, 12> checkcoord = {{3, 0, 2, 1},
-                                               {3, 0, 2, 0},
-                                               {3, 1, 2, 0},
-                                               {0},
-                                               {2, 0, 2, 1},
-                                               {0, 0, 0, 0},
-                                               {3, 1, 3, 0},
-                                               {0},
-                                               {2, 0, 3, 1},
-                                               {2, 1, 3, 1},
-                                               {2, 1, 3, 0}};
+Array<Array<int, 4>, 12> checkcoord = {{3, 0, 2, 1},
+                                       {3, 0, 2, 0},
+                                       {3, 1, 2, 0},
+                                       {0},
+                                       {2, 0, 2, 1},
+                                       {0, 0, 0, 0},
+                                       {3, 1, 3, 0},
+                                       {0},
+                                       {2, 0, 3, 1},
+                                       {2, 1, 3, 1},
+                                       {2, 1, 3, 0}};
 
 // Forward declarations so call order needs no rearranging.
 void clearDrawSegs();

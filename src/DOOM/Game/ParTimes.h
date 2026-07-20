@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -17,14 +17,14 @@ namespace Doom
 struct ParTimes
 {
     // DOOM par times: row 0 is a filler (episodes are 1-based); the rest are E1-E3, maps 1-9.
-    EA::Array<EA::Array<int, 10>, 4> pars = {
-        EA::Array<int, 10> {0},
-        EA::Array<int, 10> {0, 30, 75, 120, 90, 165, 180, 180, 30, 165},
-        EA::Array<int, 10> {0, 90, 90, 90, 120, 90, 360, 240, 30, 170},
-        EA::Array<int, 10> {0, 90, 45, 90, 150, 90, 90, 165, 30, 135}};
+    Array<Array<int, 10>, 4> pars = {
+        Array<int, 10> {0},
+        Array<int, 10> {0, 30, 75, 120, 90, 165, 180, 180, 30, 165},
+        Array<int, 10> {0, 90, 90, 90, 120, 90, 360, 240, 30, 170},
+        Array<int, 10> {0, 90, 45, 90, 150, 90, 90, 165, 30, 135}};
 
     // DOOM II par times, maps 1-32.
-    EA::Array<int, 32> cpars = {
+    Array<int, 32> cpars = {
         30,  90,  120, 120, 90,  150, 120, 120, 270, 90, //  1-10
         210, 150, 150, 150, 210, 150, 420, 150, 210, 150, // 11-20
         240, 150, 180, 150, 150, 300, 330, 420, 300, 180, // 21-30

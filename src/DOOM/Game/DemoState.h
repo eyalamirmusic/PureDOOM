@@ -2,7 +2,7 @@
 
 #include "../doomtype.h" // byte
 
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include <string>
 
@@ -44,7 +44,7 @@ struct DemoState
 
     std::string demoname; // the demo lump/file name
     bool netdemo = false; // the demo in play was recorded over a netgame
-    EA::Vector<byte>
+    Vector<byte>
         demoRecordBuffer; // owns the buffer while recordDemo() is writing one
     byte* demobuffer = nullptr; // the demo byte block: a view, see the note above
     byte* demo_p = nullptr; // read/write cursor into demobuffer

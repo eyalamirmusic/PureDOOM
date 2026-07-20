@@ -3,7 +3,7 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // LightTable
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // The light-selection constants: how many light levels the renderer resolves, and
 // the scale/z table sizes it picks a COLORMAP row from. Were r_main.h.
@@ -45,9 +45,9 @@ struct Lighting
     int extralight = 0;
 
     // The diminishing-light lookups Doom::initLightTables builds.
-    EA::Array<EA::Array<LightTable*, MAXLIGHTSCALE>, LIGHTLEVELS> scalelight = {};
-    EA::Array<LightTable*, MAXLIGHTSCALE> scalelightfixed = {};
-    EA::Array<EA::Array<LightTable*, MAXLIGHTZ>, LIGHTLEVELS> zlight = {};
+    Array<Array<LightTable*, MAXLIGHTSCALE>, LIGHTLEVELS> scalelight = {};
+    Array<LightTable*, MAXLIGHTSCALE> scalelightfixed = {};
+    Array<Array<LightTable*, MAXLIGHTZ>, LIGHTLEVELS> zlight = {};
 };
 
 // The one Lighting, a view onto the Engine's member - the same pattern as

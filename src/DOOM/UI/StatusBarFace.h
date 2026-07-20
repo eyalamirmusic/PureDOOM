@@ -2,7 +2,7 @@
 
 #include "../Game/GameDefs.h" // NUMWEAPONS
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -31,7 +31,7 @@ namespace Doom
 struct StatusBarFace
 {
     int st_oldhealth = -1; // last tic's health, for the pained face
-    EA::Array<bool, NUMWEAPONS> oldweaponsowned =
+    Array<bool, NUMWEAPONS> oldweaponsowned =
         {}; // last tic's weapons, for the evil grin
     int st_facecount = 0; // tics until the expression may change
     int st_faceindex = 0; // the face patch currently shown (w_faces binds to it)

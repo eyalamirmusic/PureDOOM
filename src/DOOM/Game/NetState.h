@@ -5,7 +5,7 @@
 #include "GameDefs.h" // MAXPLAYERS
 #include "Net.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <string>
 
@@ -40,16 +40,16 @@ struct NetState
     DoomCom* doomcom = nullptr; // view onto doomcomStorage
     NetPacket* netbuffer = nullptr; // points inside doomcom
 
-    EA::Array<Ticcmd, BACKUPTICS> localcmds = {}; // this node's commands
-    EA::Array<EA::Array<Ticcmd, BACKUPTICS>, MAXPLAYERS> netcmds =
+    Array<Ticcmd, BACKUPTICS> localcmds = {}; // this node's commands
+    Array<Array<Ticcmd, BACKUPTICS>, MAXPLAYERS> netcmds =
         {}; // every node's commands
-    EA::Array<int, MAXNETNODES> nettics = {}; // tics received per node
+    Array<int, MAXNETNODES> nettics = {}; // tics received per node
 
     int maketic = 0; // the next tic to build
     int ticdup = 0; // display tics per game tic
 
     // per-player, per-tic desync checksum
-    EA::Array<EA::Array<short, BACKUPTICS>, MAXPLAYERS> consistancy = {};
+    Array<Array<short, BACKUPTICS>, MAXPLAYERS> consistancy = {};
 
     // Game/Net's own private bookkeeping (the resend/rebound machinery and the frame-rate
     // counters), folded in here as the file-scope-statics sweep reaches it - the same
@@ -60,11 +60,11 @@ struct NetState
     // own default member initializers, in this rewrite or in vanilla d_net.c.
     // Verified against the 1993 source in this repository's history; deleted
     // rather than carried, as no read was lost.
-    EA::Array<bool, MAXNETNODES> nodeingame = {}; // node still in the game
-    EA::Array<bool, MAXNETNODES> remoteresend = {}; // node needs local tics resent
-    EA::Array<int, MAXNETNODES> resendto = {}; // next tic to send that node
-    EA::Array<int, MAXNETNODES> resendcount = {}; // resend backoff counter
-    EA::Array<int, MAXPLAYERS> nodeforplayer = {}; // node index per player
+    Array<bool, MAXNETNODES> nodeingame = {}; // node still in the game
+    Array<bool, MAXNETNODES> remoteresend = {}; // node needs local tics resent
+    Array<int, MAXNETNODES> resendto = {}; // next tic to send that node
+    Array<int, MAXNETNODES> resendcount = {}; // resend backoff counter
+    Array<int, MAXPLAYERS> nodeforplayer = {}; // node index per player
     int skiptics = 0; // tics to skip catching up
     int maxsend = 0; // BACKUPTICS/(2*ticdup)-1
     bool reboundpacket = false; // a loopback packet is queued
@@ -73,7 +73,7 @@ struct NetState
     int gametime = 0; // currentTic at the last Doom::tryRunTics
     int oldentertics = 0; // entertic at the last Doom::tryRunTics (was a static)
     int frameon = 0; // rate-meter frame counter
-    EA::Array<int, 4> frameskip = {}; // per-frame skip flags (rate meter)
+    Array<int, 4> frameskip = {}; // per-frame skip flags (rate meter)
     int oldnettics = 0; // nettics at the last rate sample
 };
 

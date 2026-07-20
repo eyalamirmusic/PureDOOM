@@ -10,6 +10,13 @@
 # moves into one the moment it stops being 1993 C and becomes C++ someone wrote,
 # and the vanilla name disappears. Progress is the flat list getting shorter.
 file(GLOB DOOM_VANILLA_SOURCES CONFIGURE_DEPENDS *.cpp *.h)
+
+# Containers.h is flat but is not vanilla: it is the container vocabulary the
+# eight subdirectories share, written for this refactor. Moving it across the two
+# lists changes no compilation (both flag sets are a no-op on a header) - it keeps
+# the lists meaning what their names say.
+list(REMOVE_ITEM DOOM_VANILLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Containers.h)
+
 file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
         Math/*.cpp Math/*.h
         Sim/*.cpp Sim/*.h
@@ -19,6 +26,7 @@ file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
         Host/*.cpp Host/*.h
         Wad/*.cpp Wad/*.h
         Engine/*.cpp Engine/*.h)
+list(APPEND DOOM_REWRITTEN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Containers.h)
 
 add_library(doom-engine STATIC ${DOOM_VANILLA_SOURCES} ${DOOM_REWRITTEN_SOURCES})
 add_library(DOOM::engine ALIAS doom-engine)

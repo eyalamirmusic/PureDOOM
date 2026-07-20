@@ -29,7 +29,7 @@
 
 #include "Sound.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <algorithm>
 #include <cstring>
@@ -120,7 +120,7 @@ static int mus_delay = 0;
 static bool mus_loop = false;
 static bool mus_playing = false;
 static int mus_volume = 127;
-static EA::Array<int, 16> mus_channel_volumes = {
+static Array<int, 16> mus_channel_volumes = {
     127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127};
 
 [[maybe_unused]] static int looping = 0;
@@ -132,7 +132,7 @@ static int musicdies = -1;
 //  mixing buffer, and the samplerate of the raw data.
 
 // The actual lengths of all sound effects.
-EA::Array<int, NUMSFX> lengths;
+Array<int, NUMSFX> lengths;
 
 // The actual output device.
 int audio_fd;
@@ -142,42 +142,42 @@ int audio_fd;
 // there, then submitted to the audio device.
 
 // The channel step amount...
-EA::Array<unsigned int, NUM_CHANNELS> channelstep;
+Array<unsigned int, NUM_CHANNELS> channelstep;
 // ... and a 0.16 bit remainder of last step.
-EA::Array<unsigned int, NUM_CHANNELS> channelstepremainder;
+Array<unsigned int, NUM_CHANNELS> channelstepremainder;
 
 // The channel data pointers, start and end.
-EA::Array<unsigned char*, NUM_CHANNELS> channels;
-EA::Array<unsigned char*, NUM_CHANNELS> channelsend;
+Array<unsigned char*, NUM_CHANNELS> channels;
+Array<unsigned char*, NUM_CHANNELS> channelsend;
 
 // Time/gameClock().gametic that the channel started playing,
 //  used to determine oldest, which automatically
 //  has lowest priority.
 // In case number of active sounds exceeds
 //  available channels.
-EA::Array<int, NUM_CHANNELS> channelstart;
+Array<int, NUM_CHANNELS> channelstart;
 
 // The sound in channel handles,
 //  determined on registration,
 //  might be used to unregister/stop/modify,
 //  currently unused.
-EA::Array<int, NUM_CHANNELS> channelhandles;
+Array<int, NUM_CHANNELS> channelhandles;
 
 // SFX id of the playing sound effect.
 // Used to catch duplicates (like chainsaw).
-EA::Array<int, NUM_CHANNELS> channelids;
+Array<int, NUM_CHANNELS> channelids;
 
 // Pitch to stepping lookup, unused.
-EA::Array<int, 256> steptable;
+Array<int, 256> steptable;
 
 // Volume lookups.
-EA::Array<int, 128 * 256> vol_lookup;
+Array<int, 128 * 256> vol_lookup;
 
 // Hardware left and right channel volume lookup.
-EA::Array<int*, NUM_CHANNELS> channelleftvol_lookup;
-EA::Array<int*, NUM_CHANNELS> channelrightvol_lookup;
+Array<int*, NUM_CHANNELS> channelleftvol_lookup;
+Array<int*, NUM_CHANNELS> channelrightvol_lookup;
 
-EA::Array<unsigned long, MAX_QUEUED_MIDI_MSGS> queued_midi_msgs;
+Array<unsigned long, MAX_QUEUED_MIDI_MSGS> queued_midi_msgs;
 int queue_midi_head = 0;
 int queue_midi_tail = 0;
 

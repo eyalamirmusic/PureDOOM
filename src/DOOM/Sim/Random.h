@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 #include "../doomtype.h"
 
 // A view onto Doom::Random's fixed 256-entry table. Was m_random.h.
@@ -53,7 +53,7 @@ struct Random
 
     void clear() { playIndex = menuIndex = 0; }
 
-    static const EA::Array<std::uint8_t, tableSize>& table();
+    static const Array<std::uint8_t, tableSize>& table();
 };
 
 // The engine's one instance, for as long as the engine has only one of everything.

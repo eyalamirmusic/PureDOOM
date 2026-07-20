@@ -3,7 +3,7 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -27,7 +27,7 @@ struct HudFont
     // ST_NUMFACES).
     static constexpr int fontSize = '_' - '!' + 1;
 
-    EA::Array<Patch*, fontSize> hu_font = {}; // the cached '!'..'_' glyph patches
+    Array<Patch*, fontSize> hu_font = {}; // the cached '!'..'_' glyph patches
 };
 
 // The one HudFont, a view onto the Engine's member - the same pattern as the other clusters

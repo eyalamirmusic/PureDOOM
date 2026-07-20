@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -31,7 +31,7 @@ struct SolidSegs
 {
     static constexpr int maxSegs = 32; // sizes solidsegs below
 
-    EA::Array<ClipRange, maxSegs> solidsegs = {}; // sorted occluded column spans
+    Array<ClipRange, maxSegs> solidsegs = {}; // sorted occluded column spans
     ClipRange* newend = nullptr; // one past the last valid range
 };
 

@@ -20,7 +20,7 @@
 #include "ViewWindow.h"
 
 #include "Video.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // ?
 #include "../Host/System.h"
@@ -169,7 +169,7 @@ void drawColumnLow()
 //  i.e. spectres and invisible players.
 //
 // The fuzz table and walk position are file-local: only drawFuzzColumn uses them.
-EA::Array<int, FUZZTABLE> fuzzoffset = {
+Array<int, FUZZTABLE> fuzzoffset = {
     FUZZOFF,  -FUZZOFF, FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,  -FUZZOFF, FUZZOFF,
     FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,  FUZZOFF,  -FUZZOFF, FUZZOFF,  FUZZOFF,
     FUZZOFF,  -FUZZOFF, -FUZZOFF, -FUZZOFF, -FUZZOFF, FUZZOFF,  -FUZZOFF, -FUZZOFF,

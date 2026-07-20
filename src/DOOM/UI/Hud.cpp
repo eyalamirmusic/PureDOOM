@@ -42,7 +42,7 @@
 #include "../Host/Text.h"
 #include "../Wad/WadFile.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "../Game/GameSession.h"
 #include "../Game/GameVersion.h"
@@ -62,9 +62,9 @@
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 // externs): the config-persisted chat macros, the player names and the level-name
 // tables (st_stuff reads mapnames).
-extern EA::Array<std::string_view, 10> chat_macros;
-extern EA::Array<std::string_view, 4> player_names;
-extern EA::Array<std::string_view, 45> mapnames;
+extern Doom::Array<std::string_view, 10> chat_macros;
+extern Doom::Array<std::string_view, 4> player_names;
+extern Doom::Array<std::string_view, 45> mapnames;
 
 //
 // Locally used constants, shortcuts.
@@ -96,7 +96,7 @@ constexpr int QUEUESIZE = 128;
 
 const char* shiftxform;
 
-const EA::Array<char, 128> french_shiftxform = {
+const Array<char, 128> french_shiftxform = {
     0,    1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
     16,   17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
     ' ',  '!', '"', '#', '$', '%', '&',
@@ -132,7 +132,7 @@ const EA::Array<char, 128> french_shiftxform = {
 
 };
 
-const EA::Array<char, 128> english_shiftxform = {
+const Array<char, 128> english_shiftxform = {
     0,    1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
     16,   17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
     ' ',  '!', '"', '#', '$', '%', '&',
@@ -166,7 +166,7 @@ const EA::Array<char, 128> english_shiftxform = {
     'A',  'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
     'Q',  'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '{', '|', '}', '~', 127};
 
-EA::Array<char, 128> frenchKeyMap = {
+Array<char, 128> frenchKeyMap = {
     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,   13,  14,  15,
     16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,   29,  30,  31,
     ' ', '!', '"', '#', '$', '%', '&', '%', '(', ')', '*', '+', ';',  '-', ':', '!',
@@ -181,7 +181,7 @@ EA::Array<char, 128> frenchKeyMap = {
 // The actual names can be found in DStrings.h.
 //
 
-EA::Array<std::string_view, 32> mapnames2 = // DOOM 2 map names.
+Array<std::string_view, 32> mapnames2 = // DOOM 2 map names.
     {HUSTR_1,  HUSTR_2,  HUSTR_3,  HUSTR_4,  HUSTR_5,  HUSTR_6,
      HUSTR_7,  HUSTR_8,  HUSTR_9,  HUSTR_10, HUSTR_11,
 
@@ -191,7 +191,7 @@ EA::Array<std::string_view, 32> mapnames2 = // DOOM 2 map names.
      HUSTR_21, HUSTR_22, HUSTR_23, HUSTR_24, HUSTR_25, HUSTR_26,
      HUSTR_27, HUSTR_28, HUSTR_29, HUSTR_30, HUSTR_31, HUSTR_32};
 
-EA::Array<std::string_view, 32> mapnamesp = // Plutonia WAD map names.
+Array<std::string_view, 32> mapnamesp = // Plutonia WAD map names.
     {PHUSTR_1,  PHUSTR_2,  PHUSTR_3,  PHUSTR_4,  PHUSTR_5,  PHUSTR_6,
      PHUSTR_7,  PHUSTR_8,  PHUSTR_9,  PHUSTR_10, PHUSTR_11,
 
@@ -201,7 +201,7 @@ EA::Array<std::string_view, 32> mapnamesp = // Plutonia WAD map names.
      PHUSTR_21, PHUSTR_22, PHUSTR_23, PHUSTR_24, PHUSTR_25, PHUSTR_26,
      PHUSTR_27, PHUSTR_28, PHUSTR_29, PHUSTR_30, PHUSTR_31, PHUSTR_32};
 
-EA::Array<std::string_view, 32> mapnamest = // TNT WAD map names.
+Array<std::string_view, 32> mapnamest = // TNT WAD map names.
     {THUSTR_1,  THUSTR_2,  THUSTR_3,  THUSTR_4,  THUSTR_5,  THUSTR_6,
      THUSTR_7,  THUSTR_8,  THUSTR_9,  THUSTR_10, THUSTR_11,
 
@@ -493,7 +493,7 @@ bool hudResponder(Event* ev)
 
     bool eatkey = false;
 
-    static EA::Array<char, MAXPLAYERS> destination_keys = {
+    static Array<char, MAXPLAYERS> destination_keys = {
         HUSTR_KEYGREEN, HUSTR_KEYINDIGO, HUSTR_KEYBROWN, HUSTR_KEYRED};
 
     auto& players_ = playerState();
@@ -630,28 +630,28 @@ bool hudResponder(Event* ev)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.
 
 // The chat macros (m_misc persists them in the config).
-EA::Array<std::string_view, 10> chat_macros = {Doom::HUSTR_CHATMACRO0,
-                                               Doom::HUSTR_CHATMACRO1,
-                                               Doom::HUSTR_CHATMACRO2,
-                                               Doom::HUSTR_CHATMACRO3,
-                                               Doom::HUSTR_CHATMACRO4,
-                                               Doom::HUSTR_CHATMACRO5,
-                                               Doom::HUSTR_CHATMACRO6,
-                                               Doom::HUSTR_CHATMACRO7,
-                                               Doom::HUSTR_CHATMACRO8,
-                                               Doom::HUSTR_CHATMACRO9};
+Doom::Array<std::string_view, 10> chat_macros = {Doom::HUSTR_CHATMACRO0,
+                                                 Doom::HUSTR_CHATMACRO1,
+                                                 Doom::HUSTR_CHATMACRO2,
+                                                 Doom::HUSTR_CHATMACRO3,
+                                                 Doom::HUSTR_CHATMACRO4,
+                                                 Doom::HUSTR_CHATMACRO5,
+                                                 Doom::HUSTR_CHATMACRO6,
+                                                 Doom::HUSTR_CHATMACRO7,
+                                                 Doom::HUSTR_CHATMACRO8,
+                                                 Doom::HUSTR_CHATMACRO9};
 
 // The player colour names (g_game uses them for obituary messages).
-EA::Array<std::string_view, 4> player_names = {Doom::HUSTR_PLRGREEN,
-                                               Doom::HUSTR_PLRINDIGO,
-                                               Doom::HUSTR_PLRBROWN,
-                                               Doom::HUSTR_PLRRED};
+Doom::Array<std::string_view, 4> player_names = {Doom::HUSTR_PLRGREEN,
+                                                 Doom::HUSTR_PLRINDIGO,
+                                                 Doom::HUSTR_PLRBROWN,
+                                                 Doom::HUSTR_PLRRED};
 
 //
 // Builtin map names. The actual names can be found in dstrings.h. st_stuff reads
 // mapnames for the deathmatch/coop level title.
 //
-EA::Array<std::string_view, 45>
+Doom::Array<std::string_view, 45>
     mapnames = // DOOM shareware/registered/retail (Ultimate) names.
     {Doom::HUSTR_E1M1, Doom::HUSTR_E1M2, Doom::HUSTR_E1M3,
      Doom::HUSTR_E1M4, Doom::HUSTR_E1M5, Doom::HUSTR_E1M6,

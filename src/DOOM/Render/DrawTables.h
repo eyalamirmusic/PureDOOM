@@ -2,7 +2,7 @@
 
 #include "../doomtype.h" // byte
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -23,8 +23,8 @@ struct DrawTables
     static constexpr int maxHeight = 832; // sizes ylookup below
     static constexpr int maxWidth = 1120; // sizes columnofs below
 
-    EA::Array<byte*, maxHeight> ylookup = {}; // per-row framebuffer address
-    EA::Array<int, maxWidth> columnofs = {}; // per-column byte offset
+    Array<byte*, maxHeight> ylookup = {}; // per-row framebuffer address
+    Array<int, maxWidth> columnofs = {}; // per-column byte offset
     int fuzzpos = 0; // spectre-fuzz distortion-table cursor
 };
 

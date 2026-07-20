@@ -2,7 +2,7 @@
 
 #include "GameDefs.h" // NUMAMMO
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -20,9 +20,8 @@ namespace Doom
 // golden-neutral.
 struct AmmoLimits
 {
-    EA::Array<int, NUMAMMO> maxammo = {200, 50, 300, 50}; // carry cap per ammo type
-    EA::Array<int, NUMAMMO> clipammo = {
-        10, 4, 20, 1}; // base amount one pickup gives
+    Array<int, NUMAMMO> maxammo = {200, 50, 300, 50}; // carry cap per ammo type
+    Array<int, NUMAMMO> clipammo = {10, 4, 20, 1}; // base amount one pickup gives
 };
 
 // The one AmmoLimits, a view onto the Engine's member - the same pattern as

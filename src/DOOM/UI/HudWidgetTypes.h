@@ -24,7 +24,7 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <string>
 
@@ -67,7 +67,7 @@ namespace Doom
 {
 struct HudScrollingText
 {
-    EA::Array<HudTextLine, HU_MAXLINES> l; // text lines to draw
+    Array<HudTextLine, HU_MAXLINES> l; // text lines to draw
     int h; // height in lines
     int cl; // current line number
 

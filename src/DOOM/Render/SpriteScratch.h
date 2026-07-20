@@ -3,7 +3,7 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // LightTable, SpriteFrame, VisSprite
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <string_view>
 
@@ -25,7 +25,7 @@ struct SpriteScratch
 {
     LightTable** spritelights =
         nullptr; // colormap row for the current sprite's light
-    EA::Array<SpriteFrame, 29> sprtemp = {}; // R_InitSpriteDefs working frames
+    Array<SpriteFrame, 29> sprtemp = {}; // R_InitSpriteDefs working frames
     int maxframe = 0; // highest frame index seen while installing
     std::string_view spritename; // the sprite name being installed
     VisSprite overflowsprite = {}; // sink for the (maxVisSprites + 1)th sprite

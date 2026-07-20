@@ -55,7 +55,7 @@ DOOM_IGNORE_CAST_FUNCTION_TYPE
 DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 
 
-const EA::Array<std::string_view, NUMSPRITES> sprnames = {
+const Array<std::string_view, NUMSPRITES> sprnames = {
     "TROO","SHTG","PUNG","PISG","PISF","SHTF","SHT2","CHGG","CHGF","MISG",
     "MISF","SAWG","PLSG","PLSF","BFGG","BFGF","BLUD","PUFF","BAL1","BAL2",
     "PLSS","PLSE","MISL","BFS1","BFE1","BFE2","TFOG","IFOG","PLAY","POSS",

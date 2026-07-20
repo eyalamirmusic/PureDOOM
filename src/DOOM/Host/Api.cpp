@@ -21,8 +21,7 @@
 #include "System.h"
 #include "../Game/GameFlow.h"
 #include "../Game/InputConfig.h"
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include <map>
 #include <string>
@@ -36,10 +35,10 @@ extern signed short mixbuffer[2048];
 // The host output buffers, RAII-owned (Step 9): the 8-bit palette-index snapshot the
 // embedder reads, and the RGB(A)-expanded frame. Sized once in initGame and returned
 // to the embedder as raw pointers into data(), which is stable (never resized after).
-static EA::Vector<unsigned char> screen_buffer;
-static EA::Vector<unsigned char> final_screen_buffer;
+static Doom::Vector<unsigned char> screen_buffer;
+static Doom::Vector<unsigned char> final_screen_buffer;
 static int last_update_time = 0;
-static EA::Array<int, 3> button_states = {0};
+static Doom::Array<int, 3> button_states = {0};
 
 int doom_flags = 0;
 

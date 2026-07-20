@@ -31,8 +31,7 @@
 #include "ActionFunc.h" // Thinker, for a sector's sound origin
 #include "MobjTypes.h" // Mobj, which a sector holds a list of
 
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 //
 // INTERNAL MAP TYPES
@@ -105,7 +104,7 @@ struct Sector
     Mobj* soundtarget;
 
     // mapblock bounding box for height changes
-    EA::Array<int, 4> blockbox;
+    Array<int, 4> blockbox;
 
     // origin for any sounds played by the sector
     DegenMobj soundorg;
@@ -181,11 +180,11 @@ struct Line
 
     // Visual appearance: SideDefs.
     // sidenum[1] will be -1 if one sided
-    EA::Array<short, 2> sidenum;
+    Array<short, 2> sidenum;
 
     // Neat. Another bounding box, for the extent
     // of the LineDef.
-    EA::Array<fixed_t, 4> bbox;
+    Array<fixed_t, 4> bbox;
 
     // To aid move clipping.
     SlopeType slopetype;
@@ -259,9 +258,9 @@ struct Node
     fixed_t dy;
 
     // Bounding box for each child.
-    EA::Array<EA::Array<fixed_t, 4>, 2> bbox;
+    Array<Array<fixed_t, 4>, 2> bbox;
 
     // If NF_SUBSECTOR its a subsector.
-    EA::Array<unsigned short, 2> children;
+    Array<unsigned short, 2> children;
 };
 } // namespace Doom

@@ -32,7 +32,7 @@ struct LevelChunk
 // instance and the whole pool with it, measured at 120 blocks after one E1M1 load.
 //
 // The list cannot become a container, and that is the reason this is a destructor
-// and not an EA::Vector: the blocks are variable-sized, hold polymorphic Thinkers
+// and not an Vector: the blocks are variable-sized, hold polymorphic Thinkers
 // whose addresses Sim/SaveGame serialises and the thinker list threads, and so can
 // never be moved or relocated. RAII here means owning the release, not owning the
 // layout.

@@ -2,7 +2,7 @@
 
 #include "../Math/FixedPoint.h" // fixed_t
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // Forward declaration at global scope (where p_mobj.h declares it) - the scratch holds pointers, not
 // layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to Doom::Mobj.
@@ -34,7 +34,7 @@ struct EnemyAI
     fixed_t viletryx {}; // where it is trying to stand the corpse up
     fixed_t viletryy {};
 
-    EA::Array<Mobj*, 32> braintargets = {}; // the boss brain's spawn-cube targets
+    Array<Mobj*, 32> braintargets = {}; // the boss brain's spawn-cube targets
     int numbraintargets = 0; // # of targets found
     int braintargeton = 0; // the next target to aim a cube at
 

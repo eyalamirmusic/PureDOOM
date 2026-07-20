@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -18,7 +18,7 @@ struct SwitchList
     static constexpr int maxSwitches =
         50; // sizes switchlist; Sim/Switches scans to it
 
-    EA::Array<int, maxSwitches * 2> switchlist =
+    Array<int, maxSwitches * 2> switchlist =
         {}; // on/off texture-number pairs, -1 terminated
     int numswitches = 0; // # of switch pairs found
 };

@@ -18,7 +18,7 @@ int slopeDiv(unsigned num, unsigned den)
 // whole-table checksums in Tests/Sim/PrimitiveTests.cpp are what say so.
 
 // clang-format off
-const EA::Array<std::int32_t, fineTangentCount> fineTangentTable = {
+const Array<std::int32_t, fineTangentCount> fineTangentTable = {
     -170910304,-56965752,-34178904,-24413316,-18988036,-15535599,-13145455,-11392683,
     -10052327,-8994149,-8137527,-7429880,-6835455,-6329090,-5892567,-5512368,
     -5178251,-4882318,-4618375,-4381502,-4167737,-3973855,-3797206,-3635590,
@@ -533,7 +533,7 @@ const EA::Array<std::int32_t, fineTangentCount> fineTangentTable = {
     11392683,13145455,15535599,18988036,24413316,34178904,56965752,170910304
 };
 
-const EA::Array<std::int32_t, fineSineCount> fineSineTable = {
+const Array<std::int32_t, fineSineCount> fineSineTable = {
     25,75,125,175,226,276,326,376,
     427,477,527,578,628,678,728,779,
     829,879,929,980,1030,1080,1130,1181,
@@ -1816,7 +1816,7 @@ const EA::Array<std::int32_t, fineSineCount> fineSineTable = {
     65534,65535,65535,65535,65535,65535,65535,65535
 };
 
-const EA::Array<std::uint32_t, slopeRange + 1> tanToAngleTable = {
+const Array<std::uint32_t, slopeRange + 1> tanToAngleTable = {
     0,333772,667544,1001315,1335086,1668857,2002626,2336395,
     2670163,3003929,3337694,3671457,4005219,4338979,4672736,5006492,
     5340245,5673995,6007743,6341488,6675230,7008968,7342704,7676435,

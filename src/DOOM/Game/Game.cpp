@@ -91,7 +91,7 @@
 #include "../UI/Menu.h"
 #include "../UI/MenuState.h"
 #include "../UI/MenuSettings.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "Config.h"
 #include "../Host/System.h"
@@ -174,7 +174,7 @@ std::string defdemoname;
 
 // Other subsystems' globals this file reads (declared at global scope so the
 // namespace code below resolves them to ::, not Doom::).
-extern EA::Array<std::string_view, 4> player_names; // hu_stuff
+extern Doom::Array<std::string_view, 4> player_names; // hu_stuff
 
 namespace Doom
 {
@@ -815,7 +815,7 @@ void playerReborn(int player)
     auto& players_ = playerState();
 
     Player* p;
-    EA::Array<int, MAXPLAYERS> frags;
+    Array<int, MAXPLAYERS> frags;
     int killcount;
     int itemcount;
     int secretcount;

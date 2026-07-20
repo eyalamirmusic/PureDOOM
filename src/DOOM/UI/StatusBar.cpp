@@ -55,7 +55,7 @@
 #include "../Render/Video.h"
 #include "Cheat.h"
 #include "StatusWidgets.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "../Game/Game.h"
 #include "../Game/GameSession.h"
@@ -70,7 +70,7 @@
 #include "../Sim/Random.h"
 
 // mapnames (hu_stuff) and doom_flags are other subsystems' globals this file reads.
-extern EA::Array<std::string_view, 45> mapnames;
+extern Doom::Array<std::string_view, 45> mapnames;
 extern int doom_flags;
 
 //
@@ -312,44 +312,44 @@ constexpr int ST_MAXAMMO3Y = 185;
 // Massive bunches of cheat shit
 //  to keep it from being easy to figure them out.
 // Yeah, right...
-EA::Array<unsigned char, 9> cheat_mus_seq = {
+Array<unsigned char, 9> cheat_mus_seq = {
     0xb2, 0x26, 0xb6, 0xae, 0xea, 1, 0, 0, 0xff};
 
-EA::Array<unsigned char, 11> cheat_choppers_seq = {
+Array<unsigned char, 11> cheat_choppers_seq = {
     0xb2, 0x26, 0xe2, 0x32, 0xf6, 0x2a, 0x2a, 0xa6, 0x6a, 0xea, 0xff // id...
 };
 
-EA::Array<unsigned char, 6> cheat_god_seq = {
+Array<unsigned char, 6> cheat_god_seq = {
     0xb2, 0x26, 0x26, 0xaa, 0x26, 0xff // iddqd
 };
 
-EA::Array<unsigned char, 6> cheat_ammo_seq = {
+Array<unsigned char, 6> cheat_ammo_seq = {
     0xb2, 0x26, 0xf2, 0x66, 0xa2, 0xff // idkfa
 };
 
-EA::Array<unsigned char, 5> cheat_ammonokey_seq = {
+Array<unsigned char, 5> cheat_ammonokey_seq = {
     0xb2, 0x26, 0x66, 0xa2, 0xff // idfa
 };
 
 // Smashing Pumpkins Into Samml Piles Of Putried Debris.
-EA::Array<unsigned char, 11> cheat_noclip_seq = {0xb2,
-                                                 0x26,
-                                                 0xea,
-                                                 0x2a,
-                                                 0xb2, // idspispopd
-                                                 0xea,
-                                                 0x2a,
-                                                 0xf6,
-                                                 0x2a,
-                                                 0x26,
-                                                 0xff};
+Array<unsigned char, 11> cheat_noclip_seq = {0xb2,
+                                             0x26,
+                                             0xea,
+                                             0x2a,
+                                             0xb2, // idspispopd
+                                             0xea,
+                                             0x2a,
+                                             0xf6,
+                                             0x2a,
+                                             0x26,
+                                             0xff};
 
 //
-EA::Array<unsigned char, 7> cheat_commercial_noclip_seq = {
+Array<unsigned char, 7> cheat_commercial_noclip_seq = {
     0xb2, 0x26, 0xe2, 0x36, 0xb2, 0x2a, 0xff // idclip
 };
 
-EA::Array<EA::Array<unsigned char, 10>, 7> cheat_powerup_seq = {
+Array<Array<unsigned char, 10>, 7> cheat_powerup_seq = {
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0x6e, 0xff}, // beholdv
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0xea, 0xff}, // beholds
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0xb2, 0xff}, // beholdi
@@ -359,12 +359,12 @@ EA::Array<EA::Array<unsigned char, 10>, 7> cheat_powerup_seq = {
     {0xb2, 0x26, 0x62, 0xa6, 0x32, 0xf6, 0x36, 0x26, 0xff} // behold
 };
 
-EA::Array<unsigned char, 10> cheat_clev_seq = {
+Array<unsigned char, 10> cheat_clev_seq = {
     0xb2, 0x26, 0xe2, 0x36, 0xa6, 0x6e, 1, 0, 0, 0xff // idclev
 };
 
 // my position cheat
-EA::Array<unsigned char, 8> cheat_mypos_seq = {
+Array<unsigned char, 8> cheat_mypos_seq = {
     0xb2, 0x26, 0xb6, 0xba, 0x2a, 0xf6, 0xea, 0xff // idmypos
 };
 
@@ -376,13 +376,13 @@ CheatSequence cheat_ammonokey = {{cheat_ammonokey_seq}};
 CheatSequence cheat_noclip = {{cheat_noclip_seq}};
 CheatSequence cheat_commercial_noclip = {{cheat_commercial_noclip_seq}};
 
-EA::Array<CheatSequence, 7> cheat_powerup = {CheatSequence {{cheat_powerup_seq[0]}},
-                                             CheatSequence {{cheat_powerup_seq[1]}},
-                                             CheatSequence {{cheat_powerup_seq[2]}},
-                                             CheatSequence {{cheat_powerup_seq[3]}},
-                                             CheatSequence {{cheat_powerup_seq[4]}},
-                                             CheatSequence {{cheat_powerup_seq[5]}},
-                                             CheatSequence {{cheat_powerup_seq[6]}}};
+Array<CheatSequence, 7> cheat_powerup = {CheatSequence {{cheat_powerup_seq[0]}},
+                                         CheatSequence {{cheat_powerup_seq[1]}},
+                                         CheatSequence {{cheat_powerup_seq[2]}},
+                                         CheatSequence {{cheat_powerup_seq[3]}},
+                                         CheatSequence {{cheat_powerup_seq[4]}},
+                                         CheatSequence {{cheat_powerup_seq[5]}},
+                                         CheatSequence {{cheat_powerup_seq[6]}}};
 
 CheatSequence cheat_choppers = {{cheat_choppers_seq}};
 CheatSequence cheat_clev = {{cheat_clev_seq}};

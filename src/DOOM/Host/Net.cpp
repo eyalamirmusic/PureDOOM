@@ -49,7 +49,7 @@
 #include "Net.h"
 
 #include "../Game/Args.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // The byte-swap helpers are only reached by the socket packet code, so they are
 #include "System.h"
@@ -276,7 +276,7 @@ void PacketGet()
 int GetLocalAddress()
 {
 #if defined(I_NET_ENABLED)
-    EA::Array<char, 1024> hostname;
+    Array<char, 1024> hostname;
     struct hostent* hostentry; // host information entry
     int v;
 

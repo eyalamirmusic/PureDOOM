@@ -11,7 +11,7 @@
 
 #include "Cheat.h"
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <string>
 
@@ -19,7 +19,7 @@ namespace Doom
 {
 
 static int firsttime = 1;
-static EA::Array<unsigned char, 256> cheat_xlate_table;
+static Array<unsigned char, 256> cheat_xlate_table;
 
 // Was SCRAMBLE(a): a bit-permutation macro used to build cheat_xlate_table.
 // ((((a)&1)<<7) + (((a)&2)<<5) + ((a)&4) + (((a)&8)<<1)

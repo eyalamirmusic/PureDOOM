@@ -5,8 +5,7 @@
 
 #include "Blockmap.h"
 
-#include <ea_data_structures/Structures/Vector.h>
-
+#include "../Containers.h"
 
 // Pointer-and-count views onto the Level vectors, refreshed by each loader after
 // it fills its vector - the owner/view split the geometry has always used. Were
@@ -47,17 +46,17 @@ namespace Doom
 // vertex, a subsector at a sector) stay valid.
 struct Level
 {
-    EA::Vector<Vertex> vertexes;
-    EA::Vector<Seg> segs;
-    EA::Vector<SubSector> subsectors;
-    EA::Vector<Sector> sectors;
-    EA::Vector<Node> nodes;
-    EA::Vector<Line> lines;
-    EA::Vector<Side> sides;
+    Vector<Vertex> vertexes;
+    Vector<Seg> segs;
+    Vector<SubSector> subsectors;
+    Vector<Sector> sectors;
+    Vector<Node> nodes;
+    Vector<Line> lines;
+    Vector<Side> sides;
 
     // The per-block mobj chain heads. The array is ours; the mobjs it points at
     // are the zone's.
-    EA::Vector<Mobj*> blockLinks;
+    Vector<Mobj*> blockLinks;
 
     // The blockmap descriptor - origin, extent and the lump pointers the iterators
     // read from. Filled by Doom::loadBlockMap, which then refreshes the vanilla
@@ -68,7 +67,7 @@ struct Level
     // One flat array of line pointers, carved into per-sector slices that
     // Sector::lines point into. Vanilla calls this `linebuffer`, a single
     // Z_Malloc in Doom::groupLines.
-    EA::Vector<Line*> sectorLines;
+    Vector<Line*> sectorLines;
 };
 
 // The engine's one level, for as long as the engine has one of everything.

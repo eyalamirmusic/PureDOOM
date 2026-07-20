@@ -5,7 +5,7 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // VisSprite
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -31,12 +31,11 @@ struct SpriteState
     fixed_t pspritescale {}; // player-sprite horizontal scale
     fixed_t pspriteiscale {}; // its inverse
 
-    EA::Array<short, SCREENWIDTH> negonearray = {}; // all -1 (a "no clip" top)
-    EA::Array<short, SCREENWIDTH> screenheightarray =
+    Array<short, SCREENWIDTH> negonearray = {}; // all -1 (a "no clip" top)
+    Array<short, SCREENWIDTH> screenheightarray =
         {}; // all SCREENHEIGHT (a "no clip" bottom)
 
-    EA::Array<VisSprite, maxVisSprites> vissprites =
-        {}; // the frame's gathered sprites
+    Array<VisSprite, maxVisSprites> vissprites = {}; // the frame's gathered sprites
     VisSprite* vissprite_p = nullptr; // one past the last gathered
     VisSprite vsprsortedhead = {}; // sentinel head of the sorted list
 

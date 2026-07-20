@@ -4,7 +4,7 @@
 #include "../Math/FixedPoint.h" // fixed_t
 #include "../Math/TrigTables.h" // angle_t, fineAngles
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -36,8 +36,8 @@ struct ViewProjection
     angle_t clipangle {};
 
     // Doom::initTextureMapping's angle<->column maps.
-    EA::Array<int, fineAngles / 2> viewangletox = {};
-    EA::Array<angle_t, SCREENWIDTH + 1> xtoviewangle = {};
+    Array<int, fineAngles / 2> viewangletox = {};
+    Array<angle_t, SCREENWIDTH + 1> xtoviewangle = {};
 };
 
 // The one ViewProjection, a view onto the Engine's member - the same pattern as

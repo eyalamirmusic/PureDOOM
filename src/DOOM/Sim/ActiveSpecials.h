@@ -2,7 +2,7 @@
 
 #include "SpecialTypes.h" // Plat, Ceiling, Button, MAXPLATS, MAXCEILINGS, MAXBUTTONS
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -23,11 +23,10 @@ namespace Doom
 // identical slot, so both hold byte-identical.
 struct ActiveSpecials
 {
-    EA::Array<Plat*, MAXPLATS> activeplats =
-        {}; // the running platform/lift thinkers
-    EA::Array<Ceiling*, MAXCEILINGS> activeceilings =
+    Array<Plat*, MAXPLATS> activeplats = {}; // the running platform/lift thinkers
+    Array<Ceiling*, MAXCEILINGS> activeceilings =
         {}; // the running ceiling/crusher thinkers
-    EA::Array<Button, MAXBUTTONS> buttonlist =
+    Array<Button, MAXBUTTONS> buttonlist =
         {}; // switch textures counting down to revert
 };
 

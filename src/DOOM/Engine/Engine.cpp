@@ -1,6 +1,6 @@
 #include "Engine.h"
 
-#include <ea_data_structures/Pointers/OwningPointer.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -12,9 +12,9 @@ namespace
 // `static auto instance = Engine{}` this replaced gave m_random.cpp's static-init
 // reference (since retired; REFACTOR.md, Step 9 strand (a)), kept here for
 // whatever future static-init-time caller wants it.
-EA::OwningPointer<Engine>& enginePointer()
+OwningPointer<Engine>& enginePointer()
 {
-    static auto instance = EA::OwningPointer<Engine> {};
+    static auto instance = OwningPointer<Engine> {};
     return instance;
 }
 } // namespace

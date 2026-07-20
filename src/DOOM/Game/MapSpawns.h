@@ -3,7 +3,7 @@
 #include "GameDefs.h" // MAXPLAYERS
 #include "../Wad/MapFormat.h" // MapThing
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -25,10 +25,9 @@ constexpr int MAX_DM_STARTS = 10;
 // only playerstarts[0]), so golden-neutral.
 struct MapSpawns
 {
-    EA::Array<MapThing, MAX_DM_STARTS> deathmatchstarts =
-        {}; // deathmatch frag spawns
+    Array<MapThing, MAX_DM_STARTS> deathmatchstarts = {}; // deathmatch frag spawns
     MapThing* deathmatch_p = nullptr; // append cursor into the above
-    EA::Array<MapThing, MAXPLAYERS> playerstarts = {}; // per-player start spots
+    Array<MapThing, MAXPLAYERS> playerstarts = {}; // per-player start spots
 };
 
 // The one MapSpawns, a view onto the Engine's member - the same pattern as

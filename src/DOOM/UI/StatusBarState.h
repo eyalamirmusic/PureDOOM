@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // Doom::Player is used only by pointer here, so a forward declaration is enough.
 namespace Doom
@@ -67,8 +67,7 @@ struct StatusBarState
     bool st_armson = false; // the arms panel is shown (not DM, bar up)
     bool st_fragson = false; // the frags summary is shown (deathmatch)
     int st_fragscount = 0; // the frags total w_frags draws
-    EA::Array<int, 3> keyboxes =
-        {}; // the key-type shown in each of the three key slots
+    Array<int, 3> keyboxes = {}; // the key-type shown in each of the three key slots
 
     // The palette flash (pain red, pickup gold, radsuit green).
     int st_palette = 0; // the PLAYPAL sub-palette currently set

@@ -45,7 +45,7 @@
 #include "IntermissionState.h"
 
 #include "../Render/Video.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "../Game/Game.h"
 #include "../Game/GameSession.h"
@@ -173,7 +173,7 @@ struct anim_t_wi_stuff
     int state;
 };
 
-static EA::Array<EA::Array<Point, NUMMAPS>, NUMEPISODES> lnodes = {
+static Array<Array<Point, NUMMAPS>, NUMEPISODES> lnodes = {
     // Episode 0 World Map
     {
         {185, 164}, // location of level 0 (CJ)
@@ -224,7 +224,7 @@ static EA::Array<EA::Array<Point, NUMMAPS>, NUMEPISODES> lnodes = {
 // -Wmissing-field-initializers that legitimate 1993 idiom raises.
 DOOM_DIAGNOSTIC_PUSH
 DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
-static EA::Array<anim_t_wi_stuff, 10> epsd0animinfo = {
+static Array<anim_t_wi_stuff, 10> epsd0animinfo = {
     {ANIM_ALWAYS, TICRATE / 3, 3, {224, 104}},
     {ANIM_ALWAYS, TICRATE / 3, 3, {184, 160}},
     {ANIM_ALWAYS, TICRATE / 3, 3, {112, 136}},
@@ -236,7 +236,7 @@ static EA::Array<anim_t_wi_stuff, 10> epsd0animinfo = {
     {ANIM_ALWAYS, TICRATE / 3, 3, {80, 16}},
     {ANIM_ALWAYS, TICRATE / 3, 3, {64, 24}}};
 
-static EA::Array<anim_t_wi_stuff, 9> epsd1animinfo = {
+static Array<anim_t_wi_stuff, 9> epsd1animinfo = {
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 1},
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 2},
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 3},
@@ -247,7 +247,7 @@ static EA::Array<anim_t_wi_stuff, 9> epsd1animinfo = {
     {ANIM_LEVEL, TICRATE / 3, 3, {192, 144}, 8},
     {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 8}};
 
-static EA::Array<anim_t_wi_stuff, 6> epsd2animinfo = {
+static Array<anim_t_wi_stuff, 6> epsd2animinfo = {
     {ANIM_ALWAYS, TICRATE / 3, 3, {104, 168}},
     {ANIM_ALWAYS, TICRATE / 3, 3, {40, 136}},
     {ANIM_ALWAYS, TICRATE / 3, 3, {160, 96}},
@@ -256,10 +256,10 @@ static EA::Array<anim_t_wi_stuff, 6> epsd2animinfo = {
     {ANIM_ALWAYS, TICRATE / 4, 3, {40, 0}}};
 DOOM_DIAGNOSTIC_POP
 
-static EA::Array<int, NUMEPISODES> NUMANIMS = {
+static Array<int, NUMEPISODES> NUMANIMS = {
     epsd0animinfo.size(), epsd1animinfo.size(), epsd2animinfo.size()};
 
-static EA::Array<anim_t_wi_stuff*, NUMEPISODES> anims_wi_stuff = {
+static Array<anim_t_wi_stuff*, NUMEPISODES> anims_wi_stuff = {
     epsd0animinfo.data(), epsd1animinfo.data(), epsd2animinfo.data()};
 
 //

@@ -52,7 +52,7 @@
 #include "HudFont.h"
 
 #include "../Render/Video.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // Other subsystems' globals/functions this file reads.
 #include "../Game/Sound.h"
@@ -104,25 +104,25 @@ std::string_view t4text = T4TEXT;
 std::string_view t5text = T5TEXT;
 std::string_view t6text = T6TEXT;
 
-EA::Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
-                                     {CC_SHOTGUN, MT_SHOTGUY},
-                                     {CC_HEAVY, MT_CHAINGUY},
-                                     {CC_IMP, MT_TROOP},
-                                     {CC_DEMON, MT_SERGEANT},
-                                     {CC_LOST, MT_SKULL},
-                                     {CC_CACO, MT_HEAD},
-                                     {CC_HELL, MT_KNIGHT},
-                                     {CC_BARON, MT_BRUISER},
-                                     {CC_ARACH, MT_BABY},
-                                     {CC_PAIN, MT_PAIN},
-                                     {CC_REVEN, MT_UNDEAD},
-                                     {CC_MANCU, MT_FATSO},
-                                     {CC_ARCH, MT_VILE},
-                                     {CC_SPIDER, MT_SPIDER},
-                                     {CC_CYBER, MT_CYBORG},
-                                     {CC_HERO, MT_PLAYER},
+Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
+                                 {CC_SHOTGUN, MT_SHOTGUY},
+                                 {CC_HEAVY, MT_CHAINGUY},
+                                 {CC_IMP, MT_TROOP},
+                                 {CC_DEMON, MT_SERGEANT},
+                                 {CC_LOST, MT_SKULL},
+                                 {CC_CACO, MT_HEAD},
+                                 {CC_HELL, MT_KNIGHT},
+                                 {CC_BARON, MT_BRUISER},
+                                 {CC_ARACH, MT_BABY},
+                                 {CC_PAIN, MT_PAIN},
+                                 {CC_REVEN, MT_UNDEAD},
+                                 {CC_MANCU, MT_FATSO},
+                                 {CC_ARCH, MT_VILE},
+                                 {CC_SPIDER, MT_SPIDER},
+                                 {CC_CYBER, MT_CYBORG},
+                                 {CC_HERO, MT_PLAYER},
 
-                                     {{}, static_cast<MobjType>(0)}};
+                                 {{}, static_cast<MobjType>(0)}};
 
 //
 // startCast

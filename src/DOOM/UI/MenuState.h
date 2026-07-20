@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include <string>
 #include <string_view>
@@ -80,7 +80,7 @@ struct MenuState
     int saveStringEnter = 0; // editing a savegame description
     int saveSlot = 0; // which slot to save in
     std::string saveOldString; // description before the edit
-    EA::Array<std::string, 10> savegamestrings; // the ten slot descriptions
+    Array<std::string, 10> savegamestrings; // the ten slot descriptions
 
     std::string endstring; // built quit/end-game confirmation text
 

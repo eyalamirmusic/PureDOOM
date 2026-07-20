@@ -6,8 +6,7 @@
 #include "../Render/RenderTypes.h" // Patch
 #include "IntermissionTypes.h" // IntermissionPhase
 
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -60,28 +59,28 @@ struct IntermissionState
     IntermissionPlayer* plrs = nullptr; // wbs->plyr[]
 
     // The animated count-up accumulators.
-    EA::Array<int, MAXPLAYERS> cnt_kills = {};
-    EA::Array<int, MAXPLAYERS> cnt_items = {};
-    EA::Array<int, MAXPLAYERS> cnt_secret = {};
+    Array<int, MAXPLAYERS> cnt_kills = {};
+    Array<int, MAXPLAYERS> cnt_items = {};
+    Array<int, MAXPLAYERS> cnt_secret = {};
     int cnt_time = 0;
     int cnt_par = 0;
-    EA::Array<int, MAXPLAYERS> cnt_frags = {};
+    Array<int, MAXPLAYERS> cnt_frags = {};
 
     // Deathmatch tallies and the frag-column flag.
     bool snl_pointeron = false; // the "you are here" pointer is lit this frame
-    EA::Array<EA::Array<int, MAXPLAYERS>, MAXPLAYERS> dm_frags = {};
-    EA::Array<int, MAXPLAYERS> dm_totals = {};
+    Array<Array<int, MAXPLAYERS>, MAXPLAYERS> dm_frags = {};
+    Array<int, MAXPLAYERS> dm_totals = {};
     int dofrags = 0; // netgame has frags to show
 
     int NUMCMAPS = 0; // # of commercial levels (set in loadIntermissionData)
 
     // Graphics loaded once by loadIntermissionData, read-only after.
     Patch* bg = nullptr; // background (map of levels)
-    EA::Array<Patch*, 2> yah = {}; // "you are here" (two blink frames)
+    Array<Patch*, 2> yah = {}; // "you are here" (two blink frames)
     Patch* splat = nullptr; // splat on completed levels
     Patch* percent = nullptr; // %
     Patch* colon = nullptr; // :
-    EA::Array<Patch*, 10> num = {}; // 0-9
+    Array<Patch*, 10> num = {}; // 0-9
     Patch* wiminus = nullptr; // minus sign
     Patch* finished = nullptr; // "Finished!"
     Patch* entering = nullptr; // "Entering"
@@ -98,15 +97,15 @@ struct IntermissionState
     Patch* total = nullptr; // "Total"
     Patch* star = nullptr; // your face
     Patch* bstar = nullptr; // your dead face
-    EA::Array<Patch*, MAXPLAYERS> p = {}; // "red P[1..MAXPLAYERS]"
-    EA::Array<Patch*, MAXPLAYERS> bp = {}; // "gray P[1..MAXPLAYERS]"
+    Array<Patch*, MAXPLAYERS> p = {}; // "red P[1..MAXPLAYERS]"
+    Array<Patch*, MAXPLAYERS> bp = {}; // "gray P[1..MAXPLAYERS]"
 
     // Per-level name graphics, sized and filled by loadIntermissionData. RAII-owned
-    // (Step 9): what was a raw doom_malloc'd Patch** is now an owning EA::Vector of
+    // (Step 9): what was a raw doom_malloc'd Patch** is now an owning Vector of
     // pointers - read only within Intermission.cpp, so unlike wipe_melt_offsets this
     // needs no separate view onto it. The pointed-to Patch lumps themselves are owned
     // by the WAD (Doom::WadFile), not by this vector, and must not be freed here.
-    EA::Vector<Patch*> lnames;
+    Vector<Patch*> lnames;
 };
 
 // The one IntermissionState, a view onto the Engine's member - the same pattern as the other

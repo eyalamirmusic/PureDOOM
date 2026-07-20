@@ -1,7 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -17,8 +16,7 @@ namespace Doom
 // the entry rather than indexing a parallel array.
 struct Lump
 {
-    EA::Array<char, 8>
-        name; // eight bytes, and NOT null-terminated when it fills them
+    Array<char, 8> name; // eight bytes, and NOT null-terminated when it fills them
     void* handle; // the file it came from
     int position;
     int size;
@@ -69,7 +67,7 @@ public:
     const std::byte* data(int lump);
 
     const Lump& info(int lump) const { return lumps[lump]; }
-    const EA::Vector<Lump>& directory() const { return lumps; }
+    const Vector<Lump>& directory() const { return lumps; }
 
     // Vanilla's `~file` hack: re-read the reloadable file's directory and drop
     // whatever it had cached, so a level can be edited and reloaded without
@@ -81,14 +79,14 @@ private:
     void addSingleLump(std::string_view path, void* handle);
     void addDirectory(std::string_view path, void* handle);
 
-    EA::Vector<Lump> lumps;
+    Vector<Lump> lumps;
 
     // One buffer per lump, filled the first time it is asked for and empty until
     // then. Indexed alongside `lumps`, so the two never disagree about how many
     // lumps there are.
-    EA::Vector<EA::Vector<std::byte>> cache;
+    Vector<Vector<std::byte>> cache;
 
-    EA::Vector<void*> handles;
+    Vector<void*> handles;
 
     std::string reloadName;
     int reloadLump = 0;
@@ -100,7 +98,7 @@ WadFile& wad();
 // The boot-time WAD list: add every file in turn, and refuse to go on if the lot
 // of them yielded no lumps at all. Doom::addWadFile builds the list this consumes;
 // nothing else calls it.
-void initWadFiles(const EA::Vector<std::string>& filenames);
+void initWadFiles(const Vector<std::string>& filenames);
 
 // A lump's bytes, cached and owned. Vanilla's W_CacheLumpNum / W_CacheLumpName
 // took a purge tag as well; there is nothing to purge now that WadFile owns every

@@ -26,7 +26,7 @@
 #include "ViewWindow.h"
 
 #include "Segs.h"
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 #include "Draw.h"
 #include "../Host/System.h"
@@ -311,7 +311,7 @@ VisSprite* newVisSprite()
     auto& sprState = spriteState();
 
     // data() + N rather than &vissprites[N] - the one-past-the-end address, which
-    // is an out-of-range subscript on the EA::Array (std::array) this now is, and
+    // is an out-of-range subscript on the Array (std::array) this now is, and
     // which MSVC's debug STL asserts on. See the same change in Sim/Mobj.cpp.
     if (sprState.vissprite_p
         == sprState.vissprites.data() + SpriteState::maxVisSprites)
@@ -850,8 +850,8 @@ void sortVisSprites()
 void drawSprite(VisSprite* spr)
 {
     DrawSeg* ds;
-    EA::Array<short, SCREENWIDTH> clipbot;
-    EA::Array<short, SCREENWIDTH> cliptop;
+    Array<short, SCREENWIDTH> clipbot;
+    Array<short, SCREENWIDTH> cliptop;
     int x;
     int r1;
     int r2;
@@ -1006,7 +1006,7 @@ void drawMasked()
 // Variables used to look up and range check thing_t sprites patches
 //  (read across the renderer and the app). The sprite frame table lives in
 //  Doom::GraphicsData (an Engine member) now; numsprites is a reference onto it,
-//  and sprites is a plain-pointer view onto its owned EA::Vector, set by
+//  and sprites is a plain-pointer view onto its owned Vector, set by
 //  R_InitSpriteDefs after the fill (Step 9).
 Doom::SpriteDef* sprites = nullptr;
 

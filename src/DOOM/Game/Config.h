@@ -2,7 +2,7 @@
 
 #include "../doomtype.h" // byte
 
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include <string_view>
 
@@ -17,7 +17,7 @@ bool writeFile(std::string_view name, void* source, int length);
 // owner rather than the old `byte** buffer` out-parameter, which handed a
 // doom_malloc'd block back for the caller to free by hand (REFACTOR.md, Step 9
 // strand (b)). Fatal, not false, if the file cannot be read - as it always was.
-int readFile(std::string_view name, EA::Vector<byte>& buffer);
+int readFile(std::string_view name, Vector<byte>& buffer);
 void saveDefaults();
 void loadDefaults();
 void writeScreenshot();

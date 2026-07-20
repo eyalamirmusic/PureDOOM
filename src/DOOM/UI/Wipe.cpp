@@ -17,7 +17,7 @@
 #include "WipeState.h"
 
 #include "../Render/Video.h"
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 #include "../Host/Video.h"
 #include "../Sim/Random.h"
@@ -34,7 +34,7 @@ namespace Doom
 void colMajorXform(short* array, int width, int height)
 {
     // RAII scratch: the transposed copy, released when the function returns.
-    auto dest = EA::Vector<short>(width * height);
+    auto dest = Vector<short>(width * height);
 
     for (int y = 0; y < height; y++)
         for (int x = 0; x < width; x++)

@@ -405,7 +405,7 @@ void drawPlanes()
         // step outside: x runs to maxx + 1, so top and bottom are each touched at
         // [minx - 1] and [maxx + 1].
         //
-        // Reached through .data() rather than operator[] because EA::Array wraps
+        // Reached through .data() rather than operator[] because Array wraps
         // std::array, and MSVC's debug STL bounds-checks std::array::operator[]
         // against the *declared* extent - it cannot know about the padding, and
         // aborts on the very access this design intends. The bytes touched are

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ea_data_structures/Structures/Array.h>
+#include "../Containers.h"
 
 // Doom::Mobj is used only by pointer here, so a forward declaration is enough - no need to pull
 // the whole mobj definition into everyone who includes the Engine.
@@ -26,7 +26,7 @@ struct CorpseQueue
 {
     static constexpr int size = 32; // BODYQUESIZE: how many corpses persist
 
-    EA::Array<Mobj*, size> bodyque = {}; // the retained corpse mobjs
+    Array<Mobj*, size> bodyque = {}; // the retained corpse mobjs
     int bodyqueslot = 0; // ever-incrementing insert counter
 };
 

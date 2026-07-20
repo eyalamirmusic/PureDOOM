@@ -2,8 +2,7 @@
 
 #include "../doomtype.h" // byte
 
-#include <ea_data_structures/Structures/Array.h>
-#include <ea_data_structures/Structures/Vector.h>
+#include "../Containers.h"
 
 namespace Doom
 {
@@ -16,7 +15,7 @@ namespace Doom
 // member (a reference-to-array). The gamma table stays in the shim (const data).
 //
 // The software renderer's framebuffers are RAII-owned here (Step 9): frame, workspace
-// and statusBar below are the EA::Vector<byte> owners of that memory. The vanilla name
+// and statusBar below are the Vector<byte> owners of that memory. The vanilla name
 // screens[] (a byte*[5] in Render/Video) stays a raw VIEW array pointing at these owners'
 // data(), because it is legitimately reseated - the eacp port swaps screens[0] to its
 // overlay-capture scratch and restores it - so it is a pointer that merely refers, kept raw
@@ -31,11 +30,12 @@ struct VideoState
     // pixels. It is plain int, not fixed_t - there is no fixed-point quantity here,
     // only pixel coordinates - so Render/Video.cpp grows it with its own int-typed
     // else-if update rather than Doom::addToBox, which is typed for a real Doom::BBox.
-    EA::Array<int, 4> dirtybox = {};
+    Array<int, 4> dirtybox = {};
 
-    EA::Vector<byte> frame; // screens[0]: the software framebuffer
-    EA::Vector<byte> workspace; // the Doom::initVideo base block sliced into screens[0..3]
-    EA::Vector<byte> statusBar; // screens[4]: the status bar back-buffer
+    Vector<byte> frame; // screens[0]: the software framebuffer
+    Vector<byte>
+        workspace; // the Doom::initVideo base block sliced into screens[0..3]
+    Vector<byte> statusBar; // screens[4]: the status bar back-buffer
 };
 
 VideoState& videoState();
