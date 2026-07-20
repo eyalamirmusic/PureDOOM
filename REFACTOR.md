@@ -144,6 +144,34 @@ repository), the
 and item 7's remaining prerequisite — the **two** CI configurations still unmeasured
 (Ubuntu's gcc/clang, and MSVC on `/W4`), before anyone reaches for `-Werror`.
 
+**The container sweep is done, and its headline is a negative result.** The
+containers were audited end to end against five questions — ranged-for, `Array` →
+`Vector`, importing the names into `namespace Doom`, `<algorithm>`/member
+functions, and `OwnedVector`. What landed: `src/DOOM/Containers.h` re-exports
+`Array`/`Vector`/`OwnedVector`/`OwningPointer`/`makeOwned` into `namespace Doom`
+across 85 files (so signatures read `Vector<T>&`); four genuinely data-driven
+`Array`s became `Vector`s, taking two live defects with them (`initSwitchList`
+bounding the *source* table with the *destination's* constant, and `A_BrainInit`
+appending with no overflow guard at all); ~30 loops became ranged-for and a
+dozen more became `fill`/`clamp`/`min`/`max`/`copy_n`/`iota`/`any_of`/`count`;
+and `sortVisSprites`' O(n²) selection sort became `std::stable_sort`, deleting
+the linked list it built for the occasion.
+
+**`OwnedVector` found no users, and that is the result rather than a gap.** The
+Step 4/9 sweeps already left ownership correct: the only remaining raw-allocation
+sites are the level pool and the host's default malloc/free. Both the level pool
+and the thinker list are **intrusive** — variable-sized blocks, addresses
+`Sim/SaveGame` serialises, and lazy mid-iteration removal — so a container is the
+wrong shape for either, and both headers already say so. The one real RAII gap
+left is `WadFile`'s destructor loop over `doom_close` handles, which wants a
+move-only handle wrapper, not an `OwnedVector` (`OwningPointer` would `delete`
+them).
+
+Most of the ~226 `Array`s were examined and **deliberately left**; CLAUDE.md's
+`Array` section now carries the table of which kinds must never move and why
+(interior pointers, `sizeof(container)`, deliberate OOB, ring cursors, slot
+identity, fixed domains). Read that before converting a fifth.
+
 **The runtime-accessor macros are done**, and the list of six this paragraph used to
 name was wrong in both directions: two of them (`ST_MAPWIDTH`/`ST_MAPTITLEX`) are
 dead in both eras and belong to the ~55 pile instead, and one that had to be

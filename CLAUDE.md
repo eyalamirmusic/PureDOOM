@@ -109,11 +109,29 @@ apparatus:
 
   It is **C++20 as of Step 2 of `REFACTOR.md`**, and there is no C left anywhere
   in the repository. **There is no flat layer left either**: `src/DOOM` holds
-  exactly two files at top level — `DOOM.h`, the public interface an embedder
+  exactly three files at top level — `DOOM.h`, the public interface an embedder
   includes (a plain C++ header in `namespace Doom` since the string refactor —
-  the `extern "C"` block is gone), and `doomtype.h`, the `byte` foundation every
-  layer including `Math/` depends on. Zero `.cpp` files. The last one,
-  `info.cpp`, became `Sim/Info.cpp`.
+  the `extern "C"` block is gone); `doomtype.h`, the `byte` foundation every
+  layer including `Math/` depends on; and `Containers.h`, the container
+  vocabulary described below. Zero `.cpp` files. The last one, `info.cpp`,
+  became `Sim/Info.cpp`.
+
+  **The containers are unqualified `Doom::` names.** `Containers.h` mirrors
+  eacp's own `<eacp/Core/Utils/Containers.h>` — it pulls in the four
+  `ea_data_structures` headers and re-exports `Array`, `Vector`, `OwnedVector`,
+  `OwningPointer` and `makeOwned` into `namespace Doom`, so a signature reads
+  `Vector<T>&`. Include it rather than the individual headers; every file that
+  used to name one of those does. It is flat because it is a foundation of the
+  same kind as `doomtype.h`, and `CMakeLists.txt` moves it off the "vanilla"
+  glob by hand so the two lists keep meaning what their names say.
+
+  Two carve-outs. **`DOOM.h` stays standard-library-only** and spells its
+  argument vector `std::vector` — an embedder should not need eacp's containers
+  to call `initGame`. And the ~16 declarations that sit at **`::` scope on
+  purpose** (the ones `EngineAccess.cpp` and the `extern "C"` block read by bare
+  name — `gammatable`, `mapnames`, `chat_macros`, `player_names`, `sprnames`,
+  `button_states`, …) are spelled `Doom::Array` / `Doom::Vector`, since the
+  using-declarations are inside the namespace and do not reach them.
 
   **The eight subdirectories *are* the engine**, all real C++ in `namespace Doom`:
 
@@ -304,7 +322,7 @@ apparatus:
     them also named two that are dead in both eras (`ST_MAPWIDTH`, `ST_MAPTITLEX`),
     classified by the interesting property and never against the prior question.
 
-  **The fixed-size C arrays are `EA::Array<T, N>` now** — 111 members across 39
+  **The fixed-size C arrays are `Array<T, N>` now** — 111 members across 39
   headers, in the state and scratch clusters. **19 are deliberately still raw**, and
   the distinction is by *struct*, not by file:
 
@@ -314,6 +332,36 @@ apparatus:
   | `Render/RenderTypes.h`'s `Patch::columnofs` | the same, one file over — and a *flexible* array, declared `[8]` but indexed to `[width]`, with the pixel data starting at `&columnofs[width]`. `SpriteFrame` and `VisPlane` in that same header are engine-composed and *are* converted |
   | `Game/PlayerTypes.h`'s 9 | `Player` is `memcpy`'d whole by `Sim/SaveGame.cpp`; `IntermissionStart`/`IntermissionPlayer` are `memcpy`'d whole to the `-statcopy` address |
   | `Game/NetTypes.h`'s `NetPacket::cmds` | packed onto the wire, checksummed through a `reinterpret_cast<unsigned*>` and byte-swapped field by field |
+
+  **Four `Array`s became `Vector`s, and the rule that picked them matters more
+  than the list.** An `Array` earns a `Vector` only when its length is *data* —
+  decided by the WAD or the map — so that the cap, the companion count and any
+  terminator all collapse into `size()`. Those four were
+  `AnimatedSurfaces::anims` (cap 32 + a `lastanim` cursor),
+  `AnimatedSurfaces::linespeciallist` (64 + `numlinespecials`),
+  `SwitchList::switchlist` (50 pairs + `numswitches` + a `-1` terminator nothing
+  read) and `EnemyAI::braintargets` (32 + `numbraintargets`). Two of the four had
+  a live defect in the shape they replaced: `initSwitchList` bounded its walk of
+  the **source** table with the **destination's** constant (41 rows against a
+  bound of 50 — only the terminator kept it in bounds), and `A_BrainInit`
+  appended with **no overflow guard at all**.
+
+  **What must not become a `Vector`, and why**, because the renderer's pools look
+  like the same shape and are not:
+
+  | Stays `Array` | Why a `Vector` breaks it |
+  |---|---|
+  | `PlaneScratch::visplanes`/`openings`, `BSPScratch::drawsegs`, `SpriteState::vissprites`, `SolidSegs::solidsegs`, `Clip::intercepts` | each hands out **interior pointers** that outlive the statement — `openings` worst of all, storing a *biased* pointer (`lastopening - start`) inside a `DrawSeg` |
+  | anything `memcpy`'d or `memset` with `sizeof(container)` | `sizeof` silently becomes the vector's own three pointers, and **no compiler warns** |
+  | `VisPlane::top`/`bottom` | the deliberate out-of-bounds sentinel writes `pad1`..`pad4` absorb |
+  | ring buffers (`events`, `itemrespawnque`, `bodyque`, `chatchars`) | head/tail are wrap cursors, not a live count |
+  | slot-indexed tables (`activeplats`, `activeceilings`, `buttonlist`) | the save game archives **by slot**; slot identity is the meaning |
+  | `StatusBarWidgets`' arrays | the STlib widgets hold `&w_arms[i]` |
+  | fixed domains (256 palette entries, `MAXPLAYERS`, 8 rotations, the trig tables) | the size is the domain, and several are type-punned |
+
+  Before converting a fifth, `grep` the owning struct for `memcpy`, `memset`,
+  `sizeof`, `reinterpret_cast` and `&…[`, and ask whether any pointer into it
+  outlives the expression.
 
   Four things that bite when converting or reading these:
 
@@ -866,6 +914,18 @@ have.
 This is what pins `r_*`, the status bar and the HUD through the rewrite, and it is
 sharp: adding 1 to the light-level start map in `R_SetViewSize` — one COLORMAP row,
 a shade — fails demo1 at tic 4 while the simulation golden sails through.
+
+**A second measurement of the same sharpness, worth knowing because it settles a
+question that is otherwise pure reasoning.** `Doom::sortVisSprites` orders the
+sprites back-to-front, and vanilla selection-sorted them with a strict `<`, so
+two sprites at *equal* scale kept the order they were added in. Whether that
+stability is load-bearing depends on whether equal fixed-point scales actually
+occur, which no amount of reading the code answers. Substituting `std::sort` for
+`std::stable_sort` moves the **frame** golden at demo2 tic 412 and demo3 tic 232
+and leaves every simulation hash untouched — so ties happen twice in three
+demos, the sort must stay stable, and the two golden families separate exactly
+as designed. If you change that function, run this experiment rather than
+trusting the diff.
 
 Two things had to be true for it to work at all, and both were already true:
 
