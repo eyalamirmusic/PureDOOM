@@ -1288,6 +1288,18 @@ found by comparing against GZDoom:
     because a target snapshots its directory's `COMPILE_OPTIONS` at creation.
     The proper fix in eacp is to scope the `add_compile_options` call the same
     way.
+11. **eacp binds the uniform buffer to both stages**, so Metal's validation layer
+    (on by default in Xcode schemes) logs an "unused binding in encoder at Buffer
+    index 16" warning for every pass whose vertex or fragment function declares no
+    uniform parameter — benign, but it is what Xcode's runtime-issues panel fills
+    up with. The emitter already computes `vertexUsesUniforms(graph)`, so gating
+    the bind on it would settle it. (Found alongside a real bug this entry used to
+    describe, since **fixed in eacp**: the packed uniform block stopped at the last
+    member's end where MSL pads `sizeof(Uniforms)` up to the widest member's
+    alignment, so a block ending off-boundary bound 4 bytes short — invisible
+    everywhere except under the validation layer, which aborted the first such
+    draw the moment demo1 entered the level. `ShaderUploadVisitor::finish` now
+    pads the block, and `GPU/shaderProgramPadsUniformBlock` pins it.)
 
 ## Code Style
 
