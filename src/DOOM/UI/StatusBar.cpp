@@ -369,24 +369,25 @@ EA::Array<unsigned char, 8> cheat_mypos_seq = {
 };
 
 // Now what?
-CheatSequence cheat_mus = {cheat_mus_seq.data(), 0};
-CheatSequence cheat_god = {cheat_god_seq.data(), 0};
-CheatSequence cheat_ammo = {cheat_ammo_seq.data(), 0};
-CheatSequence cheat_ammonokey = {cheat_ammonokey_seq.data(), 0};
-CheatSequence cheat_noclip = {cheat_noclip_seq.data(), 0};
-CheatSequence cheat_commercial_noclip = {cheat_commercial_noclip_seq.data(), 0};
+CheatSequence cheat_mus = {cheat_mus_seq.data(), nullptr};
+CheatSequence cheat_god = {cheat_god_seq.data(), nullptr};
+CheatSequence cheat_ammo = {cheat_ammo_seq.data(), nullptr};
+CheatSequence cheat_ammonokey = {cheat_ammonokey_seq.data(), nullptr};
+CheatSequence cheat_noclip = {cheat_noclip_seq.data(), nullptr};
+CheatSequence cheat_commercial_noclip = {cheat_commercial_noclip_seq.data(),
+                                         nullptr};
 
-EA::Array<CheatSequence, 7> cheat_powerup = {{cheat_powerup_seq[0].data(), 0},
-                                             {cheat_powerup_seq[1].data(), 0},
-                                             {cheat_powerup_seq[2].data(), 0},
-                                             {cheat_powerup_seq[3].data(), 0},
-                                             {cheat_powerup_seq[4].data(), 0},
-                                             {cheat_powerup_seq[5].data(), 0},
-                                             {cheat_powerup_seq[6].data(), 0}};
+EA::Array<CheatSequence, 7> cheat_powerup = {{cheat_powerup_seq[0].data(), nullptr},
+                                             {cheat_powerup_seq[1].data(), nullptr},
+                                             {cheat_powerup_seq[2].data(), nullptr},
+                                             {cheat_powerup_seq[3].data(), nullptr},
+                                             {cheat_powerup_seq[4].data(), nullptr},
+                                             {cheat_powerup_seq[5].data(), nullptr},
+                                             {cheat_powerup_seq[6].data(), nullptr}};
 
-CheatSequence cheat_choppers = {cheat_choppers_seq.data(), 0};
-CheatSequence cheat_clev = {cheat_clev_seq.data(), 0};
-CheatSequence cheat_mypos = {cheat_mypos_seq.data(), 0};
+CheatSequence cheat_choppers = {cheat_choppers_seq.data(), nullptr};
+CheatSequence cheat_clev = {cheat_clev_seq.data(), nullptr};
+CheatSequence cheat_mypos = {cheat_mypos_seq.data(), nullptr};
 
 void stopStatusBar();
 
@@ -459,8 +460,8 @@ bool statusBarResponder(Event* ev)
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
 
-                for (int i = 0; i < NUMWEAPONS; i++)
-                    bar.plyr->weaponowned[i] = true;
+                for (auto& i: bar.plyr->weaponowned)
+                    i = true;
 
                 for (int i = 0; i < NUMAMMO; i++)
                     bar.plyr->ammo[i] = bar.plyr->maxammo[i];
@@ -479,8 +480,8 @@ bool statusBarResponder(Event* ev)
                 for (int i = 0; i < NUMAMMO; i++)
                     bar.plyr->ammo[i] = bar.plyr->maxammo[i];
 
-                for (int i = 0; i < NUMCARDS; i++)
-                    bar.plyr->cards[i] = true;
+                for (bool& card: bar.plyr->cards)
+                    card = true;
 
                 bar.plyr->message = STSTR_KFAADDED;
             }

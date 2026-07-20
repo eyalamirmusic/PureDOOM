@@ -341,7 +341,7 @@ EA::Array<MenuItem, 6> MainMenu = {{1, "M_NGAME", newGame, 'n'},
                                    {1, "M_RDTHIS", readThis, 'r'},
                                    {1, "M_QUITG", quitDOOM, 'q'}};
 
-MenuDef MainDef = {main_end, 0, MainMenu.data(), drawMainMenu, 97, 64, 0};
+MenuDef MainDef = {main_end, nullptr, MainMenu.data(), drawMainMenu, 97, 64, 0};
 
 //
 // EPISODE SELECT
@@ -425,7 +425,7 @@ EA::Array<MenuItem, 8> OptionsMenuFull = {
     {1, "TXT_ARUN", changeAlwaysRun, 'r'},
     //{1,"M_DETAIL", changeDetail,'g'},  // Details do nothing?
     {2, "M_SCRNSZ", sizeDisplay, 's'},
-    {-1, "", 0},
+    {-1, "", nullptr},
     {1, "TXT_MOPT", mouseOptions, 'f'},
     {1, "M_SVOL", sound, 's'}};
 
@@ -452,7 +452,7 @@ EA::Array<MenuItem, 7> OptionsMenuNoMouse = {
     {1, "TXT_ARUN", changeAlwaysRun, 'r'},
     //{1,"M_DETAIL",  changeDetail,'g'}, // Details do nothing?
     {2, "M_SCRNSZ", sizeDisplay, 's'},
-    {-1, "", 0},
+    {-1, "", nullptr},
     {1, "M_SVOL", sound, 's'}};
 
 MenuDef OptionsNoMouseDef = {
@@ -478,7 +478,7 @@ EA::Array<MenuItem, 7> OptionsMenuNoSound = {
     {1, "TXT_ARUN", changeAlwaysRun, 'r'},
     //{1,"M_DETAIL",  changeDetail,'g'}, // Details do nothing?
     {2, "M_SCRNSZ", sizeDisplay, 's'},
-    {-1, "", 0},
+    {-1, "", nullptr},
     {1, "TXT_MOPT", mouseOptions, 'f'}};
 
 MenuDef OptionsNoSoundDef = {
@@ -503,7 +503,7 @@ EA::Array<MenuItem, 6> OptionsMenuNoSoundNoMouse = {
     {1, "TXT_ARUN", changeAlwaysRun, 'r'},
     //{1,"M_DETAIL",  changeDetail,'g'}, // Details do nothing?
     {2, "M_SCRNSZ", sizeDisplay, 's'},
-    {-1, "", 0}};
+    {-1, "", nullptr}};
 
 MenuDef OptionsNoSoundNoMouseDef = {opt_end_no_sound_no_mouse,
                                     &MainDef,
@@ -527,7 +527,7 @@ enum
 EA::Array<MenuItem, 3> MouseOptionsMenu = {
     {1, "TXT_MMOV", mouseMove, 'f'},
     {2, "M_MSENS", changeSensitivity, 'm'},
-    {-1, "", 0},
+    {-1, "", nullptr},
 };
 
 MenuDef MouseOptionsDef = {mouse_opt_end,
@@ -578,9 +578,9 @@ enum
 };
 
 EA::Array<MenuItem, 4> SoundMenuFull = {{2, "M_SFXVOL", sfxVol, 's'},
-                                        {-1, "", 0},
+                                        {-1, "", nullptr},
                                         {2, "M_MUSVOL", musicVol, 'm'},
-                                        {-1, "", 0}};
+                                        {-1, "", nullptr}};
 
 MenuDef SoundDef = {
     sound_end, &OptionsDef, SoundMenuFull.data(), drawSound, 80, 64, 0};
@@ -593,7 +593,7 @@ enum
 };
 
 EA::Array<MenuItem, 2> SoundMenuNoSFX = {{2, "M_MUSVOL", musicVol, 'm'},
-                                         {-1, "", 0}};
+                                         {-1, "", nullptr}};
 
 MenuDef SoundNoSFXDef = {
     sound_end_no_sfx, &OptionsDef, SoundMenuNoSFX.data(), drawSound, 80, 64, 0};
@@ -606,7 +606,7 @@ enum
 };
 
 EA::Array<MenuItem, 2> SoundMenuNoMusic = {{2, "M_SFXVOL", sfxVol, 's'},
-                                           {-1, "", 0}};
+                                           {-1, "", nullptr}};
 
 MenuDef SoundNoMusicDef = {
     sound_end_no_music, &OptionsDef, SoundMenuNoMusic.data(), drawSound, 80, 64, 0};
@@ -843,7 +843,7 @@ void quickSaveResponse(int ch)
     if (ch == 'y')
     {
         doSave(menuState().quickSaveSlot);
-        startSound(0, sfx_swtchx);
+        startSound(nullptr, sfx_swtchx);
     }
 }
 
@@ -853,7 +853,7 @@ void quickSave()
 
     if (!demoState().usergame)
     {
-        startSound(0, sfx_oof);
+        startSound(nullptr, sfx_oof);
         return;
     }
 
@@ -886,7 +886,7 @@ void quickLoadResponse(int ch)
     if (ch == 'y')
     {
         loadSelect(menuState().quickSaveSlot);
-        startSound(0, sfx_swtchx);
+        startSound(nullptr, sfx_swtchx);
     }
 }
 
@@ -1250,7 +1250,7 @@ void endGame(int)
 {
     if (!demoState().usergame)
     {
-        startSound(0, sfx_oof);
+        startSound(nullptr, sfx_oof);
         return;
     }
 
@@ -1293,9 +1293,9 @@ void quitResponse(int ch)
     if (!gameSession().netgame)
     {
         if (gameVersion().gamemode == commercial)
-            startSound(0, quitsounds2[(clock.gametic >> 2) & 7]);
+            startSound(nullptr, quitsounds2[(clock.gametic >> 2) & 7]);
         else
-            startSound(0, quitsounds[(clock.gametic >> 2) & 7]);
+            startSound(nullptr, quitsounds[(clock.gametic >> 2) & 7]);
         waitVBlank(105);
     }
     quitGame();
@@ -1669,7 +1669,7 @@ bool menuResponder(Event* ev)
         state.messageRoutine(ch);
 
         overlay.menuactive = false;
-        startSound(0, sfx_swtchx);
+        startSound(nullptr, sfx_swtchx);
         return true;
     }
 
@@ -1687,14 +1687,14 @@ bool menuResponder(Event* ev)
                 if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(0);
-                startSound(0, sfx_stnmov);
+                startSound(nullptr, sfx_stnmov);
                 return true;
 
             case KEY_EQUALS: // Screen size up
                 if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(1);
-                startSound(0, sfx_stnmov);
+                startSound(nullptr, sfx_stnmov);
                 return true;
 
             case KEY_F1: // Help key
@@ -1706,18 +1706,18 @@ bool menuResponder(Event* ev)
                     state.currentMenu = &ReadDef1;
 
                 state.itemOn = 0;
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 return true;
 
             case KEY_F2: // Save
                 startControlPanel();
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 saveGameMenu(0);
                 return true;
 
             case KEY_F3: // Load
                 startControlPanel();
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 loadGameMenu(0);
                 return true;
 
@@ -1725,7 +1725,7 @@ bool menuResponder(Event* ev)
                 startControlPanel();
                 state.currentMenu = &SoundDef;
                 state.itemOn = sfx_vol;
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 return true;
 
                 // case KEY_F5:            // Detail toggle
@@ -1735,31 +1735,31 @@ bool menuResponder(Event* ev)
 
             case KEY_F5: // Crosshair toggle
                 changeCrosshair(0);
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 return true;
 
             case KEY_F6: // Quicksave
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 quickSave();
                 return true;
 
             case KEY_F7: // End game
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 endGame(0);
                 return true;
 
             case KEY_F8: // Toggle messages
                 changeMessages(0);
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 return true;
 
             case KEY_F9: // Quickload
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 quickLoad();
                 return true;
 
             case KEY_F10: // Quit DOOM
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
                 quitDOOM(0);
                 return true;
 
@@ -1779,7 +1779,7 @@ bool menuResponder(Event* ev)
         if (ch == KEY_ESCAPE)
         {
             startControlPanel();
-            startSound(0, sfx_swtchn);
+            startSound(nullptr, sfx_swtchn);
             return true;
         }
         return false;
@@ -1795,7 +1795,7 @@ bool menuResponder(Event* ev)
                     state.itemOn = 0;
                 else
                     state.itemOn++;
-                startSound(0, sfx_pstop);
+                startSound(nullptr, sfx_pstop);
             } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
@@ -1806,7 +1806,7 @@ bool menuResponder(Event* ev)
                     state.itemOn = state.currentMenu->numitems - 1;
                 else
                     state.itemOn--;
-                startSound(0, sfx_pstop);
+                startSound(nullptr, sfx_pstop);
             } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
@@ -1814,7 +1814,7 @@ bool menuResponder(Event* ev)
             if (state.currentMenu->menuitems[state.itemOn].routine
                 && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
-                startSound(0, sfx_stnmov);
+                startSound(nullptr, sfx_stnmov);
                 state.currentMenu->menuitems[state.itemOn].routine(0);
             }
             return true;
@@ -1823,7 +1823,7 @@ bool menuResponder(Event* ev)
             if (state.currentMenu->menuitems[state.itemOn].routine
                 && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
-                startSound(0, sfx_stnmov);
+                startSound(nullptr, sfx_stnmov);
                 state.currentMenu->menuitems[state.itemOn].routine(1);
             }
             return true;
@@ -1837,12 +1837,12 @@ bool menuResponder(Event* ev)
                 {
                     state.currentMenu->menuitems[state.itemOn].routine(
                         1); // right arrow
-                    startSound(0, sfx_stnmov);
+                    startSound(nullptr, sfx_stnmov);
                 }
                 else
                 {
                     state.currentMenu->menuitems[state.itemOn].routine(state.itemOn);
-                    startSound(0, sfx_pistol);
+                    startSound(nullptr, sfx_pistol);
                 }
             }
             return true;
@@ -1850,7 +1850,7 @@ bool menuResponder(Event* ev)
         case KEY_ESCAPE:
             state.currentMenu->lastOn = state.itemOn;
             clearMenus();
-            startSound(0, sfx_swtchx);
+            startSound(nullptr, sfx_swtchx);
             return true;
 
         case KEY_BACKSPACE:
@@ -1859,7 +1859,7 @@ bool menuResponder(Event* ev)
             {
                 state.currentMenu = state.currentMenu->prevMenu;
                 state.itemOn = state.currentMenu->lastOn;
-                startSound(0, sfx_swtchn);
+                startSound(nullptr, sfx_swtchn);
             }
             return true;
 
@@ -1868,14 +1868,14 @@ bool menuResponder(Event* ev)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
-                    startSound(0, sfx_pstop);
+                    startSound(nullptr, sfx_pstop);
                     return true;
                 }
             for (int i = 0; i <= state.itemOn; i++)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
-                    startSound(0, sfx_pstop);
+                    startSound(nullptr, sfx_pstop);
                     return true;
                 }
             break;

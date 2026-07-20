@@ -351,7 +351,7 @@ void startHud()
 
     // create the inputbuffer widgets
     for (int i = 0; i < MAXPLAYERS; i++)
-        initIText(chat.w_inputbuffer[i], 0, 0, 0, 0, &chat.always_off);
+        initIText(chat.w_inputbuffer[i], 0, 0, nullptr, 0, &chat.always_off);
 
     state.headsupactive = true;
 }
@@ -437,9 +437,9 @@ void hudTicker()
                             msg.message_on = true;
                             msg.message_counter = HU_MSGTIMEOUT;
                             if (gameVersion().gamemode == commercial)
-                                startSound(0, sfx_radio);
+                                startSound(nullptr, sfx_radio);
                             else
-                                startSound(0, sfx_tink);
+                                startSound(nullptr, sfx_tink);
                         }
                         resetIText(chat.w_inputbuffer[i]);
                     }

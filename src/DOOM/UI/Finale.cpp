@@ -399,7 +399,7 @@ void castTicker()
         if (castorder[fin.castnum].name.empty())
             fin.castnum = 0;
         if (mobjinfo[castorder[fin.castnum].type].seesound)
-            startSound(0, mobjinfo[castorder[fin.castnum].type].seesound);
+            startSound(nullptr, mobjinfo[castorder[fin.castnum].type].seesound);
         fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
         fin.castframes = 0;
     }
@@ -481,7 +481,7 @@ void castTicker()
         }
 
         if (sfx)
-            startSound(0, sfx);
+            startSound(nullptr, sfx);
     }
 
     if (fin.castframes == 12)
@@ -544,7 +544,7 @@ bool castResponder(Event* ev)
     fin.castframes = 0;
     fin.castattacking = false;
     if (mobjinfo[castorder[fin.castnum].type].deathsound)
-        startSound(0, mobjinfo[castorder[fin.castnum].type].deathsound);
+        startSound(nullptr, mobjinfo[castorder[fin.castnum].type].deathsound);
 
     return true;
 }
@@ -686,7 +686,7 @@ void bunnyScroll()
         stage = 6;
     if (stage > fin.laststage)
     {
-        startSound(0, sfx_pistol);
+        startSound(nullptr, sfx_pistol);
         fin.laststage = stage;
     }
 

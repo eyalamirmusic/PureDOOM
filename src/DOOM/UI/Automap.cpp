@@ -164,7 +164,7 @@ EA::Array<MapLine, 3> triangle_guy = {
 // takes the view explicitly. The "iddt" cheat below stays a file-local static.
 
 static EA::Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
-static CheatSequence cheat_amap = {cheat_amap_seq.data(), 0};
+static CheatSequence cheat_amap = {cheat_amap_seq.data(), nullptr};
 
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so
