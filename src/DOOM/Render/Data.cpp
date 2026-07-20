@@ -28,6 +28,8 @@
 #include "../Host/System.h"
 #include "../Game/DemoState.h"
 #include "../Sim/Level.h"
+
+#include <numeric>
 namespace Doom
 {
 // Each texture is composed of one or more patches,
@@ -511,8 +513,11 @@ void initTextures()
     gd.texturetranslation.resize(gd.numtextures + 1);
     texturetranslation = gd.texturetranslation.data();
 
-    for (i = 0; i < gd.numtextures; i++)
-        texturetranslation[i] = i;
+    // Only numtextures entries: the vector is sized one larger, and vanilla leaves
+    // that spare slot alone.
+    std::iota(gd.texturetranslation.begin(),
+              gd.texturetranslation.begin() + gd.numtextures,
+              0);
 }
 
 //
@@ -532,8 +537,8 @@ void initFlats()
     gd.flattranslation.resize(gd.numflats + 1);
     flattranslation = gd.flattranslation.data();
 
-    for (int i = 0; i < gd.numflats; i++)
-        flattranslation[i] = i;
+    std::iota(
+        gd.flattranslation.begin(), gd.flattranslation.begin() + gd.numflats, 0);
 }
 
 //

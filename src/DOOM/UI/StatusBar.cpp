@@ -1105,8 +1105,7 @@ void initStatusBarData()
 
     face.st_oldhealth = -1;
 
-    for (int i = 0; i < NUMWEAPONS; i++)
-        face.oldweaponsowned[i] = bar.plyr->weaponowned[i];
+    std::copy_n(bar.plyr->weaponowned, NUMWEAPONS, face.oldweaponsowned.begin());
 
     bar.keyboxes.fill(-1);
 

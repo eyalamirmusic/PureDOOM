@@ -848,8 +848,7 @@ void playerReborn(int player)
     p->weaponowned[wp_pistol] = true;
     p->ammo[am_clip] = 50;
 
-    for (int i = 0; i < NUMAMMO; i++)
-        p->maxammo[i] = ammo.maxammo[i];
+    std::copy_n(ammo.maxammo.begin(), NUMAMMO, p->maxammo);
 }
 
 //
