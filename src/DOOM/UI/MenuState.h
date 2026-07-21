@@ -21,9 +21,10 @@ struct MenuDef;
 // reference-to-array bindings (char(&)[24]) would fail to compile if the two drifted, so no further
 // care was needed. Step 9 strand (a) retired every one of those bindings, which silently removed
 // the compile-time link the claim rested on - leaving two 24s with nothing tying them together, and
-// a comment asserting a guarantee that no longer existed. See REFACTOR.md item 6's
-// duplicate-constant entry; this is the shape where a *later* refactor deletes the mechanism an
-// *earlier* comment relied on, and nothing points at the comment.
+// a comment asserting a guarantee that no longer existed. See CLAUDE.md's duplicate-constant rule
+// ("the guard and the array bound are not the same token"); this is the shape where a *later*
+// refactor deletes the mechanism an *earlier* comment relied on, and nothing points at the comment.
+// The macro sweep found two more of it - HU_FONTSIZE and ST_NUMFACES - both now static_asserts.
 inline constexpr int menuSaveStringSize = 24;
 
 // The menu's transient interaction state - what UI/Menu keeps as the user navigates: which menu and

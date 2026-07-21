@@ -114,18 +114,13 @@ constexpr int toggledFlags(int bits, E... flags)
 }
 } // namespace Doom
 
-#define DOOM_MAXCHAR ((char) 0x7f)
 #define DOOM_MAXSHORT ((short) 0x7fff)
 
 // Max pos 32-bit int.
 #define DOOM_MAXINT ((int) 0x7fffffff)
-#define DOOM_MAXLONG ((long) 0x7fffffff)
-#define DOOM_MINCHAR ((char) 0x80)
-#define DOOM_MINSHORT ((short) 0x8000)
 
 // Max negative 32-bit integer.
 #define DOOM_MININT ((int) 0x80000000)
-#define DOOM_MINLONG ((long) 0x80000000)
 
 //-----------------------------------------------------------------------------
 //

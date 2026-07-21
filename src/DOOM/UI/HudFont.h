@@ -21,10 +21,9 @@ namespace Doom
 // it every tic.
 struct HudFont
 {
-    // HU_FONTSIZE in hu_stuff.h: '_' - '!' + 1. Kept as a local constant so this clean header
-    // needn't drag the vanilla hu_stuff.h in; the reference-to-array binding in the shim self-checks
-    // it against the macro - a drift won't compile (the same guard StatusBarGraphics uses for
-    // ST_NUMFACES).
+    // '_' - '!' + 1, the same number UI/Hud.h spells HU_FONTSIZE. Kept as a local constant so this
+    // header needn't include Hud.h; a static_assert in UI/Hud.cpp ties the two, which is what the
+    // lookups in UI/Finale, UI/Menu and Game/Config bound themselves with.
     static constexpr int fontSize = '_' - '!' + 1;
 
     Array<Patch*, fontSize> hu_font = {}; // the cached '!'..'_' glyph patches

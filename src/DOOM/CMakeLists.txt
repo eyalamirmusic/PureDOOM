@@ -96,9 +96,9 @@ if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
     #                compared against `true` and `false` - has been fixed at the
     #                source rather than silenced here.
     #
-    # Raising the bar is a separate, deliberate piece of work (REFACTOR.md item
-    # 7): turn these back on together with -Wconversion and -Wshadow on the GNU
-    # side, and fix what all of them find.
+    # Raising the bar is a separate, deliberate piece of work (the -Werror item
+    # in REFACTOR.md's "What is left"): turn these back on together with
+    # -Wconversion and -Wshadow on the GNU side, and fix what all of them find.
     set(DOOM_WARNINGS_ON /W4 /wd4244 /wd4267 /wd4459 /wd4457 /wd4702 /wd4805)
 else ()
     set(DOOM_WARNINGS_OFF -w)
@@ -108,7 +108,7 @@ else ()
     # default), which is how 15 long->int narrowings surfaced there while every
     # Ninja build sat at zero. Pinning it here makes the two generators agree on
     # what zero means. Clang-only: GCC's nearest spelling is -Wconversion, which
-    # is the wider, deliberate decision REFACTOR.md item 7 reserves.
+    # is the wider, deliberate decision that item reserves.
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         list(APPEND DOOM_WARNINGS_ON -Wshorten-64-to-32)
     endif ()

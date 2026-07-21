@@ -6,6 +6,11 @@
 // does happen to do for MSVC-style drivers. Testing for it therefore worked here
 // only by way of CMake's default flags: compile this engine any other way and
 // every Windows build silently took the DOOM_LINUX branch.
+//
+// DOOM_LINUX is defined and never tested - the two branches that carry code are
+// DOOM_WIN32 and DOOM_APPLE. It stays anyway, unlike the dead constants the macro
+// sweep deleted: it is one of three names for the same question, and dropping the
+// fallback would leave an `#else` that identifies no platform at all.
 #if defined(_WIN32)
 #define DOOM_WIN32
 #elif defined(__APPLE__)

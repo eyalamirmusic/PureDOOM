@@ -23,10 +23,9 @@ Three goals:
    simulation is exactly reproducible, and the tests exist to keep it that way.
 
 **The C++ refactor is finished.** `REFACTOR.md` records the end state, the short
-list of what remains (audio, ~55 deliberately-dead macros, two unmeasured
-toolchains before `-Werror`), the preserved 1993 defects, and the traps the work
-turned up. Read it before a large change; read this file for how the code works
-today.
+list of what remains (audio, and two unmeasured toolchains before `-Werror`), the
+preserved 1993 defects, and the traps the work turned up. Read it before a large
+change; read this file for how the code works today.
 
 ## The four rules that matter most
 
@@ -315,13 +314,31 @@ which is wider than "a macro with a `constexpr` twin". `Sim/Mobj.cpp` bounded an
 array sized `MAX_DM_STARTS` with a bare literal `10` — no second spelling existed,
 so no grep for duplicate constants could have found it.
 
-The constant *macros* are essentially closed (629 → 309 across `src/DOOM`, of which
-199 is `Game/StringsFrench.h`, which no build compiles). What remains is
-deliberate: the ~55 dead-in-both-eras macros (see `REFACTOR.md` — **do not convert
-them**), the string families that cannot leave the preprocessor because
-adjacent-literal concatenation happens at translation phase 6 (`PRESSKEY`, `DOSY`,
-`DEVDATA`, `DEVMAPS`), and the feature toggles read by `#ifdef` (`RANGECHECK`,
-`Host/Platform.h`'s three).
+The constant *macros* are closed (629 → 240 across `src/DOOM`, of which 199 is
+`Game/StringsFrench.h`, which no build compiles — so 41 in everything that
+compiles). What remains is deliberate: the string families that cannot leave the
+preprocessor because adjacent-literal concatenation happens at translation phase 6
+(`PRESSKEY`, `DOSY`, `DEVDATA`, `DEVMAPS`), and the feature toggles read by
+`#ifdef` (`RANGECHECK`, `Host/Platform.h`'s three, and the three `_CRT_*`/
+`_WINSOCK_*` toggles that MSVC's own headers read — those three *look* unused to
+any grep and are not).
+
+**The dead-in-both-eras macros are gone** — 62 of them, deleted rather than
+converted, which was always the choice on offer: converting one produces a
+`[[maybe_unused]] constexpr`, an attribute whose only job is to silence the
+diagnostic saying the thing is dead. Two things that sweep taught, both general:
+
+- **The dead set is a fixed point, not one pass.** `ST_MAPWIDTH`'s only mention
+  was inside `ST_MAPTITLEX`'s body, and `ST_MAPTITLEX` was itself dead; a second
+  round found it. Iterate until a round adds nothing.
+- **Deleting dead code can delete a live check with it.** `ST_NUMFACES` held the
+  face count a third time, and `StatusBarGraphics.h` claimed a compile-time check
+  against it — but that check had been a reference-to-array binding the alias sweep
+  retired, silently, months earlier. `UI/Hud.h`'s `HU_FONTSIZE` against
+  `HudFont::fontSize` was the same shape. Both are now `static_assert`s at
+  `UI/StatusBar.cpp` and `UI/Hud.cpp`. When a comment claims a guard, check the
+  guard is still there before trusting it — and prefer the `static_assert`, which
+  cannot be retired by accident.
 
 **A `constexpr` is implicitly parenthesized and several vanilla macro bodies are
 not** (`PLAYERRADIUS 16 * FRACUNIT`), so equivalence is a fact to establish per

@@ -15,11 +15,11 @@ namespace Doom
 // f_x/f_y/f_w/f_h, the player/thing shapes, followplayer/grid/cheating). This is the rest: the
 // pan/zoom increments and limits, the level's map bounds, the saved window for resize recovery, the
 // follower's old location, the frame->map scale, the placed marks, and the open/closed flag. None
-// is read by any other file. (Named AutomapView, not AutomapState, because StatusBarMode used to
-// carry a namespace-scope enum value AutomapState that would have been ambiguous with a
-// Doom::AutomapState under `using namespace Doom`. StatusBarMode is an `enum class` now, so its
-// case is spelled StatusBarMode::AutomapState and the clash is gone; the name here is kept only
-// because nothing gains from renaming it.)
+// is read by any other file. (Named AutomapView, not AutomapState, because a StatusBarMode enum in
+// UI/StatusBarTypes.h used to carry a namespace-scope value AutomapState that would have been
+// ambiguous with a Doom::AutomapState under `using namespace Doom`. Scoping the enum ended the
+// clash, and the enum itself has since been deleted as dead; the name here is kept only because
+// nothing gains from renaming it.)
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5). The vanilla names
 // were references onto these members (the arrays as references-to-array) until the file-local-alias

@@ -75,11 +75,6 @@ extern Doom::Array<std::string_view, 45> mapnames;
 // functions now (hudTitle/hudTitle2/hudTitleY/hudInputY, below the name tables
 // they read) - their bodies call runtime accessors, so no constexpr was ever
 // available to them, but nothing about them wanted the preprocessor either.
-// HU_TITLEHEIGHT/HU_INPUTWIDTH/HU_INPUTHEIGHT stay macros: they are dead, and dead
-// in 1993 too, and belong to the ~55 REFACTOR.md item 6 deliberately leaves alone.
-#define HU_TITLEHEIGHT 1
-#define HU_INPUTWIDTH 64
-#define HU_INPUTHEIGHT 1
 
 namespace Doom
 {
@@ -88,6 +83,18 @@ constexpr int HU_TITLEX = 0;
 constexpr char HU_INPUTTOGGLE = 't';
 constexpr int HU_INPUTX = HU_MSGX;
 constexpr int QUEUESIZE = 128;
+
+// HudFont sizes its glyph array with its own fontSize, and UI/Finale, UI/Menu and
+// Game/Config bound their glyph lookups with HU_FONTSIZE - two spellings of one
+// number across a subsystem boundary, which is what this project answers with a
+// static_assert rather than a third spelling or a comment. It replaces a guard the
+// code used to get for free: while the vanilla names were references-to-array
+// (`Array<Patch*, HU_FONTSIZE>& hu_font = hudFont().hu_font;`) the binding itself
+// would not compile if the two disagreed. The file-local-alias sweep retired those
+// bindings and took the check with it, silently - HudFont.h and this file both went
+// on claiming it for months.
+static_assert(HudFont::fontSize == HU_FONTSIZE,
+              "the glyph array's size and the lookups' bound must stay one number");
 
 // The HUD's residual state (the player, the level-title line, the active flag) is a Doom::HudState
 // owned by the Engine (HudState.h); the heads-up chat state is a Doom::HudChat (HudChat.h); the

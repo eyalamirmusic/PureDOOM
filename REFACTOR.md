@@ -83,14 +83,7 @@ has the working detail.
    engine side is built: sound is a pull model at `DOOM_SAMPLERATE`, music a
    140 Hz push. See `CLAUDE.md`'s "What the engine expects of its host".
 
-2. **The ~55 dead-in-both-eras macros.** Defined and unused in this lineage *and*
-   at 110ddbe. Deleting them is a judgement call reserved for a human. Do not
-   convert them: a sweep once converted ten and every one came out as
-   `[[maybe_unused]] constexpr`, an attribute whose only job is to silence the
-   diagnostic saying the thing is unused — which is the signal it should not have
-   been converted. All ten were reverted.
-
-3. **Two unmeasured toolchains, and then `-Werror`.** The engine builds with zero
+2. **Two unmeasured toolchains, and then `-Werror`.** The engine builds with zero
    warnings on Apple Clang (`Debug` and `Release`), real GCC 16 (`Release`), and
    Windows arm64 under both clang-cl and MSVC. Ubuntu's gcc/clang and MSVC on
    `/W4` are the remainder. CI prints a per-configuration warning count and fails
@@ -103,16 +96,34 @@ has the working detail.
    corresponding to a GCC/Clang flag this project has deliberately not enabled;
    the reasoning is written out at the flags in `src/DOOM/CMakeLists.txt`.
 
-4. **Two dead enums.** `StatusBarMode` and `ChatState` are declared and never
-   used. Deletion is a human's call, per item 2's rule.
+   One correction to what this item used to say: **CI does not measure this
+   branch.** The workflow triggers on pushes to `master` and PRs into it, and the
+   refactor branch is a long way ahead of `master`, so Ubuntu gcc and clang have
+   never seen this code at all. "They measure themselves on the next push" was
+   true of the mechanism and false of the situation. The measurement is a
+   deliberate act someone still has to take — a branch trigger and a push, or a
+   local container.
 
-The intermission's frame golden — item 5 until now — is recorded.
-`Tests/Goldens/intermission.frames` pins 401 tics of the real E1M1 → scoreboard →
-E1M2 transition, and every screen a demo never reaches now has one. It is
-compiler-independent like the rest (Apple Clang `Debug` and `Release`, GCC 16
-`Release`), reproducible across runs, and sharp: moving `SP_STATSX` by one pixel
-fails it and nothing else in the 99-test suite. `CLAUDE.md` has the working detail,
-including why the script spends 2,500 idle level tics before the exit.
+That is the whole list. The three items that used to sit here are closed:
+
+- **The intermission's frame golden** (was item 5). `Tests/Goldens/intermission.frames`
+  pins 401 tics of the real E1M1 → scoreboard → E1M2 transition, and every screen a
+  demo never reaches now has one. Compiler-independent like the rest, reproducible
+  across runs, and sharp: moving `SP_STATSX` by one pixel fails it and nothing else
+  in the 99-test suite.
+
+- **The dead-in-both-eras macros** (was item 2), deleted — 62 at the fixed point,
+  each verified unreferenced in this lineage *and* in the 127-file tree at 110ddbe
+  before it went. Deleting rather than converting was always the right half of that
+  choice; what the item could not say in advance is that the sweep would find two
+  live cross-boundary checks resting on dead code (see `CLAUDE.md`, and the
+  `static_assert`s now in `UI/StatusBar.cpp` and `UI/Hud.cpp`). Three macros that
+  look identically dead stay: `_CRT_SECURE_NO_WARNINGS`, `_CRT_NONSTDC_NO_DEPRECATE`
+  and `_WINSOCK_DEPRECATED_NO_WARNINGS` are read by MSVC's own headers, so "nothing
+  in this repository mentions it" is not the test for them.
+
+- **The two dead enums** (was item 4). `StatusBarMode` and `ChatState` are gone,
+  with the 1993 debris that surrounded them in `UI/StatusBarTypes.h`.
 
 ## Preserved defects
 
@@ -162,6 +173,25 @@ transferable they are.
   — a bool cast to a state. It compiled with zero warnings and hung the playsim in
   an infinite `setMobjState` loop. An explicit cast is exactly what silences the
   type system, so the cast you added for safety is the one that hides this.
+
+- **A dead-code set is a fixed point, not one pass, and a comment counts as a
+  mention but not as a use.** The macro sweep made both mistakes in one afternoon.
+  `ST_MAPWIDTH` looked live because `ST_MAPTITLEX`'s body named it, and
+  `ST_MAPTITLEX` was itself dead — a second round found it. Then four more
+  (`CENTERY`, `HU_TITLEHEIGHT`, `HU_INPUTWIDTH`, `HU_INPUTHEIGHT`) survived the
+  whole sweep because each had a comment beside it *explaining that it was dead*,
+  and the search counted that sentence as a use. Strip comments, then iterate to a
+  fixed point.
+
+- **Deleting dead code can delete a live check with it.** `ST_NUMFACES` was dead,
+  but `StatusBarGraphics.h` claimed a compile-time check against it — a claim that
+  had been false since the alias sweep retired the reference-to-array bindings that
+  once provided it. `HU_FONTSIZE` against `HudFont::fontSize` was the same, and
+  `MenuState.h` had already recorded a third instance of exactly this shape without
+  anyone noticing it was a *category*. Before deleting something a comment points
+  at, check whether the comment describes a guarantee — and if it does, check the
+  guarantee still exists. A `static_assert` cannot be retired by accident; a
+  binding that happens to typecheck can.
 
 - **`git grep -E` and BSD `sed` accept `\b` and never match it.** A sweep run
   through either silently does nothing and reports success. Use `perl` or GNU

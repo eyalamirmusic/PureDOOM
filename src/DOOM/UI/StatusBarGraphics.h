@@ -24,8 +24,9 @@ namespace Doom
 // so this is live frame-golden-covered.
 struct StatusBarGraphics
 {
-    // ST_NUMFACES in UI/StatusBar: (straight 3 + turn 2 + special 3) painfaces 5 + 2 extra. The
-    // reference-to-array binding there self-checks this against the macro - a drift won't compile.
+    // (straight 3 + turn 2 + special 3) painfaces 5 + 2 extra - the face count, spelled here
+    // because this header does not include UI/StatusBar's constants. A static_assert there ties
+    // it to ST_DEADFACE + 1, the highest index the animation writes.
     static constexpr int numFaces = (3 + 2 + 3) * 5 + 2;
 
     Patch* sbar = nullptr; // main bar, left half

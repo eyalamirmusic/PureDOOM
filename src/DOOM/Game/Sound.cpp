@@ -43,31 +43,6 @@
 #include "../Render/Main.h"
 #include "../Sim/Random.h"
 
-// These six are dead, and dead in 1993 too - only their own #define, here and in
-// vanilla's s_sound.c alike. They stay macros deliberately: REFACTOR.md item 6
-// leaves the ~55 dead-in-both-eras macros in place, because converting one to a
-// constexpr dresses dead code as live, and the [[maybe_unused]] it then needs is
-// an annotation whose only job is to silence the warning that says it is dead.
-// Deleting them is the separate judgement call, still unclaimed.
-//
-// NORM_VOLUME is the sharpest of them: snd_MaxVolume is not a symbol anywhere in
-// this engine or 1993's, so the macro has never been a valid expression - only a
-// name nothing ever expanded. It could not be transcribed at all without
-// inventing a value, which is the MAPBMASK signal (a constant that has to be
-// rewritten to compile has not been evaluated in years).
-#define S_MAX_VOLUME 127
-
-// Adjustable by menu.
-#define NORM_VOLUME snd_MaxVolume
-
-#define S_PITCH_PERTURB 1
-
-// percent attenuation from front to back
-#define S_IFRACVOL 30
-
-#define NA 0
-#define S_NUMCHANNELS 2
-
 // The snd_*Device selectors that were externed here were always dead - no definition, no
 // reader - and are dropped (with their doomstat.h declarations), not moved.
 

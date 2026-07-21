@@ -30,11 +30,13 @@ namespace Doom
 // rewrite and vanilla st_stuff.c: veryfirsttime (the one-time ST_initData gate -
 // ST_Start already runs unconditionally), st_clock (a tic counter the face
 // animation never reads), st_gamestate (automap-vs-first-person, set by the
-// responder and initData and read nowhere), st_chatstate (set once to
+// responder and initData and read nowhere), st_chatstate (set once to a
 // StartChatState and never advanced or read), st_cursoron (the chat cursor flag,
 // set once and never drawn from), and the whole three-member chat-popup chain
 // below. Verified against the source in this repository's history; deleted rather
-// than carried, as no read was lost.
+// than carried, as no read was lost. The two enums those middle members were
+// typed by - StatusBarMode and ChatState - outlived them as declarations nothing
+// held, and have since been deleted for the same reason.
 //
 // That chain is worth recording, because it is why one sweep is not enough. The
 // status bar's chat popup was st_msgcounter -> st_chat -> st_oldchat: updateWidgets

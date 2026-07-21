@@ -19,7 +19,7 @@ using fixed_t = Doom::Fixed;
 // than from a fresh 1 << 16, so there is one number here and not two.
 //
 // FRACBITS used to sit beside it and is retired: it was a thirteenth instance of
-// the duplicate-constant category REFACTOR.md item 6 tabulates - Fixed::fracBits
+// the duplicate-constant category CLAUDE.md records - Fixed::fracBits
 // and Doom::fracBits already existed, same value, same meaning. It read as
 // harmless because a shift count cannot overflow an array, but two sites had
 // already drifted into using BOTH spellings inside one expression

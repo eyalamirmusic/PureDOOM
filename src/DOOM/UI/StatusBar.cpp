@@ -71,121 +71,12 @@
 
 #include <algorithm>
 
-// mapnames (hu_stuff) and doom_flags are other subsystems' globals this file reads.
-extern Doom::Array<std::string_view, 45> mapnames;
+// doom_flags is another subsystem's global this file reads.
 extern int doom_flags;
 
 //
 // STATUS BAR DATA
 //
-
-// N/256*100% probability
-//  that the normal face state will change
-#define ST_FACEPROBABILITY 96
-
-// For Responder
-#define ST_TOGGLECHAT KEY_ENTER
-
-// Location of status bar
-#define ST_X2 104
-
-#define ST_FY 169
-
-#define ST_NUMEXTRAFACES 2
-
-#define ST_NUMFACES (ST_FACESTRIDE * ST_NUMPAINFACES + ST_NUMEXTRAFACES)
-
-#define ST_OUCHCOUNT (1 * TICRATE)
-
-// Location and size of statistics,
-// justified according to widget type.
-// Problem is, within which space? STbar? Screen?
-// Note: this could be read in by a lump.
-//       Problem is, is the stuff rendered
-//       into a buffer,
-//       or into the frame buffer?
-
-// HEALTH number pos.
-#define ST_HEALTHWIDTH 3
-
-// ARMOR number pos.
-#define ST_ARMORWIDTH 3
-
-// Key icon positions.
-#define ST_KEY0WIDTH 8
-#define ST_KEY0HEIGHT 5
-#define ST_KEY1WIDTH ST_KEY0WIDTH
-#define ST_KEY2WIDTH ST_KEY0WIDTH
-
-// Ammunition counter.
-#define ST_AMMO0HEIGHT 6
-
-// Indicate maximum ammunition.
-// Only needed because backpack exists.
-#define ST_MAXAMMO0HEIGHT 5
-
-// pistol
-#define ST_WEAPON0X 110
-#define ST_WEAPON0Y 172
-
-// shotgun
-#define ST_WEAPON1X 122
-#define ST_WEAPON1Y 172
-
-// chain gun
-#define ST_WEAPON2X 134
-#define ST_WEAPON2Y 172
-
-// missile launcher
-#define ST_WEAPON3X 110
-#define ST_WEAPON3Y 181
-
-// plasma gun
-#define ST_WEAPON4X 122
-#define ST_WEAPON4Y 181
-
-// bfg
-#define ST_WEAPON5X 134
-#define ST_WEAPON5Y 181
-
-// WPNS title
-#define ST_WPNSX 109
-#define ST_WPNSY 191
-
-// DETH title
-#define ST_DETHX 109
-#define ST_DETHY 191
-
-//Incoming messages window location
-#define ST_MSGTEXTX 0
-#define ST_MSGTEXTY 0
-// Or shall I say, in lines?
-#define ST_MSGHEIGHT 1
-
-#define ST_OUTTEXTX 0
-#define ST_OUTTEXTY 6
-
-// Width, in characters again.
-#define ST_OUTWIDTH 52
-// Height, in lines.
-#define ST_OUTHEIGHT 1
-
-// These two stay macros, and REFACTOR.md item 6 had them filed wrongly. They were
-// listed among the six "object-like macros whose bodies call a runtime accessor and
-// therefore want to be inline functions" - true of the body, but beside the point:
-// both are dead here *and* dead at 110ddbe (defined, never used, in either era), so
-// they belong to the ~55 dead-in-both-eras macros that item deliberately leaves in
-// place. Converting them would dress dead code as live, which is the exact mistake
-// that had ten [[maybe_unused]] constexprs reverted. The live members of that list
-// of six are UI/Hud's three and Game/Game's MAXPLMOVE, and those are functions now.
-#define ST_MAPWIDTH                                                                 \
-    (doom_strlen(mapnames[(gameSession().gameepisode - 1) * 9                       \
-                          + (gameSession().gamemap - 1)]))
-
-#define ST_MAPTITLEX (SCREENWIDTH - ST_MAPWIDTH * ST_CHATFONTWIDTH)
-
-#define ST_MAPTITLEY 0
-#define ST_MAPHEIGHT 1
 
 namespace Doom
 {
@@ -219,6 +110,18 @@ constexpr int ST_EVILGRINOFFSET = ST_OUCHOFFSET + 1;
 constexpr int ST_RAMPAGEOFFSET = ST_EVILGRINOFFSET + 1;
 constexpr int ST_GODFACE = ST_NUMPAINFACES * ST_FACESTRIDE;
 constexpr int ST_DEADFACE = ST_GODFACE + 1;
+
+// ST_DEADFACE is the highest index the face animation ever writes, and
+// StatusBarGraphics sizes its patch array with its own numFaces, spelled out as
+// (3 + 2 + 3) * 5 + 2 because that header deliberately does not include this file's
+// constants. Two spellings of one number across a subsystem boundary, so they are
+// tied with a static_assert - the same answer SAVESTRINGSIZE == menuSaveStringSize
+// gets. A dead ST_NUMFACES macro used to sit here holding the same arithmetic a
+// third time; deleting it is what made this check the only one, and StatusBarGraphics.h
+// had been claiming a compile-time check that a retired reference-to-array binding
+// used to provide.
+static_assert(StatusBarGraphics::numFaces == ST_DEADFACE + 1,
+              "the face patch array must hold every index the animation writes");
 
 constexpr int ST_FACESX = 143;
 constexpr int ST_FACESY = 168;

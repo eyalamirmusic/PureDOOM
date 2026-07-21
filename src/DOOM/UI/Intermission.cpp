@@ -103,19 +103,8 @@ constexpr int DM_VICTIMSY = 50;
 
 constexpr int FB = 0;
 
-// States for single-player
-#define SP_KILLS 0
-#define SP_ITEMS 2
-#define SP_SECRET 4
-#define SP_FRAGS 6
-#define SP_TIME 8
-#define SP_PAR ST_TIME
-
-#define SP_PAUSE 1
-
 // in seconds
 constexpr int SHOWNEXTLOCDELAY = 4;
-//#define SHOWLASTLOCDELAY        SHOWNEXTLOCDELAY
 
 enum class AnimEnum
 {

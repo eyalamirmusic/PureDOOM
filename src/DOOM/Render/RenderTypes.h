@@ -270,8 +270,8 @@ struct VisPlane
 //
 // Converting them to Array kept that true, because Array holds a single std::array and
 // nothing else - but that is an *implementation fact about a dependency*, not a language
-// guarantee, and REFACTOR.md item 8 explicitly says it should be re-checked rather than
-// remembered before anything is relied on. This is the one place in the engine that relies on it,
+// guarantee, and CLAUDE.md explicitly says it should be re-checked rather than remembered
+// before anything is relied on. This is the one place in the engine that relies on it,
 // so it is checked here, at compile time, instead of being remembered:
 static_assert(
     sizeof(Array<byte, SCREENWIDTH>) == SCREENWIDTH * sizeof(byte),
