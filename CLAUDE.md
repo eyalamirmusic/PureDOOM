@@ -611,7 +611,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-98 tests, roughly thirty seconds. **Run it before and after anything you change in
+99 tests, roughly thirty-five seconds. **Run it before and after anything you change in
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -629,7 +629,7 @@ not.
 | `Sim/LevelTests.cpp` | SimTests | the geometry-view invariant after a load |
 | `Sim/WadTests.cpp` | SimTests | all 1,264 lumps against `doom1.lumps` |
 | `Sim/MenuTests.cpp` `Sim/AutomapTests.cpp` `Sim/FinaleTests.cpp` | SimTests | the three screens no demo reaches — plus, in `AutomapTests`, the automap's vector shape tables, which its *frame* golden cannot reach (they are drawn only under IDDT) |
-| `Sim/IntermissionTests.cpp` | SimTests | the fourth screen: the real E1M1 → scoreboard → E1M2 transition |
+| `Sim/IntermissionTests.cpp` | SimTests | the fourth screen: the real E1M1 → scoreboard → E1M2 transition, its state machine and its frame golden |
 | `Sim/ScenarioTests.cpp` | SimTests | place a mobj, move it, assert |
 | `Sim/SaveGameTests.cpp` | SimTests | the save/load round trip, and `readFile`'s owner |
 | `Sim/OwnershipTests.cpp` | SimTests | that destroying an `Engine` gives the memory back |
@@ -732,20 +732,38 @@ The four screens a demo never reaches each have their own harness:
   `startFinale` after loading E1M8. Hashes the text crawl, the stage-transition wipe
   and the settled screen. The cast call and bunny scroll are DOOM II / episode-3
   only, so the test *asserts* the game mode is shareware.
-- **The intermission** (`Tests/Sim/IntermissionTests.cpp`) — unlike the other three
-  it needs no direct entry-point call: `Doom::exitLevel()` is the real thing, so it
-  drives the genuine E1M1 → scoreboard → E1M2 transition and asserts the state
-  machine. Its first sanitizer run caught a real defect: the intermission's last tic
-  draws *after* `endIntermission()` has run, so `drawEL` read an `lnames` the unload
-  had just cleared. Vanilla has the identical call order and survived it because
-  `WI_unloadData` was `Z_ChangeTag(PU_CACHE)`, which left the memory readable. Fixed
-  at `unloadIntermissionData`, and pinned twice. **No frame golden yet.**
+- **The intermission** (`intermission.frames`, via `Tests/IntermissionReplay.h`) —
+  unlike the other three it needs no direct entry-point call: `Doom::exitLevel()` is
+  the real thing, so one script drives the genuine E1M1 → scoreboard → E1M2
+  transition and **two tests read it differently** — `Sim/intermission` asserts the
+  state machine and discards the frames, `Sim/intermissionFrames` holds them against
+  the golden. That split is deliberate: a transition that stops happening is a
+  different bug from a scoreboard that draws wrong, and only the second needs a
+  golden to fail. The melts either side are warmed out unhashed, as the finale's
+  entry wipe is; the 401 hashed tics are `drawIntermission`'s own output, including
+  the last one, which draws *after* `endIntermission()` has unloaded.
+
+  That last tic is where its first sanitizer run caught a real defect: `drawEL` read
+  an `lnames` the unload had just cleared. Vanilla has the identical call order and
+  survived it because `WI_unloadData` was `Z_ChangeTag(PU_CACHE)`, which left the
+  memory readable. Fixed at `unloadIntermissionData`, and pinned twice.
+
+  **The level clock is the only stat this harness can make non-zero**, and it is why
+  the script spends 2,500 idle level tics before the exit. The player stands at
+  E1M1's start, so kills, items and secrets all finish at 0 and their count-ups run
+  without visibly rolling; the clock does not care what the player did. At 71 seconds
+  against E1M1's 0:30 par, `sp_state` 8 counts both up three seconds a tic and
+  `drawTime` draws a minutes digit. Ten tics — what the state test used before the
+  golden existed — left the whole screen static but par, at 17 distinct frames out of
+  401 rather than 30.
 
 Each was demonstrated **sharp and non-redundant** when recorded: a one-palette-index
-change to `WALLCOLORS` fails only `Sim/automap`, and `TEXTSPEED` 3→4 fails only
-`Sim/finale`, with the demo goldens green through both. That matters — a golden
-recorded *after* a rewrite pins whatever the rewrite did, and a golden that no
-plausible change would fail is worse than none, because it reads as coverage.
+change to `WALLCOLORS` fails only `Sim/automap`, `TEXTSPEED` 3→4 fails only
+`Sim/finale`, and moving `SP_STATSX` — the stats column's left edge — by one pixel
+fails only `Sim/intermissionFrames`, each with the demo goldens green through it.
+That matters — a golden recorded *after* a rewrite pins whatever the rewrite did, and
+a golden that no plausible change would fail is worse than none, because it reads as
+coverage.
 
 The `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` fast loop has its own blind spot: it never
 compiles `examples/EACP`, and `EngineAccess.cpp` includes engine headers directly, so

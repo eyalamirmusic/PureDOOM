@@ -6,10 +6,10 @@
 
 // UI/Intermission.cpp is the between-levels scoreboard - the "Finished!" stat
 // count, the you-are-here episode map, and the hidden NoState countdown that
-// hands over to the next level - and it is the one screen with no coverage of
+// hands over to the next level - and it was the one screen with no coverage of
 // any kind: an attract-mode demo replays a slice of a level and never completes
-// it, so no demo golden, and unlike the menu/automap/finale it never got its own
-// harness either. Nothing in the suite has ever run doCompleted,
+// it, so no demo golden, and unlike the menu/automap/finale it was the last to
+// get a harness of its own. Nothing in the suite had ever run doCompleted,
 // Doom::drawIntermission, or doWorldDone.
 //
 // Unlike the finale harness there is no need to call the screen's entry point
@@ -26,9 +26,14 @@
 // run - ASAN caught drawEL reading the cleared lnames table on the
 // intermission's last tic (fixed at unloadIntermissionData, whose comment tells
 // the story; checkIntermissionDataOutlivesItsLastDraw below pins it with no
-// sanitizer needed). It asserts the state machine's transitions rather than
-// pinning frames; a frame golden is the natural follow-up now that the
-// sanitizers run clean through it.
+// sanitizer needed).
+//
+// One script drives that transition (runIntermissionScript) and two tests read
+// it differently: checkLevelTransition asserts the state machine and discards
+// the frames, checkIntermissionMatchesGolden holds them against
+// Tests/Goldens/intermission.frames. Splitting them is what makes a failure say
+// which broke - a transition that stops happening is a different bug from a
+// scoreboard that draws wrong - and only the second needs a golden to fail.
 //
 // Input: leaving StatCount requires a fire/use press (updateStats waits on
 // acceleratestage at sp_state 10), posted through the real host path
@@ -41,8 +46,10 @@
 // Determinism: the world stops ticking the moment gamestate leaves GS_LEVEL, so
 // after the exit the only randomness consumed is M_Random (the melts, and
 // initAnimatedBack's animation phases) - deterministic for the same reason the
-// finale golden is. The ten level tics before the exit are input-free, so the
-// simulation runs them identically every time.
+// finale golden is. The level tics before the exit are input-free, so the
+// simulation runs them identically every time. Measured, not assumed: the golden
+// was recorded twice and diffed, and it holds under Apple Clang Debug and
+// Release and under GCC 16 Release.
 
 namespace DoomTests
 {
@@ -62,6 +69,11 @@ constexpr auto gsIntermission = 1;
 constexpr auto phaseNoState = -1;
 constexpr auto phaseStatCount = 0;
 constexpr auto phaseShowNextLoc = 1;
+
+// 2,500 tics is 71 seconds of level clock - see the loop that spends them. The
+// player is idle for all of them and E1M1's monsters never wake, so they cost
+// the suite about a second and change nothing but leveltime.
+constexpr auto levelTicsBeforeExit = 2500;
 
 // The natural single-player count-up runs itself to sp_state 10 in ~190 tics
 // for an immediate E1M1 exit (five 35-tic pauses dominate; the zero tallies
@@ -86,18 +98,57 @@ inline void runIntermissionWipeOut()
     nano::check(!doomSimIsWiping(), "the wipe finished");
 }
 
-// One fire press, held for exactly one tic: the tic with the key down is the
-// one whose ticcmd carries ButtonCode::Attack and fires checkForAccelerate.
-inline void pressFire()
+inline void stepOneTic()
 {
-    doomSimPostKeyDown(static_cast<int>(Doom::Key::Ctrl));
-    nano::check(doomSimStepTic() != 0, "the tic ran");
-    doomSimPostKeyUp(static_cast<int>(Doom::Key::Ctrl));
     nano::check(doomSimStepTic() != 0, "the tic ran");
 }
 
-inline void checkLevelTransition()
+// One fire press, held for exactly one tic: the tic with the key down is the
+// one whose ticcmd carries ButtonCode::Attack and fires checkForAccelerate. Both
+// of its tics go through the caller's own stepper, so a caller hashing frames
+// sees the two the press costs it rather than a gap in the golden.
+template <typename StepTic>
+inline void pressFire(const StepTic& stepTic)
 {
+    doomSimPostKeyDown(static_cast<int>(Doom::Key::Ctrl));
+    stepTic();
+    doomSimPostKeyUp(static_cast<int>(Doom::Key::Ctrl));
+    stepTic();
+}
+
+inline void pressFire()
+{
+    pressFire(stepOneTic);
+}
+
+// Drives the whole genuine E1M1 -> scoreboard -> E1M2 transition, asserting the
+// state machine at every transition, and returns the frame hash of every tic the
+// intermission itself drew.
+//
+// The two things it does NOT hash are the melts either side: the level melting
+// into the scoreboard, and the scoreboard melting into E1M2. Those are the
+// generic melt over whatever frame preceded them, not anything
+// UI/Intermission.cpp draws, and the finale golden warms its entry wipe out for
+// the same reason. Everything between them is drawIntermission's own output -
+// the count-up, the you-are-here map, the NoState countdown, and the last tic
+// that draws after endIntermission has unloaded.
+//
+// A tic is hashed only if the intermission is still up when it ends, which is
+// what keeps the hand-over tic (doWorldDone flips to GS_LEVEL mid-tic and
+// displayFrame then draws the new level) out of a golden that exists to pin the
+// scoreboard.
+inline Hashes runIntermissionScript()
+{
+    auto frames = Hashes {};
+
+    const auto stepIntermissionTic = [&frames]
+    {
+        nano::check(doomSimStepTic() != 0, "the tic ran");
+
+        if (doomSimGameState() == gsIntermission)
+            frames.push_back(doomSimFrameHash());
+    };
+
     nano::check(doomSimBoot() != 0, "engine booted headless, no demo queued");
     nano::check(doomSimLoadLevel(interEpisode, interMap, interSkill) != 0,
                 "E1M1 loaded and the player spawned");
@@ -105,12 +156,24 @@ inline void checkLevelTransition()
     runIntermissionWipeOut();
     nano::check(doomSimGameState() == gsLevel, "the level is up");
 
-    // A handful of ordinary level tics, so leveltime moves and the scoreboard's
-    // time count has a real level clock behind it.
-    for (auto i = 0; i < 10; ++i)
+    // Ordinary, input-free level tics before the exit - and enough of them to
+    // matter, because they are the only stat this harness can make non-zero.
+    // The player idles at E1M1's start, so kills, items and secrets all finish
+    // at 0 and their count-ups (updateStats' sp_state 2/4/6, +2 a tic) run but
+    // never visibly roll. The clock does not care what the player did: at
+    // levelTicsBeforeExit the scoreboard reads "1:11" against E1M1's 0:30 par,
+    // so sp_state 8 counts both up three seconds a tic for two dozen tics and
+    // drawTime draws a minutes digit. With ten tics it read 0:00 and the only
+    // thing on the screen that moved was par.
+    for (auto i = 0; i < levelTicsBeforeExit; ++i)
         nano::check(doomSimStepTic() != 0, "the tic ran");
 
-    nano::check(doomSimLevelTime() > 0, "the level clock is running");
+    // Not just "running": past a minute, which is the claim the comment above
+    // makes about what the scoreboard will read and the reason the loop is as
+    // long as it is. A shortened warm-up would otherwise quietly take the time
+    // count-up back to 0:00 and leave the golden pinning less than it says.
+    nano::check(doomSimLevelTime() > 60 * 35,
+                "the level clock passed a minute before the exit");
 
     // The real exit: the same call an exit switch makes. The next tic's
     // gameTicker sees ga_completed and runs doCompleted -> startIntermission.
@@ -133,7 +196,7 @@ inline void checkLevelTransition()
     // post-loop check pins.
     for (auto i = 0; i < statCountTics; ++i)
     {
-        nano::check(doomSimStepTic() != 0, "the tic ran");
+        stepIntermissionTic();
         nano::check(doomSimGameState() == gsIntermission,
                     "the count-up stays on the scoreboard");
     }
@@ -141,7 +204,7 @@ inline void checkLevelTransition()
     nano::check(doomSimIntermissionPhase() == phaseStatCount,
                 "the finished count waits for the player");
 
-    pressFire();
+    pressFire(stepIntermissionTic);
     nano::check(doomSimIntermissionPhase() == phaseShowNextLoc,
                 "the press advanced the scoreboard to the you-are-here map");
 
@@ -150,7 +213,7 @@ inline void checkLevelTransition()
     for (auto guard = 0;
          doomSimGameState() == gsIntermission && guard < nextLocCeiling;
          ++guard)
-        nano::check(doomSimStepTic() != 0, "the tic ran");
+        stepIntermissionTic();
 
     nano::check(doomSimGameState() == gsLevel,
                 "the intermission ended and gamestate returned to GS_LEVEL");
@@ -167,6 +230,71 @@ inline void checkLevelTransition()
 
     nano::check(doomSimGameState() == gsLevel, "E1M2 is running");
     nano::check(doomSimLevelTime() > 0, "E1M2's level clock is running");
+
+    return frames;
+}
+
+// The state machine on its own: the same drive, with the frames discarded. It is
+// the test that says *which* of the two broke - a transition that stops
+// happening is a different bug from a scoreboard that draws wrong, and this one
+// needs no golden to fail.
+inline void checkLevelTransition()
+{
+    const auto frames = runIntermissionScript();
+
+    nano::check(!frames.empty(), "the intermission drew at least one frame");
+}
+
+inline void checkIntermissionMatchesGolden()
+{
+    auto frames = runIntermissionScript();
+
+    nano::check(!frames.empty(), "the intermission script drove at least one frame");
+
+    if (updatingGoldens())
+    {
+        writeGolden("intermission",
+                    "frames",
+                    "the software frame and palette, hashed every tic the "
+                    "E1M1 -> E1M2 scoreboard drew: the count-up, the "
+                    "you-are-here map and the NoState countdown.",
+                    frames);
+        return;
+    }
+
+    auto golden = readGolden("intermission", "frames");
+
+    if (golden.empty())
+    {
+        std::printf(
+            "\nNo intermission golden. Record one with DOOM_UPDATE_GOLDENS=1\n\n");
+        nano::check(false, "intermission golden exists");
+        return;
+    }
+
+    const auto shared = std::min(frames.size(), golden.size());
+
+    for (auto i = std::size_t {0}; i < shared; ++i)
+    {
+        if (frames[i] == golden[i])
+            continue;
+
+        std::printf("\nintermission: the rendered frame changed at step %d\n"
+                    "  No demo completes a level, so this frame golden is\n"
+                    "  UI/Intermission.cpp's only net. If the change was\n"
+                    "  intended, re-record: DOOM_UPDATE_GOLDENS=1\n\n",
+                    (int) i);
+        nano::check(false, "intermission renderer matches the golden");
+        return;
+    }
+
+    if (frames.size() != golden.size())
+        std::printf("\nintermission.frames: %zu entries, golden has %zu\n\n",
+                    frames.size(),
+                    golden.size());
+
+    nano::check(frames.size() == golden.size(),
+                "the intermission walk is the same length");
 }
 
 // Pins the defect the transition first surfaced under ASAN, in a way any build

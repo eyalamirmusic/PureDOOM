@@ -106,9 +106,13 @@ has the working detail.
 4. **Two dead enums.** `StatusBarMode` and `ChatState` are declared and never
    used. Deletion is a human's call, per item 2's rule.
 
-5. **A frame golden for the intermission.** `Tests/Sim/IntermissionTests.cpp`
-   asserts the state machine; it has no recorded frames yet. The natural
-   follow-up now that the sanitizers run clean through the transition.
+The intermission's frame golden — item 5 until now — is recorded.
+`Tests/Goldens/intermission.frames` pins 401 tics of the real E1M1 → scoreboard →
+E1M2 transition, and every screen a demo never reaches now has one. It is
+compiler-independent like the rest (Apple Clang `Debug` and `Release`, GCC 16
+`Release`), reproducible across runs, and sharp: moving `SP_STATSX` by one pixel
+fails it and nothing else in the 99-test suite. `CLAUDE.md` has the working detail,
+including why the script spends 2,500 idle level tics before the exit.
 
 ## Preserved defects
 

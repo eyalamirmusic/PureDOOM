@@ -281,9 +281,9 @@ int doomSimGameMode();
 
 // --- The intermission harness ---------------------------------------------
 //
-// UI/Intermission.cpp is the between-levels scoreboard, and it is the one
+// UI/Intermission.cpp is the between-levels scoreboard, and it was the one
 // screen with no coverage of any kind: an attract demo replays a slice of a
-// level and never completes it, so nothing drives doCompleted ->
+// level and never completes it, so nothing drove doCompleted ->
 // Doom::startIntermission -> Doom::drawIntermission. Unlike the finale there
 // is no need to call the screen's entry point directly: Doom::exitLevel() is
 // the real thing - the same call an exit switch makes - and everything from

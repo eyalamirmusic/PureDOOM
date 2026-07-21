@@ -79,7 +79,8 @@ nano_add_executable(PrimitiveTests
 # once. Run it when a change to the simulation was *intended*; the diff on
 # Goldens/ is then the reviewable record of what it changed.
 set(RECORD_GOLDENS_COMMANDS "")
-foreach (case IN ITEMS demo1 demo2 demo3 wadDirectory menu automap finale)
+foreach (case IN ITEMS
+        demo1 demo2 demo3 wadDirectory menu automap finale intermissionFrames)
     list(APPEND RECORD_GOLDENS_COMMANDS
             COMMAND ${CMAKE_COMMAND} -E env DOOM_UPDATE_GOLDENS=1
             $<TARGET_FILE:SimTests> --test Sim/${case})

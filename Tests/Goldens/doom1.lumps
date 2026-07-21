@@ -1,4 +1,4 @@
-# doom1.wad as W_CacheLumpNum hands it over: name, bytes, hash.
+# doom1.wad as Doom::cacheLumpNum hands it over: name, bytes, hash.
 # Re-record with DOOM_UPDATE_GOLDENS=1, and only on purpose.
 PLAYPAL 10752 4b2a39d588be057c
 COLORMAP 8704 9cf41fa65c05e71f
