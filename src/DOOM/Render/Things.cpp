@@ -395,12 +395,12 @@ void drawVisSprite(VisSprite& vis)
         // 0 colormap = shadow draw
         colfunc = fuzzcolfunc;
     }
-    else if (vis.mobjflags & MF_TRANSLATION)
+    else if (vis.mobjflags & mobjTranslationMask)
     {
         colfunc = Doom::drawTranslatedColumn;
         draw.dc_translation =
             translationtables - 256
-            + ((vis.mobjflags & MF_TRANSLATION) >> (MF_TRANSSHIFT - 8));
+            + ((vis.mobjflags & mobjTranslationMask) >> (mobjTranslationShift - 8));
     }
 
     draw.dc_iscale = doom_abs(vis.xiscale) >> viewWindow().detailshift;
@@ -571,7 +571,7 @@ void projectSprite(Mobj& thing)
     vis->patch = lump;
 
     // get light level
-    if (thing.flags & MF_SHADOW)
+    if (hasFlag(thing.flags, MobjFlag::Shadow))
     {
         // shadow draw
         vis->colormap = nullptr;

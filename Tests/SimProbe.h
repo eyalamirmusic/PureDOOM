@@ -162,7 +162,7 @@ int doomSimMobjY(int handle);
 int doomSimMobjZ(int handle);
 
 // A handle's flags word, and a blunt setter - enough for a scenario to toggle
-// MF_NOCLIP and watch the collision early-out take effect.
+// flagBits(MobjFlag::NoClip) and watch the collision early-out take effect.
 int doomSimMobjFlags(int handle);
 void doomSimSetMobjFlags(int handle, int flags);
 
@@ -180,7 +180,7 @@ void doomSimSetThingPosition(int handle);
 // p_mobj.h). Add more here as scenarios need them.
 int doomSimTypeBarrel(); // Doom::MobjType::Barrel: solid, shootable, radius 10
 int doomSimOnFloorZ(); // ONFLOORZ, the "rest on the floor" spawn z
-int doomSimFlagNoClip(); // MF_NOCLIP
+int doomSimFlagNoClip(); // flagBits(MobjFlag::NoClip)
 
 // Archives the live world (players/sectors/thinkers/specials), reloads a
 // fresh base level and unarchives over it - the exact p_saveg round trip

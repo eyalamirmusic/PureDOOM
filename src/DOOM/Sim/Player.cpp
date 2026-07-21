@@ -85,7 +85,7 @@ void calcHeight(Player& player)
     if (player.bob > MAXBOB)
         player.bob = MAXBOB;
 
-    if ((player.cheats & CF_NOMOMENTUM) || !playerScratch().onground)
+    if ((hasFlag(player.cheats, CheatFlag::NoMomentum)) || !playerScratch().onground)
     {
         player.viewz = player.mo->z + VIEWHEIGHT;
 
@@ -202,7 +202,7 @@ void deathThink(Player& player)
     else if (player.damagecount)
         player.damagecount--;
 
-    if (player.cmd.buttons & BT_USE)
+    if (hasFlag(player.cmd.buttons, ButtonCode::Use))
         player.playerstate = PlayerLifeState::Reborn;
 }
 
@@ -212,19 +212,19 @@ void deathThink(Player& player)
 void playerThink(Player& player)
 {
     // fixme: do this in the cheat code
-    if (player.cheats & CF_NOCLIP)
-        player.mo->flags |= MF_NOCLIP;
+    if (hasFlag(player.cheats, CheatFlag::NoClip))
+        player.mo->flags = withFlags(player.mo->flags, MobjFlag::NoClip);
     else
-        player.mo->flags &= ~MF_NOCLIP;
+        player.mo->flags = withoutFlags(player.mo->flags, MobjFlag::NoClip);
 
     // chain saw run forward
     Ticcmd* cmd = &player.cmd;
-    if (player.mo->flags & MF_JUSTATTACKED)
+    if (hasFlag(player.mo->flags, MobjFlag::JustAttacked))
     {
         cmd->angleturn = 0;
         cmd->forwardmove = 0xc800 / 512;
         cmd->sidemove = 0;
-        player.mo->flags &= ~MF_JUSTATTACKED;
+        player.mo->flags = withoutFlags(player.mo->flags, MobjFlag::JustAttacked);
     }
 
     if (player.playerstate == PlayerLifeState::Dead)
@@ -249,16 +249,16 @@ void playerThink(Player& player)
     // Check for weapon change.
 
     // A special event has no other buttons.
-    if (cmd->buttons & BT_SPECIAL)
+    if (hasFlag(cmd->buttons, ButtonCode::Special))
         cmd->buttons = 0;
 
-    if (cmd->buttons & BT_CHANGE)
+    if (hasFlag(cmd->buttons, ButtonCode::Change))
     {
         // The actual changing of the weapon is done
         //  when the weapon psprite can do it
         //  (read: not in the middle of an attack).
-        WeaponType newweapon = static_cast<WeaponType>((cmd->buttons & BT_WEAPONMASK)
-                                                       >> BT_WEAPONSHIFT);
+        WeaponType newweapon = static_cast<WeaponType>(
+            (cmd->buttons & buttonWeaponMask) >> buttonWeaponShift);
 
         if (newweapon == WeaponType::Fist
             && player.weaponowned[toIndex(WeaponType::Chainsaw)]
@@ -292,7 +292,7 @@ void playerThink(Player& player)
     }
 
     // check for use
-    if (cmd->buttons & BT_USE)
+    if (hasFlag(cmd->buttons, ButtonCode::Use))
     {
         if (!player.usedown)
         {
@@ -317,7 +317,7 @@ void playerThink(Player& player)
 
     if (player.powers[toIndex(PowerType::Invisibility)])
         if (!--player.powers[toIndex(PowerType::Invisibility)])
-            player.mo->flags &= ~MF_SHADOW;
+            player.mo->flags = withoutFlags(player.mo->flags, MobjFlag::Shadow);
 
     if (player.powers[toIndex(PowerType::Infrared)])
         player.powers[toIndex(PowerType::Infrared)]--;

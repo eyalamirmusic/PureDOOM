@@ -20,7 +20,7 @@ int teleport(Line& line, int side, Mobj& thing)
     auto& thinkers = thinkerList();
 
     // don't teleport missiles
-    if (thing.flags & MF_MISSILE)
+    if (hasFlag(thing.flags, MobjFlag::Missile))
         return 0;
 
     // Don't teleport if hit back of line,

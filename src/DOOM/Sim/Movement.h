@@ -17,11 +17,11 @@ namespace Doom
 // demo. Golden-neutral: the clip scratch is never hashed.
 
 // Is `thing` clear to occupy (x, y)? Sets the tm* clipping results in Clip as a
-// side effect (floor/ceiling window, spechit list); picks up MF_SPECIAL things it
-// overlaps if the mover has MF_PICKUP. Nothing else is modified.
+// side effect (floor/ceiling window, spechit list); picks up flagBits(MobjFlag::Special) things it
+// overlaps if the mover has flagBits(MobjFlag::Pickup). Nothing else is modified.
 bool checkPosition(Mobj& thing, fixed_t x, fixed_t y);
 
-// Try to move `thing` to (x, y), crossing any special lines unless MF_TELEPORT.
+// Try to move `thing` to (x, y), crossing any special lines unless flagBits(MobjFlag::Teleport).
 // Returns false and leaves the mobj where it was if blocked; on success links it
 // into its new cell and runs the crossed specials.
 bool tryMove(Mobj& thing, fixed_t x, fixed_t y);

@@ -332,7 +332,7 @@ void weaponReady(Player& player, PspDef& psp)
 
     // check for fire
     //  the missile launcher and bfg do not auto fire
-    if (player.cmd.buttons & BT_ATTACK)
+    if (hasFlag(player.cmd.buttons, ButtonCode::Attack))
     {
         if (!player.attackdown
             || (player.readyweapon != WeaponType::Missile
@@ -362,7 +362,7 @@ void reFire(Player& player, PspDef&)
 {
     // check for fire
     //  (if a weaponchange is pending, let it go through instead)
-    if ((player.cmd.buttons & BT_ATTACK)
+    if ((hasFlag(player.cmd.buttons, ButtonCode::Attack))
         && player.pendingweapon == WeaponType::NoChange && player.health)
     {
         player.refire++;
@@ -514,7 +514,7 @@ void saw(Player& player, PspDef&)
         else
             player.mo->angle += ang90 / 20;
     }
-    player.mo->flags |= MF_JUSTATTACKED;
+    player.mo->flags = withFlags(player.mo->flags, MobjFlag::JustAttacked);
 }
 
 //

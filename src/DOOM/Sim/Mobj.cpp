@@ -106,7 +106,7 @@ void explodeMissile(Mobj& mo)
     if (mo.tics < 1)
         mo.tics = 1;
 
-    mo.flags &= ~MF_MISSILE;
+    mo.flags = withoutFlags(mo.flags, MobjFlag::Missile);
 
     if (mo.info->deathsound != SfxEnum::None)
         startSound(&mo, mo.info->deathsound);
@@ -124,10 +124,10 @@ void xyMovement(Mobj& mo)
 
     if (!mo.momx && !mo.momy)
     {
-        if (mo.flags & MF_SKULLFLY)
+        if (hasFlag(mo.flags, MobjFlag::SkullFly))
         {
             // the skull slammed into something
-            mo.flags &= ~MF_SKULLFLY;
+            mo.flags = withoutFlags(mo.flags, MobjFlag::SkullFly);
             mo.momx = mo.momy = mo.momz = fixed_t {};
 
             setMobjState(mo, static_cast<StateNum>(mo.info->spawnstate));
@@ -173,7 +173,7 @@ void xyMovement(Mobj& mo)
             { // try to slide along it
                 slideMove(mo);
             }
-            else if (mo.flags & MF_MISSILE)
+            else if (hasFlag(mo.flags, MobjFlag::Missile))
             {
                 // explode a missile
                 if (c.ceilingline && c.ceilingline->backsector
@@ -194,20 +194,20 @@ void xyMovement(Mobj& mo)
     } while (xmove || ymove);
 
     // slow down
-    if (player && player->cheats & CF_NOMOMENTUM)
+    if (player && hasFlag(player->cheats, CheatFlag::NoMomentum))
     {
         // debug option for no sliding at all
         mo.momx = mo.momy = fixed_t {};
         return;
     }
 
-    if (mo.flags & (MF_MISSILE | MF_SKULLFLY))
+    if (hasFlag(mo.flags, MobjFlag::Missile, MobjFlag::SkullFly))
         return; // no friction for missiles ever
 
     if (mo.z > mo.floorz)
         return; // no friction when airborne
 
-    if (mo.flags & MF_CORPSE)
+    if (hasFlag(mo.flags, MobjFlag::Corpse))
     {
         // do not stop sliding
         //  if halfway off a step with some momentum
@@ -256,10 +256,11 @@ void zMovement(Mobj& mo)
     // adjust height
     mo.z += mo.momz;
 
-    if (mo.flags & MF_FLOAT && mo.target)
+    if (hasFlag(mo.flags, MobjFlag::Float) && mo.target)
     {
         // float down towards target if too close
-        if (!(mo.flags & MF_SKULLFLY) && !(mo.flags & MF_INFLOAT))
+        if (!(hasFlag(mo.flags, MobjFlag::SkullFly))
+            && !(hasFlag(mo.flags, MobjFlag::InFloat)))
         {
             fixed_t dist = approxDistance(mo.x - mo.target->x, mo.y - mo.target->y);
 
@@ -280,7 +281,7 @@ void zMovement(Mobj& mo)
         // Note (id):
         //  somebody left this after the setting momz to 0,
         //  kinda useless there.
-        if (mo.flags & MF_SKULLFLY)
+        if (hasFlag(mo.flags, MobjFlag::SkullFly))
         {
             // the skull slammed into something
             mo.momz = -mo.momz;
@@ -301,13 +302,14 @@ void zMovement(Mobj& mo)
         }
         mo.z = mo.floorz;
 
-        if ((mo.flags & MF_MISSILE) && !(mo.flags & MF_NOCLIP))
+        if ((hasFlag(mo.flags, MobjFlag::Missile))
+            && !(hasFlag(mo.flags, MobjFlag::NoClip)))
         {
             explodeMissile(mo);
             return;
         }
     }
-    else if (!(mo.flags & MF_NOGRAVITY))
+    else if (!(hasFlag(mo.flags, MobjFlag::NoGravity)))
     {
         if (mo.momz.isZero())
             mo.momz = -GRAVITY * 2;
@@ -324,12 +326,13 @@ void zMovement(Mobj& mo)
             mo.z = mo.ceilingz - mo.height;
         }
 
-        if (mo.flags & MF_SKULLFLY)
+        if (hasFlag(mo.flags, MobjFlag::SkullFly))
         { // the skull slammed into something
             mo.momz = -mo.momz;
         }
 
-        if ((mo.flags & MF_MISSILE) && !(mo.flags & MF_NOCLIP))
+        if ((hasFlag(mo.flags, MobjFlag::Missile))
+            && !(hasFlag(mo.flags, MobjFlag::NoClip)))
         {
             explodeMissile(mo);
             return;
@@ -369,7 +372,7 @@ void nightmareRespawn(Mobj& mobj)
     MapThing* mthing = &mobj.spawnpoint;
 
     // spawn it
-    if (mobj.info->flags & MF_SPAWNCEILING)
+    if (hasFlag(mobj.info->flags, MobjFlag::SpawnCeiling))
         z = ONCEILINGZ;
     else
         z = ONFLOORZ;
@@ -380,7 +383,7 @@ void nightmareRespawn(Mobj& mobj)
     mo->angle = ang45 * (mthing->angle / 45);
 
     if (mthing->options & MTF_AMBUSH)
-        mo->flags |= MF_AMBUSH;
+        mo->flags = withFlags(mo->flags, MobjFlag::Ambush);
 
     mo->reactiontime = 18;
 
@@ -394,7 +397,7 @@ void nightmareRespawn(Mobj& mobj)
 void mobjThinker(Mobj& mobj)
 {
     // momentum movement
-    if (mobj.momx || mobj.momy || (mobj.flags & MF_SKULLFLY))
+    if (mobj.momx || mobj.momy || (hasFlag(mobj.flags, MobjFlag::SkullFly)))
     {
         xyMovement(mobj);
 
@@ -425,7 +428,7 @@ void mobjThinker(Mobj& mobj)
     else
     {
         // check for nightmare respawn
-        if (!(mobj.flags & MF_COUNTKILL))
+        if (!(hasFlag(mobj.flags, MobjFlag::CountKill)))
             return;
 
         if (!gameSession().respawnmonsters)
@@ -499,8 +502,9 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
 //
 void removeMobj(Mobj& mobj)
 {
-    if ((mobj.flags & MF_SPECIAL) && !(mobj.flags & MF_DROPPED)
-        && (mobj.type != MobjType::Inv) && (mobj.type != MobjType::Ins))
+    if ((hasFlag(mobj.flags, MobjFlag::Special))
+        && !(hasFlag(mobj.flags, MobjFlag::Dropped)) && (mobj.type != MobjType::Inv)
+        && (mobj.type != MobjType::Ins))
     {
         auto& queue = itemRespawnQueue();
 
@@ -564,7 +568,7 @@ void respawnSpecials()
     }
 
     // spawn it
-    if (mobjinfo[i].flags & MF_SPAWNCEILING)
+    if (hasFlag(mobjinfo[i].flags, MobjFlag::SpawnCeiling))
         z = ONCEILINGZ;
     else
         z = ONFLOORZ;
@@ -603,7 +607,7 @@ void spawnPlayer(MapThing& mthing)
 
     // set color translations for player sprites
     if (mthing.type > 1)
-        mobj->flags |= (mthing.type - 1) << MF_TRANSSHIFT;
+        mobj->flags |= (mthing.type - 1) << mobjTranslationShift;
 
     mobj->angle = ang45 * (mthing.angle / 45);
     mobj->player = p;
@@ -713,12 +717,13 @@ void spawnMapThing(MapThing& mthing)
     }
 
     // don't spawn keycards and players in deathmatch
-    if (session.deathmatch && mobjinfo[i].flags & MF_NOTDMATCH)
+    if (session.deathmatch && hasFlag(mobjinfo[i].flags, MobjFlag::NotDmatch))
         return;
 
     // don't spawn any monsters if -nomonsters
     if (launchOptions().nomonsters
-        && (i == toIndex(MobjType::Skull) || (mobjinfo[i].flags & MF_COUNTKILL)))
+        && (i == toIndex(MobjType::Skull)
+            || (hasFlag(mobjinfo[i].flags, MobjFlag::CountKill))))
     {
         return;
     }
@@ -727,7 +732,7 @@ void spawnMapThing(MapThing& mthing)
     fixed_t x = Fixed::fromInt(mthing.x);
     fixed_t y = Fixed::fromInt(mthing.y);
 
-    if (mobjinfo[i].flags & MF_SPAWNCEILING)
+    if (hasFlag(mobjinfo[i].flags, MobjFlag::SpawnCeiling))
         z = ONCEILINGZ;
     else
         z = ONFLOORZ;
@@ -739,14 +744,14 @@ void spawnMapThing(MapThing& mthing)
         mobj->tics = 1 + (randomness().forPlay() % mobj->tics);
     auto& stats = levelStats();
 
-    if (mobj->flags & MF_COUNTKILL)
+    if (hasFlag(mobj->flags, MobjFlag::CountKill))
         stats.totalkills++;
-    if (mobj->flags & MF_COUNTITEM)
+    if (hasFlag(mobj->flags, MobjFlag::CountItem))
         stats.totalitems++;
 
     mobj->angle = ang45 * (mthing.angle / 45);
     if (mthing.options & MTF_AMBUSH)
-        mobj->flags |= MF_AMBUSH;
+        mobj->flags = withFlags(mobj->flags, MobjFlag::Ambush);
 }
 
 //
@@ -826,7 +831,7 @@ Mobj* spawnMissile(Mobj& source, Mobj* dest, MobjType type)
     angle_t an = pointToAngle2(source.x, source.y, dest->x, dest->y);
 
     // fuzzy player
-    if (dest->flags & MF_SHADOW)
+    if (hasFlag(dest->flags, MobjFlag::Shadow))
         an += angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay())
                        << 20};
 

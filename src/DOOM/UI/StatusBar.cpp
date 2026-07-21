@@ -443,8 +443,9 @@ bool statusBarResponder(Event& ev)
             // 'dqd' cheat for toggleable god mode
             if (checkCheat(cheat_god, ev.data1))
             {
-                bar.plyr->cheats ^= CF_GODMODE;
-                if (bar.plyr->cheats & CF_GODMODE)
+                bar.plyr->cheats =
+                    toggledFlags(bar.plyr->cheats, CheatFlag::GodMode);
+                if (hasFlag(bar.plyr->cheats, CheatFlag::GodMode))
                 {
                     if (bar.plyr->mo)
                         bar.plyr->mo->health = 100;
@@ -522,9 +523,9 @@ bool statusBarResponder(Event& ev)
             else if (checkCheat(cheat_noclip, ev.data1)
                      || checkCheat(cheat_commercial_noclip, ev.data1))
             {
-                bar.plyr->cheats ^= CF_NOCLIP;
+                bar.plyr->cheats = toggledFlags(bar.plyr->cheats, CheatFlag::NoClip);
 
-                if (bar.plyr->cheats & CF_NOCLIP)
+                if (hasFlag(bar.plyr->cheats, CheatFlag::NoClip))
                     bar.plyr->message = STSTR_NCON;
                 else
                     bar.plyr->message = STSTR_NCOFF;
@@ -797,7 +798,7 @@ void updateFaceWidget()
     if (face.priority < 5)
     {
         // invulnerability
-        if ((bar.plyr->cheats & CF_GODMODE)
+        if ((hasFlag(bar.plyr->cheats, CheatFlag::GodMode))
             || bar.plyr->powers[toIndex(PowerType::Invulnerability)])
         {
             face.priority = 4;

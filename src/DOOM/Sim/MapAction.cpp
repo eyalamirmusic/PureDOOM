@@ -190,7 +190,7 @@ bool aimTraverse(Intercept* in,
     if (th == shootthing)
         return true; // can't shoot self
 
-    if (!(th->flags & MF_SHOOTABLE))
+    if (!(hasFlag(th->flags, MobjFlag::Shootable)))
         return true; // corpse or something
 
     // check angles to see if the thing can be aimed at
@@ -308,7 +308,7 @@ bool shootTraverse(
     if (th == shootthing)
         return true; // can't shoot self
 
-    if (!(th->flags & MF_SHOOTABLE))
+    if (!(hasFlag(th->flags, MobjFlag::Shootable)))
         return true; // corpse or something
 
     // check angles to see if the thing can be aimed at
@@ -332,7 +332,7 @@ bool shootTraverse(
     z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
 
     // Spawn bullet puffs or blod spots, depending on target type.
-    if (in->d.thing->flags & MF_NOBLOOD)
+    if (hasFlag(in->d.thing->flags, MobjFlag::NoBlood))
         spawnPuff(x, y, z);
     else
         spawnBlood(x, y, z, la_damage);
@@ -390,7 +390,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
 static bool
     radiusAttackThing(Mobj* thing, Mobj* bombspot, Mobj* bombsource, int bombdamage)
 {
-    if (!(thing->flags & MF_SHOOTABLE))
+    if (!(hasFlag(thing->flags, MobjFlag::Shootable)))
         return true;
 
     // Boss spider and cyborg take no damage from concussion.
@@ -443,7 +443,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     {
         setMobjState(*thing, StateNum::Gibs);
 
-        thing->flags &= ~MF_SOLID;
+        thing->flags = withoutFlags(thing->flags, MobjFlag::Solid);
         thing->height = fixed_t {};
         thing->radius = fixed_t {};
 
@@ -452,7 +452,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     }
 
     // crunch dropped items
-    if (thing->flags & MF_DROPPED)
+    if (hasFlag(thing->flags, MobjFlag::Dropped))
     {
         removeMobj(*thing);
 
@@ -460,7 +460,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
         return true;
     }
 
-    if (!(thing->flags & MF_SHOOTABLE))
+    if (!(hasFlag(thing->flags, MobjFlag::Shootable)))
     {
         // assume it is bloody gibs or something
         return true;

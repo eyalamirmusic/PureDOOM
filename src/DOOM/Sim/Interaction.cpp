@@ -159,7 +159,7 @@ bool giveAmmo(Player& player, AmmoType ammo, int num)
 
 //
 // giveWeapon
-// The weapon name may have a MF_DROPPED flag ored in.
+// The weapon name may have a flagBits(MobjFlag::Dropped) flag ored in.
 //
 bool giveWeapon(Player& player, WeaponType weapon, bool dropped)
 {
@@ -274,7 +274,7 @@ bool givePower(Player& player, PowerType power)
     if (power == PowerType::Invisibility)
     {
         player.powers[toIndex(power)] = invisTics;
-        player.mo->flags |= MF_SHADOW;
+        player.mo->flags = withFlags(player.mo->flags, MobjFlag::Shadow);
         return true;
     }
 
@@ -494,7 +494,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
 
             // ammo
         case SpriteNum::Clip:
-            if (special.flags & MF_DROPPED)
+            if (hasFlag(special.flags, MobjFlag::Dropped))
             {
                 if (!giveAmmo(*player, AmmoType::Clip, 0))
                     return;
@@ -570,8 +570,9 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
             break;
 
         case SpriteNum::Mgun:
-            if (!giveWeapon(
-                    *player, WeaponType::Chaingun, special.flags & MF_DROPPED))
+            if (!giveWeapon(*player,
+                            WeaponType::Chaingun,
+                            hasFlag(special.flags, MobjFlag::Dropped)))
                 return;
             player->message = GOTCHAINGUN;
             sound = SfxEnum::Wpnup;
@@ -599,16 +600,18 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
             break;
 
         case SpriteNum::Shot:
-            if (!giveWeapon(
-                    *player, WeaponType::Shotgun, special.flags & MF_DROPPED))
+            if (!giveWeapon(*player,
+                            WeaponType::Shotgun,
+                            hasFlag(special.flags, MobjFlag::Dropped)))
                 return;
             player->message = GOTSHOTGUN;
             sound = SfxEnum::Wpnup;
             break;
 
         case SpriteNum::Sgn2:
-            if (!giveWeapon(
-                    *player, WeaponType::SuperShotgun, special.flags & MF_DROPPED))
+            if (!giveWeapon(*player,
+                            WeaponType::SuperShotgun,
+                            hasFlag(special.flags, MobjFlag::Dropped)))
                 return;
             player->message = GOTSHOTGUN2;
             sound = SfxEnum::Wpnup;
@@ -618,7 +621,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
             fatalError("P_SpecialThing: Unknown gettable thing");
     }
 
-    if (special.flags & MF_COUNTITEM)
+    if (hasFlag(special.flags, MobjFlag::CountItem))
         player->itemcount++;
     removeMobj(special);
     player->bonuscount += BONUSADD;
@@ -636,12 +639,13 @@ void killMobj(Mobj* source, Mobj& target)
 {
     MobjType item;
 
-    target.flags &= ~(MF_SHOOTABLE | MF_FLOAT | MF_SKULLFLY);
+    target.flags = withoutFlags(
+        target.flags, MobjFlag::Shootable, MobjFlag::Float, MobjFlag::SkullFly);
 
     if (target.type != MobjType::Skull)
-        target.flags &= ~MF_NOGRAVITY;
+        target.flags = withoutFlags(target.flags, MobjFlag::NoGravity);
 
-    target.flags |= MF_CORPSE | MF_DROPOFF;
+    target.flags = withFlags(target.flags, MobjFlag::Corpse, MobjFlag::DropOff);
     target.height >>= 2;
 
     auto& players_ = playerState();
@@ -649,13 +653,13 @@ void killMobj(Mobj* source, Mobj& target)
     if (source && source->player)
     {
         // count for intermission
-        if (target.flags & MF_COUNTKILL)
+        if (hasFlag(target.flags, MobjFlag::CountKill))
             source->player->killcount++;
 
         if (target.player)
             source->player->frags[target.player - players_.players.data()]++;
     }
-    else if (!gameSession().netgame && (target.flags & MF_COUNTKILL))
+    else if (!gameSession().netgame && (hasFlag(target.flags, MobjFlag::CountKill)))
     {
         // count all monster deaths,
         // even those caused by other monsters
@@ -668,7 +672,7 @@ void killMobj(Mobj* source, Mobj& target)
         if (!source)
             target.player->frags[target.player - players_.players.data()]++;
 
-        target.flags &= ~MF_SOLID;
+        target.flags = withoutFlags(target.flags, MobjFlag::Solid);
         target.player->playerstate = PlayerLifeState::Dead;
         dropWeapon(*target.player);
 
@@ -718,7 +722,7 @@ void killMobj(Mobj* source, Mobj& target)
     }
 
     Mobj* mo = spawnMobj(target.x, target.y, ONFLOORZ, item);
-    mo->flags |= MF_DROPPED; // special versions of items
+    mo->flags = withFlags(mo->flags, MobjFlag::Dropped); // special versions of items
 }
 
 //
@@ -737,13 +741,13 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
     angle_t ang {};
     int saved;
 
-    if (!(target.flags & MF_SHOOTABLE))
+    if (!(hasFlag(target.flags, MobjFlag::Shootable)))
         return; // shouldn't happen...
 
     if (target.health <= 0)
         return;
 
-    if (target.flags & MF_SKULLFLY)
+    if (hasFlag(target.flags, MobjFlag::SkullFly))
     {
         target.momx = target.momy = target.momz = fixed_t {};
     }
@@ -755,7 +759,7 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
     // Some close combat weapons should not
     // inflict thrust and push the victim out of reach,
     // thus kick away unless using the chainsaw.
-    if (inflictor && !(target.flags & MF_NOCLIP)
+    if (inflictor && !(hasFlag(target.flags, MobjFlag::NoClip))
         && (!source || !source->player
             || source->player->readyweapon != WeaponType::Chainsaw))
     {
@@ -789,7 +793,7 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
         // Below certain threshold,
         // ignore damage in GOD mode, or with INVUL power.
         if (damage < 1000
-            && ((player->cheats & CF_GODMODE)
+            && ((hasFlag(player->cheats, CheatFlag::GodMode))
                 || player->powers[toIndex(PowerType::Invulnerability)]))
         {
             return;
@@ -838,9 +842,9 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
     }
 
     if ((randomness().forPlay() < target.info->painchance)
-        && !(target.flags & MF_SKULLFLY))
+        && !(hasFlag(target.flags, MobjFlag::SkullFly)))
     {
-        target.flags |= MF_JUSTHIT; // fight back!
+        target.flags = withFlags(target.flags, MobjFlag::JustHit); // fight back!
 
         setMobjState(target, static_cast<StateNum>(target.info->painstate));
     }

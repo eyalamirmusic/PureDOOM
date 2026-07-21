@@ -197,7 +197,7 @@ void setThingPosition(Mobj& thing)
     SubSector* ss = pointInSubsector(thing.x, thing.y);
     thing.subsector = ss;
 
-    if (!(thing.flags & MF_NOSECTOR))
+    if (!(hasFlag(thing.flags, MobjFlag::NoSector)))
     {
         // invisible things don't go into the sector links
         Sector* sec = ss->sector;
@@ -212,7 +212,7 @@ void setThingPosition(Mobj& thing)
     }
 
     // link into blockmap
-    if (!(thing.flags & MF_NOBLOCKMAP))
+    if (!(hasFlag(thing.flags, MobjFlag::NoBlockmap)))
     {
         // inert things don't need to be in the blockmap
         const Blockmap& bmap = level().blockmap;
@@ -239,7 +239,7 @@ void setThingPosition(Mobj& thing)
 
 void unsetThingPosition(Mobj& thing)
 {
-    if (!(thing.flags & MF_NOSECTOR))
+    if (!(hasFlag(thing.flags, MobjFlag::NoSector)))
     {
         // inert things don't need to be in the blockmap?
         // unlink from subsector
@@ -252,7 +252,7 @@ void unsetThingPosition(Mobj& thing)
             thing.subsector->sector->thinglist = thing.snext;
     }
 
-    if (!(thing.flags & MF_NOBLOCKMAP))
+    if (!(hasFlag(thing.flags, MobjFlag::NoBlockmap)))
     {
         // unlink from the blockmap
         if (thing.bnext)

@@ -595,7 +595,7 @@ int doomSimOnFloorZ()
 
 int doomSimFlagNoClip()
 {
-    return Doom::MF_NOCLIP;
+    return Doom::flagBits(Doom::MobjFlag::NoClip);
 }
 
 // --- The save/load serialization net (pre-Thinker) --------------------------

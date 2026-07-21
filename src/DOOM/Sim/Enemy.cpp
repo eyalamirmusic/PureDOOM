@@ -266,11 +266,11 @@ bool checkMissileRange(Mobj& actor)
     if (!checkSight(&actor, actor.target))
         return false;
 
-    if (actor.flags & MF_JUSTHIT)
+    if (hasFlag(actor.flags, MobjFlag::JustHit))
     {
         // the target just hit the enemy,
         // so fight back!
-        actor.flags &= ~MF_JUSTHIT;
+        actor.flags = withoutFlags(actor.flags, MobjFlag::JustHit);
         return true;
     }
 
@@ -344,7 +344,7 @@ bool move(Mobj& actor)
     if (!try_ok)
     {
         // open any specials
-        if (actor.flags & MF_FLOAT && c.floatok)
+        if (hasFlag(actor.flags, MobjFlag::Float) && c.floatok)
         {
             // must adjust height
             if (actor.z < c.tmfloorz)
@@ -352,7 +352,7 @@ bool move(Mobj& actor)
             else
                 actor.z -= FLOATSPEED;
 
-            actor.flags |= MF_INFLOAT;
+            actor.flags = withFlags(actor.flags, MobjFlag::InFloat);
             return true;
         }
 
@@ -374,10 +374,10 @@ bool move(Mobj& actor)
     }
     else
     {
-        actor.flags &= ~MF_INFLOAT;
+        actor.flags = withoutFlags(actor.flags, MobjFlag::InFloat);
     }
 
-    if (!(actor.flags & MF_FLOAT))
+    if (!(hasFlag(actor.flags, MobjFlag::Float)))
         actor.z = actor.floorz;
 
     return true;
@@ -623,11 +623,11 @@ void look(Mobj& actor)
     actor.threshold = 0; // any shot will wake up
     Mobj* targ = actor.subsector->sector->soundtarget;
 
-    if (targ && (targ->flags & MF_SHOOTABLE))
+    if (targ && (hasFlag(targ->flags, MobjFlag::Shootable)))
     {
         actor.target = targ;
 
-        if (actor.flags & MF_AMBUSH)
+        if (hasFlag(actor.flags, MobjFlag::Ambush))
         {
             if (checkSight(&actor, actor.target))
                 goto seeyou;
@@ -716,7 +716,7 @@ void chase(Mobj& actor)
             actor.angle += ang90 / 2u;
     }
 
-    if (!actor.target || !(actor.target->flags & MF_SHOOTABLE))
+    if (!actor.target || !(hasFlag(actor.target->flags, MobjFlag::Shootable)))
     {
         // look for a new target
         if (lookForPlayers(actor, true))
@@ -730,9 +730,9 @@ void chase(Mobj& actor)
     const auto& opts = launchOptions();
 
     // do not attack twice in a row
-    if (actor.flags & MF_JUSTATTACKED)
+    if (hasFlag(actor.flags, MobjFlag::JustAttacked))
     {
-        actor.flags &= ~MF_JUSTATTACKED;
+        actor.flags = withoutFlags(actor.flags, MobjFlag::JustAttacked);
         if (session.gameskill != Skill::Nightmare && !opts.fastparm)
             newChaseDir(actor);
         return;
@@ -761,7 +761,7 @@ void chase(Mobj& actor)
             goto nomissile;
 
         setMobjState(actor, actor.info->missilestate);
-        actor.flags |= MF_JUSTATTACKED;
+        actor.flags = withFlags(actor.flags, MobjFlag::JustAttacked);
         return;
     }
 
@@ -795,11 +795,11 @@ void faceTarget(Mobj& actor)
     if (!actor.target)
         return;
 
-    actor.flags &= ~MF_AMBUSH;
+    actor.flags = withoutFlags(actor.flags, MobjFlag::Ambush);
 
     actor.angle = pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
 
-    if (actor.target->flags & MF_SHADOW)
+    if (hasFlag(actor.target->flags, MobjFlag::Shadow))
         actor.angle += angle_t {
             (unsigned) (randomness().forPlay() - randomness().forPlay()) << 21};
 }
@@ -1096,7 +1096,7 @@ bool vileCheck(Mobj* thing)
 {
     auto& ai = enemyAI();
 
-    if (!(thing->flags & MF_CORPSE))
+    if (!(hasFlag(thing->flags, MobjFlag::Corpse)))
         return true; // not a monster
 
     if (thing->tics != -1)
@@ -1337,7 +1337,7 @@ void skullAttack(Mobj& actor)
         return;
 
     Mobj* dest = actor.target;
-    actor.flags |= MF_SKULLFLY;
+    actor.flags = withFlags(actor.flags, MobjFlag::SkullFly);
 
     startSound(&actor, actor.info->attacksound);
     faceTarget(actor);
@@ -1474,7 +1474,7 @@ void pain(Mobj& actor)
 void fall(Mobj& actor)
 {
     // actor is on ground, it can be walked over
-    actor.flags &= ~MF_SOLID;
+    actor.flags = withoutFlags(actor.flags, MobjFlag::Solid);
 
     // So change this if corpse objects
     // are meant to be obstacles.

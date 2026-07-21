@@ -26,7 +26,7 @@ bool stompThing(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 
-    if (!(thing->flags & MF_SHOOTABLE))
+    if (!(hasFlag(thing->flags, MobjFlag::Shootable)))
         return true;
 
     fixed_t blockdist = thing->radius + clip.tmthing->radius;
@@ -78,7 +78,7 @@ bool checkLine(Line* ld)
     if (!ld->backsector)
         return false; // one sided line
 
-    if (!(clip.tmthing->flags & MF_MISSILE))
+    if (!(hasFlag(clip.tmthing->flags, MobjFlag::Missile)))
     {
         if (ld->flags & ML_BLOCKING)
             return false; // explicitly blocking everything
@@ -119,7 +119,8 @@ bool checkThing(Mobj* thing)
 {
     Clip& clip = Doom::clip();
 
-    if (!(thing->flags & (MF_SOLID | MF_SPECIAL | MF_SHOOTABLE)))
+    if (!(hasFlag(
+            thing->flags, MobjFlag::Solid, MobjFlag::Special, MobjFlag::Shootable)))
         return true;
 
     fixed_t blockdist = thing->radius + clip.tmthing->radius;
@@ -136,13 +137,13 @@ bool checkThing(Mobj* thing)
         return true;
 
     // check for skulls slamming into things
-    if (clip.tmthing->flags & MF_SKULLFLY)
+    if (hasFlag(clip.tmthing->flags, MobjFlag::SkullFly))
     {
         int damage = ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
 
         damageMobj(*thing, clip.tmthing, clip.tmthing, damage);
 
-        clip.tmthing->flags &= ~MF_SKULLFLY;
+        clip.tmthing->flags = withoutFlags(clip.tmthing->flags, MobjFlag::SkullFly);
         clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = fixed_t {};
 
         setMobjState(*clip.tmthing,
@@ -152,7 +153,7 @@ bool checkThing(Mobj* thing)
     }
 
     // missiles can hit other things
-    if (clip.tmthing->flags & MF_MISSILE)
+    if (hasFlag(clip.tmthing->flags, MobjFlag::Missile))
     {
         // see if it went over / under
         if (clip.tmthing->z > thing->z + thing->height)
@@ -179,10 +180,10 @@ bool checkThing(Mobj* thing)
             }
         }
 
-        if (!(thing->flags & MF_SHOOTABLE))
+        if (!(hasFlag(thing->flags, MobjFlag::Shootable)))
         {
             // didn't do any damage
-            return !(thing->flags & MF_SOLID);
+            return !(hasFlag(thing->flags, MobjFlag::Solid));
         }
 
         // damage / explode
@@ -194,10 +195,10 @@ bool checkThing(Mobj* thing)
     }
 
     // check for special pickup
-    if (thing->flags & MF_SPECIAL)
+    if (hasFlag(thing->flags, MobjFlag::Special))
     {
-        bool solid = thing->flags & MF_SOLID;
-        if (clip.tmflags & MF_PICKUP)
+        bool solid = hasFlag(thing->flags, MobjFlag::Solid);
+        if (hasFlag(clip.tmflags, MobjFlag::Pickup))
         {
             // can remove thing
             touchSpecialThing(*thing, *clip.tmthing);
@@ -205,7 +206,7 @@ bool checkThing(Mobj* thing)
         return !solid;
     }
 
-    return !(thing->flags & MF_SOLID);
+    return !(hasFlag(thing->flags, MobjFlag::Solid));
 }
 } // namespace
 
@@ -235,7 +236,7 @@ bool checkPosition(Mobj& thing, fixed_t x, fixed_t y)
     validCount().validcount++;
     clip.numspechit = 0;
 
-    if (clip.tmflags & MF_NOCLIP)
+    if (hasFlag(clip.tmflags, MobjFlag::NoClip))
         return true;
 
     // Check things first, possibly picking things up. The bounding box is extended
@@ -275,20 +276,22 @@ bool tryMove(Mobj& thing, fixed_t x, fixed_t y)
     if (!checkPosition(thing, x, y))
         return false; // solid wall or thing
 
-    if (!(thing.flags & MF_NOCLIP))
+    if (!(hasFlag(thing.flags, MobjFlag::NoClip)))
     {
         if (clip.tmceilingz - clip.tmfloorz < thing.height)
             return false; // doesn't fit
 
         clip.floatok = true;
 
-        if (!(thing.flags & MF_TELEPORT) && clip.tmceilingz - thing.z < thing.height)
+        if (!(hasFlag(thing.flags, MobjFlag::Teleport))
+            && clip.tmceilingz - thing.z < thing.height)
             return false; // mobj must lower itself to fit
 
-        if (!(thing.flags & MF_TELEPORT) && clip.tmfloorz - thing.z > 24 * FRACUNIT)
+        if (!(hasFlag(thing.flags, MobjFlag::Teleport))
+            && clip.tmfloorz - thing.z > 24 * FRACUNIT)
             return false; // too big a step up
 
-        if (!(thing.flags & (MF_DROPOFF | MF_FLOAT))
+        if (!(hasFlag(thing.flags, MobjFlag::DropOff, MobjFlag::Float))
             && clip.tmfloorz - clip.tmdropoffz > 24 * FRACUNIT)
             return false; // don't stand over a dropoff
     }
@@ -306,7 +309,7 @@ bool tryMove(Mobj& thing, fixed_t x, fixed_t y)
     setThingPosition(thing);
 
     // if any special lines were hit, do the effect
-    if (!(thing.flags & (MF_TELEPORT | MF_NOCLIP)))
+    if (!(hasFlag(thing.flags, MobjFlag::Teleport, MobjFlag::NoClip)))
     {
         while (clip.numspechit--)
         {

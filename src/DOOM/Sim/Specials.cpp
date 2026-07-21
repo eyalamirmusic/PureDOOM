@@ -952,7 +952,7 @@ void playerInSpecialSector(Player& player)
 
         case 11:
             // EXIT SUPER DAMAGE! (for E1M8 finale)
-            player.cheats &= ~CF_GODMODE;
+            player.cheats = withoutFlags(player.cheats, CheatFlag::GodMode);
 
             if (!(stats.leveltime & 0x1f))
                 damageMobj(*player.mo, 0, 0, 20);

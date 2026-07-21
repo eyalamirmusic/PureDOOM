@@ -64,6 +64,54 @@ constexpr int toIndex(E value)
 {
     return static_cast<int>(value);
 }
+
+// Bit-flag helpers, for the scoped flag enums (MobjFlag, CheatFlag, ButtonCode).
+//
+// The flag *words* stay plain ints: Mobj and MobjInfo are memcpy'd whole by the
+// savegame, Ticcmd::buttons goes onto the wire, and the mobjinfo[] table composes
+// flag sets at compile time. So the enum types the individual flags and these spell
+// the combination, rather than operator overloads making enum-to-int implicit again
+// - which is the thing `enum class` is here to prevent.
+//
+// hasFlag is an ANY-of test, matching what `bits & MASK` meant at every call site
+// here: true when at least one named flag is set.
+template <typename E>
+    requires std::is_enum_v<E>
+constexpr int flagBits(E flag)
+{
+    return toIndex(flag);
+}
+
+template <typename E, typename... Rest>
+    requires std::is_enum_v<E>
+constexpr int flagBits(E first, Rest... rest)
+{
+    return toIndex(first) | flagBits(rest...);
+}
+
+template <typename... E>
+constexpr bool hasFlag(int bits, E... flags)
+{
+    return (bits & flagBits(flags...)) != 0;
+}
+
+template <typename... E>
+constexpr int withFlags(int bits, E... flags)
+{
+    return bits | flagBits(flags...);
+}
+
+template <typename... E>
+constexpr int withoutFlags(int bits, E... flags)
+{
+    return bits & ~flagBits(flags...);
+}
+
+template <typename... E>
+constexpr int toggledFlags(int bits, E... flags)
+{
+    return bits ^ flagBits(flags...);
+}
 } // namespace Doom
 
 #define DOOM_MAXCHAR ((char) 0x7f)

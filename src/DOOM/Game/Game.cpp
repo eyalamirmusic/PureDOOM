@@ -333,11 +333,11 @@ void buildTiccmd(Ticcmd& cmd)
 
     if (input.gamekeydown[config.key_fire] || mousebuttons[config.mousebfire]
         || joybuttons[config.joybfire])
-        cmd.buttons |= BT_ATTACK;
+        cmd.buttons = withFlags(cmd.buttons, ButtonCode::Attack);
 
     if (input.gamekeydown[config.key_use] || joybuttons[config.joybuse])
     {
-        cmd.buttons |= BT_USE;
+        cmd.buttons = withFlags(cmd.buttons, ButtonCode::Use);
         // clear double clicks if hit use button
         input.dclicks = 0;
     }
@@ -346,8 +346,8 @@ void buildTiccmd(Ticcmd& cmd)
     for (int i = 0; i < numWeapons - 1; i++)
         if (input.gamekeydown['1' + i])
         {
-            cmd.buttons |= BT_CHANGE;
-            cmd.buttons |= i << BT_WEAPONSHIFT;
+            cmd.buttons = withFlags(cmd.buttons, ButtonCode::Change);
+            cmd.buttons |= i << buttonWeaponShift;
             break;
         }
 
@@ -364,7 +364,7 @@ void buildTiccmd(Ticcmd& cmd)
             input.dclicks++;
         if (input.dclicks == 2)
         {
-            cmd.buttons |= BT_USE;
+            cmd.buttons = withFlags(cmd.buttons, ButtonCode::Use);
             input.dclicks = 0;
         }
         else
@@ -389,7 +389,7 @@ void buildTiccmd(Ticcmd& cmd)
             input.dclicks2++;
         if (input.dclicks2 == 2)
         {
-            cmd.buttons |= BT_USE;
+            cmd.buttons = withFlags(cmd.buttons, ButtonCode::Use);
             input.dclicks2 = 0;
         }
         else
@@ -432,13 +432,14 @@ void buildTiccmd(Ticcmd& cmd)
     if (pending.sendpause)
     {
         pending.sendpause = false;
-        cmd.buttons = BT_SPECIAL | BTS_PAUSE;
+        cmd.buttons = flagBits(ButtonCode::Special, SpecialCommand::Pause);
     }
 
     if (pending.sendsave)
     {
         pending.sendsave = false;
-        cmd.buttons = BT_SPECIAL | BTS_SAVEGAME | (savegameslot << BTS_SAVESHIFT);
+        cmd.buttons = flagBits(ButtonCode::Special, SpecialCommand::SaveGame)
+                      | (savegameslot << buttonSaveShift);
     }
 }
 
@@ -724,11 +725,12 @@ void gameTicker()
     {
         if (players_.playeringame[i])
         {
-            if (players_.players[i].cmd.buttons & BT_SPECIAL)
+            if (hasFlag(players_.players[i].cmd.buttons, ButtonCode::Special))
             {
-                switch (players_.players[i].cmd.buttons & BT_SPECIALMASK)
+                switch (static_cast<SpecialCommand>(players_.players[i].cmd.buttons
+                                                    & buttonSpecialMask))
                 {
-                    case BTS_PAUSE:
+                    case SpecialCommand::Pause:
                         refreshFlags().paused ^= 1;
                         if (refreshFlags().paused)
                             Doom::pauseSound();
@@ -736,12 +738,12 @@ void gameTicker()
                             Doom::resumeSound();
                         break;
 
-                    case BTS_SAVEGAME:
+                    case SpecialCommand::SaveGame:
                         if (savedescription.empty())
                             savedescription = "NET GAME";
                         savegameslot =
-                            (players_.players[i].cmd.buttons & BTS_SAVEMASK)
-                            >> BTS_SAVESHIFT;
+                            (players_.players[i].cmd.buttons & buttonSaveMask)
+                            >> buttonSaveShift;
                         flow.gameaction = GameAction::SaveGame;
                         break;
                 }
@@ -801,7 +803,8 @@ void playerFinishLevel(int player)
 
     doom_memset(p->powers, 0, sizeof(p->powers));
     doom_memset(p->cards, 0, sizeof(p->cards));
-    p->mo->flags &= ~MF_SHADOW; // cancel invisibility
+    p->mo->flags =
+        withoutFlags(p->mo->flags, MobjFlag::Shadow); // cancel invisibility
     p->extralight = 0; // cancel gun flashes
     p->fixedcolormap = 0; // cancel ir gogles
     p->damagecount = 0; // no palette changes

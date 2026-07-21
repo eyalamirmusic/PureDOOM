@@ -1307,7 +1307,7 @@ void checkForAccelerate()
     {
         if (players_.playeringame[i])
         {
-            if (player->cmd.buttons & BT_ATTACK)
+            if (hasFlag(player->cmd.buttons, ButtonCode::Attack))
             {
                 if (!player->attackdown)
                     im.acceleratestage = 1;
@@ -1315,7 +1315,7 @@ void checkForAccelerate()
             }
             else
                 player->attackdown = false;
-            if (player->cmd.buttons & BT_USE)
+            if (hasFlag(player->cmd.buttons, ButtonCode::Use))
             {
                 if (!player->usedown)
                     im.acceleratestage = 1;

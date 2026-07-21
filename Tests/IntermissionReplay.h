@@ -32,7 +32,7 @@
 //
 // Input: leaving StatCount requires a fire/use press (updateStats waits on
 // acceleratestage at sp_state 10), posted through the real host path
-// (Doom::keyDown -> gamekeydown -> buildTiccmd -> BT_ATTACK), key down for one
+// (Doom::keyDown -> gamekeydown -> buildTiccmd -> ButtonCode::Attack), key down for one
 // whole tic and released the next - checkForAccelerate latches attackdown, and
 // posting down+up before a single tic would leave gamekeydown already clear by
 // the time buildTiccmd reads it. ShowNextLoc and NoState then advance on their
@@ -87,7 +87,7 @@ inline void runIntermissionWipeOut()
 }
 
 // One fire press, held for exactly one tic: the tic with the key down is the
-// one whose ticcmd carries BT_ATTACK and fires checkForAccelerate.
+// one whose ticcmd carries ButtonCode::Attack and fires checkForAccelerate.
 inline void pressFire()
 {
     doomSimPostKeyDown(Doom::DOOM_KEY_CTRL);

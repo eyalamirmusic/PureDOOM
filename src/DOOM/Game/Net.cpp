@@ -871,7 +871,7 @@ void tryRunTics()
                 {
                     cmd = &playerCmds[buf];
                     cmd->chatchar = 0;
-                    if (cmd->buttons & BT_SPECIAL)
+                    if (hasFlag(cmd->buttons, ButtonCode::Special))
                         cmd->buttons = 0;
                 }
             }

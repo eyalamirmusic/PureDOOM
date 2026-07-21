@@ -96,7 +96,7 @@ bool forEachThingInBlock(int x, int y, ThingFunc&& func)
 }
 
 // Link a thing into its subsector's sector list and its blockmap cell (or neither,
-// for MF_NOSECTOR / MF_NOBLOCKMAP), setting thing.subsector from its x,y.
+// for flagBits(MobjFlag::NoSector) / flagBits(MobjFlag::NoBlockmap)), setting thing.subsector from its x,y.
 void setThingPosition(Mobj& thing);
 
 // Unlink a thing from both, ahead of a position change.

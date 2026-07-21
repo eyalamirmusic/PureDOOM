@@ -60,14 +60,14 @@ enum class PlayerLifeState
 //
 namespace Doom
 {
-enum CheatFlag
+enum class CheatFlag
 {
     // No clipping, walk through barriers.
-    CF_NOCLIP = 1,
+    NoClip = 1,
     // No damage, no health loss.
-    CF_GODMODE = 2,
+    GodMode = 2,
     // Not really a cheat, just a debug aid.
-    CF_NOMOMENTUM = 4
+    NoMomentum = 4
 };
 } // namespace Doom
 

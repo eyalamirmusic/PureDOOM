@@ -10,7 +10,7 @@ namespace Doom
 // from p_inter.cpp; the give-* helpers are internal to Interaction.cpp. Covered by
 // the demos' combat (damage, death, thrust) and golden-neutral.
 
-// Player `toucher` picks up `special` (an MF_SPECIAL thing), applying its effect and
+// Player `toucher` picks up `special` (an flagBits(MobjFlag::Special) thing), applying its effect and
 // removing it. No-op if out of reach or already at the relevant maximum.
 void touchSpecialThing(Mobj& special, Mobj& toucher);
 

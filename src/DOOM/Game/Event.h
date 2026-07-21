@@ -73,34 +73,41 @@ enum class GameAction
 //
 namespace Doom
 {
-enum ButtonCode
+// Vanilla kept BT_* and BTS_* in one enum, which hid that they are two different
+// vocabularies for the same byte: BTS_PAUSE and BT_ATTACK are both bit 0, and which
+// meaning applies depends on whether BT_SPECIAL is set. Scoping them together would
+// have made that collision look deliberate, so they are two enums - and the masks
+// and shift counts, which are neither buttons nor commands, are constants.
+enum class ButtonCode
 {
     // Press "Fire".
-    BT_ATTACK = 1,
+    Attack = 1,
     // Use button, to open doors, activate switches.
-    BT_USE = 2,
-
-    // Flag: game events, not really buttons.
-    BT_SPECIAL = 128,
-    BT_SPECIALMASK = 3,
-
+    Use = 2,
     // Flag, weapon change pending.
     // If true, the next 3 bits hold weapon num.
-    BT_CHANGE = 4,
-    // The 3bit weapon mask and shift, convenience.
-    BT_WEAPONMASK = (8 + 16 + 32),
-    BT_WEAPONSHIFT = 3,
-
-    // Pause the game.
-    BTS_PAUSE = 1,
-    // Save the game at each console.
-    BTS_SAVEGAME = 2,
-
-    // Savegame slot numbers
-    //  occupy the second byte of buttons.
-    BTS_SAVEMASK = (4 + 8 + 16),
-    BTS_SAVESHIFT = 2,
+    Change = 4,
+    // Flag: game events, not really buttons.
+    Special = 128
 };
+
+// What the low bits mean when ButtonCode::Special is set.
+enum class SpecialCommand
+{
+    // Pause the game.
+    Pause = 1,
+    // Save the game at each console.
+    SaveGame = 2
+};
+
+// The field masks and shifts packed into the same byte.
+constexpr int buttonSpecialMask = 3;
+// The 3bit weapon mask and shift, convenience.
+constexpr int buttonWeaponMask = 8 + 16 + 32;
+constexpr int buttonWeaponShift = 3;
+// Savegame slot numbers occupy the second byte of buttons.
+constexpr int buttonSaveMask = 4 + 8 + 16;
+constexpr int buttonSaveShift = 2;
 } // namespace Doom
 
 //

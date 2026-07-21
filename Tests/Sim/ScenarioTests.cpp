@@ -16,7 +16,7 @@
 //
 // The strongest assertions here need NO knowledge of the map's geometry. A solid
 // thing dropped onto a spot the player legally occupies MUST make that spot
-// illegal, and MF_NOCLIP MUST make it legal again, whatever the surrounding
+// illegal, and flagBits(MobjFlag::NoClip) MUST make it legal again, whatever the surrounding
 // walls are. Only the "a legal move commits" case leans on the level, and it
 // leans lightly: it discovers a clear neighbour by asking Doom::checkPosition rather
 // than assuming one.
@@ -45,7 +45,7 @@ bool loadE1M1()
 // A solid thing standing where the player wants to be makes the spot illegal -
 // and this is provable from the collision code alone, with no reference to the
 // map. The player stands legally at its own start; drop a barrel exactly there
-// and the same spot must become illegal; give the player MF_NOCLIP and it must
+// and the same spot must become illegal; give the player flagBits(MobjFlag::NoClip) and it must
 // become legal again. The walls never enter into it: only the barrel and the
 // NOCLIP flag change between the three checks.
 auto tThingBlocksAndNoClipBypasses =
@@ -72,11 +72,11 @@ auto tThingBlocksAndNoClipBypasses =
     doomSimSetMobjFlags(player, flags | doomSimFlagNoClip());
 
     check(doomSimCheckPosition(player, sx, sy) == 1,
-          "MF_NOCLIP walks through the thing");
+          "flagBits(MobjFlag::NoClip) walks through the thing");
 
     doomSimSetMobjFlags(player, flags);
     check(doomSimCheckPosition(player, sx, sy) == 0,
-          "clearing MF_NOCLIP restores the block");
+          "clearing flagBits(MobjFlag::NoClip) restores the block");
 };
 
 // A blocked Doom::tryMove must answer false and must leave the thing where it was.

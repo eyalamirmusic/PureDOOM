@@ -1068,7 +1068,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_DROPOFF | MF_PICKUP | MF_NOTDMATCH, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::DropOff, MobjFlag::Pickup, MobjFlag::NotDmatch), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1094,7 +1094,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::Posact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::PossRaise1                // raisestate
     },
 
@@ -1120,7 +1120,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::Posact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::SposRaise1                // raisestate
     },
 
@@ -1146,7 +1146,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         500, // mass
         0, // damage
         SfxEnum::Vilact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1172,7 +1172,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1198,7 +1198,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         500, // mass
         0, // damage
         SfxEnum::Skeact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::SkelRaise1                // raisestate
     },
 
@@ -1224,7 +1224,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         10, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1250,7 +1250,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1276,7 +1276,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         1000, // mass
         0, // damage
         SfxEnum::Posact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::FattRaise1                // raisestate
     },
 
@@ -1302,7 +1302,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         8, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1328,7 +1328,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::Posact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::CposRaise1                // raisestate
     },
 
@@ -1354,7 +1354,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::Bgact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::TrooRaise1                // raisestate
     },
 
@@ -1380,7 +1380,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         400, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::SargRaise1                // raisestate
     },
 
@@ -1406,7 +1406,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         400, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_SHADOW | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::Shadow, MobjFlag::CountKill), // flags
         StateNum::SargRaise1                // raisestate
     },
 
@@ -1432,7 +1432,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         400, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_FLOAT | MF_NOGRAVITY | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::Float, MobjFlag::NoGravity, MobjFlag::CountKill), // flags
         StateNum::HeadRaise1                // raisestate
     },
 
@@ -1458,7 +1458,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         1000, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::BossRaise1                // raisestate
     },
 
@@ -1484,7 +1484,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         8, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1510,7 +1510,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         1000, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::Bos2Raise1                // raisestate
     },
 
@@ -1536,7 +1536,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         50, // mass
         3, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_FLOAT | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::Float, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1562,7 +1562,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         1000, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1588,7 +1588,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         600, // mass
         0, // damage
         SfxEnum::Bspact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::BspiRaise1                // raisestate
     },
 
@@ -1614,7 +1614,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         1000, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1640,7 +1640,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         400, // mass
         0, // damage
         SfxEnum::Dmact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_FLOAT | MF_NOGRAVITY | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::Float, MobjFlag::NoGravity, MobjFlag::CountKill), // flags
         StateNum::PainRaise1                // raisestate
     },
 
@@ -1666,7 +1666,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::Posact, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::SswvRaise1                // raisestate
     },
 
@@ -1692,7 +1692,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         10000000, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY | MF_SHOOTABLE | MF_COUNTKILL, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity, MobjFlag::Shootable, MobjFlag::CountKill), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1718,7 +1718,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         10000000, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SHOOTABLE, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1744,7 +1744,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOSECTOR, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoSector), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1770,7 +1770,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOSECTOR, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoSector), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1796,7 +1796,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         3, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY | MF_NOCLIP, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity, MobjFlag::NoClip), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1822,7 +1822,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1848,7 +1848,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SHOOTABLE | MF_NOBLOOD, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::Shootable, MobjFlag::NoBlood), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1874,7 +1874,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         3, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1900,7 +1900,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         5, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1926,7 +1926,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         20, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1952,7 +1952,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         5, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -1978,7 +1978,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         100, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2004,7 +2004,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         5, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_MISSILE | MF_DROPOFF | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::Missile, MobjFlag::DropOff, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2030,7 +2030,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2056,7 +2056,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP, // flags
+        flagBits(MobjFlag::NoBlockmap), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2082,7 +2082,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2108,7 +2108,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2134,7 +2134,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOSECTOR, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoSector), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2160,7 +2160,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::NoBlockmap, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2186,7 +2186,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2212,7 +2212,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2238,7 +2238,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2264,7 +2264,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2290,7 +2290,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_NOTDMATCH, // flags
+        flagBits(MobjFlag::Special, MobjFlag::NotDmatch), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2316,7 +2316,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_NOTDMATCH, // flags
+        flagBits(MobjFlag::Special, MobjFlag::NotDmatch), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2342,7 +2342,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_NOTDMATCH, // flags
+        flagBits(MobjFlag::Special, MobjFlag::NotDmatch), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2368,7 +2368,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_NOTDMATCH, // flags
+        flagBits(MobjFlag::Special, MobjFlag::NotDmatch), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2394,7 +2394,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_NOTDMATCH, // flags
+        flagBits(MobjFlag::Special, MobjFlag::NotDmatch), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2420,7 +2420,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_NOTDMATCH, // flags
+        flagBits(MobjFlag::Special, MobjFlag::NotDmatch), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2446,7 +2446,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2472,7 +2472,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2498,7 +2498,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2524,7 +2524,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2550,7 +2550,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2576,7 +2576,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2602,7 +2602,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2628,7 +2628,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2654,7 +2654,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2680,7 +2680,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL | MF_COUNTITEM, // flags
+        flagBits(MobjFlag::Special, MobjFlag::CountItem), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2706,7 +2706,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2732,7 +2732,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2758,7 +2758,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2784,7 +2784,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2810,7 +2810,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2836,7 +2836,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2862,7 +2862,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2888,7 +2888,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2914,7 +2914,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2940,7 +2940,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2966,7 +2966,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -2992,7 +2992,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3018,7 +3018,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3044,7 +3044,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3070,7 +3070,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3096,7 +3096,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPECIAL, // flags
+        flagBits(MobjFlag::Special), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3122,7 +3122,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3148,7 +3148,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3174,7 +3174,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3200,7 +3200,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3226,7 +3226,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3252,7 +3252,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3278,7 +3278,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3304,7 +3304,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3330,7 +3330,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3356,7 +3356,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3382,7 +3382,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3408,7 +3408,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3434,7 +3434,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3460,7 +3460,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3486,7 +3486,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3512,7 +3512,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3538,7 +3538,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3564,7 +3564,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3590,7 +3590,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3616,7 +3616,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3668,7 +3668,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3694,7 +3694,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3720,7 +3720,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3746,7 +3746,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3772,7 +3772,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3798,7 +3798,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3824,7 +3824,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3850,7 +3850,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3876,7 +3876,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3902,7 +3902,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -3928,7 +3928,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4188,7 +4188,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4240,7 +4240,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4266,7 +4266,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4292,7 +4292,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4318,7 +4318,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4344,7 +4344,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4370,7 +4370,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID, // flags
+        flagBits(MobjFlag::Solid), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4396,7 +4396,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4422,7 +4422,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4448,7 +4448,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4474,7 +4474,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4500,7 +4500,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4526,7 +4526,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_SOLID | MF_SPAWNCEILING | MF_NOGRAVITY, // flags
+        flagBits(MobjFlag::Solid, MobjFlag::SpawnCeiling, MobjFlag::NoGravity), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4552,7 +4552,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP, // flags
+        flagBits(MobjFlag::NoBlockmap), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4578,7 +4578,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP, // flags
+        flagBits(MobjFlag::NoBlockmap), // flags
         StateNum::Null                // raisestate
     },
 
@@ -4604,7 +4604,7 @@ MobjInfo mobjinfo[numMobjTypes] = {
         100, // mass
         0, // damage
         SfxEnum::None, // activesound
-        MF_NOBLOCKMAP, // flags
+        flagBits(MobjFlag::NoBlockmap), // flags
         StateNum::Null                // raisestate
     }
 };
