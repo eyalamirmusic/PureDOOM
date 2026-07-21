@@ -27,13 +27,13 @@ struct WipeShader final : ScreenQuadShader
         // One offset per two-pixel column, sampled nearest, so the lookup picks
         // the column out on its own with no rounding to do by hand.
         auto slid = sample(offsets, float2(uv.x(), 0.5f)).x() * 255.0f;
-        auto sourceRow = uv.y() * (float) doomHeight - slid;
+        auto sourceRow = uv.y() * (float) Engine::screenHeight - slid;
 
         // Above where the column has slid to, the outgoing screen is gone, and
         // throwing the pixel away is what leaves the new frame standing.
         setDiscardBelow(sourceRow, 0.0f);
 
-        auto uvStart = float2(uv.x(), sourceRow / (float) doomHeight);
+        auto uvStart = float2(uv.x(), sourceRow / (float) Engine::screenHeight);
         setPaletteFragment(indexOf(sample(start, uvStart)));
     }
 

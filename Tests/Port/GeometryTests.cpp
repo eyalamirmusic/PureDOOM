@@ -2,16 +2,16 @@
 //
 // examples/EACP is the one part of this repository with no gate on it: the app
 // is not built by CI, EngineAccess.cpp includes the engine's headers directly,
-// and nothing has ever run eacpDoomBuildGeometry outside a live GPU frame. That
+// and nothing has ever run Engine::buildGeometry outside a live GPU frame. That
 // blind spot is exactly where the first Windows build's missing floors lived -
 // the software renderer's frame goldens were green throughout, because they do
 // not exercise this code at all.
 //
-// EngineAccess.cpp needs no GPU (it includes only DOOM headers and hands out
-// plain C structs), so the builder can be driven from a test binary and its
-// output inspected as data. That is what this file does: load E1M1, ask for one
-// frame of geometry, and assert that the three kinds of surface DOOM's world is
-// made of are all present.
+// EngineAccess.cpp needs no GPU (it includes only DOOM headers and the container
+// vocabulary), so the builder can be driven from a test binary and its output
+// inspected as data. That is what this file does: load E1M1, ask for one frame of
+// geometry, and assert that the three kinds of surface DOOM's world is made of
+// are all present.
 //
 // The classifier deliberately reads the *vertices* rather than the texture ids.
 // A floor or a ceiling is the only geometry whose triangle is horizontal - all
@@ -27,9 +27,11 @@
 #include <DOOM/Render/GraphicsData.h>
 
 #include <cmath>
+#include <span>
 #include <vector>
 
 using namespace nano;
+using namespace PureDoom;
 
 namespace
 {
@@ -48,16 +50,35 @@ struct Surfaces
     int vertical = 0;
 };
 
+// The scratch a frame is built into, and the frame built into it. Held together
+// so each case can ask for one line and then read the result as data.
+struct Frame
+{
+    Frame()
+    {
+        vertices.resize(maxVertices);
+        draws.resize(maxDraws);
+    }
+
+    Engine::WorldGeometry build()
+    {
+        return Engine::buildGeometry(Engine::camera(), 0.0f, {vertices, draws});
+    }
+
+    std::vector<Engine::WorldVertex> vertices;
+    std::vector<Engine::TextureDraw> draws;
+};
+
 // A triangle counts as horizontal when its three corners share a height. The
 // emitter writes floors and ceilings at a single `height` per subsector, so this
 // is exact rather than approximate - but it is compared with a tolerance anyway,
 // since the values arrive as floats and a future emitter is free to interpolate
 // them.
-Surfaces classify(const std::vector<EacpDoomVertex>& vertices, int count)
+Surfaces classify(std::span<const Engine::WorldVertex> vertices)
 {
     auto result = Surfaces {};
 
-    for (auto i = 0; i + 2 < count; i += 3)
+    for (auto i = 0u; i + 2 < vertices.size(); i += 3)
     {
         auto a = vertices[i].position[1];
         auto b = vertices[i + 1].position[1];
@@ -76,8 +97,8 @@ Surfaces classify(const std::vector<EacpDoomVertex>& vertices, int count)
 
 // The horizontal triangles inside one draw's run - the floors and ceilings drawn
 // with that draw's texture.
-int horizontalTrianglesIn(const std::vector<EacpDoomVertex>& vertices,
-                          const EacpDoomDraw& draw)
+int horizontalTrianglesIn(std::span<const Engine::WorldVertex> vertices,
+                          const Engine::TextureDraw& draw)
 {
     auto count = 0;
     auto end = draw.firstVertex + draw.vertexCount;
@@ -103,24 +124,13 @@ auto tWorldGeometryHasFloors = test("Port/worldGeometryHasFloors") = []
     check(doomSimBoot() != 0, "the engine booted");
     check(doomSimLoadLevel(e1, m1, skillMedium) != 0, "E1M1 loaded");
 
-    auto vertices = std::vector<EacpDoomVertex>(maxVertices);
-    auto draws = std::vector<EacpDoomDraw>(maxDraws);
-    auto vertexCount = 0;
+    auto frame = Frame {};
+    auto world = frame.build();
 
-    auto camera = eacpDoomGetCamera();
+    check(!world.draws.empty(), "the builder emitted at least one draw");
+    check(!world.vertices.empty(), "the builder emitted at least one vertex");
 
-    auto drawCount = eacpDoomBuildGeometry(&camera,
-                                           0.0f,
-                                           vertices.data(),
-                                           maxVertices,
-                                           draws.data(),
-                                           maxDraws,
-                                           &vertexCount);
-
-    check(drawCount > 0, "the builder emitted at least one draw");
-    check(vertexCount > 0, "the builder emitted at least one vertex");
-
-    auto surfaces = classify(vertices, vertexCount);
+    auto surfaces = classify(world.vertices);
 
     // The two assertions that matter, and they are independent: walls coming out
     // while floors do not is precisely the Windows symptom, and a test that only
@@ -135,7 +145,7 @@ auto tWorldGeometryHasFloors = test("Port/worldGeometryHasFloors") = []
 // The geometry coming out right does not mean a floor appears: the surface still
 // has to be handed a texture. This walks the draws whose triangles are horizontal
 // - the floors and ceilings, found from the vertices rather than from the id
-// space, as above - and asks eacpDoomGetTexturePixels for each one's pixels, the
+// space, as above - and asks Engine::readTexturePixels for each one's pixels, the
 // same call View::textureFor makes on first use.
 //
 // A flat is a raw 64x64 lump of palette indices, so what is checked is that the
@@ -150,32 +160,19 @@ auto tFloorTexturesAreReadable = test("Port/floorTexturesAreReadable") = []
     check(doomSimBoot() != 0, "the engine booted");
     check(doomSimLoadLevel(e1, m1, skillMedium) != 0, "E1M1 loaded");
 
-    auto vertices = std::vector<EacpDoomVertex>(maxVertices);
-    auto draws = std::vector<EacpDoomDraw>(maxDraws);
-    auto vertexCount = 0;
+    auto frame = Frame {};
+    auto world = frame.build();
 
-    auto camera = eacpDoomGetCamera();
-
-    auto drawCount = eacpDoomBuildGeometry(&camera,
-                                           0.0f,
-                                           vertices.data(),
-                                           maxVertices,
-                                           draws.data(),
-                                           maxDraws,
-                                           &vertexCount);
-
-    check(drawCount > 0, "the builder emitted at least one draw");
+    check(!world.draws.empty(), "the builder emitted at least one draw");
 
     auto floorTextures = 0;
 
-    for (auto i = 0; i < drawCount; ++i)
+    for (const auto& draw: world.draws)
     {
-        auto& draw = draws[i];
-
         // Only the runs that actually contain a horizontal triangle, which is
         // what makes this a test of the *floor* textures rather than of all of
         // them.
-        if (horizontalTrianglesIn(vertices, draw) == 0)
+        if (horizontalTrianglesIn(world.vertices, draw) == 0)
             continue;
 
         // The id must be in the *flat* range, not merely 64x64 - plenty of wall
@@ -184,11 +181,11 @@ auto tFloorTexturesAreReadable = test("Port/floorTexturesAreReadable") = []
         check(draw.textureId >= Doom::graphicsData().numtextures,
               "a floor's texture id is in the flat range");
 
-        auto info = eacpDoomGetTextureInfo(draw.textureId);
+        auto info = Engine::textureInfo(draw.textureId);
 
         check(info.width == 64 && info.height == 64,
               "a floor's texture is a 64x64 flat");
-        check(info.masked == 0, "a flat is not masked");
+        check(!info.masked, "a flat is not masked");
 
         // The UVs a flat is tiled by are world coordinates over 64, so they run to
         // tens or hundreds rather than the 0..4 a wall sees. That is the one
@@ -196,16 +193,16 @@ auto tFloorTexturesAreReadable = test("Port/floorTexturesAreReadable") = []
         // worth pinning: it must vary across the triangle (a constant UV samples
         // one texel and draws the surface as a single flat colour) and it must
         // stay finite.
-        auto& first = vertices[draw.firstVertex];
+        auto run = world.vertices.subspan(draw.firstVertex, draw.vertexCount);
+        const auto& first = run.front();
         auto varyingUv = false;
 
-        for (auto v = draw.firstVertex; v < draw.firstVertex + draw.vertexCount; ++v)
+        for (const auto& vertex: run)
         {
-            check(std::isfinite(vertices[v].uv[0])
-                      && std::isfinite(vertices[v].uv[1]),
+            check(std::isfinite(vertex.uv[0]) && std::isfinite(vertex.uv[1]),
                   "a flat's UV is finite");
 
-            if (vertices[v].uv[0] != first.uv[0] || vertices[v].uv[1] != first.uv[1])
+            if (vertex.uv[0] != first.uv[0] || vertex.uv[1] != first.uv[1])
                 varyingUv = true;
         }
 
@@ -214,7 +211,7 @@ auto tFloorTexturesAreReadable = test("Port/floorTexturesAreReadable") = []
         auto pixels = std::vector<unsigned char>(
             static_cast<std::size_t>(info.width * info.height), 0);
 
-        eacpDoomGetTexturePixels(draw.textureId, pixels.data());
+        Engine::readTexturePixels(draw.textureId, pixels);
 
         auto varied = false;
 
@@ -239,34 +236,21 @@ auto tWorldGeometryDrawsAreInRange = test("Port/worldGeometryDrawsAreInRange") =
     check(doomSimBoot() != 0, "the engine booted");
     check(doomSimLoadLevel(e1, m1, skillMedium) != 0, "E1M1 loaded");
 
-    auto vertices = std::vector<EacpDoomVertex>(maxVertices);
-    auto draws = std::vector<EacpDoomDraw>(maxDraws);
-    auto vertexCount = 0;
+    auto frame = Frame {};
+    auto world = frame.build();
+    auto textureCount = Engine::textureCount();
 
-    auto camera = eacpDoomGetCamera();
-
-    auto drawCount = eacpDoomBuildGeometry(&camera,
-                                           0.0f,
-                                           vertices.data(),
-                                           maxVertices,
-                                           draws.data(),
-                                           maxDraws,
-                                           &vertexCount);
-
-    auto textureCount = eacpDoomGetTextureCount();
-
-    check(drawCount > 0, "the builder emitted at least one draw");
+    check(!world.draws.empty(), "the builder emitted at least one draw");
     check(textureCount > 0, "the engine loaded a texture id space");
 
-    for (auto i = 0; i < drawCount; ++i)
+    for (const auto& draw: world.draws)
     {
-        auto& draw = draws[i];
-
         check(draw.textureId >= 0 && draw.textureId < textureCount,
               "the draw's texture is inside the id space");
         check(draw.vertexCount > 0, "the draw covers at least one vertex");
         check(draw.firstVertex >= 0
-                  && draw.firstVertex + draw.vertexCount <= vertexCount,
+                  && draw.firstVertex + draw.vertexCount
+                         <= static_cast<int>(world.vertices.size()),
               "the draw's run lies inside the emitted vertices");
     }
 };

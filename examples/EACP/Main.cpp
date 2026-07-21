@@ -22,7 +22,7 @@ int main(int argc, char** argv)
     // Doom::initGame reads ~/.doomrc back over the defaults just set, so
     // without this an old config keeps its keys forever and the bindings above
     // do nothing.
-    eacpDoomBindKeys();
+    PureDoom::Engine::bindKeys();
 
     return Apps::run<PureDoom::App>();
 }

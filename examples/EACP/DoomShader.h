@@ -34,7 +34,8 @@ struct DoomShader : GPU::ShaderProgram
 
     GPU::Float remap(const GPU::Float& index, const GPU::Float& row)
     {
-        auto uv = float2(indexCoordinate(index), (row + 0.5f) / colormapRows);
+        auto uv = float2(indexCoordinate(index),
+                         (row + 0.5f) / (float) Engine::colormapRows);
         return indexOf(sample(colormap, uv));
     }
 

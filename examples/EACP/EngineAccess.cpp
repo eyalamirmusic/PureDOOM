@@ -3,347 +3,1024 @@
 // Nothing DOOM-typed leaks out through EngineAccess.h.
 
 #include "EngineAccess.h"
-#include <DOOM/Sim/Level.h>
 
-#include <DOOM/Game/OverlayState.h>
-#include <DOOM/Game/SkyState.h>
-#include <DOOM/Render/BSP.h>
-#include <DOOM/Render/GraphicsData.h>
-#include <DOOM/Render/Lighting.h>
-#include <DOOM/Render/Planes.h>
-#include <DOOM/Render/ViewWindow.h>
-#include <DOOM/Sim/ThinkerList.h>
-#include <DOOM/Render/Things.h>
-#include <DOOM/Render/Video.h>
-#include <DOOM/UI/Automap.h>
-#include <DOOM/UI/Hud.h>
 #include <DOOM/DOOM.h>
-#include <DOOM/Host/Platform.h>
-
-#include <DOOM/UI/AutomapTypes.h>
-#include <DOOM/Game/PlayerTypes.h>
-#include <DOOM/Game/GameDefs.h>
-#include <DOOM/Game/MapSpawns.h>
 #include <DOOM/doomtype.h>
-#include <DOOM/UI/Wipe.h>
-#include <DOOM/UI/Hud.h>
-#include <DOOM/Sim/Info.h>
-#include <DOOM/Math/FixedPoint.h>
-#include <DOOM/UI/Menu.h>
 #include <DOOM/Game/ConfigTypes.h>
-#include <DOOM/Sim/SimDefs.h>
-#include <DOOM/Sim/WeaponTypes.h>
-#include <DOOM/Sim/MapTypes.h>
-#include <DOOM/Render/RenderTypes.h>
-#include <DOOM/UI/StatusBarTypes.h>
-#include <DOOM/Math/TrigTables.h>
 #include <DOOM/Game/GameClock.h>
+#include <DOOM/Game/GameDefs.h>
 #include <DOOM/Game/GameFlow.h>
 #include <DOOM/Game/GameSession.h>
+#include <DOOM/Game/MapSpawns.h>
 #include <DOOM/Game/OverlayState.h>
 #include <DOOM/Game/PlayerState.h>
+#include <DOOM/Game/PlayerTypes.h>
 #include <DOOM/Game/RefreshFlags.h>
+#include <DOOM/Game/SkyState.h>
+#include <DOOM/Host/Platform.h>
+#include <DOOM/Math/FixedPoint.h>
+#include <DOOM/Math/TrigTables.h>
+#include <DOOM/Render/BSP.h>
+#include <DOOM/Render/Data.h>
+#include <DOOM/Render/GraphicsData.h>
+#include <DOOM/Render/Lighting.h>
+#include <DOOM/Render/Main.h>
+#include <DOOM/Render/Planes.h>
+#include <DOOM/Render/RenderTypes.h>
+#include <DOOM/Render/Things.h>
+#include <DOOM/Render/Video.h>
+#include <DOOM/Render/ViewWindow.h>
+#include <DOOM/Sim/Info.h>
+#include <DOOM/Sim/Level.h>
+#include <DOOM/Sim/MapTypes.h>
+#include <DOOM/Sim/SimDefs.h>
+#include <DOOM/Sim/ThinkerList.h>
+#include <DOOM/Sim/WeaponTypes.h>
+#include <DOOM/UI/Automap.h>
+#include <DOOM/UI/AutomapTypes.h>
+#include <DOOM/UI/Hud.h>
+#include <DOOM/UI/Menu.h>
 #include <DOOM/UI/MenuSettings.h>
+#include <DOOM/UI/StatusBarTypes.h>
+#include <DOOM/UI/Wipe.h>
 #include <DOOM/Wad/WadFile.h>
 
-#include <cstring>
+#include <algorithm>
+#include <cmath>
+#include <numbers>
 
-// Engine globals that no header declares. DOOM.c reaches them the same way, so
-#include <DOOM/UI/Menu.h>
-// this is the house style rather than a workaround - but they are the natural
-#include <DOOM/Render/Main.h>
-// candidates for a real interface as the engine gets refactored.
+// The engine's live palette, which no header declares - UI/Menu.cpp reaches it
+// the same way. It is the natural candidate for a real interface as the engine
+// gets refactored further.
 extern unsigned char screen_palette[256 * 3];
 
+namespace PureDoom::Engine
+{
+namespace
+{
 // Convex subsector cells rarely exceed a handful of corners; the cap only
 // bounds the clipper's scratch space.
-#define EACP_MAX_POLY_VERTICES 32
+constexpr auto maxPolyVertices = 32;
 
 // Larger than any DOOM map, so the initial square the BSP clips down is
 // effectively unbounded.
-#define EACP_MAP_LIMIT 32768.0
+constexpr auto mapLimit = 32768.0;
 
-#define EACP_CLIP_EPSILON 1e-6
+constexpr auto clipEpsilon = 1e-6;
 
-#define EACP_FLAT_SIZE 64
-
-#define EACP_SCREEN_PIXELS (EACP_DOOM_SCREEN_WIDTH * EACP_DOOM_SCREEN_HEIGHT)
+constexpr auto flatSize = 64;
 
 // The sky is a cylinder around the camera, far enough out that every wall in a
 // DOOM level stands in front of it, and tall enough to fill the view.
-#define EACP_SKY_SEGMENTS 64
-#define EACP_SKY_RADIUS 12000.0f
-#define EACP_SKY_HEIGHT 9000.0f
+constexpr auto skySegments = 64;
+constexpr auto skyRadius = 12000.0f;
+constexpr auto skyHeight = 9000.0f;
 
 // The view's focal length in rows: half of the 168-row view divided by the
 // tangent of half its vertical field of view. It converts a height on the sky
 // cylinder into the screen row DOOM would have drawn it at.
-#define EACP_SKY_FOCAL 133.33f
+constexpr auto skyFocal = 133.33f;
 
-typedef struct
+// angle_t maps the full circle onto 32 bits, so 2^31 is half a turn.
+constexpr auto halfTurn = 2147483648.0;
+
+// Whether a caller's buffer is big enough for what is about to be written into
+// it. Every span this file takes is an out-parameter sized by one of the
+// constants in EngineAccess.h, and this is where that is checked rather than
+// assumed.
+bool fits(std::span<const std::uint8_t> buffer, int bytes)
 {
-    double x, y;
-} EacpPoint;
+    return buffer.size() >= static_cast<std::size_t>(bytes);
+}
 
-typedef struct
+double toDouble(fixed_t value)
 {
-    // Null while counting: the first pass sizes each texture's run, the second
-    // writes into it.
-    EacpDoomVertex* vertices;
-    int* counts;
-    int* cursors;
-} EacpEmitter;
+    return static_cast<double>(value.raw) / static_cast<double>(FRACUNIT.raw);
+}
 
-static float* eacpPolyVertices = 0;
-static int* eacpPolyStart = 0;
-static int* eacpPolyCount = 0;
-static int eacpPolyTotal = 0;
+float toFloat(fixed_t value)
+{
+    return static_cast<float>(value.raw) / static_cast<float>(FRACUNIT.raw);
+}
+
+fixed_t toFixed(double value)
+{
+    return fixed_t {static_cast<std::int32_t>(value * FRACUNIT.raw)};
+}
+
+// The engine's 32-bit angle for a heading in radians, so the view being drawn
+// can index the same sine tables the engine uses.
+angle_t angleFromRadians(float radians)
+{
+    auto turns = static_cast<double>(radians) * (halfTurn / std::numbers::pi);
+
+    return angle_t {static_cast<std::uint32_t>(static_cast<std::int64_t>(turns))};
+}
+
+// A point in the map's own ground plane, in whole map units. Every double in
+// this file that names a map coordinate is in whole units, never in fixed-point
+// raw ones - mixing the two is a factor of 65536 that compiles silently.
+struct Point
+{
+    double x = 0.0;
+    double y = 0.0;
+};
+
+// The COLORMAP row a surface resolves through, and whether distance darkens it
+// further.
+struct Light
+{
+    float row = 0.0f;
+    float falloff = 0.0f;
+};
+
+// Where every sector's floor and ceiling stood at the last tic, so a door or a
+// lift can be drawn part-way to where it is going rather than jumping there,
+// and how far into the current tic the frame being built sits.
+struct TicSnapshot
+{
+    Vector<float> floor;
+    Vector<float> ceiling;
+    float alpha = 0.0f;
+};
+
+// The subsector cells recovered from the BSP, and the length of every line the
+// geometry pass lays a texture along. Both are fixed for a level, so both are
+// rebuilt only when a new one loads.
+struct LevelCells
+{
+    Vector<Point> corners;
+    Vector<int> start;
+    Vector<int> count;
+    Vector<float> lineLengths;
+
+    const void* cachedNodes = nullptr;
+    int cachedSubsectors = -1;
+    int cachedEpisode = -1;
+    int cachedMap = -1;
+};
+
+// Every texture the game loaded, decided once: the dimensions and whether it has
+// holes are known only after decoding, and both are wanted before the renderer
+// asks for a single pixel.
+struct TextureTable
+{
+    bool ready() const { return !infos.empty(); }
+
+    Vector<TextureInfo> infos;
+};
+
+// The per-texture vertex runs a frame is grouped into: counted on the first pass
+// over the world, written on the second.
+struct EmitScratch
+{
+    Vector<int> counts;
+    Vector<int> cursors;
+};
+
+TicSnapshot snapshot;
+LevelCells cells;
+TextureTable textureTable;
+EmitScratch scratch;
+
+// A sector's floor or ceiling where it is *now*, part-way through whatever move
+// a door or a lift has it making, rather than where the last tic left it. The
+// walls that meet it are drawn from the same number, so nothing tears.
+float interpolatedHeight(const Vector<float>& previous, int index, float now)
+{
+    if (index < 0 || index >= previous.size())
+        return now;
+
+    return std::lerp(previous[index], now, snapshot.alpha);
+}
+
+int sectorIndex(const Doom::Sector& sector)
+{
+    return static_cast<int>(&sector - sectors);
+}
+
+float floorHeight(const Doom::Sector& sector)
+{
+    return interpolatedHeight(
+        snapshot.floor, sectorIndex(sector), toFloat(sector.floorheight));
+}
+
+float ceilingHeight(const Doom::Sector& sector)
+{
+    return interpolatedHeight(
+        snapshot.ceiling, sectorIndex(sector), toFloat(sector.ceilingheight));
+}
+
+int spriteBase()
+{
+    auto& gfx = Doom::graphicsData();
+
+    return gfx.numtextures + gfx.numflats;
+}
+
+Doom::Player& displayPlayer()
+{
+    auto& players = Doom::playerState();
+
+    return players.players[players.displayplayer];
+}
+
+// The row the whole view is locked to, or zero for none: the invulnerability
+// sphere picks the inverse map and the light-amp visor the brightest row
+// (playerThink), and setupFrame then puts every wall, flat, sprite and the
+// weapon through it, with the sector's brightness and the distance falloff both
+// ignored.
+int fixedRow()
+{
+    return displayPlayer().fixedcolormap;
+}
+
+// One row, whatever the distance - what the engine does with a bare colormap
+// pointer rather than a light table.
+Light fixedLight(int row)
+{
+    return {static_cast<float>(row), 0.0f};
+}
+
+// The row a surface starts at before distance darkens it further: the engine's
+// light level scaled into the 32 maps, offset by the sector's brightness and the
+// fake contrast walls get for their orientation.
+Light sectorLight(int lightlevel, int contrast)
+{
+    if (fixedRow())
+        return fixedLight(fixedRow());
+
+    auto lightnum = std::clamp((lightlevel >> Doom::LIGHTSEGSHIFT)
+                                   + Doom::lighting().extralight + contrast,
+                               0,
+                               Doom::LIGHTLEVELS - 1);
+
+    auto row = (Doom::LIGHTLEVELS - 1 - lightnum) * 2 * Doom::NUMCOLORMAPS
+               / Doom::LIGHTLEVELS;
+
+    return {static_cast<float>(row), 1.0f};
+}
+
+// A frame the engine marks as lit - a muzzle flash, a rocket - is drawn through
+// row 0 at any distance. A powerup outranks it (projectSprite tests
+// fixedcolormap first), and this says both.
+Light fullbrightLight()
+{
+    return fixedLight(fixedRow());
+}
+
+//
+// Texture decoding.
+//
+
+// A decoded graphic: the palette indices, and the coverage saying which of them
+// the patches actually drew. DOOM stores every graphic as runs of pixels down a
+// column with the gaps between the runs left transparent, so the coverage is
+// what makes a masked texture's holes come out as holes.
+struct IndexImage
+{
+    IndexImage(int widthToUse, int heightToUse)
+        : width(widthToUse)
+        , height(heightToUse)
+    {
+        indices.resize(width * height);
+        alpha.resize(width * height);
+    }
+
+    void plot(int x, int y, std::uint8_t index)
+    {
+        if (x < 0 || x >= width || y < 0 || y >= height)
+            return;
+
+        indices[y * width + x] = index;
+        alpha[y * width + x] = 255;
+    }
+
+    bool hasHoles() const
+    {
+        return std::ranges::any_of(alpha, [](auto covered) { return covered == 0; });
+    }
+
+    Vector<std::uint8_t> indices;
+    Vector<std::uint8_t> alpha;
+    int width = 0;
+    int height = 0;
+};
+
+Doom::Patch* patchAt(int lump)
+{
+    return static_cast<Doom::Patch*>(Doom::cacheLumpNum(lump));
+}
+
+// Composing from the patches (as generateComposite does) rather than reading the
+// engine's cached columns is what keeps the gaps.
+void blitPatch(IndexImage& image, const Doom::Patch& patch, int originX, int originY)
+{
+    const auto* base = reinterpret_cast<const byte*>(&patch);
+
+    for (auto x = 0; x < patch.width; ++x)
+    {
+        const auto* column =
+            reinterpret_cast<const Doom::Column*>(base + patch.columnofs[x]);
+
+        while (column->topdelta != 0xff)
+        {
+            const auto* source = reinterpret_cast<const byte*>(column) + 3;
+
+            for (auto i = 0; i < column->length; ++i)
+                image.plot(originX + x, originY + column->topdelta + i, source[i]);
+
+            column = reinterpret_cast<const Doom::Column*>(
+                reinterpret_cast<const byte*>(column) + column->length + 4);
+        }
+    }
+}
+
+IndexImage decodeWall(int id)
+{
+    const auto& texture = *textures[id];
+    auto image = IndexImage {texture.width, texture.height};
+
+    for (auto i = 0; i < texture.patchcount; ++i)
+    {
+        const auto& piece = texture.patches[i];
+
+        blitPatch(image, *patchAt(piece.patch), piece.originx, piece.originy);
+    }
+
+    return image;
+}
+
+IndexImage decodeSprite(int lump, const TextureInfo& info)
+{
+    auto image = IndexImage {info.width, info.height};
+
+    blitPatch(image, *patchAt(lump), 0, 0);
+
+    return image;
+}
+
+void ensureTextureTable()
+{
+    auto& gfx = Doom::graphicsData();
+
+    if (textureTable.ready() || gfx.numtextures <= 0 || textures == nullptr)
+        return;
+
+    textureTable.infos.resize(gfx.numtextures + gfx.numflats + gfx.numspritelumps);
+
+    for (auto id = 0; id < gfx.numtextures; ++id)
+        textureTable.infos[id] = {
+            textures[id]->width, textures[id]->height, decodeWall(id).hasHoles()};
+
+    for (auto i = 0; i < gfx.numflats; ++i)
+        textureTable.infos[gfx.numtextures + i] = {flatSize, flatSize, false};
+
+    for (auto i = 0; i < gfx.numspritelumps; ++i)
+        textureTable.infos[spriteBase() + i] = {
+            spritewidth[i].toInt(), patchAt(gfx.firstspritelump + i)->height, true};
+}
+
+int spriteHeight(int lump)
+{
+    return textureTable.infos[spriteBase() + lump].height;
+}
+
+//
+// The subsector cells, recovered from the BSP.
+//
+
+// A convex cell being carried down the BSP, and the clipper's working shape.
+struct Polygon
+{
+    void add(const Point& corner)
+    {
+        if (count < maxPolyVertices)
+            corners[count++] = corner;
+    }
+
+    const Point& operator[](int index) const { return corners[index]; }
+
+    Array<Point, maxPolyVertices> corners;
+    int count = 0;
+};
+
+// Sutherland-Hodgman against one half-plane. The side test matches the engine's
+// own pointOnSide: a point is in front of a directed line when
+// dy * (px - x) - dx * (py - y) is positive.
+Polygon clipToLine(const Polygon& in,
+                   const Point& origin,
+                   const Point& delta,
+                   bool keepFront)
+{
+    auto out = Polygon {};
+
+    auto sideOf = [&](const Point& point)
+    {
+        auto side = delta.y * (point.x - origin.x) - delta.x * (point.y - origin.y);
+
+        return keepFront ? side : -side;
+    };
+
+    for (auto i = 0; i < in.count; ++i)
+    {
+        const auto& a = in[i];
+        const auto& b = in[(i + 1) % in.count];
+
+        auto sideA = sideOf(a);
+        auto sideB = sideOf(b);
+
+        if (sideA >= -clipEpsilon)
+            out.add(a);
+
+        if ((sideA > clipEpsilon && sideB < -clipEpsilon)
+            || (sideA < -clipEpsilon && sideB > clipEpsilon))
+        {
+            auto t = sideA / (sideA - sideB);
+
+            out.add({a.x + t * (b.x - a.x), a.y + t * (b.y - a.y)});
+        }
+    }
+
+    return out;
+}
+
+// A subsector's cell, trimmed to the sector boundary: the segs bound it on the
+// sides that came from real linedefs, and the interior always lies in front of
+// them.
+void storeSubsector(int index, const Polygon& poly)
+{
+    const auto& subsector = subsectors[index];
+    auto current = poly;
+
+    for (auto i = 0; i < subsector.numlines && current.count >= 3; ++i)
+    {
+        const auto& seg = segs[subsector.firstline + i];
+
+        auto origin = Point {toDouble(seg.v1->x), toDouble(seg.v1->y)};
+        auto delta =
+            Point {toDouble(seg.v2->x) - origin.x, toDouble(seg.v2->y) - origin.y};
+
+        current = clipToLine(current, origin, delta, true);
+    }
+
+    if (current.count < 3)
+        return;
+
+    cells.start[index] = cells.corners.size();
+    cells.count[index] = current.count;
+
+    for (auto i = 0; i < current.count; ++i)
+        cells.corners.add(current[i]);
+}
+
+// Vanilla nodes carry no polygons - only the split planes - so each subsector's
+// shape is recovered by carrying a huge square down the BSP and clipping it by
+// every partition on the way to the leaf.
+void descend(int nodenum, const Polygon& poly)
+{
+    if (poly.count < 3)
+        return;
+
+    if (nodenum & Doom::NF_SUBSECTOR)
+    {
+        storeSubsector(nodenum & ~Doom::NF_SUBSECTOR, poly);
+        return;
+    }
+
+    const auto& node = nodes[nodenum];
+
+    auto origin = Point {toDouble(node.x), toDouble(node.y)};
+    auto delta = Point {toDouble(node.dx), toDouble(node.dy)};
+
+    descend(node.children[0], clipToLine(poly, origin, delta, true));
+    descend(node.children[1], clipToLine(poly, origin, delta, false));
+}
 
 // A line's length never changes, and the geometry pass needs it for every wall
 // it lays a texture along, so it is measured once when the level loads rather
 // than thousands of times a frame.
-static float* eacpLineLengths = 0;
-
-static int* eacpTextureCounts = 0;
-static int* eacpTextureCursors = 0;
-static int eacpScratchTextures = 0;
-
-static void* eacpCachedNodes = 0;
-static int eacpCachedSubsectors = -1;
-static int eacpCachedEpisode = -1;
-static int eacpCachedMap = -1;
-
-static int eacpTexturesReady = 0;
-static unsigned char* eacpWallMasked = 0;
-static short* eacpSpriteHeights = 0;
-
-// Where every sector's floor and ceiling stood at the last tic, so a door or a
-// lift can be drawn part-way to where it is going rather than jumping there.
-static float* eacpPreviousFloor = 0;
-static float* eacpPreviousCeiling = 0;
-static int eacpSnapshotSectors = 0;
-
-// How far into the current tic the frame being built sits.
-static float eacpAlpha = 0.0f;
-
-static double eacpFixedToDouble(fixed_t value)
+void measureLines()
 {
-    return (double) value.raw / (double) FRACUNIT.raw;
+    cells.lineLengths.resize(numlines);
+
+    for (auto i = 0; i < numlines; ++i)
+    {
+        auto dx = toDouble(lines[i].dx);
+        auto dy = toDouble(lines[i].dy);
+
+        cells.lineLengths[i] = static_cast<float>(std::sqrt(dx * dx + dy * dy));
+    }
 }
 
-static float eacpFixedToFloat(fixed_t value)
+// The BSP is static for a level, so the cells are rebuilt only when a new one
+// loads; per frame the geometry pass just re-reads the (moving) heights.
+void ensureLevel()
 {
-    return (float) value.raw / (float) FRACUNIT.raw;
-}
+    auto& session = Doom::gameSession();
 
-// The engine deliberately links no libm, so the one square root the texture
-// mapping needs (a wall's length, for its horizontal texture coordinate)
-// comes from Newton's method rather than an include.
-static double eacpSqrt(double value)
-{
-    double guess;
-    int i;
-
-    if (value <= 0.0)
-        return 0.0;
-
-    guess = value;
-
-    for (i = 0; i < 24; ++i)
-        guess = 0.5 * (guess + value / guess);
-
-    return guess;
-}
-
-static float eacpMix(float from, float to, float amount)
-{
-    return from + (to - from) * amount;
-}
-
-// A sector's floor and ceiling where they are *now*, part-way through whatever
-// move a door or a lift has them making, rather than where the last tic left
-// them. The walls that meet them are drawn from the same numbers, so nothing
-// tears.
-static float eacpFloorHeight(Doom::Sector* sector)
-{
-    float now = eacpFixedToFloat(sector->floorheight);
-    int index = (int) (sector - sectors);
-
-    if (eacpPreviousFloor == 0 || index < 0 || index >= eacpSnapshotSectors)
-        return now;
-
-    return eacpMix(eacpPreviousFloor[index], now, eacpAlpha);
-}
-
-static float eacpCeilingHeight(Doom::Sector* sector)
-{
-    float now = eacpFixedToFloat(sector->ceilingheight);
-    int index = (int) (sector - sectors);
-
-    if (eacpPreviousCeiling == 0 || index < 0 || index >= eacpSnapshotSectors)
-        return now;
-
-    return eacpMix(eacpPreviousCeiling[index], now, eacpAlpha);
-}
-
-void eacpDoomSnapshotTic()
-{
-    int i;
-
-    if (Doom::gameFlow().gamestate != Doom::GameState::Level || sectors == 0
-        || numsectors <= 0)
+    if (nodes == cells.cachedNodes && numsubsectors == cells.cachedSubsectors
+        && session.gameepisode == cells.cachedEpisode
+        && session.gamemap == cells.cachedMap)
         return;
 
-    if (eacpSnapshotSectors != numsectors)
+    cells.cachedNodes = nodes;
+    cells.cachedSubsectors = numsubsectors;
+    cells.cachedEpisode = session.gameepisode;
+    cells.cachedMap = session.gamemap;
+
+    cells.corners.clear();
+    cells.start.clear();
+    cells.count.clear();
+
+    if (numsubsectors <= 0 || numnodes <= 0 || nodes == nullptr)
+        return;
+
+    cells.start.resize(numsubsectors);
+    cells.count.resize(numsubsectors);
+    cells.corners.reserveAtLeast(numsubsectors * maxPolyVertices);
+
+    measureLines();
+
+    auto square = Polygon {};
+    square.add({-mapLimit, -mapLimit});
+    square.add({mapLimit, -mapLimit});
+    square.add({mapLimit, mapLimit});
+    square.add({-mapLimit, mapLimit});
+
+    descend(numnodes - 1, square);
+}
+
+//
+// The world, as vertices grouped by texture.
+//
+
+// The two ends of a vertical quad on the ground and the heights it spans, in the
+// renderer's coordinate space.
+struct QuadSpan
+{
+    float ax = 0.0f;
+    float az = 0.0f;
+    float bx = 0.0f;
+    float bz = 0.0f;
+    float bottom = 0.0f;
+    float top = 0.0f;
+};
+
+struct QuadUv
+{
+    float uStart = 0.0f;
+    float uEnd = 0.0f;
+    float vTop = 0.0f;
+    float vBottom = 0.0f;
+};
+
+// The frame's geometry, laid down twice: the first pass sizes each texture's
+// run, the second writes into the run reserved for it. `vertices` is empty while
+// counting.
+struct Emitter
+{
+    bool counting() const { return vertices.empty(); }
+
+    void vertex(int textureId,
+                float x,
+                float y,
+                float z,
+                float u,
+                float v,
+                const Light& light)
     {
-        doom_free(eacpPreviousFloor);
-        doom_free(eacpPreviousCeiling);
-
-        eacpPreviousFloor = (float*) doom_malloc(numsectors * (int) sizeof(float));
-        eacpPreviousCeiling = (float*) doom_malloc(numsectors * (int) sizeof(float));
-        eacpSnapshotSectors = numsectors;
-
-        if (eacpPreviousFloor == 0 || eacpPreviousCeiling == 0)
+        if (counting())
         {
-            eacpSnapshotSectors = 0;
+            ++counts[textureId];
             return;
         }
+
+        if (cursors[textureId] < 0)
+            return;
+
+        vertices[cursors[textureId]++] = {
+            {x, y, z}, {u, v}, light.row, light.falloff};
     }
 
-    for (i = 0; i < numsectors; ++i)
+    void quad(int textureId,
+              const QuadSpan& span,
+              const QuadUv& uv,
+              const Light& light)
     {
-        eacpPreviousFloor[i] = eacpFixedToFloat(sectors[i].floorheight);
-        eacpPreviousCeiling[i] = eacpFixedToFloat(sectors[i].ceilingheight);
-    }
-}
+        vertex(
+            textureId, span.ax, span.bottom, span.az, uv.uStart, uv.vBottom, light);
+        vertex(textureId, span.bx, span.bottom, span.bz, uv.uEnd, uv.vBottom, light);
+        vertex(textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
 
-int eacpDoomViewActive()
-{
-    return Doom::gameFlow().gamestate == Doom::GameState::Level
-           && Doom::gameClock().gametic;
-}
-
-int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
-{
-    const unsigned char* start = (const unsigned char*) wipe_scr_start;
-    int column;
-    int row;
-
-    if (!Doom::gameFlow().is_wiping_screen || start == 0)
-        return 0;
-
-    // wipe_melt_running is the melt's own "I have been set up" flag, and the only
-    // to test: wipe_exitMelt frees the column table but leaves y pointing at it,
-    // so between melts y is non-null and dangling. Until the melt is set up, the
-    // outgoing screen is still row-major and nothing has slid.
-    if (!wipe_melt_running)
-    {
-        doom_memcpy(outStart, start, EACP_SCREEN_PIXELS);
-        doom_memset(outOffsets, 0, EACP_DOOM_WIPE_COLUMNS);
-
-        return 1;
+        vertex(
+            textureId, span.ax, span.bottom, span.az, uv.uStart, uv.vBottom, light);
+        vertex(textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
+        vertex(textureId, span.ax, span.top, span.az, uv.uStart, uv.vTop, light);
     }
 
-    for (column = 0; column < EACP_DOOM_WIPE_COLUMNS; ++column)
-    {
-        int slid = wipe_melt_offsets[column];
+    std::span<WorldVertex> vertices;
+    std::span<int> counts;
+    std::span<int> cursors;
+};
 
-        // A column that has not started moving sits at a negative offset; it has
-        // slid nothing, which is what zero says.
-        if (slid < 0)
-            slid = 0;
-        else if (slid > EACP_DOOM_SCREEN_HEIGHT)
-            slid = EACP_DOOM_SCREEN_HEIGHT;
-
-        outOffsets[column] = (unsigned char) slid;
-
-        // wipe_initMelt leaves the outgoing screen column-major - a column of
-        // two-pixel shorts - because that is how the melt walks it. A texture
-        // wants it back the way round it was. Copying the two bytes rather than
-        // the short keeps this independent of byte order.
-        for (row = 0; row < EACP_DOOM_SCREEN_HEIGHT; ++row)
-        {
-            const unsigned char* source =
-                start + (column * EACP_DOOM_SCREEN_HEIGHT + row) * 2;
-            unsigned char* destination =
-                outStart + row * EACP_DOOM_SCREEN_WIDTH + column * 2;
-
-            destination[0] = source[0];
-            destination[1] = source[1];
-        }
-    }
-
-    return 1;
+// DOOM's map plane is (x, y) with z up; the renderer's is (x, up, -y).
+QuadSpan groundSpan(const Point& from, const Point& to, float bottom, float top)
+{
+    return {static_cast<float>(from.x),
+            static_cast<float>(-from.y),
+            static_cast<float>(to.x),
+            static_cast<float>(-to.y),
+            bottom,
+            top};
 }
 
-int eacpDoomAutomapActive()
+// A wall texture as the geometry pass wants it: the translated id the animation
+// is currently showing, and its size in world units.
+struct WallTexture
 {
-    return Doom::overlayState().automapactive ? 1 : 0;
+    int id = 0;
+    float width = 0.0f;
+    float height = 0.0f;
+};
+
+WallTexture wallTexture(int index)
+{
+    auto id = texturetranslation[index];
+
+    return {id,
+            static_cast<float>(textures[id]->width),
+            static_cast<float>(textures[id]->height)};
 }
 
-int eacpDoomStatusBarVisible()
+// One textured band of a linedef. `textureTop` is where the texture's own top
+// edge sits in world height, which is what DOOM's pegging rules decide.
+void emitWall(Emitter& emitter,
+              const WallTexture& texture,
+              const Doom::Side& side,
+              const QuadSpan& span,
+              float textureTop,
+              float length,
+              const Light& light)
 {
-    // Doom::drawStatusBar's own st_statusbaron, which is private to it: Doom::displayFrame asks for
-    // a bar-less frame once the view fills all 200 rows, and the automap keeps
-    // the bar whatever the screen size says.
-    return Doom::viewWindow().viewheight != Doom::SCREENHEIGHT
-           || Doom::overlayState().automapactive;
-}
-
-float eacpDoomViewRows()
-{
-    return eacpDoomStatusBarVisible() ? (float) Doom::ST_Y
-                                      : (float) Doom::SCREENHEIGHT;
-}
-
-void eacpDoomRevealAutomap()
-{
-    auto& players_ = Doom::playerState();
-
-    Doom::Player* player = &players_.players[players_.displayplayer];
-
-    if (Doom::gameFlow().gamestate != Doom::GameState::Level
-        || !Doom::gameClock().gametic || !Doom::overlayState().automapactive
-        || player->mo == 0)
+    if (span.top <= span.bottom)
         return;
 
-    Doom::setupFrame(*player);
-    Doom::clearClipSegs();
-    Doom::clearDrawSegs();
-    Doom::clearPlanes();
-    Doom::clearSprites();
+    auto uStart = toFloat(side.textureoffset) / texture.width;
 
-    // Marking a line is Doom::storeWallRange's doing, and it does it as it draws the
-    // wall - so the walls land in the frame the automap has just drawn itself
-    // into (the column drawers write through ylookup, which was pointed at
-    // screens[0] when the view size was set, and does not follow it anywhere).
-    // Drawing the map again puts it back. The GPU path does not read that frame
-    // for anything but the status bar, which the view never reaches; the
-    // software one reads all of it.
-    Doom::renderBSPNode(numnodes - 1);
-    Doom::drawAutomap();
+    emitter.quad(texture.id,
+                 span,
+                 {uStart,
+                  uStart + length / texture.width,
+                  (textureTop - span.top) / texture.height,
+                  (textureTop - span.bottom) / texture.height},
+                 light);
 }
 
-int eacpDoomDarkenRow()
+// The software renderer's fake contrast: walls running east-west are a step
+// darker, north-south a step brighter, so corners stay readable.
+int wallContrast(const Doom::Line& line)
 {
-    // Doom::drawMenu only reaches its darkening once it is actually showing a menu: a
-    // confirmation prompt draws its text and returns before then.
-    if (Doom::overlayState().menuactive && !messageToPrint
-        && (doom_flags & Doom::DOOM_FLAG_MENU_DARKEN_BG))
-        return EACP_DOOM_MENU_DARKEN_ROW;
+    if (line.v1->y == line.v2->y)
+        return -1;
+
+    if (line.v1->x == line.v2->x)
+        return 1;
 
     return 0;
 }
 
-static unsigned char eacpOverlayPass[2][EACP_SCREEN_PIXELS];
-static unsigned char eacpUnderIndex[EACP_SCREEN_PIXELS];
-static unsigned char eacpUnderMask[EACP_SCREEN_PIXELS];
-static unsigned char eacpMenuIndex[EACP_SCREEN_PIXELS];
-static unsigned char eacpMenuMask[EACP_SCREEN_PIXELS];
+void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
+{
+    auto& sky = Doom::skyState();
 
-// What Doom::displayFrame draws over the view *before* the menu darkens the frame, in its
-// order - and so what the menu darkens along with the world.
-static void eacpDrawUnderLayers()
+    if (line.sidenum[s] < 0)
+        return;
+
+    const auto& side = sides[line.sidenum[s]];
+    const auto& front = *side.sector;
+    const auto* back =
+        line.sidenum[s ^ 1] >= 0 ? sides[line.sidenum[s ^ 1]].sector : nullptr;
+
+    const auto& v1 = s == 0 ? *line.v1 : *line.v2;
+    const auto& v2 = s == 0 ? *line.v2 : *line.v1;
+
+    auto from = Point {toDouble(v1.x), toDouble(v1.y)};
+    auto to = Point {toDouble(v2.x), toDouble(v2.y)};
+
+    auto length = cells.lineLengths[index];
+    auto frontFloor = floorHeight(front);
+    auto frontCeiling = ceilingHeight(front);
+    auto rowOffset = toFloat(side.rowoffset);
+    auto light = sectorLight(front.lightlevel, wallContrast(line));
+    auto pegBottom = (line.flags & Doom::ML_DONTPEGBOTTOM) != 0;
+
+    if (back == nullptr)
+    {
+        if (side.midtexture <= 0)
+            return;
+
+        auto texture = wallTexture(side.midtexture);
+        auto textureTop =
+            (pegBottom ? frontFloor + texture.height : frontCeiling) + rowOffset;
+
+        emitWall(emitter,
+                 texture,
+                 side,
+                 groundSpan(from, to, frontFloor, frontCeiling),
+                 textureTop,
+                 length,
+                 light);
+        return;
+    }
+
+    auto backFloor = floorHeight(*back);
+    auto backCeiling = ceilingHeight(*back);
+
+    if (side.bottomtexture > 0 && backFloor > frontFloor)
+    {
+        auto texture = wallTexture(side.bottomtexture);
+        auto textureTop = (pegBottom ? frontCeiling : backFloor) + rowOffset;
+
+        emitWall(emitter,
+                 texture,
+                 side,
+                 groundSpan(from, to, frontFloor, backFloor),
+                 textureTop,
+                 length,
+                 light);
+    }
+
+    // Between two sky ceilings the step is invisible sky (the classic sky hack),
+    // not an upper wall.
+    auto bothSky =
+        front.ceilingpic == sky.skyflatnum && back->ceilingpic == sky.skyflatnum;
+
+    if (side.toptexture > 0 && backCeiling < frontCeiling && !bothSky)
+    {
+        auto texture = wallTexture(side.toptexture);
+        auto pegTop = (line.flags & Doom::ML_DONTPEGTOP) != 0;
+        auto textureTop =
+            (pegTop ? frontCeiling : backCeiling + texture.height) + rowOffset;
+
+        emitWall(emitter,
+                 texture,
+                 side,
+                 groundSpan(from, to, backCeiling, frontCeiling),
+                 textureTop,
+                 length,
+                 light);
+    }
+
+    // The middle texture of a two-sided line - a grate, a window, a hanging
+    // vine. It is masked, and unlike the walls above it never tiles: DOOM draws
+    // it once, clipped to the opening, which is why a too-short midtexture
+    // leaves a gap rather than repeating.
+    if (side.midtexture > 0)
+    {
+        auto texture = wallTexture(side.midtexture);
+
+        auto openingBottom = std::max(backFloor, frontFloor);
+        auto openingTop = std::min(backCeiling, frontCeiling);
+
+        auto textureTop =
+            (pegBottom ? openingBottom + texture.height : openingTop) + rowOffset;
+
+        emitWall(emitter,
+                 texture,
+                 side,
+                 groundSpan(from,
+                            to,
+                            std::max(textureTop - texture.height, openingBottom),
+                            std::min(textureTop, openingTop)),
+                 textureTop,
+                 length,
+                 light);
+    }
+}
+
+// Every thing in the level - monsters, items, decorations, the player's
+// corpse - as a quad facing the camera, exactly where DOOM's own sprite
+// projection would put it: the sprite's left edge sits its own offset to the
+// left of the thing's position along the view plane, and its top sits the
+// sprite's top offset above the thing's feet.
+void emitSprite(Emitter& emitter,
+                const Doom::Mobj& thing,
+                const Doom::Mobj& viewer,
+                const Point& right)
+{
+    auto& gfx = Doom::graphicsData();
+    auto sprite = Doom::toIndex(thing.sprite);
+
+    if (&thing == &viewer || sprite < 0 || sprite >= gfx.numsprites)
+        return;
+
+    const auto& definition = sprites[sprite];
+    auto frameIndex = static_cast<int>(thing.frame & Doom::FF_FRAMEMASK);
+
+    if (frameIndex >= definition.numframes)
+        return;
+
+    const auto& frame = definition.spriteframes[frameIndex];
+
+    // Eight drawings per frame, one per facing: which one shows depends on the
+    // angle the thing is seen from.
+    auto rotation = 0;
+
+    if (frame.rotate)
+    {
+        auto seen = Doom::pointToAngle2(viewer.x, viewer.y, thing.x, thing.y);
+
+        rotation = static_cast<int>(
+            ((seen - thing.angle + (Doom::ang45 / 2u) * 9u) >> 29).raw);
+    }
+
+    auto lump = frame.lump[rotation];
+
+    if (lump < 0 || lump >= gfx.numspritelumps)
+        return;
+
+    auto width = static_cast<float>(spritewidth[lump].toInt());
+    auto height = static_cast<float>(spriteHeight(lump));
+
+    // A thing moves once a tic, so drawing it where the tic left it makes it
+    // step while the world glides past. Its momentum is how far it travelled to
+    // get there, so winding that back by the part of the tic still to come puts
+    // it where it would be at the moment being drawn.
+    auto back = 1.0 - static_cast<double>(snapshot.alpha);
+    auto offset = toDouble(spriteoffset[lump]);
+
+    auto left =
+        Point {toDouble(thing.x) - toDouble(thing.momx) * back - right.x * offset,
+               toDouble(thing.y) - toDouble(thing.momy) * back - right.y * offset};
+
+    auto feet = toFloat(thing.z) - static_cast<float>(toDouble(thing.momz) * back);
+    auto top = feet + toFloat(spritetopoffset[lump]);
+
+    auto light = (thing.frame & Doom::FF_FULLBRIGHT)
+                     ? fullbrightLight()
+                     : sectorLight(thing.subsector->sector->lightlevel, 0);
+
+    auto flip = frame.flip[rotation] != 0;
+    auto right_ = Point {left.x + right.x * width, left.y + right.y * width};
+
+    emitter.quad(spriteBase() + lump,
+                 groundSpan(left, right_, top - height, top),
+                 {flip ? 1.0f : 0.0f, flip ? 0.0f : 1.0f, 0.0f, 1.0f},
+                 light);
+}
+
+void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camera)
+{
+    auto& thinkers = Doom::thinkerList();
+
+    // The view plane's right axis, the one DOOM measures a sprite's width along,
+    // so the billboards stay square-on to the camera being drawn.
+    auto facing = angleFromRadians(camera.angle);
+    auto right = Point {toDouble(finesine[facing.fineIndex()]),
+                        -toDouble(finecosine[facing.fineIndex()])};
+
+    for (auto* thinker = thinkers.cap.next; thinker != &thinkers.cap;
+         thinker = thinker->next)
+    {
+        // Skip a removed-but-not-yet-freed thinker, as the engine's own scans do.
+        if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
+            continue;
+
+        emitSprite(emitter, *static_cast<Doom::Mobj*>(thinker), viewer, right);
+    }
+}
+
+// The sky is not geometry in DOOM: it is painted wherever a ceiling is missing,
+// at a column picked by the direction the player faces. A cylinder around the
+// camera reproduces that - it never moves relative to the viewer, so it has no
+// parallax, and its texture repeats four times around, as the engine's does.
+void emitSky(Emitter& emitter, const Camera& camera)
+{
+    auto& sky = Doom::skyState();
+
+    // "Sky is allways drawn full bright, i.e. colormaps[0] is used. Because of
+    // this hack, sky is not affected by INVUL inverse mapping" - drawPlanes,
+    // whose words those are. Row 0 at any distance, and through any powerup.
+    auto light = fixedLight(0);
+
+    if (sky.skytexture <= 0 || sky.skytexture >= Doom::graphicsData().numtextures)
+        return;
+
+    auto texture = texturetranslation[sky.skytexture];
+
+    // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
+    // row is linear in height on the cylinder, so two rings are exact.
+    auto rows = skyFocal * skyHeight / skyRadius;
+    auto uv =
+        QuadUv {0.0f, 0.0f, (100.0f - rows) / 128.0f, (100.0f + rows) / 128.0f};
+
+    for (auto i = 0; i < skySegments; ++i)
+    {
+        auto a0 = angle_t {static_cast<std::uint32_t>(i)} << 26;
+        auto a1 = angle_t {static_cast<std::uint32_t>(i + 1)} << 26;
+
+        auto from =
+            Point {camera.x + skyRadius * toDouble(finecosine[a0.fineIndex()]),
+                   camera.y + skyRadius * toDouble(finesine[a0.fineIndex()])};
+        auto to = Point {camera.x + skyRadius * toDouble(finecosine[a1.fineIndex()]),
+                         camera.y + skyRadius * toDouble(finesine[a1.fineIndex()])};
+
+        uv.uStart = 4.0f * static_cast<float>(i) / skySegments;
+        uv.uEnd = 4.0f * static_cast<float>(i + 1) / skySegments;
+
+        emitter.quad(
+            texture,
+            groundSpan(from, to, camera.z - skyHeight, camera.z + skyHeight),
+            uv,
+            light);
+    }
+}
+
+void emitFlat(
+    Emitter& emitter, int index, int flat, float height, const Light& light)
+{
+    auto textureId = Doom::graphicsData().numtextures + flattranslation[flat];
+    auto first = cells.start[index];
+
+    auto emitCorner = [&](int corner)
+    {
+        auto x = static_cast<float>(cells.corners[first + corner].x);
+        auto y = static_cast<float>(cells.corners[first + corner].y);
+
+        emitter.vertex(textureId, x, height, -y, x / flatSize, -y / flatSize, light);
+    };
+
+    for (auto i = 1; i + 1 < cells.count[index]; ++i)
+    {
+        emitCorner(0);
+        emitCorner(i);
+        emitCorner(i + 1);
+    }
+}
+
+void emitSubsector(Emitter& emitter, int index)
+{
+    auto& sky = Doom::skyState();
+
+    const auto* sector = subsectors[index].sector;
+
+    if (cells.count[index] < 3 || sector == nullptr)
+        return;
+
+    auto light = sectorLight(sector->lightlevel, 0);
+
+    // Either way round, a sky flat is a hole onto the sky rather than a surface:
+    // drawPlanes paints the sky wherever it finds one, and a floor is as free to
+    // carry it as a ceiling.
+    if (sector->floorpic != sky.skyflatnum)
+        emitFlat(emitter, index, sector->floorpic, floorHeight(*sector), light);
+
+    if (sector->ceilingpic != sky.skyflatnum)
+        emitFlat(emitter, index, sector->ceilingpic, ceilingHeight(*sector), light);
+}
+
+void emitWorld(Emitter& emitter, const Camera& camera)
+{
+    for (auto i = 0; i < numlines; ++i)
+    {
+        emitLineSide(emitter, lines[i], i, 0);
+        emitLineSide(emitter, lines[i], i, 1);
+    }
+
+    for (auto i = 0; i < numsubsectors; ++i)
+        emitSubsector(emitter, i);
+
+    const auto* viewer = displayPlayer().mo;
+
+    if (viewer == nullptr)
+        return;
+
+    emitSky(emitter, camera);
+    emitSprites(emitter, *viewer, camera);
+}
+
+//
+// The overlay: the software-only layers, captured off a scratch frame.
+//
+
+// One layer's pixels and the coverage that goes with them. Primed differently,
+// the two passes agree only where the layer drew, so where they agree is exactly
+// what it covered - which no single pass can tell, a drawn pixel being free to
+// hold whatever value the buffer was primed with.
+struct CapturedLayer
+{
+    Array<std::uint8_t, screenPixels> indices;
+    Array<std::uint8_t, screenPixels> coverage;
+};
+
+Array<Array<std::uint8_t, screenPixels>, 2> overlayPasses;
+CapturedLayer underLayer;
+CapturedLayer menuLayer;
+
+// What displayFrame draws over the view *before* the menu darkens the frame, in
+// its order - and so what the menu darkens along with the world.
+void drawUnderLayers()
 {
     auto& overlay = Doom::overlayState();
     auto& view = Doom::viewWindow();
@@ -359,67 +1036,386 @@ static void eacpDrawUnderLayers()
 
     if (Doom::refreshFlags().paused)
     {
-        int y = overlay.automapactive ? 4 : view.viewwindowy + 4;
+        auto y = overlay.automapactive ? 4 : view.viewwindowy + 4;
 
-        Doom::drawPatchDirect(view.viewwindowx + (view.scaledviewwidth - 68) / 2,
-                              y,
-                              0,
-                              (Doom::Patch*) Doom::cacheLumpName("M_PAUSE"));
+        Doom::drawPatchDirect(
+            view.viewwindowx + (view.scaledviewwidth - 68) / 2,
+            y,
+            0,
+            static_cast<Doom::Patch*>(Doom::cacheLumpName("M_PAUSE")));
     }
 }
 
-// One layer's pixels and the coverage that goes with them. Primed differently,
-// the two passes agree only where the layer drew, so where they agree is exactly
-// what it covered - which no single pass can tell, a drawn pixel being free to
-// hold whatever value the buffer was primed with.
-static void eacpCaptureLayer(void (*layer)(),
-                             unsigned char* indices,
-                             unsigned char* coverage)
+void captureLayer(auto&& draw, CapturedLayer& into)
 {
-    byte* frame = screens[0];
-    int pass;
-    int i;
+    auto* frame = screens[0];
 
-    for (pass = 0; pass < 2; ++pass)
+    for (auto pass = 0; pass < 2; ++pass)
     {
-        doom_memset(
-            eacpOverlayPass[pass], pass == 0 ? 0x00 : 0xff, EACP_SCREEN_PIXELS);
-
-        screens[0] = eacpOverlayPass[pass];
-        layer();
+        overlayPasses[pass].fill(pass == 0 ? 0x00 : 0xff);
+        screens[0] = overlayPasses[pass].data();
+        draw();
     }
 
     screens[0] = frame;
 
-    for (i = 0; i < EACP_SCREEN_PIXELS; ++i)
+    for (auto i = 0; i < screenPixels; ++i)
     {
-        indices[i] = eacpOverlayPass[0][i];
-        coverage[i] = eacpOverlayPass[0][i] == eacpOverlayPass[1][i] ? 255 : 0;
+        into.indices[i] = overlayPasses[0][i];
+        into.coverage[i] = overlayPasses[0][i] == overlayPasses[1][i] ? 255 : 0;
     }
 }
 
-int eacpDoomBuildOverlay(unsigned char* outRgba)
+//
+// The automap, as geometry rather than as a rasterized frame.
+//
+// What is drawn, and in what colour, is drawAutomap's own choice, mirrored
+// below: only its rasterizer (drawFline, a Bresenham walk straight into the
+// 320 x 168 frame) is replaced. The shapes it draws the player and the things
+// with - player_arrow, cheat_player_arrow, thintriangle_guy - and the rotation
+// it puts them through are the engine's, used here as they stand.
+//
+
+struct AutomapEmitter
 {
-    int flags = doom_flags;
-    int covered = 0;
-    int i;
+    void corner(const Point& at, const Point& direction, float side, float shade)
+    {
+        vertices[count++] = {
+            {static_cast<float>(at.x), static_cast<float>(at.y)},
+            {static_cast<float>(direction.x), static_cast<float>(direction.y)},
+            side,
+            shade};
+    }
+
+    // One line of the map, in frame coordinates, as the two triangles of a quad
+    // the vertex shader widens.
+    void frameLine(const Point& a, const Point& b, int color)
+    {
+        auto direction = Point {b.x - a.x, b.y - a.y};
+        auto shade = static_cast<float>(color & 0xff);
+
+        if (count + 6 > static_cast<int>(vertices.size())
+            || (direction.x == 0.0 && direction.y == 0.0))
+            return;
+
+        corner(a, direction, 1.0f, shade);
+        corner(b, direction, 1.0f, shade);
+        corner(b, direction, -1.0f, shade);
+
+        corner(a, direction, 1.0f, shade);
+        corner(b, direction, -1.0f, shade);
+        corner(a, direction, -1.0f, shade);
+    }
+
+    // CXMTOF and CYMTOF's transform, in floating point and without their
+    // rounding to whole pixels: the map's y runs up and the frame's runs down.
+    Point toFrame(fixed_t x, fixed_t y) const
+    {
+        return {f_x + (toDouble(x) - origin.x) * pixelsPerMapUnit,
+                f_y + f_h - (toDouble(y) - origin.y) * pixelsPerMapUnit};
+    }
+
+    void line(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int color)
+    {
+        frameLine(toFrame(x1, y1), toFrame(x2, y2), color);
+    }
+
+    // drawLineCharacter, emitting instead of rasterizing.
+    void lineCharacter(std::span<const Doom::MapLine> shape,
+                       fixed_t size,
+                       angle_t angle,
+                       int color,
+                       fixed_t x,
+                       fixed_t y)
+    {
+        for (const auto& original: shape)
+        {
+            auto l = original;
+
+            if (size)
+            {
+                l.a.x = FixedMul(size, l.a.x);
+                l.a.y = FixedMul(size, l.a.y);
+                l.b.x = FixedMul(size, l.b.x);
+                l.b.y = FixedMul(size, l.b.y);
+            }
+
+            if (angle)
+            {
+                Doom::rotateAutomapPoint(l.a.x, l.a.y, angle);
+                Doom::rotateAutomapPoint(l.b.x, l.b.y, angle);
+            }
+
+            line(l.a.x + x, l.a.y + y, l.b.x + x, l.b.y + y, color);
+        }
+    }
+
+    std::span<AutomapVertex> vertices;
+    int count = 0;
+
+    // The map point the frame's lower-left corner sits on, and how many frame
+    // pixels one whole map unit spans. Both are in whole map units, which is
+    // what toFrame's own arithmetic is in - see Point.
+    Point origin;
+    double pixelsPerMapUnit = 0.0;
+};
+
+void automapWalls(AutomapEmitter& emitter)
+{
+    for (auto i = 0; i < numlines; i++)
+    {
+        const auto& line = lines[i];
+
+        auto draw = [&](int color)
+        { emitter.line(line.v1->x, line.v1->y, line.v2->x, line.v2->y, color); };
+
+        if (cheating || (line.flags & Doom::ML_MAPPED))
+        {
+            if ((line.flags & LINE_NEVERSEE) && !cheating)
+                continue;
+
+            if (!line.backsector)
+                draw(WALLCOLORS + lightlev);
+            else if (line.special == 39)
+                draw(WALLCOLORS + WALLRANGE / 2);
+            else if (line.flags & Doom::ML_SECRET)
+                draw(cheating ? SECRETWALLCOLORS + lightlev : WALLCOLORS + lightlev);
+            else if (line.backsector->floorheight != line.frontsector->floorheight)
+                draw(FDWALLCOLORS + lightlev);
+            else if (line.backsector->ceilingheight
+                     != line.frontsector->ceilingheight)
+                draw(CDWALLCOLORS + lightlev);
+            else if (cheating)
+                draw(TSWALLCOLORS + lightlev);
+        }
+        else if (am_plr != nullptr
+                 && am_plr->powers[Doom::toIndex(Doom::PowerType::AllMap)])
+        {
+            if (!(line.flags & LINE_NEVERSEE))
+                draw(GRAYS + 3);
+        }
+    }
+}
+
+void automapGrid(AutomapEmitter& emitter, int color)
+{
+    auto block = Doom::Fixed::fromInt(Doom::MAPBLOCKUNITS);
+    auto originX = toFixed(emitter.origin.x);
+    auto originY = toFixed(emitter.origin.y);
+
+    // The first grid line at or past `from`, the grid being pinned to the
+    // blockmap's own origin rather than to the map's.
+    auto firstLine = [&](fixed_t from, fixed_t blockmapOrigin)
+    {
+        auto past = fixed_t {(from - blockmapOrigin).raw % block.raw};
+
+        return past ? from + block - past : from;
+    };
+
+    for (auto x = firstLine(originX, bmaporgx); x < originX + m_w; x += block)
+        emitter.line(x, originY, x, originY + m_h, color);
+
+    for (auto y = firstLine(originY, bmaporgy); y < originY + m_h; y += block)
+        emitter.line(originX, y, originX + m_w, y, color);
+}
+
+// Drawn from the view rather than from the player: the arrow is the one thing on
+// the map that turns, and turning it once a tic against a map that glides is
+// what would be seen.
+void automapPlayer(AutomapEmitter& emitter, const Camera& camera)
+{
+    if (am_plr == nullptr || am_plr->mo == nullptr)
+        return;
+
+    auto x = toFixed(camera.x);
+    auto y = toFixed(camera.y);
+    auto angle = angleFromRadians(camera.angle);
+    auto unscaled = fixed_t {};
+
+    if (cheating)
+        emitter.lineCharacter(cheat_player_arrow, unscaled, angle, WHITE, x, y);
+    else
+        emitter.lineCharacter(player_arrow, unscaled, angle, WHITE, x, y);
+}
+
+void automapThings(AutomapEmitter& emitter, int color)
+{
+    for (auto i = 0; i < numsectors; i++)
+        for (auto* thing = sectors[i].thinglist; thing != nullptr;
+             thing = thing->snext)
+            emitter.lineCharacter(thintriangle_guy,
+                                  Doom::Fixed::fromInt(16),
+                                  thing->angle,
+                                  color + lightlev,
+                                  thing->x,
+                                  thing->y);
+}
+
+// drawCrosshair pokes the frame's middle pixel; a line a pixel long over it is
+// the same dot, and widens with everything else.
+void automapCrosshair(AutomapEmitter& emitter, int color)
+{
+    auto x = f_w * 0.5;
+    auto y = f_h * 0.5;
+
+    emitter.frameLine({x - 0.5, y}, {x + 0.5, y}, color);
+}
+
+//
+// The weapon and its muzzle flash.
+//
+
+// drawPSprite lights the weapon at the *nearest* entry of the scale table - it
+// is right up against the camera - and that entry is this many rows brighter
+// than the sector's start map. Reading the start map alone lights the weapon as
+// if it stood infinitely far away, which is nearly black in a dim room and
+// visibly dark in almost any room: DOOM's weapon is fullbright in every sector
+// above light level 240 and close to it well below that.
+float weaponBrightening()
+{
+    auto& view = Doom::viewWindow();
+
+    auto width = view.viewwidth << view.detailshift;
+
+    if (width <= 0)
+        return 0.0f;
+
+    return static_cast<float>((Doom::MAXLIGHTSCALE - 1) * Doom::SCREENWIDTH / width
+                              / Doom::DISTMAP);
+}
+
+// drawPSprite's choice of colormap, in its own order: a powerup first, then a
+// lit frame, then the sector.
+float weaponLight(bool fullbright)
+{
+    if (fixedRow())
+        return static_cast<float>(fixedRow());
+
+    if (fullbright)
+        return 0.0f;
+
+    auto lightlevel = displayPlayer().mo->subsector->sector->lightlevel;
+
+    return std::max(sectorLight(lightlevel, 0).row - weaponBrightening(), 0.0f);
+}
+
+// The engine places the weapon in a 320x200 space centred on row 100
+// (BASEYCENTER), and drawPSprite lands that centre on the middle row of whatever
+// the view is: row 84 with the status bar up, row 100 without it.
+float weaponRowShift()
+{
+    return 100.0f - viewRows() * 0.5f;
+}
+} // namespace
+
+//
+// The interface itself.
+//
+
+void snapshotTic()
+{
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level || sectors == nullptr
+        || numsectors <= 0)
+        return;
+
+    snapshot.floor.resize(numsectors);
+    snapshot.ceiling.resize(numsectors);
+
+    for (auto i = 0; i < numsectors; ++i)
+    {
+        snapshot.floor[i] = toFloat(sectors[i].floorheight);
+        snapshot.ceiling[i] = toFloat(sectors[i].ceilingheight);
+    }
+}
+
+bool viewActive()
+{
+    return Doom::gameFlow().gamestate == Doom::GameState::Level
+           && Doom::gameClock().gametic != 0;
+}
+
+bool automapActive()
+{
+    return Doom::overlayState().automapactive;
+}
+
+bool statusBarVisible()
+{
+    // drawStatusBar's own st_statusbaron, which is private to it: displayFrame
+    // asks for a bar-less frame once the view fills all 200 rows, and the
+    // automap keeps the bar whatever the screen size says.
+    return Doom::viewWindow().viewheight != Doom::SCREENHEIGHT
+           || Doom::overlayState().automapactive;
+}
+
+float viewRows()
+{
+    return statusBarVisible() ? static_cast<float>(Doom::ST_Y)
+                              : static_cast<float>(Doom::SCREENHEIGHT);
+}
+
+void revealAutomap()
+{
+    auto& player = displayPlayer();
+
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level
+        || !Doom::gameClock().gametic || !Doom::overlayState().automapactive
+        || player.mo == nullptr)
+        return;
+
+    Doom::setupFrame(player);
+    Doom::clearClipSegs();
+    Doom::clearDrawSegs();
+    Doom::clearPlanes();
+    Doom::clearSprites();
+
+    // Marking a line is storeWallRange's doing, and it does it as it draws the
+    // wall - so the walls land in the frame the automap has just drawn itself
+    // into (the column drawers write through ylookup, which was pointed at
+    // screens[0] when the view size was set, and does not follow it anywhere).
+    // Drawing the map again puts it back. The GPU path does not read that frame
+    // for anything but the status bar, which the view never reaches; the
+    // software one reads all of it.
+    Doom::renderBSPNode(numnodes - 1);
+    Doom::drawAutomap();
+}
+
+int darkenRow()
+{
+    // drawMenu only reaches its darkening once it is actually showing a menu: a
+    // confirmation prompt draws its text and returns before then.
+    if (Doom::overlayState().menuactive && !messageToPrint
+        && (doom_flags & Doom::DOOM_FLAG_MENU_DARKEN_BG))
+        return menuDarkenRow;
+
+    return 0;
+}
+
+bool buildOverlay(std::span<std::uint8_t> outRgba)
+{
+    if (!fits(outRgba, screenPixels * 4))
+        return false;
+
+    auto flags = doom_flags;
 
     // Left to the GPU view, which can darken at full resolution and exactly (see
-    // eacpDoomDarkenRow). Were it left on, it would write to all 64000 pixels and
-    // the whole screen would come back as covered.
+    // darkenRow). Were it left on, it would write to all 64000 pixels and the
+    // whole screen would come back as covered.
     doom_flags &= ~Doom::DOOM_FLAG_MENU_DARKEN_BG;
 
-    eacpCaptureLayer(eacpDrawUnderLayers, eacpUnderIndex, eacpUnderMask);
-    eacpCaptureLayer(Doom::drawMenu, eacpMenuIndex, eacpMenuMask);
+    captureLayer(drawUnderLayers, underLayer);
+    captureLayer(Doom::drawMenu, menuLayer);
 
     doom_flags = flags;
 
-    for (i = 0; i < EACP_SCREEN_PIXELS; ++i)
-    {
-        int menu = eacpMenuMask[i] != 0;
-        int under = eacpUnderMask[i] != 0;
+    auto covered = false;
 
-        outRgba[i * 4 + 0] = menu ? eacpMenuIndex[i] : eacpUnderIndex[i];
+    for (auto i = 0; i < screenPixels; ++i)
+    {
+        auto menu = menuLayer.coverage[i] != 0;
+        auto under = underLayer.coverage[i] != 0;
+
+        outRgba[i * 4 + 0] = menu ? menuLayer.indices[i] : underLayer.indices[i];
 
         // The menu darkens what was already on the screen and then draws itself
         // over it, so a message or the PAUSE graphic dims with the world it sits
@@ -428,1630 +1424,331 @@ int eacpDoomBuildOverlay(unsigned char* outRgba)
         outRgba[i * 4 + 2] = 0;
         outRgba[i * 4 + 3] = (menu || under) ? 255 : 0;
 
-        covered |= menu || under;
+        covered = covered || menu || under;
     }
 
     return covered;
 }
 
-void eacpDoomBindKeys()
+void bindKeys()
 {
-    int count = numdefaults;
-    int i;
-
-    for (i = 0; i < count; i++)
+    for (auto i = 0; i < numdefaults; ++i)
     {
-        Doom::ConfigDefault* entry = &defaults[i];
+        auto& entry = defaults[i];
 
-        if (entry->defaultvalue != Doom::STRING_VALUE
-            && entry->name.starts_with("key_"))
-        {
-            *entry->location = entry->defaultvalue;
-        }
+        if (entry.defaultvalue != Doom::STRING_VALUE
+            && entry.name.starts_with("key_"))
+            *entry.location = entry.defaultvalue;
     }
 }
 
-double eacpDoomTicTime()
+double ticTime()
 {
-    int sec, usec;
+    auto sec = 0;
+    auto usec = 0;
 
     doom_gettime(&sec, &usec);
 
-    // Doom::currentTic's own expression, kept fractional instead of truncated, so this
+    // currentTic's own expression, kept fractional instead of truncated, so this
     // steps from one tic to the next at exactly the moment the engine does. It
     // omits the engine's private start-of-run offset, which only shifts the
     // count by a whole number of tics and so changes neither the steps nor the
     // fraction.
-    return (double) sec * Doom::TICRATE + (double) usec * Doom::TICRATE / 1000000.0;
+    return static_cast<double>(sec) * Doom::TICRATE
+           + static_cast<double>(usec) * Doom::TICRATE / 1000000.0;
 }
 
-int eacpDoomIsWiping()
+bool isWiping()
 {
-    return Doom::gameFlow().is_wiping_screen ? 1 : 0;
+    return Doom::gameFlow().is_wiping_screen;
 }
 
-int eacpDoomMouseSensitivity()
+bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffsets)
+{
+    const auto* start = wipe_scr_start;
+
+    if (!Doom::gameFlow().is_wiping_screen || start == nullptr
+        || !fits(outStart, screenPixels) || !fits(outOffsets, wipeColumns))
+        return false;
+
+    // wipe_melt_running is the melt's own "I have been set up" flag, and the only
+    // one to test: exitMelt frees the column table but leaves the pointer to it
+    // alone, so between melts it is non-null and dangling. Until the melt is set
+    // up, the outgoing screen is still row-major and nothing has slid.
+    if (!wipe_melt_running)
+    {
+        std::copy_n(start, screenPixels, outStart.begin());
+        std::fill_n(outOffsets.begin(), wipeColumns, std::uint8_t {0});
+
+        return true;
+    }
+
+    for (auto column = 0; column < wipeColumns; ++column)
+    {
+        // A column that has not started moving sits at a negative offset; it has
+        // slid nothing, which is what zero says.
+        auto slid = std::clamp(wipe_melt_offsets[column], 0, screenHeight);
+
+        outOffsets[column] = static_cast<std::uint8_t>(slid);
+
+        // initMelt leaves the outgoing screen column-major - a column of
+        // two-pixel shorts - because that is how the melt walks it. A texture
+        // wants it back the way round it was. Copying the two bytes rather than
+        // the short keeps this independent of byte order.
+        for (auto row = 0; row < screenHeight; ++row)
+        {
+            const auto* source = start + (column * screenHeight + row) * 2;
+            auto* destination = outStart.data() + row * screenWidth + column * 2;
+
+            destination[0] = source[0];
+            destination[1] = source[1];
+        }
+    }
+
+    return true;
+}
+
+int mouseSensitivity()
 {
     return Doom::menuSettings().mouseSensitivity;
 }
 
-EacpDoomCamera eacpDoomGetCamera()
+Camera camera()
 {
-    auto& players_ = Doom::playerState();
+    const auto& player = displayPlayer();
 
-    EacpDoomCamera camera = {0, 0, 0, 0};
-    Doom::Player* player = &players_.players[players_.displayplayer];
+    if (player.mo == nullptr)
+        return {};
 
-    if (player->mo == 0)
-        return camera;
-
-    camera.x = eacpFixedToFloat(player->mo->x);
-    camera.y = eacpFixedToFloat(player->mo->y);
-    camera.z = eacpFixedToFloat(player->viewz);
-
-    // angle_t maps the full circle onto 32 bits; 2^31 is half a turn.
-    camera.angle =
-        (float) ((double) player->mo->angle.raw * (3.14159265358979 / 2147483648.0));
-    return camera;
+    return {toFloat(player.mo->x),
+            toFloat(player.mo->y),
+            toFloat(player.viewz),
+            static_cast<float>(static_cast<double>(player.mo->angle.raw)
+                               * (std::numbers::pi / halfTurn))};
 }
 
-static int eacpSpriteBase()
+void readPalette(std::span<std::uint8_t> outRgba)
 {
-    auto& gfx = Doom::graphicsData();
-
-    return gfx.numtextures + gfx.numflats;
-}
-
-// Draws a patch's posts into an index image and its coverage into an alpha
-// image. This is how DOOM stores every graphic: runs of pixels down a column,
-// with the gaps between the runs left transparent. Composing from the patches
-// (as Doom::generateComposite does) rather than reading the engine's cached columns
-// is what makes a masked texture's holes come out as holes.
-static void eacpBlitPatch(Doom::Patch* patch,
-                          int originX,
-                          int originY,
-                          unsigned char* indices,
-                          unsigned char* alpha,
-                          int width,
-                          int height)
-{
-    int x;
-
-    for (x = 0; x < patch->width; ++x)
-    {
-        int destX = originX + x;
-        Doom::Column* column;
-
-        if (destX < 0 || destX >= width)
-            continue;
-
-        column = (Doom::Column*) ((byte*) patch + patch->columnofs[x]);
-
-        while (column->topdelta != 0xff)
-        {
-            byte* source = (byte*) column + 3;
-            int count = column->length;
-            int i;
-
-            for (i = 0; i < count; ++i)
-            {
-                int destY = originY + column->topdelta + i;
-
-                if (destY < 0 || destY >= height)
-                    continue;
-
-                indices[destY * width + destX] = source[i];
-                alpha[destY * width + destX] = 255;
-            }
-
-            column = (Doom::Column*) ((byte*) column + column->length + 4);
-        }
-    }
-}
-
-static void eacpDecodeWall(
-    int id, unsigned char* indices, unsigned char* alpha, int width, int height)
-{
-    Doom::Texture* texture = textures[id];
-    int i;
-
-    doom_memset(indices, 0, width * height);
-    doom_memset(alpha, 0, width * height);
-
-    for (i = 0; i < texture->patchcount; ++i)
-    {
-        Doom::TexPatch* piece = &texture->patches[i];
-        Doom::Patch* patch = (Doom::Patch*) Doom::cacheLumpNum(piece->patch);
-
-        eacpBlitPatch(
-            patch, piece->originx, piece->originy, indices, alpha, width, height);
-    }
-}
-
-static int eacpWallIsMasked(int id)
-{
-    int width = textures[id]->width;
-    int height = textures[id]->height;
-    int count = width * height;
-    int masked = 0;
-    int i;
-
-    unsigned char* indices = (unsigned char*) doom_malloc(count);
-    unsigned char* alpha = (unsigned char*) doom_malloc(count);
-
-    if (indices != 0 && alpha != 0)
-    {
-        eacpDecodeWall(id, indices, alpha, width, height);
-
-        for (i = 0; i < count; ++i)
-            if (alpha[i] == 0)
-            {
-                masked = 1;
-                break;
-            }
-    }
-
-    doom_free(indices);
-    doom_free(alpha);
-
-    return masked;
-}
-
-// Which wall textures have holes, and how tall each sprite is: both are known
-// only after decoding, and both are wanted before the renderer asks for a
-// single pixel.
-static void eacpEnsureTextureData()
-{
-    auto& gfx = Doom::graphicsData();
-
-    int i;
-
-    if (eacpTexturesReady || gfx.numtextures <= 0 || textures == 0)
+    if (!fits(outRgba, 256 * 4))
         return;
 
-    eacpWallMasked = (unsigned char*) doom_malloc(gfx.numtextures);
-    eacpSpriteHeights =
-        (short*) doom_malloc(gfx.numspritelumps * (int) sizeof(short));
-
-    if (eacpWallMasked == 0 || eacpSpriteHeights == 0)
-        return;
-
-    for (i = 0; i < gfx.numtextures; ++i)
-        eacpWallMasked[i] = (unsigned char) eacpWallIsMasked(i);
-
-    for (i = 0; i < gfx.numspritelumps; ++i)
+    for (auto i = 0; i < 256; ++i)
     {
-        Doom::Patch* patch =
-            (Doom::Patch*) Doom::cacheLumpNum(gfx.firstspritelump + i);
-        eacpSpriteHeights[i] = patch->height;
+        outRgba[i * 4 + 0] = screen_palette[i * 3 + 0];
+        outRgba[i * 4 + 1] = screen_palette[i * 3 + 1];
+        outRgba[i * 4 + 2] = screen_palette[i * 3 + 2];
+        outRgba[i * 4 + 3] = 255;
     }
-
-    eacpTexturesReady = 1;
 }
 
-int eacpDoomGetTextureCount()
+int textureCount()
 {
     auto& gfx = Doom::graphicsData();
 
-    if (gfx.numtextures <= 0 || textures == 0)
+    if (gfx.numtextures <= 0 || textures == nullptr)
         return 0;
 
     return gfx.numtextures + gfx.numflats + gfx.numspritelumps;
 }
 
-EacpDoomTextureInfo eacpDoomGetTextureInfo(int id)
+TextureInfo textureInfo(int id)
 {
-    EacpDoomTextureInfo info;
-    info.width = 0;
-    info.height = 0;
-    info.masked = 0;
+    ensureTextureTable();
 
-    eacpEnsureTextureData();
+    if (!textureTable.ready() || id < 0 || id >= textureTable.infos.size())
+        return {};
 
-    if (!eacpTexturesReady || id < 0 || id >= eacpDoomGetTextureCount())
-        return info;
-
-    if (id < Doom::graphicsData().numtextures)
-    {
-        info.width = textures[id]->width;
-        info.height = textures[id]->height;
-        info.masked = eacpWallMasked[id];
-    }
-    else if (id < eacpSpriteBase())
-    {
-        info.width = EACP_FLAT_SIZE;
-        info.height = EACP_FLAT_SIZE;
-    }
-    else
-    {
-        int lump = id - eacpSpriteBase();
-
-        info.width = spritewidth[lump].toInt();
-        info.height = eacpSpriteHeights[lump];
-        info.masked = 1;
-    }
-
-    return info;
+    return textureTable.infos[id];
 }
 
-void eacpDoomGetTexturePixels(int id, unsigned char* out)
+void readTexturePixels(int id, std::span<std::uint8_t> out)
 {
     auto& gfx = Doom::graphicsData();
 
-    EacpDoomTextureInfo info = eacpDoomGetTextureInfo(id);
-    int count = info.width * info.height;
-    unsigned char* indices;
-    unsigned char* alpha;
-    int i;
+    auto info = textureInfo(id);
+    auto pixels = info.width * info.height;
 
-    if (out == 0 || count <= 0)
+    if (pixels <= 0 || !fits(out, pixels * (info.masked ? 4 : 1)))
         return;
 
-    if (id >= gfx.numtextures && id < eacpSpriteBase())
+    if (id >= gfx.numtextures && id < spriteBase())
     {
-        byte* flat =
-            (byte*) Doom::cacheLumpNum(gfx.firstflat + (id - gfx.numtextures));
-        doom_memcpy(out, flat, EACP_FLAT_SIZE * EACP_FLAT_SIZE);
+        const auto* flat = static_cast<const byte*>(
+            Doom::cacheLumpNum(gfx.firstflat + id - gfx.numtextures));
+
+        std::copy_n(flat, flatSize * flatSize, out.begin());
         return;
     }
 
-    indices = (unsigned char*) doom_malloc(count);
-    alpha = (unsigned char*) doom_malloc(count);
+    auto image = id < gfx.numtextures
+                     ? decodeWall(id)
+                     : decodeSprite(gfx.firstspritelump + (id - spriteBase()), info);
 
-    if (indices == 0 || alpha == 0)
+    // A masked texture carries its coverage in alpha, so the shader can throw the
+    // empty pixels away; everything else is a bare index.
+    if (!info.masked)
     {
-        doom_free(indices);
-        doom_free(alpha);
+        std::copy_n(image.indices.data(), pixels, out.begin());
         return;
     }
 
-    if (id < gfx.numtextures)
+    for (auto i = 0; i < pixels; ++i)
     {
-        eacpDecodeWall(id, indices, alpha, info.width, info.height);
+        out[i * 4 + 0] = image.indices[i];
+        out[i * 4 + 1] = 0;
+        out[i * 4 + 2] = 0;
+        out[i * 4 + 3] = image.alpha[i];
     }
-    else
-    {
-        Doom::Patch* patch = (Doom::Patch*) Doom::cacheLumpNum(
-            gfx.firstspritelump + (id - eacpSpriteBase()));
+}
 
-        doom_memset(indices, 0, count);
-        doom_memset(alpha, 0, count);
-        eacpBlitPatch(patch, 0, 0, indices, alpha, info.width, info.height);
-    }
+void readColormaps(std::span<std::uint8_t> out)
+{
+    if (colormaps == nullptr || !fits(out, 256 * colormapRows))
+        return;
 
-    // A masked texture carries its coverage in alpha, so the shader can throw
-    // the empty pixels away; everything else is a bare index.
-    if (info.masked)
+    std::copy_n(colormaps, 256 * colormapRows, out.begin());
+}
+
+WorldGeometry
+    buildGeometry(const Camera& camera, float alpha, const GeometryBuffers& into)
+{
+    auto count = textureCount();
+
+    snapshot.alpha = std::clamp(alpha, 0.0f, 1.0f);
+    ensureTextureTable();
+
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level || into.vertices.empty()
+        || into.draws.empty() || count <= 0 || lines == nullptr
+        || !textureTable.ready())
+        return {};
+
+    ensureLevel();
+
+    if (cells.corners.empty())
+        return {};
+
+    scratch.counts.assign(count, 0);
+    scratch.cursors.assign(count, 0);
+
+    auto emitter = Emitter {};
+    emitter.counts = {scratch.counts.data(), static_cast<std::size_t>(count)};
+    emitter.cursors = {scratch.cursors.data(), static_cast<std::size_t>(count)};
+
+    emitWorld(emitter, camera);
+
+    // Each texture's vertices become one contiguous run, so the frame draws once
+    // per texture with no state changes in between.
+    auto total = 0;
+    auto drawCount = 0;
+
+    for (auto i = 0; i < count; ++i)
     {
-        for (i = 0; i < count; ++i)
+        auto vertexCount = scratch.counts[i];
+
+        if (vertexCount <= 0 || drawCount >= static_cast<int>(into.draws.size())
+            || total + vertexCount > static_cast<int>(into.vertices.size()))
         {
-            out[i * 4 + 0] = indices[i];
-            out[i * 4 + 1] = 0;
-            out[i * 4 + 2] = 0;
-            out[i * 4 + 3] = alpha[i];
-        }
-    }
-    else
-    {
-        for (i = 0; i < count; ++i)
-            out[i] = indices[i];
-    }
-
-    doom_free(indices);
-    doom_free(alpha);
-}
-
-void eacpDoomGetColormaps(unsigned char* out)
-{
-    if (out == 0 || colormaps == 0)
-        return;
-
-    doom_memcpy(out, colormaps, 256 * EACP_DOOM_COLORMAP_ROWS);
-}
-
-// The COLORMAP row a surface resolves through, and whether distance darkens it
-// further.
-typedef struct
-{
-    float row;
-    float falloff;
-} EacpLight;
-
-// The row the whole view is locked to, or zero for none: the invulnerability
-// sphere picks the inverse map and the light-amp visor the brightest row
-// (P_PlayerThink), and R_SetupFrame then puts every wall, flat, sprite and the
-// weapon through it, with the sector's brightness and the distance falloff both
-// ignored.
-static int eacpFixedRow()
-{
-    auto& players_ = Doom::playerState();
-
-    return players_.players[players_.displayplayer].fixedcolormap;
-}
-
-// One row, whatever the distance - what the engine does with a bare colormap
-// pointer rather than a light table.
-static EacpLight eacpFixedLight(int row)
-{
-    EacpLight light;
-
-    light.row = (float) row;
-    light.falloff = 0.0f;
-
-    return light;
-}
-
-// The row a surface starts at before distance darkens it further: the engine's
-// light level scaled into the 32 maps, offset by the sector's brightness and the
-// fake contrast walls get for their orientation.
-static EacpLight eacpSectorLight(int lightlevel, int contrast)
-{
-    EacpLight light;
-    int lightnum;
-
-    if (eacpFixedRow())
-        return eacpFixedLight(eacpFixedRow());
-
-    lightnum =
-        (lightlevel >> Doom::LIGHTSEGSHIFT) + Doom::lighting().extralight + contrast;
-
-    if (lightnum < 0)
-        lightnum = 0;
-
-    if (lightnum >= Doom::LIGHTLEVELS)
-        lightnum = Doom::LIGHTLEVELS - 1;
-
-    light.row = (float) ((Doom::LIGHTLEVELS - 1 - lightnum) * 2 * Doom::NUMCOLORMAPS
-                         / Doom::LIGHTLEVELS);
-    light.falloff = 1.0f;
-
-    return light;
-}
-
-// A frame the engine marks as lit - a muzzle flash, a rocket - is drawn through
-// row 0 at any distance. A powerup outranks it (R_ProjectSprite tests
-// fixedcolormap first), and this says both.
-static EacpLight eacpFullbrightLight()
-{
-    return eacpFixedLight(eacpFixedRow());
-}
-
-// Sutherland-Hodgman against one half-plane. The side test matches the
-// engine's own Doom::pointOnSide: a point is in front of a directed line when
-// dy * (px - x) - dx * (py - y) is positive.
-static void eacpClipToLine(const EacpPoint* in,
-                           int inCount,
-                           double x,
-                           double y,
-                           double dx,
-                           double dy,
-                           int keepFront,
-                           EacpPoint* out,
-                           int* outCount)
-{
-    int i;
-    int count = 0;
-
-    for (i = 0; i < inCount; ++i)
-    {
-        const EacpPoint* a = &in[i];
-        const EacpPoint* b = &in[(i + 1) % inCount];
-
-        double sideA = dy * (a->x - x) - dx * (a->y - y);
-        double sideB = dy * (b->x - x) - dx * (b->y - y);
-
-        if (!keepFront)
-        {
-            sideA = -sideA;
-            sideB = -sideB;
-        }
-
-        if (sideA >= -EACP_CLIP_EPSILON && count < EACP_MAX_POLY_VERTICES)
-            out[count++] = *a;
-
-        if (((sideA > EACP_CLIP_EPSILON) && (sideB < -EACP_CLIP_EPSILON))
-            || ((sideA < -EACP_CLIP_EPSILON) && (sideB > EACP_CLIP_EPSILON)))
-        {
-            double t = sideA / (sideA - sideB);
-
-            if (count < EACP_MAX_POLY_VERTICES)
-            {
-                out[count].x = a->x + t * (b->x - a->x);
-                out[count].y = a->y + t * (b->y - a->y);
-                ++count;
-            }
-        }
-    }
-
-    *outCount = count;
-}
-
-// A subsector's cell, trimmed to the sector boundary: the segs bound it on the
-// sides that came from real linedefs, and the interior always lies in front of
-// them.
-static void eacpStoreSubsector(int index, const EacpPoint* poly, int count)
-{
-    EacpPoint current[EACP_MAX_POLY_VERTICES];
-    EacpPoint clipped[EACP_MAX_POLY_VERTICES];
-    int currentCount = count;
-    int clippedCount;
-    int i;
-
-    for (i = 0; i < count; ++i)
-        current[i] = poly[i];
-
-    for (i = 0; i < subsectors[index].numlines && currentCount >= 3; ++i)
-    {
-        Doom::Seg* seg = &segs[subsectors[index].firstline + i];
-
-        double x = eacpFixedToDouble(seg->v1->x);
-        double y = eacpFixedToDouble(seg->v1->y);
-        double dx = eacpFixedToDouble(seg->v2->x) - x;
-        double dy = eacpFixedToDouble(seg->v2->y) - y;
-
-        eacpClipToLine(
-            current, currentCount, x, y, dx, dy, 1, clipped, &clippedCount);
-
-        for (currentCount = 0; currentCount < clippedCount; ++currentCount)
-            current[currentCount] = clipped[currentCount];
-    }
-
-    if (currentCount < 3)
-        return;
-
-    eacpPolyStart[index] = eacpPolyTotal;
-    eacpPolyCount[index] = currentCount;
-
-    for (i = 0; i < currentCount; ++i)
-    {
-        eacpPolyVertices[(eacpPolyTotal + i) * 2 + 0] = (float) current[i].x;
-        eacpPolyVertices[(eacpPolyTotal + i) * 2 + 1] = (float) current[i].y;
-    }
-
-    eacpPolyTotal += currentCount;
-}
-
-// Vanilla nodes carry no polygons - only the split planes - so each
-// subsector's shape is recovered by carrying a huge square down the BSP and
-// clipping it by every partition on the way to the leaf.
-static void eacpDescend(int nodenum, const EacpPoint* poly, int count)
-{
-    EacpPoint clipped[EACP_MAX_POLY_VERTICES];
-    int clippedCount;
-    Doom::Node* node;
-    double x, y, dx, dy;
-
-    if (count < 3)
-        return;
-
-    if (nodenum & Doom::NF_SUBSECTOR)
-    {
-        eacpStoreSubsector(nodenum & ~Doom::NF_SUBSECTOR, poly, count);
-        return;
-    }
-
-    node = &nodes[nodenum];
-    x = eacpFixedToDouble(node->x);
-    y = eacpFixedToDouble(node->y);
-    dx = eacpFixedToDouble(node->dx);
-    dy = eacpFixedToDouble(node->dy);
-
-    eacpClipToLine(poly, count, x, y, dx, dy, 1, clipped, &clippedCount);
-    eacpDescend(node->children[0], clipped, clippedCount);
-
-    eacpClipToLine(poly, count, x, y, dx, dy, 0, clipped, &clippedCount);
-    eacpDescend(node->children[1], clipped, clippedCount);
-}
-
-static int eacpEnsurePolyStorage()
-{
-    doom_free(eacpPolyVertices);
-    doom_free(eacpPolyStart);
-    doom_free(eacpPolyCount);
-
-    eacpPolyVertices = (float*) doom_malloc(numsubsectors * EACP_MAX_POLY_VERTICES
-                                            * 2 * (int) sizeof(float));
-    eacpPolyStart = (int*) doom_malloc(numsubsectors * (int) sizeof(int));
-    eacpPolyCount = (int*) doom_malloc(numsubsectors * (int) sizeof(int));
-
-    return eacpPolyVertices != 0 && eacpPolyStart != 0 && eacpPolyCount != 0;
-}
-
-static void eacpMeasureLines()
-{
-    int i;
-
-    doom_free(eacpLineLengths);
-    eacpLineLengths = (float*) doom_malloc(numlines * (int) sizeof(float));
-
-    if (eacpLineLengths == 0)
-        return;
-
-    for (i = 0; i < numlines; ++i)
-    {
-        double dx = eacpFixedToDouble(lines[i].dx);
-        double dy = eacpFixedToDouble(lines[i].dy);
-
-        eacpLineLengths[i] = (float) eacpSqrt(dx * dx + dy * dy);
-    }
-}
-
-// The BSP is static for a level, so the cells are rebuilt only when a new one
-// loads; per-frame the geometry pass just re-reads the (moving) heights.
-static void eacpEnsureLevel()
-{
-    auto& session = Doom::gameSession();
-
-    EacpPoint square[4];
-    int i;
-
-    if (nodes == eacpCachedNodes && numsubsectors == eacpCachedSubsectors
-        && session.gameepisode == eacpCachedEpisode
-        && session.gamemap == eacpCachedMap)
-        return;
-
-    eacpCachedNodes = nodes;
-    eacpCachedSubsectors = numsubsectors;
-    eacpCachedEpisode = session.gameepisode;
-    eacpCachedMap = session.gamemap;
-
-    eacpPolyTotal = 0;
-
-    if (numsubsectors <= 0 || numnodes <= 0 || nodes == 0)
-        return;
-
-    if (!eacpEnsurePolyStorage())
-        return;
-
-    eacpMeasureLines();
-
-    for (i = 0; i < numsubsectors; ++i)
-    {
-        eacpPolyStart[i] = 0;
-        eacpPolyCount[i] = 0;
-    }
-
-    square[0].x = -EACP_MAP_LIMIT;
-    square[0].y = -EACP_MAP_LIMIT;
-    square[1].x = EACP_MAP_LIMIT;
-    square[1].y = -EACP_MAP_LIMIT;
-    square[2].x = EACP_MAP_LIMIT;
-    square[2].y = EACP_MAP_LIMIT;
-    square[3].x = -EACP_MAP_LIMIT;
-    square[3].y = EACP_MAP_LIMIT;
-
-    eacpDescend(numnodes - 1, square, 4);
-}
-
-static int eacpEnsureScratch(int textureCount)
-{
-    if (eacpScratchTextures == textureCount && eacpTextureCounts != 0)
-        return 1;
-
-    doom_free(eacpTextureCounts);
-    doom_free(eacpTextureCursors);
-
-    eacpTextureCounts = (int*) doom_malloc(textureCount * (int) sizeof(int));
-    eacpTextureCursors = (int*) doom_malloc(textureCount * (int) sizeof(int));
-    eacpScratchTextures = textureCount;
-
-    return eacpTextureCounts != 0 && eacpTextureCursors != 0;
-}
-
-static void eacpEmitVertex(EacpEmitter* em,
-                           int textureId,
-                           float x,
-                           float y,
-                           float z,
-                           float u,
-                           float v,
-                           EacpLight light)
-{
-    EacpDoomVertex* out;
-
-    if (em->vertices == 0)
-    {
-        em->counts[textureId]++;
-        return;
-    }
-
-    if (em->cursors[textureId] < 0)
-        return;
-
-    out = &em->vertices[em->cursors[textureId]++];
-    out->position[0] = x;
-    out->position[1] = y;
-    out->position[2] = z;
-    out->uv[0] = u;
-    out->uv[1] = v;
-    out->light = light.row;
-    out->falloff = light.falloff;
-}
-
-// DOOM's map plane is (x, y) with z up; the renderer's is (x, up, -y).
-static void eacpEmitWallQuad(EacpEmitter* em,
-                             int textureId,
-                             double x1,
-                             double y1,
-                             double x2,
-                             double y2,
-                             float bottom,
-                             float top,
-                             float textureTop,
-                             float uStart,
-                             float uEnd,
-                             float textureHeight,
-                             EacpLight light)
-{
-    float u1 = uStart;
-    float u2 = uEnd;
-    float vTop = (textureTop - top) / textureHeight;
-    float vBottom = (textureTop - bottom) / textureHeight;
-
-    float ax = (float) x1;
-    float az = (float) -y1;
-    float bx = (float) x2;
-    float bz = (float) -y2;
-
-    if (top <= bottom)
-        return;
-
-    eacpEmitVertex(em, textureId, ax, bottom, az, u1, vBottom, light);
-    eacpEmitVertex(em, textureId, bx, bottom, bz, u2, vBottom, light);
-    eacpEmitVertex(em, textureId, bx, top, bz, u2, vTop, light);
-
-    eacpEmitVertex(em, textureId, ax, bottom, az, u1, vBottom, light);
-    eacpEmitVertex(em, textureId, bx, top, bz, u2, vTop, light);
-    eacpEmitVertex(em, textureId, ax, top, az, u1, vTop, light);
-}
-
-static void eacpEmitLineSide(EacpEmitter* em, Doom::Line* line, int index, int s)
-{
-    auto& sky = Doom::skyState();
-
-    Doom::Side* side;
-    Doom::Sector* front;
-    Doom::Sector* back;
-    Doom::Vertex* v1;
-    Doom::Vertex* v2;
-    double x1, y1, x2, y2;
-    float length;
-    float frontFloor, frontCeiling;
-    float uStart, uEnd, rowOffset;
-    EacpLight light;
-    int contrast;
-
-    if (line->sidenum[s] < 0)
-        return;
-
-    side = &sides[line->sidenum[s]];
-    front = side->sector;
-    back = line->sidenum[s ^ 1] >= 0 ? sides[line->sidenum[s ^ 1]].sector : 0;
-
-    v1 = s == 0 ? line->v1 : line->v2;
-    v2 = s == 0 ? line->v2 : line->v1;
-
-    x1 = eacpFixedToDouble(v1->x);
-    y1 = eacpFixedToDouble(v1->y);
-    x2 = eacpFixedToDouble(v2->x);
-    y2 = eacpFixedToDouble(v2->y);
-    length = eacpLineLengths[index];
-
-    frontFloor = eacpFloorHeight(front);
-    frontCeiling = eacpCeilingHeight(front);
-    rowOffset = eacpFixedToFloat(side->rowoffset);
-
-    // The software renderer's fake contrast: walls running east-west are a
-    // step darker, north-south a step brighter, so corners stay readable.
-    contrast = 0;
-
-    if (line->v1->y == line->v2->y)
-        contrast = -1;
-    else if (line->v1->x == line->v2->x)
-        contrast = 1;
-
-    light = eacpSectorLight(front->lightlevel, contrast);
-
-    if (back == 0)
-    {
-        int texture = texturetranslation[side->midtexture];
-        float textureWidth, textureHeight, textureTop;
-
-        if (side->midtexture <= 0)
-            return;
-
-        textureWidth = (float) textures[texture]->width;
-        textureHeight = (float) textures[texture]->height;
-
-        textureTop = (line->flags & Doom::ML_DONTPEGBOTTOM)
-                         ? frontFloor + textureHeight
-                         : frontCeiling;
-        textureTop += rowOffset;
-
-        uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-        uEnd = uStart + length / textureWidth;
-
-        eacpEmitWallQuad(em,
-                         texture,
-                         x1,
-                         y1,
-                         x2,
-                         y2,
-                         frontFloor,
-                         frontCeiling,
-                         textureTop,
-                         uStart,
-                         uEnd,
-                         textureHeight,
-                         light);
-        return;
-    }
-
-    {
-        float backFloor = eacpFloorHeight(back);
-        float backCeiling = eacpCeilingHeight(back);
-
-        if (side->bottomtexture > 0 && backFloor > frontFloor)
-        {
-            int texture = texturetranslation[side->bottomtexture];
-            float textureWidth = (float) textures[texture]->width;
-            float textureHeight = (float) textures[texture]->height;
-
-            float textureTop =
-                (line->flags & Doom::ML_DONTPEGBOTTOM) ? frontCeiling : backFloor;
-            textureTop += rowOffset;
-
-            uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-            uEnd = uStart + length / textureWidth;
-
-            eacpEmitWallQuad(em,
-                             texture,
-                             x1,
-                             y1,
-                             x2,
-                             y2,
-                             frontFloor,
-                             backFloor,
-                             textureTop,
-                             uStart,
-                             uEnd,
-                             textureHeight,
-                             light);
-        }
-
-        // Between two sky ceilings the step is invisible sky (the classic sky
-        // hack), not an upper wall.
-        if (side->toptexture > 0 && backCeiling < frontCeiling
-            && !(front->ceilingpic == sky.skyflatnum
-                 && back->ceilingpic == sky.skyflatnum))
-        {
-            int texture = texturetranslation[side->toptexture];
-            float textureWidth = (float) textures[texture]->width;
-            float textureHeight = (float) textures[texture]->height;
-
-            float textureTop = (line->flags & Doom::ML_DONTPEGTOP)
-                                   ? frontCeiling
-                                   : backCeiling + textureHeight;
-            textureTop += rowOffset;
-
-            uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-            uEnd = uStart + length / textureWidth;
-
-            eacpEmitWallQuad(em,
-                             texture,
-                             x1,
-                             y1,
-                             x2,
-                             y2,
-                             backCeiling,
-                             frontCeiling,
-                             textureTop,
-                             uStart,
-                             uEnd,
-                             textureHeight,
-                             light);
-        }
-
-        // The middle texture of a two-sided line - a grate, a window, a hanging
-        // vine. It is masked, and unlike the walls above it never tiles: DOOM
-        // draws it once, clipped to the opening, which is why a too-short
-        // midtexture leaves a gap rather than repeating.
-        if (side->midtexture > 0)
-        {
-            int texture = texturetranslation[side->midtexture];
-            float textureWidth = (float) textures[texture]->width;
-            float textureHeight = (float) textures[texture]->height;
-
-            float openingBottom = backFloor > frontFloor ? backFloor : frontFloor;
-            float openingTop =
-                backCeiling < frontCeiling ? backCeiling : frontCeiling;
-
-            float textureTop = (line->flags & Doom::ML_DONTPEGBOTTOM)
-                                   ? openingBottom + textureHeight
-                                   : openingTop;
-            float top;
-            float bottom;
-
-            textureTop += rowOffset;
-
-            top = textureTop < openingTop ? textureTop : openingTop;
-            bottom = textureTop - textureHeight;
-
-            if (bottom < openingBottom)
-                bottom = openingBottom;
-
-            uStart = eacpFixedToFloat(side->textureoffset) / textureWidth;
-            uEnd = uStart + length / textureWidth;
-
-            eacpEmitWallQuad(em,
-                             texture,
-                             x1,
-                             y1,
-                             x2,
-                             y2,
-                             bottom,
-                             top,
-                             textureTop,
-                             uStart,
-                             uEnd,
-                             textureHeight,
-                             light);
-        }
-    }
-}
-
-// Every thing in the level - monsters, items, decorations, the player's
-// corpse - as a quad facing the camera, exactly where DOOM's own sprite
-// projection would put it: the sprite's left edge sits its own offset to the
-// left of the thing's position along the view plane, and its top sits the
-// sprite's top offset above the thing's feet.
-static void eacpEmitSprite(EacpEmitter* em,
-                           Doom::Mobj* thing,
-                           Doom::Mobj* viewer,
-                           double rightX,
-                           double rightY)
-{
-    auto& gfx = Doom::graphicsData();
-
-    Doom::SpriteDef* definition;
-    Doom::SpriteFrame* frame;
-    int rotation = 0;
-    int lump;
-    int flip;
-    EacpLight light;
-    double leftX, leftY;
-    float width, height, top, bottom;
-    float u0, u1;
-
-    if (thing == viewer || Doom::toIndex(thing->sprite) < 0
-        || Doom::toIndex(thing->sprite) >= gfx.numsprites)
-        return;
-
-    definition = &sprites[Doom::toIndex(thing->sprite)];
-
-    if ((int) (thing->frame & Doom::FF_FRAMEMASK) >= definition->numframes)
-        return;
-
-    frame = &definition->spriteframes[thing->frame & Doom::FF_FRAMEMASK];
-
-    // Eight drawings per frame, one per facing: which one shows depends on the
-    // angle the thing is seen from.
-    if (frame->rotate)
-    {
-        angle_t seen = Doom::pointToAngle2(viewer->x, viewer->y, thing->x, thing->y);
-        rotation = ((seen - thing->angle + (Doom::ang45 / 2u) * 9u) >> 29).raw;
-    }
-
-    lump = frame->lump[rotation];
-    flip = frame->flip[rotation];
-
-    if (lump < 0 || lump >= gfx.numspritelumps)
-        return;
-
-    width = (float) (spritewidth[lump].toInt());
-    height = (float) eacpSpriteHeights[lump];
-
-    // A thing moves once a tic, so drawing it where the tic left it makes it
-    // step while the world glides past. Its momentum is how far it travelled to
-    // get there, so winding that back by the part of the tic still to come puts
-    // it where it would be at the moment being drawn.
-    {
-        double back = 1.0 - (double) eacpAlpha;
-
-        double thingX =
-            eacpFixedToDouble(thing->x) - eacpFixedToDouble(thing->momx) * back;
-        double thingY =
-            eacpFixedToDouble(thing->y) - eacpFixedToDouble(thing->momy) * back;
-        float thingZ = eacpFixedToFloat(thing->z)
-                       - (float) (eacpFixedToDouble(thing->momz) * back);
-
-        leftX = thingX - rightX * eacpFixedToDouble(spriteoffset[lump]);
-        leftY = thingY - rightY * eacpFixedToDouble(spriteoffset[lump]);
-
-        top = thingZ + eacpFixedToFloat(spritetopoffset[lump]);
-        bottom = top - height;
-    }
-
-    light = (thing->frame & Doom::FF_FULLBRIGHT)
-                ? eacpFullbrightLight()
-                : eacpSectorLight(thing->subsector->sector->lightlevel, 0);
-
-    u0 = flip ? 1.0f : 0.0f;
-    u1 = flip ? 0.0f : 1.0f;
-
-    {
-        int texture = eacpSpriteBase() + lump;
-
-        float ax = (float) leftX;
-        float az = (float) -leftY;
-        float bx = (float) (leftX + rightX * width);
-        float bz = (float) -(leftY + rightY * width);
-
-        eacpEmitVertex(em, texture, ax, bottom, az, u0, 1.0f, light);
-        eacpEmitVertex(em, texture, bx, bottom, bz, u1, 1.0f, light);
-        eacpEmitVertex(em, texture, bx, top, bz, u1, 0.0f, light);
-
-        eacpEmitVertex(em, texture, ax, bottom, az, u0, 1.0f, light);
-        eacpEmitVertex(em, texture, bx, top, bz, u1, 0.0f, light);
-        eacpEmitVertex(em, texture, ax, top, az, u0, 0.0f, light);
-    }
-}
-
-// The engine's 32-bit angle for a heading in radians, so the view being drawn
-// can index the same sine tables the engine uses.
-static angle_t eacpAngleFromRadians(float radians)
-{
-    return (angle_t) (unsigned) (long long) ((double) radians
-                                             * (2147483648.0 / 3.14159265358979));
-}
-
-static void eacpEmitSprites(EacpEmitter* em,
-                            Doom::Mobj* viewer,
-                            const EacpDoomCamera* camera)
-{
-    auto& thinkers = Doom::thinkerList();
-
-    Doom::Thinker* thinker;
-
-    // The view plane's right axis, the one DOOM measures a sprite's width
-    // along, so the billboards stay square-on to the camera being drawn.
-    angle_t facing = eacpAngleFromRadians(camera->angle);
-
-    double rightX = eacpFixedToDouble(finesine[facing.fineIndex()]);
-    double rightY = -eacpFixedToDouble(finecosine[facing.fineIndex()]);
-
-    for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
-         thinker = thinker->next)
-    {
-        // A mobj is a Thinker whose virtual kind() is Doom::Mobj (was the function.acp1 ==
-        // Doom::mobjThinker identity, before Doom::Thinker became a real Doom::Thinker);
-        // skip a removed-but-not-yet-freed one, as the engine's own scans do.
-        if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
+            scratch.cursors[i] = -1;
             continue;
+        }
 
-        eacpEmitSprite(em, (Doom::Mobj*) thinker, viewer, rightX, rightY);
+        scratch.cursors[i] = total;
+        into.draws[drawCount++] = {i, total, vertexCount};
+        total += vertexCount;
     }
+
+    emitter.vertices = into.vertices;
+    emitWorld(emitter, camera);
+
+    return {into.vertices.first(static_cast<std::size_t>(total)),
+            into.draws.first(static_cast<std::size_t>(drawCount))};
 }
 
-// The sky is not geometry in DOOM: it is painted wherever a ceiling is missing,
-// at a column picked by the direction the player faces. A cylinder around the
-// camera reproduces that - it never moves relative to the viewer, so it has no
-// parallax, and its texture repeats four times around, as the engine's does.
-static void eacpEmitSky(EacpEmitter* em, const EacpDoomCamera* camera)
+std::span<const AutomapVertex> buildAutomap(const Camera& camera,
+                                            std::span<AutomapVertex> into)
 {
-    auto& sky = Doom::skyState();
+    if (!Doom::overlayState().automapactive
+        || Doom::gameFlow().gamestate != Doom::GameState::Level || into.empty()
+        || lines == nullptr)
+        return {};
 
-    int texture;
-    int i;
-    double camX, camY;
-    float camZ;
-    float vTop, vBottom;
+    auto emitter = AutomapEmitter {};
+    emitter.vertices = into;
 
-    // "Sky is allways drawn full bright, i.e. colormaps[0] is used. Because of
-    // this hack, sky is not affected by INVUL inverse mapping" - Doom::drawPlanes,
-    // whose words those are. Row 0 at any distance, and through any powerup.
-    EacpLight light = eacpFixedLight(0);
+    // MTOF, as a plain number: the engine's own is FixedMul(x, scale_mtof) shifted
+    // back down twice, which is x_raw * scale_mtof_raw / 2^32 - so one whole map
+    // unit spans scale_mtof whole frame pixels.
+    emitter.pixelsPerMapUnit = toDouble(scale_mtof);
 
-    if (sky.skytexture <= 0 || sky.skytexture >= Doom::graphicsData().numtextures)
-        return;
+    // Vanilla recentres on the player once a tic and snaps the map to whole frame
+    // pixels as it does it (doFollowPlayer's FTOM(MTOF(x))). Following the
+    // interpolated view instead, and not rounding, is what makes the map glide
+    // rather than crawl. Panned by hand, it is the engine's window that moves,
+    // and that still steps.
+    if (followplayer && am_plr != nullptr && am_plr->mo != nullptr)
+        emitter.origin = {camera.x - toDouble(m_w) / 2.0,
+                          camera.y - toDouble(m_h) / 2.0};
+    else
+        emitter.origin = {toDouble(m_x), toDouble(m_y)};
 
-    texture = texturetranslation[sky.skytexture];
+    if (grid)
+        automapGrid(emitter, GRIDCOLORS);
 
-    camX = camera->x;
-    camY = camera->y;
-    camZ = camera->z;
+    automapWalls(emitter);
+    automapPlayer(emitter, camera);
 
-    // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
-    // row is linear in height on the cylinder, so two rings are exact.
-    vTop = (100.0f - EACP_SKY_FOCAL * EACP_SKY_HEIGHT / EACP_SKY_RADIUS) / 128.0f;
-    vBottom = (100.0f + EACP_SKY_FOCAL * EACP_SKY_HEIGHT / EACP_SKY_RADIUS) / 128.0f;
+    if (cheating == 2)
+        automapThings(emitter, THINGCOLORS);
 
-    for (i = 0; i < EACP_SKY_SEGMENTS; ++i)
-    {
-        angle_t a0 = (angle_t) i << 26;
-        angle_t a1 = (angle_t) (i + 1) << 26;
+    automapCrosshair(emitter, XHAIRCOLORS);
 
-        double x0 =
-            camX + EACP_SKY_RADIUS * eacpFixedToDouble(finecosine[a0.fineIndex()]);
-        double y0 =
-            camY + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a0.fineIndex()]);
-        double x1 =
-            camX + EACP_SKY_RADIUS * eacpFixedToDouble(finecosine[a1.fineIndex()]);
-        double y1 =
-            camY + EACP_SKY_RADIUS * eacpFixedToDouble(finesine[a1.fineIndex()]);
-
-        float u0 = 4.0f * (float) i / (float) EACP_SKY_SEGMENTS;
-        float u1 = 4.0f * (float) (i + 1) / (float) EACP_SKY_SEGMENTS;
-
-        float top = camZ + EACP_SKY_HEIGHT;
-        float bottom = camZ - EACP_SKY_HEIGHT;
-
-        float ax = (float) x0;
-        float az = (float) -y0;
-        float bx = (float) x1;
-        float bz = (float) -y1;
-
-        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, light);
-        eacpEmitVertex(em, texture, bx, bottom, bz, u1, vBottom, light);
-        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, light);
-
-        eacpEmitVertex(em, texture, ax, bottom, az, u0, vBottom, light);
-        eacpEmitVertex(em, texture, bx, top, bz, u1, vTop, light);
-        eacpEmitVertex(em, texture, ax, top, az, u0, vTop, light);
-    }
+    return into.first(static_cast<std::size_t>(emitter.count));
 }
 
-// R_DrawPSprite lights the weapon at the *nearest* entry of the scale table -
-// it is right up against the camera - and that entry is this many rows brighter
-// than the sector's start map. Reading the start map alone lights the weapon as
-// if it stood infinitely far away, which is nearly black in a dim room and
-// visibly dark in almost any room: DOOM's weapon is fullbright in every sector
-// above light level 240 and close to it well below that.
-static float eacpWeaponBrightening()
+Array<HudSprite, hudSpriteCount> hudSprites()
 {
-    auto& view = Doom::viewWindow();
-
-    int width = view.viewwidth << view.detailshift;
-
-    if (width <= 0)
-        return 0.0f;
-
-    return (float) ((Doom::MAXLIGHTSCALE - 1) * Doom::SCREENWIDTH / width
-                    / Doom::DISTMAP);
-}
-
-// R_DrawPSprite's choice of colormap, in its own order: a powerup first, then a
-// lit frame, then the sector.
-static float eacpWeaponLight(int fullbright)
-{
-    auto& players_ = Doom::playerState();
-
-    float row;
-
-    if (eacpFixedRow())
-        return (float) eacpFixedRow();
-
-    if (fullbright)
-        return 0.0f;
-
-    row = eacpSectorLight(players_.players[players_.displayplayer]
-                              .mo->subsector->sector->lightlevel,
-                          0)
-              .row
-          - eacpWeaponBrightening();
-
-    return row < 0.0f ? 0.0f : row;
-}
-
-// The engine places the weapon in a 320x200 space centred on row 100
-// (BASEYCENTER), and R_DrawPSprite lands that centre on the middle row of
-// whatever the view is: row 84 with the status bar up, row 100 without it.
-static float eacpWeaponRowShift()
-{
-    return 100.0f - eacpDoomViewRows() * 0.5f;
-}
-
-void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
-{
-    auto& players_ = Doom::playerState();
-
     auto& gfx = Doom::graphicsData();
 
-    Doom::Player* player = &players_.players[players_.displayplayer];
-    int i;
+    auto out = Array<HudSprite, hudSpriteCount> {};
+    const auto& player = displayPlayer();
 
-    if (out == 0)
-        return;
+    ensureTextureTable();
 
-    for (i = 0; i < EACP_DOOM_HUD_SPRITES; ++i)
-        out[i].textureId = -1;
+    if (!textureTable.ready() || Doom::gameFlow().gamestate != Doom::GameState::Level
+        || player.mo == nullptr)
+        return out;
 
-    eacpEnsureTextureData();
-
-    if (!eacpTexturesReady || Doom::gameFlow().gamestate != Doom::GameState::Level
-        || player->mo == 0)
-        return;
-
-    for (i = 0; i < Doom::numPSprites && i < EACP_DOOM_HUD_SPRITES; ++i)
+    for (auto i = 0; i < Doom::numPSprites && i < hudSpriteCount; ++i)
     {
-        Doom::PspDef* weapon = &player->psprites[i];
-        Doom::State* state = weapon->state;
-        Doom::SpriteDef* definition;
-        Doom::SpriteFrame* frame;
-        int lump;
+        const auto& weapon = player.psprites[i];
+        const auto* state = weapon.state;
 
-        if (state == 0 || Doom::toIndex(state->sprite) < 0
+        if (state == nullptr || Doom::toIndex(state->sprite) < 0
             || Doom::toIndex(state->sprite) >= gfx.numsprites)
             continue;
 
-        definition = &sprites[Doom::toIndex(state->sprite)];
+        const auto& definition = sprites[Doom::toIndex(state->sprite)];
+        auto frameIndex = static_cast<int>(state->frame & Doom::FF_FRAMEMASK);
 
-        if ((int) (state->frame & Doom::FF_FRAMEMASK) >= definition->numframes)
+        if (frameIndex >= definition.numframes)
             continue;
 
-        frame = &definition->spriteframes[state->frame & Doom::FF_FRAMEMASK];
-        lump = frame->lump[0];
+        const auto& frame = definition.spriteframes[frameIndex];
+        auto lump = frame.lump[0];
 
         if (lump < 0 || lump >= gfx.numspritelumps)
             continue;
 
-        out[i].textureId = eacpSpriteBase() + lump;
-        out[i].width = (float) (spritewidth[lump].toInt());
-        out[i].height = (float) eacpSpriteHeights[lump];
-
-        out[i].x =
-            eacpFixedToFloat(weapon->sx) - eacpFixedToFloat(spriteoffset[lump]);
-        out[i].y = eacpFixedToFloat(weapon->sy)
-                   - eacpFixedToFloat(spritetopoffset[lump]) - eacpWeaponRowShift();
-
-        out[i].light = eacpWeaponLight(state->frame & Doom::FF_FULLBRIGHT);
-        out[i].flip = frame->flip[0];
-    }
-}
-
-static void
-    eacpEmitFlat(EacpEmitter* em, int index, int flat, float height, EacpLight light)
-{
-    int textureId = Doom::graphicsData().numtextures + flattranslation[flat];
-    const float* poly = &eacpPolyVertices[eacpPolyStart[index] * 2];
-    int count = eacpPolyCount[index];
-    int i;
-
-    for (i = 1; i + 1 < count; ++i)
-    {
-        int corners[3];
-        int c;
-
-        corners[0] = 0;
-        corners[1] = i;
-        corners[2] = i + 1;
-
-        for (c = 0; c < 3; ++c)
-        {
-            float x = poly[corners[c] * 2 + 0];
-            float y = poly[corners[c] * 2 + 1];
-
-            eacpEmitVertex(em,
-                           textureId,
-                           x,
-                           height,
-                           -y,
-                           x / (float) EACP_FLAT_SIZE,
-                           -y / (float) EACP_FLAT_SIZE,
-                           light);
-        }
-    }
-}
-
-static void eacpEmitSubsector(EacpEmitter* em, int index)
-{
-    auto& sky = Doom::skyState();
-
-    Doom::Sector* sector = subsectors[index].sector;
-    EacpLight light;
-
-    if (eacpPolyCount[index] < 3 || sector == 0)
-        return;
-
-    light = eacpSectorLight(sector->lightlevel, 0);
-
-    // Either way round, a sky flat is a hole onto the sky rather than a surface:
-    // Doom::drawPlanes paints the sky wherever it finds one, and a floor is as free
-    // to carry it as a ceiling.
-    if (sector->floorpic != sky.skyflatnum)
-        eacpEmitFlat(em, index, sector->floorpic, eacpFloorHeight(sector), light);
-
-    if (sector->ceilingpic != sky.skyflatnum)
-        eacpEmitFlat(
-            em, index, sector->ceilingpic, eacpCeilingHeight(sector), light);
-}
-
-static void eacpEmitWorld(EacpEmitter* em, const EacpDoomCamera* camera)
-{
-    auto& players_ = Doom::playerState();
-
-    Doom::Player* player = &players_.players[players_.displayplayer];
-    int i;
-
-    for (i = 0; i < numlines; ++i)
-    {
-        eacpEmitLineSide(em, &lines[i], i, 0);
-        eacpEmitLineSide(em, &lines[i], i, 1);
+        out[i] = {spriteBase() + lump,
+                  toFloat(weapon.sx) - toFloat(spriteoffset[lump]),
+                  toFloat(weapon.sy) - toFloat(spritetopoffset[lump])
+                      - weaponRowShift(),
+                  static_cast<float>(spritewidth[lump].toInt()),
+                  static_cast<float>(spriteHeight(lump)),
+                  weaponLight((state->frame & Doom::FF_FULLBRIGHT) != 0),
+                  frame.flip[0] != 0};
     }
 
-    for (i = 0; i < numsubsectors; ++i)
-        eacpEmitSubsector(em, i);
-
-    if (player->mo == 0)
-        return;
-
-    eacpEmitSky(em, camera);
-    eacpEmitSprites(em, player->mo, camera);
+    return out;
 }
-
-int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
-                          float alpha,
-                          EacpDoomVertex* vertices,
-                          int maxVertices,
-                          EacpDoomDraw* draws,
-                          int maxDraws,
-                          int* outVertexCount)
-{
-    EacpEmitter em;
-    int textureCount = eacpDoomGetTextureCount();
-    int total = 0;
-    int drawCount = 0;
-    int i;
-
-    if (outVertexCount != 0)
-        *outVertexCount = 0;
-
-    eacpAlpha = alpha < 0.0f ? 0.0f : (alpha > 1.0f ? 1.0f : alpha);
-    eacpEnsureTextureData();
-
-    if (Doom::gameFlow().gamestate != Doom::GameState::Level || vertices == 0
-        || draws == 0 || camera == 0 || textureCount <= 0 || lines == 0
-        || !eacpTexturesReady)
-        return 0;
-
-    eacpEnsureLevel();
-
-    if (eacpPolyTotal <= 0 || !eacpEnsureScratch(textureCount))
-        return 0;
-
-    for (i = 0; i < textureCount; ++i)
-        eacpTextureCounts[i] = 0;
-
-    em.counts = eacpTextureCounts;
-    em.cursors = eacpTextureCursors;
-    em.vertices = 0;
-    eacpEmitWorld(&em, camera);
-
-    // Each texture's vertices become one contiguous run, so the frame draws
-    // once per texture with no state changes in between.
-    for (i = 0; i < textureCount; ++i)
-    {
-        int count = eacpTextureCounts[i];
-
-        if (count <= 0 || drawCount >= maxDraws || total + count > maxVertices)
-        {
-            eacpTextureCursors[i] = -1;
-            continue;
-        }
-
-        eacpTextureCursors[i] = total;
-
-        draws[drawCount].textureId = i;
-        draws[drawCount].firstVertex = total;
-        draws[drawCount].vertexCount = count;
-        ++drawCount;
-
-        total += count;
-    }
-
-    em.vertices = vertices;
-    eacpEmitWorld(&em, camera);
-
-    if (outVertexCount != 0)
-        *outVertexCount = total;
-
-    return drawCount;
-}
-
-// The automap, as geometry rather than as a rasterized frame.
-//
-// What is drawn, and in what colour, is Doom::drawAutomap's own choice, mirrored below:
-// only its rasterizer (AM_drawFline, a Bresenham walk straight into the 320 x
-// 168 frame) is replaced. The shapes it draws the player and the things with -
-// player_arrow, cheat_player_arrow, thintriangle_guy - and the rotation it puts
-// them through are the engine's, used here as they stand.
-
-typedef struct
-{
-    EacpDoomAutomapVertex* vertices;
-    int count;
-    int max;
-
-    // The map point the frame's lower-left corner sits on, in fixed-point map
-    // units, and how many frame pixels one of those units spans.
-    double originX;
-    double originY;
-    double scale;
-} EacpAutomapEmitter;
-
-static void eacpAutomapCorner(EacpAutomapEmitter* em,
-                              double x,
-                              double y,
-                              double dx,
-                              double dy,
-                              float side,
-                              float color)
-{
-    EacpDoomAutomapVertex* vertex = &em->vertices[em->count++];
-
-    vertex->position[0] = (float) x;
-    vertex->position[1] = (float) y;
-    vertex->direction[0] = (float) dx;
-    vertex->direction[1] = (float) dy;
-    vertex->side = side;
-    vertex->color = color;
-}
-
-// One line of the map, in frame coordinates, as the two triangles of a quad the
-// vertex shader widens.
-static void eacpAutomapFrameLine(
-    EacpAutomapEmitter* em, double ax, double ay, double bx, double by, int color)
-{
-    double dx = bx - ax;
-    double dy = by - ay;
-    float shade = (float) (color & 0xff);
-
-    if (em->count + 6 > em->max || (dx == 0.0 && dy == 0.0))
-        return;
-
-    eacpAutomapCorner(em, ax, ay, dx, dy, 1.0f, shade);
-    eacpAutomapCorner(em, bx, by, dx, dy, 1.0f, shade);
-    eacpAutomapCorner(em, bx, by, dx, dy, -1.0f, shade);
-
-    eacpAutomapCorner(em, ax, ay, dx, dy, 1.0f, shade);
-    eacpAutomapCorner(em, bx, by, dx, dy, -1.0f, shade);
-    eacpAutomapCorner(em, ax, ay, dx, dy, -1.0f, shade);
-}
-
-// The same line, in map coordinates. CXMTOF and CYMTOF's transform, in floating
-// point and without their rounding to whole pixels: the map's y runs up and the
-// frame's runs down.
-static void eacpAutomapLine(EacpAutomapEmitter* em,
-                            fixed_t x1,
-                            fixed_t y1,
-                            fixed_t x2,
-                            fixed_t y2,
-                            int color)
-{
-    double ax = (double) f_x + (eacpFixedToDouble(x1) - em->originX) * em->scale;
-    double ay = (double) f_y + (double) f_h
-                - (eacpFixedToDouble(y1) - em->originY) * em->scale;
-    double bx = (double) f_x + (eacpFixedToDouble(x2) - em->originX) * em->scale;
-    double by = (double) f_y + (double) f_h
-                - (eacpFixedToDouble(y2) - em->originY) * em->scale;
-
-    eacpAutomapFrameLine(em, ax, ay, bx, by, color);
-}
-
-// AM_drawLineCharacter, emitting instead of rasterizing.
-static void eacpAutomapLineCharacter(EacpAutomapEmitter* em,
-                                     Doom::MapLine* lineguy,
-                                     int lineguylines,
-                                     fixed_t scale,
-                                     angle_t angle,
-                                     int color,
-                                     fixed_t x,
-                                     fixed_t y)
-{
-    int i;
-    Doom::MapLine l;
-
-    for (i = 0; i < lineguylines; i++)
-    {
-        l.a.x = lineguy[i].a.x;
-        l.a.y = lineguy[i].a.y;
-        l.b.x = lineguy[i].b.x;
-        l.b.y = lineguy[i].b.y;
-
-        if (scale)
-        {
-            l.a.x = FixedMul(scale, l.a.x);
-            l.a.y = FixedMul(scale, l.a.y);
-            l.b.x = FixedMul(scale, l.b.x);
-            l.b.y = FixedMul(scale, l.b.y);
-        }
-
-        if (angle)
-        {
-            Doom::rotateAutomapPoint(l.a.x, l.a.y, angle);
-            Doom::rotateAutomapPoint(l.b.x, l.b.y, angle);
-        }
-
-        eacpAutomapLine(em, l.a.x + x, l.a.y + y, l.b.x + x, l.b.y + y, color);
-    }
-}
-
-static void eacpAutomapWalls(EacpAutomapEmitter* em)
-{
-    int i;
-
-    for (i = 0; i < numlines; i++)
-    {
-        Doom::Line* line = &lines[i];
-        fixed_t ax = line->v1->x;
-        fixed_t ay = line->v1->y;
-        fixed_t bx = line->v2->x;
-        fixed_t by = line->v2->y;
-
-        if (cheating || (line->flags & Doom::ML_MAPPED))
-        {
-            if ((line->flags & LINE_NEVERSEE) && !cheating)
-                continue;
-
-            if (!line->backsector)
-                eacpAutomapLine(em, ax, ay, bx, by, WALLCOLORS + lightlev);
-            else if (line->special == 39)
-                eacpAutomapLine(em, ax, ay, bx, by, WALLCOLORS + WALLRANGE / 2);
-            else if (line->flags & Doom::ML_SECRET)
-                eacpAutomapLine(em,
-                                ax,
-                                ay,
-                                bx,
-                                by,
-                                cheating ? SECRETWALLCOLORS + lightlev
-                                         : WALLCOLORS + lightlev);
-            else if (line->backsector->floorheight != line->frontsector->floorheight)
-                eacpAutomapLine(em, ax, ay, bx, by, FDWALLCOLORS + lightlev);
-            else if (line->backsector->ceilingheight
-                     != line->frontsector->ceilingheight)
-                eacpAutomapLine(em, ax, ay, bx, by, CDWALLCOLORS + lightlev);
-            else if (cheating)
-                eacpAutomapLine(em, ax, ay, bx, by, TSWALLCOLORS + lightlev);
-        }
-        else if (am_plr != 0
-                 && am_plr->powers[Doom::toIndex(Doom::PowerType::AllMap)])
-        {
-            if (!(line->flags & LINE_NEVERSEE))
-                eacpAutomapLine(em, ax, ay, bx, by, GRAYS + 3);
-        }
-    }
-}
-
-static void eacpAutomapGrid(EacpAutomapEmitter* em, int color)
-{
-    fixed_t block = Doom::Fixed::fromInt(Doom::MAPBLOCKUNITS);
-    fixed_t originX = (fixed_t) em->originX;
-    fixed_t originY = (fixed_t) em->originY;
-    fixed_t x, y, start, end;
-
-    start = originX;
-    if (fixed_t {(start - bmaporgx).raw % block.raw})
-        start += block - (fixed_t {(start - bmaporgx).raw % block.raw});
-    end = originX + m_w;
-
-    for (x = start; x < end; x += block)
-        eacpAutomapLine(em, x, originY, x, originY + m_h, color);
-
-    start = originY;
-    if (fixed_t {(start - bmaporgy).raw % block.raw})
-        start += block - (fixed_t {(start - bmaporgy).raw % block.raw});
-    end = originY + m_h;
-
-    for (y = start; y < end; y += block)
-        eacpAutomapLine(em, originX, y, originX + m_w, y, color);
-}
-
-// Drawn from the view rather than from the player: the arrow is the one thing on
-// the map that turns, and turning it once a tic against a map that glides is
-// what would be seen.
-static void eacpAutomapPlayer(EacpAutomapEmitter* em, const EacpDoomCamera* camera)
-{
-    fixed_t x, y;
-    angle_t angle;
-
-    if (am_plr == 0 || am_plr->mo == 0)
-        return;
-
-    x = (fixed_t) ((double) camera->x * 65536.0);
-    y = (fixed_t) ((double) camera->y * 65536.0);
-    angle = eacpAngleFromRadians(camera->angle);
-
-    if (cheating)
-        eacpAutomapLineCharacter(em,
-                                 cheat_player_arrow,
-                                 NUMCHEATPLYRLINES,
-                                 fixed_t {},
-                                 angle,
-                                 WHITE,
-                                 x,
-                                 y);
-    else
-        eacpAutomapLineCharacter(
-            em, player_arrow, NUMPLYRLINES, fixed_t {}, angle, WHITE, x, y);
-}
-
-static void eacpAutomapThings(EacpAutomapEmitter* em, int color)
-{
-    int i;
-
-    for (i = 0; i < numsectors; i++)
-    {
-        Doom::Mobj* thing = sectors[i].thinglist;
-
-        while (thing != 0)
-        {
-            eacpAutomapLineCharacter(em,
-                                     thintriangle_guy,
-                                     NUMTHINTRIANGLEGUYLINES,
-                                     Doom::Fixed::fromInt(16),
-                                     thing->angle,
-                                     color + lightlev,
-                                     thing->x,
-                                     thing->y);
-            thing = thing->snext;
-        }
-    }
-}
-
-// AM_drawCrosshair pokes the frame's middle pixel; a line a pixel long over it
-// is the same dot, and widens with everything else.
-static void eacpAutomapCrosshair(EacpAutomapEmitter* em, int color)
-{
-    double x = (double) f_w * 0.5;
-    double y = (double) f_h * 0.5;
-
-    eacpAutomapFrameLine(em, x - 0.5, y, x + 0.5, y, color);
-}
-
-int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
-                         EacpDoomAutomapVertex* vertices,
-                         int maxVertices)
-{
-    EacpAutomapEmitter em;
-
-    if (!Doom::overlayState().automapactive
-        || Doom::gameFlow().gamestate != Doom::GameState::Level || camera == 0
-        || vertices == 0 || lines == 0)
-        return 0;
-
-    em.vertices = vertices;
-    em.count = 0;
-    em.max = maxVertices;
-
-    // MTOF in fixed point: a map unit spans scale_mtof / 2^32 frame pixels.
-    em.scale = (double) scale_mtof.raw / 4294967296.0;
-
-    // Vanilla recentres on the player once a tic and snaps the map to whole
-    // frame pixels as it does it (AM_doFollowPlayer's FTOM(MTOF(x))). Following
-    // the interpolated view instead, and not rounding, is what makes the map
-    // glide rather than crawl. Panned by hand, it is the engine's window that
-    // moves, and that still steps.
-    if (followplayer && am_plr != 0 && am_plr->mo != 0)
-    {
-        em.originX = (double) camera->x * 65536.0 - (double) m_w.raw / 2.0;
-        em.originY = (double) camera->y * 65536.0 - (double) m_h.raw / 2.0;
-    }
-    else
-    {
-        em.originX = (double) m_x.raw;
-        em.originY = (double) m_y.raw;
-    }
-
-    if (grid)
-        eacpAutomapGrid(&em, GRIDCOLORS);
-
-    eacpAutomapWalls(&em);
-    eacpAutomapPlayer(&em, camera);
-
-    if (cheating == 2)
-        eacpAutomapThings(&em, THINGCOLORS);
-
-    eacpAutomapCrosshair(&em, XHAIRCOLORS);
-
-    return em.count;
-}
+} // namespace PureDoom::Engine

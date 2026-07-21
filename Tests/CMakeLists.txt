@@ -48,6 +48,7 @@ nano_add_executable(SimTests
         Sim/FinaleTests.cpp
         Sim/IntermissionTests.cpp
         Port/GeometryTests.cpp
+        Port/AutomapTests.cpp
         ${CMAKE_SOURCE_DIR}/examples/EACP/EngineAccess.cpp
         TARGETS doom-sim-probe)
 

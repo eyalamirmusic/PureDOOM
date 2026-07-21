@@ -10,7 +10,7 @@
 // UI/Automap.cpp is ~1,300 lines of drawing, panning, zooming and marking, and
 // like m_menu before it, no demo reaches it - nothing in a recorded .lmp opens
 // the map (vanilla's D_Display skips R_RenderPlayerView entirely while it is up,
-// which is why this port had to add its own eacpDoomRevealAutomap). It gets the
+// which is why this port had to add its own Engine::revealAutomap). It gets the
 // same net m_menu got before its own rewrite: drive synthetic key events through
 // the real host path (Doom::keyDown -> Doom::postEvent -> Doom::gameResponder ->
 // Doom::automapResponder), let Doom::automapTicker and Doom::drawAutomap run, and

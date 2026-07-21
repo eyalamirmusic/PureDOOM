@@ -19,7 +19,7 @@ namespace PureDoom
 {
 // A fresh level or a teleport moves the camera somewhere else entirely, and
 // there is nothing to interpolate across that.
-inline bool jumped(const EacpDoomCamera& from, const EacpDoomCamera& to)
+inline bool jumped(const Engine::Camera& from, const Engine::Camera& to)
 {
     constexpr auto limit = 128.0f;
 
@@ -45,7 +45,7 @@ inline float shortestTurn(float from, float to)
 // units where a full circle is 2^32.
 inline float turnFor(float movement)
 {
-    auto sensitivity = (float) (eacpDoomMouseSensitivity() + 5) / 10.0f;
+    auto sensitivity = (float) (Engine::mouseSensitivity() + 5) / 10.0f;
 
     return -movement * sensitivity * pi / 4096.0f;
 }
@@ -92,15 +92,8 @@ struct View final : GPU::GPUView
         draws.resize(maxDraws);
         automap.resize(maxAutomapVertices);
         overlayPixels.resize(overlayBytes);
-        wipePixels.resize(screenPixels);
+        wipePixels.resize(Engine::screenPixels);
         paletteData.resize(256 * 4);
-
-        hud.resize(EACP_DOOM_HUD_SPRITES);
-
-        for (auto& sprite: hud)
-            sprite.textureId = -1;
-
-        previousHud = hud;
     }
 
     void prepareShader(DoomShader& shader)
@@ -127,14 +120,14 @@ struct View final : GPU::GPUView
         // frame has for it: whether a tic is due, and how far into the tic the
         // frame sits. Reading it twice lets a tic boundary fall between the two,
         // and the frame is then drawn a whole tic in the past.
-        auto now = eacpDoomTicTime();
+        auto now = Engine::ticTime();
         auto tic = (std::int64_t) now;
 
         ticFraction = std::clamp((float) (now - (double) tic), 0.0f, 1.0f);
 
         // The engine's state only moves on a tic, 35 times a second, so it is
         // left alone on the refreshes in between. A melt animates per frame.
-        if (tic == lastTic && !eacpDoomIsWiping())
+        if (tic == lastTic && !Engine::isWiping())
             return;
 
         lastTic = tic;
@@ -143,16 +136,16 @@ struct View final : GPU::GPUView
         previousCamera = currentCamera;
         previousHud = hud;
 
-        eacpDoomSnapshotTic();
+        Engine::snapshotTic();
         Doom::updateGame();
 
         // The engine reveals a wall on the map by drawing it, and draws nothing
         // while the map is up - so vanilla's map stops filling in the moment it
         // is looked at. This keeps it filling in.
-        eacpDoomRevealAutomap();
+        Engine::revealAutomap();
 
-        currentCamera = eacpDoomGetCamera();
-        eacpDoomGetHudSprites(hud.data());
+        currentCamera = Engine::camera();
+        hud = Engine::hudSprites();
 
         if (!hasCamera || jumped(previousCamera, currentCamera))
         {
@@ -168,7 +161,7 @@ struct View final : GPU::GPUView
     // the engine moves the player 35 times a second while the display refreshes
     // two to four times as often, so a view taken straight from the engine sits
     // still for two or three frames and then jumps.
-    EacpDoomCamera viewCamera() const
+    Engine::Camera viewCamera() const
     {
         auto camera = currentCamera;
 
@@ -250,12 +243,12 @@ struct View final : GPU::GPUView
         // the incoming screen and only sets the melt up on the next, so for that
         // one frame there is nothing to draw over the view with and the software
         // frame has to stand in.
-        auto gpuView = gpuWorld && eacpDoomViewActive() && !worldTextures.empty()
-                       && (!eacpDoomIsWiping() || wipeVisible);
+        auto gpuView = gpuWorld && Engine::viewActive() && !worldTextures.empty()
+                       && (!Engine::isWiping() || wipeVisible);
 
         auto pass = frame.beginPass({Graphics::Color::black()});
 
-        setDarkenRow((float) eacpDoomDarkenRow());
+        setDarkenRow((float) Engine::darkenRow());
 
         if (!gpuView)
         {
@@ -266,12 +259,12 @@ struct View final : GPU::GPUView
 
         // The last notch of the menu's screen size takes the status bar away, and
         // the view is then the whole frame rather than the rows above the bar.
-        auto rows = eacpDoomViewRows();
+        auto rows = Engine::viewRows();
         auto viewport = dst.withHeight(dst.h * worldViewportShare(rows));
 
         // The engine skips the 3D view entirely while the automap is up, so the
         // two never share the frame.
-        if (eacpDoomAutomapActive())
+        if (Engine::automapActive())
             drawAutomap(pass, bounds, viewport);
         else
         {
@@ -282,9 +275,12 @@ struct View final : GPU::GPUView
         // With no status bar there is no strip to composite: the rows it sat in
         // hold the software renderer's own view of the world, which is the one
         // thing that must not reach the screen.
-        if (eacpDoomStatusBarVisible())
-            drawScreen(
-                pass, bounds, statusBarRect(dst, rows), rows / doomHeight, 1.0f);
+        if (Engine::statusBarVisible())
+            drawScreen(pass,
+                       bounds,
+                       statusBarRect(dst, rows),
+                       rows / Engine::screenHeight,
+                       1.0f);
 
         // Over the whole frame, status bar included: the melt slides the outgoing
         // screen down across all 200 rows.
@@ -337,19 +333,12 @@ struct View final : GPU::GPUView
         // the sky are built around the camera being drawn from, and that moves
         // with the view between tics rather than with the engine.
         auto camera = viewCamera();
-        auto vertexCount = 0;
-        auto drawCount = eacpDoomBuildGeometry(&camera,
-                                               ticFraction,
-                                               geometry.data(),
-                                               maxVertices,
-                                               draws.data(),
-                                               maxDraws,
-                                               &vertexCount);
+        auto world = Engine::buildGeometry(camera, ticFraction, {geometry, draws});
 
-        if (drawCount <= 0 || vertexCount <= 0)
+        if (world.draws.empty())
             return;
 
-        worldBuffer.update(geometry.data(), vertexCount * sizeof(EacpDoomVertex));
+        worldBuffer.update(world.vertices.data(), world.vertices.size_bytes());
 
         worldShader.camX = camera.x;
         worldShader.camY = camera.z;
@@ -373,10 +362,8 @@ struct View final : GPU::GPUView
         pass.setVertexUniforms(worldShader);
         pass.setFragmentUniforms(worldShader);
 
-        for (auto i = 0; i < drawCount; ++i)
+        for (const auto& draw: world.draws)
         {
-            const auto& draw = draws[i];
-
             worldShader.texture = textureFor(draw.textureId);
             worldShader.bindTextures(pass);
             pass.draw(draw.vertexCount, draw.firstVertex);
@@ -388,7 +375,7 @@ struct View final : GPU::GPUView
                     const Graphics::Rect& viewport,
                     float rows)
     {
-        auto scaleX = viewport.w / (float) doomWidth;
+        auto scaleX = viewport.w / (float) Engine::screenWidth;
         auto scaleY = viewport.h / rows;
 
         hudShader.viewSize = std::array {bounds.w, bounds.h};
@@ -432,25 +419,46 @@ struct View final : GPU::GPUView
                      const Graphics::Rect& viewport)
     {
         auto camera = viewCamera();
-        auto vertexCount =
-            eacpDoomBuildAutomap(&camera, automap.data(), maxAutomapVertices);
 
-        if (vertexCount <= 0)
+        // Not `lines`: that is the engine's own linedef array, at :: scope and
+        // visible here.
+        auto map = Engine::buildAutomap(camera, automap);
+
+        if (map.empty())
             return;
 
-        automapBuffer.update(automap.data(),
-                             vertexCount * sizeof(EacpDoomAutomapVertex));
+        automapBuffer.update(map.data(), map.size_bytes());
 
         automapShader.setDestination(bounds, viewport);
-        automapShader.frameSize = std::array {automapWidth, automapHeight};
+        automapShader.frameSize =
+            std::array {(float) Engine::automapWidth, (float) Engine::automapHeight};
         automapShader.lineWidth = automapLineWidth;
+
+        // The map window is routinely smaller than the level, so lines run past
+        // the edges of it. Vanilla clips each one by hand before rasterizing
+        // (clipMline's Cohen-Sutherland outcodes); here the rasterizer does it,
+        // and without the bound they would spill over the status bar and the
+        // letterbox bars. Scissor state persists for the rest of the pass, hence
+        // the clear.
+        pass.setScissorRect(inPixels(viewport));
 
         pass.setPipeline(automapShader.pipeline());
         pass.setVertexBuffer(automapBuffer);
         pass.setVertexUniforms(automapShader);
         pass.setFragmentUniforms(automapShader);
         automapShader.bindTextures(pass);
-        pass.draw(vertexCount, 0);
+        pass.draw((int) map.size(), 0);
+
+        pass.clearScissorRect();
+    }
+
+    // The public geometry is in logical points; a scissor rect is in device
+    // pixels.
+    Graphics::Rect inPixels(const Graphics::Rect& rect) const
+    {
+        auto scale = backingScale();
+
+        return {rect.x * scale, rect.y * scale, rect.w * scale, rect.h * scale};
     }
 
     void drawOverlay(GPU::RenderPass& pass,
@@ -471,7 +479,7 @@ struct View final : GPU::GPUView
 
     void updateOverlay()
     {
-        overlayVisible = eacpDoomBuildOverlay(overlayPixels.data()) != 0;
+        overlayVisible = Engine::buildOverlay(overlayPixels);
 
         if (overlayVisible)
             overlayTexture.update(overlayPixels.data());
@@ -479,7 +487,7 @@ struct View final : GPU::GPUView
 
     void updateWipe()
     {
-        wipeVisible = eacpDoomBuildWipe(wipePixels.data(), wipeOffsets.data()) != 0;
+        wipeVisible = Engine::buildWipe(wipePixels, wipeOffsets);
 
         if (wipeVisible)
         {
@@ -490,14 +498,7 @@ struct View final : GPU::GPUView
 
     void updatePalette()
     {
-        for (auto i = 0; i < 256; ++i)
-        {
-            paletteData[i * 4 + 0] = screen_palette[i * 3 + 0];
-            paletteData[i * 4 + 1] = screen_palette[i * 3 + 1];
-            paletteData[i * 4 + 2] = screen_palette[i * 3 + 2];
-            paletteData[i * 4 + 3] = 255;
-        }
-
+        Engine::readPalette(paletteData);
         paletteTexture.update(paletteData.data());
     }
 
@@ -505,7 +506,7 @@ struct View final : GPU::GPUView
     // colormap comes along with them.
     void ensureWorldTextures()
     {
-        auto count = eacpDoomGetTextureCount();
+        auto count = Engine::textureCount();
 
         if (count <= 0 || worldTextures.size() == count)
             return;
@@ -514,8 +515,8 @@ struct View final : GPU::GPUView
         worldTextures.resize(count);
 
         auto rows = Vector<std::uint8_t> {};
-        rows.resize(256 * EACP_DOOM_COLORMAP_ROWS);
-        eacpDoomGetColormaps(rows.data());
+        rows.resize(256 * Engine::colormapRows);
+        Engine::readColormaps(rows);
         colormapTexture.update(rows.data());
     }
 
@@ -527,16 +528,16 @@ struct View final : GPU::GPUView
 
         if (!slot.has_value())
         {
-            auto info = eacpDoomGetTextureInfo(id);
+            auto info = Engine::textureInfo(id);
             auto width = info.width > 0 ? info.width : 1;
             auto height = info.height > 0 ? info.height : 1;
 
             auto pixels = Vector<std::uint8_t> {};
             pixels.resize(width * height * (info.masked ? 4 : 1));
-            eacpDoomGetTexturePixels(id, pixels.data());
+            Engine::readTexturePixels(id, pixels);
 
             slot.emplace(
-                makeWorldTexture(width, height, info.masked != 0, pixels.data()));
+                makeWorldTexture(width, height, info.masked, pixels.data()));
         }
 
         return *slot;
@@ -631,24 +632,26 @@ struct View final : GPU::GPUView
 
     GPU::Buffer worldBuffer {GPU::Device::shared(),
                              nullptr,
-                             maxVertices * sizeof(EacpDoomVertex),
+                             maxVertices * sizeof(Engine::WorldVertex),
                              GPU::BufferUsage::Vertex};
     GPU::Buffer automapBuffer {GPU::Device::shared(),
                                nullptr,
-                               maxAutomapVertices * sizeof(EacpDoomAutomapVertex),
+                               maxAutomapVertices * sizeof(Engine::AutomapVertex),
                                GPU::BufferUsage::Vertex};
 
     Vector<std::optional<GPU::Texture>> worldTextures;
-    Vector<EacpDoomVertex> geometry;
-    Vector<EacpDoomDraw> draws;
-    Vector<EacpDoomAutomapVertex> automap;
+    Vector<Engine::WorldVertex> geometry;
+    Vector<Engine::TextureDraw> draws;
+    Vector<Engine::AutomapVertex> automap;
     Vector<std::uint8_t> overlayPixels;
     Vector<std::uint8_t> wipePixels;
     Vector<std::uint8_t> paletteData;
-    std::array<std::uint8_t, EACP_DOOM_WIPE_COLUMNS> wipeOffsets {};
+    Array<std::uint8_t, Engine::wipeColumns> wipeOffsets;
 
-    Vector<EacpDoomHudSprite> hud;
-    Vector<EacpDoomHudSprite> previousHud;
+    // Always hudSpriteCount entries, so this tic's slot can be matched against
+    // last tic's and interpolated between.
+    Array<Engine::HudSprite, Engine::hudSpriteCount> hud;
+    Array<Engine::HudSprite, Engine::hudSpriteCount> previousHud;
 
     bool overlayVisible = false;
     bool wipeVisible = false;
@@ -670,8 +673,8 @@ struct View final : GPU::GPUView
     float appliedTurn = 0.0f;
     bool predictAim = true;
 
-    EacpDoomCamera previousCamera {};
-    EacpDoomCamera currentCamera {};
+    Engine::Camera previousCamera {};
+    Engine::Camera currentCamera {};
     bool hasCamera = false;
 
     Graphics::Window& window;

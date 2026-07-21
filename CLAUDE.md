@@ -442,10 +442,28 @@ Three things that bite:
 
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
-  eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the plain-data
-  snapshot interface to engine internals. `EngineAccess.cpp` is an ordinary
-  translation unit that includes the engine's headers; nothing DOOM-typed leaks out
-  through the `.h`.
+  eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the snapshot
+  interface to engine internals. `EngineAccess.cpp` is an ordinary translation unit
+  that includes the engine's headers; nothing DOOM-typed leaks out through the `.h`,
+  and the renderer never sees a `fixed_t`.
+
+  **It is `namespace PureDoom::Engine`, and it is ordinary C++** — `Engine::camera`,
+  `Engine::buildGeometry`, `Engine::hudSprites`, not the `eacpDoom*` free functions
+  and `typedef struct`s it began as. Read the name as "ask the engine"; it is this
+  port's *view* of the engine, and has nothing to do with `Doom::Engine`, the
+  engine's own composition root, which is always spelled with its namespace. The
+  vocabulary is the rest of the repository's: `Vector`/`Array` (re-exported into
+  `namespace PureDoom` by `EngineAccess.h`, the way `src/DOOM/Containers.h` does it),
+  `bool` where a `bool` is meant, references where null is not a value, and
+  `std::span` for the out-parameters — eacp has no span, and a view onto a caller's
+  buffer is the one thing the EA containers do not spell.
+
+  Two carve-outs, both forced by eacp rather than chosen. The **vertex layouts**
+  (`WorldVertex`, `AutomapVertex`) hold `std::array<float, N>`, because
+  `GPU::ShaderValueOf` — which is what turns `vertexInput(&WorldVertex::position)`
+  into a `Float3` — is specialised for `std::array<float, N>` and raw `float[N]` and
+  for nothing else. And the shader uniforms are assigned `std::array` for the same
+  reason.
 
   The six shaders share `DoomShader.h`: `DoomShader` resolves a palette index the
   way the software renderer does (index → COLORMAP row → palette), and
@@ -502,14 +520,16 @@ Two paths, toggled at runtime with **Shift+F8**:
     lazily on first use (a WAD holds well over a thousand sprite lumps).
 - **GPU automap**: the map as geometry rather than a rasterized frame. What it
   draws and the colour it picks are `AM_Drawer`'s own choices, mirrored in
-  `eacpDoomBuildAutomap`; only its Bresenham walk is replaced, by a quad per line
-  the vertex shader widens. Two things vanilla's rasterizer cannot do come out of
+  `Engine::buildAutomap`; only its Bresenham walk is replaced, by a quad per line
+  the vertex shader widens, and its Cohen-Sutherland clip, by the scissor rect the
+  draw is bounded with — the map window is routinely smaller than the level, so
+  without that bound the lines beyond it spill over the status bar. Two things vanilla's rasterizer cannot do come out of
   it: the lines keep their real endpoints instead of snapping to whole pixels, and
   the map is recentred on the *interpolated* view rather than the player's last
   tic, so it glides at the display's rate instead of crawling at 35Hz.
 
   **The one place the port departs from vanilla on purpose**
-  (`eacpDoomRevealAutomap`). A wall is revealed as a *side effect of being drawn*:
+  (`Engine::revealAutomap`). A wall is revealed as a *side effect of being drawn*:
   `R_StoreWallRange` sets `ML_MAPPED` as the software renderer lays it down. But
   `D_Display` skips `R_RenderPlayerView` entirely while the automap is up, so
   vanilla's map stops filling in the moment you look at it. Most source ports
@@ -519,7 +539,7 @@ Two paths, toggled at runtime with **Shift+F8**:
   event queue. The walls it *does* draw land in the frame the automap had just drawn
   itself into (the column drawers write through `ylookup`, aimed at `screens[0]`),
   so the map is drawn again afterwards to put it back.
-- **Overlay** (`eacpDoomBuildOverlay`): the layers the engine draws over the view
+- **Overlay** (`Engine::buildOverlay`): the layers the engine draws over the view
   in software and nothing else reproduces — HUD messages, the level name, PAUSE,
   the menu, the automap's marks. The engine offers no way to draw them anywhere but
   over the frame it has just rendered, so they are captured: `screens[0]` is pointed
@@ -628,7 +648,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-99 tests, roughly thirty-five seconds. **Run it before and after anything you change in
+101 tests, roughly thirty-five seconds. **Run it before and after anything you change in
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -654,6 +674,7 @@ not.
 | `Sim/CheatTests.cpp` | PrimitiveTests | the cheat-sequence matcher |
 | `Sim/EngineTests.cpp` | PrimitiveTests | the composition root, and that `resetEngine` is genuine |
 | `Sim/StateClusterTests.cpp` | PrimitiveTests | the `Engine`'s state clusters and accessor identity |
+| `Port/GeometryTests.cpp` `Port/AutomapTests.cpp` | SimTests | the *port's* builders — `Engine::buildGeometry` and `Engine::buildAutomap` — driven headlessly. See below |
 
 Run the binaries through ctest, not bare. NanoTest registers one ctest case per test
 and re-runs the binary with `--test <name>`, so every test gets a fresh process —
@@ -729,13 +750,15 @@ vector's `data()`/`size()`.
 
 ### What the tests do not cover
 
-Audio, and the eacp platform layer and GPU renderer. That is the whole list — but it
-was wrong until recently, and the way it was wrong is the lesson. **The cheat
-matcher** was live engine code with no gate over it at all, and went unlisted because
-this section was organised around *screens* and `checkCheat` is not a screen — so a
-category nobody had thought to name could not show up as missing. **Before
-refactoring anything, check what covers it by running the code, not by reading a list
-like this one.**
+Audio, and `examples/EACP`'s GPU-bound half — `View`, the shaders, the platform
+layer. That is the whole list — but it has been wrong twice, and the way it was wrong
+each time is the lesson. **The cheat matcher** was live engine code with no gate over
+it at all, and went unlisted because this section was organised around *screens* and
+`checkCheat` is not a screen — so a category nobody had thought to name could not show
+up as missing. **The port's automap transform** was worse: it was listed as uncovered,
+correctly, and stayed broken for it (see `Tests/Port` below). **Before refactoring
+anything, check what covers it by running the code, not by reading a list like this
+one.**
 
 The four screens a demo never reaches each have their own harness:
 
@@ -782,10 +805,51 @@ That matters — a golden recorded *after* a rewrite pins whatever the rewrite d
 a golden that no plausible change would fail is worse than none, because it reads as
 coverage.
 
-The `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` fast loop has its own blind spot: it never
-compiles `examples/EACP`, and `EngineAccess.cpp` includes engine headers directly, so
-an engine change can break the app with every test green. Keep a second build
-directory for it and treat the app linking as a fourth gate.
+The `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` fast loop never builds the app target, so a
+change there can break it with every test green. `EngineAccess.cpp` is the exception
+and is covered — `SimTests` compiles it directly, see below — but `View.h`, the
+shaders and the platform layer are not. Keep a second build directory with the app on
+and treat its linking as a fourth gate.
+
+### `Tests/Port` covers the port's builders, and is why it exists
+
+`EngineAccess.cpp` needs no GPU: it includes only the engine's headers and the
+container vocabulary, and hands out plain data. So `Tests/CMakeLists.txt` compiles it
+into `SimTests` — which makes an engine change that breaks it a build failure in the
+ordinary suite, and lets `Engine::buildGeometry` and `Engine::buildAutomap` be driven
+headlessly and their output inspected as data.
+
+That coverage is not decorative. **Both port bugs found so far were invisible to
+every other gate**, and for the same structural reason: the port re-implements the
+engine's *decisions* as geometry, so the software renderer's frame goldens are green
+whatever the port emits — they do not run a line of it.
+
+- `Port/GeometryTests` grew out of the first Windows build's missing floors. It
+  classifies triangles by their *vertices* rather than by texture id (a floor is the
+  only horizontal triangle: walls are vertical quads and things are billboards), so
+  it stays true through a rewrite of the emitter.
+- `Port/AutomapTests` grew out of the second, which is worth stating in full because
+  it is the general hazard in its purest form. The map's transform read
+  `((double) x1 - originX) * scale` with `x1` a raw `int` `fixed_t`. When `fixed_t`
+  became a strong type, the sweep rewrote `(double) x1` as a whole-units conversion —
+  correct in isolation, and it compiled clean — while `originX` beside it stayed in
+  raw fixed-point. The two terms then disagreed by a factor of 65536, and the entire
+  GPU automap collapsed to a point ninety pixels left of centre. That is exactly the
+  lesson already recorded under **Read the warnings**, arriving without even a
+  warning to ignore: *when a raw arithmetic type becomes a strong one, audit every
+  site where the old type met a value of another kind, not only the ones that fail to
+  compile.* Units are the ones that hide — nothing in the type system knows that one
+  `double` is whole map units and the next is 65536ths of one. `Engine::Point` now
+  says so in a comment at its declaration, and every `double` naming a map coordinate
+  in that file is in whole units.
+
+Both cases were demonstrated **sharp**, the same bar the frame goldens are held to,
+and one of them failed the bar first: an earlier `automapSpansTheFrame` measured the
+bounding box of the *whole* emitted map, which the arrow and the crosshair — drawn
+from the camera and the frame, not from the map — held open on their own. It passed
+with the bug reinstated. Measuring the walls alone fails by four orders of magnitude.
+`Sim/automap`, the engine's own golden, passes with the bug in either way, which is
+the non-redundancy demonstrated rather than assumed.
 
 ### `Sim/OwnershipTests.cpp` is the only test that can see a leak
 
@@ -1000,7 +1064,7 @@ rather than fail outright.
   from inside the game, yet it still writes every binding to `~/.doomrc` and, at
   startup, reads them back *over* whatever `Doom::setDefaultInt` asked for. A config
   left by an older build therefore pins that build's keys for good, and changing the
-  binding in `Main.cpp` silently does nothing. `Main.cpp` calls `eacpDoomBindKeys()`
+  binding in `Main.cpp` silently does nothing. `Main.cpp` calls `Engine::bindKeys()`
   after `Doom::initGame` to apply them again once the config has been read. What the
   player *can* change from the menu (mouse sensitivity, screen size, volumes) is left
   alone and still persists.
@@ -1018,7 +1082,7 @@ rather than fail outright.
   from filling `D_PostEvent`'s 64-slot ring buffer, which silently overwrites rather
   than blocking, and so can swallow keystrokes.
 - **The game only moves on a tic, 35 times a second.** The display refreshes two to
-  four times as often. Step the engine when its own clock (`eacpDoomTicTime`) says a
+  four times as often. Step the engine when its own clock (`Engine::ticTime`) says a
   tic is due, and rebuild what derives from its state only then. Rendering still runs
   every refresh.
 - **Do not draw the camera straight from the engine.** It would sit still for two or
@@ -1028,7 +1092,7 @@ rather than fail outright.
   the engine is about to make, so applying it now makes the view follow the mouse
   every frame with no lag.
 - **Place everything between tics with the engine's clock, not the display's**
-  (`eacpDoomTicTime`). A tic lasts 28.6ms and a frame 8.3ms, so a ramp paced by the
+  (`Engine::ticTime`). A tic lasts 28.6ms and a frame 8.3ms, so a ramp paced by the
   display saturates early on some tics and is cut short on others.
 - **Read that clock exactly once a frame**, and take both answers from the one
   reading: whether a tic is due, and how far into the tic the frame sits. Ask twice
@@ -1053,12 +1117,12 @@ rather than fail outright.
   - **things** are wound back from where the tic left them by their own momentum,
     which the engine already stores.
   - **floors and ceilings** a door or lift is driving come from
-    `eacpDoomSnapshotTic`, taken before each tic runs. The walls that meet them read
+    `Engine::snapshotTic`, taken before each tic runs. The walls that meet them read
     the same numbers, so nothing tears.
   - the **weapon** is interpolated from the previous tic's HUD sprites.
 - **Billboards and the sky must be built around the camera being drawn from**, not
   the engine's. Built for the engine's heading, a sprite sits progressively edge-on as
-  the view turns within a tic and visibly pulses; hence `eacpDoomBuildGeometry` takes
+  the view turns within a tic and visibly pulses; hence `Engine::buildGeometry` takes
   the view camera and the geometry is rebuilt per frame rather than per tic.
 
 ## eacp Gap Log

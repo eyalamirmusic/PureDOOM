@@ -19,10 +19,10 @@ struct AutomapShader final : ScreenQuadShader
 
     void define() override
     {
-        auto position = vertexInput(&EacpDoomAutomapVertex::position);
-        auto direction = vertexInput(&EacpDoomAutomapVertex::direction);
-        auto side = vertexInput(&EacpDoomAutomapVertex::side);
-        auto color = vertexInput(&EacpDoomAutomapVertex::color);
+        auto position = vertexInput(&Engine::AutomapVertex::position);
+        auto direction = vertexInput(&Engine::AutomapVertex::direction);
+        auto side = vertexInput(&Engine::AutomapVertex::side);
+        auto color = vertexInput(&Engine::AutomapVertex::color);
 
         auto normal = normalize(float2(-direction.y(), direction.x()));
         auto corner = position + normal * (side * lineWidth * 0.5f);

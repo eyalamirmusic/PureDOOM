@@ -29,10 +29,10 @@ struct WorldShader final : DoomShader
 
     void define() override
     {
-        auto position = vertexInput(&EacpDoomVertex::position);
-        auto uv = vertexInput(&EacpDoomVertex::uv);
-        auto light = vertexInput(&EacpDoomVertex::light);
-        auto falloff = vertexInput(&EacpDoomVertex::falloff);
+        auto position = vertexInput(&Engine::WorldVertex::position);
+        auto uv = vertexInput(&Engine::WorldVertex::uv);
+        auto light = vertexInput(&Engine::WorldVertex::light);
+        auto falloff = vertexInput(&Engine::WorldVertex::falloff);
 
         auto view = rotateY(-yaw) * translate(-camX, -camY, -camZ);
         auto fovY = 2.0f * std::atan(1.0f / worldAspect);

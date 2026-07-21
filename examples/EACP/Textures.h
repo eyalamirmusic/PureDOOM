@@ -13,8 +13,8 @@ namespace PureDoom
 inline GPU::Texture makeIndexTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
-    descriptor.width = doomWidth;
-    descriptor.height = doomHeight;
+    descriptor.width = Engine::screenWidth;
+    descriptor.height = Engine::screenHeight;
     descriptor.format = GPU::TextureFormat::R8Unorm;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
@@ -36,7 +36,7 @@ inline GPU::Texture makeColormapTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
     descriptor.width = 256;
-    descriptor.height = EACP_DOOM_COLORMAP_ROWS;
+    descriptor.height = Engine::colormapRows;
     descriptor.format = GPU::TextureFormat::R8Unorm;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
@@ -48,8 +48,8 @@ inline GPU::Texture makeColormapTexture()
 inline GPU::Texture makeOverlayTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
-    descriptor.width = EACP_DOOM_SCREEN_WIDTH;
-    descriptor.height = EACP_DOOM_SCREEN_HEIGHT;
+    descriptor.width = Engine::screenWidth;
+    descriptor.height = Engine::screenHeight;
     descriptor.format = GPU::TextureFormat::RGBA8Unorm;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
@@ -60,7 +60,7 @@ inline GPU::Texture makeOverlayTexture()
 inline GPU::Texture makeWipeOffsetTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
-    descriptor.width = EACP_DOOM_WIPE_COLUMNS;
+    descriptor.width = Engine::wipeColumns;
     descriptor.height = 1;
     descriptor.format = GPU::TextureFormat::R8Unorm;
 

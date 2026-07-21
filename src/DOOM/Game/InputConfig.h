@@ -11,7 +11,7 @@ namespace Doom
 // Game/Config.cpp's defaults[] table captured their addresses at static-init, which a
 // reference-alias would race. The doom_config->Host rework removed that (Config.cpp binds the
 // defaults[] entries to these members at runtime, bindEngineDefaults), so they move in like the
-// rest of the config-backed set (REFACTOR.md, Step 5). The app's eacpDoomBindKeys reaches them
+// rest of the config-backed set (REFACTOR.md, Step 5). The app's Engine::bindKeys reaches them
 // the same way - through defaults[].location, which the runtime bind points at these members.
 //
 // Not demo-covered (a demo feeds ticcmds directly, bypassing the bindings), so verified by build +
