@@ -20,10 +20,10 @@ int lineSide(Vec2 point, const Line& line)
 
 int boxLineSide(const fixed_t* box, const Line& line)
 {
-    return boxOnLineSide(box[BOXTOP],
-                         box[BOXBOTTOM],
-                         box[BOXLEFT],
-                         box[BOXRIGHT],
+    return boxOnLineSide(box[boxTop],
+                         box[boxBottom],
+                         box[boxLeft],
+                         box[boxRight],
                          {line.v1->x, line.v1->y},
                          {line.dx, line.dy},
                          static_cast<int>(line.slopetype));

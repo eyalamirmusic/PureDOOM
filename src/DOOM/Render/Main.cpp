@@ -79,14 +79,14 @@ void renderPlayerView(Player& player);
 // raw values are wrapped here.
 void addPointToBox(int x, int y, fixed_t* box)
 {
-    if (fixed_t {x} < box[BOXLEFT])
-        box[BOXLEFT] = fixed_t {x};
-    if (fixed_t {x} > box[BOXRIGHT])
-        box[BOXRIGHT] = fixed_t {x};
-    if (fixed_t {y} < box[BOXBOTTOM])
-        box[BOXBOTTOM] = fixed_t {y};
-    if (fixed_t {y} > box[BOXTOP])
-        box[BOXTOP] = fixed_t {y};
+    if (fixed_t {x} < box[boxLeft])
+        box[boxLeft] = fixed_t {x};
+    if (fixed_t {x} > box[boxRight])
+        box[boxRight] = fixed_t {x};
+    if (fixed_t {y} < box[boxBottom])
+        box[boxBottom] = fixed_t {y};
+    if (fixed_t {y} > box[boxTop])
+        box[boxTop] = fixed_t {y};
 }
 
 //

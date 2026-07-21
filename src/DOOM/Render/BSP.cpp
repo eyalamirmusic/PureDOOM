@@ -368,16 +368,16 @@ bool checkBBox(fixed_t* bspcoord)
 
     // Find the corners of the box
     // that define the edges from current viewpoint.
-    if (pt.viewx <= bspcoord[BOXLEFT])
+    if (pt.viewx <= bspcoord[boxLeft])
         boxx = 0;
-    else if (pt.viewx < bspcoord[BOXRIGHT])
+    else if (pt.viewx < bspcoord[boxRight])
         boxx = 1;
     else
         boxx = 2;
 
-    if (pt.viewy >= bspcoord[BOXTOP])
+    if (pt.viewy >= bspcoord[boxTop])
         boxy = 0;
-    else if (pt.viewy > bspcoord[BOXBOTTOM])
+    else if (pt.viewy > bspcoord[boxBottom])
         boxy = 1;
     else
         boxy = 2;

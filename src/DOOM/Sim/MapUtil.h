@@ -32,7 +32,7 @@ DivLine makeDivLine(const Line& line);
 int lineSide(Vec2 point, const Line& line);
 
 // The same question for a whole bounding box, in vanilla's tmbox order
-// (BOXTOP, BOXBOTTOM, BOXLEFT, BOXRIGHT): 0 in front, 1 behind, -1 straddling.
+// (boxTop, boxBottom, boxLeft, boxRight): 0 in front, 1 behind, -1 straddling.
 int boxLineSide(const fixed_t* box, const Line& line);
 
 // P_LineOpening: the vertical window the line leaves, written into Clip's

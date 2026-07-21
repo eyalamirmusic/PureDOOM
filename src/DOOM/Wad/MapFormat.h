@@ -37,20 +37,19 @@
 
 // Lump order in a map WAD: each map needs a couple of lumps
 // to provide a complete scene geometry description.
-enum
-{
-    ML_LABEL, // A separator, name, ExMx or MAPxx
-    ML_THINGS, // Monsters, items..
-    ML_LINEDEFS, // LineDefs, from editing
-    ML_SIDEDEFS, // SideDefs, from editing
-    ML_VERTEXES, // Vertices, edited and BSP splits generated
-    ML_SEGS, // LineSegs, from LineDefs split by BSP
-    ML_SSECTORS, // SubSectors, list of LineSegs
-    ML_NODES, // BSP nodes
-    ML_SECTORS, // Sectors, from editing
-    ML_REJECT, // LUT, sector-sector visibility
-    ML_BLOCKMAP // LUT, motion clipping, walls/grid element
-};
+// Offsets from the map's label lump, not a type - they are only ever added to a
+// lump number. Constants for the same reason the box indices are.
+constexpr int mapLumpLabel = 0; // A separator, name, ExMx or MAPxx
+constexpr int mapLumpThings = 1; // Monsters, items..
+constexpr int mapLumpLinedefs = 2; // LineDefs, from editing
+constexpr int mapLumpSidedefs = 3; // SideDefs, from editing
+constexpr int mapLumpVertexes = 4; // Vertices, edited and BSP splits generated
+constexpr int mapLumpSegs = 5; // LineSegs, from LineDefs split by BSP
+constexpr int mapLumpSsectors = 6; // SubSectors, list of LineSegs
+constexpr int mapLumpNodes = 7; // BSP nodes
+constexpr int mapLumpSectors = 8; // Sectors, from editing
+constexpr int mapLumpReject = 9; // LUT, sector-sector visibility
+constexpr int mapLumpBlockmap = 10; // LUT, motion clipping, walls/grid element
 
 // A single Doom::Vertex.
 namespace Doom

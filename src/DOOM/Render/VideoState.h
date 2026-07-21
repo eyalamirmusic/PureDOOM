@@ -26,7 +26,7 @@ namespace Doom
 // Doom::initStatusBar). Each is filled by the drawers, so the frame goldens pin them exactly.
 struct VideoState
 {
-    // BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP (Math/BBox.h) of the drawn region, in screen
+    // boxLeft/boxBottom/boxRight/boxTop (Math/BBox.h) of the drawn region, in screen
     // pixels. It is plain int, not fixed_t - there is no fixed-point quantity here,
     // only pixel coordinates - so Render/Video.cpp grows it with its own int-typed
     // else-if update rather than Doom::addToBox, which is typed for a real Doom::BBox.

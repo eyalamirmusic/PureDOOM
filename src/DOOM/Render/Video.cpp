@@ -49,7 +49,7 @@ byte* screens[5];
 
 // videoState().dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
 // It holds screen pixels, not a fixed-point box, so it is grown by addToDirtyBox below rather
-// than by Doom::addToBox (Math/BBox.h is still included for the BOXLEFT/BOXBOTTOM/BOXRIGHT/BOXTOP
+// than by Doom::addToBox (Math/BBox.h is still included for the boxLeft/boxBottom/boxRight/boxTop
 // index names addToDirtyBox uses).
 
 // Now where did these came from?
@@ -156,15 +156,15 @@ void addToDirtyBox(int x, int y)
 {
     auto& box = videoState().dirtybox;
 
-    if (x < box[BOXLEFT])
-        box[BOXLEFT] = x;
-    else if (x > box[BOXRIGHT])
-        box[BOXRIGHT] = x;
+    if (x < box[boxLeft])
+        box[boxLeft] = x;
+    else if (x > box[boxRight])
+        box[boxRight] = x;
 
-    if (y < box[BOXBOTTOM])
-        box[BOXBOTTOM] = y;
-    else if (y > box[BOXTOP])
-        box[BOXTOP] = y;
+    if (y < box[boxBottom])
+        box[boxBottom] = y;
+    else if (y > box[boxTop])
+        box[boxTop] = y;
 }
 } // namespace
 

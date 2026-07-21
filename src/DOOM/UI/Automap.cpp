@@ -707,25 +707,26 @@ void clearFB(int color)
 
 namespace
 {
-enum
+// Cohen-Sutherland outcode bits, accumulated into an int per endpoint.
+enum class Outcode
 {
-    LEFT = 1,
-    RIGHT = 2,
-    BOTTOM = 4,
-    TOP = 8
+    Left = 1,
+    Right = 2,
+    Bottom = 4,
+    Top = 8
 };
 
 int computeOutcode(int mx, int my)
 {
     int oc = 0;
     if (my < 0)
-        oc |= TOP;
+        oc = withFlags(oc, Outcode::Top);
     else if (my >= f_h)
-        oc |= BOTTOM;
+        oc = withFlags(oc, Outcode::Bottom);
     if (mx < 0)
-        oc |= LEFT;
+        oc = withFlags(oc, Outcode::Left);
     else if (mx >= f_w)
-        oc |= RIGHT;
+        oc = withFlags(oc, Outcode::Right);
     return oc;
 }
 } // namespace
@@ -756,27 +757,27 @@ bool clipMline(const MapLine& ml, FLine& fl)
 
     // do trivial rejects and outcodes
     if (ml.a.y > map.m_y2)
-        outcode1 = TOP;
+        outcode1 = flagBits(Outcode::Top);
     else if (ml.a.y < m_y)
-        outcode1 = BOTTOM;
+        outcode1 = flagBits(Outcode::Bottom);
 
     if (ml.b.y > map.m_y2)
-        outcode2 = TOP;
+        outcode2 = flagBits(Outcode::Top);
     else if (ml.b.y < m_y)
-        outcode2 = BOTTOM;
+        outcode2 = flagBits(Outcode::Bottom);
 
     if (outcode1 & outcode2)
         return false; // trivially outside
 
     if (ml.a.x < m_x)
-        outcode1 |= LEFT;
+        outcode1 = withFlags(outcode1, Outcode::Left);
     else if (ml.a.x > map.m_x2)
-        outcode1 |= RIGHT;
+        outcode1 = withFlags(outcode1, Outcode::Right);
 
     if (ml.b.x < m_x)
-        outcode2 |= LEFT;
+        outcode2 = withFlags(outcode2, Outcode::Left);
     else if (ml.b.x > map.m_x2)
-        outcode2 |= RIGHT;
+        outcode2 = withFlags(outcode2, Outcode::Right);
 
     if (outcode1 & outcode2)
         return false; // trivially outside
@@ -803,28 +804,28 @@ bool clipMline(const MapLine& ml, FLine& fl)
             outside = outcode2;
 
         // clip to each side
-        if (outside & TOP)
+        if (hasFlag(outside, Outcode::Top))
         {
             dy = fl.a.y - fl.b.y;
             dx = fl.b.x - fl.a.x;
             tmp.x = fl.a.x + (dx * (fl.a.y)) / dy;
             tmp.y = 0;
         }
-        else if (outside & BOTTOM)
+        else if (hasFlag(outside, Outcode::Bottom))
         {
             dy = fl.a.y - fl.b.y;
             dx = fl.b.x - fl.a.x;
             tmp.x = fl.a.x + (dx * (fl.a.y - f_h)) / dy;
             tmp.y = f_h - 1;
         }
-        else if (outside & RIGHT)
+        else if (hasFlag(outside, Outcode::Right))
         {
             dy = fl.b.y - fl.a.y;
             dx = fl.b.x - fl.a.x;
             tmp.y = fl.a.y + (dy * (f_w - 1 - fl.a.x)) / dx;
             tmp.x = f_w - 1;
         }
-        else if (outside & LEFT)
+        else if (hasFlag(outside, Outcode::Left))
         {
             dy = fl.b.y - fl.a.y;
             dx = fl.b.x - fl.a.x;

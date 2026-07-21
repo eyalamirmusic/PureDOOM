@@ -281,24 +281,24 @@ void loadLineDefs(int lump)
 
         if (v1->x < v2->x)
         {
-            ld->bbox[BOXLEFT] = v1->x;
-            ld->bbox[BOXRIGHT] = v2->x;
+            ld->bbox[boxLeft] = v1->x;
+            ld->bbox[boxRight] = v2->x;
         }
         else
         {
-            ld->bbox[BOXLEFT] = v2->x;
-            ld->bbox[BOXRIGHT] = v1->x;
+            ld->bbox[boxLeft] = v2->x;
+            ld->bbox[boxRight] = v1->x;
         }
 
         if (v1->y < v2->y)
         {
-            ld->bbox[BOXBOTTOM] = v1->y;
-            ld->bbox[BOXTOP] = v2->y;
+            ld->bbox[boxBottom] = v1->y;
+            ld->bbox[boxTop] = v2->y;
         }
         else
         {
-            ld->bbox[BOXBOTTOM] = v2->y;
-            ld->bbox[BOXTOP] = v1->y;
+            ld->bbox[boxBottom] = v2->y;
+            ld->bbox[boxTop] = v1->y;
         }
 
         ld->sidenum[0] = littleEndian(mld->sidenum[0]);
@@ -428,25 +428,25 @@ void groupLines()
             fatalError("Error: groupLines: miscounted");
 
         // set the DegenMobj to the middle of the bounding box
-        sector->soundorg.x = (bbox[BOXRIGHT] + bbox[BOXLEFT]) / 2;
-        sector->soundorg.y = (bbox[BOXTOP] + bbox[BOXBOTTOM]) / 2;
+        sector->soundorg.x = (bbox[boxRight] + bbox[boxLeft]) / 2;
+        sector->soundorg.y = (bbox[boxTop] + bbox[boxBottom]) / 2;
 
         // adjust bounding box to map blocks
-        int block = (bbox[BOXTOP] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
+        int block = (bbox[boxTop] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block >= bmapheight ? bmapheight - 1 : block;
-        sector->blockbox[BOXTOP] = block;
+        sector->blockbox[boxTop] = block;
 
-        block = (bbox[BOXBOTTOM] - bmaporgy - MAXRADIUS).raw >> MAPBLOCKSHIFT;
+        block = (bbox[boxBottom] - bmaporgy - MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block < 0 ? 0 : block;
-        sector->blockbox[BOXBOTTOM] = block;
+        sector->blockbox[boxBottom] = block;
 
-        block = (bbox[BOXRIGHT] - bmaporgx + MAXRADIUS).raw >> MAPBLOCKSHIFT;
+        block = (bbox[boxRight] - bmaporgx + MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block >= bmapwidth ? bmapwidth - 1 : block;
-        sector->blockbox[BOXRIGHT] = block;
+        sector->blockbox[boxRight] = block;
 
-        block = (bbox[BOXLEFT] - bmaporgx - MAXRADIUS).raw >> MAPBLOCKSHIFT;
+        block = (bbox[boxLeft] - bmaporgx - MAXRADIUS).raw >> MAPBLOCKSHIFT;
         block = block < 0 ? 0 : block;
-        sector->blockbox[BOXLEFT] = block;
+        sector->blockbox[boxLeft] = block;
     }
 }
 
@@ -500,23 +500,23 @@ void setupLevel(int episode, int map, int, Skill)
     stats.leveltime = 0;
 
     // note: most of this ordering is important
-    loadBlockMap(lumpnum + ML_BLOCKMAP);
-    loadVertexes(lumpnum + ML_VERTEXES);
-    loadSectors(lumpnum + ML_SECTORS);
-    loadSideDefs(lumpnum + ML_SIDEDEFS);
+    loadBlockMap(lumpnum + mapLumpBlockmap);
+    loadVertexes(lumpnum + mapLumpVertexes);
+    loadSectors(lumpnum + mapLumpSectors);
+    loadSideDefs(lumpnum + mapLumpSidedefs);
 
-    loadLineDefs(lumpnum + ML_LINEDEFS);
-    loadSubsectors(lumpnum + ML_SSECTORS);
-    loadNodes(lumpnum + ML_NODES);
-    loadSegs(lumpnum + ML_SEGS);
+    loadLineDefs(lumpnum + mapLumpLinedefs);
+    loadSubsectors(lumpnum + mapLumpSsectors);
+    loadNodes(lumpnum + mapLumpNodes);
+    loadSegs(lumpnum + mapLumpSegs);
 
-    rejectmatrix = static_cast<byte*>(cacheLumpNum(lumpnum + ML_REJECT));
+    rejectmatrix = static_cast<byte*>(cacheLumpNum(lumpnum + mapLumpReject));
     groupLines();
 
     corpseQueue().bodyqueslot = 0;
     auto& spawns = mapSpawns();
     spawns.deathmatch_p = spawns.deathmatchstarts.data();
-    loadThings(lumpnum + ML_THINGS);
+    loadThings(lumpnum + mapLumpThings);
 
     // if deathmatch, randomly spawn the active players
     if (gameSession().deathmatch)

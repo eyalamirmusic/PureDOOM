@@ -58,10 +58,10 @@ bool checkLine(Line* ld)
 {
     Clip& clip = Doom::clip();
 
-    if (clip.tmbbox[BOXRIGHT] <= ld->bbox[BOXLEFT]
-        || clip.tmbbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-        || clip.tmbbox[BOXTOP] <= ld->bbox[BOXBOTTOM]
-        || clip.tmbbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
+    if (clip.tmbbox[boxRight] <= ld->bbox[boxLeft]
+        || clip.tmbbox[boxLeft] >= ld->bbox[boxRight]
+        || clip.tmbbox[boxTop] <= ld->bbox[boxBottom]
+        || clip.tmbbox[boxBottom] >= ld->bbox[boxTop])
         return true;
 
     if (boxLineSide(clip.tmbbox.data(), *ld) != -1)
@@ -220,10 +220,10 @@ bool checkPosition(Mobj& thing, fixed_t x, fixed_t y)
     clip.tmx = x;
     clip.tmy = y;
 
-    clip.tmbbox[BOXTOP] = y + clip.tmthing->radius;
-    clip.tmbbox[BOXBOTTOM] = y - clip.tmthing->radius;
-    clip.tmbbox[BOXRIGHT] = x + clip.tmthing->radius;
-    clip.tmbbox[BOXLEFT] = x - clip.tmthing->radius;
+    clip.tmbbox[boxTop] = y + clip.tmthing->radius;
+    clip.tmbbox[boxBottom] = y - clip.tmthing->radius;
+    clip.tmbbox[boxRight] = x + clip.tmthing->radius;
+    clip.tmbbox[boxLeft] = x - clip.tmthing->radius;
 
     SubSector* newsubsec = pointInSubsector(x, y);
     clip.ceilingline = nullptr;
@@ -244,10 +244,10 @@ bool checkPosition(Mobj& thing, fixed_t x, fixed_t y)
     // point, and can overlap into adjacent blocks by up to MAXRADIUS units.
     const Blockmap& bmap = level().blockmap;
 
-    int xl = bmap.blockX(clip.tmbbox[BOXLEFT] - MAXRADIUS);
-    int xh = bmap.blockX(clip.tmbbox[BOXRIGHT] + MAXRADIUS);
-    int yl = bmap.blockY(clip.tmbbox[BOXBOTTOM] - MAXRADIUS);
-    int yh = bmap.blockY(clip.tmbbox[BOXTOP] + MAXRADIUS);
+    int xl = bmap.blockX(clip.tmbbox[boxLeft] - MAXRADIUS);
+    int xh = bmap.blockX(clip.tmbbox[boxRight] + MAXRADIUS);
+    int yl = bmap.blockY(clip.tmbbox[boxBottom] - MAXRADIUS);
+    int yh = bmap.blockY(clip.tmbbox[boxTop] + MAXRADIUS);
 
     for (int bx = xl; bx <= xh; bx++)
         for (int by = yl; by <= yh; by++)
@@ -255,10 +255,10 @@ bool checkPosition(Mobj& thing, fixed_t x, fixed_t y)
                 return false;
 
     // check lines
-    xl = bmap.blockX(clip.tmbbox[BOXLEFT]);
-    xh = bmap.blockX(clip.tmbbox[BOXRIGHT]);
-    yl = bmap.blockY(clip.tmbbox[BOXBOTTOM]);
-    yh = bmap.blockY(clip.tmbbox[BOXTOP]);
+    xl = bmap.blockX(clip.tmbbox[boxLeft]);
+    xh = bmap.blockX(clip.tmbbox[boxRight]);
+    yl = bmap.blockY(clip.tmbbox[boxBottom]);
+    yh = bmap.blockY(clip.tmbbox[boxTop]);
 
     for (int bx = xl; bx <= xh; bx++)
         for (int by = yl; by <= yh; by++)
@@ -339,10 +339,10 @@ bool teleportMove(Mobj& thing, fixed_t x, fixed_t y)
     clip.tmx = x;
     clip.tmy = y;
 
-    clip.tmbbox[BOXTOP] = y + clip.tmthing->radius;
-    clip.tmbbox[BOXBOTTOM] = y - clip.tmthing->radius;
-    clip.tmbbox[BOXRIGHT] = x + clip.tmthing->radius;
-    clip.tmbbox[BOXLEFT] = x - clip.tmthing->radius;
+    clip.tmbbox[boxTop] = y + clip.tmthing->radius;
+    clip.tmbbox[boxBottom] = y - clip.tmthing->radius;
+    clip.tmbbox[boxRight] = x + clip.tmthing->radius;
+    clip.tmbbox[boxLeft] = x - clip.tmthing->radius;
 
     SubSector* newsubsec = pointInSubsector(x, y);
     clip.ceilingline = nullptr;
@@ -357,10 +357,10 @@ bool teleportMove(Mobj& thing, fixed_t x, fixed_t y)
 
     // stomp on any things contacted. Blockmap cell indices: the shift is
     // MAPBLOCKSHIFT over the raw 16.16 bits, not a fixed-to-whole conversion.
-    int xl = (clip.tmbbox[BOXLEFT] - bmaporgx - MAXRADIUS).raw >> MAPBLOCKSHIFT;
-    int xh = (clip.tmbbox[BOXRIGHT] - bmaporgx + MAXRADIUS).raw >> MAPBLOCKSHIFT;
-    int yl = (clip.tmbbox[BOXBOTTOM] - bmaporgy - MAXRADIUS).raw >> MAPBLOCKSHIFT;
-    int yh = (clip.tmbbox[BOXTOP] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int xl = (clip.tmbbox[boxLeft] - bmaporgx - MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int xh = (clip.tmbbox[boxRight] - bmaporgx + MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int yl = (clip.tmbbox[boxBottom] - bmaporgy - MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int yh = (clip.tmbbox[boxTop] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
 
     for (int bx = xl; bx <= xh; bx++)
         for (int by = yl; by <= yh; by++)

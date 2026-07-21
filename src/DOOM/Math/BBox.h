@@ -68,13 +68,14 @@ struct BBox
 // free of the vanilla headers; they are the same type.) BBox has
 // the same four numbers in the same order (asserted in BBox.cpp), so the bridge can
 // reinterpret rather than copy. Scaffolding: it goes when the last fixed_t[4] does.
-enum
-{
-    BOXTOP,
-    BOXBOTTOM,
-    BOXLEFT,
-    BOXRIGHT
-};
+// Positions within that fixed_t[4], not a type: nothing ever declares a variable
+// of this kind, they only ever subscript the raw array. So they are constants
+// rather than an enum class, which would need a cast at all 100+ subscripts and
+// buy no type safety on a C array.
+constexpr int boxTop = 0;
+constexpr int boxBottom = 1;
+constexpr int boxLeft = 2;
+constexpr int boxRight = 3;
 
 BBox& asBBox(Fixed* box);
 void clearBox(Fixed* box);

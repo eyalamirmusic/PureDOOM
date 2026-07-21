@@ -710,8 +710,8 @@ bool changeSector(Sector& sector, bool crunch)
     { return changeSectorThing(thing, crunch, nofit); };
 
     // re-check heights for all things near the moving sector
-    for (int x = sector.blockbox[BOXLEFT]; x <= sector.blockbox[BOXRIGHT]; x++)
-        for (int y = sector.blockbox[BOXBOTTOM]; y <= sector.blockbox[BOXTOP]; y++)
+    for (int x = sector.blockbox[boxLeft]; x <= sector.blockbox[boxRight]; x++)
+        for (int y = sector.blockbox[boxBottom]; y <= sector.blockbox[boxTop]; y++)
             forEachThingInBlock(x, y, clipThing);
 
     return nofit;

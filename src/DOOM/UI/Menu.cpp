@@ -320,15 +320,15 @@ void drawMouseOptions();
 //
 // DOOM MENU
 //
-enum
+enum class MainItem
 {
-    newgame = 0,
-    options,
-    loadgame,
-    savegame,
-    readthis,
-    quitdoom,
-    main_end
+    NewGame = 0,
+    Options,
+    LoadGame,
+    SaveGame,
+    ReadThis,
+    QuitDoom,
+    End
 };
 
 Array<MenuItem, 6> MainMenu = {{1, "M_NGAME", newGame, 'n'},
@@ -339,18 +339,19 @@ Array<MenuItem, 6> MainMenu = {{1, "M_NGAME", newGame, 'n'},
                                {1, "M_RDTHIS", readThis, 'r'},
                                {1, "M_QUITG", quitDOOM, 'q'}};
 
-MenuDef MainDef = {main_end, nullptr, MainMenu.data(), drawMainMenu, 97, 64, 0};
+MenuDef MainDef = {
+    toIndex(MainItem::End), nullptr, MainMenu.data(), drawMainMenu, 97, 64, 0};
 
 //
 // EPISODE SELECT
 //
-enum
+enum class EpisodeItem
 {
-    ep1,
-    ep2,
-    ep3,
-    ep4,
-    ep_end
+    Ep1,
+    Ep2,
+    Ep3,
+    Ep4,
+    End
 };
 
 Array<MenuItem, 4> EpisodeMenu = {{1, "M_EPI1", episode, 'k'},
@@ -359,26 +360,26 @@ Array<MenuItem, 4> EpisodeMenu = {{1, "M_EPI1", episode, 'k'},
                                   {1, "M_EPI4", episode, 't'}};
 
 MenuDef EpiDef = {
-    ep_end, // # of menu items
+    toIndex(EpisodeItem::End), // # of menu items
     &MainDef, // previous menu
     EpisodeMenu.data(), // MenuItem ->
     drawEpisode, // drawing routine ->
     48,
     63, // x,y
-    ep1 // lastOn
+    toIndex(EpisodeItem::Ep1) // lastOn
 };
 
 //
 // NEW GAME
 //
-enum
+enum class SkillItem
 {
-    killthings,
-    toorough,
-    hurtme,
-    violence,
-    nightmare,
-    newg_end
+    KillThings,
+    TooRough,
+    HurtMe,
+    Violence,
+    Nightmare,
+    End
 };
 
 Array<MenuItem, 5> NewGameMenu = {{1, "M_JKILL", chooseSkill, 'i'},
@@ -388,13 +389,13 @@ Array<MenuItem, 5> NewGameMenu = {{1, "M_JKILL", chooseSkill, 'i'},
                                   {1, "M_NMARE", chooseSkill, 'n'}};
 
 MenuDef NewDef = {
-    newg_end, // # of menu items
+    toIndex(SkillItem::End), // # of menu items
     &EpiDef, // previous menu
     NewGameMenu.data(), // MenuItem ->
     drawNewGame, // drawing routine ->
     48,
     63, // x,y
-    hurtme // lastOn
+    toIndex(SkillItem::HurtMe) // lastOn
 };
 
 //
@@ -402,18 +403,18 @@ MenuDef NewDef = {
 //
 MenuItem* OptionsMenu;
 
-enum
+enum class OptionsItem
 {
-    endgame,
-    messages,
-    crosshair_opt,
-    always_run_opt,
+    EndGame,
+    Messages,
+    CrosshairOpt,
+    AlwaysRunOpt,
     //detail, // Details do nothing?
-    scrnsize,
-    option_empty1,
-    mouseoptions,
-    soundvol,
-    opt_end
+    ScrnSize,
+    OptionEmpty1,
+    Mouseoptions,
+    SoundVol,
+    End
 };
 
 Array<MenuItem, 8> OptionsMenuFull = {
@@ -427,20 +428,25 @@ Array<MenuItem, 8> OptionsMenuFull = {
     {1, "TXT_MOPT", mouseOptions, 'f'},
     {1, "M_SVOL", sound, 's'}};
 
-MenuDef OptionsDef = {
-    opt_end, &MainDef, OptionsMenuFull.data(), drawOptions, 60, 37, 0};
+MenuDef OptionsDef = {toIndex(OptionsItem::End),
+                      &MainDef,
+                      OptionsMenuFull.data(),
+                      drawOptions,
+                      60,
+                      37,
+                      0};
 
-enum
+enum class OptionsNoMouseItem
 {
-    endgame_no_mouse,
-    messages_no_mouse,
-    crosshair_opt_no_mouse,
-    always_run_opt_no_mouse,
+    EndGameNoMouse,
+    MessagesNoMouse,
+    CrosshairOptNoMouse,
+    AlwaysRunOptNoMouse,
     //detail_no_mouse, // Details do nothing?
-    scrnsize_no_mouse,
-    option_empty1_no_mouse,
-    soundvol_no_mouse,
-    opt_end_no_mouse
+    ScrnSizeNoMouse,
+    OptionEmpty1NoMouse,
+    SoundVolNoMouse,
+    OptEndNoMouse
 };
 
 Array<MenuItem, 7> OptionsMenuNoMouse = {
@@ -453,20 +459,25 @@ Array<MenuItem, 7> OptionsMenuNoMouse = {
     {-1, "", nullptr},
     {1, "M_SVOL", sound, 's'}};
 
-MenuDef OptionsNoMouseDef = {
-    opt_end_no_mouse, &MainDef, OptionsMenuNoMouse.data(), drawOptions, 60, 37, 0};
+MenuDef OptionsNoMouseDef = {toIndex(OptionsNoMouseItem::OptEndNoMouse),
+                             &MainDef,
+                             OptionsMenuNoMouse.data(),
+                             drawOptions,
+                             60,
+                             37,
+                             0};
 
-enum
+enum class OptionsNoSoundItem
 {
-    endgame_no_sound,
-    messages_no_sound,
-    crosshair_opt_no_sound,
-    always_run_opt_no_sound,
+    EndGameNoSound,
+    MessagesNoSound,
+    CrosshairOptNoSound,
+    AlwaysRunOptNoSound,
     //detail_no_sound, // Details do nothing?
-    scrnsize_no_sound,
-    option_empty1_no_sound,
-    mouseoptions_no_sound,
-    opt_end_no_sound
+    ScrnSizeNoSound,
+    OptionEmpty1NoSound,
+    MouseoptionsNoSound,
+    OptEndNoSound
 };
 
 Array<MenuItem, 7> OptionsMenuNoSound = {
@@ -479,19 +490,24 @@ Array<MenuItem, 7> OptionsMenuNoSound = {
     {-1, "", nullptr},
     {1, "TXT_MOPT", mouseOptions, 'f'}};
 
-MenuDef OptionsNoSoundDef = {
-    opt_end_no_sound, &MainDef, OptionsMenuNoSound.data(), drawOptions, 60, 37, 0};
+MenuDef OptionsNoSoundDef = {toIndex(OptionsNoSoundItem::OptEndNoSound),
+                             &MainDef,
+                             OptionsMenuNoSound.data(),
+                             drawOptions,
+                             60,
+                             37,
+                             0};
 
-enum
+enum class OptionsNoSoundNoMouseItem
 {
-    endgame_no_sound_no_mouse,
-    messages_no_sound_no_mouse,
-    crosshair_opt_no_sound_no_mouse,
-    always_run_top_no_sound_no_mouse,
+    EndGameNoSoundNoMouse,
+    MessagesNoSoundNoMouse,
+    CrosshairOptNoSoundNoMouse,
+    AlwaysRunTopNoSoundNoMouse,
     //detail_no_sound_no_mouse, // Details do nothing?
-    scrnsize_no_sound_no_mouse,
-    option_empty1_no_sound_no_mouse,
-    opt_end_no_sound_no_mouse
+    ScrnSizeNoSoundNoMouse,
+    OptionEmpty1NoSoundNoMouse,
+    OptEndNoSoundNoMouse
 };
 
 Array<MenuItem, 6> OptionsMenuNoSoundNoMouse = {
@@ -503,23 +519,24 @@ Array<MenuItem, 6> OptionsMenuNoSoundNoMouse = {
     {2, "M_SCRNSZ", sizeDisplay, 's'},
     {-1, "", nullptr}};
 
-MenuDef OptionsNoSoundNoMouseDef = {opt_end_no_sound_no_mouse,
-                                    &MainDef,
-                                    OptionsMenuNoSoundNoMouse.data(),
-                                    drawOptions,
-                                    60,
-                                    37,
-                                    0};
+MenuDef OptionsNoSoundNoMouseDef = {
+    toIndex(OptionsNoSoundNoMouseItem::OptEndNoSoundNoMouse),
+    &MainDef,
+    OptionsMenuNoSoundNoMouse.data(),
+    drawOptions,
+    60,
+    37,
+    0};
 
 //
 // MOUSE OPTIONS
 //
-enum
+enum class MouseItem
 {
-    mousemov,
-    mousesens,
-    mouse_option_empty1,
-    mouse_opt_end
+    MouseMov,
+    MouseSens,
+    MouseOptionEmpty1,
+    End
 };
 
 Array<MenuItem, 3> MouseOptionsMenu = {
@@ -528,7 +545,7 @@ Array<MenuItem, 3> MouseOptionsMenu = {
     {-1, "", nullptr},
 };
 
-MenuDef MouseOptionsDef = {mouse_opt_end,
+MenuDef MouseOptionsDef = {toIndex(MouseItem::End),
                            &OptionsDef,
                            MouseOptionsMenu.data(),
                            drawMouseOptions,
@@ -539,40 +556,50 @@ MenuDef MouseOptionsDef = {mouse_opt_end,
 //
 // Read This! MENU 1 & 2
 //
-enum
+enum class ReadThis1Item
 {
-    rdthsempty1,
-    read1_end
+    Empty1,
+    End
 };
 
 Array<MenuItem, 1> ReadMenu1 = {{1, "", readThis2, 0}};
 
-MenuDef ReadDef1 = {
-    read1_end, &MainDef, ReadMenu1.data(), drawReadThis1, 280, 185, 0};
+MenuDef ReadDef1 = {toIndex(ReadThis1Item::End),
+                    &MainDef,
+                    ReadMenu1.data(),
+                    drawReadThis1,
+                    280,
+                    185,
+                    0};
 
-enum
+enum class ReadThis2Item
 {
-    rdthsempty2,
-    read2_end
+    Empty2,
+    End
 };
 
 Array<MenuItem, 1> ReadMenu2 = {{1, "", finishReadThis, 0}};
 
-MenuDef ReadDef2 = {
-    read2_end, &ReadDef1, ReadMenu2.data(), drawReadThis2, 330, 175, 0};
+MenuDef ReadDef2 = {toIndex(ReadThis2Item::End),
+                    &ReadDef1,
+                    ReadMenu2.data(),
+                    drawReadThis2,
+                    330,
+                    175,
+                    0};
 
 //
 // SOUND VOLUME MENU
 //
 MenuItem* SoundMenu;
 
-enum
+enum class SoundItem
 {
-    sfx_vol,
-    sfx_empty1,
-    music_vol,
-    sfx_empty2,
-    sound_end
+    SfxVol,
+    SfxEmpty1,
+    MusicVol,
+    SfxEmpty2,
+    End
 };
 
 Array<MenuItem, 4> SoundMenuFull = {{2, "M_SFXVOL", sfxVol, 's'},
@@ -580,47 +607,62 @@ Array<MenuItem, 4> SoundMenuFull = {{2, "M_SFXVOL", sfxVol, 's'},
                                     {2, "M_MUSVOL", musicVol, 'm'},
                                     {-1, "", nullptr}};
 
-MenuDef SoundDef = {
-    sound_end, &OptionsDef, SoundMenuFull.data(), drawSound, 80, 64, 0};
+MenuDef SoundDef = {toIndex(SoundItem::End),
+                    &OptionsDef,
+                    SoundMenuFull.data(),
+                    drawSound,
+                    80,
+                    64,
+                    0};
 
-enum
+enum class SoundNoSfxItem
 {
-    music_vol_no_sfx,
-    sfx_empty2_no_sfx,
-    sound_end_no_sfx
+    MusicVolNoSfx,
+    SfxEmpty2NoSfx,
+    SoundEndNoSfx
 };
 
 Array<MenuItem, 2> SoundMenuNoSFX = {{2, "M_MUSVOL", musicVol, 'm'},
                                      {-1, "", nullptr}};
 
-MenuDef SoundNoSFXDef = {
-    sound_end_no_sfx, &OptionsDef, SoundMenuNoSFX.data(), drawSound, 80, 64, 0};
+MenuDef SoundNoSFXDef = {toIndex(SoundNoSfxItem::SoundEndNoSfx),
+                         &OptionsDef,
+                         SoundMenuNoSFX.data(),
+                         drawSound,
+                         80,
+                         64,
+                         0};
 
-enum
+enum class SoundNoMusicItem
 {
-    sfx_vol_no_music,
-    sfx_empty1_no_music,
-    sound_end_no_music
+    SfxVolNoMusic,
+    SfxEmpty1NoMusic,
+    SoundEndNoMusic
 };
 
 Array<MenuItem, 2> SoundMenuNoMusic = {{2, "M_SFXVOL", sfxVol, 's'},
                                        {-1, "", nullptr}};
 
-MenuDef SoundNoMusicDef = {
-    sound_end_no_music, &OptionsDef, SoundMenuNoMusic.data(), drawSound, 80, 64, 0};
+MenuDef SoundNoMusicDef = {toIndex(SoundNoMusicItem::SoundEndNoMusic),
+                           &OptionsDef,
+                           SoundMenuNoMusic.data(),
+                           drawSound,
+                           80,
+                           64,
+                           0};
 
 //
 // LOAD GAME MENU
 //
-enum
+enum class LoadItem
 {
-    load1,
-    load2,
-    load3,
-    load4,
-    load5,
-    load6,
-    load_end
+    Load1,
+    Load2,
+    Load3,
+    Load4,
+    Load5,
+    Load6,
+    End
 };
 
 Array<MenuItem, 6> DOOM_LoadMenu = {{1, "", loadSelect, '1'},
@@ -630,7 +672,8 @@ Array<MenuItem, 6> DOOM_LoadMenu = {{1, "", loadSelect, '1'},
                                     {1, "", loadSelect, '5'},
                                     {1, "", loadSelect, '6'}};
 
-MenuDef LoadDef = {load_end, &MainDef, DOOM_LoadMenu.data(), drawLoad, 80, 54, 0};
+MenuDef LoadDef = {
+    toIndex(LoadItem::End), &MainDef, DOOM_LoadMenu.data(), drawLoad, 80, 54, 0};
 
 //
 // SAVE GAME MENU
@@ -642,7 +685,8 @@ Array<MenuItem, 6> SaveMenu = {{1, "", saveSelect, '1'},
                                {1, "", saveSelect, '5'},
                                {1, "", saveSelect, '6'}};
 
-MenuDef SaveDef = {load_end, &MainDef, SaveMenu.data(), drawSave, 80, 54, 0};
+MenuDef SaveDef = {
+    toIndex(LoadItem::End), &MainDef, SaveMenu.data(), drawSave, 80, 54, 0};
 
 DOOM_DIAGNOSTIC_POP
 
@@ -679,7 +723,7 @@ void readSaveStrings()
 
     void* handle;
 
-    for (int i = 0; i < load_end; i++)
+    for (int i = 0; i < toIndex(LoadItem::End); i++)
     {
         //doom_sprintf(name, SAVEGAMENAME"%d.dsg", i);
         auto name = concat(SAVEGAMENAME, i, ".dsg");
@@ -710,7 +754,7 @@ void drawLoad()
     auto& state = menuState();
 
     drawPatchDirect(72, 28, 0, static_cast<Patch*>(cacheLumpName("M_LOADG")));
-    for (int i = 0; i < load_end; i++)
+    for (int i = 0; i < toIndex(LoadItem::End); i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
         writeText(
@@ -769,7 +813,7 @@ void drawSave()
     int i;
 
     drawPatchDirect(72, 28, 0, static_cast<Patch*>(cacheLumpName("M_SAVEG")));
-    for (i = 0; i < load_end; i++)
+    for (i = 0; i < toIndex(LoadItem::End); i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
         writeText(
@@ -969,8 +1013,8 @@ void drawSound()
     if (!(doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
     {
         int offset = (doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
-                         ? static_cast<int>(sfx_vol_no_music)
-                         : static_cast<int>(sfx_vol);
+                         ? static_cast<int>(toIndex(SoundNoMusicItem::SfxVolNoMusic))
+                         : static_cast<int>(toIndex(SoundItem::SfxVol));
         drawThermo(SoundDef.x,
                    SoundDef.y + LINEHEIGHT * (offset + 1),
                    16,
@@ -980,8 +1024,8 @@ void drawSound()
     if (!(doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS))
     {
         int offset = (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
-                         ? static_cast<int>(music_vol_no_sfx)
-                         : static_cast<int>(music_vol);
+                         ? static_cast<int>(toIndex(SoundNoSfxItem::MusicVolNoSfx))
+                         : static_cast<int>(toIndex(SoundItem::MusicVol));
         drawThermo(SoundDef.x,
                    SoundDef.y + LINEHEIGHT * (offset + 1),
                    16,
@@ -1081,13 +1125,14 @@ void verifyNightmare(int ch)
     if (ch != 'y')
         return;
 
-    deferInitNew(static_cast<Skill>(nightmare), menuState().epi + 1, 1);
+    deferInitNew(
+        static_cast<Skill>(toIndex(SkillItem::Nightmare)), menuState().epi + 1, 1);
     clearMenus();
 }
 
 void chooseSkill(int choice)
 {
-    if (choice == nightmare)
+    if (choice == toIndex(SkillItem::Nightmare))
     {
         startMessage(NIGHTMARE, verifyNightmare, true);
         return;
@@ -1133,22 +1178,22 @@ void drawOptions()
 
     drawPatchDirect(
         OptionsDef.x + 120,
-        OptionsDef.y + LINEHEIGHT * messages,
+        OptionsDef.y + LINEHEIGHT * toIndex(OptionsItem::Messages),
         0,
         static_cast<Patch*>(cacheLumpName(msgNames[menuSettings().showMessages])));
 
     drawPatchDirect(OptionsDef.x + 131,
-                    OptionsDef.y + LINEHEIGHT * crosshair_opt,
+                    OptionsDef.y + LINEHEIGHT * toIndex(OptionsItem::CrosshairOpt),
                     0,
                     static_cast<Patch*>(cacheLumpName(msgNames[input.crosshair])));
 
     drawPatchDirect(OptionsDef.x + 147,
-                    OptionsDef.y + LINEHEIGHT * always_run_opt,
+                    OptionsDef.y + LINEHEIGHT * toIndex(OptionsItem::AlwaysRunOpt),
                     0,
                     static_cast<Patch*>(cacheLumpName(msgNames[input.always_run])));
 
     drawThermo(OptionsDef.x,
-               OptionsDef.y + LINEHEIGHT * (scrnsize + 1),
+               OptionsDef.y + LINEHEIGHT * (toIndex(OptionsItem::ScrnSize) + 1),
                9,
                menuState().screenSize);
 }
@@ -1159,12 +1204,12 @@ void drawMouseOptions()
 
     drawPatchDirect(
         MouseOptionsDef.x + 149,
-        MouseOptionsDef.y + LINEHEIGHT * mousemov,
+        MouseOptionsDef.y + LINEHEIGHT * toIndex(MouseItem::MouseMov),
         0,
         static_cast<Patch*>(cacheLumpName(msgNames[inputConfig().mousemove])));
 
     drawThermo(MouseOptionsDef.x,
-               MouseOptionsDef.y + LINEHEIGHT * (mousesens + 1),
+               MouseOptionsDef.y + LINEHEIGHT * (toIndex(MouseItem::MouseSens) + 1),
                10,
                menuSettings().mouseSensitivity);
 }
@@ -1721,7 +1766,7 @@ bool menuResponder(Event& ev)
             case KEY_F4: // Sound Volume
                 startControlPanel();
                 state.currentMenu = &SoundDef;
-                state.itemOn = sfx_vol;
+                state.itemOn = toIndex(SoundItem::SfxVol);
                 startSound(nullptr, SfxEnum::Swtchn);
                 return true;
 
@@ -2076,7 +2121,8 @@ void initMenu()
             // This is used because DOOM 2 had only one HELP
             //  page. I use CREDIT as second page now, but
             //  kept this hack for educational purposes.
-            MainMenu[readthis] = MainMenu[quitdoom];
+            MainMenu[toIndex(MainItem::ReadThis)] =
+                MainMenu[toIndex(MainItem::QuitDoom)];
             MainDef.numitems--;
             MainDef.y += 8;
             NewDef.prevMenu = &MainDef;

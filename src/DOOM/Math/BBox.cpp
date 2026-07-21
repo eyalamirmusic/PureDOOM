@@ -13,14 +13,20 @@ namespace Doom
 {
 static_assert(sizeof(BBox) == 4 * sizeof(std::int32_t),
               "BBox must be layout-compatible with vanilla's fixed_t[4]");
-static_assert(offsetof(BBox, top) == BOXTOP * sizeof(std::int32_t));
-static_assert(offsetof(BBox, bottom) == BOXBOTTOM * sizeof(std::int32_t));
-static_assert(offsetof(BBox, left) == BOXLEFT * sizeof(std::int32_t));
-static_assert(offsetof(BBox, right) == BOXRIGHT * sizeof(std::int32_t));
+static_assert(offsetof(BBox, top) == boxTop * sizeof(std::int32_t));
+static_assert(offsetof(BBox, bottom) == boxBottom * sizeof(std::int32_t));
+static_assert(offsetof(BBox, left) == boxLeft * sizeof(std::int32_t));
+static_assert(offsetof(BBox, right) == boxRight * sizeof(std::int32_t));
 
-BBox& asBBox(Fixed* box) { return *(BBox*) box; }
+BBox& asBBox(Fixed* box)
+{
+    return *(BBox*) box;
+}
 
-void clearBox(Fixed* box) { asBBox(box) = BBox::empty(); }
+void clearBox(Fixed* box)
+{
+    asBBox(box) = BBox::empty();
+}
 
 void addToBox(Fixed* box, Fixed x, Fixed y)
 {

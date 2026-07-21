@@ -209,7 +209,7 @@ int endScreen(int x, int y, int width, int height)
     return 0;
 }
 
-int screenWipe(int wipeno,
+int screenWipe(WipeType wipeno,
                [[maybe_unused]] int x,
                [[maybe_unused]] int y,
                int width,
@@ -224,18 +224,18 @@ int screenWipe(int wipeno,
     {
         wipe_melt_running = true;
         wipeState().wipe_scr = screens[0];
-        (*wipes[wipeno * 3])(width, height, ticks);
+        (*wipes[toIndex(wipeno) * 3])(width, height, ticks);
     }
 
     // do a piece of wipe-in
     markRect(0, 0, width, height);
-    int rc = (*wipes[wipeno * 3 + 1])(width, height, ticks);
+    int rc = (*wipes[toIndex(wipeno) * 3 + 1])(width, height, ticks);
 
     // final stuff
     if (rc)
     {
         wipe_melt_running = false;
-        (*wipes[wipeno * 3 + 2])(width, height, ticks);
+        (*wipes[toIndex(wipeno) * 3 + 2])(width, height, ticks);
     }
 
     return !wipe_melt_running;

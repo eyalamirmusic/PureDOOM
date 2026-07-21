@@ -171,10 +171,10 @@ auto tBBoxIsLayoutCompatible = test("BBox/isLayoutCompatibleWithVanilla") = []
     // Doom::groupLines and Doom::markRect still hand it a bare fixed_t[4], and m_bbox.cpp
     // reinterprets one as a BBox. These four are what make that legal.
     static_assert(sizeof(BBox) == 4 * sizeof(fixed_t));
-    static_assert(offsetof(BBox, top) == BOXTOP * sizeof(fixed_t));
-    static_assert(offsetof(BBox, bottom) == BOXBOTTOM * sizeof(fixed_t));
-    static_assert(offsetof(BBox, left) == BOXLEFT * sizeof(fixed_t));
-    static_assert(offsetof(BBox, right) == BOXRIGHT * sizeof(fixed_t));
+    static_assert(offsetof(BBox, top) == boxTop * sizeof(fixed_t));
+    static_assert(offsetof(BBox, bottom) == boxBottom * sizeof(fixed_t));
+    static_assert(offsetof(BBox, left) == boxLeft * sizeof(fixed_t));
+    static_assert(offsetof(BBox, right) == boxRight * sizeof(fixed_t));
 
     check(true);
 };
@@ -227,10 +227,10 @@ auto tBBoxMatchesVanilla = test("BBox/matchesVanillaAddToBox") = []
         box.add(Fixed::fromInt(p[0]), Fixed::fromInt(p[1]));
     }
 
-    check(box.top == vanilla[BOXTOP]);
-    check(box.bottom == vanilla[BOXBOTTOM]);
-    check(box.left == vanilla[BOXLEFT]);
-    check(box.right == vanilla[BOXRIGHT]);
+    check(box.top == vanilla[boxTop]);
+    check(box.bottom == vanilla[boxBottom]);
+    check(box.left == vanilla[boxLeft]);
+    check(box.right == vanilla[boxRight]);
 };
 
 // ---------------------------------------------------------------------------

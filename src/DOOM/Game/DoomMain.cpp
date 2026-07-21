@@ -350,7 +350,7 @@ void displayFrame()
             tics = nowtime - wipestart;
         } while (!tics);
         wipestart = nowtime;
-        done = Doom::screenWipe(wipe_Melt
+        done = Doom::screenWipe(Doom::WipeType::Melt
                                , 0, 0, SCREENWIDTH, SCREENHEIGHT, tics);
         updateNoBlit();
         drawMenu();                            // menu is drawn even on top of wipes
@@ -364,7 +364,7 @@ void displayFrame()
 //
 void updateWipe()
 {
-    if (Doom::screenWipe(wipe_Melt, 0, 0, SCREENWIDTH, SCREENHEIGHT, 1))
+    if (Doom::screenWipe(Doom::WipeType::Melt, 0, 0, SCREENWIDTH, SCREENHEIGHT, 1))
         gameFlow().is_wiping_screen = false;
 }
 
