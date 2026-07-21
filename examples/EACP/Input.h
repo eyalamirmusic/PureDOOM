@@ -4,8 +4,6 @@
 
 namespace PureDoom
 {
-using enum Doom::Key;
-using enum Doom::MouseButton;
 
 // The printable keys, mapped from the *positional* KeyCode rather than from the
 // character the event carries.
@@ -14,7 +12,7 @@ using enum Doom::MouseButton;
 // every platform, but fills in charactersIgnoringModifiers only on macOS - the
 // Windows backend never assigns it, and assigns `characters` on key *down* alone
 // (see the gap log). Reading the character first therefore made every letter,
-// digit and punctuation key on Windows fall through to DOOM_KEY_UNKNOWN, which
+// digit and punctuation key on Windows fall through to Doom::Key::Unknown, which
 // View::keyDown drops - so w/a/s/d did nothing while Space, Escape, Enter and the
 // arrows, all of which have a KeyCode case below, worked. That looked like partial
 // keyboard support and was really one missing string.
@@ -44,53 +42,53 @@ struct DoomKeyMapping
 };
 
 inline constexpr DoomKeyMapping printableKeys[] = {
-    {Graphics::KeyCode::A, DOOM_KEY_A},
-    {Graphics::KeyCode::B, DOOM_KEY_B},
-    {Graphics::KeyCode::C, DOOM_KEY_C},
-    {Graphics::KeyCode::D, DOOM_KEY_D},
-    {Graphics::KeyCode::E, DOOM_KEY_E},
-    {Graphics::KeyCode::F, DOOM_KEY_F},
-    {Graphics::KeyCode::G, DOOM_KEY_G},
-    {Graphics::KeyCode::H, DOOM_KEY_H},
-    {Graphics::KeyCode::I, DOOM_KEY_I},
-    {Graphics::KeyCode::J, DOOM_KEY_J},
-    {Graphics::KeyCode::K, DOOM_KEY_K},
-    {Graphics::KeyCode::L, DOOM_KEY_L},
-    {Graphics::KeyCode::M, DOOM_KEY_M},
-    {Graphics::KeyCode::N, DOOM_KEY_N},
-    {Graphics::KeyCode::O, DOOM_KEY_O},
-    {Graphics::KeyCode::P, DOOM_KEY_P},
-    {Graphics::KeyCode::Q, DOOM_KEY_Q},
-    {Graphics::KeyCode::R, DOOM_KEY_R},
-    {Graphics::KeyCode::S, DOOM_KEY_S},
-    {Graphics::KeyCode::T, DOOM_KEY_T},
-    {Graphics::KeyCode::U, DOOM_KEY_U},
-    {Graphics::KeyCode::V, DOOM_KEY_V},
-    {Graphics::KeyCode::W, DOOM_KEY_W},
-    {Graphics::KeyCode::X, DOOM_KEY_X},
-    {Graphics::KeyCode::Y, DOOM_KEY_Y},
-    {Graphics::KeyCode::Z, DOOM_KEY_Z},
+    {Graphics::KeyCode::A, Doom::Key::A},
+    {Graphics::KeyCode::B, Doom::Key::B},
+    {Graphics::KeyCode::C, Doom::Key::C},
+    {Graphics::KeyCode::D, Doom::Key::D},
+    {Graphics::KeyCode::E, Doom::Key::E},
+    {Graphics::KeyCode::F, Doom::Key::F},
+    {Graphics::KeyCode::G, Doom::Key::G},
+    {Graphics::KeyCode::H, Doom::Key::H},
+    {Graphics::KeyCode::I, Doom::Key::I},
+    {Graphics::KeyCode::J, Doom::Key::J},
+    {Graphics::KeyCode::K, Doom::Key::K},
+    {Graphics::KeyCode::L, Doom::Key::L},
+    {Graphics::KeyCode::M, Doom::Key::M},
+    {Graphics::KeyCode::N, Doom::Key::N},
+    {Graphics::KeyCode::O, Doom::Key::O},
+    {Graphics::KeyCode::P, Doom::Key::P},
+    {Graphics::KeyCode::Q, Doom::Key::Q},
+    {Graphics::KeyCode::R, Doom::Key::R},
+    {Graphics::KeyCode::S, Doom::Key::S},
+    {Graphics::KeyCode::T, Doom::Key::T},
+    {Graphics::KeyCode::U, Doom::Key::U},
+    {Graphics::KeyCode::V, Doom::Key::V},
+    {Graphics::KeyCode::W, Doom::Key::W},
+    {Graphics::KeyCode::X, Doom::Key::X},
+    {Graphics::KeyCode::Y, Doom::Key::Y},
+    {Graphics::KeyCode::Z, Doom::Key::Z},
 
-    {Graphics::KeyCode::Num0, DOOM_KEY_0},
-    {Graphics::KeyCode::Num1, DOOM_KEY_1},
-    {Graphics::KeyCode::Num2, DOOM_KEY_2},
-    {Graphics::KeyCode::Num3, DOOM_KEY_3},
-    {Graphics::KeyCode::Num4, DOOM_KEY_4},
-    {Graphics::KeyCode::Num5, DOOM_KEY_5},
-    {Graphics::KeyCode::Num6, DOOM_KEY_6},
-    {Graphics::KeyCode::Num7, DOOM_KEY_7},
-    {Graphics::KeyCode::Num8, DOOM_KEY_8},
-    {Graphics::KeyCode::Num9, DOOM_KEY_9},
+    {Graphics::KeyCode::Num0, Doom::Key::Digit0},
+    {Graphics::KeyCode::Num1, Doom::Key::Digit1},
+    {Graphics::KeyCode::Num2, Doom::Key::Digit2},
+    {Graphics::KeyCode::Num3, Doom::Key::Digit3},
+    {Graphics::KeyCode::Num4, Doom::Key::Digit4},
+    {Graphics::KeyCode::Num5, Doom::Key::Digit5},
+    {Graphics::KeyCode::Num6, Doom::Key::Digit6},
+    {Graphics::KeyCode::Num7, Doom::Key::Digit7},
+    {Graphics::KeyCode::Num8, Doom::Key::Digit8},
+    {Graphics::KeyCode::Num9, Doom::Key::Digit9},
 
-    {Graphics::KeyCode::Minus, DOOM_KEY_MINUS},
-    {Graphics::KeyCode::Equals, DOOM_KEY_EQUALS},
-    {Graphics::KeyCode::LeftBracket, DOOM_KEY_LEFT_BRACKET},
-    {Graphics::KeyCode::RightBracket, DOOM_KEY_RIGHT_BRACKET},
-    {Graphics::KeyCode::Semicolon, DOOM_KEY_SEMICOLON},
-    {Graphics::KeyCode::Quote, DOOM_KEY_APOSTROPHE},
-    {Graphics::KeyCode::Comma, DOOM_KEY_COMMA},
-    {Graphics::KeyCode::Period, DOOM_KEY_PERIOD},
-    {Graphics::KeyCode::Slash, DOOM_KEY_SLASH},
+    {Graphics::KeyCode::Minus, Doom::Key::Minus},
+    {Graphics::KeyCode::Equals, Doom::Key::Equals},
+    {Graphics::KeyCode::LeftBracket, Doom::Key::LeftBracket},
+    {Graphics::KeyCode::RightBracket, Doom::Key::RightBracket},
+    {Graphics::KeyCode::Semicolon, Doom::Key::Semicolon},
+    {Graphics::KeyCode::Quote, Doom::Key::Apostrophe},
+    {Graphics::KeyCode::Comma, Doom::Key::Comma},
+    {Graphics::KeyCode::Period, Doom::Key::Period},
+    {Graphics::KeyCode::Slash, Doom::Key::Slash},
 };
 
 inline Doom::Key toDoomKey(const Graphics::KeyEvent& event)
@@ -103,7 +101,7 @@ inline Doom::Key toDoomKey(const Graphics::KeyEvent& event)
     // forever. Dropping it is the safe answer, and DOOM binds nothing outside the
     // table below.
     if (event.keyCode == KeyCode::Unknown)
-        return DOOM_KEY_UNKNOWN;
+        return Doom::Key::Unknown;
 
     for (const auto& mapping: printableKeys)
         if (mapping.keyCode == event.keyCode)
@@ -112,47 +110,47 @@ inline Doom::Key toDoomKey(const Graphics::KeyEvent& event)
     switch (event.keyCode)
     {
         case KeyCode::Tab:
-            return DOOM_KEY_TAB;
+            return Doom::Key::Tab;
         case KeyCode::Return:
-            return DOOM_KEY_ENTER;
+            return Doom::Key::Enter;
         case KeyCode::Escape:
-            return DOOM_KEY_ESCAPE;
+            return Doom::Key::Escape;
         case KeyCode::Space:
-            return DOOM_KEY_SPACE;
+            return Doom::Key::Space;
         case KeyCode::Delete:
-            return DOOM_KEY_BACKSPACE;
+            return Doom::Key::Backspace;
         case KeyCode::LeftArrow:
-            return DOOM_KEY_LEFT_ARROW;
+            return Doom::Key::LeftArrow;
         case KeyCode::RightArrow:
-            return DOOM_KEY_RIGHT_ARROW;
+            return Doom::Key::RightArrow;
         case KeyCode::UpArrow:
-            return DOOM_KEY_UP_ARROW;
+            return Doom::Key::UpArrow;
         case KeyCode::DownArrow:
-            return DOOM_KEY_DOWN_ARROW;
+            return Doom::Key::DownArrow;
         case KeyCode::F1:
-            return DOOM_KEY_F1;
+            return Doom::Key::F1;
         case KeyCode::F2:
-            return DOOM_KEY_F2;
+            return Doom::Key::F2;
         case KeyCode::F3:
-            return DOOM_KEY_F3;
+            return Doom::Key::F3;
         case KeyCode::F4:
-            return DOOM_KEY_F4;
+            return Doom::Key::F4;
         case KeyCode::F5:
-            return DOOM_KEY_F5;
+            return Doom::Key::F5;
         case KeyCode::F6:
-            return DOOM_KEY_F6;
+            return Doom::Key::F6;
         case KeyCode::F7:
-            return DOOM_KEY_F7;
+            return Doom::Key::F7;
         case KeyCode::F8:
-            return DOOM_KEY_F8;
+            return Doom::Key::F8;
         case KeyCode::F9:
-            return DOOM_KEY_F9;
+            return Doom::Key::F9;
         case KeyCode::F10:
-            return DOOM_KEY_F10;
+            return Doom::Key::F10;
         case KeyCode::F11:
-            return DOOM_KEY_F11;
+            return Doom::Key::F11;
         case KeyCode::F12:
-            return DOOM_KEY_F12;
+            return Doom::Key::F12;
         default:
             break;
     }
@@ -174,7 +172,7 @@ inline Doom::Key toDoomKey(const Graphics::KeyEvent& event)
             return (Doom::Key) character;
     }
 
-    return DOOM_KEY_UNKNOWN;
+    return Doom::Key::Unknown;
 }
 
 inline Doom::MouseButton toDoomButton(Graphics::MouseButton button)
@@ -182,11 +180,11 @@ inline Doom::MouseButton toDoomButton(Graphics::MouseButton button)
     switch (button)
     {
         case Graphics::MouseButton::Right:
-            return DOOM_RIGHT_BUTTON;
+            return Doom::MouseButton::Right;
         case Graphics::MouseButton::Middle:
-            return DOOM_MIDDLE_BUTTON;
+            return Doom::MouseButton::Middle;
         default:
-            return DOOM_LEFT_BUTTON;
+            return Doom::MouseButton::Left;
     }
 }
 } // namespace PureDoom

@@ -546,9 +546,9 @@ struct View final : GPU::GPUView
     // reports them only as modifier state, never as key events (see the gap log).
     void syncModifierKeys(const Graphics::ModifierKeys& current)
     {
-        syncModifierKey(current.shift, modifiers.shift, DOOM_KEY_SHIFT);
-        syncModifierKey(current.control, modifiers.control, DOOM_KEY_CTRL);
-        syncModifierKey(current.alt, modifiers.alt, DOOM_KEY_ALT);
+        syncModifierKey(current.shift, modifiers.shift, Doom::Key::Shift);
+        syncModifierKey(current.control, modifiers.control, Doom::Key::Ctrl);
+        syncModifierKey(current.alt, modifiers.alt, Doom::Key::Alt);
         modifiers = current;
     }
 
@@ -569,13 +569,13 @@ struct View final : GPU::GPUView
             return;
         }
 
-        if (auto key = toDoomKey(event); key != DOOM_KEY_UNKNOWN)
+        if (auto key = toDoomKey(event); key != Doom::Key::Unknown)
             Doom::keyDown(key);
     }
 
     void keyUp(const Graphics::KeyEvent& event) override
     {
-        if (auto key = toDoomKey(event); key != DOOM_KEY_UNKNOWN)
+        if (auto key = toDoomKey(event); key != Doom::Key::Unknown)
             Doom::keyUp(key);
     }
 

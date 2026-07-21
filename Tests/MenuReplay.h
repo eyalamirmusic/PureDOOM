@@ -33,16 +33,15 @@ using MenuScript = std::vector<int>;
 
 inline MenuScript menuScript()
 {
-    using enum Doom::Key;
-
-    constexpr auto ESC = DOOM_KEY_ESCAPE;
-    constexpr auto ENT = DOOM_KEY_ENTER;
-    constexpr auto UP = DOOM_KEY_UP_ARROW;
-    constexpr auto DN = DOOM_KEY_DOWN_ARROW;
-    constexpr auto LF = DOOM_KEY_LEFT_ARROW;
-    constexpr auto RT = DOOM_KEY_RIGHT_ARROW;
-    constexpr auto BS = DOOM_KEY_BACKSPACE;
-    constexpr auto NO = DOOM_KEY_N; // answers a yes/no prompt with "no"
+    constexpr auto ESC = static_cast<int>(Doom::Key::Escape);
+    constexpr auto ENT = static_cast<int>(Doom::Key::Enter);
+    constexpr auto UP = static_cast<int>(Doom::Key::UpArrow);
+    constexpr auto DN = static_cast<int>(Doom::Key::DownArrow);
+    constexpr auto LF = static_cast<int>(Doom::Key::LeftArrow);
+    constexpr auto RT = static_cast<int>(Doom::Key::RightArrow);
+    constexpr auto BS = static_cast<int>(Doom::Key::Backspace);
+    constexpr auto NO =
+        static_cast<int>(Doom::Key::N); // answers a yes/no prompt with "no"
     constexpr auto WAIT = 0;
 
     auto s = MenuScript {};
@@ -97,12 +96,16 @@ inline MenuScript menuScript()
     add({ENT, WAIT, NO}); // quit prompt, decline
 
     // Title-screen F-keys, with the menu closed between them.
-    add({DOOM_KEY_F1, WAIT, ESC}); // help, then close
-    add({DOOM_KEY_F5}); // crosshair toggle
-    add({DOOM_KEY_F8}); // messages toggle
+    add({static_cast<int>(Doom::Key::F1), WAIT, ESC}); // help, then close
+    add({static_cast<int>(Doom::Key::F5)}); // crosshair toggle
+    add({static_cast<int>(Doom::Key::F8)}); // messages toggle
     // Gamma cycles 0..4 and wraps, so five presses paint every ramp and restore
     // the palette the frame is resolved through.
-    add({DOOM_KEY_F11, DOOM_KEY_F11, DOOM_KEY_F11, DOOM_KEY_F11, DOOM_KEY_F11});
+    add({static_cast<int>(Doom::Key::F11),
+         static_cast<int>(Doom::Key::F11),
+         static_cast<int>(Doom::Key::F11),
+         static_cast<int>(Doom::Key::F11),
+         static_cast<int>(Doom::Key::F11)});
 
     return s;
 }

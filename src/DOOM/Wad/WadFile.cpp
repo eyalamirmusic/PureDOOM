@@ -134,14 +134,14 @@ void WadFile::addFile(std::string_view path)
 
 void WadFile::addSingleLump(std::string_view path, void* handle)
 {
-    doom_seek(handle, 0, DOOM_SEEK_END);
+    doom_seek(handle, 0, Doom::SeekOrigin::End);
 
     auto lump = Lump {};
     lump.handle = reloadName.empty() ? handle : nullptr;
     lump.position = 0;
     lump.size = doom_tell(handle);
 
-    doom_seek(handle, 0, DOOM_SEEK_SET);
+    doom_seek(handle, 0, Doom::SeekOrigin::Set);
 
     // The lump is named after the file it came from. Lump::name is eight bytes,
     // zero-padded (value-initialised above), and NOT terminated when full.
@@ -165,7 +165,7 @@ void WadFile::addDirectory(std::string_view path, void* handle)
     auto lumpCount = littleEndian(header.numlumps);
     auto entries = Vector<FileLump>(lumpCount);
 
-    doom_seek(handle, littleEndian(header.infotableofs), DOOM_SEEK_SET);
+    doom_seek(handle, littleEndian(header.infotableofs), Doom::SeekOrigin::Set);
     doom_read(
         handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
 
@@ -237,7 +237,7 @@ void WadFile::read(int lump, void* destination) const
             fatalError("Error: W_ReadLump: couldn't open ", reloadName);
     }
 
-    doom_seek(handle, entry.position, DOOM_SEEK_SET);
+    doom_seek(handle, entry.position, Doom::SeekOrigin::Set);
     auto read = doom_read(handle, destination, entry.size);
 
     if (reopened)
@@ -309,7 +309,7 @@ void WadFile::reload()
     auto lumpCount = littleEndian(header.numlumps);
     auto entries = Vector<FileLump>(lumpCount);
 
-    doom_seek(handle, littleEndian(header.infotableofs), DOOM_SEEK_SET);
+    doom_seek(handle, littleEndian(header.infotableofs), Doom::SeekOrigin::Set);
     doom_read(
         handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
     doom_close(handle);

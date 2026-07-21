@@ -258,7 +258,7 @@ void keyUp(Key key)
 
 void buttonDown(MouseButton button)
 {
-    button_states[button] = 1;
+    button_states[toIndex(button)] = 1;
 
     Event event;
     event.type = EventType::Mouse;
@@ -270,7 +270,7 @@ void buttonDown(MouseButton button)
 
 void buttonUp(MouseButton button)
 {
-    button_states[button] = 0;
+    button_states[toIndex(button)] = 0;
 
     Event event;
     event.type = EventType::Mouse;

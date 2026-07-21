@@ -90,9 +90,9 @@ inline void runIntermissionWipeOut()
 // one whose ticcmd carries ButtonCode::Attack and fires checkForAccelerate.
 inline void pressFire()
 {
-    doomSimPostKeyDown(Doom::DOOM_KEY_CTRL);
+    doomSimPostKeyDown(static_cast<int>(Doom::Key::Ctrl));
     nano::check(doomSimStepTic() != 0, "the tic ran");
-    doomSimPostKeyUp(Doom::DOOM_KEY_CTRL);
+    doomSimPostKeyUp(static_cast<int>(Doom::Key::Ctrl));
     nano::check(doomSimStepTic() != 0, "the tic ran");
 }
 

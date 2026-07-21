@@ -306,9 +306,9 @@ int readFile(std::string_view name, Vector<byte>& buffer)
     {
         fatalError("Error: Couldn't read file ", name);
     }
-    doom_seek(handle, 0, DOOM_SEEK_END);
+    doom_seek(handle, 0, Doom::SeekOrigin::End);
     int length = doom_tell(handle);
-    doom_seek(handle, 0, DOOM_SEEK_SET);
+    doom_seek(handle, 0, Doom::SeekOrigin::Set);
 
     // resize zeroes where the old doom_malloc did not, which is unobservable: the
     // doom_read below fills all `length` bytes or the read is fatal.

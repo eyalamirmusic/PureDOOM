@@ -9,6 +9,8 @@
 
 #include "Host.h"
 
+#include "../doomtype.h" // toIndex
+
 #include <cstdio>
 #include <cstdlib>
 
@@ -88,8 +90,16 @@ Host::Host()
             std::fwrite(buffer, 1, count, static_cast<FILE*>(handle)));
     };
 
+    // SeekOrigin's values are passed straight to fseek, which vanilla relied on
+    // without saying so. Pin it: if a platform ever numbered SEEK_* differently,
+    // every WAD read would seek to the wrong place and nothing would say why.
+    static_assert(toIndex(SeekOrigin::Set) == SEEK_SET
+                      && toIndex(SeekOrigin::Current) == SEEK_CUR
+                      && toIndex(SeekOrigin::End) == SEEK_END,
+                  "Doom::SeekOrigin must match the C library's SEEK_* values");
+
     seek = [](void* handle, int offset, SeekOrigin origin)
-    { return std::fseek(static_cast<FILE*>(handle), offset, origin); };
+    { return std::fseek(static_cast<FILE*>(handle), offset, toIndex(origin)); };
 
     tell = [](void* handle)
     { return static_cast<int>(std::ftell(static_cast<FILE*>(handle))); };

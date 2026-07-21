@@ -743,9 +743,9 @@ void findResponseFile()
 
         print("Found response file ", responseFile, "!\n");
 
-        doom_seek(handle, 0, DOOM_SEEK_END);
+        doom_seek(handle, 0, Doom::SeekOrigin::End);
         auto size = doom_tell(handle);
-        doom_seek(handle, 0, DOOM_SEEK_SET);
+        doom_seek(handle, 0, Doom::SeekOrigin::Set);
 
         auto contents = std::string(static_cast<std::size_t>(size), '\0');
         doom_read(handle, contents.data(), size);

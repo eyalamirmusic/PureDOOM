@@ -10,11 +10,11 @@ int main(int argc, char** argv)
     if (!getEnv("DOOMWADDIR"))
         setEnv("DOOMWADDIR", PUREDOOM_ROOT_DIR);
 
-    Doom::setDefaultInt("key_up", Doom::DOOM_KEY_W);
-    Doom::setDefaultInt("key_down", Doom::DOOM_KEY_S);
-    Doom::setDefaultInt("key_strafeleft", Doom::DOOM_KEY_A);
-    Doom::setDefaultInt("key_straferight", Doom::DOOM_KEY_D);
-    Doom::setDefaultInt("key_use", Doom::DOOM_KEY_SPACE);
+    Doom::setDefaultInt("key_up", static_cast<int>(Doom::Key::W));
+    Doom::setDefaultInt("key_down", static_cast<int>(Doom::Key::S));
+    Doom::setDefaultInt("key_strafeleft", static_cast<int>(Doom::Key::A));
+    Doom::setDefaultInt("key_straferight", static_cast<int>(Doom::Key::D));
+    Doom::setDefaultInt("key_use", static_cast<int>(Doom::Key::Space));
     Doom::setDefaultInt("mouse_move", 0);
 
     Doom::initGame(argc, argv, Doom::DOOM_FLAG_MENU_DARKEN_BG);

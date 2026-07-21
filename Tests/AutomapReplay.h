@@ -49,22 +49,23 @@ inline AutomapScript automapScript()
 {
     using enum Doom::Key;
 
-    constexpr auto RIGHT = DOOM_KEY_RIGHT_ARROW; // AM_PANRIGHTKEY
-    constexpr auto LEFT = DOOM_KEY_LEFT_ARROW; // AM_PANLEFTKEY
-    constexpr auto UP = DOOM_KEY_UP_ARROW; // AM_PANUPKEY
-    constexpr auto DOWN = DOOM_KEY_DOWN_ARROW; // AM_PANDOWNKEY
-    constexpr auto ZOOMIN = DOOM_KEY_EQUALS; // AM_ZOOMINKEY '='
-    constexpr auto ZOOMOUT = DOOM_KEY_MINUS; // AM_ZOOMOUTKEY '-'
-    constexpr auto BIG = DOOM_KEY_0; // AM_GOBIGKEY '0'
-    constexpr auto FOLLOW = DOOM_KEY_F; // AM_FOLLOWKEY
-    constexpr auto GRID = DOOM_KEY_G; // AM_GRIDKEY
-    constexpr auto MARK = DOOM_KEY_M; // AM_MARKKEY
-    constexpr auto CLEAR = DOOM_KEY_C; // AM_CLEARMARKKEY
+    constexpr auto RIGHT = Doom::Key::RightArrow; // AM_PANRIGHTKEY
+    constexpr auto LEFT = Doom::Key::LeftArrow; // AM_PANLEFTKEY
+    constexpr auto UP = Doom::Key::UpArrow; // AM_PANUPKEY
+    constexpr auto DOWN = Doom::Key::DownArrow; // AM_PANDOWNKEY
+    constexpr auto ZOOMIN = Doom::Key::Equals; // AM_ZOOMINKEY '='
+    constexpr auto ZOOMOUT = Doom::Key::Minus; // AM_ZOOMOUTKEY '-'
+    constexpr auto BIG = Doom::Key::Digit0; // AM_GOBIGKEY '0'
+    constexpr auto FOLLOW = Doom::Key::F; // AM_FOLLOWKEY
+    constexpr auto GRID = Doom::Key::G; // AM_GRIDKEY
+    constexpr auto MARK = Doom::Key::M; // AM_MARKKEY
+    constexpr auto CLEAR = Doom::Key::C; // AM_CLEARMARKKEY
 
     auto s = AutomapScript {};
-    auto tap = [&](int key) { s.push_back({key, key}); };
-    auto down = [&](int key) { s.push_back({key, 0}); };
-    auto up = [&](int key) { s.push_back({0, key}); };
+    auto tap = [&](Doom::Key key)
+    { s.push_back({static_cast<int>(key), static_cast<int>(key)}); };
+    auto down = [&](Doom::Key key) { s.push_back({static_cast<int>(key), 0}); };
+    auto up = [&](Doom::Key key) { s.push_back({0, static_cast<int>(key)}); };
     auto wait = [&](int tics)
     {
         for (auto i = 0; i < tics; ++i)
@@ -181,8 +182,8 @@ inline Hashes runAutomapScript()
     // rather than assuming a keypress landed - Doom::gameResponder only reaches
     // Doom::automapResponder while gamestate is GS_LEVEL (Game.cpp,
     // gameResponder), so this doubles as proof the level really is up.
-    doomSimPostKeyDown(Doom::DOOM_KEY_TAB);
-    doomSimPostKeyUp(Doom::DOOM_KEY_TAB);
+    doomSimPostKeyDown(static_cast<int>(Doom::Key::Tab));
+    doomSimPostKeyUp(static_cast<int>(Doom::Key::Tab));
     nano::check(doomSimStepTic() != 0, "the tic ran");
     frames.push_back(doomSimFrameHash());
     nano::check(doomSimAutomapActive() != 0, "AM_STARTKEY opened the automap");
@@ -201,8 +202,8 @@ inline Hashes runAutomapScript()
 
     // Close the map with AM_ENDKEY (the same physical key as AM_STARTKEY) and
     // check it actually closed.
-    doomSimPostKeyDown(Doom::DOOM_KEY_TAB);
-    doomSimPostKeyUp(Doom::DOOM_KEY_TAB);
+    doomSimPostKeyDown(static_cast<int>(Doom::Key::Tab));
+    doomSimPostKeyUp(static_cast<int>(Doom::Key::Tab));
     nano::check(doomSimStepTic() != 0, "the tic ran");
     frames.push_back(doomSimFrameHash());
     nano::check(!doomSimAutomapActive(), "AM_ENDKEY closed the automap");
