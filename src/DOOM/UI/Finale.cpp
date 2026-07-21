@@ -132,7 +132,7 @@ Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
 
 void startCast();
 void castTicker();
-bool castResponder(Event* ev);
+bool castResponder(Event& ev);
 void castDrawer();
 
 //
@@ -235,7 +235,7 @@ void startFinale()
     fin.finalecount = 0;
 }
 
-bool finaleResponder(Event* event)
+bool finaleResponder(Event& event)
 {
     if (finaleState().finalestage == 2)
         return castResponder(event);
@@ -529,11 +529,11 @@ void castTicker()
 //
 // castResponder
 //
-bool castResponder(Event* ev)
+bool castResponder(Event& ev)
 {
     auto& fin = finaleState();
 
-    if (ev->type != ev_keydown)
+    if (ev.type != ev_keydown)
         return false;
 
     if (fin.castdeath)

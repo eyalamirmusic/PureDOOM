@@ -9,7 +9,7 @@ namespace Doom
 // DOOM startup + the main game loop; d_main.cpp keeps the vanilla D_ names as
 // shims. The core state d_main owns is defined at file scope in DoomMain.cpp
 // (above its namespace).
-void postEvent(Event* ev);
+void postEvent(Event& ev);
 void processEvents();
 void displayFrame();
 void updateWipe();

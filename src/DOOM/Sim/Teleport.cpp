@@ -15,12 +15,12 @@
 namespace Doom
 {
 
-int teleport(Line* line, int side, Mobj* thing)
+int teleport(Line& line, int side, Mobj& thing)
 {
     auto& thinkers = thinkerList();
 
     // don't teleport missiles
-    if (thing->flags & MF_MISSILE)
+    if (thing.flags & MF_MISSILE)
         return 0;
 
     // Don't teleport if hit back of line,
@@ -28,7 +28,7 @@ int teleport(Line* line, int side, Mobj* thing)
     if (side == 1)
         return 0;
 
-    int tag = line->tag;
+    int tag = line.tag;
     for (int i = 0; i < numsectors; i++)
     {
         if (sectors[i].tag == tag)
@@ -52,35 +52,35 @@ int teleport(Line* line, int side, Mobj* thing)
                 if (sector - sectors != i)
                     continue;
 
-                fixed_t oldx = thing->x;
-                fixed_t oldy = thing->y;
-                fixed_t oldz = thing->z;
+                fixed_t oldx = thing.x;
+                fixed_t oldy = thing.y;
+                fixed_t oldz = thing.z;
 
                 if (!teleportMove(thing, m->x, m->y))
                     return 0;
 
-                thing->z = thing->floorz; //fixme: not needed?
-                if (thing->player)
-                    thing->player->viewz = thing->z + thing->player->viewheight;
+                thing.z = thing.floorz; //fixme: not needed?
+                if (thing.player)
+                    thing.player->viewz = thing.z + thing.player->viewheight;
 
                 // spawn teleport fog at source and destination
                 Mobj* fog = spawnMobj(oldx, oldy, oldz, MT_TFOG);
                 startSound(fog, sfx_telept);
                 const auto anFine = m->angle.fineIndex();
                 fog = spawnMobj(m->x + 20 * finecosine[anFine],
-                                  m->y + 20 * finesine[anFine],
-                                  thing->z,
-                                  MT_TFOG);
+                                m->y + 20 * finesine[anFine],
+                                thing.z,
+                                MT_TFOG);
 
                 // emit sound, where?
                 startSound(fog, sfx_telept);
 
                 // don't move for a bit
-                if (thing->player)
-                    thing->reactiontime = 18;
+                if (thing.player)
+                    thing.reactiontime = 18;
 
-                thing->angle = m->angle;
-                thing->momx = thing->momy = thing->momz = fixed_t {};
+                thing.angle = m->angle;
+                thing.momx = thing.momy = thing.momz = fixed_t {};
                 return 1;
             }
         }

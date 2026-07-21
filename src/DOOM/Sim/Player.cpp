@@ -153,7 +153,7 @@ void movePlayer(Player& player)
 
     if ((cmd->forwardmove || cmd->sidemove) && player.mo->state == &states[S_PLAY])
     {
-        setMobjState(player.mo, S_PLAY_RUN1);
+        setMobjState(*player.mo, S_PLAY_RUN1);
     }
 }
 
@@ -243,7 +243,7 @@ void playerThink(Player& player)
     calcHeight(player);
 
     if (player.mo->subsector->sector->special)
-        playerInSpecialSector(&player);
+        playerInSpecialSector(player);
 
     // Check for weapon change.
 
@@ -291,7 +291,7 @@ void playerThink(Player& player)
     {
         if (!player.usedown)
         {
-            useLines(&player);
+            useLines(player);
             player.usedown = true;
         }
     }

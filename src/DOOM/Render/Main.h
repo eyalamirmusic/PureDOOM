@@ -21,8 +21,8 @@ constexpr int DISTMAP = 2;
 
 // Renderer main/setup; r_main.cpp keeps the vanilla R_ names as shims.
 void addPointToBox(int x, int y, fixed_t* box);
-int pointOnSide(fixed_t x, fixed_t y, Node* node);
-int pointOnSegSide(fixed_t x, fixed_t y, Seg* line);
+int pointOnSide(fixed_t x, fixed_t y, Node& node);
+int pointOnSegSide(fixed_t x, fixed_t y, Seg& line);
 angle_t pointToAngle(fixed_t x, fixed_t y);
 angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
 fixed_t pointToDist(fixed_t x, fixed_t y);

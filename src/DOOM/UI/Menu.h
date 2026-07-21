@@ -17,7 +17,7 @@ namespace Doom
 // detailLevel / showMessages / mouseSensitivity, inhelpscreens, messageToPrint)
 // stay at file scope for them. The M_ names are kept inside the namespace so the
 // transcription stays diffable against the 1993 source.
-bool menuResponder(Event* ev);
+bool menuResponder(Event& ev);
 void menuTicker();
 void drawMenu();
 void initMenu();

@@ -34,8 +34,8 @@ MoveResult movePlane(Sector& sector,
                      int floorOrCeiling,
                      int direction);
 void moveFloor(FloorMove& floor);
-int doFloor(Line* line, FloorType floortype);
-int buildStairs(Line* line, StairType type);
+int doFloor(Line& line, FloorType floortype);
+int buildStairs(Line& line, StairType type);
 
 MoveResult movePlane(Sector& sector,
                      fixed_t speed,
@@ -59,11 +59,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight = dest;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            changeSector(&sector, crush);
+                            changeSector(sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -72,11 +72,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight -= speed;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            changeSector(&sector, crush);
+                            changeSector(sector, crush);
                             return crushed;
                         }
                     }
@@ -88,11 +88,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight = dest;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            changeSector(&sector, crush);
+                            changeSector(sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -102,13 +102,13 @@ MoveResult movePlane(Sector& sector,
                         // COULD GET CRUSHED
                         lastpos = sector.floorheight;
                         sector.floorheight += speed;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
                         if (flag == true)
                         {
                             if (crush == true)
                                 return crushed;
                             sector.floorheight = lastpos;
-                            changeSector(&sector, crush);
+                            changeSector(sector, crush);
                             return crushed;
                         }
                     }
@@ -126,12 +126,12 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight = dest;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
 
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            changeSector(&sector, crush);
+                            changeSector(sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -141,14 +141,14 @@ MoveResult movePlane(Sector& sector,
                         // COULD GET CRUSHED
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight -= speed;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
 
                         if (flag == true)
                         {
                             if (crush == true)
                                 return crushed;
                             sector.ceilingheight = lastpos;
-                            changeSector(&sector, crush);
+                            changeSector(sector, crush);
                             return crushed;
                         }
                     }
@@ -160,11 +160,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight = dest;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            changeSector(&sector, crush);
+                            changeSector(sector, crush);
                             //return crushed;
                         }
                         return pastdest;
@@ -173,7 +173,7 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight += speed;
-                        flag = changeSector(&sector, crush);
+                        flag = changeSector(sector, crush);
                         // UNUSED
 #if 0
                         if (flag == true)
@@ -205,8 +205,7 @@ void moveFloor(FloorMove& floor)
                                floor.direction);
 
     if (!(levelStats().leveltime & 7))
-        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
-                         sfx_stnmov);
+        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), sfx_stnmov);
 
     if (res == pastdest)
     {
@@ -234,17 +233,16 @@ void moveFloor(FloorMove& floor)
                     break;
             }
         }
-        removeThinker(&floor);
+        removeThinker(floor);
 
-        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
-                         sfx_pstop);
+        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), sfx_pstop);
     }
 }
 
 //
 // HANDLE FLOOR TYPES
 //
-int doFloor(Line* line, FloorType floortype)
+int doFloor(Line& line, FloorType floortype)
 {
     int secnum = -1;
     int rtn = 0;
@@ -259,7 +257,7 @@ int doFloor(Line* line, FloorType floortype)
         // new floor thinker
         rtn = 1;
         FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-        addThinker(floor);
+        addThinker(*floor);
         sec->specialdata = floor;
         floor->type = floortype;
         floor->crush = false;
@@ -270,21 +268,21 @@ int doFloor(Line* line, FloorType floortype)
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findHighestFloorSurrounding(sec);
+                floor->floordestheight = findHighestFloorSurrounding(*sec);
                 break;
 
             case lowerFloorToLowest:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findLowestFloorSurrounding(sec);
+                floor->floordestheight = findLowestFloorSurrounding(*sec);
                 break;
 
             case turboLower:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
-                floor->floordestheight = findHighestFloorSurrounding(sec);
+                floor->floordestheight = findHighestFloorSurrounding(*sec);
                 if (floor->floordestheight != sec->floorheight)
                     floor->floordestheight += 8 * FRACUNIT;
                 break;
@@ -296,7 +294,7 @@ int doFloor(Line* line, FloorType floortype)
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findLowestCeilingSurrounding(sec);
+                floor->floordestheight = findLowestCeilingSurrounding(*sec);
                 if (floor->floordestheight > sec->ceilingheight)
                     floor->floordestheight = sec->ceilingheight;
                 floor->floordestheight -=
@@ -308,7 +306,7 @@ int doFloor(Line* line, FloorType floortype)
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
                 floor->floordestheight =
-                    findNextHighestFloor(sec, sec->floorheight);
+                    findNextHighestFloor(*sec, sec->floorheight);
                 break;
 
             case raiseFloorToNearest:
@@ -316,7 +314,7 @@ int doFloor(Line* line, FloorType floortype)
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight =
-                    findNextHighestFloor(sec, sec->floorheight);
+                    findNextHighestFloor(*sec, sec->floorheight);
                 break;
 
             case raiseFloor24:
@@ -337,8 +335,8 @@ int doFloor(Line* line, FloorType floortype)
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight = floor->sector->floorheight + 24 * FRACUNIT;
-                sec->floorpic = line->frontsector->floorpic;
-                sec->special = line->frontsector->special;
+                sec->floorpic = line.frontsector->floorpic;
+                sec->special = line.frontsector->special;
                 break;
 
             case raiseToTexture:
@@ -370,7 +368,7 @@ int doFloor(Line* line, FloorType floortype)
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findLowestFloorSurrounding(sec);
+                floor->floordestheight = findLowestFloorSurrounding(*sec);
                 floor->texture = sec->floorpic;
 
                 for (int i = 0; i < sec->linecount; i++)
@@ -412,7 +410,7 @@ int doFloor(Line* line, FloorType floortype)
 //
 // BUILD A STAIRCASE!
 //
-int buildStairs(Line* line, StairType type)
+int buildStairs(Line& line, StairType type)
 {
     int ok;
 
@@ -432,7 +430,7 @@ int buildStairs(Line* line, StairType type)
         // new floor thinker
         rtn = 1;
         FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-        addThinker(floor);
+        addThinker(*floor);
         sec->specialdata = floor;
         floor->direction = 1;
         floor->sector = sec;
@@ -485,7 +483,7 @@ int buildStairs(Line* line, StairType type)
                 secnum = newsecnum;
                 floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
 
-                addThinker(floor);
+                addThinker(*floor);
 
                 sec->specialdata = floor;
                 floor->direction = 1;

@@ -322,7 +322,7 @@ void unArchiveThinkers()
         Thinker* next = currentthinker->next;
 
         if (currentthinker->kind() == ThinkerKind::Mobj)
-            removeMobj(reinterpret_cast<Mobj*>(currentthinker));
+            removeMobj(*reinterpret_cast<Mobj*>(currentthinker));
         else
             levelFree(currentthinker);
 
@@ -354,7 +354,7 @@ void unArchiveThinkers()
                 mobj->info = &mobjinfo[mobj->type];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;
-                addThinker(mobj);
+                addThinker(*mobj);
                 break;
 
             default:
@@ -503,8 +503,8 @@ void unArchiveSpecials()
                     &sectors[reinterpret_cast<long long>(ceiling->sector)];
                 ceiling->sector->specialdata = ceiling;
 
-                addThinker(ceiling);
-                addActiveCeiling(ceiling);
+                addThinker(*ceiling);
+                addActiveCeiling(*ceiling);
                 break;
 
             case tc_door:
@@ -512,7 +512,7 @@ void unArchiveSpecials()
                 door = unarchiveThinker<Door>();
                 door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
-                addThinker(door);
+                addThinker(*door);
                 break;
 
             case tc_floor:
@@ -520,7 +520,7 @@ void unArchiveSpecials()
                 floor = unarchiveThinker<FloorMove>();
                 floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
-                addThinker(floor);
+                addThinker(*floor);
                 break;
 
             case tc_plat:
@@ -529,15 +529,15 @@ void unArchiveSpecials()
                 plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
 
-                addThinker(plat);
-                addActivePlat(plat);
+                addThinker(*plat);
+                addActivePlat(*plat);
                 break;
 
             case tc_flash:
                 padSaveCursor(save.cursor);
                 flash = unarchiveThinker<LightFlash>();
                 flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
-                addThinker(flash);
+                addThinker(*flash);
                 break;
 
             case tc_strobe:
@@ -545,14 +545,14 @@ void unArchiveSpecials()
                 strobe = unarchiveThinker<Strobe>();
                 strobe->sector =
                     &sectors[reinterpret_cast<long long>(strobe->sector)];
-                addThinker(strobe);
+                addThinker(*strobe);
                 break;
 
             case tc_glow:
                 padSaveCursor(save.cursor);
                 glow = unarchiveThinker<Glow>();
                 glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];
-                addThinker(glow);
+                addThinker(*glow);
                 break;
 
             default:

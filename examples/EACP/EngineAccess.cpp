@@ -1862,8 +1862,8 @@ static void eacpAutomapLineCharacter(EacpAutomapEmitter* em,
 
         if (angle)
         {
-            Doom::rotateAutomapPoint(&l.a.x, &l.a.y, angle);
-            Doom::rotateAutomapPoint(&l.b.x, &l.b.y, angle);
+            Doom::rotateAutomapPoint(l.a.x, l.a.y, angle);
+            Doom::rotateAutomapPoint(l.b.x, l.b.y, angle);
         }
 
         eacpAutomapLine(em, l.a.x + x, l.a.y + y, l.b.x + x, l.b.y + y, color);

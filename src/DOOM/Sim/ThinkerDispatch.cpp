@@ -18,7 +18,7 @@
 
 void Doom::Mobj::tick()
 {
-    mobjThinker(this);
+    mobjThinker(*this);
 }
 void Doom::Door::tick()
 {

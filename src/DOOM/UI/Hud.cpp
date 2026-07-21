@@ -486,7 +486,7 @@ char dequeueChatChar()
     return c;
 }
 
-bool hudResponder(Event* ev)
+bool hudResponder(Event& ev)
 {
     auto& hud = hudFlags();
     auto& chat = hudChat();
@@ -503,29 +503,29 @@ bool hudResponder(Event* ev)
     const auto numplayers = static_cast<int>(std::count(
         players_.playeringame.begin(), players_.playeringame.end(), true));
 
-    if (ev->data1 == KEY_RSHIFT)
+    if (ev.data1 == KEY_RSHIFT)
     {
-        chat.shiftdown = ev->type == ev_keydown;
+        chat.shiftdown = ev.type == ev_keydown;
         return false;
     }
-    else if (ev->data1 == KEY_RALT || ev->data1 == KEY_LALT)
+    else if (ev.data1 == KEY_RALT || ev.data1 == KEY_LALT)
     {
-        chat.altdown = ev->type == ev_keydown;
+        chat.altdown = ev.type == ev_keydown;
         return false;
     }
 
-    if (ev->type != ev_keydown)
+    if (ev.type != ev_keydown)
         return false;
 
     if (!hud.chat_on)
     {
-        if (ev->data1 == HU_MSGREFRESH)
+        if (ev.data1 == HU_MSGREFRESH)
         {
             msg.message_on = true;
             msg.message_counter = HU_MSGTIMEOUT;
             eatkey = true;
         }
-        else if (gameSession().netgame && ev->data1 == HU_INPUTTOGGLE)
+        else if (gameSession().netgame && ev.data1 == HU_INPUTTOGGLE)
         {
             eatkey = hud.chat_on = true;
             resetIText(chat.w_chat);
@@ -535,7 +535,7 @@ bool hudResponder(Event* ev)
         {
             for (int i = 0; i < MAXPLAYERS; i++)
             {
-                if (ev->data1 == destination_keys[i])
+                if (ev.data1 == destination_keys[i])
                 {
                     if (players_.playeringame[i] && i != players_.consoleplayer)
                     {
@@ -564,7 +564,7 @@ bool hudResponder(Event* ev)
     }
     else
     {
-        unsigned char c = ev->data1;
+        unsigned char c = ev.data1;
         // send a macro
         if (chat.altdown)
         {

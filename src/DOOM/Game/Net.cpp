@@ -72,7 +72,7 @@
 // references stay until their readers go through netState() too (REFACTOR.md, Step 5).
 
 void Doom::processEvents();
-void Doom::buildTiccmd(Doom::Ticcmd* cmd);
+void Doom::buildTiccmd(Doom::Ticcmd& cmd);
 void Doom::doAdvanceDemo();
 
 namespace Doom
@@ -487,7 +487,7 @@ void netUpdate()
             break; // can't hold any more
 
         //doom_print ("mk:%i ",maketic);
-        Doom::buildTiccmd(&net.localcmds[net.maketic % BACKUPTICS]);
+        Doom::buildTiccmd(net.localcmds[net.maketic % BACKUPTICS]);
         net.maketic++;
     }
 

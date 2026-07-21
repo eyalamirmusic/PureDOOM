@@ -27,7 +27,7 @@ void fireCGun(Player& player, PspDef& psp);
 void light0(Player& player, PspDef& psp);
 void light1(Player& player, PspDef& psp);
 void light2(Player& player, PspDef& psp);
-void bfgSpray(Mobj* mo);
+void bfgSpray(Mobj& mo);
 void bfgSound(Player& player, PspDef& psp);
 void setupPsprites(Player& player);
 void movePsprites(Player& player);

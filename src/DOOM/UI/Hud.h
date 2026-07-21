@@ -24,7 +24,7 @@ namespace Doom
 // HU_ names as shims.
 void initHud();
 void startHud();
-bool hudResponder(Event* ev);
+bool hudResponder(Event& ev);
 void hudTicker();
 void drawHud();
 char dequeueChatChar();

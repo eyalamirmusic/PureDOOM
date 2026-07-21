@@ -570,6 +570,67 @@ apparatus:
   as a `std::span` the same read becomes an **MSVC debug-STL assertion**, which is
   the Debug-only, one-toolchain, modal-dialog failure mode documented under
   **Windows** — a worse outcome than the silent read, arrived at by accident.
+
+  **A pointer parameter that can never be null is a reference — 109 functions
+  are, now.** The whole specials family (`doDoor`, `doPlat`, `doCeiling`,
+  `doFloor`, `buildStairs`, `teleport`, `changeSwitchTexture`, the seven
+  `Sim/Lights` spawners, the six `find*Surrounding` queries, `crossSpecialLine`,
+  `shootSpecialLine`, `useSpecialLine`, `getNextSector`, …), the playsim core
+  (`tryMove`, `checkPosition`, `teleportMove`, `setMobjState`, `removeMobj`,
+  `addThinker`/`removeThinker`, `touchSpecialThing`, `changeSector`, `slideMove`,
+  `lineAttack`, `useLines`, the `give*` family), the seven `Event*` responders,
+  the `Ticcmd` path, and the automap's own line helpers. **The nullability was
+  established per call site, not assumed** — three surveys over every call site in
+  `src`, `Tests` and `examples`, plus a check for a null test inside each body,
+  which is the strongest evidence a parameter *is* nullable.
+
+  **What deliberately stays a pointer, because null is a real value it carries:**
+
+  | Stays `T*` | Why |
+  |---|---|
+  | `damageMobj`'s `inflictor` and `source` | `MapAction.cpp`'s crush and `Specials.cpp`'s slime pass a literal null; the body tests both |
+  | `radiusAttack`'s `source` | `explode()` passes `thingy.target`, unguarded, and the path is *designed* to accept null |
+  | `spawnMissile`'s `dest` | the `fatAttack1/2/3` family passes `actor.target` with no guard, unlike every sibling attack |
+  | `checkSight`'s `t1`, `aimLineAttack`'s `t1` | `fire()` and `bfgSpray` pass `.target` unguarded |
+  | `killMobj`'s `source` | inherits `damageMobj`'s |
+  | `Render/Planes`' `checkPlane` | `BSP.cpp` nulls `floorplane`/`ceilingplane` outright; the invariant that saves it is a three-fact argument across two files, not an address-of |
+  | `drawMaskedColumn`, `drawColumnInCache` | the parameter is a loop *cursor*, reassigned in the body to walk posts |
+  | `startIntermission` | it **stores** the pointer (`im.wbs = wbstartstruct`) well past the call |
+  | the `drawPatch` family | ~45 call sites pass `cacheLumpName(...)` straight in; a reference makes every one `*static_cast<Patch*>(...)`. The real fix is a `Patch&`-returning lookup, not this |
+  | `Actions.cpp`'s 75 state actions, `callWeaponAction` | address-pinned by `states[]`; they deref into the reference-taking implementations |
+
+  `SaveGame.cpp` nulls **every** mobj's `target` on load, which is what turns those
+  unguarded `.target` reads from theoretical into reachable. That is the single
+  fact holding up most of the "stays a pointer" column.
+
+  Three things to know before converting the next one:
+
+  - **Capturing a now-reference parameter *by value* in a lambda copies the whole
+    object, and the goldens will not see it.** `Sim/Switches.cpp`'s `startButton`
+    had `[line](const Button& button) { return button.line == &line; }` — with
+    `line` a `Line&`, `&line` is the address of the closure's *copy*, so the
+    "this line already has an active button" test could never match. It compiled,
+    and **all 98 tests passed with it in**, because no demo presses one switch
+    twice inside its timer. The compiler caught it one call over only by accident,
+    on a `const` mismatch. After any pointer→reference sweep, grep every lambda
+    capture list in the touched files for a by-value capture of a converted
+    parameter.
+  - **`sizeof` is the one place this does *not* bite.** `sizeof(*ptr)` becomes
+    `sizeof(ref)`, and a reference's `sizeof` is the referent's — same value.
+    (Contrast the `EA::Array` note above, where `sizeof` silently changes.) What
+    *would* bite is code that sized the pointer itself; none did.
+  - **Rewriting `param->` to `param.` in a body over-reaches on `other->param->`**
+    — the word boundary matches the inner `param->` of `player->mo->state` when
+    the parameter is `mo`. Harmless in practice: a pointer member reached with `.`
+    is always a compile error, so the compiler catches every instance. Do not take
+    that as licence to skip reading the diff, but do not fear the sweep either.
+
+  Two vanilla latent defects the surveys turned up, **left as they are** for the
+  same reason as the MUS-delay and `drawAnimatedBack` precedents: `Enemy.cpp`'s
+  `fatAttack1/2/3` pass `actor.target` to `spawnMissile` with no null guard where
+  every sibling attack has one, and `Specials.cpp`'s `doDonut` dereferences
+  `getNextSector`'s result unchecked (every other call site guards it), so a
+  malformed donut sector faults.
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
   eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the plain-data  snapshot interface to engine internals (camera, wall geometry, view state).

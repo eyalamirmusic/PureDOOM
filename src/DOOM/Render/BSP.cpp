@@ -57,7 +57,7 @@ void clearDrawSegs();
 void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
 void clearClipSegs();
-void addLine(Seg* line);
+void addLine(Seg& line);
 bool checkBBox(fixed_t* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);
@@ -226,7 +226,7 @@ void clearClipSegs()
 // Clips the given segment
 // and adds any visible pieces to the line list.
 //
-void addLine(Seg* line)
+void addLine(Seg& line)
 {
     int x1;
     int x2;
@@ -239,11 +239,11 @@ void addLine(Seg* line)
     auto& pt = viewPoint();
     auto& proj = viewProjection();
 
-    bsp.curline = line;
+    bsp.curline = &line;
 
     // OPTIMIZE: quickly reject orthogonal back sides.
-    angle1 = Doom::pointToAngle(line->v1->x, line->v1->y);
-    angle2 = Doom::pointToAngle(line->v2->x, line->v2->y);
+    angle1 = Doom::pointToAngle(line.v1->x, line.v1->y);
+    angle2 = Doom::pointToAngle(line.v2->x, line.v2->y);
 
     // Clip to view edges.
     // OPTIMIZE: make constant out of 2*clipangle (FIELDOFVIEW).
@@ -298,7 +298,7 @@ void addLine(Seg* line)
     if (x1 == x2)
         return;
 
-    bsp.backsector = line->backsector;
+    bsp.backsector = line.backsector;
 
     // Single sided line?
     if (!bsp.backsector)
@@ -509,11 +509,11 @@ void subsector(int num)
     else
         scratch.ceilingplane = nullptr;
 
-    Doom::addSprites(bsp.frontsector);
+    Doom::addSprites(*bsp.frontsector);
 
     while (count--)
     {
-        addLine(line);
+        addLine(*line);
         line++;
     }
 }
@@ -542,7 +542,7 @@ void renderBSPNode(int bspnum)
 
     // Decide which side the view point is on.
     auto& pt = viewPoint();
-    side = Doom::pointOnSide(pt.viewx, pt.viewy, bsp);
+    side = Doom::pointOnSide(pt.viewx, pt.viewy, *bsp);
 
     // Recursively divide front space.
     renderBSPNode(bsp->children[side]);

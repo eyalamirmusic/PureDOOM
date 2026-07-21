@@ -57,8 +57,8 @@ void (*transcolfunc)();
 
 // Forward declarations so call order needs no rearranging.
 void addPointToBox(int x, int y, fixed_t* box);
-int pointOnSide(fixed_t x, fixed_t y, Node* node);
-int pointOnSegSide(fixed_t x, fixed_t y, Seg* line);
+int pointOnSide(fixed_t x, fixed_t y, Node& node);
+int pointOnSegSide(fixed_t x, fixed_t y, Seg& line);
 angle_t pointToAngle(fixed_t x, fixed_t y);
 angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
 fixed_t pointToDist(fixed_t x, fixed_t y);
@@ -95,35 +95,35 @@ void addPointToBox(int x, int y, fixed_t* box)
 //  check point against partition plane.
 // Returns side 0 (front) or 1 (back).
 //
-int pointOnSide(fixed_t x, fixed_t y, Node* node)
+int pointOnSide(fixed_t x, fixed_t y, Node& node)
 {
     fixed_t dx;
     fixed_t dy;
     fixed_t left;
     fixed_t right;
 
-    if (!node->dx)
+    if (!node.dx)
     {
-        if (x <= node->x)
-            return node->dy.isPositive();
+        if (x <= node.x)
+            return node.dy.isPositive();
 
-        return node->dy.isNegative();
+        return node.dy.isNegative();
     }
-    if (!node->dy)
+    if (!node.dy)
     {
-        if (y <= node->y)
-            return node->dx.isNegative();
+        if (y <= node.y)
+            return node.dx.isNegative();
 
-        return node->dx.isPositive();
+        return node.dx.isPositive();
     }
 
-    dx = (x - node->x);
-    dy = (y - node->y);
+    dx = (x - node.x);
+    dy = (y - node.y);
 
     // Try to quickly decide by looking at sign bits.
-    if ((node->dy.raw ^ node->dx.raw ^ dx.raw ^ dy.raw) & 0x80000000)
+    if ((node.dy.raw ^ node.dx.raw ^ dx.raw ^ dy.raw) & 0x80000000)
     {
-        if ((node->dy.raw ^ dx.raw) & 0x80000000)
+        if ((node.dy.raw ^ dx.raw) & 0x80000000)
         {
             // (left is negative)
             return 1;
@@ -131,8 +131,8 @@ int pointOnSide(fixed_t x, fixed_t y, Node* node)
         return 0;
     }
 
-    left = FixedMul(node->dy >> fracBits, dx);
-    right = FixedMul(dy, node->dx >> fracBits);
+    left = FixedMul(node.dy >> fracBits, dx);
+    right = FixedMul(dy, node.dx >> fracBits);
 
     if (right < left)
     {
@@ -143,7 +143,7 @@ int pointOnSide(fixed_t x, fixed_t y, Node* node)
     return 1;
 }
 
-int pointOnSegSide(fixed_t x, fixed_t y, Seg* line)
+int pointOnSegSide(fixed_t x, fixed_t y, Seg& line)
 {
     fixed_t lx;
     fixed_t ly;
@@ -154,11 +154,11 @@ int pointOnSegSide(fixed_t x, fixed_t y, Seg* line)
     fixed_t left;
     fixed_t right;
 
-    lx = line->v1->x;
-    ly = line->v1->y;
+    lx = line.v1->x;
+    ly = line.v1->y;
 
-    ldx = line->v2->x - lx;
-    ldy = line->v2->y - ly;
+    ldx = line.v2->x - lx;
+    ldy = line.v2->y - ly;
 
     if (!ldx)
     {
@@ -664,7 +664,7 @@ SubSector* pointInSubsector(fixed_t x, fixed_t y)
     while (!(nodenum & NF_SUBSECTOR))
     {
         node = &nodes[nodenum];
-        side = pointOnSide(x, y, node);
+        side = pointOnSide(x, y, *node);
         nodenum = node->children[side];
     }
 

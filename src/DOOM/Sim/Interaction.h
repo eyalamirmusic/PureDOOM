@@ -12,12 +12,12 @@ namespace Doom
 
 // Player `toucher` picks up `special` (an MF_SPECIAL thing), applying its effect and
 // removing it. No-op if out of reach or already at the relevant maximum.
-void touchSpecialThing(Mobj* special, Mobj* toucher);
+void touchSpecialThing(Mobj& special, Mobj& toucher);
 
 // Apply `damage` to target from inflictor/source (either may be null for
 // environmental damage), including thrust, armor, pain and death.
-void damageMobj(Mobj* target, Mobj* inflictor, Mobj* source, int damage);
+void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage);
 
 // Grant a powerup to the player; returns false if it had no effect.
-bool givePower(Player* player, int power);
+bool givePower(Player& player, int power);
 } // namespace Doom

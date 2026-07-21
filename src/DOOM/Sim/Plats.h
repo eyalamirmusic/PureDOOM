@@ -9,9 +9,9 @@ namespace Doom
 {
 // Platform thinker and handlers; p_plats.cpp keeps the vanilla names as shims.
 void platRaise(Plat& plat);
-int doPlat(Line* line, PlatType type, int amount);
+int doPlat(Line& line, PlatType type, int amount);
 void activateInStasis(int tag);
-void stopPlat(Line* line);
-void addActivePlat(Plat* plat);
-void removeActivePlat(Plat* plat);
+void stopPlat(Line& line);
+void addActivePlat(Plat& plat);
+void removeActivePlat(Plat& plat);
 } // namespace Doom

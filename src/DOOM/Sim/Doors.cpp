@@ -26,10 +26,10 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void verticalDoor(Door& door);
-int doLockedDoor(Line* line, DoorType type, Mobj* thing);
-int doDoor(Line* line, DoorType type);
-void verticalDoor(Line* line, Mobj* thing);
-void spawnDoorCloseIn30(Sector* sec);
+int doLockedDoor(Line& line, DoorType type, Mobj& thing);
+int doDoor(Line& line, DoorType type);
+void verticalDoor(Line& line, Mobj& thing);
+void spawnDoorCloseIn30(Sector& sec);
 void spawnDoorRaiseIn5Mins(Sector* sec, int secnum);
 
 void verticalDoor(Door& door)
@@ -46,23 +46,20 @@ void verticalDoor(Door& door)
                 {
                     case blazeRaise:
                         door.direction = -1; // time to go back down
-                        startSound(
-                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                            sfx_bdcls);
+                        startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
+                                   sfx_bdcls);
                         break;
 
                     case door_normal:
                         door.direction = -1; // time to go back down
-                        startSound(
-                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                            sfx_dorcls);
+                        startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
+                                   sfx_dorcls);
                         break;
 
                     case close30ThenOpen:
                         door.direction = 1;
-                        startSound(
-                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                            sfx_doropn);
+                        startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
+                                   sfx_doropn);
                         break;
 
                     default:
@@ -80,9 +77,8 @@ void verticalDoor(Door& door)
                     case raiseIn5Mins:
                         door.direction = 1;
                         door.type = door_normal;
-                        startSound(
-                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                            sfx_doropn);
+                        startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
+                                   sfx_doropn);
                         break;
 
                     default:
@@ -94,11 +90,11 @@ void verticalDoor(Door& door)
         case -1:
             // DOWN
             res = movePlane(*door.sector,
-                              door.speed,
-                              door.sector->floorheight,
-                              false,
-                              1,
-                              door.direction);
+                            door.speed,
+                            door.sector->floorheight,
+                            false,
+                            1,
+                            door.direction);
             if (res == pastdest)
             {
                 switch (door.type)
@@ -106,16 +102,15 @@ void verticalDoor(Door& door)
                     case blazeRaise:
                     case blazeClose:
                         door.sector->specialdata = nullptr;
-                        removeThinker(&door); // unlink and free
-                        startSound(
-                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                            sfx_bdcls);
+                        removeThinker(door); // unlink and free
+                        startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
+                                   sfx_bdcls);
                         break;
 
                     case door_normal:
                     case door_close:
                         door.sector->specialdata = nullptr;
-                        removeThinker(&door); // unlink and free
+                        removeThinker(door); // unlink and free
                         break;
 
                     case close30ThenOpen:
@@ -137,9 +132,8 @@ void verticalDoor(Door& door)
 
                     default:
                         door.direction = 1;
-                        startSound(
-                            reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                            sfx_doropn);
+                        startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
+                                   sfx_doropn);
                         break;
                 }
             }
@@ -147,12 +141,8 @@ void verticalDoor(Door& door)
 
         case 1:
             // UP
-            res = movePlane(*door.sector,
-                              door.speed,
-                              door.topheight,
-                              false,
-                              1,
-                              door.direction);
+            res = movePlane(
+                *door.sector, door.speed, door.topheight, false, 1, door.direction);
 
             if (res == pastdest)
             {
@@ -168,7 +158,7 @@ void verticalDoor(Door& door)
                     case blazeOpen:
                     case door_open:
                         door.sector->specialdata = nullptr;
-                        removeThinker(&door); // unlink and free
+                        removeThinker(door); // unlink and free
                         break;
 
                     default:
@@ -183,14 +173,14 @@ void verticalDoor(Door& door)
 // doLockedDoor
 // Move a locked door up/down
 //
-int doLockedDoor(Line* line, DoorType type, Mobj* thing)
+int doLockedDoor(Line& line, DoorType type, Mobj& thing)
 {
-    Player* p = thing->player;
+    Player* p = thing.player;
 
     if (!p)
         return 0;
 
-    switch (line->special)
+    switch (line.special)
     {
         case 99: // Blue Lock
         case 133:
@@ -232,7 +222,7 @@ int doLockedDoor(Line* line, DoorType type, Mobj* thing)
     return doDoor(line, type);
 }
 
-int doDoor(Line* line, DoorType type)
+int doDoor(Line& line, DoorType type)
 {
     int secnum = -1;
     int rtn = 0;
@@ -246,7 +236,7 @@ int doDoor(Line* line, DoorType type)
         // new door thinker
         rtn = 1;
         Door* door = new (levelAlloc(sizeof(*door))) Door {};
-        addThinker(door);
+        addThinker(*door);
         sec->specialdata = door;
 
         door->sector = sec;
@@ -257,48 +247,48 @@ int doDoor(Line* line, DoorType type)
         switch (type)
         {
             case blazeClose:
-                door->topheight = findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 door->speed = VDOORSPEED * 4;
                 startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                             sfx_bdcls);
+                           sfx_bdcls);
                 break;
 
             case door_close:
-                door->topheight = findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                             sfx_dorcls);
+                           sfx_dorcls);
                 break;
 
             case close30ThenOpen:
                 door->topheight = sec->ceilingheight;
                 door->direction = -1;
                 startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                             sfx_dorcls);
+                           sfx_dorcls);
                 break;
 
             case blazeRaise:
             case blazeOpen:
                 door->direction = 1;
-                door->topheight = findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->speed = VDOORSPEED * 4;
                 if (door->topheight != sec->ceilingheight)
                     startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                                 sfx_bdopn);
+                               sfx_bdopn);
                 break;
 
             case door_normal:
             case door_open:
                 door->direction = 1;
-                door->topheight = findLowestCeilingSurrounding(sec);
+                door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
                 if (door->topheight != sec->ceilingheight)
                     startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                                 sfx_doropn);
+                               sfx_doropn);
                 break;
 
             default:
@@ -312,16 +302,16 @@ int doDoor(Line* line, DoorType type)
 //
 // verticalDoor : open a door manually, no tag value
 //
-void verticalDoor(Line* line, Mobj* thing)
+void verticalDoor(Line& line, Mobj& thing)
 {
     Door* door;
 
     int side = 0; // only front sides can be used
 
     // Check for locks
-    Player* player = thing->player;
+    Player* player = thing.player;
 
-    switch (line->special)
+    switch (line.special)
     {
         case 26: // Blue Lock
         case 32:
@@ -364,12 +354,12 @@ void verticalDoor(Line* line, Mobj* thing)
     }
 
     // if the sector has an active thinker, use it
-    Sector* sec = sides[line->sidenum[side ^ 1]].sector;
+    Sector* sec = sides[line.sidenum[side ^ 1]].sector;
 
     if (sec->specialdata)
     {
         door = static_cast<Door*>(sec->specialdata);
-        switch (line->special)
+        switch (line.special)
         {
             case 1: // ONLY FOR "RAISE" DOORS, NOT "OPEN"s
             case 26:
@@ -380,7 +370,7 @@ void verticalDoor(Line* line, Mobj* thing)
                     door->direction = 1; // go back up
                 else
                 {
-                    if (!thing->player)
+                    if (!thing.player)
                         return; // JDC: bad guys never close doors
 
                     door->direction = -1; // start going down immediately
@@ -390,7 +380,7 @@ void verticalDoor(Line* line, Mobj* thing)
     }
 
     // for proper sound
-    switch (line->special)
+    switch (line.special)
     {
         case 117: // BLAZING DOOR RAISE
         case 118: // BLAZING DOOR OPEN
@@ -409,14 +399,14 @@ void verticalDoor(Line* line, Mobj* thing)
 
     // new door thinker
     door = new (levelAlloc(sizeof(*door))) Door {};
-    addThinker(door);
+    addThinker(*door);
     sec->specialdata = door;
     door->sector = sec;
     door->direction = 1;
     door->speed = VDOORSPEED;
     door->topwait = VDOORWAIT;
 
-    switch (line->special)
+    switch (line.special)
     {
         case 1:
         case 26:
@@ -430,7 +420,7 @@ void verticalDoor(Line* line, Mobj* thing)
         case 33:
         case 34:
             door->type = door_open;
-            line->special = 0;
+            line.special = 0;
             break;
 
         case 117: // blazing door raise
@@ -439,29 +429,29 @@ void verticalDoor(Line* line, Mobj* thing)
             break;
         case 118: // blazing door open
             door->type = blazeOpen;
-            line->special = 0;
+            line.special = 0;
             door->speed = VDOORSPEED * 4;
             break;
     }
 
     // find the top and bottom of the movement range
-    door->topheight = findLowestCeilingSurrounding(sec);
+    door->topheight = findLowestCeilingSurrounding(*sec);
     door->topheight -= 4 * FRACUNIT;
 }
 
 //
 // Spawn a door that closes after 30 seconds
 //
-void spawnDoorCloseIn30(Sector* sec)
+void spawnDoorCloseIn30(Sector& sec)
 {
     Door* door = new (levelAlloc(sizeof(*door))) Door {};
 
-    addThinker(door);
+    addThinker(*door);
 
-    sec->specialdata = door;
-    sec->special = 0;
+    sec.specialdata = door;
+    sec.special = 0;
 
-    door->sector = sec;
+    door->sector = &sec;
     door->direction = 0;
     door->type = door_normal;
     door->speed = VDOORSPEED;
@@ -471,16 +461,16 @@ void spawnDoorCloseIn30(Sector* sec)
 //
 // Spawn a door that opens after 5 minutes
 //
-void spawnDoorRaiseIn5Mins(Sector* sec, int)
+void spawnDoorRaiseIn5Mins(Sector& sec, int)
 {
     Door* door = new (levelAlloc(sizeof(*door))) Door {};
 
-    addThinker(door);
+    addThinker(*door);
 
-    sec->specialdata = door;
-    sec->special = 0;
+    sec.specialdata = door;
+    sec.special = 0;
 
-    door->sector = sec;
+    door->sector = &sec;
     door->direction = 2;
     door->type = raiseIn5Mins;
     door->speed = VDOORSPEED;

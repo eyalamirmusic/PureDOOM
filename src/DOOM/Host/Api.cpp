@@ -245,7 +245,7 @@ void keyDown(Key key)
     Event event;
     event.type = ev_keydown;
     event.data1 = static_cast<int>(key);
-    postEvent(&event);
+    postEvent(event);
 }
 
 void keyUp(Key key)
@@ -253,7 +253,7 @@ void keyUp(Key key)
     Event event;
     event.type = ev_keyup;
     event.data1 = static_cast<int>(key);
-    postEvent(&event);
+    postEvent(event);
 }
 
 void buttonDown(MouseButton button)
@@ -265,7 +265,7 @@ void buttonDown(MouseButton button)
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = event.data3 = 0;
-    postEvent(&event);
+    postEvent(event);
 }
 
 void buttonUp(MouseButton button)
@@ -281,7 +281,7 @@ void buttonUp(MouseButton button)
                   ^ (button_states[1] ? 2 : 0) ^ (button_states[2] ? 4 : 0);
 
     event.data2 = event.data3 = 0;
-    postEvent(&event);
+    postEvent(event);
 }
 
 void mouseMove(int deltaX, int deltaY)
@@ -296,7 +296,7 @@ void mouseMove(int deltaX, int deltaY)
 
     if (event.data2 || event.data3)
     {
-        postEvent(&event);
+        postEvent(event);
     }
 }
 } // namespace Doom

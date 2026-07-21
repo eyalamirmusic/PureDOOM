@@ -169,18 +169,18 @@ static CheatSequence cheat_amap = {{cheat_amap_seq}};
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so
 // that it can be used with the brain-dead drawing stuff.
-void getIslope(MapLine* ml, ISlope* is)
+void getIslope(const MapLine& ml, ISlope& is)
 {
-    fixed_t dy = ml->a.y - ml->b.y;
-    fixed_t dx = ml->b.x - ml->a.x;
+    fixed_t dy = ml.a.y - ml.b.y;
+    fixed_t dx = ml.b.x - ml.a.x;
     if (!dy)
-        is->islp = dx.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
+        is.islp = dx.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
     else
-        is->islp = FixedDiv(dx, dy);
+        is.islp = FixedDiv(dx, dy);
     if (!dx)
-        is->slp = dy.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
+        is.slp = dy.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
     else
-        is->slp = FixedDiv(dy, dx);
+        is.slp = FixedDiv(dy, dx);
 }
 
 //
@@ -360,7 +360,7 @@ void initAutomapVariables()
     map.old_m_h = m_h;
 
     // inform the status bar of the change
-    statusBarResponder(&st_notify);
+    statusBarResponder(st_notify);
 }
 
 //
@@ -422,7 +422,7 @@ void stopAutomap()
 
     unloadPics();
     overlayState().automapactive = false;
-    statusBarResponder(&st_notify);
+    statusBarResponder(st_notify);
     automapView().stopped = true;
 }
 
@@ -475,7 +475,7 @@ void maxOutWindowScale()
 //
 // Handle events (user inputs) in automap mode
 //
-bool automapResponder(Event* ev)
+bool automapResponder(Event& ev)
 {
     auto& map = automapView();
 
@@ -485,7 +485,7 @@ bool automapResponder(Event* ev)
 
     if (!overlayState().automapactive)
     {
-        if (ev->type == ev_keydown && ev->data1 == AM_STARTKEY)
+        if (ev.type == ev_keydown && ev.data1 == AM_STARTKEY)
         {
             startAutomap();
             refreshFlags().viewactive = false;
@@ -493,10 +493,10 @@ bool automapResponder(Event* ev)
         }
     }
 
-    else if (ev->type == ev_keydown)
+    else if (ev.type == ev_keydown)
     {
         rc = true;
-        switch (ev->data1)
+        switch (ev.data1)
         {
             case AM_PANRIGHTKEY: // pan right
                 if (!followplayer)
@@ -567,17 +567,17 @@ bool automapResponder(Event* ev)
             default:
                 rc = false;
         }
-        if (!gameSession().deathmatch && checkCheat(cheat_amap, ev->data1))
+        if (!gameSession().deathmatch && checkCheat(cheat_amap, ev.data1))
         {
             rc = false;
             cheating = (cheating + 1) % 3;
         }
     }
 
-    else if (ev->type == ev_keyup)
+    else if (ev.type == ev_keyup)
     {
         rc = false;
-        switch (ev->data1)
+        switch (ev.data1)
         {
             case AM_PANRIGHTKEY:
                 if (!followplayer)
@@ -730,7 +730,7 @@ int computeOutcode(int mx, int my)
 // faster reject and precalculated slopes.  If the speed is needed,
 // use a hash algorithm to handle  the common cases.
 //
-bool clipMline(MapLine* ml, FLine* fl)
+bool clipMline(const MapLine& ml, FLine& fl)
 {
     auto& map = automapView();
 
@@ -748,40 +748,40 @@ bool clipMline(MapLine* ml, FLine* fl)
     int dy;
 
     // do trivial rejects and outcodes
-    if (ml->a.y > map.m_y2)
+    if (ml.a.y > map.m_y2)
         outcode1 = TOP;
-    else if (ml->a.y < m_y)
+    else if (ml.a.y < m_y)
         outcode1 = BOTTOM;
 
-    if (ml->b.y > map.m_y2)
+    if (ml.b.y > map.m_y2)
         outcode2 = TOP;
-    else if (ml->b.y < m_y)
+    else if (ml.b.y < m_y)
         outcode2 = BOTTOM;
 
     if (outcode1 & outcode2)
         return false; // trivially outside
 
-    if (ml->a.x < m_x)
+    if (ml.a.x < m_x)
         outcode1 |= LEFT;
-    else if (ml->a.x > map.m_x2)
+    else if (ml.a.x > map.m_x2)
         outcode1 |= RIGHT;
 
-    if (ml->b.x < m_x)
+    if (ml.b.x < m_x)
         outcode2 |= LEFT;
-    else if (ml->b.x > map.m_x2)
+    else if (ml.b.x > map.m_x2)
         outcode2 |= RIGHT;
 
     if (outcode1 & outcode2)
         return false; // trivially outside
 
     // transform to frame-buffer coordinates.
-    fl->a.x = mapXToFrame(ml->a.x);
-    fl->a.y = mapYToFrame(ml->a.y);
-    fl->b.x = mapXToFrame(ml->b.x);
-    fl->b.y = mapYToFrame(ml->b.y);
+    fl.a.x = mapXToFrame(ml.a.x);
+    fl.a.y = mapYToFrame(ml.a.y);
+    fl.b.x = mapXToFrame(ml.b.x);
+    fl.b.y = mapYToFrame(ml.b.y);
 
-    outcode1 = computeOutcode(fl->a.x, fl->a.y);
-    outcode2 = computeOutcode(fl->b.x, fl->b.y);
+    outcode1 = computeOutcode(fl.a.x, fl.a.y);
+    outcode2 = computeOutcode(fl.b.x, fl.b.y);
 
     if (outcode1 & outcode2)
         return false;
@@ -798,42 +798,42 @@ bool clipMline(MapLine* ml, FLine* fl)
         // clip to each side
         if (outside & TOP)
         {
-            dy = fl->a.y - fl->b.y;
-            dx = fl->b.x - fl->a.x;
-            tmp.x = fl->a.x + (dx * (fl->a.y)) / dy;
+            dy = fl.a.y - fl.b.y;
+            dx = fl.b.x - fl.a.x;
+            tmp.x = fl.a.x + (dx * (fl.a.y)) / dy;
             tmp.y = 0;
         }
         else if (outside & BOTTOM)
         {
-            dy = fl->a.y - fl->b.y;
-            dx = fl->b.x - fl->a.x;
-            tmp.x = fl->a.x + (dx * (fl->a.y - f_h)) / dy;
+            dy = fl.a.y - fl.b.y;
+            dx = fl.b.x - fl.a.x;
+            tmp.x = fl.a.x + (dx * (fl.a.y - f_h)) / dy;
             tmp.y = f_h - 1;
         }
         else if (outside & RIGHT)
         {
-            dy = fl->b.y - fl->a.y;
-            dx = fl->b.x - fl->a.x;
-            tmp.y = fl->a.y + (dy * (f_w - 1 - fl->a.x)) / dx;
+            dy = fl.b.y - fl.a.y;
+            dx = fl.b.x - fl.a.x;
+            tmp.y = fl.a.y + (dy * (f_w - 1 - fl.a.x)) / dx;
             tmp.x = f_w - 1;
         }
         else if (outside & LEFT)
         {
-            dy = fl->b.y - fl->a.y;
-            dx = fl->b.x - fl->a.x;
-            tmp.y = fl->a.y + (dy * (-fl->a.x)) / dx;
+            dy = fl.b.y - fl.a.y;
+            dx = fl.b.x - fl.a.x;
+            tmp.y = fl.a.y + (dy * (-fl.a.x)) / dx;
             tmp.x = 0;
         }
 
         if (outside == outcode1)
         {
-            fl->a = tmp;
-            outcode1 = computeOutcode(fl->a.x, fl->a.y);
+            fl.a = tmp;
+            outcode1 = computeOutcode(fl.a.x, fl.a.y);
         }
         else
         {
-            fl->b = tmp;
-            outcode2 = computeOutcode(fl->b.x, fl->b.y);
+            fl.b = tmp;
+            outcode2 = computeOutcode(fl.b.x, fl.b.y);
         }
 
         if (outcode1 & outcode2)
@@ -851,7 +851,7 @@ static inline void putDot(byte* fb, int xx, int yy, int cc)
 //
 // Classic Bresenham w/ whatever optimizations needed for speed
 //
-void drawFline(FLine* fl, int color)
+void drawFline(const FLine& fl, int color)
 {
     auto& map = automapView();
 
@@ -867,26 +867,26 @@ void drawFline(FLine* fl, int color)
 
     // For debugging only
 #if 0 // [pd] Don't waste CPU cycles testing this then
-    if (fl->a.x < 0 || fl->a.x >= f_w
-        || fl->a.y < 0 || fl->a.y >= f_h
-        || fl->b.x < 0 || fl->b.x >= f_w
-        || fl->b.y < 0 || fl->b.y >= f_h)
+    if (fl.a.x < 0 || fl.a.x >= f_w
+        || fl.a.y < 0 || fl.a.y >= f_h
+        || fl.b.x < 0 || fl.b.x >= f_w
+        || fl.b.y < 0 || fl.b.y >= f_h)
     {
         print("fuck ", fuck++, "\r");
         return;
     }
 #endif
 
-    dx = fl->b.x - fl->a.x;
+    dx = fl.b.x - fl.a.x;
     ax = 2 * (dx < 0 ? -dx : dx);
     sx = dx < 0 ? -1 : 1;
 
-    dy = fl->b.y - fl->a.y;
+    dy = fl.b.y - fl.a.y;
     ay = 2 * (dy < 0 ? -dy : dy);
     sy = dy < 0 ? -1 : 1;
 
-    x = fl->a.x;
-    y = fl->a.y;
+    x = fl.a.x;
+    y = fl.a.y;
 
     if (ax > ay)
     {
@@ -894,7 +894,7 @@ void drawFline(FLine* fl, int color)
         while (1)
         {
             putDot(map.fb, x, y, color);
-            if (x == fl->b.x)
+            if (x == fl.b.x)
                 return;
             if (d >= 0)
             {
@@ -911,7 +911,7 @@ void drawFline(FLine* fl, int color)
         while (1)
         {
             putDot(map.fb, x, y, color);
-            if (y == fl->b.y)
+            if (y == fl.b.y)
                 return;
             if (d >= 0)
             {
@@ -927,12 +927,12 @@ void drawFline(FLine* fl, int color)
 //
 // Clip lines, draw visible part sof lines.
 //
-void drawMline(MapLine* ml, int color)
+void drawMline(const MapLine& ml, int color)
 {
     static FLine fl;
 
-    if (clipMline(ml, &fl))
-        drawFline(&fl, color); // draws it on frame buffer using fb coords
+    if (clipMline(ml, fl))
+        drawFline(fl, color); // draws it on frame buffer using fb coords
 }
 
 //
@@ -959,7 +959,7 @@ void drawGrid(int color)
     {
         ml.a.x = x;
         ml.b.x = x;
-        drawMline(&ml, color);
+        drawMline(ml, color);
     }
 
     // Figure out start of horizontal gridlines
@@ -976,7 +976,7 @@ void drawGrid(int color)
     {
         ml.a.y = y;
         ml.b.y = y;
-        drawMline(&ml, color);
+        drawMline(ml, color);
     }
 }
 
@@ -1000,41 +1000,41 @@ void drawWalls()
                 continue;
             if (!lines[i].backsector)
             {
-                drawMline(&l, WALLCOLORS + lightlev);
+                drawMline(l, WALLCOLORS + lightlev);
             }
             else
             {
                 if (lines[i].special == 39)
                 { // teleporters
-                    drawMline(&l, WALLCOLORS + WALLRANGE / 2);
+                    drawMline(l, WALLCOLORS + WALLRANGE / 2);
                 }
                 else if (lines[i].flags & ML_SECRET) // secret door
                 {
                     if (cheating)
-                        drawMline(&l, SECRETWALLCOLORS + lightlev);
+                        drawMline(l, SECRETWALLCOLORS + lightlev);
                     else
-                        drawMline(&l, WALLCOLORS + lightlev);
+                        drawMline(l, WALLCOLORS + lightlev);
                 }
                 else if (lines[i].backsector->floorheight
                          != lines[i].frontsector->floorheight)
                 {
-                    drawMline(&l, FDWALLCOLORS + lightlev); // floor level change
+                    drawMline(l, FDWALLCOLORS + lightlev); // floor level change
                 }
                 else if (lines[i].backsector->ceilingheight
                          != lines[i].frontsector->ceilingheight)
                 {
-                    drawMline(&l, CDWALLCOLORS + lightlev); // ceiling level change
+                    drawMline(l, CDWALLCOLORS + lightlev); // ceiling level change
                 }
                 else if (cheating)
                 {
-                    drawMline(&l, TSWALLCOLORS + lightlev);
+                    drawMline(l, TSWALLCOLORS + lightlev);
                 }
             }
         }
         else if (am_plr->powers[pw_allmap])
         {
             if (!(lines[i].flags & LINE_NEVERSEE))
-                drawMline(&l, GRAYS + 3);
+                drawMline(l, GRAYS + 3);
         }
     }
 }
@@ -1043,15 +1043,15 @@ void drawWalls()
 // Rotation in 2D.
 // Used to rotate player arrow line character.
 //
-void rotateAutomapPoint(fixed_t* x, fixed_t* y, angle_t a)
+void rotateAutomapPoint(fixed_t& x, fixed_t& y, angle_t a)
 {
-    fixed_t tmpx = FixedMul(*x, finecosine[a.fineIndex()])
-                   - FixedMul(*y, finesine[a.fineIndex()]);
+    fixed_t tmpx = FixedMul(x, finecosine[a.fineIndex()])
+                   - FixedMul(y, finesine[a.fineIndex()]);
 
-    *y = FixedMul(*x, finesine[a.fineIndex()])
-         + FixedMul(*y, finecosine[a.fineIndex()]);
+    y = FixedMul(x, finesine[a.fineIndex()])
+        + FixedMul(y, finecosine[a.fineIndex()]);
 
-    *x = tmpx;
+    x = tmpx;
 }
 
 void drawLineCharacter(MapLine* lineguy,
@@ -1076,7 +1076,7 @@ void drawLineCharacter(MapLine* lineguy,
         }
 
         if (angle)
-            rotateAutomapPoint(&l.a.x, &l.a.y, angle);
+            rotateAutomapPoint(l.a.x, l.a.y, angle);
 
         l.a.x += x;
         l.a.y += y;
@@ -1091,12 +1091,12 @@ void drawLineCharacter(MapLine* lineguy,
         }
 
         if (angle)
-            rotateAutomapPoint(&l.b.x, &l.b.y, angle);
+            rotateAutomapPoint(l.b.x, l.b.y, angle);
 
         l.b.x += x;
         l.b.y += y;
 
-        drawMline(&l, color);
+        drawMline(l, color);
     }
 }
 

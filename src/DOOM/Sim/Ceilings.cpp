@@ -27,11 +27,11 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void moveCeiling(Ceiling& ceiling);
-int doCeiling(Line* line, CeilingType type);
-void addActiveCeiling(Ceiling* c);
-void removeActiveCeiling(Ceiling* c);
-void activateInStasisCeiling(Line* line);
-int ceilingCrushStop(Line* line);
+int doCeiling(Line& line, CeilingType type);
+void addActiveCeiling(Ceiling& c);
+void removeActiveCeiling(Ceiling& c);
+void activateInStasisCeiling(Line& line);
+int ceilingCrushStop(Line& line);
 
 void moveCeiling(Ceiling& ceiling)
 {
@@ -73,7 +73,7 @@ void moveCeiling(Ceiling& ceiling)
                 switch (ceiling.type)
                 {
                     case raiseToHighest:
-                        removeActiveCeiling(&ceiling);
+                        removeActiveCeiling(ceiling);
                         break;
 
                     case silentCrushAndRaise:
@@ -132,7 +132,7 @@ void moveCeiling(Ceiling& ceiling)
 
                     case lowerAndCrush:
                     case lowerToFloor:
-                        removeActiveCeiling(&ceiling);
+                        removeActiveCeiling(ceiling);
                         break;
 
                     default:
@@ -164,7 +164,7 @@ void moveCeiling(Ceiling& ceiling)
 // doCeiling
 // Move a ceiling up/down and all around!
 //
-int doCeiling(Line* line, CeilingType type)
+int doCeiling(Line& line, CeilingType type)
 {
     int secnum = -1;
     int rtn = 0;
@@ -189,7 +189,7 @@ int doCeiling(Line* line, CeilingType type)
         // new door thinker
         rtn = 1;
         Ceiling* ceiling = new (levelAlloc(sizeof(*ceiling))) Ceiling {};
-        addThinker(ceiling);
+        addThinker(*ceiling);
         sec->specialdata = ceiling;
         ceiling->sector = sec;
         ceiling->crush = false;
@@ -219,7 +219,7 @@ int doCeiling(Line* line, CeilingType type)
                 break;
 
             case raiseToHighest:
-                ceiling->topheight = findHighestCeilingSurrounding(sec);
+                ceiling->topheight = findHighestCeilingSurrounding(*sec);
                 ceiling->direction = 1;
                 ceiling->speed = CEILSPEED;
                 break;
@@ -227,7 +227,7 @@ int doCeiling(Line* line, CeilingType type)
 
         ceiling->tag = sec->tag;
         ceiling->type = type;
-        addActiveCeiling(ceiling);
+        addActiveCeiling(*ceiling);
     }
 
     return rtn;
@@ -236,14 +236,14 @@ int doCeiling(Line* line, CeilingType type)
 //
 // Add an active ceiling
 //
-void addActiveCeiling(Ceiling* c)
+void addActiveCeiling(Ceiling& c)
 {
     auto& specials = activeSpecials();
     for (auto*& ceiling: specials.activeceilings)
     {
         if (ceiling == nullptr)
         {
-            ceiling = c;
+            ceiling = &c;
             return;
         }
     }
@@ -252,15 +252,15 @@ void addActiveCeiling(Ceiling* c)
 //
 // Remove a ceiling's thinker
 //
-void removeActiveCeiling(Ceiling* c)
+void removeActiveCeiling(Ceiling& c)
 {
     auto& specials = activeSpecials();
     for (auto*& ceiling: specials.activeceilings)
     {
-        if (ceiling == c)
+        if (ceiling == &c)
         {
             ceiling->sector->specialdata = nullptr;
-            removeThinker(ceiling);
+            removeThinker(*ceiling);
             ceiling = nullptr;
             break;
         }
@@ -270,12 +270,12 @@ void removeActiveCeiling(Ceiling* c)
 //
 // Restart a ceiling that's in-stasis
 //
-void activateInStasisCeiling(Line* line)
+void activateInStasisCeiling(Line& line)
 {
     auto& specials = activeSpecials();
     for (auto* ceiling: specials.activeceilings)
     {
-        if (ceiling && ceiling->tag == line->tag && ceiling->direction == 0)
+        if (ceiling && ceiling->tag == line.tag && ceiling->direction == 0)
         {
             ceiling->direction = ceiling->olddirection;
             ceiling->stopped = false;
@@ -287,13 +287,13 @@ void activateInStasisCeiling(Line* line)
 // ceilingCrushStop
 // Stop a ceiling from crushing!
 //
-int ceilingCrushStop(Line* line)
+int ceilingCrushStop(Line& line)
 {
     int rtn = 0;
     auto& specials = activeSpecials();
     for (auto* ceiling: specials.activeceilings)
     {
-        if (ceiling && ceiling->tag == line->tag && ceiling->direction != 0)
+        if (ceiling && ceiling->tag == line.tag && ceiling->direction != 0)
         {
             ceiling->olddirection = ceiling->direction;
             ceiling->stopped = true;

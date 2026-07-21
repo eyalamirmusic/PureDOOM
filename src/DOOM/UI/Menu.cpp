@@ -1517,7 +1517,7 @@ void writeText(int x, int y, std::string_view string)
 //
 // menuResponder
 //
-bool menuResponder(Event* ev)
+bool menuResponder(Event& ev)
 {
     auto& overlay = overlayState();
     auto& players_ = playerState();
@@ -1527,36 +1527,36 @@ bool menuResponder(Event* ev)
 
     int ch = -1;
 
-    if (ev->type == ev_joystick && state.joywait < currentTic())
+    if (ev.type == ev_joystick && state.joywait < currentTic())
     {
-        if (ev->data3 == -1)
+        if (ev.data3 == -1)
         {
             ch = KEY_UPARROW;
             state.joywait = currentTic() + 5;
         }
-        else if (ev->data3 == 1)
+        else if (ev.data3 == 1)
         {
             ch = KEY_DOWNARROW;
             state.joywait = currentTic() + 5;
         }
 
-        if (ev->data2 == -1)
+        if (ev.data2 == -1)
         {
             ch = KEY_LEFTARROW;
             state.joywait = currentTic() + 2;
         }
-        else if (ev->data2 == 1)
+        else if (ev.data2 == 1)
         {
             ch = KEY_RIGHTARROW;
             state.joywait = currentTic() + 2;
         }
 
-        if (ev->data1 & 1)
+        if (ev.data1 & 1)
         {
             ch = KEY_ENTER;
             state.joywait = currentTic() + 5;
         }
-        if (ev->data1 & 2)
+        if (ev.data1 & 2)
         {
             ch = KEY_BACKSPACE;
             state.joywait = currentTic() + 5;
@@ -1564,9 +1564,9 @@ bool menuResponder(Event* ev)
     }
     else
     {
-        if (ev->type == ev_mouse && state.mousewait < currentTic())
+        if (ev.type == ev_mouse && state.mousewait < currentTic())
         {
-            state.mousey += ev->data3;
+            state.mousey += ev.data3;
             if (state.mousey < state.lasty - 30)
             {
                 ch = KEY_DOWNARROW;
@@ -1580,7 +1580,7 @@ bool menuResponder(Event* ev)
                 state.mousey = state.lasty += 30;
             }
 
-            state.mousex += ev->data2;
+            state.mousex += ev.data2;
             if (state.mousex < state.lastx - 30)
             {
                 ch = KEY_LEFTARROW;
@@ -1594,21 +1594,21 @@ bool menuResponder(Event* ev)
                 state.mousex = state.lastx += 30;
             }
 
-            if (ev->data1 & 1)
+            if (ev.data1 & 1)
             {
                 ch = KEY_ENTER;
                 state.mousewait = currentTic() + 15;
             }
 
-            if (ev->data1 & 2)
+            if (ev.data1 & 2)
             {
                 ch = KEY_BACKSPACE;
                 state.mousewait = currentTic() + 15;
             }
         }
-        else if (ev->type == ev_keydown)
+        else if (ev.type == ev_keydown)
         {
-            ch = ev->data1;
+            ch = ev.data1;
         }
     }
 

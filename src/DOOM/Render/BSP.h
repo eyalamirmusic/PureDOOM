@@ -10,7 +10,7 @@ void clearDrawSegs();
 void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
 void clearClipSegs();
-void addLine(Seg* line);
+void addLine(Seg& line);
 bool checkBBox(fixed_t* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);

@@ -229,17 +229,17 @@ void babyMetal(Mobj* mo)
 
 void openShotgun2(Player* player, PspDef* psp)
 {
-    Doom::openShotgun2(player, psp);
+    Doom::openShotgun2(*player, *psp);
 }
 
 void loadShotgun2(Player* player, PspDef* psp)
 {
-    Doom::loadShotgun2(player, psp);
+    Doom::loadShotgun2(*player, *psp);
 }
 
 void closeShotgun2(Player* player, PspDef* psp)
 {
-    Doom::closeShotgun2(player, psp);
+    Doom::closeShotgun2(*player, *psp);
 }
 
 void brainAwake(Mobj* mo)
@@ -379,7 +379,7 @@ void light2(Player* player, PspDef* psp)
 
 void bfgSpray(Mobj* mo)
 {
-    Doom::bfgSpray(mo);
+    Doom::bfgSpray(*mo);
 }
 
 void bfgSound(Player* player, PspDef* psp)

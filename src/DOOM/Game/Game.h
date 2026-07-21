@@ -24,8 +24,8 @@ void exitLevel();
 void secretExitLevel();
 void worldDone();
 void gameTicker();
-bool gameResponder(Event* ev);
+bool gameResponder(Event& ev);
 void takeScreenshot();
-void buildTiccmd(Ticcmd* cmd);
+void buildTiccmd(Ticcmd& cmd);
 void playerReborn(int player);
 } // namespace Doom

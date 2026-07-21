@@ -53,11 +53,11 @@ constexpr int HEIGHTUNIT = 1 << HEIGHTBITS;
 // member through it.
 
 // Forward declarations so call order needs no rearranging.
-void renderMaskedSegRange(DrawSeg* ds, int x1, int x2);
+void renderMaskedSegRange(DrawSeg& ds, int x1, int x2);
 void renderSegLoop();
 void storeWallRange(int start, int stop);
 
-void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
+void renderMaskedSegRange(DrawSeg& ds, int x1, int x2)
 {
     auto& bsp = bspScratch();
     auto& seg = segState();
@@ -76,7 +76,7 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
     // Use different light tables
     //   for horizontal / vertical / diagonal. Diagonal?
     // OPTIMIZE: get rid of LIGHTSEGSHIFT globally
-    bsp.curline = ds->curline;
+    bsp.curline = ds.curline;
     bsp.frontsector = bsp.curline->frontsector;
     bsp.backsector = bsp.curline->backsector;
     texnum = texturetranslation[bsp.curline->sidedef->midtexture];
@@ -95,12 +95,12 @@ void renderMaskedSegRange(DrawSeg* ds, int x1, int x2)
     else
         seg.walllights = lights.scalelight[lightnum].data();
 
-    seg.maskedtexturecol = ds->maskedtexturecol;
+    seg.maskedtexturecol = ds.maskedtexturecol;
 
-    wall.rw_scalestep = ds->scalestep;
-    sprites.spryscale = ds->scale1 + (x1 - ds->x1) * wall.rw_scalestep;
-    sprites.mfloorclip = ds->sprbottomclip;
-    sprites.mceilingclip = ds->sprtopclip;
+    wall.rw_scalestep = ds.scalestep;
+    sprites.spryscale = ds.scale1 + (x1 - ds.x1) * wall.rw_scalestep;
+    sprites.mfloorclip = ds.sprbottomclip;
+    sprites.mceilingclip = ds.sprtopclip;
 
     // find positioning
     if (bsp.curline->linedef->flags & ML_DONTPEGBOTTOM)

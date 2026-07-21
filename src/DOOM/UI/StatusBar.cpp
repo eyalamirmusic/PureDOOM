@@ -413,14 +413,14 @@ void refreshBackground()
 
 // Respond to keyboard input events,
 //  intercept cheats.
-bool statusBarResponder(Event* ev)
+bool statusBarResponder(Event& ev)
 {
     auto& bar = statusBarState();
 
     // Filter automap on/off.
-    if (ev->type == ev_keyup && ((ev->data1 & 0xffff0000) == AM_MSGHEADER))
+    if (ev.type == ev_keyup && ((ev.data1 & 0xffff0000) == AM_MSGHEADER))
     {
-        switch (ev->data1)
+        switch (ev.data1)
         {
             case AM_MSGENTERED:
                 bar.st_firsttime = true;
@@ -433,7 +433,7 @@ bool statusBarResponder(Event* ev)
     }
 
     // if a user keypress...
-    else if (ev->type == ev_keydown)
+    else if (ev.type == ev_keydown)
     {
         if (!gameSession().netgame)
         {
@@ -441,7 +441,7 @@ bool statusBarResponder(Event* ev)
             // if (gameskill != sk_nightmare) {
 
             // 'dqd' cheat for toggleable god mode
-            if (checkCheat(cheat_god, ev->data1))
+            if (checkCheat(cheat_god, ev.data1))
             {
                 bar.plyr->cheats ^= CF_GODMODE;
                 if (bar.plyr->cheats & CF_GODMODE)
@@ -456,7 +456,7 @@ bool statusBarResponder(Event* ev)
                     bar.plyr->message = STSTR_DQDOFF;
             }
             // 'fa' cheat for killer fucking arsenal
-            else if (checkCheat(cheat_ammonokey, ev->data1))
+            else if (checkCheat(cheat_ammonokey, ev.data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -470,7 +470,7 @@ bool statusBarResponder(Event* ev)
                 bar.plyr->message = STSTR_FAADDED;
             }
             // 'kfa' cheat for key full ammo
-            else if (checkCheat(cheat_ammo, ev->data1))
+            else if (checkCheat(cheat_ammo, ev.data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -487,7 +487,7 @@ bool statusBarResponder(Event* ev)
                 bar.plyr->message = STSTR_KFAADDED;
             }
             // 'mus' cheat for changing music
-            else if (checkCheat(cheat_mus, ev->data1))
+            else if (checkCheat(cheat_mus, ev.data1))
             {
                 int musnum;
 
@@ -515,8 +515,8 @@ bool statusBarResponder(Event* ev)
             }
             // Simplified, accepting both "noclip" and "idspispopd".
             // no clipping mode cheat
-            else if (checkCheat(cheat_noclip, ev->data1)
-                     || checkCheat(cheat_commercial_noclip, ev->data1))
+            else if (checkCheat(cheat_noclip, ev.data1)
+                     || checkCheat(cheat_commercial_noclip, ev.data1))
             {
                 bar.plyr->cheats ^= CF_NOCLIP;
 
@@ -528,10 +528,10 @@ bool statusBarResponder(Event* ev)
             // 'behold?' power-up cheats
             for (int i = 0; i < 6; i++)
             {
-                if (checkCheat(cheat_powerup[i], ev->data1))
+                if (checkCheat(cheat_powerup[i], ev.data1))
                 {
                     if (!bar.plyr->powers[i])
-                        givePower(bar.plyr, i);
+                        givePower(*bar.plyr, i);
                     else if (i != pw_strength)
                         bar.plyr->powers[i] = 1;
                     else
@@ -542,19 +542,19 @@ bool statusBarResponder(Event* ev)
             }
 
             // 'behold' power-up menu
-            if (checkCheat(cheat_powerup[6], ev->data1))
+            if (checkCheat(cheat_powerup[6], ev.data1))
             {
                 bar.plyr->message = STSTR_BEHOLD;
             }
             // 'choppers' invulnerability & chainsaw
-            else if (checkCheat(cheat_choppers, ev->data1))
+            else if (checkCheat(cheat_choppers, ev.data1))
             {
                 bar.plyr->weaponowned[wp_chainsaw] = true;
                 bar.plyr->powers[pw_invulnerability] = true;
                 bar.plyr->message = STSTR_CHOPPERS;
             }
             // 'mypos' for player position
-            else if (checkCheat(cheat_mypos, ev->data1))
+            else if (checkCheat(cheat_mypos, ev.data1))
             {
                 static std::string buf;
                 //doom_sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
@@ -576,7 +576,7 @@ bool statusBarResponder(Event* ev)
         }
 
         // 'clev' change-level cheat
-        if (checkCheat(cheat_clev, ev->data1))
+        if (checkCheat(cheat_clev, ev.data1))
         {
             int epsd;
             int map;

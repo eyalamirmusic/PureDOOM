@@ -31,7 +31,7 @@ struct AimResult
 
 // Slide `mo` along the first wall its momentum would drive it into, so it grazes
 // angled walls instead of stopping dead.
-void slideMove(Mobj* mo);
+void slideMove(Mobj& mo);
 
 // Trace a shot from t1 at the given angle and find the auto-aim slope to the first
 // shootable thing in view. AimResult::slope is 0 if nothing was found, which is
@@ -41,15 +41,15 @@ AimResult aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance);
 // Fire a hitscan from t1 at angle/slope for `distance`, spawning puffs or blood and
 // dealing `damage` (damage 0 is a test trace used only to find an aim target).
 void lineAttack(
-    Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage);
+    Mobj& t1, angle_t angle, fixed_t distance, fixed_t slope, int damage);
 
 // Activate the special line the player is facing, within USERANGE.
-void useLines(Player* player);
+void useLines(Player& player);
 
 // Damage every shootable thing within `damage` map units of spot that spot can see.
-void radiusAttack(Mobj* spot, Mobj* source, int damage);
+void radiusAttack(Mobj& spot, Mobj* source, int damage);
 
 // After a sector changed height, re-clip every thing touching it; crush those that
 // no longer fit if `crunch`. Returns true if anything did not fit.
-bool changeSector(Sector* sector, bool crunch);
+bool changeSector(Sector& sector, bool crunch);
 } // namespace Doom

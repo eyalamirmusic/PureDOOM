@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include "../Game/SoundData.h"
 namespace Doom
 {
@@ -15,7 +13,7 @@ void updateSound();
 void submitSound();
 void shutdownSoundHost();
 void setChannels();
-int sfxLumpNum(SfxInfo* sfxinfo);
+int sfxLumpNum(SfxInfo& sfxinfo);
 int startSoundHost(int id, int vol, int sep, int pitch, int priority);
 void stopSoundHost(int handle);
 int soundIsPlaying(int handle);

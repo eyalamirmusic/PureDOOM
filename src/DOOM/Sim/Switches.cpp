@@ -93,9 +93,9 @@ SwitchListEntry alphSwitchList[] = {
 
 // Forward declarations so the file's own call order needs no rearranging.
 void initSwitchList();
-void startButton(Line* line, ButtonWhere w, int texture, int time);
-void changeSwitchTexture(Line* line, int useAgain);
-bool useSpecialLine(Mobj* thing, Line* line, int side);
+void startButton(Line& line, ButtonWhere w, int texture, int time);
+void changeSwitchTexture(Line& line, int useAgain);
+bool useSpecialLine(Mobj& thing, Line& line, int side);
 
 void initSwitchList()
 {
@@ -128,12 +128,12 @@ void initSwitchList()
 //
 // Start a button counting down till it turns off.
 //
-void startButton(Line* line, ButtonWhere w, int texture, int time)
+void startButton(Line& line, ButtonWhere w, int texture, int time)
 {
     auto& specials = activeSpecials();
 
-    const auto isThisButton = [line](const Button& button)
-    { return button.btimer && button.line == line; };
+    const auto isThisButton = [&line](const Button& button)
+    { return button.btimer && button.line == &line; };
 
     if (std::any_of(
             specials.buttonlist.begin(), specials.buttonlist.end(), isThisButton))
@@ -143,13 +143,13 @@ void startButton(Line* line, ButtonWhere w, int texture, int time)
     {
         if (!button.btimer)
         {
-            button.line = line;
+            button.line = &line;
             button.where = w;
             button.btexture = texture;
             button.btimer = time;
             // vanilla's degenmobj pun: the sound source is the address of the
             // sector's soundorg member, not a Mobj.
-            button.soundorg = reinterpret_cast<Mobj*>(&line->frontsector->soundorg);
+            button.soundorg = reinterpret_cast<Mobj*>(&line.frontsector->soundorg);
             return;
         }
     }
@@ -161,22 +161,22 @@ void startButton(Line* line, ButtonWhere w, int texture, int time)
 // Function that changes wall texture.
 // Tell it if switch is ok to use again (1=yes, it's a button).
 //
-void changeSwitchTexture(Line* line, int useAgain)
+void changeSwitchTexture(Line& line, int useAgain)
 {
     auto& specials = activeSpecials();
     auto& list = switchList();
 
     if (!useAgain)
-        line->special = 0;
+        line.special = 0;
 
-    int texTop = sides[line->sidenum[0]].toptexture;
-    int texMid = sides[line->sidenum[0]].midtexture;
-    int texBot = sides[line->sidenum[0]].bottomtexture;
+    int texTop = sides[line.sidenum[0]].toptexture;
+    int texMid = sides[line.sidenum[0]].midtexture;
+    int texBot = sides[line.sidenum[0]].bottomtexture;
 
     int sound = sfx_swtchn;
 
     // EXIT SWITCH?
-    if (line->special == 11)
+    if (line.special == 11)
         sound = sfx_swtchx;
 
     // Not a ranged-for: the index is load-bearing, switchlist[i ^ 1] being the
@@ -186,7 +186,7 @@ void changeSwitchTexture(Line* line, int useAgain)
         if (list.switchlist[i] == texTop)
         {
             startSound(specials.buttonlist.data()->soundorg, sound);
-            sides[line->sidenum[0]].toptexture = list.switchlist[i ^ 1];
+            sides[line.sidenum[0]].toptexture = list.switchlist[i ^ 1];
 
             if (useAgain)
                 startButton(line, top, list.switchlist[i], BUTTONTIME);
@@ -198,7 +198,7 @@ void changeSwitchTexture(Line* line, int useAgain)
             if (list.switchlist[i] == texMid)
             {
                 startSound(specials.buttonlist.data()->soundorg, sound);
-                sides[line->sidenum[0]].midtexture = list.switchlist[i ^ 1];
+                sides[line.sidenum[0]].midtexture = list.switchlist[i ^ 1];
 
                 if (useAgain)
                     startButton(line, middle, list.switchlist[i], BUTTONTIME);
@@ -210,7 +210,7 @@ void changeSwitchTexture(Line* line, int useAgain)
                 if (list.switchlist[i] == texBot)
                 {
                     startSound(specials.buttonlist.data()->soundorg, sound);
-                    sides[line->sidenum[0]].bottomtexture = list.switchlist[i ^ 1];
+                    sides[line.sidenum[0]].bottomtexture = list.switchlist[i ^ 1];
 
                     if (useAgain)
                         startButton(line, bottom, list.switchlist[i], BUTTONTIME);
@@ -227,13 +227,13 @@ void changeSwitchTexture(Line* line, int useAgain)
 // Called when a thing uses a special line.
 // Only the front sides of lines are usable.
 //
-bool useSpecialLine(Mobj* thing, Line* line, int side)
+bool useSpecialLine(Mobj& thing, Line& line, int side)
 {
     // Err...
     // Use the back sides of VERY SPECIAL lines...
     if (side)
     {
-        switch (line->special)
+        switch (line.special)
         {
             case 124:
                 // Sliding door open&close
@@ -247,13 +247,13 @@ bool useSpecialLine(Mobj* thing, Line* line, int side)
     }
 
     // Switches that other things can activate.
-    if (!thing->player)
+    if (!thing.player)
     {
         // never open secret doors
-        if (line->flags & ML_SECRET)
+        if (line.flags & ML_SECRET)
             return false;
 
-        switch (line->special)
+        switch (line.special)
         {
             case 1: // MANUAL DOOR RAISE
             case 32: // MANUAL BLUE
@@ -268,7 +268,7 @@ bool useSpecialLine(Mobj* thing, Line* line, int side)
     }
 
     // do something
-    switch (line->special)
+    switch (line.special)
     {
         // MANUALS
         case 1: // Vertical Door

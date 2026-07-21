@@ -116,7 +116,7 @@
 // reason to be a macro; maxPlayerMove() is defined in namespace Doom below.
 
 // Prototypes for other subsystems' functions.
-void Doom::spawnPlayer(Doom::MapThing* mthing);
+void Doom::spawnPlayer(Doom::MapThing& mthing);
 void Doom::executeSetViewSize();
 
 // The reference aliases that survive here are the ones a header still externs, so other
@@ -208,8 +208,8 @@ constexpr int DEMOMARKER = 0x80;
 
 // Forward declarations so call order needs no rearranging.
 bool checkDemoStatus();
-void readDemoTiccmd(Ticcmd* cmd);
-void writeDemoTiccmd(Ticcmd* cmd);
+void readDemoTiccmd(Ticcmd& cmd);
+void writeDemoTiccmd(Ticcmd& cmd);
 void playerReborn(int player);
 void initNewGame(Skill skill, int episode, int map);
 void doReborn(int playernum);
@@ -221,12 +221,12 @@ void doCompleted();
 void doWorldDone();
 void doSaveGame();
 
-int cmdChecksum(Ticcmd* cmd)
+int cmdChecksum(Ticcmd& cmd)
 {
     int sum = 0;
 
-    for (int i = 0; i < static_cast<int>((sizeof(*cmd) / 4 - 1)); i++)
-        sum += (reinterpret_cast<int*>(cmd))[i];
+    for (int i = 0; i < static_cast<int>((sizeof(cmd) / 4 - 1)); i++)
+        sum += (reinterpret_cast<int*>(&cmd))[i];
 
     return sum;
 }
@@ -237,7 +237,7 @@ int cmdChecksum(Ticcmd* cmd)
 // or reads it from the demo buffer.
 // If recording a demo, write it out
 //
-void buildTiccmd(Ticcmd* cmd)
+void buildTiccmd(Ticcmd& cmd)
 {
     auto& config = inputConfig();
     auto& input = ticcmdInput();
@@ -255,9 +255,9 @@ void buildTiccmd(Ticcmd* cmd)
     Ticcmd* base;
 
     base = baseTiccmd(); // empty, or external driver
-    doom_memcpy(cmd, base, sizeof(*cmd));
+    doom_memcpy(&cmd, base, sizeof(cmd));
 
-    cmd->consistancy =
+    cmd.consistancy =
         net.consistancy[playerState().consoleplayer][net.maketic % BACKUPTICS];
 
     strafe = input.gamekeydown[config.key_strafe]
@@ -302,13 +302,13 @@ void buildTiccmd(Ticcmd* cmd)
     else
     {
         if (input.gamekeydown[config.key_right])
-            cmd->angleturn -= speeds.angleturn[tspeed];
+            cmd.angleturn -= speeds.angleturn[tspeed];
         if (input.gamekeydown[config.key_left])
-            cmd->angleturn += speeds.angleturn[tspeed];
+            cmd.angleturn += speeds.angleturn[tspeed];
         if (input.joyxmove > 0)
-            cmd->angleturn -= speeds.angleturn[tspeed];
+            cmd.angleturn -= speeds.angleturn[tspeed];
         if (input.joyxmove < 0)
-            cmd->angleturn += speeds.angleturn[tspeed];
+            cmd.angleturn += speeds.angleturn[tspeed];
     }
 
     if (input.gamekeydown[config.key_up])
@@ -329,15 +329,15 @@ void buildTiccmd(Ticcmd* cmd)
         side -= speeds.sidemove[speed];
 
     // buttons
-    cmd->chatchar = Doom::dequeueChatChar();
+    cmd.chatchar = Doom::dequeueChatChar();
 
     if (input.gamekeydown[config.key_fire] || mousebuttons[config.mousebfire]
         || joybuttons[config.joybfire])
-        cmd->buttons |= BT_ATTACK;
+        cmd.buttons |= BT_ATTACK;
 
     if (input.gamekeydown[config.key_use] || joybuttons[config.joybuse])
     {
-        cmd->buttons |= BT_USE;
+        cmd.buttons |= BT_USE;
         // clear double clicks if hit use button
         input.dclicks = 0;
     }
@@ -346,8 +346,8 @@ void buildTiccmd(Ticcmd* cmd)
     for (int i = 0; i < NUMWEAPONS - 1; i++)
         if (input.gamekeydown['1' + i])
         {
-            cmd->buttons |= BT_CHANGE;
-            cmd->buttons |= i << BT_WEAPONSHIFT;
+            cmd.buttons |= BT_CHANGE;
+            cmd.buttons |= i << BT_WEAPONSHIFT;
             break;
         }
 
@@ -364,7 +364,7 @@ void buildTiccmd(Ticcmd* cmd)
             input.dclicks++;
         if (input.dclicks == 2)
         {
-            cmd->buttons |= BT_USE;
+            cmd.buttons |= BT_USE;
             input.dclicks = 0;
         }
         else
@@ -389,7 +389,7 @@ void buildTiccmd(Ticcmd* cmd)
             input.dclicks2++;
         if (input.dclicks2 == 2)
         {
-            cmd->buttons |= BT_USE;
+            cmd.buttons |= BT_USE;
             input.dclicks2 = 0;
         }
         else
@@ -410,7 +410,7 @@ void buildTiccmd(Ticcmd* cmd)
     if (strafe)
         side += input.mousex * 2;
     else
-        cmd->angleturn -= input.mousex * 0x8;
+        cmd.angleturn -= input.mousex * 0x8;
 
     input.mousex = input.mousey = 0;
 
@@ -425,20 +425,20 @@ void buildTiccmd(Ticcmd* cmd)
     else if (side < -maxmove)
         side = -maxmove;
 
-    cmd->forwardmove += forward;
-    cmd->sidemove += side;
+    cmd.forwardmove += forward;
+    cmd.sidemove += side;
 
     // special buttons
     if (pending.sendpause)
     {
         pending.sendpause = false;
-        cmd->buttons = BT_SPECIAL | BTS_PAUSE;
+        cmd.buttons = BT_SPECIAL | BTS_PAUSE;
     }
 
     if (pending.sendsave)
     {
         pending.sendsave = false;
-        cmd->buttons = BT_SPECIAL | BTS_SAVEGAME | (savegameslot << BTS_SAVESHIFT);
+        cmd.buttons = BT_SPECIAL | BTS_SAVEGAME | (savegameslot << BTS_SAVESHIFT);
     }
 }
 
@@ -508,7 +508,7 @@ void doLoadLevel()
 // gameResponder
 // Get info needed to make ticcmd_ts for the players.
 //
-bool gameResponder(Event* ev)
+bool gameResponder(Event& ev)
 {
     auto& flow = gameFlow();
     auto& demo = demoState();
@@ -516,7 +516,7 @@ bool gameResponder(Event* ev)
     auto& input = ticcmdInput();
 
     // allow spy mode changes even during the demo
-    if (flow.gamestate == GS_LEVEL && ev->type == ev_keydown && ev->data1 == KEY_F12
+    if (flow.gamestate == GS_LEVEL && ev.type == ev_keydown && ev.data1 == KEY_F12
         && (demo.singledemo || !gameSession().deathmatch))
     {
         // spy mode
@@ -534,8 +534,8 @@ bool gameResponder(Event* ev)
     if (flow.gameaction == ga_nothing && !demo.singledemo
         && (demo.demoplayback || flow.gamestate == GS_DEMOSCREEN))
     {
-        if (ev->type == ev_keydown || (ev->type == ev_mouse && ev->data1)
-            || (ev->type == ev_joystick && ev->data1))
+        if (ev.type == ev_keydown || (ev.type == ev_mouse && ev.data1)
+            || (ev.type == ev_joystick && ev.data1))
         {
             startControlPanel();
             return true;
@@ -546,7 +546,7 @@ bool gameResponder(Event* ev)
     if (flow.gamestate == GS_LEVEL)
     {
 #if 0 
-        if (devparm && ev->type == ev_keydown && ev->data1 == ';')
+        if (devparm && ev.type == ev_keydown && ev.data1 == ';')
         {
             deathMatchSpawnPlayer(0);
             return true;
@@ -566,41 +566,41 @@ bool gameResponder(Event* ev)
             return true; // finale ate the event
     }
 
-    switch (ev->type)
+    switch (ev.type)
     {
         case ev_keydown:
-            if (ev->data1 == KEY_PAUSE)
+            if (ev.data1 == KEY_PAUSE)
             {
                 pendingCommands().sendpause = true;
                 return true;
             }
-            if (ev->data1 < NUMKEYS)
-                input.gamekeydown[ev->data1] = true;
+            if (ev.data1 < NUMKEYS)
+                input.gamekeydown[ev.data1] = true;
             return true; // eat key down events
 
         case ev_keyup:
-            if (ev->data1 < NUMKEYS)
-                input.gamekeydown[ev->data1] = false;
+            if (ev.data1 < NUMKEYS)
+                input.gamekeydown[ev.data1] = false;
             return false; // always let key up events filter down
 
         case ev_mouse:
         {
             const auto sensitivity = menuSettings().mouseSensitivity;
-            mousebuttons[0] = ev->data1 & 1;
-            mousebuttons[1] = ev->data1 & 2;
-            mousebuttons[2] = ev->data1 & 4;
-            input.mousex = ev->data2 * (sensitivity + 5) / 10;
-            input.mousey = ev->data3 * (sensitivity + 5) / 10;
+            mousebuttons[0] = ev.data1 & 1;
+            mousebuttons[1] = ev.data1 & 2;
+            mousebuttons[2] = ev.data1 & 4;
+            input.mousex = ev.data2 * (sensitivity + 5) / 10;
+            input.mousey = ev.data3 * (sensitivity + 5) / 10;
             return true; // eat events
         }
 
         case ev_joystick:
-            joybuttons[0] = ev->data1 & 1;
-            joybuttons[1] = ev->data1 & 2;
-            joybuttons[2] = ev->data1 & 4;
-            joybuttons[3] = ev->data1 & 8;
-            input.joyxmove = ev->data2;
-            input.joyymove = ev->data3;
+            joybuttons[0] = ev.data1 & 1;
+            joybuttons[1] = ev.data1 & 2;
+            joybuttons[2] = ev.data1 & 4;
+            joybuttons[3] = ev.data1 & 8;
+            input.joyxmove = ev.data2;
+            input.joyymove = ev.data3;
             return true; // eat events
 
         default:
@@ -682,9 +682,9 @@ void gameTicker()
             doom_memcpy(cmd, &net.netcmds[i][buf], sizeof(Ticcmd));
 
             if (demo.demoplayback)
-                readDemoTiccmd(cmd);
+                readDemoTiccmd(*cmd);
             if (demo.demorecording)
-                writeDemoTiccmd(cmd);
+                writeDemoTiccmd(*cmd);
 
             // check for turbo cheats
             if (cmd->forwardmove > TURBOTHRESHOLD && !(clock.gametic & 31)
@@ -858,7 +858,7 @@ void playerReborn(int player)
 // because something is occupying it
 //
 
-bool checkSpot(int playernum, MapThing* mthing)
+bool checkSpot(int playernum, MapThing& mthing)
 {
     auto& players_ = playerState();
     auto& corpses = corpseQueue();
@@ -872,28 +872,28 @@ bool checkSpot(int playernum, MapThing* mthing)
     {
         // first spawn of level, before corpses
         for (int i = 0; i < playernum; i++)
-            if (players_.players[i].mo->x == Doom::Fixed::fromInt(mthing->x)
-                && players_.players[i].mo->y == Doom::Fixed::fromInt(mthing->y))
+            if (players_.players[i].mo->x == Doom::Fixed::fromInt(mthing.x)
+                && players_.players[i].mo->y == Doom::Fixed::fromInt(mthing.y))
                 return false;
         return true;
     }
 
-    x = Doom::Fixed::fromInt(mthing->x);
-    y = Doom::Fixed::fromInt(mthing->y);
+    x = Doom::Fixed::fromInt(mthing.x);
+    y = Doom::Fixed::fromInt(mthing.y);
 
-    if (!Doom::checkPosition(players_.players[playernum].mo, x, y))
+    if (!Doom::checkPosition(*players_.players[playernum].mo, x, y))
         return false;
 
     // flush an old corpse if needed
     if (corpses.bodyqueslot >= BODYQUESIZE)
-        Doom::removeMobj(corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE]);
+        Doom::removeMobj(*corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE]);
     corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE] =
         players_.players[playernum].mo;
     corpses.bodyqueslot++;
 
     // spawn a teleport fog
     ss = Doom::pointInSubsector(x, y);
-    const auto anFine = (ang45 * (mthing->angle / 45)).fineIndex();
+    const auto anFine = (ang45 * (mthing.angle / 45)).fineIndex();
 
     mo = Doom::spawnMobj(x + 20 * finecosine[anFine],
                          y + 20 * finesine[anFine],
@@ -929,16 +929,16 @@ void deathMatchSpawnPlayer(int playernum)
     for (int j = 0; j < 20; j++)
     {
         i = Doom::randomness().forPlay() % selections;
-        if (checkSpot(playernum, &spawns.deathmatchstarts[i]))
+        if (checkSpot(playernum, spawns.deathmatchstarts[i]))
         {
             spawns.deathmatchstarts[i].type = playernum + 1;
-            Doom::spawnPlayer(&spawns.deathmatchstarts[i]);
+            Doom::spawnPlayer(spawns.deathmatchstarts[i]);
             return;
         }
     }
 
     // no good spot, so the player will probably get stuck
-    Doom::spawnPlayer(&spawns.playerstarts[playernum]);
+    Doom::spawnPlayer(spawns.playerstarts[playernum]);
 }
 
 //
@@ -968,25 +968,25 @@ void doReborn(int playernum)
             return;
         }
 
-        if (checkSpot(playernum, &spawns.playerstarts[playernum]))
+        if (checkSpot(playernum, spawns.playerstarts[playernum]))
         {
-            Doom::spawnPlayer(&spawns.playerstarts[playernum]);
+            Doom::spawnPlayer(spawns.playerstarts[playernum]);
             return;
         }
 
         // try to spawn at one of the other players spots
         for (int i = 0; i < MAXPLAYERS; i++)
         {
-            if (checkSpot(playernum, &spawns.playerstarts[i]))
+            if (checkSpot(playernum, spawns.playerstarts[i]))
             {
                 spawns.playerstarts[i].type = playernum + 1; // fake as other player
-                Doom::spawnPlayer(&spawns.playerstarts[i]);
+                Doom::spawnPlayer(spawns.playerstarts[i]);
                 spawns.playerstarts[i].type = i + 1; // restore
                 return;
             }
             // he's going to be inside something.  Too bad.
         }
-        Doom::spawnPlayer(&spawns.playerstarts[playernum]);
+        Doom::spawnPlayer(spawns.playerstarts[playernum]);
     }
 }
 
@@ -1491,7 +1491,7 @@ void initNewGame(Skill skill, int episode, int map)
 // DEMO RECORDING
 //
 
-void readDemoTiccmd(Ticcmd* cmd)
+void readDemoTiccmd(Ticcmd& cmd)
 {
     auto& demo = demoState();
 
@@ -1501,22 +1501,22 @@ void readDemoTiccmd(Ticcmd* cmd)
         checkDemoStatus();
         return;
     }
-    cmd->forwardmove = (static_cast<signed char>(*demo.demo_p++));
-    cmd->sidemove = (static_cast<signed char>(*demo.demo_p++));
-    cmd->angleturn = (static_cast<unsigned char>(*demo.demo_p++)) << 8;
-    cmd->buttons = static_cast<unsigned char>(*demo.demo_p++);
+    cmd.forwardmove = (static_cast<signed char>(*demo.demo_p++));
+    cmd.sidemove = (static_cast<signed char>(*demo.demo_p++));
+    cmd.angleturn = (static_cast<unsigned char>(*demo.demo_p++)) << 8;
+    cmd.buttons = static_cast<unsigned char>(*demo.demo_p++);
 }
 
-void writeDemoTiccmd(Ticcmd* cmd)
+void writeDemoTiccmd(Ticcmd& cmd)
 {
     auto& demo = demoState();
 
     if (ticcmdInput().gamekeydown['q']) // press q to end demo recording
         checkDemoStatus();
-    *demo.demo_p++ = cmd->forwardmove;
-    *demo.demo_p++ = cmd->sidemove;
-    *demo.demo_p++ = (cmd->angleturn + 128) >> 8;
-    *demo.demo_p++ = cmd->buttons;
+    *demo.demo_p++ = cmd.forwardmove;
+    *demo.demo_p++ = cmd.sidemove;
+    *demo.demo_p++ = (cmd.angleturn + 128) >> 8;
+    *demo.demo_p++ = cmd.buttons;
     demo.demo_p -= 4;
     if (demo.demo_p > demo.demoend - 16)
     {

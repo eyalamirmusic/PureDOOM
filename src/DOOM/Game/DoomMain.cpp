@@ -140,7 +140,7 @@ void Doom::executeSetViewSize();
 // namespace code below binds :: not Doom::).
 extern void* statcopy; // g_game
 void Doom::checkNetGame();
-void Doom::buildTiccmd(Doom::Ticcmd* cmd);
+void Doom::buildTiccmd(Doom::Ticcmd& cmd);
 
 namespace Doom
 {
@@ -154,11 +154,11 @@ void doAdvanceDemo();
 // postEvent
 // Called by the I/O functions when input is detected
 //
-void postEvent(Event* ev)
+void postEvent(Event& ev)
 {
     auto& events_ = eventQueue();
 
-    events_.events[events_.eventhead] = *ev;
+    events_.events[events_.eventhead] = ev;
     events_.eventhead++;
     events_.eventhead = (events_.eventhead) & (MAXEVENTS - 1);
 }
@@ -180,8 +180,8 @@ void processEvents()
     for (; events_.eventtail != events_.eventhead;)
     {
         ev = &events_.events[events_.eventtail];
-        if (!menuResponder(ev))
-            Doom::gameResponder(ev);
+        if (!menuResponder(*ev))
+            Doom::gameResponder(*ev);
         // else menu ate the event
         events_.eventtail++;
         events_.eventtail = (events_.eventtail) & (MAXEVENTS - 1);
@@ -399,7 +399,7 @@ void doomLoop()
             startTic();
             processEvents();
             Doom::buildTiccmd(
-                &net.netcmds[state.consoleplayer][net.maketic % BACKUPTICS]);
+                net.netcmds[state.consoleplayer][net.maketic % BACKUPTICS]);
             if (attractMode().advancedemo)
                 doAdvanceDemo();
             menuTicker();

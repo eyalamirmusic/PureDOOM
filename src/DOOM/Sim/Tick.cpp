@@ -31,8 +31,8 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 void initThinkers();
-void addThinker(Thinker* thinker);
-void removeThinker(Thinker* thinker);
+void addThinker(Thinker& thinker);
+void removeThinker(Thinker& thinker);
 void runThinkers();
 void ticker();
 
@@ -134,13 +134,13 @@ void initThinkers()
 // addThinker
 // Adds a new thinker at the end of the list.
 //
-void addThinker(Thinker* thinker)
+void addThinker(Thinker& thinker)
 {
     auto& thinkers = thinkerList();
-    thinkers.cap.prev->next = thinker;
-    thinker->next = &thinkers.cap;
-    thinker->prev = thinkers.cap.prev;
-    thinkers.cap.prev = thinker;
+    thinkers.cap.prev->next = &thinker;
+    thinker.next = &thinkers.cap;
+    thinker.prev = thinkers.cap.prev;
+    thinkers.cap.prev = &thinker;
 }
 
 //
@@ -148,11 +148,11 @@ void addThinker(Thinker* thinker)
 // Deallocation is lazy -- it will not actually be freed
 // until its thinking turn comes up.
 //
-void removeThinker(Thinker* thinker)
+void removeThinker(Thinker& thinker)
 {
     // Deallocation is lazy: mark it, and runThinkers frees it when its turn next
     // comes up. Was `function.acv = (actionf_v) -1`.
-    thinker->removed = true;
+    thinker.removed = true;
 }
 
 //

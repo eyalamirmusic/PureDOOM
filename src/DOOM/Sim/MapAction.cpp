@@ -250,7 +250,7 @@ bool shootTraverse(
         li = in->d.line;
 
         if (li->special)
-            shootSpecialLine(shootthing, li);
+            shootSpecialLine(*shootthing, *li);
 
         if (!(li->flags & ML_TWOSIDED))
             goto hitline;
@@ -338,7 +338,7 @@ bool shootTraverse(
         spawnBlood(x, y, z, la_damage);
 
     if (la_damage)
-        damageMobj(th, shootthing, shootthing, la_damage);
+        damageMobj(*th, shootthing, shootthing, la_damage);
 
     // don't go any farther
     return false;
@@ -374,7 +374,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
     if (lineSide({usething->x, usething->y}, *in->d.line) == 1)
         side = 1;
 
-    useSpecialLine(usething, in->d.line, side);
+    useSpecialLine(*usething, *in->d.line, side);
 
     // can't use for than one special line in a row
     return false;
@@ -416,7 +416,7 @@ static bool
     if (checkSight(thing, bombspot))
     {
         // must be in direct path
-        damageMobj(thing, bombspot, bombsource, bombdamage - dist);
+        damageMobj(*thing, bombspot, bombsource, bombdamage - dist);
     }
 
     return true;
@@ -432,7 +432,7 @@ static bool
 //
 static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 {
-    if (thingHeightClip(thing))
+    if (thingHeightClip(*thing))
     {
         // keep checking
         return true;
@@ -441,7 +441,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     // crunch bodies to giblets
     if (thing->health <= 0)
     {
-        setMobjState(thing, S_GIBS);
+        setMobjState(*thing, S_GIBS);
 
         thing->flags &= ~MF_SOLID;
         thing->height = fixed_t {};
@@ -454,7 +454,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     // crunch dropped items
     if (thing->flags & MF_DROPPED)
     {
-        removeMobj(thing);
+        removeMobj(*thing);
 
         // keep checking
         return true;
@@ -470,17 +470,15 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 
     if (crushchange && !(levelStats().leveltime & 3))
     {
-        damageMobj(thing, nullptr, nullptr, 10);
+        damageMobj(*thing, nullptr, nullptr, 10);
 
         // spray blood in a random direction
         Mobj* mo =
             spawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
 
         // Raw: the random difference shifted into the fraction, ~+-16 units/tic.
-        mo->momx = fixed_t {
-            (randomness().forPlay() - randomness().forPlay()) << 12};
-        mo->momy = fixed_t {
-            (randomness().forPlay() - randomness().forPlay()) << 12};
+        mo->momx = fixed_t {(randomness().forPlay() - randomness().forPlay()) << 12};
+        mo->momy = fixed_t {(randomness().forPlay() - randomness().forPlay()) << 12};
     }
 
     // keep checking (crush other things)
@@ -493,7 +491,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 // The momx / momy move is bad, so try to slide along a wall. Find the first line
 // hit, move flush to it, and slide along it. This is a kludgy mess.
 //
-void slideMove(Mobj* mo)
+void slideMove(Mobj& mo)
 {
     auto& scratch = actionScratch();
 
@@ -504,7 +502,7 @@ void slideMove(Mobj* mo)
     fixed_t newx;
     fixed_t newy;
 
-    scratch.slidemo = mo;
+    scratch.slidemo = &mo;
     int hitcount = 0;
 
 retry:
@@ -512,46 +510,42 @@ retry:
         goto stairstep; // don't loop forever
 
     // trace along the three leading corners
-    if (mo->momx.isPositive())
+    if (mo.momx.isPositive())
     {
-        leadx = mo->x + mo->radius;
-        trailx = mo->x - mo->radius;
+        leadx = mo.x + mo.radius;
+        trailx = mo.x - mo.radius;
     }
     else
     {
-        leadx = mo->x - mo->radius;
-        trailx = mo->x + mo->radius;
+        leadx = mo.x - mo.radius;
+        trailx = mo.x + mo.radius;
     }
 
-    if (mo->momy.isPositive())
+    if (mo.momy.isPositive())
     {
-        leady = mo->y + mo->radius;
-        traily = mo->y - mo->radius;
+        leady = mo.y + mo.radius;
+        traily = mo.y - mo.radius;
     }
     else
     {
-        leady = mo->y - mo->radius;
-        traily = mo->y + mo->radius;
+        leady = mo.y - mo.radius;
+        traily = mo.y + mo.radius;
     }
 
     scratch.bestslidefrac = FRACUNIT + fixed_t {1};
 
-    pathTraverse(leadx,
-                 leady,
-                 leadx + mo->momx,
-                 leady + mo->momy,
-                 PT_ADDLINES,
-                 slideTraverse);
+    pathTraverse(
+        leadx, leady, leadx + mo.momx, leady + mo.momy, PT_ADDLINES, slideTraverse);
     pathTraverse(trailx,
                  leady,
-                 trailx + mo->momx,
-                 leady + mo->momy,
+                 trailx + mo.momx,
+                 leady + mo.momy,
                  PT_ADDLINES,
                  slideTraverse);
     pathTraverse(leadx,
                  traily,
-                 leadx + mo->momx,
-                 traily + mo->momy,
+                 leadx + mo.momx,
+                 traily + mo.momy,
                  PT_ADDLINES,
                  slideTraverse);
 
@@ -560,8 +554,8 @@ retry:
     {
         // the move most have hit the middle, so stairstep
     stairstep:
-        if (!tryMove(mo, mo->x, mo->y + mo->momy))
-            tryMove(mo, mo->x + mo->momx, mo->y);
+        if (!tryMove(mo, mo.x, mo.y + mo.momy))
+            tryMove(mo, mo.x + mo.momx, mo.y);
         return;
     }
 
@@ -569,10 +563,10 @@ retry:
     scratch.bestslidefrac -= fixed_t {0x800};
     if (scratch.bestslidefrac.isPositive())
     {
-        newx = FixedMul(mo->momx, scratch.bestslidefrac);
-        newy = FixedMul(mo->momy, scratch.bestslidefrac);
+        newx = FixedMul(mo.momx, scratch.bestslidefrac);
+        newy = FixedMul(mo.momy, scratch.bestslidefrac);
 
-        if (!tryMove(mo, mo->x + newx, mo->y + newy))
+        if (!tryMove(mo, mo.x + newx, mo.y + newy))
             goto stairstep;
     }
 
@@ -586,15 +580,15 @@ retry:
     if (!scratch.bestslidefrac.isPositive())
         return;
 
-    scratch.tmxmove = FixedMul(mo->momx, scratch.bestslidefrac);
-    scratch.tmymove = FixedMul(mo->momy, scratch.bestslidefrac);
+    scratch.tmxmove = FixedMul(mo.momx, scratch.bestslidefrac);
+    scratch.tmymove = FixedMul(mo.momy, scratch.bestslidefrac);
 
     hitSlideLine(scratch.bestslideline); // clip the moves
 
-    mo->momx = scratch.tmxmove;
-    mo->momy = scratch.tmymove;
+    mo.momx = scratch.tmxmove;
+    mo.momy = scratch.tmymove;
 
-    if (!tryMove(mo, mo->x + scratch.tmxmove, mo->y + scratch.tmymove))
+    if (!tryMove(mo, mo.x + scratch.tmxmove, mo.y + scratch.tmymove))
     {
         goto retry;
     }
@@ -637,42 +631,42 @@ AimResult aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance)
 // Doom::lineAttack
 // If damage == 0, it is just a test trace used only to find an aim target.
 //
-void lineAttack(Mobj* t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
+void lineAttack(Mobj& t1, angle_t angle, fixed_t distance, fixed_t slope, int damage)
 {
     Clip& clip = Doom::clip();
 
     const auto angleFine = angle.fineIndex();
-    Mobj* shootthing = t1;
+    Mobj* shootthing = &t1;
     int la_damage = damage;
     // Whole units scaling the fixed cosine - an integer product. See aimLineAttack.
-    fixed_t x2 = t1->x + distance.toInt() * finecosine[angleFine];
-    fixed_t y2 = t1->y + distance.toInt() * finesine[angleFine];
-    fixed_t shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
+    fixed_t x2 = t1.x + distance.toInt() * finecosine[angleFine];
+    fixed_t y2 = t1.y + distance.toInt() * finesine[angleFine];
+    fixed_t shootz = t1.z + (t1.height >> 1) + 8 * FRACUNIT;
     clip.attackrange = distance;
     fixed_t aimslope = slope;
 
     const auto tryShoot = [shootthing, shootz, aimslope, la_damage](Intercept* in)
     { return shootTraverse(in, shootthing, shootz, aimslope, la_damage); };
 
-    pathTraverse(t1->x, t1->y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryShoot);
+    pathTraverse(t1.x, t1.y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryShoot);
 }
 
 //
 // Doom::useLines
 // Looks for special lines in front of the player to activate.
 //
-void useLines(Player* player)
+void useLines(Player& player)
 {
-    angle_t angle = player->mo->angle;
+    angle_t angle = player.mo->angle;
     const auto angleFine = angle.fineIndex();
 
-    fixed_t x1 = player->mo->x;
-    fixed_t y1 = player->mo->y;
+    fixed_t x1 = player.mo->x;
+    fixed_t y1 = player.mo->y;
     // USERANGE in whole units scaling the fixed cosine - an integer product.
     fixed_t x2 = x1 + USERANGE.toInt() * finecosine[angleFine];
     fixed_t y2 = y1 + USERANGE.toInt() * finesine[angleFine];
 
-    Mobj* usething = player->mo;
+    Mobj* usething = player.mo;
 
     const auto tryLine = [usething](Intercept* in)
     { return useTraverse(in, usething); };
@@ -684,7 +678,7 @@ void useLines(Player* player)
 // Doom::radiusAttack
 // Source is the creature that caused the explosion at spot.
 //
-void radiusAttack(Mobj* spot, Mobj* source, int damage)
+void radiusAttack(Mobj& spot, Mobj* source, int damage)
 {
     // Vanilla, overflow and all: MAXRADIUS is already a fixed value, so shifting
     // (damage + MAXRADIUS) up by another Doom::fracBits wraps the MAXRADIUS term away
@@ -693,12 +687,12 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
     fixed_t dist {(damage + (MAXRADIUS).raw) << fracBits};
 
     // Blockmap cell indices: a raw shift by MAPBLOCKSHIFT, not a conversion.
-    int yh = (spot->y + dist - bmaporgy).raw >> MAPBLOCKSHIFT;
-    int yl = (spot->y - dist - bmaporgy).raw >> MAPBLOCKSHIFT;
-    int xh = (spot->x + dist - bmaporgx).raw >> MAPBLOCKSHIFT;
-    int xl = (spot->x - dist - bmaporgx).raw >> MAPBLOCKSHIFT;
-    const auto hitThing = [spot, source, damage](Mobj* thing)
-    { return radiusAttackThing(thing, spot, source, damage); };
+    int yh = (spot.y + dist - bmaporgy).raw >> MAPBLOCKSHIFT;
+    int yl = (spot.y - dist - bmaporgy).raw >> MAPBLOCKSHIFT;
+    int xh = (spot.x + dist - bmaporgx).raw >> MAPBLOCKSHIFT;
+    int xl = (spot.x - dist - bmaporgx).raw >> MAPBLOCKSHIFT;
+    const auto hitThing = [&spot, source, damage](Mobj* thing)
+    { return radiusAttackThing(thing, &spot, source, damage); };
 
     for (int y = yl; y <= yh; y++)
         for (int x = xl; x <= xh; x++)
@@ -708,7 +702,7 @@ void radiusAttack(Mobj* spot, Mobj* source, int damage)
 //
 // Doom::changeSector
 //
-bool changeSector(Sector* sector, bool crunch)
+bool changeSector(Sector& sector, bool crunch)
 {
     bool nofit = false;
 
@@ -716,8 +710,8 @@ bool changeSector(Sector* sector, bool crunch)
     { return changeSectorThing(thing, crunch, nofit); };
 
     // re-check heights for all things near the moving sector
-    for (int x = sector->blockbox[BOXLEFT]; x <= sector->blockbox[BOXRIGHT]; x++)
-        for (int y = sector->blockbox[BOXBOTTOM]; y <= sector->blockbox[BOXTOP]; y++)
+    for (int x = sector.blockbox[BOXLEFT]; x <= sector.blockbox[BOXRIGHT]; x++)
+        for (int y = sector.blockbox[BOXBOTTOM]; y <= sector.blockbox[BOXTOP]; y++)
             forEachThingInBlock(x, y, clipThing);
 
     return nofit;

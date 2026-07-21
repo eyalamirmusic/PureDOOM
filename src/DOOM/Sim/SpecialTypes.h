@@ -49,7 +49,7 @@
 int twoSided(int sector, int line);
 Doom::Sector* getSector(int currentSector, int line, int side);
 Doom::Side* getSide(int currentSector, int line, int side);
-Doom::Sector* getNextSector(Doom::Line* line, Doom::Sector* sec);
+Doom::Sector* getNextSector(Doom::Line& line, Doom::Sector& sec);
 
 //
 // SPECIAL

@@ -15,6 +15,6 @@ MoveResult movePlane(Sector& sector,
                      int floorOrCeiling,
                      int direction);
 void moveFloor(FloorMove& floor);
-int doFloor(Line* line, FloorType floortype);
-int buildStairs(Line* line, StairType type);
+int doFloor(Line& line, FloorType floortype);
+int buildStairs(Line& line, StairType type);
 } // namespace Doom

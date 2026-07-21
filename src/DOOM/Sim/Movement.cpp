@@ -46,7 +46,7 @@ bool stompThing(Mobj* thing)
     if (!clip.tmthing->player && gameSession().gamemap != 30)
         return false;
 
-    damageMobj(thing, clip.tmthing, clip.tmthing, 10000);
+    damageMobj(*thing, clip.tmthing, clip.tmthing, 10000);
 
     return true;
 }
@@ -138,16 +138,15 @@ bool checkThing(Mobj* thing)
     // check for skulls slamming into things
     if (clip.tmthing->flags & MF_SKULLFLY)
     {
-        int damage =
-            ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+        int damage = ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
 
-        damageMobj(thing, clip.tmthing, clip.tmthing, damage);
+        damageMobj(*thing, clip.tmthing, clip.tmthing, damage);
 
         clip.tmthing->flags &= ~MF_SKULLFLY;
         clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = fixed_t {};
 
-        setMobjState(clip.tmthing,
-                           static_cast<StateNum>(clip.tmthing->info->spawnstate));
+        setMobjState(*clip.tmthing,
+                     static_cast<StateNum>(clip.tmthing->info->spawnstate));
 
         return false; // stop moving
     }
@@ -187,9 +186,8 @@ bool checkThing(Mobj* thing)
         }
 
         // damage / explode
-        int damage =
-            ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
-        damageMobj(thing, clip.tmthing, clip.tmthing->target, damage);
+        int damage = ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+        damageMobj(*thing, clip.tmthing, clip.tmthing->target, damage);
 
         // don't traverse any more
         return false;
@@ -202,7 +200,7 @@ bool checkThing(Mobj* thing)
         if (clip.tmflags & MF_PICKUP)
         {
             // can remove thing
-            touchSpecialThing(thing, clip.tmthing);
+            touchSpecialThing(*thing, *clip.tmthing);
         }
         return !solid;
     }
@@ -211,12 +209,12 @@ bool checkThing(Mobj* thing)
 }
 } // namespace
 
-bool checkPosition(Mobj* thing, fixed_t x, fixed_t y)
+bool checkPosition(Mobj& thing, fixed_t x, fixed_t y)
 {
     Clip& clip = Doom::clip();
 
-    clip.tmthing = thing;
-    clip.tmflags = thing->flags;
+    clip.tmthing = &thing;
+    clip.tmflags = thing.flags;
 
     clip.tmx = x;
     clip.tmy = y;
@@ -269,7 +267,7 @@ bool checkPosition(Mobj* thing, fixed_t x, fixed_t y)
     return true;
 }
 
-bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
+bool tryMove(Mobj& thing, fixed_t x, fixed_t y)
 {
     Clip& clip = Doom::clip();
 
@@ -277,52 +275,49 @@ bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
     if (!checkPosition(thing, x, y))
         return false; // solid wall or thing
 
-    if (!(thing->flags & MF_NOCLIP))
+    if (!(thing.flags & MF_NOCLIP))
     {
-        if (clip.tmceilingz - clip.tmfloorz < thing->height)
+        if (clip.tmceilingz - clip.tmfloorz < thing.height)
             return false; // doesn't fit
 
         clip.floatok = true;
 
-        if (!(thing->flags & MF_TELEPORT)
-            && clip.tmceilingz - thing->z < thing->height)
+        if (!(thing.flags & MF_TELEPORT) && clip.tmceilingz - thing.z < thing.height)
             return false; // mobj must lower itself to fit
 
-        if (!(thing->flags & MF_TELEPORT)
-            && clip.tmfloorz - thing->z > 24 * FRACUNIT)
+        if (!(thing.flags & MF_TELEPORT) && clip.tmfloorz - thing.z > 24 * FRACUNIT)
             return false; // too big a step up
 
-        if (!(thing->flags & (MF_DROPOFF | MF_FLOAT))
+        if (!(thing.flags & (MF_DROPOFF | MF_FLOAT))
             && clip.tmfloorz - clip.tmdropoffz > 24 * FRACUNIT)
             return false; // don't stand over a dropoff
     }
 
     // the move is ok, so link the thing into its new position
-    unsetThingPosition(*thing);
+    unsetThingPosition(thing);
 
-    fixed_t oldx = thing->x;
-    fixed_t oldy = thing->y;
-    thing->floorz = clip.tmfloorz;
-    thing->ceilingz = clip.tmceilingz;
-    thing->x = x;
-    thing->y = y;
+    fixed_t oldx = thing.x;
+    fixed_t oldy = thing.y;
+    thing.floorz = clip.tmfloorz;
+    thing.ceilingz = clip.tmceilingz;
+    thing.x = x;
+    thing.y = y;
 
-    setThingPosition(*thing);
+    setThingPosition(thing);
 
     // if any special lines were hit, do the effect
-    if (!(thing->flags & (MF_TELEPORT | MF_NOCLIP)))
+    if (!(thing.flags & (MF_TELEPORT | MF_NOCLIP)))
     {
         while (clip.numspechit--)
         {
             // see if the line was crossed
             Line* ld = clip.spechit[clip.numspechit];
-            int side = lineSide({thing->x, thing->y}, *ld);
+            int side = lineSide({thing.x, thing.y}, *ld);
             int oldside = lineSide({oldx, oldy}, *ld);
             if (side != oldside)
             {
                 if (ld->special)
-                    crossSpecialLine(
-                        static_cast<int>(ld - lines), oldside, thing);
+                    crossSpecialLine(static_cast<int>(ld - lines), oldside, thing);
             }
         }
     }
@@ -330,13 +325,13 @@ bool tryMove(Mobj* thing, fixed_t x, fixed_t y)
     return true;
 }
 
-bool teleportMove(Mobj* thing, fixed_t x, fixed_t y)
+bool teleportMove(Mobj& thing, fixed_t x, fixed_t y)
 {
     Clip& clip = Doom::clip();
 
     // kill anything occupying the position
-    clip.tmthing = thing;
-    clip.tmflags = thing->flags;
+    clip.tmthing = &thing;
+    clip.tmflags = thing.flags;
 
     clip.tmx = x;
     clip.tmy = y;
@@ -370,43 +365,43 @@ bool teleportMove(Mobj* thing, fixed_t x, fixed_t y)
                 return false;
 
     // the move is ok, so link the thing into its new position
-    unsetThingPosition(*thing);
+    unsetThingPosition(thing);
 
-    thing->floorz = clip.tmfloorz;
-    thing->ceilingz = clip.tmceilingz;
-    thing->x = x;
-    thing->y = y;
+    thing.floorz = clip.tmfloorz;
+    thing.ceilingz = clip.tmceilingz;
+    thing.x = x;
+    thing.y = y;
 
-    setThingPosition(*thing);
+    setThingPosition(thing);
 
     return true;
 }
 
-bool thingHeightClip(Mobj* thing)
+bool thingHeightClip(Mobj& thing)
 {
     Clip& clip = Doom::clip();
 
-    bool onfloor = (thing->z == thing->floorz);
+    bool onfloor = (thing.z == thing.floorz);
 
-    checkPosition(thing, thing->x, thing->y);
+    checkPosition(thing, thing.x, thing.y);
     // what about stranding a monster partially off an edge?
 
-    thing->floorz = clip.tmfloorz;
-    thing->ceilingz = clip.tmceilingz;
+    thing.floorz = clip.tmfloorz;
+    thing.ceilingz = clip.tmceilingz;
 
     if (onfloor)
     {
         // walking monsters rise and fall with the floor
-        thing->z = thing->floorz;
+        thing.z = thing.floorz;
     }
     else
     {
         // don't adjust a floating monster unless forced to
-        if (thing->z + thing->height > thing->ceilingz)
-            thing->z = thing->ceilingz - thing->height;
+        if (thing.z + thing.height > thing.ceilingz)
+            thing.z = thing.ceilingz - thing.height;
     }
 
-    if (thing->ceilingz - thing->floorz < thing->height)
+    if (thing.ceilingz - thing.floorz < thing.height)
         return false;
 
     return true;

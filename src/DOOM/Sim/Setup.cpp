@@ -43,7 +43,7 @@
 #include "Switches.h"
 #include "../Math/BBox.h"
 #include "ItemRespawnQueue.h"
-void Doom::spawnMapThing(MapThing* mthing);
+void Doom::spawnMapThing(MapThing& mthing);
 
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
@@ -240,7 +240,7 @@ void loadThings(int lump)
         mt->type = littleEndian(mt->type);
         mt->options = littleEndian(mt->options);
 
-        spawnMapThing(mt);
+        spawnMapThing(*mt);
     }
 }
 
