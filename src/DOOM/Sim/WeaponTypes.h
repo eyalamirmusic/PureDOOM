@@ -23,6 +23,7 @@
 
 // Basic data types.
 // Needs fixed point, and BAM angles.
+#include "../doomtype.h" // toIndex, for numPSprites below
 #include "../Math/FixedPoint.h"
 #include "../Math/TrigTables.h"
 
@@ -51,12 +52,14 @@ constexpr int FF_FRAMEMASK = 0x7fff;
 //
 namespace Doom
 {
-enum PspNum
+enum class PspNum
 {
-    ps_weapon,
-    ps_flash,
-    NUMPSPRITES
+    Weapon,
+    Flash,
+    NumPSprites
 };
+
+constexpr int numPSprites = toIndex(PspNum::NumPSprites);
 } // namespace Doom
 
 namespace Doom

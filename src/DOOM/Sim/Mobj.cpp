@@ -66,14 +66,14 @@ bool setMobjState(Mobj& mobj, StateNum state)
 {
     do
     {
-        if (state == S_NULL)
+        if (state == StateNum::Null)
         {
-            mobj.state = (State*) S_NULL;
+            mobj.state = nullptr; // was (State*) S_NULL, i.e. a null pointer
             removeMobj(mobj);
             return false;
         }
 
-        State* st = &states[state];
+        State* st = &states[toIndex(state)];
         mobj.state = st;
         mobj.tics = st->tics;
         mobj.sprite = st->sprite;
@@ -99,7 +99,7 @@ void explodeMissile(Mobj& mo)
 {
     mo.momx = mo.momy = mo.momz = fixed_t {};
 
-    setMobjState(mo, static_cast<StateNum>(mobjinfo[mo.type].deathstate));
+    setMobjState(mo, static_cast<StateNum>(mobjinfo[toIndex(mo.type)].deathstate));
 
     mo.tics -= randomness().forPlay() & 3;
 
@@ -108,7 +108,7 @@ void explodeMissile(Mobj& mo)
 
     mo.flags &= ~MF_MISSILE;
 
-    if (mo.info->deathsound)
+    if (mo.info->deathsound != SfxEnum::None)
         startSound(&mo, mo.info->deathsound);
 }
 
@@ -225,8 +225,10 @@ void xyMovement(Mobj& mo)
     {
         // if in a walking frame, stop moving
         if (player
-            && static_cast<unsigned>((player->mo->state - states) - S_PLAY_RUN1) < 4)
-            setMobjState(*player->mo, S_PLAY);
+            && static_cast<unsigned>((player->mo->state - states)
+                                     - toIndex(StateNum::PlayRun1))
+                   < 4)
+            setMobjState(*player->mo, StateNum::Play);
 
         mo.momx = fixed_t {};
         mo.momy = fixed_t {};
@@ -293,7 +295,7 @@ void zMovement(Mobj& mo)
                 // after hitting the ground (hard),
                 // and utter appropriate sound.
                 mo.player->deltaviewheight = mo.momz >> 3;
-                startSound(&mo, sfx_oof);
+                startSound(&mo, SfxEnum::Oof);
             }
             mo.momz = fixed_t {};
         }
@@ -351,17 +353,17 @@ void nightmareRespawn(Mobj& mobj)
 
     // spawn a teleport fog at old spot
     // because of removal of the body?
-    Mobj* mo =
-        spawnMobj(mobj.x, mobj.y, mobj.subsector->sector->floorheight, MT_TFOG);
+    Mobj* mo = spawnMobj(
+        mobj.x, mobj.y, mobj.subsector->sector->floorheight, MobjType::Tfog);
     // initiate teleport sound
-    startSound(mo, sfx_telept);
+    startSound(mo, SfxEnum::Telept);
 
     // spawn a teleport fog at the new spot
     SubSector* ss = pointInSubsector(x, y);
 
-    mo = spawnMobj(x, y, ss->sector->floorheight, MT_TFOG);
+    mo = spawnMobj(x, y, ss->sector->floorheight, MobjType::Tfog);
 
-    startSound(mo, sfx_telept);
+    startSound(mo, SfxEnum::Telept);
 
     // spawn the new monster
     MapThing* mthing = &mobj.spawnpoint;
@@ -450,7 +452,7 @@ void mobjThinker(Mobj& mobj)
 Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
 {
     Mobj* mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
-    MobjInfo* info = &mobjinfo[type];
+    MobjInfo* info = &mobjinfo[toIndex(type)];
 
     mobj->type = type;
     mobj->info = info;
@@ -467,7 +469,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     mobj->lastlook = randomness().forPlay() % MAXPLAYERS;
     // do not set the state with setMobjState,
     // because action routines can not be called yet
-    State* st = &states[info->spawnstate];
+    State* st = &states[toIndex(info->spawnstate)];
 
     mobj->state = st;
     mobj->tics = st->tics;
@@ -498,7 +500,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
 void removeMobj(Mobj& mobj)
 {
     if ((mobj.flags & MF_SPECIAL) && !(mobj.flags & MF_DROPPED)
-        && (mobj.type != MT_INV) && (mobj.type != MT_INS))
+        && (mobj.type != MobjType::Inv) && (mobj.type != MobjType::Ins))
     {
         auto& queue = itemRespawnQueue();
 
@@ -551,11 +553,11 @@ void respawnSpecials()
 
     // spawn a teleport fog at the new spot
     SubSector* ss = pointInSubsector(x, y);
-    Mobj* mo = spawnMobj(x, y, ss->sector->floorheight, MT_IFOG);
-    startSound(mo, sfx_itmbk);
+    Mobj* mo = spawnMobj(x, y, ss->sector->floorheight, MobjType::Ifog);
+    startSound(mo, SfxEnum::Itmbk);
 
     // find which type to spawn
-    for (i = 0; i < NUMMOBJTYPES; i++)
+    for (i = 0; i < numMobjTypes; i++)
     {
         if (mthing->type == mobjinfo[i].doomednum)
             break;
@@ -597,7 +599,7 @@ void spawnPlayer(MapThing& mthing)
     fixed_t x = Fixed::fromInt(mthing.x);
     fixed_t y = Fixed::fromInt(mthing.y);
     fixed_t z = ONFLOORZ;
-    Mobj* mobj = spawnMobj(x, y, z, MT_PLAYER);
+    Mobj* mobj = spawnMobj(x, y, z, MobjType::Player);
 
     // set color translations for player sprites
     if (mthing.type > 1)
@@ -691,11 +693,11 @@ void spawnMapThing(MapThing& mthing)
         return;
 
     // find which type to spawn
-    for (i = 0; i < NUMMOBJTYPES; i++)
+    for (i = 0; i < numMobjTypes; i++)
         if (mthing.type == mobjinfo[i].doomednum)
             break;
 
-    if (i == NUMMOBJTYPES)
+    if (i == numMobjTypes)
     {
         //fatalError("Error: spawnMapThing: Unknown type %i at (%i, %i)",
         //        mthing.type,
@@ -716,7 +718,7 @@ void spawnMapThing(MapThing& mthing)
 
     // don't spawn any monsters if -nomonsters
     if (launchOptions().nomonsters
-        && (i == MT_SKULL || (mobjinfo[i].flags & MF_COUNTKILL)))
+        && (i == toIndex(MobjType::Skull) || (mobjinfo[i].flags & MF_COUNTKILL)))
     {
         return;
     }
@@ -758,7 +760,7 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 {
     z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
 
-    Mobj* th = spawnMobj(x, y, z, MT_PUFF);
+    Mobj* th = spawnMobj(x, y, z, MobjType::Puff);
     th->momz = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
 
@@ -767,7 +769,7 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 
     // don't make punches spark on the wall
     if (clip().attackrange == MELEERANGE)
-        setMobjState(*th, S_PUFF3);
+        setMobjState(*th, StateNum::Puff3);
 }
 
 //
@@ -776,7 +778,7 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
 void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
 {
     z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
-    Mobj* th = spawnMobj(x, y, z, MT_BLOOD);
+    Mobj* th = spawnMobj(x, y, z, MobjType::Blood);
     th->momz = FRACUNIT * 2;
     th->tics -= randomness().forPlay() & 3;
 
@@ -784,9 +786,9 @@ void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
         th->tics = 1;
 
     if (damage <= 12 && damage >= 9)
-        setMobjState(*th, S_BLOOD2);
+        setMobjState(*th, StateNum::Blood2);
     else if (damage < 9)
-        setMobjState(*th, S_BLOOD3);
+        setMobjState(*th, StateNum::Blood3);
 }
 
 //
@@ -817,7 +819,7 @@ Mobj* spawnMissile(Mobj& source, Mobj* dest, MobjType type)
 {
     Mobj* th = spawnMobj(source.x, source.y, source.z + 4 * 8 * FRACUNIT, type);
 
-    if (th->info->seesound)
+    if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);
 
     th->target = &source; // where it came from
@@ -884,7 +886,7 @@ void spawnPlayerMissile(Mobj& source, MobjType type)
 
     Mobj* th = spawnMobj(x, y, z, type);
 
-    if (th->info->seesound)
+    if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);
 
     th->target = &source;

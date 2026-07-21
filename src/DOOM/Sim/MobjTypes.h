@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,7 +21,6 @@
 
 #pragma once
 
-
 // Basics.
 #include "../Math/TrigTables.h"
 #include "../Math/FixedPoint.h"
@@ -38,13 +37,11 @@
 // Needs precompiled tables/data structures.
 #include "Info.h"
 
-
 // Held only by pointer here; r_defs.h has the definition.
 namespace Doom
 {
 struct SubSector;
 } // namespace Doom
-
 
 //
 // NOTES: Doom::Mobj
@@ -95,7 +92,7 @@ struct SubSector;
 // things, but nothing can run into a missile).
 // Each block in the grid is 128*128 units, and knows about
 // every Doom::Line that it contains a piece of, and every
-// interactable Doom::Mobj that has its origin contained.  
+// interactable Doom::Mobj that has its origin contained.
 //
 // A valid Doom::Mobj is a Doom::Mobj that has the proper Doom::SubSector
 // filled in for its xy coordinates and is linked into the
@@ -203,7 +200,6 @@ enum MobjFlag
 };
 } // namespace Doom
 
-
 // Map Object definition.
 namespace Doom
 {
@@ -224,9 +220,9 @@ struct Mobj : Thinker
     struct Mobj* sprev;
 
     //More drawing info: to determine current sprite.
-    angle_t angle;        // orientation
-    SpriteNum sprite;        // used to find Doom::Patch and flip value
-    int frame;        // might be ORed with FF_FULLBRIGHT
+    angle_t angle; // orientation
+    SpriteNum sprite; // used to find Doom::Patch and flip value
+    int frame; // might be ORed with FF_FULLBRIGHT
 
     // Interaction info, by BLOCKMAP.
     // Links in blocks (if needed).
@@ -276,7 +272,7 @@ struct Mobj : Thinker
     int threshold;
 
     // Additional info record for player avatars only.
-    // Only valid if type == MT_PLAYER
+    // Only valid if type == MobjType::Player
     struct Player* player;
 
     // Player number last looked for.
@@ -289,8 +285,6 @@ struct Mobj : Thinker
     struct Mobj* tracer;
 };
 } // namespace Doom
-
-
 
 //-----------------------------------------------------------------------------
 //

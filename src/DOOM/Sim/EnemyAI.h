@@ -34,7 +34,7 @@ struct EnemyAI
     fixed_t viletryx {}; // where it is trying to stand the corpse up
     fixed_t viletryy {};
 
-    // The boss brain's spawn-cube targets: however many MT_BOSSTARGET things the
+    // The boss brain's spawn-cube targets: however many MobjType::Bosstarget things the
     // map placed, so a Vector rather than the vanilla cap of 32 - which had no
     // overflow guard at all, and would have written past the array on a map with
     // more. braintargeton stays: it is a persistent cursor across A_BrainSpit

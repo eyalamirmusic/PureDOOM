@@ -66,7 +66,7 @@ void moveCeiling(Ceiling& ceiling)
                     case CeilingType::FastCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
-                            sfx_stnmov);
+                            SfxEnum::Stnmov);
                         // ?
                         break;
                 }
@@ -83,7 +83,7 @@ void moveCeiling(Ceiling& ceiling)
                     case CeilingType::SilentCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
-                            sfx_pstop);
+                            SfxEnum::Pstop);
                         [[fallthrough]];
                     case CeilingType::FastCrushAndRaise:
                     case CeilingType::CrushAndRaise:
@@ -119,7 +119,7 @@ void moveCeiling(Ceiling& ceiling)
                     case CeilingType::FastCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
-                            sfx_stnmov);
+                            SfxEnum::Stnmov);
                         break;
                 }
             }
@@ -131,7 +131,7 @@ void moveCeiling(Ceiling& ceiling)
                     case CeilingType::SilentCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
-                            sfx_pstop);
+                            SfxEnum::Pstop);
                         [[fallthrough]];
                     case CeilingType::CrushAndRaise:
                         ceiling.speed = CEILSPEED;

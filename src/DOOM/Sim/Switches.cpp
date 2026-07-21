@@ -173,11 +173,11 @@ void changeSwitchTexture(Line& line, int useAgain)
     int texMid = sides[line.sidenum[0]].midtexture;
     int texBot = sides[line.sidenum[0]].bottomtexture;
 
-    int sound = sfx_swtchn;
+    SfxEnum sound = SfxEnum::Swtchn;
 
     // EXIT SWITCH?
     if (line.special == 11)
-        sound = sfx_swtchx;
+        sound = SfxEnum::Swtchx;
 
     // Not a ranged-for: the index is load-bearing, switchlist[i ^ 1] being the
     // texture this one flips to.

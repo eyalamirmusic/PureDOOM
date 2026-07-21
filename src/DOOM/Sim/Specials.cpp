@@ -411,12 +411,12 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
         // Things that should NOT trigger specials...
         switch (thing.type)
         {
-            case MT_ROCKET:
-            case MT_PLASMA:
-            case MT_BFG:
-            case MT_TROOPSHOT:
-            case MT_HEADSHOT:
-            case MT_BRUISERSHOT:
+            case MobjType::Rocket:
+            case MobjType::Plasma:
+            case MobjType::Bfg:
+            case MobjType::Troopshot:
+            case MobjType::Headshot:
+            case MobjType::Bruisershot:
                 return;
                 break;
 
@@ -918,14 +918,14 @@ void playerInSpecialSector(Player& player)
     {
         case 5:
             // HELLSLIME DAMAGE
-            if (!player.powers[pw_ironfeet])
+            if (!player.powers[toIndex(PowerType::IronFeet)])
                 if (!(stats.leveltime & 0x1f))
                     damageMobj(*player.mo, 0, 0, 10);
             break;
 
         case 7:
             // NUKAGE DAMAGE
-            if (!player.powers[pw_ironfeet])
+            if (!player.powers[toIndex(PowerType::IronFeet)])
                 if (!(stats.leveltime & 0x1f))
                     damageMobj(*player.mo, 0, 0, 5);
             break;
@@ -934,7 +934,8 @@ void playerInSpecialSector(Player& player)
             // SUPER HELLSLIME DAMAGE
         case 4:
             // STROBE HURT
-            if (!player.powers[pw_ironfeet] || (randomness().forPlay() < 5))
+            if (!player.powers[toIndex(PowerType::IronFeet)]
+                || (randomness().forPlay() < 5))
             {
                 if (!(stats.leveltime & 0x1f))
                     damageMobj(*player.mo, 0, 0, 20);
@@ -945,7 +946,7 @@ void playerInSpecialSector(Player& player)
             // SECRET SECTOR
             player.secretcount++;
             player.message = "A secret is revealed!";
-            startSound(nullptr, sfx_getpow);
+            startSound(nullptr, SfxEnum::Getpow);
             sector->special = 0;
             break;
 
@@ -1041,7 +1042,8 @@ void updateSpecials()
                 }
                 // vanilla's degenmobj pun: the sound source is the address of the
                 // soundorg member, not the pointer it holds.
-                startSound(reinterpret_cast<Mobj*>(&button.soundorg), sfx_swtchn);
+                startSound(reinterpret_cast<Mobj*>(&button.soundorg),
+                           SfxEnum::Swtchn);
                 button = {};
             }
         }

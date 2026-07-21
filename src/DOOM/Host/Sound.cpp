@@ -132,7 +132,7 @@ static int musicdies = -1;
 //  mixing buffer, and the samplerate of the raw data.
 
 // The actual lengths of all sound effects.
-Array<int, NUMSFX> lengths;
+Array<int, numSfx> lengths;
 
 // The actual output device.
 int audio_fd;
@@ -165,7 +165,7 @@ Array<int, NUM_CHANNELS> channelhandles;
 
 // SFX id of the playing sound effect.
 // Used to catch duplicates (like chainsaw).
-Array<int, NUM_CHANNELS> channelids;
+Array<SfxEnum, NUM_CHANNELS> channelids;
 
 // Pitch to stepping lookup, unused.
 Array<int, 256> steptable;
@@ -249,7 +249,7 @@ void* getsfx(std::string_view sfxname, int* len)
 //  (eight, usually) of internal channels.
 // Returns a handle.
 //
-int addsfx(int sfxid, int volume, int step, int seperation)
+int addsfx(SfxEnum sfxid, int volume, int step, int seperation)
 {
     static unsigned short handlenums = 0;
 
@@ -265,8 +265,9 @@ int addsfx(int sfxid, int volume, int step, int seperation)
 
     // Chainsaw troubles.
     // Play these sound effects only one at a time.
-    if (sfxid == sfx_sawup || sfxid == sfx_sawidl || sfxid == sfx_sawful
-        || sfxid == sfx_sawhit || sfxid == sfx_stnmov || sfxid == sfx_pistol)
+    if (sfxid == SfxEnum::Sawup || sfxid == SfxEnum::Sawidl
+        || sfxid == SfxEnum::Sawful || sfxid == SfxEnum::Sawhit
+        || sfxid == SfxEnum::Stnmov || sfxid == SfxEnum::Pistol)
     {
         // Loop all channels, check.
         for (i = 0; i < NUM_CHANNELS; i++)
@@ -305,9 +306,9 @@ int addsfx(int sfxid, int volume, int step, int seperation)
     // Okay, in the less recent channel,
     //  we will handle the new SFX.
     // Set pointer to raw data.
-    channels[slot] = (unsigned char*) S_sfx[sfxid].data;
+    channels[slot] = (unsigned char*) S_sfx[toIndex(sfxid)].data;
     // Set pointer to end of raw data.
-    channelsend[slot] = channels[slot] + lengths[sfxid];
+    channelsend[slot] = channels[slot] + lengths[toIndex(sfxid)];
 
     // Reset current handle number, limited to 0..100.
     if (!handlenums)
@@ -703,11 +704,10 @@ int sfxLumpNum(SfxInfo& sfx)
 //  is set, but currently not used by mixing.
 //
 int startSoundHost(
-    int id, int vol, int sep, int pitch, [[maybe_unused]] int priority)
+    SfxEnum id, int vol, int sep, int pitch, [[maybe_unused]] int priority)
 {
     // Returns a handle (not used).
-    id = addsfx(id, vol, steptable[pitch], sep);
-    return id;
+    return addsfx(id, vol, steptable[pitch], sep);
 }
 
 void stopSoundHost([[maybe_unused]] int handle)
@@ -899,7 +899,7 @@ void initSoundHost()
     // boot's buffers go now rather than accumulating.
     sfxBuffers.clear();
 
-    for (i = 1; i < NUMSFX; i++)
+    for (i = 1; i < numSfx; i++)
     {
         // Alias? Example is the chaingun sound linked to pistol.
         if (!S_sfx[i].link)

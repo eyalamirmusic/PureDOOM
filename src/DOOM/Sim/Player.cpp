@@ -151,9 +151,10 @@ void movePlayer(Player& player)
     if (cmd->sidemove && scratch.onground)
         thrust(player, player.mo->angle - ang90, fixed_t {cmd->sidemove * 2048});
 
-    if ((cmd->forwardmove || cmd->sidemove) && player.mo->state == &states[S_PLAY])
+    if ((cmd->forwardmove || cmd->sidemove)
+        && player.mo->state == &states[toIndex(StateNum::Play)])
     {
-        setMobjState(*player.mo, S_PLAY_RUN1);
+        setMobjState(*player.mo, StateNum::PlayRun1);
     }
 }
 
@@ -259,26 +260,30 @@ void playerThink(Player& player)
         WeaponType newweapon = static_cast<WeaponType>((cmd->buttons & BT_WEAPONMASK)
                                                        >> BT_WEAPONSHIFT);
 
-        if (newweapon == wp_fist && player.weaponowned[wp_chainsaw]
-            && !(player.readyweapon == wp_chainsaw && player.powers[pw_strength]))
+        if (newweapon == WeaponType::Fist
+            && player.weaponowned[toIndex(WeaponType::Chainsaw)]
+            && !(player.readyweapon == WeaponType::Chainsaw
+                 && player.powers[toIndex(PowerType::Strength)]))
         {
-            newweapon = wp_chainsaw;
+            newweapon = WeaponType::Chainsaw;
         }
 
         const auto& version = gameVersion();
 
-        if ((version.gamemode == GameMode::Commercial) && newweapon == wp_shotgun
-            && player.weaponowned[wp_supershotgun]
-            && player.readyweapon != wp_supershotgun)
+        if ((version.gamemode == GameMode::Commercial)
+            && newweapon == WeaponType::Shotgun
+            && player.weaponowned[toIndex(WeaponType::SuperShotgun)]
+            && player.readyweapon != WeaponType::SuperShotgun)
         {
-            newweapon = wp_supershotgun;
+            newweapon = WeaponType::SuperShotgun;
         }
 
-        if (player.weaponowned[newweapon] && newweapon != player.readyweapon)
+        if (player.weaponowned[toIndex(newweapon)]
+            && newweapon != player.readyweapon)
         {
             // Do not go to plasma or BFG in shareware,
             //  even if cheated.
-            if ((newweapon != wp_plasma && newweapon != wp_bfg)
+            if ((newweapon != WeaponType::Plasma && newweapon != WeaponType::Bfg)
                 || (version.gamemode != GameMode::Shareware))
             {
                 player.pendingweapon = newweapon;
@@ -304,21 +309,21 @@ void playerThink(Player& player)
     // Counters, time dependend power ups.
 
     // Strength counts up to diminish fade.
-    if (player.powers[pw_strength])
-        player.powers[pw_strength]++;
+    if (player.powers[toIndex(PowerType::Strength)])
+        player.powers[toIndex(PowerType::Strength)]++;
 
-    if (player.powers[pw_invulnerability])
-        player.powers[pw_invulnerability]--;
+    if (player.powers[toIndex(PowerType::Invulnerability)])
+        player.powers[toIndex(PowerType::Invulnerability)]--;
 
-    if (player.powers[pw_invisibility])
-        if (!--player.powers[pw_invisibility])
+    if (player.powers[toIndex(PowerType::Invisibility)])
+        if (!--player.powers[toIndex(PowerType::Invisibility)])
             player.mo->flags &= ~MF_SHADOW;
 
-    if (player.powers[pw_infrared])
-        player.powers[pw_infrared]--;
+    if (player.powers[toIndex(PowerType::Infrared)])
+        player.powers[toIndex(PowerType::Infrared)]--;
 
-    if (player.powers[pw_ironfeet])
-        player.powers[pw_ironfeet]--;
+    if (player.powers[toIndex(PowerType::IronFeet)])
+        player.powers[toIndex(PowerType::IronFeet)]--;
 
     if (player.damagecount)
         player.damagecount--;
@@ -327,17 +332,18 @@ void playerThink(Player& player)
         player.bonuscount--;
 
     // Handling colormaps.
-    if (player.powers[pw_invulnerability])
+    if (player.powers[toIndex(PowerType::Invulnerability)])
     {
-        if (player.powers[pw_invulnerability] > 4 * 32
-            || (player.powers[pw_invulnerability] & 8))
+        if (player.powers[toIndex(PowerType::Invulnerability)] > 4 * 32
+            || (player.powers[toIndex(PowerType::Invulnerability)] & 8))
             player.fixedcolormap = INVERSECOLORMAP;
         else
             player.fixedcolormap = 0;
     }
-    else if (player.powers[pw_infrared])
+    else if (player.powers[toIndex(PowerType::Infrared)])
     {
-        if (player.powers[pw_infrared] > 4 * 32 || (player.powers[pw_infrared] & 8))
+        if (player.powers[toIndex(PowerType::Infrared)] > 4 * 32
+            || (player.powers[toIndex(PowerType::Infrared)] & 8))
         {
             // almost full bright
             player.fixedcolormap = 1;

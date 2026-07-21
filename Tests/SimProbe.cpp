@@ -585,7 +585,7 @@ void doomSimSetThingPosition(int handle)
 
 int doomSimTypeBarrel()
 {
-    return Doom::MT_BARREL;
+    return Doom::toIndex(Doom::MobjType::Barrel);
 }
 
 int doomSimOnFloorZ()

@@ -496,9 +496,9 @@ void doAdvanceDemo()
             flow.gamestate = GameState::DemoScreen;
             attract.pagename = "TITLEPIC";
             if (gamemode == GameMode::Commercial)
-                Doom::startMusic(mus_dm2ttl);
+                Doom::startMusic(MusicEnum::Dm2ttl);
             else
-                Doom::startMusic(mus_intro);
+                Doom::startMusic(MusicEnum::Intro);
             break;
         case 1:
             Doom::deferPlayDemo("demo1");
@@ -517,7 +517,7 @@ void doAdvanceDemo()
             {
                 attract.pagetic = 35 * 11;
                 attract.pagename = "TITLEPIC";
-                Doom::startMusic(mus_dm2ttl);
+                Doom::startMusic(MusicEnum::Dm2ttl);
             }
             else
             {

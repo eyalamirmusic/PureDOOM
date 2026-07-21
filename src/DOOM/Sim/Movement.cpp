@@ -162,16 +162,16 @@ bool checkThing(Mobj* thing)
 
         if (clip.tmthing->target
             && (clip.tmthing->target->type == thing->type
-                || (clip.tmthing->target->type == MT_KNIGHT
-                    && thing->type == MT_BRUISER)
-                || (clip.tmthing->target->type == MT_BRUISER
-                    && thing->type == MT_KNIGHT)))
+                || (clip.tmthing->target->type == MobjType::Knight
+                    && thing->type == MobjType::Bruiser)
+                || (clip.tmthing->target->type == MobjType::Bruiser
+                    && thing->type == MobjType::Knight)))
         {
             // Don't hit same species as originator.
             if (thing == clip.tmthing->target)
                 return true;
 
-            if (thing->type != MT_PLAYER)
+            if (thing->type != MobjType::Player)
             {
                 // Explode, but do no damage.
                 // Let players missile other players.

@@ -444,9 +444,9 @@ void hudTicker()
                             msg.message_on = true;
                             msg.message_counter = HU_MSGTIMEOUT;
                             if (gameVersion().gamemode == GameMode::Commercial)
-                                startSound(nullptr, sfx_radio);
+                                startSound(nullptr, SfxEnum::Radio);
                             else
-                                startSound(nullptr, sfx_tink);
+                                startSound(nullptr, SfxEnum::Tink);
                         }
                         resetIText(chat.w_inputbuffer[i]);
                     }

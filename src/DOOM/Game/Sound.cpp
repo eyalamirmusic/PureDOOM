@@ -155,7 +155,7 @@ void initSound(int sfxVolume, int musicVolume)
     snd.mus_paused = false;
 
     // Note that sounds have not been cached (yet).
-    for (int i = 1; i < NUMSFX; i++)
+    for (int i = 1; i < numSfx; i++)
         S_sfx[i].lumpnum = S_sfx[i].usefulness = -1;
 }
 
@@ -166,7 +166,7 @@ void initSound(int sfxVolume, int musicVolume)
 //
 void startLevelSound()
 {
-    int mnum;
+    MusicEnum mnum;
 
     auto& sound = soundState();
     auto& session = gameSession();
@@ -181,37 +181,40 @@ void startLevelSound()
     sound.mus_paused = false;
 
     if (gameVersion().gamemode == GameMode::Commercial)
-        mnum = mus_runnin + session.gamemap - 1;
+        mnum =
+            static_cast<MusicEnum>(toIndex(MusicEnum::Runnin) + session.gamemap - 1);
     else
     {
-        int spmus[] = {
+        MusicEnum spmus[] = {
             // Song - Who? - Where?
 
-            mus_e3m4, // American        e4m1
-            mus_e3m2, // Romero        e4m2
-            mus_e3m3, // Shawn        e4m3
-            mus_e1m5, // American        e4m4
-            mus_e2m7, // Tim         e4m5
-            mus_e2m4, // Romero        e4m6
-            mus_e2m6, // J.Anderson        e4m7 CHIRON.WAD
-            mus_e2m5, // Shawn        e4m8
-            mus_e1m9 // Tim                e4m9
+            MusicEnum::E3m4, // American        e4m1
+            MusicEnum::E3m2, // Romero        e4m2
+            MusicEnum::E3m3, // Shawn        e4m3
+            MusicEnum::E1m5, // American        e4m4
+            MusicEnum::E2m7, // Tim         e4m5
+            MusicEnum::E2m4, // Romero        e4m6
+            MusicEnum::E2m6, // J.Anderson        e4m7 CHIRON.WAD
+            MusicEnum::E2m5, // Shawn        e4m8
+            MusicEnum::E1m9 // Tim                e4m9
         };
 
         if (session.gameepisode < 4)
-            mnum = mus_e1m1 + (session.gameepisode - 1) * 9 + session.gamemap - 1;
+            mnum = static_cast<MusicEnum>(toIndex(MusicEnum::E1m1)
+                                          + (session.gameepisode - 1) * 9
+                                          + session.gamemap - 1);
         else
             mnum = spmus[session.gamemap - 1];
     }
 
     // HACK FOR COMMERCIAL
-    //  if (commercial && mnum > mus_e3m9)
-    //      mnum -= mus_e3m9;
+    //  if (commercial && mnum > MusicEnum::E3m9)
+    //      mnum -= MusicEnum::E3m9;
 
     changeMusic(mnum, true);
 }
 
-void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
+void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
 {
     int rc;
     int sep;
@@ -225,12 +228,12 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     auto& sndset = soundSettings();
 
     // check for bogus sound #
-    if (sfx_id < 1 || sfx_id > NUMSFX)
+    if (toIndex(sfx_id) < 1 || toIndex(sfx_id) > numSfx)
     {
-        fatalError("Error: Bad sfx #: ", sfx_id);
+        fatalError("Error: Bad sfx #: ", toIndex(sfx_id));
     }
 
-    sfx = &S_sfx[sfx_id];
+    sfx = &S_sfx[toIndex(sfx_id)];
 
     // Initialize sound parameters
     if (sfx->link)
@@ -275,7 +278,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
     }
 
     // hacks to vary the sfx pitches
-    if (sfx_id >= sfx_sawup && sfx_id <= sfx_sawhit)
+    if (sfx_id >= SfxEnum::Sawup && sfx_id <= SfxEnum::Sawhit)
     {
         pitch += 8 - (Doom::randomness().forMenu() & 15);
 
@@ -284,7 +287,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
         else if (pitch > 255)
             pitch = 255;
     }
-    else if (sfx_id != sfx_itemup && sfx_id != sfx_tink)
+    else if (sfx_id != SfxEnum::Itemup && sfx_id != SfxEnum::Tink)
     {
         pitch += 16 - (Doom::randomness().forMenu() & 31);
 
@@ -341,7 +344,7 @@ void startSoundAtVolume(void* origin_p, int sfx_id, int volume)
                                                    priority);
 }
 
-void startSound(void* origin, int sfx_id)
+void startSound(void* origin, SfxEnum sfx_id)
 {
     startSoundAtVolume(origin, sfx_id, soundSettings().sfxVolume);
 }
@@ -482,23 +485,23 @@ void setSfxVolume(int volume)
 //
 // Starts some music with the music id found in sounds.h.
 //
-void startMusic(int m_id)
+void startMusic(MusicEnum m_id)
 {
     changeMusic(m_id, false);
 }
 
-void changeMusic(int musicnum, int looping)
+void changeMusic(MusicEnum musicnum, int looping)
 {
     MusicInfo* music = nullptr;
 
     auto& sound = soundState();
 
-    if ((musicnum <= mus_None) || (musicnum >= NUMMUSIC))
+    if ((musicnum <= MusicEnum::None) || (toIndex(musicnum) >= numMusic))
     {
-        fatalError("Error: Bad music number ", musicnum);
+        fatalError("Error: Bad music number ", toIndex(musicnum));
     }
     else
-        music = &S_music[musicnum];
+        music = &S_music[toIndex(musicnum)];
 
     if (sound.mus_playing == music)
         return;
@@ -547,7 +550,7 @@ void stopChannel(int cnum)
         if (soundIsPlaying(c.handle))
         {
 #ifdef SAWDEBUG
-            if (c.sfxinfo == &S_sfx[sfx_sawful])
+            if (c.sfxinfo == &S_sfx[toIndex(SfxEnum::Sawful)])
                 print("stopped\n");
 #endif
             stopSoundHost(c.handle);

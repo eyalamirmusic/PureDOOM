@@ -464,7 +464,7 @@ bool statusBarResponder(Event& ev)
                 for (auto& i: bar.plyr->weaponowned)
                     i = true;
 
-                for (int i = 0; i < NUMAMMO; i++)
+                for (int i = 0; i < numAmmo; i++)
                     bar.plyr->ammo[i] = bar.plyr->maxammo[i];
 
                 bar.plyr->message = STSTR_FAADDED;
@@ -475,10 +475,10 @@ bool statusBarResponder(Event& ev)
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
 
-                for (int i = 0; i < NUMWEAPONS; i++)
+                for (int i = 0; i < numWeapons; i++)
                     bar.plyr->weaponowned[i] = true;
 
-                for (int i = 0; i < NUMAMMO; i++)
+                for (int i = 0; i < numAmmo; i++)
                     bar.plyr->ammo[i] = bar.plyr->maxammo[i];
 
                 for (bool& card: bar.plyr->cards)
@@ -489,14 +489,16 @@ bool statusBarResponder(Event& ev)
             // 'mus' cheat for changing music
             else if (checkCheat(cheat_mus, ev.data1))
             {
-                int musnum;
+                MusicEnum musnum;
 
                 bar.plyr->message = STSTR_MUS;
                 const auto buf = getParam(cheat_mus);
 
                 if (gameVersion().gamemode == GameMode::Commercial)
                 {
-                    musnum = mus_runnin + (buf[0] - '0') * 10 + buf[1] - '0' - 1;
+                    musnum = static_cast<MusicEnum>(toIndex(MusicEnum::Runnin)
+                                                    + (buf[0] - '0') * 10 + buf[1]
+                                                    - '0' - 1);
 
                     if (((buf[0] - '0') * 10 + buf[1] - '0') > 35)
                         bar.plyr->message = STSTR_NOMUS;
@@ -505,7 +507,9 @@ bool statusBarResponder(Event& ev)
                 }
                 else
                 {
-                    musnum = mus_e1m1 + (buf[0] - '1') * 9 + (buf[1] - '1');
+                    musnum = static_cast<MusicEnum>(toIndex(MusicEnum::E1m1)
+                                                    + (buf[0] - '1') * 9
+                                                    + (buf[1] - '1'));
 
                     if (((buf[0] - '1') * 9 + buf[1] - '1') > 31)
                         bar.plyr->message = STSTR_NOMUS;
@@ -531,8 +535,8 @@ bool statusBarResponder(Event& ev)
                 if (checkCheat(cheat_powerup[i], ev.data1))
                 {
                     if (!bar.plyr->powers[i])
-                        givePower(*bar.plyr, i);
-                    else if (i != pw_strength)
+                        givePower(*bar.plyr, static_cast<PowerType>(i));
+                    else if (i != toIndex(PowerType::Strength))
                         bar.plyr->powers[i] = 1;
                     else
                         bar.plyr->powers[i] = 0;
@@ -549,8 +553,8 @@ bool statusBarResponder(Event& ev)
             // 'choppers' invulnerability & chainsaw
             else if (checkCheat(cheat_choppers, ev.data1))
             {
-                bar.plyr->weaponowned[wp_chainsaw] = true;
-                bar.plyr->powers[pw_invulnerability] = true;
+                bar.plyr->weaponowned[toIndex(WeaponType::Chainsaw)] = true;
+                bar.plyr->powers[toIndex(PowerType::Invulnerability)] = true;
                 bar.plyr->message = STSTR_CHOPPERS;
             }
             // 'mypos' for player position
@@ -678,7 +682,7 @@ void updateFaceWidget()
             // picking up bonus
             bool doevilgrin = false;
 
-            for (i = 0; i < NUMWEAPONS; i++)
+            for (i = 0; i < numWeapons; i++)
             {
                 if (face.oldweaponsowned[i] != bar.plyr->weaponowned[i])
                 {
@@ -793,7 +797,8 @@ void updateFaceWidget()
     if (face.priority < 5)
     {
         // invulnerability
-        if ((bar.plyr->cheats & CF_GODMODE) || bar.plyr->powers[pw_invulnerability])
+        if ((bar.plyr->cheats & CF_GODMODE)
+            || bar.plyr->powers[toIndex(PowerType::Invulnerability)])
         {
             face.priority = 4;
 
@@ -821,13 +826,14 @@ void updateWidgets()
     // needs).
     auto& widgets = statusBarWidgets();
 
-    if (weaponinfo[bar.plyr->readyweapon].ammo == am_noammo)
+    if (weaponinfo[toIndex(bar.plyr->readyweapon)].ammo == AmmoType::NoAmmo)
         widgets.w_ready.num = &widgets.largeammo;
     else
         widgets.w_ready.num =
-            &bar.plyr->ammo[weaponinfo[bar.plyr->readyweapon].ammo];
+            &bar.plyr
+                 ->ammo[toIndex(weaponinfo[toIndex(bar.plyr->readyweapon)].ammo)];
 
-    widgets.w_ready.data = bar.plyr->readyweapon;
+    widgets.w_ready.data = toIndex(bar.plyr->readyweapon);
 
     // update keycard multiple widgets
     for (int i = 0; i < 3; i++)
@@ -880,10 +886,10 @@ void doPaletteStuff()
 
     int cnt = bar.plyr->damagecount;
 
-    if (bar.plyr->powers[pw_strength])
+    if (bar.plyr->powers[toIndex(PowerType::Strength)])
     {
         // slowly fade the berzerk out
-        int bzc = 12 - (bar.plyr->powers[pw_strength] >> 6);
+        int bzc = 12 - (bar.plyr->powers[toIndex(PowerType::Strength)] >> 6);
 
         cnt = std::max(cnt, bzc);
     }
@@ -906,8 +912,8 @@ void doPaletteStuff()
         palette += STARTBONUSPALS;
     }
 
-    else if (bar.plyr->powers[pw_ironfeet] > 4 * 32
-             || bar.plyr->powers[pw_ironfeet] & 8)
+    else if (bar.plyr->powers[toIndex(PowerType::IronFeet)] > 4 * 32
+             || bar.plyr->powers[toIndex(PowerType::IronFeet)] & 8)
         palette = RADIATIONPAL;
     else
         palette = 0;
@@ -1020,7 +1026,7 @@ void loadGraphics()
     gfx.tallpercent = static_cast<Patch*>(cacheLumpName("STTPRCNT"));
 
     // key cards
-    for (int i = 0; i < NUMCARDS; i++)
+    for (int i = 0; i < numCards; i++)
     {
         gfx.keys[i] = static_cast<Patch*>(cacheLumpName(concat("STKEYS", i)));
     }
@@ -1108,7 +1114,7 @@ void initStatusBarData()
 
     face.st_oldhealth = -1;
 
-    std::copy_n(bar.plyr->weaponowned, NUMWEAPONS, face.oldweaponsowned.begin());
+    std::copy_n(bar.plyr->weaponowned, numWeapons, face.oldweaponsowned.begin());
 
     bar.keyboxes.fill(-1);
 
@@ -1122,16 +1128,17 @@ void createWidgets()
     auto& gfx = statusBarGraphics();
 
     // ready weapon ammo
-    initNum(widgets.w_ready,
-            ST_AMMOX,
-            ST_AMMOY,
-            gfx.tallnum.data(),
-            &bar.plyr->ammo[weaponinfo[bar.plyr->readyweapon].ammo],
-            &bar.st_statusbaron,
-            ST_AMMOWIDTH);
+    initNum(
+        widgets.w_ready,
+        ST_AMMOX,
+        ST_AMMOY,
+        gfx.tallnum.data(),
+        &bar.plyr->ammo[toIndex(weaponinfo[toIndex(bar.plyr->readyweapon)].ammo)],
+        &bar.st_statusbaron,
+        ST_AMMOWIDTH);
 
     // the last weapon type
-    widgets.w_ready.data = bar.plyr->readyweapon;
+    widgets.w_ready.data = toIndex(bar.plyr->readyweapon);
 
     // health percentage
     initPercent(widgets.w_health,

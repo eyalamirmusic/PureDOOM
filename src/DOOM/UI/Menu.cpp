@@ -238,23 +238,23 @@ Array<MenuCustomText, 4> menu_custom_texts = {
 Array<std::string_view, 2> detailNames = {"M_GDHIGH", "M_GDLOW"};
 Array<std::string_view, 2> msgNames = {"M_MSGOFF", "M_MSGON"};
 
-Array<int, 8> quitsounds = {sfx_pldeth,
-                            sfx_dmpain,
-                            sfx_popain,
-                            sfx_slop,
-                            sfx_telept,
-                            sfx_posit1,
-                            sfx_posit3,
-                            sfx_sgtatk};
+Array<SfxEnum, 8> quitsounds = {SfxEnum::Pldeth,
+                                SfxEnum::Dmpain,
+                                SfxEnum::Popain,
+                                SfxEnum::Slop,
+                                SfxEnum::Telept,
+                                SfxEnum::Posit1,
+                                SfxEnum::Posit3,
+                                SfxEnum::Sgtatk};
 
-Array<int, 8> quitsounds2 = {sfx_vilact,
-                             sfx_getpow,
-                             sfx_boscub,
-                             sfx_slop,
-                             sfx_skeswg,
-                             sfx_kntdth,
-                             sfx_bspact,
-                             sfx_sgtatk};
+Array<SfxEnum, 8> quitsounds2 = {SfxEnum::Vilact,
+                                 SfxEnum::Getpow,
+                                 SfxEnum::Boscub,
+                                 SfxEnum::Slop,
+                                 SfxEnum::Skeswg,
+                                 SfxEnum::Kntdth,
+                                 SfxEnum::Bspact,
+                                 SfxEnum::Sgtatk};
 
 //
 // PROTOTYPES
@@ -840,7 +840,7 @@ void quickSaveResponse(int ch)
     if (ch == 'y')
     {
         doSave(menuState().quickSaveSlot);
-        startSound(nullptr, sfx_swtchx);
+        startSound(nullptr, SfxEnum::Swtchx);
     }
 }
 
@@ -850,7 +850,7 @@ void quickSave()
 
     if (!demoState().usergame)
     {
-        startSound(nullptr, sfx_oof);
+        startSound(nullptr, SfxEnum::Oof);
         return;
     }
 
@@ -883,7 +883,7 @@ void quickLoadResponse(int ch)
     if (ch == 'y')
     {
         loadSelect(menuState().quickSaveSlot);
-        startSound(nullptr, sfx_swtchx);
+        startSound(nullptr, SfxEnum::Swtchx);
     }
 }
 
@@ -1247,7 +1247,7 @@ void endGame(int)
 {
     if (!demoState().usergame)
     {
-        startSound(nullptr, sfx_oof);
+        startSound(nullptr, SfxEnum::Oof);
         return;
     }
 
@@ -1666,7 +1666,7 @@ bool menuResponder(Event& ev)
         state.messageRoutine(ch);
 
         overlay.menuactive = false;
-        startSound(nullptr, sfx_swtchx);
+        startSound(nullptr, SfxEnum::Swtchx);
         return true;
     }
 
@@ -1684,14 +1684,14 @@ bool menuResponder(Event& ev)
                 if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(0);
-                startSound(nullptr, sfx_stnmov);
+                startSound(nullptr, SfxEnum::Stnmov);
                 return true;
 
             case KEY_EQUALS: // Screen size up
                 if (overlayState().automapactive || hudFlags().chat_on)
                     return false;
                 sizeDisplay(1);
-                startSound(nullptr, sfx_stnmov);
+                startSound(nullptr, SfxEnum::Stnmov);
                 return true;
 
             case KEY_F1: // Help key
@@ -1703,18 +1703,18 @@ bool menuResponder(Event& ev)
                     state.currentMenu = &ReadDef1;
 
                 state.itemOn = 0;
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 return true;
 
             case KEY_F2: // Save
                 startControlPanel();
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 saveGameMenu(0);
                 return true;
 
             case KEY_F3: // Load
                 startControlPanel();
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 loadGameMenu(0);
                 return true;
 
@@ -1722,41 +1722,41 @@ bool menuResponder(Event& ev)
                 startControlPanel();
                 state.currentMenu = &SoundDef;
                 state.itemOn = sfx_vol;
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 return true;
 
                 // case KEY_F5:            // Detail toggle
                 //     changeDetail(0);
-                //     Doom::startSound(0, sfx_swtchn);
+                //     Doom::startSound(0, SfxEnum::Swtchn);
                 //     return true;
 
             case KEY_F5: // Crosshair toggle
                 changeCrosshair(0);
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 return true;
 
             case KEY_F6: // Quicksave
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 quickSave();
                 return true;
 
             case KEY_F7: // End game
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 endGame(0);
                 return true;
 
             case KEY_F8: // Toggle messages
                 changeMessages(0);
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 return true;
 
             case KEY_F9: // Quickload
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 quickLoad();
                 return true;
 
             case KEY_F10: // Quit DOOM
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
                 quitDOOM(0);
                 return true;
 
@@ -1776,7 +1776,7 @@ bool menuResponder(Event& ev)
         if (ch == KEY_ESCAPE)
         {
             startControlPanel();
-            startSound(nullptr, sfx_swtchn);
+            startSound(nullptr, SfxEnum::Swtchn);
             return true;
         }
         return false;
@@ -1792,7 +1792,7 @@ bool menuResponder(Event& ev)
                     state.itemOn = 0;
                 else
                     state.itemOn++;
-                startSound(nullptr, sfx_pstop);
+                startSound(nullptr, SfxEnum::Pstop);
             } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
@@ -1803,7 +1803,7 @@ bool menuResponder(Event& ev)
                     state.itemOn = state.currentMenu->numitems - 1;
                 else
                     state.itemOn--;
-                startSound(nullptr, sfx_pstop);
+                startSound(nullptr, SfxEnum::Pstop);
             } while (state.currentMenu->menuitems[state.itemOn].status == -1);
             return true;
 
@@ -1811,7 +1811,7 @@ bool menuResponder(Event& ev)
             if (state.currentMenu->menuitems[state.itemOn].routine
                 && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
-                startSound(nullptr, sfx_stnmov);
+                startSound(nullptr, SfxEnum::Stnmov);
                 state.currentMenu->menuitems[state.itemOn].routine(0);
             }
             return true;
@@ -1820,7 +1820,7 @@ bool menuResponder(Event& ev)
             if (state.currentMenu->menuitems[state.itemOn].routine
                 && state.currentMenu->menuitems[state.itemOn].status == 2)
             {
-                startSound(nullptr, sfx_stnmov);
+                startSound(nullptr, SfxEnum::Stnmov);
                 state.currentMenu->menuitems[state.itemOn].routine(1);
             }
             return true;
@@ -1834,12 +1834,12 @@ bool menuResponder(Event& ev)
                 {
                     state.currentMenu->menuitems[state.itemOn].routine(
                         1); // right arrow
-                    startSound(nullptr, sfx_stnmov);
+                    startSound(nullptr, SfxEnum::Stnmov);
                 }
                 else
                 {
                     state.currentMenu->menuitems[state.itemOn].routine(state.itemOn);
-                    startSound(nullptr, sfx_pistol);
+                    startSound(nullptr, SfxEnum::Pistol);
                 }
             }
             return true;
@@ -1847,7 +1847,7 @@ bool menuResponder(Event& ev)
         case KEY_ESCAPE:
             state.currentMenu->lastOn = state.itemOn;
             clearMenus();
-            startSound(nullptr, sfx_swtchx);
+            startSound(nullptr, SfxEnum::Swtchx);
             return true;
 
         case KEY_BACKSPACE:
@@ -1856,7 +1856,7 @@ bool menuResponder(Event& ev)
             {
                 state.currentMenu = state.currentMenu->prevMenu;
                 state.itemOn = state.currentMenu->lastOn;
-                startSound(nullptr, sfx_swtchn);
+                startSound(nullptr, SfxEnum::Swtchn);
             }
             return true;
 
@@ -1865,14 +1865,14 @@ bool menuResponder(Event& ev)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
-                    startSound(nullptr, sfx_pstop);
+                    startSound(nullptr, SfxEnum::Pstop);
                     return true;
                 }
             for (int i = 0; i <= state.itemOn; i++)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
-                    startSound(nullptr, sfx_pstop);
+                    startSound(nullptr, SfxEnum::Pstop);
                     return true;
                 }
             break;

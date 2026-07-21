@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Game/GameDefs.h" // NUMCARDS
+#include "../Game/GameDefs.h" // numCards
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h" // Patch
 
@@ -33,7 +33,7 @@ struct StatusBarGraphics
     Array<Patch*, 10> tallnum = {}; // 0-9, the tall health/armor/ammo digits
     Patch* tallpercent = nullptr; // the tall % sign
     Array<Patch*, 10> shortnum = {}; // 0-9, the small yellow arms-count digits
-    Array<Patch*, NUMCARDS> keys = {}; // the key-card and skull icons
+    Array<Patch*, numCards> keys = {}; // the key-card and skull icons
     Array<Array<Patch*, 2>, 6> arms = {}; // the six weapons' on/off ownership glyphs
     Array<Patch*, numFaces> faces = {}; // the animated-face patches
     Patch* faceback = nullptr; // the face backdrop (deathmatch)

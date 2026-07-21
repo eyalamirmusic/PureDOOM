@@ -70,7 +70,7 @@ void archivePlayers()
         Player* dest = reinterpret_cast<Player*>(save.cursor);
         doom_memcpy(dest, &players_.players[i], sizeof(Player));
         save.cursor += sizeof(Player);
-        for (int j = 0; j < NUMPSPRITES; j++)
+        for (int j = 0; j < numPSprites; j++)
         {
             if (dest->psprites[j].state)
             {
@@ -104,7 +104,7 @@ void unArchivePlayers()
         players_.players[i].message = {};
         players_.players[i].attacker = nullptr;
 
-        for (int j = 0; j < NUMPSPRITES; j++)
+        for (int j = 0; j < numPSprites; j++)
         {
             if (players_.players[i].psprites[j].state)
             {
@@ -351,7 +351,7 @@ void unArchiveThinkers()
                     mobj->player->mo = mobj;
                 }
                 setThingPosition(*mobj);
-                mobj->info = &mobjinfo[mobj->type];
+                mobj->info = &mobjinfo[toIndex(mobj->type)];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;
                 addThinker(*mobj);

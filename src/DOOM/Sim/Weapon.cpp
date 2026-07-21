@@ -113,20 +113,20 @@ void bfgSound(Player& player, PspDef& psp);
 void setupPsprites(Player& player);
 void movePsprites(Player& player);
 
-void setPsprite(Player& player, int position, StateNum stnum)
+void setPsprite(Player& player, PspNum position, StateNum stnum)
 {
-    PspDef* psp = &player.psprites[position];
+    PspDef* psp = &player.psprites[toIndex(position)];
 
     do
     {
-        if (!stnum)
+        if (stnum == StateNum::Null)
         {
             // object removed itself
             psp->state = nullptr;
             break;
         }
 
-        State* state = &states[stnum];
+        State* state = &states[toIndex(stnum)];
         psp->state = state;
         psp->tics = state->tics; // could be 0
 
@@ -161,19 +161,19 @@ void setPsprite(Player& player, int position, StateNum stnum)
 //
 void bringUpWeapon(Player& player)
 {
-    if (player.pendingweapon == wp_nochange)
+    if (player.pendingweapon == WeaponType::NoChange)
         player.pendingweapon = player.readyweapon;
 
-    if (player.pendingweapon == wp_chainsaw)
-        startSound(player.mo, sfx_sawup);
+    if (player.pendingweapon == WeaponType::Chainsaw)
+        startSound(player.mo, SfxEnum::Sawup);
 
     StateNum newstate =
-        static_cast<StateNum>(weaponinfo[player.pendingweapon].upstate);
+        static_cast<StateNum>(weaponinfo[toIndex(player.pendingweapon)].upstate);
 
-    player.pendingweapon = wp_nochange;
-    player.psprites[ps_weapon].sy = WEAPONBOTTOM;
+    player.pendingweapon = WeaponType::NoChange;
+    player.psprites[toIndex(PspNum::Weapon)].sy = WEAPONBOTTOM;
 
-    setPsprite(player, ps_weapon, newstate);
+    setPsprite(player, PspNum::Weapon, newstate);
 }
 
 //
@@ -185,19 +185,19 @@ bool checkAmmo(Player& player)
 {
     int count;
 
-    AmmoType ammo = weaponinfo[player.readyweapon].ammo;
+    AmmoType ammo = weaponinfo[toIndex(player.readyweapon)].ammo;
 
     // Minimal amount for one shot varies.
-    if (player.readyweapon == wp_bfg)
+    if (player.readyweapon == WeaponType::Bfg)
         count = BFGCELLS;
-    else if (player.readyweapon == wp_supershotgun)
+    else if (player.readyweapon == WeaponType::SuperShotgun)
         count = 2; // Double barrel.
     else
         count = 1; // Regular.
 
     // Some do not need ammunition anyway.
     // Return if current ammunition sufficient.
-    if (ammo == am_noammo || player.ammo[ammo] >= count)
+    if (ammo == AmmoType::NoAmmo || player.ammo[toIndex(ammo)] >= count)
         return true;
 
     // Out of ammo, pick a weapon to change to.
@@ -206,53 +206,60 @@ bool checkAmmo(Player& player)
 
     do
     {
-        if (player.weaponowned[wp_plasma] && player.ammo[am_cell]
+        if (player.weaponowned[toIndex(WeaponType::Plasma)]
+            && player.ammo[toIndex(AmmoType::Cell)]
             && (version.gamemode != GameMode::Shareware))
         {
-            player.pendingweapon = wp_plasma;
+            player.pendingweapon = WeaponType::Plasma;
         }
-        else if (player.weaponowned[wp_supershotgun] && player.ammo[am_shell] > 2
+        else if (player.weaponowned[toIndex(WeaponType::SuperShotgun)]
+                 && player.ammo[toIndex(AmmoType::Shell)] > 2
                  && (version.gamemode == GameMode::Commercial))
         {
-            player.pendingweapon = wp_supershotgun;
+            player.pendingweapon = WeaponType::SuperShotgun;
         }
-        else if (player.weaponowned[wp_chaingun] && player.ammo[am_clip])
+        else if (player.weaponowned[toIndex(WeaponType::Chaingun)]
+                 && player.ammo[toIndex(AmmoType::Clip)])
         {
-            player.pendingweapon = wp_chaingun;
+            player.pendingweapon = WeaponType::Chaingun;
         }
-        else if (player.weaponowned[wp_shotgun] && player.ammo[am_shell])
+        else if (player.weaponowned[toIndex(WeaponType::Shotgun)]
+                 && player.ammo[toIndex(AmmoType::Shell)])
         {
-            player.pendingweapon = wp_shotgun;
+            player.pendingweapon = WeaponType::Shotgun;
         }
-        else if (player.ammo[am_clip])
+        else if (player.ammo[toIndex(AmmoType::Clip)])
         {
-            player.pendingweapon = wp_pistol;
+            player.pendingweapon = WeaponType::Pistol;
         }
-        else if (player.weaponowned[wp_chainsaw])
+        else if (player.weaponowned[toIndex(WeaponType::Chainsaw)])
         {
-            player.pendingweapon = wp_chainsaw;
+            player.pendingweapon = WeaponType::Chainsaw;
         }
-        else if (player.weaponowned[wp_missile] && player.ammo[am_misl])
+        else if (player.weaponowned[toIndex(WeaponType::Missile)]
+                 && player.ammo[toIndex(AmmoType::Misl)])
         {
-            player.pendingweapon = wp_missile;
+            player.pendingweapon = WeaponType::Missile;
         }
-        else if (player.weaponowned[wp_bfg] && player.ammo[am_cell] > 40
+        else if (player.weaponowned[toIndex(WeaponType::Bfg)]
+                 && player.ammo[toIndex(AmmoType::Cell)] > 40
                  && (version.gamemode != GameMode::Shareware))
         {
-            player.pendingweapon = wp_bfg;
+            player.pendingweapon = WeaponType::Bfg;
         }
         else
         {
             // If everything fails.
-            player.pendingweapon = wp_fist;
+            player.pendingweapon = WeaponType::Fist;
         }
 
-    } while (player.pendingweapon == wp_nochange);
+    } while (player.pendingweapon == WeaponType::NoChange);
 
     // Now set appropriate weapon overlay.
-    setPsprite(player,
-               ps_weapon,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].downstate));
+    setPsprite(
+        player,
+        PspNum::Weapon,
+        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].downstate));
 
     return false;
 }
@@ -265,14 +272,14 @@ void fireWeapon(Player& player)
     if (!checkAmmo(player))
         return;
 
-    setMobjState(*player.mo, S_PLAY_ATK1);
+    setMobjState(*player.mo, StateNum::PlayAtk1);
     StateNum newstate =
-        static_cast<StateNum>(weaponinfo[player.readyweapon].atkstate);
-    setPsprite(player, ps_weapon, newstate);
+        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].atkstate);
+    setPsprite(player, PspNum::Weapon, newstate);
     noiseAlert(*player.mo, *player.mo);
 
     // [pd] Stop gun bobbing when shooting
-    PspDef* psp = &player.psprites[ps_weapon];
+    PspDef* psp = &player.psprites[toIndex(PspNum::Weapon)];
     psp->sx = FRACUNIT;
     psp->sy = WEAPONTOP;
 }
@@ -283,9 +290,10 @@ void fireWeapon(Player& player)
 //
 void dropWeapon(Player& player)
 {
-    setPsprite(player,
-               ps_weapon,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].downstate));
+    setPsprite(
+        player,
+        PspNum::Weapon,
+        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].downstate));
 }
 
 //
@@ -298,26 +306,27 @@ void dropWeapon(Player& player)
 void weaponReady(Player& player, PspDef& psp)
 {
     // get out of attack state
-    if (player.mo->state == &states[S_PLAY_ATK1]
-        || player.mo->state == &states[S_PLAY_ATK2])
+    if (player.mo->state == &states[toIndex(StateNum::PlayAtk1)]
+        || player.mo->state == &states[toIndex(StateNum::PlayAtk2)])
     {
-        setMobjState(*player.mo, S_PLAY);
+        setMobjState(*player.mo, StateNum::Play);
     }
 
-    if (player.readyweapon == wp_chainsaw && psp.state == &states[S_SAW])
+    if (player.readyweapon == WeaponType::Chainsaw
+        && psp.state == &states[toIndex(StateNum::Saw)])
     {
-        startSound(player.mo, sfx_sawidl);
+        startSound(player.mo, SfxEnum::Sawidl);
     }
 
     // check for change
     //  if player is dead, put the weapon away
-    if (player.pendingweapon != wp_nochange || !player.health)
+    if (player.pendingweapon != WeaponType::NoChange || !player.health)
     {
         // change weapon
         //  (pending weapon should allready be validated)
         StateNum newstate =
-            static_cast<StateNum>(weaponinfo[player.readyweapon].downstate);
-        setPsprite(player, ps_weapon, newstate);
+            static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].downstate);
+        setPsprite(player, PspNum::Weapon, newstate);
         return;
     }
 
@@ -326,7 +335,8 @@ void weaponReady(Player& player, PspDef& psp)
     if (player.cmd.buttons & BT_ATTACK)
     {
         if (!player.attackdown
-            || (player.readyweapon != wp_missile && player.readyweapon != wp_bfg))
+            || (player.readyweapon != WeaponType::Missile
+                && player.readyweapon != WeaponType::Bfg))
         {
             player.attackdown = true;
             fireWeapon(player);
@@ -352,8 +362,8 @@ void reFire(Player& player, PspDef&)
 {
     // check for fire
     //  (if a weaponchange is pending, let it go through instead)
-    if ((player.cmd.buttons & BT_ATTACK) && player.pendingweapon == wp_nochange
-        && player.health)
+    if ((player.cmd.buttons & BT_ATTACK)
+        && player.pendingweapon == WeaponType::NoChange && player.health)
     {
         player.refire++;
         fireWeapon(player);
@@ -397,7 +407,7 @@ void lower(Player& player, PspDef& psp)
     if (!player.health)
     {
         // Player is dead, so keep the weapon off screen.
-        setPsprite(player, ps_weapon, S_NULL);
+        setPsprite(player, PspNum::Weapon, StateNum::Null);
         return;
     }
 
@@ -421,9 +431,9 @@ void raise(Player& player, PspDef& psp)
     // The weapon has been raised all the way,
     //  so change to the ready state.
     StateNum newstate =
-        static_cast<StateNum>(weaponinfo[player.readyweapon].readystate);
+        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].readystate);
 
-    setPsprite(player, ps_weapon, newstate);
+    setPsprite(player, PspNum::Weapon, newstate);
 }
 
 //
@@ -431,10 +441,11 @@ void raise(Player& player, PspDef& psp)
 //
 void gunFlash(Player& player, PspDef&)
 {
-    setMobjState(*player.mo, S_PLAY_ATK2);
+    setMobjState(*player.mo, StateNum::PlayAtk2);
     setPsprite(player,
-               ps_flash,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
+               PspNum::Flash,
+               static_cast<StateNum>(
+                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
 }
 
 //
@@ -448,7 +459,7 @@ void punch(Player& player, PspDef&)
 {
     int damage = (randomness().forPlay() % 10 + 1) << 1;
 
-    if (player.powers[pw_strength])
+    if (player.powers[toIndex(PowerType::Strength)])
         damage *= 10;
 
     angle_t angle = player.mo->angle;
@@ -460,7 +471,7 @@ void punch(Player& player, PspDef&)
     // turn to face target
     if (aim.target)
     {
-        startSound(player.mo, sfx_punch);
+        startSound(player.mo, SfxEnum::Punch);
         player.mo->angle =
             pointToAngle2(player.mo->x, player.mo->y, aim.target->x, aim.target->y);
     }
@@ -482,10 +493,10 @@ void saw(Player& player, PspDef&)
 
     if (!aim.target)
     {
-        startSound(player.mo, sfx_sawful);
+        startSound(player.mo, SfxEnum::Sawful);
         return;
     }
-    startSound(player.mo, sfx_sawhit);
+    startSound(player.mo, SfxEnum::Sawhit);
 
     // turn to face target
     angle = pointToAngle2(player.mo->x, player.mo->y, aim.target->x, aim.target->y);
@@ -511,8 +522,8 @@ void saw(Player& player, PspDef&)
 //
 void fireMissile(Player& player, PspDef&)
 {
-    player.ammo[weaponinfo[player.readyweapon].ammo]--;
-    spawnPlayerMissile(*player.mo, MT_ROCKET);
+    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
+    spawnPlayerMissile(*player.mo, MobjType::Rocket);
 }
 
 //
@@ -520,8 +531,8 @@ void fireMissile(Player& player, PspDef&)
 //
 void fireBFG(Player& player, PspDef&)
 {
-    player.ammo[weaponinfo[player.readyweapon].ammo] -= BFGCELLS;
-    spawnPlayerMissile(*player.mo, MT_BFG);
+    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)] -= BFGCELLS;
+    spawnPlayerMissile(*player.mo, MobjType::Bfg);
 }
 
 //
@@ -529,14 +540,15 @@ void fireBFG(Player& player, PspDef&)
 //
 void firePlasma(Player& player, PspDef&)
 {
-    player.ammo[weaponinfo[player.readyweapon].ammo]--;
+    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
-               ps_flash,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate
-                                     + (randomness().forPlay() & 1)));
+               PspNum::Flash,
+               static_cast<StateNum>(
+                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)
+                   + (randomness().forPlay() & 1)));
 
-    spawnPlayerMissile(*player.mo, MT_PLASMA);
+    spawnPlayerMissile(*player.mo, MobjType::Plasma);
 }
 
 //
@@ -587,14 +599,15 @@ void gunShot(Mobj& mo, bool accurate)
 //
 void firePistol(Player& player, PspDef&)
 {
-    startSound(player.mo, sfx_pistol);
+    startSound(player.mo, SfxEnum::Pistol);
 
-    setMobjState(*player.mo, S_PLAY_ATK2);
-    player.ammo[weaponinfo[player.readyweapon].ammo]--;
+    setMobjState(*player.mo, StateNum::PlayAtk2);
+    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
-               ps_flash,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
+               PspNum::Flash,
+               static_cast<StateNum>(
+                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
 
     computeBulletSlope(*player.mo);
     gunShot(*player.mo, !player.refire);
@@ -605,14 +618,15 @@ void firePistol(Player& player, PspDef&)
 //
 void fireShotgun(Player& player, PspDef&)
 {
-    startSound(player.mo, sfx_shotgn);
-    setMobjState(*player.mo, S_PLAY_ATK2);
+    startSound(player.mo, SfxEnum::Shotgn);
+    setMobjState(*player.mo, StateNum::PlayAtk2);
 
-    player.ammo[weaponinfo[player.readyweapon].ammo]--;
+    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
-               ps_flash,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
+               PspNum::Flash,
+               static_cast<StateNum>(
+                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
 
     computeBulletSlope(*player.mo);
 
@@ -625,14 +639,15 @@ void fireShotgun(Player& player, PspDef&)
 //
 void fireShotgun2(Player& player, PspDef&)
 {
-    startSound(player.mo, sfx_dshtgn);
-    setMobjState(*player.mo, S_PLAY_ATK2);
+    startSound(player.mo, SfxEnum::Dshtgn);
+    setMobjState(*player.mo, StateNum::PlayAtk2);
 
-    player.ammo[weaponinfo[player.readyweapon].ammo] -= 2;
+    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)] -= 2;
 
     setPsprite(player,
-               ps_flash,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate));
+               PspNum::Flash,
+               static_cast<StateNum>(
+                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
 
     computeBulletSlope(*player.mo);
 
@@ -657,18 +672,19 @@ void fireShotgun2(Player& player, PspDef&)
 //
 void fireCGun(Player& player, PspDef& psp)
 {
-    startSound(player.mo, sfx_pistol);
+    startSound(player.mo, SfxEnum::Pistol);
 
-    if (!player.ammo[weaponinfo[player.readyweapon].ammo])
+    if (!player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)])
         return;
 
-    setMobjState(*player.mo, S_PLAY_ATK2);
-    player.ammo[weaponinfo[player.readyweapon].ammo]--;
+    setMobjState(*player.mo, StateNum::PlayAtk2);
+    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
-               ps_flash,
-               static_cast<StateNum>(weaponinfo[player.readyweapon].flashstate
-                                     + psp.state - &states[S_CHAIN1]));
+               PspNum::Flash,
+               static_cast<StateNum>(
+                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)
+                   + psp.state - &states[toIndex(StateNum::Chain1)]));
 
     computeBulletSlope(*player.mo);
 
@@ -714,7 +730,7 @@ void bfgSpray(Mobj& mo)
         spawnMobj(aim.target->x,
                   aim.target->y,
                   aim.target->z + (aim.target->height >> 2),
-                  MT_EXTRABFG);
+                  MobjType::Extrabfg);
 
         int damage = 0;
         for (int j = 0; j < 15; j++)
@@ -729,7 +745,7 @@ void bfgSpray(Mobj& mo)
 //
 void bfgSound(Player& player, PspDef&)
 {
-    startSound(player.mo, sfx_bfg);
+    startSound(player.mo, SfxEnum::Bfg);
 }
 
 //
@@ -739,7 +755,7 @@ void bfgSound(Player& player, PspDef&)
 void setupPsprites(Player& player)
 {
     // remove all psprites
-    for (int i = 0; i < NUMPSPRITES; i++)
+    for (int i = 0; i < numPSprites; i++)
         player.psprites[i].state = nullptr;
 
     // spawn the gun
@@ -756,7 +772,7 @@ void movePsprites(Player& player)
     State* state;
 
     PspDef* psp = &player.psprites[0];
-    for (int i = 0; i < NUMPSPRITES; i++, psp++)
+    for (int i = 0; i < numPSprites; i++, psp++)
     {
         // a null state means not active
         if ((state = psp->state))
@@ -768,12 +784,15 @@ void movePsprites(Player& player)
             {
                 psp->tics--;
                 if (!psp->tics)
-                    setPsprite(player, i, psp->state->nextstate);
+                    setPsprite(
+                        player, static_cast<PspNum>(i), psp->state->nextstate);
             }
         }
     }
 
-    player.psprites[ps_flash].sx = player.psprites[ps_weapon].sx;
-    player.psprites[ps_flash].sy = player.psprites[ps_weapon].sy;
+    player.psprites[toIndex(PspNum::Flash)].sx =
+        player.psprites[toIndex(PspNum::Weapon)].sx;
+    player.psprites[toIndex(PspNum::Flash)].sy =
+        player.psprites[toIndex(PspNum::Weapon)].sy;
 }
 } // namespace Doom

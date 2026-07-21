@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -17,11 +17,10 @@
 // DESCRIPTION:
 //        Simple basic typedefs, isolated here to make it easier
 //         separating modules.
-//    
+//
 //-----------------------------------------------------------------------------
 
 #pragma once
-
 
 // `doom_boolean` used to live here - an int, deliberately not the built-in bool,
 // because compiled as C it was `enum { false, true }` and the engine leaned on its
@@ -45,24 +44,40 @@
 // - and for i == 5, of the `int ammo[]` past the end of the array. The widget indexes
 // `StatusBarWidgets::w_armsindex[6]` instead now.
 
-
 typedef unsigned char byte;
 
+#include <type_traits>
 
-#define DOOM_MAXCHAR    ((char)0x7f)
-#define DOOM_MAXSHORT   ((short)0x7fff)
+namespace Doom
+{
+// The integer an enum value names. Several scoped enums here index a parallel table -
+// states[], mobjinfo[], S_sfx[], Player::ammo[], Player::cards[] - and this is how such
+// a conversion is spelled, rather than a bare static_cast at each site.
+//
+// Deliberately explicit, and deliberately a function rather than an implicit conversion:
+// `enum class` exists precisely to stop enum-to-int happening silently, so the point is
+// to make each index conversion visible and greppable, not to hide it again. It returns
+// `int` because that is what eacp's containers are indexed by.
+template <typename E>
+    requires std::is_enum_v<E>
+constexpr int toIndex(E value)
+{
+    return static_cast<int>(value);
+}
+} // namespace Doom
+
+#define DOOM_MAXCHAR ((char) 0x7f)
+#define DOOM_MAXSHORT ((short) 0x7fff)
 
 // Max pos 32-bit int.
-#define DOOM_MAXINT     ((int)0x7fffffff)        
-#define DOOM_MAXLONG    ((long)0x7fffffff)
-#define DOOM_MINCHAR    ((char)0x80)
-#define DOOM_MINSHORT   ((short)0x8000)
+#define DOOM_MAXINT ((int) 0x7fffffff)
+#define DOOM_MAXLONG ((long) 0x7fffffff)
+#define DOOM_MINCHAR ((char) 0x80)
+#define DOOM_MINSHORT ((short) 0x8000)
 
 // Max negative 32-bit integer.
-#define DOOM_MININT     ((int)0x80000000)        
-#define DOOM_MINLONG    ((long)0x80000000)
-
-
+#define DOOM_MININT ((int) 0x80000000)
+#define DOOM_MINLONG ((long) 0x80000000)
 
 //-----------------------------------------------------------------------------
 //

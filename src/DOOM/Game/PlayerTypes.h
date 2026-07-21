@@ -101,20 +101,20 @@ struct Player
     int armortype;
 
     // Power ups. invinc and invis are tic counters.
-    int powers[NUMPOWERS];
-    bool cards[NUMCARDS];
+    int powers[numPowers];
+    bool cards[numCards];
     bool backpack;
 
     // Frags, kills of other players.
     int frags[MAXPLAYERS];
     WeaponType readyweapon;
 
-    // Is wp_nochange if not changing.
+    // Is WeaponType::NoChange if not changing.
     WeaponType pendingweapon;
 
-    bool weaponowned[NUMWEAPONS];
-    int ammo[NUMAMMO];
-    int maxammo[NUMAMMO];
+    bool weaponowned[numWeapons];
+    int ammo[numAmmo];
+    int maxammo[numAmmo];
 
     // True if button down last tic.
     int attackdown;
@@ -158,7 +158,7 @@ struct Player
     int colormap;
 
     // Overlay view sprites (gun, etc).
-    PspDef psprites[NUMPSPRITES];
+    PspDef psprites[numPSprites];
 
     // True if secret level has been done.
     bool didsecret;

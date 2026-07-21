@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Game/GameDefs.h" // NUMWEAPONS
+#include "../Game/GameDefs.h" // numWeapons
 
 #include "../Containers.h"
 
@@ -31,7 +31,7 @@ namespace Doom
 struct StatusBarFace
 {
     int st_oldhealth = -1; // last tic's health, for the pained face
-    Array<bool, NUMWEAPONS> oldweaponsowned =
+    Array<bool, numWeapons> oldweaponsowned =
         {}; // last tic's weapons, for the evil grin
     int st_facecount = 0; // tics until the expression may change
     int st_faceindex = 0; // the face patch currently shown (w_faces binds to it)

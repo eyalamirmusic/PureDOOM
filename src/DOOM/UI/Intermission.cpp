@@ -752,14 +752,14 @@ void updateDeathmatchStats()
             }
         }
 
-        startSound(nullptr, sfx_barexp);
+        startSound(nullptr, SfxEnum::Barexp);
         im.dm_state = 4;
     }
 
     if (im.dm_state == 2)
     {
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         bool stillticking = false;
 
@@ -789,7 +789,7 @@ void updateDeathmatchStats()
         }
         if (!stillticking)
         {
-            startSound(nullptr, sfx_barexp);
+            startSound(nullptr, SfxEnum::Barexp);
             im.dm_state++;
         }
     }
@@ -797,7 +797,7 @@ void updateDeathmatchStats()
     {
         if (im.acceleratestage)
         {
-            startSound(nullptr, sfx_slop);
+            startSound(nullptr, SfxEnum::Slop);
 
             if (gameVersion().gamemode == GameMode::Commercial)
                 initNoState();
@@ -947,14 +947,14 @@ void updateNetgameStats()
             if (im.dofrags)
                 im.cnt_frags[i] = fragSum(i);
         }
-        startSound(nullptr, sfx_barexp);
+        startSound(nullptr, SfxEnum::Barexp);
         im.ng_state = 10;
     }
 
     if (im.ng_state == 2)
     {
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         stillticking = false;
 
@@ -973,14 +973,14 @@ void updateNetgameStats()
 
         if (!stillticking)
         {
-            startSound(nullptr, sfx_barexp);
+            startSound(nullptr, SfxEnum::Barexp);
             im.ng_state++;
         }
     }
     else if (im.ng_state == 4)
     {
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         stillticking = false;
 
@@ -997,14 +997,14 @@ void updateNetgameStats()
         }
         if (!stillticking)
         {
-            startSound(nullptr, sfx_barexp);
+            startSound(nullptr, SfxEnum::Barexp);
             im.ng_state++;
         }
     }
     else if (im.ng_state == 6)
     {
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         stillticking = false;
 
@@ -1023,14 +1023,14 @@ void updateNetgameStats()
 
         if (!stillticking)
         {
-            startSound(nullptr, sfx_barexp);
+            startSound(nullptr, SfxEnum::Barexp);
             im.ng_state += 1 + 2 * !im.dofrags;
         }
     }
     else if (im.ng_state == 8)
     {
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         stillticking = false;
 
@@ -1049,7 +1049,7 @@ void updateNetgameStats()
 
         if (!stillticking)
         {
-            startSound(nullptr, sfx_pldeth);
+            startSound(nullptr, SfxEnum::Pldeth);
             im.ng_state++;
         }
     }
@@ -1057,7 +1057,7 @@ void updateNetgameStats()
     {
         if (im.acceleratestage)
         {
-            startSound(nullptr, sfx_sgcock);
+            startSound(nullptr, SfxEnum::Sgcock);
             if (gameVersion().gamemode == GameMode::Commercial)
                 initNoState();
             else
@@ -1168,7 +1168,7 @@ void updateStats()
         im.cnt_secret[0] = (im.plrs[im.me].ssecret * 100) / im.wbs->maxsecret;
         im.cnt_time = im.plrs[im.me].stime / TICRATE;
         im.cnt_par = im.wbs->partime / TICRATE;
-        startSound(nullptr, sfx_barexp);
+        startSound(nullptr, SfxEnum::Barexp);
         im.sp_state = 10;
     }
 
@@ -1177,12 +1177,12 @@ void updateStats()
         im.cnt_kills[0] += 2;
 
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         if (im.cnt_kills[0] >= (im.plrs[im.me].skills * 100) / im.wbs->maxkills)
         {
             im.cnt_kills[0] = (im.plrs[im.me].skills * 100) / im.wbs->maxkills;
-            startSound(nullptr, sfx_barexp);
+            startSound(nullptr, SfxEnum::Barexp);
             im.sp_state++;
         }
     }
@@ -1191,12 +1191,12 @@ void updateStats()
         im.cnt_items[0] += 2;
 
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         if (im.cnt_items[0] >= (im.plrs[im.me].sitems * 100) / im.wbs->maxitems)
         {
             im.cnt_items[0] = (im.plrs[im.me].sitems * 100) / im.wbs->maxitems;
-            startSound(nullptr, sfx_barexp);
+            startSound(nullptr, SfxEnum::Barexp);
             im.sp_state++;
         }
     }
@@ -1205,12 +1205,12 @@ void updateStats()
         im.cnt_secret[0] += 2;
 
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         if (im.cnt_secret[0] >= (im.plrs[im.me].ssecret * 100) / im.wbs->maxsecret)
         {
             im.cnt_secret[0] = (im.plrs[im.me].ssecret * 100) / im.wbs->maxsecret;
-            startSound(nullptr, sfx_barexp);
+            startSound(nullptr, SfxEnum::Barexp);
             im.sp_state++;
         }
     }
@@ -1218,7 +1218,7 @@ void updateStats()
     else if (im.sp_state == 8)
     {
         if (!(im.bcnt & 3))
-            startSound(nullptr, sfx_pistol);
+            startSound(nullptr, SfxEnum::Pistol);
 
         im.cnt_time += 3;
 
@@ -1233,7 +1233,7 @@ void updateStats()
 
             if (im.cnt_time >= im.plrs[im.me].stime / TICRATE)
             {
-                startSound(nullptr, sfx_barexp);
+                startSound(nullptr, SfxEnum::Barexp);
                 im.sp_state++;
             }
         }
@@ -1242,7 +1242,7 @@ void updateStats()
     {
         if (im.acceleratestage)
         {
-            startSound(nullptr, sfx_sgcock);
+            startSound(nullptr, SfxEnum::Sgcock);
 
             if (gameVersion().gamemode == GameMode::Commercial)
                 initNoState();
@@ -1340,9 +1340,9 @@ void intermissionTicker()
     {
         // intermission music
         if (gameVersion().gamemode == GameMode::Commercial)
-            changeMusic(mus_dm2int, true);
+            changeMusic(MusicEnum::Dm2int, true);
         else
-            changeMusic(mus_inter, true);
+            changeMusic(MusicEnum::Inter, true);
     }
 
     checkForAccelerate();

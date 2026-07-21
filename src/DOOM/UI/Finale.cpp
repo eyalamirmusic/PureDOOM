@@ -106,23 +106,23 @@ std::string_view t4text = T4TEXT;
 std::string_view t5text = T5TEXT;
 std::string_view t6text = T6TEXT;
 
-Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MT_POSSESSED},
-                                 {CC_SHOTGUN, MT_SHOTGUY},
-                                 {CC_HEAVY, MT_CHAINGUY},
-                                 {CC_IMP, MT_TROOP},
-                                 {CC_DEMON, MT_SERGEANT},
-                                 {CC_LOST, MT_SKULL},
-                                 {CC_CACO, MT_HEAD},
-                                 {CC_HELL, MT_KNIGHT},
-                                 {CC_BARON, MT_BRUISER},
-                                 {CC_ARACH, MT_BABY},
-                                 {CC_PAIN, MT_PAIN},
-                                 {CC_REVEN, MT_UNDEAD},
-                                 {CC_MANCU, MT_FATSO},
-                                 {CC_ARCH, MT_VILE},
-                                 {CC_SPIDER, MT_SPIDER},
-                                 {CC_CYBER, MT_CYBORG},
-                                 {CC_HERO, MT_PLAYER},
+Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MobjType::Possessed},
+                                 {CC_SHOTGUN, MobjType::Shotguy},
+                                 {CC_HEAVY, MobjType::Chainguy},
+                                 {CC_IMP, MobjType::Troop},
+                                 {CC_DEMON, MobjType::Sergeant},
+                                 {CC_LOST, MobjType::Skull},
+                                 {CC_CACO, MobjType::Head},
+                                 {CC_HELL, MobjType::Knight},
+                                 {CC_BARON, MobjType::Bruiser},
+                                 {CC_ARACH, MobjType::Baby},
+                                 {CC_PAIN, MobjType::Pain},
+                                 {CC_REVEN, MobjType::Undead},
+                                 {CC_MANCU, MobjType::Fatso},
+                                 {CC_ARCH, MobjType::Vile},
+                                 {CC_SPIDER, MobjType::Spider},
+                                 {CC_CYBER, MobjType::Cyborg},
+                                 {CC_HERO, MobjType::Player},
 
                                  {{}, static_cast<MobjType>(0)}};
 
@@ -158,7 +158,7 @@ void startFinale()
         case GameMode::Registered:
         case GameMode::Retail:
         {
-            changeMusic(mus_victor, true);
+            changeMusic(MusicEnum::Victor, true);
 
             switch (gameSession().gameepisode)
             {
@@ -188,7 +188,7 @@ void startFinale()
         // DOOM II and missions packs with E1, M34
         case GameMode::Commercial:
         {
-            changeMusic(mus_read_m, true);
+            changeMusic(MusicEnum::ReadM, true);
 
             switch (gameSession().gamemap)
             {
@@ -225,7 +225,7 @@ void startFinale()
 
         // Indeterminate.
         default:
-            changeMusic(mus_read_m, true);
+            changeMusic(MusicEnum::ReadM, true);
             fin.finaleflat = "F_SKY1"; // Not used anywhere else.
             fin.finaletext = c1text; // FIXME - other text, music?
             break;
@@ -291,7 +291,7 @@ void finaleTicker()
         fin.finalestage = 1;
         gameFlow().wipegamestate = GS_FORCE_WIPE;
         if (gameSession().gameepisode == 3)
-            startMusic(mus_bunny);
+            startMusic(MusicEnum::Bunny);
     }
 }
 
@@ -370,14 +370,15 @@ void startCast()
 
     gameFlow().wipegamestate = GS_FORCE_WIPE;
     fin.castnum = 0;
-    fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
+    fin.caststate =
+        &states[toIndex(mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)];
     fin.casttics = fin.caststate->tics;
     fin.castdeath = false;
     fin.finalestage = 2;
     fin.castframes = 0;
     fin.castonmelee = 0;
     fin.castattacking = false;
-    changeMusic(mus_evil, true);
+    changeMusic(MusicEnum::Evil, true);
 }
 
 //
@@ -387,102 +388,104 @@ void castTicker()
 {
     auto& fin = finaleState();
 
-    int st;
-    int sfx;
+    StateNum st;
+    SfxEnum sfx;
 
     if (--fin.casttics > 0)
         return; // not time to change state yet
 
-    if (fin.caststate->tics == -1 || fin.caststate->nextstate == S_NULL)
+    if (fin.caststate->tics == -1 || fin.caststate->nextstate == StateNum::Null)
     {
         // switch from deathstate to next monster
         fin.castnum++;
         fin.castdeath = false;
         if (castorder[fin.castnum].name.empty())
             fin.castnum = 0;
-        if (mobjinfo[castorder[fin.castnum].type].seesound)
-            startSound(nullptr, mobjinfo[castorder[fin.castnum].type].seesound);
-        fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
+        if (mobjinfo[toIndex(castorder[fin.castnum].type)].seesound != SfxEnum::None)
+            startSound(nullptr,
+                       mobjinfo[toIndex(castorder[fin.castnum].type)].seesound);
+        fin.caststate = &states[toIndex(
+            mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)];
         fin.castframes = 0;
     }
     else
     {
         // just advance to next state in animation
-        if (fin.caststate == &states[S_PLAY_ATK1])
+        if (fin.caststate == &states[toIndex(StateNum::PlayAtk1)])
             goto stopattack; // Oh, gross hack!
         st = fin.caststate->nextstate;
-        fin.caststate = &states[st];
+        fin.caststate = &states[toIndex(st)];
         fin.castframes++;
 
         // sound hacks....
         switch (st)
         {
-            case S_PLAY_ATK1:
-                sfx = sfx_dshtgn;
+            case StateNum::PlayAtk1:
+                sfx = SfxEnum::Dshtgn;
                 break;
-            case S_POSS_ATK2:
-                sfx = sfx_pistol;
+            case StateNum::PossAtk2:
+                sfx = SfxEnum::Pistol;
                 break;
-            case S_SPOS_ATK2:
-                sfx = sfx_shotgn;
+            case StateNum::SposAtk2:
+                sfx = SfxEnum::Shotgn;
                 break;
-            case S_VILE_ATK2:
-                sfx = sfx_vilatk;
+            case StateNum::VileAtk2:
+                sfx = SfxEnum::Vilatk;
                 break;
-            case S_SKEL_FIST2:
-                sfx = sfx_skeswg;
+            case StateNum::SkelFist2:
+                sfx = SfxEnum::Skeswg;
                 break;
-            case S_SKEL_FIST4:
-                sfx = sfx_skepch;
+            case StateNum::SkelFist4:
+                sfx = SfxEnum::Skepch;
                 break;
-            case S_SKEL_MISS2:
-                sfx = sfx_skeatk;
+            case StateNum::SkelMiss2:
+                sfx = SfxEnum::Skeatk;
                 break;
-            case S_FATT_ATK8:
-            case S_FATT_ATK5:
-            case S_FATT_ATK2:
-                sfx = sfx_firsht;
+            case StateNum::FattAtk8:
+            case StateNum::FattAtk5:
+            case StateNum::FattAtk2:
+                sfx = SfxEnum::Firsht;
                 break;
-            case S_CPOS_ATK2:
-            case S_CPOS_ATK3:
-            case S_CPOS_ATK4:
-                sfx = sfx_shotgn;
+            case StateNum::CposAtk2:
+            case StateNum::CposAtk3:
+            case StateNum::CposAtk4:
+                sfx = SfxEnum::Shotgn;
                 break;
-            case S_TROO_ATK3:
-                sfx = sfx_claw;
+            case StateNum::TrooAtk3:
+                sfx = SfxEnum::Claw;
                 break;
-            case S_SARG_ATK2:
-                sfx = sfx_sgtatk;
+            case StateNum::SargAtk2:
+                sfx = SfxEnum::Sgtatk;
                 break;
-            case S_BOSS_ATK2:
-            case S_BOS2_ATK2:
-            case S_HEAD_ATK2:
-                sfx = sfx_firsht;
+            case StateNum::BossAtk2:
+            case StateNum::Bos2Atk2:
+            case StateNum::HeadAtk2:
+                sfx = SfxEnum::Firsht;
                 break;
-            case S_SKULL_ATK2:
-                sfx = sfx_sklatk;
+            case StateNum::SkullAtk2:
+                sfx = SfxEnum::Sklatk;
                 break;
-            case S_SPID_ATK2:
-            case S_SPID_ATK3:
-                sfx = sfx_shotgn;
+            case StateNum::SpidAtk2:
+            case StateNum::SpidAtk3:
+                sfx = SfxEnum::Shotgn;
                 break;
-            case S_BSPI_ATK2:
-                sfx = sfx_plasma;
+            case StateNum::BspiAtk2:
+                sfx = SfxEnum::Plasma;
                 break;
-            case S_CYBER_ATK2:
-            case S_CYBER_ATK4:
-            case S_CYBER_ATK6:
-                sfx = sfx_rlaunc;
+            case StateNum::CyberAtk2:
+            case StateNum::CyberAtk4:
+            case StateNum::CyberAtk6:
+                sfx = SfxEnum::Rlaunc;
                 break;
-            case S_PAIN_ATK3:
-                sfx = sfx_sklatk;
+            case StateNum::PainAtk3:
+                sfx = SfxEnum::Sklatk;
                 break;
             default:
-                sfx = 0;
+                sfx = SfxEnum::None;
                 break;
         }
 
-        if (sfx)
+        if (sfx != SfxEnum::None)
             startSound(nullptr, sfx);
     }
 
@@ -491,20 +494,20 @@ void castTicker()
         // go into attack frame
         fin.castattacking = true;
         if (fin.castonmelee)
-            fin.caststate =
-                &states[mobjinfo[castorder[fin.castnum].type].meleestate];
+            fin.caststate = &states[toIndex(
+                mobjinfo[toIndex(castorder[fin.castnum].type)].meleestate)];
         else
-            fin.caststate =
-                &states[mobjinfo[castorder[fin.castnum].type].missilestate];
+            fin.caststate = &states[toIndex(
+                mobjinfo[toIndex(castorder[fin.castnum].type)].missilestate)];
         fin.castonmelee ^= 1;
-        if (fin.caststate == &states[S_NULL])
+        if (fin.caststate == &states[toIndex(StateNum::Null)])
         {
             if (fin.castonmelee)
-                fin.caststate =
-                    &states[mobjinfo[castorder[fin.castnum].type].meleestate];
+                fin.caststate = &states[toIndex(
+                    mobjinfo[toIndex(castorder[fin.castnum].type)].meleestate)];
             else
-                fin.caststate =
-                    &states[mobjinfo[castorder[fin.castnum].type].missilestate];
+                fin.caststate = &states[toIndex(
+                    mobjinfo[toIndex(castorder[fin.castnum].type)].missilestate)];
         }
     }
 
@@ -512,12 +515,14 @@ void castTicker()
     {
         if (fin.castframes == 24
             || fin.caststate
-                   == &states[mobjinfo[castorder[fin.castnum].type].seestate])
+                   == &states[toIndex(
+                       mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)])
         {
         stopattack:
             fin.castattacking = false;
             fin.castframes = 0;
-            fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].seestate];
+            fin.caststate = &states[toIndex(
+                mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)];
         }
     }
 
@@ -541,12 +546,14 @@ bool castResponder(Event& ev)
 
     // go into death frame
     fin.castdeath = true;
-    fin.caststate = &states[mobjinfo[castorder[fin.castnum].type].deathstate];
+    fin.caststate =
+        &states[toIndex(mobjinfo[toIndex(castorder[fin.castnum].type)].deathstate)];
     fin.casttics = fin.caststate->tics;
     fin.castframes = 0;
     fin.castattacking = false;
-    if (mobjinfo[castorder[fin.castnum].type].deathsound)
-        startSound(nullptr, mobjinfo[castorder[fin.castnum].type].deathsound);
+    if (mobjinfo[toIndex(castorder[fin.castnum].type)].deathsound != SfxEnum::None)
+        startSound(nullptr,
+                   mobjinfo[toIndex(castorder[fin.castnum].type)].deathsound);
 
     return true;
 }
@@ -605,7 +612,7 @@ void castDrawer()
     castPrint(castorder[fin.castnum].name);
 
     // draw the current frame in the middle of the screen
-    SpriteDef* sprdef = &sprites[fin.caststate->sprite];
+    SpriteDef* sprdef = &sprites[toIndex(fin.caststate->sprite)];
     SpriteFrame* sprframe =
         &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
     int lump = sprframe->lump[0];
@@ -685,7 +692,7 @@ void bunnyScroll()
         stage = 6;
     if (stage > fin.laststage)
     {
-        startSound(nullptr, sfx_pistol);
+        startSound(nullptr, SfxEnum::Pistol);
         fin.laststage = stage;
     }
 

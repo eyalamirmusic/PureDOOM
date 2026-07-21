@@ -69,7 +69,7 @@ struct Clip
     // The range of the shot in progress. This looks like a result and is not: it is
     // an INPUT that Doom::lineAttack sets before its pathTraverse runs, and
     // Sim/Mobj.cpp's spawnPuff reads it from *inside* that same traversal's call
-    // stack (nested, not stale) to give a punch's puff its S_PUFF3. aimTraverse and
+    // stack (nested, not stale) to give a punch's puff its StateNum::Puff3. aimTraverse and
     // shootTraverse's actual results (the aim slope, the locked-on target) are
     // returned by value from Doom::aimLineAttack now - see AimResult in MapAction.h.
     //
@@ -77,7 +77,7 @@ struct Clip
     // behaviour: spawnPuff has a third caller in no hitscan chain at all - the
     // revenant's homing rocket spawns a smoke puff every 4th tic (Sim/Enemy.cpp's
     // tracer) - which reads whatever attackrange the last hitscan left behind, so a
-    // recent punch can flip that smoke to S_PUFF3 too. Threading an explicit "no
+    // recent punch can flip that smoke to StateNum::Puff3 too. Threading an explicit "no
     // range" through the tracer would be a behaviour change wearing a refactor's
     // clothes, not a fix - leave it leaking.
     fixed_t attackrange {};

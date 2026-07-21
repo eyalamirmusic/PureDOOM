@@ -361,7 +361,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
         updateLineOpening(*in->d.line);
         if (!clip.openrange.isPositive())
         {
-            startSound(usething, sfx_noway);
+            startSound(usething, SfxEnum::Noway);
 
             // can't use through a wall
             return false;
@@ -394,7 +394,7 @@ static bool
         return true;
 
     // Boss spider and cyborg take no damage from concussion.
-    if (thing->type == MT_CYBORG || thing->type == MT_SPIDER)
+    if (thing->type == MobjType::Cyborg || thing->type == MobjType::Spider)
         return true;
 
     fixed_t dx = doom_abs(thing->x - bombspot->x);
@@ -441,7 +441,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     // crunch bodies to giblets
     if (thing->health <= 0)
     {
-        setMobjState(*thing, S_GIBS);
+        setMobjState(*thing, StateNum::Gibs);
 
         thing->flags &= ~MF_SOLID;
         thing->height = fixed_t {};
@@ -473,8 +473,8 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
         damageMobj(*thing, nullptr, nullptr, 10);
 
         // spray blood in a random direction
-        Mobj* mo =
-            spawnMobj(thing->x, thing->y, thing->z + thing->height / 2, MT_BLOOD);
+        Mobj* mo = spawnMobj(
+            thing->x, thing->y, thing->z + thing->height / 2, MobjType::Blood);
 
         // Raw: the random difference shifted into the fraction, ~+-16 units/tic.
         mo->momx = fixed_t {(randomness().forPlay() - randomness().forPlay()) << 12};

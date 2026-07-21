@@ -205,7 +205,8 @@ void moveFloor(FloorMove& floor)
                                floor.direction);
 
     if (!(levelStats().leveltime & 7))
-        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), sfx_stnmov);
+        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
+                   SfxEnum::Stnmov);
 
     if (res == MoveResult::PastDest)
     {
@@ -235,7 +236,7 @@ void moveFloor(FloorMove& floor)
         }
         removeThinker(floor);
 
-        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), sfx_pstop);
+        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), SfxEnum::Pstop);
     }
 }
 

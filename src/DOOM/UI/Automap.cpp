@@ -1038,7 +1038,7 @@ void drawWalls()
                 }
             }
         }
-        else if (am_plr->powers[pw_allmap])
+        else if (am_plr->powers[toIndex(PowerType::AllMap)])
         {
             if (!(lines[i].flags & LINE_NEVERSEE))
                 drawMline(l, GRAYS + 3);
@@ -1149,7 +1149,7 @@ void drawPlayers()
         if (!players_.playeringame[i])
             continue;
 
-        if (p->powers[pw_invisibility])
+        if (p->powers[toIndex(PowerType::Invisibility)])
             color = 246; // *close* to black
         else
             color = their_colors[their_color];

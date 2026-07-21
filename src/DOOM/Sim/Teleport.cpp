@@ -44,7 +44,7 @@ int teleport(Line& line, int side, Mobj& thing)
                 Mobj* m = reinterpret_cast<Mobj*>(thinker);
 
                 // not a teleportman
-                if (m->type != MT_TELEPORTMAN)
+                if (m->type != MobjType::Teleportman)
                     continue;
 
                 Sector* sector = m->subsector->sector;
@@ -64,16 +64,16 @@ int teleport(Line& line, int side, Mobj& thing)
                     thing.player->viewz = thing.z + thing.player->viewheight;
 
                 // spawn teleport fog at source and destination
-                Mobj* fog = spawnMobj(oldx, oldy, oldz, MT_TFOG);
-                startSound(fog, sfx_telept);
+                Mobj* fog = spawnMobj(oldx, oldy, oldz, MobjType::Tfog);
+                startSound(fog, SfxEnum::Telept);
                 const auto anFine = m->angle.fineIndex();
                 fog = spawnMobj(m->x + 20 * finecosine[anFine],
                                 m->y + 20 * finesine[anFine],
                                 thing.z,
-                                MT_TFOG);
+                                MobjType::Tfog);
 
                 // emit sound, where?
-                startSound(fog, sfx_telept);
+                startSound(fog, SfxEnum::Telept);
 
                 // don't move for a bit
                 if (thing.player)

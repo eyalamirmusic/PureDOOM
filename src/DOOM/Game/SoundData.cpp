@@ -47,8 +47,8 @@ DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 //
 Doom::MusicInfo S_music[] =
 {
-    // mus_None. Was `{ 0 }` - a null name, which no reachable path dereferenced
-    // (changeMusic builds "d_" + name and is never called with mus_None). An empty
+    // MusicEnum::None. Was `{ 0 }` - a null name, which no reachable path dereferenced
+    // (changeMusic builds "d_" + name and is never called with MusicEnum::None). An empty
     // name says the same thing without a null std::string_view, which is UB.
     { "", 0 },
     { "e1m1", 0 },
@@ -213,7 +213,7 @@ Doom::SfxInfo S_sfx[] =
     { "punch", false, 64, 0, -1, -1, 0 },
     { "hoof", false, 70, 0, -1, -1, 0 },
     { "metal", false, 70, 0, -1, -1, 0 },
-    { "chgun", false, 64, &S_sfx[sfx_pistol], 150, 0, 0 },
+    { "chgun", false, 64, &S_sfx[toIndex(SfxEnum::Pistol)], 150, 0, 0 },
     { "tink", false, 60, 0, -1, -1, 0 },
     { "bdopn", false, 100, 0, -1, -1, 0 },
     { "bdcls", false, 100, 0, -1, -1, 0 },

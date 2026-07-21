@@ -1323,10 +1323,11 @@ static void eacpEmitSprite(EacpEmitter* em,
     float width, height, top, bottom;
     float u0, u1;
 
-    if (thing == viewer || thing->sprite < 0 || thing->sprite >= gfx.numsprites)
+    if (thing == viewer || Doom::toIndex(thing->sprite) < 0
+        || Doom::toIndex(thing->sprite) >= gfx.numsprites)
         return;
 
-    definition = &sprites[thing->sprite];
+    definition = &sprites[Doom::toIndex(thing->sprite)];
 
     if ((int) (thing->frame & Doom::FF_FRAMEMASK) >= definition->numframes)
         return;
@@ -1571,7 +1572,7 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
         || player->mo == 0)
         return;
 
-    for (i = 0; i < Doom::NUMPSPRITES && i < EACP_DOOM_HUD_SPRITES; ++i)
+    for (i = 0; i < Doom::numPSprites && i < EACP_DOOM_HUD_SPRITES; ++i)
     {
         Doom::PspDef* weapon = &player->psprites[i];
         Doom::State* state = weapon->state;
@@ -1579,10 +1580,11 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
         Doom::SpriteFrame* frame;
         int lump;
 
-        if (state == 0 || state->sprite < 0 || state->sprite >= gfx.numsprites)
+        if (state == 0 || Doom::toIndex(state->sprite) < 0
+            || Doom::toIndex(state->sprite) >= gfx.numsprites)
             continue;
 
-        definition = &sprites[state->sprite];
+        definition = &sprites[Doom::toIndex(state->sprite)];
 
         if ((int) (state->frame & Doom::FF_FRAMEMASK) >= definition->numframes)
             continue;
@@ -1911,7 +1913,8 @@ static void eacpAutomapWalls(EacpAutomapEmitter* em)
             else if (cheating)
                 eacpAutomapLine(em, ax, ay, bx, by, TSWALLCOLORS + lightlev);
         }
-        else if (am_plr != 0 && am_plr->powers[Doom::pw_allmap])
+        else if (am_plr != 0
+                 && am_plr->powers[Doom::toIndex(Doom::PowerType::AllMap)])
         {
             if (!(line->flags & LINE_NEVERSEE))
                 eacpAutomapLine(em, ax, ay, bx, by, GRAYS + 3);

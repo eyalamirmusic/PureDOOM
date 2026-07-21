@@ -438,12 +438,15 @@ auto tStateTableIsIntact = test("Info/stateTableIsIntact") = []
 {
     auto sum = Checksum {};
 
-    for (auto i = 0; i < Doom::NUMSTATES; ++i)
+    for (auto i = 0; i < Doom::numStates; ++i)
     {
         const auto& state = states[i];
 
-        sum << state.sprite << state.frame << state.tics << state.nextstate
-            << state.misc1 << state.misc2;
+        // The enum-typed fields are mixed as their integer values, exactly as they
+        // were when they were plain enums - so the golden checksum below is
+        // unchanged by the enum class conversion, and still pins the transcription.
+        sum << toIndex(state.sprite) << state.frame << state.tics
+            << toIndex(state.nextstate) << state.misc1 << state.misc2;
     }
 
     checkTable("states[]", sum, 0x9a0e177f5784c873ULL);
@@ -453,17 +456,20 @@ auto tMobjInfoTableIsIntact = test("Info/mobjInfoTableIsIntact") = []
 {
     auto sum = Checksum {};
 
-    for (auto i = 0; i < Doom::NUMMOBJTYPES; ++i)
+    for (auto i = 0; i < Doom::numMobjTypes; ++i)
     {
         const auto& info = mobjinfo[i];
 
-        sum << info.doomednum << info.spawnstate << info.spawnhealth << info.seestate
-            << info.seesound << info.reactiontime << info.attacksound
-            << info.painstate << info.painchance << info.painsound << info.meleestate
-            << info.missilestate << info.deathstate << info.xdeathstate
-            << info.deathsound << info.speed << info.radius.raw << info.height.raw
-            << info.mass << info.damage << info.activesound << info.flags
-            << info.raisestate;
+        // As above: enum-typed fields mixed as their integer values, so the golden
+        // checksum is unchanged by the conversion.
+        sum << info.doomednum << toIndex(info.spawnstate) << info.spawnhealth
+            << toIndex(info.seestate) << toIndex(info.seesound) << info.reactiontime
+            << toIndex(info.attacksound) << toIndex(info.painstate)
+            << info.painchance << toIndex(info.painsound) << toIndex(info.meleestate)
+            << toIndex(info.missilestate) << toIndex(info.deathstate)
+            << toIndex(info.xdeathstate) << toIndex(info.deathsound) << info.speed
+            << info.radius.raw << info.height.raw << info.mass << info.damage
+            << toIndex(info.activesound) << info.flags << toIndex(info.raisestate);
     }
 
     checkTable("mobjinfo[]", sum, 0x55b7217727afe6b6ULL);

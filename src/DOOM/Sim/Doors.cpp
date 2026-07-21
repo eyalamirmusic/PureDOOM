@@ -47,19 +47,19 @@ void verticalDoor(Door& door)
                     case DoorType::BlazeRaise:
                         door.direction = -1; // time to go back down
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                                   sfx_bdcls);
+                                   SfxEnum::Bdcls);
                         break;
 
                     case DoorType::Normal:
                         door.direction = -1; // time to go back down
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                                   sfx_dorcls);
+                                   SfxEnum::Dorcls);
                         break;
 
                     case DoorType::Close30ThenOpen:
                         door.direction = 1;
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                                   sfx_doropn);
+                                   SfxEnum::Doropn);
                         break;
 
                     case DoorType::Close:
@@ -82,7 +82,7 @@ void verticalDoor(Door& door)
                         door.direction = 1;
                         door.type = DoorType::Normal;
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                                   sfx_doropn);
+                                   SfxEnum::Doropn);
                         break;
 
                     case DoorType::Normal:
@@ -114,7 +114,7 @@ void verticalDoor(Door& door)
                         door.sector->specialdata = nullptr;
                         removeThinker(door); // unlink and free
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                                   sfx_bdcls);
+                                   SfxEnum::Bdcls);
                         break;
 
                     case DoorType::Normal:
@@ -150,7 +150,7 @@ void verticalDoor(Door& door)
                     case DoorType::BlazeOpen:
                         door.direction = 1;
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
-                                   sfx_doropn);
+                                   SfxEnum::Doropn);
                         break;
                 }
             }
@@ -205,10 +205,11 @@ int doLockedDoor(Line& line, DoorType type, Mobj& thing)
         case 133:
             if (!p)
                 return 0;
-            if (!p->cards[it_bluecard] && !p->cards[it_blueskull])
+            if (!p->cards[toIndex(Card::BlueCard)]
+                && !p->cards[toIndex(Card::BlueSkull)])
             {
                 p->message = PD_BLUEO;
-                startSound(nullptr, sfx_oof);
+                startSound(nullptr, SfxEnum::Oof);
                 return 0;
             }
             break;
@@ -217,10 +218,11 @@ int doLockedDoor(Line& line, DoorType type, Mobj& thing)
         case 135:
             if (!p)
                 return 0;
-            if (!p->cards[it_redcard] && !p->cards[it_redskull])
+            if (!p->cards[toIndex(Card::RedCard)]
+                && !p->cards[toIndex(Card::RedSkull)])
             {
                 p->message = PD_REDO;
-                startSound(nullptr, sfx_oof);
+                startSound(nullptr, SfxEnum::Oof);
                 return 0;
             }
             break;
@@ -229,10 +231,11 @@ int doLockedDoor(Line& line, DoorType type, Mobj& thing)
         case 137:
             if (!p)
                 return 0;
-            if (!p->cards[it_yellowcard] && !p->cards[it_yellowskull])
+            if (!p->cards[toIndex(Card::YellowCard)]
+                && !p->cards[toIndex(Card::YellowSkull)])
             {
                 p->message = PD_YELLOWO;
-                startSound(nullptr, sfx_oof);
+                startSound(nullptr, SfxEnum::Oof);
                 return 0;
             }
             break;
@@ -271,7 +274,7 @@ int doDoor(Line& line, DoorType type)
                 door->direction = -1;
                 door->speed = VDOORSPEED * 4;
                 startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                           sfx_bdcls);
+                           SfxEnum::Bdcls);
                 break;
 
             case DoorType::Close:
@@ -279,14 +282,14 @@ int doDoor(Line& line, DoorType type)
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
                 startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                           sfx_dorcls);
+                           SfxEnum::Dorcls);
                 break;
 
             case DoorType::Close30ThenOpen:
                 door->topheight = sec->ceilingheight;
                 door->direction = -1;
                 startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                           sfx_dorcls);
+                           SfxEnum::Dorcls);
                 break;
 
             case DoorType::BlazeRaise:
@@ -297,7 +300,7 @@ int doDoor(Line& line, DoorType type)
                 door->speed = VDOORSPEED * 4;
                 if (door->topheight != sec->ceilingheight)
                     startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                               sfx_bdopn);
+                               SfxEnum::Bdopn);
                 break;
 
             case DoorType::Normal:
@@ -307,7 +310,7 @@ int doDoor(Line& line, DoorType type)
                 door->topheight -= 4 * FRACUNIT;
                 if (door->topheight != sec->ceilingheight)
                     startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
-                               sfx_doropn);
+                               SfxEnum::Doropn);
                 break;
 
             case DoorType::RaiseIn5Mins:
@@ -337,10 +340,11 @@ void verticalDoor(Line& line, Mobj& thing)
             if (!player)
                 return;
 
-            if (!player->cards[it_bluecard] && !player->cards[it_blueskull])
+            if (!player->cards[toIndex(Card::BlueCard)]
+                && !player->cards[toIndex(Card::BlueSkull)])
             {
                 player->message = PD_BLUEK;
-                startSound(nullptr, sfx_oof);
+                startSound(nullptr, SfxEnum::Oof);
                 return;
             }
             break;
@@ -350,10 +354,11 @@ void verticalDoor(Line& line, Mobj& thing)
             if (!player)
                 return;
 
-            if (!player->cards[it_yellowcard] && !player->cards[it_yellowskull])
+            if (!player->cards[toIndex(Card::YellowCard)]
+                && !player->cards[toIndex(Card::YellowSkull)])
             {
                 player->message = PD_YELLOWK;
-                startSound(nullptr, sfx_oof);
+                startSound(nullptr, SfxEnum::Oof);
                 return;
             }
             break;
@@ -363,10 +368,11 @@ void verticalDoor(Line& line, Mobj& thing)
             if (!player)
                 return;
 
-            if (!player->cards[it_redcard] && !player->cards[it_redskull])
+            if (!player->cards[toIndex(Card::RedCard)]
+                && !player->cards[toIndex(Card::RedSkull)])
             {
                 player->message = PD_REDK;
-                startSound(nullptr, sfx_oof);
+                startSound(nullptr, SfxEnum::Oof);
                 return;
             }
             break;
@@ -403,16 +409,16 @@ void verticalDoor(Line& line, Mobj& thing)
     {
         case 117: // BLAZING DOOR RAISE
         case 118: // BLAZING DOOR OPEN
-            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_bdopn);
+            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Bdopn);
             break;
 
         case 1: // NORMAL DOOR SOUND
         case 31:
-            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
+            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Doropn);
             break;
 
         default: // LOCKED DOOR SOUND
-            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_doropn);
+            startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Doropn);
             break;
     }
 

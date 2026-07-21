@@ -178,7 +178,7 @@ void doomSimSetThingPosition(int handle);
 
 // Named constants, so a scenario test stays free of DOOM's enums (info.h,
 // p_mobj.h). Add more here as scenarios need them.
-int doomSimTypeBarrel(); // Doom::MT_BARREL: solid, shootable, radius 10
+int doomSimTypeBarrel(); // Doom::MobjType::Barrel: solid, shootable, radius 10
 int doomSimOnFloorZ(); // ONFLOORZ, the "rest on the floor" spawn z
 int doomSimFlagNoClip(); // MF_NOCLIP
 

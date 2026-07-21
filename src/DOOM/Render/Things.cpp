@@ -499,7 +499,7 @@ void projectSprite(Mobj& thing)
                    " ");
     }
 #endif
-    sprdef = &sprites[thing.sprite];
+    sprdef = &sprites[toIndex(thing.sprite)];
 #ifdef RANGECHECK
     if ((thing.frame & FF_FRAMEMASK) >= sprdef->numframes)
     {
@@ -666,7 +666,7 @@ void drawPSprite(PspDef& psp)
                    " ");
     }
 #endif
-    sprdef = &sprites[psp.state->sprite];
+    sprdef = &sprites[toIndex(psp.state->sprite)];
 #ifdef RANGECHECK
     if ((psp.state->frame & FF_FRAMEMASK) >= sprdef->numframes)
     {
@@ -724,8 +724,8 @@ void drawPSprite(PspDef& psp)
 
     vis->patch = lump;
 
-    if (pt.viewplayer->powers[pw_invisibility] > 4 * 32
-        || pt.viewplayer->powers[pw_invisibility] & 8)
+    if (pt.viewplayer->powers[toIndex(PowerType::Invisibility)] > 4 * 32
+        || pt.viewplayer->powers[toIndex(PowerType::Invisibility)] & 8)
     {
         // shadow draw
         vis->colormap = nullptr;
@@ -779,7 +779,7 @@ void drawPlayerSprites()
     sprState.mceilingclip = sprState.negonearray.data();
 
     // add all active psprites
-    for (i = 0, psp = pt.viewplayer->psprites; i < NUMPSPRITES; i++, psp++)
+    for (i = 0, psp = pt.viewplayer->psprites; i < numPSprites; i++, psp++)
     {
         if (psp->state)
             drawPSprite(*psp);

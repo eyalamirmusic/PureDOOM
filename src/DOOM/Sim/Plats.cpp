@@ -50,7 +50,7 @@ void platRaise(Plat& plat)
             {
                 if (!(levelStats().leveltime & 7))
                     startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                               sfx_stnmov);
+                               SfxEnum::Stnmov);
             }
 
             if (res == MoveResult::Crushed && (!plat.crush))
@@ -58,7 +58,7 @@ void platRaise(Plat& plat)
                 plat.count = plat.wait;
                 plat.status = PlatState::Down;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                           sfx_pstart);
+                           SfxEnum::Pstart);
             }
             else
             {
@@ -67,7 +67,7 @@ void platRaise(Plat& plat)
                     plat.count = plat.wait;
                     plat.status = PlatState::Waiting;
                     startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                               sfx_pstop);
+                               SfxEnum::Pstop);
 
                     switch (plat.type)
                     {
@@ -96,7 +96,7 @@ void platRaise(Plat& plat)
                 plat.count = plat.wait;
                 plat.status = PlatState::Waiting;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                           sfx_pstop);
+                           SfxEnum::Pstop);
             }
             break;
 
@@ -108,7 +108,7 @@ void platRaise(Plat& plat)
                 else
                     plat.status = PlatState::Down;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                           sfx_pstart);
+                           SfxEnum::Pstart);
             }
 
         case PlatState::InStasis:
@@ -167,7 +167,7 @@ int doPlat(Line& line, PlatType type, int amount)
                 // NO MORE DAMAGE, IF APPLICABLE
                 sec->special = 0;
 
-                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Stnmov);
                 break;
 
             case PlatType::RaiseAndChange:
@@ -177,7 +177,7 @@ int doPlat(Line& line, PlatType type, int amount)
                 plat->wait = 0;
                 plat->status = PlatState::Up;
 
-                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Stnmov);
                 break;
 
             case PlatType::DownWaitUpStay:
@@ -190,7 +190,7 @@ int doPlat(Line& line, PlatType type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = PlatState::Down;
-                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Pstart);
                 break;
 
             case PlatType::BlazeDWUS:
@@ -203,7 +203,7 @@ int doPlat(Line& line, PlatType type, int amount)
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
                 plat->status = PlatState::Down;
-                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Pstart);
                 break;
 
             case PlatType::PerpetualRaise:
@@ -221,7 +221,7 @@ int doPlat(Line& line, PlatType type, int amount)
                 plat->wait = 35 * PLATWAIT;
                 plat->status = static_cast<PlatState>(randomness().forPlay() & 1);
 
-                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
+                startSound(reinterpret_cast<Mobj*>(&sec->soundorg), SfxEnum::Pstart);
                 break;
         }
         addActivePlat(*plat);

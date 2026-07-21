@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "../doomtype.h" // toIndex, for the enum-derived counts below
+
 //
 // Global parameters/defines.
 //
@@ -161,16 +163,20 @@ enum class Skill
 //
 namespace Doom
 {
-enum Card
+enum class Card
 {
-    it_bluecard,
-    it_yellowcard,
-    it_redcard,
-    it_blueskull,
-    it_yellowskull,
-    it_redskull,
-    NUMCARDS
+    BlueCard,
+    YellowCard,
+    RedCard,
+    BlueSkull,
+    YellowSkull,
+    RedSkull,
+    NumCards
 };
+
+// The count, for array sizes and loop bounds. Derived from the enum's own sentinel so
+// the two cannot drift - the rule the fixed-size-array bounds follow elsewhere.
+constexpr int numCards = toIndex(Card::NumCards);
 } // namespace Doom
 
 // The defined weapons,
@@ -178,50 +184,56 @@ enum Card
 // user has not changed weapon.
 namespace Doom
 {
-enum WeaponType
+enum class WeaponType
 {
-    wp_fist,
-    wp_pistol,
-    wp_shotgun,
-    wp_chaingun,
-    wp_missile,
-    wp_plasma,
-    wp_bfg,
-    wp_chainsaw,
-    wp_supershotgun,
-    NUMWEAPONS,
+    Fist,
+    Pistol,
+    Shotgun,
+    Chaingun,
+    Missile,
+    Plasma,
+    Bfg,
+    Chainsaw,
+    SuperShotgun,
+    NumWeapons,
     // No pending weapon change.
-    wp_nochange
+    NoChange
 };
+
+constexpr int numWeapons = toIndex(WeaponType::NumWeapons);
 } // namespace Doom
 
 // Ammunition types defined.
 namespace Doom
 {
-enum AmmoType
+enum class AmmoType
 {
-    am_clip, // Pistol / chaingun ammo.
-    am_shell, // Shotgun / double barreled shotgun.
-    am_cell, // Plasma rifle, BFG.
-    am_misl, // Missile launcher.
-    NUMAMMO,
-    am_noammo // Unlimited for chainsaw / fist.
+    Clip, // Pistol / chaingun ammo.
+    Shell, // Shotgun / double barreled shotgun.
+    Cell, // Plasma rifle, BFG.
+    Misl, // Missile launcher.
+    NumAmmo,
+    NoAmmo // Unlimited for chainsaw / fist.
 };
+
+constexpr int numAmmo = toIndex(AmmoType::NumAmmo);
 } // namespace Doom
 
 // Power up artifacts.
 namespace Doom
 {
-enum PowerType
+enum class PowerType
 {
-    pw_invulnerability,
-    pw_strength,
-    pw_invisibility,
-    pw_ironfeet,
-    pw_allmap,
-    pw_infrared,
-    NUMPOWERS
+    Invulnerability,
+    Strength,
+    Invisibility,
+    IronFeet,
+    AllMap,
+    Infrared,
+    NumPowers
 };
+
+constexpr int numPowers = toIndex(PowerType::NumPowers);
 } // namespace Doom
 
 //
@@ -231,13 +243,15 @@ enum PowerType
 //
 namespace Doom
 {
-enum PowerDuration
-{
-    INVULNTICS = (30 * TICRATE),
-    INVISTICS = (60 * TICRATE),
-    INFRATICS = (120 * TICRATE),
-    IRONTICS = (60 * TICRATE)
-};
+// Not an `enum class`: these are tic counts, assigned straight into Player::powers[]
+// and counted down. They are a group of integer constants rather than an enumeration
+// of alternatives, and typing them would force a toIndex() on every use - naming an
+// index where a duration is meant. So they become constexpr ints, which is what the
+// rest of this file's constants already are, and no raw enum is left behind.
+constexpr int invulnTics = 30 * TICRATE;
+constexpr int invisTics = 60 * TICRATE;
+constexpr int infraTics = 120 * TICRATE;
+constexpr int ironTics = 60 * TICRATE;
 } // namespace Doom
 
 //

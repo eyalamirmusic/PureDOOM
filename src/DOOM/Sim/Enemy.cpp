@@ -63,31 +63,32 @@ constexpr fixed_t SKULLSPEED = 20 * FRACUNIT;
 // P_NewChaseDir movement LUTs and the transient targets the AI threads through its
 // state actions (the vile's corpse, the fat/brain spit targets). All file-local;
 // soundtarget alone is shared (now a Doom::SoundTarget Engine member, reached above).
-enum DirType
+enum class DirType
 {
-    DI_EAST,
-    DI_NORTHEAST,
-    DI_NORTH,
-    DI_NORTHWEST,
-    DI_WEST,
-    DI_SOUTHWEST,
-    DI_SOUTH,
-    DI_SOUTHEAST,
-    DI_NODIR,
-    NUMDIRS
+    East,
+    NorthEast,
+    North,
+    NorthWest,
+    West,
+    SouthWest,
+    South,
+    SouthEast,
+    NoDir,
+    NumDirs
 };
 
-Array<DirType, 9> opposite = {DI_WEST,
-                              DI_SOUTHWEST,
-                              DI_SOUTH,
-                              DI_SOUTHEAST,
-                              DI_EAST,
-                              DI_NORTHEAST,
-                              DI_NORTH,
-                              DI_NORTHWEST,
-                              DI_NODIR};
+Array<DirType, 9> opposite = {DirType::West,
+                              DirType::SouthWest,
+                              DirType::South,
+                              DirType::SouthEast,
+                              DirType::East,
+                              DirType::NorthEast,
+                              DirType::North,
+                              DirType::NorthWest,
+                              DirType::NoDir};
 
-Array<DirType, 4> diags = {DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST};
+Array<DirType, 4> diags = {
+    DirType::NorthWest, DirType::NorthEast, DirType::SouthWest, DirType::SouthEast};
 
 // Raw fixed values: 47000 is FRACUNIT * cos(45) rounded, as vanilla wrote it.
 Array<fixed_t, 8> xspeed = {FRACUNIT,
@@ -281,25 +282,26 @@ bool checkMissileRange(Mobj& actor)
         approxDistance(actor.x - actor.target->x, actor.y - actor.target->y)
         - 64 * FRACUNIT;
 
-    if (!actor.info->meleestate)
+    if (actor.info->meleestate == StateNum::Null)
         distance -= 128 * FRACUNIT; // no melee attack, so fire more
 
     int dist = distance.toInt();
 
-    if (actor.type == MT_VILE)
+    if (actor.type == MobjType::Vile)
     {
         if (dist > 14 * 64)
             return false; // too far away
     }
 
-    if (actor.type == MT_UNDEAD)
+    if (actor.type == MobjType::Undead)
     {
         if (dist < 196)
             return false; // close for fist attack
         dist >>= 1;
     }
 
-    if (actor.type == MT_CYBORG || actor.type == MT_SPIDER || actor.type == MT_SKULL)
+    if (actor.type == MobjType::Cyborg || actor.type == MobjType::Spider
+        || actor.type == MobjType::Skull)
     {
         dist >>= 1;
     }
@@ -307,7 +309,7 @@ bool checkMissileRange(Mobj& actor)
     if (dist > 200)
         dist = 200;
 
-    if (actor.type == MT_CYBORG && dist > 160)
+    if (actor.type == MobjType::Cyborg && dist > 160)
         dist = 160;
 
     if (randomness().forPlay() < dist)
@@ -328,7 +330,7 @@ bool move(Mobj& actor)
 
     auto& c = clip();
 
-    if (actor.movedir == DI_NODIR)
+    if (actor.movedir == toIndex(DirType::NoDir))
         return false;
 
     if (static_cast<unsigned>(actor.movedir) >= 8)
@@ -357,7 +359,7 @@ bool move(Mobj& actor)
         if (!c.numspechit)
             return false;
 
-        actor.movedir = DI_NODIR;
+        actor.movedir = toIndex(DirType::NoDir);
         bool good = false;
         while (c.numspechit--)
         {
@@ -413,49 +415,50 @@ void newChaseDir(Mobj& actor)
         fatalError("Error: newChaseDir: called with no target");
 
     DirType olddir = static_cast<DirType>(actor.movedir);
-    DirType turnaround = opposite[olddir];
+    DirType turnaround = opposite[toIndex(olddir)];
 
     fixed_t deltax = actor.target->x - actor.x;
     fixed_t deltay = actor.target->y - actor.y;
 
     if (deltax > 10 * FRACUNIT)
-        d[1] = DI_EAST;
+        d[1] = DirType::East;
     else if (deltax < -10 * FRACUNIT)
-        d[1] = DI_WEST;
+        d[1] = DirType::West;
     else
-        d[1] = DI_NODIR;
+        d[1] = DirType::NoDir;
 
     if (deltay < -10 * FRACUNIT)
-        d[2] = DI_SOUTH;
+        d[2] = DirType::South;
     else if (deltay > 10 * FRACUNIT)
-        d[2] = DI_NORTH;
+        d[2] = DirType::North;
     else
-        d[2] = DI_NODIR;
+        d[2] = DirType::NoDir;
 
     // try direct route
-    if (d[1] != DI_NODIR && d[2] != DI_NODIR)
+    if (d[1] != DirType::NoDir && d[2] != DirType::NoDir)
     {
-        actor.movedir = diags[(deltay.isNegative() << 1) + deltax.isPositive()];
-        if (actor.movedir != turnaround && tryWalk(actor))
+        actor.movedir =
+            toIndex(diags[(deltay.isNegative() << 1) + deltax.isPositive()]);
+        if (actor.movedir != toIndex(turnaround) && tryWalk(actor))
             return;
     }
 
     // try other directions
     if (randomness().forPlay() > 200 || doom_abs(deltay) > doom_abs(deltax))
     {
-        tdir = d[1];
+        tdir = toIndex(d[1]);
         d[1] = d[2];
         d[2] = static_cast<DirType>(tdir);
     }
 
     if (d[1] == turnaround)
-        d[1] = DI_NODIR;
+        d[1] = DirType::NoDir;
     if (d[2] == turnaround)
-        d[2] = DI_NODIR;
+        d[2] = DirType::NoDir;
 
-    if (d[1] != DI_NODIR)
+    if (d[1] != DirType::NoDir)
     {
-        actor.movedir = d[1];
+        actor.movedir = toIndex(d[1]);
         if (tryWalk(actor))
         {
             // either moved forward or attacked
@@ -463,9 +466,9 @@ void newChaseDir(Mobj& actor)
         }
     }
 
-    if (d[2] != DI_NODIR)
+    if (d[2] != DirType::NoDir)
     {
-        actor.movedir = d[2];
+        actor.movedir = toIndex(d[2]);
 
         if (tryWalk(actor))
             return;
@@ -473,9 +476,9 @@ void newChaseDir(Mobj& actor)
 
     // there is no direct path to the player,
     // so pick another direction.
-    if (olddir != DI_NODIR)
+    if (olddir != DirType::NoDir)
     {
-        actor.movedir = olddir;
+        actor.movedir = toIndex(olddir);
 
         if (tryWalk(actor))
             return;
@@ -484,9 +487,10 @@ void newChaseDir(Mobj& actor)
     // randomly determine direction of search
     if (randomness().forPlay() & 1)
     {
-        for (tdir = DI_EAST; tdir <= DI_SOUTHEAST; tdir++)
+        for (tdir = toIndex(DirType::East); tdir <= toIndex(DirType::SouthEast);
+             tdir++)
         {
-            if (tdir != turnaround)
+            if (tdir != toIndex(turnaround))
             {
                 actor.movedir = tdir;
 
@@ -497,9 +501,10 @@ void newChaseDir(Mobj& actor)
     }
     else
     {
-        for (tdir = DI_SOUTHEAST; tdir != (DI_EAST - 1); tdir--)
+        for (tdir = toIndex(DirType::SouthEast); tdir != toIndex(DirType::East) - 1;
+             tdir--)
         {
-            if (tdir != turnaround)
+            if (tdir != toIndex(turnaround))
             {
                 actor.movedir = tdir;
 
@@ -509,14 +514,14 @@ void newChaseDir(Mobj& actor)
         }
     }
 
-    if (turnaround != DI_NODIR)
+    if (turnaround != DirType::NoDir)
     {
-        actor.movedir = turnaround;
+        actor.movedir = toIndex(turnaround);
         if (tryWalk(actor))
             return;
     }
 
-    actor.movedir = DI_NODIR; // can not move
+    actor.movedir = toIndex(DirType::NoDir); // can not move
 }
 
 //
@@ -636,21 +641,23 @@ void look(Mobj& actor)
 
     // go into chase state
 seeyou:
-    if (actor.info->seesound)
+    if (actor.info->seesound != SfxEnum::None)
     {
-        int sound;
+        SfxEnum sound;
 
         switch (actor.info->seesound)
         {
-            case sfx_posit1:
-            case sfx_posit2:
-            case sfx_posit3:
-                sound = sfx_posit1 + randomness().forPlay() % 3;
+            case SfxEnum::Posit1:
+            case SfxEnum::Posit2:
+            case SfxEnum::Posit3:
+                sound = static_cast<SfxEnum>(toIndex(SfxEnum::Posit1)
+                                             + randomness().forPlay() % 3);
                 break;
 
-            case sfx_bgsit1:
-            case sfx_bgsit2:
-                sound = sfx_bgsit1 + randomness().forPlay() % 2;
+            case SfxEnum::Bgsit1:
+            case SfxEnum::Bgsit2:
+                sound = static_cast<SfxEnum>(toIndex(SfxEnum::Bgsit1)
+                                             + randomness().forPlay() % 2);
                 break;
 
             default:
@@ -658,7 +665,7 @@ seeyou:
                 break;
         }
 
-        if (actor.type == MT_SPIDER || actor.type == MT_CYBORG)
+        if (actor.type == MobjType::Spider || actor.type == MobjType::Cyborg)
         {
             // full volume
             startSound(0, sound);
@@ -732,17 +739,17 @@ void chase(Mobj& actor)
     }
 
     // check for melee attack
-    if (actor.info->meleestate && checkMeleeRange(actor))
+    if (actor.info->meleestate != StateNum::Null && checkMeleeRange(actor))
     {
-        if (actor.info->attacksound)
+        if (actor.info->attacksound != SfxEnum::None)
             startSound(&actor, actor.info->attacksound);
 
-        setMobjState(actor, static_cast<StateNum>(actor.info->meleestate));
+        setMobjState(actor, actor.info->meleestate);
         return;
     }
 
     // check for missile attack
-    if (actor.info->missilestate)
+    if (actor.info->missilestate != StateNum::Null)
     {
         if (session.gameskill < Skill::Nightmare && !opts.fastparm
             && actor.movecount)
@@ -753,7 +760,7 @@ void chase(Mobj& actor)
         if (!checkMissileRange(actor))
             goto nomissile;
 
-        setMobjState(actor, static_cast<StateNum>(actor.info->missilestate));
+        setMobjState(actor, actor.info->missilestate);
         actor.flags |= MF_JUSTATTACKED;
         return;
     }
@@ -774,7 +781,7 @@ nomissile:
     }
 
     // make active sound
-    if (actor.info->activesound && randomness().forPlay() < 3)
+    if (actor.info->activesound != SfxEnum::None && randomness().forPlay() < 3)
     {
         startSound(&actor, actor.info->activesound);
     }
@@ -809,7 +816,7 @@ void posAttack(Mobj& actor)
     angle_t angle = actor.angle;
     fixed_t slope = aimLineAttack(&actor, angle, MISSILERANGE).slope;
 
-    startSound(&actor, sfx_pistol);
+    startSound(&actor, SfxEnum::Pistol);
     angle +=
         angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
@@ -823,7 +830,7 @@ void sPosAttack(Mobj& actor)
     if (!actor.target)
         return;
 
-    startSound(&actor, sfx_shotgn);
+    startSound(&actor, SfxEnum::Shotgn);
     faceTarget(actor);
     angle_t bangle = actor.angle;
     fixed_t slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
@@ -846,7 +853,7 @@ void cPosAttack(Mobj& actor)
     if (!actor.target)
         return;
 
-    startSound(&actor, sfx_shotgn);
+    startSound(&actor, SfxEnum::Shotgn);
     faceTarget(actor);
     angle_t bangle = actor.angle;
     fixed_t slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
@@ -896,7 +903,7 @@ void bspiAttack(Mobj& actor)
     faceTarget(actor);
 
     // launch a missile
-    spawnMissile(actor, actor.target, MT_ARACHPLAZ);
+    spawnMissile(actor, actor.target, MobjType::Arachplaz);
 }
 
 //
@@ -910,14 +917,14 @@ void troopAttack(Mobj& actor)
     faceTarget(actor);
     if (checkMeleeRange(actor))
     {
-        startSound(&actor, sfx_claw);
+        startSound(&actor, SfxEnum::Claw);
         int damage = (randomness().forPlay() % 8 + 1) * 3;
         damageMobj(*actor.target, &actor, &actor, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(actor, actor.target, MT_TROOPSHOT);
+    spawnMissile(actor, actor.target, MobjType::Troopshot);
 }
 
 void sargAttack(Mobj& actor)
@@ -947,7 +954,7 @@ void headAttack(Mobj& actor)
     }
 
     // launch a missile
-    spawnMissile(actor, actor.target, MT_HEADSHOT);
+    spawnMissile(actor, actor.target, MobjType::Headshot);
 }
 
 void cyberAttack(Mobj& actor)
@@ -956,7 +963,7 @@ void cyberAttack(Mobj& actor)
         return;
 
     faceTarget(actor);
-    spawnMissile(actor, actor.target, MT_ROCKET);
+    spawnMissile(actor, actor.target, MobjType::Rocket);
 }
 
 void bruisAttack(Mobj& actor)
@@ -966,14 +973,14 @@ void bruisAttack(Mobj& actor)
 
     if (checkMeleeRange(actor))
     {
-        startSound(&actor, sfx_claw);
+        startSound(&actor, SfxEnum::Claw);
         int damage = (randomness().forPlay() % 8 + 1) * 10;
         damageMobj(*actor.target, &actor, &actor, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(actor, actor.target, MT_BRUISERSHOT);
+    spawnMissile(actor, actor.target, MobjType::Bruisershot);
 }
 
 //
@@ -986,7 +993,7 @@ void skelMissile(Mobj& actor)
 
     faceTarget(actor);
     actor.z += 16 * FRACUNIT; // so missile spawns higher
-    Mobj* mo = spawnMissile(actor, actor.target, MT_TRACER);
+    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Tracer);
     actor.z -= 16 * FRACUNIT; // back to normal
 
     mo->x += mo->momx;
@@ -1005,8 +1012,8 @@ void tracer(Mobj& actor)
     // spawn a puff of smoke behind the rocket
     spawnPuff(actor.x, actor.y, actor.z);
 
-    Mobj* th =
-        spawnMobj(actor.x - actor.momx, actor.y - actor.momy, actor.z, MT_SMOKE);
+    Mobj* th = spawnMobj(
+        actor.x - actor.momx, actor.y - actor.momy, actor.z, MobjType::Smoke);
 
     th->momz = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
@@ -1063,7 +1070,7 @@ void skelWhoosh(Mobj& actor)
         return;
 
     faceTarget(actor);
-    startSound(&actor, sfx_skeswg);
+    startSound(&actor, SfxEnum::Skeswg);
 }
 
 void skelFist(Mobj& actor)
@@ -1076,7 +1083,7 @@ void skelFist(Mobj& actor)
     if (checkMeleeRange(actor))
     {
         int damage = ((randomness().forPlay() % 10) + 1) * 6;
-        startSound(&actor, sfx_skepch);
+        startSound(&actor, SfxEnum::Skepch);
         damageMobj(*actor.target, &actor, &actor, damage);
     }
 }
@@ -1095,10 +1102,10 @@ bool vileCheck(Mobj* thing)
     if (thing->tics != -1)
         return true; // not lying still yet
 
-    if (thing->info->raisestate == S_NULL)
+    if (thing->info->raisestate == StateNum::Null)
         return true; // monster doesn't have a raise state
 
-    fixed_t maxdist = thing->info->radius + mobjinfo[MT_VILE].radius;
+    fixed_t maxdist = thing->info->radius + mobjinfo[toIndex(MobjType::Vile)].radius;
 
     if (doom_abs(thing->x - ai.viletryx) > maxdist
         || doom_abs(thing->y - ai.viletryy) > maxdist)
@@ -1124,7 +1131,7 @@ void vileChase(Mobj& actor)
 {
     auto& ai = enemyAI();
 
-    if (actor.movedir != DI_NODIR)
+    if (actor.movedir != toIndex(DirType::NoDir))
     {
         // check for corpses to raise
         ai.viletryx = actor.x + actor.info->speed * xspeed[actor.movedir];
@@ -1150,12 +1157,11 @@ void vileChase(Mobj& actor)
                     faceTarget(actor);
                     actor.target = temp;
 
-                    setMobjState(actor, S_VILE_HEAL1);
-                    startSound(ai.corpsehit, sfx_slop);
+                    setMobjState(actor, StateNum::VileHeal1);
+                    startSound(ai.corpsehit, SfxEnum::Slop);
                     MobjInfo* info = ai.corpsehit->info;
 
-                    setMobjState(*ai.corpsehit,
-                                 static_cast<StateNum>(info->raisestate));
+                    setMobjState(*ai.corpsehit, info->raisestate);
                     ai.corpsehit->height <<= 2;
                     ai.corpsehit->flags = info->flags;
                     ai.corpsehit->health = info->spawnhealth;
@@ -1176,7 +1182,7 @@ void vileChase(Mobj& actor)
 //
 void vileStart(Mobj& actor)
 {
-    startSound(&actor, sfx_vilatk);
+    startSound(&actor, SfxEnum::Vilatk);
 }
 
 //
@@ -1185,13 +1191,13 @@ void vileStart(Mobj& actor)
 //
 void startFire(Mobj& actor)
 {
-    startSound(&actor, sfx_flamst);
+    startSound(&actor, SfxEnum::Flamst);
     fire(actor);
 }
 
 void fireCrackle(Mobj& actor)
 {
-    startSound(&actor, sfx_flame);
+    startSound(&actor, SfxEnum::Flame);
     fire(actor);
 }
 
@@ -1226,7 +1232,7 @@ void vileTarget(Mobj& actor)
     faceTarget(actor);
 
     Mobj* fog =
-        spawnMobj(actor.target->x, actor.target->x, actor.target->z, MT_FIRE);
+        spawnMobj(actor.target->x, actor.target->x, actor.target->z, MobjType::Fire);
 
     actor.tracer = fog;
     fog->target = &actor;
@@ -1247,7 +1253,7 @@ void vileAttack(Mobj& actor)
     if (!checkSight(&actor, actor.target))
         return;
 
-    startSound(&actor, sfx_barexp);
+    startSound(&actor, SfxEnum::Barexp);
     damageMobj(*actor.target, &actor, &actor, 20);
     actor.target->momz = 1000 * FRACUNIT / actor.target->info->mass;
 
@@ -1273,7 +1279,7 @@ void vileAttack(Mobj& actor)
 void fatRaise(Mobj& actor)
 {
     faceTarget(actor);
-    startSound(&actor, sfx_manatk);
+    startSound(&actor, SfxEnum::Manatk);
 }
 
 void fatAttack1(Mobj& actor)
@@ -1281,9 +1287,9 @@ void fatAttack1(Mobj& actor)
     faceTarget(actor);
     // Change direction  to ...
     actor.angle += FATSPREAD;
-    spawnMissile(actor, actor.target, MT_FATSHOT);
+    spawnMissile(actor, actor.target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(actor, actor.target, MT_FATSHOT);
+    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle += FATSPREAD;
     const auto an1Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an1Fine]);
@@ -1295,9 +1301,9 @@ void fatAttack2(Mobj& actor)
     faceTarget(actor);
     // Now here choose opposite deviation.
     actor.angle -= FATSPREAD;
-    spawnMissile(actor, actor.target, MT_FATSHOT);
+    spawnMissile(actor, actor.target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(actor, actor.target, MT_FATSHOT);
+    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle -= FATSPREAD * 2;
     const auto an2Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an2Fine]);
@@ -1308,13 +1314,13 @@ void fatAttack3(Mobj& actor)
 {
     faceTarget(actor);
 
-    Mobj* mo = spawnMissile(actor, actor.target, MT_FATSHOT);
+    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle -= FATSPREAD / 2;
     const auto an3Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an3Fine]);
     mo->momy = FixedMul(Fixed {mo->info->speed}, finesine[an3Fine]);
 
-    mo = spawnMissile(actor, actor.target, MT_FATSHOT);
+    mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle += FATSPREAD / 2;
     const auto an4Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an4Fine]);
@@ -1361,7 +1367,7 @@ void painShootSkull(Mobj& actor, angle_t angle)
     while (currentthinker != &thinkers.cap)
     {
         if (currentthinker->kind() == ThinkerKind::Mobj && !currentthinker->removed
-            && (reinterpret_cast<Mobj*>(currentthinker))->type == MT_SKULL)
+            && (reinterpret_cast<Mobj*>(currentthinker))->type == MobjType::Skull)
             count++;
         currentthinker = currentthinker->next;
     }
@@ -1375,13 +1381,14 @@ void painShootSkull(Mobj& actor, angle_t angle)
     const auto anFine = angle.fineIndex();
 
     fixed_t prestep =
-        4 * FRACUNIT + 3 * (actor.info->radius + mobjinfo[MT_SKULL].radius) / 2;
+        4 * FRACUNIT
+        + 3 * (actor.info->radius + mobjinfo[toIndex(MobjType::Skull)].radius) / 2;
 
     fixed_t x = actor.x + FixedMul(prestep, finecosine[anFine]);
     fixed_t y = actor.y + FixedMul(prestep, finesine[anFine]);
     fixed_t z = actor.z + 8 * FRACUNIT;
 
-    Mobj* newmobj = spawnMobj(x, y, z, MT_SKULL);
+    Mobj* newmobj = spawnMobj(x, y, z, MobjType::Skull);
 
     // Check for movements.
     if (!tryMove(*newmobj, newmobj->x, newmobj->y))
@@ -1418,22 +1425,24 @@ void painDie(Mobj& actor)
 
 void scream(Mobj& actor)
 {
-    int sound;
+    SfxEnum sound;
 
     switch (actor.info->deathsound)
     {
-        case 0:
+        case SfxEnum::None:
             return;
 
-        case sfx_podth1:
-        case sfx_podth2:
-        case sfx_podth3:
-            sound = sfx_podth1 + randomness().forPlay() % 3;
+        case SfxEnum::Podth1:
+        case SfxEnum::Podth2:
+        case SfxEnum::Podth3:
+            sound = static_cast<SfxEnum>(toIndex(SfxEnum::Podth1)
+                                         + randomness().forPlay() % 3);
             break;
 
-        case sfx_bgdth1:
-        case sfx_bgdth2:
-            sound = sfx_bgdth1 + randomness().forPlay() % 2;
+        case SfxEnum::Bgdth1:
+        case SfxEnum::Bgdth2:
+            sound = static_cast<SfxEnum>(toIndex(SfxEnum::Bgdth1)
+                                         + randomness().forPlay() % 2);
             break;
 
         default:
@@ -1442,7 +1451,7 @@ void scream(Mobj& actor)
     }
 
     // Check for bosses.
-    if (actor.type == MT_SPIDER || actor.type == MT_CYBORG)
+    if (actor.type == MobjType::Spider || actor.type == MobjType::Cyborg)
     {
         // full volume
         startSound(0, sound);
@@ -1453,12 +1462,12 @@ void scream(Mobj& actor)
 
 void xScream(Mobj& actor)
 {
-    startSound(&actor, sfx_slop);
+    startSound(&actor, SfxEnum::Slop);
 }
 
 void pain(Mobj& actor)
 {
-    if (actor.info->painsound)
+    if (actor.info->painsound != SfxEnum::None)
         startSound(&actor, actor.info->painsound);
 }
 
@@ -1498,7 +1507,7 @@ void bossDeath(Mobj& mo)
         if (session.gamemap != 7)
             return;
 
-        if ((mo.type != MT_FATSO) && (mo.type != MT_BABY))
+        if ((mo.type != MobjType::Fatso) && (mo.type != MobjType::Baby))
             return;
     }
     else
@@ -1509,7 +1518,7 @@ void bossDeath(Mobj& mo)
                 if (session.gamemap != 8)
                     return;
 
-                if (mo.type != MT_BRUISER)
+                if (mo.type != MobjType::Bruiser)
                     return;
                 break;
 
@@ -1517,7 +1526,7 @@ void bossDeath(Mobj& mo)
                 if (session.gamemap != 8)
                     return;
 
-                if (mo.type != MT_CYBORG)
+                if (mo.type != MobjType::Cyborg)
                     return;
                 break;
 
@@ -1525,7 +1534,7 @@ void bossDeath(Mobj& mo)
                 if (session.gamemap != 8)
                     return;
 
-                if (mo.type != MT_SPIDER)
+                if (mo.type != MobjType::Spider)
                     return;
 
                 break;
@@ -1534,12 +1543,12 @@ void bossDeath(Mobj& mo)
                 switch (session.gamemap)
                 {
                     case 6:
-                        if (mo.type != MT_CYBORG)
+                        if (mo.type != MobjType::Cyborg)
                             return;
                         break;
 
                     case 8:
-                        if (mo.type != MT_SPIDER)
+                        if (mo.type != MobjType::Spider)
                             return;
                         break;
 
@@ -1589,14 +1598,14 @@ void bossDeath(Mobj& mo)
     {
         if (session.gamemap == 7)
         {
-            if (mo.type == MT_FATSO)
+            if (mo.type == MobjType::Fatso)
             {
                 junk.tag = 666;
                 doFloor(junk, FloorType::LowerFloorToLowest);
                 return;
             }
 
-            if (mo.type == MT_BABY)
+            if (mo.type == MobjType::Baby)
             {
                 junk.tag = 667;
                 doFloor(junk, FloorType::RaiseToTexture);
@@ -1637,35 +1646,35 @@ void bossDeath(Mobj& mo)
 
 void hoof(Mobj& mo)
 {
-    startSound(&mo, sfx_hoof);
+    startSound(&mo, SfxEnum::Hoof);
     chase(mo);
 }
 
 void metal(Mobj& mo)
 {
-    startSound(&mo, sfx_metal);
+    startSound(&mo, SfxEnum::Metal);
     chase(mo);
 }
 
 void babyMetal(Mobj& mo)
 {
-    startSound(&mo, sfx_bspwlk);
+    startSound(&mo, SfxEnum::Bspwlk);
     chase(mo);
 }
 
 void openShotgun2(Player& player, PspDef&)
 {
-    startSound(player.mo, sfx_dbopn);
+    startSound(player.mo, SfxEnum::Dbopn);
 }
 
 void loadShotgun2(Player& player, PspDef&)
 {
-    startSound(player.mo, sfx_dbload);
+    startSound(player.mo, SfxEnum::Dbload);
 }
 
 void closeShotgun2(Player& player, PspDef& psp)
 {
-    startSound(player.mo, sfx_dbcls);
+    startSound(player.mo, SfxEnum::Dbcls);
     reFire(player, psp);
 }
 
@@ -1687,18 +1696,18 @@ void brainAwake(Mobj&)
 
         Mobj* m = reinterpret_cast<Mobj*>(thinker);
 
-        if (m->type == MT_BOSSTARGET)
+        if (m->type == MobjType::Bosstarget)
         {
             ai.braintargets.add(m);
         }
     }
 
-    startSound(0, sfx_bossit);
+    startSound(0, SfxEnum::Bossit);
 }
 
 void brainPain(Mobj&)
 {
-    startSound(0, sfx_bospn);
+    startSound(0, SfxEnum::Bospn);
 }
 
 void brainScream(Mobj& mo)
@@ -1709,17 +1718,17 @@ void brainScream(Mobj& mo)
         fixed_t y = mo.y - 320 * FRACUNIT;
         // vanilla's raw 128 added to a whole-unit-scaled random; kept as it stands.
         fixed_t z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-        Mobj* th = spawnMobj(x, y, z, MT_ROCKET);
+        Mobj* th = spawnMobj(x, y, z, MobjType::Rocket);
         th->momz = Fixed {randomness().forPlay() * 512};
 
-        setMobjState(*th, S_BRAINEXPLODE1);
+        setMobjState(*th, StateNum::Brainexplode1);
 
         th->tics -= randomness().forPlay() & 7;
         if (th->tics < 1)
             th->tics = 1;
     }
 
-    startSound(0, sfx_bosdth);
+    startSound(0, SfxEnum::Bosdth);
 }
 
 void brainExplode(Mobj& mo)
@@ -1728,10 +1737,10 @@ void brainExplode(Mobj& mo)
         mo.x + Fixed {(randomness().forPlay() - randomness().forPlay()) * 2048};
     fixed_t y = mo.y;
     fixed_t z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-    Mobj* th = spawnMobj(x, y, z, MT_ROCKET);
+    Mobj* th = spawnMobj(x, y, z, MobjType::Rocket);
     th->momz = Fixed {randomness().forPlay() * 512};
 
-    setMobjState(*th, S_BRAINEXPLODE1);
+    setMobjState(*th, StateNum::Brainexplode1);
 
     th->tics -= randomness().forPlay() & 7;
     if (th->tics < 1)
@@ -1756,20 +1765,20 @@ void brainSpit(Mobj& mo)
     ai.braintargeton = (ai.braintargeton + 1) % ai.braintargets.size();
 
     // spawn brain missile
-    Mobj* newmobj = spawnMissile(mo, targ, MT_SPAWNSHOT);
+    Mobj* newmobj = spawnMissile(mo, targ, MobjType::Spawnshot);
     newmobj->target = targ;
     // Vanilla divides the raw values as plain integers here - the result is a tic
     // count, not a length. A fixed-point divide would scale it by 65536.
     newmobj->reactiontime =
         ((targ->y - mo.y).raw / newmobj->momy.raw) / newmobj->state->tics;
 
-    startSound(0, sfx_bospit);
+    startSound(0, SfxEnum::Bospit);
 }
 
 // travelling cube sound
 void spawnSound(Mobj& mo)
 {
-    startSound(&mo, sfx_boscub);
+    startSound(&mo, SfxEnum::Boscub);
     spawnFly(mo);
 }
 
@@ -1783,8 +1792,8 @@ void spawnFly(Mobj& mo)
     Mobj* targ = mo.target;
 
     // First spawn teleport fog.
-    Mobj* fog = spawnMobj(targ->x, targ->y, targ->z, MT_SPAWNFIRE);
-    startSound(fog, sfx_telept);
+    Mobj* fog = spawnMobj(targ->x, targ->y, targ->z, MobjType::Spawnfire);
+    startSound(fog, SfxEnum::Telept);
 
     // Randomly select monster to spawn.
     int r = randomness().forPlay();
@@ -1792,27 +1801,27 @@ void spawnFly(Mobj& mo)
     // Probability distribution (kind of :),
     // decreasing likelihood.
     if (r < 50)
-        type = MT_TROOP;
+        type = MobjType::Troop;
     else if (r < 90)
-        type = MT_SERGEANT;
+        type = MobjType::Sergeant;
     else if (r < 120)
-        type = MT_SHADOWS;
+        type = MobjType::Shadows;
     else if (r < 130)
-        type = MT_PAIN;
+        type = MobjType::Pain;
     else if (r < 160)
-        type = MT_HEAD;
+        type = MobjType::Head;
     else if (r < 162)
-        type = MT_VILE;
+        type = MobjType::Vile;
     else if (r < 172)
-        type = MT_UNDEAD;
+        type = MobjType::Undead;
     else if (r < 192)
-        type = MT_BABY;
+        type = MobjType::Baby;
     else if (r < 222)
-        type = MT_FATSO;
+        type = MobjType::Fatso;
     else if (r < 246)
-        type = MT_KNIGHT;
+        type = MobjType::Knight;
     else
-        type = MT_BRUISER;
+        type = MobjType::Bruiser;
 
     Mobj* newmobj = spawnMobj(targ->x, targ->y, targ->z, type);
     if (lookForPlayers(*newmobj, true))
@@ -1828,13 +1837,13 @@ void spawnFly(Mobj& mo)
 void playerScream(Mobj& mo)
 {
     // Default death sound.
-    int sound = sfx_pldeth;
+    SfxEnum sound = SfxEnum::Pldeth;
 
     if ((gameVersion().gamemode == GameMode::Commercial) && (mo.health < -50))
     {
         // IF THE PLAYER DIES
         // LESS THAN -50% WITHOUT GIBBING
-        sound = sfx_pdiehi;
+        sound = SfxEnum::Pdiehi;
     }
 
     startSound(&mo, sound);

@@ -343,7 +343,7 @@ void buildTiccmd(Ticcmd& cmd)
     }
 
     // chainsaw overrides
-    for (int i = 0; i < NUMWEAPONS - 1; i++)
+    for (int i = 0; i < numWeapons - 1; i++)
         if (input.gamekeydown['1' + i])
         {
             cmd.buttons |= BT_CHANGE;
@@ -842,12 +842,12 @@ void playerReborn(int player)
     p->usedown = p->attackdown = true; // don't do anything immediately
     p->playerstate = PlayerLifeState::Live;
     p->health = MAXHEALTH;
-    p->readyweapon = p->pendingweapon = wp_pistol;
-    p->weaponowned[wp_fist] = true;
-    p->weaponowned[wp_pistol] = true;
-    p->ammo[am_clip] = 50;
+    p->readyweapon = p->pendingweapon = WeaponType::Pistol;
+    p->weaponowned[toIndex(WeaponType::Fist)] = true;
+    p->weaponowned[toIndex(WeaponType::Pistol)] = true;
+    p->ammo[toIndex(AmmoType::Clip)] = 50;
 
-    std::copy_n(ammo.maxammo.begin(), NUMAMMO, p->maxammo);
+    std::copy_n(ammo.maxammo.begin(), numAmmo, p->maxammo);
 }
 
 //
@@ -897,11 +897,11 @@ bool checkSpot(int playernum, MapThing& mthing)
     mo = Doom::spawnMobj(x + 20 * finecosine[anFine],
                          y + 20 * finesine[anFine],
                          ss->sector->floorheight,
-                         MT_TFOG);
+                         MobjType::Tfog);
 
     // viewz is the raw sentinel 1 that Doom::setupLevel plants, not one world unit.
     if (players_.players[players_.consoleplayer].viewz != fixed_t {1})
-        Doom::startSound(mo, sfx_telept); // don't start sound on first frame
+        Doom::startSound(mo, SfxEnum::Telept); // don't start sound on first frame
 
     return true;
 }
@@ -1428,19 +1428,21 @@ void initNewGame(Skill skill, int episode, int map)
     if (opts.fastparm
         || (skill == Skill::Nightmare && session.gameskill != Skill::Nightmare))
     {
-        for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
+        for (int i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
+             i++)
             states[i].tics >>= 1;
-        mobjinfo[MT_BRUISERSHOT].speed = (20 * FRACUNIT).raw;
-        mobjinfo[MT_HEADSHOT].speed = (20 * FRACUNIT).raw;
-        mobjinfo[MT_TROOPSHOT].speed = (20 * FRACUNIT).raw;
+        mobjinfo[toIndex(MobjType::Bruisershot)].speed = (20 * FRACUNIT).raw;
+        mobjinfo[toIndex(MobjType::Headshot)].speed = (20 * FRACUNIT).raw;
+        mobjinfo[toIndex(MobjType::Troopshot)].speed = (20 * FRACUNIT).raw;
     }
     else if (skill != Skill::Nightmare && session.gameskill == Skill::Nightmare)
     {
-        for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
+        for (int i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
+             i++)
             states[i].tics <<= 1;
-        mobjinfo[MT_BRUISERSHOT].speed = (15 * FRACUNIT).raw;
-        mobjinfo[MT_HEADSHOT].speed = (10 * FRACUNIT).raw;
-        mobjinfo[MT_TROOPSHOT].speed = (10 * FRACUNIT).raw;
+        mobjinfo[toIndex(MobjType::Bruisershot)].speed = (15 * FRACUNIT).raw;
+        mobjinfo[toIndex(MobjType::Headshot)].speed = (10 * FRACUNIT).raw;
+        mobjinfo[toIndex(MobjType::Troopshot)].speed = (10 * FRACUNIT).raw;
     }
 
     // force players to be initialized upon first level load

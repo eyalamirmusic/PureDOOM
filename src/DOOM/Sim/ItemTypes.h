@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,9 +21,15 @@
 
 #pragma once
 
-
 #include "../Game/GameDefs.h"
 
+namespace Doom
+{
+// WeaponInfo's fields are StateNum (defined in Sim/Info.h). Only the type is needed
+// here, so an opaque declaration keeps the include set small; Sim/Items.cpp, which
+// fills weaponinfo[] with StateNum::* values, includes Info.h for the definition.
+enum class StateNum;
+} // namespace Doom
 
 // Weapon info: sprite frames, ammunition use.
 namespace Doom
@@ -31,18 +37,15 @@ namespace Doom
 struct WeaponInfo
 {
     AmmoType ammo;
-    int upstate;
-    int downstate;
-    int readystate;
-    int atkstate;
-    int flashstate;
+    StateNum upstate;
+    StateNum downstate;
+    StateNum readystate;
+    StateNum atkstate;
+    StateNum flashstate;
 };
 } // namespace Doom
 
-
-extern Doom::WeaponInfo weaponinfo[Doom::NUMWEAPONS];
-
-
+extern Doom::WeaponInfo weaponinfo[Doom::numWeapons];
 
 //-----------------------------------------------------------------------------
 //
