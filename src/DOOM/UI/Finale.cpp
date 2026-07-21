@@ -224,7 +224,7 @@ void startFinale()
         }
 
         // Indeterminate.
-        default:
+        case GameMode::Indetermined:
             changeMusic(MusicEnum::ReadM, true);
             fin.finaleflat = "F_SKY1"; // Not used anywhere else.
             fin.finaletext = c1text; // FIXME - other text, music?

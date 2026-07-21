@@ -219,7 +219,20 @@ void moveFloor(FloorMove& floor)
                 case FloorType::DonutRaise:
                     floor.sector->special = floor.newspecial;
                     floor.sector->floorpic = floor.texture;
-                default:
+                    break;
+
+                case FloorType::LowerFloor:
+                case FloorType::LowerFloorToLowest:
+                case FloorType::TurboLower:
+                case FloorType::RaiseFloor:
+                case FloorType::RaiseFloorToNearest:
+                case FloorType::RaiseToTexture:
+                case FloorType::LowerAndChange:
+                case FloorType::RaiseFloor24:
+                case FloorType::RaiseFloor24AndChange:
+                case FloorType::RaiseFloorCrush:
+                case FloorType::RaiseFloorTurbo:
+                case FloorType::RaiseFloor512:
                     break;
             }
         }
@@ -230,7 +243,20 @@ void moveFloor(FloorMove& floor)
                 case FloorType::LowerAndChange:
                     floor.sector->special = floor.newspecial;
                     floor.sector->floorpic = floor.texture;
-                default:
+                    break;
+
+                case FloorType::LowerFloor:
+                case FloorType::LowerFloorToLowest:
+                case FloorType::TurboLower:
+                case FloorType::RaiseFloor:
+                case FloorType::RaiseFloorToNearest:
+                case FloorType::RaiseToTexture:
+                case FloorType::RaiseFloor24:
+                case FloorType::RaiseFloor24AndChange:
+                case FloorType::RaiseFloorCrush:
+                case FloorType::RaiseFloorTurbo:
+                case FloorType::DonutRaise:
+                case FloorType::RaiseFloor512:
                     break;
             }
         }

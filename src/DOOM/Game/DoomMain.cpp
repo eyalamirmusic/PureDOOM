@@ -868,7 +868,7 @@ void doomMain()
                              VERSION/100,VERSION%100);
                     break;
             */
-        default:
+        case GameMode::Indetermined:
             title = concat("                     "
                            "Public DOOM - v",
                            VERSION / 100,
@@ -943,7 +943,7 @@ void doomMain()
                 break;
 
             case GameMode::Commercial:
-            default:
+            case GameMode::Indetermined:
                 p = parseInt(myargv[p + 1]);
                 if (p < 10)
                     file = concat("~" DEVMAPS "cdata/map0", p, ".wad");
@@ -1092,9 +1092,9 @@ void doomMain()
                 "===========================================================================\n");
             break;
 
-        default:
-            // Ouch.
-            break;
+            // Vanilla's trailing `default: // Ouch.` was already unreachable here -
+            // Indetermined is handled with Shareware above, so all five modes are
+            // covered. Making the switch exhaustive is what made that visible.
     }
 
     doom_print("initMenu: Init miscellaneous info.\n");

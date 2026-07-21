@@ -972,7 +972,7 @@ void drawReadThis1()
         case GameMode::Retail:
             drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP1")));
             break;
-        default:
+        case GameMode::Indetermined:
             break;
     }
     return;
@@ -995,7 +995,7 @@ void drawReadThis2()
         case GameMode::Registered:
             drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
             break;
-        default:
+        case GameMode::Indetermined:
             break;
     }
     return;
@@ -2140,7 +2140,7 @@ void initMenu()
             break;
         case GameMode::Retail:
             // We are fine.
-        default:
+        case GameMode::Indetermined:
             break;
     }
 }

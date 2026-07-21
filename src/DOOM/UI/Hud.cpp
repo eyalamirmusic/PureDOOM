@@ -340,7 +340,7 @@ void startHud()
             */
 
         case GameMode::Commercial:
-        default:
+        case GameMode::Indetermined:
             s = hudTitle2();
             break;
     }
