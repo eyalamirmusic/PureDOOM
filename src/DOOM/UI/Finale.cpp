@@ -143,8 +143,8 @@ void startFinale()
     auto& flow = gameFlow();
     auto& fin = finaleState();
 
-    flow.gameaction = ga_nothing;
-    flow.gamestate = GS_FINALE;
+    flow.gameaction = GameAction::Nothing;
+    flow.gamestate = GameState::Finale;
     refreshFlags().viewactive = false;
     overlayState().automapactive = false;
 
@@ -154,9 +154,9 @@ void startFinale()
     switch (gameVersion().gamemode)
     {
         // DOOM 1 - E1, E3 or E4, but each nine missions
-        case shareware:
-        case registered:
-        case retail:
+        case GameMode::Shareware:
+        case GameMode::Registered:
+        case GameMode::Retail:
         {
             changeMusic(mus_victor, true);
 
@@ -186,7 +186,7 @@ void startFinale()
         }
 
         // DOOM II and missions packs with E1, M34
-        case commercial:
+        case GameMode::Commercial:
         {
             changeMusic(mus_read_m, true);
 
@@ -255,7 +255,7 @@ void finaleTicker()
     auto& fin = finaleState();
 
     // check for skipping
-    if ((version.gamemode == commercial) && (fin.finalecount > 50))
+    if ((version.gamemode == GameMode::Commercial) && (fin.finalecount > 50))
     {
         // go on to the next level
         for (i = 0; i < MAXPLAYERS; i++)
@@ -267,7 +267,7 @@ void finaleTicker()
             if (gameSession().gamemap == 30)
                 startCast();
             else
-                gameFlow().gameaction = ga_worlddone;
+                gameFlow().gameaction = GameAction::WorldDone;
         }
     }
 
@@ -280,7 +280,7 @@ void finaleTicker()
         return;
     }
 
-    if (version.gamemode == commercial)
+    if (version.gamemode == GameMode::Commercial)
         return;
 
     if (!fin.finalestage
@@ -533,7 +533,7 @@ bool castResponder(Event& ev)
 {
     auto& fin = finaleState();
 
-    if (ev.type != ev_keydown)
+    if (ev.type != EventType::KeyDown)
         return false;
 
     if (fin.castdeath)
@@ -715,7 +715,7 @@ void drawFinale()
         switch (gameSession().gameepisode)
         {
             case 1:
-                if (gameVersion().gamemode == retail)
+                if (gameVersion().gamemode == GameMode::Retail)
                     drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
                 else
                     drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));

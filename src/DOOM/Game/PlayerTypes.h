@@ -44,14 +44,14 @@
 //
 namespace Doom
 {
-enum PlayerLifeState
+enum class PlayerLifeState
 {
     // Playing or camping.
-    PST_LIVE,
+    Live,
     // Dead on the ground, view follows killer.
-    PST_DEAD,
+    Dead,
     // Ready to restart/respawn???
-    PST_REBORN
+    Reborn
 };
 } // namespace Doom
 

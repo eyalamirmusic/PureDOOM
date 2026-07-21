@@ -42,75 +42,76 @@ void platRaise(Plat& plat)
 
     switch (plat.status)
     {
-        case up:
+        case PlatState::Up:
             res = movePlane(*plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
 
-            if (plat.type == raiseAndChange || plat.type == raiseToNearestAndChange)
+            if (plat.type == PlatType::RaiseAndChange
+                || plat.type == PlatType::RaiseToNearestAndChange)
             {
                 if (!(levelStats().leveltime & 7))
                     startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                                sfx_stnmov);
             }
 
-            if (res == crushed && (!plat.crush))
+            if (res == MoveResult::Crushed && (!plat.crush))
             {
                 plat.count = plat.wait;
-                plat.status = down;
+                plat.status = PlatState::Down;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                            sfx_pstart);
             }
             else
             {
-                if (res == pastdest)
+                if (res == MoveResult::PastDest)
                 {
                     plat.count = plat.wait;
-                    plat.status = waiting;
+                    plat.status = PlatState::Waiting;
                     startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                                sfx_pstop);
 
                     switch (plat.type)
                     {
-                        case blazeDWUS:
-                        case downWaitUpStay:
+                        case PlatType::BlazeDWUS:
+                        case PlatType::DownWaitUpStay:
                             removeActivePlat(plat);
                             break;
 
-                        case raiseAndChange:
-                        case raiseToNearestAndChange:
+                        case PlatType::RaiseAndChange:
+                        case PlatType::RaiseToNearestAndChange:
                             removeActivePlat(plat);
                             break;
 
-                        default:
+                        case PlatType::PerpetualRaise:
                             break;
                     }
                 }
             }
             break;
 
-        case down:
+        case PlatState::Down:
             res = movePlane(*plat.sector, plat.speed, plat.low, false, 0, -1);
 
-            if (res == pastdest)
+            if (res == MoveResult::PastDest)
             {
                 plat.count = plat.wait;
-                plat.status = waiting;
+                plat.status = PlatState::Waiting;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                            sfx_pstop);
             }
             break;
 
-        case waiting:
+        case PlatState::Waiting:
             if (!--plat.count)
             {
                 if (plat.sector->floorheight == plat.low)
-                    plat.status = up;
+                    plat.status = PlatState::Up;
                 else
-                    plat.status = down;
+                    plat.status = PlatState::Down;
                 startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
                            sfx_pstart);
             }
 
-        case in_stasis:
+        case PlatState::InStasis:
             break;
     }
 }
@@ -124,13 +125,16 @@ int doPlat(Line& line, PlatType type, int amount)
     int secnum = -1;
     int rtn = 0;
 
-    // Activate all <type> plats that are in_stasis
+    // Activate all <type> plats that are PlatState::InStasis
     switch (type)
     {
-        case perpetualRaise:
+        case PlatType::PerpetualRaise:
             activateInStasis(line.tag);
             break;
-        default:
+        case PlatType::DownWaitUpStay:
+        case PlatType::RaiseAndChange:
+        case PlatType::RaiseToNearestAndChange:
+        case PlatType::BlazeDWUS:
             break;
     }
 
@@ -154,29 +158,29 @@ int doPlat(Line& line, PlatType type, int amount)
 
         switch (type)
         {
-            case raiseToNearestAndChange:
+            case PlatType::RaiseToNearestAndChange:
                 plat->speed = PLATSPEED / 2;
                 sec->floorpic = sides[line.sidenum[0]].sector->floorpic;
                 plat->high = findNextHighestFloor(*sec, sec->floorheight);
                 plat->wait = 0;
-                plat->status = up;
+                plat->status = PlatState::Up;
                 // NO MORE DAMAGE, IF APPLICABLE
                 sec->special = 0;
 
                 startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
                 break;
 
-            case raiseAndChange:
+            case PlatType::RaiseAndChange:
                 plat->speed = PLATSPEED / 2;
                 sec->floorpic = sides[line.sidenum[0]].sector->floorpic;
                 plat->high = sec->floorheight + amount * FRACUNIT;
                 plat->wait = 0;
-                plat->status = up;
+                plat->status = PlatState::Up;
 
                 startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_stnmov);
                 break;
 
-            case downWaitUpStay:
+            case PlatType::DownWaitUpStay:
                 plat->speed = PLATSPEED * 4;
                 plat->low = findLowestFloorSurrounding(*sec);
 
@@ -185,11 +189,11 @@ int doPlat(Line& line, PlatType type, int amount)
 
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
-                plat->status = down;
+                plat->status = PlatState::Down;
                 startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;
 
-            case blazeDWUS:
+            case PlatType::BlazeDWUS:
                 plat->speed = PLATSPEED * 8;
                 plat->low = findLowestFloorSurrounding(*sec);
 
@@ -198,11 +202,11 @@ int doPlat(Line& line, PlatType type, int amount)
 
                 plat->high = sec->floorheight;
                 plat->wait = 35 * PLATWAIT;
-                plat->status = down;
+                plat->status = PlatState::Down;
                 startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;
 
-            case perpetualRaise:
+            case PlatType::PerpetualRaise:
                 plat->speed = PLATSPEED;
                 plat->low = findLowestFloorSurrounding(*sec);
 
@@ -215,7 +219,7 @@ int doPlat(Line& line, PlatType type, int amount)
                     plat->high = sec->floorheight;
 
                 plat->wait = 35 * PLATWAIT;
-                plat->status = (PlatState) (randomness().forPlay() & 1);
+                plat->status = static_cast<PlatState>(randomness().forPlay() & 1);
 
                 startSound(reinterpret_cast<Mobj*>(&sec->soundorg), sfx_pstart);
                 break;
@@ -230,7 +234,7 @@ void activateInStasis(int tag)
 {
     auto& specials = activeSpecials();
     for (auto* plat: specials.activeplats)
-        if (plat && plat->tag == tag && plat->status == in_stasis)
+        if (plat && plat->tag == tag && plat->status == PlatState::InStasis)
         {
             plat->status = plat->oldstatus;
             plat->stopped = false;
@@ -241,10 +245,10 @@ void stopPlat(Line& line)
 {
     auto& specials = activeSpecials();
     for (auto* plat: specials.activeplats)
-        if (plat && plat->status != in_stasis && plat->tag == line.tag)
+        if (plat && plat->status != PlatState::InStasis && plat->tag == line.tag)
         {
             plat->oldstatus = plat->status;
-            plat->status = in_stasis;
+            plat->status = PlatState::InStasis;
             plat->stopped = true;
         }
 }

@@ -825,7 +825,7 @@ void saveGameMenu(int)
         return;
     }
 
-    if (gameFlow().gamestate != GS_LEVEL)
+    if (gameFlow().gamestate != GameState::Level)
         return;
 
     setupNextMenu(&SaveDef);
@@ -854,7 +854,7 @@ void quickSave()
         return;
     }
 
-    if (gameFlow().gamestate != GS_LEVEL)
+    if (gameFlow().gamestate != GameState::Level)
         return;
 
     if (state.quickSaveSlot < 0)
@@ -920,12 +920,12 @@ void drawReadThis1()
     overlayState().inhelpscreens = true;
     switch (gameVersion().gamemode)
     {
-        case commercial:
+        case GameMode::Commercial:
             drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP")));
             break;
-        case shareware:
-        case registered:
-        case retail:
+        case GameMode::Shareware:
+        case GameMode::Registered:
+        case GameMode::Retail:
             drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP1")));
             break;
         default:
@@ -942,13 +942,13 @@ void drawReadThis2()
     overlayState().inhelpscreens = true;
     switch (gameVersion().gamemode)
     {
-        case retail:
-        case commercial:
+        case GameMode::Retail:
+        case GameMode::Commercial:
             // This hack keeps us from having to change menus.
             drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
             break;
-        case shareware:
-        case registered:
+        case GameMode::Shareware:
+        case GameMode::Registered:
             drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
             break;
         default:
@@ -1062,7 +1062,7 @@ void newGame(int)
         return;
     }
 
-    if (gameVersion().gamemode == commercial)
+    if (gameVersion().gamemode == GameMode::Commercial)
         setupNextMenu(&NewDef);
     else
         setupNextMenu(&EpiDef);
@@ -1101,7 +1101,7 @@ void episode(int choice)
 {
     auto& version = gameVersion();
 
-    if ((version.gamemode == shareware) && choice)
+    if ((version.gamemode == GameMode::Shareware) && choice)
     {
         startMessage(SWSTRING, {}, false);
         setupNextMenu(&ReadDef1);
@@ -1109,7 +1109,7 @@ void episode(int choice)
     }
 
     // Yet another hack...
-    if ((version.gamemode == registered) && (choice > 2))
+    if ((version.gamemode == GameMode::Registered) && (choice > 2))
     {
         print("episode: 4th episode requires UltimateDOOM\n");
         choice = 0;
@@ -1289,7 +1289,7 @@ void quitResponse(int ch)
         return;
     if (!gameSession().netgame)
     {
-        if (gameVersion().gamemode == commercial)
+        if (gameVersion().gamemode == GameMode::Commercial)
             startSound(nullptr, quitsounds2[(clock.gametic >> 2) & 7]);
         else
             startSound(nullptr, quitsounds[(clock.gametic >> 2) & 7]);
@@ -1304,7 +1304,7 @@ void quitDOOM(int)
 
     // We pick index 0 which is language sensitive,
     //  or one at random, between 1 and maximum number.
-    if (gameVersion().language != english)
+    if (gameVersion().language != Language::English)
     {
         //doom_sprintf(endstring, "%s\n\n"DOSY, endmsg[0]);
         state.endstring = concat(endmsg[0], "\n\n" DOSY);
@@ -1527,7 +1527,7 @@ bool menuResponder(Event& ev)
 
     int ch = -1;
 
-    if (ev.type == ev_joystick && state.joywait < currentTic())
+    if (ev.type == EventType::Joystick && state.joywait < currentTic())
     {
         if (ev.data3 == -1)
         {
@@ -1564,7 +1564,7 @@ bool menuResponder(Event& ev)
     }
     else
     {
-        if (ev.type == ev_mouse && state.mousewait < currentTic())
+        if (ev.type == EventType::Mouse && state.mousewait < currentTic())
         {
             state.mousey += ev.data3;
             if (state.mousey < state.lasty - 30)
@@ -1606,7 +1606,7 @@ bool menuResponder(Event& ev)
                 state.mousewait = currentTic() + 15;
             }
         }
-        else if (ev.type == ev_keydown)
+        else if (ev.type == EventType::KeyDown)
         {
             ch = ev.data1;
         }
@@ -1697,7 +1697,7 @@ bool menuResponder(Event& ev)
             case KEY_F1: // Help key
                 startControlPanel();
 
-                if (gameVersion().gamemode == retail)
+                if (gameVersion().gamemode == GameMode::Retail)
                     state.currentMenu = &ReadDef2;
                 else
                     state.currentMenu = &ReadDef1;
@@ -2072,7 +2072,7 @@ void initMenu()
 
     switch (gameVersion().gamemode)
     {
-        case commercial:
+        case GameMode::Commercial:
             // This is used because DOOM 2 had only one HELP
             //  page. I use CREDIT as second page now, but
             //  kept this hack for educational purposes.
@@ -2085,14 +2085,14 @@ void initMenu()
             ReadDef1.y = 165;
             ReadMenu1[0].routine = finishReadThis;
             break;
-        case shareware:
+        case GameMode::Shareware:
             // Episode 2 and 3 are handled,
             //  branching to an ad screen.
-        case registered:
+        case GameMode::Registered:
             // We need to remove the fourth episode.
             EpiDef.numitems--;
             break;
-        case retail:
+        case GameMode::Retail:
             // We are fine.
         default:
             break;

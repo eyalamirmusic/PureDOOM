@@ -324,7 +324,7 @@ void initAutomapVariables()
     auto& map = automapView();
 
     int pnum;
-    static Event st_notify = {ev_keyup, AM_MSGENTERED, 0, 0};
+    static Event st_notify = {EventType::KeyUp, AM_MSGENTERED, 0, 0};
 
     overlayState().automapactive = true;
     map.fb = screens[0];
@@ -418,7 +418,14 @@ void levelInit()
 //
 void stopAutomap()
 {
-    static Event st_notify = {static_cast<EventType>(0), ev_keyup, AM_MSGEXITED, 0};
+    // Vanilla's field-shifted AM_Stop notice { 0, ev_keyup, AM_MSGEXITED }: the
+    // type is 0 (keydown) and ev_keyup lands in the int data1 field, so
+    // statusBarResponder's keyup test never fires - a preserved 1993 no-op. Kept
+    // byte-exact: data1 holds ev_keyup's integer value.
+    static Event st_notify = {static_cast<EventType>(0),
+                              static_cast<int>(EventType::KeyUp),
+                              AM_MSGEXITED,
+                              0};
 
     unloadPics();
     overlayState().automapactive = false;
@@ -485,7 +492,7 @@ bool automapResponder(Event& ev)
 
     if (!overlayState().automapactive)
     {
-        if (ev.type == ev_keydown && ev.data1 == AM_STARTKEY)
+        if (ev.type == EventType::KeyDown && ev.data1 == AM_STARTKEY)
         {
             startAutomap();
             refreshFlags().viewactive = false;
@@ -493,7 +500,7 @@ bool automapResponder(Event& ev)
         }
     }
 
-    else if (ev.type == ev_keydown)
+    else if (ev.type == EventType::KeyDown)
     {
         rc = true;
         switch (ev.data1)
@@ -574,7 +581,7 @@ bool automapResponder(Event& ev)
         }
     }
 
-    else if (ev.type == ev_keyup)
+    else if (ev.type == EventType::KeyUp)
     {
         rc = false;
         switch (ev.data1)

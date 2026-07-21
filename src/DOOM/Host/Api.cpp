@@ -175,7 +175,7 @@ const unsigned char* framebuffer(int channels)
 
     // Draw Doom::inputConfig().crosshair
     if (inputConfig().crosshair && !overlayState().menuactive
-        && gameFlow().gamestate == GS_LEVEL && !overlayState().automapactive)
+        && gameFlow().gamestate == GameState::Level && !overlayState().automapactive)
     {
         int y;
         if (viewWindow().setblocks == 11)
@@ -243,7 +243,7 @@ short* soundBuffer()
 void keyDown(Key key)
 {
     Event event;
-    event.type = ev_keydown;
+    event.type = EventType::KeyDown;
     event.data1 = static_cast<int>(key);
     postEvent(event);
 }
@@ -251,7 +251,7 @@ void keyDown(Key key)
 void keyUp(Key key)
 {
     Event event;
-    event.type = ev_keyup;
+    event.type = EventType::KeyUp;
     event.data1 = static_cast<int>(key);
     postEvent(event);
 }
@@ -261,7 +261,7 @@ void buttonDown(MouseButton button)
     button_states[button] = 1;
 
     Event event;
-    event.type = ev_mouse;
+    event.type = EventType::Mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = event.data3 = 0;
@@ -273,7 +273,7 @@ void buttonUp(MouseButton button)
     button_states[button] = 0;
 
     Event event;
-    event.type = ev_mouse;
+    event.type = EventType::Mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
 
@@ -288,7 +288,7 @@ void mouseMove(int deltaX, int deltaY)
 {
     Event event;
 
-    event.type = ev_mouse;
+    event.type = EventType::Mouse;
     event.data1 =
         (button_states[0]) | (button_states[1] ? 2 : 0) | (button_states[2] ? 4 : 0);
     event.data2 = deltaX;

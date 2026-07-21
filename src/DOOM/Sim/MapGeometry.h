@@ -44,7 +44,7 @@ inline int pointOnLineSide(Vec2 point, Vec2 lineStart, Vec2 lineDelta)
 // asks to reject lines a mover's box cannot touch before the exact test.
 //
 // `slopeType` is the linedef's precomputed orientation (vanilla's SlopeType:
-// 0 ST_HORIZONTAL, 1 ST_VERTICAL, 2 ST_POSITIVE, 3 ST_NEGATIVE); the axis-aligned
+// 0 SlopeType::Horizontal, 1 SlopeType::Vertical, 2 SlopeType::Positive, 3 SlopeType::Negative); the axis-aligned
 // cases answer from a single edge comparison and skip the cross product, and the
 // two diagonal cases test the box corners that face the line's direction. The box
 // edges are the vanilla tmbox order - top/bottom/left/right. p1/p2 start at 0 so a
@@ -63,7 +63,7 @@ inline int boxOnLineSide(Fixed top,
 
     switch (slopeType)
     {
-        case 0: // ST_HORIZONTAL
+        case 0: // SlopeType::Horizontal
             p1 = top.raw > lineStart.y.raw;
             p2 = bottom.raw > lineStart.y.raw;
             if (lineDelta.x.raw < 0)
@@ -73,7 +73,7 @@ inline int boxOnLineSide(Fixed top,
             }
             break;
 
-        case 1: // ST_VERTICAL
+        case 1: // SlopeType::Vertical
             p1 = right.raw < lineStart.x.raw;
             p2 = left.raw < lineStart.x.raw;
             if (lineDelta.y.raw < 0)
@@ -83,12 +83,12 @@ inline int boxOnLineSide(Fixed top,
             }
             break;
 
-        case 2: // ST_POSITIVE
+        case 2: // SlopeType::Positive
             p1 = pointOnLineSide({left, top}, lineStart, lineDelta);
             p2 = pointOnLineSide({right, bottom}, lineStart, lineDelta);
             break;
 
-        case 3: // ST_NEGATIVE
+        case 3: // SlopeType::Negative
             p1 = pointOnLineSide({right, top}, lineStart, lineDelta);
             p2 = pointOnLineSide({left, bottom}, lineStart, lineDelta);
             break;

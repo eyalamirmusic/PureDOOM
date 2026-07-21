@@ -143,7 +143,7 @@ inline AutomapScript automapScript()
     return s;
 }
 
-// Doom::GS_LEVEL, as doomSimGameState reports it (the GameState enum's first
+// Doom::GameState::Level, as doomSimGameState reports it (the GameState enum's first
 // member). The whole script must stay in the level; if gamestate drifted off
 // (the level ended, or something reached the title or an intermission) the
 // automap would no longer be drawing the world the golden was recorded over.

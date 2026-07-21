@@ -30,12 +30,12 @@
 // Input event types.
 namespace Doom
 {
-enum EventType
+enum class EventType
 {
-    ev_keydown,
-    ev_keyup,
-    ev_mouse,
-    ev_joystick
+    KeyDown,
+    KeyUp,
+    Mouse,
+    Joystick
 };
 } // namespace Doom
 
@@ -53,18 +53,18 @@ struct Event
 
 namespace Doom
 {
-enum GameAction
+enum class GameAction
 {
-    ga_nothing,
-    ga_loadlevel,
-    ga_newgame,
-    ga_loadgame,
-    ga_savegame,
-    ga_playdemo,
-    ga_completed,
-    ga_victory,
-    ga_worlddone,
-    ga_screenshot
+    Nothing,
+    LoadLevel,
+    NewGame,
+    LoadGame,
+    SaveGame,
+    PlayDemo,
+    Completed,
+    Victory,
+    WorldDone,
+    Screenshot
 };
 } // namespace Doom
 

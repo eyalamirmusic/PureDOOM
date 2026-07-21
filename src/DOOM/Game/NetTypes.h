@@ -45,10 +45,10 @@ constexpr int BACKUPTICS = 12;
 
 namespace Doom
 {
-enum NetCommandKind
+enum class NetCommandKind
 {
-    CMD_SEND = 1,
-    CMD_GET = 2
+    Send = 1,
+    Get = 2
 };
 } // namespace Doom
 
@@ -81,7 +81,7 @@ struct DoomCom
     // DOOM executes an int to execute commands.
     short intnum;
     // Communication between DOOM and the driver.
-    // Is CMD_SEND or CMD_GET.
+    // Is NetCommandKind::Send or NetCommandKind::Get.
     short command;
     // Is dest for send, set by get (-1 = no packet).
     short remotenode;

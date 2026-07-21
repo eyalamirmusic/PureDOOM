@@ -64,9 +64,9 @@ MoveResult movePlane(Sector& sector,
                         {
                             sector.floorheight = lastpos;
                             changeSector(sector, crush);
-                            //return crushed;
+                            //return MoveResult::Crushed;
                         }
-                        return pastdest;
+                        return MoveResult::PastDest;
                     }
                     else
                     {
@@ -77,7 +77,7 @@ MoveResult movePlane(Sector& sector,
                         {
                             sector.floorheight = lastpos;
                             changeSector(sector, crush);
-                            return crushed;
+                            return MoveResult::Crushed;
                         }
                     }
                     break;
@@ -93,9 +93,9 @@ MoveResult movePlane(Sector& sector,
                         {
                             sector.floorheight = lastpos;
                             changeSector(sector, crush);
-                            //return crushed;
+                            //return MoveResult::Crushed;
                         }
-                        return pastdest;
+                        return MoveResult::PastDest;
                     }
                     else
                     {
@@ -106,10 +106,10 @@ MoveResult movePlane(Sector& sector,
                         if (flag == true)
                         {
                             if (crush == true)
-                                return crushed;
+                                return MoveResult::Crushed;
                             sector.floorheight = lastpos;
                             changeSector(sector, crush);
-                            return crushed;
+                            return MoveResult::Crushed;
                         }
                     }
                     break;
@@ -132,9 +132,9 @@ MoveResult movePlane(Sector& sector,
                         {
                             sector.ceilingheight = lastpos;
                             changeSector(sector, crush);
-                            //return crushed;
+                            //return MoveResult::Crushed;
                         }
-                        return pastdest;
+                        return MoveResult::PastDest;
                     }
                     else
                     {
@@ -146,10 +146,10 @@ MoveResult movePlane(Sector& sector,
                         if (flag == true)
                         {
                             if (crush == true)
-                                return crushed;
+                                return MoveResult::Crushed;
                             sector.ceilingheight = lastpos;
                             changeSector(sector, crush);
-                            return crushed;
+                            return MoveResult::Crushed;
                         }
                     }
                     break;
@@ -165,9 +165,9 @@ MoveResult movePlane(Sector& sector,
                         {
                             sector.ceilingheight = lastpos;
                             changeSector(sector, crush);
-                            //return crushed;
+                            //return MoveResult::Crushed;
                         }
-                        return pastdest;
+                        return MoveResult::PastDest;
                     }
                     else
                     {
@@ -180,7 +180,7 @@ MoveResult movePlane(Sector& sector,
                         {
                             sector.ceilingheight = lastpos;
                             Doom::changeSector(&sector, crush);
-                            return crushed;
+                            return MoveResult::Crushed;
                         }
 #endif
                     }
@@ -189,7 +189,7 @@ MoveResult movePlane(Sector& sector,
             break;
     }
 
-    return ok;
+    return MoveResult::Ok;
 }
 
 //
@@ -207,7 +207,7 @@ void moveFloor(FloorMove& floor)
     if (!(levelStats().leveltime & 7))
         startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), sfx_stnmov);
 
-    if (res == pastdest)
+    if (res == MoveResult::PastDest)
     {
         floor.sector->specialdata = nullptr;
 
@@ -215,7 +215,7 @@ void moveFloor(FloorMove& floor)
         {
             switch (floor.type)
             {
-                case donutRaise:
+                case FloorType::DonutRaise:
                     floor.sector->special = floor.newspecial;
                     floor.sector->floorpic = floor.texture;
                 default:
@@ -226,7 +226,7 @@ void moveFloor(FloorMove& floor)
         {
             switch (floor.type)
             {
-                case lowerAndChange:
+                case FloorType::LowerAndChange:
                     floor.sector->special = floor.newspecial;
                     floor.sector->floorpic = floor.texture;
                 default:
@@ -264,21 +264,21 @@ int doFloor(Line& line, FloorType floortype)
 
         switch (floortype)
         {
-            case lowerFloor:
+            case FloorType::LowerFloor:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight = findHighestFloorSurrounding(*sec);
                 break;
 
-            case lowerFloorToLowest:
+            case FloorType::LowerFloorToLowest:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight = findLowestFloorSurrounding(*sec);
                 break;
 
-            case turboLower:
+            case FloorType::TurboLower:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
@@ -287,10 +287,10 @@ int doFloor(Line& line, FloorType floortype)
                     floor->floordestheight += 8 * FRACUNIT;
                 break;
 
-            case raiseFloorCrush:
+            case FloorType::RaiseFloorCrush:
                 floor->crush = true;
                 [[fallthrough]];
-            case raiseFloor:
+            case FloorType::RaiseFloor:
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
@@ -298,10 +298,10 @@ int doFloor(Line& line, FloorType floortype)
                 if (floor->floordestheight > sec->ceilingheight)
                     floor->floordestheight = sec->ceilingheight;
                 floor->floordestheight -=
-                    (8 * FRACUNIT) * (floortype == raiseFloorCrush);
+                    (8 * FRACUNIT) * (floortype == FloorType::RaiseFloorCrush);
                 break;
 
-            case raiseFloorTurbo:
+            case FloorType::RaiseFloorTurbo:
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
@@ -309,7 +309,7 @@ int doFloor(Line& line, FloorType floortype)
                     findNextHighestFloor(*sec, sec->floorheight);
                 break;
 
-            case raiseFloorToNearest:
+            case FloorType::RaiseFloorToNearest:
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
@@ -317,20 +317,20 @@ int doFloor(Line& line, FloorType floortype)
                     findNextHighestFloor(*sec, sec->floorheight);
                 break;
 
-            case raiseFloor24:
+            case FloorType::RaiseFloor24:
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight = floor->sector->floorheight + 24 * FRACUNIT;
                 break;
-            case raiseFloor512:
+            case FloorType::RaiseFloor512:
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight = floor->sector->floorheight + 512 * FRACUNIT;
                 break;
 
-            case raiseFloor24AndChange:
+            case FloorType::RaiseFloor24AndChange:
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
@@ -339,7 +339,7 @@ int doFloor(Line& line, FloorType floortype)
                 sec->special = line.frontsector->special;
                 break;
 
-            case raiseToTexture:
+            case FloorType::RaiseToTexture:
             {
                 fixed_t minsize {DOOM_MAXINT};
 
@@ -364,7 +364,7 @@ int doFloor(Line& line, FloorType floortype)
             }
             break;
 
-            case lowerAndChange:
+            case FloorType::LowerAndChange:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
@@ -399,7 +399,9 @@ int doFloor(Line& line, FloorType floortype)
                         }
                     }
                 }
-            default:
+                break;
+
+            case FloorType::DonutRaise:
                 break;
         }
     }
@@ -436,11 +438,11 @@ int buildStairs(Line& line, StairType type)
         floor->sector = sec;
         switch (type)
         {
-            case build8:
+            case StairType::Build8:
                 speed = FLOORSPEED / 4;
                 stairsize = 8 * FRACUNIT;
                 break;
-            case turbo16:
+            case StairType::Turbo16:
                 speed = FLOORSPEED * 4;
                 stairsize = 16 * FRACUNIT;
                 break;

@@ -448,43 +448,43 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
         // All from here to RETRIGGERS.
         case 2:
             // Open Door
-            doDoor(line, door_open);
+            doDoor(line, DoorType::Open);
             line.special = 0;
             break;
 
         case 3:
             // Close Door
-            doDoor(line, door_close);
+            doDoor(line, DoorType::Close);
             line.special = 0;
             break;
 
         case 4:
             // Raise Door
-            doDoor(line, door_normal);
+            doDoor(line, DoorType::Normal);
             line.special = 0;
             break;
 
         case 5:
             // Raise Floor
-            doFloor(line, raiseFloor);
+            doFloor(line, FloorType::RaiseFloor);
             line.special = 0;
             break;
 
         case 6:
             // Fast Ceiling Crush & Raise
-            doCeiling(line, fastCrushAndRaise);
+            doCeiling(line, CeilingType::FastCrushAndRaise);
             line.special = 0;
             break;
 
         case 8:
             // Build Stairs
-            buildStairs(line, build8);
+            buildStairs(line, StairType::Build8);
             line.special = 0;
             break;
 
         case 10:
             // PlatDownWaitUp
-            doPlat(line, downWaitUpStay, 0);
+            doPlat(line, PlatType::DownWaitUpStay, 0);
             line.special = 0;
             break;
 
@@ -502,7 +502,7 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 16:
             // Close Door 30
-            doDoor(line, close30ThenOpen);
+            doDoor(line, DoorType::Close30ThenOpen);
             line.special = 0;
             break;
 
@@ -514,26 +514,26 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 19:
             // Lower Floor
-            doFloor(line, lowerFloor);
+            doFloor(line, FloorType::LowerFloor);
             line.special = 0;
             break;
 
         case 22:
             // Raise floor to nearest height and change texture
-            doPlat(line, raiseToNearestAndChange, 0);
+            doPlat(line, PlatType::RaiseToNearestAndChange, 0);
             line.special = 0;
             break;
 
         case 25:
             // Ceiling Crush and Raise
-            doCeiling(line, crushAndRaise);
+            doCeiling(line, CeilingType::CrushAndRaise);
             line.special = 0;
             break;
 
         case 30:
             // Raise floor to shortest texture height
             //  on either side of lines.
-            doFloor(line, raiseToTexture);
+            doFloor(line, FloorType::RaiseToTexture);
             line.special = 0;
             break;
 
@@ -545,19 +545,19 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 36:
             // Lower Floor (TURBO)
-            doFloor(line, turboLower);
+            doFloor(line, FloorType::TurboLower);
             line.special = 0;
             break;
 
         case 37:
             // LowerAndChange
-            doFloor(line, lowerAndChange);
+            doFloor(line, FloorType::LowerAndChange);
             line.special = 0;
             break;
 
         case 38:
             // Lower Floor To Lowest
-            doFloor(line, lowerFloorToLowest);
+            doFloor(line, FloorType::LowerFloorToLowest);
             line.special = 0;
             break;
 
@@ -569,14 +569,14 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 40:
             // RaiseCeilingLowerFloor
-            doCeiling(line, raiseToHighest);
-            doFloor(line, lowerFloorToLowest);
+            doCeiling(line, CeilingType::RaiseToHighest);
+            doFloor(line, FloorType::LowerFloorToLowest);
             line.special = 0;
             break;
 
         case 44:
             // Ceiling Crush
-            doCeiling(line, lowerAndCrush);
+            doCeiling(line, CeilingType::LowerAndCrush);
             line.special = 0;
             break;
 
@@ -587,7 +587,7 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 53:
             // Perpetual Platform Raise
-            doPlat(line, perpetualRaise, 0);
+            doPlat(line, PlatType::PerpetualRaise, 0);
             line.special = 0;
             break;
 
@@ -599,7 +599,7 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 56:
             // Raise Floor Crush
-            doFloor(line, raiseFloorCrush);
+            doFloor(line, FloorType::RaiseFloorCrush);
             line.special = 0;
             break;
 
@@ -611,13 +611,13 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 58:
             // Raise Floor 24
-            doFloor(line, raiseFloor24);
+            doFloor(line, FloorType::RaiseFloor24);
             line.special = 0;
             break;
 
         case 59:
             // Raise Floor 24 And Change
-            doFloor(line, raiseFloor24AndChange);
+            doFloor(line, FloorType::RaiseFloor24AndChange);
             line.special = 0;
             break;
 
@@ -629,37 +629,37 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 108:
             // Blazing Door Raise (faster than TURBO!)
-            doDoor(line, blazeRaise);
+            doDoor(line, DoorType::BlazeRaise);
             line.special = 0;
             break;
 
         case 109:
             // Blazing Door Open (faster than TURBO!)
-            doDoor(line, blazeOpen);
+            doDoor(line, DoorType::BlazeOpen);
             line.special = 0;
             break;
 
         case 100:
             // Build Stairs Turbo 16
-            buildStairs(line, turbo16);
+            buildStairs(line, StairType::Turbo16);
             line.special = 0;
             break;
 
         case 110:
             // Blazing Door Close (faster than TURBO!)
-            doDoor(line, blazeClose);
+            doDoor(line, DoorType::BlazeClose);
             line.special = 0;
             break;
 
         case 119:
             // Raise floor to nearest surr. floor
-            doFloor(line, raiseFloorToNearest);
+            doFloor(line, FloorType::RaiseFloorToNearest);
             line.special = 0;
             break;
 
         case 121:
             // Blazing PlatDownWaitUpStay
-            doPlat(line, blazeDWUS, 0);
+            doPlat(line, PlatType::BlazeDWUS, 0);
             line.special = 0;
             break;
 
@@ -679,25 +679,25 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 130:
             // Raise Floor Turbo
-            doFloor(line, raiseFloorTurbo);
+            doFloor(line, FloorType::RaiseFloorTurbo);
             line.special = 0;
             break;
 
         case 141:
             // Silent Ceiling Crush & Raise
-            doCeiling(line, silentCrushAndRaise);
+            doCeiling(line, CeilingType::SilentCrushAndRaise);
             line.special = 0;
             break;
 
             // RETRIGGERS.  All from here till end.
         case 72:
             // Ceiling Crush
-            doCeiling(line, lowerAndCrush);
+            doCeiling(line, CeilingType::LowerAndCrush);
             break;
 
         case 73:
             // Ceiling Crush and Raise
-            doCeiling(line, crushAndRaise);
+            doCeiling(line, CeilingType::CrushAndRaise);
             break;
 
         case 74:
@@ -707,17 +707,17 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 75:
             // Close Door
-            doDoor(line, door_close);
+            doDoor(line, DoorType::Close);
             break;
 
         case 76:
             // Close Door 30
-            doDoor(line, close30ThenOpen);
+            doDoor(line, DoorType::Close30ThenOpen);
             break;
 
         case 77:
             // Fast Ceiling Crush & Raise
-            doCeiling(line, fastCrushAndRaise);
+            doCeiling(line, CeilingType::FastCrushAndRaise);
             break;
 
         case 79:
@@ -737,32 +737,32 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 82:
             // Lower Floor To Lowest
-            doFloor(line, lowerFloorToLowest);
+            doFloor(line, FloorType::LowerFloorToLowest);
             break;
 
         case 83:
             // Lower Floor
-            doFloor(line, lowerFloor);
+            doFloor(line, FloorType::LowerFloor);
             break;
 
         case 84:
             // LowerAndChange
-            doFloor(line, lowerAndChange);
+            doFloor(line, FloorType::LowerAndChange);
             break;
 
         case 86:
             // Open Door
-            doDoor(line, door_open);
+            doDoor(line, DoorType::Open);
             break;
 
         case 87:
             // Perpetual Platform Raise
-            doPlat(line, perpetualRaise, 0);
+            doPlat(line, PlatType::PerpetualRaise, 0);
             break;
 
         case 88:
             // PlatDownWaitUp
-            doPlat(line, downWaitUpStay, 0);
+            doPlat(line, PlatType::DownWaitUpStay, 0);
             break;
 
         case 89:
@@ -772,39 +772,39 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 90:
             // Raise Door
-            doDoor(line, door_normal);
+            doDoor(line, DoorType::Normal);
             break;
 
         case 91:
             // Raise Floor
-            doFloor(line, raiseFloor);
+            doFloor(line, FloorType::RaiseFloor);
             break;
 
         case 92:
             // Raise Floor 24
-            doFloor(line, raiseFloor24);
+            doFloor(line, FloorType::RaiseFloor24);
             break;
 
         case 93:
             // Raise Floor 24 And Change
-            doFloor(line, raiseFloor24AndChange);
+            doFloor(line, FloorType::RaiseFloor24AndChange);
             break;
 
         case 94:
             // Raise Floor Crush
-            doFloor(line, raiseFloorCrush);
+            doFloor(line, FloorType::RaiseFloorCrush);
             break;
 
         case 95:
             // Raise floor to nearest height
             // and change texture.
-            doPlat(line, raiseToNearestAndChange, 0);
+            doPlat(line, PlatType::RaiseToNearestAndChange, 0);
             break;
 
         case 96:
             // Raise floor to shortest texture height
             // on either side of lines.
-            doFloor(line, raiseToTexture);
+            doFloor(line, FloorType::RaiseToTexture);
             break;
 
         case 97:
@@ -814,27 +814,27 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 98:
             // Lower Floor (TURBO)
-            doFloor(line, turboLower);
+            doFloor(line, FloorType::TurboLower);
             break;
 
         case 105:
             // Blazing Door Raise (faster than TURBO!)
-            doDoor(line, blazeRaise);
+            doDoor(line, DoorType::BlazeRaise);
             break;
 
         case 106:
             // Blazing Door Open (faster than TURBO!)
-            doDoor(line, blazeOpen);
+            doDoor(line, DoorType::BlazeOpen);
             break;
 
         case 107:
             // Blazing Door Close (faster than TURBO!)
-            doDoor(line, blazeClose);
+            doDoor(line, DoorType::BlazeClose);
             break;
 
         case 120:
             // Blazing PlatDownWaitUpStay.
-            doPlat(line, blazeDWUS, 0);
+            doPlat(line, PlatType::BlazeDWUS, 0);
             break;
 
         case 126:
@@ -845,12 +845,12 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 128:
             // Raise To Nearest Floor
-            doFloor(line, raiseFloorToNearest);
+            doFloor(line, FloorType::RaiseFloorToNearest);
             break;
 
         case 129:
             // Raise Floor Turbo
-            doFloor(line, raiseFloorTurbo);
+            doFloor(line, FloorType::RaiseFloorTurbo);
             break;
     }
 }
@@ -880,19 +880,19 @@ void shootSpecialLine(Mobj& thing, Line& line)
     {
         case 24:
             // RAISE FLOOR
-            doFloor(line, raiseFloor);
+            doFloor(line, FloorType::RaiseFloor);
             changeSwitchTexture(line, 0);
             break;
 
         case 46:
             // OPEN DOOR
-            doDoor(line, door_open);
+            doDoor(line, DoorType::Open);
             changeSwitchTexture(line, 1);
             break;
 
         case 47:
             // RAISE FLOOR NEAR AND CHANGE
-            doPlat(line, raiseToNearestAndChange, 0);
+            doPlat(line, PlatType::RaiseToNearestAndChange, 0);
             changeSwitchTexture(line, 0);
             break;
     }
@@ -1026,15 +1026,15 @@ void updateSpecials()
             {
                 switch (button.where)
                 {
-                    case top:
+                    case ButtonWhere::Top:
                         sides[button.line->sidenum[0]].toptexture = button.btexture;
                         break;
 
-                    case middle:
+                    case ButtonWhere::Middle:
                         sides[button.line->sidenum[0]].midtexture = button.btexture;
                         break;
 
-                    case bottom:
+                    case ButtonWhere::Bottom:
                         sides[button.line->sidenum[0]].bottomtexture =
                             button.btexture;
                         break;
@@ -1075,7 +1075,7 @@ int doDonut(Line& line)
             FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
             addThinker(*floor);
             s2->specialdata = floor;
-            floor->type = donutRaise;
+            floor->type = FloorType::DonutRaise;
             floor->crush = false;
             floor->direction = 1;
             floor->sector = s2;
@@ -1088,7 +1088,7 @@ int doDonut(Line& line)
             floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
             addThinker(*floor);
             s1->specialdata = floor;
-            floor->type = lowerFloor;
+            floor->type = FloorType::LowerFloor;
             floor->crush = false;
             floor->direction = -1;
             floor->sector = s1;

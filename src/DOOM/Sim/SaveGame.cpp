@@ -219,10 +219,10 @@ void unArchiveWorld()
 //
 // Thinkers
 //
-enum ThinkerClass
+enum class ThinkerClass
 {
-    tc_end,
-    tc_mobj
+    End,
+    Mobj
 };
 
 // Reconstruct a saved thinker in a fresh level-pool block. placement-new sets the
@@ -280,7 +280,7 @@ void archiveThinkers()
         // was the -1 sentinel, matching no archived type).
         if (th->kind() == ThinkerKind::Mobj && !th->removed)
         {
-            *save.cursor++ = tc_mobj;
+            *save.cursor++ = static_cast<byte>(ThinkerClass::Mobj);
             padSaveCursor(save.cursor);
 
             // Composed in an aligned local for the reason archiveSectorThinker
@@ -302,7 +302,7 @@ void archiveThinkers()
     }
 
     // add a terminating marker
-    *save.cursor++ = tc_end;
+    *save.cursor++ = static_cast<byte>(ThinkerClass::End);
 }
 
 //
@@ -334,12 +334,12 @@ void unArchiveThinkers()
     while (1)
     {
         byte tclass = *save.cursor++;
-        switch (tclass)
+        switch (static_cast<ThinkerClass>(tclass))
         {
-            case tc_end:
+            case ThinkerClass::End:
                 return; // end of list
 
-            case tc_mobj:
+            case ThinkerClass::Mobj:
                 padSaveCursor(save.cursor);
                 mobj = unarchiveThinker<Mobj>();
                 mobj->state = &states[reinterpret_cast<long long>(mobj->state)];
@@ -370,16 +370,16 @@ void unArchiveThinkers()
 //
 // archiveSpecials
 //
-enum
+enum class SpecialClass
 {
-    tc_ceiling,
-    tc_door,
-    tc_floor,
-    tc_plat,
-    tc_flash,
-    tc_strobe,
-    tc_glow,
-    tc_endspecials
+    Ceiling,
+    Door,
+    Floor,
+    Plat,
+    Flash,
+    Strobe,
+    Glow,
+    EndSpecials
 };
 
 //
@@ -412,7 +412,7 @@ void archiveSpecials()
         {
             if (th->kind() == ThinkerKind::Ceiling)
             {
-                *save.cursor++ = tc_ceiling;
+                *save.cursor++ = static_cast<byte>(SpecialClass::Ceiling);
                 archiveSectorThinker<Ceiling>(th);
             }
             continue;
@@ -420,56 +420,56 @@ void archiveSpecials()
 
         if (th->kind() == ThinkerKind::Ceiling)
         {
-            *save.cursor++ = tc_ceiling;
+            *save.cursor++ = static_cast<byte>(SpecialClass::Ceiling);
             archiveSectorThinker<Ceiling>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Door)
         {
-            *save.cursor++ = tc_door;
+            *save.cursor++ = static_cast<byte>(SpecialClass::Door);
             archiveSectorThinker<Door>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Floor)
         {
-            *save.cursor++ = tc_floor;
+            *save.cursor++ = static_cast<byte>(SpecialClass::Floor);
             archiveSectorThinker<FloorMove>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Plat)
         {
-            *save.cursor++ = tc_plat;
+            *save.cursor++ = static_cast<byte>(SpecialClass::Plat);
             archiveSectorThinker<Plat>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::LightFlash)
         {
-            *save.cursor++ = tc_flash;
+            *save.cursor++ = static_cast<byte>(SpecialClass::Flash);
             archiveSectorThinker<LightFlash>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::StrobeFlash)
         {
-            *save.cursor++ = tc_strobe;
+            *save.cursor++ = static_cast<byte>(SpecialClass::Strobe);
             archiveSectorThinker<Strobe>(th);
             continue;
         }
 
         if (th->kind() == ThinkerKind::Glow)
         {
-            *save.cursor++ = tc_glow;
+            *save.cursor++ = static_cast<byte>(SpecialClass::Glow);
             archiveSectorThinker<Glow>(th);
             continue;
         }
     }
 
     // add a terminating marker
-    *save.cursor++ = tc_endspecials;
+    *save.cursor++ = static_cast<byte>(SpecialClass::EndSpecials);
 }
 
 //
@@ -491,12 +491,12 @@ void unArchiveSpecials()
     while (1)
     {
         byte tclass = *save.cursor++;
-        switch (tclass)
+        switch (static_cast<SpecialClass>(tclass))
         {
-            case tc_endspecials:
+            case SpecialClass::EndSpecials:
                 return; // end of list
 
-            case tc_ceiling:
+            case SpecialClass::Ceiling:
                 padSaveCursor(save.cursor);
                 ceiling = unarchiveThinker<Ceiling>();
                 ceiling->sector =
@@ -507,7 +507,7 @@ void unArchiveSpecials()
                 addActiveCeiling(*ceiling);
                 break;
 
-            case tc_door:
+            case SpecialClass::Door:
                 padSaveCursor(save.cursor);
                 door = unarchiveThinker<Door>();
                 door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
@@ -515,7 +515,7 @@ void unArchiveSpecials()
                 addThinker(*door);
                 break;
 
-            case tc_floor:
+            case SpecialClass::Floor:
                 padSaveCursor(save.cursor);
                 floor = unarchiveThinker<FloorMove>();
                 floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
@@ -523,7 +523,7 @@ void unArchiveSpecials()
                 addThinker(*floor);
                 break;
 
-            case tc_plat:
+            case SpecialClass::Plat:
                 padSaveCursor(save.cursor);
                 plat = unarchiveThinker<Plat>();
                 plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
@@ -533,14 +533,14 @@ void unArchiveSpecials()
                 addActivePlat(*plat);
                 break;
 
-            case tc_flash:
+            case SpecialClass::Flash:
                 padSaveCursor(save.cursor);
                 flash = unarchiveThinker<LightFlash>();
                 flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
                 addThinker(*flash);
                 break;
 
-            case tc_strobe:
+            case SpecialClass::Strobe:
                 padSaveCursor(save.cursor);
                 strobe = unarchiveThinker<Strobe>();
                 strobe->sector =
@@ -548,7 +548,7 @@ void unArchiveSpecials()
                 addThinker(*strobe);
                 break;
 
-            case tc_glow:
+            case SpecialClass::Glow:
                 padSaveCursor(save.cursor);
                 glow = unarchiveThinker<Glow>();
                 glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];

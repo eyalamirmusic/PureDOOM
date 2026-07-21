@@ -65,7 +65,7 @@ constexpr auto finaleEpisode = 1;
 constexpr auto finaleMap = 8;
 constexpr auto finaleSkill = 2; // sk_medium
 
-// Doom::GS_LEVEL / Doom::GS_FINALE, as doomSimGameState reports them (the
+// Doom::GameState::Level / Doom::GameState::Finale, as doomSimGameState reports them (the
 // Doom::GameState enum's first and third members).
 constexpr auto gsLevel = 0;
 constexpr auto gsFinale = 2;

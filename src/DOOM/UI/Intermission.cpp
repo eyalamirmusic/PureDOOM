@@ -117,11 +117,11 @@ constexpr int FB = 0;
 constexpr int SHOWNEXTLOCDELAY = 4;
 //#define SHOWLASTLOCDELAY        SHOWNEXTLOCDELAY
 
-enum AnimEnum
+enum class AnimEnum
 {
-    ANIM_ALWAYS,
-    ANIM_RANDOM,
-    ANIM_LEVEL
+    Always,
+    Random,
+    Level
 };
 
 struct Point
@@ -227,35 +227,35 @@ static Array<Array<Point, NUMMAPS>, NUMEPISODES> lnodes = {
 DOOM_DIAGNOSTIC_PUSH
 DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 static Array<anim_t_wi_stuff, 10> epsd0animinfo = {
-    {ANIM_ALWAYS, TICRATE / 3, 3, {224, 104}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {184, 160}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {112, 136}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {72, 112}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {88, 96}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {64, 48}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {192, 40}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {136, 16}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {80, 16}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {64, 24}}};
+    {AnimEnum::Always, TICRATE / 3, 3, {224, 104}},
+    {AnimEnum::Always, TICRATE / 3, 3, {184, 160}},
+    {AnimEnum::Always, TICRATE / 3, 3, {112, 136}},
+    {AnimEnum::Always, TICRATE / 3, 3, {72, 112}},
+    {AnimEnum::Always, TICRATE / 3, 3, {88, 96}},
+    {AnimEnum::Always, TICRATE / 3, 3, {64, 48}},
+    {AnimEnum::Always, TICRATE / 3, 3, {192, 40}},
+    {AnimEnum::Always, TICRATE / 3, 3, {136, 16}},
+    {AnimEnum::Always, TICRATE / 3, 3, {80, 16}},
+    {AnimEnum::Always, TICRATE / 3, 3, {64, 24}}};
 
 static Array<anim_t_wi_stuff, 9> epsd1animinfo = {
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 1},
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 2},
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 3},
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 4},
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 5},
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 6},
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 7},
-    {ANIM_LEVEL, TICRATE / 3, 3, {192, 144}, 8},
-    {ANIM_LEVEL, TICRATE / 3, 1, {128, 136}, 8}};
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 1},
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 2},
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 3},
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 4},
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 5},
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 6},
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 7},
+    {AnimEnum::Level, TICRATE / 3, 3, {192, 144}, 8},
+    {AnimEnum::Level, TICRATE / 3, 1, {128, 136}, 8}};
 
 static Array<anim_t_wi_stuff, 6> epsd2animinfo = {
-    {ANIM_ALWAYS, TICRATE / 3, 3, {104, 168}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {40, 136}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {160, 96}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {104, 80}},
-    {ANIM_ALWAYS, TICRATE / 3, 3, {120, 32}},
-    {ANIM_ALWAYS, TICRATE / 4, 3, {40, 0}}};
+    {AnimEnum::Always, TICRATE / 3, 3, {104, 168}},
+    {AnimEnum::Always, TICRATE / 3, 3, {40, 136}},
+    {AnimEnum::Always, TICRATE / 3, 3, {160, 96}},
+    {AnimEnum::Always, TICRATE / 3, 3, {104, 80}},
+    {AnimEnum::Always, TICRATE / 3, 3, {120, 32}},
+    {AnimEnum::Always, TICRATE / 4, 3, {40, 0}}};
 DOOM_DIAGNOSTIC_POP
 
 static Array<int, NUMEPISODES> NUMANIMS = {
@@ -374,7 +374,7 @@ void initAnimatedBack()
 {
     auto& im = intermissionState();
 
-    if (gameVersion().gamemode == commercial)
+    if (gameVersion().gamemode == GameMode::Commercial)
         return;
 
     if (im.wbs->epsd > 2)
@@ -388,12 +388,12 @@ void initAnimatedBack()
         a->ctr = -1;
 
         // specify the next time to draw it
-        if (a->type == ANIM_ALWAYS)
+        if (a->type == AnimEnum::Always)
             a->nexttic = im.bcnt + 1 + (randomness().forMenu() % a->period);
-        else if (a->type == ANIM_RANDOM)
+        else if (a->type == AnimEnum::Random)
             a->nexttic =
                 im.bcnt + 1 + a->data2 + (randomness().forMenu() % a->data1);
-        else if (a->type == ANIM_LEVEL)
+        else if (a->type == AnimEnum::Level)
             a->nexttic = im.bcnt + 1;
     }
 }
@@ -402,7 +402,7 @@ void updateAnimatedBack()
 {
     auto& im = intermissionState();
 
-    if (gameVersion().gamemode == commercial)
+    if (gameVersion().gamemode == GameMode::Commercial)
         return;
 
     if (im.wbs->epsd > 2)
@@ -416,13 +416,13 @@ void updateAnimatedBack()
         {
             switch (a->type)
             {
-                case ANIM_ALWAYS:
+                case AnimEnum::Always:
                     if (++a->ctr >= a->nanims)
                         a->ctr = 0;
                     a->nexttic = im.bcnt + a->period;
                     break;
 
-                case ANIM_RANDOM:
+                case AnimEnum::Random:
                     a->ctr++;
                     if (a->ctr == a->nanims)
                     {
@@ -434,9 +434,9 @@ void updateAnimatedBack()
                         a->nexttic = im.bcnt + a->period;
                     break;
 
-                case ANIM_LEVEL:
+                case AnimEnum::Level:
                     // gawd-awful hack for level anims
-                    if (!(im.state == StatCount && i == 7)
+                    if (!(im.state == IntermissionPhase::StatCount && i == 7)
                         && im.wbs->next == a->data1)
                     {
                         a->ctr++;
@@ -465,7 +465,7 @@ void drawAnimatedBack()
     // recorded with it, so correcting it is a behaviour change, not a cleanup.
     // Written as an explicit comparison only so the always-true test is visible
     // rather than something a compiler has to point out.
-    if (commercial != 0)
+    if (static_cast<int>(GameMode::Commercial) != 0)
         return;
 
     if (im.wbs->epsd > 2)
@@ -598,7 +598,7 @@ void initNoState()
 {
     auto& im = intermissionState();
 
-    im.state = NoState;
+    im.state = IntermissionPhase::NoState;
     im.acceleratestage = 0;
     im.cnt = 10;
 }
@@ -618,7 +618,7 @@ void initShowNextLoc()
 {
     auto& im = intermissionState();
 
-    im.state = ShowNextLoc;
+    im.state = IntermissionPhase::ShowNextLoc;
     im.acceleratestage = 0;
     im.cnt = SHOWNEXTLOCDELAY * TICRATE;
 
@@ -647,7 +647,7 @@ void drawShowNextLoc()
     // draw animated background
     drawAnimatedBack();
 
-    if (version.gamemode != commercial)
+    if (version.gamemode != GameMode::Commercial)
     {
         if (im.wbs->epsd > 2)
         {
@@ -671,7 +671,7 @@ void drawShowNextLoc()
     }
 
     // draws which level you are entering..
-    if ((version.gamemode != commercial) || im.wbs->next != 30)
+    if ((version.gamemode != GameMode::Commercial) || im.wbs->next != 30)
         drawEL();
 }
 
@@ -708,7 +708,7 @@ void initDeathmatchStats()
     auto& im = intermissionState();
     const auto& players_ = playerState();
 
-    im.state = StatCount;
+    im.state = IntermissionPhase::StatCount;
     im.acceleratestage = 0;
     im.dm_state = 1;
 
@@ -799,7 +799,7 @@ void updateDeathmatchStats()
         {
             startSound(nullptr, sfx_slop);
 
-            if (gameVersion().gamemode == commercial)
+            if (gameVersion().gamemode == GameMode::Commercial)
                 initNoState();
             else
                 initShowNextLoc();
@@ -899,7 +899,7 @@ void initNetgameStats()
 {
     auto& im = intermissionState();
 
-    im.state = StatCount;
+    im.state = IntermissionPhase::StatCount;
     im.acceleratestage = 0;
     im.ng_state = 1;
 
@@ -1058,7 +1058,7 @@ void updateNetgameStats()
         if (im.acceleratestage)
         {
             startSound(nullptr, sfx_sgcock);
-            if (gameVersion().gamemode == commercial)
+            if (gameVersion().gamemode == GameMode::Commercial)
                 initNoState();
             else
                 initShowNextLoc();
@@ -1144,7 +1144,7 @@ void initStats()
 {
     auto& im = intermissionState();
 
-    im.state = StatCount;
+    im.state = IntermissionPhase::StatCount;
     im.acceleratestage = 0;
     im.sp_state = 1;
     im.cnt_kills[0] = im.cnt_items[0] = im.cnt_secret[0] = -1;
@@ -1244,7 +1244,7 @@ void updateStats()
         {
             startSound(nullptr, sfx_sgcock);
 
-            if (gameVersion().gamemode == commercial)
+            if (gameVersion().gamemode == GameMode::Commercial)
                 initNoState();
             else
                 initShowNextLoc();
@@ -1339,7 +1339,7 @@ void intermissionTicker()
     if (im.bcnt == 1)
     {
         // intermission music
-        if (gameVersion().gamemode == commercial)
+        if (gameVersion().gamemode == GameMode::Commercial)
             changeMusic(mus_dm2int, true);
         else
             changeMusic(mus_inter, true);
@@ -1349,7 +1349,7 @@ void intermissionTicker()
 
     switch (im.state)
     {
-        case StatCount:
+        case IntermissionPhase::StatCount:
             if (session.deathmatch)
                 updateDeathmatchStats();
             else if (session.netgame)
@@ -1358,11 +1358,11 @@ void intermissionTicker()
                 updateStats();
             break;
 
-        case ShowNextLoc:
+        case IntermissionPhase::ShowNextLoc:
             updateShowNextLoc();
             break;
 
-        case NoState:
+        case IntermissionPhase::NoState:
             updateNoState();
             break;
     }
@@ -1376,12 +1376,12 @@ void loadIntermissionData()
 
     auto name = std::string {};
 
-    if (version.gamemode == commercial)
+    if (version.gamemode == GameMode::Commercial)
         name = "INTERPIC";
     else
         name = concat("WIMAP", im.wbs->epsd);
 
-    if (version.gamemode == retail)
+    if (version.gamemode == GameMode::Retail)
     {
         if (im.wbs->epsd == 3)
             name = "INTERPIC";
@@ -1391,7 +1391,7 @@ void loadIntermissionData()
     im.bg = static_cast<Patch*>(cacheLumpName(name));
     drawPatch(0, 0, 1, im.bg);
 
-    if (version.gamemode == commercial)
+    if (version.gamemode == GameMode::Commercial)
     {
         im.NUMCMAPS = 32;
         im.lnames.resize(im.NUMCMAPS);
@@ -1480,7 +1480,9 @@ void loadIntermissionData()
     im.sp_secret = static_cast<Patch*>(cacheLumpName("WISCRT2"));
 
     // Yuck.
-    if (french)
+    // Preserved vanilla bug: always-true `french` enumerator test (it tests the
+    // constant, not gameVersion().language), so the French string is always chosen.
+    if (static_cast<int>(Language::French))
     {
         // "items"
         if (session.netgame && !session.deathmatch)
@@ -1541,7 +1543,7 @@ void unloadIntermissionData()
     // lnames - the pointer array, the one thing here the intermission does own
     // (RAII-owned, Step 9) - must NOT be cleared here, and this function's call
     // site is why: updateNoState runs endIntermission and worldDone on the
-    // intermission's last tic, but gamestate stays GS_INTERMISSION until the
+    // intermission's last tic, but gamestate stays GameState::Intermission until the
     // *next* tic's doWorldDone, so displayFrame draws one more intermission
     // frame after this ran and drawEL reads lnames[wbs->next]. Vanilla had the
     // identical order and survived it because PU_CACHE left the memory readable;
@@ -1558,7 +1560,7 @@ void drawIntermission()
 
     switch (intermissionState().state)
     {
-        case StatCount:
+        case IntermissionPhase::StatCount:
             if (session.deathmatch)
                 drawDeathmatchStats();
             else if (session.netgame)
@@ -1567,11 +1569,11 @@ void drawIntermission()
                 drawStats();
             break;
 
-        case ShowNextLoc:
+        case IntermissionPhase::ShowNextLoc:
             drawShowNextLoc();
             break;
 
-        case NoState:
+        case IntermissionPhase::NoState:
             drawNoState();
             break;
     }
@@ -1615,7 +1617,7 @@ void initIntermissionVariables(IntermissionStart* wbstartstruct)
     if (!im.wbs->maxsecret)
         im.wbs->maxsecret = 1;
 
-    if (version.gamemode != retail)
+    if (version.gamemode != GameMode::Retail)
         if (im.wbs->epsd > 2)
             im.wbs->epsd -= 3;
 }

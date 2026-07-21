@@ -144,7 +144,7 @@ int doomSimBootToTitle()
 int doomSimInLevel()
 {
     return Doom::demoState().demoplayback
-           && Doom::gameFlow().gamestate == Doom::GS_LEVEL;
+           && Doom::gameFlow().gamestate == Doom::GameState::Level;
 }
 
 // The demo is deferred, so it is not playing on the tic that queues it. "Not

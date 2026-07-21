@@ -57,9 +57,13 @@ void moveCeiling(Ceiling& ceiling)
             {
                 switch (ceiling.type)
                 {
-                    case silentCrushAndRaise:
+                    case CeilingType::SilentCrushAndRaise:
                         break;
-                    default:
+                    case CeilingType::LowerToFloor:
+                    case CeilingType::RaiseToHighest:
+                    case CeilingType::LowerAndCrush:
+                    case CeilingType::CrushAndRaise:
+                    case CeilingType::FastCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
@@ -68,25 +72,26 @@ void moveCeiling(Ceiling& ceiling)
                 }
             }
 
-            if (res == pastdest)
+            if (res == MoveResult::PastDest)
             {
                 switch (ceiling.type)
                 {
-                    case raiseToHighest:
+                    case CeilingType::RaiseToHighest:
                         removeActiveCeiling(ceiling);
                         break;
 
-                    case silentCrushAndRaise:
+                    case CeilingType::SilentCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                         [[fallthrough]];
-                    case fastCrushAndRaise:
-                    case crushAndRaise:
+                    case CeilingType::FastCrushAndRaise:
+                    case CeilingType::CrushAndRaise:
                         ceiling.direction = -1;
                         break;
 
-                    default:
+                    case CeilingType::LowerToFloor:
+                    case CeilingType::LowerAndCrush:
                         break;
                 }
             }
@@ -105,53 +110,60 @@ void moveCeiling(Ceiling& ceiling)
             {
                 switch (ceiling.type)
                 {
-                    case silentCrushAndRaise:
+                    case CeilingType::SilentCrushAndRaise:
                         break;
-                    default:
+                    case CeilingType::LowerToFloor:
+                    case CeilingType::RaiseToHighest:
+                    case CeilingType::LowerAndCrush:
+                    case CeilingType::CrushAndRaise:
+                    case CeilingType::FastCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_stnmov);
+                        break;
                 }
             }
 
-            if (res == pastdest)
+            if (res == MoveResult::PastDest)
             {
                 switch (ceiling.type)
                 {
-                    case silentCrushAndRaise:
+                    case CeilingType::SilentCrushAndRaise:
                         startSound(
                             reinterpret_cast<Mobj*>(&ceiling.sector->soundorg),
                             sfx_pstop);
                         [[fallthrough]];
-                    case crushAndRaise:
+                    case CeilingType::CrushAndRaise:
                         ceiling.speed = CEILSPEED;
                         [[fallthrough]];
-                    case fastCrushAndRaise:
+                    case CeilingType::FastCrushAndRaise:
                         ceiling.direction = 1;
                         break;
 
-                    case lowerAndCrush:
-                    case lowerToFloor:
+                    case CeilingType::LowerAndCrush:
+                    case CeilingType::LowerToFloor:
                         removeActiveCeiling(ceiling);
                         break;
 
-                    default:
+                    case CeilingType::RaiseToHighest:
                         break;
                 }
             }
-            else // ( res != pastdest )
+            else // ( res != MoveResult::PastDest )
             {
-                if (res == crushed)
+                if (res == MoveResult::Crushed)
                 {
                     switch (ceiling.type)
                     {
-                        case silentCrushAndRaise:
-                        case crushAndRaise:
-                        case lowerAndCrush:
+                        case CeilingType::SilentCrushAndRaise:
+                        case CeilingType::CrushAndRaise:
+                        case CeilingType::LowerAndCrush:
                             ceiling.speed = CEILSPEED / 8;
                             break;
 
-                        default:
+                        case CeilingType::LowerToFloor:
+                        case CeilingType::RaiseToHighest:
+                        case CeilingType::FastCrushAndRaise:
                             break;
                     }
                 }
@@ -172,11 +184,14 @@ int doCeiling(Line& line, CeilingType type)
     // Reactivate in-stasis ceilings...for certain types.
     switch (type)
     {
-        case fastCrushAndRaise:
-        case silentCrushAndRaise:
-        case crushAndRaise:
+        case CeilingType::FastCrushAndRaise:
+        case CeilingType::SilentCrushAndRaise:
+        case CeilingType::CrushAndRaise:
             activateInStasisCeiling(line);
-        default:
+            break;
+        case CeilingType::LowerToFloor:
+        case CeilingType::RaiseToHighest:
+        case CeilingType::LowerAndCrush:
             break;
     }
 
@@ -196,7 +211,7 @@ int doCeiling(Line& line, CeilingType type)
 
         switch (type)
         {
-            case fastCrushAndRaise:
+            case CeilingType::FastCrushAndRaise:
                 ceiling->crush = true;
                 ceiling->topheight = sec->ceilingheight;
                 ceiling->bottomheight = sec->floorheight + (8 * FRACUNIT);
@@ -204,21 +219,21 @@ int doCeiling(Line& line, CeilingType type)
                 ceiling->speed = CEILSPEED * 2;
                 break;
 
-            case silentCrushAndRaise:
-            case crushAndRaise:
+            case CeilingType::SilentCrushAndRaise:
+            case CeilingType::CrushAndRaise:
                 ceiling->crush = true;
                 ceiling->topheight = sec->ceilingheight;
                 [[fallthrough]];
-            case lowerAndCrush:
-            case lowerToFloor:
+            case CeilingType::LowerAndCrush:
+            case CeilingType::LowerToFloor:
                 ceiling->bottomheight = sec->floorheight;
-                if (type != lowerToFloor)
+                if (type != CeilingType::LowerToFloor)
                     ceiling->bottomheight += 8 * FRACUNIT;
                 ceiling->direction = -1;
                 ceiling->speed = CEILSPEED;
                 break;
 
-            case raiseToHighest:
+            case CeilingType::RaiseToHighest:
                 ceiling->topheight = findHighestCeilingSurrounding(*sec);
                 ceiling->direction = 1;
                 ceiling->speed = CEILSPEED;

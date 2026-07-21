@@ -256,7 +256,12 @@ void initHud()
 {
     auto& font = hudFont();
 
-    if (french)
+    // Preserved vanilla bug: this tests the enumerator `french` (value 1, always
+    // true) rather than `gameVersion().language == Language::French`, so the French
+    // shift table is always selected. Kept byte-exact - the 1993 source is identical
+    // and the frame goldens record it. static_cast makes the always-true test compile
+    // and visible.
+    if (static_cast<int>(Language::French))
         shiftxform = french_shiftxform.data();
     else
         shiftxform = english_shiftxform.data();
@@ -319,9 +324,9 @@ void startHud()
 
     switch (gameVersion().gamemode)
     {
-        case shareware:
-        case registered:
-        case retail:
+        case GameMode::Shareware:
+        case GameMode::Registered:
+        case GameMode::Retail:
             s = hudTitle();
             break;
 
@@ -334,7 +339,7 @@ void startHud()
                     break;
             */
 
-        case commercial:
+        case GameMode::Commercial:
         default:
             s = hudTitle2();
             break;
@@ -438,7 +443,7 @@ void hudTicker()
                             msg.message_nottobefuckedwith = true;
                             msg.message_on = true;
                             msg.message_counter = HU_MSGTIMEOUT;
-                            if (gameVersion().gamemode == commercial)
+                            if (gameVersion().gamemode == GameMode::Commercial)
                                 startSound(nullptr, sfx_radio);
                             else
                                 startSound(nullptr, sfx_tink);
@@ -505,16 +510,16 @@ bool hudResponder(Event& ev)
 
     if (ev.data1 == KEY_RSHIFT)
     {
-        chat.shiftdown = ev.type == ev_keydown;
+        chat.shiftdown = ev.type == EventType::KeyDown;
         return false;
     }
     else if (ev.data1 == KEY_RALT || ev.data1 == KEY_LALT)
     {
-        chat.altdown = ev.type == ev_keydown;
+        chat.altdown = ev.type == EventType::KeyDown;
         return false;
     }
 
-    if (ev.type != ev_keydown)
+    if (ev.type != EventType::KeyDown)
         return false;
 
     if (!hud.chat_on)
@@ -589,7 +594,9 @@ bool hudResponder(Event& ev)
         }
         else
         {
-            if (french)
+            // Preserved vanilla bug: always-true `french` enumerator test (see
+            // HU_Init above), so foreign translation is always applied.
+            if (static_cast<int>(Language::French))
                 c = foreignTranslation(c);
             if (chat.shiftdown || (c >= 'a' && c <= 'z'))
                 c = shiftxform[c];

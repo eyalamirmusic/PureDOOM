@@ -152,12 +152,12 @@ struct Side
 //
 namespace Doom
 {
-enum SlopeType
+enum class SlopeType
 {
-    ST_HORIZONTAL,
-    ST_VERTICAL,
-    ST_POSITIVE,
-    ST_NEGATIVE
+    Horizontal,
+    Vertical,
+    Positive,
+    Negative
 };
 } // namespace Doom
 

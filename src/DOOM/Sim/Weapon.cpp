@@ -207,12 +207,12 @@ bool checkAmmo(Player& player)
     do
     {
         if (player.weaponowned[wp_plasma] && player.ammo[am_cell]
-            && (version.gamemode != shareware))
+            && (version.gamemode != GameMode::Shareware))
         {
             player.pendingweapon = wp_plasma;
         }
         else if (player.weaponowned[wp_supershotgun] && player.ammo[am_shell] > 2
-                 && (version.gamemode == commercial))
+                 && (version.gamemode == GameMode::Commercial))
         {
             player.pendingweapon = wp_supershotgun;
         }
@@ -237,7 +237,7 @@ bool checkAmmo(Player& player)
             player.pendingweapon = wp_missile;
         }
         else if (player.weaponowned[wp_bfg] && player.ammo[am_cell] > 40
-                 && (version.gamemode != shareware))
+                 && (version.gamemode != GameMode::Shareware))
         {
             player.pendingweapon = wp_bfg;
         }
@@ -384,7 +384,7 @@ void lower(Player& player, PspDef& psp)
         return;
 
     // Player is dead.
-    if (player.playerstate == PST_DEAD)
+    if (player.playerstate == PlayerLifeState::Dead)
     {
         psp.sy = WEAPONBOTTOM;
 

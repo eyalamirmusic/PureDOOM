@@ -15,7 +15,7 @@ namespace Doom
 // onto the members. None is hashed, so the move is golden-neutral like the rest.
 struct StartupDefaults
 {
-    Skill startskill = sk_baby; // default skill (vanilla zero-inits this)
+    Skill startskill = Skill::Baby; // default skill (vanilla zero-inits this)
     int startepisode = 0; // default episode
     int startmap = 0; // default map
 

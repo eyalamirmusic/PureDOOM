@@ -44,13 +44,13 @@ void hitSlideLine(Line* ld)
 {
     auto& scratch = actionScratch();
 
-    if (ld->slopetype == ST_HORIZONTAL)
+    if (ld->slopetype == SlopeType::Horizontal)
     {
         scratch.tmymove = fixed_t {};
         return;
     }
 
-    if (ld->slopetype == ST_VERTICAL)
+    if (ld->slopetype == SlopeType::Vertical)
     {
         scratch.tmxmove = fixed_t {};
         return;

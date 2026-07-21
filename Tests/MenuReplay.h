@@ -19,7 +19,7 @@
 // sliders, the mouse and sound submenus, episode and skill select, the help
 // pages, load/save, the quit prompt, and the title-screen F-keys - but it never
 // commits: it never starts, loads or saves a game, and it answers the quit and
-// nightmare prompts with "no". So gamestate never leaves Doom::GS_DEMOSCREEN and the
+// nightmare prompts with "no". So gamestate never leaves Doom::GameState::DemoScreen and the
 // process is never taken down, while nearly every branch of Doom::menuResponder and
 // Doom::drawMenu still runs.
 
@@ -107,7 +107,7 @@ inline MenuScript menuScript()
     return s;
 }
 
-// Doom::GS_DEMOSCREEN, as doomSimGameState reports it (the Doom::GameState enum's fourth
+// Doom::GameState::DemoScreen, as doomSimGameState reports it (the Doom::GameState enum's fourth
 // member). The whole script must stay on the title screen; if it drifts off, the
 // background is no longer the deterministic picture the golden was recorded over.
 constexpr auto gsDemoScreen = 3;

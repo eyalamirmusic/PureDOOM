@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -26,7 +26,7 @@
 // States for the intermission
 namespace Doom
 {
-enum IntermissionPhase
+enum class IntermissionPhase
 {
     NoState = -1,
     StatCount,
@@ -40,7 +40,6 @@ enum IntermissionPhase
 // draws the intermission directly into the screen buffer.
 
 // Setup for an intermission screen.
-
 
 //-----------------------------------------------------------------------------
 //

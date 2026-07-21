@@ -20,7 +20,8 @@ namespace Doom
 // golden-neutral.
 struct GameSession
 {
-    Skill gameskill = sk_baby; // the skill being played (vanilla zero-inits this)
+    Skill gameskill =
+        Skill::Baby; // the skill being played (vanilla zero-inits this)
     int gameepisode = 0; // the episode being played
     int gamemap = 0; // the map being played
 

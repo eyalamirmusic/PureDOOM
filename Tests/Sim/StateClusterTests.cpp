@@ -74,12 +74,13 @@ auto tOtherDefaults = test("StateClusters/otherClusterDefaults") = []
               && DisplayState {}.borderdrawcount == 0,
           "DisplayState frame-diff defaults");
     check(StatusBarState {}.st_stopped == true, "StatusBarState parked flag");
-    check(AutomapView {}.stopped == true && AutomapView {}.finit_width == Doom::SCREENWIDTH
+    check(AutomapView {}.stopped == true
+              && AutomapView {}.finit_width == Doom::SCREENWIDTH
               && AutomapView {}.finit_height == Doom::SCREENHEIGHT - 32,
           "AutomapView closed flag and frame size");
     // The one non-zero-looking default: IntermissionPhase zero-init lands on StatCount, since NoState is
     // -1, not 0. A migration that "helpfully" defaulted state to NoState would change the value.
-    check(IntermissionState {}.state == StatCount
+    check(IntermissionState {}.state == IntermissionPhase::StatCount
               && IntermissionState {}.snl_pointeron == false
               && IntermissionState {}.bg == nullptr,
           "IntermissionState zero-init state, cleared pointer flag, null patches");

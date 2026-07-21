@@ -500,7 +500,7 @@ void fillBackScreen()
     if (view.scaledviewwidth == 320)
         return;
 
-    auto name = gameVersion().gamemode == commercial ? name2 : name1;
+    auto name = gameVersion().gamemode == GameMode::Commercial ? name2 : name1;
 
     src = static_cast<byte*>(Doom::cacheLumpName(name));
     dest = screens[1];

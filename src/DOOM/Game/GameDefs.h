@@ -35,39 +35,39 @@ constexpr int VERSION = 110;
 //  to handle IWAD dependend animations etc.
 namespace Doom
 {
-enum GameMode
+enum class GameMode
 {
-    shareware, // DOOM 1 shareware, E1, M9
-    registered, // DOOM 1 registered, E3, M27
-    commercial, // DOOM 2 retail, E1 M34
+    Shareware, // DOOM 1 shareware, E1, M9
+    Registered, // DOOM 1 registered, E3, M27
+    Commercial, // DOOM 2 retail, E1 M34
     // DOOM 2 german edition not handled
-    retail, // DOOM 1 retail, E4, M36
-    indetermined // Well, no IWAD found.
+    Retail, // DOOM 1 retail, E4, M36
+    Indetermined // Well, no IWAD found.
 };
 } // namespace Doom
 
 // Mission packs - might be useful for TC stuff?
 namespace Doom
 {
-enum GameMission
+enum class GameMission
 {
-    doom, // DOOM 1
-    doom2, // DOOM 2
-    pack_tnt, // TNT mission pack
-    pack_plut, // Plutonia pack
-    none
+    Doom, // DOOM 1
+    Doom2, // DOOM 2
+    PackTnt, // TNT mission pack
+    PackPlut, // Plutonia pack
+    None
 };
 } // namespace Doom
 
 // Identify language to use, software localization.
 namespace Doom
 {
-enum Language
+enum class Language
 {
-    english,
-    french,
-    german,
-    unknown
+    English,
+    French,
+    German,
+    Unknown
 };
 } // namespace Doom
 
@@ -113,12 +113,12 @@ namespace Doom
 // The underlying type is stated because the enum also carries GS_FORCE_WIPE
 // below, which is outside the enumerators' range - and without a fixed type,
 // holding a value outside that range is UB (UBSan flagged every load of it).
-enum GameState : int
+enum class GameState : int
 {
-    GS_LEVEL,
-    GS_INTERMISSION,
-    GS_FINALE,
-    GS_DEMOSCREEN
+    Level,
+    Intermission,
+    Finale,
+    DemoScreen
 };
 
 // The force-wipe/redraw sentinel: no real screen, written to wipegamestate (and
@@ -146,13 +146,13 @@ constexpr int MTF_AMBUSH = 8;
 
 namespace Doom
 {
-enum Skill
+enum class Skill
 {
-    sk_baby,
-    sk_easy,
-    sk_medium,
-    sk_hard,
-    sk_nightmare
+    Baby,
+    Easy,
+    Medium,
+    Hard,
+    Nightmare
 };
 } // namespace Doom
 

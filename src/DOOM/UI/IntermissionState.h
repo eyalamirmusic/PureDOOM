@@ -44,8 +44,8 @@ struct IntermissionState
 {
     // Timing and the count-up state machine.
     int acceleratestage = 0; // skip the current stage's delay
-    IntermissionPhase state =
-        StatCount; // zero-init lands here (NoState is -1); reset by wiInit* before use
+    IntermissionPhase state = IntermissionPhase::
+        StatCount; // zero-init lands here (IntermissionPhase::NoState is -1); reset by wiInit* before use
     int cnt = 0; // general timing
     int bcnt = 0; // background-animation timing
     int dm_state = 0; // deathmatch table sub-state

@@ -212,7 +212,7 @@ void loadThings(int lump)
         bool spawn = true;
 
         // Do not spawn cool, new monsters if !commercial
-        if (gameVersion().gamemode != commercial)
+        if (gameVersion().gamemode != GameMode::Commercial)
         {
             switch (mt->type)
             {
@@ -268,15 +268,15 @@ void loadLineDefs(int lump)
         ld->dy = v2->y - v1->y;
 
         if (!ld->dx)
-            ld->slopetype = ST_VERTICAL;
+            ld->slopetype = SlopeType::Vertical;
         else if (!ld->dy)
-            ld->slopetype = ST_HORIZONTAL;
+            ld->slopetype = SlopeType::Horizontal;
         else
         {
             if (FixedDiv(ld->dy, ld->dx).isPositive())
-                ld->slopetype = ST_POSITIVE;
+                ld->slopetype = SlopeType::Positive;
             else
-                ld->slopetype = ST_NEGATIVE;
+                ld->slopetype = SlopeType::Negative;
         }
 
         if (v1->x < v2->x)
@@ -485,7 +485,7 @@ void setupLevel(int episode, int map, int, Skill)
     // find map name
     auto lumpname = std::string {};
 
-    if (gameVersion().gamemode == commercial)
+    if (gameVersion().gamemode == GameMode::Commercial)
     {
         if (map < 10)
             lumpname = concat("map0", map);

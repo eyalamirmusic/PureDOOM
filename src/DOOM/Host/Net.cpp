@@ -435,11 +435,15 @@ void netCommand()
 #if defined(I_NET_ENABLED)
     auto& net = netState();
 
-    if (net.doomcom->command == CMD_SEND)
+    // command is a short wire field; hSendPacket/hGetPacket write the enum through
+    // the same cast. This block is never compiled here (I_NET_ENABLED is unset in
+    // every build in this repository), so nothing gates it but inspection.
+    if (static_cast<NetCommandKind>(net.doomcom->command) == NetCommandKind::Send)
     {
         netsend();
     }
-    else if (net.doomcom->command == CMD_GET)
+    else if (static_cast<NetCommandKind>(net.doomcom->command)
+             == NetCommandKind::Get)
     {
         netget();
     }

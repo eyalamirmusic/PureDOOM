@@ -85,7 +85,7 @@ bool giveAmmo(Player& player, AmmoType ammo, int num)
 
     const auto skill = gameSession().gameskill;
 
-    if (skill == sk_baby || skill == sk_nightmare)
+    if (skill == Skill::Baby || skill == Skill::Nightmare)
     {
         // give double ammo in trainer mode,
         // you'll need in nightmare
@@ -362,7 +362,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
             break;
 
         case SPR_MEGA:
-            if (gameVersion().gamemode != commercial)
+            if (gameVersion().gamemode != GameMode::Commercial)
                 return;
             player->health = 200;
             player->mo->health = player->health;
@@ -657,7 +657,7 @@ void killMobj(Mobj* source, Mobj& target)
             target.player->frags[target.player - players_.players.data()]++;
 
         target.flags &= ~MF_SOLID;
-        target.player->playerstate = PST_DEAD;
+        target.player->playerstate = PlayerLifeState::Dead;
         dropWeapon(*target.player);
 
         if (target.player == &players_.players[players_.consoleplayer]
@@ -736,7 +736,7 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
     }
 
     Player* player = target.player;
-    if (player && gameSession().gameskill == sk_baby)
+    if (player && gameSession().gameskill == Skill::Baby)
         damage >>= 1; // take half damage in trainer mode
 
     // Some close combat weapons should not

@@ -190,7 +190,7 @@ void eacpDoomSnapshotTic()
 {
     int i;
 
-    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || sectors == 0
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level || sectors == 0
         || numsectors <= 0)
         return;
 
@@ -219,7 +219,8 @@ void eacpDoomSnapshotTic()
 
 int eacpDoomViewActive()
 {
-    return Doom::gameFlow().gamestate == Doom::GS_LEVEL && Doom::gameClock().gametic;
+    return Doom::gameFlow().gamestate == Doom::GameState::Level
+           && Doom::gameClock().gametic;
 }
 
 int eacpDoomBuildWipe(unsigned char* outStart, unsigned char* outOffsets)
@@ -301,8 +302,9 @@ void eacpDoomRevealAutomap()
 
     Doom::Player* player = &players_.players[players_.displayplayer];
 
-    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || !Doom::gameClock().gametic
-        || !Doom::overlayState().automapactive || player->mo == 0)
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level
+        || !Doom::gameClock().gametic || !Doom::overlayState().automapactive
+        || player->mo == 0)
         return;
 
     Doom::setupFrame(*player);
@@ -346,7 +348,8 @@ static void eacpDrawUnderLayers()
     auto& overlay = Doom::overlayState();
     auto& view = Doom::viewWindow();
 
-    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || !Doom::gameClock().gametic)
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level
+        || !Doom::gameClock().gametic)
         return;
 
     if (overlay.automapactive)
@@ -1564,7 +1567,7 @@ void eacpDoomGetHudSprites(EacpDoomHudSprite* out)
 
     eacpEnsureTextureData();
 
-    if (!eacpTexturesReady || Doom::gameFlow().gamestate != Doom::GS_LEVEL
+    if (!eacpTexturesReady || Doom::gameFlow().gamestate != Doom::GameState::Level
         || player->mo == 0)
         return;
 
@@ -1704,8 +1707,9 @@ int eacpDoomBuildGeometry(const EacpDoomCamera* camera,
     eacpAlpha = alpha < 0.0f ? 0.0f : (alpha > 1.0f ? 1.0f : alpha);
     eacpEnsureTextureData();
 
-    if (Doom::gameFlow().gamestate != Doom::GS_LEVEL || vertices == 0 || draws == 0
-        || camera == 0 || textureCount <= 0 || lines == 0 || !eacpTexturesReady)
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level || vertices == 0
+        || draws == 0 || camera == 0 || textureCount <= 0 || lines == 0
+        || !eacpTexturesReady)
         return 0;
 
     eacpEnsureLevel();
@@ -2008,7 +2012,7 @@ int eacpDoomBuildAutomap(const EacpDoomCamera* camera,
     EacpAutomapEmitter em;
 
     if (!Doom::overlayState().automapactive
-        || Doom::gameFlow().gamestate != Doom::GS_LEVEL || camera == 0
+        || Doom::gameFlow().gamestate != Doom::GameState::Level || camera == 0
         || vertices == 0 || lines == 0)
         return 0;
 

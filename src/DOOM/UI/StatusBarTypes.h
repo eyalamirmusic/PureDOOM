@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -35,7 +35,6 @@ constexpr int ST_WIDTH = SCREENWIDTH;
 constexpr int ST_Y = SCREENHEIGHT - ST_HEIGHT;
 } // namespace Doom
 
-
 //
 // STATUS BAR
 //
@@ -50,31 +49,26 @@ constexpr int ST_Y = SCREENHEIGHT - ST_HEIGHT;
 
 // Called by startup code.
 
-
 // States for status bar code.
 namespace Doom
 {
-enum StatusBarMode
+enum class StatusBarMode
 {
     AutomapState,
     FirstPersonState
 };
 } // namespace Doom
 
-
 // States for the chat code.
 namespace Doom
 {
-enum ChatState
+enum class ChatState
 {
     StartChatState,
     WaitDestState,
     GetChatState
 };
 } // namespace Doom
-
-
-
 
 //-----------------------------------------------------------------------------
 //

@@ -8,7 +8,7 @@ namespace Doom
 // The top-level game state, the pending action that drives it, and the wipe that guards its
 // transitions - the game-flow triple g_game owns. gameaction is the deferred action Doom::gameTicker
 // dispatches at the top of each tic (load a level, start a game, run a demo, complete the
-// level), cleared to ga_nothing once run. gamestate is which screen the game is on - a level,
+// level), cleared to GameAction::Nothing once run. gamestate is which screen the game is on - a level,
 // the intermission, a finale, or the title/demo loop - read all over the loop, the HUD and the
 // status bar to decide what to draw and what input means. wipegamestate is the state the last
 // displayed frame belonged to; Doom::displayFrame melts the screen whenever the two differ (and
@@ -23,15 +23,15 @@ namespace Doom
 // references in step. gamestate is hashed by the probe, but a reference reads the identical
 // value, so the move is golden-neutral. gameaction (defined in Game/Game.cpp, externed only in
 // d_event.h, read by the loop and UI/Finale) completes the triple - transient within a tic, so
-// ga_nothing at the hash point, and golden-neutral through the reference all the same.
+// GameAction::Nothing at the hash point, and golden-neutral through the reference all the same.
 struct GameFlow
 {
     GameAction gameaction =
-        ga_nothing; // the deferred action Doom::gameTicker runs each tic
+        GameAction::Nothing; // the deferred action Doom::gameTicker runs each tic
     GameState gamestate =
-        GS_LEVEL; // which screen we are on (vanilla zero-inits this)
-    GameState wipegamestate =
-        GS_DEMOSCREEN; // the last drawn frame's state; GS_FORCE_WIPE forces a wipe
+        GameState::Level; // which screen we are on (vanilla zero-inits this)
+    GameState wipegamestate = GameState::
+        DemoScreen; // the last drawn frame's state; GS_FORCE_WIPE forces a wipe
 
     // A screen melt is currently animating: Doom::displayFrame raises it, doom_update drains
     // it via Doom::updateWipe instead of Doom::doomLoop, and the eacp compositor reads it.

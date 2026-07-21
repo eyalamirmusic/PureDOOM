@@ -44,25 +44,29 @@ void verticalDoor(Door& door)
             {
                 switch (door.type)
                 {
-                    case blazeRaise:
+                    case DoorType::BlazeRaise:
                         door.direction = -1; // time to go back down
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
                                    sfx_bdcls);
                         break;
 
-                    case door_normal:
+                    case DoorType::Normal:
                         door.direction = -1; // time to go back down
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
                                    sfx_dorcls);
                         break;
 
-                    case close30ThenOpen:
+                    case DoorType::Close30ThenOpen:
                         door.direction = 1;
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
                                    sfx_doropn);
                         break;
 
-                    default:
+                    case DoorType::Close:
+                    case DoorType::Open:
+                    case DoorType::RaiseIn5Mins:
+                    case DoorType::BlazeOpen:
+                    case DoorType::BlazeClose:
                         break;
                 }
             }
@@ -74,14 +78,20 @@ void verticalDoor(Door& door)
             {
                 switch (door.type)
                 {
-                    case raiseIn5Mins:
+                    case DoorType::RaiseIn5Mins:
                         door.direction = 1;
-                        door.type = door_normal;
+                        door.type = DoorType::Normal;
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
                                    sfx_doropn);
                         break;
 
-                    default:
+                    case DoorType::Normal:
+                    case DoorType::Close30ThenOpen:
+                    case DoorType::Close:
+                    case DoorType::Open:
+                    case DoorType::BlazeRaise:
+                    case DoorType::BlazeOpen:
+                    case DoorType::BlazeClose:
                         break;
                 }
             }
@@ -95,42 +105,49 @@ void verticalDoor(Door& door)
                             false,
                             1,
                             door.direction);
-            if (res == pastdest)
+            if (res == MoveResult::PastDest)
             {
                 switch (door.type)
                 {
-                    case blazeRaise:
-                    case blazeClose:
+                    case DoorType::BlazeRaise:
+                    case DoorType::BlazeClose:
                         door.sector->specialdata = nullptr;
                         removeThinker(door); // unlink and free
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
                                    sfx_bdcls);
                         break;
 
-                    case door_normal:
-                    case door_close:
+                    case DoorType::Normal:
+                    case DoorType::Close:
                         door.sector->specialdata = nullptr;
                         removeThinker(door); // unlink and free
                         break;
 
-                    case close30ThenOpen:
+                    case DoorType::Close30ThenOpen:
                         door.direction = 0;
                         door.topcountdown = 35 * 30;
                         break;
 
-                    default:
+                    case DoorType::Open:
+                    case DoorType::RaiseIn5Mins:
+                    case DoorType::BlazeOpen:
                         break;
                 }
             }
-            else if (res == crushed)
+            else if (res == MoveResult::Crushed)
             {
                 switch (door.type)
                 {
-                    case blazeClose:
-                    case door_close: // DO NOT GO BACK UP!
+                    case DoorType::BlazeClose:
+                    case DoorType::Close: // DO NOT GO BACK UP!
                         break;
 
-                    default:
+                    case DoorType::Normal:
+                    case DoorType::Close30ThenOpen:
+                    case DoorType::Open:
+                    case DoorType::RaiseIn5Mins:
+                    case DoorType::BlazeRaise:
+                    case DoorType::BlazeOpen:
                         door.direction = 1;
                         startSound(reinterpret_cast<Mobj*>(&door.sector->soundorg),
                                    sfx_doropn);
@@ -144,24 +161,26 @@ void verticalDoor(Door& door)
             res = movePlane(
                 *door.sector, door.speed, door.topheight, false, 1, door.direction);
 
-            if (res == pastdest)
+            if (res == MoveResult::PastDest)
             {
                 switch (door.type)
                 {
-                    case blazeRaise:
-                    case door_normal:
+                    case DoorType::BlazeRaise:
+                    case DoorType::Normal:
                         door.direction = 0; // wait at top
                         door.topcountdown = door.topwait;
                         break;
 
-                    case close30ThenOpen:
-                    case blazeOpen:
-                    case door_open:
+                    case DoorType::Close30ThenOpen:
+                    case DoorType::BlazeOpen:
+                    case DoorType::Open:
                         door.sector->specialdata = nullptr;
                         removeThinker(door); // unlink and free
                         break;
 
-                    default:
+                    case DoorType::Close:
+                    case DoorType::RaiseIn5Mins:
+                    case DoorType::BlazeClose:
                         break;
                 }
             }
@@ -246,7 +265,7 @@ int doDoor(Line& line, DoorType type)
 
         switch (type)
         {
-            case blazeClose:
+            case DoorType::BlazeClose:
                 door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
@@ -255,7 +274,7 @@ int doDoor(Line& line, DoorType type)
                            sfx_bdcls);
                 break;
 
-            case door_close:
+            case DoorType::Close:
                 door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
                 door->direction = -1;
@@ -263,15 +282,15 @@ int doDoor(Line& line, DoorType type)
                            sfx_dorcls);
                 break;
 
-            case close30ThenOpen:
+            case DoorType::Close30ThenOpen:
                 door->topheight = sec->ceilingheight;
                 door->direction = -1;
                 startSound(reinterpret_cast<Mobj*>(&door->sector->soundorg),
                            sfx_dorcls);
                 break;
 
-            case blazeRaise:
-            case blazeOpen:
+            case DoorType::BlazeRaise:
+            case DoorType::BlazeOpen:
                 door->direction = 1;
                 door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
@@ -281,8 +300,8 @@ int doDoor(Line& line, DoorType type)
                                sfx_bdopn);
                 break;
 
-            case door_normal:
-            case door_open:
+            case DoorType::Normal:
+            case DoorType::Open:
                 door->direction = 1;
                 door->topheight = findLowestCeilingSurrounding(*sec);
                 door->topheight -= 4 * FRACUNIT;
@@ -291,7 +310,7 @@ int doDoor(Line& line, DoorType type)
                                sfx_doropn);
                 break;
 
-            default:
+            case DoorType::RaiseIn5Mins:
                 break;
         }
     }
@@ -412,23 +431,23 @@ void verticalDoor(Line& line, Mobj& thing)
         case 26:
         case 27:
         case 28:
-            door->type = door_normal;
+            door->type = DoorType::Normal;
             break;
 
         case 31:
         case 32:
         case 33:
         case 34:
-            door->type = door_open;
+            door->type = DoorType::Open;
             line.special = 0;
             break;
 
         case 117: // blazing door raise
-            door->type = blazeRaise;
+            door->type = DoorType::BlazeRaise;
             door->speed = VDOORSPEED * 4;
             break;
         case 118: // blazing door open
-            door->type = blazeOpen;
+            door->type = DoorType::BlazeOpen;
             line.special = 0;
             door->speed = VDOORSPEED * 4;
             break;
@@ -453,7 +472,7 @@ void spawnDoorCloseIn30(Sector& sec)
 
     door->sector = &sec;
     door->direction = 0;
-    door->type = door_normal;
+    door->type = DoorType::Normal;
     door->speed = VDOORSPEED;
     door->topcountdown = 30 * 35;
 }
@@ -472,7 +491,7 @@ void spawnDoorRaiseIn5Mins(Sector& sec, int)
 
     door->sector = &sec;
     door->direction = 2;
-    door->type = raiseIn5Mins;
+    door->type = DoorType::RaiseIn5Mins;
     door->speed = VDOORSPEED;
     door->topheight = findLowestCeilingSurrounding(sec);
     door->topheight -= 4 * FRACUNIT;

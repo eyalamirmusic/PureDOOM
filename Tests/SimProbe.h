@@ -227,7 +227,7 @@ int doomSimStepTic();
 // before it starts hashing - the golden pins the menu, not the entry wipe.
 int doomSimIsWiping();
 
-// The current gamestate as a small int (Doom::GS_LEVEL=0 .. Doom::GS_DEMOSCREEN=3), so
+// The current gamestate as a small int (Doom::GameState::Level=0 .. Doom::GameState::DemoScreen=3), so
 // the harness can assert the background stayed the title screen for the whole
 // script (the attract loop would otherwise advance to a demo after ~170
 // tics), and whether the menu is currently open.

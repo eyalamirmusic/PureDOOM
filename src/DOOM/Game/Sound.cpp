@@ -180,7 +180,7 @@ void startLevelSound()
     // start new music for the level
     sound.mus_paused = false;
 
-    if (gameVersion().gamemode == commercial)
+    if (gameVersion().gamemode == GameMode::Commercial)
         mnum = mus_runnin + session.gamemap - 1;
     else
     {

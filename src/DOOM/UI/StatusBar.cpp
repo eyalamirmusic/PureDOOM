@@ -418,7 +418,7 @@ bool statusBarResponder(Event& ev)
     auto& bar = statusBarState();
 
     // Filter automap on/off.
-    if (ev.type == ev_keyup && ((ev.data1 & 0xffff0000) == AM_MSGHEADER))
+    if (ev.type == EventType::KeyUp && ((ev.data1 & 0xffff0000) == AM_MSGHEADER))
     {
         switch (ev.data1)
         {
@@ -433,12 +433,12 @@ bool statusBarResponder(Event& ev)
     }
 
     // if a user keypress...
-    else if (ev.type == ev_keydown)
+    else if (ev.type == EventType::KeyDown)
     {
         if (!gameSession().netgame)
         {
             // b. - enabled for more debug fun.
-            // if (gameskill != sk_nightmare) {
+            // if (gameskill != Skill::Nightmare) {
 
             // 'dqd' cheat for toggleable god mode
             if (checkCheat(cheat_god, ev.data1))
@@ -494,7 +494,7 @@ bool statusBarResponder(Event& ev)
                 bar.plyr->message = STSTR_MUS;
                 const auto buf = getParam(cheat_mus);
 
-                if (gameVersion().gamemode == commercial)
+                if (gameVersion().gamemode == GameMode::Commercial)
                 {
                     musnum = mus_runnin + (buf[0] - '0') * 10 + buf[1] - '0' - 1;
 
@@ -585,7 +585,7 @@ bool statusBarResponder(Event& ev)
 
             const auto& version = gameVersion();
 
-            if (version.gamemode == commercial)
+            if (version.gamemode == GameMode::Commercial)
             {
                 epsd = 0;
                 map = (buf[0] - '0') * 10 + buf[1] - '0';
@@ -604,16 +604,19 @@ bool statusBarResponder(Event& ev)
                 return false;
 
             // Ohmygod - this is not going to work.
-            if ((version.gamemode == retail) && ((epsd > 4) || (map > 9)))
+            if ((version.gamemode == GameMode::Retail) && ((epsd > 4) || (map > 9)))
                 return false;
 
-            if ((version.gamemode == registered) && ((epsd > 3) || (map > 9)))
+            if ((version.gamemode == GameMode::Registered)
+                && ((epsd > 3) || (map > 9)))
                 return false;
 
-            if ((version.gamemode == shareware) && ((epsd > 1) || (map > 9)))
+            if ((version.gamemode == GameMode::Shareware)
+                && ((epsd > 1) || (map > 9)))
                 return false;
 
-            if ((version.gamemode == commercial) && ((epsd > 1) || (map > 34)))
+            if ((version.gamemode == GameMode::Commercial)
+                && ((epsd > 1) || (map > 34)))
                 return false;
 
             // So be it.

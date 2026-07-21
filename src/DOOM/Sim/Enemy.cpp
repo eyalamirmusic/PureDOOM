@@ -602,7 +602,7 @@ void keenDie(Mobj& mo)
     }
 
     junk.tag = 666;
-    doDoor(junk, door_open);
+    doDoor(junk, DoorType::Open);
 }
 
 //
@@ -726,7 +726,7 @@ void chase(Mobj& actor)
     if (actor.flags & MF_JUSTATTACKED)
     {
         actor.flags &= ~MF_JUSTATTACKED;
-        if (session.gameskill != sk_nightmare && !opts.fastparm)
+        if (session.gameskill != Skill::Nightmare && !opts.fastparm)
             newChaseDir(actor);
         return;
     }
@@ -744,7 +744,8 @@ void chase(Mobj& actor)
     // check for missile attack
     if (actor.info->missilestate)
     {
-        if (session.gameskill < sk_nightmare && !opts.fastparm && actor.movecount)
+        if (session.gameskill < Skill::Nightmare && !opts.fastparm
+            && actor.movecount)
         {
             goto nomissile;
         }
@@ -1492,7 +1493,7 @@ void bossDeath(Mobj& mo)
     const auto& session = gameSession();
     const auto& players_ = playerState();
 
-    if (version.gamemode == commercial)
+    if (version.gamemode == GameMode::Commercial)
     {
         if (session.gamemap != 7)
             return;
@@ -1584,21 +1585,21 @@ void bossDeath(Mobj& mo)
     }
 
     // victory!
-    if (version.gamemode == commercial)
+    if (version.gamemode == GameMode::Commercial)
     {
         if (session.gamemap == 7)
         {
             if (mo.type == MT_FATSO)
             {
                 junk.tag = 666;
-                doFloor(junk, lowerFloorToLowest);
+                doFloor(junk, FloorType::LowerFloorToLowest);
                 return;
             }
 
             if (mo.type == MT_BABY)
             {
                 junk.tag = 667;
-                doFloor(junk, raiseToTexture);
+                doFloor(junk, FloorType::RaiseToTexture);
                 return;
             }
         }
@@ -1609,7 +1610,7 @@ void bossDeath(Mobj& mo)
         {
             case 1:
                 junk.tag = 666;
-                doFloor(junk, lowerFloorToLowest);
+                doFloor(junk, FloorType::LowerFloorToLowest);
                 return;
                 break;
 
@@ -1618,13 +1619,13 @@ void bossDeath(Mobj& mo)
                 {
                     case 6:
                         junk.tag = 666;
-                        doDoor(junk, blazeOpen);
+                        doDoor(junk, DoorType::BlazeOpen);
                         return;
                         break;
 
                     case 8:
                         junk.tag = 666;
-                        doFloor(junk, lowerFloorToLowest);
+                        doFloor(junk, FloorType::LowerFloorToLowest);
                         return;
                         break;
                 }
@@ -1747,7 +1748,7 @@ void brainSpit(Mobj& mo)
     auto& ai = enemyAI();
 
     ai.brainSpitEasy ^= 1;
-    if (gameSession().gameskill <= sk_easy && (!ai.brainSpitEasy))
+    if (gameSession().gameskill <= Skill::Easy && (!ai.brainSpitEasy))
         return;
 
     // shoot a cube at current target
@@ -1829,7 +1830,7 @@ void playerScream(Mobj& mo)
     // Default death sound.
     int sound = sfx_pldeth;
 
-    if ((gameVersion().gamemode == commercial) && (mo.health < -50))
+    if ((gameVersion().gamemode == GameMode::Commercial) && (mo.health < -50))
     {
         // IF THE PLAYER DIES
         // LESS THAN -50% WITHOUT GIBBING

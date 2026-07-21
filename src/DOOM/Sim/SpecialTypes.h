@@ -137,11 +137,11 @@ struct SwitchListEntry
 
 namespace Doom
 {
-enum ButtonWhere
+enum class ButtonWhere
 {
-    top,
-    middle,
-    bottom
+    Top,
+    Middle,
+    Bottom
 };
 } // namespace Doom
 
@@ -176,24 +176,24 @@ constexpr int BUTTONTIME = 35;
 //
 namespace Doom
 {
-enum PlatState
+enum class PlatState
 {
-    up,
-    down,
-    waiting,
-    in_stasis
+    Up,
+    Down,
+    Waiting,
+    InStasis
 };
 } // namespace Doom
 
 namespace Doom
 {
-enum PlatType
+enum class PlatType
 {
-    perpetualRaise,
-    downWaitUpStay,
-    raiseAndChange,
-    raiseToNearestAndChange,
-    blazeDWUS
+    PerpetualRaise,
+    DownWaitUpStay,
+    RaiseAndChange,
+    RaiseToNearestAndChange,
+    BlazeDWUS
 };
 } // namespace Doom
 
@@ -229,16 +229,16 @@ constexpr int MAXPLATS = 30;
 //
 namespace Doom
 {
-enum DoorType
+enum class DoorType
 {
-    door_normal,
-    close30ThenOpen,
-    door_close,
-    door_open,
-    raiseIn5Mins,
-    blazeRaise,
-    blazeOpen,
-    blazeClose
+    Normal,
+    Close30ThenOpen,
+    Close,
+    Open,
+    RaiseIn5Mins,
+    BlazeRaise,
+    BlazeOpen,
+    BlazeClose
 };
 } // namespace Doom
 
@@ -276,14 +276,14 @@ constexpr int VDOORWAIT = 150;
 //
 namespace Doom
 {
-enum CeilingType
+enum class CeilingType
 {
-    lowerToFloor,
-    raiseToHighest,
-    lowerAndCrush,
-    crushAndRaise,
-    fastCrushAndRaise,
-    silentCrushAndRaise
+    LowerToFloor,
+    RaiseToHighest,
+    LowerAndCrush,
+    CrushAndRaise,
+    FastCrushAndRaise,
+    SilentCrushAndRaise
 };
 } // namespace Doom
 
@@ -320,47 +320,47 @@ constexpr int MAXCEILINGS = 30;
 //
 namespace Doom
 {
-enum FloorType
+enum class FloorType
 {
     // lower floor to highest surrounding floor
-    lowerFloor,
+    LowerFloor,
 
     // lower floor to lowest surrounding floor
-    lowerFloorToLowest,
+    LowerFloorToLowest,
 
     // lower floor to highest surrounding floor VERY FAST
-    turboLower,
+    TurboLower,
 
     // raise floor to lowest surrounding CEILING
-    raiseFloor,
+    RaiseFloor,
 
     // raise floor to next highest surrounding floor
-    raiseFloorToNearest,
+    RaiseFloorToNearest,
 
     // raise floor to shortest height texture around it
-    raiseToTexture,
+    RaiseToTexture,
 
     // lower floor to lowest surrounding floor
     //  and change floorpic
-    lowerAndChange,
+    LowerAndChange,
 
-    raiseFloor24,
-    raiseFloor24AndChange,
-    raiseFloorCrush,
+    RaiseFloor24,
+    RaiseFloor24AndChange,
+    RaiseFloorCrush,
 
     // raise to next highest floor, turbo-speed
-    raiseFloorTurbo,
-    donutRaise,
-    raiseFloor512
+    RaiseFloorTurbo,
+    DonutRaise,
+    RaiseFloor512
 };
 } // namespace Doom
 
 namespace Doom
 {
-enum StairType
+enum class StairType
 {
-    build8, // slowly build by 8
-    turbo16 // quickly build by 16
+    Build8, // slowly build by 8
+    Turbo16 // quickly build by 16
 };
 } // namespace Doom
 
@@ -388,11 +388,11 @@ constexpr fixed_t FLOORSPEED = FRACUNIT;
 
 namespace Doom
 {
-enum MoveResult
+enum class MoveResult
 {
-    ok,
-    crushed,
-    pastdest
+    Ok,
+    Crushed,
+    PastDest
 };
 } // namespace Doom
 

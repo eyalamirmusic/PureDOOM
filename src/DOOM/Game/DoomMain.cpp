@@ -174,7 +174,8 @@ void processEvents()
     auto& events_ = eventQueue();
 
     // IF STORE DEMO, DO NOT ACCEPT INPUT
-    if ((gameVersion().gamemode == commercial) && (Doom::wad().find("map01") < 0))
+    if ((gameVersion().gamemode == GameMode::Commercial)
+        && (Doom::wad().find("map01") < 0))
         return;
 
     for (; events_.eventtail != events_.eventhead;)
@@ -237,13 +238,13 @@ void displayFrame()
     else
         wipe = false;
 
-    if (flow.gamestate == GS_LEVEL && clock.gametic)
+    if (flow.gamestate == GameState::Level && clock.gametic)
         Doom::eraseHud();
 
     // do buffered drawing
     switch (flow.gamestate)
     {
-        case GS_LEVEL:
+        case GameState::Level:
             if (!clock.gametic)
                 break;
             if (overlay.automapactive)
@@ -256,15 +257,15 @@ void displayFrame()
             fullscreen = view.viewheight == 200;
             break;
 
-        case GS_INTERMISSION:
+        case GameState::Intermission:
             Doom::drawIntermission();
             break;
 
-        case GS_FINALE:
+        case GameState::Finale:
             Doom::drawFinale();
             break;
 
-        case GS_DEMOSCREEN:
+        case GameState::DemoScreen:
             drawPage();
             break;
     }
@@ -273,28 +274,29 @@ void displayFrame()
     updateNoBlit();
 
     // draw the view directly
-    if (flow.gamestate == GS_LEVEL && !overlay.automapactive && clock.gametic)
+    if (flow.gamestate == GameState::Level && !overlay.automapactive
+        && clock.gametic)
     {
         auto& state = playerState();
         Doom::renderPlayerView(state.players[state.displayplayer]);
     }
 
-    if (flow.gamestate == GS_LEVEL && clock.gametic)
+    if (flow.gamestate == GameState::Level && clock.gametic)
         Doom::drawHud();
 
     // clean up border stuff
-    if (flow.gamestate != oldgamestate && flow.gamestate != GS_LEVEL)
+    if (flow.gamestate != oldgamestate && flow.gamestate != GameState::Level)
         setPalette(static_cast<byte*>((Doom::cacheLumpName("PLAYPAL"))));
 
     // see if the border needs to be initially drawn
-    if (flow.gamestate == GS_LEVEL && oldgamestate != GS_LEVEL)
+    if (flow.gamestate == GameState::Level && oldgamestate != GameState::Level)
     {
         viewactivestate = false; // view was not active
         Doom::fillBackScreen(); // draw the pattern into the back screen
     }
 
     // see if the border needs to be updated to the screen
-    if (flow.gamestate == GS_LEVEL && !overlay.automapactive
+    if (flow.gamestate == GameState::Level && !overlay.automapactive
         && view.scaledviewwidth != 320)
     {
         if (overlay.menuactive || menuactivestate || !viewactivestate)
@@ -472,13 +474,14 @@ void doAdvanceDemo()
     auto& flow = gameFlow();
     const GameMode gamemode = gameVersion().gamemode;
 
-    state.players[state.consoleplayer].playerstate = PST_LIVE; // not reborn
+    state.players[state.consoleplayer].playerstate =
+        PlayerLifeState::Live; // not reborn
     attract.advancedemo = false;
     demoState().usergame = false; // no save / end game here
     refreshFlags().paused = false;
-    flow.gameaction = ga_nothing;
+    flow.gameaction = GameAction::Nothing;
 
-    if (gamemode == retail)
+    if (gamemode == GameMode::Retail)
         attract.demosequence = (attract.demosequence + 1) % 7;
     else
         attract.demosequence = (attract.demosequence + 1) % 6;
@@ -486,13 +489,13 @@ void doAdvanceDemo()
     switch (attract.demosequence)
     {
         case 0:
-            if (gamemode == commercial)
+            if (gamemode == GameMode::Commercial)
                 attract.pagetic = 35 * 11;
             else
                 attract.pagetic = 170;
-            flow.gamestate = GS_DEMOSCREEN;
+            flow.gamestate = GameState::DemoScreen;
             attract.pagename = "TITLEPIC";
-            if (gamemode == commercial)
+            if (gamemode == GameMode::Commercial)
                 Doom::startMusic(mus_dm2ttl);
             else
                 Doom::startMusic(mus_intro);
@@ -502,15 +505,15 @@ void doAdvanceDemo()
             break;
         case 2:
             attract.pagetic = 200;
-            flow.gamestate = GS_DEMOSCREEN;
+            flow.gamestate = GameState::DemoScreen;
             attract.pagename = "CREDIT";
             break;
         case 3:
             Doom::deferPlayDemo("demo2");
             break;
         case 4:
-            flow.gamestate = GS_DEMOSCREEN;
-            if (gamemode == commercial)
+            flow.gamestate = GameState::DemoScreen;
+            if (gamemode == GameMode::Commercial)
             {
                 attract.pagetic = 35 * 11;
                 attract.pagename = "TITLEPIC";
@@ -520,7 +523,7 @@ void doAdvanceDemo()
             {
                 attract.pagetic = 200;
 
-                if (gamemode == retail)
+                if (gamemode == GameMode::Retail)
                     attract.pagename = "CREDIT";
                 else
                     attract.pagename = "HELP2";
@@ -541,7 +544,7 @@ void doAdvanceDemo()
 //
 void startTitle()
 {
-    gameFlow().gameaction = ga_nothing;
+    gameFlow().gameaction = GameAction::Nothing;
     attractMode().demosequence = -1;
     advanceDemo();
 }
@@ -613,7 +616,7 @@ void IdentifyVersion()
 
     if (Doom::checkParm("-shdev"))
     {
-        version.gamemode = shareware;
+        version.gamemode = GameMode::Shareware;
         opts.devparm = true;
         addWadFile(DEVDATA "doom1.wad");
         addWadFile(DEVMAPS "data_se/texture1.lmp");
@@ -624,7 +627,7 @@ void IdentifyVersion()
 
     if (Doom::checkParm("-regdev"))
     {
-        version.gamemode = registered;
+        version.gamemode = GameMode::Registered;
         opts.devparm = true;
         addWadFile(DEVDATA "doom.wad");
         addWadFile(DEVMAPS "data_se/texture1.lmp");
@@ -636,7 +639,7 @@ void IdentifyVersion()
 
     if (Doom::checkParm("-comdev"))
     {
-        version.gamemode = commercial;
+        version.gamemode = GameMode::Commercial;
         opts.devparm = true;
         /* I don't bother
         if(plutonia)
@@ -656,10 +659,10 @@ void IdentifyVersion()
     if ((f = doom_open(doom2fwad.c_str(), "rb")))
     {
         doom_close(f);
-        version.gamemode = commercial;
+        version.gamemode = GameMode::Commercial;
         // C'est ridicule!
         // Let's handle languages in config files, okay?
-        version.language = french;
+        version.language = Language::French;
         print("French version\n");
         addWadFile(doom2fwad);
         return;
@@ -668,7 +671,7 @@ void IdentifyVersion()
     if ((f = doom_open(doom2wad.c_str(), "rb")))
     {
         doom_close(f);
-        version.gamemode = commercial;
+        version.gamemode = GameMode::Commercial;
         addWadFile(doom2wad);
         return;
     }
@@ -676,7 +679,7 @@ void IdentifyVersion()
     if ((f = doom_open(plutoniawad.c_str(), "rb")))
     {
         doom_close(f);
-        version.gamemode = commercial;
+        version.gamemode = GameMode::Commercial;
         addWadFile(plutoniawad);
         return;
     }
@@ -684,7 +687,7 @@ void IdentifyVersion()
     if ((f = doom_open(tntwad.c_str(), "rb")))
     {
         doom_close(f);
-        version.gamemode = commercial;
+        version.gamemode = GameMode::Commercial;
         addWadFile(tntwad);
         return;
     }
@@ -692,7 +695,7 @@ void IdentifyVersion()
     if ((f = doom_open(doomuwad.c_str(), "rb")))
     {
         doom_close(f);
-        version.gamemode = retail;
+        version.gamemode = GameMode::Retail;
         addWadFile(doomuwad);
         return;
     }
@@ -700,7 +703,7 @@ void IdentifyVersion()
     if ((f = doom_open(doomwad.c_str(), "rb")))
     {
         doom_close(f);
-        version.gamemode = registered;
+        version.gamemode = GameMode::Registered;
         addWadFile(doomwad);
         return;
     }
@@ -708,13 +711,13 @@ void IdentifyVersion()
     if ((f = doom_open(doom1wad.c_str(), "rb")))
     {
         doom_close(f);
-        version.gamemode = shareware;
+        version.gamemode = GameMode::Shareware;
         addWadFile(doom1wad);
         return;
     }
 
     print("Game mode indeterminate.\n");
-    version.gamemode = indetermined;
+    version.gamemode = GameMode::Indetermined;
 }
 
 //
@@ -817,7 +820,7 @@ void doomMain()
 
     switch (version.gamemode)
     {
-        case retail:
+        case GameMode::Retail:
             title = concat("                         "
                            "The Ultimate DOOM Startup v",
                            VERSION / 100,
@@ -825,7 +828,7 @@ void doomMain()
                            VERSION % 100,
                            "                           ");
             break;
-        case shareware:
+        case GameMode::Shareware:
             title = concat("                            "
                            "DOOM Shareware Startup v",
                            VERSION / 100,
@@ -833,7 +836,7 @@ void doomMain()
                            VERSION % 100,
                            "                           ");
             break;
-        case registered:
+        case GameMode::Registered:
             title = concat("                            "
                            "DOOM Registered Startup v",
                            VERSION / 100,
@@ -841,7 +844,7 @@ void doomMain()
                            VERSION % 100,
                            "                           ");
             break;
-        case commercial:
+        case GameMode::Commercial:
             title = concat("                         "
                            "DOOM 2: Hell on Earth v",
                            VERSION / 100,
@@ -923,9 +926,9 @@ void doomMain()
         // Map name handling.
         switch (version.gamemode)
         {
-            case shareware:
-            case retail:
-            case registered:
+            case GameMode::Shareware:
+            case GameMode::Retail:
+            case GameMode::Registered:
                 file = concat("~" DEVMAPS "E",
                               myargv[p + 1][0],
                               "M",
@@ -939,7 +942,7 @@ void doomMain()
                       ".\n");
                 break;
 
-            case commercial:
+            case GameMode::Commercial:
             default:
                 p = parseInt(myargv[p + 1]);
                 if (p < 10)
@@ -975,7 +978,7 @@ void doomMain()
     }
 
     // get skill / episode / map from parms
-    defaults_.startskill = sk_medium;
+    defaults_.startskill = Skill::Medium;
     defaults_.startepisode = 1;
     defaults_.startmap = 1;
     defaults_.autostart = false;
@@ -1013,7 +1016,7 @@ void doomMain()
     p = Doom::checkParm("-warp");
     if (p && p < myargCount() - 1)
     {
-        if (version.gamemode == commercial)
+        if (version.gamemode == GameMode::Commercial)
             defaults_.startmap = parseInt(myargv[p + 1]);
         else
         {
@@ -1044,13 +1047,13 @@ void doomMain()
             "e3m4",   "e3m5",   "e3m6",   "e3m7",   "e3m8",    "e3m9",
             "dphoof", "bfgga0", "heada1", "cybra1", "spida1d1"};
 
-        if (version.gamemode == shareware)
+        if (version.gamemode == GameMode::Shareware)
             fatalError("Error: \nYou cannot -file with the shareware "
                        "version. Register!");
 
         // Check for fake IWAD with right name,
         // but w/o all the lumps of the registered version.
-        if (version.gamemode == registered)
+        if (version.gamemode == GameMode::Registered)
             for (auto n: name)
                 if (Doom::wad().find(n) < 0)
                     fatalError("Error: \nThis is not the registered version.");
@@ -1072,16 +1075,16 @@ void doomMain()
     // Check and print which version is executed.
     switch (version.gamemode)
     {
-        case shareware:
-        case indetermined:
+        case GameMode::Shareware:
+        case GameMode::Indetermined:
             doom_print(
                 "===========================================================================\n"
                 "                                Shareware!\n"
                 "===========================================================================\n");
             break;
-        case registered:
-        case retail:
-        case commercial:
+        case GameMode::Registered:
+        case GameMode::Retail:
+        case GameMode::Commercial:
             doom_print(
                 "===========================================================================\n"
                 "                 Commercial product - do not distribute!\n"
@@ -1171,7 +1174,7 @@ void doomMain()
         Doom::loadGame(file.c_str());
     }
 
-    if (gameFlow().gameaction != ga_loadgame)
+    if (gameFlow().gameaction != GameAction::LoadGame)
     {
         if (defaults_.autostart || session.netgame)
             Doom::initNewGame(

@@ -22,9 +22,10 @@ namespace Doom
 // rather than carried, as no read was lost.
 struct GameVersion
 {
-    GameMode gamemode = indetermined; // shareware / registered / retail / commercial
+    GameMode gamemode = GameMode::
+        Indetermined; // GameMode::Shareware / GameMode::Registered / GameMode::Retail / GameMode::Commercial
 
-    Language language = english; // string-table language
+    Language language = Language::English; // string-table language
 
     bool modifiedgame = false; // a PWAD has modified the game
 };

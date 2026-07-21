@@ -461,7 +461,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     mobj->flags = info->flags;
     mobj->health = info->spawnhealth;
 
-    if (gameSession().gameskill != sk_nightmare)
+    if (gameSession().gameskill != Skill::Nightmare)
         mobj->reactiontime = info->reactiontime;
 
     mobj->lastlook = randomness().forPlay() % MAXPLAYERS;
@@ -591,7 +591,7 @@ void spawnPlayer(MapThing& mthing)
 
     Player* p = &players_.players[mthing.type - 1];
 
-    if (p->playerstate == PST_REBORN)
+    if (p->playerstate == PlayerLifeState::Reborn)
         playerReborn(mthing.type - 1);
 
     fixed_t x = Fixed::fromInt(mthing.x);
@@ -608,7 +608,7 @@ void spawnPlayer(MapThing& mthing)
     mobj->health = p->health;
 
     p->mo = mobj;
-    p->playerstate = PST_LIVE;
+    p->playerstate = PlayerLifeState::Live;
     p->refire = 0;
     p->message = {};
     p->damagecount = 0;
@@ -680,12 +680,12 @@ void spawnMapThing(MapThing& mthing)
     if (!session.netgame && (mthing.options & 16))
         return;
 
-    if (session.gameskill == sk_baby)
+    if (session.gameskill == Skill::Baby)
         bit = 1;
-    else if (session.gameskill == sk_nightmare)
+    else if (session.gameskill == Skill::Nightmare)
         bit = 4;
     else
-        bit = 1 << (session.gameskill - 1);
+        bit = 1 << (static_cast<int>(session.gameskill) - 1);
 
     if (!(mthing.options & bit))
         return;

@@ -166,7 +166,7 @@ void hSendPacket(int node, int flags)
     if (!gameSession().netgame)
         fatalError("Error: Tried to transmit to another node");
 
-    net.doomcom->command = CMD_SEND;
+    net.doomcom->command = static_cast<short>(NetCommandKind::Send);
     net.doomcom->remotenode = node;
     net.doomcom->datalength = netbufferSize();
 
@@ -229,7 +229,7 @@ bool hGetPacket()
     if (demoState().demoplayback)
         return false;
 
-    net.doomcom->command = CMD_GET;
+    net.doomcom->command = static_cast<short>(NetCommandKind::Get);
     netCommand();
 
     if (net.doomcom->remotenode == -1)
@@ -543,7 +543,7 @@ void checkAbort()
     for (; events_.eventtail != events_.eventhead;)
     {
         ev = &events_.events[events_.eventtail];
-        if (ev->type == ev_keydown && ev->data1 == KEY_ESCAPE)
+        if (ev->type == EventType::KeyDown && ev->data1 == KEY_ESCAPE)
             fatalError("Error: Network game synchronization aborted.");
     }
 
@@ -603,7 +603,8 @@ void dArbitrateNetStart()
             {
                 const int deathmatch = gameSession().deathmatch;
 
-                net.netbuffer->retransmitfrom = defaults_.startskill;
+                net.netbuffer->retransmitfrom =
+                    static_cast<byte>(defaults_.startskill);
                 if (deathmatch)
                     net.netbuffer->retransmitfrom |= (deathmatch << 6);
                 if (opts.nomonsters)

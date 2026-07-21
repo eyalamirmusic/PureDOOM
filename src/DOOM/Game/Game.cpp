@@ -463,9 +463,9 @@ void doLoadLevel()
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
     const auto mode = gameVersion().gamemode;
-    if ((mode == commercial)
-        || (static_cast<int>(mode) == static_cast<int>(pack_tnt))
-        || (static_cast<int>(mode) == static_cast<int>(pack_plut)))
+    if ((mode == GameMode::Commercial)
+        || (static_cast<int>(mode) == static_cast<int>(GameMission::PackTnt))
+        || (static_cast<int>(mode) == static_cast<int>(GameMission::PackPlut)))
     {
         sky.skytexture = Doom::textureNumForName("SKY3");
         if (session.gamemap < 12)
@@ -474,22 +474,23 @@ void doLoadLevel()
             sky.skytexture = Doom::textureNumForName("SKY2");
     }
 
-    if (flow.wipegamestate == GS_LEVEL)
+    if (flow.wipegamestate == GameState::Level)
         flow.wipegamestate = GS_FORCE_WIPE;
 
-    flow.gamestate = GS_LEVEL;
+    flow.gamestate = GameState::Level;
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
-        if (players_.playeringame[i] && players_.players[i].playerstate == PST_DEAD)
-            players_.players[i].playerstate = PST_REBORN;
+        if (players_.playeringame[i]
+            && players_.players[i].playerstate == PlayerLifeState::Dead)
+            players_.players[i].playerstate = PlayerLifeState::Reborn;
         doom_memset(players_.players[i].frags, 0, sizeof(players_.players[i].frags));
     }
 
     Doom::setupLevel(session.gameepisode, session.gamemap, 0, session.gameskill);
     players_.displayplayer = players_.consoleplayer; // view the guy you are playing
     timeDemo().starttime = currentTic();
-    flow.gameaction = ga_nothing;
+    flow.gameaction = GameAction::Nothing;
 
     // clear cmd building stuff
     input.gamekeydown.fill(false);
@@ -516,8 +517,8 @@ bool gameResponder(Event& ev)
     auto& input = ticcmdInput();
 
     // allow spy mode changes even during the demo
-    if (flow.gamestate == GS_LEVEL && ev.type == ev_keydown && ev.data1 == KEY_F12
-        && (demo.singledemo || !gameSession().deathmatch))
+    if (flow.gamestate == GameState::Level && ev.type == EventType::KeyDown
+        && ev.data1 == KEY_F12 && (demo.singledemo || !gameSession().deathmatch))
     {
         // spy mode
         do
@@ -531,11 +532,12 @@ bool gameResponder(Event& ev)
     }
 
     // any other key pops up menu if in demos
-    if (flow.gameaction == ga_nothing && !demo.singledemo
-        && (demo.demoplayback || flow.gamestate == GS_DEMOSCREEN))
+    if (flow.gameaction == GameAction::Nothing && !demo.singledemo
+        && (demo.demoplayback || flow.gamestate == GameState::DemoScreen))
     {
-        if (ev.type == ev_keydown || (ev.type == ev_mouse && ev.data1)
-            || (ev.type == ev_joystick && ev.data1))
+        if (ev.type == EventType::KeyDown
+            || (ev.type == EventType::Mouse && ev.data1)
+            || (ev.type == EventType::Joystick && ev.data1))
         {
             startControlPanel();
             return true;
@@ -543,10 +545,10 @@ bool gameResponder(Event& ev)
         return false;
     }
 
-    if (flow.gamestate == GS_LEVEL)
+    if (flow.gamestate == GameState::Level)
     {
 #if 0 
-        if (devparm && ev.type == ev_keydown && ev.data1 == ';')
+        if (devparm && ev.type == EventType::KeyDown && ev.data1 == ';')
         {
             deathMatchSpawnPlayer(0);
             return true;
@@ -560,7 +562,7 @@ bool gameResponder(Event& ev)
             return true; // automap ate it
     }
 
-    if (flow.gamestate == GS_FINALE)
+    if (flow.gamestate == GameState::Finale)
     {
         if (Doom::finaleResponder(ev))
             return true; // finale ate the event
@@ -568,7 +570,7 @@ bool gameResponder(Event& ev)
 
     switch (ev.type)
     {
-        case ev_keydown:
+        case EventType::KeyDown:
             if (ev.data1 == KEY_PAUSE)
             {
                 pendingCommands().sendpause = true;
@@ -578,12 +580,12 @@ bool gameResponder(Event& ev)
                 input.gamekeydown[ev.data1] = true;
             return true; // eat key down events
 
-        case ev_keyup:
+        case EventType::KeyUp:
             if (ev.data1 < NUMKEYS)
                 input.gamekeydown[ev.data1] = false;
             return false; // always let key up events filter down
 
-        case ev_mouse:
+        case EventType::Mouse:
         {
             const auto sensitivity = menuSettings().mouseSensitivity;
             mousebuttons[0] = ev.data1 & 1;
@@ -594,7 +596,7 @@ bool gameResponder(Event& ev)
             return true; // eat events
         }
 
-        case ev_joystick:
+        case EventType::Joystick:
             joybuttons[0] = ev.data1 & 1;
             joybuttons[1] = ev.data1 & 2;
             joybuttons[2] = ev.data1 & 4;
@@ -602,9 +604,6 @@ bool gameResponder(Event& ev)
             input.joyxmove = ev.data2;
             input.joyymove = ev.data3;
             return true; // eat events
-
-        default:
-            break;
     }
 
     return false;
@@ -628,43 +627,43 @@ void gameTicker()
     // do player reborns if needed
     for (int i = 0; i < MAXPLAYERS; i++)
         if (players_.playeringame[i]
-            && players_.players[i].playerstate == PST_REBORN)
+            && players_.players[i].playerstate == PlayerLifeState::Reborn)
             doReborn(i);
 
     // do things to change the game state
-    while (flow.gameaction != ga_nothing)
+    while (flow.gameaction != GameAction::Nothing)
     {
         switch (flow.gameaction)
         {
-            case ga_loadlevel:
+            case GameAction::LoadLevel:
                 doLoadLevel();
                 break;
-            case ga_newgame:
+            case GameAction::NewGame:
                 doNewGame();
                 break;
-            case ga_loadgame:
+            case GameAction::LoadGame:
                 doLoadGame();
                 break;
-            case ga_savegame:
+            case GameAction::SaveGame:
                 doSaveGame();
                 break;
-            case ga_playdemo:
+            case GameAction::PlayDemo:
                 doPlayDemo();
                 break;
-            case ga_completed:
+            case GameAction::Completed:
                 doCompleted();
                 break;
-            case ga_victory:
+            case GameAction::Victory:
                 Doom::startFinale();
                 break;
-            case ga_worlddone:
+            case GameAction::WorldDone:
                 doWorldDone();
                 break;
-            case ga_screenshot:
+            case GameAction::Screenshot:
                 Doom::writeScreenshot();
-                flow.gameaction = ga_nothing;
+                flow.gameaction = GameAction::Nothing;
                 break;
-            case ga_nothing:
+            case GameAction::Nothing:
                 break;
         }
     }
@@ -743,7 +742,7 @@ void gameTicker()
                         savegameslot =
                             (players_.players[i].cmd.buttons & BTS_SAVEMASK)
                             >> BTS_SAVESHIFT;
-                        flow.gameaction = ga_savegame;
+                        flow.gameaction = GameAction::SaveGame;
                         break;
                 }
             }
@@ -753,22 +752,22 @@ void gameTicker()
     // do main actions
     switch (flow.gamestate)
     {
-        case GS_LEVEL:
+        case GameState::Level:
             Doom::ticker();
             Doom::statusBarTicker();
             Doom::automapTicker();
             Doom::hudTicker();
             break;
 
-        case GS_INTERMISSION:
+        case GameState::Intermission:
             Doom::intermissionTicker();
             break;
 
-        case GS_FINALE:
+        case GameState::Finale:
             Doom::finaleTicker();
             break;
 
-        case GS_DEMOSCREEN:
+        case GameState::DemoScreen:
             Doom::pageTicker();
             break;
     }
@@ -841,7 +840,7 @@ void playerReborn(int player)
     players_.players[player].secretcount = secretcount;
 
     p->usedown = p->attackdown = true; // don't do anything immediately
-    p->playerstate = PST_LIVE;
+    p->playerstate = PlayerLifeState::Live;
     p->health = MAXHEALTH;
     p->readyweapon = p->pendingweapon = wp_pistol;
     p->weaponowned[wp_fist] = true;
@@ -952,7 +951,7 @@ void doReborn(int playernum)
     if (!session.netgame)
     {
         // reload the level from scratch
-        gameFlow().gameaction = ga_loadlevel;
+        gameFlow().gameaction = GameAction::LoadLevel;
     }
     else
     {
@@ -992,7 +991,7 @@ void doReborn(int playernum)
 
 void takeScreenshot()
 {
-    gameFlow().gameaction = ga_screenshot;
+    gameFlow().gameaction = GameAction::Screenshot;
 }
 
 //
@@ -1001,18 +1000,19 @@ void takeScreenshot()
 void exitLevel()
 {
     secretexit = false;
-    gameFlow().gameaction = ga_completed;
+    gameFlow().gameaction = GameAction::Completed;
 }
 
 // Here's for the german edition.
 void secretExitLevel()
 {
     // IF NO WOLF3D LEVELS, NO SECRET EXIT!
-    if ((gameVersion().gamemode == commercial) && (Doom::wad().find("map31") < 0))
+    if ((gameVersion().gamemode == GameMode::Commercial)
+        && (Doom::wad().find("map31") < 0))
         secretexit = false;
     else
         secretexit = true;
-    gameFlow().gameaction = ga_completed;
+    gameFlow().gameaction = GameAction::Completed;
 }
 
 void doCompleted()
@@ -1026,7 +1026,7 @@ void doCompleted()
     auto& wminfo_ = intermissionInfo().wminfo;
     const auto mode = gameVersion().gamemode;
 
-    flow.gameaction = ga_nothing;
+    flow.gameaction = GameAction::Nothing;
 
     for (int i = 0; i < MAXPLAYERS; i++)
         if (players_.playeringame[i])
@@ -1035,11 +1035,11 @@ void doCompleted()
     if (overlay.automapactive)
         Doom::stopAutomap();
 
-    if (mode != commercial)
+    if (mode != GameMode::Commercial)
         switch (session.gamemap)
         {
             case 8:
-                flow.gameaction = ga_victory;
+                flow.gameaction = GameAction::Victory;
                 return;
             case 9:
                 for (auto& player: players_.players)
@@ -1047,14 +1047,14 @@ void doCompleted()
                 break;
         }
 
-    if ((session.gamemap == 8) && (mode != commercial))
+    if ((session.gamemap == 8) && (mode != GameMode::Commercial))
     {
         // victory
-        flow.gameaction = ga_victory;
+        flow.gameaction = GameAction::Victory;
         return;
     }
 
-    if ((session.gamemap == 9) && (mode != commercial))
+    if ((session.gamemap == 9) && (mode != GameMode::Commercial))
     {
         // exit secret level
         for (auto& player: players_.players)
@@ -1066,7 +1066,7 @@ void doCompleted()
     wminfo_.last = session.gamemap - 1;
 
     // wminfo.next is 0 biased, unlike gamemap
-    if (mode == commercial)
+    if (mode == GameMode::Commercial)
     {
         if (secretexit)
             switch (session.gamemap)
@@ -1120,7 +1120,7 @@ void doCompleted()
     wminfo_.maxitems = stats.totalitems;
     wminfo_.maxsecret = stats.totalsecret;
     wminfo_.maxfrags = 0;
-    if (mode == commercial)
+    if (mode == GameMode::Commercial)
         wminfo_.partime = 35 * par.cpars[session.gamemap - 1];
     else
         wminfo_.partime = 35 * par.pars[session.gameepisode][session.gamemap];
@@ -1138,7 +1138,7 @@ void doCompleted()
                     sizeof(wminfo_.plyr[i].frags));
     }
 
-    flow.gamestate = GS_INTERMISSION;
+    flow.gamestate = GameState::Intermission;
     refreshFlags().viewactive = false;
     overlay.automapactive = false;
 
@@ -1160,7 +1160,7 @@ void doCompleted()
 //
 void worldDone()
 {
-    gameFlow().gameaction = ga_worlddone;
+    gameFlow().gameaction = GameAction::WorldDone;
 
     if (secretexit)
     {
@@ -1168,7 +1168,7 @@ void worldDone()
         players_.players[players_.consoleplayer].didsecret = true;
     }
 
-    if (gameVersion().gamemode == commercial)
+    if (gameVersion().gamemode == GameMode::Commercial)
     {
         switch (gameSession().gamemap)
         {
@@ -1193,10 +1193,10 @@ void doWorldDone()
 {
     auto& flow = gameFlow();
 
-    flow.gamestate = GS_LEVEL;
+    flow.gamestate = GameState::Level;
     gameSession().gamemap = intermissionInfo().wminfo.next + 1;
     doLoadLevel();
-    flow.gameaction = ga_nothing;
+    flow.gameaction = GameAction::Nothing;
     refreshFlags().viewactive = true;
 }
 
@@ -1208,7 +1208,7 @@ void doWorldDone()
 void loadGame(std::string_view name)
 {
     saveGameState().name = name;
-    gameFlow().gameaction = ga_loadgame;
+    gameFlow().gameaction = GameAction::LoadGame;
 }
 
 void doLoadGame()
@@ -1219,7 +1219,7 @@ void doLoadGame()
 
     int a, b, c;
 
-    gameFlow().gameaction = ga_nothing;
+    gameFlow().gameaction = GameAction::Nothing;
 
     // readFile() fills the owner directly; buffer is left a view onto it, as it is a
     // view onto the framebuffer scratch on the save path (see SaveGameState.h).
@@ -1306,7 +1306,7 @@ void doSaveGame()
     fillField(save.cursor, VERSIONSIZE, concat("version ", VERSION));
     save.cursor += VERSIONSIZE;
 
-    *save.cursor++ = session.gameskill;
+    *save.cursor++ = static_cast<byte>(session.gameskill);
     *save.cursor++ = session.gameepisode;
     *save.cursor++ = session.gamemap;
     for (bool ingame: players_.playeringame)
@@ -1326,7 +1326,7 @@ void doSaveGame()
     if (length > SAVEGAMESIZE)
         fatalError("Error: Savegame buffer overrun");
     Doom::writeFile(name, save.buffer, length);
-    gameFlow().gameaction = ga_nothing;
+    gameFlow().gameaction = GameAction::Nothing;
     savedescription.clear();
 
     players_.players[players_.consoleplayer].message = GGSAVED;
@@ -1348,7 +1348,7 @@ void deferInitNew(Skill skill, int episode, int map)
     deferred.d_skill = skill;
     deferred.d_episode = episode;
     deferred.d_map = map;
-    gameFlow().gameaction = ga_newgame;
+    gameFlow().gameaction = GameAction::NewGame;
 }
 
 void doNewGame()
@@ -1370,7 +1370,7 @@ void doNewGame()
     opts.nomonsters = false;
     players_.consoleplayer = 0;
     initNewGame(deferred.d_skill, deferred.d_episode, deferred.d_map);
-    gameFlow().gameaction = ga_nothing;
+    gameFlow().gameaction = GameAction::Nothing;
 }
 
 void initNewGame(Skill skill, int episode, int map)
@@ -1387,8 +1387,8 @@ void initNewGame(Skill skill, int episode, int map)
         Doom::resumeSound();
     }
 
-    if (skill > sk_nightmare)
-        skill = sk_nightmare;
+    if (skill > Skill::Nightmare)
+        skill = Skill::Nightmare;
 
     // This was quite messy with SPECIAL and commented parts.
     // Supposedly hacks to make the latest edition work.
@@ -1396,12 +1396,12 @@ void initNewGame(Skill skill, int episode, int map)
     if (episode < 1)
         episode = 1;
 
-    if (mode == retail)
+    if (mode == GameMode::Retail)
     {
         if (episode > 4)
             episode = 4;
     }
-    else if (mode == shareware)
+    else if (mode == GameMode::Shareware)
     {
         if (episode > 1)
             episode = 1; // only start episode 1 on shareware
@@ -1415,18 +1415,18 @@ void initNewGame(Skill skill, int episode, int map)
     if (map < 1)
         map = 1;
 
-    if ((map > 9) && (mode != commercial))
+    if ((map > 9) && (mode != GameMode::Commercial))
         map = 9;
 
     Doom::randomness().clear();
 
-    if (skill == sk_nightmare || opts.respawnparm)
+    if (skill == Skill::Nightmare || opts.respawnparm)
         session.respawnmonsters = true;
     else
         session.respawnmonsters = false;
 
     if (opts.fastparm
-        || (skill == sk_nightmare && session.gameskill != sk_nightmare))
+        || (skill == Skill::Nightmare && session.gameskill != Skill::Nightmare))
     {
         for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics >>= 1;
@@ -1434,7 +1434,7 @@ void initNewGame(Skill skill, int episode, int map)
         mobjinfo[MT_HEADSHOT].speed = (20 * FRACUNIT).raw;
         mobjinfo[MT_TROOPSHOT].speed = (20 * FRACUNIT).raw;
     }
-    else if (skill != sk_nightmare && session.gameskill == sk_nightmare)
+    else if (skill != Skill::Nightmare && session.gameskill == Skill::Nightmare)
     {
         for (int i = S_SARG_RUN1; i <= S_SARG_PAIN2; i++)
             states[i].tics <<= 1;
@@ -1445,7 +1445,7 @@ void initNewGame(Skill skill, int episode, int map)
 
     // force players to be initialized upon first level load
     for (auto& player: playerState().players)
-        player.playerstate = PST_REBORN;
+        player.playerstate = PlayerLifeState::Reborn;
 
     demoState().usergame = true; // will be set false if a demo
     refresh.paused = false;
@@ -1459,7 +1459,7 @@ void initNewGame(Skill skill, int episode, int map)
     refresh.viewactive = true;
 
     // set the sky map for the episode
-    if (mode == commercial)
+    if (mode == GameMode::Commercial)
     {
         sky.skytexture = Doom::textureNumForName("SKY3");
         if (session.gamemap < 12)
@@ -1561,7 +1561,7 @@ void beginRecording()
     demo.demo_p = demo.demobuffer;
 
     *demo.demo_p++ = VERSION;
-    *demo.demo_p++ = session.gameskill;
+    *demo.demo_p++ = static_cast<byte>(session.gameskill);
     *demo.demo_p++ = session.gameepisode;
     *demo.demo_p++ = session.gamemap;
     *demo.demo_p++ = session.deathmatch;
@@ -1581,7 +1581,7 @@ void beginRecording()
 void deferPlayDemo(std::string_view name)
 {
     defdemoname = name;
-    gameFlow().gameaction = ga_playdemo;
+    gameFlow().gameaction = GameAction::PlayDemo;
 }
 
 void doPlayDemo()
@@ -1595,7 +1595,7 @@ void doPlayDemo()
     Skill skill;
     int episode, map;
 
-    flow.gameaction = ga_nothing;
+    flow.gameaction = GameAction::Nothing;
     demo.demobuffer = demo.demo_p =
         static_cast<byte*>((Doom::cacheLumpName(defdemoname)));
     byte demo_version = *demo.demo_p++;
@@ -1608,7 +1608,7 @@ void doPlayDemo()
               ", this version = ",
               VERSION,
               "\n");
-        flow.gameaction = ga_nothing;
+        flow.gameaction = GameAction::Nothing;
         return;
     }
 
@@ -1651,7 +1651,7 @@ void startTimeDemo(std::string_view name)
     engineParams().singletics = true;
 
     defdemoname = name;
-    gameFlow().gameaction = ga_playdemo;
+    gameFlow().gameaction = GameAction::PlayDemo;
 }
 
 /*

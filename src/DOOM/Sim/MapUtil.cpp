@@ -26,7 +26,7 @@ int boxLineSide(const fixed_t* box, const Line& line)
                          box[BOXRIGHT],
                          {line.v1->x, line.v1->y},
                          {line.dx, line.dy},
-                         line.slopetype);
+                         static_cast<int>(line.slopetype));
 }
 
 void updateLineOpening(const Line& linedef)

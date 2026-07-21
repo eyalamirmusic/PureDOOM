@@ -100,7 +100,7 @@ void calcHeight(Player& player)
     fixed_t bob = FixedMul(player.bob / 2, finesine[angle]);
 
     // move viewheight
-    if (player.playerstate == PST_LIVE)
+    if (player.playerstate == PlayerLifeState::Live)
     {
         player.viewheight += player.deltaviewheight;
 
@@ -202,7 +202,7 @@ void deathThink(Player& player)
         player.damagecount--;
 
     if (player.cmd.buttons & BT_USE)
-        player.playerstate = PST_REBORN;
+        player.playerstate = PlayerLifeState::Reborn;
 }
 
 //
@@ -226,7 +226,7 @@ void playerThink(Player& player)
         player.mo->flags &= ~MF_JUSTATTACKED;
     }
 
-    if (player.playerstate == PST_DEAD)
+    if (player.playerstate == PlayerLifeState::Dead)
     {
         deathThink(player);
         return;
@@ -267,7 +267,7 @@ void playerThink(Player& player)
 
         const auto& version = gameVersion();
 
-        if ((version.gamemode == commercial) && newweapon == wp_shotgun
+        if ((version.gamemode == GameMode::Commercial) && newweapon == wp_shotgun
             && player.weaponowned[wp_supershotgun]
             && player.readyweapon != wp_supershotgun)
         {
@@ -279,7 +279,7 @@ void playerThink(Player& player)
             // Do not go to plasma or BFG in shareware,
             //  even if cheated.
             if ((newweapon != wp_plasma && newweapon != wp_bfg)
-                || (version.gamemode != shareware))
+                || (version.gamemode != GameMode::Shareware))
             {
                 player.pendingweapon = newweapon;
             }
