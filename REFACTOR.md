@@ -86,9 +86,16 @@ has the working detail.
 2. **Two unmeasured toolchains, and then `-Werror`.** The engine builds with zero
    warnings on Apple Clang (`Debug` and `Release`), real GCC 16 (`Release`), and
    Windows arm64 under both clang-cl and MSVC. Ubuntu's gcc/clang and MSVC on
-   `/W4` are the remainder. CI prints a per-configuration warning count and fails
-   on nothing, so those measure themselves on the next push. `-Werror` waits on
-   them.
+   `/W4` are the remainder, and `-Werror` waits on them.
+
+   **Nothing measures them today, and the workflow will not start on its own.**
+   `.github/workflows/tests.yml` triggers on pushes to `master` and PRs into it;
+   the refactor branch is a long way ahead of `master`, so its five rows — four
+   distinct toolchains — have never seen this code. The Report-warning-count step
+   is built and ready and has never run against it. Taking the measurement is a
+   deliberate act: add the branch to the workflow's triggers and push, or build
+   Ubuntu locally in a container. Until one of those happens, "CI will tell us" is
+   a plan, not a state.
 
    Raising the bar further — `-Wconversion`, `-Wshadow` — is a real decision that
    should be taken for all compilers at once rather than arrived at by accident on
@@ -96,34 +103,33 @@ has the working detail.
    corresponding to a GCC/Clang flag this project has deliberately not enabled;
    the reasoning is written out at the flags in `src/DOOM/CMakeLists.txt`.
 
-   One correction to what this item used to say: **CI does not measure this
-   branch.** The workflow triggers on pushes to `master` and PRs into it, and the
-   refactor branch is a long way ahead of `master`, so Ubuntu gcc and clang have
-   never seen this code at all. "They measure themselves on the next push" was
-   true of the mechanism and false of the situation. The measurement is a
-   deliberate act someone still has to take — a branch trigger and a push, or a
-   local container.
+That is the whole list. Three items closed recently, kept here because each says
+something the code alone does not:
 
-That is the whole list. The three items that used to sit here are closed:
+- **The intermission's frame golden.** `Tests/Goldens/intermission.frames` pins 401
+  tics of the real E1M1 → scoreboard → E1M2 transition, and every screen a demo
+  never reaches now has one. Compiler-independent like the rest, reproducible across
+  runs, and sharp: moving `SP_STATSX` by one pixel fails it and nothing else in the
+  99-test suite. One script drives the transition and two tests read it — the state
+  machine and the frames — so a failure says which broke.
 
-- **The intermission's frame golden** (was item 5). `Tests/Goldens/intermission.frames`
-  pins 401 tics of the real E1M1 → scoreboard → E1M2 transition, and every screen a
-  demo never reaches now has one. Compiler-independent like the rest, reproducible
-  across runs, and sharp: moving `SP_STATSX` by one pixel fails it and nothing else
-  in the 99-test suite.
+- **The dead-in-both-eras macros**, deleted — 70 of them, each verified
+  unreferenced in this lineage *and* in the 127-file tree at 110ddbe before it went.
+  Deleting rather than converting was always the right half of that choice; what the
+  item could not say in advance is that the sweep would find two live cross-boundary
+  checks resting on dead code (`static_assert`s now, in `UI/StatusBar.cpp` and
+  `UI/Hud.cpp`), and that the honest count was 70 rather than the ~55 estimated —
+  see the two sweep traps below for why the first pass under-counted.
 
-- **The dead-in-both-eras macros** (was item 2), deleted — 62 at the fixed point,
-  each verified unreferenced in this lineage *and* in the 127-file tree at 110ddbe
-  before it went. Deleting rather than converting was always the right half of that
-  choice; what the item could not say in advance is that the sweep would find two
-  live cross-boundary checks resting on dead code (see `CLAUDE.md`, and the
-  `static_assert`s now in `UI/StatusBar.cpp` and `UI/Hud.cpp`). Three macros that
-  look identically dead stay: `_CRT_SECURE_NO_WARNINGS`, `_CRT_NONSTDC_NO_DEPRECATE`
-  and `_WINSOCK_DEPRECATED_NO_WARNINGS` are read by MSVC's own headers, so "nothing
-  in this repository mentions it" is not the test for them.
+  **Four macros that look identically dead stay, for two different reasons.**
+  `_CRT_SECURE_NO_WARNINGS`, `_CRT_NONSTDC_NO_DEPRECATE` and
+  `_WINSOCK_DEPRECATED_NO_WARNINGS` are read by MSVC's own headers, so "nothing in
+  this repository mentions it" is not the test for them. `DOOM_LINUX` is one of
+  three names for a single question, and dropping the fallback would leave an
+  `#else` that identifies no platform at all.
 
-- **The two dead enums** (was item 4). `StatusBarMode` and `ChatState` are gone,
-  with the 1993 debris that surrounded them in `UI/StatusBarTypes.h`.
+- **The two dead enums.** `StatusBarMode` and `ChatState` are gone, with the 1993
+  debris that surrounded them in `UI/StatusBarTypes.h`.
 
 ## Preserved defects
 
@@ -153,6 +159,18 @@ Each is in the 1993-lineage source too, and each is behaviour the goldens record
   also why `shiftxform` stays a raw pointer: as a `std::span` the same read
   becomes an MSVC debug-STL assertion, which is a worse failure mode than the
   silent read.
+- **`UI/Finale.cpp`'s three glyph loops bound `c` with `> HU_FONTSIZE` where
+  `UI/Menu.cpp` uses `>=`**, so a character mapping to exactly `HU_FONTSIZE`
+  indexes one past the 63-entry font. Both spellings are vanilla's own — `>` in
+  `f_finale.c` and `m_misc.c`, `>=` in `m_menu.c` — and both are reproduced
+  faithfully. It takes a backtick to reach — `toUpper` upper-cases `a`..`z` and
+  leaves everything else alone, and a backtick sits at `HU_FONTSTART + 63` — and
+  nothing that reaches those loops contains one: the finale texts are fixed
+  strings, and the fourth site, `Game/Config.cpp`'s `drawText`, has no callers
+  here or at 110ddbe. Worth knowing anyway, because
+  unlike `shiftxform` this one indexes an `Array` rather than a raw pointer, so if
+  a caller ever does pass user text through it the Windows `Debug` failure is an
+  STL assertion rather than vanilla's silent garbage glyph.
 
 ## Traps worth carrying
 

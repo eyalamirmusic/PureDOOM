@@ -344,6 +344,14 @@ void textWrite()
             continue;
         }
 
+        // `>` where UI/Menu.cpp writes `>=`, so c == HU_FONTSIZE indexes one past
+        // the 63-entry font. Preserved, not fixed: both spellings are vanilla's own
+        // (f_finale.c and m_misc.c use `>`, m_menu.c `>=`), and this file has three
+        // of them. Only a backtick reaches it - toUpper leaves '`' alone and it sits
+        // at HU_FONTSTART + 63 - and no finale text contains one. See REFACTOR.md's
+        // preserved defects, which also says why this one is worth more attention
+        // than vanilla's: hu_font is an Array, so the day a caller does pass user
+        // text through here, Windows Debug asserts where 1993 drew a garbage glyph.
         c = toUpper(static_cast<char>(c)) - HU_FONTSTART;
         if (c < 0 || c > HU_FONTSIZE)
         {
