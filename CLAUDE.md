@@ -603,8 +603,10 @@ Targets: `doom-engine`, `PureDoomEACP`, `SimTests` and `PrimitiveTests`,
 `Tests/SimProbe.cpp`, which both test binaries link so the shim is compiled once).
 Two build options: `PUREDOOM_BUILD_TESTS` and `PUREDOOM_BUILD_EACP_EXAMPLE`.
 
-The tests need **no GPU**, so `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast loop,
-and that is what CI builds. Both the tests and the engine link **`eacp-core`** for
+The tests need **no GPU**, so `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` gives a fast loop.
+CI does *not* use it: it builds every target, app included, because compiling the app
+needs no GPU either — only running it does — and the app is otherwise ungated.
+Both the tests and the engine link **`eacp-core`** for
 platform work they would otherwise hand-roll per OS (today
 `<eacp/Core/Utils/Environment.h>` — reading and writing an environment variable has
 no portable spelling, and `std::getenv` is deprecated by Microsoft's CRT). With the
@@ -809,7 +811,8 @@ The `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` fast loop never builds the app target, s
 change there can break it with every test green. `EngineAccess.cpp` is the exception
 and is covered — `SimTests` compiles it directly, see below — but `View.h`, the
 shaders and the platform layer are not. Keep a second build directory with the app on
-and treat its linking as a fourth gate.
+and treat its linking as a fourth gate — CI builds every row with the app on, so a
+break there is caught on push, but not before it is pushed.
 
 ### `Tests/Port` covers the port's builders, and is why it exists
 
@@ -939,7 +942,10 @@ which CMake happens to do for MSVC-style drivers.
 The engine builds under `-Wall -Wextra -Wpedantic` with **zero warnings**. **Anything
 at all is a regression.** That zero is measured on Apple Clang (`Debug` and
 `Release`), real GCC 16 (`Release`), and Windows arm64 with both clang-cl and MSVC.
-Only Ubuntu's gcc/clang remain; `-Werror` waits on them.
+Only Ubuntu's gcc/clang remain; `-Werror` waits on them — and **CI no longer
+measures them**: the matrix is macOS and Windows only, so real GCC and Linux are a
+local gate
+(the second-compiler recipe above) rather than an automatic one.
 
 On Clang the zero includes **`-Wshorten-64-to-32`**, appended to `DOOM_WARNINGS_ON`.
 The Xcode generator passes that flag on its own, which is how 15 `long`→`int`
@@ -962,10 +968,24 @@ DOOM's pervasive and load-bearing int→short/byte truncation. Raising that bar 
 real decision, and it should be taken for all compilers at once rather than arrived
 at by accident on one.
 
-**CI's five rows are four toolchains.** On a macOS runner bare `gcc`/`g++` resolve to
-`/usr/bin`, which is Apple Clang wearing the name — so the `macos-latest × gcc` row
-is the clang row run twice. The workflow has a **Report warning count** step that
-prints a per-configuration count and fails on nothing.
+**CI's five rows are five distinct configurations**, which they were not before: one
+macOS universal build (AppleClang, `arm64;x86_64` — so the x86_64 half is compiled
+though only the arm64 slice is run, the runner being Apple silicon and Rosetta not
+installed on it), and Windows on **x64 and ARM64** under **both MSVC and clang-cl**.
+All five are Ninja, `Release`, every target built and all 101 tests run. The earlier
+matrix had a `macos-latest × gcc` row that was the clang row run twice: on a macOS
+runner bare `gcc`/`g++` resolve to `/usr/bin`, which is Apple Clang wearing the name.
+
+Two Windows details the workflow depends on and states at its site: the MSVC command
+line is set up by calling `vcvarsall.bat` (located through `vswhere`) and forwarding
+`PATH`/`INCLUDE`/`LIB`/`LIBPATH` through `GITHUB_ENV`, since a step's environment
+does not survive into the next; and clang-cl comes from the **standalone LLVM** on
+the image rather than the Visual Studio generator's `ClangCL` toolset, which is a
+separately installable VS component documented as present on the x64 image but not on
+the ARM64 one.
+
+The workflow has a **Report warning count** step that prints a per-configuration
+count and fails on nothing.
 
 Two things the first GCC build taught, neither visible from a Clang-only measurement:
 

@@ -55,9 +55,11 @@ nano_add_executable(SimTests
 target_compile_definitions(SimTests PRIVATE
         PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
 
-# examples/EACP is otherwise ungated: CI never builds the app, so an engine change
-# can break EngineAccess.cpp - which includes the engine's headers directly - with
-# every test still green. Compiling it here makes that a build failure in the
+# examples/EACP is otherwise ungated in the engine-only loop: with
+# -DPUREDOOM_BUILD_EACP_EXAMPLE=OFF nothing builds the app, so an engine change can
+# break EngineAccess.cpp - which includes the engine's headers directly - with every
+# test still green. (CI builds the app on every row, but that is after the push.)
+# Compiling it here makes that a build failure in the
 # ordinary suite, and lets Port/GeometryTests drive the world-geometry builder
 # headlessly. Only EngineAccess.cpp is reachable this way; the rest of the port is
 # GPU-bound and still needs the app build.

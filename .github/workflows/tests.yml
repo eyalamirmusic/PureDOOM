@@ -1,10 +1,27 @@
-# Builds the engine and runs the test suite on the three desktop platforms.
+# Builds every target and runs the whole suite on the five configurations this
+# project ships against: macOS as a universal binary, and Windows on both x64 and
+# ARM64 under both of its C++ toolchains.
 #
-# The eacp app is deliberately NOT built here. It needs a GPU, and it tracks a
-# local eacp branch rather than eacp's main (see CLAUDE.md). What CI can check is
-# the thing that matters most through the C++ refactor: that the simulation, and
-# the frames the renderer draws of it, still match their goldens - everywhere,
-# not just on the machine that recorded them.
+# Two things this deliberately does that the previous workflow did not.
+#
+# It builds the eacp app. Compiling PureDoomEACP needs no GPU - only running it
+# does - and CLAUDE.md asks for its linking to be treated as a fourth gate. The
+# engine-only loop developers actually use (-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF)
+# reaches examples/EACP through EngineAccess.cpp alone, which
+# Tests/CMakeLists.txt compiles into SimTests - so View.h, the six shaders and
+# the platform layer can break with every test still green. This is where that
+# is caught.
+#
+# And it covers Windows ARM64, which is not a formality: that platform surfaced
+# three genuine memory defects (a one-byte heap overflow on every boot, a
+# tutti-frutti guard too small by half, three one-past-the-end subscripts) that
+# macOS and Linux had been absorbing silently, and none of them was visible to any
+# golden - the world and the picture were correct right up until the heap gave out.
+#
+# `cmake --build` builds the default target, which is every library and executable
+# and NOT record-goldens. That target is excluded from ALL on purpose: it rewrites
+# Tests/Goldens, and a CI job that re-records the goldens it is meant to be
+# checking would defeat the entire apparatus.
 name: Tests
 
 on:
@@ -18,81 +35,115 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
 
-    name: Tests ${{ matrix.os }}, ${{ matrix.c_compiler }}
+    name: ${{ matrix.name }}
 
     strategy:
       fail-fast: false
 
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        build_type: [ Release ]
-        c_compiler: [ gcc, clang, cl ]
         include:
-          - os: windows-latest
+          # One row, two architectures. CMAKE_OSX_ARCHITECTURES makes every
+          # binary fat, so the x86_64 half is *compiled* here - which is the half
+          # this catches, since the runner is arm64 and ctest therefore only ever
+          # executes the arm64 slice. Rosetta is not installed on GitHub's Apple
+          # silicon runners, so running the other slice is not on offer.
+          - name: macOS universal, AppleClang
+            os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+            # Quoted inside the value: this is substituted verbatim into a bash
+            # command line, where a bare `;` would end it.
+            cmake_extra: '-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"'
+
+          - name: Windows x64, MSVC
+            os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-          # NOTE: this row does not measure what its name says. On a macOS runner
-          # bare `gcc`/`g++` resolve to /usr/bin, which is Apple Clang wearing the
-          # name - so this is the macos/clang row run twice, and these five rows are
-          # four distinct toolchains. Real GCC on macOS is a separate thing, and it
-          # is worth having: the first time it was ever run against this engine it
-          # failed to build and then reported 327 warnings that Apple Clang did not,
-          # 314 of them behind a pragma spelled in Clang's dialect (see REFACTOR.md
-          # item 7). Pointing this row at Homebrew's g++-N would make the matrix
-          # honest, at the cost of pinning a version and a brew install - left as a
-          # deliberate decision rather than changed in passing.
-          - os: macos-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-        exclude:
-          - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
+            vcvars_arch: x64
+
+          - name: Windows x64, clang-cl
+            os: windows-latest
+            c_compiler: clang-cl
+            cpp_compiler: clang-cl
+            vcvars_arch: x64
+
+          - name: Windows ARM64, MSVC
+            os: windows-11-arm
             c_compiler: cl
-          - os: macos-latest
-            c_compiler: cl
+            cpp_compiler: cl
+            vcvars_arch: arm64
+
+          - name: Windows ARM64, clang-cl
+            os: windows-11-arm
+            c_compiler: clang-cl
+            cpp_compiler: clang-cl
+            vcvars_arch: arm64
 
     steps:
       - uses: actions/checkout@v4
 
+      # Ninja on every row, so all five are single-config builds driven the same
+      # way: CMAKE_BUILD_TYPE decides, and no step needs --config. It also keeps
+      # clang-cl off the Visual Studio generator's ClangCL toolset, which is a
+      # separately installable VS component and is documented as present on the
+      # x64 image but not on the ARM64 one. Both images ship a standalone LLVM.
+      #
+      # cl and clang-cl both need the MSVC command line - the toolchain on PATH,
+      # and INCLUDE/LIB/LIBPATH pointing at it and at the Windows SDK. vcvarsall
+      # sets those in the shell it runs in, and a `run:` block's environment does
+      # not survive into the next step, so they are forwarded through GITHUB_ENV.
+      # Only those four: dumping the whole environment (the usual trick) copies
+      # PROMPT and friends along with it, and any value carrying a newline
+      # corrupts the file. They are echoed by name rather than dumped with
+      # `set NAME`, which prints "Environment variable NAME not defined" to
+      # *stdout* when it is unset - a line the runner would then reject the whole
+      # file over, reporting it as a syntax error a long way from the cause.
+      #
+      # x64 and arm64 are each the *native* toolchain on their own host; nothing
+      # here cross-compiles, which is what lets ctest run afterwards.
+      - name: Set up the MSVC environment
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do set "VSDIR=%%i"
+          call "%VSDIR%\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.vcvars_arch }} || exit /b 1
+          if exist "%ProgramFiles%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles%\LLVM\bin;%PATH%"
+          >>"%GITHUB_ENV%" echo PATH=%PATH%
+          >>"%GITHUB_ENV%" echo INCLUDE=%INCLUDE%
+          >>"%GITHUB_ENV%" echo LIB=%LIB%
+          >>"%GITHUB_ENV%" echo LIBPATH=%LIBPATH%
+
+      # PUREDOOM_BUILD_EACP_EXAMPLE=ON is what makes this build eacp's Graphics
+      # and GPU modules as well as Core, and what puts PureDoomEACP in the default
+      # target. The app is built and never run.
       - name: Configure
+        shell: bash
         run: >
-          cmake -B ${{ github.workspace }}/build
-          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          cmake -G Ninja -B "${{ github.workspace }}/build"
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_BUILD_TYPE=Release
           -DPUREDOOM_BUILD_TESTS=ON
-          -DPUREDOOM_BUILD_EACP_EXAMPLE=OFF
-          -S ${{ github.workspace }}
+          -DPUREDOOM_BUILD_EACP_EXAMPLE=ON
+          ${{ matrix.cmake_extra }}
+          -S "${{ github.workspace }}"
 
       # The build output is captured so the warning count can be reported per
-      # configuration. It is REPORTED, NOT ENFORCED: -Werror is not on, because the
-      # count has only ever been measured on some of these toolchains and turning it
-      # on from a partial measurement would break the branch on push for the rest.
-      # This step is the cheap first move REFACTOR.md item 7 asks for - once every
-      # row here reads 0 for a while, -Werror becomes a decision with evidence
-      # behind it rather than a guess.
-      #
-      # Two counting patterns, because MSVC does not spell it the same way:
-      # gcc/clang emit "warning:", cl emits "warning C4996:".
+      # configuration. It is REPORTED, NOT ENFORCED: -Werror is not on, because
+      # the count has only ever been measured on some of these toolchains and
+      # turning it on from a partial measurement would break the branch on push
+      # for the rest. This step is the cheap first move REFACTOR.md item 7 asks
+      # for - once every row here reads 0 for a while, -Werror becomes a decision
+      # with evidence behind it rather than a guess.
       - name: Build
         shell: bash
         run: |
           set -o pipefail
-          cmake --build "${{ github.workspace }}/build" --config ${{ matrix.build_type }} 2>&1 \
+          cmake --build "${{ github.workspace }}/build" 2>&1 \
             | tee "${{ github.workspace }}/build-log.txt"
 
+      # Two counting patterns, because MSVC does not spell it the same way:
+      # gcc/clang emit "warning:", cl emits "warning C4996:".
       - name: Report warning count
         if: always()
         shell: bash
@@ -101,7 +152,7 @@ jobs:
           if [ ! -f "$log" ]; then echo "no build log (configure or build failed early)"; exit 0; fi
           count=$(grep -cE 'warning:|warning C[0-9]{4}' "$log" || true)
           echo "Warnings: $count"
-          echo "### ${{ matrix.os }} / ${{ matrix.c_compiler }}: $count warning(s)" >> "$GITHUB_STEP_SUMMARY"
+          echo "### ${{ matrix.name }}: $count warning(s)" >> "$GITHUB_STEP_SUMMARY"
           if [ "$count" -gt 0 ]; then
             echo '<details><summary>warnings</summary>' >> "$GITHUB_STEP_SUMMARY"
             echo '' >> "$GITHUB_STEP_SUMMARY"
@@ -111,6 +162,9 @@ jobs:
             echo '</details>' >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      # NanoTest registers one ctest case per test and re-runs the binary with
+      # --test <name>, so each of the 101 gets a fresh process - which the engine
+      # needs, since it only boots once.
       - name: Test
         working-directory: ${{ github.workspace }}/build
-        run: ctest --output-on-failure --build-config ${{ matrix.build_type }}
+        run: ctest --output-on-failure
