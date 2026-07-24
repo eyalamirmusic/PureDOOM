@@ -51,8 +51,8 @@ namespace Doom
 {
 struct Post
 {
-    byte topdelta; // -1 is the last post in a column
-    byte length; // length data bytes follows
+    byte topdelta = 0; // -1 is the last post in a column
+    byte length = 0; // length data bytes follows
 };
 } // namespace Doom
 
@@ -83,16 +83,16 @@ namespace Doom
 {
 struct DrawSeg
 {
-    Seg* curline;
-    int x1;
-    int x2;
+    Seg* curline = nullptr;
+    int x1 = 0;
+    int x2 = 0;
 
     Fixed scale1;
     Fixed scale2;
     Fixed scalestep;
 
     // 0=none, 1=bottom, 2=top, 3=both
-    int silhouette;
+    int silhouette = 0;
 
     // do not clip sprites above this
     Fixed bsilheight;
@@ -102,9 +102,9 @@ struct DrawSeg
 
     // Pointers to lists for sprite clipping,
     //  all three adjusted so [x1] is first value.
-    short* sprtopclip;
-    short* sprbottomclip;
-    short* maskedtexturecol;
+    short* sprtopclip = nullptr;
+    short* sprbottomclip = nullptr;
+    short* maskedtexturecol = nullptr;
 };
 } // namespace Doom
 
@@ -117,11 +117,11 @@ namespace Doom
 {
 struct Patch
 {
-    short width; // bounding box size
-    short height;
-    short leftoffset; // pixels to the left of origin
-    short topoffset; // pixels below the origin
-    int columnofs[8]; // only [width] used
+    short width = 0; // bounding box size
+    short height = 0;
+    short leftoffset = 0; // pixels to the left of origin
+    short topoffset = 0; // pixels below the origin
+    int columnofs[8] = {}; // only [width] used
     // the [0] is &columnofs[width]
 };
 } // namespace Doom
@@ -134,11 +134,11 @@ namespace Doom
 struct VisSprite
 {
     // Doubly linked list.
-    struct VisSprite* prev;
-    struct VisSprite* next;
+    struct VisSprite* prev = nullptr;
+    struct VisSprite* next = nullptr;
 
-    int x1;
-    int x2;
+    int x1 = 0;
+    int x2 = 0;
 
     // for line side calculation
     Fixed gx;
@@ -157,13 +157,13 @@ struct VisSprite
     Fixed xiscale;
 
     Fixed texturemid;
-    int patch;
+    int patch = 0;
 
     // for color translation and shadow draw,
     //  maxbright frames as well
-    LightTable* colormap;
+    LightTable* colormap = nullptr;
 
-    int mobjflags;
+    int mobjflags = 0;
 };
 } // namespace Doom
 
@@ -207,7 +207,7 @@ struct SpriteFrame
     // mixing bool with int, which was the honest complaint rather than a nuisance:
     // the field is not a bool, and writing it as one hid the very state the
     // comment above exists to explain.
-    int rotate;
+    int rotate = 0;
 
     // Lump to use for view angles 0-7.
     Array<short, 8> lump;
@@ -225,7 +225,7 @@ namespace Doom
 {
 struct SpriteDef
 {
-    int numframes;
+    int numframes = 0;
     // The animation frames, RAII-owned (Step 9): was a raw malloc'd SpriteFrame*,
     // now an owned vector freed with the sprite. Readers index it as before
     // (spriteframes[frame], &spriteframes[frame]).
@@ -241,22 +241,22 @@ namespace Doom
 struct VisPlane
 {
     Fixed height;
-    int picnum;
-    int lightlevel;
-    int minx;
-    int maxx;
+    int picnum = 0;
+    int lightlevel = 0;
+    int minx = 0;
+    int maxx = 0;
 
     // leave pads for [minx-1]/[maxx+1]
 
-    byte pad1;
+    byte pad1 = 0;
     // Here lies the rub for all
     //  dynamic resize/change of resolution.
     Array<byte, SCREENWIDTH> top;
-    byte pad2;
-    byte pad3;
+    byte pad2 = 0;
+    byte pad3 = 0;
     // See above.
     Array<byte, SCREENWIDTH> bottom;
-    byte pad4;
+    byte pad4 = 0;
 };
 
 // The pads above are not alignment slack - they are load-bearing, and they are the reason this

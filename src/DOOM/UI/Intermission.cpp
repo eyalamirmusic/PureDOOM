@@ -115,8 +115,8 @@ enum class AnimEnum
 
 struct Point
 {
-    int x;
-    int y;
+    int x = 0;
+    int y = 0;
 };
 
 //
@@ -125,13 +125,13 @@ struct Point
 //
 struct anim_t_wi_stuff
 {
-    AnimEnum type;
+    AnimEnum type = AnimEnum::Always;
 
     // period in tics between animations
-    int period;
+    int period = 0;
 
     // number of animation frames
-    int nanims;
+    int nanims = 0;
 
     // location of animation
     Point loc;
@@ -139,29 +139,29 @@ struct anim_t_wi_stuff
     // ALWAYS: n/a,
     // RANDOM: period deviation (<256),
     // LEVEL: level
-    int data1;
+    int data1 = 0;
 
     // ALWAYS: n/a,
     // RANDOM: random base period,
     // LEVEL: n/a
-    int data2;
+    int data2 = 0;
 
     // actual graphics for frames of animations
-    Patch* p[3];
+    Patch* p[3] = {};
 
     // following must be initialized to zero before use!
 
     // next value of bcnt (used in conjunction with period)
-    int nexttic;
+    int nexttic = 0;
 
     // last drawn animation frame
-    int lastdrawn;
+    int lastdrawn = 0;
 
     // next frame number to animate
-    int ctr;
+    int ctr = 0;
 
     // used by RANDOM and LEVEL when animating
-    int state;
+    int state = 0;
 };
 
 static Array<Array<Point, NUMMAPS>, NUMEPISODES> lnodes = {

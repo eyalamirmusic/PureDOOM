@@ -34,6 +34,10 @@ namespace Doom
 // underlying type - so an opaque declaration is enough and this widely-included
 // header keeps its small include set. Sim/Info.cpp, which fills the table with
 // SfxEnum::* values, includes SoundData.h for the definition.
+//
+// It is also why MobjInfo's sound fields are default-initialised `{}` rather than
+// naming SfxEnum::None the way the rest of the engine does: "not the enumerators"
+// cuts both ways, and an initialiser naming one would not compile here.
 enum class SfxEnum;
 } // namespace Doom
 
@@ -1168,12 +1172,12 @@ namespace Doom
 {
 struct State
 {
-    SpriteNum sprite;
-    int frame;
-    int tics;
+    SpriteNum sprite = SpriteNum::Troo;
+    int frame = 0;
+    int tics = 0;
     ActionFunc action;
-    StateNum nextstate;
-    int misc1, misc2;
+    StateNum nextstate = StateNum::Null;
+    int misc1 = 0, misc2 = 0;
 };
 
 // The count, for array sizes and loop bounds; derived from the enum's own
@@ -1339,33 +1343,33 @@ namespace Doom
 {
 struct MobjInfo
 {
-    int doomednum;
-    StateNum spawnstate;
-    int spawnhealth;
-    StateNum seestate;
-    SfxEnum seesound;
-    int reactiontime;
-    SfxEnum attacksound;
-    StateNum painstate;
-    int painchance;
-    SfxEnum painsound;
-    StateNum meleestate;
-    StateNum missilestate;
-    StateNum deathstate;
-    StateNum xdeathstate;
-    SfxEnum deathsound;
+    int doomednum = 0;
+    StateNum spawnstate = StateNum::Null;
+    int spawnhealth = 0;
+    StateNum seestate = StateNum::Null;
+    SfxEnum seesound {};
+    int reactiontime = 0;
+    SfxEnum attacksound {};
+    StateNum painstate = StateNum::Null;
+    int painchance = 0;
+    SfxEnum painsound {};
+    StateNum meleestate = StateNum::Null;
+    StateNum missilestate = StateNum::Null;
+    StateNum deathstate = StateNum::Null;
+    StateNum xdeathstate = StateNum::Null;
+    SfxEnum deathsound {};
     // Dual-typed in vanilla and left that way: a walking monster stores a plain
     // integer multiplier (8) that scales the xspeed/yspeed unit vectors, while a
     // missile stores a fixed-point velocity (20*FRACUNIT). The missile sites
     // reinterpret it with Fixed{...}; do not "fix" this to one type.
-    int speed;
+    int speed = 0;
     Fixed radius;
     Fixed height;
-    int mass;
-    int damage;
-    SfxEnum activesound;
-    int flags;
-    StateNum raisestate;
+    int mass = 0;
+    int damage = 0;
+    SfxEnum activesound {};
+    int flags = 0;
+    StateNum raisestate = StateNum::Null;
 };
 
 // The count, for array sizes and loop bounds; derived from the enum's own

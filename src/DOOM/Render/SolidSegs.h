@@ -23,8 +23,8 @@ namespace Doom
 // frame-golden-covered - every frame the demos draw walks the BSP through these.
 struct ClipRange
 {
-    int first;
-    int last;
+    int first = 0;
+    int last = 0;
 };
 
 struct SolidSegs

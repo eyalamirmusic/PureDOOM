@@ -15,9 +15,9 @@ namespace Doom
 // (definition kept here rather than in Game/Sound so SoundState can own it by value)
 struct SoundChannel
 {
-    SfxInfo* sfxinfo; // sound occupying the channel (null = available)
-    void* origin; // origin of the sound
-    int handle; // handle of the sound being played
+    SfxInfo* sfxinfo = nullptr; // sound occupying the channel (null = available)
+    void* origin = nullptr; // origin of the sound
+    int handle = 0; // handle of the sound being played
 };
 } // namespace Doom
 

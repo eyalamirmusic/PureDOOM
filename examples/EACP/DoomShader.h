@@ -6,7 +6,7 @@ namespace PureDoom
 {
 struct ScreenVertex
 {
-    float corner[2];
+    float corner[2] = {};
 };
 
 inline constexpr ScreenVertex unitQuad[] = {

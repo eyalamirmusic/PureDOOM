@@ -77,7 +77,7 @@ struct SwitchListEntry
 {
     std::string_view name1;
     std::string_view name2;
-    short episode;
+    short episode = 0;
 };
 } // namespace Doom
 
@@ -95,11 +95,11 @@ namespace Doom
 {
 struct Button
 {
-    Line* line;
-    ButtonWhere where;
-    int btexture;
-    int btimer;
-    Mobj* soundorg;
+    Line* line = nullptr;
+    ButtonWhere where = ButtonWhere::Top;
+    int btexture = 0;
+    int btimer = 0;
+    Mobj* soundorg = nullptr;
 };
 } // namespace Doom
 

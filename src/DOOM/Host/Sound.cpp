@@ -90,13 +90,13 @@ constexpr int CONTROLLER_SOFT = 9;
 
 struct MusHeader
 {
-    char ID[4];
-    unsigned short scoreLen;
-    unsigned short scoreStart;
-    unsigned short channels;
-    unsigned short sec_channels;
-    unsigned short instrCnt;
-    unsigned short dummy;
+    char ID[4] = {};
+    unsigned short scoreLen = 0;
+    unsigned short scoreStart = 0;
+    unsigned short channels = 0;
+    unsigned short sec_channels = 0;
+    unsigned short instrCnt = 0;
+    unsigned short dummy = 0;
 };
 
 // A quick hack to establish a protocol between

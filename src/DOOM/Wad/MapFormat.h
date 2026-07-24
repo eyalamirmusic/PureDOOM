@@ -56,8 +56,8 @@ namespace Doom
 {
 struct MapVertex
 {
-    short x;
-    short y;
+    short x = 0;
+    short y = 0;
 };
 } // namespace Doom
 
@@ -67,13 +67,13 @@ namespace Doom
 {
 struct MapSidedef
 {
-    short textureoffset;
-    short rowoffset;
-    char toptexture[8];
-    char bottomtexture[8];
-    char midtexture[8];
+    short textureoffset = 0;
+    short rowoffset = 0;
+    char toptexture[8] = {};
+    char bottomtexture[8] = {};
+    char midtexture[8] = {};
     // Front sector, towards viewer.
-    short sector;
+    short sector = 0;
 };
 } // namespace Doom
 
@@ -83,13 +83,13 @@ namespace Doom
 {
 struct MapLinedef
 {
-    short v1;
-    short v2;
-    short flags;
-    short special;
-    short tag;
+    short v1 = 0;
+    short v2 = 0;
+    short flags = 0;
+    short special = 0;
+    short tag = 0;
     // sidenum[1] will be -1 if one sided
-    short sidenum[2];
+    short sidenum[2] = {};
 };
 } // namespace Doom
 
@@ -166,13 +166,13 @@ namespace Doom
 {
 struct MapSector
 {
-    short floorheight;
-    short ceilingheight;
-    char floorpic[8];
-    char ceilingpic[8];
-    short lightlevel;
-    short special;
-    short tag;
+    short floorheight = 0;
+    short ceilingheight = 0;
+    char floorpic[8] = {};
+    char ceilingpic[8] = {};
+    short lightlevel = 0;
+    short special = 0;
+    short tag = 0;
 };
 } // namespace Doom
 
@@ -181,9 +181,9 @@ namespace Doom
 {
 struct MapSubsector
 {
-    short numsegs;
+    short numsegs = 0;
     // Index of first one, segs are stored sequentially.
-    short firstseg;
+    short firstseg = 0;
 };
 } // namespace Doom
 
@@ -193,12 +193,12 @@ namespace Doom
 {
 struct MapSeg
 {
-    short v1;
-    short v2;
-    short angle;
-    short linedef;
-    short side;
-    short offset;
+    short v1 = 0;
+    short v2 = 0;
+    short angle = 0;
+    short linedef = 0;
+    short side = 0;
+    short offset = 0;
 };
 } // namespace Doom
 
@@ -217,18 +217,18 @@ namespace Doom
 struct MapNode
 {
     // Partition line from (x,y) to x+dx,y+dy)
-    short x;
-    short y;
-    short dx;
-    short dy;
+    short x = 0;
+    short y = 0;
+    short dx = 0;
+    short dy = 0;
 
     // Bounding box for each child,
     // clip against view frustum.
-    short bbox[2][4];
+    short bbox[2][4] = {};
 
     // If NF_SUBSECTOR its a subsector,
     // else it's a node of another subtree.
-    unsigned short children[2];
+    unsigned short children[2] = {};
 };
 } // namespace Doom
 
@@ -238,11 +238,11 @@ namespace Doom
 {
 struct MapThing
 {
-    short x;
-    short y;
-    short angle;
-    short type;
-    short options;
+    short x = 0;
+    short y = 0;
+    short angle = 0;
+    short type = 0;
+    short options = 0;
 };
 } // namespace Doom
 

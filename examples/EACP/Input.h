@@ -37,8 +37,8 @@ namespace PureDoom
 // rather than a surprise.
 struct DoomKeyMapping
 {
-    std::uint16_t keyCode;
-    Doom::Key doomKey;
+    std::uint16_t keyCode = 0;
+    Doom::Key doomKey = Doom::Key::Unknown;
 };
 
 inline constexpr DoomKeyMapping printableKeys[] = {

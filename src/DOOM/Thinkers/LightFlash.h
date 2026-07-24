@@ -14,11 +14,11 @@ struct LightFlash : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::LightFlash; }
-    Sector* sector;
-    int count;
-    int maxlight;
-    int minlight;
-    int maxtime;
-    int mintime;
+    Sector* sector = nullptr;
+    int count = 0;
+    int maxlight = 0;
+    int minlight = 0;
+    int maxtime = 0;
+    int mintime = 0;
 };
 } // namespace Doom

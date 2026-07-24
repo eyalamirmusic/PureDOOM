@@ -19,11 +19,11 @@ namespace Doom
 // a file-scope typedef and, redundantly, a namespace one; the dead file-scope copy was deleted).
 struct SurfaceAnim
 {
-    bool istexture; // texture (else flat)
-    int picnum; // the frame currently shown
-    int basepic; // the first frame
-    int numpics; // # of frames
-    int speed; // tics between frames
+    bool istexture = false; // texture (else flat)
+    int picnum = 0; // the frame currently shown
+    int basepic = 0; // the first frame
+    int numpics = 0; // # of frames
+    int speed = 0; // tics between frames
 };
 
 // The level's animated surfaces, built by initPicAnims / spawnSpecials and driven by

@@ -49,15 +49,15 @@ namespace Doom
 struct HudTextLine
 {
     // left-justified position of scrolling text window
-    int x;
-    int y;
+    int x = 0;
+    int y = 0;
 
-    Patch** f; // font
-    int sc; // start character
+    Patch** f = nullptr; // font
+    int sc = 0; // start character
     std::string l; // line of text
 
     // whether this line needs to be udpated
-    int needsupdate;
+    int needsupdate = 0;
 };
 } // namespace Doom
 
@@ -68,12 +68,12 @@ namespace Doom
 struct HudScrollingText
 {
     Array<HudTextLine, HU_MAXLINES> l; // text lines to draw
-    int h; // height in lines
-    int cl; // current line number
+    int h = 0; // height in lines
+    int cl = 0; // current line number
 
     // pointer to bool stating whether to update window
-    bool* on;
-    bool laston; // last value of *->on.
+    bool* on = nullptr;
+    bool laston = false; // last value of *->on.
 };
 } // namespace Doom
 
@@ -86,11 +86,11 @@ struct HudInputText
     HudTextLine l; // text line to input on
 
     // left margin past which I am not to delete characters
-    int lm;
+    int lm = 0;
 
     // pointer to bool stating whether to update window
-    bool* on;
-    bool laston; // last value of *->on;
+    bool* on = nullptr;
+    bool laston = false; // last value of *->on;
 };
 } // namespace Doom
 

@@ -69,7 +69,7 @@ constexpr int TEXTWAIT = 250;
 struct CastInfo
 {
     std::string_view name;
-    MobjType type;
+    MobjType type = MobjType::Player;
 };
 
 // The finale's runtime state lives on the Engine (UI/FinaleState.h, moved by the

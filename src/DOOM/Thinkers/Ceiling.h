@@ -28,18 +28,18 @@ struct Ceiling : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Ceiling; }
-    CeilingType type;
-    Sector* sector;
+    CeilingType type = CeilingType::LowerToFloor;
+    Sector* sector = nullptr;
     Fixed bottomheight;
     Fixed topheight;
     Fixed speed;
-    bool crush;
+    bool crush = false;
 
     // 1 = up, 0 = waiting, -1 = down
-    int direction;
+    int direction = 0;
 
     // ID
-    int tag;
-    int olddirection;
+    int tag = 0;
+    int olddirection = 0;
 };
 } // namespace Doom

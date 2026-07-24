@@ -17,9 +17,9 @@ namespace Doom
 struct Lump
 {
     Array<char, 8> name; // eight bytes, and NOT null-terminated when it fills them
-    void* handle; // the file it came from
-    int position;
-    int size;
+    void* handle = nullptr; // the file it came from
+    int position = 0;
+    int size = 0;
 };
 
 // The WAD, and everything in it.

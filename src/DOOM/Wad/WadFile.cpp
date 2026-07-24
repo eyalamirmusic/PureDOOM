@@ -18,16 +18,16 @@ namespace
 // which littleEndian() swaps on a big-endian host and leaves alone everywhere else.
 struct FileLump
 {
-    int filepos;
-    int size;
-    char name[8];
+    int filepos = 0;
+    int size = 0;
+    char name[8] = {};
 };
 
 struct WadHeader
 {
-    char identification[4]; // "IWAD" or "PWAD"
-    int numlumps;
-    int infotableofs;
+    char identification[4] = {}; // "IWAD" or "PWAD"
+    int numlumps = 0;
+    int infotableofs = 0;
 };
 
 // A file that is not a .wad becomes a single lump named after itself: the base

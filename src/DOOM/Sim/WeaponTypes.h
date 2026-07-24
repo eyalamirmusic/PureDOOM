@@ -66,8 +66,8 @@ namespace Doom
 {
 struct PspDef
 {
-    State* state; // a 0 state means not active
-    int tics;
+    State* state = nullptr; // a 0 state means not active
+    int tics = 0;
     Fixed sx;
     Fixed sy;
 };

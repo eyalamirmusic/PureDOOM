@@ -78,8 +78,8 @@ namespace Doom
 {
 struct Player
 {
-    Mobj* mo;
-    PlayerLifeState playerstate;
+    Mobj* mo = nullptr;
+    PlayerLifeState playerstate = PlayerLifeState::Live;
     Ticcmd cmd;
 
     // Determine POV,
@@ -95,42 +95,42 @@ struct Player
 
     // This is only used between levels,
     // mo->health is used during levels.
-    int health;
-    int armorpoints;
+    int health = 0;
+    int armorpoints = 0;
     // Armor type is 0-2.
-    int armortype;
+    int armortype = 0;
 
     // Power ups. invinc and invis are tic counters.
-    int powers[numPowers];
-    bool cards[numCards];
-    bool backpack;
+    int powers[numPowers] = {};
+    bool cards[numCards] = {};
+    bool backpack = false;
 
     // Frags, kills of other players.
-    int frags[MAXPLAYERS];
-    WeaponType readyweapon;
+    int frags[MAXPLAYERS] = {};
+    WeaponType readyweapon = WeaponType::Fist;
 
     // Is WeaponType::NoChange if not changing.
-    WeaponType pendingweapon;
+    WeaponType pendingweapon = WeaponType::Fist;
 
-    bool weaponowned[numWeapons];
-    int ammo[numAmmo];
-    int maxammo[numAmmo];
+    bool weaponowned[numWeapons] = {};
+    int ammo[numAmmo] = {};
+    int maxammo[numAmmo] = {};
 
     // True if button down last tic.
-    int attackdown;
-    int usedown;
+    int attackdown = 0;
+    int usedown = 0;
 
     // Bit flags, for cheats and debug.
     // See CheatFlag, above.
-    int cheats;
+    int cheats = 0;
 
     // Refired shots are less accurate.
-    int refire;
+    int refire = 0;
 
     // For intermission stats.
-    int killcount;
-    int itemcount;
-    int secretcount;
+    int killcount = 0;
+    int itemcount = 0;
+    int secretcount = 0;
 
     // The hint message shown on the HUD this tic, and cleared by the HUD once it
     // has been drawn. A non-owning view, so whatever is assigned to it must outlive
@@ -140,28 +140,28 @@ struct Player
     std::string_view message;
 
     // For screen flashing (red or bright).
-    int damagecount;
-    int bonuscount;
+    int damagecount = 0;
+    int bonuscount = 0;
 
     // Who did damage (0 for floors/ceilings).
-    Mobj* attacker;
+    Mobj* attacker = nullptr;
 
     // So gun flashes light up areas.
-    int extralight;
+    int extralight = 0;
 
     // Current PLAYPAL, ???
     //  can be set to REDCOLORMAP for pain, etc.
-    int fixedcolormap;
+    int fixedcolormap = 0;
 
     // Player skin colorshift,
     //  0-3 for which color to draw player.
-    int colormap;
+    int colormap = 0;
 
     // Overlay view sprites (gun, etc).
     PspDef psprites[numPSprites];
 
     // True if secret level has been done.
-    bool didsecret;
+    bool didsecret = false;
 
     // One tic of this player (vanilla's P_PlayerThink): weapon change, movement,
     // view bob, specials and powerup countdowns. p_tick calls it; the rest are its
@@ -234,15 +234,15 @@ namespace Doom
 {
 struct IntermissionPlayer
 {
-    bool in; // whether the player is in game
+    bool in = false; // whether the player is in game
 
     // Player stats, kills, collected items etc.
-    int skills;
-    int sitems;
-    int ssecret;
-    int stime;
-    int frags[4];
-    int score; // current score on entry, modified on return
+    int skills = 0;
+    int sitems = 0;
+    int ssecret = 0;
+    int stime = 0;
+    int frags[4] = {};
+    int score = 0; // current score on entry, modified on return
 };
 } // namespace Doom
 
@@ -250,25 +250,25 @@ namespace Doom
 {
 struct IntermissionStart
 {
-    int epsd; // episode # (0-2)
+    int epsd = 0; // episode # (0-2)
 
     // if true, splash the secret level
-    bool didsecret;
+    bool didsecret = false;
 
     // previous and next levels, origin 0
-    int last;
-    int next;
+    int last = 0;
+    int next = 0;
 
-    int maxkills;
-    int maxitems;
-    int maxsecret;
-    int maxfrags;
+    int maxkills = 0;
+    int maxitems = 0;
+    int maxsecret = 0;
+    int maxfrags = 0;
 
     // the par time
-    int partime;
+    int partime = 0;
 
     // index of this player in game
-    int pnum;
+    int pnum = 0;
 
     IntermissionPlayer plyr[MAXPLAYERS];
 };

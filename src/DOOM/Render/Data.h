@@ -15,9 +15,9 @@ struct TexPatch
     // Block origin (allways UL),
     // which has allready accounted
     // for the internal origin of the patch.
-    int originx;
-    int originy;
-    int patch;
+    int originx = 0;
+    int originy = 0;
+    int patch = 0;
 };
 } // namespace Doom
 
@@ -30,15 +30,15 @@ struct Texture
 {
     // Keep name for switch changing, etc.
     Array<char, 8> name;
-    short width;
-    short height;
+    short width = 0;
+    short height = 0;
 
     // All the patches[patchcount]
     //  are drawn back to front into the cached texture. RAII-owned (Step 9): was a
     //  trailing flexible-array-member (patches[1] with a variable-length malloc);
     //  now an owned vector, so a Texture is fixed-size and frees its own patches.
     //  Readers index it as before (patches[j], &patches[0]).
-    short patchcount;
+    short patchcount = 0;
     Vector<TexPatch> patches;
 };
 } // namespace Doom

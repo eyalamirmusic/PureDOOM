@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -21,9 +21,7 @@
 
 #pragma once
 
-
 #include "../doomtype.h"
-
 
 // The data sampled per tick (single player)
 // and transmitted to other peers (multiplayer).
@@ -33,16 +31,14 @@ namespace Doom
 {
 struct Ticcmd
 {
-    char forwardmove;   // *2048 for move
-    char sidemove;      // *2048 for move
-    short angleturn;    // <<16 for angle delta
-    short consistancy;  // checks for net game
-    byte chatchar;
-    byte buttons;
+    char forwardmove = 0; // *2048 for move
+    char sidemove = 0; // *2048 for move
+    short angleturn = 0; // <<16 for angle delta
+    short consistancy = 0; // checks for net game
+    byte chatchar = 0;
+    byte buttons = 0;
 };
 } // namespace Doom
-
-
 
 //-----------------------------------------------------------------------------
 //

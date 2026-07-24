@@ -108,17 +108,17 @@ struct Sector
 {
     Fixed floorheight;
     Fixed ceilingheight;
-    short floorpic;
-    short ceilingpic;
-    short lightlevel;
-    short special;
-    short tag;
+    short floorpic = 0;
+    short ceilingpic = 0;
+    short lightlevel = 0;
+    short special = 0;
+    short tag = 0;
 
     // 0 = untraversed, 1,2 = sndlines -1
-    int soundtraversed;
+    int soundtraversed = 0;
 
     // thing that made a sound (or null)
-    Mobj* soundtarget;
+    Mobj* soundtarget = nullptr;
 
     // mapblock bounding box for height changes
     Array<int, 4> blockbox;
@@ -127,16 +127,16 @@ struct Sector
     DegenMobj soundorg;
 
     // if == validcount, already checked
-    int validcount;
+    int validcount = 0;
 
     // list of mobjs in sector
-    Mobj* thinglist;
+    Mobj* thinglist = nullptr;
 
     // Thinker for reversable actions
-    void* specialdata;
+    void* specialdata = nullptr;
 
-    int linecount;
-    struct Line** lines; // [linecount] size
+    int linecount = 0;
+    struct Line** lines = nullptr; // [linecount] size
 
     // After this sector changed height, re-clip every thing touching it; crush those
     // that no longer fit if `crunch`. Returns true if anything did not fit (vanilla
@@ -179,12 +179,12 @@ struct Side
 
     // Texture indices.
     // We do not maintain names here.
-    short toptexture;
-    short bottomtexture;
-    short midtexture;
+    short toptexture = 0;
+    short bottomtexture = 0;
+    short midtexture = 0;
 
     // Sector the SideDef is facing.
-    Sector* sector;
+    Sector* sector = nullptr;
 };
 } // namespace Doom
 
@@ -207,17 +207,17 @@ namespace Doom
 struct Line
 {
     // Vertices, from v1 to v2.
-    Vertex* v1;
-    Vertex* v2;
+    Vertex* v1 = nullptr;
+    Vertex* v2 = nullptr;
 
     // Precalculated v2 - v1 for side checking.
     Fixed dx;
     Fixed dy;
 
     // Animation related.
-    short flags;
-    short special;
-    short tag;
+    short flags = 0;
+    short special = 0;
+    short tag = 0;
 
     // Visual appearance: SideDefs.
     // sidenum[1] will be -1 if one sided
@@ -228,18 +228,18 @@ struct Line
     Array<Fixed, 4> bbox;
 
     // To aid move clipping.
-    SlopeType slopetype;
+    SlopeType slopetype = SlopeType::Horizontal;
 
     // Front and back sector.
     // Note: redundant? Can be retrieved from SideDefs.
-    Sector* frontsector;
-    Sector* backsector;
+    Sector* frontsector = nullptr;
+    Sector* backsector = nullptr;
 
     // if == validcount, already checked
-    int validcount;
+    int validcount = 0;
 
     // Thinker for reversable actions
-    void* specialdata;
+    void* specialdata = nullptr;
 
     // The p_spec line-special handlers: the cross/shoot/use dispatchers and the
     // individual door/floor/ceiling/plat/light/teleport/switch effects they trigger,
@@ -280,9 +280,9 @@ namespace Doom
 {
 struct SubSector
 {
-    Sector* sector;
-    short numlines;
-    short firstline;
+    Sector* sector = nullptr;
+    short numlines = 0;
+    short firstline = 0;
 };
 } // namespace Doom
 
@@ -293,21 +293,21 @@ namespace Doom
 {
 struct Seg
 {
-    Vertex* v1;
-    Vertex* v2;
+    Vertex* v1 = nullptr;
+    Vertex* v2 = nullptr;
 
     Fixed offset;
 
     Angle angle;
 
-    Side* sidedef;
-    Line* linedef;
+    Side* sidedef = nullptr;
+    Line* linedef = nullptr;
 
     // Sector references.
     // Could be retrieved from linedef, too.
     // backsector is 0 for one sided lines
-    Sector* frontsector;
-    Sector* backsector;
+    Sector* frontsector = nullptr;
+    Sector* backsector = nullptr;
 };
 } // namespace Doom
 

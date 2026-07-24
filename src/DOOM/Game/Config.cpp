@@ -67,28 +67,28 @@
 //
 struct PcxHeader
 {
-    char manufacturer;
-    char version;
-    char encoding;
-    char bits_per_pixel;
+    char manufacturer = 0;
+    char version = 0;
+    char encoding = 0;
+    char bits_per_pixel = 0;
 
-    unsigned short xmin;
-    unsigned short ymin;
-    unsigned short xmax;
-    unsigned short ymax;
+    unsigned short xmin = 0;
+    unsigned short ymin = 0;
+    unsigned short xmax = 0;
+    unsigned short ymax = 0;
 
-    unsigned short hres;
-    unsigned short vres;
+    unsigned short hres = 0;
+    unsigned short vres = 0;
 
-    unsigned char palette[48];
+    unsigned char palette[48] = {};
 
-    char reserved;
-    char color_planes;
-    unsigned short bytes_per_line;
-    unsigned short palette_type;
+    char reserved = 0;
+    char color_planes = 0;
+    unsigned short bytes_per_line = 0;
+    unsigned short palette_type = 0;
 
-    char filler[58];
-    unsigned char data; // unbounded
+    char filler[58] = {};
+    unsigned char data = 0; // unbounded
 };
 
 //
@@ -355,7 +355,7 @@ static void bindEngineDefaults()
     struct Bind
     {
         std::string_view name;
-        int* location;
+        int* location = nullptr;
     };
 
     const Array<Bind, 30> binds = {

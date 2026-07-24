@@ -40,11 +40,11 @@ namespace Doom
 //
 struct MapPatch
 {
-    short originx;
-    short originy;
-    short patch;
-    short stepdir;
-    short colormap;
+    short originx = 0;
+    short originy = 0;
+    short patch = 0;
+    short stepdir = 0;
+    short colormap = 0;
 };
 
 //
@@ -54,19 +54,20 @@ struct MapPatch
 //
 struct MapTexture
 {
-    char name[8];
+    char name[8] = {};
     // An ON-DISK field, not an application boolean: this struct is overlaid directly
     // onto raw TEXTURE1/TEXTURE2 lump bytes. The value is never read, but its four
     // bytes are load-bearing - as a one-byte bool, width/height/columndirectory/
     // patchcount below would all shift by three and every texture in every WAD would
     // parse as garbage. It was declared int ahead of the engine-wide flip to bool
     // precisely so that flip could not reach it, and it stays int for the same reason.
-    int masked;
-    short width;
-    short height;
+    int masked = 0;
+    short width = 0;
+    short height = 0;
     //void **columndirectory; // OBSOLETE
-    int columndirectory; // [pd] If it's not used, at least make sure it's the right size! Pointers are 8 bytes in x64
-    short patchcount;
+    int columndirectory =
+        0; // [pd] If it's not used, at least make sure it's the right size! Pointers are 8 bytes in x64
+    short patchcount = 0;
     MapPatch patches[1];
 };
 

@@ -10,8 +10,8 @@ namespace Doom
 // without freeing).
 struct LevelChunk
 {
-    LevelChunk* next;
-    LevelChunk* prev;
+    LevelChunk* next = nullptr;
+    LevelChunk* prev = nullptr;
 };
 
 // The head of that list. Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5)

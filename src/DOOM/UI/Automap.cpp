@@ -121,7 +121,7 @@ static inline int mapYToFrame(Fixed y)
 
 struct FPoint
 {
-    int x, y;
+    int x = 0, y = 0;
 };
 
 struct FLine

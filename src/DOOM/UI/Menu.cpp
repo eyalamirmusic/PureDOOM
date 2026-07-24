@@ -134,7 +134,7 @@ constexpr int LINEHEIGHT = 16;
 struct MenuItem
 {
     // 0 = no cursor here, 1 = ok, 2 = arrows ok
-    short status;
+    short status = 0;
 
     std::string_view name;
 
@@ -144,26 +144,26 @@ struct MenuItem
     void (*routine)(int choice);
 
     // hotkey in menu
-    char alphaKey;
+    char alphaKey = 0;
 };
 
 struct MenuDef
 {
-    short numitems; // # of menu items
-    MenuDef* prevMenu; // previous menu
-    MenuItem* menuitems; // menu items
+    short numitems = 0; // # of menu items
+    MenuDef* prevMenu = nullptr; // previous menu
+    MenuItem* menuitems = nullptr; // menu items
     void (*routine)(); // draw routine
-    short x;
-    short y; // x,y of menu
-    short lastOn; // last item user was on in menu
+    short x = 0;
+    short y = 0; // x,y of menu
+    short lastOn = 0; // last item user was on in menu
 };
 
 struct MenuCustomTextSeg
 {
     std::string_view lump;
-    int x, w;
-    int offx;
-    int offy;
+    int x = 0, w = 0;
+    int offx = 0;
+    int offy = 0;
 };
 
 struct MenuCustomText

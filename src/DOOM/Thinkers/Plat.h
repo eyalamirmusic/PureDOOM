@@ -35,16 +35,16 @@ struct Plat : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Plat; }
-    Sector* sector;
+    Sector* sector = nullptr;
     Fixed speed;
     Fixed low;
     Fixed high;
-    int wait;
-    int count;
-    PlatState status;
-    PlatState oldstatus;
-    bool crush;
-    int tag;
-    PlatType type;
+    int wait = 0;
+    int count = 0;
+    PlatState status = PlatState::Up;
+    PlatState oldstatus = PlatState::Up;
+    bool crush = false;
+    int tag = 0;
+    PlatType type = PlatType::PerpetualRaise;
 };
 } // namespace Doom

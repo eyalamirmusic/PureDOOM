@@ -111,7 +111,7 @@ namespace Doom
 struct Intercept
 {
     Fixed frac; // along trace line
-    bool isaline;
+    bool isaline = false;
     union
     {
         Mobj* thing;

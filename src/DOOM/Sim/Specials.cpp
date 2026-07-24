@@ -113,10 +113,10 @@ struct AnimDef
     // Compiled as C this was an int-sized enum and -1 fitted. As a C++ bool the
     // terminator would quietly become `true`, never be recognised, and the loop
     // would run off the end of the array.
-    int istexture; // 0 a flat, 1 a texture, -1 ends the table
+    int istexture = 0; // 0 a flat, 1 a texture, -1 ends the table
     std::string_view endname;
     std::string_view startname;
-    int speed;
+    int speed = 0;
 };
 
 Array<AnimDef, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},

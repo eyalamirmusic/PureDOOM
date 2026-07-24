@@ -29,19 +29,19 @@ struct Door : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Door; }
-    DoorType type;
-    Sector* sector;
+    DoorType type = DoorType::Normal;
+    Sector* sector = nullptr;
     Fixed topheight;
     Fixed speed;
 
     // 1 = up, 0 = waiting at top, -1 = down
-    int direction;
+    int direction = 0;
 
     // tics to wait at the top
-    int topwait;
+    int topwait = 0;
 
     // (keep in case a door going down is reset)
     // when it reaches 0, start going down
-    int topcountdown;
+    int topcountdown = 0;
 };
 } // namespace Doom

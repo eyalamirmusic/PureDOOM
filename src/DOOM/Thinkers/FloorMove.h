@@ -57,12 +57,12 @@ struct FloorMove : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Floor; }
-    FloorType type;
-    bool crush;
-    Sector* sector;
-    int direction;
-    int newspecial;
-    short texture;
+    FloorType type = FloorType::LowerFloor;
+    bool crush = false;
+    Sector* sector = nullptr;
+    int direction = 0;
+    int newspecial = 0;
+    short texture = 0;
     Fixed floordestheight;
     Fixed speed;
 };

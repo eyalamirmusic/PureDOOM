@@ -45,27 +45,27 @@ struct StatusNumber
 {
     // upper right-hand corner
     //  of the number (right-justified)
-    int x;
-    int y;
+    int x = 0;
+    int y = 0;
 
     // max # of digits in number
-    int width;
+    int width = 0;
 
     // last number value
-    int oldnum;
+    int oldnum = 0;
 
     // pointer to current value
-    int* num;
+    int* num = nullptr;
 
     // pointer to bool stating
     //  whether to update number
-    bool* on;
+    bool* on = nullptr;
 
     // list of patches for 0-9
-    Patch** p;
+    Patch** p = nullptr;
 
     // user data
-    int data;
+    int data = 0;
 };
 } // namespace Doom
 
@@ -79,7 +79,7 @@ struct StatusPercent
     StatusNumber n;
 
     // percent sign graphic
-    Patch* p;
+    Patch* p = nullptr;
 };
 } // namespace Doom
 
@@ -89,24 +89,24 @@ namespace Doom
 struct StatusMultIcon
 {
     // center-justified location of icons
-    int x;
-    int y;
+    int x = 0;
+    int y = 0;
 
     // last icon number
-    int oldinum;
+    int oldinum = 0;
 
     // pointer to current icon
-    int* inum;
+    int* inum = nullptr;
 
     // pointer to bool stating
     //  whether to update icon
-    bool* on;
+    bool* on = nullptr;
 
     // list of icons
-    Patch** p;
+    Patch** p = nullptr;
 
     // user data
-    int data;
+    int data = 0;
 };
 } // namespace Doom
 
@@ -116,21 +116,21 @@ namespace Doom
 struct StatusBinIcon
 {
     // center-justified location of icon
-    int x;
-    int y;
+    int x = 0;
+    int y = 0;
 
     // last icon value
-    int oldval;
+    int oldval = 0;
 
     // pointer to current icon status
-    bool* val;
+    bool* val = nullptr;
 
     // pointer to bool
     //  stating whether to update icon
-    bool* on;
+    bool* on = nullptr;
 
-    Patch* p; // icon
-    int data; // user data
+    Patch* p = nullptr; // icon
+    int data = 0; // user data
 };
 } // namespace Doom
 

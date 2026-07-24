@@ -36,30 +36,30 @@ struct SfxInfo
     std::string_view name;
 
     // Sfx singularity (only one at a time)
-    int singularity;
+    int singularity = 0;
 
     // Sfx priority
-    int priority;
+    int priority = 0;
 
     // referenced sound if a link
-    SfxInfo* link;
+    SfxInfo* link = nullptr;
 
     // pitch if a link
-    int pitch;
+    int pitch = 0;
 
     // volume if a link
-    int volume;
+    int volume = 0;
 
     // sound data
-    void* data;
+    void* data = nullptr;
 
     // this is checked every second to see if sound
     // can be thrown out (if 0, then decrement, if -1,
     // then throw out, if > 0, then it is in use)
-    int usefulness;
+    int usefulness = 0;
 
     // lump number of sfx
-    int lumpnum;
+    int lumpnum = 0;
 };
 } // namespace Doom
 
@@ -74,13 +74,13 @@ struct MusicInfo
     std::string_view name;
 
     // lump number of music
-    int lumpnum;
+    int lumpnum = 0;
 
     // music data
-    void* data;
+    void* data = nullptr;
 
     // music handle once registered
-    int handle;
+    int handle = 0;
 };
 } // namespace Doom
 

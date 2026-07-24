@@ -28,6 +28,10 @@ namespace Doom
 // WeaponInfo's fields are StateNum (defined in Sim/Info.h). Only the type is needed
 // here, so an opaque declaration keeps the include set small; Sim/Items.cpp, which
 // fills weaponinfo[] with StateNum::* values, includes Info.h for the definition.
+//
+// It is also why those fields are default-initialised `{}` rather than naming
+// StateNum::Null the way the rest of the engine does: an opaque enum is complete
+// enough to declare a member of, but its enumerators are not visible here.
 enum class StateNum;
 } // namespace Doom
 
@@ -36,12 +40,12 @@ namespace Doom
 {
 struct WeaponInfo
 {
-    AmmoType ammo;
-    StateNum upstate;
-    StateNum downstate;
-    StateNum readystate;
-    StateNum atkstate;
-    StateNum flashstate;
+    AmmoType ammo = AmmoType::Clip;
+    StateNum upstate {};
+    StateNum downstate {};
+    StateNum readystate {};
+    StateNum atkstate {};
+    StateNum flashstate {};
 };
 // The per-weapon data table, read-only. Was an `extern` global; storage is
 // file-local to Sim/Items.cpp now, and weaponinfo()[i] reads what weaponinfo[i]

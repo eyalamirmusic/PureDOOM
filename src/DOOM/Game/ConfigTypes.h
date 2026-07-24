@@ -33,16 +33,16 @@ namespace Doom
 struct ConfigDefault
 {
     std::string_view name;
-    int* location;
-    int defaultvalue;
-    int scantranslate; // PC scan code hack
-    int untranslated; // lousy hack
+    int* location = nullptr;
+    int defaultvalue = 0;
+    int scantranslate = 0; // PC scan code hack
+    int untranslated = 0; // lousy hack
 
     // A text-valued default (defaultvalue == STRING_VALUE) writes through
     // text_location instead of location. The view does not own what it points at:
     // before the config file is read that is default_text_value's literal, and
     // after it is a slot of loadDefaults' process-lifetime string storage.
-    std::string_view* text_location;
+    std::string_view* text_location = nullptr;
     std::string_view default_text_value;
 };
 } // namespace Doom

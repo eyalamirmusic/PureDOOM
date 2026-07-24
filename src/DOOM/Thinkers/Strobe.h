@@ -21,11 +21,11 @@ struct Strobe : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::StrobeFlash; }
-    Sector* sector;
-    int count;
-    int minlight;
-    int maxlight;
-    int darktime;
-    int brighttime;
+    Sector* sector = nullptr;
+    int count = 0;
+    int minlight = 0;
+    int maxlight = 0;
+    int darktime = 0;
+    int brighttime = 0;
 };
 } // namespace Doom

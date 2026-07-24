@@ -44,10 +44,10 @@ namespace Doom
 {
 struct Event
 {
-    EventType type;
-    int data1; // keys / mouse/joystick buttons
-    int data2; // mouse/joystick x move
-    int data3; // mouse/joystick y move
+    EventType type = EventType::KeyDown;
+    int data1 = 0; // keys / mouse/joystick buttons
+    int data2 = 0; // mouse/joystick x move
+    int data3 = 0; // mouse/joystick y move
 };
 } // namespace Doom
 

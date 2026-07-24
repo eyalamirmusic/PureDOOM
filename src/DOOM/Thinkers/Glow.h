@@ -16,9 +16,9 @@ struct Glow : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Glow; }
-    Sector* sector;
-    int minlight;
-    int maxlight;
-    int direction;
+    Sector* sector = nullptr;
+    int minlight = 0;
+    int maxlight = 0;
+    int direction = 0;
 };
 } // namespace Doom

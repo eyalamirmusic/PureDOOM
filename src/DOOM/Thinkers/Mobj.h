@@ -306,20 +306,20 @@ struct Mobj : Thinker
     Fixed z;
 
     // More list: links in sector (if needed)
-    struct Mobj* snext;
-    struct Mobj* sprev;
+    struct Mobj* snext = nullptr;
+    struct Mobj* sprev = nullptr;
 
     //More drawing info: to determine current sprite.
     Angle angle; // orientation
-    SpriteNum sprite; // used to find Patch and flip value
-    int frame; // might be ORed with FF_FULLBRIGHT
+    SpriteNum sprite = SpriteNum::Troo; // used to find Patch and flip value
+    int frame = 0; // might be ORed with FF_FULLBRIGHT
 
     // Interaction info, by BLOCKMAP.
     // Links in blocks (if needed).
-    struct Mobj* bnext;
-    struct Mobj* bprev;
+    struct Mobj* bnext = nullptr;
+    struct Mobj* bprev = nullptr;
 
-    SubSector* subsector;
+    SubSector* subsector = nullptr;
 
     // The closest interval over all contacted Sectors.
     Fixed floorz;
@@ -335,43 +335,43 @@ struct Mobj : Thinker
     Fixed momz;
 
     // If == validcount, already checked.
-    int validcount;
+    int validcount = 0;
 
-    MobjType type;
-    MobjInfo* info; // &mobjinfo()[mobj->type]
+    MobjType type = MobjType::Player;
+    MobjInfo* info = nullptr; // &mobjinfo()[mobj->type]
 
-    int tics; // state tic counter
-    State* state;
-    int flags;
-    int health;
+    int tics = 0; // state tic counter
+    State* state = nullptr;
+    int flags = 0;
+    int health = 0;
 
     // Movement direction, movement generation (zig-zagging).
-    int movedir; // 0-7
-    int movecount; // when 0, select a new dir
+    int movedir = 0; // 0-7
+    int movecount = 0; // when 0, select a new dir
 
     // Thing being chased/attacked (or 0),
     // also the originator for missiles.
-    struct Mobj* target;
+    struct Mobj* target = nullptr;
 
     // Reaction time: if non 0, don't attack yet.
     // Used by player to freeze a bit after teleporting.
-    int reactiontime;
+    int reactiontime = 0;
 
     // If >0, the target will be chased
     // no matter what (even if shot)
-    int threshold;
+    int threshold = 0;
 
     // Additional info record for player avatars only.
     // Only valid if type == MobjType::Player
-    struct Player* player;
+    struct Player* player = nullptr;
 
     // Player number last looked for.
-    int lastlook;
+    int lastlook = 0;
 
     // For nightmare respawn.
     MapThing spawnpoint;
 
     // Thing being chased/attacked for tracers.
-    struct Mobj* tracer;
+    struct Mobj* tracer = nullptr;
 };
 } // namespace Doom

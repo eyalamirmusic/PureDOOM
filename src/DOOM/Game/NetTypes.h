@@ -60,13 +60,13 @@ namespace Doom
 struct NetPacket
 {
     // High bit is retransmit request.
-    unsigned checksum;
+    unsigned checksum = 0;
     // Only valid if NCMD_RETRANSMIT.
-    byte retransmitfrom;
+    byte retransmitfrom = 0;
 
-    byte starttic;
-    byte player;
-    byte numtics;
+    byte starttic = 0;
+    byte player = 0;
+    byte numtics = 0;
     Ticcmd cmds[BACKUPTICS];
 };
 } // namespace Doom
@@ -76,37 +76,37 @@ namespace Doom
 struct DoomCom
 {
     // Supposed to be DOOMCOM_ID?
-    long id;
+    long id = 0;
 
     // DOOM executes an int to execute commands.
-    short intnum;
+    short intnum = 0;
     // Communication between DOOM and the driver.
     // Is NetCommandKind::Send or NetCommandKind::Get.
-    short command;
+    short command = 0;
     // Is dest for send, set by get (-1 = no packet).
-    short remotenode;
+    short remotenode = 0;
 
     // Number of bytes in doomdata to be sent
-    short datalength;
+    short datalength = 0;
 
     // Info common to all nodes.
     // Console is allways node 0.
-    short numnodes;
+    short numnodes = 0;
     // Flag: 1 = no duplication, 2-5 = dup for slow nets.
-    short ticdup;
+    short ticdup = 0;
     // Flag: 1 = send a backup tic in every packet.
-    short extratics;
+    short extratics = 0;
     // Flag: 1 = deathmatch.
-    short deathmatch;
+    short deathmatch = 0;
     // Flag: -1 = new game, 0-5 = load savegame
-    short savegame;
-    short episode; // 1-3
-    short map; // 1-9
-    short skill; // 1-5
+    short savegame = 0;
+    short episode = 0; // 1-3
+    short map = 0; // 1-9
+    short skill = 0; // 1-5
 
     // Info specific to this node.
-    short consoleplayer;
-    short numplayers;
+    short consoleplayer = 0;
+    short numplayers = 0;
 
     // These are related to the 3-display mode,
     //  in which two drones looking left and right
@@ -114,9 +114,9 @@ struct DoomCom
     //  on two additional computers.
     // Probably not operational anymore.
     // 1 = left, 0 = center, -1 = right
-    short angleoffset;
+    short angleoffset = 0;
     // 1 = drone
-    short drone;
+    short drone = 0;
 
     // The packet data to be sent.
     NetPacket data;

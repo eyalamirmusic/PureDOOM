@@ -13,9 +13,9 @@ struct FireFlicker : Thinker
 {
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::FireFlicker; }
-    Sector* sector;
-    int count;
-    int maxlight;
-    int minlight;
+    Sector* sector = nullptr;
+    int count = 0;
+    int maxlight = 0;
+    int minlight = 0;
 };
 } // namespace Doom
