@@ -6,28 +6,293 @@
 # generated single header is gone, and with it the rule that no two files may
 # share a file-scope name.
 
-# Vanilla's files are the flat ones. The subdirectories are the rewrite: a file
-# moves into one the moment it stops being 1993 C and becomes C++ someone wrote,
-# and the vanilla name disappears. Progress is the flat list getting shorter.
-file(GLOB DOOM_VANILLA_SOURCES CONFIGURE_DEPENDS *.cpp *.h)
+# The sources are listed explicitly rather than globbed: a glob makes the set of
+# files a build-time discovery that CMake has to re-run (CONFIGURE_DEPENDS) and
+# that no diff can review, and it silently sweeps in a stray file the moment it
+# lands in a directory. Listing them makes adding, moving or deleting a file a
+# reviewable edit here - which is what the two buckets below are *for*.
+#
+# The split is between the two flag sets applied further down. Vanilla's files
+# were the flat 1993 C; a file moved into a subdirectory the moment it became C++
+# someone wrote, and picked up the strict warnings there. That move has finished:
+# the vanilla bucket is now two top-level headers and no translation unit at all,
+# so everything compiled is under the strict flags. The machinery stays - it costs
+# nothing and documents the rule.
+set(DOOM_VANILLA_SOURCES
+        DOOM.h
+        doomtype.h)
 
 # Containers.h is flat but is not vanilla: it is the container vocabulary the
-# eight subdirectories share, written for this refactor. Moving it across the two
-# lists changes no compilation (both flag sets are a no-op on a header) - it keeps
-# the lists meaning what their names say.
-list(REMOVE_ITEM DOOM_VANILLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Containers.h)
+# subdirectories share, written for this refactor, so it belongs with the
+# rewritten sources. (Which bucket a header sits in changes no compilation - the
+# flags are a no-op on a header that no translation unit is - it keeps the lists
+# meaning what their names say.)
+set(DOOM_REWRITTEN_SOURCES
+        Containers.h
 
-file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
-        Math/*.cpp Math/*.h
-        Sim/*.cpp Sim/*.h
-        Thinkers/*.cpp Thinkers/*.h
-        Render/*.cpp Render/*.h
-        UI/*.cpp UI/*.h
-        Game/*.cpp Game/*.h
-        Host/*.cpp Host/*.h
-        Wad/*.cpp Wad/*.h
-        Engine/*.cpp Engine/*.h)
-list(APPEND DOOM_REWRITTEN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Containers.h)
+        Math/Angle.h
+        Math/BBox.cpp
+        Math/BBox.h
+        Math/Fixed.cpp
+        Math/Fixed.h
+        Math/FixedPoint.h
+        Math/FunctionRef.h
+        Math/Swap.h
+        Math/Trig.cpp
+        Math/Trig.h
+        Math/TrigTables.h
+        Math/Vec2.h
+
+        Sim/ActionFunc.h
+        Sim/ActionScratch.h
+        Sim/ActiveSpecials.h
+        Sim/AnimatedSurfaces.h
+        Sim/Blockmap.h
+        Sim/Ceilings.cpp
+        Sim/Ceilings.h
+        Sim/Clip.h
+        Sim/Doors.cpp
+        Sim/Doors.h
+        Sim/EndLevelTimer.h
+        Sim/Enemy.cpp
+        Sim/Enemy.h
+        Sim/EnemyAI.h
+        Sim/Floors.cpp
+        Sim/Floors.h
+        Sim/Info.cpp
+        Sim/Info.h
+        Sim/Interaction.cpp
+        Sim/Interaction.h
+        Sim/ItemRespawnQueue.h
+        Sim/Items.cpp
+        Sim/ItemTypes.h
+        Sim/Level.h
+        Sim/LevelPool.h
+        Sim/Lights.cpp
+        Sim/Lights.h
+        Sim/MapAction.cpp
+        Sim/MapAction.h
+        Sim/MapGeometry.h
+        Sim/MapTypes.h
+        Sim/MapUtil.cpp
+        Sim/MapUtil.h
+        Sim/Mobj.cpp
+        Sim/Mobj.h
+        Sim/MobjTypes.h
+        Sim/Movement.cpp
+        Sim/Movement.h
+        Sim/Plats.cpp
+        Sim/Plats.h
+        Sim/Player.cpp
+        Sim/Player.h
+        Sim/PlayerScratch.h
+        Sim/Random.cpp
+        Sim/Random.h
+        Sim/SaveGame.cpp
+        Sim/SaveGame.h
+        Sim/Setup.cpp
+        Sim/Setup.h
+        Sim/Sight.cpp
+        Sim/Sight.h
+        Sim/SimDefs.h
+        Sim/SoundTarget.h
+        Sim/Specials.cpp
+        Sim/Specials.h
+        Sim/SpecialTypes.h
+        Sim/Switches.cpp
+        Sim/Switches.h
+        Sim/SwitchList.h
+        Sim/Teleport.cpp
+        Sim/Teleport.h
+        Sim/Thinker.h
+        Sim/ThinkerList.h
+        Sim/Tick.cpp
+        Sim/Tick.h
+        Sim/ValidCount.h
+        Sim/Weapon.cpp
+        Sim/Weapon.h
+        Sim/WeaponScratch.h
+        Sim/WeaponTypes.h
+
+        Thinkers/Ceiling.cpp
+        Thinkers/Ceiling.h
+        Thinkers/Door.cpp
+        Thinkers/Door.h
+        Thinkers/FireFlicker.cpp
+        Thinkers/FireFlicker.h
+        Thinkers/FloorMove.cpp
+        Thinkers/FloorMove.h
+        Thinkers/Glow.cpp
+        Thinkers/Glow.h
+        Thinkers/LightFlash.cpp
+        Thinkers/LightFlash.h
+        Thinkers/Mobj.cpp
+        Thinkers/Mobj.h
+        Thinkers/Plat.cpp
+        Thinkers/Plat.h
+        Thinkers/Strobe.cpp
+        Thinkers/Strobe.h
+
+        Render/BSP.cpp
+        Render/BSP.h
+        Render/BSPScratch.h
+        Render/CompositeCache.h
+        Render/Data.cpp
+        Render/Data.h
+        Render/Draw.cpp
+        Render/Draw.h
+        Render/Drawers.h
+        Render/DrawState.h
+        Render/DrawTables.h
+        Render/GraphicsData.h
+        Render/Lighting.h
+        Render/Main.cpp
+        Render/Main.h
+        Render/Planes.cpp
+        Render/Planes.h
+        Render/PlaneScratch.h
+        Render/RenderMainState.h
+        Render/RenderScratch.h
+        Render/RenderTypes.h
+        Render/Segs.cpp
+        Render/Segs.h
+        Render/SegState.h
+        Render/Sky.cpp
+        Render/Sky.h
+        Render/SolidSegs.h
+        Render/SpriteScratch.h
+        Render/SpriteState.h
+        Render/Things.cpp
+        Render/Things.h
+        Render/Video.cpp
+        Render/Video.h
+        Render/VideoState.h
+        Render/ViewPoint.h
+        Render/ViewProjection.h
+        Render/ViewWindow.h
+        Render/WallScratch.h
+
+        UI/Automap.cpp
+        UI/Automap.h
+        UI/AutomapTypes.h
+        UI/AutomapView.h
+        UI/Cheat.cpp
+        UI/Cheat.h
+        UI/CheatTypes.h
+        UI/Finale.cpp
+        UI/Finale.h
+        UI/FinaleState.h
+        UI/Hud.cpp
+        UI/Hud.h
+        UI/HudChat.h
+        UI/HudFlags.h
+        UI/HudFont.h
+        UI/HudMessage.h
+        UI/HudState.h
+        UI/HudWidgets.cpp
+        UI/HudWidgets.h
+        UI/HudWidgetTypes.h
+        UI/Intermission.cpp
+        UI/Intermission.h
+        UI/IntermissionState.h
+        UI/IntermissionTypes.h
+        UI/Menu.cpp
+        UI/Menu.h
+        UI/MenuSettings.h
+        UI/MenuState.h
+        UI/StatusBar.cpp
+        UI/StatusBar.h
+        UI/StatusBarFace.h
+        UI/StatusBarGraphics.h
+        UI/StatusBarState.h
+        UI/StatusBarTypes.h
+        UI/StatusBarWidgets.h
+        UI/StatusWidgetGraphics.h
+        UI/StatusWidgets.cpp
+        UI/StatusWidgets.h
+        UI/StatusWidgetTypes.h
+        UI/Wipe.cpp
+        UI/Wipe.h
+        UI/WipeState.h
+
+        Game/AmmoLimits.h
+        Game/Args.cpp
+        Game/Args.h
+        Game/AttractMode.h
+        Game/Config.cpp
+        Game/Config.h
+        Game/ConfigPaths.h
+        Game/ConfigTypes.h
+        Game/CorpseQueue.h
+        Game/DeferredNewGame.h
+        Game/DemoState.h
+        Game/DisplayState.h
+        Game/DoomMain.cpp
+        Game/DoomMain.h
+        Game/EngineParams.h
+        Game/Event.h
+        Game/EventQueue.h
+        Game/Game.cpp
+        Game/Game.h
+        Game/GameClock.h
+        Game/GameDefs.h
+        Game/GameFlow.h
+        Game/GameSession.h
+        Game/GameVersion.h
+        Game/InputConfig.h
+        Game/IntermissionInfo.h
+        Game/LaunchOptions.h
+        Game/LevelStats.h
+        Game/MapSpawns.h
+        Game/MovementSpeeds.h
+        Game/Net.cpp
+        Game/Net.h
+        Game/NetState.h
+        Game/NetTypes.h
+        Game/OverlayState.h
+        Game/ParTimes.h
+        Game/PendingCommands.h
+        Game/PlayerState.h
+        Game/PlayerTypes.h
+        Game/RefreshFlags.h
+        Game/SaveGameState.h
+        Game/SkyState.h
+        Game/Sound.cpp
+        Game/Sound.h
+        Game/SoundData.cpp
+        Game/SoundData.h
+        Game/SoundSettings.h
+        Game/SoundState.h
+        Game/StartupDefaults.h
+        Game/Strings.h
+        Game/StringsEnglish.h
+        Game/StringsFrench.h
+        Game/Ticcmd.h
+        Game/TiccmdInput.h
+        Game/TimeDemo.h
+
+        Host/Api.cpp
+        Host/Diagnostics.h
+        Host/Host.cpp
+        Host/Host.h
+        Host/Net.cpp
+        Host/Net.h
+        Host/Platform.h
+        Host/Sound.cpp
+        Host/Sound.h
+        Host/System.cpp
+        Host/System.h
+        Host/Text.cpp
+        Host/Text.h
+        Host/Video.cpp
+        Host/Video.h
+
+        Wad/MapFormat.h
+        Wad/WadFile.cpp
+        Wad/WadFile.h
+
+        Engine/Engine.cpp
+        Engine/Engine.h)
 
 add_library(doom-engine STATIC ${DOOM_VANILLA_SOURCES} ${DOOM_REWRITTEN_SOURCES})
 add_library(DOOM::engine ALIAS doom-engine)
