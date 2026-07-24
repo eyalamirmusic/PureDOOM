@@ -115,7 +115,7 @@ auto tAutomapIsCentredOnThePlayer = test("Port/automapIsCentredOnThePlayer") = [
     auto map = Engine::buildAutomap(Engine::camera(), buffer);
 
     constexpr auto cornersPerLine = 6u;
-    constexpr auto arrowCorners = NUMPLYRLINES * cornersPerLine;
+    constexpr auto arrowCorners = Doom::NUMPLYRLINES * cornersPerLine;
 
     check(map.size() >= arrowCorners + cornersPerLine, "the arrow was emitted");
 
@@ -166,7 +166,7 @@ auto tAutomapSpansTheFrame = test("Port/automapSpansTheFrame") = []
     auto map = Engine::buildAutomap(Engine::camera(), buffer);
 
     constexpr auto cornersPerLine = 6u;
-    constexpr auto tailCorners = (NUMPLYRLINES + 1) * cornersPerLine;
+    constexpr auto tailCorners = (Doom::NUMPLYRLINES + 1) * cornersPerLine;
 
     check(map.size() > tailCorners, "walls were revealed and emitted");
 

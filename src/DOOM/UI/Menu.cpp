@@ -73,20 +73,22 @@
 // stay at file scope rather than moving into namespace Doom below. mouseSensitivity
 // is declared in doomstat.h. (messageToPrint is a MenuState member now, read by the
 // eacp overlay through menuState() like the rest of the cluster.)
-// menuactive, automapactive and inhelpscreens (which gates Doom::displayFrame's border
-// redraw) are a Doom::OverlayState owned by the Engine now; these are references
+// menuactive, automapactive and inhelpscreens (which gates displayFrame's border
+// redraw) are a OverlayState owned by the Engine now; these are references
 // onto it (REFACTOR.md, Step 5).
 // The config-backed settings (mouse sensitivity, message toggle, detail, view
 // size) are Engine members now (UI/MenuSettings.h); these are references onto
 // them. Config.cpp binds its defaults[] entries to the members at runtime rather
 // than capturing their addresses at static-init, which is what unblocked the move.
 
-// The quit-screen taunts, drawn by quitDOOM. Declared in dstrings.h, read only
+namespace Doom
+{
+// The quit-screen taunts, drawn by quitDOOM. Declared in Game/Strings.h, read only
 // here, so their definition moved out of dstrings.cpp to sit with their one
-// reader. ::-scoped for the extern; const so the literals stay off -Wwritable.
-std::string_view endmsgData[Doom::NUM_QUITMESSAGES + 1] = {
+// reader.
+std::string_view endmsgData[NUM_QUITMESSAGES + 1] = {
     // DOOM1
-    Doom::QUITMSG,
+    QUITMSG,
     "please don't leave, there's more\ndemons to toast!",
     "let's beat it -- this is turning\ninto a bloodbath!",
     "i wouldn't leave if i were you.\ndos is much worse.",
@@ -121,9 +123,6 @@ const std::string_view* endmsg()
 {
     return endmsgData;
 }
-
-namespace Doom
-{
 
 constexpr int SKULLXOFF = -32;
 constexpr int LINEHEIGHT = 16;

@@ -68,12 +68,9 @@ Breaking one silently defeats the whole apparatus.
   `OwningPointer` and `makeOwned` into `namespace Doom`, so a signature reads
   `Vector<T>&`. Include it rather than the individual headers.
 
-  Two carve-outs. **`DOOM.h` stays standard-library-only** and spells its argument
+  One carve-out. **`DOOM.h` stays standard-library-only** and spells its argument
   vector `std::vector` — an embedder should not need eacp's containers to call
-  `initGame`. And a handful of `::`-scope **accessor functions** returning the
-  shared tables (`mapnames()`, `chat_macros()`, `player_names()`, `mixbuffer()`, …)
-  spell their `Doom::Array` / `Doom::Vector` return types in full, since the
-  using-declarations are inside the namespace and do not reach `::` scope. **There
+  `initGame`. **There
   are no `extern` variables anywhere in the repository** — a grep for a bare
   `extern` (outside comments and `extern "C"` prose) comes back empty, and it
   should stay that way. What used to be an `extern` global is now either a member
@@ -141,7 +138,9 @@ per-column indirection was measured and the demo suite's wall clock did not move
 The automap's vector shapes and the melt's state are deliberate exported
 carve-outs (`UI/AutomapTypes.h`, `UI/Wipe.h`, both including their state clusters)
 that the eacp compositor reads through accessors (`mapShapes()`, `automapView()`,
-`wipeState()`); `UI/AutomapTypes.h`'s `MapLine` shapes stay all at `::` scope.
+`wipeState()`). Being exported does not mean being at `::` scope: everything
+`UI/AutomapTypes.h` declares — the `MapLine` shapes, the colour indices, the line
+counts — is in `namespace Doom`, and `examples/EACP` qualifies them.
 
 Three constraints died with the single header and the code may rely on their
 absence: **two files may share a file-scope name**, a source file may include a
@@ -227,12 +226,72 @@ Two hazards when converting or extending an enum:
   enum fields as their integer values, so the checksums are unchanged by scoping
   and still pin the transcription.
 
+### One `namespace Doom` per file, and the engine never qualifies itself
+
+**Every file that opens `namespace Doom` opens it exactly once**, and **no engine
+file writes `Doom::`**. Both are greppable invariants, and they are the same
+invariant: a `Doom::` inside the engine only ever appeared because the declaration
+had been left at `::` scope, so the prefix was *required* rather than redundant.
+There were 170 namespace blocks across 37 files (`Sim/MapTypes.h` had 11,
+`Wad/MapFormat.h` 18, `Game/StringsEnglish.h` 23) and 158 `Doom::` occurrences, and
+**not one of the 158 was redundant** — the reopening and the prefix were two
+symptoms of one cause.
+
+The blocks were split so that *comments* could sit between them, which is what a
+mechanical namespace-wrapping sweep leaves behind. Merging them is not cosmetic:
+while a file is in pieces there is no single place a declaration belongs, so the
+next one lands at `::` scope and needs a prefix again.
+
+Four things to know before touching this:
+
+- **`using namespace Doom;` is gone from every file** (it was in `Sim/Info.cpp`,
+  `Sim/Items.cpp` and `Game/SoundData.cpp`, each so a verbatim 1993 table could name
+  `MF_*`/`S_*`/`SPR_*` unqualified while sitting at `::` scope). The tables are
+  inside the namespace now and name those enumerators directly. **A namespace-block
+  scanner must exclude `using namespace Doom`** — matching it makes the *next* `{`,
+  which is a table's opening brace, look like the namespace's, and the merge then
+  eats the table's closing `};`. That mis-parse silently corrupted exactly those
+  three files, and it is the reason to run the scanner's own output past a build
+  rather than trusting it.
+- **What deliberately stays at `::` scope**, and it is a short list: `doomtype.h`'s
+  `byte`, `Host/Platform.h`'s `doom_abs`/`doom_memset`/`doom_memcpy` (the memory
+  primitives), `Game/Args.h`'s `myargv()`/`myargCount()`, `Host/Sound.h`'s
+  `mixbuffer()`, and the `#define`s that cannot leave the preprocessor. Everything
+  else is in the namespace.
+- **A `#define` hoisted out of a merged block must take its comment with it.** Three
+  files (`Game/Strings.h`, `Game/StringsEnglish.h`, `Game/GameDefs.h`) keep macros
+  whose whole justification is a comment explaining why they cannot become
+  `constexpr`; moving the macro and stranding the rationale is how that comment stops
+  being read. An `#include` between two blocks is the harder case and must be hoisted
+  above the first block, never swallowed into the namespace.
+- **The prefix moves outward, not away.** `Tests/` and `examples/EACP/` are outside
+  `namespace Doom` and now qualify what they previously got for free — the automap's
+  colour constants, `NUMPLYRLINES`, `FRACUNIT`/`FixedMul`/`FixedDiv`,
+  `defaults()`/`numdefaults()`. That is the correct direction: the engine reads
+  cleanly and its consumers say whose names they are using. `Math/FixedPoint.h`
+  carried a comment asserting the opposite ("deliberately at `::` scope" so the tests
+  could read `FRACUNIT` bare); letting a *test's* convenience decide an engine
+  header's scope is the tail wagging the dog, and that comment is gone.
+
+Two things this sweep found, both of which the goldens could not have: six files
+carried a `// Global-scope data that was X.cpp. It stays at :: scope because these
+are the vanilla names other translation units (and the eacp port) still link
+against.` banner over a section that was **entirely comments** — every declaration
+had migrated to the `Engine` long before, so the banner asserted a rule that
+governed nothing, and `UI/Hud.cpp`'s identical banner was what justified keeping
+three live tables outside the namespace (nothing outside the engine reads any of
+them). And nine `nullptr` pointer globals in `Render/Data.cpp`, `Render/Things.cpp`
+and `Render/Draw.cpp` were **dead** — vestiges of the view-removal sweep, each
+survived by a same-named `GraphicsData`/`DrawState` member, each still carrying a
+comment describing how `initTextures` refreshed it. Deleting them is
+compiler-verified: a reader would have become an undeclared identifier.
+
 ### Types, containers and idiom
 
 **The vanilla types and function names are gone.** All 107 types are PascalCase in
 `namespace Doom` (`mobj_t`→`Mobj`, `line_t`→`Line`, `player_t`→`Player`, …), and
-every call site calls the namespaced function (`Doom::drawPlanes`, `Doom::tryMove`,
-`Doom::displayFrame`, `Doom::fatalError`, `Doom::cacheLumpNum`). No prefixed
+every call site calls the namespaced function (`drawPlanes`, `tryMove`,
+`displayFrame`, `fatalError`, `cacheLumpNum`). No prefixed
 spelling survives; do not go looking for one. The state-action adapter layer is
 gone: `Sim/Info.cpp`'s `states[]` used to store every action through one
 type-erased `void(*)(void*)` and a `Sim/Actions.{h,cpp}` forwarding shim, and now

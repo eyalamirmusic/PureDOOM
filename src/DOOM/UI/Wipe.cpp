@@ -246,8 +246,8 @@ int screenWipe(WipeType wipeno,
 } // namespace Doom
 
 // ---------------------------------------------------------------------------
-// Global-scope data that was f_wipe.cpp. It stays at :: scope because these are the
-// vanilla names other translation units (and the eacp port) still link against.
+// What was f_wipe.cpp's file-scope data. Every name below has moved onto the
+// Engine; the notes record where each went.
 // ---------------------------------------------------------------------------
 //
 // SCREEN WIPE PACKAGE

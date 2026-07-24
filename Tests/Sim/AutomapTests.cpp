@@ -23,12 +23,12 @@ auto tAutomap = test("Sim/automap") = [] { checkAutomapMatchesGolden(); };
 // cheats. That blind spot hid a real regression from the Doom::Fixed -> Doom::Fixed
 // migration, so these pin the numbers directly rather than through a picture.
 //
-// The bug: thintriangle_guy scaled its vertices with `#define R (FRACUNIT)`,
+// The bug: thintriangle_guy scaled its vertices with `#define R (Doom::FRACUNIT)`,
 // making each `-.5 * R` a `double * Fixed`. That converts -.5 to `int` 0 before
 // multiplying, so every scaled vertex collapsed to the origin and the shape
 // became one degenerate line. Vanilla's Doom::Fixed was a plain int, where
 // -.5 * 65536 truncated to -32768 as intended. triangle_guy next to it scales
-// off FRACUNIT.raw and was always right, which is what made the difference
+// off Doom::FRACUNIT.raw and was always right, which is what made the difference
 // visible. Values below are vanilla's, from git show 110ddbe:src/DOOM/am_map.c.
 auto tShapeTables = test("Automap/shapeTablesAreScaled") = []
 {

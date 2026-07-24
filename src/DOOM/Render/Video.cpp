@@ -46,9 +46,9 @@
 #include "../Host/System.h"
 #include "../Math/BBox.h"
 
-// videoState().dirtybox is a Doom::VideoState member (Engine) now; a reference onto it (Step 5).
+// videoState().dirtybox is a VideoState member (Engine) now; a reference onto it (Step 5).
 // It holds screen pixels, not a fixed-point box, so it is grown by addToDirtyBox below rather
-// than by Doom::addToBox (Math/BBox.h is still included for the boxLeft/boxBottom/boxRight/boxTop
+// than by addToBox (Math/BBox.h is still included for the boxLeft/boxBottom/boxRight/boxTop
 // index names addToDirtyBox uses).
 
 // The gamma-correction table (v_video's gammatable) was defined here and read

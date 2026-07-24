@@ -2,15 +2,12 @@
 
 #include "../Containers.h"
 
-// Doom::Mobj is used only by pointer here, so a forward declaration is enough - no need to pull
+// Mobj is used only by pointer here, so a forward declaration is enough - no need to pull
 // the whole mobj definition into everyone who includes the Engine.
 namespace Doom
 {
 struct Mobj;
-} // namespace Doom
 
-namespace Doom
-{
 // The rotating queue of player corpses. So old bodies do not pile up forever, G_QueueBody
 // keeps only the last BODYQUESIZE of them: each reborn player's old mobj is stored at
 // bodyque[bodyqueslot % BODYQUESIZE] and the one it displaces is removed, with bodyqueslot the

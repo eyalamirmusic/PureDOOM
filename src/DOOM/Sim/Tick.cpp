@@ -1,8 +1,8 @@
 // Rewritten out of vanilla p_tick into namespace Doom.
 //
-// The thinker list (init/add/remove/run) and the per-tic Doom::ticker that thinks each
+// The thinker list (init/add/remove/run) and the per-tic ticker that thinks each
 // player and runs the thinkers, specials and respawns. The run loop dispatches
-// through the thinker function-pointer union, so the T_/Doom::mobjThinker addresses it
+// through the thinker function-pointer union, so the T_/mobjThinker addresses it
 // stores stay global. p_tick.cpp shims the vanilla names and owns leveltime and
 // thinkercap. Golden-neutral - this is the heartbeat every demo tic runs through.
 

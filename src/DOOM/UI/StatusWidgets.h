@@ -5,7 +5,7 @@
 namespace Doom
 {
 // Status-bar widgets. The vanilla STlib_ names that used to shim these have
-// been retired; call sites use these Doom:: names directly.
+// been retired; call sites use these  names directly.
 void initStatusWidgets();
 void initNum(
     StatusNumber& n, int x, int y, Patch** pl, int* num, bool* on, int width);

@@ -24,7 +24,7 @@
 #include "../doomtype.h"
 
 //
-// Doom::Event handling.
+// Event handling.
 //
 
 // Input event types.
@@ -37,11 +37,8 @@ enum class EventType
     Mouse,
     Joystick
 };
-} // namespace Doom
 
-// Doom::Event structure.
-namespace Doom
-{
+// Event structure.
 struct Event
 {
     EventType type = EventType::KeyDown;
@@ -49,10 +46,7 @@ struct Event
     int data2 = 0; // mouse/joystick x move
     int data3 = 0; // mouse/joystick y move
 };
-} // namespace Doom
 
-namespace Doom
-{
 enum class GameAction
 {
     Nothing,
@@ -66,13 +60,10 @@ enum class GameAction
     WorldDone,
     Screenshot
 };
-} // namespace Doom
 
 //
-// Doom::Button/action code definitions.
+// Button/action code definitions.
 //
-namespace Doom
-{
 // Vanilla kept BT_* and BTS_* in one enum, which hid that they are two different
 // vocabularies for the same byte: BTS_PAUSE and BT_ATTACK are both bit 0, and which
 // meaning applies depends on whether BT_SPECIAL is set. Scoping them together would
@@ -108,21 +99,18 @@ constexpr int buttonWeaponShift = 3;
 // Savegame slot numbers occupy the second byte of buttons.
 constexpr int buttonSaveMask = 4 + 8 + 16;
 constexpr int buttonSaveShift = 2;
-} // namespace Doom
 
 //
 // GLOBAL VARIABLES
 //
-namespace Doom
-{
 // [pd] Crank up the number because we pump them faster.
 constexpr int MAXEVENTS = 64 * 64;
 } // namespace Doom
 
-// The input event ring buffer is a Doom::EventQueue owned by the Engine now; these are
+// The input event ring buffer is a EventQueue owned by the Engine now; these are
 // references onto its members (REFACTOR.md, Step 5).
 
-// The pending game action is a member of the Doom::GameFlow owned by the Engine now; this is
+// The pending game action is a member of the GameFlow owned by the Engine now; this is
 // a reference onto it (REFACTOR.md, Step 5).
 
 //-----------------------------------------------------------------------------

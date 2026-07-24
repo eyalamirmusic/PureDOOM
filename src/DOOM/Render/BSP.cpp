@@ -23,16 +23,16 @@
 #include "Things.h"
 #include "../Containers.h"
 
-// Doom::storeWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
+// storeWallRange lives in r_segs; declared so the BSP walk can hand it ranges.
 #include "Segs.h"
 #include "../Host/System.h"
 #include "Main.h"
 #include "../Math/BBox.h"
 #include "../Sim/Level.h"
-void Doom::storeWallRange(int start, int stop);
-
 namespace Doom
 {
+void storeWallRange(int start, int stop);
+
 // ClipRange and the solidsegs/newend clip ranges now live on the Engine (Render/SolidSegs.h, moved
 // by the file-scope-statics sweep - REFACTOR.md, Step 5). The type moved to the header so solidsegs
 // could become a member (an anonymous-struct typedef in the .cpp cannot be named there). solidsegs

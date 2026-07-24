@@ -1,6 +1,6 @@
 // Rewritten out of vanilla m_argv into namespace Doom.
 //
-// Command-line argument lookup. m_argv.cpp shims Doom::checkParm; myargc/myargv are
+// Command-line argument lookup. m_argv.cpp shims checkParm; myargc/myargv are
 // the argument vector the host fills in and every subsystem reads, so they stay
 // defined at file scope here, above the namespace (still ::-scoped).
 

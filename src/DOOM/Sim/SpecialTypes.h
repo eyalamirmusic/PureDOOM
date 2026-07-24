@@ -16,7 +16,7 @@
 //
 // DESCRIPTION:  none
 //        Implements special effects:
-//        Doom::Texture animation, height or lighting changes
+//        Texture animation, height or lighting changes
 //         according to adjacent sectors, respective
 //         utility functions, etc.
 //
@@ -48,7 +48,7 @@
 //
 // End-level timer (-TIMER option)
 //
-// The end-level timer is a Doom::EndLevelTimer owned by the Engine now; these are references
+// The end-level timer is a EndLevelTimer owned by the Engine now; these are references
 // onto its members (REFACTOR.md, Step 5).
 
 // at game start
@@ -59,10 +59,12 @@
 
 // when needed
 
+namespace Doom
+{
 int twoSided(int sector, int line);
-Doom::Sector* getSector(int currentSector, int line, int side);
-Doom::Side* getSide(int currentSector, int line, int side);
-Doom::Sector* getNextSector(Doom::Line& line, Doom::Sector& sec);
+Sector* getSector(int currentSector, int line, int side);
+Side* getSide(int currentSector, int line, int side);
+Sector* getNextSector(Line& line, Sector& sec);
 
 //
 // SPECIAL
@@ -71,28 +73,20 @@ Doom::Sector* getNextSector(Doom::Line& line, Doom::Sector& sec);
 //
 // P_SWITCH
 //
-namespace Doom
-{
 struct SwitchListEntry
 {
     std::string_view name1;
     std::string_view name2;
     short episode = 0;
 };
-} // namespace Doom
 
-namespace Doom
-{
 enum class ButtonWhere
 {
     Top,
     Middle,
     Bottom
 };
-} // namespace Doom
 
-namespace Doom
-{
 struct Button
 {
     Line* line = nullptr;
@@ -101,10 +95,7 @@ struct Button
     int btimer = 0;
     Mobj* soundorg = nullptr;
 };
-} // namespace Doom
 
-namespace Doom
-{
 // max # of wall switches in a level
 
 // 4 players, 4 buttons each at once, max.
@@ -112,16 +103,13 @@ constexpr int MAXBUTTONS = 16;
 
 // 1 second, in ticks.
 constexpr int BUTTONTIME = 35;
-} // namespace Doom
 
-// The active-special registries are a Doom::ActiveSpecials owned by the Engine now; these
+// The active-special registries are a ActiveSpecials owned by the Engine now; these
 // (and activeplats/activeceilings below) are references onto its members (REFACTOR.md, Step 5).
 
 //
 // P_FLOOR
 //
-namespace Doom
-{
 // The result of one movePlane step, shared by the floor, ceiling, plat and door
 // thinkers (Floors.cpp defines movePlane; the movers read its verdict).
 enum class MoveResult

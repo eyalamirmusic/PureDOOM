@@ -27,16 +27,18 @@
 //
 // Global parameters/defines.
 //
+// If rangecheck is undefined,
+// most parameter validation debugging code will not be compiled.
+// This one stays a macro: it is a feature toggle read by #ifdef, not a value.
+#define RANGECHECK
+
 // DOOM version
 namespace Doom
 {
 constexpr int VERSION = 110;
-} // namespace Doom
 
 // Game mode handling - identify IWAD version
 //  to handle IWAD dependend animations etc.
-namespace Doom
-{
 enum class GameMode
 {
     Shareware, // DOOM 1 shareware, E1, M9
@@ -46,11 +48,8 @@ enum class GameMode
     Retail, // DOOM 1 retail, E4, M36
     Indetermined // Well, no IWAD found.
 };
-} // namespace Doom
 
 // Mission packs - might be useful for TC stuff?
-namespace Doom
-{
 enum class GameMission
 {
     Doom, // DOOM 1
@@ -59,11 +58,8 @@ enum class GameMission
     PackPlut, // Plutonia pack
     None
 };
-} // namespace Doom
 
 // Identify language to use, software localization.
-namespace Doom
-{
 enum class Language
 {
     English,
@@ -71,15 +67,11 @@ enum class Language
     German,
     Unknown
 };
-} // namespace Doom
 
 // If rangecheck is undefined,
 // most parameter validation debugging code will not be compiled.
 // This one stays a macro: it is a feature toggle read by #ifdef, not a value.
-#define RANGECHECK
 
-namespace Doom
-{
 //
 // For resize of screen, at start of game.
 // It will not work dynamically, see visplanes.
@@ -105,13 +97,10 @@ constexpr int TICKMUL = 2;
 constexpr int TICKMUL = 1;
 #endif
 constexpr int TICRATE = 35 * TICKMUL;
-} // namespace Doom
 
 // The current state of the game: whether we are
 // playing, gazing at the intermission screen,
 // the game final animation, or a demo.
-namespace Doom
-{
 // The underlying type is stated because the enum also carries GS_FORCE_WIPE
 // below, which is outside the enumerators' range - and without a fixed type,
 // holding a value outside that range is UB (UBSan flagged every load of it).
@@ -129,14 +118,11 @@ enum class GameState : int
 // Deliberately not an enumerator: the switches over gamestate handle exactly
 // the four real screens, and a fifth case would put an unreachable arm in each.
 constexpr auto GS_FORCE_WIPE = static_cast<GameState>(-1);
-} // namespace Doom
 
 //
 // Difficulty/skill settings/filters.
 //
 
-namespace Doom
-{
 // Skill flags.
 constexpr int MTF_EASY = 1;
 constexpr int MTF_NORMAL = 2;
@@ -144,10 +130,7 @@ constexpr int MTF_HARD = 4;
 
 // Deaf monsters/do not react to sound.
 constexpr int MTF_AMBUSH = 8;
-} // namespace Doom
 
-namespace Doom
-{
 enum class Skill
 {
     Baby,
@@ -156,13 +139,10 @@ enum class Skill
     Hard,
     Nightmare
 };
-} // namespace Doom
 
 //
 // Key cards.
 //
-namespace Doom
-{
 enum class Card
 {
     BlueCard,
@@ -177,13 +157,10 @@ enum class Card
 // The count, for array sizes and loop bounds. Derived from the enum's own sentinel so
 // the two cannot drift - the rule the fixed-size-array bounds follow elsewhere.
 constexpr int numCards = toIndex(Card::NumCards);
-} // namespace Doom
 
 // The defined weapons,
 // including a marker indicating
 // user has not changed weapon.
-namespace Doom
-{
 enum class WeaponType
 {
     Fist,
@@ -201,11 +178,8 @@ enum class WeaponType
 };
 
 constexpr int numWeapons = toIndex(WeaponType::NumWeapons);
-} // namespace Doom
 
 // Ammunition types defined.
-namespace Doom
-{
 enum class AmmoType
 {
     Clip, // Pistol / chaingun ammo.
@@ -217,11 +191,8 @@ enum class AmmoType
 };
 
 constexpr int numAmmo = toIndex(AmmoType::NumAmmo);
-} // namespace Doom
 
 // Power up artifacts.
-namespace Doom
-{
 enum class PowerType
 {
     Invulnerability,
@@ -234,15 +205,12 @@ enum class PowerType
 };
 
 constexpr int numPowers = toIndex(PowerType::NumPowers);
-} // namespace Doom
 
 //
 // Power up durations,
 //  how many seconds till expiration,
 //  assuming TICRATE is 35 ticks/second.
 //
-namespace Doom
-{
 // Not an `enum class`: these are tic counts, assigned straight into Player::powers[]
 // and counted down. They are a group of integer constants rather than an enumeration
 // of alternatives, and typing them would force a toIndex() on every use - naming an
@@ -252,15 +220,12 @@ constexpr int invulnTics = 30 * TICRATE;
 constexpr int invisTics = 60 * TICRATE;
 constexpr int infraTics = 120 * TICRATE;
 constexpr int ironTics = 60 * TICRATE;
-} // namespace Doom
 
 //
 // DOOM keyboard definition.
 // This is the stuff configured by Setup.Exe.
 // Most key data are simple ascii (uppercased).
 //
-namespace Doom
-{
 constexpr int KEY_RIGHTARROW = 0xae;
 constexpr int KEY_LEFTARROW = 0xac;
 constexpr int KEY_UPARROW = 0xad;

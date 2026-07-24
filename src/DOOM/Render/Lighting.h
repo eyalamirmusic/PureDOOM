@@ -16,10 +16,7 @@ constexpr int LIGHTSCALESHIFT = 12;
 constexpr int MAXLIGHTZ = 128;
 constexpr int LIGHTZSHIFT = 20;
 constexpr int NUMCOLORMAPS = 32;
-} // namespace Doom
 
-namespace Doom
-{
 // The renderer's light selection. initLightTables builds the diminishing-light
 // lookups once - scalelight indexed by light level and on-screen scale, zlight by
 // light level and distance, each cell a COLORMAP row (a LightTable* into the

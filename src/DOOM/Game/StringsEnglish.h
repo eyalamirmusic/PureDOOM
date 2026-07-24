@@ -28,19 +28,6 @@
 // Printed strings for translation
 //
 
-//
-// D_Main.C
-//
-namespace Doom
-{
-constexpr std::string_view D_DEVSTR = "Development mode ON.\n";
-constexpr std::string_view D_CDROM =
-    "CD-ROM Version: default.cfg from c:\\doomdata\n";
-} // namespace Doom
-
-//
-//        M_Menu.C
-//
 // These two stay macros deliberately. Ten entries below end in one of them --
 // LOADNET, QLOADNET, QSAVESPOT, SAVEDEAD, QSPROMPT, QLPROMPT, QSPROMPT_2,
 // QLPROMPT_2, NETEND, ENDGAME -- as `"...\n\n" PRESSKEY`. That is
@@ -49,8 +36,19 @@ constexpr std::string_view D_CDROM =
 // what lets all ten convert normally.
 #define PRESSKEY "press a key."
 #define PRESSYN "press y or n."
+
+//
+// D_Main.C
+//
 namespace Doom
 {
+constexpr std::string_view D_DEVSTR = "Development mode ON.\n";
+constexpr std::string_view D_CDROM =
+    "CD-ROM Version: default.cfg from c:\\doomdata\n";
+
+//
+//        M_Menu.C
+//
 constexpr std::string_view QUITMSG =
     "are you sure you want to\nquit this great game?";
 constexpr std::string_view LOADNET =
@@ -105,13 +103,10 @@ constexpr std::string_view GAMMALVL2 = "Gamma correction level 2";
 constexpr std::string_view GAMMALVL3 = "Gamma correction level 3";
 constexpr std::string_view GAMMALVL4 = "Gamma correction level 4";
 constexpr std::string_view EMPTYSTRING = "empty slot";
-} // namespace Doom
 
 //
 // P_inter.C
 //
-namespace Doom
-{
 constexpr std::string_view GOTARMOR = "Picked up the armor.";
 constexpr std::string_view GOTMEGA = "Picked up the MegaArmor!";
 constexpr std::string_view GOTHTHBONUS = "Picked up a health bonus.";
@@ -153,13 +148,10 @@ constexpr std::string_view GOTLAUNCHER = "You got the rocket launcher!";
 constexpr std::string_view GOTPLASMA = "You got the plasma gun!";
 constexpr std::string_view GOTSHOTGUN = "You got the shotgun!";
 constexpr std::string_view GOTSHOTGUN2 = "You got the super shotgun!";
-} // namespace Doom
 
 //
 // P_Doors.C
 //
-namespace Doom
-{
 constexpr std::string_view PD_BLUEO = "You need a blue key to activate this object";
 constexpr std::string_view PD_REDO = "You need a red key to activate this object";
 constexpr std::string_view PD_YELLOWO =
@@ -167,21 +159,15 @@ constexpr std::string_view PD_YELLOWO =
 constexpr std::string_view PD_BLUEK = "You need a blue key to open this door";
 constexpr std::string_view PD_REDK = "You need a red key to open this door";
 constexpr std::string_view PD_YELLOWK = "You need a yellow key to open this door";
-} // namespace Doom
 
 //
 // G_game.C
 //
-namespace Doom
-{
 constexpr std::string_view GGSAVED = "game saved.";
-} // namespace Doom
 
 //
 // HU_stuff.C
 //
-namespace Doom
-{
 constexpr std::string_view HUSTR_MSGU = "[Message unsent]";
 
 constexpr std::string_view HUSTR_E1M1 = "E1M1: Hangar";
@@ -350,13 +336,10 @@ constexpr std::string_view HUSTR_TALKTOSELF4 = "You start to rave";
 constexpr std::string_view HUSTR_TALKTOSELF5 = "You've lost it...";
 
 constexpr std::string_view HUSTR_MESSAGESENT = "[Message Sent]";
-} // namespace Doom
 
 // The following should NOT be changed unless it seems
 // just AWFULLY necessary
 
-namespace Doom
-{
 constexpr std::string_view HUSTR_PLRGREEN = "Green: ";
 constexpr std::string_view HUSTR_PLRINDIGO = "Indigo: ";
 constexpr std::string_view HUSTR_PLRBROWN = "Brown: ";
@@ -366,14 +349,11 @@ constexpr char HUSTR_KEYGREEN = 'g';
 constexpr char HUSTR_KEYINDIGO = 'i';
 constexpr char HUSTR_KEYBROWN = 'b';
 constexpr char HUSTR_KEYRED = 'r';
-} // namespace Doom
 
 //
 // AM_map.C
 //
 
-namespace Doom
-{
 constexpr std::string_view AMSTR_FOLLOWON = "Follow Mode ON";
 constexpr std::string_view AMSTR_FOLLOWOFF = "Follow Mode OFF";
 
@@ -382,14 +362,11 @@ constexpr std::string_view AMSTR_GRIDOFF = "Grid OFF";
 
 constexpr std::string_view AMSTR_MARKEDSPOT = "Marked Spot";
 constexpr std::string_view AMSTR_MARKSCLEARED = "All Marks Cleared";
-} // namespace Doom
 
 //
 // ST_stuff.C
 //
 
-namespace Doom
-{
 constexpr std::string_view STSTR_MUS = "Music Change";
 constexpr std::string_view STSTR_NOMUS = "IMPOSSIBLE SELECTION";
 constexpr std::string_view STSTR_DQDON = "Degreelessness Mode On";
@@ -407,13 +384,10 @@ constexpr std::string_view STSTR_BEHOLDX = "Power-up Toggled";
 
 constexpr std::string_view STSTR_CHOPPERS = "... doesn't suck - GM";
 constexpr std::string_view STSTR_CLEV = "Changing Level...";
-} // namespace Doom
 
 //
 // F_Finale.C
 //
-namespace Doom
-{
 constexpr std::string_view E1TEXT = "Once you beat the big badasses and\n"
                                     "clean out the moon base you're supposed\n"
                                     "to win, aren't you? Aren't you? Where's\n"
@@ -482,11 +456,8 @@ constexpr std::string_view E4TEXT = "the spider mastermind must have sent forth\
                                     "of demons run amok among our cities.\n"
                                     "\n"
                                     "next stop, hell on earth!";
-} // namespace Doom
 
 // after level 6, put this:
-namespace Doom
-{
 constexpr std::string_view C1TEXT = "YOU HAVE ENTERED DEEPLY INTO THE INFESTED\n"
                                     "STARPORT. BUT SOMETHING IS WRONG. THE\n"
                                     "MONSTERS HAVE BROUGHT THEIR OWN REALITY\n"
@@ -499,11 +470,8 @@ constexpr std::string_view C1TEXT = "YOU HAVE ENTERED DEEPLY INTO THE INFESTED\n
                                     "OF THE STARBASE AND FIND THE CONTROLLING\n"
                                     "SWITCH WHICH HOLDS EARTH'S POPULATION\n"
                                     "HOSTAGE.";
-} // namespace Doom
 
 // After level 11, put this:
-namespace Doom
-{
 constexpr std::string_view C2TEXT = "YOU HAVE WON! YOUR VICTORY HAS ENABLED\n"
                                     "HUMANKIND TO EVACUATE EARTH AND ESCAPE\n"
                                     "THE NIGHTMARE.  NOW YOU ARE THE ONLY\n"
@@ -521,11 +489,8 @@ constexpr std::string_view C2TEXT = "YOU HAVE WON! YOUR VICTORY HAS ENABLED\n"
                                     "YOUR OWN HOME CITY, NOT FAR FROM THE\n"
                                     "STARPORT.\" SLOWLY AND PAINFULLY YOU GET\n"
                                     "UP AND RETURN TO THE FRAY.";
-} // namespace Doom
 
 // After level 20, put this:
-namespace Doom
-{
 constexpr std::string_view C3TEXT = "YOU ARE AT THE CORRUPT HEART OF THE CITY,\n"
                                     "SURROUNDED BY THE CORPSES OF YOUR ENEMIES.\n"
                                     "YOU SEE NO WAY TO DESTROY THE CREATURES'\n"
@@ -535,11 +500,8 @@ constexpr std::string_view C3TEXT = "YOU ARE AT THE CORRUPT HEART OF THE CITY,\n
                                     "THERE MUST BE A WAY TO CLOSE IT ON THE\n"
                                     "OTHER SIDE. WHAT DO YOU CARE IF YOU'VE\n"
                                     "GOT TO GO THROUGH HELL TO GET TO IT?";
-} // namespace Doom
 
 // After level 29, put this:
-namespace Doom
-{
 constexpr std::string_view C4TEXT = "THE HORRENDOUS VISAGE OF THE BIGGEST\n"
                                     "DEMON YOU'VE EVER SEEN CRUMBLES BEFORE\n"
                                     "YOU, AFTER YOU PUMP YOUR ROCKETS INTO\n"
@@ -555,29 +517,20 @@ constexpr std::string_view C4TEXT = "THE HORRENDOUS VISAGE OF THE BIGGEST\n"
                                     "FOREHEAD YOU BEGIN THE LONG TREK BACK\n"
                                     "HOME. REBUILDING EARTH OUGHT TO BE A\n"
                                     "LOT MORE FUN THAN RUINING IT WAS.\n";
-} // namespace Doom
 
 // Before level 31, put this:
-namespace Doom
-{
 constexpr std::string_view C5TEXT = "CONGRATULATIONS, YOU'VE FOUND THE SECRET\n"
                                     "LEVEL! LOOKS LIKE IT'S BEEN BUILT BY\n"
                                     "HUMANS, RATHER THAN DEMONS. YOU WONDER\n"
                                     "WHO THE INMATES OF THIS CORNER OF HELL\n"
                                     "WILL BE.";
-} // namespace Doom
 
 // Before level 32, put this:
-namespace Doom
-{
 constexpr std::string_view C6TEXT = "CONGRATULATIONS, YOU'VE FOUND THE\n"
                                     "SUPER SECRET LEVEL!  YOU'D BETTER\n"
                                     "BLAZE THROUGH THIS ONE!\n";
-} // namespace Doom
 
 // after map 06
-namespace Doom
-{
 constexpr std::string_view P1TEXT = "You gloat over the steaming carcass of the\n"
                                     "Guardian.  With its death, you've wrested\n"
                                     "the Accelerator from the stinking claws\n"
@@ -590,22 +543,16 @@ constexpr std::string_view P1TEXT = "You gloat over the steaming carcass of the\
                                     "struggles will have been wasted. Keep\n"
                                     "moving, keep fighting, keep killing.\n"
                                     "Oh yes, keep living, too.";
-} // namespace Doom
 
 // after map 11
-namespace Doom
-{
 constexpr std::string_view P2TEXT = "Even the deadly Arch-Vile labyrinth could\n"
                                     "not stop you, and you've gotten to the\n"
                                     "prototype Accelerator which is soon\n"
                                     "efficiently and permanently deactivated.\n"
                                     "\n"
                                     "You're good at that kind of thing.";
-} // namespace Doom
 
 // after map 20
-namespace Doom
-{
 constexpr std::string_view P3TEXT = "You've bashed and battered your way into\n"
                                     "the heart of the devil-hive.  Time for a\n"
                                     "Search-and-Destroy mission, aimed at the\n"
@@ -616,11 +563,8 @@ constexpr std::string_view P3TEXT = "You've bashed and battered your way into\n"
                                     "Grinning evilly, you check your gear, and\n"
                                     "get ready to give the bastard a little Hell\n"
                                     "of your own making!";
-} // namespace Doom
 
 // after map 30
-namespace Doom
-{
 constexpr std::string_view P4TEXT = "The Gatekeeper's evil face is splattered\n"
                                     "all over the place.  As its tattered corpse\n"
                                     "collapses, an inverted Gate forms and\n"
@@ -633,20 +577,14 @@ constexpr std::string_view P4TEXT = "The Gatekeeper's evil face is splattered\n"
                                     "launcher in your coffin. If you go to Hell\n"
                                     "when you die, you'll need it for some\n"
                                     "final cleaning-up ...";
-} // namespace Doom
 
 // before map 31
-namespace Doom
-{
 constexpr std::string_view P5TEXT = "You've found the second-hardest level we\n"
                                     "got. Hope you have a saved game a level or\n"
                                     "two previous.  If not, be prepared to die\n"
                                     "aplenty. For master marines only.";
-} // namespace Doom
 
 // before map 32
-namespace Doom
-{
 constexpr std::string_view P6TEXT = "Betcha wondered just what WAS the hardest\n"
                                     "level we had ready for ya?  Now you know.\n"
                                     "No one gets out alive.";
@@ -711,13 +649,10 @@ constexpr std::string_view T6TEXT = "Time for a vacation. You've burst the\n"
                                     "\n"
                                     "As you step off the transport, you hear\n"
                                     "the stomp of a cyberdemon's iron shoe.";
-} // namespace Doom
 
 //
 // Character cast strings F_FINALE.C
 //
-namespace Doom
-{
 constexpr std::string_view CC_ZOMBIE = "ZOMBIEMAN";
 constexpr std::string_view CC_SHOTGUN = "SHOTGUN GUY";
 constexpr std::string_view CC_HEAVY = "HEAVY WEAPON DUDE";

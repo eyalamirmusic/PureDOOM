@@ -28,9 +28,9 @@
 // clang-format off
 
 // The weapon table below is kept verbatim from the 1993 source, so it names
-// am_*/S_* unqualified. Those enums live in namespace Doom now; this brings
-// them into scope without touching the table.
-using namespace Doom;
+// am_*/S_* unqualified.
+namespace Doom
+{
 
 
 //
@@ -132,10 +132,8 @@ WeaponInfo weaponinfoData[numWeapons] =
 
 // clang-format on
 
-// Hands out the file-local table above (Sim/Items.cpp opens with `using namespace
-// Doom`, so it sits at :: scope). const: nothing rewrites weapon data at runtime.
-namespace Doom
-{
+// Hands out the file-local table above. const: nothing rewrites weapon data at
+// runtime.
 const WeaponInfo* weaponinfo()
 {
     return weaponinfoData;

@@ -31,9 +31,9 @@
 // The sfx / music tables are 1993 data verbatim: partial-init rows (only the
 
 // The S_sfx/S_music tables below are kept verbatim from the 1993 source, so they
-// name sfx_*/mus_* unqualified. Those enums live in namespace Doom now; this
-// brings them into scope without touching the tables.
-using namespace Doom;
+// name sfx_*/mus_* unqualified.
+namespace Doom
+{
 // leading fields are given; the rest zero). Keep them exactly as they were -
 // guard the layout from clang-format and quiet the warning that legitimate
 // data of this shape raises under -Wall.
@@ -45,7 +45,7 @@ DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 //
 // Information about all the music
 //
-Doom::MusicInfo S_musicData[] =
+MusicInfo S_musicData[] =
 {
     // MusicEnum::None. Was `{ 0 }` - a null name, which no reachable path dereferenced
     // (changeMusic builds "d_" + name and is never called with MusicEnum::None). An empty
@@ -124,7 +124,7 @@ Doom::MusicInfo S_musicData[] =
 //
 // Information about all the sfx
 //
-Doom::SfxInfo S_sfxData[] =
+SfxInfo S_sfxData[] =
 {
     // S_sfx[0] needs to be a dummy for odd reasons.
     { "none", false,  0, 0, -1, -1, 0 },
@@ -213,7 +213,7 @@ Doom::SfxInfo S_sfxData[] =
     { "punch", false, 64, 0, -1, -1, 0 },
     { "hoof", false, 70, 0, -1, -1, 0 },
     { "metal", false, 70, 0, -1, -1, 0 },
-    { "chgun", false, 64, &Doom::S_sfx()[toIndex(SfxEnum::Pistol)], 150, 0, 0 },
+    { "chgun", false, 64, &S_sfx()[toIndex(SfxEnum::Pistol)], 150, 0, 0 },
     { "tink", false, 60, 0, -1, -1, 0 },
     { "bdopn", false, 100, 0, -1, -1, 0 },
     { "bdcls", false, 100, 0, -1, -1, 0 },
@@ -241,10 +241,7 @@ Doom::SfxInfo S_sfxData[] =
 DOOM_DIAGNOSTIC_POP
 // clang-format on
 
-// The two tables above are file-local storage (Game/SoundData.cpp opens with
-// `using namespace Doom`, so they sit at :: scope); these hand them out.
-namespace Doom
-{
+// The two tables above are file-local storage; these hand them out.
 SfxInfo* S_sfx()
 {
     return S_sfxData;

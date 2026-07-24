@@ -1,21 +1,14 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/FixedPoint.h" // Fixed
 
 // Forward declarations at global scope (that is where p_mobj.h / r_defs.h declare them) - the
 // scratch holds pointers to these, not their layout. Declaring them inside namespace Doom would make
-// distinct Doom:: types that do not match the vanilla Doom::Mobj / Doom::Line the reference aliases bind to.
+// distinct  types that do not match the vanilla Mobj / Line the reference aliases bind to.
 namespace Doom
 {
 struct Mobj; // Mobj
-} // namespace Doom
-namespace Doom
-{
 struct Line; // Line
-} // namespace Doom
-
-namespace Doom
-{
 
 // The p_map "action" scratch - the working state slideMove sets up and reads
 // back within one call, but which vanilla kept as globals because PTR_SlideTraverse,

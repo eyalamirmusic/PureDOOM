@@ -1,9 +1,9 @@
 // Rewritten out of vanilla p_setup into namespace Doom.
 //
-// Level loading: parse each map lump into Doom::Level's vectors and refresh the
+// Level loading: parse each map lump into Level's vectors and refresh the
 // geometry view-globals the renderer and playsim index, build the blockmap
 // descriptor and per-sector line lists, spawn the things, and set up a fresh level.
-// p_setup.cpp shims Doom::setupLevel and Doom::init and owns the view-global storage; the
+// p_setup.cpp shims setupLevel and init and owns the view-global storage; the
 // per-lump loaders are file-local. Golden-neutral - every demo loads its level
 // through this, and LevelTests pins the view invariant.
 
@@ -35,7 +35,7 @@
 #include "Specials.h"
 #include "../Containers.h"
 
-// Doom::spawnMapThing is Doom::Mobj's now (global shim); the things loader calls it.
+// spawnMapThing is Mobj's now (global shim); the things loader calls it.
 #include "../Game/Game.h"
 #include "../Game/Sound.h"
 #include "../Host/System.h"
@@ -43,13 +43,13 @@
 #include "Switches.h"
 #include "../Math/BBox.h"
 #include "ItemRespawnQueue.h"
-void Doom::spawnMapThing(MapThing& mthing);
-
 // The thinker functions stay global (p_saveg identity); declared so the spawners
 // can store their address.
 
 namespace Doom
 {
+void spawnMapThing(MapThing& mthing);
+
 // Forward declarations so the file's own call order needs no rearranging.
 void loadVertexes(int lump);
 void loadSegs(int lump);
@@ -555,8 +555,8 @@ void init()
 } // namespace Doom
 
 // ---------------------------------------------------------------------------
-// Global-scope data that was p_setup.cpp. It stays at :: scope because these are the
-// vanilla names other translation units (and the eacp port) still link against.
+// What was p_setup.cpp's file-scope data. Every name below has moved onto the
+// Engine; the notes record where each went.
 // ---------------------------------------------------------------------------
 // The blockmap views and the player/deathmatch starts. Read across the renderer
 // and playsim; refreshed by the loaders in Sim/Setup.cpp. Storage here.
@@ -581,5 +581,5 @@ void init()
 //
 // Now Level::rejectMatrix (Sim/Level.h).
 
-// The map's spawn spots are a Doom::MapSpawns owned by the Engine now; these are references
+// The map's spawn spots are a MapSpawns owned by the Engine now; these are references
 // onto it, the arrays as references-to-array (REFACTOR.md, Step 5).

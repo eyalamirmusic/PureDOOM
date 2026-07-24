@@ -36,16 +36,13 @@ constexpr int FG = 0;
 
 constexpr int HU_MAXLINES = 4;
 constexpr int HU_MAXLINELENGTH = 80;
-} // namespace Doom
 
 //
 // Typedefs of widgets
 //
 
-// Text Doom::Line widget
+// Text Line widget
 //  (parent of Scrolling Text and Input Text widgets)
-namespace Doom
-{
 struct HudTextLine
 {
     // left-justified position of scrolling text window
@@ -59,12 +56,9 @@ struct HudTextLine
     // whether this line needs to be udpated
     int needsupdate = 0;
 };
-} // namespace Doom
 
 // Scrolling Text window widget
-//  (child of Text Doom::Line widget)
-namespace Doom
-{
+//  (child of Text Line widget)
 struct HudScrollingText
 {
     Array<HudTextLine, HU_MAXLINES> l; // text lines to draw
@@ -75,12 +69,9 @@ struct HudScrollingText
     bool* on = nullptr;
     bool laston = false; // last value of *->on.
 };
-} // namespace Doom
 
-// Input Text Doom::Line widget
-//  (child of Text Doom::Line widget)
-namespace Doom
-{
+// Input Text Line widget
+//  (child of Text Line widget)
 struct HudInputText
 {
     HudTextLine l; // text line to input on

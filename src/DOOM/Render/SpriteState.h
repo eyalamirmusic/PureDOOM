@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Game/GameDefs.h" // SCREENWIDTH
-#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/FixedPoint.h" // Fixed
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // VisSprite
 

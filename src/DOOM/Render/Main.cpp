@@ -740,28 +740,28 @@ void renderPlayerView(Player& player)
 } // namespace Doom
 
 // ---------------------------------------------------------------------------
-// Global-scope data that was r_main.cpp. It stays at :: scope because these are the
-// vanilla names other translation units (and the eacp port) still link against.
+// What was r_main.cpp's file-scope data. Every name below has moved onto the
+// Engine; the notes record where each went.
 // ---------------------------------------------------------------------------
-// increment every time a check is made - a Doom::ValidCount owned by the Engine now
+// increment every time a check is made - a ValidCount owned by the Engine now
 // (the one scalar owned by no subsystem); this vanilla name is a reference onto it.
 
-// The light selection is a Doom::Lighting owned by the Engine now; these vanilla names
+// The light selection is a Lighting owned by the Engine now; these vanilla names
 // are references onto it. fixedcolormap/extralight are set per frame by R_SetupFrame,
 // the scalelight/zlight tables built once by R_InitLightTables.
 
-// The screen projection is a Doom::ViewProjection owned by the Engine now; these
+// The screen projection is a ViewProjection owned by the Engine now; these
 // vanilla names are references onto it. R_ExecuteSetViewSize (Render/Main.cpp) writes
 // through them when the view size changes.
 
-// The subsector counter is a Doom::RenderScratch member (an Engine member) now; a
+// The subsector counter is a RenderScratch member (an Engine member) now; a
 // reference onto it.
 
-// The view point (camera) is a Doom::ViewPoint owned by the Engine now; these
+// The view point (camera) is a ViewPoint owned by the Engine now; these
 // vanilla names are references onto it for the renderer code still reading them as
 // globals. R_SetupFrame (Render/Main.cpp) writes through them each frame.
 
-// 0 = high, 1 = low. Part of the view-sizing state in Doom::ViewWindow now; a reference
+// 0 = high, 1 = low. Part of the view-sizing state in ViewWindow now; a reference
 // onto it.
 
 //
@@ -779,13 +779,13 @@ void renderPlayerView(Player& player)
 // to the lowest viewangle that maps back to x ranges
 // from clipangle to -clipangle.
 
-// References-to-array onto Doom::Lighting, so the type and every indexed read (the
+// References-to-array onto Lighting, so the type and every indexed read (the
 // walllights = scalelight[light] row assignment included) are unchanged.
 
 // bumped light from gun blasts
 
 // The pending view-size request, stashed by R_SetViewSize (Render/Main.cpp) for
-// R_ExecuteSetViewSize. Part of Doom::ViewWindow now; references onto it.
+// R_ExecuteSetViewSize. Part of ViewWindow now; references onto it.
 
 //
 // R_AddPointToBox

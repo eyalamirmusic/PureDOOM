@@ -61,13 +61,10 @@ struct SfxInfo
     // lump number of sfx
     int lumpnum = 0;
 };
-} // namespace Doom
 
 //
-// Doom::MusicInfo struct.
+// MusicInfo struct.
 //
-namespace Doom
-{
 struct MusicInfo
 {
     // up to 6-character name
@@ -82,23 +79,17 @@ struct MusicInfo
     // music handle once registered
     int handle = 0;
 };
-} // namespace Doom
 
 // The complete sets of sound effects and music. S_sfx[] is mutated as sounds load
 // (each row's lump number and cached PCM), so it is handed out as a pointer; the
 // storage is file-local to Game/SoundData.cpp. S_sfx()[i] / S_music()[i] read what
 // the `extern` globals S_sfx[i] / S_music[i] did.
-namespace Doom
-{
 SfxInfo* S_sfx();
 MusicInfo* S_music();
-} // namespace Doom
 
 //
 // Identifiers for all music in game.
 //
-namespace Doom
-{
 enum class MusicEnum
 {
     None,
@@ -175,13 +166,10 @@ enum class MusicEnum
 // The count, for array sizes and loop bounds; derived from the enum's own
 // sentinel so the two cannot drift.
 constexpr int numMusic = toIndex(MusicEnum::NumMusic);
-} // namespace Doom
 
 //
 // Identifiers for all sfx in game.
 //
-namespace Doom
-{
 enum class SfxEnum
 {
     None,

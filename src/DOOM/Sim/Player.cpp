@@ -7,7 +7,7 @@
 // terms of the DOOM Source Code License. See the license for details.
 //
 // DESCRIPTION:
-//        Doom::Player related stuff: bobbing POV/weapon, movement, pending weapon.
+//        Player related stuff: bobbing POV/weapon, movement, pending weapon.
 //
 // Rewritten into namespace Doom out of vanilla p_user. One tic of a player is
 // Player::think() (vanilla's P_PlayerThink), with thrust / calcHeight / movePlayer /

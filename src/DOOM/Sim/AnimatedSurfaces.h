@@ -5,14 +5,11 @@
 #include "../Containers.h"
 
 // Forward declaration at global scope (where r_defs.h declares it) - linespeciallist holds pointers,
-// not layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to Doom::Line.
+// not layout. Inside namespace Doom it would be a distinct  type that would not bind to Line.
 namespace Doom
 {
 struct Line; // Line
-} // namespace Doom
 
-namespace Doom
-{
 // One animating flat or wall texture: a run of numpics frames from basepic that updateSpecials
 // cycles picnum through every speed tics (istexture picks the texture vs flat translation table).
 // Moved out of Sim/Specials so anims/lastanim can be Engine members (the type was defined there - as

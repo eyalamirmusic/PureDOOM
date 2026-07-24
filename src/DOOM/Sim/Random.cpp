@@ -36,11 +36,8 @@ const Array<std::uint8_t, Random::tableSize>& Random::table()
     return values;
 }
 // clang-format on
-} // namespace Doom
 
 // A view onto Random's fixed 256-entry table (was the m_random.cpp global).
-namespace Doom
-{
 const unsigned char* rndtable()
 {
     return Random::table().data();

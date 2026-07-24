@@ -626,77 +626,68 @@ bool hudResponder(Event& ev)
     return eatkey;
 }
 
-} // namespace Doom
-
 // ---------------------------------------------------------------------------
-// Global-scope data that was hu_stuff.cpp. It stays at :: scope because these are the
-// vanilla names other translation units (and the eacp port) still link against.
+// The data that was hu_stuff.cpp's file-scope storage.
 // ---------------------------------------------------------------------------
-// The heads-up font (read by f_finale, m_menu, m_misc). A Doom::HudFont owned by the Engine now;
+// The heads-up font (read by f_finale, m_menu, m_misc). A HudFont owned by the Engine now;
 // this is a reference onto its member. HU_Start writes the array, so every reader's extern is a
 // reference-to-array too (a plain array extern would read the reference's hidden pointer as the
 // first glyph and fault). The reference-to-array binding self-checks HU_FONTSIZE against the
 // cluster's fontSize - a drift won't compile.
 
 // The two cross-read HUD flags (chat input open; a forced message locks the line)
-// are a Doom::HudFlags owned by the Engine now; these are references onto its members.
+// are a HudFlags owned by the Engine now; these are references onto its members.
 
 // The chat macros (m_misc persists them in the config).
-Doom::Array<std::string_view, 10> chat_macrosData = {Doom::HUSTR_CHATMACRO0,
-                                                     Doom::HUSTR_CHATMACRO1,
-                                                     Doom::HUSTR_CHATMACRO2,
-                                                     Doom::HUSTR_CHATMACRO3,
-                                                     Doom::HUSTR_CHATMACRO4,
-                                                     Doom::HUSTR_CHATMACRO5,
-                                                     Doom::HUSTR_CHATMACRO6,
-                                                     Doom::HUSTR_CHATMACRO7,
-                                                     Doom::HUSTR_CHATMACRO8,
-                                                     Doom::HUSTR_CHATMACRO9};
+Array<std::string_view, 10> chat_macrosData = {HUSTR_CHATMACRO0,
+                                               HUSTR_CHATMACRO1,
+                                               HUSTR_CHATMACRO2,
+                                               HUSTR_CHATMACRO3,
+                                               HUSTR_CHATMACRO4,
+                                               HUSTR_CHATMACRO5,
+                                               HUSTR_CHATMACRO6,
+                                               HUSTR_CHATMACRO7,
+                                               HUSTR_CHATMACRO8,
+                                               HUSTR_CHATMACRO9};
 
 // The player colour names (g_game uses them for obituary messages).
-Doom::Array<std::string_view, 4> player_namesData = {Doom::HUSTR_PLRGREEN,
-                                                     Doom::HUSTR_PLRINDIGO,
-                                                     Doom::HUSTR_PLRBROWN,
-                                                     Doom::HUSTR_PLRRED};
+Array<std::string_view, 4> player_namesData = {
+    HUSTR_PLRGREEN, HUSTR_PLRINDIGO, HUSTR_PLRBROWN, HUSTR_PLRRED};
 
 //
 // Builtin map names. The actual names can be found in dstrings.h. st_stuff reads
 // mapnames for the deathmatch/coop level title.
 //
-Doom::Array<std::string_view, 45>
+Array<std::string_view, 45>
     mapnamesData = // DOOM shareware/registered/retail (Ultimate) names.
-    {Doom::HUSTR_E1M1, Doom::HUSTR_E1M2, Doom::HUSTR_E1M3,
-     Doom::HUSTR_E1M4, Doom::HUSTR_E1M5, Doom::HUSTR_E1M6,
-     Doom::HUSTR_E1M7, Doom::HUSTR_E1M8, Doom::HUSTR_E1M9,
+    {HUSTR_E1M1, HUSTR_E1M2, HUSTR_E1M3, HUSTR_E1M4, HUSTR_E1M5,
+     HUSTR_E1M6, HUSTR_E1M7, HUSTR_E1M8, HUSTR_E1M9,
 
-     Doom::HUSTR_E2M1, Doom::HUSTR_E2M2, Doom::HUSTR_E2M3,
-     Doom::HUSTR_E2M4, Doom::HUSTR_E2M5, Doom::HUSTR_E2M6,
-     Doom::HUSTR_E2M7, Doom::HUSTR_E2M8, Doom::HUSTR_E2M9,
+     HUSTR_E2M1, HUSTR_E2M2, HUSTR_E2M3, HUSTR_E2M4, HUSTR_E2M5,
+     HUSTR_E2M6, HUSTR_E2M7, HUSTR_E2M8, HUSTR_E2M9,
 
-     Doom::HUSTR_E3M1, Doom::HUSTR_E3M2, Doom::HUSTR_E3M3,
-     Doom::HUSTR_E3M4, Doom::HUSTR_E3M5, Doom::HUSTR_E3M6,
-     Doom::HUSTR_E3M7, Doom::HUSTR_E3M8, Doom::HUSTR_E3M9,
+     HUSTR_E3M1, HUSTR_E3M2, HUSTR_E3M3, HUSTR_E3M4, HUSTR_E3M5,
+     HUSTR_E3M6, HUSTR_E3M7, HUSTR_E3M8, HUSTR_E3M9,
 
-     Doom::HUSTR_E4M1, Doom::HUSTR_E4M2, Doom::HUSTR_E4M3,
-     Doom::HUSTR_E4M4, Doom::HUSTR_E4M5, Doom::HUSTR_E4M6,
-     Doom::HUSTR_E4M7, Doom::HUSTR_E4M8, Doom::HUSTR_E4M9,
+     HUSTR_E4M1, HUSTR_E4M2, HUSTR_E4M3, HUSTR_E4M4, HUSTR_E4M5,
+     HUSTR_E4M6, HUSTR_E4M7, HUSTR_E4M8, HUSTR_E4M9,
 
-     "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL",
-     "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL",
-     "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL"};
+     "NEWLEVEL", "NEWLEVEL", "NEWLEVEL", "NEWLEVEL", "NEWLEVEL",
+     "NEWLEVEL", "NEWLEVEL", "NEWLEVEL", "NEWLEVEL"};
 
 // The three tables above are file-local storage; these hand them out. Non-const
 // references: the config binds &chat_macros()[i] and rewrites the macros, and the
 // map-name table is chosen by game mode. See UI/Hud.cpp's readers.
-Doom::Array<std::string_view, 10>& chat_macros()
+Array<std::string_view, 10>& chat_macros()
 {
     return chat_macrosData;
 }
-Doom::Array<std::string_view, 4>& player_names()
+Array<std::string_view, 4>& player_names()
 {
     return player_namesData;
 }
-Doom::Array<std::string_view, 45>& mapnames()
+Array<std::string_view, 45>& mapnames()
 {
     return mapnamesData;
 }
+} // namespace Doom

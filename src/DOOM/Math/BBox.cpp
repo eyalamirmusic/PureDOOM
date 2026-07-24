@@ -1,9 +1,9 @@
-// The bridge between vanilla's bare Doom::Fixed[4] boxes and Doom::BBox.
+// The bridge between vanilla's bare Fixed[4] boxes and BBox.
 //
 // Was m_bbox.cpp's M_ClearBox / M_AddToBox. BBox holds the same four numbers in the
 // same order as the vanilla array, which the static_asserts below pin, so this
 // reinterprets rather than copies. The element type is spelled std::int32_t rather
-// than Doom::Fixed so this layer needs none of the vanilla headers; they are one type.
+// than Fixed so this layer needs none of the vanilla headers; they are one type.
 
 #include "BBox.h"
 

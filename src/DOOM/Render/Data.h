@@ -19,13 +19,10 @@ struct TexPatch
     int originy = 0;
     int patch = 0;
 };
-} // namespace Doom
 
 // A maptexturedef_t describes a rectangular texture,
-// which is composed of one or more Doom::MapPatch structures
+// which is composed of one or more MapPatch structures
 // that arrange graphic patches.
-namespace Doom
-{
 struct Texture
 {
     // Keep name for switch changing, etc.
@@ -41,7 +38,6 @@ struct Texture
     short patchcount = 0;
     Vector<TexPatch> patches;
 };
-} // namespace Doom
 
 // Every wall texture the WAD loaded, and how many.
 //
@@ -57,7 +53,7 @@ struct Texture
 // Floor/ceiling opaque texture tiles,
 // lookup by name. For animation?
 
-// Called by Doom::ticker for switches and animations,
+// Called by ticker for switches and animations,
 // returns the texture number for the texture name.
 
 // How many wall textures and flats the WAD loaded. Composed lazily, so these are
@@ -69,8 +65,6 @@ struct Texture
 //
 //-----------------------------------------------------------------------------
 
-namespace Doom
-{
 // Renderer data; r_data.cpp keeps the vanilla R_ names as shims.
 void drawColumnInCache(Column* patch, byte* cache, int originy, int cacheheight);
 void generateComposite(int texnum);

@@ -1246,18 +1246,14 @@ void drawAutomap()
         automapView().f_x, automapView().f_y, automapView().f_w, automapView().f_h);
 }
 
-} // namespace Doom
-
 // ---------------------------------------------------------------------------
 // The vector shapes the automap draws the player and things with, which the eacp
 // port's GPU automap reads too.
 // ---------------------------------------------------------------------------
 
 // The player arrow's radius, a Fixed. Both arrow tables are drawn to it.
-constexpr Doom::Fixed R = (8 * Doom::PLAYERRADIUS) / 7;
+constexpr Fixed R = (8 * PLAYERRADIUS) / 7;
 
-namespace Doom
-{
 // The three line drawings, immutable after static init and handed out const, so
 // the GPU compositor reads the same tables the software automap draws from.
 //
@@ -1315,5 +1311,5 @@ const MapShapes& mapShapes()
 // and the two cheats used to be twelve loose globals here. They are AutomapView
 // members now (UI/AutomapView.h).
 
-// automapactive (with menuactive) is a Doom::OverlayState owned by the Engine now; this is a
+// automapactive (with menuactive) is a OverlayState owned by the Engine now; this is a
 // reference onto it (REFACTOR.md, Step 5).

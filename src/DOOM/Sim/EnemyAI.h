@@ -1,18 +1,15 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/FixedPoint.h" // Fixed
 
 #include "../Containers.h"
 
 // Forward declaration at global scope (where p_mobj.h declares it) - the scratch holds pointers, not
-// layout. Inside namespace Doom it would be a distinct Doom:: type that would not bind to Doom::Mobj.
+// layout. Inside namespace Doom it would be a distinct  type that would not bind to Mobj.
 namespace Doom
 {
 struct Mobj; // Mobj
-} // namespace Doom
 
-namespace Doom
-{
 // The monster-AI scratch two of the A_* actions keep between their blockmap callbacks: the archvile
 // resurrection (A_VileChase / PIT_VileCheck - the corpse being raised, and where it is trying to
 // stand it up) and the DOOM II boss brain (A_BrainInit / A_BrainSpawn - the

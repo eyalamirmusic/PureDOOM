@@ -41,22 +41,16 @@ constexpr int MAXNETNODES = 8;
 
 // Networking and tick handling related.
 constexpr int BACKUPTICS = 12;
-} // namespace Doom
 
-namespace Doom
-{
 enum class NetCommandKind
 {
     Send = 1,
     Get = 2
 };
-} // namespace Doom
 
 //
 // Network packet data.
 //
-namespace Doom
-{
 struct NetPacket
 {
     // High bit is retransmit request.
@@ -69,10 +63,7 @@ struct NetPacket
     byte numtics = 0;
     Ticcmd cmds[BACKUPTICS];
 };
-} // namespace Doom
 
-namespace Doom
-{
 struct DoomCom
 {
     // Supposed to be DOOMCOM_ID?

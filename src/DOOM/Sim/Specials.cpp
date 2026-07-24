@@ -2,7 +2,7 @@
 //
 // The specials coordinator: animated flats/textures, the surrounding-sector height
 // and light queries the movers use, line-special cross/shoot dispatch, per-sector
-// player damage/secret, the once-a-tic Doom::updateSpecials and level-spawn setup.
+// player damage/secret, the once-a-tic updateSpecials and level-spawn setup.
 // getSide/getSector/twoSided/getNextSector stay at global scope (p_spec.h API);
 // every P_/EV_ entry is shimmed by p_spec.cpp; the animation state is file-local and
 // levelTimer stays global. Golden-neutral - the demos scroll skies, damage in slime
@@ -47,25 +47,27 @@
 #include "Switches.h"
 #include "Random.h"
 
-// (The vanilla file-scope `Doom::SurfaceAnim` typedef that sat here was dead - unused at global scope, a
-// leftover of the namespace wrap - and was removed; Doom::SurfaceAnim now lives in Sim/AnimatedSurfaces.h.)
+// (The vanilla file-scope `SurfaceAnim` typedef that sat here was dead - unused at global scope, a
+// leftover of the namespace wrap - and was removed; SurfaceAnim now lives in Sim/AnimatedSurfaces.h.)
 
-Doom::Side* getSide(int currentSector, int line, int side)
+namespace Doom
 {
-    return &Doom::level().sides[(Doom::level().sectors[currentSector].lines[line])
-                                    ->sidenum[side]];
+Side* getSide(int currentSector, int line, int side)
+{
+    return &level()
+                .sides[(level().sectors[currentSector].lines[line])->sidenum[side]];
 }
 
 //
 // getSector()
-// Will return a Doom::Sector*
+// Will return a Sector*
 //  given the number of the current sector,
 //  the line number and the side (0/1) that you want.
 //
-Doom::Sector* getSector(int currentSector, int line, int side)
+Sector* getSector(int currentSector, int line, int side)
 {
-    return Doom::level()
-        .sides[(Doom::level().sectors[currentSector].lines[line])->sidenum[side]]
+    return level()
+        .sides[(level().sectors[currentSector].lines[line])->sidenum[side]]
         .sector;
 }
 
@@ -76,17 +78,17 @@ Doom::Sector* getSector(int currentSector, int line, int side)
 //
 int twoSided(int sector, int line)
 {
-    return (Doom::level().sectors[sector].lines[line])->flags & Doom::ML_TWOSIDED;
+    return (level().sectors[sector].lines[line])->flags & ML_TWOSIDED;
 }
 
 //
 // getNextSector()
-// Return Doom::Sector * of sector next to current.
+// Return Sector * of sector next to current.
 // 0 if not two-sided line
 //
-Doom::Sector* getNextSector(Doom::Line& line, Doom::Sector& sec)
+Sector* getNextSector(Line& line, Sector& sec)
 {
-    if (!(line.flags & Doom::ML_TWOSIDED))
+    if (!(line.flags & ML_TWOSIDED))
         return nullptr;
 
     if (line.frontsector == &sec)
@@ -96,12 +98,10 @@ Doom::Sector* getNextSector(Doom::Line& line, Doom::Sector& sec)
 }
 
 //
-// Doom::findLowestFloorSurrounding()
+// findLowestFloorSurrounding()
 // FIND LOWEST FLOOR HEIGHT IN SURROUNDING SECTORS
 //
 
-namespace Doom
-{
 constexpr int MAX_ADJOINING_SECTORS = 20;
 
 // SurfaceAnim moved to Sim/AnimatedSurfaces.h with the anims/lastanim it types.

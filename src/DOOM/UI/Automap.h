@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../Game/Event.h" // Event
-#include "../Math/FixedPoint.h" // Doom::Fixed
-#include "../Math/TrigTables.h" // Doom::Angle
+#include "../Math/FixedPoint.h" // Fixed
+#include "../Math/TrigTables.h" // Angle
 
 namespace Doom
 {

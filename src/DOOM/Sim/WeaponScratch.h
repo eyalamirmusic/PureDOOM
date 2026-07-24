@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/FixedPoint.h" // Fixed
 
 namespace Doom
 {

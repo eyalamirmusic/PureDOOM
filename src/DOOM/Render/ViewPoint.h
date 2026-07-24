@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Game/PlayerTypes.h" // Player, and Doom::Fixed / Doom::Angle through it.
+#include "../Game/PlayerTypes.h" // Player, and Fixed / Angle through it.
 #include "../Math/FixedPoint.h"
 #include "../Math/TrigTables.h"
 

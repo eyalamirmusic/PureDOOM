@@ -2,14 +2,11 @@
 
 #include "HudWidgetTypes.h" // HudTextLine
 
-// Doom::Player is used only by pointer here, so a forward declaration is enough.
+// Player is used only by pointer here, so a forward declaration is enough.
 namespace Doom
 {
 struct Player;
-} // namespace Doom
 
-namespace Doom
-{
 // What is left of UI/Hud's own file-scope state once the message line and the chat moved out
 // (HudMessage / HudChat): the console player the HUD reads from (plr, refreshed at startHud), the
 // level-title text line drawn for a few seconds on entry (w_title), and headsupactive, the flag

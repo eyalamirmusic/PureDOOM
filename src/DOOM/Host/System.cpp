@@ -21,7 +21,7 @@
 
 #include "System.h"
 
-// In Doom::DemoState (an Engine member); read by fatalError to flush a demo before it aborts.
+// In DemoState (an Engine member); read by fatalError to flush a demo before it aborts.
 #include "../Game/Config.h"
 #include "../Game/Net.h"
 #include "Sound.h"

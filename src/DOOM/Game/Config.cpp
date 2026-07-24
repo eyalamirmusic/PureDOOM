@@ -26,11 +26,11 @@
 
 // Rewritten out of vanilla m_misc into namespace Doom.
 //
-// Config load/save, the raw file I/O, the screenshot writer and Doom::drawText.
+// Config load/save, the raw file I/O, the screenshot writer and drawText.
 // m_misc.cpp shims the M_ names. The defaults[] table (binding config keys to
 // the engine's option globals) stays at file scope here, above the namespace,
 // alongside the externs the still-loose entries take addresses of; the config
-// paths are read straight off Doom::configPaths() (Game/ConfigPaths.h).
+// paths are read straight off configPaths() (Game/ConfigPaths.h).
 // loadDefaults reads the test config, so the frame goldens pin it.
 
 #include "../Host/Diagnostics.h"
@@ -62,6 +62,8 @@
 #define O_BINARY 0
 #endif
 
+namespace Doom
+{
 //
 // SCREEN SHOTS
 //
@@ -92,15 +94,15 @@ struct PcxHeader
 };
 
 //
-// Doom::drawText
+// drawText
 // Returns the final X coordinate
-// Doom::initHud must have been called to init the font
+// initHud must have been called to init the font
 //
 
 //
 // DEFAULTS
 //
-// The keyboard/mouse/joystick bindings are Doom::InputConfig members (Engine) now, so their
+// The keyboard/mouse/joystick bindings are InputConfig members (Engine) now, so their
 // defaults[] entries are bound to those members at runtime by bindEngineDefaults() rather than
 // capturing their addresses here at static-init. Config.cpp no longer needs to name them.
 
@@ -109,7 +111,7 @@ struct PcxHeader
 // sound params below, their defaults[] entries are bound to those members at runtime by
 // bindEngineDefaults() rather than capturing their addresses here at static-init.
 
-// crosshair/always_run are Doom::InputConfig members (Engine); references, still read by
+// crosshair/always_run are InputConfig members (Engine); references, still read by
 // UI/Menu.cpp, Game/Game.cpp and Host/Api.cpp through their own extern declarations.
 
 // Only the trailing fields are given, so the rest are zero-initialized. The
@@ -119,7 +121,7 @@ struct PcxHeader
 // which GCC then warned about not recognising.
 DOOM_DIAGNOSTIC_PUSH
 DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
-Doom::ConfigDefault defaultsData[] = {
+ConfigDefault defaultsData[] = {
     // These config-backed globals are Engine members reached through references, so their
     // location is bound to the member at runtime (bindEngineDefaults) rather than captured
     // here: a static &member would take the address of a reference before the Engine exists
@@ -129,19 +131,19 @@ Doom::ConfigDefault defaultsData[] = {
     {"music_volume", 0, 8},
     {"show_messages", 0, 1},
 
-    // The control bindings are bound to their Doom::InputConfig members at runtime
+    // The control bindings are bound to their InputConfig members at runtime
     // (bindEngineDefaults); a static &member here would race that binding across TUs.
-    {"key_right", 0, Doom::KEY_RIGHTARROW},
-    {"key_left", 0, Doom::KEY_LEFTARROW},
-    {"key_up", 0, Doom::KEY_UPARROW},
-    {"key_down", 0, Doom::KEY_DOWNARROW},
+    {"key_right", 0, KEY_RIGHTARROW},
+    {"key_left", 0, KEY_LEFTARROW},
+    {"key_up", 0, KEY_UPARROW},
+    {"key_down", 0, KEY_DOWNARROW},
     {"key_strafeleft", 0, ','},
     {"key_straferight", 0, '.'},
 
-    {"key_fire", 0, Doom::KEY_RCTRL},
+    {"key_fire", 0, KEY_RCTRL},
     {"key_use", 0, ' '},
-    {"key_strafe", 0, Doom::KEY_RALT},
-    {"key_speed", 0, Doom::KEY_RSHIFT},
+    {"key_strafe", 0, KEY_RALT},
+    {"key_speed", 0, KEY_RSHIFT},
 
     {"use_mouse", 0, 1},
     {"mouseb_fire", 0, 0},
@@ -164,81 +166,21 @@ Doom::ConfigDefault defaultsData[] = {
 
     {"usegamma", 0, 0}, // bound to menuSettings().usegamma at runtime
 
-    {"chatmacro0",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[0],
-     Doom::HUSTR_CHATMACRO0},
-    {"chatmacro1",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[1],
-     Doom::HUSTR_CHATMACRO1},
-    {"chatmacro2",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[2],
-     Doom::HUSTR_CHATMACRO2},
-    {"chatmacro3",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[3],
-     Doom::HUSTR_CHATMACRO3},
-    {"chatmacro4",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[4],
-     Doom::HUSTR_CHATMACRO4},
-    {"chatmacro5",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[5],
-     Doom::HUSTR_CHATMACRO5},
-    {"chatmacro6",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[6],
-     Doom::HUSTR_CHATMACRO6},
-    {"chatmacro7",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[7],
-     Doom::HUSTR_CHATMACRO7},
-    {"chatmacro8",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[8],
-     Doom::HUSTR_CHATMACRO8},
-    {"chatmacro9",
-     0,
-     Doom::STRING_VALUE,
-     0,
-     0,
-     &chat_macros()[9],
-     Doom::HUSTR_CHATMACRO9}};
+    {"chatmacro0", 0, STRING_VALUE, 0, 0, &chat_macros()[0], HUSTR_CHATMACRO0},
+    {"chatmacro1", 0, STRING_VALUE, 0, 0, &chat_macros()[1], HUSTR_CHATMACRO1},
+    {"chatmacro2", 0, STRING_VALUE, 0, 0, &chat_macros()[2], HUSTR_CHATMACRO2},
+    {"chatmacro3", 0, STRING_VALUE, 0, 0, &chat_macros()[3], HUSTR_CHATMACRO3},
+    {"chatmacro4", 0, STRING_VALUE, 0, 0, &chat_macros()[4], HUSTR_CHATMACRO4},
+    {"chatmacro5", 0, STRING_VALUE, 0, 0, &chat_macros()[5], HUSTR_CHATMACRO5},
+    {"chatmacro6", 0, STRING_VALUE, 0, 0, &chat_macros()[6], HUSTR_CHATMACRO6},
+    {"chatmacro7", 0, STRING_VALUE, 0, 0, &chat_macros()[7], HUSTR_CHATMACRO7},
+    {"chatmacro8", 0, STRING_VALUE, 0, 0, &chat_macros()[8], HUSTR_CHATMACRO8},
+    {"chatmacro9", 0, STRING_VALUE, 0, 0, &chat_macros()[9], HUSTR_CHATMACRO9}};
 
 DOOM_DIAGNOSTIC_POP
-int numdefaultsValue = sizeof(defaultsData) / sizeof(Doom::ConfigDefault);
+int numdefaultsValue = sizeof(defaultsData) / sizeof(ConfigDefault);
 
-Doom::ConfigDefault* defaults()
+ConfigDefault* defaults()
 {
     return defaultsData;
 }
@@ -246,9 +188,6 @@ int numdefaults()
 {
     return numdefaultsValue;
 }
-
-namespace Doom
-{
 
 int drawText(int x, int y, bool direct, std::string_view string)
 {

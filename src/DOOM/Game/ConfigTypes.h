@@ -45,19 +45,16 @@ struct ConfigDefault
     std::string_view* text_location = nullptr;
     std::string_view default_text_value;
 };
-} // namespace Doom
 
-namespace Doom
-{
 // A default whose value is text rather than a number: `defaultvalue` is this
 // sentinel and the string lives in text_location.
 constexpr int STRING_VALUE = 0xFFFF;
-} // namespace Doom
 
 // The config default table and its length. Was two `extern` globals; storage is
 // file-local to Game/Config.cpp now, reached as defaults()[i] and numdefaults().
-Doom::ConfigDefault* defaults();
+ConfigDefault* defaults();
 int numdefaults();
+} // namespace Doom
 
 //-----------------------------------------------------------------------------
 //

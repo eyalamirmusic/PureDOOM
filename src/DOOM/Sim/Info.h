@@ -27,6 +27,10 @@
 #include "../doomtype.h" // toIndex, for the enum-derived counts below
 #include "ActionFunc.h"
 
+#include "../Math/FixedPoint.h"
+#include "../Containers.h"
+#include <string_view>
+
 namespace Doom
 {
 // MobjInfo's sound fields are SfxEnum, which is defined in Game/SoundData.h. Only
@@ -39,16 +43,7 @@ namespace Doom
 // naming SfxEnum::None the way the rest of the engine does: "not the enumerators"
 // cuts both ways, and an initialiser naming one would not compile here.
 enum class SfxEnum;
-} // namespace Doom
 
-#include "../Math/FixedPoint.h"
-
-#include "../Containers.h"
-
-#include <string_view>
-
-namespace Doom
-{
 enum class SpriteNum
 {
     Troo,
@@ -191,10 +186,7 @@ enum class SpriteNum
     Tlp2,
     NumSprites
 };
-} // namespace Doom
 
-namespace Doom
-{
 enum class StateNum
 {
     Null,
@@ -1166,10 +1158,7 @@ enum class StateNum
     Tech2lamp4,
     NumStates
 };
-} // namespace Doom
 
-namespace Doom
-{
 struct State
 {
     SpriteNum sprite = SpriteNum::Troo;
@@ -1337,10 +1326,7 @@ enum class MobjType
     Misc86,
     NumMobjTypes
 };
-} // namespace Doom
 
-namespace Doom
-{
 struct MobjInfo
 {
     int doomednum = 0;

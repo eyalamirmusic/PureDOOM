@@ -46,14 +46,8 @@
 // The snd_*Device selectors that were externed here were always dead - no definition, no
 // reader - and are dropped (with their doomstat.h declarations), not moved.
 
-// Doom::SoundChannel moved to Game/SoundState.h (the RAII sweep, Step 9, makes SoundState own the
+// SoundChannel moved to Game/SoundState.h (the RAII sweep, Step 9, makes SoundState own the
 // channel array by value, which needs the complete type there).
-
-// The engine-side sound bookkeeping now lives on the Engine (Game/SoundState.h, moved
-// by the file-scope-statics sweep - REFACTOR.md, Step 5), and is read straight off
-// Doom::soundState(). channels_s_sound is a plain-pointer VIEW onto SoundState's owned
-// channels vector (RAII, Step 9), refreshed by initSound after the resize.
-static Doom::SoundChannel* channels_s_sound = nullptr;
 
 // The sfx/music volumes and the channel count are config-backed, and used to
 // resist the Engine migration because Config.cpp's defaults[] captured their
@@ -67,6 +61,11 @@ static Doom::SoundChannel* channels_s_sound = nullptr;
 
 namespace Doom
 {
+// The engine-side sound bookkeeping now lives on the Engine (Game/SoundState.h, moved
+// by the file-scope-statics sweep - REFACTOR.md, Step 5), and is read straight off
+// soundState(). channels_s_sound is a plain-pointer VIEW onto SoundState's owned
+// channels vector (RAII, Step 9), refreshed by initSound after the resize.
+static SoundChannel* channels_s_sound = nullptr;
 
 // when to clip out sounds
 // Does not fit the large outdoor areas.

@@ -27,7 +27,7 @@
 #include <string_view>
 
 // All important printed strings.
-// Doom::Language selection (message strings).
+// Language selection (message strings).
 // Use -DFRENCH etc.
 
 #ifdef FRENCH
@@ -35,12 +35,6 @@
 #else
 #include "StringsEnglish.h"
 #endif
-
-// Misc. other strings.
-namespace Doom
-{
-constexpr std::string_view SAVEGAMENAME = "doomsav";
-} // namespace Doom
 
 //
 // File locations,
@@ -55,17 +49,19 @@ constexpr std::string_view SAVEGAMENAME = "doomsav";
 #define DEVMAPS "devmaps"
 #define DEVDATA "devdata"
 
+namespace Doom
+{
+constexpr std::string_view SAVEGAMENAME = "doomsav";
+
 // Not done in french?
 
 // QuitDOOM messages
-namespace Doom
-{
 constexpr int NUM_QUITMESSAGES = 22;
-} // namespace Doom
 
 // The quit-screen taunts. Was an `extern` array; endmsg() hands out the
 // file-local storage in UI/Menu.cpp, read as endmsg()[i].
 const std::string_view* endmsg();
+} // namespace Doom
 
 //-----------------------------------------------------------------------------
 //

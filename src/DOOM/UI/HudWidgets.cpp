@@ -3,7 +3,7 @@
 // Heads-up text widgets: a single text line, a scrolling multi-line message list,
 // and an editable input line. All state lives in the caller's structs, so this
 // unit holds no globals of its own. The vanilla HUlib_ names that used to shim
-// these have been retired; callers use the Doom:: names directly. Covered by
+// these have been retired; callers use the  names directly. Covered by
 // the frame goldens (messages and the level name land in screens[0]).
 
 #include "../Host/Platform.h"

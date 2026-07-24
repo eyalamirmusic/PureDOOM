@@ -1,6 +1,6 @@
 // The C++ core: Fixed, Angle, BBox, Random.
 //
-// PrimitiveTests.cpp pins the vanilla API - FixedMul, finesine, P_Random - and it
+// PrimitiveTests.cpp pins the vanilla API - Doom::FixedMul, finesine, P_Random - and it
 // still does, which is what proves the shims did not change the answers. These
 // test the types underneath, which is where the behaviour actually lives now.
 //
@@ -102,8 +102,8 @@ auto tFixedWrapsAt32Bits = test("Fixed/arithmeticWrapsAt32Bits") = []
 };
 
 // (Fixed/agreesWithVanillaFixedMul lived here. It held Doom::Fixed's operators
-// against the vanilla FixedMul/FixedDiv functions - the claim the shim layer
-// made. Doom::Fixed IS Doom::Fixed now and FixedMul(a, b) is literally `a * b`, so
+// against the vanilla Doom::FixedMul/Doom::FixedDiv functions - the claim the shim layer
+// made. Doom::Fixed IS Doom::Fixed now and Doom::FixedMul(a, b) is literally `a * b`, so
 // the comparison has become `(x * y).raw == (x * y).raw`. There is no longer
 // anything for it to disagree about. The numeric behaviour it guarded is pinned
 // by Fixed/multiplyWidensToAvoidOverflow and Fixed/divideSaturates above, which

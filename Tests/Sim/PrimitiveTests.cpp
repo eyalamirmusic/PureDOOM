@@ -30,8 +30,8 @@ using namespace nano;
 
 namespace
 {
-constexpr auto one = FRACUNIT;
-constexpr auto half = FRACUNIT / 2;
+constexpr auto one = Doom::FRACUNIT;
+constexpr auto half = Doom::FRACUNIT / 2;
 
 // FNV-1a, the same mix the simulation probe uses, so a checksum quoted in one
 // place means the same thing in the other.
@@ -78,16 +78,16 @@ void checkTable(std::string_view table, const Checksum& sum, std::uint64_t expec
 
 auto tFixedMulIdentity = test("Fixed/mulByOneIsIdentity") = []
 {
-    check(FixedMul(Doom::Fixed {12345}, one) == Doom::Fixed {12345});
-    check(FixedMul(one, Doom::Fixed {12345}) == Doom::Fixed {12345});
-    check(FixedMul(Doom::Fixed {-12345}, one) == Doom::Fixed {-12345});
+    check(Doom::FixedMul(Doom::Fixed {12345}, one) == Doom::Fixed {12345});
+    check(Doom::FixedMul(one, Doom::Fixed {12345}) == Doom::Fixed {12345});
+    check(Doom::FixedMul(Doom::Fixed {-12345}, one) == Doom::Fixed {-12345});
 };
 
 auto tFixedMulHalves = test("Fixed/mulHalves") = []
 {
-    check(FixedMul(half, half) == FRACUNIT / 4);
-    check(FixedMul(-half, half) == -(FRACUNIT / 4));
-    check(FixedMul(3 * one, 4 * one) == 12 * one);
+    check(Doom::FixedMul(half, half) == Doom::FRACUNIT / 4);
+    check(Doom::FixedMul(-half, half) == -(Doom::FRACUNIT / 4));
+    check(Doom::FixedMul(3 * one, 4 * one) == 12 * one);
 };
 
 // The multiply widens to 64 bits before shifting back down, so a product that
@@ -95,29 +95,29 @@ auto tFixedMulHalves = test("Fixed/mulHalves") = []
 // shift in 32 bits would pass every small case above and break this one - and
 // would then only show up in-game as objects teleporting at high speed.
 auto tFixedMulDoesNotOverflowMidway = test("Fixed/mulWidensTo64Bit") = []
-{ check(FixedMul(1000 * one, 1000 * one) == 1000000 * one); };
+{ check(Doom::FixedMul(1000 * one, 1000 * one) == 1000000 * one); };
 
 auto tFixedDivIdentity = test("Fixed/divByOneIsIdentity") = []
 {
-    check(FixedDiv(Doom::Fixed {12345}, one) == Doom::Fixed {12345});
-    check(FixedDiv(one, one) == one);
+    check(Doom::FixedDiv(Doom::Fixed {12345}, one) == Doom::Fixed {12345});
+    check(Doom::FixedDiv(one, one) == one);
 };
 
 auto tFixedDivHalves = test("Fixed/divHalves") = []
 {
-    check(FixedDiv(one, 2 * one) == half);
-    check(FixedDiv(12 * one, 4 * one) == 3 * one);
+    check(Doom::FixedDiv(one, 2 * one) == half);
+    check(Doom::FixedDiv(12 * one, 4 * one) == 3 * one);
 };
 
-// FixedDiv's guard, and the one piece of it that is easy to get wrong. When the
+// Doom::FixedDiv's guard, and the one piece of it that is easy to get wrong. When the
 // quotient will not fit, it does not divide at all: it saturates, and the sign
 // of the saturation is the sign of the result. The engine leans on this - it is
 // how a divide by a near-zero denominator stays finite instead of trapping.
 auto tFixedDivSaturates = test("Fixed/divSaturatesRatherThanOverflowing") = []
 {
-    check(FixedDiv(one, Doom::Fixed {1}) == Doom::Fixed {DOOM_MAXINT});
-    check(FixedDiv(-one, Doom::Fixed {1}) == Doom::Fixed {DOOM_MININT});
-    check(FixedDiv(one, Doom::Fixed {-1}) == Doom::Fixed {DOOM_MININT});
+    check(Doom::FixedDiv(one, Doom::Fixed {1}) == Doom::Fixed {DOOM_MAXINT});
+    check(Doom::FixedDiv(-one, Doom::Fixed {1}) == Doom::Fixed {DOOM_MININT});
+    check(Doom::FixedDiv(one, Doom::Fixed {-1}) == Doom::Fixed {DOOM_MININT});
 };
 
 // Dividing and multiplying back is lossy - there are only 16 bits of fraction to
@@ -129,7 +129,7 @@ auto tFixedRoundTripLosesAlmostNothing = test("Fixed/mulAndDivRoundTrip") = []
     {
         for (auto divisor = one; divisor < 9 * one; divisor += one)
         {
-            auto back = FixedMul(FixedDiv(value, divisor), divisor);
+            auto back = Doom::FixedMul(Doom::FixedDiv(value, divisor), divisor);
             auto lost = back > value ? back - value : value - back;
 
             check(lost <= Doom::Fixed {8});
@@ -242,7 +242,7 @@ auto tFineCosineIsFineSineShifted = test("Tables/cosineIsSineQuarterTurnOn") = [
 //
 // It looks like an off-by-one and it is not. Every demo ever recorded, and every
 // monster's aim, was computed through these exact numbers - "correcting" the
-// table to hit 0 and FRACUNIT squarely would shift the whole game a fraction of
+// table to hit 0 and Doom::FRACUNIT squarely would shift the whole game a fraction of
 // a degree and desync all of it. Pinned here so the correction is caught by a
 // test that explains itself rather than by a mystery desync.
 auto tFineSineIsSampledAtBucketCentres =
@@ -261,13 +261,14 @@ auto tFineSineIsSampledAtBucketCentres =
           == Doom::Fixed {-25}); // cos(~90 deg)
 
     // Near enough to the real thing to be the real thing, one part in 65536.
-    check(Doom::finesine()[Doom::fineAngles / 4] > FRACUNIT - Doom::Fixed {4});
+    check(Doom::finesine()[Doom::fineAngles / 4] > Doom::FRACUNIT - Doom::Fixed {4});
 };
 
 auto tFineSineStaysInUnitRange = test("Tables/sineStaysInUnitRange") = []
 {
     for (auto i = 0; i < Doom::fineAngles; ++i)
-        check(Doom::finesine()[i] >= -FRACUNIT && Doom::finesine()[i] <= FRACUNIT);
+        check(Doom::finesine()[i] >= -Doom::FRACUNIT
+              && Doom::finesine()[i] <= Doom::FRACUNIT);
 };
 
 auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []

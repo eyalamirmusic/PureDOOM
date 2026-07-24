@@ -2,7 +2,7 @@
 //
 // Savegame serialisation: players, the world (sectors/lines), the thinkers (mobjs),
 // and the active specials. Thinkers are identified on write and restored on read by
-// their function pointer, which is why the T_* thinker functions and Doom::mobjThinker
+// their function pointer, which is why the T_* thinker functions and mobjThinker
 // stay global shims - this code compares against and stores those exact addresses.
 // p_saveg.cpp shims the eight vanilla names and owns the save.cursor cursor. Not covered
 // by the demos (no save in a demo); migrated copy-for-copy so the byte layout is
@@ -25,7 +25,7 @@
 #include <new> // placement new
 #include "../Host/System.h"
 
-// save.cursor is a reference onto Doom::SaveGameState's cursor (an Engine member), bound in
+// save.cursor is a reference onto SaveGameState's cursor (an Engine member), bound in
 #include "MapUtil.h"
 #include "Mobj.h"
 // the p_saveg.cpp shim; g_game, the probe and this file share it. This bare extern must

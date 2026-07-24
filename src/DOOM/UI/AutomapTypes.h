@@ -29,9 +29,8 @@
 
 // Used by ST StatusBar stuff.
 //
-// Everything this header declares is at global scope, not in namespace Doom:
-// examples/EACP/EngineAccess.cpp is an ordinary translation unit and reads these
-// by bare name. Keep new declarations here at :: scope for the same reason.
+namespace Doom
+{
 constexpr int AM_MSGHEADER = ('a' << 24) + ('m' << 16);
 constexpr int AM_MSGENTERED = AM_MSGHEADER | ('e' << 8);
 constexpr int AM_MSGEXITED = AM_MSGHEADER | ('x' << 8);
@@ -56,22 +55,15 @@ constexpr int AM_MSGEXITED = AM_MSGHEADER | ('x' << 8);
 // is what AM_Drawer reads, not what it writes. That is all this is: the state and
 // the shapes, named. The choices stay AM_Drawer's own.
 //
-
-namespace Doom
-{
 struct MapPoint
 {
     Fixed x, y;
 };
-} // namespace Doom
 
-namespace Doom
-{
 struct MapLine
 {
     MapPoint a, b;
 };
-} // namespace Doom
 
 // The automap's palette. It picks raw colour indices rather than texturing
 // anything, and these are the ones it picks.
@@ -103,7 +95,7 @@ constexpr int GRIDCOLORS = GRAYS + GRAYSRANGE / 2;
 constexpr int XHAIRCOLORS = GRAYS;
 
 // A line the map never draws, whatever the player has seen.
-constexpr int LINE_NEVERSEE = Doom::ML_DONTDRAW;
+constexpr int LINE_NEVERSEE = ML_DONTDRAW;
 
 // The line drawings the map is made of. These counts are the array bounds the
 // tables in UI/Automap.cpp are defined against, so a count that drifts from its
@@ -112,8 +104,6 @@ constexpr int NUMPLYRLINES = 7;
 constexpr int NUMCHEATPLYRLINES = 16;
 constexpr int NUMTHINTRIANGLEGUYLINES = 3;
 
-namespace Doom
-{
 // The three line drawings, immutable after static init - the player arrow, the
 // IDDT arrow, and the shape every *thing* is drawn as. Const, and reached through
 // mapShapes(), so the compositor in examples/EACP reads the same tables the
@@ -132,7 +122,7 @@ const MapShapes& mapShapes();
 // and the two cheats, all used to be twelve loose globals here. They are members
 // of AutomapView (UI/AutomapView.h) now - the automap's own state cluster, which
 // already held the rest of the same state - and are reached through
-// Doom::automapView().
+// automapView().
 
 // Turns a map point about the origin. The automap's own, used as it stands, so a
 // renderer puts the player arrow through exactly the rotation AM_Drawer would.

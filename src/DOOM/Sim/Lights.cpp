@@ -1,6 +1,6 @@
 // Rewritten out of vanilla p_lights into namespace Doom.
 //
-// Doom::Sector light effects: the fire flicker, the random and strobe flashes and the
+// Sector light effects: the fire flicker, the random and strobe flashes and the
 // glow, plus their spawners and the EV_ line handlers. p_lights.cpp shims every
 // name. Golden-neutral.
 

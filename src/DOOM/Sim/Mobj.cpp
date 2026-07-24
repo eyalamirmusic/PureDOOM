@@ -57,10 +57,9 @@
 
 // Defined in g_game (reset a player's state on respawn) and in Clip (the shot range,
 // read by xyMovement's melee check).
-void Doom::playerReborn(int player);
-
 namespace Doom
 {
+void playerReborn(int player);
 
 constexpr Fixed STOPSPEED {0x1000};
 constexpr Fixed FRICTION {0xe800};

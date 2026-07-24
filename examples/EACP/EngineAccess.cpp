@@ -97,17 +97,17 @@ bool fits(std::span<const std::uint8_t> buffer, int bytes)
 
 double toDouble(Doom::Fixed value)
 {
-    return static_cast<double>(value.raw) / static_cast<double>(FRACUNIT.raw);
+    return static_cast<double>(value.raw) / static_cast<double>(Doom::FRACUNIT.raw);
 }
 
 float toFloat(Doom::Fixed value)
 {
-    return static_cast<float>(value.raw) / static_cast<float>(FRACUNIT.raw);
+    return static_cast<float>(value.raw) / static_cast<float>(Doom::FRACUNIT.raw);
 }
 
 Doom::Fixed toFixed(double value)
 {
-    return Doom::Fixed {static_cast<std::int32_t>(value * FRACUNIT.raw)};
+    return Doom::Fixed {static_cast<std::int32_t>(value * Doom::FRACUNIT.raw)};
 }
 
 // The engine's 32-bit angle for a heading in radians, so the view being drawn
@@ -1149,10 +1149,10 @@ struct AutomapEmitter
 
             if (size)
             {
-                l.a.x = FixedMul(size, l.a.x);
-                l.a.y = FixedMul(size, l.a.y);
-                l.b.x = FixedMul(size, l.b.x);
-                l.b.y = FixedMul(size, l.b.y);
+                l.a.x = Doom::FixedMul(size, l.a.x);
+                l.a.y = Doom::FixedMul(size, l.a.y);
+                l.b.x = Doom::FixedMul(size, l.b.x);
+                l.b.y = Doom::FixedMul(size, l.b.y);
             }
 
             if (angle)
@@ -1186,31 +1186,31 @@ void automapWalls(AutomapEmitter& emitter)
 
         if (Doom::automapView().cheating || (line.flags & Doom::ML_MAPPED))
         {
-            if ((line.flags & LINE_NEVERSEE) && !Doom::automapView().cheating)
+            if ((line.flags & Doom::LINE_NEVERSEE) && !Doom::automapView().cheating)
                 continue;
 
             if (!line.backsector)
-                draw(WALLCOLORS + Doom::automapView().lightlev);
+                draw(Doom::WALLCOLORS + Doom::automapView().lightlev);
             else if (line.special == 39)
-                draw(WALLCOLORS + WALLRANGE / 2);
+                draw(Doom::WALLCOLORS + Doom::WALLRANGE / 2);
             else if (line.flags & Doom::ML_SECRET)
                 draw(Doom::automapView().cheating
-                         ? SECRETWALLCOLORS + Doom::automapView().lightlev
-                         : WALLCOLORS + Doom::automapView().lightlev);
+                         ? Doom::SECRETWALLCOLORS + Doom::automapView().lightlev
+                         : Doom::WALLCOLORS + Doom::automapView().lightlev);
             else if (line.backsector->floorheight != line.frontsector->floorheight)
-                draw(FDWALLCOLORS + Doom::automapView().lightlev);
+                draw(Doom::FDWALLCOLORS + Doom::automapView().lightlev);
             else if (line.backsector->ceilingheight
                      != line.frontsector->ceilingheight)
-                draw(CDWALLCOLORS + Doom::automapView().lightlev);
+                draw(Doom::CDWALLCOLORS + Doom::automapView().lightlev);
             else if (Doom::automapView().cheating)
-                draw(TSWALLCOLORS + Doom::automapView().lightlev);
+                draw(Doom::TSWALLCOLORS + Doom::automapView().lightlev);
         }
         else if (Doom::automapView().am_plr != nullptr
                  && Doom::automapView()
                         .am_plr->powers[Doom::toIndex(Doom::PowerType::AllMap)])
         {
-            if (!(line.flags & LINE_NEVERSEE))
-                draw(GRAYS + 3);
+            if (!(line.flags & Doom::LINE_NEVERSEE))
+                draw(Doom::GRAYS + 3);
         }
     }
 }
@@ -1257,10 +1257,10 @@ void automapPlayer(AutomapEmitter& emitter, const Camera& camera)
 
     if (Doom::automapView().cheating)
         emitter.lineCharacter(
-            Doom::mapShapes().cheatPlayerArrow, unscaled, angle, WHITE, x, y);
+            Doom::mapShapes().cheatPlayerArrow, unscaled, angle, Doom::WHITE, x, y);
     else
         emitter.lineCharacter(
-            Doom::mapShapes().playerArrow, unscaled, angle, WHITE, x, y);
+            Doom::mapShapes().playerArrow, unscaled, angle, Doom::WHITE, x, y);
 }
 
 void automapThings(AutomapEmitter& emitter, int color)
@@ -1458,9 +1458,9 @@ bool buildOverlay(std::span<std::uint8_t> outRgba)
 
 void bindKeys()
 {
-    for (auto i = 0; i < numdefaults(); ++i)
+    for (auto i = 0; i < Doom::numdefaults(); ++i)
     {
-        auto& entry = defaults()[i];
+        auto& entry = Doom::defaults()[i];
 
         if (entry.defaultvalue != Doom::STRING_VALUE
             && entry.name.starts_with("key_"))
@@ -1702,7 +1702,7 @@ std::span<const AutomapVertex> buildAutomap(const Camera& camera,
     auto emitter = AutomapEmitter {};
     emitter.vertices = into;
 
-    // MTOF, as a plain number: the engine's own is FixedMul(x, scale_mtof) shifted
+    // MTOF, as a plain number: the engine's own is Doom::FixedMul(x, scale_mtof) shifted
     // back down twice, which is x_raw * scale_mtof_raw / 2^32 - so one whole map
     // unit spans scale_mtof whole frame pixels.
     emitter.pixelsPerMapUnit = toDouble(Doom::automapView().scale_mtof);
@@ -1721,15 +1721,15 @@ std::span<const AutomapVertex> buildAutomap(const Camera& camera,
                           toDouble(Doom::automapView().m_y)};
 
     if (Doom::automapView().grid)
-        automapGrid(emitter, GRIDCOLORS);
+        automapGrid(emitter, Doom::GRIDCOLORS);
 
     automapWalls(emitter);
     automapPlayer(emitter, camera);
 
     if (Doom::automapView().cheating == 2)
-        automapThings(emitter, THINGCOLORS);
+        automapThings(emitter, Doom::THINGCOLORS);
 
-    automapCrosshair(emitter, XHAIRCOLORS);
+    automapCrosshair(emitter, Doom::XHAIRCOLORS);
 
     return into.first(static_cast<std::size_t>(emitter.count));
 }

@@ -2,7 +2,7 @@
 
 #include "../DOOM.h"
 
-// Doom::Host and Doom::host() are declared in DOOM.h now - they are the public
+// Host and host() are declared in DOOM.h now - they are the public
 // interface an embedder assigns its platform hooks through. Host.cpp holds the
 // singleton and the built-in defaults its constructor installs.
 //

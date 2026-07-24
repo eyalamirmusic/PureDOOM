@@ -1,14 +1,14 @@
 #pragma once
 
 #include "SoundData.h" // MusicInfo (an anonymous-struct typedef, so it cannot be
-// forward-declared - only a pointer is held here regardless); also Doom::SfxInfo
+// forward-declared - only a pointer is held here regardless); also SfxInfo
 
 #include "../Containers.h"
 
 // A mixing channel: which sound occupies it (null = available), the sound's origin and
 // the handle of the sound being played. This was Game/Sound's file-local struct - a
 // forward declaration sufficed while SoundState held only a pointer to the array - but the
-// RAII sweep (Step 9) makes SoundState own the channel array by value (Vector<Doom::SoundChannel>),
+// RAII sweep (Step 9) makes SoundState own the channel array by value (Vector<SoundChannel>),
 // which needs the complete type here. Still used by no file but Game/Sound.
 namespace Doom
 {
@@ -19,10 +19,7 @@ struct SoundChannel
     void* origin = nullptr; // origin of the sound
     int handle = 0; // handle of the sound being played
 };
-} // namespace Doom
 
-namespace Doom
-{
 // Game/Sound's engine-side sound bookkeeping - which sounds occupy the mixing
 // channels, whether music is paused, and the music currently playing. This is the
 // *engine* side of sound (s_sound), the game deciding what should be heard; the actual

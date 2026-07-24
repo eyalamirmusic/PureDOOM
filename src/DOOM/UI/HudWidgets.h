@@ -7,7 +7,7 @@
 namespace Doom
 {
 // Heads-up text widgets. The vanilla HUlib_ names that used to shim these
-// have been retired; call sites use these Doom:: names directly.
+// have been retired; call sites use these  names directly.
 void initWidgets();
 void clearTextLine(HudTextLine& t);
 void initTextLine(HudTextLine& t, int x, int y, Patch** f, int sc);

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../Game/GameDefs.h" // SCREENWIDTH
-#include "../Math/FixedPoint.h" // Doom::Fixed
-#include "../Math/TrigTables.h" // Doom::Angle, fineAngles
+#include "../Math/FixedPoint.h" // Fixed
+#include "../Math/TrigTables.h" // Angle, fineAngles
 
 #include "../Containers.h"
 

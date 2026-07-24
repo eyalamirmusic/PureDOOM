@@ -40,27 +40,20 @@ constexpr int SIL_NONE = 0;
 constexpr int SIL_BOTTOM = 1;
 constexpr int SIL_TOP = 2;
 constexpr int SIL_BOTH = 3;
-} // namespace Doom
 
 // The drawseg pool's size is BSPScratch::maxDrawSegs (Render/BSPScratch.h),
 // which is what sizes the array. Bound-check against that, not against a
 // separate constant of the same value.
 
 // posts are runs of non masked source pixels
-namespace Doom
-{
 struct Post
 {
     byte topdelta = 0; // -1 is the last post in a column
     byte length = 0; // length data bytes follows
 };
-} // namespace Doom
 
-namespace Doom
-{
 // A Column is a list of 0 or more Post, (byte)-1 terminated
 using Column = Post;
-} // namespace Doom
 
 //
 // OTHER TYPES
@@ -71,16 +64,11 @@ using Column = Post;
 //  precalculating 24bpp lightmap/colormap LUT.
 //  from darkening PLAYPAL to all black.
 // Could even us emore than 32 levels.
-namespace Doom
-{
 using LightTable = byte;
-} // namespace Doom
 
 //
 // ?
 //
-namespace Doom
-{
 struct DrawSeg
 {
     Seg* curline = nullptr;
@@ -106,15 +94,12 @@ struct DrawSeg
     short* sprbottomclip = nullptr;
     short* maskedtexturecol = nullptr;
 };
-} // namespace Doom
 
 // Patches.
 // A patch holds one or more columns.
 // Patches are used for sprites and all masked pictures,
 // and we compose textures from the TEXTURE1/2 lists
 // of patches.
-namespace Doom
-{
 struct Patch
 {
     short width = 0; // bounding box size
@@ -124,13 +109,10 @@ struct Patch
     int columnofs[8] = {}; // only [width] used
     // the [0] is &columnofs[width]
 };
-} // namespace Doom
 
-// A Doom::VisSprite is a thing
+// A VisSprite is a thing
 //  that will be drawn during a refresh.
 // I.e. a sprite object that is partly visible.
-namespace Doom
-{
 struct VisSprite
 {
     // Doubly linked list.
@@ -165,16 +147,15 @@ struct VisSprite
 
     int mobjflags = 0;
 };
-} // namespace Doom
 
 //
 // Sprites are patches with a special naming convention
-//  so they can be recognized by Doom::initSprites.
+//  so they can be recognized by initSprites.
 // The base name is NNNNFx or NNNNFxFx, with
 //  x indicating the rotation, x = 0, 1-7.
 // The sprite and frame specified by a thing_t
 //  is range checked at run time.
-// A sprite is a Doom::Patch that is assumed to represent
+// A sprite is a Patch that is assumed to represent
 //  a three dimensional object and may have multiple
 //  rotations pre drawn.
 // Horizontal flipping is used to save space,
@@ -182,8 +163,6 @@ struct VisSprite
 // Some sprites will only have one picture used
 // for all views: NNNNF0
 //
-namespace Doom
-{
 // The three states SpriteFrame::rotate can hold. See the field itself for why it
 // is an int with a sentinel rather than the bool vanilla declared.
 constexpr int noRotationsSeen = -1;
@@ -215,14 +194,11 @@ struct SpriteFrame
     // Flip bit (1 = flip) to use for view angles 0-7.
     Array<byte, 8> flip;
 };
-} // namespace Doom
 
 //
 // A sprite definition:
 //  a number of animation frames.
 //
-namespace Doom
-{
 struct SpriteDef
 {
     int numframes = 0;
@@ -231,13 +207,10 @@ struct SpriteDef
     // (spriteframes[frame], &spriteframes[frame]).
     Vector<SpriteFrame> spriteframes;
 };
-} // namespace Doom
 
 //
 // Now what is a visplane, anyway?
 //
-namespace Doom
-{
 struct VisPlane
 {
     Fixed height;

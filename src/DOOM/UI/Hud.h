@@ -2,7 +2,7 @@
 
 #include "../Game/Event.h" // Event
 
-#include "../Containers.h" // Doom::Array
+#include "../Containers.h" // Array
 
 #include <string_view>
 
@@ -20,10 +20,7 @@ constexpr int HU_MSGX = 0;
 constexpr int HU_MSGY = 0;
 constexpr int HU_MSGHEIGHT = 1; // in lines
 constexpr int HU_MSGTIMEOUT = 4 * TICRATE;
-} // namespace Doom
 
-namespace Doom
-{
 // Heads-up display (messages, chat, level title); hu_stuff.cpp keeps the vanilla
 // HU_ names as shims.
 void initHud();
@@ -33,11 +30,10 @@ void hudTicker();
 void drawHud();
 char dequeueChatChar();
 void eraseHud();
+// The chat macros, player-colour names and built-in map names. Accessors (the
+// config persists the chat macros; the map names are chosen by game mode) handing
+// out storage defined in UI/Hud.cpp. Were per-file `extern` arrays.
+Array<std::string_view, 10>& chat_macros();
+Array<std::string_view, 4>& player_names();
+Array<std::string_view, 45>& mapnames();
 } // namespace Doom
-
-// The chat macros, player-colour names and built-in map names. ::-scope accessors
-// (the config persists the chat macros; the map names are chosen by game mode)
-// handing out storage defined in UI/Hud.cpp. Were per-file `extern` arrays.
-Doom::Array<std::string_view, 10>& chat_macros();
-Doom::Array<std::string_view, 4>& player_names();
-Doom::Array<std::string_view, 45>& mapnames();

@@ -28,7 +28,7 @@ using namespace nano;
 namespace
 {
 // The engine's coordinates are 16.16 fixed-point (Doom::Fixed is int32); the harness
-// takes and returns them raw. One map unit is therefore FRACUNIT.
+// takes and returns them raw. One map unit is therefore Doom::FRACUNIT.
 constexpr int unit = 1 << 16;
 
 // Shareware E1M1 at skill medium. A fixed map, so "the player's own start is a

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/FixedPoint.h" // Fixed
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // VisPlane
-#include "../Math/TrigTables.h" // Doom::Angle
+#include "../Math/TrigTables.h" // Angle
 
 namespace Doom
 {

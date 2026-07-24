@@ -47,7 +47,7 @@ constexpr int MIXBUFFERSIZE = SAMPLECOUNT * BUFMUL;
 
 // The global mixing buffer. doom_get_sound_buffer (Host/Api.cpp) hands it to the
 // audio callback, so it is reached through the accessor mixbuffer() rather than a
-// Doom:: member; the storage is file-local here.
+//  member; the storage is file-local here.
 signed short mixbufferData[MIXBUFFERSIZE];
 signed short* mixbuffer()
 {

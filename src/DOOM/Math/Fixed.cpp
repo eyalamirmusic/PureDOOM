@@ -2,7 +2,6 @@
 #include "../Host/Platform.h"
 #include "FixedPoint.h"
 
-
 #include "../Host/System.h"
 #include "../Game/GameDefs.h"
 namespace Doom
@@ -30,6 +29,6 @@ Fixed fixedDiv(Fixed a, Fixed b)
 } // namespace Doom
 
 // ---------------------------------------------------------------------------
-// Global-scope data that was m_fixed.cpp. It stays at :: scope because these are the
-// vanilla names other translation units (and the eacp port) still link against.
+// What was m_fixed.cpp's file-scope data. Every name below has moved onto the
+// Engine; the notes record where each went.
 // ---------------------------------------------------------------------------

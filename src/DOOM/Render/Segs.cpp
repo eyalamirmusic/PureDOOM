@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-// These are Doom::SegState members (Engine), exported by the r_segs.cpp shim; references onto
+// These are SegState members (Engine), exported by the r_segs.cpp shim; references onto
 // them - and as references, not plain externs, since Render/Segs writes them (a write through a
 // plain extern would clobber the reference's pointer, the skytexturemid trap).
 

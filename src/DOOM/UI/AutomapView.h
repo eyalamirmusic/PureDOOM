@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AutomapTypes.h" // MapPoint (and Doom::Fixed through it)
+#include "AutomapTypes.h" // MapPoint (and Fixed through it)
 #include "../Game/GameDefs.h" // SCREENWIDTH, SCREENHEIGHT
 #include "../doomtype.h" // byte
 #include "../Sim/MapTypes.h"

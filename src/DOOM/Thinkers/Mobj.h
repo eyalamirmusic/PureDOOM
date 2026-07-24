@@ -10,7 +10,7 @@
 #include "../Math/TrigTables.h"
 #include "../Math/FixedPoint.h"
 
-// We need the Doom::Thinker stuff.
+// We need the Thinker stuff.
 #include "../Sim/ActionFunc.h"
 
 // We need the WAD data structure for Map things,
@@ -26,10 +26,9 @@
 namespace Doom
 {
 struct SubSector;
-} // namespace Doom
 
 //
-// NOTES: Doom::Mobj
+// NOTES: Mobj
 //
 // mobj_ts are used to tell the refresh where to draw an image,
 // tell the world simulation when objects are contacted,
@@ -37,10 +36,10 @@ struct SubSector;
 //
 // The refresh uses the next and prev links to follow
 // lists of things in sectors as they are being drawn.
-// The sprite, frame, and angle elements determine which Doom::Patch
+// The sprite, frame, and angle elements determine which Patch
 // is used to draw the sprite if it is visible.
 // The sprite and frame values are allmost allways set
-// from Doom::State structures.
+// from State structures.
 // The statescr.exe utility generates the states.h and states.c
 // files that contain the sprite/frame numbers from the
 // statescr.txt source file.
@@ -52,23 +51,23 @@ struct SubSector;
 // it is standing on.
 //
 // The sound code uses the x,y, and subsector fields
-// to do stereo positioning of any sound effited by the Doom::Mobj.
+// to do stereo positioning of any sound effited by the Mobj.
 //
 // The play simulation uses the blocklinks, x,y,z, radius, height
 // to determine when mobj_ts are touching each other,
 // touching lines in the map, or hit by trace lines (gunshots,
 // lines of sight, etc).
-// The Doom::Mobj->flags element has various bit flags
+// The Mobj->flags element has various bit flags
 // used by the simulation.
 //
-// Every Doom::Mobj is linked into a single sector
+// Every Mobj is linked into a single sector
 // based on its origin coordinates.
-// The Doom::SubSector is found with Doom::pointInSubsector(x,y),
-// and the Doom::Sector can be found with subsector->sector.
+// The SubSector is found with pointInSubsector(x,y),
+// and the Sector can be found with subsector->sector.
 // The sector links are only used by the rendering code,
 // the play simulation does not care about them at all.
 //
-// Any Doom::Mobj that needs to be acted upon by something else
+// Any Mobj that needs to be acted upon by something else
 // in the play world (block movement, be shot, etc) will also
 // need to be linked into the blockmap.
 // If the thing has the MobjFlag::NoBlockmap flag set, it will not use
@@ -76,13 +75,13 @@ struct SubSector;
 // but only as the instigator (missiles will run into other
 // things, but nothing can run into a missile).
 // Each block in the grid is 128*128 units, and knows about
-// every Doom::Line that it contains a piece of, and every
-// interactable Doom::Mobj that has its origin contained.
+// every Line that it contains a piece of, and every
+// interactable Mobj that has its origin contained.
 //
-// A valid Doom::Mobj is a Doom::Mobj that has the proper Doom::SubSector
+// A valid Mobj is a Mobj that has the proper SubSector
 // filled in for its xy coordinates and is linked into the
 // sector from which the subsector was made, or has the
-// MobjFlag::NoSector flag set (the Doom::SubSector needs to be valid
+// MobjFlag::NoSector flag set (the SubSector needs to be valid
 // even if MobjFlag::NoSector is set), and is linked into a blockmap
 // block or has the MobjFlag::NoBlockmap flag set.
 // Links should only be modified by the P_[Un]SetThingPosition()
@@ -95,8 +94,6 @@ struct SubSector;
 //
 // Misc. mobj flags
 //
-namespace Doom
-{
 enum class MobjFlag
 {
     // Call P_SpecialThing when touched.
@@ -182,11 +179,7 @@ enum class MobjFlag
 constexpr int mobjTranslationMask = 0xc000000;
 constexpr int mobjTranslationShift = 26;
 
-} // namespace Doom
-
 // Map Object definition.
-namespace Doom
-{
 struct Mobj : Thinker
 {
     // Was `Thinker thinker;` as the first member; a mobj now *is* a Thinker.

@@ -32,15 +32,12 @@ namespace Doom
 //
 constexpr int STLIB_BG = 4;
 constexpr int STLIB_FG = 0;
-} // namespace Doom
 
 //
 // Typedefs of widgets
 //
 
 // Number widget
-namespace Doom
-{
 struct StatusNumber
 {
     // upper right-hand corner
@@ -67,12 +64,9 @@ struct StatusNumber
     // user data
     int data = 0;
 };
-} // namespace Doom
 
 // Percent widget ("child" of number widget,
 //  or, more precisely, contains a number widget.)
-namespace Doom
-{
 struct StatusPercent
 {
     // number information
@@ -81,11 +75,8 @@ struct StatusPercent
     // percent sign graphic
     Patch* p = nullptr;
 };
-} // namespace Doom
 
 // Multiple Icon widget
-namespace Doom
-{
 struct StatusMultIcon
 {
     // center-justified location of icons
@@ -108,11 +99,8 @@ struct StatusMultIcon
     // user data
     int data = 0;
 };
-} // namespace Doom
 
 // Binary Icon widget
-namespace Doom
-{
 struct StatusBinIcon
 {
     // center-justified location of icon

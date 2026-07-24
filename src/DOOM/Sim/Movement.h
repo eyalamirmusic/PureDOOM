@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SimDefs.h" // Mobj, Doom::Fixed
+#include "SimDefs.h" // Mobj, Fixed
 
 // The movement-clipping core of vanilla p_map is now Mobj methods, declared on the
 // struct in Thinkers/Mobj.h and defined in Sim/Movement.cpp:

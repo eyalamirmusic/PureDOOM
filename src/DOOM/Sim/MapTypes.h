@@ -27,7 +27,7 @@
 // are in Render/RenderTypes.h.
 
 #include "../Game/GameDefs.h" // SCREENWIDTH
-#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/FixedPoint.h" // Fixed
 #include "ActionFunc.h" // Thinker, for a sector's sound origin
 #include "MobjTypes.h" // Mobj, which a sector holds a list of
 
@@ -50,13 +50,9 @@ struct Vertex
     Fixed x;
     Fixed y;
 };
-} // namespace Doom
 
 // Forward of LineDefs, for Sectors.
-namespace Doom
-{
 struct Line;
-} // namespace Doom
 
 // The p_spec handler enums, opaque-declared so Sector/Line below can name them in
 // their method signatures without this low-level header pulling in the whole
@@ -64,8 +60,6 @@ struct Line;
 // Each is a scoped enum with the default int underlying type, so the opaque
 // declaration is a complete type; the real definitions live in
 // Thinkers/{FloorMove,Door,Ceiling,Plat}.h and Sim/SpecialTypes.h.
-namespace Doom
-{
 enum class FloorType;
 enum class StairType;
 enum class DoorType;
@@ -73,37 +67,31 @@ enum class CeilingType;
 enum class PlatType;
 enum class MoveResult;
 enum class ButtonWhere;
-} // namespace Doom
 
-// Each sector has a Doom::DegenMobj in its center
+// Each sector has a DegenMobj in its center
 // for sound origin purposes.
 // I suppose this does not handle sound from
 // moving objects (doppler), because
 // position is prolly just buffered, not
 // updated.
-// A sector's sound origin. The sound code casts it to Doom::Mobj* and reads x/y off
-// it, so x/y/z must sit at the same offsets as Doom::Mobj's. Doom::Mobj inherits
-// Doom::Thinker and its first field reuses the base's tail padding, so this must
-// inherit it the same way rather than hold a `Doom::Thinker thinker` member - a member
-// gets no tail-padding reuse, which would push x/y/z 4 bytes later than Doom::Mobj's
+// A sector's sound origin. The sound code casts it to Mobj* and reads x/y off
+// it, so x/y/z must sit at the same offsets as Mobj's. Mobj inherits
+// Thinker and its first field reuses the base's tail padding, so this must
+// inherit it the same way rather than hold a `Thinker thinker` member - a member
+// gets no tail-padding reuse, which would push x/y/z 4 bytes later than Mobj's
 // and make the cast read the wrong words (a silently misplaced, wrongly-inaudible
 // sound). The Thinker part is otherwise unused: this is never a real thinker.
-namespace Doom
-{
 struct DegenMobj : Thinker
 {
     Fixed x;
     Fixed y;
     Fixed z;
 };
-} // namespace Doom
 
 //
 // The SECTORS record, at runtime.
 // Stores things/mobjs.
 //
-namespace Doom
-{
 struct Sector
 {
     Fixed floorheight;
@@ -162,13 +150,10 @@ struct Sector
     void spawnDoorCloseIn30();
     void spawnDoorRaiseIn5Mins(int secnum);
 };
-} // namespace Doom
 
 //
 // The SideDef.
 //
-namespace Doom
-{
 struct Side
 {
     // add this to the calculated texture column
@@ -186,13 +171,10 @@ struct Side
     // Sector the SideDef is facing.
     Sector* sector = nullptr;
 };
-} // namespace Doom
 
 //
 // Move clipping aid for LineDefs.
 //
-namespace Doom
-{
 enum class SlopeType
 {
     Horizontal,
@@ -200,10 +182,7 @@ enum class SlopeType
     Positive,
     Negative
 };
-} // namespace Doom
 
-namespace Doom
-{
 struct Line
 {
     // Vertices, from v1 to v2.
@@ -267,30 +246,24 @@ struct Line
     void startButton(ButtonWhere w, int texture, int time);
     void changeSwitchTexture(int useAgain);
 };
-} // namespace Doom
 
 //
-// A Doom::SubSector.
-// References a Doom::Sector.
+// A SubSector.
+// References a Sector.
 // Basically, this is a list of LineSegs,
 // indicating the visible walls that define
 // (all or some) sides of a convex BSP leaf.
 //
-namespace Doom
-{
 struct SubSector
 {
     Sector* sector = nullptr;
     short numlines = 0;
     short firstline = 0;
 };
-} // namespace Doom
 
 //
 // The LineSeg.
 //
-namespace Doom
-{
 struct Seg
 {
     Vertex* v1 = nullptr;
@@ -309,13 +282,10 @@ struct Seg
     Sector* frontsector = nullptr;
     Sector* backsector = nullptr;
 };
-} // namespace Doom
 
 //
 // BSP node.
 //
-namespace Doom
-{
 struct Node
 {
     // Partition line.

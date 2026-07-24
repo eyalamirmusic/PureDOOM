@@ -2,14 +2,11 @@
 
 #include "../Containers.h"
 
-// Doom::Player is used only by pointer here, so a forward declaration is enough.
+// Player is used only by pointer here, so a forward declaration is enough.
 namespace Doom
 {
 struct Player;
-} // namespace Doom
 
-namespace Doom
-{
 // The status bar's residual runtime state - what is left of UI/StatusBar's own file-scope statics
 // once the animated face, the STlib widgets and the loaded patches have moved out (StatusBarFace /
 // StatusBarWidgets / StatusBarGraphics). Three loosely-related threads the bar keeps for itself: the

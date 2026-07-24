@@ -43,15 +43,12 @@ namespace Doom
 //
 constexpr int FF_FULLBRIGHT = 0x8000; // flag in thing->frame
 constexpr int FF_FRAMEMASK = 0x7fff;
-} // namespace Doom
 
 //
 // Overlay psprites are scaled shapes
 // drawn directly on the view screen,
 // coordinates are given for a 320*200 view screen.
 //
-namespace Doom
-{
 enum class PspNum
 {
     Weapon,
@@ -60,10 +57,7 @@ enum class PspNum
 };
 
 constexpr int numPSprites = toIndex(PspNum::NumPSprites);
-} // namespace Doom
 
-namespace Doom
-{
 struct PspDef
 {
     State* state = nullptr; // a 0 state means not active

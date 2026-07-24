@@ -3,7 +3,7 @@
 // Status-bar widgets: a difference-drawn number, a number with a trailing percent
 // glyph, a multi-icon (the arms/faces), and a binary on/off icon. The vanilla
 // STlib_ names that used to shim these have been retired; the minus-sign patch
-// is the only global, now a Doom::StatusWidgetGraphics member owned by the
+// is the only global, now a StatusWidgetGraphics member owned by the
 // Engine (reached by a reference alias). Covered by the frame goldens (the bar
 // lands in screens[0]).
 

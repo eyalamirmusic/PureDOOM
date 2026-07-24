@@ -1,15 +1,12 @@
 #pragma once
 
 // Forward declaration at global scope (that is where p_mobj.h declares it) - the cluster holds a
-// pointer to it, not its layout, so declaring it inside namespace Doom would make a distinct Doom::
-// type that would not bind to the vanilla Doom::Mobj the reference alias points at.
+// pointer to it, not its layout, so declaring it inside namespace Doom would make a distinct
+// type that would not bind to the vanilla Mobj the reference alias points at.
 namespace Doom
 {
 struct Mobj; // Mobj
-} // namespace Doom
 
-namespace Doom
-{
 // The last thing that made noise, propagated to nearby monsters as noiseAlert / P_RecursiveSound
 // walk outward from it (each sector's own soundtarget member is then set to this). Vanilla kept it a
 // global so the recursion could read it without threading it through every call.

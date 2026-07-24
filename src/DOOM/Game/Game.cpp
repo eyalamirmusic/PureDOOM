@@ -109,63 +109,65 @@
 // what turns them into a velocity, by multiplying by 2048. So the cap is that raw
 // integer, not a whole-unit conversion of it.
 //
-// Not a constexpr candidate: Doom::movementSpeeds().forwardmove[1] is a runtime
-// accessor into per-session state (Doom::doomLoop's -turbo handling scales it at
+// Not a constexpr candidate: movementSpeeds().forwardmove[1] is a runtime
+// accessor into per-session state (doomLoop's -turbo handling scales it at
 // startup), not a compile-time constant. It was a macro for exactly that reason
 // until Step 9's last pass, which is a reason not to be a constant and never was a
 // reason to be a macro; maxPlayerMove() is defined in namespace Doom below.
 
+namespace Doom
+{
 // Prototypes for other subsystems' functions.
-void Doom::spawnPlayer(Doom::MapThing& mthing);
-void Doom::executeSetViewSize();
+void spawnPlayer(MapThing& mthing);
+void executeSetViewSize();
 
 // The reference aliases that survive here are the ones a header still externs, so other
 // translation units read them by their vanilla names; this file itself goes through the owning
 // cluster (gameFlow(), gameSession(), ...) and no longer reads any of them. The aliases nothing
 // outside this file needed are gone (REFACTOR.md, Step 5).
 //
-// gameaction and gamestate are a Doom::GameFlow owned by the Engine now; these are references
+// gameaction and gamestate are a GameFlow owned by the Engine now; these are references
 // onto it (d_event.h / doomstat.h extern them).
 
-// The current game's rules are a Doom::GameSession owned by the Engine now; these (and
+// The current game's rules are a GameSession owned by the Engine now; these (and
 // netgame/deathmatch below) are references onto it (REFACTOR.md, Step 5).
 
-// paused (with viewactive/nodrawers/noblit below) is a Doom::RefreshFlags owned by the
+// paused (with viewactive/nodrawers/noblit below) is a RefreshFlags owned by the
 // Engine now; these are references onto it (REFACTOR.md, Step 5).
 
-// usergame (with the demo flags below) is a Doom::DemoState owned by the Engine now; these
+// usergame (with the demo flags below) is a DemoState owned by the Engine now; these
 // are references onto it (REFACTOR.md, Step 5).
 
-// The player roster and view selection is a Doom::PlayerState owned by the Engine now;
+// The player roster and view selection is a PlayerState owned by the Engine now;
 // these are references onto it (the arrays as references-to-array) (REFACTOR.md, Step 5).
 
 // The level's progress (the intermission totals, and leveltime over in p_tick) is a
-// Doom::LevelStats owned by the Engine now; these are references onto it.
+// LevelStats owned by the Engine now; these are references onto it.
 
-// The demo flags are a Doom::DemoState owned by the Engine now; these vanilla names are
+// The demo flags are a DemoState owned by the Engine now; these vanilla names are
 // references onto it (REFACTOR.md, Step 5). The buffer state (demoname/demobuffer/demo_p/
 // demoend/netdemo) needed no alias - nothing outside this file reads it.
 
-// precache is a Doom::EngineParams owned by the Engine now; this is a reference onto it (default
+// precache is a EngineParams owned by the Engine now; this is a reference onto it (default
 // true - load all graphics at start; REFACTOR.md, Step 5).
 
-// wminfo is a Doom::IntermissionInfo owned by the Engine now; this is a reference onto it
+// wminfo is a IntermissionInfo owned by the Engine now; this is a reference onto it
 // (REFACTOR.md, Step 5).
 
 // mousemove is the one control binding another translation unit still reads by its vanilla name
-// (UI/Menu.cpp externs it); the rest of the Doom::InputConfig bindings are reached through
+// (UI/Menu.cpp externs it); the rest of the InputConfig bindings are reached through
 // inputConfig() here. Config.cpp binds its defaults[] entries to the members at runtime rather
 // than capturing their addresses at static-init, which is what unblocked the migration.
 
-// The interior views onto Doom::TiccmdInput's button arrays, offset by one so vanilla's [-1]
+// The interior views onto TiccmdInput's button arrays, offset by one so vanilla's [-1]
 // index (an unbound button) stays in bounds.
-bool* mousebuttons = &Doom::ticcmdInput().mousearray[1];
-bool* joybuttons = &Doom::ticcmdInput().joyarray[1];
+bool* mousebuttons = &ticcmdInput().mousearray[1];
+bool* joybuttons = &ticcmdInput().joyarray[1];
 
 int savegameslot;
 std::string savedescription;
 
-// bodyqueslot is a Doom::CorpseQueue owned by the Engine now; this is a reference onto it
+// bodyqueslot is a CorpseQueue owned by the Engine now; this is a reference onto it
 // (doomstat.h externs it, bodyque[] alongside it does not need one) (REFACTOR.md, Step 5).
 
 void* statcopyValue = nullptr; // for statistics driver
@@ -177,9 +179,6 @@ void*& statcopy()
 bool secretexit;
 
 std::string defdemoname;
-
-namespace Doom
-{
 
 constexpr int SAVEGAMESIZE = 0x2c000;
 

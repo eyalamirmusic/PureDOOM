@@ -40,7 +40,7 @@
 #include "Ticcmd.h"
 
 //
-// Doom::Player states.
+// Player states.
 //
 namespace Doom
 {
@@ -53,13 +53,10 @@ enum class PlayerLifeState
     // Ready to restart/respawn???
     Reborn
 };
-} // namespace Doom
 
 //
-// Doom::Player internal flags, for cheats and debug.
+// Player internal flags, for cheats and debug.
 //
-namespace Doom
-{
 enum class CheatFlag
 {
     // No clipping, walk through barriers.
@@ -69,13 +66,10 @@ enum class CheatFlag
     // Not really a cheat, just a debug aid.
     NoMomentum = 4
 };
-} // namespace Doom
 
 //
-// Extended player object info: Doom::Player
+// Extended player object info: Player
 //
-namespace Doom
-{
 struct Player
 {
     Mobj* mo = nullptr;
@@ -224,14 +218,11 @@ struct Player
     void giveCard(Card card);
     bool givePower(PowerType power);
 };
-} // namespace Doom
 
 //
 // INTERMISSION
-// Structure passed e.g. to Doom::startIntermission(wb)
+// Structure passed e.g. to startIntermission(wb)
 //
-namespace Doom
-{
 struct IntermissionPlayer
 {
     bool in = false; // whether the player is in game
@@ -244,10 +235,7 @@ struct IntermissionPlayer
     int frags[4] = {};
     int score = 0; // current score on entry, modified on return
 };
-} // namespace Doom
 
-namespace Doom
-{
 struct IntermissionStart
 {
     int epsd = 0; // episode # (0-2)

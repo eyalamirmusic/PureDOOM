@@ -66,17 +66,16 @@
 // a gametic cannot be run until nettics[] > gametic for all players
 //
 
-// The netcode buffers and tic bookkeeping are a Doom::NetState owned by the Engine now, and
+// The netcode buffers and tic bookkeeping are a NetState owned by the Engine now, and
 // this file reads them straight off netState(). These five are still externed in doomstat.h
 // and read through those externs by Game/Game.cpp, Game/DoomMain.cpp and Host/Net.cpp, so the
 // references stay until their readers go through netState() too (REFACTOR.md, Step 5).
 
-void Doom::processEvents();
-void Doom::buildTiccmd(Doom::Ticcmd& cmd);
-void Doom::doAdvanceDemo();
-
 namespace Doom
 {
+void processEvents();
+void buildTiccmd(Ticcmd& cmd);
+void doAdvanceDemo();
 
 // NCMD_EXIT does not fit int (0x80000000 > INT_MAX), so it is unsigned - the
 // same type the bare hex literal already had as a macro.

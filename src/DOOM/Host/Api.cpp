@@ -5,7 +5,7 @@
 
 #include "../DOOM.h"
 
-#include "Host.h" // Doom::host(), the owner of the 13 callbacks below
+#include "Host.h" // host(), the owner of the 13 callbacks below
 
 #include "Platform.h" // the 13 host references / helpers we define, for drift
 #include "../Game/DoomMain.h"
@@ -26,14 +26,6 @@
 
 #include <map>
 #include <string>
-
-// The host output buffers, RAII-owned (Step 9): the 8-bit palette-index snapshot the
-// embedder reads, and the RGB(A)-expanded frame. Sized once in initGame and returned
-// to the embedder as raw pointers into data(), which is stable (never resized after).
-static Doom::Vector<unsigned char> screen_buffer;
-static Doom::Vector<unsigned char> final_screen_buffer;
-static int last_update_time = 0;
-static Doom::Array<int, 3> button_states = {0};
 
 void doom_memset(void* ptr, int value, int num)
 {
@@ -59,6 +51,14 @@ void* doom_memcpy(void* destination, const void* source, int num)
 
 namespace Doom
 {
+// The host output buffers, RAII-owned (Step 9): the 8-bit palette-index snapshot the
+// embedder reads, and the RGB(A)-expanded frame. Sized once in initGame and returned
+// to the embedder as raw pointers into data(), which is stable (never resized after).
+static Vector<unsigned char> screen_buffer;
+static Vector<unsigned char> final_screen_buffer;
+static int last_update_time = 0;
+static Array<int, 3> button_states = {0};
+
 static ConfigDefault* getDefault(std::string_view name)
 {
     for (auto i = 0; i < numdefaults(); ++i)

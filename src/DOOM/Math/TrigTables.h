@@ -46,11 +46,11 @@
 // finesine() / finecosine() / finetangent() / tantoangle() - the typed views onto
 // the trig tables - are declared in Math/Trig.h, included above. They used to be
 // four `extern const T*` globals spelled here; the engine reads them as
-// finesine()[i] now, and Doom::Angle is spelled by its own name (this header used
+// finesine()[i] now, and Angle is spelled by its own name (this header used
 // to alias it `angle_t`).
 
 // Utility function,
-//  called by Doom::pointToAngle.
+//  called by pointToAngle.
 
 //-----------------------------------------------------------------------------
 //

@@ -101,7 +101,7 @@ auto tInterceptVectorCrossing = test("Geometry/interceptVectorFindsTheCrossing")
 
     auto frac = interceptVector(a, b);
 
-    // A quarter of FRACUNIT, give or take the >>8 truncation in the formula.
+    // A quarter of Doom::FRACUNIT, give or take the >>8 truncation in the formula.
     check(abs(frac - Fixed {Fixed::fracUnit / 4}).raw < 64,
           "crosses at ~1/4 along a");
 };

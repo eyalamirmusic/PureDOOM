@@ -24,7 +24,7 @@
 // Rewritten out of vanilla f_finale into namespace Doom.
 //
 // The end-of-episode finale: the scrolling text screen, the character cast call,
-// and the DOOM II bunny scroll. The finale's runtime state is a Doom::FinaleState
+// and the DOOM II bunny scroll. The finale's runtime state is a FinaleState
 // owned by the Engine (UI/FinaleState.h), reached through a hoisted local per
 // function; the two externs below are other subsystems' globals. It has its own
 // frame golden now (Tests/Goldens/finale.frames, via Tests/FinaleReplay.h - no
@@ -58,10 +58,9 @@
 #include "../Game/Sound.h"
 
 #include <algorithm>
-void Doom::drawPatchFlipped(int x, int y, int scrn, Patch* patch); // v_video
-
 namespace Doom
 {
+void drawPatchFlipped(int x, int y, int scrn, Patch* patch); // v_video
 
 constexpr int TEXTSPEED = 3;
 constexpr int TEXTWAIT = 250;

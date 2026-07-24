@@ -33,11 +33,8 @@ namespace Doom
 // StateNum::Null the way the rest of the engine does: an opaque enum is complete
 // enough to declare a member of, but its enumerators are not visible here.
 enum class StateNum;
-} // namespace Doom
 
 // Weapon info: sprite frames, ammunition use.
-namespace Doom
-{
 struct WeaponInfo
 {
     AmmoType ammo = AmmoType::Clip;
