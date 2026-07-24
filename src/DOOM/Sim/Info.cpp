@@ -78,95 +78,95 @@ const Array<std::string_view, numSprites> sprnamesData = {
 
 State statesData[numStates] = {
     {SpriteNum::Troo,0,-1,{},StateNum::Null,0,0}, // StateNum::Null
-    {SpriteNum::Shtg,4,0,{.weapon = light0},StateNum::Null,0,0}, // StateNum::Lightdone
-    {SpriteNum::Pung,0,1,{.weapon = weaponReady},StateNum::Punch,0,0}, // StateNum::Punch
-    {SpriteNum::Pung,0,1,{.weapon = lower},StateNum::Punchdown,0,0}, // StateNum::Punchdown
-    {SpriteNum::Pung,0,1,{.weapon = raise},StateNum::Punchup,0,0}, // StateNum::Punchup
+    {SpriteNum::Shtg,4,0,{.weapon = &Player::light0},StateNum::Null,0,0}, // StateNum::Lightdone
+    {SpriteNum::Pung,0,1,{.weapon = &Player::weaponReady},StateNum::Punch,0,0}, // StateNum::Punch
+    {SpriteNum::Pung,0,1,{.weapon = &Player::lower},StateNum::Punchdown,0,0}, // StateNum::Punchdown
+    {SpriteNum::Pung,0,1,{.weapon = &Player::raise},StateNum::Punchup,0,0}, // StateNum::Punchup
     {SpriteNum::Pung,1,4,{},StateNum::Punch2,0,0}, // StateNum::Punch1
-    {SpriteNum::Pung,2,4,{.weapon = punch},StateNum::Punch3,0,0}, // StateNum::Punch2
+    {SpriteNum::Pung,2,4,{.weapon = &Player::punch},StateNum::Punch3,0,0}, // StateNum::Punch2
     {SpriteNum::Pung,3,5,{},StateNum::Punch4,0,0}, // StateNum::Punch3
     {SpriteNum::Pung,2,4,{},StateNum::Punch5,0,0}, // StateNum::Punch4
-    {SpriteNum::Pung,1,5,{.weapon = reFire},StateNum::Punch,0,0}, // StateNum::Punch5
-    {SpriteNum::Pisg,0,1,{.weapon = weaponReady},StateNum::Pistol,0,0},// StateNum::Pistol
-    {SpriteNum::Pisg,0,1,{.weapon = lower},StateNum::Pistoldown,0,0}, // StateNum::Pistoldown
-    {SpriteNum::Pisg,0,1,{.weapon = raise},StateNum::Pistolup,0,0}, // StateNum::Pistolup
+    {SpriteNum::Pung,1,5,{.weapon = &Player::reFire},StateNum::Punch,0,0}, // StateNum::Punch5
+    {SpriteNum::Pisg,0,1,{.weapon = &Player::weaponReady},StateNum::Pistol,0,0},// StateNum::Pistol
+    {SpriteNum::Pisg,0,1,{.weapon = &Player::lower},StateNum::Pistoldown,0,0}, // StateNum::Pistoldown
+    {SpriteNum::Pisg,0,1,{.weapon = &Player::raise},StateNum::Pistolup,0,0}, // StateNum::Pistolup
     {SpriteNum::Pisg,0,4,{},StateNum::Pistol2,0,0}, // StateNum::Pistol1
-    {SpriteNum::Pisg,1,6,{.weapon = firePistol},StateNum::Pistol3,0,0},// StateNum::Pistol2
+    {SpriteNum::Pisg,1,6,{.weapon = &Player::firePistol},StateNum::Pistol3,0,0},// StateNum::Pistol2
     {SpriteNum::Pisg,2,4,{},StateNum::Pistol4,0,0}, // StateNum::Pistol3
-    {SpriteNum::Pisg,1,5,{.weapon = reFire},StateNum::Pistol,0,0}, // StateNum::Pistol4
-    {SpriteNum::Pisf,32768,7,{.weapon = light1},StateNum::Lightdone,0,0}, // StateNum::Pistolflash
-    {SpriteNum::Shtg,0,1,{.weapon = weaponReady},StateNum::Sgun,0,0}, // StateNum::Sgun
-    {SpriteNum::Shtg,0,1,{.weapon = lower},StateNum::Sgundown,0,0}, // StateNum::Sgundown
-    {SpriteNum::Shtg,0,1,{.weapon = raise},StateNum::Sgunup,0,0}, // StateNum::Sgunup
+    {SpriteNum::Pisg,1,5,{.weapon = &Player::reFire},StateNum::Pistol,0,0}, // StateNum::Pistol4
+    {SpriteNum::Pisf,32768,7,{.weapon = &Player::light1},StateNum::Lightdone,0,0}, // StateNum::Pistolflash
+    {SpriteNum::Shtg,0,1,{.weapon = &Player::weaponReady},StateNum::Sgun,0,0}, // StateNum::Sgun
+    {SpriteNum::Shtg,0,1,{.weapon = &Player::lower},StateNum::Sgundown,0,0}, // StateNum::Sgundown
+    {SpriteNum::Shtg,0,1,{.weapon = &Player::raise},StateNum::Sgunup,0,0}, // StateNum::Sgunup
     {SpriteNum::Shtg,0,3,{},StateNum::Sgun2,0,0}, // StateNum::Sgun1
-    {SpriteNum::Shtg,0,7,{.weapon = fireShotgun},StateNum::Sgun3,0,0}, // StateNum::Sgun2
+    {SpriteNum::Shtg,0,7,{.weapon = &Player::fireShotgun},StateNum::Sgun3,0,0}, // StateNum::Sgun2
     {SpriteNum::Shtg,1,5,{},StateNum::Sgun4,0,0}, // StateNum::Sgun3
     {SpriteNum::Shtg,2,5,{},StateNum::Sgun5,0,0}, // StateNum::Sgun4
     {SpriteNum::Shtg,3,4,{},StateNum::Sgun6,0,0}, // StateNum::Sgun5
     {SpriteNum::Shtg,2,5,{},StateNum::Sgun7,0,0}, // StateNum::Sgun6
     {SpriteNum::Shtg,1,5,{},StateNum::Sgun8,0,0}, // StateNum::Sgun7
     {SpriteNum::Shtg,0,3,{},StateNum::Sgun9,0,0}, // StateNum::Sgun8
-    {SpriteNum::Shtg,0,7,{.weapon = reFire},StateNum::Sgun,0,0}, // StateNum::Sgun9
-    {SpriteNum::Shtf,32768,4,{.weapon = light1},StateNum::Sgunflash2,0,0}, // StateNum::Sgunflash1
-    {SpriteNum::Shtf,32769,3,{.weapon = light2},StateNum::Lightdone,0,0}, // StateNum::Sgunflash2
-    {SpriteNum::Sht2,0,1,{.weapon = weaponReady},StateNum::Dsgun,0,0}, // StateNum::Dsgun
-    {SpriteNum::Sht2,0,1,{.weapon = lower},StateNum::Dsgundown,0,0}, // StateNum::Dsgundown
-    {SpriteNum::Sht2,0,1,{.weapon = raise},StateNum::Dsgunup,0,0}, // StateNum::Dsgunup
+    {SpriteNum::Shtg,0,7,{.weapon = &Player::reFire},StateNum::Sgun,0,0}, // StateNum::Sgun9
+    {SpriteNum::Shtf,32768,4,{.weapon = &Player::light1},StateNum::Sgunflash2,0,0}, // StateNum::Sgunflash1
+    {SpriteNum::Shtf,32769,3,{.weapon = &Player::light2},StateNum::Lightdone,0,0}, // StateNum::Sgunflash2
+    {SpriteNum::Sht2,0,1,{.weapon = &Player::weaponReady},StateNum::Dsgun,0,0}, // StateNum::Dsgun
+    {SpriteNum::Sht2,0,1,{.weapon = &Player::lower},StateNum::Dsgundown,0,0}, // StateNum::Dsgundown
+    {SpriteNum::Sht2,0,1,{.weapon = &Player::raise},StateNum::Dsgunup,0,0}, // StateNum::Dsgunup
     {SpriteNum::Sht2,0,3,{},StateNum::Dsgun2,0,0}, // StateNum::Dsgun1
-    {SpriteNum::Sht2,0,7,{.weapon = fireShotgun2},StateNum::Dsgun3,0,0}, // StateNum::Dsgun2
+    {SpriteNum::Sht2,0,7,{.weapon = &Player::fireShotgun2},StateNum::Dsgun3,0,0}, // StateNum::Dsgun2
     {SpriteNum::Sht2,1,7,{},StateNum::Dsgun4,0,0}, // StateNum::Dsgun3
-    {SpriteNum::Sht2,2,7,{.weapon = checkReload},StateNum::Dsgun5,0,0}, // StateNum::Dsgun4
-    {SpriteNum::Sht2,3,7,{.weapon = openShotgun2},StateNum::Dsgun6,0,0}, // StateNum::Dsgun5
+    {SpriteNum::Sht2,2,7,{.weapon = &Player::checkReload},StateNum::Dsgun5,0,0}, // StateNum::Dsgun4
+    {SpriteNum::Sht2,3,7,{.weapon = &Player::openShotgun2},StateNum::Dsgun6,0,0}, // StateNum::Dsgun5
     {SpriteNum::Sht2,4,7,{},StateNum::Dsgun7,0,0}, // StateNum::Dsgun6
-    {SpriteNum::Sht2,5,7,{.weapon = loadShotgun2},StateNum::Dsgun8,0,0}, // StateNum::Dsgun7
+    {SpriteNum::Sht2,5,7,{.weapon = &Player::loadShotgun2},StateNum::Dsgun8,0,0}, // StateNum::Dsgun7
     {SpriteNum::Sht2,6,6,{},StateNum::Dsgun9,0,0}, // StateNum::Dsgun8
-    {SpriteNum::Sht2,7,6,{.weapon = closeShotgun2},StateNum::Dsgun10,0,0}, // StateNum::Dsgun9
-    {SpriteNum::Sht2,0,5,{.weapon = reFire},StateNum::Dsgun,0,0}, // StateNum::Dsgun10
+    {SpriteNum::Sht2,7,6,{.weapon = &Player::closeShotgun2},StateNum::Dsgun10,0,0}, // StateNum::Dsgun9
+    {SpriteNum::Sht2,0,5,{.weapon = &Player::reFire},StateNum::Dsgun,0,0}, // StateNum::Dsgun10
     {SpriteNum::Sht2,1,7,{},StateNum::Dsnr2,0,0}, // StateNum::Dsnr1
     {SpriteNum::Sht2,0,3,{},StateNum::Dsgundown,0,0}, // StateNum::Dsnr2
-    {SpriteNum::Sht2,32776,5,{.weapon = light1},StateNum::Dsgunflash2,0,0}, // StateNum::Dsgunflash1
-    {SpriteNum::Sht2,32777,4,{.weapon = light2},StateNum::Lightdone,0,0}, // StateNum::Dsgunflash2
-    {SpriteNum::Chgg,0,1,{.weapon = weaponReady},StateNum::Chain,0,0}, // StateNum::Chain
-    {SpriteNum::Chgg,0,1,{.weapon = lower},StateNum::Chaindown,0,0}, // StateNum::Chaindown
-    {SpriteNum::Chgg,0,1,{.weapon = raise},StateNum::Chainup,0,0}, // StateNum::Chainup
-    {SpriteNum::Chgg,0,4,{.weapon = fireCGun},StateNum::Chain2,0,0}, // StateNum::Chain1
-    {SpriteNum::Chgg,1,4,{.weapon = fireCGun},StateNum::Chain3,0,0}, // StateNum::Chain2
-    {SpriteNum::Chgg,1,0,{.weapon = reFire},StateNum::Chain,0,0}, // StateNum::Chain3
-    {SpriteNum::Chgf,32768,5,{.weapon = light1},StateNum::Lightdone,0,0}, // StateNum::Chainflash1
-    {SpriteNum::Chgf,32769,5,{.weapon = light2},StateNum::Lightdone,0,0}, // StateNum::Chainflash2
-    {SpriteNum::Misg,0,1,{.weapon = weaponReady},StateNum::Missile,0,0}, // StateNum::Missile
-    {SpriteNum::Misg,0,1,{.weapon = lower},StateNum::Missiledown,0,0}, // StateNum::Missiledown
-    {SpriteNum::Misg,0,1,{.weapon = raise},StateNum::Missileup,0,0}, // StateNum::Missileup
-    {SpriteNum::Misg,1,8,{.weapon = gunFlash},StateNum::Missile2,0,0}, // StateNum::Missile1
-    {SpriteNum::Misg,1,12,{.weapon = fireMissile},StateNum::Missile3,0,0}, // StateNum::Missile2
-    {SpriteNum::Misg,1,0,{.weapon = reFire},StateNum::Missile,0,0}, // StateNum::Missile3
-    {SpriteNum::Misf,32768,3,{.weapon = light1},StateNum::Missileflash2,0,0}, // StateNum::Missileflash1
+    {SpriteNum::Sht2,32776,5,{.weapon = &Player::light1},StateNum::Dsgunflash2,0,0}, // StateNum::Dsgunflash1
+    {SpriteNum::Sht2,32777,4,{.weapon = &Player::light2},StateNum::Lightdone,0,0}, // StateNum::Dsgunflash2
+    {SpriteNum::Chgg,0,1,{.weapon = &Player::weaponReady},StateNum::Chain,0,0}, // StateNum::Chain
+    {SpriteNum::Chgg,0,1,{.weapon = &Player::lower},StateNum::Chaindown,0,0}, // StateNum::Chaindown
+    {SpriteNum::Chgg,0,1,{.weapon = &Player::raise},StateNum::Chainup,0,0}, // StateNum::Chainup
+    {SpriteNum::Chgg,0,4,{.weapon = &Player::fireCGun},StateNum::Chain2,0,0}, // StateNum::Chain1
+    {SpriteNum::Chgg,1,4,{.weapon = &Player::fireCGun},StateNum::Chain3,0,0}, // StateNum::Chain2
+    {SpriteNum::Chgg,1,0,{.weapon = &Player::reFire},StateNum::Chain,0,0}, // StateNum::Chain3
+    {SpriteNum::Chgf,32768,5,{.weapon = &Player::light1},StateNum::Lightdone,0,0}, // StateNum::Chainflash1
+    {SpriteNum::Chgf,32769,5,{.weapon = &Player::light2},StateNum::Lightdone,0,0}, // StateNum::Chainflash2
+    {SpriteNum::Misg,0,1,{.weapon = &Player::weaponReady},StateNum::Missile,0,0}, // StateNum::Missile
+    {SpriteNum::Misg,0,1,{.weapon = &Player::lower},StateNum::Missiledown,0,0}, // StateNum::Missiledown
+    {SpriteNum::Misg,0,1,{.weapon = &Player::raise},StateNum::Missileup,0,0}, // StateNum::Missileup
+    {SpriteNum::Misg,1,8,{.weapon = &Player::gunFlash},StateNum::Missile2,0,0}, // StateNum::Missile1
+    {SpriteNum::Misg,1,12,{.weapon = &Player::fireMissile},StateNum::Missile3,0,0}, // StateNum::Missile2
+    {SpriteNum::Misg,1,0,{.weapon = &Player::reFire},StateNum::Missile,0,0}, // StateNum::Missile3
+    {SpriteNum::Misf,32768,3,{.weapon = &Player::light1},StateNum::Missileflash2,0,0}, // StateNum::Missileflash1
     {SpriteNum::Misf,32769,4,{},StateNum::Missileflash3,0,0}, // StateNum::Missileflash2
-    {SpriteNum::Misf,32770,4,{.weapon = light2},StateNum::Missileflash4,0,0}, // StateNum::Missileflash3
-    {SpriteNum::Misf,32771,4,{.weapon = light2},StateNum::Lightdone,0,0}, // StateNum::Missileflash4
-    {SpriteNum::Sawg,2,4,{.weapon = weaponReady},StateNum::Sawb,0,0}, // StateNum::Saw
-    {SpriteNum::Sawg,3,4,{.weapon = weaponReady},StateNum::Saw,0,0}, // StateNum::Sawb
-    {SpriteNum::Sawg,2,1,{.weapon = lower},StateNum::Sawdown,0,0}, // StateNum::Sawdown
-    {SpriteNum::Sawg,2,1,{.weapon = raise},StateNum::Sawup,0,0}, // StateNum::Sawup
-    {SpriteNum::Sawg,0,4,{.weapon = saw},StateNum::Saw2,0,0}, // StateNum::Saw1
-    {SpriteNum::Sawg,1,4,{.weapon = saw},StateNum::Saw3,0,0}, // StateNum::Saw2
-    {SpriteNum::Sawg,1,0,{.weapon = reFire},StateNum::Saw,0,0}, // StateNum::Saw3
-    {SpriteNum::Plsg,0,1,{.weapon = weaponReady},StateNum::Plasma,0,0}, // StateNum::Plasma
-    {SpriteNum::Plsg,0,1,{.weapon = lower},StateNum::Plasmadown,0,0}, // StateNum::Plasmadown
-    {SpriteNum::Plsg,0,1,{.weapon = raise},StateNum::Plasmaup,0,0}, // StateNum::Plasmaup
-    {SpriteNum::Plsg,0,3,{.weapon = firePlasma},StateNum::Plasma2,0,0}, // StateNum::Plasma1
-    {SpriteNum::Plsg,1,20,{.weapon = reFire},StateNum::Plasma,0,0}, // StateNum::Plasma2
-    {SpriteNum::Plsf,32768,4,{.weapon = light1},StateNum::Lightdone,0,0}, // StateNum::Plasmaflash1
-    {SpriteNum::Plsf,32769,4,{.weapon = light1},StateNum::Lightdone,0,0}, // StateNum::Plasmaflash2
-    {SpriteNum::Bfgg,0,1,{.weapon = weaponReady},StateNum::Bfg,0,0}, // StateNum::Bfg
-    {SpriteNum::Bfgg,0,1,{.weapon = lower},StateNum::Bfgdown,0,0}, // StateNum::Bfgdown
-    {SpriteNum::Bfgg,0,1,{.weapon = raise},StateNum::Bfgup,0,0}, // StateNum::Bfgup
-    {SpriteNum::Bfgg,0,20,{.weapon = bfgSound},StateNum::Bfg2,0,0}, // StateNum::Bfg1
-    {SpriteNum::Bfgg,1,10,{.weapon = gunFlash},StateNum::Bfg3,0,0}, // StateNum::Bfg2
-    {SpriteNum::Bfgg,1,10,{.weapon = fireBFG},StateNum::Bfg4,0,0}, // StateNum::Bfg3
-    {SpriteNum::Bfgg,1,20,{.weapon = reFire},StateNum::Bfg,0,0}, // StateNum::Bfg4
-    {SpriteNum::Bfgf,32768,11,{.weapon = light1},StateNum::Bfgflash2,0,0}, // StateNum::Bfgflash1
-    {SpriteNum::Bfgf,32769,6,{.weapon = light2},StateNum::Lightdone,0,0}, // StateNum::Bfgflash2
+    {SpriteNum::Misf,32770,4,{.weapon = &Player::light2},StateNum::Missileflash4,0,0}, // StateNum::Missileflash3
+    {SpriteNum::Misf,32771,4,{.weapon = &Player::light2},StateNum::Lightdone,0,0}, // StateNum::Missileflash4
+    {SpriteNum::Sawg,2,4,{.weapon = &Player::weaponReady},StateNum::Sawb,0,0}, // StateNum::Saw
+    {SpriteNum::Sawg,3,4,{.weapon = &Player::weaponReady},StateNum::Saw,0,0}, // StateNum::Sawb
+    {SpriteNum::Sawg,2,1,{.weapon = &Player::lower},StateNum::Sawdown,0,0}, // StateNum::Sawdown
+    {SpriteNum::Sawg,2,1,{.weapon = &Player::raise},StateNum::Sawup,0,0}, // StateNum::Sawup
+    {SpriteNum::Sawg,0,4,{.weapon = &Player::saw},StateNum::Saw2,0,0}, // StateNum::Saw1
+    {SpriteNum::Sawg,1,4,{.weapon = &Player::saw},StateNum::Saw3,0,0}, // StateNum::Saw2
+    {SpriteNum::Sawg,1,0,{.weapon = &Player::reFire},StateNum::Saw,0,0}, // StateNum::Saw3
+    {SpriteNum::Plsg,0,1,{.weapon = &Player::weaponReady},StateNum::Plasma,0,0}, // StateNum::Plasma
+    {SpriteNum::Plsg,0,1,{.weapon = &Player::lower},StateNum::Plasmadown,0,0}, // StateNum::Plasmadown
+    {SpriteNum::Plsg,0,1,{.weapon = &Player::raise},StateNum::Plasmaup,0,0}, // StateNum::Plasmaup
+    {SpriteNum::Plsg,0,3,{.weapon = &Player::firePlasma},StateNum::Plasma2,0,0}, // StateNum::Plasma1
+    {SpriteNum::Plsg,1,20,{.weapon = &Player::reFire},StateNum::Plasma,0,0}, // StateNum::Plasma2
+    {SpriteNum::Plsf,32768,4,{.weapon = &Player::light1},StateNum::Lightdone,0,0}, // StateNum::Plasmaflash1
+    {SpriteNum::Plsf,32769,4,{.weapon = &Player::light1},StateNum::Lightdone,0,0}, // StateNum::Plasmaflash2
+    {SpriteNum::Bfgg,0,1,{.weapon = &Player::weaponReady},StateNum::Bfg,0,0}, // StateNum::Bfg
+    {SpriteNum::Bfgg,0,1,{.weapon = &Player::lower},StateNum::Bfgdown,0,0}, // StateNum::Bfgdown
+    {SpriteNum::Bfgg,0,1,{.weapon = &Player::raise},StateNum::Bfgup,0,0}, // StateNum::Bfgup
+    {SpriteNum::Bfgg,0,20,{.weapon = &Player::bfgSound},StateNum::Bfg2,0,0}, // StateNum::Bfg1
+    {SpriteNum::Bfgg,1,10,{.weapon = &Player::gunFlash},StateNum::Bfg3,0,0}, // StateNum::Bfg2
+    {SpriteNum::Bfgg,1,10,{.weapon = &Player::fireBFG},StateNum::Bfg4,0,0}, // StateNum::Bfg3
+    {SpriteNum::Bfgg,1,20,{.weapon = &Player::reFire},StateNum::Bfg,0,0}, // StateNum::Bfg4
+    {SpriteNum::Bfgf,32768,11,{.weapon = &Player::light1},StateNum::Bfgflash2,0,0}, // StateNum::Bfgflash1
+    {SpriteNum::Bfgf,32769,6,{.weapon = &Player::light2},StateNum::Lightdone,0,0}, // StateNum::Bfgflash2
     {SpriteNum::Blud,2,8,{},StateNum::Blood2,0,0}, // StateNum::Blood1
     {SpriteNum::Blud,1,8,{},StateNum::Blood3,0,0}, // StateNum::Blood2
     {SpriteNum::Blud,0,8,{},StateNum::Null,0,0}, // StateNum::Blood3
@@ -196,7 +196,7 @@ State statesData[numStates] = {
     {SpriteNum::Bfs1,32769,4,{},StateNum::Bfgshot,0,0}, // StateNum::Bfgshot2
     {SpriteNum::Bfe1,32768,8,{},StateNum::Bfgland2,0,0}, // StateNum::Bfgland
     {SpriteNum::Bfe1,32769,8,{},StateNum::Bfgland3,0,0}, // StateNum::Bfgland2
-    {SpriteNum::Bfe1,32770,8,{.mobj = bfgSpray},StateNum::Bfgland4,0,0}, // StateNum::Bfgland3
+    {SpriteNum::Bfe1,32770,8,{.mobj = &Mobj::bfgSpray},StateNum::Bfgland4,0,0}, // StateNum::Bfgland3
     {SpriteNum::Bfe1,32771,8,{},StateNum::Bfgland5,0,0}, // StateNum::Bfgland4
     {SpriteNum::Bfe1,32772,8,{},StateNum::Bfgland6,0,0}, // StateNum::Bfgland5
     {SpriteNum::Bfe1,32773,8,{},StateNum::Null,0,0}, // StateNum::Bfgland6
@@ -204,7 +204,7 @@ State statesData[numStates] = {
     {SpriteNum::Bfe2,32769,8,{},StateNum::Bfgexp3,0,0}, // StateNum::Bfgexp2
     {SpriteNum::Bfe2,32770,8,{},StateNum::Bfgexp4,0,0}, // StateNum::Bfgexp3
     {SpriteNum::Bfe2,32771,8,{},StateNum::Null,0,0}, // StateNum::Bfgexp4
-    {SpriteNum::Misl,32769,8,{.mobj = explode},StateNum::Explode2,0,0}, // StateNum::Explode1
+    {SpriteNum::Misl,32769,8,{.mobj = &Mobj::explode},StateNum::Explode2,0,0}, // StateNum::Explode1
     {SpriteNum::Misl,32770,6,{},StateNum::Explode3,0,0}, // StateNum::Explode2
     {SpriteNum::Misl,32771,4,{},StateNum::Null,0,0}, // StateNum::Explode3
     {SpriteNum::Tfog,32768,6,{},StateNum::Tfog01,0,0}, // StateNum::Tfog
@@ -234,46 +234,46 @@ State statesData[numStates] = {
     {SpriteNum::Play,4,12,{},StateNum::Play,0,0}, // StateNum::PlayAtk1
     {SpriteNum::Play,32773,6,{},StateNum::PlayAtk1,0,0}, // StateNum::PlayAtk2
     {SpriteNum::Play,6,4,{},StateNum::PlayPain2,0,0}, // StateNum::PlayPain
-    {SpriteNum::Play,6,4,{.mobj = pain},StateNum::Play,0,0}, // StateNum::PlayPain2
+    {SpriteNum::Play,6,4,{.mobj = &Mobj::pain},StateNum::Play,0,0}, // StateNum::PlayPain2
     {SpriteNum::Play,7,10,{},StateNum::PlayDie2,0,0}, // StateNum::PlayDie1
-    {SpriteNum::Play,8,10,{.mobj = playerScream},StateNum::PlayDie3,0,0}, // StateNum::PlayDie2
-    {SpriteNum::Play,9,10,{.mobj = fall},StateNum::PlayDie4,0,0}, // StateNum::PlayDie3
+    {SpriteNum::Play,8,10,{.mobj = &Mobj::playerScream},StateNum::PlayDie3,0,0}, // StateNum::PlayDie2
+    {SpriteNum::Play,9,10,{.mobj = &Mobj::fall},StateNum::PlayDie4,0,0}, // StateNum::PlayDie3
     {SpriteNum::Play,10,10,{},StateNum::PlayDie5,0,0}, // StateNum::PlayDie4
     {SpriteNum::Play,11,10,{},StateNum::PlayDie6,0,0}, // StateNum::PlayDie5
     {SpriteNum::Play,12,10,{},StateNum::PlayDie7,0,0}, // StateNum::PlayDie6
     {SpriteNum::Play,13,-1,{},StateNum::Null,0,0}, // StateNum::PlayDie7
     {SpriteNum::Play,14,5,{},StateNum::PlayXdie2,0,0}, // StateNum::PlayXdie1
-    {SpriteNum::Play,15,5,{.mobj = xScream},StateNum::PlayXdie3,0,0}, // StateNum::PlayXdie2
-    {SpriteNum::Play,16,5,{.mobj = fall},StateNum::PlayXdie4,0,0}, // StateNum::PlayXdie3
+    {SpriteNum::Play,15,5,{.mobj = &Mobj::xScream},StateNum::PlayXdie3,0,0}, // StateNum::PlayXdie2
+    {SpriteNum::Play,16,5,{.mobj = &Mobj::fall},StateNum::PlayXdie4,0,0}, // StateNum::PlayXdie3
     {SpriteNum::Play,17,5,{},StateNum::PlayXdie5,0,0}, // StateNum::PlayXdie4
     {SpriteNum::Play,18,5,{},StateNum::PlayXdie6,0,0}, // StateNum::PlayXdie5
     {SpriteNum::Play,19,5,{},StateNum::PlayXdie7,0,0}, // StateNum::PlayXdie6
     {SpriteNum::Play,20,5,{},StateNum::PlayXdie8,0,0}, // StateNum::PlayXdie7
     {SpriteNum::Play,21,5,{},StateNum::PlayXdie9,0,0}, // StateNum::PlayXdie8
     {SpriteNum::Play,22,-1,{},StateNum::Null,0,0}, // StateNum::PlayXdie9
-    {SpriteNum::Poss,0,10,{.mobj = look},StateNum::PossStnd2,0,0}, // StateNum::PossStnd
-    {SpriteNum::Poss,1,10,{.mobj = look},StateNum::PossStnd,0,0}, // StateNum::PossStnd2
-    {SpriteNum::Poss,0,4,{.mobj = chase},StateNum::PossRun2,0,0}, // StateNum::PossRun1
-    {SpriteNum::Poss,0,4,{.mobj = chase},StateNum::PossRun3,0,0}, // StateNum::PossRun2
-    {SpriteNum::Poss,1,4,{.mobj = chase},StateNum::PossRun4,0,0}, // StateNum::PossRun3
-    {SpriteNum::Poss,1,4,{.mobj = chase},StateNum::PossRun5,0,0}, // StateNum::PossRun4
-    {SpriteNum::Poss,2,4,{.mobj = chase},StateNum::PossRun6,0,0}, // StateNum::PossRun5
-    {SpriteNum::Poss,2,4,{.mobj = chase},StateNum::PossRun7,0,0}, // StateNum::PossRun6
-    {SpriteNum::Poss,3,4,{.mobj = chase},StateNum::PossRun8,0,0}, // StateNum::PossRun7
-    {SpriteNum::Poss,3,4,{.mobj = chase},StateNum::PossRun1,0,0}, // StateNum::PossRun8
-    {SpriteNum::Poss,4,10,{.mobj = faceTarget},StateNum::PossAtk2,0,0}, // StateNum::PossAtk1
-    {SpriteNum::Poss,5,8,{.mobj = posAttack},StateNum::PossAtk3,0,0}, // StateNum::PossAtk2
+    {SpriteNum::Poss,0,10,{.mobj = &Mobj::look},StateNum::PossStnd2,0,0}, // StateNum::PossStnd
+    {SpriteNum::Poss,1,10,{.mobj = &Mobj::look},StateNum::PossStnd,0,0}, // StateNum::PossStnd2
+    {SpriteNum::Poss,0,4,{.mobj = &Mobj::chase},StateNum::PossRun2,0,0}, // StateNum::PossRun1
+    {SpriteNum::Poss,0,4,{.mobj = &Mobj::chase},StateNum::PossRun3,0,0}, // StateNum::PossRun2
+    {SpriteNum::Poss,1,4,{.mobj = &Mobj::chase},StateNum::PossRun4,0,0}, // StateNum::PossRun3
+    {SpriteNum::Poss,1,4,{.mobj = &Mobj::chase},StateNum::PossRun5,0,0}, // StateNum::PossRun4
+    {SpriteNum::Poss,2,4,{.mobj = &Mobj::chase},StateNum::PossRun6,0,0}, // StateNum::PossRun5
+    {SpriteNum::Poss,2,4,{.mobj = &Mobj::chase},StateNum::PossRun7,0,0}, // StateNum::PossRun6
+    {SpriteNum::Poss,3,4,{.mobj = &Mobj::chase},StateNum::PossRun8,0,0}, // StateNum::PossRun7
+    {SpriteNum::Poss,3,4,{.mobj = &Mobj::chase},StateNum::PossRun1,0,0}, // StateNum::PossRun8
+    {SpriteNum::Poss,4,10,{.mobj = &Mobj::faceTarget},StateNum::PossAtk2,0,0}, // StateNum::PossAtk1
+    {SpriteNum::Poss,5,8,{.mobj = &Mobj::posAttack},StateNum::PossAtk3,0,0}, // StateNum::PossAtk2
     {SpriteNum::Poss,4,8,{},StateNum::PossRun1,0,0}, // StateNum::PossAtk3
     {SpriteNum::Poss,6,3,{},StateNum::PossPain2,0,0}, // StateNum::PossPain
-    {SpriteNum::Poss,6,3,{.mobj = pain},StateNum::PossRun1,0,0}, // StateNum::PossPain2
+    {SpriteNum::Poss,6,3,{.mobj = &Mobj::pain},StateNum::PossRun1,0,0}, // StateNum::PossPain2
     {SpriteNum::Poss,7,5,{},StateNum::PossDie2,0,0}, // StateNum::PossDie1
-    {SpriteNum::Poss,8,5,{.mobj = scream},StateNum::PossDie3,0,0}, // StateNum::PossDie2
-    {SpriteNum::Poss,9,5,{.mobj = fall},StateNum::PossDie4,0,0}, // StateNum::PossDie3
+    {SpriteNum::Poss,8,5,{.mobj = &Mobj::scream},StateNum::PossDie3,0,0}, // StateNum::PossDie2
+    {SpriteNum::Poss,9,5,{.mobj = &Mobj::fall},StateNum::PossDie4,0,0}, // StateNum::PossDie3
     {SpriteNum::Poss,10,5,{},StateNum::PossDie5,0,0}, // StateNum::PossDie4
     {SpriteNum::Poss,11,-1,{},StateNum::Null,0,0}, // StateNum::PossDie5
     {SpriteNum::Poss,12,5,{},StateNum::PossXdie2,0,0}, // StateNum::PossXdie1
-    {SpriteNum::Poss,13,5,{.mobj = xScream},StateNum::PossXdie3,0,0}, // StateNum::PossXdie2
-    {SpriteNum::Poss,14,5,{.mobj = fall},StateNum::PossXdie4,0,0}, // StateNum::PossXdie3
+    {SpriteNum::Poss,13,5,{.mobj = &Mobj::xScream},StateNum::PossXdie3,0,0}, // StateNum::PossXdie2
+    {SpriteNum::Poss,14,5,{.mobj = &Mobj::fall},StateNum::PossXdie4,0,0}, // StateNum::PossXdie3
     {SpriteNum::Poss,15,5,{},StateNum::PossXdie5,0,0}, // StateNum::PossXdie4
     {SpriteNum::Poss,16,5,{},StateNum::PossXdie6,0,0}, // StateNum::PossXdie5
     {SpriteNum::Poss,17,5,{},StateNum::PossXdie7,0,0}, // StateNum::PossXdie6
@@ -284,29 +284,29 @@ State statesData[numStates] = {
     {SpriteNum::Poss,9,5,{},StateNum::PossRaise3,0,0}, // StateNum::PossRaise2
     {SpriteNum::Poss,8,5,{},StateNum::PossRaise4,0,0}, // StateNum::PossRaise3
     {SpriteNum::Poss,7,5,{},StateNum::PossRun1,0,0}, // StateNum::PossRaise4
-    {SpriteNum::Spos,0,10,{.mobj = look},StateNum::SposStnd2,0,0}, // StateNum::SposStnd
-    {SpriteNum::Spos,1,10,{.mobj = look},StateNum::SposStnd,0,0}, // StateNum::SposStnd2
-    {SpriteNum::Spos,0,3,{.mobj = chase},StateNum::SposRun2,0,0}, // StateNum::SposRun1
-    {SpriteNum::Spos,0,3,{.mobj = chase},StateNum::SposRun3,0,0}, // StateNum::SposRun2
-    {SpriteNum::Spos,1,3,{.mobj = chase},StateNum::SposRun4,0,0}, // StateNum::SposRun3
-    {SpriteNum::Spos,1,3,{.mobj = chase},StateNum::SposRun5,0,0}, // StateNum::SposRun4
-    {SpriteNum::Spos,2,3,{.mobj = chase},StateNum::SposRun6,0,0}, // StateNum::SposRun5
-    {SpriteNum::Spos,2,3,{.mobj = chase},StateNum::SposRun7,0,0}, // StateNum::SposRun6
-    {SpriteNum::Spos,3,3,{.mobj = chase},StateNum::SposRun8,0,0}, // StateNum::SposRun7
-    {SpriteNum::Spos,3,3,{.mobj = chase},StateNum::SposRun1,0,0}, // StateNum::SposRun8
-    {SpriteNum::Spos,4,10,{.mobj = faceTarget},StateNum::SposAtk2,0,0}, // StateNum::SposAtk1
-    {SpriteNum::Spos,32773,10,{.mobj = sPosAttack},StateNum::SposAtk3,0,0}, // StateNum::SposAtk2
+    {SpriteNum::Spos,0,10,{.mobj = &Mobj::look},StateNum::SposStnd2,0,0}, // StateNum::SposStnd
+    {SpriteNum::Spos,1,10,{.mobj = &Mobj::look},StateNum::SposStnd,0,0}, // StateNum::SposStnd2
+    {SpriteNum::Spos,0,3,{.mobj = &Mobj::chase},StateNum::SposRun2,0,0}, // StateNum::SposRun1
+    {SpriteNum::Spos,0,3,{.mobj = &Mobj::chase},StateNum::SposRun3,0,0}, // StateNum::SposRun2
+    {SpriteNum::Spos,1,3,{.mobj = &Mobj::chase},StateNum::SposRun4,0,0}, // StateNum::SposRun3
+    {SpriteNum::Spos,1,3,{.mobj = &Mobj::chase},StateNum::SposRun5,0,0}, // StateNum::SposRun4
+    {SpriteNum::Spos,2,3,{.mobj = &Mobj::chase},StateNum::SposRun6,0,0}, // StateNum::SposRun5
+    {SpriteNum::Spos,2,3,{.mobj = &Mobj::chase},StateNum::SposRun7,0,0}, // StateNum::SposRun6
+    {SpriteNum::Spos,3,3,{.mobj = &Mobj::chase},StateNum::SposRun8,0,0}, // StateNum::SposRun7
+    {SpriteNum::Spos,3,3,{.mobj = &Mobj::chase},StateNum::SposRun1,0,0}, // StateNum::SposRun8
+    {SpriteNum::Spos,4,10,{.mobj = &Mobj::faceTarget},StateNum::SposAtk2,0,0}, // StateNum::SposAtk1
+    {SpriteNum::Spos,32773,10,{.mobj = &Mobj::sPosAttack},StateNum::SposAtk3,0,0}, // StateNum::SposAtk2
     {SpriteNum::Spos,4,10,{},StateNum::SposRun1,0,0}, // StateNum::SposAtk3
     {SpriteNum::Spos,6,3,{},StateNum::SposPain2,0,0}, // StateNum::SposPain
-    {SpriteNum::Spos,6,3,{.mobj = pain},StateNum::SposRun1,0,0}, // StateNum::SposPain2
+    {SpriteNum::Spos,6,3,{.mobj = &Mobj::pain},StateNum::SposRun1,0,0}, // StateNum::SposPain2
     {SpriteNum::Spos,7,5,{},StateNum::SposDie2,0,0}, // StateNum::SposDie1
-    {SpriteNum::Spos,8,5,{.mobj = scream},StateNum::SposDie3,0,0}, // StateNum::SposDie2
-    {SpriteNum::Spos,9,5,{.mobj = fall},StateNum::SposDie4,0,0}, // StateNum::SposDie3
+    {SpriteNum::Spos,8,5,{.mobj = &Mobj::scream},StateNum::SposDie3,0,0}, // StateNum::SposDie2
+    {SpriteNum::Spos,9,5,{.mobj = &Mobj::fall},StateNum::SposDie4,0,0}, // StateNum::SposDie3
     {SpriteNum::Spos,10,5,{},StateNum::SposDie5,0,0}, // StateNum::SposDie4
     {SpriteNum::Spos,11,-1,{},StateNum::Null,0,0}, // StateNum::SposDie5
     {SpriteNum::Spos,12,5,{},StateNum::SposXdie2,0,0}, // StateNum::SposXdie1
-    {SpriteNum::Spos,13,5,{.mobj = xScream},StateNum::SposXdie3,0,0}, // StateNum::SposXdie2
-    {SpriteNum::Spos,14,5,{.mobj = fall},StateNum::SposXdie4,0,0}, // StateNum::SposXdie3
+    {SpriteNum::Spos,13,5,{.mobj = &Mobj::xScream},StateNum::SposXdie3,0,0}, // StateNum::SposXdie2
+    {SpriteNum::Spos,14,5,{.mobj = &Mobj::fall},StateNum::SposXdie4,0,0}, // StateNum::SposXdie3
     {SpriteNum::Spos,15,5,{},StateNum::SposXdie5,0,0}, // StateNum::SposXdie4
     {SpriteNum::Spos,16,5,{},StateNum::SposXdie6,0,0}, // StateNum::SposXdie5
     {SpriteNum::Spos,17,5,{},StateNum::SposXdie7,0,0}, // StateNum::SposXdie6
@@ -318,39 +318,39 @@ State statesData[numStates] = {
     {SpriteNum::Spos,9,5,{},StateNum::SposRaise4,0,0}, // StateNum::SposRaise3
     {SpriteNum::Spos,8,5,{},StateNum::SposRaise5,0,0}, // StateNum::SposRaise4
     {SpriteNum::Spos,7,5,{},StateNum::SposRun1,0,0}, // StateNum::SposRaise5
-    {SpriteNum::Vile,0,10,{.mobj = look},StateNum::VileStnd2,0,0}, // StateNum::VileStnd
-    {SpriteNum::Vile,1,10,{.mobj = look},StateNum::VileStnd,0,0}, // StateNum::VileStnd2
-    {SpriteNum::Vile,0,2,{.mobj = vileChase},StateNum::VileRun2,0,0}, // StateNum::VileRun1
-    {SpriteNum::Vile,0,2,{.mobj = vileChase},StateNum::VileRun3,0,0}, // StateNum::VileRun2
-    {SpriteNum::Vile,1,2,{.mobj = vileChase},StateNum::VileRun4,0,0}, // StateNum::VileRun3
-    {SpriteNum::Vile,1,2,{.mobj = vileChase},StateNum::VileRun5,0,0}, // StateNum::VileRun4
-    {SpriteNum::Vile,2,2,{.mobj = vileChase},StateNum::VileRun6,0,0}, // StateNum::VileRun5
-    {SpriteNum::Vile,2,2,{.mobj = vileChase},StateNum::VileRun7,0,0}, // StateNum::VileRun6
-    {SpriteNum::Vile,3,2,{.mobj = vileChase},StateNum::VileRun8,0,0}, // StateNum::VileRun7
-    {SpriteNum::Vile,3,2,{.mobj = vileChase},StateNum::VileRun9,0,0}, // StateNum::VileRun8
-    {SpriteNum::Vile,4,2,{.mobj = vileChase},StateNum::VileRun10,0,0}, // StateNum::VileRun9
-    {SpriteNum::Vile,4,2,{.mobj = vileChase},StateNum::VileRun11,0,0}, // StateNum::VileRun10
-    {SpriteNum::Vile,5,2,{.mobj = vileChase},StateNum::VileRun12,0,0}, // StateNum::VileRun11
-    {SpriteNum::Vile,5,2,{.mobj = vileChase},StateNum::VileRun1,0,0}, // StateNum::VileRun12
-    {SpriteNum::Vile,32774,0,{.mobj = vileStart},StateNum::VileAtk2,0,0}, // StateNum::VileAtk1
-    {SpriteNum::Vile,32774,10,{.mobj = faceTarget},StateNum::VileAtk3,0,0}, // StateNum::VileAtk2
-    {SpriteNum::Vile,32775,8,{.mobj = vileTarget},StateNum::VileAtk4,0,0}, // StateNum::VileAtk3
-    {SpriteNum::Vile,32776,8,{.mobj = faceTarget},StateNum::VileAtk5,0,0}, // StateNum::VileAtk4
-    {SpriteNum::Vile,32777,8,{.mobj = faceTarget},StateNum::VileAtk6,0,0}, // StateNum::VileAtk5
-    {SpriteNum::Vile,32778,8,{.mobj = faceTarget},StateNum::VileAtk7,0,0}, // StateNum::VileAtk6
-    {SpriteNum::Vile,32779,8,{.mobj = faceTarget},StateNum::VileAtk8,0,0}, // StateNum::VileAtk7
-    {SpriteNum::Vile,32780,8,{.mobj = faceTarget},StateNum::VileAtk9,0,0}, // StateNum::VileAtk8
-    {SpriteNum::Vile,32781,8,{.mobj = faceTarget},StateNum::VileAtk10,0,0}, // StateNum::VileAtk9
-    {SpriteNum::Vile,32782,8,{.mobj = vileAttack},StateNum::VileAtk11,0,0}, // StateNum::VileAtk10
+    {SpriteNum::Vile,0,10,{.mobj = &Mobj::look},StateNum::VileStnd2,0,0}, // StateNum::VileStnd
+    {SpriteNum::Vile,1,10,{.mobj = &Mobj::look},StateNum::VileStnd,0,0}, // StateNum::VileStnd2
+    {SpriteNum::Vile,0,2,{.mobj = &Mobj::vileChase},StateNum::VileRun2,0,0}, // StateNum::VileRun1
+    {SpriteNum::Vile,0,2,{.mobj = &Mobj::vileChase},StateNum::VileRun3,0,0}, // StateNum::VileRun2
+    {SpriteNum::Vile,1,2,{.mobj = &Mobj::vileChase},StateNum::VileRun4,0,0}, // StateNum::VileRun3
+    {SpriteNum::Vile,1,2,{.mobj = &Mobj::vileChase},StateNum::VileRun5,0,0}, // StateNum::VileRun4
+    {SpriteNum::Vile,2,2,{.mobj = &Mobj::vileChase},StateNum::VileRun6,0,0}, // StateNum::VileRun5
+    {SpriteNum::Vile,2,2,{.mobj = &Mobj::vileChase},StateNum::VileRun7,0,0}, // StateNum::VileRun6
+    {SpriteNum::Vile,3,2,{.mobj = &Mobj::vileChase},StateNum::VileRun8,0,0}, // StateNum::VileRun7
+    {SpriteNum::Vile,3,2,{.mobj = &Mobj::vileChase},StateNum::VileRun9,0,0}, // StateNum::VileRun8
+    {SpriteNum::Vile,4,2,{.mobj = &Mobj::vileChase},StateNum::VileRun10,0,0}, // StateNum::VileRun9
+    {SpriteNum::Vile,4,2,{.mobj = &Mobj::vileChase},StateNum::VileRun11,0,0}, // StateNum::VileRun10
+    {SpriteNum::Vile,5,2,{.mobj = &Mobj::vileChase},StateNum::VileRun12,0,0}, // StateNum::VileRun11
+    {SpriteNum::Vile,5,2,{.mobj = &Mobj::vileChase},StateNum::VileRun1,0,0}, // StateNum::VileRun12
+    {SpriteNum::Vile,32774,0,{.mobj = &Mobj::vileStart},StateNum::VileAtk2,0,0}, // StateNum::VileAtk1
+    {SpriteNum::Vile,32774,10,{.mobj = &Mobj::faceTarget},StateNum::VileAtk3,0,0}, // StateNum::VileAtk2
+    {SpriteNum::Vile,32775,8,{.mobj = &Mobj::vileTarget},StateNum::VileAtk4,0,0}, // StateNum::VileAtk3
+    {SpriteNum::Vile,32776,8,{.mobj = &Mobj::faceTarget},StateNum::VileAtk5,0,0}, // StateNum::VileAtk4
+    {SpriteNum::Vile,32777,8,{.mobj = &Mobj::faceTarget},StateNum::VileAtk6,0,0}, // StateNum::VileAtk5
+    {SpriteNum::Vile,32778,8,{.mobj = &Mobj::faceTarget},StateNum::VileAtk7,0,0}, // StateNum::VileAtk6
+    {SpriteNum::Vile,32779,8,{.mobj = &Mobj::faceTarget},StateNum::VileAtk8,0,0}, // StateNum::VileAtk7
+    {SpriteNum::Vile,32780,8,{.mobj = &Mobj::faceTarget},StateNum::VileAtk9,0,0}, // StateNum::VileAtk8
+    {SpriteNum::Vile,32781,8,{.mobj = &Mobj::faceTarget},StateNum::VileAtk10,0,0}, // StateNum::VileAtk9
+    {SpriteNum::Vile,32782,8,{.mobj = &Mobj::vileAttack},StateNum::VileAtk11,0,0}, // StateNum::VileAtk10
     {SpriteNum::Vile,32783,20,{},StateNum::VileRun1,0,0}, // StateNum::VileAtk11
     {SpriteNum::Vile,32794,10,{},StateNum::VileHeal2,0,0}, // StateNum::VileHeal1
     {SpriteNum::Vile,32795,10,{},StateNum::VileHeal3,0,0}, // StateNum::VileHeal2
     {SpriteNum::Vile,32796,10,{},StateNum::VileRun1,0,0}, // StateNum::VileHeal3
     {SpriteNum::Vile,16,5,{},StateNum::VilePain2,0,0}, // StateNum::VilePain
-    {SpriteNum::Vile,16,5,{.mobj = pain},StateNum::VileRun1,0,0}, // StateNum::VilePain2
+    {SpriteNum::Vile,16,5,{.mobj = &Mobj::pain},StateNum::VileRun1,0,0}, // StateNum::VilePain2
     {SpriteNum::Vile,16,7,{},StateNum::VileDie2,0,0}, // StateNum::VileDie1
-    {SpriteNum::Vile,17,7,{.mobj = scream},StateNum::VileDie3,0,0}, // StateNum::VileDie2
-    {SpriteNum::Vile,18,7,{.mobj = fall},StateNum::VileDie4,0,0}, // StateNum::VileDie3
+    {SpriteNum::Vile,17,7,{.mobj = &Mobj::scream},StateNum::VileDie3,0,0}, // StateNum::VileDie2
+    {SpriteNum::Vile,18,7,{.mobj = &Mobj::fall},StateNum::VileDie4,0,0}, // StateNum::VileDie3
     {SpriteNum::Vile,19,7,{},StateNum::VileDie5,0,0}, // StateNum::VileDie4
     {SpriteNum::Vile,20,7,{},StateNum::VileDie6,0,0}, // StateNum::VileDie5
     {SpriteNum::Vile,21,7,{},StateNum::VileDie7,0,0}, // StateNum::VileDie6
@@ -358,74 +358,74 @@ State statesData[numStates] = {
     {SpriteNum::Vile,23,5,{},StateNum::VileDie9,0,0}, // StateNum::VileDie8
     {SpriteNum::Vile,24,5,{},StateNum::VileDie10,0,0}, // StateNum::VileDie9
     {SpriteNum::Vile,25,-1,{},StateNum::Null,0,0}, // StateNum::VileDie10
-    {SpriteNum::Fire,32768,2,{.mobj = startFire},StateNum::Fire2,0,0}, // StateNum::Fire1
-    {SpriteNum::Fire,32769,2,{.mobj = fire},StateNum::Fire3,0,0}, // StateNum::Fire2
-    {SpriteNum::Fire,32768,2,{.mobj = fire},StateNum::Fire4,0,0}, // StateNum::Fire3
-    {SpriteNum::Fire,32769,2,{.mobj = fire},StateNum::Fire5,0,0}, // StateNum::Fire4
-    {SpriteNum::Fire,32770,2,{.mobj = fireCrackle},StateNum::Fire6,0,0}, // StateNum::Fire5
-    {SpriteNum::Fire,32769,2,{.mobj = fire},StateNum::Fire7,0,0}, // StateNum::Fire6
-    {SpriteNum::Fire,32770,2,{.mobj = fire},StateNum::Fire8,0,0}, // StateNum::Fire7
-    {SpriteNum::Fire,32769,2,{.mobj = fire},StateNum::Fire9,0,0}, // StateNum::Fire8
-    {SpriteNum::Fire,32770,2,{.mobj = fire},StateNum::Fire10,0,0}, // StateNum::Fire9
-    {SpriteNum::Fire,32771,2,{.mobj = fire},StateNum::Fire11,0,0}, // StateNum::Fire10
-    {SpriteNum::Fire,32770,2,{.mobj = fire},StateNum::Fire12,0,0}, // StateNum::Fire11
-    {SpriteNum::Fire,32771,2,{.mobj = fire},StateNum::Fire13,0,0}, // StateNum::Fire12
-    {SpriteNum::Fire,32770,2,{.mobj = fire},StateNum::Fire14,0,0}, // StateNum::Fire13
-    {SpriteNum::Fire,32771,2,{.mobj = fire},StateNum::Fire15,0,0}, // StateNum::Fire14
-    {SpriteNum::Fire,32772,2,{.mobj = fire},StateNum::Fire16,0,0}, // StateNum::Fire15
-    {SpriteNum::Fire,32771,2,{.mobj = fire},StateNum::Fire17,0,0}, // StateNum::Fire16
-    {SpriteNum::Fire,32772,2,{.mobj = fire},StateNum::Fire18,0,0}, // StateNum::Fire17
-    {SpriteNum::Fire,32771,2,{.mobj = fire},StateNum::Fire19,0,0}, // StateNum::Fire18
-    {SpriteNum::Fire,32772,2,{.mobj = fireCrackle},StateNum::Fire20,0,0}, // StateNum::Fire19
-    {SpriteNum::Fire,32773,2,{.mobj = fire},StateNum::Fire21,0,0}, // StateNum::Fire20
-    {SpriteNum::Fire,32772,2,{.mobj = fire},StateNum::Fire22,0,0}, // StateNum::Fire21
-    {SpriteNum::Fire,32773,2,{.mobj = fire},StateNum::Fire23,0,0}, // StateNum::Fire22
-    {SpriteNum::Fire,32772,2,{.mobj = fire},StateNum::Fire24,0,0}, // StateNum::Fire23
-    {SpriteNum::Fire,32773,2,{.mobj = fire},StateNum::Fire25,0,0}, // StateNum::Fire24
-    {SpriteNum::Fire,32774,2,{.mobj = fire},StateNum::Fire26,0,0}, // StateNum::Fire25
-    {SpriteNum::Fire,32775,2,{.mobj = fire},StateNum::Fire27,0,0}, // StateNum::Fire26
-    {SpriteNum::Fire,32774,2,{.mobj = fire},StateNum::Fire28,0,0}, // StateNum::Fire27
-    {SpriteNum::Fire,32775,2,{.mobj = fire},StateNum::Fire29,0,0}, // StateNum::Fire28
-    {SpriteNum::Fire,32774,2,{.mobj = fire},StateNum::Fire30,0,0}, // StateNum::Fire29
-    {SpriteNum::Fire,32775,2,{.mobj = fire},StateNum::Null,0,0}, // StateNum::Fire30
+    {SpriteNum::Fire,32768,2,{.mobj = &Mobj::startFire},StateNum::Fire2,0,0}, // StateNum::Fire1
+    {SpriteNum::Fire,32769,2,{.mobj = &Mobj::fire},StateNum::Fire3,0,0}, // StateNum::Fire2
+    {SpriteNum::Fire,32768,2,{.mobj = &Mobj::fire},StateNum::Fire4,0,0}, // StateNum::Fire3
+    {SpriteNum::Fire,32769,2,{.mobj = &Mobj::fire},StateNum::Fire5,0,0}, // StateNum::Fire4
+    {SpriteNum::Fire,32770,2,{.mobj = &Mobj::fireCrackle},StateNum::Fire6,0,0}, // StateNum::Fire5
+    {SpriteNum::Fire,32769,2,{.mobj = &Mobj::fire},StateNum::Fire7,0,0}, // StateNum::Fire6
+    {SpriteNum::Fire,32770,2,{.mobj = &Mobj::fire},StateNum::Fire8,0,0}, // StateNum::Fire7
+    {SpriteNum::Fire,32769,2,{.mobj = &Mobj::fire},StateNum::Fire9,0,0}, // StateNum::Fire8
+    {SpriteNum::Fire,32770,2,{.mobj = &Mobj::fire},StateNum::Fire10,0,0}, // StateNum::Fire9
+    {SpriteNum::Fire,32771,2,{.mobj = &Mobj::fire},StateNum::Fire11,0,0}, // StateNum::Fire10
+    {SpriteNum::Fire,32770,2,{.mobj = &Mobj::fire},StateNum::Fire12,0,0}, // StateNum::Fire11
+    {SpriteNum::Fire,32771,2,{.mobj = &Mobj::fire},StateNum::Fire13,0,0}, // StateNum::Fire12
+    {SpriteNum::Fire,32770,2,{.mobj = &Mobj::fire},StateNum::Fire14,0,0}, // StateNum::Fire13
+    {SpriteNum::Fire,32771,2,{.mobj = &Mobj::fire},StateNum::Fire15,0,0}, // StateNum::Fire14
+    {SpriteNum::Fire,32772,2,{.mobj = &Mobj::fire},StateNum::Fire16,0,0}, // StateNum::Fire15
+    {SpriteNum::Fire,32771,2,{.mobj = &Mobj::fire},StateNum::Fire17,0,0}, // StateNum::Fire16
+    {SpriteNum::Fire,32772,2,{.mobj = &Mobj::fire},StateNum::Fire18,0,0}, // StateNum::Fire17
+    {SpriteNum::Fire,32771,2,{.mobj = &Mobj::fire},StateNum::Fire19,0,0}, // StateNum::Fire18
+    {SpriteNum::Fire,32772,2,{.mobj = &Mobj::fireCrackle},StateNum::Fire20,0,0}, // StateNum::Fire19
+    {SpriteNum::Fire,32773,2,{.mobj = &Mobj::fire},StateNum::Fire21,0,0}, // StateNum::Fire20
+    {SpriteNum::Fire,32772,2,{.mobj = &Mobj::fire},StateNum::Fire22,0,0}, // StateNum::Fire21
+    {SpriteNum::Fire,32773,2,{.mobj = &Mobj::fire},StateNum::Fire23,0,0}, // StateNum::Fire22
+    {SpriteNum::Fire,32772,2,{.mobj = &Mobj::fire},StateNum::Fire24,0,0}, // StateNum::Fire23
+    {SpriteNum::Fire,32773,2,{.mobj = &Mobj::fire},StateNum::Fire25,0,0}, // StateNum::Fire24
+    {SpriteNum::Fire,32774,2,{.mobj = &Mobj::fire},StateNum::Fire26,0,0}, // StateNum::Fire25
+    {SpriteNum::Fire,32775,2,{.mobj = &Mobj::fire},StateNum::Fire27,0,0}, // StateNum::Fire26
+    {SpriteNum::Fire,32774,2,{.mobj = &Mobj::fire},StateNum::Fire28,0,0}, // StateNum::Fire27
+    {SpriteNum::Fire,32775,2,{.mobj = &Mobj::fire},StateNum::Fire29,0,0}, // StateNum::Fire28
+    {SpriteNum::Fire,32774,2,{.mobj = &Mobj::fire},StateNum::Fire30,0,0}, // StateNum::Fire29
+    {SpriteNum::Fire,32775,2,{.mobj = &Mobj::fire},StateNum::Null,0,0}, // StateNum::Fire30
     {SpriteNum::Puff,1,4,{},StateNum::Smoke2,0,0}, // StateNum::Smoke1
     {SpriteNum::Puff,2,4,{},StateNum::Smoke3,0,0}, // StateNum::Smoke2
     {SpriteNum::Puff,1,4,{},StateNum::Smoke4,0,0}, // StateNum::Smoke3
     {SpriteNum::Puff,2,4,{},StateNum::Smoke5,0,0}, // StateNum::Smoke4
     {SpriteNum::Puff,3,4,{},StateNum::Null,0,0}, // StateNum::Smoke5
-    {SpriteNum::Fatb,32768,2,{.mobj = tracer},StateNum::Tracer2,0,0}, // StateNum::Tracer
-    {SpriteNum::Fatb,32769,2,{.mobj = tracer},StateNum::Tracer,0,0}, // StateNum::Tracer2
+    {SpriteNum::Fatb,32768,2,{.mobj = &Mobj::traceTarget},StateNum::Tracer2,0,0}, // StateNum::Tracer
+    {SpriteNum::Fatb,32769,2,{.mobj = &Mobj::traceTarget},StateNum::Tracer,0,0}, // StateNum::Tracer2
     {SpriteNum::Fbxp,32768,8,{},StateNum::Traceexp2,0,0}, // StateNum::Traceexp1
     {SpriteNum::Fbxp,32769,6,{},StateNum::Traceexp3,0,0}, // StateNum::Traceexp2
     {SpriteNum::Fbxp,32770,4,{},StateNum::Null,0,0}, // StateNum::Traceexp3
-    {SpriteNum::Skel,0,10,{.mobj = look},StateNum::SkelStnd2,0,0}, // StateNum::SkelStnd
-    {SpriteNum::Skel,1,10,{.mobj = look},StateNum::SkelStnd,0,0}, // StateNum::SkelStnd2
-    {SpriteNum::Skel,0,2,{.mobj = chase},StateNum::SkelRun2,0,0}, // StateNum::SkelRun1
-    {SpriteNum::Skel,0,2,{.mobj = chase},StateNum::SkelRun3,0,0}, // StateNum::SkelRun2
-    {SpriteNum::Skel,1,2,{.mobj = chase},StateNum::SkelRun4,0,0}, // StateNum::SkelRun3
-    {SpriteNum::Skel,1,2,{.mobj = chase},StateNum::SkelRun5,0,0}, // StateNum::SkelRun4
-    {SpriteNum::Skel,2,2,{.mobj = chase},StateNum::SkelRun6,0,0}, // StateNum::SkelRun5
-    {SpriteNum::Skel,2,2,{.mobj = chase},StateNum::SkelRun7,0,0}, // StateNum::SkelRun6
-    {SpriteNum::Skel,3,2,{.mobj = chase},StateNum::SkelRun8,0,0}, // StateNum::SkelRun7
-    {SpriteNum::Skel,3,2,{.mobj = chase},StateNum::SkelRun9,0,0}, // StateNum::SkelRun8
-    {SpriteNum::Skel,4,2,{.mobj = chase},StateNum::SkelRun10,0,0}, // StateNum::SkelRun9
-    {SpriteNum::Skel,4,2,{.mobj = chase},StateNum::SkelRun11,0,0}, // StateNum::SkelRun10
-    {SpriteNum::Skel,5,2,{.mobj = chase},StateNum::SkelRun12,0,0}, // StateNum::SkelRun11
-    {SpriteNum::Skel,5,2,{.mobj = chase},StateNum::SkelRun1,0,0}, // StateNum::SkelRun12
-    {SpriteNum::Skel,6,0,{.mobj = faceTarget},StateNum::SkelFist2,0,0}, // StateNum::SkelFist1
-    {SpriteNum::Skel,6,6,{.mobj = skelWhoosh},StateNum::SkelFist3,0,0}, // StateNum::SkelFist2
-    {SpriteNum::Skel,7,6,{.mobj = faceTarget},StateNum::SkelFist4,0,0}, // StateNum::SkelFist3
-    {SpriteNum::Skel,8,6,{.mobj = skelFist},StateNum::SkelRun1,0,0}, // StateNum::SkelFist4
-    {SpriteNum::Skel,32777,0,{.mobj = faceTarget},StateNum::SkelMiss2,0,0}, // StateNum::SkelMiss1
-    {SpriteNum::Skel,32777,10,{.mobj = faceTarget},StateNum::SkelMiss3,0,0}, // StateNum::SkelMiss2
-    {SpriteNum::Skel,10,10,{.mobj = skelMissile},StateNum::SkelMiss4,0,0}, // StateNum::SkelMiss3
-    {SpriteNum::Skel,10,10,{.mobj = faceTarget},StateNum::SkelRun1,0,0}, // StateNum::SkelMiss4
+    {SpriteNum::Skel,0,10,{.mobj = &Mobj::look},StateNum::SkelStnd2,0,0}, // StateNum::SkelStnd
+    {SpriteNum::Skel,1,10,{.mobj = &Mobj::look},StateNum::SkelStnd,0,0}, // StateNum::SkelStnd2
+    {SpriteNum::Skel,0,2,{.mobj = &Mobj::chase},StateNum::SkelRun2,0,0}, // StateNum::SkelRun1
+    {SpriteNum::Skel,0,2,{.mobj = &Mobj::chase},StateNum::SkelRun3,0,0}, // StateNum::SkelRun2
+    {SpriteNum::Skel,1,2,{.mobj = &Mobj::chase},StateNum::SkelRun4,0,0}, // StateNum::SkelRun3
+    {SpriteNum::Skel,1,2,{.mobj = &Mobj::chase},StateNum::SkelRun5,0,0}, // StateNum::SkelRun4
+    {SpriteNum::Skel,2,2,{.mobj = &Mobj::chase},StateNum::SkelRun6,0,0}, // StateNum::SkelRun5
+    {SpriteNum::Skel,2,2,{.mobj = &Mobj::chase},StateNum::SkelRun7,0,0}, // StateNum::SkelRun6
+    {SpriteNum::Skel,3,2,{.mobj = &Mobj::chase},StateNum::SkelRun8,0,0}, // StateNum::SkelRun7
+    {SpriteNum::Skel,3,2,{.mobj = &Mobj::chase},StateNum::SkelRun9,0,0}, // StateNum::SkelRun8
+    {SpriteNum::Skel,4,2,{.mobj = &Mobj::chase},StateNum::SkelRun10,0,0}, // StateNum::SkelRun9
+    {SpriteNum::Skel,4,2,{.mobj = &Mobj::chase},StateNum::SkelRun11,0,0}, // StateNum::SkelRun10
+    {SpriteNum::Skel,5,2,{.mobj = &Mobj::chase},StateNum::SkelRun12,0,0}, // StateNum::SkelRun11
+    {SpriteNum::Skel,5,2,{.mobj = &Mobj::chase},StateNum::SkelRun1,0,0}, // StateNum::SkelRun12
+    {SpriteNum::Skel,6,0,{.mobj = &Mobj::faceTarget},StateNum::SkelFist2,0,0}, // StateNum::SkelFist1
+    {SpriteNum::Skel,6,6,{.mobj = &Mobj::skelWhoosh},StateNum::SkelFist3,0,0}, // StateNum::SkelFist2
+    {SpriteNum::Skel,7,6,{.mobj = &Mobj::faceTarget},StateNum::SkelFist4,0,0}, // StateNum::SkelFist3
+    {SpriteNum::Skel,8,6,{.mobj = &Mobj::skelFist},StateNum::SkelRun1,0,0}, // StateNum::SkelFist4
+    {SpriteNum::Skel,32777,0,{.mobj = &Mobj::faceTarget},StateNum::SkelMiss2,0,0}, // StateNum::SkelMiss1
+    {SpriteNum::Skel,32777,10,{.mobj = &Mobj::faceTarget},StateNum::SkelMiss3,0,0}, // StateNum::SkelMiss2
+    {SpriteNum::Skel,10,10,{.mobj = &Mobj::skelMissile},StateNum::SkelMiss4,0,0}, // StateNum::SkelMiss3
+    {SpriteNum::Skel,10,10,{.mobj = &Mobj::faceTarget},StateNum::SkelRun1,0,0}, // StateNum::SkelMiss4
     {SpriteNum::Skel,11,5,{},StateNum::SkelPain2,0,0}, // StateNum::SkelPain
-    {SpriteNum::Skel,11,5,{.mobj = pain},StateNum::SkelRun1,0,0}, // StateNum::SkelPain2
+    {SpriteNum::Skel,11,5,{.mobj = &Mobj::pain},StateNum::SkelRun1,0,0}, // StateNum::SkelPain2
     {SpriteNum::Skel,11,7,{},StateNum::SkelDie2,0,0}, // StateNum::SkelDie1
     {SpriteNum::Skel,12,7,{},StateNum::SkelDie3,0,0}, // StateNum::SkelDie2
-    {SpriteNum::Skel,13,7,{.mobj = scream},StateNum::SkelDie4,0,0}, // StateNum::SkelDie3
-    {SpriteNum::Skel,14,7,{.mobj = fall},StateNum::SkelDie5,0,0}, // StateNum::SkelDie4
+    {SpriteNum::Skel,13,7,{.mobj = &Mobj::scream},StateNum::SkelDie4,0,0}, // StateNum::SkelDie3
+    {SpriteNum::Skel,14,7,{.mobj = &Mobj::fall},StateNum::SkelDie5,0,0}, // StateNum::SkelDie4
     {SpriteNum::Skel,15,7,{},StateNum::SkelDie6,0,0}, // StateNum::SkelDie5
     {SpriteNum::Skel,16,-1,{},StateNum::Null,0,0}, // StateNum::SkelDie6
     {SpriteNum::Skel,16,5,{},StateNum::SkelRaise2,0,0}, // StateNum::SkelRaise1
@@ -439,42 +439,42 @@ State statesData[numStates] = {
     {SpriteNum::Misl,32769,8,{},StateNum::Fatshotx2,0,0}, // StateNum::Fatshotx1
     {SpriteNum::Misl,32770,6,{},StateNum::Fatshotx3,0,0}, // StateNum::Fatshotx2
     {SpriteNum::Misl,32771,4,{},StateNum::Null,0,0}, // StateNum::Fatshotx3
-    {SpriteNum::Fatt,0,15,{.mobj = look},StateNum::FattStnd2,0,0}, // StateNum::FattStnd
-    {SpriteNum::Fatt,1,15,{.mobj = look},StateNum::FattStnd,0,0}, // StateNum::FattStnd2
-    {SpriteNum::Fatt,0,4,{.mobj = chase},StateNum::FattRun2,0,0}, // StateNum::FattRun1
-    {SpriteNum::Fatt,0,4,{.mobj = chase},StateNum::FattRun3,0,0}, // StateNum::FattRun2
-    {SpriteNum::Fatt,1,4,{.mobj = chase},StateNum::FattRun4,0,0}, // StateNum::FattRun3
-    {SpriteNum::Fatt,1,4,{.mobj = chase},StateNum::FattRun5,0,0}, // StateNum::FattRun4
-    {SpriteNum::Fatt,2,4,{.mobj = chase},StateNum::FattRun6,0,0}, // StateNum::FattRun5
-    {SpriteNum::Fatt,2,4,{.mobj = chase},StateNum::FattRun7,0,0}, // StateNum::FattRun6
-    {SpriteNum::Fatt,3,4,{.mobj = chase},StateNum::FattRun8,0,0}, // StateNum::FattRun7
-    {SpriteNum::Fatt,3,4,{.mobj = chase},StateNum::FattRun9,0,0}, // StateNum::FattRun8
-    {SpriteNum::Fatt,4,4,{.mobj = chase},StateNum::FattRun10,0,0}, // StateNum::FattRun9
-    {SpriteNum::Fatt,4,4,{.mobj = chase},StateNum::FattRun11,0,0}, // StateNum::FattRun10
-    {SpriteNum::Fatt,5,4,{.mobj = chase},StateNum::FattRun12,0,0}, // StateNum::FattRun11
-    {SpriteNum::Fatt,5,4,{.mobj = chase},StateNum::FattRun1,0,0}, // StateNum::FattRun12
-    {SpriteNum::Fatt,6,20,{.mobj = fatRaise},StateNum::FattAtk2,0,0}, // StateNum::FattAtk1
-    {SpriteNum::Fatt,32775,10,{.mobj = fatAttack1},StateNum::FattAtk3,0,0}, // StateNum::FattAtk2
-    {SpriteNum::Fatt,8,5,{.mobj = faceTarget},StateNum::FattAtk4,0,0}, // StateNum::FattAtk3
-    {SpriteNum::Fatt,6,5,{.mobj = faceTarget},StateNum::FattAtk5,0,0}, // StateNum::FattAtk4
-    {SpriteNum::Fatt,32775,10,{.mobj = fatAttack2},StateNum::FattAtk6,0,0}, // StateNum::FattAtk5
-    {SpriteNum::Fatt,8,5,{.mobj = faceTarget},StateNum::FattAtk7,0,0}, // StateNum::FattAtk6
-    {SpriteNum::Fatt,6,5,{.mobj = faceTarget},StateNum::FattAtk8,0,0}, // StateNum::FattAtk7
-    {SpriteNum::Fatt,32775,10,{.mobj = fatAttack3},StateNum::FattAtk9,0,0}, // StateNum::FattAtk8
-    {SpriteNum::Fatt,8,5,{.mobj = faceTarget},StateNum::FattAtk10,0,0}, // StateNum::FattAtk9
-    {SpriteNum::Fatt,6,5,{.mobj = faceTarget},StateNum::FattRun1,0,0}, // StateNum::FattAtk10
+    {SpriteNum::Fatt,0,15,{.mobj = &Mobj::look},StateNum::FattStnd2,0,0}, // StateNum::FattStnd
+    {SpriteNum::Fatt,1,15,{.mobj = &Mobj::look},StateNum::FattStnd,0,0}, // StateNum::FattStnd2
+    {SpriteNum::Fatt,0,4,{.mobj = &Mobj::chase},StateNum::FattRun2,0,0}, // StateNum::FattRun1
+    {SpriteNum::Fatt,0,4,{.mobj = &Mobj::chase},StateNum::FattRun3,0,0}, // StateNum::FattRun2
+    {SpriteNum::Fatt,1,4,{.mobj = &Mobj::chase},StateNum::FattRun4,0,0}, // StateNum::FattRun3
+    {SpriteNum::Fatt,1,4,{.mobj = &Mobj::chase},StateNum::FattRun5,0,0}, // StateNum::FattRun4
+    {SpriteNum::Fatt,2,4,{.mobj = &Mobj::chase},StateNum::FattRun6,0,0}, // StateNum::FattRun5
+    {SpriteNum::Fatt,2,4,{.mobj = &Mobj::chase},StateNum::FattRun7,0,0}, // StateNum::FattRun6
+    {SpriteNum::Fatt,3,4,{.mobj = &Mobj::chase},StateNum::FattRun8,0,0}, // StateNum::FattRun7
+    {SpriteNum::Fatt,3,4,{.mobj = &Mobj::chase},StateNum::FattRun9,0,0}, // StateNum::FattRun8
+    {SpriteNum::Fatt,4,4,{.mobj = &Mobj::chase},StateNum::FattRun10,0,0}, // StateNum::FattRun9
+    {SpriteNum::Fatt,4,4,{.mobj = &Mobj::chase},StateNum::FattRun11,0,0}, // StateNum::FattRun10
+    {SpriteNum::Fatt,5,4,{.mobj = &Mobj::chase},StateNum::FattRun12,0,0}, // StateNum::FattRun11
+    {SpriteNum::Fatt,5,4,{.mobj = &Mobj::chase},StateNum::FattRun1,0,0}, // StateNum::FattRun12
+    {SpriteNum::Fatt,6,20,{.mobj = &Mobj::fatRaise},StateNum::FattAtk2,0,0}, // StateNum::FattAtk1
+    {SpriteNum::Fatt,32775,10,{.mobj = &Mobj::fatAttack1},StateNum::FattAtk3,0,0}, // StateNum::FattAtk2
+    {SpriteNum::Fatt,8,5,{.mobj = &Mobj::faceTarget},StateNum::FattAtk4,0,0}, // StateNum::FattAtk3
+    {SpriteNum::Fatt,6,5,{.mobj = &Mobj::faceTarget},StateNum::FattAtk5,0,0}, // StateNum::FattAtk4
+    {SpriteNum::Fatt,32775,10,{.mobj = &Mobj::fatAttack2},StateNum::FattAtk6,0,0}, // StateNum::FattAtk5
+    {SpriteNum::Fatt,8,5,{.mobj = &Mobj::faceTarget},StateNum::FattAtk7,0,0}, // StateNum::FattAtk6
+    {SpriteNum::Fatt,6,5,{.mobj = &Mobj::faceTarget},StateNum::FattAtk8,0,0}, // StateNum::FattAtk7
+    {SpriteNum::Fatt,32775,10,{.mobj = &Mobj::fatAttack3},StateNum::FattAtk9,0,0}, // StateNum::FattAtk8
+    {SpriteNum::Fatt,8,5,{.mobj = &Mobj::faceTarget},StateNum::FattAtk10,0,0}, // StateNum::FattAtk9
+    {SpriteNum::Fatt,6,5,{.mobj = &Mobj::faceTarget},StateNum::FattRun1,0,0}, // StateNum::FattAtk10
     {SpriteNum::Fatt,9,3,{},StateNum::FattPain2,0,0}, // StateNum::FattPain
-    {SpriteNum::Fatt,9,3,{.mobj = pain},StateNum::FattRun1,0,0}, // StateNum::FattPain2
+    {SpriteNum::Fatt,9,3,{.mobj = &Mobj::pain},StateNum::FattRun1,0,0}, // StateNum::FattPain2
     {SpriteNum::Fatt,10,6,{},StateNum::FattDie2,0,0}, // StateNum::FattDie1
-    {SpriteNum::Fatt,11,6,{.mobj = scream},StateNum::FattDie3,0,0}, // StateNum::FattDie2
-    {SpriteNum::Fatt,12,6,{.mobj = fall},StateNum::FattDie4,0,0}, // StateNum::FattDie3
+    {SpriteNum::Fatt,11,6,{.mobj = &Mobj::scream},StateNum::FattDie3,0,0}, // StateNum::FattDie2
+    {SpriteNum::Fatt,12,6,{.mobj = &Mobj::fall},StateNum::FattDie4,0,0}, // StateNum::FattDie3
     {SpriteNum::Fatt,13,6,{},StateNum::FattDie5,0,0}, // StateNum::FattDie4
     {SpriteNum::Fatt,14,6,{},StateNum::FattDie6,0,0}, // StateNum::FattDie5
     {SpriteNum::Fatt,15,6,{},StateNum::FattDie7,0,0}, // StateNum::FattDie6
     {SpriteNum::Fatt,16,6,{},StateNum::FattDie8,0,0}, // StateNum::FattDie7
     {SpriteNum::Fatt,17,6,{},StateNum::FattDie9,0,0}, // StateNum::FattDie8
     {SpriteNum::Fatt,18,6,{},StateNum::FattDie10,0,0}, // StateNum::FattDie9
-    {SpriteNum::Fatt,19,-1,{.mobj = bossDeath},StateNum::Null,0,0}, // StateNum::FattDie10
+    {SpriteNum::Fatt,19,-1,{.mobj = &Mobj::bossDeath},StateNum::Null,0,0}, // StateNum::FattDie10
     {SpriteNum::Fatt,17,5,{},StateNum::FattRaise2,0,0}, // StateNum::FattRaise1
     {SpriteNum::Fatt,16,5,{},StateNum::FattRaise3,0,0}, // StateNum::FattRaise2
     {SpriteNum::Fatt,15,5,{},StateNum::FattRaise4,0,0}, // StateNum::FattRaise3
@@ -483,32 +483,32 @@ State statesData[numStates] = {
     {SpriteNum::Fatt,12,5,{},StateNum::FattRaise7,0,0}, // StateNum::FattRaise6
     {SpriteNum::Fatt,11,5,{},StateNum::FattRaise8,0,0}, // StateNum::FattRaise7
     {SpriteNum::Fatt,10,5,{},StateNum::FattRun1,0,0}, // StateNum::FattRaise8
-    {SpriteNum::Cpos,0,10,{.mobj = look},StateNum::CposStnd2,0,0}, // StateNum::CposStnd
-    {SpriteNum::Cpos,1,10,{.mobj = look},StateNum::CposStnd,0,0}, // StateNum::CposStnd2
-    {SpriteNum::Cpos,0,3,{.mobj = chase},StateNum::CposRun2,0,0}, // StateNum::CposRun1
-    {SpriteNum::Cpos,0,3,{.mobj = chase},StateNum::CposRun3,0,0}, // StateNum::CposRun2
-    {SpriteNum::Cpos,1,3,{.mobj = chase},StateNum::CposRun4,0,0}, // StateNum::CposRun3
-    {SpriteNum::Cpos,1,3,{.mobj = chase},StateNum::CposRun5,0,0}, // StateNum::CposRun4
-    {SpriteNum::Cpos,2,3,{.mobj = chase},StateNum::CposRun6,0,0}, // StateNum::CposRun5
-    {SpriteNum::Cpos,2,3,{.mobj = chase},StateNum::CposRun7,0,0}, // StateNum::CposRun6
-    {SpriteNum::Cpos,3,3,{.mobj = chase},StateNum::CposRun8,0,0}, // StateNum::CposRun7
-    {SpriteNum::Cpos,3,3,{.mobj = chase},StateNum::CposRun1,0,0}, // StateNum::CposRun8
-    {SpriteNum::Cpos,4,10,{.mobj = faceTarget},StateNum::CposAtk2,0,0}, // StateNum::CposAtk1
-    {SpriteNum::Cpos,32773,4,{.mobj = cPosAttack},StateNum::CposAtk3,0,0}, // StateNum::CposAtk2
-    {SpriteNum::Cpos,32772,4,{.mobj = cPosAttack},StateNum::CposAtk4,0,0}, // StateNum::CposAtk3
-    {SpriteNum::Cpos,5,1,{.mobj = cPosRefire},StateNum::CposAtk2,0,0}, // StateNum::CposAtk4
+    {SpriteNum::Cpos,0,10,{.mobj = &Mobj::look},StateNum::CposStnd2,0,0}, // StateNum::CposStnd
+    {SpriteNum::Cpos,1,10,{.mobj = &Mobj::look},StateNum::CposStnd,0,0}, // StateNum::CposStnd2
+    {SpriteNum::Cpos,0,3,{.mobj = &Mobj::chase},StateNum::CposRun2,0,0}, // StateNum::CposRun1
+    {SpriteNum::Cpos,0,3,{.mobj = &Mobj::chase},StateNum::CposRun3,0,0}, // StateNum::CposRun2
+    {SpriteNum::Cpos,1,3,{.mobj = &Mobj::chase},StateNum::CposRun4,0,0}, // StateNum::CposRun3
+    {SpriteNum::Cpos,1,3,{.mobj = &Mobj::chase},StateNum::CposRun5,0,0}, // StateNum::CposRun4
+    {SpriteNum::Cpos,2,3,{.mobj = &Mobj::chase},StateNum::CposRun6,0,0}, // StateNum::CposRun5
+    {SpriteNum::Cpos,2,3,{.mobj = &Mobj::chase},StateNum::CposRun7,0,0}, // StateNum::CposRun6
+    {SpriteNum::Cpos,3,3,{.mobj = &Mobj::chase},StateNum::CposRun8,0,0}, // StateNum::CposRun7
+    {SpriteNum::Cpos,3,3,{.mobj = &Mobj::chase},StateNum::CposRun1,0,0}, // StateNum::CposRun8
+    {SpriteNum::Cpos,4,10,{.mobj = &Mobj::faceTarget},StateNum::CposAtk2,0,0}, // StateNum::CposAtk1
+    {SpriteNum::Cpos,32773,4,{.mobj = &Mobj::cPosAttack},StateNum::CposAtk3,0,0}, // StateNum::CposAtk2
+    {SpriteNum::Cpos,32772,4,{.mobj = &Mobj::cPosAttack},StateNum::CposAtk4,0,0}, // StateNum::CposAtk3
+    {SpriteNum::Cpos,5,1,{.mobj = &Mobj::cPosRefire},StateNum::CposAtk2,0,0}, // StateNum::CposAtk4
     {SpriteNum::Cpos,6,3,{},StateNum::CposPain2,0,0}, // StateNum::CposPain
-    {SpriteNum::Cpos,6,3,{.mobj = pain},StateNum::CposRun1,0,0}, // StateNum::CposPain2
+    {SpriteNum::Cpos,6,3,{.mobj = &Mobj::pain},StateNum::CposRun1,0,0}, // StateNum::CposPain2
     {SpriteNum::Cpos,7,5,{},StateNum::CposDie2,0,0}, // StateNum::CposDie1
-    {SpriteNum::Cpos,8,5,{.mobj = scream},StateNum::CposDie3,0,0}, // StateNum::CposDie2
-    {SpriteNum::Cpos,9,5,{.mobj = fall},StateNum::CposDie4,0,0}, // StateNum::CposDie3
+    {SpriteNum::Cpos,8,5,{.mobj = &Mobj::scream},StateNum::CposDie3,0,0}, // StateNum::CposDie2
+    {SpriteNum::Cpos,9,5,{.mobj = &Mobj::fall},StateNum::CposDie4,0,0}, // StateNum::CposDie3
     {SpriteNum::Cpos,10,5,{},StateNum::CposDie5,0,0}, // StateNum::CposDie4
     {SpriteNum::Cpos,11,5,{},StateNum::CposDie6,0,0}, // StateNum::CposDie5
     {SpriteNum::Cpos,12,5,{},StateNum::CposDie7,0,0}, // StateNum::CposDie6
     {SpriteNum::Cpos,13,-1,{},StateNum::Null,0,0}, // StateNum::CposDie7
     {SpriteNum::Cpos,14,5,{},StateNum::CposXdie2,0,0}, // StateNum::CposXdie1
-    {SpriteNum::Cpos,15,5,{.mobj = xScream},StateNum::CposXdie3,0,0}, // StateNum::CposXdie2
-    {SpriteNum::Cpos,16,5,{.mobj = fall},StateNum::CposXdie4,0,0}, // StateNum::CposXdie3
+    {SpriteNum::Cpos,15,5,{.mobj = &Mobj::xScream},StateNum::CposXdie3,0,0}, // StateNum::CposXdie2
+    {SpriteNum::Cpos,16,5,{.mobj = &Mobj::fall},StateNum::CposXdie4,0,0}, // StateNum::CposXdie3
     {SpriteNum::Cpos,17,5,{},StateNum::CposXdie5,0,0}, // StateNum::CposXdie4
     {SpriteNum::Cpos,18,5,{},StateNum::CposXdie6,0,0}, // StateNum::CposXdie5
     {SpriteNum::Cpos,19,-1,{},StateNum::Null,0,0}, // StateNum::CposXdie6
@@ -519,30 +519,30 @@ State statesData[numStates] = {
     {SpriteNum::Cpos,9,5,{},StateNum::CposRaise6,0,0}, // StateNum::CposRaise5
     {SpriteNum::Cpos,8,5,{},StateNum::CposRaise7,0,0}, // StateNum::CposRaise6
     {SpriteNum::Cpos,7,5,{},StateNum::CposRun1,0,0}, // StateNum::CposRaise7
-    {SpriteNum::Troo,0,10,{.mobj = look},StateNum::TrooStnd2,0,0}, // StateNum::TrooStnd
-    {SpriteNum::Troo,1,10,{.mobj = look},StateNum::TrooStnd,0,0}, // StateNum::TrooStnd2
-    {SpriteNum::Troo,0,3,{.mobj = chase},StateNum::TrooRun2,0,0}, // StateNum::TrooRun1
-    {SpriteNum::Troo,0,3,{.mobj = chase},StateNum::TrooRun3,0,0}, // StateNum::TrooRun2
-    {SpriteNum::Troo,1,3,{.mobj = chase},StateNum::TrooRun4,0,0}, // StateNum::TrooRun3
-    {SpriteNum::Troo,1,3,{.mobj = chase},StateNum::TrooRun5,0,0}, // StateNum::TrooRun4
-    {SpriteNum::Troo,2,3,{.mobj = chase},StateNum::TrooRun6,0,0}, // StateNum::TrooRun5
-    {SpriteNum::Troo,2,3,{.mobj = chase},StateNum::TrooRun7,0,0}, // StateNum::TrooRun6
-    {SpriteNum::Troo,3,3,{.mobj = chase},StateNum::TrooRun8,0,0}, // StateNum::TrooRun7
-    {SpriteNum::Troo,3,3,{.mobj = chase},StateNum::TrooRun1,0,0}, // StateNum::TrooRun8
-    {SpriteNum::Troo,4,8,{.mobj = faceTarget},StateNum::TrooAtk2,0,0}, // StateNum::TrooAtk1
-    {SpriteNum::Troo,5,8,{.mobj = faceTarget},StateNum::TrooAtk3,0,0}, // StateNum::TrooAtk2
-    {SpriteNum::Troo,6,6,{.mobj = troopAttack},StateNum::TrooRun1,0,0}, // StateNum::TrooAtk3
+    {SpriteNum::Troo,0,10,{.mobj = &Mobj::look},StateNum::TrooStnd2,0,0}, // StateNum::TrooStnd
+    {SpriteNum::Troo,1,10,{.mobj = &Mobj::look},StateNum::TrooStnd,0,0}, // StateNum::TrooStnd2
+    {SpriteNum::Troo,0,3,{.mobj = &Mobj::chase},StateNum::TrooRun2,0,0}, // StateNum::TrooRun1
+    {SpriteNum::Troo,0,3,{.mobj = &Mobj::chase},StateNum::TrooRun3,0,0}, // StateNum::TrooRun2
+    {SpriteNum::Troo,1,3,{.mobj = &Mobj::chase},StateNum::TrooRun4,0,0}, // StateNum::TrooRun3
+    {SpriteNum::Troo,1,3,{.mobj = &Mobj::chase},StateNum::TrooRun5,0,0}, // StateNum::TrooRun4
+    {SpriteNum::Troo,2,3,{.mobj = &Mobj::chase},StateNum::TrooRun6,0,0}, // StateNum::TrooRun5
+    {SpriteNum::Troo,2,3,{.mobj = &Mobj::chase},StateNum::TrooRun7,0,0}, // StateNum::TrooRun6
+    {SpriteNum::Troo,3,3,{.mobj = &Mobj::chase},StateNum::TrooRun8,0,0}, // StateNum::TrooRun7
+    {SpriteNum::Troo,3,3,{.mobj = &Mobj::chase},StateNum::TrooRun1,0,0}, // StateNum::TrooRun8
+    {SpriteNum::Troo,4,8,{.mobj = &Mobj::faceTarget},StateNum::TrooAtk2,0,0}, // StateNum::TrooAtk1
+    {SpriteNum::Troo,5,8,{.mobj = &Mobj::faceTarget},StateNum::TrooAtk3,0,0}, // StateNum::TrooAtk2
+    {SpriteNum::Troo,6,6,{.mobj = &Mobj::troopAttack},StateNum::TrooRun1,0,0}, // StateNum::TrooAtk3
     {SpriteNum::Troo,7,2,{},StateNum::TrooPain2,0,0}, // StateNum::TrooPain
-    {SpriteNum::Troo,7,2,{.mobj = pain},StateNum::TrooRun1,0,0}, // StateNum::TrooPain2
+    {SpriteNum::Troo,7,2,{.mobj = &Mobj::pain},StateNum::TrooRun1,0,0}, // StateNum::TrooPain2
     {SpriteNum::Troo,8,8,{},StateNum::TrooDie2,0,0}, // StateNum::TrooDie1
-    {SpriteNum::Troo,9,8,{.mobj = scream},StateNum::TrooDie3,0,0}, // StateNum::TrooDie2
+    {SpriteNum::Troo,9,8,{.mobj = &Mobj::scream},StateNum::TrooDie3,0,0}, // StateNum::TrooDie2
     {SpriteNum::Troo,10,6,{},StateNum::TrooDie4,0,0}, // StateNum::TrooDie3
-    {SpriteNum::Troo,11,6,{.mobj = fall},StateNum::TrooDie5,0,0}, // StateNum::TrooDie4
+    {SpriteNum::Troo,11,6,{.mobj = &Mobj::fall},StateNum::TrooDie5,0,0}, // StateNum::TrooDie4
     {SpriteNum::Troo,12,-1,{},StateNum::Null,0,0}, // StateNum::TrooDie5
     {SpriteNum::Troo,13,5,{},StateNum::TrooXdie2,0,0}, // StateNum::TrooXdie1
-    {SpriteNum::Troo,14,5,{.mobj = xScream},StateNum::TrooXdie3,0,0}, // StateNum::TrooXdie2
+    {SpriteNum::Troo,14,5,{.mobj = &Mobj::xScream},StateNum::TrooXdie3,0,0}, // StateNum::TrooXdie2
     {SpriteNum::Troo,15,5,{},StateNum::TrooXdie4,0,0}, // StateNum::TrooXdie3
-    {SpriteNum::Troo,16,5,{.mobj = fall},StateNum::TrooXdie5,0,0}, // StateNum::TrooXdie4
+    {SpriteNum::Troo,16,5,{.mobj = &Mobj::fall},StateNum::TrooXdie5,0,0}, // StateNum::TrooXdie4
     {SpriteNum::Troo,17,5,{},StateNum::TrooXdie6,0,0}, // StateNum::TrooXdie5
     {SpriteNum::Troo,18,5,{},StateNum::TrooXdie7,0,0}, // StateNum::TrooXdie6
     {SpriteNum::Troo,19,5,{},StateNum::TrooXdie8,0,0}, // StateNum::TrooXdie7
@@ -552,25 +552,25 @@ State statesData[numStates] = {
     {SpriteNum::Troo,10,6,{},StateNum::TrooRaise4,0,0}, // StateNum::TrooRaise3
     {SpriteNum::Troo,9,6,{},StateNum::TrooRaise5,0,0}, // StateNum::TrooRaise4
     {SpriteNum::Troo,8,6,{},StateNum::TrooRun1,0,0}, // StateNum::TrooRaise5
-    {SpriteNum::Sarg,0,10,{.mobj = look},StateNum::SargStnd2,0,0}, // StateNum::SargStnd
-    {SpriteNum::Sarg,1,10,{.mobj = look},StateNum::SargStnd,0,0}, // StateNum::SargStnd2
-    {SpriteNum::Sarg,0,2,{.mobj = chase},StateNum::SargRun2,0,0}, // StateNum::SargRun1
-    {SpriteNum::Sarg,0,2,{.mobj = chase},StateNum::SargRun3,0,0}, // StateNum::SargRun2
-    {SpriteNum::Sarg,1,2,{.mobj = chase},StateNum::SargRun4,0,0}, // StateNum::SargRun3
-    {SpriteNum::Sarg,1,2,{.mobj = chase},StateNum::SargRun5,0,0}, // StateNum::SargRun4
-    {SpriteNum::Sarg,2,2,{.mobj = chase},StateNum::SargRun6,0,0}, // StateNum::SargRun5
-    {SpriteNum::Sarg,2,2,{.mobj = chase},StateNum::SargRun7,0,0}, // StateNum::SargRun6
-    {SpriteNum::Sarg,3,2,{.mobj = chase},StateNum::SargRun8,0,0}, // StateNum::SargRun7
-    {SpriteNum::Sarg,3,2,{.mobj = chase},StateNum::SargRun1,0,0}, // StateNum::SargRun8
-    {SpriteNum::Sarg,4,8,{.mobj = faceTarget},StateNum::SargAtk2,0,0}, // StateNum::SargAtk1
-    {SpriteNum::Sarg,5,8,{.mobj = faceTarget},StateNum::SargAtk3,0,0}, // StateNum::SargAtk2
-    {SpriteNum::Sarg,6,8,{.mobj = sargAttack},StateNum::SargRun1,0,0}, // StateNum::SargAtk3
+    {SpriteNum::Sarg,0,10,{.mobj = &Mobj::look},StateNum::SargStnd2,0,0}, // StateNum::SargStnd
+    {SpriteNum::Sarg,1,10,{.mobj = &Mobj::look},StateNum::SargStnd,0,0}, // StateNum::SargStnd2
+    {SpriteNum::Sarg,0,2,{.mobj = &Mobj::chase},StateNum::SargRun2,0,0}, // StateNum::SargRun1
+    {SpriteNum::Sarg,0,2,{.mobj = &Mobj::chase},StateNum::SargRun3,0,0}, // StateNum::SargRun2
+    {SpriteNum::Sarg,1,2,{.mobj = &Mobj::chase},StateNum::SargRun4,0,0}, // StateNum::SargRun3
+    {SpriteNum::Sarg,1,2,{.mobj = &Mobj::chase},StateNum::SargRun5,0,0}, // StateNum::SargRun4
+    {SpriteNum::Sarg,2,2,{.mobj = &Mobj::chase},StateNum::SargRun6,0,0}, // StateNum::SargRun5
+    {SpriteNum::Sarg,2,2,{.mobj = &Mobj::chase},StateNum::SargRun7,0,0}, // StateNum::SargRun6
+    {SpriteNum::Sarg,3,2,{.mobj = &Mobj::chase},StateNum::SargRun8,0,0}, // StateNum::SargRun7
+    {SpriteNum::Sarg,3,2,{.mobj = &Mobj::chase},StateNum::SargRun1,0,0}, // StateNum::SargRun8
+    {SpriteNum::Sarg,4,8,{.mobj = &Mobj::faceTarget},StateNum::SargAtk2,0,0}, // StateNum::SargAtk1
+    {SpriteNum::Sarg,5,8,{.mobj = &Mobj::faceTarget},StateNum::SargAtk3,0,0}, // StateNum::SargAtk2
+    {SpriteNum::Sarg,6,8,{.mobj = &Mobj::sargAttack},StateNum::SargRun1,0,0}, // StateNum::SargAtk3
     {SpriteNum::Sarg,7,2,{},StateNum::SargPain2,0,0}, // StateNum::SargPain
-    {SpriteNum::Sarg,7,2,{.mobj = pain},StateNum::SargRun1,0,0}, // StateNum::SargPain2
+    {SpriteNum::Sarg,7,2,{.mobj = &Mobj::pain},StateNum::SargRun1,0,0}, // StateNum::SargPain2
     {SpriteNum::Sarg,8,8,{},StateNum::SargDie2,0,0}, // StateNum::SargDie1
-    {SpriteNum::Sarg,9,8,{.mobj = scream},StateNum::SargDie3,0,0}, // StateNum::SargDie2
+    {SpriteNum::Sarg,9,8,{.mobj = &Mobj::scream},StateNum::SargDie3,0,0}, // StateNum::SargDie2
     {SpriteNum::Sarg,10,4,{},StateNum::SargDie4,0,0}, // StateNum::SargDie3
-    {SpriteNum::Sarg,11,4,{.mobj = fall},StateNum::SargDie5,0,0}, // StateNum::SargDie4
+    {SpriteNum::Sarg,11,4,{.mobj = &Mobj::fall},StateNum::SargDie5,0,0}, // StateNum::SargDie4
     {SpriteNum::Sarg,12,4,{},StateNum::SargDie6,0,0}, // StateNum::SargDie5
     {SpriteNum::Sarg,13,-1,{},StateNum::Null,0,0}, // StateNum::SargDie6
     {SpriteNum::Sarg,13,5,{},StateNum::SargRaise2,0,0}, // StateNum::SargRaise1
@@ -579,19 +579,19 @@ State statesData[numStates] = {
     {SpriteNum::Sarg,10,5,{},StateNum::SargRaise5,0,0}, // StateNum::SargRaise4
     {SpriteNum::Sarg,9,5,{},StateNum::SargRaise6,0,0}, // StateNum::SargRaise5
     {SpriteNum::Sarg,8,5,{},StateNum::SargRun1,0,0}, // StateNum::SargRaise6
-    {SpriteNum::Head,0,10,{.mobj = look},StateNum::HeadStnd,0,0}, // StateNum::HeadStnd
-    {SpriteNum::Head,0,3,{.mobj = chase},StateNum::HeadRun1,0,0}, // StateNum::HeadRun1
-    {SpriteNum::Head,1,5,{.mobj = faceTarget},StateNum::HeadAtk2,0,0}, // StateNum::HeadAtk1
-    {SpriteNum::Head,2,5,{.mobj = faceTarget},StateNum::HeadAtk3,0,0}, // StateNum::HeadAtk2
-    {SpriteNum::Head,32771,5,{.mobj = headAttack},StateNum::HeadRun1,0,0}, // StateNum::HeadAtk3
+    {SpriteNum::Head,0,10,{.mobj = &Mobj::look},StateNum::HeadStnd,0,0}, // StateNum::HeadStnd
+    {SpriteNum::Head,0,3,{.mobj = &Mobj::chase},StateNum::HeadRun1,0,0}, // StateNum::HeadRun1
+    {SpriteNum::Head,1,5,{.mobj = &Mobj::faceTarget},StateNum::HeadAtk2,0,0}, // StateNum::HeadAtk1
+    {SpriteNum::Head,2,5,{.mobj = &Mobj::faceTarget},StateNum::HeadAtk3,0,0}, // StateNum::HeadAtk2
+    {SpriteNum::Head,32771,5,{.mobj = &Mobj::headAttack},StateNum::HeadRun1,0,0}, // StateNum::HeadAtk3
     {SpriteNum::Head,4,3,{},StateNum::HeadPain2,0,0}, // StateNum::HeadPain
-    {SpriteNum::Head,4,3,{.mobj = pain},StateNum::HeadPain3,0,0}, // StateNum::HeadPain2
+    {SpriteNum::Head,4,3,{.mobj = &Mobj::pain},StateNum::HeadPain3,0,0}, // StateNum::HeadPain2
     {SpriteNum::Head,5,6,{},StateNum::HeadRun1,0,0}, // StateNum::HeadPain3
     {SpriteNum::Head,6,8,{},StateNum::HeadDie2,0,0}, // StateNum::HeadDie1
-    {SpriteNum::Head,7,8,{.mobj = scream},StateNum::HeadDie3,0,0}, // StateNum::HeadDie2
+    {SpriteNum::Head,7,8,{.mobj = &Mobj::scream},StateNum::HeadDie3,0,0}, // StateNum::HeadDie2
     {SpriteNum::Head,8,8,{},StateNum::HeadDie4,0,0}, // StateNum::HeadDie3
     {SpriteNum::Head,9,8,{},StateNum::HeadDie5,0,0}, // StateNum::HeadDie4
-    {SpriteNum::Head,10,8,{.mobj = fall},StateNum::HeadDie6,0,0}, // StateNum::HeadDie5
+    {SpriteNum::Head,10,8,{.mobj = &Mobj::fall},StateNum::HeadDie6,0,0}, // StateNum::HeadDie5
     {SpriteNum::Head,11,-1,{},StateNum::Null,0,0}, // StateNum::HeadDie6
     {SpriteNum::Head,11,8,{},StateNum::HeadRaise2,0,0}, // StateNum::HeadRaise1
     {SpriteNum::Head,10,8,{},StateNum::HeadRaise3,0,0}, // StateNum::HeadRaise2
@@ -604,28 +604,28 @@ State statesData[numStates] = {
     {SpriteNum::Bal7,32770,6,{},StateNum::Brballx2,0,0}, // StateNum::Brballx1
     {SpriteNum::Bal7,32771,6,{},StateNum::Brballx3,0,0}, // StateNum::Brballx2
     {SpriteNum::Bal7,32772,6,{},StateNum::Null,0,0}, // StateNum::Brballx3
-    {SpriteNum::Boss,0,10,{.mobj = look},StateNum::BossStnd2,0,0}, // StateNum::BossStnd
-    {SpriteNum::Boss,1,10,{.mobj = look},StateNum::BossStnd,0,0}, // StateNum::BossStnd2
-    {SpriteNum::Boss,0,3,{.mobj = chase},StateNum::BossRun2,0,0}, // StateNum::BossRun1
-    {SpriteNum::Boss,0,3,{.mobj = chase},StateNum::BossRun3,0,0}, // StateNum::BossRun2
-    {SpriteNum::Boss,1,3,{.mobj = chase},StateNum::BossRun4,0,0}, // StateNum::BossRun3
-    {SpriteNum::Boss,1,3,{.mobj = chase},StateNum::BossRun5,0,0}, // StateNum::BossRun4
-    {SpriteNum::Boss,2,3,{.mobj = chase},StateNum::BossRun6,0,0}, // StateNum::BossRun5
-    {SpriteNum::Boss,2,3,{.mobj = chase},StateNum::BossRun7,0,0}, // StateNum::BossRun6
-    {SpriteNum::Boss,3,3,{.mobj = chase},StateNum::BossRun8,0,0}, // StateNum::BossRun7
-    {SpriteNum::Boss,3,3,{.mobj = chase},StateNum::BossRun1,0,0}, // StateNum::BossRun8
-    {SpriteNum::Boss,4,8,{.mobj = faceTarget},StateNum::BossAtk2,0,0}, // StateNum::BossAtk1
-    {SpriteNum::Boss,5,8,{.mobj = faceTarget},StateNum::BossAtk3,0,0}, // StateNum::BossAtk2
-    {SpriteNum::Boss,6,8,{.mobj = bruisAttack},StateNum::BossRun1,0,0}, // StateNum::BossAtk3
+    {SpriteNum::Boss,0,10,{.mobj = &Mobj::look},StateNum::BossStnd2,0,0}, // StateNum::BossStnd
+    {SpriteNum::Boss,1,10,{.mobj = &Mobj::look},StateNum::BossStnd,0,0}, // StateNum::BossStnd2
+    {SpriteNum::Boss,0,3,{.mobj = &Mobj::chase},StateNum::BossRun2,0,0}, // StateNum::BossRun1
+    {SpriteNum::Boss,0,3,{.mobj = &Mobj::chase},StateNum::BossRun3,0,0}, // StateNum::BossRun2
+    {SpriteNum::Boss,1,3,{.mobj = &Mobj::chase},StateNum::BossRun4,0,0}, // StateNum::BossRun3
+    {SpriteNum::Boss,1,3,{.mobj = &Mobj::chase},StateNum::BossRun5,0,0}, // StateNum::BossRun4
+    {SpriteNum::Boss,2,3,{.mobj = &Mobj::chase},StateNum::BossRun6,0,0}, // StateNum::BossRun5
+    {SpriteNum::Boss,2,3,{.mobj = &Mobj::chase},StateNum::BossRun7,0,0}, // StateNum::BossRun6
+    {SpriteNum::Boss,3,3,{.mobj = &Mobj::chase},StateNum::BossRun8,0,0}, // StateNum::BossRun7
+    {SpriteNum::Boss,3,3,{.mobj = &Mobj::chase},StateNum::BossRun1,0,0}, // StateNum::BossRun8
+    {SpriteNum::Boss,4,8,{.mobj = &Mobj::faceTarget},StateNum::BossAtk2,0,0}, // StateNum::BossAtk1
+    {SpriteNum::Boss,5,8,{.mobj = &Mobj::faceTarget},StateNum::BossAtk3,0,0}, // StateNum::BossAtk2
+    {SpriteNum::Boss,6,8,{.mobj = &Mobj::bruisAttack},StateNum::BossRun1,0,0}, // StateNum::BossAtk3
     {SpriteNum::Boss,7,2,{},StateNum::BossPain2,0,0}, // StateNum::BossPain
-    {SpriteNum::Boss,7,2,{.mobj = pain},StateNum::BossRun1,0,0}, // StateNum::BossPain2
+    {SpriteNum::Boss,7,2,{.mobj = &Mobj::pain},StateNum::BossRun1,0,0}, // StateNum::BossPain2
     {SpriteNum::Boss,8,8,{},StateNum::BossDie2,0,0}, // StateNum::BossDie1
-    {SpriteNum::Boss,9,8,{.mobj = scream},StateNum::BossDie3,0,0}, // StateNum::BossDie2
+    {SpriteNum::Boss,9,8,{.mobj = &Mobj::scream},StateNum::BossDie3,0,0}, // StateNum::BossDie2
     {SpriteNum::Boss,10,8,{},StateNum::BossDie4,0,0}, // StateNum::BossDie3
-    {SpriteNum::Boss,11,8,{.mobj = fall},StateNum::BossDie5,0,0}, // StateNum::BossDie4
+    {SpriteNum::Boss,11,8,{.mobj = &Mobj::fall},StateNum::BossDie5,0,0}, // StateNum::BossDie4
     {SpriteNum::Boss,12,8,{},StateNum::BossDie6,0,0}, // StateNum::BossDie5
     {SpriteNum::Boss,13,8,{},StateNum::BossDie7,0,0}, // StateNum::BossDie6
-    {SpriteNum::Boss,14,-1,{.mobj = bossDeath},StateNum::Null,0,0}, // StateNum::BossDie7
+    {SpriteNum::Boss,14,-1,{.mobj = &Mobj::bossDeath},StateNum::Null,0,0}, // StateNum::BossDie7
     {SpriteNum::Boss,14,8,{},StateNum::BossRaise2,0,0}, // StateNum::BossRaise1
     {SpriteNum::Boss,13,8,{},StateNum::BossRaise3,0,0}, // StateNum::BossRaise2
     {SpriteNum::Boss,12,8,{},StateNum::BossRaise4,0,0}, // StateNum::BossRaise3
@@ -633,25 +633,25 @@ State statesData[numStates] = {
     {SpriteNum::Boss,10,8,{},StateNum::BossRaise6,0,0}, // StateNum::BossRaise5
     {SpriteNum::Boss,9,8,{},StateNum::BossRaise7,0,0}, // StateNum::BossRaise6
     {SpriteNum::Boss,8,8,{},StateNum::BossRun1,0,0}, // StateNum::BossRaise7
-    {SpriteNum::Bos2,0,10,{.mobj = look},StateNum::Bos2Stnd2,0,0}, // StateNum::Bos2Stnd
-    {SpriteNum::Bos2,1,10,{.mobj = look},StateNum::Bos2Stnd,0,0}, // StateNum::Bos2Stnd2
-    {SpriteNum::Bos2,0,3,{.mobj = chase},StateNum::Bos2Run2,0,0}, // StateNum::Bos2Run1
-    {SpriteNum::Bos2,0,3,{.mobj = chase},StateNum::Bos2Run3,0,0}, // StateNum::Bos2Run2
-    {SpriteNum::Bos2,1,3,{.mobj = chase},StateNum::Bos2Run4,0,0}, // StateNum::Bos2Run3
-    {SpriteNum::Bos2,1,3,{.mobj = chase},StateNum::Bos2Run5,0,0}, // StateNum::Bos2Run4
-    {SpriteNum::Bos2,2,3,{.mobj = chase},StateNum::Bos2Run6,0,0}, // StateNum::Bos2Run5
-    {SpriteNum::Bos2,2,3,{.mobj = chase},StateNum::Bos2Run7,0,0}, // StateNum::Bos2Run6
-    {SpriteNum::Bos2,3,3,{.mobj = chase},StateNum::Bos2Run8,0,0}, // StateNum::Bos2Run7
-    {SpriteNum::Bos2,3,3,{.mobj = chase},StateNum::Bos2Run1,0,0}, // StateNum::Bos2Run8
-    {SpriteNum::Bos2,4,8,{.mobj = faceTarget},StateNum::Bos2Atk2,0,0}, // StateNum::Bos2Atk1
-    {SpriteNum::Bos2,5,8,{.mobj = faceTarget},StateNum::Bos2Atk3,0,0}, // StateNum::Bos2Atk2
-    {SpriteNum::Bos2,6,8,{.mobj = bruisAttack},StateNum::Bos2Run1,0,0}, // StateNum::Bos2Atk3
+    {SpriteNum::Bos2,0,10,{.mobj = &Mobj::look},StateNum::Bos2Stnd2,0,0}, // StateNum::Bos2Stnd
+    {SpriteNum::Bos2,1,10,{.mobj = &Mobj::look},StateNum::Bos2Stnd,0,0}, // StateNum::Bos2Stnd2
+    {SpriteNum::Bos2,0,3,{.mobj = &Mobj::chase},StateNum::Bos2Run2,0,0}, // StateNum::Bos2Run1
+    {SpriteNum::Bos2,0,3,{.mobj = &Mobj::chase},StateNum::Bos2Run3,0,0}, // StateNum::Bos2Run2
+    {SpriteNum::Bos2,1,3,{.mobj = &Mobj::chase},StateNum::Bos2Run4,0,0}, // StateNum::Bos2Run3
+    {SpriteNum::Bos2,1,3,{.mobj = &Mobj::chase},StateNum::Bos2Run5,0,0}, // StateNum::Bos2Run4
+    {SpriteNum::Bos2,2,3,{.mobj = &Mobj::chase},StateNum::Bos2Run6,0,0}, // StateNum::Bos2Run5
+    {SpriteNum::Bos2,2,3,{.mobj = &Mobj::chase},StateNum::Bos2Run7,0,0}, // StateNum::Bos2Run6
+    {SpriteNum::Bos2,3,3,{.mobj = &Mobj::chase},StateNum::Bos2Run8,0,0}, // StateNum::Bos2Run7
+    {SpriteNum::Bos2,3,3,{.mobj = &Mobj::chase},StateNum::Bos2Run1,0,0}, // StateNum::Bos2Run8
+    {SpriteNum::Bos2,4,8,{.mobj = &Mobj::faceTarget},StateNum::Bos2Atk2,0,0}, // StateNum::Bos2Atk1
+    {SpriteNum::Bos2,5,8,{.mobj = &Mobj::faceTarget},StateNum::Bos2Atk3,0,0}, // StateNum::Bos2Atk2
+    {SpriteNum::Bos2,6,8,{.mobj = &Mobj::bruisAttack},StateNum::Bos2Run1,0,0}, // StateNum::Bos2Atk3
     {SpriteNum::Bos2,7,2,{},StateNum::Bos2Pain2,0,0}, // StateNum::Bos2Pain
-    {SpriteNum::Bos2,7,2,{.mobj = pain},StateNum::Bos2Run1,0,0}, // StateNum::Bos2Pain2
+    {SpriteNum::Bos2,7,2,{.mobj = &Mobj::pain},StateNum::Bos2Run1,0,0}, // StateNum::Bos2Pain2
     {SpriteNum::Bos2,8,8,{},StateNum::Bos2Die2,0,0}, // StateNum::Bos2Die1
-    {SpriteNum::Bos2,9,8,{.mobj = scream},StateNum::Bos2Die3,0,0}, // StateNum::Bos2Die2
+    {SpriteNum::Bos2,9,8,{.mobj = &Mobj::scream},StateNum::Bos2Die3,0,0}, // StateNum::Bos2Die2
     {SpriteNum::Bos2,10,8,{},StateNum::Bos2Die4,0,0}, // StateNum::Bos2Die3
-    {SpriteNum::Bos2,11,8,{.mobj = fall},StateNum::Bos2Die5,0,0}, // StateNum::Bos2Die4
+    {SpriteNum::Bos2,11,8,{.mobj = &Mobj::fall},StateNum::Bos2Die5,0,0}, // StateNum::Bos2Die4
     {SpriteNum::Bos2,12,8,{},StateNum::Bos2Die6,0,0}, // StateNum::Bos2Die5
     {SpriteNum::Bos2,13,8,{},StateNum::Bos2Die7,0,0}, // StateNum::Bos2Die6
     {SpriteNum::Bos2,14,-1,{},StateNum::Null,0,0}, // StateNum::Bos2Die7
@@ -662,44 +662,44 @@ State statesData[numStates] = {
     {SpriteNum::Bos2,10,8,{},StateNum::Bos2Raise6,0,0}, // StateNum::Bos2Raise5
     {SpriteNum::Bos2,9,8,{},StateNum::Bos2Raise7,0,0}, // StateNum::Bos2Raise6
     {SpriteNum::Bos2,8,8,{},StateNum::Bos2Run1,0,0}, // StateNum::Bos2Raise7
-    {SpriteNum::Skul,32768,10,{.mobj = look},StateNum::SkullStnd2,0,0}, // StateNum::SkullStnd
-    {SpriteNum::Skul,32769,10,{.mobj = look},StateNum::SkullStnd,0,0}, // StateNum::SkullStnd2
-    {SpriteNum::Skul,32768,6,{.mobj = chase},StateNum::SkullRun2,0,0}, // StateNum::SkullRun1
-    {SpriteNum::Skul,32769,6,{.mobj = chase},StateNum::SkullRun1,0,0}, // StateNum::SkullRun2
-    {SpriteNum::Skul,32770,10,{.mobj = faceTarget},StateNum::SkullAtk2,0,0}, // StateNum::SkullAtk1
-    {SpriteNum::Skul,32771,4,{.mobj = skullAttack},StateNum::SkullAtk3,0,0}, // StateNum::SkullAtk2
+    {SpriteNum::Skul,32768,10,{.mobj = &Mobj::look},StateNum::SkullStnd2,0,0}, // StateNum::SkullStnd
+    {SpriteNum::Skul,32769,10,{.mobj = &Mobj::look},StateNum::SkullStnd,0,0}, // StateNum::SkullStnd2
+    {SpriteNum::Skul,32768,6,{.mobj = &Mobj::chase},StateNum::SkullRun2,0,0}, // StateNum::SkullRun1
+    {SpriteNum::Skul,32769,6,{.mobj = &Mobj::chase},StateNum::SkullRun1,0,0}, // StateNum::SkullRun2
+    {SpriteNum::Skul,32770,10,{.mobj = &Mobj::faceTarget},StateNum::SkullAtk2,0,0}, // StateNum::SkullAtk1
+    {SpriteNum::Skul,32771,4,{.mobj = &Mobj::skullAttack},StateNum::SkullAtk3,0,0}, // StateNum::SkullAtk2
     {SpriteNum::Skul,32770,4,{},StateNum::SkullAtk4,0,0}, // StateNum::SkullAtk3
     {SpriteNum::Skul,32771,4,{},StateNum::SkullAtk3,0,0}, // StateNum::SkullAtk4
     {SpriteNum::Skul,32772,3,{},StateNum::SkullPain2,0,0}, // StateNum::SkullPain
-    {SpriteNum::Skul,32772,3,{.mobj = pain},StateNum::SkullRun1,0,0}, // StateNum::SkullPain2
+    {SpriteNum::Skul,32772,3,{.mobj = &Mobj::pain},StateNum::SkullRun1,0,0}, // StateNum::SkullPain2
     {SpriteNum::Skul,32773,6,{},StateNum::SkullDie2,0,0}, // StateNum::SkullDie1
-    {SpriteNum::Skul,32774,6,{.mobj = scream},StateNum::SkullDie3,0,0}, // StateNum::SkullDie2
+    {SpriteNum::Skul,32774,6,{.mobj = &Mobj::scream},StateNum::SkullDie3,0,0}, // StateNum::SkullDie2
     {SpriteNum::Skul,32775,6,{},StateNum::SkullDie4,0,0}, // StateNum::SkullDie3
-    {SpriteNum::Skul,32776,6,{.mobj = fall},StateNum::SkullDie5,0,0}, // StateNum::SkullDie4
+    {SpriteNum::Skul,32776,6,{.mobj = &Mobj::fall},StateNum::SkullDie5,0,0}, // StateNum::SkullDie4
     {SpriteNum::Skul,9,6,{},StateNum::SkullDie6,0,0}, // StateNum::SkullDie5
     {SpriteNum::Skul,10,6,{},StateNum::Null,0,0}, // StateNum::SkullDie6
-    {SpriteNum::Spid,0,10,{.mobj = look},StateNum::SpidStnd2,0,0}, // StateNum::SpidStnd
-    {SpriteNum::Spid,1,10,{.mobj = look},StateNum::SpidStnd,0,0}, // StateNum::SpidStnd2
-    {SpriteNum::Spid,0,3,{.mobj = metal},StateNum::SpidRun2,0,0}, // StateNum::SpidRun1
-    {SpriteNum::Spid,0,3,{.mobj = chase},StateNum::SpidRun3,0,0}, // StateNum::SpidRun2
-    {SpriteNum::Spid,1,3,{.mobj = chase},StateNum::SpidRun4,0,0}, // StateNum::SpidRun3
-    {SpriteNum::Spid,1,3,{.mobj = chase},StateNum::SpidRun5,0,0}, // StateNum::SpidRun4
-    {SpriteNum::Spid,2,3,{.mobj = metal},StateNum::SpidRun6,0,0}, // StateNum::SpidRun5
-    {SpriteNum::Spid,2,3,{.mobj = chase},StateNum::SpidRun7,0,0}, // StateNum::SpidRun6
-    {SpriteNum::Spid,3,3,{.mobj = chase},StateNum::SpidRun8,0,0}, // StateNum::SpidRun7
-    {SpriteNum::Spid,3,3,{.mobj = chase},StateNum::SpidRun9,0,0}, // StateNum::SpidRun8
-    {SpriteNum::Spid,4,3,{.mobj = metal},StateNum::SpidRun10,0,0}, // StateNum::SpidRun9
-    {SpriteNum::Spid,4,3,{.mobj = chase},StateNum::SpidRun11,0,0}, // StateNum::SpidRun10
-    {SpriteNum::Spid,5,3,{.mobj = chase},StateNum::SpidRun12,0,0}, // StateNum::SpidRun11
-    {SpriteNum::Spid,5,3,{.mobj = chase},StateNum::SpidRun1,0,0}, // StateNum::SpidRun12
-    {SpriteNum::Spid,32768,20,{.mobj = faceTarget},StateNum::SpidAtk2,0,0}, // StateNum::SpidAtk1
-    {SpriteNum::Spid,32774,4,{.mobj = sPosAttack},StateNum::SpidAtk3,0,0}, // StateNum::SpidAtk2
-    {SpriteNum::Spid,32775,4,{.mobj = sPosAttack},StateNum::SpidAtk4,0,0}, // StateNum::SpidAtk3
-    {SpriteNum::Spid,32775,1,{.mobj = spidRefire},StateNum::SpidAtk2,0,0}, // StateNum::SpidAtk4
+    {SpriteNum::Spid,0,10,{.mobj = &Mobj::look},StateNum::SpidStnd2,0,0}, // StateNum::SpidStnd
+    {SpriteNum::Spid,1,10,{.mobj = &Mobj::look},StateNum::SpidStnd,0,0}, // StateNum::SpidStnd2
+    {SpriteNum::Spid,0,3,{.mobj = &Mobj::metal},StateNum::SpidRun2,0,0}, // StateNum::SpidRun1
+    {SpriteNum::Spid,0,3,{.mobj = &Mobj::chase},StateNum::SpidRun3,0,0}, // StateNum::SpidRun2
+    {SpriteNum::Spid,1,3,{.mobj = &Mobj::chase},StateNum::SpidRun4,0,0}, // StateNum::SpidRun3
+    {SpriteNum::Spid,1,3,{.mobj = &Mobj::chase},StateNum::SpidRun5,0,0}, // StateNum::SpidRun4
+    {SpriteNum::Spid,2,3,{.mobj = &Mobj::metal},StateNum::SpidRun6,0,0}, // StateNum::SpidRun5
+    {SpriteNum::Spid,2,3,{.mobj = &Mobj::chase},StateNum::SpidRun7,0,0}, // StateNum::SpidRun6
+    {SpriteNum::Spid,3,3,{.mobj = &Mobj::chase},StateNum::SpidRun8,0,0}, // StateNum::SpidRun7
+    {SpriteNum::Spid,3,3,{.mobj = &Mobj::chase},StateNum::SpidRun9,0,0}, // StateNum::SpidRun8
+    {SpriteNum::Spid,4,3,{.mobj = &Mobj::metal},StateNum::SpidRun10,0,0}, // StateNum::SpidRun9
+    {SpriteNum::Spid,4,3,{.mobj = &Mobj::chase},StateNum::SpidRun11,0,0}, // StateNum::SpidRun10
+    {SpriteNum::Spid,5,3,{.mobj = &Mobj::chase},StateNum::SpidRun12,0,0}, // StateNum::SpidRun11
+    {SpriteNum::Spid,5,3,{.mobj = &Mobj::chase},StateNum::SpidRun1,0,0}, // StateNum::SpidRun12
+    {SpriteNum::Spid,32768,20,{.mobj = &Mobj::faceTarget},StateNum::SpidAtk2,0,0}, // StateNum::SpidAtk1
+    {SpriteNum::Spid,32774,4,{.mobj = &Mobj::sPosAttack},StateNum::SpidAtk3,0,0}, // StateNum::SpidAtk2
+    {SpriteNum::Spid,32775,4,{.mobj = &Mobj::sPosAttack},StateNum::SpidAtk4,0,0}, // StateNum::SpidAtk3
+    {SpriteNum::Spid,32775,1,{.mobj = &Mobj::spidRefire},StateNum::SpidAtk2,0,0}, // StateNum::SpidAtk4
     {SpriteNum::Spid,8,3,{},StateNum::SpidPain2,0,0}, // StateNum::SpidPain
-    {SpriteNum::Spid,8,3,{.mobj = pain},StateNum::SpidRun1,0,0}, // StateNum::SpidPain2
-    {SpriteNum::Spid,9,20,{.mobj = scream},StateNum::SpidDie2,0,0}, // StateNum::SpidDie1
-    {SpriteNum::Spid,10,10,{.mobj = fall},StateNum::SpidDie3,0,0}, // StateNum::SpidDie2
+    {SpriteNum::Spid,8,3,{.mobj = &Mobj::pain},StateNum::SpidRun1,0,0}, // StateNum::SpidPain2
+    {SpriteNum::Spid,9,20,{.mobj = &Mobj::scream},StateNum::SpidDie2,0,0}, // StateNum::SpidDie1
+    {SpriteNum::Spid,10,10,{.mobj = &Mobj::fall},StateNum::SpidDie3,0,0}, // StateNum::SpidDie2
     {SpriteNum::Spid,11,10,{},StateNum::SpidDie4,0,0}, // StateNum::SpidDie3
     {SpriteNum::Spid,12,10,{},StateNum::SpidDie5,0,0}, // StateNum::SpidDie4
     {SpriteNum::Spid,13,10,{},StateNum::SpidDie6,0,0}, // StateNum::SpidDie5
@@ -708,35 +708,35 @@ State statesData[numStates] = {
     {SpriteNum::Spid,16,10,{},StateNum::SpidDie9,0,0}, // StateNum::SpidDie8
     {SpriteNum::Spid,17,10,{},StateNum::SpidDie10,0,0}, // StateNum::SpidDie9
     {SpriteNum::Spid,18,30,{},StateNum::SpidDie11,0,0}, // StateNum::SpidDie10
-    {SpriteNum::Spid,18,-1,{.mobj = bossDeath},StateNum::Null,0,0}, // StateNum::SpidDie11
-    {SpriteNum::Bspi,0,10,{.mobj = look},StateNum::BspiStnd2,0,0}, // StateNum::BspiStnd
-    {SpriteNum::Bspi,1,10,{.mobj = look},StateNum::BspiStnd,0,0}, // StateNum::BspiStnd2
+    {SpriteNum::Spid,18,-1,{.mobj = &Mobj::bossDeath},StateNum::Null,0,0}, // StateNum::SpidDie11
+    {SpriteNum::Bspi,0,10,{.mobj = &Mobj::look},StateNum::BspiStnd2,0,0}, // StateNum::BspiStnd
+    {SpriteNum::Bspi,1,10,{.mobj = &Mobj::look},StateNum::BspiStnd,0,0}, // StateNum::BspiStnd2
     {SpriteNum::Bspi,0,20,{},StateNum::BspiRun1,0,0}, // StateNum::BspiSight
-    {SpriteNum::Bspi,0,3,{.mobj = babyMetal},StateNum::BspiRun2,0,0}, // StateNum::BspiRun1
-    {SpriteNum::Bspi,0,3,{.mobj = chase},StateNum::BspiRun3,0,0}, // StateNum::BspiRun2
-    {SpriteNum::Bspi,1,3,{.mobj = chase},StateNum::BspiRun4,0,0}, // StateNum::BspiRun3
-    {SpriteNum::Bspi,1,3,{.mobj = chase},StateNum::BspiRun5,0,0}, // StateNum::BspiRun4
-    {SpriteNum::Bspi,2,3,{.mobj = chase},StateNum::BspiRun6,0,0}, // StateNum::BspiRun5
-    {SpriteNum::Bspi,2,3,{.mobj = chase},StateNum::BspiRun7,0,0}, // StateNum::BspiRun6
-    {SpriteNum::Bspi,3,3,{.mobj = babyMetal},StateNum::BspiRun8,0,0}, // StateNum::BspiRun7
-    {SpriteNum::Bspi,3,3,{.mobj = chase},StateNum::BspiRun9,0,0}, // StateNum::BspiRun8
-    {SpriteNum::Bspi,4,3,{.mobj = chase},StateNum::BspiRun10,0,0}, // StateNum::BspiRun9
-    {SpriteNum::Bspi,4,3,{.mobj = chase},StateNum::BspiRun11,0,0}, // StateNum::BspiRun10
-    {SpriteNum::Bspi,5,3,{.mobj = chase},StateNum::BspiRun12,0,0}, // StateNum::BspiRun11
-    {SpriteNum::Bspi,5,3,{.mobj = chase},StateNum::BspiRun1,0,0}, // StateNum::BspiRun12
-    {SpriteNum::Bspi,32768,20,{.mobj = faceTarget},StateNum::BspiAtk2,0,0}, // StateNum::BspiAtk1
-    {SpriteNum::Bspi,32774,4,{.mobj = bspiAttack},StateNum::BspiAtk3,0,0}, // StateNum::BspiAtk2
+    {SpriteNum::Bspi,0,3,{.mobj = &Mobj::babyMetal},StateNum::BspiRun2,0,0}, // StateNum::BspiRun1
+    {SpriteNum::Bspi,0,3,{.mobj = &Mobj::chase},StateNum::BspiRun3,0,0}, // StateNum::BspiRun2
+    {SpriteNum::Bspi,1,3,{.mobj = &Mobj::chase},StateNum::BspiRun4,0,0}, // StateNum::BspiRun3
+    {SpriteNum::Bspi,1,3,{.mobj = &Mobj::chase},StateNum::BspiRun5,0,0}, // StateNum::BspiRun4
+    {SpriteNum::Bspi,2,3,{.mobj = &Mobj::chase},StateNum::BspiRun6,0,0}, // StateNum::BspiRun5
+    {SpriteNum::Bspi,2,3,{.mobj = &Mobj::chase},StateNum::BspiRun7,0,0}, // StateNum::BspiRun6
+    {SpriteNum::Bspi,3,3,{.mobj = &Mobj::babyMetal},StateNum::BspiRun8,0,0}, // StateNum::BspiRun7
+    {SpriteNum::Bspi,3,3,{.mobj = &Mobj::chase},StateNum::BspiRun9,0,0}, // StateNum::BspiRun8
+    {SpriteNum::Bspi,4,3,{.mobj = &Mobj::chase},StateNum::BspiRun10,0,0}, // StateNum::BspiRun9
+    {SpriteNum::Bspi,4,3,{.mobj = &Mobj::chase},StateNum::BspiRun11,0,0}, // StateNum::BspiRun10
+    {SpriteNum::Bspi,5,3,{.mobj = &Mobj::chase},StateNum::BspiRun12,0,0}, // StateNum::BspiRun11
+    {SpriteNum::Bspi,5,3,{.mobj = &Mobj::chase},StateNum::BspiRun1,0,0}, // StateNum::BspiRun12
+    {SpriteNum::Bspi,32768,20,{.mobj = &Mobj::faceTarget},StateNum::BspiAtk2,0,0}, // StateNum::BspiAtk1
+    {SpriteNum::Bspi,32774,4,{.mobj = &Mobj::bspiAttack},StateNum::BspiAtk3,0,0}, // StateNum::BspiAtk2
     {SpriteNum::Bspi,32775,4,{},StateNum::BspiAtk4,0,0}, // StateNum::BspiAtk3
-    {SpriteNum::Bspi,32775,1,{.mobj = spidRefire},StateNum::BspiAtk2,0,0}, // StateNum::BspiAtk4
+    {SpriteNum::Bspi,32775,1,{.mobj = &Mobj::spidRefire},StateNum::BspiAtk2,0,0}, // StateNum::BspiAtk4
     {SpriteNum::Bspi,8,3,{},StateNum::BspiPain2,0,0}, // StateNum::BspiPain
-    {SpriteNum::Bspi,8,3,{.mobj = pain},StateNum::BspiRun1,0,0}, // StateNum::BspiPain2
-    {SpriteNum::Bspi,9,20,{.mobj = scream},StateNum::BspiDie2,0,0}, // StateNum::BspiDie1
-    {SpriteNum::Bspi,10,7,{.mobj = fall},StateNum::BspiDie3,0,0}, // StateNum::BspiDie2
+    {SpriteNum::Bspi,8,3,{.mobj = &Mobj::pain},StateNum::BspiRun1,0,0}, // StateNum::BspiPain2
+    {SpriteNum::Bspi,9,20,{.mobj = &Mobj::scream},StateNum::BspiDie2,0,0}, // StateNum::BspiDie1
+    {SpriteNum::Bspi,10,7,{.mobj = &Mobj::fall},StateNum::BspiDie3,0,0}, // StateNum::BspiDie2
     {SpriteNum::Bspi,11,7,{},StateNum::BspiDie4,0,0}, // StateNum::BspiDie3
     {SpriteNum::Bspi,12,7,{},StateNum::BspiDie5,0,0}, // StateNum::BspiDie4
     {SpriteNum::Bspi,13,7,{},StateNum::BspiDie6,0,0}, // StateNum::BspiDie5
     {SpriteNum::Bspi,14,7,{},StateNum::BspiDie7,0,0}, // StateNum::BspiDie6
-    {SpriteNum::Bspi,15,-1,{.mobj = bossDeath},StateNum::Null,0,0}, // StateNum::BspiDie7
+    {SpriteNum::Bspi,15,-1,{.mobj = &Mobj::bossDeath},StateNum::Null,0,0}, // StateNum::BspiDie7
     {SpriteNum::Bspi,15,5,{},StateNum::BspiRaise2,0,0}, // StateNum::BspiRaise1
     {SpriteNum::Bspi,14,5,{},StateNum::BspiRaise3,0,0}, // StateNum::BspiRaise2
     {SpriteNum::Bspi,13,5,{},StateNum::BspiRaise4,0,0}, // StateNum::BspiRaise3
@@ -751,51 +751,51 @@ State statesData[numStates] = {
     {SpriteNum::Apbx,32770,5,{},StateNum::ArachPlex4,0,0}, // StateNum::ArachPlex3
     {SpriteNum::Apbx,32771,5,{},StateNum::ArachPlex5,0,0}, // StateNum::ArachPlex4
     {SpriteNum::Apbx,32772,5,{},StateNum::Null,0,0}, // StateNum::ArachPlex5
-    {SpriteNum::Cybr,0,10,{.mobj = look},StateNum::CyberStnd2,0,0}, // StateNum::CyberStnd
-    {SpriteNum::Cybr,1,10,{.mobj = look},StateNum::CyberStnd,0,0}, // StateNum::CyberStnd2
-    {SpriteNum::Cybr,0,3,{.mobj = hoof},StateNum::CyberRun2,0,0}, // StateNum::CyberRun1
-    {SpriteNum::Cybr,0,3,{.mobj = chase},StateNum::CyberRun3,0,0}, // StateNum::CyberRun2
-    {SpriteNum::Cybr,1,3,{.mobj = chase},StateNum::CyberRun4,0,0}, // StateNum::CyberRun3
-    {SpriteNum::Cybr,1,3,{.mobj = chase},StateNum::CyberRun5,0,0}, // StateNum::CyberRun4
-    {SpriteNum::Cybr,2,3,{.mobj = chase},StateNum::CyberRun6,0,0}, // StateNum::CyberRun5
-    {SpriteNum::Cybr,2,3,{.mobj = chase},StateNum::CyberRun7,0,0}, // StateNum::CyberRun6
-    {SpriteNum::Cybr,3,3,{.mobj = metal},StateNum::CyberRun8,0,0}, // StateNum::CyberRun7
-    {SpriteNum::Cybr,3,3,{.mobj = chase},StateNum::CyberRun1,0,0}, // StateNum::CyberRun8
-    {SpriteNum::Cybr,4,6,{.mobj = faceTarget},StateNum::CyberAtk2,0,0}, // StateNum::CyberAtk1
-    {SpriteNum::Cybr,5,12,{.mobj = cyberAttack},StateNum::CyberAtk3,0,0}, // StateNum::CyberAtk2
-    {SpriteNum::Cybr,4,12,{.mobj = faceTarget},StateNum::CyberAtk4,0,0}, // StateNum::CyberAtk3
-    {SpriteNum::Cybr,5,12,{.mobj = cyberAttack},StateNum::CyberAtk5,0,0}, // StateNum::CyberAtk4
-    {SpriteNum::Cybr,4,12,{.mobj = faceTarget},StateNum::CyberAtk6,0,0}, // StateNum::CyberAtk5
-    {SpriteNum::Cybr,5,12,{.mobj = cyberAttack},StateNum::CyberRun1,0,0}, // StateNum::CyberAtk6
-    {SpriteNum::Cybr,6,10,{.mobj = pain},StateNum::CyberRun1,0,0}, // StateNum::CyberPain
+    {SpriteNum::Cybr,0,10,{.mobj = &Mobj::look},StateNum::CyberStnd2,0,0}, // StateNum::CyberStnd
+    {SpriteNum::Cybr,1,10,{.mobj = &Mobj::look},StateNum::CyberStnd,0,0}, // StateNum::CyberStnd2
+    {SpriteNum::Cybr,0,3,{.mobj = &Mobj::hoof},StateNum::CyberRun2,0,0}, // StateNum::CyberRun1
+    {SpriteNum::Cybr,0,3,{.mobj = &Mobj::chase},StateNum::CyberRun3,0,0}, // StateNum::CyberRun2
+    {SpriteNum::Cybr,1,3,{.mobj = &Mobj::chase},StateNum::CyberRun4,0,0}, // StateNum::CyberRun3
+    {SpriteNum::Cybr,1,3,{.mobj = &Mobj::chase},StateNum::CyberRun5,0,0}, // StateNum::CyberRun4
+    {SpriteNum::Cybr,2,3,{.mobj = &Mobj::chase},StateNum::CyberRun6,0,0}, // StateNum::CyberRun5
+    {SpriteNum::Cybr,2,3,{.mobj = &Mobj::chase},StateNum::CyberRun7,0,0}, // StateNum::CyberRun6
+    {SpriteNum::Cybr,3,3,{.mobj = &Mobj::metal},StateNum::CyberRun8,0,0}, // StateNum::CyberRun7
+    {SpriteNum::Cybr,3,3,{.mobj = &Mobj::chase},StateNum::CyberRun1,0,0}, // StateNum::CyberRun8
+    {SpriteNum::Cybr,4,6,{.mobj = &Mobj::faceTarget},StateNum::CyberAtk2,0,0}, // StateNum::CyberAtk1
+    {SpriteNum::Cybr,5,12,{.mobj = &Mobj::cyberAttack},StateNum::CyberAtk3,0,0}, // StateNum::CyberAtk2
+    {SpriteNum::Cybr,4,12,{.mobj = &Mobj::faceTarget},StateNum::CyberAtk4,0,0}, // StateNum::CyberAtk3
+    {SpriteNum::Cybr,5,12,{.mobj = &Mobj::cyberAttack},StateNum::CyberAtk5,0,0}, // StateNum::CyberAtk4
+    {SpriteNum::Cybr,4,12,{.mobj = &Mobj::faceTarget},StateNum::CyberAtk6,0,0}, // StateNum::CyberAtk5
+    {SpriteNum::Cybr,5,12,{.mobj = &Mobj::cyberAttack},StateNum::CyberRun1,0,0}, // StateNum::CyberAtk6
+    {SpriteNum::Cybr,6,10,{.mobj = &Mobj::pain},StateNum::CyberRun1,0,0}, // StateNum::CyberPain
     {SpriteNum::Cybr,7,10,{},StateNum::CyberDie2,0,0}, // StateNum::CyberDie1
-    {SpriteNum::Cybr,8,10,{.mobj = scream},StateNum::CyberDie3,0,0}, // StateNum::CyberDie2
+    {SpriteNum::Cybr,8,10,{.mobj = &Mobj::scream},StateNum::CyberDie3,0,0}, // StateNum::CyberDie2
     {SpriteNum::Cybr,9,10,{},StateNum::CyberDie4,0,0}, // StateNum::CyberDie3
     {SpriteNum::Cybr,10,10,{},StateNum::CyberDie5,0,0}, // StateNum::CyberDie4
     {SpriteNum::Cybr,11,10,{},StateNum::CyberDie6,0,0}, // StateNum::CyberDie5
-    {SpriteNum::Cybr,12,10,{.mobj = fall},StateNum::CyberDie7,0,0}, // StateNum::CyberDie6
+    {SpriteNum::Cybr,12,10,{.mobj = &Mobj::fall},StateNum::CyberDie7,0,0}, // StateNum::CyberDie6
     {SpriteNum::Cybr,13,10,{},StateNum::CyberDie8,0,0}, // StateNum::CyberDie7
     {SpriteNum::Cybr,14,10,{},StateNum::CyberDie9,0,0}, // StateNum::CyberDie8
     {SpriteNum::Cybr,15,30,{},StateNum::CyberDie10,0,0}, // StateNum::CyberDie9
-    {SpriteNum::Cybr,15,-1,{.mobj = bossDeath},StateNum::Null,0,0}, // StateNum::CyberDie10
-    {SpriteNum::Pain,0,10,{.mobj = look},StateNum::PainStnd,0,0}, // StateNum::PainStnd
-    {SpriteNum::Pain,0,3,{.mobj = chase},StateNum::PainRun2,0,0}, // StateNum::PainRun1
-    {SpriteNum::Pain,0,3,{.mobj = chase},StateNum::PainRun3,0,0}, // StateNum::PainRun2
-    {SpriteNum::Pain,1,3,{.mobj = chase},StateNum::PainRun4,0,0}, // StateNum::PainRun3
-    {SpriteNum::Pain,1,3,{.mobj = chase},StateNum::PainRun5,0,0}, // StateNum::PainRun4
-    {SpriteNum::Pain,2,3,{.mobj = chase},StateNum::PainRun6,0,0}, // StateNum::PainRun5
-    {SpriteNum::Pain,2,3,{.mobj = chase},StateNum::PainRun1,0,0}, // StateNum::PainRun6
-    {SpriteNum::Pain,3,5,{.mobj = faceTarget},StateNum::PainAtk2,0,0}, // StateNum::PainAtk1
-    {SpriteNum::Pain,4,5,{.mobj = faceTarget},StateNum::PainAtk3,0,0}, // StateNum::PainAtk2
-    {SpriteNum::Pain,32773,5,{.mobj = faceTarget},StateNum::PainAtk4,0,0}, // StateNum::PainAtk3
-    {SpriteNum::Pain,32773,0,{.mobj = painAttack},StateNum::PainRun1,0,0}, // StateNum::PainAtk4
+    {SpriteNum::Cybr,15,-1,{.mobj = &Mobj::bossDeath},StateNum::Null,0,0}, // StateNum::CyberDie10
+    {SpriteNum::Pain,0,10,{.mobj = &Mobj::look},StateNum::PainStnd,0,0}, // StateNum::PainStnd
+    {SpriteNum::Pain,0,3,{.mobj = &Mobj::chase},StateNum::PainRun2,0,0}, // StateNum::PainRun1
+    {SpriteNum::Pain,0,3,{.mobj = &Mobj::chase},StateNum::PainRun3,0,0}, // StateNum::PainRun2
+    {SpriteNum::Pain,1,3,{.mobj = &Mobj::chase},StateNum::PainRun4,0,0}, // StateNum::PainRun3
+    {SpriteNum::Pain,1,3,{.mobj = &Mobj::chase},StateNum::PainRun5,0,0}, // StateNum::PainRun4
+    {SpriteNum::Pain,2,3,{.mobj = &Mobj::chase},StateNum::PainRun6,0,0}, // StateNum::PainRun5
+    {SpriteNum::Pain,2,3,{.mobj = &Mobj::chase},StateNum::PainRun1,0,0}, // StateNum::PainRun6
+    {SpriteNum::Pain,3,5,{.mobj = &Mobj::faceTarget},StateNum::PainAtk2,0,0}, // StateNum::PainAtk1
+    {SpriteNum::Pain,4,5,{.mobj = &Mobj::faceTarget},StateNum::PainAtk3,0,0}, // StateNum::PainAtk2
+    {SpriteNum::Pain,32773,5,{.mobj = &Mobj::faceTarget},StateNum::PainAtk4,0,0}, // StateNum::PainAtk3
+    {SpriteNum::Pain,32773,0,{.mobj = &Mobj::painAttack},StateNum::PainRun1,0,0}, // StateNum::PainAtk4
     {SpriteNum::Pain,6,6,{},StateNum::PainPain2,0,0}, // StateNum::PainPain
-    {SpriteNum::Pain,6,6,{.mobj = pain},StateNum::PainRun1,0,0}, // StateNum::PainPain2
+    {SpriteNum::Pain,6,6,{.mobj = &Mobj::pain},StateNum::PainRun1,0,0}, // StateNum::PainPain2
     {SpriteNum::Pain,32775,8,{},StateNum::PainDie2,0,0}, // StateNum::PainDie1
-    {SpriteNum::Pain,32776,8,{.mobj = scream},StateNum::PainDie3,0,0}, // StateNum::PainDie2
+    {SpriteNum::Pain,32776,8,{.mobj = &Mobj::scream},StateNum::PainDie3,0,0}, // StateNum::PainDie2
     {SpriteNum::Pain,32777,8,{},StateNum::PainDie4,0,0}, // StateNum::PainDie3
     {SpriteNum::Pain,32778,8,{},StateNum::PainDie5,0,0}, // StateNum::PainDie4
-    {SpriteNum::Pain,32779,8,{.mobj = painDie},StateNum::PainDie6,0,0}, // StateNum::PainDie5
+    {SpriteNum::Pain,32779,8,{.mobj = &Mobj::painDie},StateNum::PainDie6,0,0}, // StateNum::PainDie5
     {SpriteNum::Pain,32780,8,{},StateNum::Null,0,0}, // StateNum::PainDie6
     {SpriteNum::Pain,12,8,{},StateNum::PainRaise2,0,0}, // StateNum::PainRaise1
     {SpriteNum::Pain,11,8,{},StateNum::PainRaise3,0,0}, // StateNum::PainRaise2
@@ -803,32 +803,32 @@ State statesData[numStates] = {
     {SpriteNum::Pain,9,8,{},StateNum::PainRaise5,0,0}, // StateNum::PainRaise4
     {SpriteNum::Pain,8,8,{},StateNum::PainRaise6,0,0}, // StateNum::PainRaise5
     {SpriteNum::Pain,7,8,{},StateNum::PainRun1,0,0}, // StateNum::PainRaise6
-    {SpriteNum::Sswv,0,10,{.mobj = look},StateNum::SswvStnd2,0,0}, // StateNum::SswvStnd
-    {SpriteNum::Sswv,1,10,{.mobj = look},StateNum::SswvStnd,0,0}, // StateNum::SswvStnd2
-    {SpriteNum::Sswv,0,3,{.mobj = chase},StateNum::SswvRun2,0,0}, // StateNum::SswvRun1
-    {SpriteNum::Sswv,0,3,{.mobj = chase},StateNum::SswvRun3,0,0}, // StateNum::SswvRun2
-    {SpriteNum::Sswv,1,3,{.mobj = chase},StateNum::SswvRun4,0,0}, // StateNum::SswvRun3
-    {SpriteNum::Sswv,1,3,{.mobj = chase},StateNum::SswvRun5,0,0}, // StateNum::SswvRun4
-    {SpriteNum::Sswv,2,3,{.mobj = chase},StateNum::SswvRun6,0,0}, // StateNum::SswvRun5
-    {SpriteNum::Sswv,2,3,{.mobj = chase},StateNum::SswvRun7,0,0}, // StateNum::SswvRun6
-    {SpriteNum::Sswv,3,3,{.mobj = chase},StateNum::SswvRun8,0,0}, // StateNum::SswvRun7
-    {SpriteNum::Sswv,3,3,{.mobj = chase},StateNum::SswvRun1,0,0}, // StateNum::SswvRun8
-    {SpriteNum::Sswv,4,10,{.mobj = faceTarget},StateNum::SswvAtk2,0,0}, // StateNum::SswvAtk1
-    {SpriteNum::Sswv,5,10,{.mobj = faceTarget},StateNum::SswvAtk3,0,0}, // StateNum::SswvAtk2
-    {SpriteNum::Sswv,32774,4,{.mobj = cPosAttack},StateNum::SswvAtk4,0,0}, // StateNum::SswvAtk3
-    {SpriteNum::Sswv,5,6,{.mobj = faceTarget},StateNum::SswvAtk5,0,0}, // StateNum::SswvAtk4
-    {SpriteNum::Sswv,32774,4,{.mobj = cPosAttack},StateNum::SswvAtk6,0,0}, // StateNum::SswvAtk5
-    {SpriteNum::Sswv,5,1,{.mobj = cPosRefire},StateNum::SswvAtk2,0,0}, // StateNum::SswvAtk6
+    {SpriteNum::Sswv,0,10,{.mobj = &Mobj::look},StateNum::SswvStnd2,0,0}, // StateNum::SswvStnd
+    {SpriteNum::Sswv,1,10,{.mobj = &Mobj::look},StateNum::SswvStnd,0,0}, // StateNum::SswvStnd2
+    {SpriteNum::Sswv,0,3,{.mobj = &Mobj::chase},StateNum::SswvRun2,0,0}, // StateNum::SswvRun1
+    {SpriteNum::Sswv,0,3,{.mobj = &Mobj::chase},StateNum::SswvRun3,0,0}, // StateNum::SswvRun2
+    {SpriteNum::Sswv,1,3,{.mobj = &Mobj::chase},StateNum::SswvRun4,0,0}, // StateNum::SswvRun3
+    {SpriteNum::Sswv,1,3,{.mobj = &Mobj::chase},StateNum::SswvRun5,0,0}, // StateNum::SswvRun4
+    {SpriteNum::Sswv,2,3,{.mobj = &Mobj::chase},StateNum::SswvRun6,0,0}, // StateNum::SswvRun5
+    {SpriteNum::Sswv,2,3,{.mobj = &Mobj::chase},StateNum::SswvRun7,0,0}, // StateNum::SswvRun6
+    {SpriteNum::Sswv,3,3,{.mobj = &Mobj::chase},StateNum::SswvRun8,0,0}, // StateNum::SswvRun7
+    {SpriteNum::Sswv,3,3,{.mobj = &Mobj::chase},StateNum::SswvRun1,0,0}, // StateNum::SswvRun8
+    {SpriteNum::Sswv,4,10,{.mobj = &Mobj::faceTarget},StateNum::SswvAtk2,0,0}, // StateNum::SswvAtk1
+    {SpriteNum::Sswv,5,10,{.mobj = &Mobj::faceTarget},StateNum::SswvAtk3,0,0}, // StateNum::SswvAtk2
+    {SpriteNum::Sswv,32774,4,{.mobj = &Mobj::cPosAttack},StateNum::SswvAtk4,0,0}, // StateNum::SswvAtk3
+    {SpriteNum::Sswv,5,6,{.mobj = &Mobj::faceTarget},StateNum::SswvAtk5,0,0}, // StateNum::SswvAtk4
+    {SpriteNum::Sswv,32774,4,{.mobj = &Mobj::cPosAttack},StateNum::SswvAtk6,0,0}, // StateNum::SswvAtk5
+    {SpriteNum::Sswv,5,1,{.mobj = &Mobj::cPosRefire},StateNum::SswvAtk2,0,0}, // StateNum::SswvAtk6
     {SpriteNum::Sswv,7,3,{},StateNum::SswvPain2,0,0}, // StateNum::SswvPain
-    {SpriteNum::Sswv,7,3,{.mobj = pain},StateNum::SswvRun1,0,0}, // StateNum::SswvPain2
+    {SpriteNum::Sswv,7,3,{.mobj = &Mobj::pain},StateNum::SswvRun1,0,0}, // StateNum::SswvPain2
     {SpriteNum::Sswv,8,5,{},StateNum::SswvDie2,0,0}, // StateNum::SswvDie1
-    {SpriteNum::Sswv,9,5,{.mobj = scream},StateNum::SswvDie3,0,0}, // StateNum::SswvDie2
-    {SpriteNum::Sswv,10,5,{.mobj = fall},StateNum::SswvDie4,0,0}, // StateNum::SswvDie3
+    {SpriteNum::Sswv,9,5,{.mobj = &Mobj::scream},StateNum::SswvDie3,0,0}, // StateNum::SswvDie2
+    {SpriteNum::Sswv,10,5,{.mobj = &Mobj::fall},StateNum::SswvDie4,0,0}, // StateNum::SswvDie3
     {SpriteNum::Sswv,11,5,{},StateNum::SswvDie5,0,0}, // StateNum::SswvDie4
     {SpriteNum::Sswv,12,-1,{},StateNum::Null,0,0}, // StateNum::SswvDie5
     {SpriteNum::Sswv,13,5,{},StateNum::SswvXdie2,0,0}, // StateNum::SswvXdie1
-    {SpriteNum::Sswv,14,5,{.mobj = xScream},StateNum::SswvXdie3,0,0}, // StateNum::SswvXdie2
-    {SpriteNum::Sswv,15,5,{.mobj = fall},StateNum::SswvXdie4,0,0}, // StateNum::SswvXdie3
+    {SpriteNum::Sswv,14,5,{.mobj = &Mobj::xScream},StateNum::SswvXdie3,0,0}, // StateNum::SswvXdie2
+    {SpriteNum::Sswv,15,5,{.mobj = &Mobj::fall},StateNum::SswvXdie4,0,0}, // StateNum::SswvXdie3
     {SpriteNum::Sswv,16,5,{},StateNum::SswvXdie5,0,0}, // StateNum::SswvXdie4
     {SpriteNum::Sswv,17,5,{},StateNum::SswvXdie6,0,0}, // StateNum::SswvXdie5
     {SpriteNum::Sswv,18,5,{},StateNum::SswvXdie7,0,0}, // StateNum::SswvXdie6
@@ -843,7 +843,7 @@ State statesData[numStates] = {
     {SpriteNum::Keen,0,-1,{},StateNum::Keenstnd,0,0}, // StateNum::Keenstnd
     {SpriteNum::Keen,0,6,{},StateNum::Commkeen2,0,0}, // StateNum::Commkeen
     {SpriteNum::Keen,1,6,{},StateNum::Commkeen3,0,0}, // StateNum::Commkeen2
-    {SpriteNum::Keen,2,6,{.mobj = scream},StateNum::Commkeen4,0,0}, // StateNum::Commkeen3
+    {SpriteNum::Keen,2,6,{.mobj = &Mobj::scream},StateNum::Commkeen4,0,0}, // StateNum::Commkeen3
     {SpriteNum::Keen,3,6,{},StateNum::Commkeen5,0,0}, // StateNum::Commkeen4
     {SpriteNum::Keen,4,6,{},StateNum::Commkeen6,0,0}, // StateNum::Commkeen5
     {SpriteNum::Keen,5,6,{},StateNum::Commkeen7,0,0}, // StateNum::Commkeen6
@@ -851,34 +851,34 @@ State statesData[numStates] = {
     {SpriteNum::Keen,7,6,{},StateNum::Commkeen9,0,0}, // StateNum::Commkeen8
     {SpriteNum::Keen,8,6,{},StateNum::Commkeen10,0,0}, // StateNum::Commkeen9
     {SpriteNum::Keen,9,6,{},StateNum::Commkeen11,0,0}, // StateNum::Commkeen10
-    {SpriteNum::Keen,10,6,{.mobj = keenDie},StateNum::Commkeen12,0,0},// StateNum::Commkeen11
+    {SpriteNum::Keen,10,6,{.mobj = &Mobj::keenDie},StateNum::Commkeen12,0,0},// StateNum::Commkeen11
     {SpriteNum::Keen,11,-1,{},StateNum::Null,0,0}, // StateNum::Commkeen12
     {SpriteNum::Keen,12,4,{},StateNum::Keenpain2,0,0}, // StateNum::Keenpain
-    {SpriteNum::Keen,12,8,{.mobj = pain},StateNum::Keenstnd,0,0}, // StateNum::Keenpain2
+    {SpriteNum::Keen,12,8,{.mobj = &Mobj::pain},StateNum::Keenstnd,0,0}, // StateNum::Keenpain2
     {SpriteNum::Bbrn,0,-1,{},StateNum::Null,0,0}, // StateNum::Brain
-    {SpriteNum::Bbrn,1,36,{.mobj = brainPain},StateNum::Brain,0,0}, // StateNum::BrainPain
-    {SpriteNum::Bbrn,0,100,{.mobj = brainScream},StateNum::BrainDie2,0,0}, // StateNum::BrainDie1
+    {SpriteNum::Bbrn,1,36,{.mobj = &Mobj::brainPain},StateNum::Brain,0,0}, // StateNum::BrainPain
+    {SpriteNum::Bbrn,0,100,{.mobj = &Mobj::brainScream},StateNum::BrainDie2,0,0}, // StateNum::BrainDie1
     {SpriteNum::Bbrn,0,10,{},StateNum::BrainDie3,0,0}, // StateNum::BrainDie2
     {SpriteNum::Bbrn,0,10,{},StateNum::BrainDie4,0,0}, // StateNum::BrainDie3
-    {SpriteNum::Bbrn,0,-1,{.mobj = brainDie},StateNum::Null,0,0}, // StateNum::BrainDie4
-    {SpriteNum::Sswv,0,10,{.mobj = look},StateNum::Braineye,0,0}, // StateNum::Braineye
-    {SpriteNum::Sswv,0,181,{.mobj = brainAwake},StateNum::Braineye1,0,0}, // StateNum::Braineyesee
-    {SpriteNum::Sswv,0,150,{.mobj = brainSpit},StateNum::Braineye1,0,0}, // StateNum::Braineye1
-    {SpriteNum::Bosf,32768,3,{.mobj = spawnSound},StateNum::Spawn2,0,0}, // StateNum::Spawn1
-    {SpriteNum::Bosf,32769,3,{.mobj = spawnFly},StateNum::Spawn3,0,0}, // StateNum::Spawn2
-    {SpriteNum::Bosf,32770,3,{.mobj = spawnFly},StateNum::Spawn4,0,0}, // StateNum::Spawn3
-    {SpriteNum::Bosf,32771,3,{.mobj = spawnFly},StateNum::Spawn1,0,0}, // StateNum::Spawn4
-    {SpriteNum::Fire,32768,4,{.mobj = fire},StateNum::Spawnfire2,0,0}, // StateNum::Spawnfire1
-    {SpriteNum::Fire,32769,4,{.mobj = fire},StateNum::Spawnfire3,0,0}, // StateNum::Spawnfire2
-    {SpriteNum::Fire,32770,4,{.mobj = fire},StateNum::Spawnfire4,0,0}, // StateNum::Spawnfire3
-    {SpriteNum::Fire,32771,4,{.mobj = fire},StateNum::Spawnfire5,0,0}, // StateNum::Spawnfire4
-    {SpriteNum::Fire,32772,4,{.mobj = fire},StateNum::Spawnfire6,0,0}, // StateNum::Spawnfire5
-    {SpriteNum::Fire,32773,4,{.mobj = fire},StateNum::Spawnfire7,0,0}, // StateNum::Spawnfire6
-    {SpriteNum::Fire,32774,4,{.mobj = fire},StateNum::Spawnfire8,0,0}, // StateNum::Spawnfire7
-    {SpriteNum::Fire,32775,4,{.mobj = fire},StateNum::Null,0,0}, // StateNum::Spawnfire8
+    {SpriteNum::Bbrn,0,-1,{.mobj = &Mobj::brainDie},StateNum::Null,0,0}, // StateNum::BrainDie4
+    {SpriteNum::Sswv,0,10,{.mobj = &Mobj::look},StateNum::Braineye,0,0}, // StateNum::Braineye
+    {SpriteNum::Sswv,0,181,{.mobj = &Mobj::brainAwake},StateNum::Braineye1,0,0}, // StateNum::Braineyesee
+    {SpriteNum::Sswv,0,150,{.mobj = &Mobj::brainSpit},StateNum::Braineye1,0,0}, // StateNum::Braineye1
+    {SpriteNum::Bosf,32768,3,{.mobj = &Mobj::spawnSound},StateNum::Spawn2,0,0}, // StateNum::Spawn1
+    {SpriteNum::Bosf,32769,3,{.mobj = &Mobj::spawnFly},StateNum::Spawn3,0,0}, // StateNum::Spawn2
+    {SpriteNum::Bosf,32770,3,{.mobj = &Mobj::spawnFly},StateNum::Spawn4,0,0}, // StateNum::Spawn3
+    {SpriteNum::Bosf,32771,3,{.mobj = &Mobj::spawnFly},StateNum::Spawn1,0,0}, // StateNum::Spawn4
+    {SpriteNum::Fire,32768,4,{.mobj = &Mobj::fire},StateNum::Spawnfire2,0,0}, // StateNum::Spawnfire1
+    {SpriteNum::Fire,32769,4,{.mobj = &Mobj::fire},StateNum::Spawnfire3,0,0}, // StateNum::Spawnfire2
+    {SpriteNum::Fire,32770,4,{.mobj = &Mobj::fire},StateNum::Spawnfire4,0,0}, // StateNum::Spawnfire3
+    {SpriteNum::Fire,32771,4,{.mobj = &Mobj::fire},StateNum::Spawnfire5,0,0}, // StateNum::Spawnfire4
+    {SpriteNum::Fire,32772,4,{.mobj = &Mobj::fire},StateNum::Spawnfire6,0,0}, // StateNum::Spawnfire5
+    {SpriteNum::Fire,32773,4,{.mobj = &Mobj::fire},StateNum::Spawnfire7,0,0}, // StateNum::Spawnfire6
+    {SpriteNum::Fire,32774,4,{.mobj = &Mobj::fire},StateNum::Spawnfire8,0,0}, // StateNum::Spawnfire7
+    {SpriteNum::Fire,32775,4,{.mobj = &Mobj::fire},StateNum::Null,0,0}, // StateNum::Spawnfire8
     {SpriteNum::Misl,32769,10,{},StateNum::Brainexplode2,0,0}, // StateNum::Brainexplode1
     {SpriteNum::Misl,32770,10,{},StateNum::Brainexplode3,0,0}, // StateNum::Brainexplode2
-    {SpriteNum::Misl,32771,10,{.mobj = brainExplode},StateNum::Null,0,0}, // StateNum::Brainexplode3
+    {SpriteNum::Misl,32771,10,{.mobj = &Mobj::brainExplode},StateNum::Null,0,0}, // StateNum::Brainexplode3
     {SpriteNum::Arm1,0,6,{},StateNum::Arm1a,0,0}, // StateNum::Arm1
     {SpriteNum::Arm1,32769,7,{},StateNum::Arm1,0,0}, // StateNum::Arm1a
     {SpriteNum::Arm2,0,6,{},StateNum::Arm2a,0,0}, // StateNum::Arm2
@@ -886,9 +886,9 @@ State statesData[numStates] = {
     {SpriteNum::Bar1,0,6,{},StateNum::Bar2,0,0}, // StateNum::Bar1
     {SpriteNum::Bar1,1,6,{},StateNum::Bar1,0,0}, // StateNum::Bar2
     {SpriteNum::Bexp,32768,5,{},StateNum::Bexp2,0,0}, // StateNum::Bexp
-    {SpriteNum::Bexp,32769,5,{.mobj = scream},StateNum::Bexp3,0,0}, // StateNum::Bexp2
+    {SpriteNum::Bexp,32769,5,{.mobj = &Mobj::scream},StateNum::Bexp3,0,0}, // StateNum::Bexp2
     {SpriteNum::Bexp,32770,5,{},StateNum::Bexp4,0,0}, // StateNum::Bexp3
-    {SpriteNum::Bexp,32771,10,{.mobj = explode},StateNum::Bexp5,0,0}, // StateNum::Bexp4
+    {SpriteNum::Bexp,32771,10,{.mobj = &Mobj::explode},StateNum::Bexp5,0,0}, // StateNum::Bexp4
     {SpriteNum::Bexp,32772,10,{},StateNum::Null,0,0}, // StateNum::Bexp5
     {SpriteNum::Fcan,32768,4,{},StateNum::Bbar2,0,0}, // StateNum::Bbar1
     {SpriteNum::Fcan,32769,4,{},StateNum::Bbar3,0,0}, // StateNum::Bbar2

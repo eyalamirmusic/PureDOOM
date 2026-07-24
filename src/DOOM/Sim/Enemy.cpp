@@ -9,10 +9,13 @@
 // DESCRIPTION:
 //        Enemy thinking, AI. Action pointers for the states/definitions.
 //
-// Rewritten into namespace Doom out of vanilla p_enemy. Sim/Info.cpp's state table
-// names these functions directly - the Actions:: adapter layer that used to bend
-// them into one pointer shape is gone. The AI scratch is file-local; soundtarget
-// stays global (p_saveg archives it).
+// Rewritten into namespace Doom out of vanilla p_enemy. The A_* codepointers are
+// Mobj methods now (chase, look, the attacks, the deaths) and, for the super-
+// shotgun, Player methods; Sim/Info.cpp's state table installs each as &Mobj::name /
+// &Player::name. What stays a free function here is the internal AI the actions call
+// (move, tryWalk, newChaseDir, lookForPlayers, the range checks) and the noiseAlert /
+// recursiveSound sound flood. The AI scratch is file-local; soundtarget stays global
+// (p_saveg archives it).
 //
 //-----------------------------------------------------------------------------
 
@@ -122,62 +125,8 @@ bool move(Mobj& actor);
 bool tryWalk(Mobj& actor);
 void newChaseDir(Mobj& actor);
 bool lookForPlayers(Mobj& actor, bool allaround);
-void keenDie(Mobj& mo);
-void look(Mobj& actor);
-void chase(Mobj& actor);
-void faceTarget(Mobj& actor);
-void posAttack(Mobj& actor);
-void sPosAttack(Mobj& actor);
-void cPosAttack(Mobj& actor);
-void cPosRefire(Mobj& actor);
-void spidRefire(Mobj& actor);
-void bspiAttack(Mobj& actor);
-void troopAttack(Mobj& actor);
-void sargAttack(Mobj& actor);
-void headAttack(Mobj& actor);
-void cyberAttack(Mobj& actor);
-void bruisAttack(Mobj& actor);
-void skelMissile(Mobj& actor);
-void tracer(Mobj& actor);
-void skelWhoosh(Mobj& actor);
-void skelFist(Mobj& actor);
 bool vileCheck(Mobj* thing);
-void vileChase(Mobj& actor);
-void vileStart(Mobj& actor);
-void startFire(Mobj& actor);
-void fireCrackle(Mobj& actor);
-void fire(Mobj& actor);
-void vileTarget(Mobj& actor);
-void vileAttack(Mobj& actor);
-void fatRaise(Mobj& actor);
-void fatAttack1(Mobj& actor);
-void fatAttack2(Mobj& actor);
-void fatAttack3(Mobj& actor);
-void skullAttack(Mobj& actor);
 void painShootSkull(Mobj& actor, Angle angle);
-void painAttack(Mobj& actor);
-void painDie(Mobj& actor);
-void scream(Mobj& actor);
-void xScream(Mobj& actor);
-void pain(Mobj& actor);
-void fall(Mobj& actor);
-void explode(Mobj& thingy);
-void bossDeath(Mobj& mo);
-void hoof(Mobj& mo);
-void metal(Mobj& mo);
-void babyMetal(Mobj& mo);
-void openShotgun2(Player& player, PspDef& psp);
-void loadShotgun2(Player& player, PspDef& psp);
-void closeShotgun2(Player& player, PspDef& psp);
-void brainAwake(Mobj& mo);
-void brainPain(Mobj& mo);
-void brainScream(Mobj& mo);
-void brainExplode(Mobj& mo);
-void brainDie(Mobj& mo);
-void brainSpit(Mobj& mo);
-void spawnSound(Mobj& mo);
-void spawnFly(Mobj& mo);
-void playerScream(Mobj& mo);
 
 void recursiveSound(Sector* sec, int soundblocks)
 {
@@ -581,13 +530,13 @@ bool lookForPlayers(Mobj& actor, bool allaround)
 // DOOM II special, map 32.
 // Uses special tag 666.
 //
-void keenDie(Mobj& mo)
+void Mobj::keenDie()
 {
     Line junk;
 
     auto& thinkers = thinkerList();
 
-    fall(mo);
+    fall();
 
     // scan the remaining thinkers
     // to see if all Keens are dead
@@ -597,7 +546,7 @@ void keenDie(Mobj& mo)
             continue;
 
         Mobj* mo2 = reinterpret_cast<Mobj*>(th);
-        if (mo2 != &mo && mo2->type == mo.type && mo2->health > 0)
+        if (mo2 != this && mo2->type == type && mo2->health > 0)
         {
             // other Keen not dead
             return;
@@ -616,19 +565,19 @@ void keenDie(Mobj& mo)
 // look
 // Stay in state until a player is sighted.
 //
-void look(Mobj& actor)
+void Mobj::look()
 {
-    actor.threshold = 0; // any shot will wake up
-    Mobj* targ = actor.subsector->sector->soundtarget;
+    threshold = 0; // any shot will wake up
+    Mobj* targ = subsector->sector->soundtarget;
 
     // go into chase state
     auto seeyou = [&]
     {
-        if (actor.info->seesound != SfxEnum::None)
+        if (info->seesound != SfxEnum::None)
         {
             SfxEnum sound;
 
-            switch (actor.info->seesound)
+            switch (info->seesound)
             {
                 case SfxEnum::Posit1:
                 case SfxEnum::Posit2:
@@ -644,37 +593,36 @@ void look(Mobj& actor)
                     break;
 
                 default:
-                    sound = actor.info->seesound;
+                    sound = info->seesound;
                     break;
             }
 
-            if (actor.type == MobjType::Spider || actor.type == MobjType::Cyborg)
+            if (type == MobjType::Spider || type == MobjType::Cyborg)
             {
                 // full volume
                 startSound(0, sound);
             }
             else
-                startSound(&actor, sound);
+                startSound(this, sound);
         }
 
-        setMobjState(actor, static_cast<StateNum>(actor.info->seestate));
+        setMobjState(*this, static_cast<StateNum>(info->seestate));
     };
 
     if (targ && (hasFlag(targ->flags, MobjFlag::Shootable)))
     {
-        actor.target = targ;
+        target = targ;
 
         // An ambush monster waits for line of sight; any other wakes on the
         // sound target alone.
-        if (!hasFlag(actor.flags, MobjFlag::Ambush)
-            || checkSight(&actor, actor.target))
+        if (!hasFlag(flags, MobjFlag::Ambush) || checkSight(this, target))
         {
             seeyou();
             return;
         }
     }
 
-    if (!lookForPlayers(actor, false))
+    if (!lookForPlayers(*this, false))
         return;
 
     seeyou();
@@ -685,46 +633,46 @@ void look(Mobj& actor)
 // Actor has a melee attack,
 // so it tries to close as fast as possible
 //
-void chase(Mobj& actor)
+void Mobj::chase()
 {
     // SIGNED on purpose: vanilla declares this int, so the two tests below are a
     // signed comparison of an angle difference. As an unsigned raw angle, `> 0`
     // would be true for every non-zero value and the `< 0` branch unreachable -
     // which desyncs demo1 at tic 89, monsters turning the wrong way.
 
-    if (actor.reactiontime)
-        actor.reactiontime--;
+    if (reactiontime)
+        reactiontime--;
 
     // modify target threshold
-    if (actor.threshold)
+    if (threshold)
     {
-        if (!actor.target || actor.target->health <= 0)
+        if (!target || target->health <= 0)
         {
-            actor.threshold = 0;
+            threshold = 0;
         }
         else
-            actor.threshold--;
+            threshold--;
     }
 
     // turn towards movement direction if not there yet
-    if (actor.movedir < 8)
+    if (movedir < 8)
     {
-        actor.angle = Angle {actor.angle.raw & (7u << 29)};
-        int delta = (int) (actor.angle - Angle {(unsigned) actor.movedir << 29}).raw;
+        angle = Angle {angle.raw & (7u << 29)};
+        int delta = (int) (angle - Angle {(unsigned) movedir << 29}).raw;
 
         if (delta > 0)
-            actor.angle -= ang90 / 2u;
+            angle -= ang90 / 2u;
         else if (delta < 0)
-            actor.angle += ang90 / 2u;
+            angle += ang90 / 2u;
     }
 
-    if (!actor.target || !(hasFlag(actor.target->flags, MobjFlag::Shootable)))
+    if (!target || !(hasFlag(target->flags, MobjFlag::Shootable)))
     {
         // look for a new target
-        if (lookForPlayers(actor, true))
+        if (lookForPlayers(*this, true))
             return; // got a new target
 
-        setMobjState(actor, static_cast<StateNum>(actor.info->spawnstate));
+        setMobjState(*this, static_cast<StateNum>(info->spawnstate));
         return;
     }
 
@@ -732,276 +680,275 @@ void chase(Mobj& actor)
     const auto& opts = launchOptions();
 
     // do not attack twice in a row
-    if (hasFlag(actor.flags, MobjFlag::JustAttacked))
+    if (hasFlag(flags, MobjFlag::JustAttacked))
     {
-        actor.flags = withoutFlags(actor.flags, MobjFlag::JustAttacked);
+        flags = withoutFlags(flags, MobjFlag::JustAttacked);
         if (session.gameskill != Skill::Nightmare && !opts.fastparm)
-            newChaseDir(actor);
+            newChaseDir(*this);
         return;
     }
 
     // check for melee attack
-    if (actor.info->meleestate != StateNum::Null && checkMeleeRange(actor))
+    if (info->meleestate != StateNum::Null && checkMeleeRange(*this))
     {
-        if (actor.info->attacksound != SfxEnum::None)
-            startSound(&actor, actor.info->attacksound);
+        if (info->attacksound != SfxEnum::None)
+            startSound(this, info->attacksound);
 
-        setMobjState(actor, actor.info->meleestate);
+        setMobjState(*this, info->meleestate);
         return;
     }
 
     // check for missile attack
-    if (actor.info->missilestate != StateNum::Null)
+    if (info->missilestate != StateNum::Null)
     {
         // Below Nightmare/fast, a monster that still has moves left in its
         // current direction holds fire; otherwise it fires if in range. Either
         // way a "no" falls through to the chase logic below. checkMissileRange is
         // evaluated only when not holding fire, exactly as the two gotos did.
-        const bool holdFire = session.gameskill < Skill::Nightmare && !opts.fastparm
-                              && actor.movecount;
+        const bool holdFire =
+            session.gameskill < Skill::Nightmare && !opts.fastparm && movecount;
 
-        if (!holdFire && checkMissileRange(actor))
+        if (!holdFire && checkMissileRange(*this))
         {
-            setMobjState(actor, actor.info->missilestate);
-            actor.flags = withFlags(actor.flags, MobjFlag::JustAttacked);
+            setMobjState(*this, info->missilestate);
+            flags = withFlags(flags, MobjFlag::JustAttacked);
             return;
         }
     }
 
     // possibly choose another target
-    if (session.netgame && !actor.threshold && !checkSight(&actor, actor.target))
+    if (session.netgame && !threshold && !checkSight(this, target))
     {
-        if (lookForPlayers(actor, true))
+        if (lookForPlayers(*this, true))
             return; // got a new target
     }
 
     // chase towards player
-    if (--actor.movecount < 0 || !move(actor))
+    if (--movecount < 0 || !move(*this))
     {
-        newChaseDir(actor);
+        newChaseDir(*this);
     }
 
     // make active sound
-    if (actor.info->activesound != SfxEnum::None && randomness().forPlay() < 3)
+    if (info->activesound != SfxEnum::None && randomness().forPlay() < 3)
     {
-        startSound(&actor, actor.info->activesound);
+        startSound(this, info->activesound);
     }
 }
 
 //
 // faceTarget
 //
-void faceTarget(Mobj& actor)
+void Mobj::faceTarget()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    actor.flags = withoutFlags(actor.flags, MobjFlag::Ambush);
+    flags = withoutFlags(flags, MobjFlag::Ambush);
 
-    actor.angle = pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
+    angle = pointToAngle2(x, y, target->x, target->y);
 
-    if (hasFlag(actor.target->flags, MobjFlag::Shadow))
-        actor.angle += Angle {
-            (unsigned) (randomness().forPlay() - randomness().forPlay()) << 21};
+    if (hasFlag(target->flags, MobjFlag::Shadow))
+        angle += Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                        << 21};
 }
 
 //
 // posAttack
 //
-void posAttack(Mobj& actor)
+void Mobj::posAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    Angle angle = actor.angle;
-    Fixed slope = aimLineAttack(&actor, angle, MISSILERANGE).slope;
+    faceTarget();
+    Angle angleToUse = angle;
+    Fixed slope = aimLineAttack(this, angleToUse, MISSILERANGE).slope;
 
-    startSound(&actor, SfxEnum::Pistol);
-    angle +=
+    startSound(this, SfxEnum::Pistol);
+    angleToUse +=
         Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
-    lineAttack(actor, angle, MISSILERANGE, slope, damage);
+    lineAttack(*this, angleToUse, MISSILERANGE, slope, damage);
 }
 
-void sPosAttack(Mobj& actor)
+void Mobj::sPosAttack()
 {
-    Angle angle {};
+    Angle angleToUse {};
 
-    if (!actor.target)
+    if (!target)
         return;
 
-    startSound(&actor, SfxEnum::Shotgn);
-    faceTarget(actor);
-    Angle bangle = actor.angle;
-    Fixed slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
+    startSound(this, SfxEnum::Shotgn);
+    faceTarget();
+    Angle bangle = angle;
+    Fixed slope = aimLineAttack(this, bangle, MISSILERANGE).slope;
 
     for (int i = 0; i < 3; i++)
     {
-        angle = bangle
-                + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
-                         << 20};
+        angleToUse =
+            bangle
+            + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                     << 20};
         int damage = ((randomness().forPlay() % 5) + 1) * 3;
-        lineAttack(actor, angle, MISSILERANGE, slope, damage);
+        lineAttack(*this, angleToUse, MISSILERANGE, slope, damage);
     }
 }
 
-void cPosAttack(Mobj& actor)
+void Mobj::cPosAttack()
 {
-    Angle angle {};
+    Angle angleToUse {};
 
-    if (!actor.target)
+    if (!target)
         return;
 
-    startSound(&actor, SfxEnum::Shotgn);
-    faceTarget(actor);
-    Angle bangle = actor.angle;
-    Fixed slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
+    startSound(this, SfxEnum::Shotgn);
+    faceTarget();
+    Angle bangle = angle;
+    Fixed slope = aimLineAttack(this, bangle, MISSILERANGE).slope;
 
-    angle =
+    angleToUse =
         bangle
         + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
-    lineAttack(actor, angle, MISSILERANGE, slope, damage);
+    lineAttack(*this, angleToUse, MISSILERANGE, slope, damage);
 }
 
-void cPosRefire(Mobj& actor)
+void Mobj::cPosRefire()
 {
     // keep firing unless target got out of sight
-    faceTarget(actor);
+    faceTarget();
 
     if (randomness().forPlay() < 40)
         return;
 
-    if (!actor.target || actor.target->health <= 0
-        || !checkSight(&actor, actor.target))
+    if (!target || target->health <= 0 || !checkSight(this, target))
     {
-        setMobjState(actor, static_cast<StateNum>(actor.info->seestate));
+        setMobjState(*this, static_cast<StateNum>(info->seestate));
     }
 }
 
-void spidRefire(Mobj& actor)
+void Mobj::spidRefire()
 {
     // keep firing unless target got out of sight
-    faceTarget(actor);
+    faceTarget();
 
     if (randomness().forPlay() < 10)
         return;
 
-    if (!actor.target || actor.target->health <= 0
-        || !checkSight(&actor, actor.target))
+    if (!target || target->health <= 0 || !checkSight(this, target))
     {
-        setMobjState(actor, static_cast<StateNum>(actor.info->seestate));
+        setMobjState(*this, static_cast<StateNum>(info->seestate));
     }
 }
 
-void bspiAttack(Mobj& actor)
+void Mobj::bspiAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
+    faceTarget();
 
     // launch a missile
-    spawnMissile(actor, actor.target, MobjType::Arachplaz);
+    spawnMissile(*this, target, MobjType::Arachplaz);
 }
 
 //
 // troopAttack
 //
-void troopAttack(Mobj& actor)
+void Mobj::troopAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    if (checkMeleeRange(actor))
+    faceTarget();
+    if (checkMeleeRange(*this))
     {
-        startSound(&actor, SfxEnum::Claw);
+        startSound(this, SfxEnum::Claw);
         int damage = (randomness().forPlay() % 8 + 1) * 3;
-        damageMobj(*actor.target, &actor, &actor, damage);
+        damageMobj(*target, this, this, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(actor, actor.target, MobjType::Troopshot);
+    spawnMissile(*this, target, MobjType::Troopshot);
 }
 
-void sargAttack(Mobj& actor)
+void Mobj::sargAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    if (checkMeleeRange(actor))
+    faceTarget();
+    if (checkMeleeRange(*this))
     {
         int damage = ((randomness().forPlay() % 10) + 1) * 4;
-        damageMobj(*actor.target, &actor, &actor, damage);
+        damageMobj(*target, this, this, damage);
     }
 }
 
-void headAttack(Mobj& actor)
+void Mobj::headAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    if (checkMeleeRange(actor))
+    faceTarget();
+    if (checkMeleeRange(*this))
     {
         int damage = (randomness().forPlay() % 6 + 1) * 10;
-        damageMobj(*actor.target, &actor, &actor, damage);
+        damageMobj(*target, this, this, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(actor, actor.target, MobjType::Headshot);
+    spawnMissile(*this, target, MobjType::Headshot);
 }
 
-void cyberAttack(Mobj& actor)
+void Mobj::cyberAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    spawnMissile(actor, actor.target, MobjType::Rocket);
+    faceTarget();
+    spawnMissile(*this, target, MobjType::Rocket);
 }
 
-void bruisAttack(Mobj& actor)
+void Mobj::bruisAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    if (checkMeleeRange(actor))
+    if (checkMeleeRange(*this))
     {
-        startSound(&actor, SfxEnum::Claw);
+        startSound(this, SfxEnum::Claw);
         int damage = (randomness().forPlay() % 8 + 1) * 10;
-        damageMobj(*actor.target, &actor, &actor, damage);
+        damageMobj(*target, this, this, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(actor, actor.target, MobjType::Bruisershot);
+    spawnMissile(*this, target, MobjType::Bruisershot);
 }
 
 //
 // skelMissile
 //
-void skelMissile(Mobj& actor)
+void Mobj::skelMissile()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    actor.z += 16 * FRACUNIT; // so missile spawns higher
-    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Tracer);
-    actor.z -= 16 * FRACUNIT; // back to normal
+    faceTarget();
+    z += 16 * FRACUNIT; // so missile spawns higher
+    Mobj* mo = spawnMissile(*this, target, MobjType::Tracer);
+    z -= 16 * FRACUNIT; // back to normal
 
     mo->x += mo->momx;
     mo->y += mo->momy;
-    mo->tracer = actor.target;
+    mo->tracer = target;
 }
 
-void tracer(Mobj& actor)
+void Mobj::traceTarget()
 {
     // As in spawnMissile: dist is a tic count once divided by the missile's raw
     // speed, and is then the plain integer divisor of the height difference.
@@ -1010,10 +957,9 @@ void tracer(Mobj& actor)
         return;
 
     // spawn a puff of smoke behind the rocket
-    spawnPuff(actor.x, actor.y, actor.z);
+    spawnPuff(x, y, z);
 
-    Mobj* th = spawnMobj(
-        actor.x - actor.momx, actor.y - actor.momy, actor.z, MobjType::Smoke);
+    Mobj* th = spawnMobj(x - momx, y - momy, z, MobjType::Smoke);
 
     th->momz = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
@@ -1021,70 +967,70 @@ void tracer(Mobj& actor)
         th->tics = 1;
 
     // adjust direction
-    Mobj* dest = actor.tracer;
+    Mobj* dest = tracer;
 
     if (!dest || dest->health <= 0)
         return;
 
     // change angle
-    Angle exact = pointToAngle2(actor.x, actor.y, dest->x, dest->y);
+    Angle exact = pointToAngle2(x, y, dest->x, dest->y);
 
-    if (exact != actor.angle)
+    if (exact != angle)
     {
-        if (exact - actor.angle > ang180)
+        if (exact - angle > ang180)
         {
-            actor.angle -= TRACEANGLE;
-            if (exact - actor.angle < ang180)
-                actor.angle = exact;
+            angle -= TRACEANGLE;
+            if (exact - angle < ang180)
+                angle = exact;
         }
         else
         {
-            actor.angle += TRACEANGLE;
-            if (exact - actor.angle > ang180)
-                actor.angle = exact;
+            angle += TRACEANGLE;
+            if (exact - angle > ang180)
+                angle = exact;
         }
     }
 
-    const auto fine = actor.angle.fineIndex();
-    actor.momx = FixedMul(Fixed {actor.info->speed}, finecosine()[fine]);
-    actor.momy = FixedMul(Fixed {actor.info->speed}, finesine()[fine]);
+    const auto fine = angle.fineIndex();
+    momx = FixedMul(Fixed {info->speed}, finecosine()[fine]);
+    momy = FixedMul(Fixed {info->speed}, finesine()[fine]);
 
     // change slope
-    int dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
+    int dist = approxDistance(dest->x - x, dest->y - y).raw;
 
-    dist = dist / actor.info->speed;
+    dist = dist / info->speed;
 
     if (dist < 1)
         dist = 1;
-    Fixed slope = (dest->z + 40 * FRACUNIT - actor.z) / dist;
+    Fixed slope = (dest->z + 40 * FRACUNIT - z) / dist;
 
-    if (slope < actor.momz)
-        actor.momz -= FRACUNIT / 8;
+    if (slope < momz)
+        momz -= FRACUNIT / 8;
     else
-        actor.momz += FRACUNIT / 8;
+        momz += FRACUNIT / 8;
 }
 
-void skelWhoosh(Mobj& actor)
+void Mobj::skelWhoosh()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    startSound(&actor, SfxEnum::Skeswg);
+    faceTarget();
+    startSound(this, SfxEnum::Skeswg);
 }
 
-void skelFist(Mobj& actor)
+void Mobj::skelFist()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
+    faceTarget();
 
-    if (checkMeleeRange(actor))
+    if (checkMeleeRange(*this))
     {
         int damage = ((randomness().forPlay() % 10) + 1) * 6;
-        startSound(&actor, SfxEnum::Skepch);
-        damageMobj(*actor.target, &actor, &actor, damage);
+        startSound(this, SfxEnum::Skepch);
+        damageMobj(*target, this, this, damage);
     }
 }
 
@@ -1127,15 +1073,15 @@ bool vileCheck(Mobj* thing)
 // vileChase
 // Check for ressurecting a body
 //
-void vileChase(Mobj& actor)
+void Mobj::vileChase()
 {
     auto& ai = enemyAI();
 
-    if (actor.movedir != toIndex(DirType::NoDir))
+    if (movedir != toIndex(DirType::NoDir))
     {
         // check for corpses to raise
-        ai.viletryx = actor.x + actor.info->speed * xspeed[actor.movedir];
-        ai.viletryy = actor.y + actor.info->speed * yspeed[actor.movedir];
+        ai.viletryx = x + info->speed * xspeed[movedir];
+        ai.viletryy = y + info->speed * yspeed[movedir];
 
         int xl = (ai.viletryx - level().blockmap.origin.x - MAXRADIUS * 2).raw
                  >> MAPBLOCKSHIFT;
@@ -1156,19 +1102,19 @@ void vileChase(Mobj& actor)
                 if (!forEachThingInBlock(bx, by, vileCheck))
                 {
                     // got one!
-                    Mobj* temp = actor.target;
-                    actor.target = ai.corpsehit;
-                    faceTarget(actor);
-                    actor.target = temp;
+                    Mobj* temp = target;
+                    target = ai.corpsehit;
+                    faceTarget();
+                    target = temp;
 
-                    setMobjState(actor, StateNum::VileHeal1);
+                    setMobjState(*this, StateNum::VileHeal1);
                     startSound(ai.corpsehit, SfxEnum::Slop);
-                    MobjInfo* info = ai.corpsehit->info;
+                    MobjInfo* corpseInfo = ai.corpsehit->info;
 
-                    setMobjState(*ai.corpsehit, info->raisestate);
+                    setMobjState(*ai.corpsehit, corpseInfo->raisestate);
                     ai.corpsehit->height <<= 2;
-                    ai.corpsehit->flags = info->flags;
-                    ai.corpsehit->health = info->spawnhealth;
+                    ai.corpsehit->flags = corpseInfo->flags;
+                    ai.corpsehit->health = corpseInfo->spawnhealth;
                     ai.corpsehit->target = nullptr;
 
                     return;
@@ -1178,100 +1124,99 @@ void vileChase(Mobj& actor)
     }
 
     // Return to normal attack.
-    chase(actor);
+    chase();
 }
 
 //
 // vileStart
 //
-void vileStart(Mobj& actor)
+void Mobj::vileStart()
 {
-    startSound(&actor, SfxEnum::Vilatk);
+    startSound(this, SfxEnum::Vilatk);
 }
 
 //
 // fire
 // Keep fire in front of player unless out of sight
 //
-void startFire(Mobj& actor)
+void Mobj::startFire()
 {
-    startSound(&actor, SfxEnum::Flamst);
-    fire(actor);
+    startSound(this, SfxEnum::Flamst);
+    fire();
 }
 
-void fireCrackle(Mobj& actor)
+void Mobj::fireCrackle()
 {
-    startSound(&actor, SfxEnum::Flame);
-    fire(actor);
+    startSound(this, SfxEnum::Flame);
+    fire();
 }
 
-void fire(Mobj& actor)
+void Mobj::fire()
 {
-    Mobj* dest = actor.tracer;
+    Mobj* dest = tracer;
     if (!dest)
         return;
 
     // don't move it if the vile lost sight
-    if (!checkSight(actor.target, dest))
+    if (!checkSight(target, dest))
         return;
 
     const auto anFine = dest->angle.fineIndex();
 
-    unsetThingPosition(actor);
-    actor.x = dest->x + FixedMul(24 * FRACUNIT, finecosine()[anFine]);
-    actor.y = dest->y + FixedMul(24 * FRACUNIT, finesine()[anFine]);
-    actor.z = dest->z;
-    setThingPosition(actor);
+    unsetThingPosition(*this);
+    x = dest->x + FixedMul(24 * FRACUNIT, finecosine()[anFine]);
+    y = dest->y + FixedMul(24 * FRACUNIT, finesine()[anFine]);
+    z = dest->z;
+    setThingPosition(*this);
 }
 
 //
 // vileTarget
 // Spawn the hellfire
 //
-void vileTarget(Mobj& actor)
+void Mobj::vileTarget()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
+    faceTarget();
 
-    Mobj* fog =
-        spawnMobj(actor.target->x, actor.target->x, actor.target->z, MobjType::Fire);
+    Mobj* fog = spawnMobj(target->x, target->x, target->z, MobjType::Fire);
 
-    actor.tracer = fog;
-    fog->target = &actor;
-    fog->tracer = actor.target;
-    fire(*fog);
+    tracer = fog;
+    fog->target = this;
+    fog->tracer = target;
+    fog->fire();
 }
 
 //
 // vileAttack
 //
-void vileAttack(Mobj& actor)
+void Mobj::vileAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
+    faceTarget();
 
-    if (!checkSight(&actor, actor.target))
+    if (!checkSight(this, target))
         return;
 
-    startSound(&actor, SfxEnum::Barexp);
-    damageMobj(*actor.target, &actor, &actor, 20);
-    actor.target->momz = 1000 * FRACUNIT / actor.target->info->mass;
+    startSound(this, SfxEnum::Barexp);
+    damageMobj(*target, this, this, 20);
+    target->momz = 1000 * FRACUNIT / target->info->mass;
 
-    const auto anFine = actor.angle.fineIndex();
+    const auto anFine = angle.fineIndex();
 
-    Mobj* fire = actor.tracer;
+    Mobj* fire = tracer;
 
     if (!fire)
         return;
 
     // move the fire between the vile and the player
-    fire->x = actor.target->x - FixedMul(24 * FRACUNIT, finecosine()[anFine]);
-    fire->y = actor.target->y - FixedMul(24 * FRACUNIT, finesine()[anFine]);
-    radiusAttack(*fire, &actor, 70);
+    fire->x = target->x - FixedMul(24 * FRACUNIT, finecosine()[anFine]);
+    fire->y = target->y - FixedMul(24 * FRACUNIT, finesine()[anFine]);
+    radiusAttack(*fire, this, 70);
 }
 
 //
@@ -1280,51 +1225,51 @@ void vileAttack(Mobj& actor)
 // in three different directions?
 // Doesn't look like it.
 //
-void fatRaise(Mobj& actor)
+void Mobj::fatRaise()
 {
-    faceTarget(actor);
-    startSound(&actor, SfxEnum::Manatk);
+    faceTarget();
+    startSound(this, SfxEnum::Manatk);
 }
 
-void fatAttack1(Mobj& actor)
+void Mobj::fatAttack1()
 {
-    faceTarget(actor);
+    faceTarget();
     // Change direction  to ...
-    actor.angle += FATSPREAD;
-    spawnMissile(actor, actor.target, MobjType::Fatshot);
+    angle += FATSPREAD;
+    spawnMissile(*this, target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
+    Mobj* mo = spawnMissile(*this, target, MobjType::Fatshot);
     mo->angle += FATSPREAD;
     const auto an1Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an1Fine]);
     mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an1Fine]);
 }
 
-void fatAttack2(Mobj& actor)
+void Mobj::fatAttack2()
 {
-    faceTarget(actor);
+    faceTarget();
     // Now here choose opposite deviation.
-    actor.angle -= FATSPREAD;
-    spawnMissile(actor, actor.target, MobjType::Fatshot);
+    angle -= FATSPREAD;
+    spawnMissile(*this, target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
+    Mobj* mo = spawnMissile(*this, target, MobjType::Fatshot);
     mo->angle -= FATSPREAD * 2;
     const auto an2Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an2Fine]);
     mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an2Fine]);
 }
 
-void fatAttack3(Mobj& actor)
+void Mobj::fatAttack3()
 {
-    faceTarget(actor);
+    faceTarget();
 
-    Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
+    Mobj* mo = spawnMissile(*this, target, MobjType::Fatshot);
     mo->angle -= FATSPREAD / 2;
     const auto an3Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an3Fine]);
     mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an3Fine]);
 
-    mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
+    mo = spawnMissile(*this, target, MobjType::Fatshot);
     mo->angle += FATSPREAD / 2;
     const auto an4Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an4Fine]);
@@ -1335,25 +1280,25 @@ void fatAttack3(Mobj& actor)
 // SkullAttack
 // Fly at the player like a missile.
 //
-void skullAttack(Mobj& actor)
+void Mobj::skullAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    Mobj* dest = actor.target;
-    actor.flags = withFlags(actor.flags, MobjFlag::SkullFly);
+    Mobj* dest = target;
+    flags = withFlags(flags, MobjFlag::SkullFly);
 
-    startSound(&actor, actor.info->attacksound);
-    faceTarget(actor);
-    const auto fine = actor.angle.fineIndex();
-    actor.momx = FixedMul(SKULLSPEED, finecosine()[fine]);
-    actor.momy = FixedMul(SKULLSPEED, finesine()[fine]);
-    int dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
+    startSound(this, info->attacksound);
+    faceTarget();
+    const auto fine = angle.fineIndex();
+    momx = FixedMul(SKULLSPEED, finecosine()[fine]);
+    momy = FixedMul(SKULLSPEED, finesine()[fine]);
+    int dist = approxDistance(dest->x - x, dest->y - y).raw;
     dist = dist / SKULLSPEED.raw;
 
     if (dist < 1)
         dist = 1;
-    actor.momz = (dest->z + (dest->height >> 1) - actor.z) / dist;
+    momz = (dest->z + (dest->height >> 1) - z) / dist;
 }
 
 //
@@ -1403,35 +1348,35 @@ void painShootSkull(Mobj& actor, Angle angle)
     }
 
     newmobj->target = actor.target;
-    skullAttack(*newmobj);
+    newmobj->skullAttack();
 }
 
 //
 // painAttack
 // Spawn a lost soul and launch it at the target
 //
-void painAttack(Mobj& actor)
+void Mobj::painAttack()
 {
-    if (!actor.target)
+    if (!target)
         return;
 
-    faceTarget(actor);
-    painShootSkull(actor, actor.angle);
+    faceTarget();
+    painShootSkull(*this, angle);
 }
 
-void painDie(Mobj& actor)
+void Mobj::painDie()
 {
-    fall(actor);
-    painShootSkull(actor, actor.angle + ang90);
-    painShootSkull(actor, actor.angle + ang180);
-    painShootSkull(actor, actor.angle + ang270);
+    fall();
+    painShootSkull(*this, angle + ang90);
+    painShootSkull(*this, angle + ang180);
+    painShootSkull(*this, angle + ang270);
 }
 
-void scream(Mobj& actor)
+void Mobj::scream()
 {
     SfxEnum sound;
 
-    switch (actor.info->deathsound)
+    switch (info->deathsound)
     {
         case SfxEnum::None:
             return;
@@ -1450,35 +1395,35 @@ void scream(Mobj& actor)
             break;
 
         default:
-            sound = actor.info->deathsound;
+            sound = info->deathsound;
             break;
     }
 
     // Check for bosses.
-    if (actor.type == MobjType::Spider || actor.type == MobjType::Cyborg)
+    if (type == MobjType::Spider || type == MobjType::Cyborg)
     {
         // full volume
         startSound(0, sound);
     }
     else
-        startSound(&actor, sound);
+        startSound(this, sound);
 }
 
-void xScream(Mobj& actor)
+void Mobj::xScream()
 {
-    startSound(&actor, SfxEnum::Slop);
+    startSound(this, SfxEnum::Slop);
 }
 
-void pain(Mobj& actor)
+void Mobj::pain()
 {
-    if (actor.info->painsound != SfxEnum::None)
-        startSound(&actor, actor.info->painsound);
+    if (info->painsound != SfxEnum::None)
+        startSound(this, info->painsound);
 }
 
-void fall(Mobj& actor)
+void Mobj::fall()
 {
-    // actor is on ground, it can be walked over
-    actor.flags = withoutFlags(actor.flags, MobjFlag::Solid);
+    // *this is on ground, it can be walked over
+    flags = withoutFlags(flags, MobjFlag::Solid);
 
     // So change this if corpse objects
     // are meant to be obstacles.
@@ -1487,9 +1432,9 @@ void fall(Mobj& actor)
 //
 // explode
 //
-void explode(Mobj& thingy)
+void Mobj::explode()
 {
-    radiusAttack(thingy, thingy.target, 128);
+    radiusAttack(*this, target, 128);
 }
 
 //
@@ -1497,7 +1442,7 @@ void explode(Mobj& thingy)
 // Possibly trigger special effects
 // if on first boss level
 //
-void bossDeath(Mobj& mo)
+void Mobj::bossDeath()
 {
     Line junk;
 
@@ -1511,7 +1456,7 @@ void bossDeath(Mobj& mo)
         if (session.gamemap != 7)
             return;
 
-        if ((mo.type != MobjType::Fatso) && (mo.type != MobjType::Baby))
+        if ((type != MobjType::Fatso) && (type != MobjType::Baby))
             return;
     }
     else
@@ -1522,7 +1467,7 @@ void bossDeath(Mobj& mo)
                 if (session.gamemap != 8)
                     return;
 
-                if (mo.type != MobjType::Bruiser)
+                if (type != MobjType::Bruiser)
                     return;
                 break;
 
@@ -1530,7 +1475,7 @@ void bossDeath(Mobj& mo)
                 if (session.gamemap != 8)
                     return;
 
-                if (mo.type != MobjType::Cyborg)
+                if (type != MobjType::Cyborg)
                     return;
                 break;
 
@@ -1538,7 +1483,7 @@ void bossDeath(Mobj& mo)
                 if (session.gamemap != 8)
                     return;
 
-                if (mo.type != MobjType::Spider)
+                if (type != MobjType::Spider)
                     return;
 
                 break;
@@ -1547,12 +1492,12 @@ void bossDeath(Mobj& mo)
                 switch (session.gamemap)
                 {
                     case 6:
-                        if (mo.type != MobjType::Cyborg)
+                        if (type != MobjType::Cyborg)
                             return;
                         break;
 
                     case 8:
-                        if (mo.type != MobjType::Spider)
+                        if (type != MobjType::Spider)
                             return;
                         break;
 
@@ -1590,7 +1535,7 @@ void bossDeath(Mobj& mo)
             continue;
 
         Mobj* mo2 = reinterpret_cast<Mobj*>(th);
-        if (mo2 != &mo && mo2->type == mo.type && mo2->health > 0)
+        if (mo2 != this && mo2->type == type && mo2->health > 0)
         {
             // other boss not dead
             return;
@@ -1602,14 +1547,14 @@ void bossDeath(Mobj& mo)
     {
         if (session.gamemap == 7)
         {
-            if (mo.type == MobjType::Fatso)
+            if (type == MobjType::Fatso)
             {
                 junk.tag = 666;
                 doFloor(junk, FloorType::LowerFloorToLowest);
                 return;
             }
 
-            if (mo.type == MobjType::Baby)
+            if (type == MobjType::Baby)
             {
                 junk.tag = 667;
                 doFloor(junk, FloorType::RaiseToTexture);
@@ -1648,41 +1593,41 @@ void bossDeath(Mobj& mo)
     exitLevel();
 }
 
-void hoof(Mobj& mo)
+void Mobj::hoof()
 {
-    startSound(&mo, SfxEnum::Hoof);
-    chase(mo);
+    startSound(this, SfxEnum::Hoof);
+    chase();
 }
 
-void metal(Mobj& mo)
+void Mobj::metal()
 {
-    startSound(&mo, SfxEnum::Metal);
-    chase(mo);
+    startSound(this, SfxEnum::Metal);
+    chase();
 }
 
-void babyMetal(Mobj& mo)
+void Mobj::babyMetal()
 {
-    startSound(&mo, SfxEnum::Bspwlk);
-    chase(mo);
+    startSound(this, SfxEnum::Bspwlk);
+    chase();
 }
 
-void openShotgun2(Player& player, PspDef&)
+void Player::openShotgun2(PspDef&)
 {
-    startSound(player.mo, SfxEnum::Dbopn);
+    startSound(mo, SfxEnum::Dbopn);
 }
 
-void loadShotgun2(Player& player, PspDef&)
+void Player::loadShotgun2(PspDef&)
 {
-    startSound(player.mo, SfxEnum::Dbload);
+    startSound(mo, SfxEnum::Dbload);
 }
 
-void closeShotgun2(Player& player, PspDef& psp)
+void Player::closeShotgun2(PspDef& psp)
 {
-    startSound(player.mo, SfxEnum::Dbcls);
-    reFire(player, psp);
+    startSound(mo, SfxEnum::Dbcls);
+    reFire(psp);
 }
 
-void brainAwake(Mobj&)
+void Mobj::brainAwake()
 {
     auto& thinkers = thinkerList();
     auto& ai = enemyAI();
@@ -1709,20 +1654,20 @@ void brainAwake(Mobj&)
     startSound(0, SfxEnum::Bossit);
 }
 
-void brainPain(Mobj&)
+void Mobj::brainPain()
 {
     startSound(0, SfxEnum::Bospn);
 }
 
-void brainScream(Mobj& mo)
+void Mobj::brainScream()
 {
-    for (Fixed x = mo.x - 196 * FRACUNIT; x < mo.x + 320 * FRACUNIT;
-         x += FRACUNIT * 8)
+    for (Fixed xToUse = x - 196 * FRACUNIT; xToUse < x + 320 * FRACUNIT;
+         xToUse += FRACUNIT * 8)
     {
-        Fixed y = mo.y - 320 * FRACUNIT;
+        Fixed yToUse = y - 320 * FRACUNIT;
         // vanilla's raw 128 added to a whole-unit-scaled random; kept as it stands.
-        Fixed z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-        Mobj* th = spawnMobj(x, y, z, MobjType::Rocket);
+        Fixed zToUse = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+        Mobj* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
         th->momz = Fixed {randomness().forPlay() * 512};
 
         setMobjState(*th, StateNum::Brainexplode1);
@@ -1735,13 +1680,13 @@ void brainScream(Mobj& mo)
     startSound(0, SfxEnum::Bosdth);
 }
 
-void brainExplode(Mobj& mo)
+void Mobj::brainExplode()
 {
-    Fixed x =
-        mo.x + Fixed {(randomness().forPlay() - randomness().forPlay()) * 2048};
-    Fixed y = mo.y;
-    Fixed z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-    Mobj* th = spawnMobj(x, y, z, MobjType::Rocket);
+    Fixed xToUse =
+        x + Fixed {(randomness().forPlay() - randomness().forPlay()) * 2048};
+    Fixed yToUse = y;
+    Fixed zToUse = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+    Mobj* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
     th->momz = Fixed {randomness().forPlay() * 512};
 
     setMobjState(*th, StateNum::Brainexplode1);
@@ -1751,12 +1696,12 @@ void brainExplode(Mobj& mo)
         th->tics = 1;
 }
 
-void brainDie(Mobj&)
+void Mobj::brainDie()
 {
     exitLevel();
 }
 
-void brainSpit(Mobj& mo)
+void Mobj::brainSpit()
 {
     auto& ai = enemyAI();
 
@@ -1769,31 +1714,31 @@ void brainSpit(Mobj& mo)
     ai.braintargeton = (ai.braintargeton + 1) % ai.braintargets.size();
 
     // spawn brain missile
-    Mobj* newmobj = spawnMissile(mo, targ, MobjType::Spawnshot);
+    Mobj* newmobj = spawnMissile(*this, targ, MobjType::Spawnshot);
     newmobj->target = targ;
     // Vanilla divides the raw values as plain integers here - the result is a tic
     // count, not a length. A fixed-point divide would scale it by 65536.
     newmobj->reactiontime =
-        ((targ->y - mo.y).raw / newmobj->momy.raw) / newmobj->state->tics;
+        ((targ->y - y).raw / newmobj->momy.raw) / newmobj->state->tics;
 
     startSound(0, SfxEnum::Bospit);
 }
 
 // travelling cube sound
-void spawnSound(Mobj& mo)
+void Mobj::spawnSound()
 {
-    startSound(&mo, SfxEnum::Boscub);
-    spawnFly(mo);
+    startSound(this, SfxEnum::Boscub);
+    spawnFly();
 }
 
-void spawnFly(Mobj& mo)
+void Mobj::spawnFly()
 {
-    MobjType type;
+    MobjType spawnType;
 
-    if (--mo.reactiontime)
+    if (--reactiontime)
         return; // still flying
 
-    Mobj* targ = mo.target;
+    Mobj* targ = target;
 
     // First spawn teleport fog.
     Mobj* fog = spawnMobj(targ->x, targ->y, targ->z, MobjType::Spawnfire);
@@ -1805,29 +1750,29 @@ void spawnFly(Mobj& mo)
     // Probability distribution (kind of :),
     // decreasing likelihood.
     if (r < 50)
-        type = MobjType::Troop;
+        spawnType = MobjType::Troop;
     else if (r < 90)
-        type = MobjType::Sergeant;
+        spawnType = MobjType::Sergeant;
     else if (r < 120)
-        type = MobjType::Shadows;
+        spawnType = MobjType::Shadows;
     else if (r < 130)
-        type = MobjType::Pain;
+        spawnType = MobjType::Pain;
     else if (r < 160)
-        type = MobjType::Head;
+        spawnType = MobjType::Head;
     else if (r < 162)
-        type = MobjType::Vile;
+        spawnType = MobjType::Vile;
     else if (r < 172)
-        type = MobjType::Undead;
+        spawnType = MobjType::Undead;
     else if (r < 192)
-        type = MobjType::Baby;
+        spawnType = MobjType::Baby;
     else if (r < 222)
-        type = MobjType::Fatso;
+        spawnType = MobjType::Fatso;
     else if (r < 246)
-        type = MobjType::Knight;
+        spawnType = MobjType::Knight;
     else
-        type = MobjType::Bruiser;
+        spawnType = MobjType::Bruiser;
 
-    Mobj* newmobj = spawnMobj(targ->x, targ->y, targ->z, type);
+    Mobj* newmobj = spawnMobj(targ->x, targ->y, targ->z, spawnType);
     if (lookForPlayers(*newmobj, true))
         setMobjState(*newmobj, static_cast<StateNum>(newmobj->info->seestate));
 
@@ -1835,21 +1780,21 @@ void spawnFly(Mobj& mo)
     teleportMove(*newmobj, newmobj->x, newmobj->y);
 
     // remove self (i.e., cube).
-    removeMobj(mo);
+    removeMobj(*this);
 }
 
-void playerScream(Mobj& mo)
+void Mobj::playerScream()
 {
     // Default death sound.
     SfxEnum sound = SfxEnum::Pldeth;
 
-    if ((gameVersion().gamemode == GameMode::Commercial) && (mo.health < -50))
+    if ((gameVersion().gamemode == GameMode::Commercial) && (health < -50))
     {
         // IF THE PLAYER DIES
         // LESS THAN -50% WITHOUT GIBBING
         sound = SfxEnum::Pdiehi;
     }
 
-    startSound(&mo, sound);
+    startSound(this, sound);
 }
 } // namespace Doom

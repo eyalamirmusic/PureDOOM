@@ -2,11 +2,8 @@
 
 #include "../Game/PlayerTypes.h" // Player
 
-namespace Doom
-{
-// One tic of a player: weapon change, movement (via tryMove/thrust), view bob,
-// specials, powerup countdowns and the powerup colormap. p_user.cpp keeps the
-// vanilla name P_PlayerThink as a shim; p_tick calls it. Golden-neutral and covered
-// by every demo (the demos are recorded player input).
-void playerThink(Player& player);
-} // namespace Doom
+// One tic of a player - weapon change, movement, view bob, specials, powerup
+// countdowns - is now Player::think() (vanilla's P_PlayerThink), declared on the
+// struct in Game/PlayerTypes.h with its helpers (thrust, calcHeight, movePlayer,
+// deathThink); p_tick calls it. Bodies in Sim/Player.cpp. This header remains as
+// the include the sim reaches for the player type and its per-tic entry point.

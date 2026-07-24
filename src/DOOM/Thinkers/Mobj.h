@@ -195,6 +195,63 @@ struct Mobj : Thinker
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Mobj; }
 
+    // State-action methods (vanilla's A_* codepointers): Sim/Info.cpp's state
+    // table installs each as &Mobj::name, and setMobjState invokes the one its
+    // state names via (mobj.*action.mobj)(). The bodies live in Sim/Enemy.cpp,
+    // except bfgSpray, which lives in Sim/Weapon.cpp with the rest of the BFG.
+    void look();
+    void chase();
+    void faceTarget();
+    void posAttack();
+    void sPosAttack();
+    void cPosAttack();
+    void cPosRefire();
+    void spidRefire();
+    void bspiAttack();
+    void troopAttack();
+    void sargAttack();
+    void headAttack();
+    void cyberAttack();
+    void bruisAttack();
+    void skelMissile();
+    void traceTarget(); // vanilla A_Tracer; renamed off the `tracer` member
+    void skelWhoosh();
+    void skelFist();
+    void vileChase();
+    void vileStart();
+    void startFire();
+    void fireCrackle();
+    void fire();
+    void vileTarget();
+    void vileAttack();
+    void fatRaise();
+    void fatAttack1();
+    void fatAttack2();
+    void fatAttack3();
+    void skullAttack();
+    void painAttack();
+    void painDie();
+    void keenDie();
+    void scream();
+    void xScream();
+    void pain();
+    void fall();
+    void explode();
+    void bossDeath();
+    void hoof();
+    void metal();
+    void babyMetal();
+    void bfgSpray();
+    void brainAwake();
+    void brainPain();
+    void brainScream();
+    void brainExplode();
+    void brainDie();
+    void brainSpit();
+    void spawnSound();
+    void spawnFly();
+    void playerScream();
+
     // Info for drawing: position.
     Fixed x;
     Fixed y;

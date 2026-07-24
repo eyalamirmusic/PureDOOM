@@ -215,7 +215,7 @@ void ticker()
 
     for (int i = 0; i < MAXPLAYERS; i++)
         if (players_.playeringame[i])
-            playerThink(players_.players[i]);
+            players_.players[i].think();
 
     runThinkers();
     updateSpecials();

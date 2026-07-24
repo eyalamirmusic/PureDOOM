@@ -83,7 +83,7 @@ bool setMobjState(Mobj& mobj, StateNum state)
         // Modified handling.
         // Call action functions when the state is set.
         if (st->action.mobj)
-            st->action.mobj(mobj);
+            (mobj.*(st->action.mobj))();
 
         state = st->nextstate;
     } while (!mobj.tics);

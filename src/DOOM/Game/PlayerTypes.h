@@ -162,6 +162,42 @@ struct Player
 
     // True if secret level has been done.
     bool didsecret;
+
+    // One tic of this player (vanilla's P_PlayerThink): weapon change, movement,
+    // view bob, specials and powerup countdowns. p_tick calls it; the rest are its
+    // helpers. Bodies in Sim/Player.cpp. Golden-neutral, covered by every demo.
+    void think();
+    void thrust(Angle angle, Fixed move);
+    void calcHeight();
+    void movePlayer();
+    void deathThink();
+
+    // Weapon-action methods (vanilla's A_* weapon codepointers): Sim/Info.cpp's
+    // state table installs each as &Player::name, and setPsprite invokes the one
+    // its weapon state names via (player.*action.weapon)(psp). The bodies live in
+    // Sim/Weapon.cpp, except the super-shotgun trio, which lives in Sim/Enemy.cpp.
+    void weaponReady(PspDef& psp);
+    void reFire(PspDef& psp);
+    void checkReload(PspDef& psp);
+    void lower(PspDef& psp);
+    void raise(PspDef& psp);
+    void gunFlash(PspDef& psp);
+    void punch(PspDef& psp);
+    void saw(PspDef& psp);
+    void fireMissile(PspDef& psp);
+    void fireBFG(PspDef& psp);
+    void firePlasma(PspDef& psp);
+    void firePistol(PspDef& psp);
+    void fireShotgun(PspDef& psp);
+    void fireShotgun2(PspDef& psp);
+    void fireCGun(PspDef& psp);
+    void light0(PspDef& psp);
+    void light1(PspDef& psp);
+    void light2(PspDef& psp);
+    void bfgSound(PspDef& psp);
+    void openShotgun2(PspDef& psp);
+    void loadShotgun2(PspDef& psp);
+    void closeShotgun2(PspDef& psp);
 };
 } // namespace Doom
 

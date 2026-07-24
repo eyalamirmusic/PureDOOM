@@ -9,9 +9,10 @@
 // DESCRIPTION:
 //        Doom::Player related stuff: bobbing POV/weapon, movement, pending weapon.
 //
-// Rewritten into namespace Doom out of vanilla p_user; p_user.cpp keeps the vanilla
-// name P_PlayerThink as a shim. Everything else (thrust, calcHeight, movePlayer,
-// deathThink and the onground flag) is internal to this file.
+// Rewritten into namespace Doom out of vanilla p_user. One tic of a player is
+// Player::think() (vanilla's P_PlayerThink), with thrust / calcHeight / movePlayer /
+// deathThink its helper methods - all declared on the struct in Game/PlayerTypes.h,
+// bodies here. The onground flag lives on the Engine (Sim/PlayerScratch.h).
 //
 //-----------------------------------------------------------------------------
 
@@ -57,19 +58,19 @@ constexpr Angle ANG5 = ang90 / 18;
 // thrust
 // Moves the given origin along a given angle.
 //
-void thrust(Player& player, Angle angle, Fixed move)
+void Player::thrust(Angle angle, Fixed move)
 {
     const auto angleFine = angle.fineIndex();
 
-    player.mo->momx += FixedMul(move, finecosine()[angleFine]);
-    player.mo->momy += FixedMul(move, finesine()[angleFine]);
+    mo->momx += FixedMul(move, finecosine()[angleFine]);
+    mo->momy += FixedMul(move, finesine()[angleFine]);
 }
 
 //
 // calcHeight
 // Calculate the walking / running height adjustment
 //
-void calcHeight(Player& player)
+void Player::calcHeight()
 {
     // Regular movement bobbing
     // (needs to be calculated for gun swing
@@ -77,84 +78,83 @@ void calcHeight(Player& player)
     // OPTIMIZE: tablify angle
     // Note: a LUT allows for effects
     //  like a ramp with low health.
-    player.bob = FixedMul(player.mo->momx, player.mo->momx)
-                 + FixedMul(player.mo->momy, player.mo->momy);
+    bob = FixedMul(mo->momx, mo->momx) + FixedMul(mo->momy, mo->momy);
 
-    player.bob >>= 2;
+    bob >>= 2;
 
-    if (player.bob > MAXBOB)
-        player.bob = MAXBOB;
+    if (bob > MAXBOB)
+        bob = MAXBOB;
 
-    if ((hasFlag(player.cheats, CheatFlag::NoMomentum)) || !playerScratch().onground)
+    if ((hasFlag(cheats, CheatFlag::NoMomentum)) || !playerScratch().onground)
     {
-        player.viewz = player.mo->z + VIEWHEIGHT;
+        viewz = mo->z + VIEWHEIGHT;
 
-        if (player.viewz > player.mo->ceilingz - 4 * FRACUNIT)
-            player.viewz = player.mo->ceilingz - 4 * FRACUNIT;
+        if (viewz > mo->ceilingz - 4 * FRACUNIT)
+            viewz = mo->ceilingz - 4 * FRACUNIT;
 
-        player.viewz = player.mo->z + player.viewheight;
+        viewz = mo->z + viewheight;
         return;
     }
 
     int angle = (fineAngles / 20 * levelStats().leveltime) & fineMask;
-    Fixed bob = FixedMul(player.bob / 2, finesine()[angle]);
+    Fixed bobToUse = FixedMul(bob / 2, finesine()[angle]);
 
     // move viewheight
-    if (player.playerstate == PlayerLifeState::Live)
+    if (playerstate == PlayerLifeState::Live)
     {
-        player.viewheight += player.deltaviewheight;
+        viewheight += deltaviewheight;
 
-        if (player.viewheight > VIEWHEIGHT)
+        if (viewheight > VIEWHEIGHT)
         {
-            player.viewheight = VIEWHEIGHT;
-            player.deltaviewheight = Fixed {};
+            viewheight = VIEWHEIGHT;
+            deltaviewheight = Fixed {};
         }
 
-        if (player.viewheight < VIEWHEIGHT / 2)
+        if (viewheight < VIEWHEIGHT / 2)
         {
-            player.viewheight = VIEWHEIGHT / 2;
-            if (!player.deltaviewheight.isPositive())
-                player.deltaviewheight = Fixed {1};
+            viewheight = VIEWHEIGHT / 2;
+            if (!deltaviewheight.isPositive())
+                deltaviewheight = Fixed {1};
         }
 
-        if (player.deltaviewheight)
+        if (deltaviewheight)
         {
-            player.deltaviewheight += FRACUNIT / 4;
-            if (!player.deltaviewheight)
-                player.deltaviewheight = Fixed {1};
+            deltaviewheight += FRACUNIT / 4;
+            if (!deltaviewheight)
+                deltaviewheight = Fixed {1};
         }
     }
-    player.viewz = player.mo->z + player.viewheight + bob;
+    viewz = mo->z + viewheight + bobToUse;
 
-    if (player.viewz > player.mo->ceilingz - 4 * FRACUNIT)
-        player.viewz = player.mo->ceilingz - 4 * FRACUNIT;
+    if (viewz > mo->ceilingz - 4 * FRACUNIT)
+        viewz = mo->ceilingz - 4 * FRACUNIT;
 }
 
 //
 // movePlayer
 //
-void movePlayer(Player& player)
+void Player::movePlayer()
 {
-    Ticcmd* cmd = &player.cmd;
+    Ticcmd* cmdToUse = &cmd;
 
     auto& scratch = playerScratch();
 
-    player.mo->angle += Angle {(unsigned) cmd->angleturn << 16};
+    mo->angle += Angle {(unsigned) cmdToUse->angleturn << 16};
 
-    // Do not let the player control movement
+    // Do not let the *this control movement
     //  if not onground.
-    scratch.onground = (player.mo->z <= player.mo->floorz);
+    scratch.onground = (mo->z <= mo->floorz);
 
-    if (cmd->forwardmove && scratch.onground)
-        thrust(player, player.mo->angle, Fixed {cmd->forwardmove * 2048});
+    if (cmdToUse->forwardmove && scratch.onground)
+        thrust(mo->angle, Fixed {cmdToUse->forwardmove * 2048});
 
-    if (cmd->sidemove && scratch.onground)
-        thrust(player, player.mo->angle - ang90, Fixed {cmd->sidemove * 2048});
+    if (cmdToUse->sidemove && scratch.onground)
+        thrust(mo->angle - ang90, Fixed {cmdToUse->sidemove * 2048});
 
-    if ((cmd->forwardmove || cmd->sidemove)
-        && player.mo->state == &states()[toIndex(StateNum::Play)])
+    if ((cmdToUse->forwardmove || cmdToUse->sidemove)
+        && mo->state == &states()[toIndex(StateNum::Play)])
     {
-        setMobjState(*player.mo, StateNum::PlayRun1);
+        setMobjState(*mo, StateNum::PlayRun1);
     }
 }
 
@@ -163,107 +163,106 @@ void movePlayer(Player& player)
 // Fall on your face when dying.
 // Decrease POV height to floor height.
 //
-void deathThink(Player& player)
+void Player::deathThink()
 {
-    movePsprites(player);
+    movePsprites(*this);
 
     // fall to the ground
-    if (player.viewheight > 6 * FRACUNIT)
-        player.viewheight -= FRACUNIT;
+    if (viewheight > 6 * FRACUNIT)
+        viewheight -= FRACUNIT;
 
-    if (player.viewheight < 6 * FRACUNIT)
-        player.viewheight = 6 * FRACUNIT;
+    if (viewheight < 6 * FRACUNIT)
+        viewheight = 6 * FRACUNIT;
 
-    player.deltaviewheight = Fixed {};
-    playerScratch().onground = (player.mo->z <= player.mo->floorz);
-    calcHeight(player);
+    deltaviewheight = Fixed {};
+    playerScratch().onground = (mo->z <= mo->floorz);
+    calcHeight();
 
-    if (player.attacker && player.attacker != player.mo)
+    if (attacker && attacker != mo)
     {
-        Angle angle = pointToAngle2(
-            player.mo->x, player.mo->y, player.attacker->x, player.attacker->y);
+        Angle angle = pointToAngle2(mo->x, mo->y, attacker->x, attacker->y);
 
-        Angle delta = angle - player.mo->angle;
+        Angle delta = angle - mo->angle;
 
         if (delta < ANG5 || delta > -ANG5)
         {
             // Looking at killer,
             //  so fade damage flash down.
-            player.mo->angle = angle;
+            mo->angle = angle;
 
-            if (player.damagecount)
-                player.damagecount--;
+            if (damagecount)
+                damagecount--;
         }
         else if (delta < ang180)
-            player.mo->angle += ANG5;
+            mo->angle += ANG5;
         else
-            player.mo->angle -= ANG5;
+            mo->angle -= ANG5;
     }
-    else if (player.damagecount)
-        player.damagecount--;
+    else if (damagecount)
+        damagecount--;
 
-    if (hasFlag(player.cmd.buttons, ButtonCode::Use))
-        player.playerstate = PlayerLifeState::Reborn;
+    if (hasFlag(cmd.buttons, ButtonCode::Use))
+        playerstate = PlayerLifeState::Reborn;
 }
 
 //
 // playerThink
 //
-void playerThink(Player& player)
+void Player::think()
 {
     // fixme: do this in the cheat code
-    if (hasFlag(player.cheats, CheatFlag::NoClip))
-        player.mo->flags = withFlags(player.mo->flags, MobjFlag::NoClip);
+    if (hasFlag(cheats, CheatFlag::NoClip))
+        mo->flags = withFlags(mo->flags, MobjFlag::NoClip);
     else
-        player.mo->flags = withoutFlags(player.mo->flags, MobjFlag::NoClip);
+        mo->flags = withoutFlags(mo->flags, MobjFlag::NoClip);
 
     // chain saw run forward
-    Ticcmd* cmd = &player.cmd;
-    if (hasFlag(player.mo->flags, MobjFlag::JustAttacked))
+    Ticcmd* cmdToUse = &cmd;
+    if (hasFlag(mo->flags, MobjFlag::JustAttacked))
     {
-        cmd->angleturn = 0;
-        cmd->forwardmove = 0xc800 / 512;
-        cmd->sidemove = 0;
-        player.mo->flags = withoutFlags(player.mo->flags, MobjFlag::JustAttacked);
+        cmdToUse->angleturn = 0;
+        cmdToUse->forwardmove = 0xc800 / 512;
+        cmdToUse->sidemove = 0;
+        mo->flags = withoutFlags(mo->flags, MobjFlag::JustAttacked);
     }
 
-    if (player.playerstate == PlayerLifeState::Dead)
+    if (playerstate == PlayerLifeState::Dead)
     {
-        deathThink(player);
+        deathThink();
         return;
     }
 
     // Move around.
     // Reactiontime is used to prevent movement
     //  for a bit after a teleport.
-    if (player.mo->reactiontime)
-        player.mo->reactiontime--;
+    if (mo->reactiontime)
+        mo->reactiontime--;
     else
-        movePlayer(player);
+        movePlayer();
 
-    calcHeight(player);
+    calcHeight();
 
-    if (player.mo->subsector->sector->special)
-        playerInSpecialSector(player);
+    if (mo->subsector->sector->special)
+        playerInSpecialSector(*this);
 
     // Check for weapon change.
 
     // A special event has no other buttons.
-    if (hasFlag(cmd->buttons, ButtonCode::Special))
-        cmd->buttons = 0;
+    if (hasFlag(cmdToUse->buttons, ButtonCode::Special))
+        cmdToUse->buttons = 0;
 
-    if (hasFlag(cmd->buttons, ButtonCode::Change))
+    if (hasFlag(cmdToUse->buttons, ButtonCode::Change))
     {
         // The actual changing of the weapon is done
         //  when the weapon psprite can do it
         //  (read: not in the middle of an attack).
         WeaponType newweapon = static_cast<WeaponType>(
-            (cmd->buttons & buttonWeaponMask) >> buttonWeaponShift);
+            (cmdToUse->buttons & buttonWeaponMask) >> buttonWeaponShift);
 
         if (newweapon == WeaponType::Fist
-            && player.weaponowned[toIndex(WeaponType::Chainsaw)]
-            && !(player.readyweapon == WeaponType::Chainsaw
-                 && player.powers[toIndex(PowerType::Strength)]))
+            && weaponowned[toIndex(WeaponType::Chainsaw)]
+            && !(readyweapon == WeaponType::Chainsaw
+                 && powers[toIndex(PowerType::Strength)]))
         {
             newweapon = WeaponType::Chainsaw;
         }
@@ -272,86 +271,85 @@ void playerThink(Player& player)
 
         if ((version.gamemode == GameMode::Commercial)
             && newweapon == WeaponType::Shotgun
-            && player.weaponowned[toIndex(WeaponType::SuperShotgun)]
-            && player.readyweapon != WeaponType::SuperShotgun)
+            && weaponowned[toIndex(WeaponType::SuperShotgun)]
+            && readyweapon != WeaponType::SuperShotgun)
         {
             newweapon = WeaponType::SuperShotgun;
         }
 
-        if (player.weaponowned[toIndex(newweapon)]
-            && newweapon != player.readyweapon)
+        if (weaponowned[toIndex(newweapon)] && newweapon != readyweapon)
         {
             // Do not go to plasma or BFG in shareware,
             //  even if cheated.
             if ((newweapon != WeaponType::Plasma && newweapon != WeaponType::Bfg)
                 || (version.gamemode != GameMode::Shareware))
             {
-                player.pendingweapon = newweapon;
+                pendingweapon = newweapon;
             }
         }
     }
 
     // check for use
-    if (hasFlag(cmd->buttons, ButtonCode::Use))
+    if (hasFlag(cmdToUse->buttons, ButtonCode::Use))
     {
-        if (!player.usedown)
+        if (!usedown)
         {
-            useLines(player);
-            player.usedown = true;
+            useLines(*this);
+            usedown = true;
         }
     }
     else
-        player.usedown = false;
+        usedown = false;
 
     // cycle psprites
-    movePsprites(player);
+    movePsprites(*this);
 
     // Counters, time dependend power ups.
 
     // Strength counts up to diminish fade.
-    if (player.powers[toIndex(PowerType::Strength)])
-        player.powers[toIndex(PowerType::Strength)]++;
+    if (powers[toIndex(PowerType::Strength)])
+        powers[toIndex(PowerType::Strength)]++;
 
-    if (player.powers[toIndex(PowerType::Invulnerability)])
-        player.powers[toIndex(PowerType::Invulnerability)]--;
+    if (powers[toIndex(PowerType::Invulnerability)])
+        powers[toIndex(PowerType::Invulnerability)]--;
 
-    if (player.powers[toIndex(PowerType::Invisibility)])
-        if (!--player.powers[toIndex(PowerType::Invisibility)])
-            player.mo->flags = withoutFlags(player.mo->flags, MobjFlag::Shadow);
+    if (powers[toIndex(PowerType::Invisibility)])
+        if (!--powers[toIndex(PowerType::Invisibility)])
+            mo->flags = withoutFlags(mo->flags, MobjFlag::Shadow);
 
-    if (player.powers[toIndex(PowerType::Infrared)])
-        player.powers[toIndex(PowerType::Infrared)]--;
+    if (powers[toIndex(PowerType::Infrared)])
+        powers[toIndex(PowerType::Infrared)]--;
 
-    if (player.powers[toIndex(PowerType::IronFeet)])
-        player.powers[toIndex(PowerType::IronFeet)]--;
+    if (powers[toIndex(PowerType::IronFeet)])
+        powers[toIndex(PowerType::IronFeet)]--;
 
-    if (player.damagecount)
-        player.damagecount--;
+    if (damagecount)
+        damagecount--;
 
-    if (player.bonuscount)
-        player.bonuscount--;
+    if (bonuscount)
+        bonuscount--;
 
     // Handling colormaps.
-    if (player.powers[toIndex(PowerType::Invulnerability)])
+    if (powers[toIndex(PowerType::Invulnerability)])
     {
-        if (player.powers[toIndex(PowerType::Invulnerability)] > 4 * 32
-            || (player.powers[toIndex(PowerType::Invulnerability)] & 8))
-            player.fixedcolormap = INVERSECOLORMAP;
+        if (powers[toIndex(PowerType::Invulnerability)] > 4 * 32
+            || (powers[toIndex(PowerType::Invulnerability)] & 8))
+            fixedcolormap = INVERSECOLORMAP;
         else
-            player.fixedcolormap = 0;
+            fixedcolormap = 0;
     }
-    else if (player.powers[toIndex(PowerType::Infrared)])
+    else if (powers[toIndex(PowerType::Infrared)])
     {
-        if (player.powers[toIndex(PowerType::Infrared)] > 4 * 32
-            || (player.powers[toIndex(PowerType::Infrared)] & 8))
+        if (powers[toIndex(PowerType::Infrared)] > 4 * 32
+            || (powers[toIndex(PowerType::Infrared)] & 8))
         {
             // almost full bright
-            player.fixedcolormap = 1;
+            fixedcolormap = 1;
         }
         else
-            player.fixedcolormap = 0;
+            fixedcolormap = 0;
     }
     else
-        player.fixedcolormap = 0;
+        fixedcolormap = 0;
 }
 } // namespace Doom
