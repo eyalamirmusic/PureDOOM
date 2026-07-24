@@ -24,6 +24,7 @@ add_executable(PureDoomEACP
         ScreenShader.h
         Textures.h
         View.h
+        View.cpp
         WipeShader.h
         WorldShader.h)
 

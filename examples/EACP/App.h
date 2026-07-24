@@ -5,8 +5,6 @@
 
 namespace PureDoom
 {
-// The window is declared before the view, so the view can take it as a reference
-// and never has to ask whether it has one.
 struct App
 {
     App()

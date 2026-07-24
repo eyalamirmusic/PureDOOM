@@ -198,6 +198,13 @@ void setResolution(int width, int height);
 // controls. A string value is kept as the view given - pass a literal or
 // storage that outlives the engine.
 void setDefaultInt(std::string_view name, int value);
+
+template<typename T>
+void setDefaultInt(std::string_view name, T value)
+{
+    setDefaultInt(name, static_cast<int>(value));
+}
+
 void setDefaultString(std::string_view name, std::string_view value);
 
 // Initializes DOOM and starts things up. Call only once.

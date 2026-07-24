@@ -42,6 +42,7 @@ struct DoomKeyMapping
 };
 
 inline constexpr DoomKeyMapping printableKeys[] = {
+
     {Graphics::KeyCode::A, Doom::Key::A},
     {Graphics::KeyCode::B, Doom::Key::B},
     {Graphics::KeyCode::C, Doom::Key::C},
