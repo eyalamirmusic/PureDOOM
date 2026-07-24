@@ -184,11 +184,11 @@ MoveResult Sector::movePlane(
 //
 int Line::doFloor(FloorType floortype)
 {
-    int secnum = -1;
-    int rtn = 0;
+    auto secnum = -1;
+    auto rtn = 0;
     while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
-        Sector* sec = &level().sectors[secnum];
+        auto* sec = &level().sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (sec->specialdata)
@@ -284,11 +284,11 @@ int Line::doFloor(FloorType floortype)
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                for (int i = 0; i < sec->linecount; i++)
+                for (auto i = 0; i < sec->linecount; i++)
                 {
                     if (twoSided(secnum, i))
                     {
-                        Side* side = getSide(secnum, i, 0);
+                        auto* side = getSide(secnum, i, 0);
                         if (side->bottomtexture >= 0)
                             if (graphicsData().textureheight[side->bottomtexture]
                                 < minsize)
@@ -313,7 +313,7 @@ int Line::doFloor(FloorType floortype)
                 floor->floordestheight = sec->findLowestFloorSurrounding();
                 floor->texture = sec->floorpic;
 
-                for (int i = 0; i < sec->linecount; i++)
+                for (auto i = 0; i < sec->linecount; i++)
                 {
                     if (twoSided(secnum, i))
                     {
@@ -362,11 +362,11 @@ int Line::buildStairs(StairType type)
     Fixed stairsize;
     Fixed speed;
 
-    int secnum = -1;
-    int rtn = 0;
+    auto secnum = -1;
+    auto rtn = 0;
     while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
-        Sector* sec = &level().sectors[secnum];
+        auto* sec = &level().sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (sec->specialdata)
@@ -391,10 +391,10 @@ int Line::buildStairs(StairType type)
                 break;
         }
         floor->speed = speed;
-        Fixed height = sec->floorheight + stairsize;
+        auto height = sec->floorheight + stairsize;
         floor->floordestheight = height;
 
-        int texture = sec->floorpic;
+        auto texture = sec->floorpic;
 
         // Find next sector to raise
         // 1.        Find 2-sided line with same sector side[0]
@@ -402,13 +402,13 @@ int Line::buildStairs(StairType type)
         do
         {
             ok = 0;
-            for (int i = 0; i < sec->linecount; i++)
+            for (auto i = 0; i < sec->linecount; i++)
             {
                 if (!((sec->lines[i])->flags & ML_TWOSIDED))
                     continue;
 
-                Sector* tsec = (sec->lines[i])->frontsector;
-                int newsecnum = static_cast<int>(tsec - level().sectors.data());
+                auto* tsec = (sec->lines[i])->frontsector;
+                auto newsecnum = static_cast<int>(tsec - level().sectors.data());
 
                 if (secnum != newsecnum)
                     continue;

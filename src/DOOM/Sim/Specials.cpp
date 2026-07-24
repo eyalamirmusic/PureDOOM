@@ -168,7 +168,7 @@ void initPicAnims()
 
     // Init animation
     surf.anims.clear();
-    for (int i = 0; animdefs[i].istexture != -1; i++)
+    for (auto i = 0; animdefs[i].istexture != -1; i++)
     {
         auto anim = SurfaceAnim {};
 
@@ -222,12 +222,12 @@ void initPicAnims()
 //
 Fixed Sector::findLowestFloorSurrounding()
 {
-    Fixed floor = floorheight;
+    auto floor = floorheight;
 
-    for (int i = 0; i < linecount; i++)
+    for (auto i = 0; i < linecount; i++)
     {
-        Line* check = lines[i];
-        Sector* other = getNextSector(*check, *this);
+        auto* check = lines[i];
+        auto* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -245,12 +245,12 @@ Fixed Sector::findLowestFloorSurrounding()
 //
 Fixed Sector::findHighestFloorSurrounding()
 {
-    Fixed floor = -500 * FRACUNIT;
+    auto floor = -500 * FRACUNIT;
 
-    for (int i = 0; i < linecount; i++)
+    for (auto i = 0; i < linecount; i++)
     {
-        Line* check = lines[i];
-        Sector* other = getNextSector(*check, *this);
+        auto* check = lines[i];
+        auto* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -270,14 +270,14 @@ Fixed Sector::findNextHighestFloor(Fixed currentheight)
 {
     int i;
     int h;
-    Fixed height = currentheight;
+    auto height = currentheight;
 
     Array<Fixed, MAX_ADJOINING_SECTORS> heightlist;
 
     for (i = 0, h = 0; i < linecount; i++)
     {
-        Line* check = lines[i];
-        Sector* other = getNextSector(*check, *this);
+        auto* check = lines[i];
+        auto* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -297,7 +297,7 @@ Fixed Sector::findNextHighestFloor(Fixed currentheight)
     if (!h)
         return currentheight;
 
-    Fixed min = heightlist[0];
+    auto min = heightlist[0];
 
     // Range checking?
     for (i = 1; i < h; i++)
@@ -314,10 +314,10 @@ Fixed Sector::findLowestCeilingSurrounding()
 {
     auto height = Fixed {DOOM_MAXINT};
 
-    for (int i = 0; i < linecount; i++)
+    for (auto i = 0; i < linecount; i++)
     {
-        Line* check = lines[i];
-        Sector* other = getNextSector(*check, *this);
+        auto* check = lines[i];
+        auto* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -336,10 +336,10 @@ Fixed Sector::findHighestCeilingSurrounding()
 {
     Fixed height {};
 
-    for (int i = 0; i < linecount; i++)
+    for (auto i = 0; i < linecount; i++)
     {
-        Line* check = lines[i];
-        Sector* other = getNextSector(*check, *this);
+        auto* check = lines[i];
+        auto* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -356,7 +356,7 @@ Fixed Sector::findHighestCeilingSurrounding()
 //
 int Line::findSectorFromLineTag(int start)
 {
-    for (int i = start + 1; i < level().sectors.size(); i++)
+    for (auto i = start + 1; i < level().sectors.size(); i++)
         if (level().sectors[i].tag == tag)
             return i;
 
@@ -368,11 +368,11 @@ int Line::findSectorFromLineTag(int start)
 //
 int Sector::findMinSurroundingLight(int max)
 {
-    int min = max;
-    for (int i = 0; i < linecount; i++)
+    auto min = max;
+    for (auto i = 0; i < linecount; i++)
     {
-        Line* line = lines[i];
-        Sector* check = getNextSector(*line, *this);
+        auto* line = lines[i];
+        auto* check = getNextSector(*line, *this);
 
         if (!check)
             continue;
@@ -416,7 +416,7 @@ void Line::crossSpecialLine(int side, Mobj& thing)
                 break;
         }
 
-        int ok = 0;
+        auto ok = 0;
         switch (special)
         {
             case 39: // TELEPORT TRIGGER
@@ -856,7 +856,7 @@ void Line::shootSpecialLine(Mobj& thing)
     // Impacts that other things can activate.
     if (!thing.player)
     {
-        int ok = 0;
+        auto ok = 0;
         switch (special)
         {
             case 46:
@@ -899,7 +899,7 @@ void Player::inSpecialSector()
 {
     auto& stats = levelStats();
 
-    Sector* sector = mo->subsector->sector;
+    auto* sector = mo->subsector->sector;
 
     // Falling, not all the way down yet?
     if (mo->z != sector->floorheight)
@@ -987,10 +987,10 @@ void updateSpecials()
     // ANIMATE FLATS AND TEXTURES GLOBALLY
     for (auto& anim: surf.anims)
     {
-        for (int i = anim.basepic; i < anim.basepic + anim.numpics; i++)
+        for (auto i = anim.basepic; i < anim.basepic + anim.numpics; i++)
         {
-            int pic = anim.basepic
-                      + ((levelStats().leveltime / anim.speed + i) % anim.numpics);
+            auto pic = anim.basepic
+                       + ((levelStats().leveltime / anim.speed + i) % anim.numpics);
             if (anim.istexture)
                 graphicsData().texturetranslation[i] = pic;
             else
@@ -1048,24 +1048,24 @@ void updateSpecials()
 //
 int Line::doDonut()
 {
-    int secnum = -1;
-    int rtn = 0;
+    auto secnum = -1;
+    auto rtn = 0;
     while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
-        Sector* s1 = &level().sectors[secnum];
+        auto* s1 = &level().sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (s1->specialdata)
             continue;
 
         rtn = 1;
-        Sector* s2 = getNextSector(*s1->lines[0], *s1);
-        for (int i = 0; i < s2->linecount; i++)
+        auto* s2 = getNextSector(*s1->lines[0], *s1);
+        for (auto i = 0; i < s2->linecount; i++)
         {
             if ((!(s2->lines[i]->flags & ML_TWOSIDED))
                 || (s2->lines[i]->backsector == s1))
                 continue;
-            Sector* s3 = s2->lines[i]->backsector;
+            auto* s3 = s2->lines[i]->backsector;
 
             //        Spawn rising slime
             FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
@@ -1118,7 +1118,7 @@ void spawnSpecials()
     // See if -TIMER needs to be used.
     timer.levelTimer = false;
 
-    int i = checkParm("-avg");
+    auto i = checkParm("-avg");
     if (i && session.deathmatch)
     {
         timer.levelTimer = true;
@@ -1128,13 +1128,13 @@ void spawnSpecials()
     i = checkParm("-timer");
     if (i && session.deathmatch)
     {
-        int time = parseInt(myargv()[i + 1]) * 60 * 35;
+        auto time = parseInt(myargv()[i + 1]) * 60 * 35;
         timer.levelTimer = true;
         timer.levelTimeCount = time;
     }
 
     //        Init special SECTORs.
-    Sector* sector = level().sectors.data();
+    auto* sector = level().sectors.data();
     for (i = 0; i < level().sectors.size(); i++, sector++)
     {
         if (!sector->special)

@@ -143,7 +143,7 @@ void clearPlanes()
     auto& proj = viewProjection();
 
     // opening / clipping determination
-    for (int i = 0; i < view.viewwidth; i++)
+    for (auto i = 0; i < view.viewwidth; i++)
     {
         plane.floorclip[i] = view.viewheight;
         plane.ceilingclip[i] = -1;
@@ -367,7 +367,7 @@ void drawPlanes()
             //  by INVUL inverse mapping.
             draw.dc_colormap = graphicsData().colormaps;
             draw.dc_texturemid = sky.skytexturemid;
-            for (int x = pl->minx; x <= pl->maxx; x++)
+            for (auto x = pl->minx; x <= pl->maxx; x++)
             {
                 draw.dc_yl = pl->top[x];
                 draw.dc_yh = pl->bottom[x];
@@ -425,7 +425,7 @@ void drawPlanes()
 
         stop = pl->maxx + 1;
 
-        for (int x = pl->minx; x <= stop; x++)
+        for (auto x = pl->minx; x <= stop; x++)
             makeSpans(x, top[x - 1], bottom[x - 1], top[x], bottom[x]);
     }
 }

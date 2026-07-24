@@ -365,7 +365,7 @@ bool statusBarResponder(Event& ev)
                 for (auto& i: bar.plyr->weaponowned)
                     i = true;
 
-                for (int i = 0; i < numAmmo; i++)
+                for (auto i = 0; i < numAmmo; i++)
                     bar.plyr->ammo[i] = bar.plyr->maxammo[i];
 
                 bar.plyr->message = STSTR_FAADDED;
@@ -376,10 +376,10 @@ bool statusBarResponder(Event& ev)
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
 
-                for (int i = 0; i < numWeapons; i++)
+                for (auto i = 0; i < numWeapons; i++)
                     bar.plyr->weaponowned[i] = true;
 
-                for (int i = 0; i < numAmmo; i++)
+                for (auto i = 0; i < numAmmo; i++)
                     bar.plyr->ammo[i] = bar.plyr->maxammo[i];
 
                 for (bool& card: bar.plyr->cards)
@@ -431,7 +431,7 @@ bool statusBarResponder(Event& ev)
                     bar.plyr->message = STSTR_NCOFF;
             }
             // 'behold?' power-up cheats
-            for (int i = 0; i < 6; i++)
+            for (auto i = 0; i < 6; i++)
             {
                 if (checkCheat(cheat_powerup[i], ev.data1))
                 {
@@ -536,8 +536,8 @@ int calcPainOffset()
 {
     // The pain-offset cache: StatusBarFace members (Engine) now, reached by a local
     // reference (formerly function-local statics, never reset - identical persistence).
-    int& lastcalc = statusBarFace().lastcalc;
-    int& oldhealth = statusBarFace().oldhealth;
+    auto& lastcalc = statusBarFace().lastcalc;
+    auto& oldhealth = statusBarFace().oldhealth;
     auto& bar = statusBarState();
 
     int health = bar.plyr->health > 100 ? 100 : bar.plyr->health;
@@ -581,7 +581,7 @@ void updateFaceWidget()
         if (bar.plyr->bonuscount)
         {
             // picking up bonus
-            bool doevilgrin = false;
+            auto doevilgrin = false;
 
             for (i = 0; i < numWeapons; i++)
             {
@@ -616,10 +616,10 @@ void updateFaceWidget()
             }
             else
             {
-                Angle badguyangle = pointToAngle2(bar.plyr->mo->x,
-                                                  bar.plyr->mo->y,
-                                                  bar.plyr->attacker->x,
-                                                  bar.plyr->attacker->y);
+                auto badguyangle = pointToAngle2(bar.plyr->mo->x,
+                                                 bar.plyr->mo->y,
+                                                 bar.plyr->attacker->x,
+                                                 bar.plyr->attacker->y);
 
                 if (badguyangle > bar.plyr->mo->angle)
                 {
@@ -737,7 +737,7 @@ void updateWidgets()
     widgets.w_ready.data = toIndex(bar.plyr->readyweapon);
 
     // update keycard multiple widgets
-    for (int i = 0; i < 3; i++)
+    for (auto i = 0; i < 3; i++)
     {
         bar.keyboxes[i] = bar.plyr->cards[i] ? i : -1;
 
@@ -760,7 +760,7 @@ void updateWidgets()
     bar.st_fragson = session.deathmatch && bar.st_statusbaron;
     bar.st_fragscount = 0;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (i != playerState().consoleplayer)
             bar.st_fragscount += bar.plyr->frags[i];
@@ -785,12 +785,12 @@ void doPaletteStuff()
 
     int palette;
 
-    int cnt = bar.plyr->damagecount;
+    auto cnt = bar.plyr->damagecount;
 
     if (bar.plyr->powers[toIndex(PowerType::Strength)])
     {
         // slowly fade the berzerk out
-        int bzc = 12 - (bar.plyr->powers[toIndex(PowerType::Strength)] >> 6);
+        auto bzc = 12 - (bar.plyr->powers[toIndex(PowerType::Strength)] >> 6);
 
         cnt = std::max(cnt, bzc);
     }
@@ -822,7 +822,7 @@ void doPaletteStuff()
     if (palette != bar.st_palette)
     {
         bar.st_palette = palette;
-        byte* pal = static_cast<byte*>(cacheLumpNum(bar.lu_palette)) + palette * 768;
+        auto* pal = static_cast<byte*>(cacheLumpNum(bar.lu_palette)) + palette * 768;
         setPalette(pal);
     }
 }
@@ -841,7 +841,7 @@ void drawWidgets(bool refresh)
 
     updateNum(widgets.w_ready, refresh);
 
-    for (int i = 0; i < 4; i++)
+    for (auto i = 0; i < 4; i++)
     {
         updateNum(widgets.w_ammo[i], refresh);
         updateNum(widgets.w_maxammo[i], refresh);
@@ -855,7 +855,7 @@ void drawWidgets(bool refresh)
     // The arms icons read w_armsindex, not the player directly - see StatusBarWidgets.h.
     // Refreshed here, immediately before the update, so each icon sees exactly the
     // weaponowned value the old (int*) pun would have read at this same point.
-    for (int i = 0; i < 6; i++)
+    for (auto i = 0; i < 6; i++)
         widgets.w_armsindex[i] = bar.plyr->weaponowned[i + 1];
 
     for (auto& arm: widgets.w_arms)
@@ -916,7 +916,7 @@ void loadGraphics()
     auto& gfx = statusBarGraphics();
 
     // Load the numbers, tall and short
-    for (int i = 0; i < 10; i++)
+    for (auto i = 0; i < 10; i++)
     {
         gfx.tallnum[i] = static_cast<Patch*>(cacheLumpName(concat("STTNUM", i)));
         gfx.shortnum[i] = static_cast<Patch*>(cacheLumpName(concat("STYSNUM", i)));
@@ -927,7 +927,7 @@ void loadGraphics()
     gfx.tallpercent = static_cast<Patch*>(cacheLumpName("STTPRCNT"));
 
     // key cards
-    for (int i = 0; i < numCards; i++)
+    for (auto i = 0; i < numCards; i++)
     {
         gfx.keys[i] = static_cast<Patch*>(cacheLumpName(concat("STKEYS", i)));
     }
@@ -936,7 +936,7 @@ void loadGraphics()
     gfx.armsbg = static_cast<Patch*>(cacheLumpName("STARMS"));
 
     // arms ownership widgets
-    for (int i = 0; i < 6; i++)
+    for (auto i = 0; i < 6; i++)
     {
         // gray #
         gfx.arms[i][0] = static_cast<Patch*>(cacheLumpName(concat("STGNUM", i + 2)));
@@ -953,10 +953,10 @@ void loadGraphics()
     gfx.sbar = static_cast<Patch*>(cacheLumpName("STBAR"));
 
     // face states
-    int facenum = 0;
-    for (int i = 0; i < ST_NUMPAINFACES; i++)
+    auto facenum = 0;
+    for (auto i = 0; i < ST_NUMPAINFACES; i++)
     {
-        for (int j = 0; j < ST_NUMSTRAIGHTFACES; j++)
+        for (auto j = 0; j < ST_NUMSTRAIGHTFACES; j++)
         {
             gfx.faces[facenum++] =
                 static_cast<Patch*>(cacheLumpName(concat("STFST", i, j)));
@@ -1059,7 +1059,7 @@ void createWidgets()
                 &bar.st_statusbaron);
 
     // weapons owned
-    for (int i = 0; i < 6; i++)
+    for (auto i = 0; i < 6; i++)
     {
         initMultIcon(widgets.w_arms[i],
                      ST_ARMSX + (i % 3) * ST_ARMSXSPACE,

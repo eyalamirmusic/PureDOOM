@@ -194,7 +194,7 @@ void hSendPacket(int node, int flags)
                     "] ");
         }
 
-        for (int i = 0; i < net.doomcom->datalength; i++)
+        for (auto i = 0; i < net.doomcom->datalength; i++)
         {
             //fprintf(debugfile, "%i ", ((byte*)netbuffer)[i]);
             printTo(debugfile, (reinterpret_cast<byte*>(net.netbuffer))[i], " ");
@@ -288,7 +288,7 @@ bool hGetPacket()
                         "] ");
             }
 
-            for (int i = 0; i < net.doomcom->datalength; i++)
+            for (auto i = 0; i < net.doomcom->datalength; i++)
             {
                 //fprintf(debugfile, "%i ", ((byte*)netbuffer)[i]);
                 printTo(debugfile, (reinterpret_cast<byte*>(net.netbuffer))[i], " ");
@@ -465,7 +465,7 @@ void netUpdate()
 
         // build new ticcmds for console player
         gameticdiv = gameClock().gametic / net.ticdup;
-        for (int i = 0; i < newtics; i++)
+        for (auto i = 0; i < newtics; i++)
         {
             startTic();
             processEvents();
@@ -496,7 +496,7 @@ void netUpdate()
             return; // singletic update is syncronous
 
         // send the packet to the other nodes
-        for (int i = 0; i < net.doomcom->numnodes; i++)
+        for (auto i = 0; i < net.doomcom->numnodes; i++)
             if (net.nodeingame[i])
             {
                 net.netbuffer->starttic = realstart = net.resendto[i];
@@ -506,7 +506,7 @@ void netUpdate()
 
                 net.resendto[i] = net.maketic - net.doomcom->extratics;
 
-                for (int j = 0; j < net.netbuffer->numtics; j++)
+                for (auto j = 0; j < net.netbuffer->numtics; j++)
                     net.netbuffer->cmds[j] =
                         net.localcmds[(realstart + j) % BACKUPTICS];
 
@@ -651,7 +651,7 @@ void checkNetGame()
     auto& session = gameSession();
     auto& defaults_ = startupDefaults();
 
-    for (int i = 0; i < MAXNETNODES; i++)
+    for (auto i = 0; i < MAXNETNODES; i++)
     {
         net.nodeingame[i] = false;
         net.nettics[i] = 0;
@@ -687,9 +687,9 @@ void checkNetGame()
     if (net.maxsend < 1)
         net.maxsend = 1;
 
-    for (int i = 0; i < net.doomcom->numplayers; i++)
+    for (auto i = 0; i < net.doomcom->numplayers; i++)
         state.playeringame[i] = true;
-    for (int i = 0; i < net.doomcom->numnodes; i++)
+    for (auto i = 0; i < net.doomcom->numnodes; i++)
         net.nodeingame[i] = true;
 
     //doom_print("player %i of %i (%i nodes)\n",
@@ -725,9 +725,9 @@ void quitNetGame()
     // send a bunch of packets for security
     net.netbuffer->player = consoleplayer;
     net.netbuffer->numtics = 0;
-    for (int i = 0; i < 4; i++)
+    for (auto i = 0; i < 4; i++)
     {
-        for (int j = 1; j < net.doomcom->numnodes; j++)
+        for (auto j = 1; j < net.doomcom->numnodes; j++)
             if (net.nodeingame[j])
                 hSendPacket(j, NCMD_EXIT);
         waitVBlank(1);
@@ -746,7 +746,7 @@ void tryRunTics()
     auto& state = playerState();
     auto& clock = gameClock();
     auto* debugfile = engineParams().debugfile;
-    int& oldentertics = net.oldentertics;
+    auto& oldentertics = net.oldentertics;
     int realtics;
     int availabletics;
     int counts;

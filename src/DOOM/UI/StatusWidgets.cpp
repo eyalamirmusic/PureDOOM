@@ -54,16 +54,16 @@ void initNum(
 //
 void drawNum(StatusNumber& n)
 {
-    int numdigits = n.width;
+    auto numdigits = n.width;
     int num = *n.num;
 
-    int w = littleEndian(n.p[0]->width);
-    int h = littleEndian(n.p[0]->height);
+    auto w = littleEndian(n.p[0]->width);
+    auto h = littleEndian(n.p[0]->height);
     int x = n.x;
 
     n.oldnum = *n.num;
 
-    int neg = num < 0;
+    auto neg = num < 0;
 
     if (neg)
     {
@@ -145,8 +145,8 @@ void updateMultIcon(StatusMultIcon& mi, bool refresh)
         {
             int x = mi.x - littleEndian(mi.p[mi.oldinum]->leftoffset);
             int y = mi.y - littleEndian(mi.p[mi.oldinum]->topoffset);
-            int w = littleEndian(mi.p[mi.oldinum]->width);
-            int h = littleEndian(mi.p[mi.oldinum]->height);
+            auto w = littleEndian(mi.p[mi.oldinum]->width);
+            auto h = littleEndian(mi.p[mi.oldinum]->height);
 
             if (y - ST_Y < 0)
                 fatalError("Error: updateMultIcon: y - ST_Y < 0");
@@ -174,8 +174,8 @@ void updateBinIcon(StatusBinIcon& bi, bool refresh)
     {
         int x = bi.x - littleEndian(bi.p->leftoffset);
         int y = bi.y - littleEndian(bi.p->topoffset);
-        int w = littleEndian(bi.p->width);
-        int h = littleEndian(bi.p->height);
+        auto w = littleEndian(bi.p->width);
+        auto h = littleEndian(bi.p->height);
 
         if (y - ST_Y < 0)
             fatalError("Error: updateBinIcon: y - ST_Y < 0");

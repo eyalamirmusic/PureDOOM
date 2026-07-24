@@ -50,10 +50,10 @@ auto tResetEngineReleasesTheLevelPool =
     doomSimCountAllocations();
 
     check(doomSimBoot() != 0, "the engine booted");
-    const int afterBoot = doomSimLiveAllocations();
+    const auto afterBoot = doomSimLiveAllocations();
 
     check(doomSimLoadLevel(1, 1, 2) != 0, "E1M1 loaded");
-    const int withLevel = doomSimLiveAllocations();
+    const auto withLevel = doomSimLiveAllocations();
 
     // Guards the test itself: if loading a level ever stopped allocating through the
     // pool, the assertion below would pass while measuring nothing at all.

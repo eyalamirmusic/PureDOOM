@@ -189,7 +189,7 @@ void renderSegLoop()
     // So the assignment always precedes the read. GCC cannot see that the four
     // members and segtextured move together and warns; the invariant is real, and
     // 0 is written here to say so rather than to change what runs.
-    int texturecolumn = 0;
+    auto texturecolumn = 0;
     int top;
     int bottom;
 

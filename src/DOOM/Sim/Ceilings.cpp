@@ -38,8 +38,8 @@ void removeActiveCeiling(Ceiling& c);
 //
 int Line::doCeiling(CeilingType type)
 {
-    int secnum = -1;
-    int rtn = 0;
+    auto secnum = -1;
+    auto rtn = 0;
 
     // Reactivate in-stasis ceilings...for certain types.
     switch (type)
@@ -57,7 +57,7 @@ int Line::doCeiling(CeilingType type)
 
     while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
-        Sector* sec = &level().sectors[secnum];
+        auto* sec = &level().sectors[secnum];
         if (sec->specialdata)
             continue;
 
@@ -164,7 +164,7 @@ void Line::activateInStasisCeiling()
 //
 int Line::ceilingCrushStop()
 {
-    int rtn = 0;
+    auto rtn = 0;
     auto& specials = activeSpecials();
     for (auto* ceiling: specials.activeceilings)
     {

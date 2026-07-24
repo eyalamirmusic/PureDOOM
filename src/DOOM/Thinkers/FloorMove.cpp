@@ -15,7 +15,7 @@ namespace Doom
 {
 void FloorMove::tick()
 {
-    MoveResult res = sector->movePlane(speed, floordestheight, crush, 0, direction);
+    auto res = sector->movePlane(speed, floordestheight, crush, 0, direction);
 
     if (!(levelStats().leveltime & 7))
         startSound(reinterpret_cast<Mobj*>(&sector->soundorg), SfxEnum::Stnmov);

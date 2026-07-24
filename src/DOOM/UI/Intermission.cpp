@@ -290,7 +290,7 @@ void drawLF()
 {
     auto& im = intermissionState();
 
-    int y = WI_TITLEY;
+    auto y = WI_TITLEY;
 
     // draw <LevelName>
     drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->last]->width)) / 2,
@@ -310,7 +310,7 @@ void drawEL()
 {
     auto& im = intermissionState();
 
-    int y = WI_TITLEY;
+    auto y = WI_TITLEY;
 
     // draw "Entering"
     drawPatch(
@@ -329,15 +329,15 @@ void drawOnLnode(int n, Patch* c[])
 {
     auto& im = intermissionState();
 
-    bool fits = false;
+    auto fits = false;
 
-    int i = 0;
+    auto i = 0;
     do
     {
-        int left = lnodes[im.wbs->epsd][n].x - littleEndian(c[i]->leftoffset);
-        int top = lnodes[im.wbs->epsd][n].y - littleEndian(c[i]->topoffset);
-        int right = left + littleEndian(c[i]->width);
-        int bottom = top + littleEndian(c[i]->height);
+        auto left = lnodes[im.wbs->epsd][n].x - littleEndian(c[i]->leftoffset);
+        auto top = lnodes[im.wbs->epsd][n].y - littleEndian(c[i]->topoffset);
+        auto right = left + littleEndian(c[i]->width);
+        auto bottom = top + littleEndian(c[i]->height);
 
         if (left >= 0 && right < SCREENWIDTH && top >= 0 && bottom < SCREENHEIGHT)
         {
@@ -371,9 +371,9 @@ void initAnimatedBack()
     if (im.wbs->epsd > 2)
         return;
 
-    for (int i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
+    for (auto i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
     {
-        anim_t_wi_stuff* a = &anims_wi_stuff[im.wbs->epsd][i];
+        auto* a = &anims_wi_stuff[im.wbs->epsd][i];
 
         // init variables
         a->ctr = -1;
@@ -399,9 +399,9 @@ void updateAnimatedBack()
     if (im.wbs->epsd > 2)
         return;
 
-    for (int i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
+    for (auto i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
     {
-        anim_t_wi_stuff* a = &anims_wi_stuff[im.wbs->epsd][i];
+        auto* a = &anims_wi_stuff[im.wbs->epsd][i];
 
         if (im.bcnt == a->nexttic)
         {
@@ -462,7 +462,7 @@ void drawAnimatedBack()
     if (im.wbs->epsd > 2)
         return;
 
-    for (int i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
+    for (auto i = 0; i < NUMANIMS[im.wbs->epsd]; i++)
     {
         a = &anims_wi_stuff[im.wbs->epsd][i];
 
@@ -481,7 +481,7 @@ int drawIntermissionNum(int x, int y, int n, int digits)
 {
     auto& im = intermissionState();
 
-    int fontwidth = littleEndian(im.num[0]->width);
+    auto fontwidth = littleEndian(im.num[0]->width);
 
     if (digits < 0)
     {
@@ -494,7 +494,7 @@ int drawIntermissionNum(int x, int y, int n, int digits)
         {
             // figure out # of digits in #
             digits = 0;
-            int temp = n;
+            auto temp = n;
 
             while (temp)
             {
@@ -504,7 +504,7 @@ int drawIntermissionNum(int x, int y, int n, int digits)
         }
     }
 
-    int neg = n < 0;
+    auto neg = n < 0;
     if (neg)
         n = -n;
 
@@ -549,11 +549,11 @@ void drawTime(int x, int y, int t)
 
     if (t <= 61 * 59)
     {
-        int div = 1;
+        auto div = 1;
 
         do
         {
-            int n = (t / div) % 60;
+            auto n = (t / div) % 60;
             x = drawIntermissionNum(x, y, n, 2) - littleEndian(im.colon->width);
             div *= 60;
 
@@ -649,7 +649,7 @@ void drawShowNextLoc()
         int last = (im.wbs->last == 8) ? im.wbs->next - 1 : im.wbs->last;
 
         // draw a splat on taken cities.
-        for (int i = 0; i <= last; i++)
+        for (auto i = 0; i <= last; i++)
             drawOnLnode(i, &im.splat);
 
         // splat the secret level?
@@ -676,9 +676,9 @@ int fragSum(int playernum)
 {
     auto& im = intermissionState();
 
-    int frags = 0;
+    auto frags = 0;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (playerState().playeringame[i] && i != playernum)
         {
@@ -705,11 +705,11 @@ void initDeathmatchStats()
 
     im.cnt_pause = TICRATE;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (players_.playeringame[i])
         {
-            for (int j = 0; j < MAXPLAYERS; j++)
+            for (auto j = 0; j < MAXPLAYERS; j++)
                 if (players_.playeringame[j])
                     im.dm_frags[i][j] = 0;
 
@@ -731,11 +731,11 @@ void updateDeathmatchStats()
     {
         im.acceleratestage = 0;
 
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (players_.playeringame[i])
             {
-                for (int j = 0; j < MAXPLAYERS; j++)
+                for (auto j = 0; j < MAXPLAYERS; j++)
                     if (players_.playeringame[j])
                         im.dm_frags[i][j] = im.plrs[i].frags[j];
 
@@ -752,13 +752,13 @@ void updateDeathmatchStats()
         if (!(im.bcnt & 3))
             startSound(nullptr, SfxEnum::Pistol);
 
-        bool stillticking = false;
+        auto stillticking = false;
 
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (players_.playeringame[i])
             {
-                for (int j = 0; j < MAXPLAYERS; j++)
+                for (auto j = 0; j < MAXPLAYERS; j++)
                 {
                     if (players_.playeringame[j]
                         && im.dm_frags[i][j] != im.plrs[i].frags[j])
@@ -827,10 +827,10 @@ void drawDeathmatchStats()
     drawPatch(DM_VICTIMSX, DM_VICTIMSY, FB, im.victims);
 
     // draw P?
-    int x = DM_MATRIXX + DM_SPACINGX;
-    int y = DM_MATRIXY;
+    auto x = DM_MATRIXX + DM_SPACINGX;
+    auto y = DM_MATRIXY;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (players_.playeringame[i])
         {
@@ -865,15 +865,15 @@ void drawDeathmatchStats()
 
     // draw stats
     y = DM_MATRIXY + 10;
-    int w = littleEndian(im.num[0]->width);
+    auto w = littleEndian(im.num[0]->width);
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         x = DM_MATRIXX + DM_SPACINGX;
 
         if (players_.playeringame[i])
         {
-            for (int j = 0; j < MAXPLAYERS; j++)
+            for (auto j = 0; j < MAXPLAYERS; j++)
             {
                 if (players_.playeringame[j])
                     drawIntermissionNum(x + w, y, im.dm_frags[i][j], 2);
@@ -896,7 +896,7 @@ void initNetgameStats()
 
     im.cnt_pause = TICRATE;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (!playerState().playeringame[i])
             continue;
@@ -926,7 +926,7 @@ void updateNetgameStats()
     {
         im.acceleratestage = 0;
 
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (!players_.playeringame[i])
                 continue;
@@ -949,7 +949,7 @@ void updateNetgameStats()
 
         stillticking = false;
 
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (!players_.playeringame[i])
                 continue;
@@ -975,7 +975,7 @@ void updateNetgameStats()
 
         stillticking = false;
 
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (!players_.playeringame[i])
                 continue;
@@ -999,7 +999,7 @@ void updateNetgameStats()
 
         stillticking = false;
 
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (!players_.playeringame[i])
                 continue;
@@ -1025,7 +1025,7 @@ void updateNetgameStats()
 
         stillticking = false;
 
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (!players_.playeringame[i])
                 continue;
@@ -1069,9 +1069,9 @@ void drawNetgameStats()
 {
     auto& im = intermissionState();
 
-    const int statsX = 32 + littleEndian(im.star->width) / 2 + 32 * !im.dofrags;
+    const auto statsX = 32 + littleEndian(im.star->width) / 2 + 32 * !im.dofrags;
 
-    int pwidth = littleEndian(im.percent->width);
+    auto pwidth = littleEndian(im.percent->width);
 
     slamBackground();
 
@@ -1103,14 +1103,14 @@ void drawNetgameStats()
                   im.frags);
 
     // draw stats
-    int y = NG_STATSY + littleEndian(im.kills->height);
+    auto y = NG_STATSY + littleEndian(im.kills->height);
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (!playerState().playeringame[i])
             continue;
 
-        int x = statsX;
+        auto x = statsX;
         drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.p[i]);
 
         if (i == im.me)
@@ -1257,7 +1257,7 @@ void drawStats()
 
     // line height
 
-    int lh = (3 * littleEndian(im.num[0]->height)) / 2;
+    auto lh = (3 * littleEndian(im.num[0]->height)) / 2;
 
     slamBackground();
 
@@ -1386,7 +1386,7 @@ void loadIntermissionData()
     {
         im.NUMCMAPS = 32;
         im.lnames.resize(im.NUMCMAPS);
-        for (int i = 0; i < im.NUMCMAPS; i++)
+        for (auto i = 0; i < im.NUMCMAPS; i++)
         {
             name = "CWILV";
             if (i < 10)
@@ -1398,7 +1398,7 @@ void loadIntermissionData()
     else
     {
         im.lnames.resize(NUMMAPS);
-        for (int i = 0; i < NUMMAPS; i++)
+        for (auto i = 0; i < NUMMAPS; i++)
         {
             im.lnames[i] =
                 static_cast<Patch*>(cacheLumpName(concat("WILV", im.wbs->epsd, i)));
@@ -1415,10 +1415,10 @@ void loadIntermissionData()
 
         if (im.wbs->epsd < 3)
         {
-            for (int j = 0; j < NUMANIMS[im.wbs->epsd]; j++)
+            for (auto j = 0; j < NUMANIMS[im.wbs->epsd]; j++)
             {
-                anim_t_wi_stuff* a = &anims_wi_stuff[im.wbs->epsd][j];
-                for (int i = 0; i < a->nanims; i++)
+                auto* a = &anims_wi_stuff[im.wbs->epsd][j];
+                for (auto i = 0; i < a->nanims; i++)
                 {
                     // MONDO HACK!
                     if (im.wbs->epsd != 1 || j != 8)
@@ -1446,7 +1446,7 @@ void loadIntermissionData()
     // More hacks on minus sign.
     im.wiminus = static_cast<Patch*>(cacheLumpName("WIMINUS"));
 
-    for (int i = 0; i < 10; i++)
+    for (auto i = 0; i < 10; i++)
     {
         // numbers 0-9
         im.num[i] = static_cast<Patch*>(cacheLumpName(concat("WINUM", i)));
@@ -1514,7 +1514,7 @@ void loadIntermissionData()
     // dead face
     im.bstar = static_cast<Patch*>(cacheLumpName("STFDEAD0"));
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         // "1,2,3,4"
         im.p[i] = static_cast<Patch*>(cacheLumpName(concat("STPB", i)));

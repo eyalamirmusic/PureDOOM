@@ -138,9 +138,9 @@ void recursiveSound(Sector* sec, int soundblocks)
     sec->soundtraversed = soundblocks + 1;
     sec->soundtarget = soundTarget().soundtarget;
 
-    for (int i = 0; i < sec->linecount; i++)
+    for (auto i = 0; i < sec->linecount; i++)
     {
-        Line* check = sec->lines[i];
+        auto* check = sec->lines[i];
         if (!(check->flags & ML_TWOSIDED))
             continue;
 
@@ -184,8 +184,8 @@ bool Mobj::checkMeleeRange()
     if (!target)
         return false;
 
-    Mobj* pl = target;
-    Fixed dist = approxDistance(pl->x - x, pl->y - y);
+    auto* pl = target;
+    auto dist = approxDistance(pl->x - x, pl->y - y);
 
     if (dist >= MELEERANGE - 20 * FRACUNIT + pl->info->radius)
         return false;
@@ -220,12 +220,12 @@ bool Mobj::checkMissileRange()
         return false; // do not attack yet
 
     // OPTIMIZE: get this from a global checksight
-    Fixed distance = approxDistance(x - target->x, y - target->y) - 64 * FRACUNIT;
+    auto distance = approxDistance(x - target->x, y - target->y) - 64 * FRACUNIT;
 
     if (info->meleestate == StateNum::Null)
         distance -= 128 * FRACUNIT; // no melee attack, so fire more
 
-    int dist = distance.toInt();
+    auto dist = distance.toInt();
 
     if (type == MobjType::Vile)
     {
@@ -276,8 +276,8 @@ bool Mobj::move()
     if (static_cast<unsigned>(movedir) >= 8)
         fatalError("Error: Weird *this->movedir!");
 
-    Fixed tryx = x + info->speed * xspeed[movedir];
-    Fixed tryy = y + info->speed * yspeed[movedir];
+    auto tryx = x + info->speed * xspeed[movedir];
+    auto tryy = y + info->speed * yspeed[movedir];
 
     bool try_ok = tryMove(tryx, tryy);
 
@@ -300,10 +300,10 @@ bool Mobj::move()
             return false;
 
         movedir = toIndex(DirType::NoDir);
-        bool good = false;
+        auto good = false;
         while (c.numspechit--)
         {
-            Line* ld = c.spechit[c.numspechit];
+            auto* ld = c.spechit[c.numspechit];
             // if the special is not a door
             // that can be opened,
             // return false
@@ -354,11 +354,11 @@ void Mobj::newChaseDir()
     if (!target)
         fatalError("Error: newChaseDir: called with no target");
 
-    DirType olddir = static_cast<DirType>(movedir);
-    DirType turnaround = opposite[toIndex(olddir)];
+    auto olddir = static_cast<DirType>(movedir);
+    auto turnaround = opposite[toIndex(olddir)];
 
-    Fixed deltax = target->x - x;
-    Fixed deltay = target->y - y;
+    auto deltax = target->x - x;
+    auto deltay = target->y - y;
 
     if (deltax > 10 * FRACUNIT)
         d[1] = DirType::East;
@@ -470,8 +470,8 @@ void Mobj::newChaseDir()
 //
 bool Mobj::lookForPlayers(bool allaround)
 {
-    int c = 0;
-    int stop = (lastlook - 1) & 3;
+    auto c = 0;
+    auto stop = (lastlook - 1) & 3;
 
     auto& players_ = playerState();
 
@@ -486,7 +486,7 @@ bool Mobj::lookForPlayers(bool allaround)
             return false;
         }
 
-        Player* playerToUse = &players_.players[lastlook];
+        auto* playerToUse = &players_.players[lastlook];
 
         if (playerToUse->health <= 0)
             continue; // dead
@@ -496,12 +496,12 @@ bool Mobj::lookForPlayers(bool allaround)
 
         if (!allaround)
         {
-            Angle an =
+            auto an =
                 pointToAngle2(x, y, playerToUse->mo->x, playerToUse->mo->y) - angle;
 
             if (an > ang90 && an < ang270)
             {
-                Fixed dist =
+                auto dist =
                     approxDistance(playerToUse->mo->x - x, playerToUse->mo->y - y);
                 // if real close, react anyway
                 if (dist > MELEERANGE)
@@ -531,12 +531,12 @@ void Mobj::keenDie()
 
     // scan the remaining thinkers
     // to see if all Keens are dead
-    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         if (th->kind() != ThinkerKind::Mobj || th->removed)
             continue;
 
-        Mobj* mo2 = reinterpret_cast<Mobj*>(th);
+        auto* mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != this && mo2->type == type && mo2->health > 0)
         {
             // other Keen not dead
@@ -559,7 +559,7 @@ void Mobj::keenDie()
 void Mobj::look()
 {
     threshold = 0; // any shot will wake up
-    Mobj* targ = subsector->sector->soundtarget;
+    auto* targ = subsector->sector->soundtarget;
 
     // go into chase state
     auto seeyou = [&]
@@ -649,7 +649,7 @@ void Mobj::chase()
     if (movedir < 8)
     {
         angle = Angle {angle.raw & (7u << 29)};
-        int delta = (int) (angle - Angle {(unsigned) movedir << 29}).raw;
+        auto delta = (int) (angle - Angle {(unsigned) movedir << 29}).raw;
 
         if (delta > 0)
             angle -= ang90 / 2u;
@@ -753,13 +753,13 @@ void Mobj::posAttack()
         return;
 
     faceTarget();
-    Angle angleToUse = angle;
-    Fixed slope = aimLineAttack(this, angleToUse, MISSILERANGE).slope;
+    auto angleToUse = angle;
+    auto slope = aimLineAttack(this, angleToUse, MISSILERANGE).slope;
 
     startSound(this, SfxEnum::Pistol);
     angleToUse +=
         Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
-    int damage = ((randomness().forPlay() % 5) + 1) * 3;
+    auto damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(angleToUse, MISSILERANGE, slope, damage);
 }
 
@@ -772,16 +772,16 @@ void Mobj::sPosAttack()
 
     startSound(this, SfxEnum::Shotgn);
     faceTarget();
-    Angle bangle = angle;
-    Fixed slope = aimLineAttack(this, bangle, MISSILERANGE).slope;
+    auto bangle = angle;
+    auto slope = aimLineAttack(this, bangle, MISSILERANGE).slope;
 
-    for (int i = 0; i < 3; i++)
+    for (auto i = 0; i < 3; i++)
     {
         angleToUse =
             bangle
             + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
                      << 20};
-        int damage = ((randomness().forPlay() % 5) + 1) * 3;
+        auto damage = ((randomness().forPlay() % 5) + 1) * 3;
         lineAttack(angleToUse, MISSILERANGE, slope, damage);
     }
 }
@@ -795,13 +795,13 @@ void Mobj::cPosAttack()
 
     startSound(this, SfxEnum::Shotgn);
     faceTarget();
-    Angle bangle = angle;
-    Fixed slope = aimLineAttack(this, bangle, MISSILERANGE).slope;
+    auto bangle = angle;
+    auto slope = aimLineAttack(this, bangle, MISSILERANGE).slope;
 
     angleToUse =
         bangle
         + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
-    int damage = ((randomness().forPlay() % 5) + 1) * 3;
+    auto damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(angleToUse, MISSILERANGE, slope, damage);
 }
 
@@ -856,7 +856,7 @@ void Mobj::troopAttack()
     if (checkMeleeRange())
     {
         startSound(this, SfxEnum::Claw);
-        int damage = (randomness().forPlay() % 8 + 1) * 3;
+        auto damage = (randomness().forPlay() % 8 + 1) * 3;
         target->damage(this, this, damage);
         return;
     }
@@ -873,7 +873,7 @@ void Mobj::sargAttack()
     faceTarget();
     if (checkMeleeRange())
     {
-        int damage = ((randomness().forPlay() % 10) + 1) * 4;
+        auto damage = ((randomness().forPlay() % 10) + 1) * 4;
         target->damage(this, this, damage);
     }
 }
@@ -886,7 +886,7 @@ void Mobj::headAttack()
     faceTarget();
     if (checkMeleeRange())
     {
-        int damage = (randomness().forPlay() % 6 + 1) * 10;
+        auto damage = (randomness().forPlay() % 6 + 1) * 10;
         target->damage(this, this, damage);
         return;
     }
@@ -912,7 +912,7 @@ void Mobj::bruisAttack()
     if (checkMeleeRange())
     {
         startSound(this, SfxEnum::Claw);
-        int damage = (randomness().forPlay() % 8 + 1) * 10;
+        auto damage = (randomness().forPlay() % 8 + 1) * 10;
         target->damage(this, this, damage);
         return;
     }
@@ -931,7 +931,7 @@ void Mobj::skelMissile()
 
     faceTarget();
     z += 16 * FRACUNIT; // so missile spawns higher
-    Mobj* mo = spawnMissile(target, MobjType::Tracer);
+    auto* mo = spawnMissile(target, MobjType::Tracer);
     z -= 16 * FRACUNIT; // back to normal
 
     mo->x += mo->momx;
@@ -950,7 +950,7 @@ void Mobj::traceTarget()
     // spawn a puff of smoke behind the rocket
     spawnPuff(x, y, z);
 
-    Mobj* th = spawnMobj(x - momx, y - momy, z, MobjType::Smoke);
+    auto* th = spawnMobj(x - momx, y - momy, z, MobjType::Smoke);
 
     th->momz = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
@@ -958,13 +958,13 @@ void Mobj::traceTarget()
         th->tics = 1;
 
     // adjust direction
-    Mobj* dest = tracer;
+    auto* dest = tracer;
 
     if (!dest || dest->health <= 0)
         return;
 
     // change angle
-    Angle exact = pointToAngle2(x, y, dest->x, dest->y);
+    auto exact = pointToAngle2(x, y, dest->x, dest->y);
 
     if (exact != angle)
     {
@@ -987,13 +987,13 @@ void Mobj::traceTarget()
     momy = FixedMul(Fixed {info->speed}, finesine()[fine]);
 
     // change slope
-    int dist = approxDistance(dest->x - x, dest->y - y).raw;
+    auto dist = approxDistance(dest->x - x, dest->y - y).raw;
 
     dist = dist / info->speed;
 
     if (dist < 1)
         dist = 1;
-    Fixed slope = (dest->z + 40 * FRACUNIT - z) / dist;
+    auto slope = (dest->z + 40 * FRACUNIT - z) / dist;
 
     if (slope < momz)
         momz -= FRACUNIT / 8;
@@ -1019,7 +1019,7 @@ void Mobj::skelFist()
 
     if (checkMeleeRange())
     {
-        int damage = ((randomness().forPlay() % 10) + 1) * 6;
+        auto damage = ((randomness().forPlay() % 10) + 1) * 6;
         startSound(this, SfxEnum::Skepch);
         target->damage(this, this, damage);
     }
@@ -1042,7 +1042,7 @@ bool vileCheck(Mobj* thing)
     if (thing->info->raisestate == StateNum::Null)
         return true; // monster doesn't have a raise state
 
-    Fixed maxdist = thing->info->radius + mobjinfo()[toIndex(MobjType::Vile)].radius;
+    auto maxdist = thing->info->radius + mobjinfo()[toIndex(MobjType::Vile)].radius;
 
     if (doom_abs(thing->x - ai.viletryx) > maxdist
         || doom_abs(thing->y - ai.viletryy) > maxdist)
@@ -1074,18 +1074,18 @@ void Mobj::vileChase()
         ai.viletryx = x + info->speed * xspeed[movedir];
         ai.viletryy = y + info->speed * yspeed[movedir];
 
-        int xl = (ai.viletryx - level().blockmap.origin.x - MAXRADIUS * 2).raw
-                 >> MAPBLOCKSHIFT;
-        int xh = (ai.viletryx - level().blockmap.origin.x + MAXRADIUS * 2).raw
-                 >> MAPBLOCKSHIFT;
-        int yl = (ai.viletryy - level().blockmap.origin.y - MAXRADIUS * 2).raw
-                 >> MAPBLOCKSHIFT;
-        int yh = (ai.viletryy - level().blockmap.origin.y + MAXRADIUS * 2).raw
-                 >> MAPBLOCKSHIFT;
+        auto xl = (ai.viletryx - level().blockmap.origin.x - MAXRADIUS * 2).raw
+                  >> MAPBLOCKSHIFT;
+        auto xh = (ai.viletryx - level().blockmap.origin.x + MAXRADIUS * 2).raw
+                  >> MAPBLOCKSHIFT;
+        auto yl = (ai.viletryy - level().blockmap.origin.y - MAXRADIUS * 2).raw
+                  >> MAPBLOCKSHIFT;
+        auto yh = (ai.viletryy - level().blockmap.origin.y + MAXRADIUS * 2).raw
+                  >> MAPBLOCKSHIFT;
 
-        for (int bx = xl; bx <= xh; bx++)
+        for (auto bx = xl; bx <= xh; bx++)
         {
-            for (int by = yl; by <= yh; by++)
+            for (auto by = yl; by <= yh; by++)
             {
                 // Call vileCheck to check
                 // whether object is a corpse
@@ -1093,14 +1093,14 @@ void Mobj::vileChase()
                 if (!forEachThingInBlock(bx, by, vileCheck))
                 {
                     // got one!
-                    Mobj* temp = target;
+                    auto* temp = target;
                     target = ai.corpsehit;
                     faceTarget();
                     target = temp;
 
                     setState(StateNum::VileHeal1);
                     startSound(ai.corpsehit, SfxEnum::Slop);
-                    MobjInfo* corpseInfo = ai.corpsehit->info;
+                    auto* corpseInfo = ai.corpsehit->info;
 
                     ai.corpsehit->setState(corpseInfo->raisestate);
                     ai.corpsehit->height <<= 2;
@@ -1144,7 +1144,7 @@ void Mobj::fireCrackle()
 
 void Mobj::fire()
 {
-    Mobj* dest = tracer;
+    auto* dest = tracer;
     if (!dest)
         return;
 
@@ -1172,7 +1172,7 @@ void Mobj::vileTarget()
 
     faceTarget();
 
-    Mobj* fog = spawnMobj(target->x, target->x, target->z, MobjType::Fire);
+    auto* fog = spawnMobj(target->x, target->x, target->z, MobjType::Fire);
 
     tracer = fog;
     fog->target = this;
@@ -1199,7 +1199,7 @@ void Mobj::vileAttack()
 
     const auto anFine = angle.fineIndex();
 
-    Mobj* fire = tracer;
+    auto* fire = tracer;
 
     if (!fire)
         return;
@@ -1229,7 +1229,7 @@ void Mobj::fatAttack1()
     angle += FATSPREAD;
     spawnMissile(target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(target, MobjType::Fatshot);
+    auto* mo = spawnMissile(target, MobjType::Fatshot);
     mo->angle += FATSPREAD;
     const auto an1Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an1Fine]);
@@ -1243,7 +1243,7 @@ void Mobj::fatAttack2()
     angle -= FATSPREAD;
     spawnMissile(target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(target, MobjType::Fatshot);
+    auto* mo = spawnMissile(target, MobjType::Fatshot);
     mo->angle -= FATSPREAD * 2;
     const auto an2Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an2Fine]);
@@ -1254,7 +1254,7 @@ void Mobj::fatAttack3()
 {
     faceTarget();
 
-    Mobj* mo = spawnMissile(target, MobjType::Fatshot);
+    auto* mo = spawnMissile(target, MobjType::Fatshot);
     mo->angle -= FATSPREAD / 2;
     const auto an3Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an3Fine]);
@@ -1276,7 +1276,7 @@ void Mobj::skullAttack()
     if (!target)
         return;
 
-    Mobj* dest = target;
+    auto* dest = target;
     flags = withFlags(flags, MobjFlag::SkullFly);
 
     startSound(this, info->attacksound);
@@ -1284,7 +1284,7 @@ void Mobj::skullAttack()
     const auto fine = angle.fineIndex();
     momx = FixedMul(SKULLSPEED, finecosine()[fine]);
     momy = FixedMul(SKULLSPEED, finesine()[fine]);
-    int dist = approxDistance(dest->x - x, dest->y - y).raw;
+    auto dist = approxDistance(dest->x - x, dest->y - y).raw;
     dist = dist / SKULLSPEED.raw;
 
     if (dist < 1)
@@ -1301,9 +1301,9 @@ void Mobj::painShootSkull(Angle angleToUse)
     auto& thinkers = thinkerList();
 
     // count total number of skull currently on the level
-    int count = 0;
+    auto count = 0;
 
-    Thinker* currentthinker = thinkers.cap.next;
+    auto* currentthinker = thinkers.cap.next;
     while (currentthinker != &thinkers.cap)
     {
         if (currentthinker->kind() == ThinkerKind::Mobj && !currentthinker->removed
@@ -1320,15 +1320,15 @@ void Mobj::painShootSkull(Angle angleToUse)
     // okay, there's playe for another one
     const auto anFine = angleToUse.fineIndex();
 
-    Fixed prestep =
+    auto prestep =
         4 * FRACUNIT
         + 3 * (info->radius + mobjinfo()[toIndex(MobjType::Skull)].radius) / 2;
 
-    Fixed xToUse = x + FixedMul(prestep, finecosine()[anFine]);
-    Fixed yToUse = y + FixedMul(prestep, finesine()[anFine]);
-    Fixed zToUse = z + 8 * FRACUNIT;
+    auto xToUse = x + FixedMul(prestep, finecosine()[anFine]);
+    auto yToUse = y + FixedMul(prestep, finesine()[anFine]);
+    auto zToUse = z + 8 * FRACUNIT;
 
-    Mobj* newmobj = spawnMobj(xToUse, yToUse, zToUse, MobjType::Skull);
+    auto* newmobj = spawnMobj(xToUse, yToUse, zToUse, MobjType::Skull);
 
     // Check for movements.
     if (!newmobj->tryMove(newmobj->x, newmobj->y))
@@ -1508,7 +1508,7 @@ void Mobj::bossDeath()
     // make sure there is a player alive for victory
     const auto anyPlayerAlive = [&players_]
     {
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
             if (players_.playeringame[i] && players_.players[i].health > 0)
                 return true;
 
@@ -1520,12 +1520,12 @@ void Mobj::bossDeath()
 
     // scan the remaining thinkers to see
     // if all bosses are dead
-    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         if (th->kind() != ThinkerKind::Mobj || th->removed)
             continue;
 
-        Mobj* mo2 = reinterpret_cast<Mobj*>(th);
+        auto* mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != this && mo2->type == type && mo2->health > 0)
         {
             // other boss not dead
@@ -1627,14 +1627,14 @@ void Mobj::brainAwake()
     ai.braintargets.clear();
     ai.braintargeton = 0;
 
-    Thinker* thinker = thinkers.cap.next;
+    auto* thinker = thinkers.cap.next;
     for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
          thinker = thinker->next)
     {
         if (thinker->kind() != ThinkerKind::Mobj || thinker->removed)
             continue; // not a mobj
 
-        Mobj* m = reinterpret_cast<Mobj*>(thinker);
+        auto* m = reinterpret_cast<Mobj*>(thinker);
 
         if (m->type == MobjType::Bosstarget)
         {
@@ -1652,13 +1652,13 @@ void Mobj::brainPain()
 
 void Mobj::brainScream()
 {
-    for (Fixed xToUse = x - 196 * FRACUNIT; xToUse < x + 320 * FRACUNIT;
+    for (auto xToUse = x - 196 * FRACUNIT; xToUse < x + 320 * FRACUNIT;
          xToUse += FRACUNIT * 8)
     {
-        Fixed yToUse = y - 320 * FRACUNIT;
+        auto yToUse = y - 320 * FRACUNIT;
         // vanilla's raw 128 added to a whole-unit-scaled random; kept as it stands.
-        Fixed zToUse = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-        Mobj* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
+        auto zToUse = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+        auto* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
         th->momz = Fixed {randomness().forPlay() * 512};
 
         th->setState(StateNum::Brainexplode1);
@@ -1673,11 +1673,11 @@ void Mobj::brainScream()
 
 void Mobj::brainExplode()
 {
-    Fixed xToUse =
+    auto xToUse =
         x + Fixed {(randomness().forPlay() - randomness().forPlay()) * 2048};
-    Fixed yToUse = y;
-    Fixed zToUse = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
-    Mobj* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
+    auto yToUse = y;
+    auto zToUse = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+    auto* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
     th->momz = Fixed {randomness().forPlay() * 512};
 
     th->setState(StateNum::Brainexplode1);
@@ -1701,11 +1701,11 @@ void Mobj::brainSpit()
         return;
 
     // shoot a cube at current target
-    Mobj* targ = ai.braintargets[ai.braintargeton];
+    auto* targ = ai.braintargets[ai.braintargeton];
     ai.braintargeton = (ai.braintargeton + 1) % ai.braintargets.size();
 
     // spawn brain missile
-    Mobj* newmobj = spawnMissile(targ, MobjType::Spawnshot);
+    auto* newmobj = spawnMissile(targ, MobjType::Spawnshot);
     newmobj->target = targ;
     // Vanilla divides the raw values as plain integers here - the result is a tic
     // count, not a length. A fixed-point divide would scale it by 65536.
@@ -1729,14 +1729,14 @@ void Mobj::spawnFly()
     if (--reactiontime)
         return; // still flying
 
-    Mobj* targ = target;
+    auto* targ = target;
 
     // First spawn teleport fog.
-    Mobj* fog = spawnMobj(targ->x, targ->y, targ->z, MobjType::Spawnfire);
+    auto* fog = spawnMobj(targ->x, targ->y, targ->z, MobjType::Spawnfire);
     startSound(fog, SfxEnum::Telept);
 
     // Randomly select monster to spawn.
-    int r = randomness().forPlay();
+    auto r = randomness().forPlay();
 
     // Probability distribution (kind of :),
     // decreasing likelihood.
@@ -1763,7 +1763,7 @@ void Mobj::spawnFly()
     else
         spawnType = MobjType::Bruiser;
 
-    Mobj* newmobj = spawnMobj(targ->x, targ->y, targ->z, spawnType);
+    auto* newmobj = spawnMobj(targ->x, targ->y, targ->z, spawnType);
     if (newmobj->lookForPlayers(true))
         newmobj->setState(static_cast<StateNum>(newmobj->info->seestate));
 
@@ -1777,7 +1777,7 @@ void Mobj::spawnFly()
 void Mobj::playerScream()
 {
     // Default death sound.
-    SfxEnum sound = SfxEnum::Pldeth;
+    auto sound = SfxEnum::Pldeth;
 
     if ((gameVersion().gamemode == GameMode::Commercial) && (health < -50))
     {

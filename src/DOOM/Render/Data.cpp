@@ -454,7 +454,7 @@ void initTextures()
         // overlaid pointer). So the record is decoded through aligned copies -
         // the header first, then each patch record. Tests/Sim/TextureTests.cpp
         // holds the decode against the lump's own bytes.
-        const byte* rawTexture = reinterpret_cast<byte*>(maptex) + offset;
+        const auto* rawTexture = reinterpret_cast<byte*>(maptex) + offset;
 
         MapTexture mtexture;
         doom_memcpy(&mtexture, rawTexture, offsetof(MapTexture, patches));
@@ -470,7 +470,7 @@ void initTextures()
         texture->patches.resize(texture->patchcount);
 
         doom_memcpy(texture->name.data(), mtexture.name, sizeof(texture->name));
-        const byte* rawPatch = rawTexture + offsetof(MapTexture, patches);
+        const auto* rawPatch = rawTexture + offsetof(MapTexture, patches);
         patch = &texture->patches[0];
 
         for (j = 0; j < texture->patchcount;
@@ -562,7 +562,7 @@ void initSpriteLumps()
     gd.spriteoffset.resize(gd.numspritelumps);
     gd.spritetopoffset.resize(gd.numspritelumps);
 
-    for (int i = 0; i < gd.numspritelumps; i++)
+    for (auto i = 0; i < gd.numspritelumps; i++)
     {
         if (!(i & 63))
             print(".");
@@ -621,7 +621,7 @@ void initData()
 //
 int flatNumForName(std::string_view name)
 {
-    int i = wad().find(name);
+    auto i = wad().find(name);
 
     if (i == -1)
     {
@@ -636,7 +636,7 @@ int flatNumForName(std::string_view name)
 // place has to meet a NUL in the other.
 static bool textureNameMatches(const Array<char, 8>& stored, std::string_view name)
 {
-    for (int i = 0; i < 8; ++i)
+    for (auto i = 0; i < 8; ++i)
     {
         auto wanted = i < static_cast<int>(name.size()) ? name[i] : char(0);
 
@@ -663,7 +663,7 @@ int checkTextureNumForName(std::string_view name)
 
     auto& gd = graphicsData();
 
-    for (int i = 0; i < gd.numtextures; i++)
+    for (auto i = 0; i < gd.numtextures; i++)
         if (textureNameMatches(graphicsData().textures[i]->name, name))
             return i;
 
@@ -677,7 +677,7 @@ int checkTextureNumForName(std::string_view name)
 //
 int textureNumForName(std::string_view name)
 {
-    int i = checkTextureNumForName(name);
+    auto i = checkTextureNumForName(name);
 
     if (i == -1)
     {

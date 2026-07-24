@@ -14,7 +14,7 @@ void FireFlicker::tick()
     if (--count)
         return;
 
-    int amount = (randomness().forPlay() & 3) * 16;
+    auto amount = (randomness().forPlay() & 3) * 16;
 
     if (sector->lightlevel - amount < minlight)
         sector->lightlevel = minlight;

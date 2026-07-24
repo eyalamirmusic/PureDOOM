@@ -34,7 +34,7 @@ namespace Doom
 //
 int Line::doLockedDoor(DoorType type, Mobj& thing)
 {
-    Player* p = thing.player;
+    auto* p = thing.player;
 
     if (!p)
         return 0;
@@ -86,12 +86,12 @@ int Line::doLockedDoor(DoorType type, Mobj& thing)
 
 int Line::doDoor(DoorType type)
 {
-    int secnum = -1;
-    int rtn = 0;
+    auto secnum = -1;
+    auto rtn = 0;
 
     while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
-        Sector* sec = &level().sectors[secnum];
+        auto* sec = &level().sectors[secnum];
         if (sec->specialdata)
             continue;
 
@@ -168,10 +168,10 @@ void Line::verticalDoor(Mobj& thing)
 {
     Door* door;
 
-    int side = 0; // only front sides can be used
+    auto side = 0; // only front sides can be used
 
     // Check for locks
-    Player* player = thing.player;
+    auto* player = thing.player;
 
     switch (special)
     {
@@ -219,7 +219,7 @@ void Line::verticalDoor(Mobj& thing)
     }
 
     // if the sector has an active thinker, use it
-    Sector* sec = level().sides[sidenum[side ^ 1]].sector;
+    auto* sec = level().sides[sidenum[side ^ 1]].sector;
 
     if (sec->specialdata)
     {

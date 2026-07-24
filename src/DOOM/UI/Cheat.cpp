@@ -37,12 +37,12 @@ static constexpr unsigned char scramble(int a)
 //
 int checkCheat(CheatSequence& cht, char key)
 {
-    int rc = 0;
+    auto rc = 0;
 
     if (firsttime)
     {
         firsttime = 0;
-        for (int i = 0; i < 256; i++)
+        for (auto i = 0; i < 256; i++)
             cheat_xlate_table[i] = scramble(i);
     }
 

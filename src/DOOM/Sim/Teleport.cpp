@@ -29,11 +29,11 @@ int Line::teleport(int side, Mobj& thing)
         return 0;
 
     // `tag` here is this line's own tag member.
-    for (int i = 0; i < level().sectors.size(); i++)
+    for (auto i = 0; i < level().sectors.size(); i++)
     {
         if (level().sectors[i].tag == tag)
         {
-            Thinker* thinker = thinkers.cap.next;
+            auto* thinker = thinkers.cap.next;
             for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
                  thinker = thinker->next)
             {
@@ -41,20 +41,20 @@ int Line::teleport(int side, Mobj& thing)
                 if (thinker->kind() != ThinkerKind::Mobj || thinker->removed)
                     continue;
 
-                Mobj* m = reinterpret_cast<Mobj*>(thinker);
+                auto* m = reinterpret_cast<Mobj*>(thinker);
 
                 // not a teleportman
                 if (m->type != MobjType::Teleportman)
                     continue;
 
-                Sector* sector = m->subsector->sector;
+                auto* sector = m->subsector->sector;
                 // wrong sector
                 if (sector - level().sectors.data() != i)
                     continue;
 
-                Fixed oldx = thing.x;
-                Fixed oldy = thing.y;
-                Fixed oldz = thing.z;
+                auto oldx = thing.x;
+                auto oldy = thing.y;
+                auto oldz = thing.z;
 
                 if (!thing.teleportMove(m->x, m->y))
                     return 0;
@@ -64,7 +64,7 @@ int Line::teleport(int side, Mobj& thing)
                     thing.player->viewz = thing.z + thing.player->viewheight;
 
                 // spawn teleport fog at source and destination
-                Mobj* fog = spawnMobj(oldx, oldy, oldz, MobjType::Tfog);
+                auto* fog = spawnMobj(oldx, oldy, oldz, MobjType::Tfog);
                 startSound(fog, SfxEnum::Telept);
                 const auto anFine = m->angle.fineIndex();
                 fog = spawnMobj(m->x + 20 * finecosine()[anFine],

@@ -24,12 +24,12 @@ namespace
 // PIT_StompThing: telefrag a shootable thing occupying the teleport destination.
 bool stompThing(Mobj* thing)
 {
-    Clip& clip = clipping();
+    auto& clip = clipping();
 
     if (!(hasFlag(thing->flags, MobjFlag::Shootable)))
         return true;
 
-    Fixed blockdist = thing->radius + clip.tmthing->radius;
+    auto blockdist = thing->radius + clip.tmthing->radius;
 
     if (doom_abs(thing->x - clip.tmx) >= blockdist
         || doom_abs(thing->y - clip.tmy) >= blockdist)
@@ -56,7 +56,7 @@ bool stompThing(Mobj* thing)
 // the opening it leaves and records a special line for later.
 bool checkLine(Line* ld)
 {
-    Clip& clip = clipping();
+    auto& clip = clipping();
 
     if (clip.tmbbox[boxRight] <= ld->bbox[boxLeft]
         || clip.tmbbox[boxLeft] >= ld->bbox[boxRight]
@@ -117,13 +117,13 @@ bool checkLine(Line* ld)
 // pickup, or a plain solid block.
 bool checkThing(Mobj* thing)
 {
-    Clip& clip = clipping();
+    auto& clip = clipping();
 
     if (!(hasFlag(
             thing->flags, MobjFlag::Solid, MobjFlag::Special, MobjFlag::Shootable)))
         return true;
 
-    Fixed blockdist = thing->radius + clip.tmthing->radius;
+    auto blockdist = thing->radius + clip.tmthing->radius;
 
     if (doom_abs(thing->x - clip.tmx) >= blockdist
         || doom_abs(thing->y - clip.tmy) >= blockdist)
@@ -139,7 +139,8 @@ bool checkThing(Mobj* thing)
     // check for skulls slamming into things
     if (hasFlag(clip.tmthing->flags, MobjFlag::SkullFly))
     {
-        int damage = ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+        auto damage =
+            ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
 
         thing->damage(clip.tmthing, clip.tmthing, damage);
 
@@ -187,7 +188,8 @@ bool checkThing(Mobj* thing)
         }
 
         // damage / explode
-        int damage = ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
+        auto damage =
+            ((randomness().forPlay() % 8) + 1) * clip.tmthing->info->damage;
         thing->damage(clip.tmthing, clip.tmthing->target, damage);
 
         // don't traverse any more
@@ -197,7 +199,7 @@ bool checkThing(Mobj* thing)
     // check for special pickup
     if (hasFlag(thing->flags, MobjFlag::Special))
     {
-        bool solid = hasFlag(thing->flags, MobjFlag::Solid);
+        auto solid = hasFlag(thing->flags, MobjFlag::Solid);
         if (hasFlag(clip.tmflags, MobjFlag::Pickup))
         {
             // can remove thing
@@ -212,7 +214,7 @@ bool checkThing(Mobj* thing)
 
 bool Mobj::checkPosition(Fixed xToUse, Fixed yToUse)
 {
-    Clip& clip = clipping();
+    auto& clip = clipping();
 
     clip.tmthing = this;
     clip.tmflags = flags;
@@ -225,7 +227,7 @@ bool Mobj::checkPosition(Fixed xToUse, Fixed yToUse)
     clip.tmbbox[boxRight] = xToUse + clip.tmthing->radius;
     clip.tmbbox[boxLeft] = xToUse - clip.tmthing->radius;
 
-    SubSector* newsubsec = pointInSubsector(xToUse, yToUse);
+    auto* newsubsec = pointInSubsector(xToUse, yToUse);
     clip.ceilingline = nullptr;
 
     // The base floor / ceiling is from the subsector that contains the point. Any
@@ -242,15 +244,15 @@ bool Mobj::checkPosition(Fixed xToUse, Fixed yToUse)
     // Check things first, possibly picking things up. The bounding box is extended
     // by MAXRADIUS because mobj_ts are grouped into mapblocks based on their origin
     // point, and can overlap into adjacent blocks by up to MAXRADIUS units.
-    const Blockmap& bmap = level().blockmap;
+    const auto& bmap = level().blockmap;
 
-    int xl = bmap.blockX(clip.tmbbox[boxLeft] - MAXRADIUS);
-    int xh = bmap.blockX(clip.tmbbox[boxRight] + MAXRADIUS);
-    int yl = bmap.blockY(clip.tmbbox[boxBottom] - MAXRADIUS);
-    int yh = bmap.blockY(clip.tmbbox[boxTop] + MAXRADIUS);
+    auto xl = bmap.blockX(clip.tmbbox[boxLeft] - MAXRADIUS);
+    auto xh = bmap.blockX(clip.tmbbox[boxRight] + MAXRADIUS);
+    auto yl = bmap.blockY(clip.tmbbox[boxBottom] - MAXRADIUS);
+    auto yh = bmap.blockY(clip.tmbbox[boxTop] + MAXRADIUS);
 
-    for (int bx = xl; bx <= xh; bx++)
-        for (int by = yl; by <= yh; by++)
+    for (auto bx = xl; bx <= xh; bx++)
+        for (auto by = yl; by <= yh; by++)
             if (!forEachThingInBlock(bx, by, checkThing))
                 return false;
 
@@ -260,8 +262,8 @@ bool Mobj::checkPosition(Fixed xToUse, Fixed yToUse)
     yl = bmap.blockY(clip.tmbbox[boxBottom]);
     yh = bmap.blockY(clip.tmbbox[boxTop]);
 
-    for (int bx = xl; bx <= xh; bx++)
-        for (int by = yl; by <= yh; by++)
+    for (auto bx = xl; bx <= xh; bx++)
+        for (auto by = yl; by <= yh; by++)
             if (!forEachLineInBlock(bx, by, checkLine))
                 return false;
 
@@ -270,7 +272,7 @@ bool Mobj::checkPosition(Fixed xToUse, Fixed yToUse)
 
 bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
 {
-    Clip& clip = clipping();
+    auto& clip = clipping();
 
     clip.floatok = false;
     if (!checkPosition(xToUse, yToUse))
@@ -298,8 +300,8 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
     // the move is ok, so link the thing into its new position
     unsetThingPosition(*this);
 
-    Fixed oldx = x;
-    Fixed oldy = y;
+    auto oldx = x;
+    auto oldy = y;
     floorz = clip.tmfloorz;
     ceilingz = clip.tmceilingz;
     x = xToUse;
@@ -313,9 +315,9 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
         while (clip.numspechit--)
         {
             // see if the line was crossed
-            Line* ld = clip.spechit[clip.numspechit];
-            int side = lineSide({x, y}, *ld);
-            int oldside = lineSide({oldx, oldy}, *ld);
+            auto* ld = clip.spechit[clip.numspechit];
+            auto side = lineSide({x, y}, *ld);
+            auto oldside = lineSide({oldx, oldy}, *ld);
             if (side != oldside)
             {
                 if (ld->special)
@@ -329,7 +331,7 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
 
 bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
 {
-    Clip& clip = clipping();
+    auto& clip = clipping();
 
     // kill anything occupying the position
     clip.tmthing = this;
@@ -343,7 +345,7 @@ bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
     clip.tmbbox[boxRight] = xToUse + clip.tmthing->radius;
     clip.tmbbox[boxLeft] = xToUse - clip.tmthing->radius;
 
-    SubSector* newsubsec = pointInSubsector(xToUse, yToUse);
+    auto* newsubsec = pointInSubsector(xToUse, yToUse);
     clip.ceilingline = nullptr;
 
     // The base floor/ceiling is from the subsector that contains the point. Any
@@ -356,17 +358,17 @@ bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
 
     // stomp on any things contacted. Blockmap cell indices: the shift is
     // MAPBLOCKSHIFT over the raw 16.16 bits, not a fixed-to-whole conversion.
-    int xl = (clip.tmbbox[boxLeft] - level().blockmap.origin.x - MAXRADIUS).raw
-             >> MAPBLOCKSHIFT;
-    int xh = (clip.tmbbox[boxRight] - level().blockmap.origin.x + MAXRADIUS).raw
-             >> MAPBLOCKSHIFT;
-    int yl = (clip.tmbbox[boxBottom] - level().blockmap.origin.y - MAXRADIUS).raw
-             >> MAPBLOCKSHIFT;
-    int yh = (clip.tmbbox[boxTop] - level().blockmap.origin.y + MAXRADIUS).raw
-             >> MAPBLOCKSHIFT;
+    auto xl = (clip.tmbbox[boxLeft] - level().blockmap.origin.x - MAXRADIUS).raw
+              >> MAPBLOCKSHIFT;
+    auto xh = (clip.tmbbox[boxRight] - level().blockmap.origin.x + MAXRADIUS).raw
+              >> MAPBLOCKSHIFT;
+    auto yl = (clip.tmbbox[boxBottom] - level().blockmap.origin.y - MAXRADIUS).raw
+              >> MAPBLOCKSHIFT;
+    auto yh = (clip.tmbbox[boxTop] - level().blockmap.origin.y + MAXRADIUS).raw
+              >> MAPBLOCKSHIFT;
 
-    for (int bx = xl; bx <= xh; bx++)
-        for (int by = yl; by <= yh; by++)
+    for (auto bx = xl; bx <= xh; bx++)
+        for (auto by = yl; by <= yh; by++)
             if (!forEachThingInBlock(bx, by, stompThing))
                 return false;
 
@@ -385,9 +387,9 @@ bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
 
 bool Mobj::thingHeightClip()
 {
-    Clip& clip = clipping();
+    auto& clip = clipping();
 
-    bool onfloor = (z == floorz);
+    auto onfloor = (z == floorz);
 
     checkPosition(x, y);
     // what about stranding a monster partially off an edge?

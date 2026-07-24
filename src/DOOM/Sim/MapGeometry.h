@@ -58,8 +58,8 @@ inline int boxOnLineSide(Fixed top,
                          Vec2 lineDelta,
                          int slopeType)
 {
-    int p1 = 0;
-    int p2 = 0;
+    auto p1 = 0;
+    auto p2 = 0;
 
     switch (slopeType)
     {

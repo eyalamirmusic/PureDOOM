@@ -36,8 +36,8 @@ void colMajorXform(short* array, int width, int height)
     // RAII scratch: the transposed copy, released when the function returns.
     auto dest = Vector<short>(width * height);
 
-    for (int y = 0; y < height; y++)
-        for (int x = 0; x < width; x++)
+    for (auto y = 0; y < height; y++)
+        for (auto x = 0; x < width; x++)
             dest[x * height + y] = array[y * width + x];
 
     doom_memcpy(array, dest.data(), width * height * 2);
@@ -55,9 +55,9 @@ int doColorXForm(int width, int height, int ticks)
 
     int newval;
 
-    bool changed = false;
-    byte* w = scratch.wipe_scr;
-    byte* e = scratch.wipe_scr_end;
+    auto changed = false;
+    auto* w = scratch.wipe_scr;
+    auto* e = scratch.wipe_scr_end;
 
     while (w != scratch.wipe_scr + width * height)
     {
@@ -114,9 +114,9 @@ int initMelt(int width, int height, [[maybe_unused]] int ticks)
     // vanilla name wipe_melt_offsets is a view refreshed here after the resize.
     scratch.wipe_melt_offsets.resize(width);
     scratch.wipe_melt_offsets[0] = -(randomness().forMenu() % 16);
-    for (int i = 1; i < width; i++)
+    for (auto i = 1; i < width; i++)
     {
-        int r = (randomness().forMenu() % 3) - 1;
+        auto r = (randomness().forMenu() % 3) - 1;
         scratch.wipe_melt_offsets[i] = scratch.wipe_melt_offsets[i - 1] + r;
         if (scratch.wipe_melt_offsets[i] > 0)
             scratch.wipe_melt_offsets[i] = 0;
@@ -131,13 +131,13 @@ int doMelt(int width, int height, int ticks)
 {
     auto& scratch = wipeState();
 
-    bool done = true;
+    auto done = true;
 
     width /= 2;
 
     while (ticks--)
     {
-        for (int i = 0; i < width; i++)
+        for (auto i = 0; i < width; i++)
         {
             if (scratch.wipe_melt_offsets[i] < 0)
             {
@@ -146,18 +146,18 @@ int doMelt(int width, int height, int ticks)
             }
             else if (scratch.wipe_melt_offsets[i] < height)
             {
-                int dy = (scratch.wipe_melt_offsets[i] < 16)
-                             ? scratch.wipe_melt_offsets[i] + 1
-                             : 8;
+                auto dy = (scratch.wipe_melt_offsets[i] < 16)
+                              ? scratch.wipe_melt_offsets[i] + 1
+                              : 8;
                 if (scratch.wipe_melt_offsets[i] + dy >= height)
                     dy = height - scratch.wipe_melt_offsets[i];
-                short* s = &(reinterpret_cast<short*>(
+                auto* s = &(reinterpret_cast<short*>(
                     scratch
                         .wipe_scr_end))[i * height + scratch.wipe_melt_offsets[i]];
-                short* d = &(reinterpret_cast<short*>(
+                auto* d = &(reinterpret_cast<short*>(
                     scratch.wipe_scr))[scratch.wipe_melt_offsets[i] * width + i];
-                int idx = 0;
-                for (int j = dy; j; j--)
+                auto idx = 0;
+                for (auto j = dy; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
@@ -167,7 +167,7 @@ int doMelt(int width, int height, int ticks)
                 d = &(reinterpret_cast<short*>(
                     scratch.wipe_scr))[scratch.wipe_melt_offsets[i] * width + i];
                 idx = 0;
-                for (int j = height - scratch.wipe_melt_offsets[i]; j; j--)
+                for (auto j = height - scratch.wipe_melt_offsets[i]; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
@@ -231,7 +231,7 @@ int screenWipe(WipeType wipeno,
 
     // do a piece of wipe-in
     markRect(0, 0, width, height);
-    int rc = (*wipes[toIndex(wipeno) * 3 + 1])(width, height, ticks);
+    auto rc = (*wipes[toIndex(wipeno) * 3 + 1])(width, height, ticks);
 
     // final stuff
     if (rc)

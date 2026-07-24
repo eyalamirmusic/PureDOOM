@@ -696,7 +696,7 @@ void drawCustomMenuText(std::string_view name, int x, int y)
     {
         if (custom_text.name == name)
         {
-            MenuCustomTextSeg* seg = custom_text.segs;
+            auto* seg = custom_text.segs;
             while (!seg->lump.empty())
             {
                 void* lump = cacheLumpName(seg->lump);
@@ -719,7 +719,7 @@ void readSaveStrings()
 
     void* handle;
 
-    for (int i = 0; i < toIndex(LoadItem::End); i++)
+    for (auto i = 0; i < toIndex(LoadItem::End); i++)
     {
         //doom_sprintf(name, SAVEGAMENAME"%d.dsg", i);
         auto name = concat(SAVEGAMENAME, i, ".dsg");
@@ -750,7 +750,7 @@ void drawLoad()
     auto& state = menuState();
 
     drawPatchDirect(72, 28, 0, static_cast<Patch*>(cacheLumpName("M_LOADG")));
-    for (int i = 0; i < toIndex(LoadItem::End); i++)
+    for (auto i = 0; i < toIndex(LoadItem::End); i++)
     {
         drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
         writeText(
@@ -765,7 +765,7 @@ void drawSaveLoadBorder(int x, int y)
 {
     drawPatchDirect(x - 8, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSLEFT")));
 
-    for (int i = 0; i < 24; i++)
+    for (auto i = 0; i < 24; i++)
     {
         drawPatchDirect(x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSCNTR")));
         x += 8;
@@ -1008,9 +1008,10 @@ void drawSound()
 
     if (!(host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
     {
-        int offset = (host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
-                         ? static_cast<int>(toIndex(SoundNoMusicItem::SfxVolNoMusic))
-                         : static_cast<int>(toIndex(SoundItem::SfxVol));
+        auto offset =
+            (host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
+                ? static_cast<int>(toIndex(SoundNoMusicItem::SfxVolNoMusic))
+                : static_cast<int>(toIndex(SoundItem::SfxVol));
         drawThermo(SoundDef.x,
                    SoundDef.y + LINEHEIGHT * (offset + 1),
                    16,
@@ -1019,9 +1020,9 @@ void drawSound()
 
     if (!(host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS))
     {
-        int offset = (host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
-                         ? static_cast<int>(toIndex(SoundNoSfxItem::MusicVolNoSfx))
-                         : static_cast<int>(toIndex(SoundItem::MusicVol));
+        auto offset = (host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
+                          ? static_cast<int>(toIndex(SoundNoSfxItem::MusicVolNoSfx))
+                          : static_cast<int>(toIndex(SoundItem::MusicVol));
         drawThermo(SoundDef.x,
                    SoundDef.y + LINEHEIGHT * (offset + 1),
                    16,
@@ -1427,10 +1428,10 @@ void sizeDisplay(int choice)
 //
 void drawThermo(int x, int y, int thermWidth, int thermDot)
 {
-    int xx = x;
+    auto xx = x;
     drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERML")));
     xx += 8;
-    for (int i = 0; i < thermWidth; i++)
+    for (auto i = 0; i < thermWidth; i++)
     {
         drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMM")));
         xx += 8;
@@ -1488,11 +1489,11 @@ void stopMessage()
 //
 int stringWidth(std::string_view string)
 {
-    int w = 0;
+    auto w = 0;
 
     for (auto character: string)
     {
-        int c = toUpper(character) - HU_FONTSTART;
+        auto c = toUpper(character) - HU_FONTSTART;
         if (c < 0 || c >= HU_FONTSIZE)
             w += 4;
         else
@@ -1509,7 +1510,7 @@ int stringHeight(std::string_view string)
 {
     int height = littleEndian(hudFont().hu_font[0]->height);
 
-    int h = height;
+    auto h = height;
     for (auto character: string)
         if (character == '\n')
             h += height;
@@ -1524,8 +1525,8 @@ void writeText(int x, int y, std::string_view string)
 {
     auto& font = hudFont();
 
-    int cx = x;
-    int cy = y;
+    auto cx = x;
+    auto cy = y;
 
     for (auto character: string)
     {
@@ -1536,14 +1537,14 @@ void writeText(int x, int y, std::string_view string)
             continue;
         }
 
-        int c = toUpper(character) - HU_FONTSTART;
+        auto c = toUpper(character) - HU_FONTSTART;
         if (c < 0 || c >= HU_FONTSIZE)
         {
             cx += 4;
             continue;
         }
 
-        int w = littleEndian(font.hu_font[c]->width);
+        auto w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
         drawPatchDirect(cx, cy, 0, font.hu_font[c]);
@@ -1566,7 +1567,7 @@ bool menuResponder(Event& ev)
 
     auto& state = menuState();
 
-    int ch = -1;
+    auto ch = -1;
 
     if (ev.type == EventType::Joystick && state.joywait < currentTic())
     {
@@ -1902,14 +1903,14 @@ bool menuResponder(Event& ev)
             return true;
 
         default:
-            for (int i = state.itemOn + 1; i < state.currentMenu->numitems; i++)
+            for (auto i = state.itemOn + 1; i < state.currentMenu->numitems; i++)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
                     startSound(nullptr, SfxEnum::Pstop);
                     return true;
                 }
-            for (int i = 0; i <= state.itemOn; i++)
+            for (auto i = 0; i <= state.itemOn; i++)
                 if (state.currentMenu->menuitems[i].alphaKey == ch)
                 {
                     state.itemOn = i;
@@ -1998,7 +1999,7 @@ void drawMenu()
 
     for (i = 0; i < max; i++)
     {
-        MenuItem* menuitem = state.currentMenu->menuitems + i;
+        auto* menuitem = state.currentMenu->menuitems + i;
         if (!menuitem->name.empty())
         {
             if (menuitem->name.starts_with("TXT_"))
@@ -2062,7 +2063,7 @@ void initMenu()
     auto& overlay = overlayState();
     auto& state = menuState();
 
-    bool hide_mouse = (host().flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
+    auto hide_mouse = (host().flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
     bool hide_sound = ((host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
                        && (host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
                           ? true

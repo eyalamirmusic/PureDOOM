@@ -74,7 +74,7 @@ void drawTextLine(HudTextLine& l, bool drawcursor)
         auto c = static_cast<unsigned char>(toUpper(character));
         if (c != ' ' && c >= l.sc && c <= '_')
         {
-            int w = littleEndian(l.f[c - l.sc]->width);
+            auto w = littleEndian(l.f[c - l.sc]->width);
             if (x + w > SCREENWIDTH)
                 break;
             drawPatchDirect(x, l.y, FG, l.f[c - l.sc]);
@@ -109,7 +109,7 @@ void eraseTextLine(HudTextLine& l)
 
     if (!overlayState().automapactive && view.viewwindowx && l.needsupdate)
     {
-        int lh = littleEndian(l.f[0]->height) + 1;
+        auto lh = littleEndian(l.f[0]->height) + 1;
         for (y = l.y, yoffset = y * SCREENWIDTH; y < l.y + lh;
              y++, yoffset += SCREENWIDTH)
         {
@@ -136,7 +136,7 @@ void initSText(
     s.on = on;
     s.laston = true;
     s.cl = 0;
-    for (int i = 0; i < h; i++)
+    for (auto i = 0; i < h; i++)
         initTextLine(
             s.l[i], x, y - i * (littleEndian(font[0]->height) + 1), font, startchar);
 }
@@ -149,7 +149,7 @@ void addLineToSText(HudScrollingText& s)
     clearTextLine(s.l[s.cl]);
 
     // everything needs updating
-    for (int i = 0; i < s.h; i++)
+    for (auto i = 0; i < s.h; i++)
         s.l[i].needsupdate = 4;
 }
 
@@ -172,9 +172,9 @@ void drawSText(HudScrollingText& s)
         return; // if not on, don't draw
 
     // draw everything
-    for (int i = 0; i < s.h; i++)
+    for (auto i = 0; i < s.h; i++)
     {
-        int idx = s.cl - i;
+        auto idx = s.cl - i;
         if (idx < 0)
             idx += s.h; // handle queue of lines
 
@@ -185,7 +185,7 @@ void drawSText(HudScrollingText& s)
 
 void eraseSText(HudScrollingText& s)
 {
-    for (int i = 0; i < s.h; i++)
+    for (auto i = 0; i < s.h; i++)
     {
         if (s.laston && !*s.on)
             s.l[i].needsupdate = 4;

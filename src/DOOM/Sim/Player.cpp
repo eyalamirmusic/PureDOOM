@@ -96,8 +96,8 @@ void Player::calcHeight()
         return;
     }
 
-    int angle = (fineAngles / 20 * levelStats().leveltime) & fineMask;
-    Fixed bobToUse = FixedMul(bob / 2, finesine()[angle]);
+    auto angle = (fineAngles / 20 * levelStats().leveltime) & fineMask;
+    auto bobToUse = FixedMul(bob / 2, finesine()[angle]);
 
     // move viewheight
     if (playerstate == PlayerLifeState::Live)
@@ -135,7 +135,7 @@ void Player::calcHeight()
 //
 void Player::movePlayer()
 {
-    Ticcmd* cmdToUse = &cmd;
+    auto* cmdToUse = &cmd;
 
     auto& scratch = playerScratch();
 
@@ -180,9 +180,9 @@ void Player::deathThink()
 
     if (attacker && attacker != mo)
     {
-        Angle angle = pointToAngle2(mo->x, mo->y, attacker->x, attacker->y);
+        auto angle = pointToAngle2(mo->x, mo->y, attacker->x, attacker->y);
 
-        Angle delta = angle - mo->angle;
+        auto delta = angle - mo->angle;
 
         if (delta < ANG5 || delta > -ANG5)
         {
@@ -217,7 +217,7 @@ void Player::think()
         mo->flags = withoutFlags(mo->flags, MobjFlag::NoClip);
 
     // chain saw run forward
-    Ticcmd* cmdToUse = &cmd;
+    auto* cmdToUse = &cmd;
     if (hasFlag(mo->flags, MobjFlag::JustAttacked))
     {
         cmdToUse->angleturn = 0;
@@ -256,7 +256,7 @@ void Player::think()
         // The actual changing of the weapon is done
         //  when the weapon psprite can do it
         //  (read: not in the middle of an attack).
-        WeaponType newweapon = static_cast<WeaponType>(
+        auto newweapon = static_cast<WeaponType>(
             (cmdToUse->buttons & buttonWeaponMask) >> buttonWeaponShift);
 
         if (newweapon == WeaponType::Fist

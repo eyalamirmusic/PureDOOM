@@ -173,8 +173,8 @@ static CheatSequence cheat_amap = {{cheat_amap_seq}};
 // that it can be used with the brain-dead drawing stuff.
 void getIslope(const MapLine& ml, ISlope& is)
 {
-    Fixed dy = ml.a.y - ml.b.y;
-    Fixed dx = ml.b.x - ml.a.x;
+    auto dy = ml.a.y - ml.b.y;
+    auto dx = ml.b.x - ml.a.x;
     if (!dy)
         is.islp = dx.isNegative() ? Fixed {-DOOM_MAXINT} : Fixed {DOOM_MAXINT};
     else
@@ -266,7 +266,7 @@ void findMinMaxBoundaries()
     map.min_x = map.min_y = Fixed {DOOM_MAXINT};
     map.max_x = map.max_y = Fixed {-DOOM_MAXINT};
 
-    for (int i = 0; i < level().vertexes.size(); i++)
+    for (auto i = 0; i < level().vertexes.size(); i++)
     {
         if (level().vertexes[i].x < map.min_x)
             map.min_x = level().vertexes[i].x;
@@ -282,8 +282,8 @@ void findMinMaxBoundaries()
     map.max_w = map.max_x - map.min_x;
     map.max_h = map.max_y - map.min_y;
 
-    Fixed a = FixedDiv(Fixed::fromInt(automapView().f_w), map.max_w);
-    Fixed b = FixedDiv(Fixed::fromInt(automapView().f_h), map.max_h);
+    auto a = FixedDiv(Fixed::fromInt(automapView().f_w), map.max_w);
+    auto b = FixedDiv(Fixed::fromInt(automapView().f_h), map.max_h);
 
     map.min_scale_mtof = a < b ? a : b;
     map.max_scale_mtof =
@@ -374,7 +374,7 @@ void loadPics()
 {
     auto& map = automapView();
 
-    for (int i = 0; i < 10; i++)
+    for (auto i = 0; i < 10; i++)
     {
         map.marknums[i] = static_cast<Patch*>(cacheLumpName(concat("AMMNUM", i)));
     }
@@ -492,7 +492,7 @@ bool automapResponder(Event& ev)
 
     static std::string buffer;
 
-    int rc = false;
+    auto rc = false;
 
     if (!overlayState().automapactive)
     {
@@ -727,7 +727,7 @@ enum class Outcode
 
 int computeOutcode(int mx, int my)
 {
-    int oc = 0;
+    auto oc = 0;
     if (my < 0)
         oc = withFlags(oc, Outcode::Top);
     else if (my >= automapView().f_h)
@@ -751,8 +751,8 @@ bool clipMline(const MapLine& ml, FLine& fl)
 {
     auto& map = automapView();
 
-    int outcode1 = 0;
-    int outcode2 = 0;
+    auto outcode1 = 0;
+    auto outcode2 = 0;
     int outside;
 
     // Initialized because the four-way clip below is an if/else-if chain with no
@@ -963,17 +963,17 @@ void drawGrid(int color)
     const auto blockSpacing = Fixed::fromInt(MAPBLOCKUNITS);
 
     // Figure out start of vertical gridlines
-    Fixed start = automapView().m_x;
+    auto start = automapView().m_x;
     if (Fixed {(start - level().blockmap.origin.x).raw % blockSpacing.raw})
         start +=
             blockSpacing
             - (Fixed {(start - level().blockmap.origin.x).raw % blockSpacing.raw});
-    Fixed end = automapView().m_x + automapView().m_w;
+    auto end = automapView().m_x + automapView().m_w;
 
     // draw vertical gridlines
     ml.a.y = automapView().m_y;
     ml.b.y = automapView().m_y + automapView().m_h;
-    for (Fixed x = start; x < end; x += blockSpacing)
+    for (auto x = start; x < end; x += blockSpacing)
     {
         ml.a.x = x;
         ml.b.x = x;
@@ -991,7 +991,7 @@ void drawGrid(int color)
     // draw horizontal gridlines
     ml.a.x = automapView().m_x;
     ml.b.x = automapView().m_x + automapView().m_w;
-    for (Fixed y = start; y < end; y += blockSpacing)
+    for (auto y = start; y < end; y += blockSpacing)
     {
         ml.a.y = y;
         ml.b.y = y;
@@ -1007,7 +1007,7 @@ void drawWalls()
 {
     static MapLine l;
 
-    for (int i = 0; i < level().lines.size(); i++)
+    for (auto i = 0; i < level().lines.size(); i++)
     {
         l.a.x = level().lines[i].v1->x;
         l.a.y = level().lines[i].v1->y;
@@ -1068,8 +1068,8 @@ void drawWalls()
 //
 void rotateAutomapPoint(Fixed& x, Fixed& y, Angle a)
 {
-    Fixed tmpx = FixedMul(x, finecosine()[a.fineIndex()])
-                 - FixedMul(y, finesine()[a.fineIndex()]);
+    auto tmpx = FixedMul(x, finecosine()[a.fineIndex()])
+                - FixedMul(y, finesine()[a.fineIndex()]);
 
     y = FixedMul(x, finesine()[a.fineIndex()])
         + FixedMul(y, finecosine()[a.fineIndex()]);
@@ -1129,7 +1129,7 @@ void drawLineCharacter(std::span<const MapLine> lineguy,
 void drawPlayers()
 {
     static Array<int, 4> their_colors = {GREENS, GRAYS, BROWNS, REDS};
-    int their_color = -1;
+    auto their_color = -1;
     int color;
 
     const auto& session = gameSession();
@@ -1155,10 +1155,10 @@ void drawPlayers()
 
     auto& players_ = playerState();
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         their_color++;
-        Player* p = &players_.players[i];
+        auto* p = &players_.players[i];
 
         if ((session.deathmatch && !demoState().singledemo)
             && p != automapView().am_plr)
@@ -1183,9 +1183,9 @@ void drawPlayers()
 
 void drawThings(int colors)
 {
-    for (int i = 0; i < level().sectors.size(); i++)
+    for (auto i = 0; i < level().sectors.size(); i++)
     {
-        Mobj* t = level().sectors[i].thinglist;
+        auto* t = level().sectors[i].thinglist;
         while (t)
         {
             drawLineCharacter(mapShapes().thinTriangleGuy,
@@ -1203,16 +1203,16 @@ void drawAutomapMarks()
 {
     auto& map = automapView();
 
-    for (int i = 0; i < AutomapView::numMarkPoints; i++)
+    for (auto i = 0; i < AutomapView::numMarkPoints; i++)
     {
         if (map.markpoints[i].x != Fixed {-1})
         {
             //      w = littleEndian(marknums[i]->width);
             //      h = littleEndian(marknums[i]->height);
-            int w = 5; // because something's wrong with the wad, i guess
-            int h = 6; // because something's wrong with the wad, i guess
-            int fx = mapXToFrame(map.markpoints[i].x);
-            int fy = mapYToFrame(map.markpoints[i].y);
+            auto w = 5; // because something's wrong with the wad, i guess
+            auto h = 6; // because something's wrong with the wad, i guess
+            auto fx = mapXToFrame(map.markpoints[i].x);
+            auto fy = mapYToFrame(map.markpoints[i].y);
             if (fx >= automapView().f_x && fx <= automapView().f_w - w
                 && fy >= automapView().f_y && fy <= automapView().f_h - h)
                 drawPatch(fx, fy, FB, map.marknums[i]);

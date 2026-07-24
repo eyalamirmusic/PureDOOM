@@ -58,8 +58,8 @@ int divlineSide(Fixed x, Fixed y, const DivLine& node)
     // multiply: vanilla declares them Fixed but never treats them as such, and
     // Fixed::operator* would shift the product back down by fracBits and give a
     // different answer. Kept as plain ints on the raw bits.
-    const int left = (node.delta.y.raw >> fracBits) * (dx.raw >> fracBits);
-    const int right = (dy.raw >> fracBits) * (node.delta.x.raw >> fracBits);
+    const auto left = (node.delta.y.raw >> fracBits) * (dx.raw >> fracBits);
+    const auto right = (dy.raw >> fracBits) * (node.delta.x.raw >> fracBits);
 
     if (right < left)
         return 0; // front side
@@ -76,15 +76,15 @@ int divlineSide(Fixed x, Fixed y, const DivLine& node)
 //
 Fixed interceptVector2(const DivLine& v2, const DivLine& v1)
 {
-    Fixed den = FixedMul(v1.delta.y >> 8, v2.delta.x)
-                - FixedMul(v1.delta.x >> 8, v2.delta.y);
+    auto den = FixedMul(v1.delta.y >> 8, v2.delta.x)
+               - FixedMul(v1.delta.x >> 8, v2.delta.y);
 
     if (den.isZero())
         return Fixed {};
 
-    Fixed num = FixedMul((v1.origin.x - v2.origin.x) >> 8, v1.delta.y)
-                + FixedMul((v2.origin.y - v1.origin.y) >> 8, v1.delta.x);
-    Fixed frac = FixedDiv(num, den);
+    auto num = FixedMul((v1.origin.x - v2.origin.x) >> 8, v1.delta.y)
+               + FixedMul((v2.origin.y - v1.origin.y) >> 8, v1.delta.x);
+    auto frac = FixedDiv(num, den);
 
     return frac;
 }
@@ -246,7 +246,7 @@ bool crossBSPNode(int bspnum,
                 bspnum & (~NF_SUBSECTOR), trace, topslope, bottomslope);
     }
 
-    Node* bsp = &level().nodes[bspnum];
+    auto* bsp = &level().nodes[bspnum];
 
     // The node's partition line, which vanilla read by casting the node itself to
     // a divline_t - its first four fields are the same four numbers. Named now
@@ -255,7 +255,7 @@ bool crossBSPNode(int bspnum,
                              {Fixed {bsp->dx}, Fixed {bsp->dy}}};
 
     // decide which side the start point is on
-    int side = divlineSide(trace.strace.origin.x, trace.strace.origin.y, partition);
+    auto side = divlineSide(trace.strace.origin.x, trace.strace.origin.y, partition);
     if (side == 2)
         side = 0; // an "on" should cross both sides
 
@@ -280,11 +280,11 @@ bool checkSight(Mobj* t1, Mobj* t2)
     // First check for trivial rejection.
 
     // Determine subsector entries in REJECT table.
-    int s1 = static_cast<int>(t1->subsector->sector - level().sectors.data());
-    int s2 = static_cast<int>(t2->subsector->sector - level().sectors.data());
+    auto s1 = static_cast<int>(t1->subsector->sector - level().sectors.data());
+    auto s2 = static_cast<int>(t2->subsector->sector - level().sectors.data());
     int pnum = s1 * level().sectors.size() + s2;
-    int bytenum = pnum >> 3;
-    int bitnum = 1 << (pnum & 7);
+    auto bytenum = pnum >> 3;
+    auto bitnum = 1 << (pnum & 7);
 
     // Check in REJECT table.
     if (level().rejectMatrix[bytenum] & bitnum)
@@ -298,8 +298,8 @@ bool checkSight(Mobj* t1, Mobj* t2)
 
     SightTrace trace;
     trace.sightzstart = t1->z + t1->height - (t1->height >> 2);
-    Fixed topslope = (t2->z + t2->height) - trace.sightzstart;
-    Fixed bottomslope = (t2->z) - trace.sightzstart;
+    auto topslope = (t2->z + t2->height) - trace.sightzstart;
+    auto bottomslope = (t2->z) - trace.sightzstart;
 
     trace.strace.origin = {Fixed {t1->x}, Fixed {t1->y}};
     trace.t2x = t2->x;

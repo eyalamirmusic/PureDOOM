@@ -5,9 +5,10 @@ single owned type" pattern in the engine and rewrite it as classic OOP. Continue
 spirit from the thinker-OOP work (`git log`, "Moved thinkers to look more like proper
 OOP classes") and sits alongside `REFACTOR.md`.
 
-**Status: done. The whole playsim surface (Player + Mobj + the state-action table)
-and the Specials line/sector subsystem are converted and verified. Nothing that fits
-the rule cleanly remains a free function.**
+**Status: the whole playsim surface (Player + Mobj + the state-action table) and the
+Specials line/sector subsystem — the one coherent subsystem this log had left — are
+converted and verified. A short tail of clean candidates the effort never reached is
+listed under *Not yet reached* below; the renderer was never in scope.**
 
 ## The rule applied
 
@@ -190,6 +191,22 @@ than the Player/Mobj surface, and `Sector::changeSector` had already shown the s
   `floorheight`, `sidenum`, `frontsector` are all `Sector`/`Line` members). The one
   that bit was `teleport`'s `int tag = line.tag` (hazard 9).
 
-Nothing that fits the rule cleanly is left. The registry inserts and level-wide
-coordinators that stayed free are listed under **What deliberately stayed a free
-function** above, each for a stated reason.
+The registry inserts and level-wide coordinators that stayed free are listed under
+**What deliberately stayed a free function** above, each for a stated reason.
+
+## Not yet reached
+
+Clean candidates the rule flags but this effort never touched — not carve-outs, just
+outside the surfaces worked so far:
+
+- **Playsim:** `setThingPosition(Mobj&)` and `unsetThingPosition(Mobj&)`
+  (`Sim/MapUtil.cpp`) — the blockmap/sector link and unlink. They are called
+  `setThingPosition(*this)` from `Mobj` methods and are not taken by address, so they
+  are `Mobj` methods waiting to happen (`thing.setPosition()` / `unsetPosition()`).
+  MapUtil was simply never part of a converted cluster.
+- **Renderer** (never in scope for this log): `setupFrame(Player&)` /
+  `renderPlayerView(Player&)` (`Render/Main.cpp`) and `projectSprite(Mobj&)` /
+  `addSprites(Sector&)` / `drawPSprite(PspDef&)` (`Render/Things.cpp`).
+- **Borderline:** `adjustSoundParams(Mobj* listener, Mobj* source, …)`
+  (`Game/Sound.cpp`) reads as a genuine two-object operation, like `killMobj` — leave
+  it unless a clear single owner emerges.

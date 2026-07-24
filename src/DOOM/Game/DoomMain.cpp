@@ -193,13 +193,13 @@ void displayFrame()
     // The frame-diff state machine: a DisplayState owned by the Engine now, reached by local
     // references (formerly displayFrame's own function-local statics, never reset - identical
     // persistence).
-    DisplayState& ds = displayState();
-    bool& viewactivestate = ds.viewactivestate;
-    bool& menuactivestate = ds.menuactivestate;
-    bool& inhelpscreensstate = ds.inhelpscreensstate;
-    bool& fullscreen = ds.fullscreen;
-    GameState& oldgamestate = ds.oldgamestate;
-    int& borderdrawcount = ds.borderdrawcount;
+    auto& ds = displayState();
+    auto& viewactivestate = ds.viewactivestate;
+    auto& menuactivestate = ds.menuactivestate;
+    auto& inhelpscreensstate = ds.inhelpscreensstate;
+    auto& fullscreen = ds.fullscreen;
+    auto& oldgamestate = ds.oldgamestate;
+    auto& borderdrawcount = ds.borderdrawcount;
     int y;
     bool wipe;
     bool redrawsbar;
@@ -715,7 +715,7 @@ void IdentifyVersion()
 //
 void findResponseFile()
 {
-    for (int i = 1; i < myargCount(); i++)
+    for (auto i = 1; i < myargCount(); i++)
     {
         if (myargv()[i][0] != '@')
             continue;
@@ -885,7 +885,7 @@ void doomMain()
     // turbo option
     if ((p = checkParm("-turbo")))
     {
-        int scale = 200;
+        auto scale = 200;
 
         if (p < myargCount() - 1)
             scale = parseInt(myargv()[p + 1]);
@@ -991,7 +991,7 @@ void doomMain()
     p = checkParm("-timer");
     if (p && p < myargCount() - 1 && session.deathmatch)
     {
-        int time = parseInt(myargv()[p + 1]);
+        auto time = parseInt(myargv()[p + 1]);
         //doom_print("Levels will end after %d minute", time);
         print("Levels will end after ", time, " minute");
         if (time > 1)

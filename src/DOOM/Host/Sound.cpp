@@ -245,10 +245,10 @@ int addsfx(SfxEnum sfxid, int volume, int step, int seperation)
     static unsigned short handlenums = 0;
 
     int i;
-    int rc = -1;
+    auto rc = -1;
 
-    int oldest = gameClock().gametic;
-    int oldestnum = 0;
+    auto oldest = gameClock().gametic;
+    auto oldestnum = 0;
     int slot;
 
     int rightvol;
@@ -365,7 +365,7 @@ void setChannels()
     int i;
     int j;
 
-    int* steptablemid = steptable.data() + 128;
+    auto* steptablemid = steptable.data() + 128;
 
     // Okay, reset internal mixing channels to zero.
     /*for (i=0; i<NUM_CHANNELS; i++)
@@ -665,7 +665,7 @@ void setMusicVolume(int volume)
     soundSettings().musicVolume = volume;
     mus_volume = soundSettings().musicVolume * 8;
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         queued_midi_msgs[(queue_midi_tail++) % MAX_QUEUED_MIDI_MSGS] =
             (0x000000B0 | i | 0x0700
@@ -856,7 +856,7 @@ void updateSoundParams([[maybe_unused]] int handle,
 void shutdownSoundHost()
 {
     // Wait till all pending sounds are finished.
-    int done = 0;
+    auto done = 0;
     int i;
 
     // FIXME (below).
@@ -950,7 +950,7 @@ void resumeSong([[maybe_unused]] int handle)
 
 static void reset_all_channels()
 {
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
         queued_midi_msgs[(queue_midi_tail++) % MAX_QUEUED_MIDI_MSGS] =
             0b10110000 | i | (123 << 8);
 }
@@ -1003,9 +1003,9 @@ unsigned long tickSong()
 
     if (mus_delay <= 0)
     {
-        int event = static_cast<int>(mus_data[mus_offset++]);
-        int type = (event & 0b01110000) >> 4;
-        int channel = event & 0b00001111;
+        auto event = static_cast<int>(mus_data[mus_offset++]);
+        auto type = (event & 0b01110000) >> 4;
+        auto channel = event & 0b00001111;
 
         if (channel == 15)
             channel = 9; // Percussion is 9 on GM
@@ -1016,15 +1016,15 @@ unsigned long tickSong()
         {
             case EVENT_RELEASE_NOTE:
             {
-                int note = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
+                auto note = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 midi_event = (0x00000080 | channel | (note << 8));
                 break;
             }
             case EVENT_PLAY_NOTE:
             {
-                int note_bytes = static_cast<int>(mus_data[mus_offset++]);
-                int note = note_bytes & 0b01111111;
-                int vol = 127;
+                auto note_bytes = static_cast<int>(mus_data[mus_offset++]);
+                auto note = note_bytes & 0b01111111;
+                auto vol = 127;
                 if (note_bytes & 0b10000000)
                     vol = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 midi_event = (0x00000090 | channel | (note << 8) | (vol << 16));
@@ -1032,15 +1032,15 @@ unsigned long tickSong()
             }
             case EVENT_PITCH_BEND:
             {
-                int bend_amount = static_cast<int>(mus_data[mus_offset++]) * 64;
-                int l = bend_amount & 0b01111111;
-                int m = (bend_amount & 0b1111111110000000) >> 7;
+                auto bend_amount = static_cast<int>(mus_data[mus_offset++]) * 64;
+                auto l = bend_amount & 0b01111111;
+                auto m = (bend_amount & 0b1111111110000000) >> 7;
                 midi_event = (0x000000E0 | channel | (l << 8) | (m << 16));
                 break;
             }
             case EVENT_SYSTEM_EVENT:
             {
-                int controller =
+                auto controller =
                     static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 switch (controller)
                 {
@@ -1066,9 +1066,9 @@ unsigned long tickSong()
             }
             case EVENT_CONTROLLER:
             {
-                int controller =
+                auto controller =
                     static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
-                int value = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
+                auto value = static_cast<int>(mus_data[mus_offset++]) & 0b01111111;
                 switch (controller)
                 {
                     case CONTROLLER_CHANGE_INSTRUMENT:
@@ -1137,7 +1137,7 @@ unsigned long tickSong()
         if (event & 0b10000000) // Followed by delay
         {
             mus_delay = 0;
-            int delay_byte = 0;
+            auto delay_byte = 0;
             do
             {
                 delay_byte = mus_data[mus_offset++];

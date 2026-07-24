@@ -59,7 +59,7 @@ constexpr int BFGCELLS = 40;
 
 void Player::setPsprite(PspNum position, StateNum stnum)
 {
-    PspDef* psp = &psprites[toIndex(position)];
+    auto* psp = &psprites[toIndex(position)];
 
     do
     {
@@ -70,7 +70,7 @@ void Player::setPsprite(PspNum position, StateNum stnum)
             break;
         }
 
-        State* state = &states()[toIndex(stnum)];
+        auto* state = &states()[toIndex(stnum)];
         psp->state = state;
         psp->tics = state->tics; // could be 0
 
@@ -109,7 +109,7 @@ void Player::bringUpWeapon()
     if (pendingweapon == WeaponType::Chainsaw)
         startSound(mo, SfxEnum::Sawup);
 
-    StateNum newstate =
+    auto newstate =
         static_cast<StateNum>(weaponinfo()[toIndex(pendingweapon)].upstate);
 
     pendingweapon = WeaponType::NoChange;
@@ -127,7 +127,7 @@ bool Player::checkAmmo()
 {
     int count;
 
-    AmmoType ammoType = weaponinfo()[toIndex(readyweapon)].ammo;
+    auto ammoType = weaponinfo()[toIndex(readyweapon)].ammo;
 
     // Minimal amount for one shot varies.
     if (readyweapon == WeaponType::Bfg)
@@ -212,13 +212,13 @@ void Player::fireWeapon()
         return;
 
     mo->setState(StateNum::PlayAtk1);
-    StateNum newstate =
+    auto newstate =
         static_cast<StateNum>(weaponinfo()[toIndex(readyweapon)].atkstate);
     setPsprite(PspNum::Weapon, newstate);
     noiseAlert(*mo, *mo);
 
     // [pd] Stop gun bobbing when shooting
-    PspDef* psp = &psprites[toIndex(PspNum::Weapon)];
+    auto* psp = &psprites[toIndex(PspNum::Weapon)];
     psp->sx = FRACUNIT;
     psp->sy = WEAPONTOP;
 }
@@ -261,7 +261,7 @@ void Player::weaponReady(PspDef& psp)
     {
         // change weapon
         //  (pending weapon should allready be validated)
-        StateNum newstate =
+        auto newstate =
             static_cast<StateNum>(weaponinfo()[toIndex(readyweapon)].downstate);
         setPsprite(PspNum::Weapon, newstate);
         return;
@@ -284,7 +284,7 @@ void Player::weaponReady(PspDef& psp)
         attackdown = false;
 
     // bob the weapon based on movement speed
-    int angle = (128 * levelStats().leveltime) & fineMask;
+    auto angle = (128 * levelStats().leveltime) & fineMask;
     psp.sx = FRACUNIT + FixedMul(bob, finecosine()[angle]);
     angle &= fineAngles / 2 - 1;
     psp.sy = WEAPONTOP + FixedMul(bob, finesine()[angle]);
@@ -367,7 +367,7 @@ void Player::raise(PspDef& psp)
 
     // The weapon has been raised all the way,
     //  so change to the ready state.
-    StateNum newstate =
+    auto newstate =
         static_cast<StateNum>(weaponinfo()[toIndex(readyweapon)].readystate);
 
     setPsprite(PspNum::Weapon, newstate);
@@ -393,12 +393,12 @@ void Player::gunFlash(PspDef&)
 //
 void Player::punch(PspDef&)
 {
-    int damage = (randomness().forPlay() % 10 + 1) << 1;
+    auto damage = (randomness().forPlay() % 10 + 1) << 1;
 
     if (powers[toIndex(PowerType::Strength)])
         damage *= 10;
 
-    Angle angle = mo->angle;
+    auto angle = mo->angle;
     angle +=
         Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 18};
     const auto aim = aimLineAttack(mo, angle, MELEERANGE);
@@ -417,8 +417,8 @@ void Player::punch(PspDef&)
 //
 void Player::saw(PspDef&)
 {
-    int damage = 2 * (randomness().forPlay() % 10 + 1);
-    Angle angle = mo->angle;
+    auto damage = 2 * (randomness().forPlay() % 10 + 1);
+    auto angle = mo->angle;
     angle +=
         Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 18};
 
@@ -495,7 +495,7 @@ void Mobj::computeBulletSlope()
     auto& scratch = weaponScratch();
 
     // see which target is to be aimed at
-    Angle an = angle;
+    auto an = angle;
     auto aim = aimLineAttack(this, an, 16 * 64 * FRACUNIT);
     scratch.bulletslope = aim.slope;
 
@@ -518,8 +518,8 @@ void Mobj::computeBulletSlope()
 //
 void Mobj::gunShot(bool accurate)
 {
-    int damage = 5 * (randomness().forPlay() % 3 + 1);
-    Angle angleToUse = angle;
+    auto damage = 5 * (randomness().forPlay() % 3 + 1);
+    auto angleToUse = angle;
 
     if (!accurate)
         angleToUse += Angle {
@@ -562,7 +562,7 @@ void Player::fireShotgun(PspDef&)
 
     mo->computeBulletSlope();
 
-    for (int i = 0; i < 7; i++)
+    for (auto i = 0; i < 7; i++)
         mo->gunShot(false);
 }
 
@@ -582,10 +582,10 @@ void Player::fireShotgun2(PspDef&)
 
     mo->computeBulletSlope();
 
-    for (int i = 0; i < 20; i++)
+    for (auto i = 0; i < 20; i++)
     {
-        int damage = 5 * (randomness().forPlay() % 3 + 1);
-        Angle angle = mo->angle;
+        auto damage = 5 * (randomness().forPlay() % 3 + 1);
+        auto angle = mo->angle;
         angle += Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
                         << 19};
         mo->lineAttack(
@@ -645,9 +645,9 @@ void Player::light2(PspDef&)
 void Mobj::bfgSpray()
 {
     // offset angles from its attack angle
-    for (int i = 0; i < 40; i++)
+    for (auto i = 0; i < 40; i++)
     {
-        Angle an = angle - ang90 / 2 + ang90 / 40 * i;
+        auto an = angle - ang90 / 2 + ang90 / 40 * i;
 
         // target is the originator (player)
         //  of the missile
@@ -661,8 +661,8 @@ void Mobj::bfgSpray()
                   aim.target->z + (aim.target->height >> 2),
                   MobjType::Extrabfg);
 
-        int damage = 0;
-        for (int j = 0; j < 15; j++)
+        auto damage = 0;
+        for (auto j = 0; j < 15; j++)
             damage += (randomness().forPlay() & 7) + 1;
 
         aim.target->damage(target, target, damage);
@@ -684,7 +684,7 @@ void Player::bfgSound(PspDef&)
 void Player::setupPsprites()
 {
     // remove all psprites
-    for (int i = 0; i < numPSprites; i++)
+    for (auto i = 0; i < numPSprites; i++)
         psprites[i].state = nullptr;
 
     // spawn the gun
@@ -700,8 +700,8 @@ void Player::movePsprites()
 {
     State* state;
 
-    PspDef* psp = &psprites[0];
-    for (int i = 0; i < numPSprites; i++, psp++)
+    auto* psp = &psprites[0];
+    for (auto i = 0; i < numPSprites; i++, psp++)
     {
         // a null state means not active
         if ((state = psp->state))

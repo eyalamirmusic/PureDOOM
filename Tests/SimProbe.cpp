@@ -205,7 +205,7 @@ unsigned long long doomSimStateHash()
 
     Doom::Thinker* thinker;
     Doom::Player* player = &Doom::playerState().players[0];
-    int count = 0;
+    auto count = 0;
 
     simHash = 1469598103934665603ULL;
 
@@ -282,7 +282,7 @@ static long simLiveBlocks = 0;
 
 static void* simCountingMalloc(int size)
 {
-    void* block = malloc((size_t) size);
+    auto* block = malloc((size_t) size);
     if (block)
         ++simLiveBlocks;
     return block;
@@ -386,7 +386,7 @@ int doomSimMobjCount()
     auto& thinkers = Doom::thinkerList();
 
     Doom::Thinker* thinker;
-    int count = 0;
+    auto count = 0;
 
     for (thinker = thinkers.cap.next; thinker && thinker != &thinkers.cap;
          thinker = thinker->next)
@@ -613,9 +613,9 @@ int doomSimThingsInBlockOf(int handle)
     if (setjmp(simAbort))
         return -1;
 
-    int blockx =
+    auto blockx =
         (mobj->x - Doom::level().blockmap.origin.x).raw >> Doom::MAPBLOCKSHIFT;
-    int blocky =
+    auto blocky =
         (mobj->y - Doom::level().blockmap.origin.y).raw >> Doom::MAPBLOCKSHIFT;
 
     simBlockThingCount = 0;
@@ -682,7 +682,7 @@ static unsigned long long simWorldHash()
 
     // Players - the scalar state Doom::archivePlayers/Doom::unArchivePlayers round-trip
     // (pointers like mo/attacker/message are fixed up or nulled on load).
-    for (int i = 0; i < Doom::MAXPLAYERS; i++)
+    for (auto i = 0; i < Doom::MAXPLAYERS; i++)
     {
         if (!players_.playeringame[i])
             continue;
@@ -704,7 +704,7 @@ static unsigned long long simWorldHash()
 
     // The world - sectors, lines and sides, exactly the fields Doom::archiveWorld
     // walks (moving floors/ceilings and switched textures live here).
-    for (int i = 0; i < Doom::level().sectors.size(); i++)
+    for (auto i = 0; i < Doom::level().sectors.size(); i++)
     {
         Doom::Sector* s = &Doom::level().sectors[i];
         simMix(&s->floorheight, sizeof(s->floorheight));
@@ -715,14 +715,14 @@ static unsigned long long simWorldHash()
         simMix(&s->special, sizeof(s->special));
         simMix(&s->tag, sizeof(s->tag));
     }
-    for (int i = 0; i < Doom::level().lines.size(); i++)
+    for (auto i = 0; i < Doom::level().lines.size(); i++)
     {
         Doom::Line* l = &Doom::level().lines[i];
         simMix(&l->flags, sizeof(l->flags));
         simMix(&l->special, sizeof(l->special));
         simMix(&l->tag, sizeof(l->tag));
     }
-    for (int i = 0; i < Doom::level().sides.size(); i++)
+    for (auto i = 0; i < Doom::level().sides.size(); i++)
     {
         Doom::Side* sd = &Doom::level().sides[i];
         simMix(&sd->textureoffset, sizeof(sd->textureoffset));
@@ -736,8 +736,8 @@ static unsigned long long simWorldHash()
     // plus a total thinker count so a wrong number of specials from
     // Doom::unArchiveSpecials shows up even though the specials are hashed only
     // through the sector state they drive.
-    int mobjCount = 0;
-    int thinkerCount = 0;
+    auto mobjCount = 0;
+    auto thinkerCount = 0;
     for (Doom::Thinker* th = thinkers.cap.next; th && th != &thinkers.cap;
          th = th->next)
     {
@@ -745,7 +745,7 @@ static unsigned long long simWorldHash()
         if (!simIsMobj(th))
             continue;
         Doom::Mobj* m = (Doom::Mobj*) th;
-        int frame = (int) (m->state - Doom::states());
+        auto frame = (int) (m->state - Doom::states());
         simMix(&m->x, sizeof(Doom::Fixed));
         simMix(&m->y, sizeof(Doom::Fixed));
         simMix(&m->z, sizeof(Doom::Fixed));
@@ -780,9 +780,9 @@ int doomSimSaveLoadPreservesWorld()
     if (setjmp(simAbort))
         return 0;
 
-    int ep = session.gameepisode;
-    int map = session.gamemap;
-    int skill = (int) session.gameskill;
+    auto ep = session.gameepisode;
+    auto map = session.gamemap;
+    auto skill = (int) session.gameskill;
 
     unsigned long long before = simWorldHash();
 

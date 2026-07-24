@@ -102,7 +102,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
         }
 
         scratch.sprtemp[frame].rotate = singleRotation;
-        for (int r = 0; r < 8; r++)
+        for (auto r = 0; r < 8; r++)
         {
             scratch.sprtemp[frame].lump[r] = lump - gd.firstspritelump;
             scratch.sprtemp[frame].flip[r] = static_cast<byte>(flipped);
@@ -196,7 +196,7 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
         //  filling in the frames for whatever is found
         for (l = start + 1; l < end; l++)
         {
-            const Lump& entry = wad().info(l);
+            const auto& entry = wad().info(l);
 
             if (*reinterpret_cast<const int*>(entry.name.data()) == intname)
             {

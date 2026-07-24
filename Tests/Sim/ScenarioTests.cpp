@@ -124,7 +124,7 @@ auto tLegalTryMoveCommits = test("Sim/scenarioLegalTryMoveCommits") = []
     auto sx = doomSimMobjX(player);
     auto sy = doomSimMobjY(player);
 
-    const int d = 4 * unit;
+    const auto d = 4 * unit;
     const int dx[] = {d, -d, 0, 0};
     const int dy[] = {0, 0, d, -d};
 

@@ -306,19 +306,19 @@ bool writeFile(std::string_view name, void* source, int length)
 //
 int readFile(std::string_view name, Vector<byte>& buffer)
 {
-    void* handle = host().open(name, "rb");
+    auto* handle = host().open(name, "rb");
     if (handle == nullptr)
     {
         fatalError("Error: Couldn't read file ", name);
     }
     host().seek(handle, 0, SeekOrigin::End);
-    int length = host().tell(handle);
+    auto length = host().tell(handle);
     host().seek(handle, 0, SeekOrigin::Set);
 
     // resize zeroes where the old doom_malloc did not, which is unobservable: the
     // doom_read below fills all `length` bytes or the read is fatal.
     buffer.resize(length);
-    int count = host().read(handle, buffer.data(), length);
+    auto count = host().read(handle, buffer.data(), length);
     host().close(handle);
 
     if (count < length)
@@ -337,7 +337,7 @@ int readFile(std::string_view name, Vector<byte>& buffer)
 // loadDefaults and saveDefaults call it before touching a location pointer.
 static void bindEngineDefault(std::string_view name, int* location)
 {
-    for (int i = 0; i < numdefaults(); i++)
+    for (auto i = 0; i < numdefaults(); i++)
         if (name == defaults()[i].name)
         {
             defaults()[i].location = location;
@@ -347,7 +347,7 @@ static void bindEngineDefault(std::string_view name, int* location)
 
 static void bindEngineDefaults()
 {
-    Engine& e = engine();
+    auto& e = engine();
 
     // The member addresses are taken here, at runtime, not in the static defaults[] table -
     // that is the whole point (a static &member captures the address of a reference before the
@@ -409,7 +409,7 @@ void saveDefaults()
     if (!f)
         return; // can't write the file, but don't complain
 
-    for (int i = 0; i < numdefaults(); i++)
+    for (auto i = 0; i < numdefaults(); i++)
     {
         if (defaults()[i].defaultvalue > -0xfff
             && defaults()[i].defaultvalue < 0xfff)
@@ -443,7 +443,7 @@ void loadDefaults()
     auto def = std::string {};
     auto strparm = std::string {};
     bool isstring;
-    int parm = 0;
+    auto parm = 0;
 
     // Owns the storage for the string-valued defaults (currently the ten
     // chatmacroN entries) read from ~/.doomrc, in place of what was a
@@ -491,7 +491,7 @@ void loadDefaults()
         while (!host().eof(f))
         {
             // def
-            int arg_read = 0;
+            auto arg_read = 0;
             char c;
             def.clear();
             for (i = 0; i < 79; ++i)
@@ -609,7 +609,7 @@ void WritePCXfile(
     // pack the image
     pack = &pcx->data;
 
-    for (int i = 0; i < width * height; i++)
+    for (auto i = 0; i < width * height; i++)
     {
         if ((*data & 0xc0) != 0xc0)
             *pack++ = *data++;
@@ -622,7 +622,7 @@ void WritePCXfile(
 
     // write the palette
     *pack++ = 0x0c; // palette ID byte
-    for (int i = 0; i < 768; i++)
+    for (auto i = 0; i < 768; i++)
         *pack++ = *palette++;
 
     // write output file

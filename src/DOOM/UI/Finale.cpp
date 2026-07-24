@@ -303,12 +303,12 @@ void textWrite()
     auto& fin = finaleState();
 
     // erase the entire screen to a tiled background
-    byte* src = static_cast<byte*>(cacheLumpName(fin.finaleflat));
-    byte* dest = videoState().screens[0];
+    auto* src = static_cast<byte*>(cacheLumpName(fin.finaleflat));
+    auto* dest = videoState().screens[0];
 
-    for (int y = 0; y < SCREENHEIGHT; y++)
+    for (auto y = 0; y < SCREENHEIGHT; y++)
     {
-        for (int x = 0; x < SCREENWIDTH / 64; x++)
+        for (auto x = 0; x < SCREENWIDTH / 64; x++)
         {
             doom_memcpy(dest, src + ((y & 63) << 6), 64);
             dest += 64;
@@ -323,19 +323,19 @@ void textWrite()
     markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
     // draw some of the text onto the screen
-    int cx = 10;
-    int cy = 10;
+    auto cx = 10;
+    auto cy = 10;
     auto text = fin.finaletext;
     std::size_t position = 0;
 
-    int count = (fin.finalecount - 10) / TEXTSPEED;
+    auto count = (fin.finalecount - 10) / TEXTSPEED;
     if (count < 0)
         count = 0;
     for (; count; count--)
     {
         if (position == text.size())
             break;
-        int c = text[position++];
+        auto c = text[position++];
         if (c == '\n')
         {
             cx = 10;
@@ -358,7 +358,7 @@ void textWrite()
             continue;
         }
 
-        int w = littleEndian(font.hu_font[c]->width);
+        auto w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
         drawPatch(cx, cy, 0, font.hu_font[c]);
@@ -593,7 +593,7 @@ void castPrint(std::string_view text)
     int w;
 
     // find width
-    int width = 0;
+    auto width = 0;
 
     for (auto character: text)
     {
@@ -609,7 +609,7 @@ void castPrint(std::string_view text)
     }
 
     // draw it
-    int cx = 160 - width / 2;
+    auto cx = 160 - width / 2;
 
     for (auto character: text)
     {
@@ -639,13 +639,12 @@ void castDrawer()
     castPrint(castorder[fin.castnum].name);
 
     // draw the current frame in the middle of the screen
-    SpriteDef* sprdef = &graphicsData().sprites[toIndex(fin.caststate->sprite)];
-    SpriteFrame* sprframe =
-        &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
+    auto* sprdef = &graphicsData().sprites[toIndex(fin.caststate->sprite)];
+    auto* sprframe = &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
     int lump = sprframe->lump[0];
     bool flip = static_cast<bool>(sprframe->flip[0]);
 
-    Patch* patch =
+    auto* patch =
         static_cast<Patch*>(cacheLumpNum(lump + graphicsData().firstspritelump));
     if (flip)
         drawPatchFlipped(160, 170, 0, patch);
@@ -658,16 +657,16 @@ void castDrawer()
 //
 void drawPatchCol(int x, Patch* patch, int col)
 {
-    Column* column = reinterpret_cast<Column*>(
-        reinterpret_cast<byte*>(patch) + littleEndian(patch->columnofs[col]));
-    byte* desttop = videoState().screens[0] + x;
+    auto* column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(patch)
+                                             + littleEndian(patch->columnofs[col]));
+    auto* desttop = videoState().screens[0] + x;
 
     // step through the posts in a column
     while (column->topdelta != 0xff)
     {
-        byte* source = reinterpret_cast<byte*>(column) + 3;
-        byte* dest = desttop + column->topdelta * SCREENWIDTH;
-        int count = column->length;
+        auto* source = reinterpret_cast<byte*>(column) + 3;
+        auto* dest = desttop + column->topdelta * SCREENWIDTH;
+        auto count = column->length;
 
         while (count--)
         {
@@ -686,15 +685,15 @@ void bunnyScroll()
 {
     auto& fin = finaleState();
 
-    Patch* p1 = static_cast<Patch*>(cacheLumpName("PFUB2"));
-    Patch* p2 = static_cast<Patch*>(cacheLumpName("PFUB1"));
+    auto* p1 = static_cast<Patch*>(cacheLumpName("PFUB2"));
+    auto* p2 = static_cast<Patch*>(cacheLumpName("PFUB1"));
 
     markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
-    int scrolled = 320 - (fin.finalecount - 230) / 2;
+    auto scrolled = 320 - (fin.finalecount - 230) / 2;
     scrolled = std::clamp(scrolled, 0, 320);
 
-    for (int x = 0; x < SCREENWIDTH; x++)
+    for (auto x = 0; x < SCREENWIDTH; x++)
     {
         if (x + scrolled < 320)
             drawPatchCol(x, p1, x + scrolled);
@@ -714,7 +713,7 @@ void bunnyScroll()
         return;
     }
 
-    int stage = (fin.finalecount - 1180) / 5;
+    auto stage = (fin.finalecount - 1180) / 5;
     if (stage > 6)
         stage = 6;
     if (stage > fin.laststage)

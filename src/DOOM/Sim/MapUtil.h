@@ -53,17 +53,17 @@ void updateLineOpening(const Line& linedef);
 template <class LineFunc>
 bool forEachLineInBlock(int x, int y, LineFunc&& func)
 {
-    const Blockmap& bmap = level().blockmap;
+    const auto& bmap = level().blockmap;
 
     if (!bmap.contains(x, y))
         return true;
 
     auto& vc = validCount();
 
-    for (short* list = bmap.lump + bmap.offsets[bmap.index(x, y)]; *list != -1;
+    for (auto* list = bmap.lump + bmap.offsets[bmap.index(x, y)]; *list != -1;
          ++list)
     {
-        Line* ld = &level().lines[*list];
+        auto* ld = &level().lines[*list];
 
         if (ld->validcount == vc.validcount)
             continue; // already checked from another cell
@@ -83,12 +83,12 @@ bool forEachLineInBlock(int x, int y, LineFunc&& func)
 template <class ThingFunc>
 bool forEachThingInBlock(int x, int y, ThingFunc&& func)
 {
-    const Blockmap& bmap = level().blockmap;
+    const auto& bmap = level().blockmap;
 
     if (!bmap.contains(x, y))
         return true;
 
-    for (Mobj* mobj = level().blockLinks[bmap.index(x, y)]; mobj; mobj = mobj->bnext)
+    for (auto* mobj = level().blockLinks[bmap.index(x, y)]; mobj; mobj = mobj->bnext)
         if (!func(mobj))
             return false;
 

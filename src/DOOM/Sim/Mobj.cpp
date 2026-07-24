@@ -76,7 +76,7 @@ bool Mobj::setState(StateNum stateToUse)
             return false;
         }
 
-        State* st = &states()[toIndex(stateToUse)];
+        auto* st = &states()[toIndex(stateToUse)];
         state = st;
         tics = st->tics;
         sprite = st->sprite;
@@ -136,7 +136,7 @@ void Mobj::xyMovement()
         return;
     }
 
-    Player* playerToUse = player;
+    auto* playerToUse = player;
 
     if (momx > MAXMOVE)
         momx = MAXMOVE;
@@ -148,8 +148,8 @@ void Mobj::xyMovement()
     else if (momy < -MAXMOVE)
         momy = -MAXMOVE;
 
-    Fixed xmove = momx;
-    Fixed ymove = momy;
+    auto xmove = momx;
+    auto ymove = momy;
 
     do
     {
@@ -265,9 +265,9 @@ void Mobj::zMovement()
         if (!(hasFlag(flags, MobjFlag::SkullFly))
             && !(hasFlag(flags, MobjFlag::InFloat)))
         {
-            Fixed dist = approxDistance(x - target->x, y - target->y);
+            auto dist = approxDistance(x - target->x, y - target->y);
 
-            Fixed delta = (target->z + (height >> 1)) - z;
+            auto delta = (target->z + (height >> 1)) - z;
 
             if (delta.isNegative() && dist < -(delta * 3))
                 z -= FLOATSPEED;
@@ -350,8 +350,8 @@ void Mobj::nightmareRespawn()
 {
     Fixed zToUse;
 
-    Fixed xToUse = Fixed::fromInt(spawnpoint.x);
-    Fixed yToUse = Fixed::fromInt(spawnpoint.y);
+    auto xToUse = Fixed::fromInt(spawnpoint.x);
+    auto yToUse = Fixed::fromInt(spawnpoint.y);
 
     // somthing is occupying it's position?
     if (!checkPosition(xToUse, yToUse))
@@ -359,20 +359,20 @@ void Mobj::nightmareRespawn()
 
     // spawn a teleport fog at old spot
     // because of removal of the body?
-    Mobj* mo =
+    auto* mo =
         spawnMobj(xToUse, yToUse, subsector->sector->floorheight, MobjType::Tfog);
     // initiate teleport sound
     startSound(mo, SfxEnum::Telept);
 
     // spawn a teleport fog at the new spot
-    SubSector* ss = pointInSubsector(xToUse, yToUse);
+    auto* ss = pointInSubsector(xToUse, yToUse);
 
     mo = spawnMobj(xToUse, yToUse, ss->sector->floorheight, MobjType::Tfog);
 
     startSound(mo, SfxEnum::Telept);
 
     // spawn the new monster
-    MapThing* mthing = &spawnpoint;
+    auto* mthing = &spawnpoint;
 
     // spawn it
     if (hasFlag(info->flags, MobjFlag::SpawnCeiling))
@@ -400,7 +400,7 @@ void Mobj::nightmareRespawn()
 Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type)
 {
     Mobj* mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
-    MobjInfo* info = &mobjinfo()[toIndex(type)];
+    auto* info = &mobjinfo()[toIndex(type)];
 
     mobj->type = type;
     mobj->info = info;
@@ -417,7 +417,7 @@ Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type)
     mobj->lastlook = randomness().forPlay() % MAXPLAYERS;
     // do not set the state with setMobjState,
     // because action routines can not be called yet
-    State* st = &states()[toIndex(info->spawnstate)];
+    auto* st = &states()[toIndex(info->spawnstate)];
 
     mobj->state = st;
     mobj->tics = st->tics;
@@ -494,14 +494,14 @@ void respawnSpecials()
     if (levelStats().leveltime - queue.itemrespawntime[queue.iquetail] < 30 * 35)
         return;
 
-    MapThing* mthing = &queue.itemrespawnque[queue.iquetail];
+    auto* mthing = &queue.itemrespawnque[queue.iquetail];
 
-    Fixed x = Fixed::fromInt(mthing->x);
-    Fixed y = Fixed::fromInt(mthing->y);
+    auto x = Fixed::fromInt(mthing->x);
+    auto y = Fixed::fromInt(mthing->y);
 
     // spawn a teleport fog at the new spot
-    SubSector* ss = pointInSubsector(x, y);
-    Mobj* mo = spawnMobj(x, y, ss->sector->floorheight, MobjType::Ifog);
+    auto* ss = pointInSubsector(x, y);
+    auto* mo = spawnMobj(x, y, ss->sector->floorheight, MobjType::Ifog);
     startSound(mo, SfxEnum::Itmbk);
 
     // find which type to spawn
@@ -539,15 +539,15 @@ void spawnPlayer(MapThing& mthing)
     if (!players_.playeringame[mthing.type - 1])
         return;
 
-    Player* p = &players_.players[mthing.type - 1];
+    auto* p = &players_.players[mthing.type - 1];
 
     if (p->playerstate == PlayerLifeState::Reborn)
         playerReborn(mthing.type - 1);
 
-    Fixed x = Fixed::fromInt(mthing.x);
-    Fixed y = Fixed::fromInt(mthing.y);
-    Fixed z = ONFLOORZ;
-    Mobj* mobj = spawnMobj(x, y, z, MobjType::Player);
+    auto x = Fixed::fromInt(mthing.x);
+    auto y = Fixed::fromInt(mthing.y);
+    auto z = ONFLOORZ;
+    auto* mobj = spawnMobj(x, y, z, MobjType::Player);
 
     // set color translations for player sprites
     if (mthing.type > 1)
@@ -673,15 +673,15 @@ void spawnMapThing(MapThing& mthing)
     }
 
     // spawn it
-    Fixed x = Fixed::fromInt(mthing.x);
-    Fixed y = Fixed::fromInt(mthing.y);
+    auto x = Fixed::fromInt(mthing.x);
+    auto y = Fixed::fromInt(mthing.y);
 
     if (hasFlag(mobjinfo()[i].flags, MobjFlag::SpawnCeiling))
         z = ONCEILINGZ;
     else
         z = ONFLOORZ;
 
-    Mobj* mobj = spawnMobj(x, y, z, static_cast<MobjType>(i));
+    auto* mobj = spawnMobj(x, y, z, static_cast<MobjType>(i));
     mobj->spawnpoint = mthing;
 
     if (mobj->tics > 0)
@@ -709,7 +709,7 @@ void spawnPuff(Fixed x, Fixed y, Fixed z)
 {
     z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
 
-    Mobj* th = spawnMobj(x, y, z, MobjType::Puff);
+    auto* th = spawnMobj(x, y, z, MobjType::Puff);
     th->momz = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
 
@@ -727,7 +727,7 @@ void spawnPuff(Fixed x, Fixed y, Fixed z)
 void spawnBlood(Fixed x, Fixed y, Fixed z, int damage)
 {
     z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
-    Mobj* th = spawnMobj(x, y, z, MobjType::Blood);
+    auto* th = spawnMobj(x, y, z, MobjType::Blood);
     th->momz = FRACUNIT * 2;
     th->tics -= randomness().forPlay() & 3;
 
@@ -766,13 +766,13 @@ void Mobj::checkMissileSpawn()
 //
 Mobj* Mobj::spawnMissile(Mobj* dest, MobjType typeToUse)
 {
-    Mobj* th = spawnMobj(x, y, z + 4 * 8 * FRACUNIT, typeToUse);
+    auto* th = spawnMobj(x, y, z + 4 * 8 * FRACUNIT, typeToUse);
 
     if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);
 
     th->target = this; // where it came from
-    Angle an = pointToAngle2(x, y, dest->x, dest->y);
+    auto an = pointToAngle2(x, y, dest->x, dest->y);
 
     // fuzzy player
     if (hasFlag(dest->flags, MobjFlag::Shadow))
@@ -786,7 +786,7 @@ Mobj* Mobj::spawnMissile(Mobj* dest, MobjType typeToUse)
 
     // dist is vanilla's tic count, not a length: the raw distance divided by the
     // missile's raw speed as plain integers, then used as the divisor for momz.
-    int dist = approxDistance(dest->x - x, dest->y - y).raw;
+    auto dist = approxDistance(dest->x - x, dest->y - y).raw;
     dist = dist / th->info->speed;
 
     if (dist < 1)
@@ -805,9 +805,9 @@ Mobj* Mobj::spawnMissile(Mobj* dest, MobjType typeToUse)
 void Mobj::spawnPlayerMissile(MobjType typeToUse)
 {
     // see which target is to be aimed at
-    Angle an = angle;
+    auto an = angle;
     auto aim = aimLineAttack(this, an, 16 * 64 * FRACUNIT);
-    Fixed slope = aim.slope;
+    auto slope = aim.slope;
 
     if (!aim.target)
     {
@@ -829,11 +829,11 @@ void Mobj::spawnPlayerMissile(MobjType typeToUse)
         }
     }
 
-    Fixed xToUse = x;
-    Fixed yToUse = y;
-    Fixed zToUse = z + 4 * 8 * FRACUNIT;
+    auto xToUse = x;
+    auto yToUse = y;
+    auto zToUse = z + 4 * 8 * FRACUNIT;
 
-    Mobj* th = spawnMobj(xToUse, yToUse, zToUse, typeToUse);
+    auto* th = spawnMobj(xToUse, yToUse, zToUse, typeToUse);
 
     if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);

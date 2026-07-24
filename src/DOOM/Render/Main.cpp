@@ -438,7 +438,7 @@ void initTextureMapping()
     // Scan viewangletox[] to generate xtoviewangle[]:
     // xtoviewangle will give the smallest view angle
     // that maps to x.
-    for (int x = 0; x <= view.viewwidth; x++)
+    for (auto x = 0; x <= view.viewwidth; x++)
     {
         i = 0;
         while (proj.viewangletox[i] > x)
@@ -478,10 +478,10 @@ void initLightTables()
 
     // Calculate the light levels to use
     //  for each level / distance combination.
-    for (int i = 0; i < LIGHTLEVELS; i++)
+    for (auto i = 0; i < LIGHTLEVELS; i++)
     {
         startmap = ((LIGHTLEVELS - 1 - i) * 2) * NUMCOLORMAPS / LIGHTLEVELS;
-        for (int j = 0; j < MAXLIGHTZ; j++)
+        for (auto j = 0; j < MAXLIGHTZ; j++)
         {
             // scale is dual-purpose: a raw fixed quotient, then a light index.
             scale =

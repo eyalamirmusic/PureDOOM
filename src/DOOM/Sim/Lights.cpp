@@ -108,10 +108,10 @@ void Sector::spawnStrobeFlash(int fastOrSlow, int inSync)
 //
 void Line::startLightStrobing()
 {
-    int secnum = -1;
+    auto secnum = -1;
     while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
-        Sector* sec = &level().sectors[secnum];
+        auto* sec = &level().sectors[secnum];
         if (sec->specialdata)
             continue;
 
@@ -124,17 +124,17 @@ void Line::startLightStrobing()
 //
 void Line::turnTagLightsOff()
 {
-    Sector* sector = level().sectors.data();
+    auto* sector = level().sectors.data();
 
-    for (int j = 0; j < level().sectors.size(); j++, sector++)
+    for (auto j = 0; j < level().sectors.size(); j++, sector++)
     {
         if (sector->tag == tag)
         {
-            int min = sector->lightlevel;
-            for (int i = 0; i < sector->linecount; i++)
+            auto min = sector->lightlevel;
+            for (auto i = 0; i < sector->linecount; i++)
             {
-                Line* templine = sector->lines[i];
-                Sector* tsec = getNextSector(*templine, *sector);
+                auto* templine = sector->lines[i];
+                auto* tsec = getNextSector(*templine, *sector);
                 if (!tsec)
                     continue;
                 if (tsec->lightlevel < min)
@@ -150,9 +150,9 @@ void Line::turnTagLightsOff()
 //
 void Line::lightTurnOn(int bright)
 {
-    Sector* sector = level().sectors.data();
+    auto* sector = level().sectors.data();
 
-    for (int i = 0; i < level().sectors.size(); i++, sector++)
+    for (auto i = 0; i < level().sectors.size(); i++, sector++)
     {
         if (sector->tag == tag)
         {
@@ -161,10 +161,10 @@ void Line::lightTurnOn(int bright)
             // surrounding sector
             if (!bright)
             {
-                for (int j = 0; j < sector->linecount; j++)
+                for (auto j = 0; j < sector->linecount; j++)
                 {
-                    Line* templine = sector->lines[j];
-                    Sector* temp = getNextSector(*templine, *sector);
+                    auto* templine = sector->lines[j];
+                    auto* temp = getNextSector(*templine, *sector);
 
                     if (!temp)
                         continue;

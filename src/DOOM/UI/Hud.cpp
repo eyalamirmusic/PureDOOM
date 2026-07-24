@@ -271,7 +271,7 @@ void initHud()
         shiftxform = english_shiftxform.data();
 
     // load the heads-up font
-    int j = HU_FONTSTART;
+    auto j = HU_FONTSTART;
     for (auto*& glyph: font.hu_font)
     {
         auto name = std::string {"STCFN"};
@@ -419,7 +419,7 @@ void hudTicker()
     // check for incoming chat characters
     if (gameSession().netgame)
     {
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (!players_.playeringame[i])
                 continue;
@@ -433,7 +433,7 @@ void hudTicker()
                     if (c >= 'a' && c <= 'z')
                         c = static_cast<char>(
                             shiftxform[static_cast<unsigned char>(c)]);
-                    int rc = keyInIText(chat.w_inputbuffer[i], c);
+                    auto rc = keyInIText(chat.w_inputbuffer[i], c);
                     if (rc && c == KEY_ENTER)
                     {
                         if (!chat.w_inputbuffer[i].l.l.empty()
@@ -502,7 +502,7 @@ bool hudResponder(Event& ev)
     auto& msg = hudMessage();
     auto& state = hudState();
 
-    bool eatkey = false;
+    auto eatkey = false;
 
     static Array<char, MAXPLAYERS> destination_keys = {
         HUSTR_KEYGREEN, HUSTR_KEYINDIGO, HUSTR_KEYBROWN, HUSTR_KEYRED};
@@ -542,7 +542,7 @@ bool hudResponder(Event& ev)
         }
         else if (gameSession().netgame && numplayers > 2)
         {
-            for (int i = 0; i < MAXPLAYERS; i++)
+            for (auto i = 0; i < MAXPLAYERS; i++)
             {
                 if (ev.data1 == destination_keys[i])
                 {

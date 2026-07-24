@@ -314,7 +314,7 @@ void initTranslationTables()
         & ~255ULL);
 
     // translate just the 16 green colors
-    for (int i = 0; i < 256; i++)
+    for (auto i = 0; i < 256; i++)
     {
         if (i >= 0x70 && i <= 0x7f)
         {
@@ -454,7 +454,7 @@ void initBuffer(int width, int height)
     view.viewwindowx = (SCREENWIDTH - width) >> 1;
 
     // Column offset. For windows.
-    for (int i = 0; i < width; i++)
+    for (auto i = 0; i < width; i++)
         tables.columnofs[i] = view.viewwindowx + i;
 
     // Samw with base row offset.
@@ -464,7 +464,7 @@ void initBuffer(int width, int height)
         view.viewwindowy = (SCREENHEIGHT - SBARHEIGHT - height) >> 1;
 
     // Preclaculate all row offsets.
-    for (int i = 0; i < height; i++)
+    for (auto i = 0; i < height; i++)
         tables.ylookup[i] =
             videoState().screens[0] + (i + view.viewwindowy) * SCREENWIDTH;
 }

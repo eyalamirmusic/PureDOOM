@@ -385,9 +385,9 @@ void getBlock(int x, int y, int scrn, int width, int height, byte* dest)
 VideoState::VideoState()
 {
     workspace.assign(SCREENWIDTH * SCREENHEIGHT * 4, byte(0));
-    byte* base = workspace.data();
+    auto* base = workspace.data();
 
-    for (int i = 0; i < 4; i++)
+    for (auto i = 0; i < 4; i++)
         screens[i] = base + i * SCREENWIDTH * SCREENHEIGHT;
 }
 

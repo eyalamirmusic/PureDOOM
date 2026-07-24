@@ -51,7 +51,7 @@ void* levelAlloc(int size)
 {
     auto& pool = levelPool();
 
-    int total = static_cast<int>(sizeof(LevelChunk)) + size;
+    auto total = static_cast<int>(sizeof(LevelChunk)) + size;
     auto chunk = static_cast<LevelChunk*>(host().malloc(total));
     doom_memset(chunk, 0, total);
 
@@ -71,7 +71,7 @@ void levelFree(void* block)
 
     auto& pool = levelPool();
 
-    LevelChunk* chunk = static_cast<LevelChunk*>(block) - 1;
+    auto* chunk = static_cast<LevelChunk*>(block) - 1;
     if (chunk->prev)
         chunk->prev->next = chunk->next;
     else
@@ -100,10 +100,10 @@ static void destroyThinker(Thinker* thinker)
 // no resources of its own; it is the storage that is being reclaimed.
 void LevelPool::releaseAll()
 {
-    LevelChunk* chunk = head;
+    auto* chunk = head;
     while (chunk)
     {
-        LevelChunk* next = chunk->next;
+        auto* next = chunk->next;
         reinterpret_cast<Thinker*>(chunk + 1)->~Thinker();
         host().free(chunk);
         chunk = next;
@@ -164,7 +164,7 @@ void removeThinker(Thinker& thinker)
 void runThinkers()
 {
     auto& thinkers = thinkerList();
-    Thinker* currentthinker = thinkers.cap.next;
+    auto* currentthinker = thinkers.cap.next;
     while (currentthinker != &thinkers.cap)
     {
         if (currentthinker->removed)
@@ -174,7 +174,7 @@ void runThinkers()
             // its bytes until reused; a real free() unmaps them, so capture next
             // before releasing (the unlink leaves currentthinker->next intact, so
             // this is the same value vanilla read - only sooner).
-            Thinker* next = currentthinker->next;
+            auto* next = currentthinker->next;
             currentthinker->next->prev = currentthinker->prev;
             currentthinker->prev->next = currentthinker->next;
             destroyThinker(currentthinker);
@@ -213,7 +213,7 @@ void ticker()
         return;
     }
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
         if (players_.playeringame[i])
             players_.players[i].think();
 

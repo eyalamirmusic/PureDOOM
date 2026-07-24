@@ -52,7 +52,7 @@ int currentTic()
     host().gettime(&sec, &usec);
     if (!basetime)
         basetime = sec;
-    int newtics = (sec - basetime) * TICRATE + usec * TICRATE / 1000000;
+    auto newtics = (sec - basetime) * TICRATE + usec * TICRATE / 1000000;
     return newtics;
 }
 

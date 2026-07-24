@@ -60,17 +60,17 @@ void archivePlayers()
     auto& save = saveGameState();
     auto& players_ = playerState();
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (!players_.playeringame[i])
             continue;
 
         padSaveCursor(save.cursor);
 
-        Player* dest = reinterpret_cast<Player*>(save.cursor);
+        auto* dest = reinterpret_cast<Player*>(save.cursor);
         doom_memcpy(dest, &players_.players[i], sizeof(Player));
         save.cursor += sizeof(Player);
-        for (int j = 0; j < numPSprites; j++)
+        for (auto j = 0; j < numPSprites; j++)
         {
             if (dest->psprites[j].state)
             {
@@ -89,7 +89,7 @@ void unArchivePlayers()
     auto& save = saveGameState();
     auto& players_ = playerState();
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (!players_.playeringame[i])
             continue;
@@ -104,7 +104,7 @@ void unArchivePlayers()
         players_.players[i].message = {};
         players_.players[i].attacker = nullptr;
 
-        for (int j = 0; j < numPSprites; j++)
+        for (auto j = 0; j < numPSprites; j++)
         {
             if (players_.players[i].psprites[j].state)
             {
@@ -127,7 +127,7 @@ void archiveWorld()
 
     auto& save = saveGameState();
 
-    short* put = reinterpret_cast<short*>(save.cursor);
+    auto* put = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
     for (i = 0, sec = level().sectors.data(); i < level().sectors.size(); i++, sec++)
@@ -154,7 +154,7 @@ void archiveWorld()
             if (sidenum == -1)
                 continue;
 
-            Side* si = &level().sides[sidenum];
+            auto* si = &level().sides[sidenum];
 
             *put++ = si->textureoffset.toInt();
             *put++ = si->rowoffset.toInt();
@@ -178,7 +178,7 @@ void unArchiveWorld()
 
     auto& save = saveGameState();
 
-    short* get = reinterpret_cast<short*>(save.cursor);
+    auto* get = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
     for (i = 0, sec = level().sectors.data(); i < level().sectors.size(); i++, sec++)
@@ -204,7 +204,7 @@ void unArchiveWorld()
         {
             if (sidenum == -1)
                 continue;
-            Side* si = &level().sides[sidenum];
+            auto* si = &level().sides[sidenum];
             si->textureoffset = Fixed::fromInt(*get++);
             si->rowoffset = Fixed::fromInt(*get++);
             si->toptexture = *get++;
@@ -236,8 +236,8 @@ template <typename T>
 static T* unarchiveThinker()
 {
     auto& save = saveGameState();
-    T* obj = new (levelAlloc(sizeof(T))) T {};
-    void* vtable = *reinterpret_cast<void**>(obj);
+    auto* obj = new (levelAlloc(sizeof(T))) T {};
+    auto* vtable = *reinterpret_cast<void**>(obj);
     doom_memcpy(obj, save.cursor, sizeof(T));
     *reinterpret_cast<void**>(obj) = vtable;
     save.cursor += sizeof(T);
@@ -275,7 +275,7 @@ void archiveThinkers()
     auto& thinkers = thinkerList();
 
     // save off the current thinkers
-    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         // A removed-but-not-yet-freed mobj is skipped, as vanilla did (its function
         // was the -1 sentinel, matching no archived type).
@@ -317,10 +317,10 @@ void unArchiveThinkers()
     auto& thinkers = thinkerList();
 
     // remove all the current thinkers
-    Thinker* currentthinker = thinkers.cap.next;
+    auto* currentthinker = thinkers.cap.next;
     while (currentthinker != &thinkers.cap)
     {
-        Thinker* next = currentthinker->next;
+        auto* next = currentthinker->next;
 
         if (currentthinker->kind() == ThinkerKind::Mobj)
             (reinterpret_cast<Mobj*>(currentthinker))->remove();
@@ -400,7 +400,7 @@ void archiveSpecials()
     auto& thinkers = thinkerList();
 
     // save off the current thinkers
-    for (Thinker* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
     {
         // Skip a removed-but-not-yet-freed thinker (vanilla's -1 function matched
         // no type).

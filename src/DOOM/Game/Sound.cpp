@@ -123,14 +123,14 @@ void initSound(int sfxVolume, int musicVolume)
     channels_s_sound = snd.channels.data();
 
     // Free all channels for use
-    for (int i = 0; i < sndset.numChannels; i++)
+    for (auto i = 0; i < sndset.numChannels; i++)
         channels_s_sound[i].sfxinfo = nullptr;
 
     // no sounds are playing, and they are not mus_paused
     snd.mus_paused = false;
 
     // Note that sounds have not been cached (yet).
-    for (int i = 1; i < numSfx; i++)
+    for (auto i = 1; i < numSfx; i++)
         S_sfx()[i].lumpnum = S_sfx()[i].usefulness = -1;
 }
 
@@ -148,7 +148,7 @@ void startLevelSound()
 
     // kill all playing sounds at start of level
     //  (trust me - a good idea)
-    for (int cnum = 0; cnum < soundSettings().numChannels; cnum++)
+    for (auto cnum = 0; cnum < soundSettings().numChannels; cnum++)
         if (channels_s_sound[cnum].sfxinfo)
             stopChannel(cnum);
 
@@ -198,7 +198,7 @@ void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
     SfxInfo* sfx;
     int cnum;
 
-    Mobj* origin = static_cast<Mobj*>(origin_p);
+    auto* origin = static_cast<Mobj*>(origin_p);
 
     auto& sndset = soundSettings();
 
@@ -326,7 +326,7 @@ void startSound(void* origin, SfxEnum sfx_id)
 
 void stopSound(void* origin)
 {
-    for (int cnum = 0; cnum < soundSettings().numChannels; cnum++)
+    for (auto cnum = 0; cnum < soundSettings().numChannels; cnum++)
     {
         if (channels_s_sound[cnum].sfxinfo
             && channels_s_sound[cnum].origin == origin)
@@ -374,11 +374,11 @@ void updateSounds(void* listener_p)
     SfxInfo* sfx;
     SoundChannel* c;
 
-    Mobj* listener = static_cast<Mobj*>(listener_p);
+    auto* listener = static_cast<Mobj*>(listener_p);
 
     auto& sndset = soundSettings();
 
-    for (int cnum = 0; cnum < sndset.numChannels; cnum++)
+    for (auto cnum = 0; cnum < sndset.numChannels; cnum++)
     {
         c = &channels_s_sound[cnum];
         sfx = c->sfxinfo;
@@ -517,7 +517,7 @@ void stopMusic()
 
 void stopChannel(int cnum)
 {
-    SoundChannel& c = channels_s_sound[cnum];
+    auto& c = channels_s_sound[cnum];
 
     if (c.sfxinfo)
     {
@@ -533,7 +533,7 @@ void stopChannel(int cnum)
 
         // check to see
         //  if other channels are playing the sound
-        for (int i = 0; i < soundSettings().numChannels; i++)
+        for (auto i = 0; i < soundSettings().numChannels; i++)
         {
             if (cnum != i && c.sfxinfo == channels_s_sound[i].sfxinfo)
             {

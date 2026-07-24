@@ -203,7 +203,7 @@ void PacketGet()
     if (c == -1)
     {
 #if defined(DOOM_WIN32)
-        int r = WSAGetLastError();
+        auto r = WSAGetLastError();
         if (r != WSAEWOULDBLOCK)
         {
             // fatalError("Error: GetPacket: %i", r);
@@ -318,7 +318,7 @@ void initNetwork()
     // handed to ioctl(FIONBIO) below, which reads a full word back out through
     // it. A one-byte bool makes that read three bytes of neighbouring stack.
     // The Windows arm above says the same thing in its own ABI's spelling.
-    int trueval = 1;
+    auto trueval = 1;
 #endif
     struct hostent* hostentry; // host information entry
 #endif

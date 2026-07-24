@@ -38,7 +38,7 @@ static Doom::Array<int, 3> button_states = {0};
 void doom_memset(void* ptr, int value, int num)
 {
     unsigned char* p = (unsigned char*) (ptr);
-    for (int i = 0; i < num; ++i, ++p)
+    for (auto i = 0; i < num; ++i, ++p)
     {
         *p = (unsigned char) value;
     }
@@ -49,7 +49,7 @@ void* doom_memcpy(void* destination, const void* source, int num)
     unsigned char* dst = (unsigned char*) (destination);
     const unsigned char* src = (const unsigned char*) (source);
 
-    for (int i = 0; i < num; ++i, ++dst, ++src)
+    for (auto i = 0; i < num; ++i, ++dst, ++src)
     {
         *dst = *src;
     }
@@ -61,7 +61,7 @@ namespace Doom
 {
 static ConfigDefault* getDefault(std::string_view name)
 {
-    for (int i = 0; i < numdefaults(); ++i)
+    for (auto i = 0; i < numdefaults(); ++i)
     {
         if (name == defaults()[i].name)
             return &defaults()[i];
@@ -79,7 +79,7 @@ void setResolution(int width, int height)
 
 void setDefaultInt(std::string_view name, int value)
 {
-    ConfigDefault* def = getDefault(name);
+    auto* def = getDefault(name);
     if (!def)
         return;
     def->defaultvalue = value;
@@ -87,7 +87,7 @@ void setDefaultInt(std::string_view name, int value)
 
 void setDefaultString(std::string_view name, std::string_view value)
 {
-    ConfigDefault* def = getDefault(name);
+    auto* def = getDefault(name);
     if (!def)
         return;
 
@@ -122,8 +122,8 @@ void initGame(const std::vector<std::string>& args, int flags)
 
 void updateGame()
 {
-    int now = currentTic();
-    int delta_time = now - last_update_time;
+    auto now = currentTic();
+    auto delta_time = now - last_update_time;
 
     while (delta_time-- > 0)
     {
@@ -158,12 +158,12 @@ const unsigned char* framebuffer(int channels)
             y = SCREENHEIGHT / 2 + 8;
         else
             y = SCREENHEIGHT / 2 - 8;
-        for (int i = 0; i < 2; ++i)
+        for (auto i = 0; i < 2; ++i)
         {
             screen_buffer[SCREENWIDTH / 2 - 2 - i + y * SCREENWIDTH] = 4;
             screen_buffer[SCREENWIDTH / 2 + 2 + i + y * SCREENWIDTH] = 4;
         }
-        for (int i = 0; i < 2; ++i)
+        for (auto i = 0; i < 2; ++i)
         {
             screen_buffer[SCREENWIDTH / 2 + (y - 2 - i) * SCREENWIDTH] = 4;
             screen_buffer[SCREENWIDTH / 2 + (y + 2 + i) * SCREENWIDTH] = 4;
@@ -178,8 +178,8 @@ const unsigned char* framebuffer(int channels)
     {
         for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
         {
-            int k = i * 3;
-            int kpal = screen_buffer[i] * 3;
+            auto k = i * 3;
+            auto kpal = screen_buffer[i] * 3;
             final_screen_buffer[k + 0] = videoState().screen_palette[kpal + 0];
             final_screen_buffer[k + 1] = videoState().screen_palette[kpal + 1];
             final_screen_buffer[k + 2] = videoState().screen_palette[kpal + 2];
@@ -190,8 +190,8 @@ const unsigned char* framebuffer(int channels)
     {
         for (int i = 0, len = SCREENWIDTH * SCREENHEIGHT; i < len; ++i)
         {
-            int k = i * 4;
-            int kpal = screen_buffer[i] * 3;
+            auto k = i * 4;
+            auto kpal = screen_buffer[i] * 3;
             final_screen_buffer[k + 0] = videoState().screen_palette[kpal + 0];
             final_screen_buffer[k + 1] = videoState().screen_palette[kpal + 1];
             final_screen_buffer[k + 2] = videoState().screen_palette[kpal + 2];

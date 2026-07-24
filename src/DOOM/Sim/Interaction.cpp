@@ -95,7 +95,7 @@ bool Player::giveAmmo(AmmoType ammoType, int num)
         num <<= 1;
     }
 
-    int oldammo = ammo[toIndex(ammoType)];
+    auto oldammo = ammo[toIndex(ammoType)];
     ammo[toIndex(ammoType)] += num;
 
     if (ammo[toIndex(ammoType)] > maxammo[toIndex(ammoType)])
@@ -237,7 +237,7 @@ bool Player::giveBody(int num)
 //
 bool Player::giveArmor(int armortypeToUse)
 {
-    int hits = armortypeToUse * 100;
+    auto hits = armortypeToUse * 100;
     if (armorpoints >= hits)
         return false; // don't pick up
 
@@ -308,7 +308,7 @@ bool Player::givePower(PowerType power)
 //
 void touchSpecialThing(Mobj& special, Mobj& toucher)
 {
-    Fixed delta = special.z - toucher.z;
+    auto delta = special.z - toucher.z;
 
     if (delta > toucher.height || delta < -8 * FRACUNIT)
     {
@@ -316,8 +316,8 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         return;
     }
 
-    SfxEnum sound = SfxEnum::Itemup;
-    Player* player = toucher.player;
+    auto sound = SfxEnum::Itemup;
+    auto* player = toucher.player;
 
     const auto& session = gameSession();
 
@@ -551,11 +551,11 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Bpak:
             if (!player->backpack)
             {
-                for (int i = 0; i < numAmmo; i++)
+                for (auto i = 0; i < numAmmo; i++)
                     player->maxammo[i] *= 2;
                 player->backpack = true;
             }
-            for (int i = 0; i < numAmmo; i++)
+            for (auto i = 0; i < numAmmo; i++)
                 player->giveAmmo(static_cast<AmmoType>(i), 1);
             player->message = GOTBACKPACK;
             break;
@@ -717,7 +717,7 @@ void killMobj(Mobj* source, Mobj& target)
             return;
     }
 
-    Mobj* mo = spawnMobj(target.x, target.y, ONFLOORZ, item);
+    auto* mo = spawnMobj(target.x, target.y, ONFLOORZ, item);
     mo->flags = withFlags(mo->flags, MobjFlag::Dropped); // special versions of items
 }
 
@@ -748,7 +748,7 @@ void Mobj::damage(Mobj* inflictor, Mobj* source, int damage)
         momx = momy = momz = Fixed {};
     }
 
-    Player* playerToUse = player;
+    auto* playerToUse = player;
     if (playerToUse && gameSession().gameskill == Skill::Baby)
         damage >>= 1; // take half damage in trainer mode
 
@@ -761,7 +761,7 @@ void Mobj::damage(Mobj* inflictor, Mobj* source, int damage)
     {
         ang = pointToAngle2(inflictor->x, inflictor->y, x, y);
 
-        Fixed thrust = damage * (FRACUNIT >> 3) * 100 / info->mass;
+        auto thrust = damage * (FRACUNIT >> 3) * 100 / info->mass;
 
         // make fall forwards sometimes
         if (damage < 40 && damage > health && z - inflictor->z > 64 * FRACUNIT
@@ -820,7 +820,7 @@ void Mobj::damage(Mobj* inflictor, Mobj* source, int damage)
         if (playerToUse->damagecount > 100)
             playerToUse->damagecount = 100; // teleport stomp does 10k points...
 
-        int temp = damage < 100 ? damage : 100;
+        auto temp = damage < 100 ? damage : 100;
 
         const auto& players_ = playerState();
 

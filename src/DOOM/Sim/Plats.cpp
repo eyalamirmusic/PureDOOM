@@ -42,8 +42,8 @@ void removeActivePlat(Plat& plat);
 //
 int Line::doPlat(PlatType type, int amount)
 {
-    int secnum = -1;
-    int rtn = 0;
+    auto secnum = -1;
+    auto rtn = 0;
 
     // Activate all <type> plats that are PlatState::InStasis
     switch (type)
@@ -60,7 +60,7 @@ int Line::doPlat(PlatType type, int amount)
 
     while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
-        Sector* sec = &level().sectors[secnum];
+        auto* sec = &level().sectors[secnum];
 
         if (sec->specialdata)
             continue;

@@ -64,8 +64,8 @@ void finishUpdate()
     // draws little dots on the bottom of the screen
     if (launchOptions().devparm)
     {
-        int i = currentTic();
-        int tics = i - lasttic;
+        auto i = currentTic();
+        auto tics = i - lasttic;
         lasttic = i;
         if (tics > 20)
             tics = 20;

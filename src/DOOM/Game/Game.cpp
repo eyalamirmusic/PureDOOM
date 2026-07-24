@@ -223,9 +223,9 @@ void doSaveGame();
 
 int cmdChecksum(Ticcmd& cmd)
 {
-    int sum = 0;
+    auto sum = 0;
 
-    for (int i = 0; i < static_cast<int>((sizeof(cmd) / 4 - 1)); i++)
+    for (auto i = 0; i < static_cast<int>((sizeof(cmd) / 4 - 1)); i++)
         sum += (reinterpret_cast<int*>(&cmd))[i];
 
     return sum;
@@ -343,7 +343,7 @@ void buildTiccmd(Ticcmd& cmd)
     }
 
     // chainsaw overrides
-    for (int i = 0; i < numWeapons - 1; i++)
+    for (auto i = 0; i < numWeapons - 1; i++)
         if (input.gamekeydown['1' + i])
         {
             cmd.buttons = withFlags(cmd.buttons, ButtonCode::Change);
@@ -414,7 +414,7 @@ void buildTiccmd(Ticcmd& cmd)
 
     input.mousex = input.mousey = 0;
 
-    const int maxmove = maxPlayerMove();
+    const auto maxmove = maxPlayerMove();
 
     if (forward > maxmove)
         forward = maxmove;
@@ -480,7 +480,7 @@ void doLoadLevel()
 
     flow.gamestate = GameState::Level;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (players_.playeringame[i]
             && players_.players[i].playerstate == PlayerLifeState::Dead)
@@ -626,7 +626,7 @@ void gameTicker()
     Ticcmd* cmd;
 
     // do player reborns if needed
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
         if (players_.playeringame[i]
             && players_.players[i].playerstate == PlayerLifeState::Reborn)
             doReborn(i);
@@ -673,7 +673,7 @@ void gameTicker()
     // and build new consistancy check
     buf = (clock.gametic / net.ticdup) % BACKUPTICS;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (players_.playeringame[i])
         {
@@ -721,7 +721,7 @@ void gameTicker()
     }
 
     // check for special buttons
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         if (players_.playeringame[i])
         {
@@ -873,7 +873,7 @@ bool checkSpot(int playernum, MapThing& mthing)
     if (!players_.players[playernum].mo)
     {
         // first spawn of level, before corpses
-        for (int i = 0; i < playernum; i++)
+        for (auto i = 0; i < playernum; i++)
             if (players_.players[i].mo->x == Fixed::fromInt(mthing.x)
                 && players_.players[i].mo->y == Fixed::fromInt(mthing.y))
                 return false;
@@ -928,7 +928,7 @@ void deathMatchSpawnPlayer(int playernum)
         fatalError("Error: Only ", selections, " deathmatch spots, 4 required");
     }
 
-    for (int j = 0; j < 20; j++)
+    for (auto j = 0; j < 20; j++)
     {
         i = randomness().forPlay() % selections;
         if (checkSpot(playernum, spawns.deathmatchstarts[i]))
@@ -977,7 +977,7 @@ void doReborn(int playernum)
         }
 
         // try to spawn at one of the other players spots
-        for (int i = 0; i < MAXPLAYERS; i++)
+        for (auto i = 0; i < MAXPLAYERS; i++)
         {
             if (checkSpot(playernum, spawns.playerstarts[i]))
             {
@@ -1031,7 +1031,7 @@ void doCompleted()
 
     flow.gameaction = GameAction::Nothing;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
         if (players_.playeringame[i])
             playerFinishLevel(i); // take away cards and stuff
 
@@ -1129,7 +1129,7 @@ void doCompleted()
         wminfo_.partime = 35 * par.pars[session.gameepisode][session.gamemap];
     wminfo_.pnum = players_.consoleplayer;
 
-    for (int i = 0; i < MAXPLAYERS; i++)
+    for (auto i = 0; i < MAXPLAYERS; i++)
     {
         wminfo_.plyr[i].in = players_.playeringame[i];
         wminfo_.plyr[i].skills = players_.players[i].killcount;
@@ -1431,7 +1431,7 @@ void initNewGame(Skill skill, int episode, int map)
     if (opts.fastparm
         || (skill == Skill::Nightmare && session.gameskill != Skill::Nightmare))
     {
-        for (int i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
+        for (auto i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
              i++)
             states()[i].tics >>= 1;
         mobjinfo()[toIndex(MobjType::Bruisershot)].speed = (20 * FRACUNIT).raw;
@@ -1440,7 +1440,7 @@ void initNewGame(Skill skill, int episode, int map)
     }
     else if (skill != Skill::Nightmare && session.gameskill == Skill::Nightmare)
     {
-        for (int i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
+        for (auto i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
              i++)
             states()[i].tics <<= 1;
         mobjinfo()[toIndex(MobjType::Bruisershot)].speed = (15 * FRACUNIT).raw;

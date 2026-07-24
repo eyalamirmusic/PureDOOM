@@ -96,7 +96,7 @@ void initSwitchList();
 
 void initSwitchList()
 {
-    int episode = 1;
+    auto episode = 1;
 
     const auto& version = gameVersion();
     auto& list = switchList();
@@ -168,11 +168,11 @@ void Line::changeSwitchTexture(int useAgain)
     if (!useAgain)
         special = 0;
 
-    int texTop = level().sides[sidenum[0]].toptexture;
-    int texMid = level().sides[sidenum[0]].midtexture;
-    int texBot = level().sides[sidenum[0]].bottomtexture;
+    auto texTop = level().sides[sidenum[0]].toptexture;
+    auto texMid = level().sides[sidenum[0]].midtexture;
+    auto texBot = level().sides[sidenum[0]].bottomtexture;
 
-    SfxEnum sound = SfxEnum::Swtchn;
+    auto sound = SfxEnum::Swtchn;
 
     // EXIT SWITCH?
     if (special == 11)
@@ -180,7 +180,7 @@ void Line::changeSwitchTexture(int useAgain)
 
     // Not a ranged-for: the index is load-bearing, switchlist[i ^ 1] being the
     // texture this one flips to.
-    for (int i = 0; i < list.switchlist.size(); i++)
+    for (auto i = 0; i < list.switchlist.size(); i++)
     {
         if (list.switchlist[i] == texTop)
         {

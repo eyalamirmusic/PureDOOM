@@ -53,7 +53,7 @@ constexpr int toUpper(int c)
 // counts) is unsigned decimal, and the goldens pin the behaviour.
 constexpr int parseInt(std::string_view text)
 {
-    int value = 0;
+    auto value = 0;
 
     for (auto c: text)
     {
@@ -67,7 +67,7 @@ constexpr int parseInt(std::string_view text)
 // The retired doom_atox: upper-case hex digits only, as the config writes them.
 constexpr int parseHex(std::string_view text)
 {
-    int value = 0;
+    auto value = 0;
 
     for (auto c: text)
     {
