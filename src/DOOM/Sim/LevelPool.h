@@ -25,7 +25,7 @@ struct LevelChunk
 // The pool *owns* every block levelAlloc handed out, so it releases them in a
 // destructor rather than waiting to be told (REFACTOR.md, Step 9 strand (b)). It
 // was a bare `{ LevelChunk* head; }` until then, which was safe only for as long as
-// the Engine outlived the process: Doom::loadLevel calls freeLevelAllocations on
+// the Engine outlived the process: loadLevel calls freeLevelAllocations on
 // reload, but nothing did so on teardown, so destroying an Engine with a level
 // loaded leaked every mobj and thinker special on the list. That became reachable
 // the moment strand (a) made the Engine constructible - resetEngine() dropped the

@@ -52,7 +52,7 @@ void* levelAlloc(int size)
     auto& pool = levelPool();
 
     int total = static_cast<int>(sizeof(LevelChunk)) + size;
-    auto chunk = static_cast<LevelChunk*>(doom_malloc(total));
+    auto chunk = static_cast<LevelChunk*>(host().malloc(total));
     doom_memset(chunk, 0, total);
 
     chunk->prev = nullptr;
@@ -79,7 +79,7 @@ void levelFree(void* block)
     if (chunk->next)
         chunk->next->prev = chunk->prev;
 
-    doom_free(chunk);
+    host().free(chunk);
 }
 
 // Every level allocation is a Thinker (mobj or special), so a chunk's payload can
@@ -105,7 +105,7 @@ void LevelPool::releaseAll()
     {
         LevelChunk* next = chunk->next;
         reinterpret_cast<Thinker*>(chunk + 1)->~Thinker();
-        doom_free(chunk);
+        host().free(chunk);
         chunk = next;
     }
     head = nullptr;
@@ -205,7 +205,7 @@ void ticker()
     // pause if in menu and at least one tic has been run
     if (!gameSession().netgame && overlayState().menuactive
         && !demoState().demoplayback
-        && players_.players[players_.consoleplayer].viewz != fixed_t {1})
+        && players_.players[players_.consoleplayer].viewz != Fixed {1})
     {
         return;
     }

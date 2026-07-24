@@ -251,7 +251,7 @@ int doDoor(Line& line, DoorType type)
 
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        Sector* sec = &sectors[secnum];
+        Sector* sec = &level().sectors[secnum];
         if (sec->specialdata)
             continue;
 
@@ -379,7 +379,7 @@ void verticalDoor(Line& line, Mobj& thing)
     }
 
     // if the sector has an active thinker, use it
-    Sector* sec = sides[line.sidenum[side ^ 1]].sector;
+    Sector* sec = level().sides[line.sidenum[side ^ 1]].sector;
 
     if (sec->specialdata)
     {

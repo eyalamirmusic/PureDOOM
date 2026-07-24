@@ -28,8 +28,8 @@ namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
 MoveResult movePlane(Sector& sector,
-                     fixed_t speed,
-                     fixed_t dest,
+                     Fixed speed,
+                     Fixed dest,
                      bool crush,
                      int floorOrCeiling,
                      int direction);
@@ -38,14 +38,14 @@ int doFloor(Line& line, FloorType floortype);
 int buildStairs(Line& line, StairType type);
 
 MoveResult movePlane(Sector& sector,
-                     fixed_t speed,
-                     fixed_t dest,
+                     Fixed speed,
+                     Fixed dest,
                      bool crush,
                      int floorOrCeiling,
                      int direction)
 {
     bool flag;
-    fixed_t lastpos;
+    Fixed lastpos;
 
     switch (floorOrCeiling)
     {
@@ -179,7 +179,7 @@ MoveResult movePlane(Sector& sector,
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            Doom::changeSector(&sector, crush);
+                            changeSector(&sector, crush);
                             return MoveResult::Crushed;
                         }
 #endif
@@ -275,7 +275,7 @@ int doFloor(Line& line, FloorType floortype)
     int rtn = 0;
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        Sector* sec = &sectors[secnum];
+        Sector* sec = &level().sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (sec->specialdata)
@@ -368,7 +368,7 @@ int doFloor(Line& line, FloorType floortype)
 
             case FloorType::RaiseToTexture:
             {
-                fixed_t minsize {DOOM_MAXINT};
+                Fixed minsize {DOOM_MAXINT};
 
                 floor->direction = 1;
                 floor->sector = sec;
@@ -379,12 +379,16 @@ int doFloor(Line& line, FloorType floortype)
                     {
                         Side* side = getSide(secnum, i, 0);
                         if (side->bottomtexture >= 0)
-                            if (textureheight[side->bottomtexture] < minsize)
-                                minsize = textureheight[side->bottomtexture];
+                            if (graphicsData().textureheight[side->bottomtexture]
+                                < minsize)
+                                minsize = graphicsData()
+                                              .textureheight[side->bottomtexture];
                         side = getSide(secnum, i, 1);
                         if (side->bottomtexture >= 0)
-                            if (textureheight[side->bottomtexture] < minsize)
-                                minsize = textureheight[side->bottomtexture];
+                            if (graphicsData().textureheight[side->bottomtexture]
+                                < minsize)
+                                minsize = graphicsData()
+                                              .textureheight[side->bottomtexture];
                     }
                 }
                 floor->floordestheight = floor->sector->floorheight + minsize;
@@ -402,7 +406,8 @@ int doFloor(Line& line, FloorType floortype)
                 {
                     if (twoSided(secnum, i))
                     {
-                        if (getSide(secnum, i, 0)->sector - sectors == secnum)
+                        if (getSide(secnum, i, 0)->sector - level().sectors.data()
+                            == secnum)
                         {
                             sec = getSector(secnum, i, 1);
 
@@ -443,14 +448,14 @@ int buildStairs(Line& line, StairType type)
 {
     int ok;
 
-    fixed_t stairsize;
-    fixed_t speed;
+    Fixed stairsize;
+    Fixed speed;
 
     int secnum = -1;
     int rtn = 0;
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        Sector* sec = &sectors[secnum];
+        Sector* sec = &level().sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (sec->specialdata)
@@ -475,7 +480,7 @@ int buildStairs(Line& line, StairType type)
                 break;
         }
         floor->speed = speed;
-        fixed_t height = sec->floorheight + stairsize;
+        Fixed height = sec->floorheight + stairsize;
         floor->floordestheight = height;
 
         int texture = sec->floorpic;
@@ -492,13 +497,13 @@ int buildStairs(Line& line, StairType type)
                     continue;
 
                 Sector* tsec = (sec->lines[i])->frontsector;
-                int newsecnum = static_cast<int>(tsec - sectors);
+                int newsecnum = static_cast<int>(tsec - level().sectors.data());
 
                 if (secnum != newsecnum)
                     continue;
 
                 tsec = (sec->lines[i])->backsector;
-                newsecnum = static_cast<int>(tsec - sectors);
+                newsecnum = static_cast<int>(tsec - level().sectors.data());
 
                 if (tsec->floorpic != texture)
                     continue;

@@ -34,28 +34,16 @@
 #define DOOM_IGNORE_MISSING_FIELD_INITIALIZERS                                      \
     DOOM_PRAGMA(GCC diagnostic ignored "-Wmissing-field-initializers")
 
-// Clang split -Wcast-function-type-mismatch out of -Wcast-function-type in
-// Clang 19. Naming the narrower one unconditionally would raise
-// -Wunknown-warning-option on every Clang older than that, so ask rather than
-// assume; __has_warning is a Clang extension, hence the nesting.
-#if defined(__clang__)
-#if __has_warning("-Wcast-function-type-mismatch")
-#define DOOM_IGNORE_CAST_FUNCTION_TYPE                                              \
-    DOOM_PRAGMA(clang diagnostic ignored "-Wcast-function-type-mismatch")
-#else
-#define DOOM_IGNORE_CAST_FUNCTION_TYPE                                              \
-    DOOM_PRAGMA(clang diagnostic ignored "-Wcast-function-type")
-#endif
-#else
-#define DOOM_IGNORE_CAST_FUNCTION_TYPE                                              \
-    DOOM_PRAGMA(GCC diagnostic ignored "-Wcast-function-type")
-#endif
+// DOOM_IGNORE_CAST_FUNCTION_TYPE used to sit here, wrapping the state table and
+// Sim/Weapon's call into it, because every action was stored through one erased
+// function-pointer type. ActionFunc carries the two real signatures now, so there
+// is no cast left on that path and the suppression went with it - which is this
+// file's own advice taken: fix the code rather than keep the pragma.
 
 #else // MSVC, which raises none of these at /W4.
 
 #define DOOM_DIAGNOSTIC_PUSH
 #define DOOM_DIAGNOSTIC_POP
 #define DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
-#define DOOM_IGNORE_CAST_FUNCTION_TYPE
 
 #endif

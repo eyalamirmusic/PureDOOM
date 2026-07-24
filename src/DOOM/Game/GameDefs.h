@@ -98,7 +98,7 @@ constexpr int SCREENHEIGHT = 200;
 // The maximum number of players, multiplayer/networking.
 constexpr int MAXPLAYERS = 4;
 
-// Doom::State updates, number of tics / second.
+// State updates, number of tics / second.
 #if defined(DOOM_FAST_TICK)
 constexpr int TICKMUL = 2;
 #else
@@ -137,7 +137,7 @@ constexpr auto GS_FORCE_WIPE = static_cast<GameState>(-1);
 
 namespace Doom
 {
-// Doom::Skill flags.
+// Skill flags.
 constexpr int MTF_EASY = 1;
 constexpr int MTF_NORMAL = 2;
 constexpr int MTF_HARD = 4;

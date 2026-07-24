@@ -61,7 +61,7 @@ namespace Doom
 {
 struct MapPoint
 {
-    fixed_t x, y;
+    Fixed x, y;
 };
 } // namespace Doom
 
@@ -112,32 +112,27 @@ constexpr int NUMPLYRLINES = 7;
 constexpr int NUMCHEATPLYRLINES = 16;
 constexpr int NUMTHINTRIANGLEGUYLINES = 3;
 
-extern Doom::MapLine player_arrow[NUMPLYRLINES];
-extern Doom::MapLine cheat_player_arrow[NUMCHEATPLYRLINES];
-extern Doom::MapLine thintriangle_guy[NUMTHINTRIANGLEGUYLINES];
+namespace Doom
+{
+// The three line drawings, immutable after static init - the player arrow, the
+// IDDT arrow, and the shape every *thing* is drawn as. Const, and reached through
+// mapShapes(), so the compositor in examples/EACP reads the same tables the
+// software automap draws from without either of them being a mutable global.
+struct MapShapes
+{
+    Array<MapLine, NUMPLYRLINES> playerArrow;
+    Array<MapLine, NUMCHEATPLYRLINES> cheatPlayerArrow;
+    Array<MapLine, NUMTHINTRIANGLEGUYLINES> thinTriangleGuy;
+};
 
-// Where the map is looking, and how far in. m_x/m_y is the lower-left corner in
-// map coordinates; scale_mtof converts a map distance to a frame one.
-extern fixed_t m_x, m_y;
+const MapShapes& mapShapes();
+} // namespace Doom
 
-// How much of the map the window spans, in map coordinates.
-extern fixed_t m_w, m_h;
-
-extern fixed_t scale_mtof;
-
-// The map's rect within the frame.
-extern int f_x, f_y, f_w, f_h;
-
-// The player it draws the arrow for, and whether it is keeping them centred.
-extern Doom::Player* am_plr;
-extern int followplayer;
-
-// The map cheats: `cheating` reveals the walls and the things, `grid` the grid.
-extern int cheating;
-extern int grid;
-
-// Wall brightness, which the map strobes.
-extern int lightlev;
+// The map window's position, extent, scale and frame rect, the player it follows,
+// and the two cheats, all used to be twelve loose globals here. They are members
+// of AutomapView (UI/AutomapView.h) now - the automap's own state cluster, which
+// already held the rest of the same state - and are reached through
+// Doom::automapView().
 
 // Turns a map point about the origin. The automap's own, used as it stands, so a
 // renderer puts the player arrow through exactly the rotation AM_Drawer would.

@@ -178,9 +178,9 @@ bool giveWeapon(Player& player, WeaponType weapon, bool dropped)
         player.weaponowned[toIndex(weapon)] = true;
 
         if (session.deathmatch)
-            giveAmmo(player, weaponinfo[toIndex(weapon)].ammo, 5);
+            giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 5);
         else
-            giveAmmo(player, weaponinfo[toIndex(weapon)].ammo, 2);
+            giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 2);
         player.pendingweapon = weapon;
 
         const auto& players_ = playerState();
@@ -190,14 +190,14 @@ bool giveWeapon(Player& player, WeaponType weapon, bool dropped)
         return false;
     }
 
-    if (weaponinfo[toIndex(weapon)].ammo != AmmoType::NoAmmo)
+    if (weaponinfo()[toIndex(weapon)].ammo != AmmoType::NoAmmo)
     {
         // give one clip with a dropped weapon,
         // two clips with a found weapon
         if (dropped)
-            gaveammo = giveAmmo(player, weaponinfo[toIndex(weapon)].ammo, 1);
+            gaveammo = giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 1);
         else
-            gaveammo = giveAmmo(player, weaponinfo[toIndex(weapon)].ammo, 2);
+            gaveammo = giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 2);
     }
     else
         gaveammo = false;
@@ -309,7 +309,7 @@ bool givePower(Player& player, PowerType power)
 //
 void touchSpecialThing(Mobj& special, Mobj& toucher)
 {
-    fixed_t delta = special.z - toucher.z;
+    Fixed delta = special.z - toucher.z;
 
     if (delta > toucher.height || delta < -8 * FRACUNIT)
     {
@@ -738,7 +738,7 @@ void killMobj(Mobj* source, Mobj& target)
 //
 void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
 {
-    angle_t ang {};
+    Angle ang {};
     int saved;
 
     if (!(hasFlag(target.flags, MobjFlag::Shootable)))
@@ -749,7 +749,7 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
 
     if (hasFlag(target.flags, MobjFlag::SkullFly))
     {
-        target.momx = target.momy = target.momz = fixed_t {};
+        target.momx = target.momy = target.momz = Fixed {};
     }
 
     Player* player = target.player;
@@ -765,7 +765,7 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
     {
         ang = pointToAngle2(inflictor->x, inflictor->y, target.x, target.y);
 
-        fixed_t thrust = damage * (FRACUNIT >> 3) * 100 / target.info->mass;
+        Fixed thrust = damage * (FRACUNIT >> 3) * 100 / target.info->mass;
 
         // make fall forwards sometimes
         if (damage < 40 && damage > target.health
@@ -777,8 +777,8 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
         }
 
         const auto angFine = ang.fineIndex();
-        target.momx += FixedMul(thrust, finecosine[angFine]);
-        target.momy += FixedMul(thrust, finesine[angFine]);
+        target.momx += FixedMul(thrust, finecosine()[angFine]);
+        target.momy += FixedMul(thrust, finesine()[angFine]);
     }
 
     // player specific
@@ -858,7 +858,7 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
         // chase after this one
         target.target = source;
         target.threshold = BASETHRESHOLD;
-        if (target.state == &states[toIndex(target.info->spawnstate)]
+        if (target.state == &states()[toIndex(target.info->spawnstate)]
             && target.info->seestate != StateNum::Null)
             setMobjState(target, static_cast<StateNum>(target.info->seestate));
     }

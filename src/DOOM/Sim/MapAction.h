@@ -1,13 +1,13 @@
 #pragma once
 
-#include "SimDefs.h" // Mobj, Player, angle_t, fixed_t, Sector
+#include "SimDefs.h" // Mobj, Player, Doom::Angle, Doom::Fixed, Sector
 
 namespace Doom
 {
 // The rest of vanilla p_map, past the movement core in Sim/Movement: sliding a
 // blocked move along a wall, hitscan aiming and firing, using a line in front of
 // the player, splash damage, and re-clipping things after a sector moves. p_map.cpp
-// keeps the vanilla names (Doom::slideMove, Doom::lineAttack, ...) as shims forwarding here.
+// keeps the vanilla names (slideMove, lineAttack, ...) as shims forwarding here.
 //
 // The scratch these share with their P_PathTraverse / blockmap callbacks is
 // file-local to MapAction.cpp, carried by capturing lambdas rather than globals
@@ -25,7 +25,7 @@ namespace Doom
 // `target` is the real "found" flag and callers must test it, not the slope.
 struct AimResult
 {
-    fixed_t slope {};
+    Fixed slope {};
     Mobj* target = nullptr;
 };
 
@@ -36,12 +36,11 @@ void slideMove(Mobj& mo);
 // Trace a shot from t1 at the given angle and find the auto-aim slope to the first
 // shootable thing in view. AimResult::slope is 0 if nothing was found, which is
 // ambiguous with a genuine horizontal shot - test AimResult::target instead.
-AimResult aimLineAttack(Mobj* t1, angle_t angle, fixed_t distance);
+AimResult aimLineAttack(Mobj* t1, Angle angle, Fixed distance);
 
 // Fire a hitscan from t1 at angle/slope for `distance`, spawning puffs or blood and
 // dealing `damage` (damage 0 is a test trace used only to find an aim target).
-void lineAttack(
-    Mobj& t1, angle_t angle, fixed_t distance, fixed_t slope, int damage);
+void lineAttack(Mobj& t1, Angle angle, Fixed distance, Fixed slope, int damage);
 
 // Activate the special line the player is facing, within USERANGE.
 void useLines(Player& player);

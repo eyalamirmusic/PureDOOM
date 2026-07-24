@@ -35,3 +35,7 @@ void stopSong(int handle);
 void unregisterSong(int handle);
 unsigned long tickSong();
 } // namespace Doom
+
+// The global mixing buffer, handed to the audio callback by doom_get_sound_buffer.
+// ::-scope accessor over storage defined in Host/Sound.cpp; was an `extern` array.
+signed short* mixbuffer();

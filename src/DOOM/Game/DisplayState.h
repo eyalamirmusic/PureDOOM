@@ -4,7 +4,7 @@
 
 namespace Doom
 {
-// Doom::displayFrame's frame-diff state: the previous frame's overlay/view flags and the border-redraw
+// displayFrame's frame-diff state: the previous frame's overlay/view flags and the border-redraw
 // countdown it compares against to decide what to repaint. viewactivestate/menuactivestate/
 // inhelpscreensstate/fullscreen latch last frame's viewactive/menuactive/inhelpscreens/full-view so
 // a change forces a status-bar or border redraw; oldgamestate latches the last drawn gamestate (a

@@ -23,7 +23,7 @@
 namespace Doom
 {
 
-// Hack display negative frags: the STTMINUS lump. A Doom::StatusWidgetGraphics member owned by the
+// Hack display negative frags: the STTMINUS lump. A StatusWidgetGraphics member owned by the
 // Engine now; this is a reference onto it (initStatusWidgets writes it, so it must be a reference -
 // a plain pointer would clobber the reference's storage).
 Patch*& sttminus = statusWidgetGraphics().sttminus;

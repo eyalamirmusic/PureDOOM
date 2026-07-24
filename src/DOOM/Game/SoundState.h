@@ -15,7 +15,7 @@ namespace Doom
 // (definition kept here rather than in Game/Sound so SoundState can own it by value)
 struct SoundChannel
 {
-    Doom::SfxInfo* sfxinfo; // sound occupying the channel (null = available)
+    SfxInfo* sfxinfo; // sound occupying the channel (null = available)
     void* origin; // origin of the sound
     int handle; // handle of the sound being played
 };
@@ -43,7 +43,7 @@ namespace Doom
 // history; deleted rather than carried, as no read was lost.
 struct SoundState
 {
-    // the set of mixing channels (numChannels of them, sized at Doom::initSound); a channel's
+    // the set of mixing channels (numChannels of them, sized at initSound); a channel's
     // sfxinfo is null when it is available. RAII-owned (Step 9) - what was a boot-once
     // doom_malloc; Game/Sound's vanilla name channels_s_sound is a plain-pointer view
     // onto data(), refreshed after the resize (the same owner/view split screens[] and

@@ -4,17 +4,17 @@
 
 namespace Doom
 {
-// The movement-speed lookup tables Doom::buildTiccmd applies to the player's input when building a
+// The movement-speed lookup tables buildTiccmd applies to the player's input when building a
 // ticcmd: forwardmove[speed] and sidemove[speed] are the walk/run forward and strafe amounts
 // (indexed by whether the run key is held), and angleturn[tspeed] the per-tic turn amount (fast,
 // faster, and a slow-turn value used for the first few tics of a key press). MAXPLMOVE is
 // forwardmove[1], the run speed, which also caps the combined forward/side move.
 //
-// These are plain int, not fixed_t: the numbers in them (0x19, 0x32, ...) are the small raw
-// integers that go straight into a ticcmd's char/short fields, and Doom::movePlayer is what turns
+// These are plain int, not Fixed: the numbers in them (0x19, 0x32, ...) are the small raw
+// integers that go straight into a ticcmd's char/short fields, and movePlayer is what turns
 // them into a velocity, by multiplying by 2048. Nothing here is ever a fixed-point quantity.
 //
-// forwardmove/sidemove are not purely fixed reference data: Doom::doomLoop's -turbo handling scales
+// forwardmove/sidemove are not purely fixed reference data: doomLoop's -turbo handling scales
 // both at startup (forwardmove[i] = forwardmove[i] * scale / 100), so they are genuine per-session
 // state. That write lives in Game/DoomMain.cpp, which is why forwardmove/sidemove are the only two
 // of the three read outside g_game - their DoomMain externs move to references-to-array in lockstep
@@ -22,7 +22,7 @@ namespace Doom
 // would silently read the reference's hidden pointer as the array). angleturn is g_game's alone.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names
-// become references-to-array onto these members, so every indexed read is unchanged. Doom::buildTiccmd
+// become references-to-array onto these members, so every indexed read is unchanged. buildTiccmd
 // is the only consumer, and in the headless suite the demo playback overrides the command it builds
 // (and -turbo is never passed), so the move is golden-neutral.
 struct MovementSpeeds

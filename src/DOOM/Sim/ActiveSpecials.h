@@ -7,10 +7,10 @@
 namespace Doom
 {
 // The level's active special-effect registries. activeplats and activeceilings hold the
-// moving-sector thinkers currently running - the ones Doom::doPlat/Doom::doCeiling add and the
+// moving-sector thinkers currently running - the ones doPlat/doCeiling add and the
 // stasis lines pause and resume - so the crush/stop specials can find and act on an already-
-// moving sector; buttonlist holds the switch textures counting down to revert (Doom::startButton
-// arms one, Doom::updateSpecials ticks the timers). Doom::spawnSpecials clears all three together at
+// moving sector; buttonlist holds the switch textures counting down to revert (startButton
+// arms one, updateSpecials ticks the timers). spawnSpecials clears all three together at
 // the top of every level ("Init other misc stuff"), which is what makes them one cluster: the
 // active-special state a level starts empty and fills as its machinery runs. p_spec.h's
 // buttonlist / activeplats / activeceilings.
@@ -31,6 +31,6 @@ struct ActiveSpecials
 };
 
 // The one ActiveSpecials, a view onto the Engine's member - the same pattern as
-// itemRespawnQueue(), clip(), level() and the Game/ clusters.
+// itemRespawnQueue(), clipping(), level() and the Game/ clusters.
 ActiveSpecials& activeSpecials();
 } // namespace Doom

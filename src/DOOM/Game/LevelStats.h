@@ -2,7 +2,7 @@
 
 namespace Doom
 {
-// The current level's progress. Doom::setupLevel counts the map's monsters, items and secret
+// The current level's progress. setupLevel counts the map's monsters, items and secret
 // sectors into the totals; the playsim bumps them as the player kills, picks up and finds
 // (each is what the intermission tallies against the map's totals). leveltime is the level
 // clock - the tics elapsed since the level began - the specials time doors and lifts against,
@@ -33,6 +33,6 @@ struct LevelStats
 };
 
 // The one LevelStats, a view onto the Engine's member - the same pattern as
-// renderScratch(), graphicsData(), viewPoint(), clip(), level(), wad() and randomness().
+// renderScratch(), graphicsData(), viewPoint(), clipping(), level(), wad() and randomness().
 LevelStats& levelStats();
 } // namespace Doom

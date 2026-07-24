@@ -21,7 +21,7 @@ namespace Doom
 //     Sim/Movement, Sim/MapAction and Sim/Enemy.
 //
 // None of it is hashed - a demo's world is mobj fields, not this scratch - so
-// gathering it here is golden-neutral. Every reader reaches it through clip()
+// gathering it here is golden-neutral. Every reader reaches it through clipping()
 // now; the vanilla-named references onto these members went with p_maputl.cpp.
 struct Clip
 {
@@ -33,27 +33,27 @@ struct Clip
     DivLine trace = {};
 
     // updateLineOpening's window.
-    fixed_t opentop {};
-    fixed_t openbottom {};
-    fixed_t openrange {};
-    fixed_t lowfloor {};
+    Fixed opentop {};
+    Fixed openbottom {};
+    Fixed openrange {};
+    Fixed lowfloor {};
 
-    // Doom::checkPosition / Doom::tryMove clipping state (vanilla's tm*). The mover being
+    // checkPosition / tryMove clipping state (vanilla's tm*). The mover being
     // clipped, its flags and centre, and the bounding box its radius sweeps.
     Mobj* tmthing = nullptr;
     int tmflags = 0;
-    fixed_t tmx {};
-    fixed_t tmy {};
-    Array<fixed_t, 4> tmbbox = {};
+    Fixed tmx {};
+    Fixed tmy {};
+    Array<Fixed, 4> tmbbox = {};
 
     // floatok: the move would fit if the mobj sat between tmfloorz and tmceilingz.
     bool floatok = false;
 
     // The floor/ceiling the contacted lines leave for the mover, and the lowest
     // floor under it (a dropoff a monster refuses to walk off).
-    fixed_t tmfloorz {};
-    fixed_t tmceilingz {};
-    fixed_t tmdropoffz {};
+    Fixed tmfloorz {};
+    Fixed tmceilingz {};
+    Fixed tmdropoffz {};
 
     // The line that lowered the ceiling, kept so missiles don't explode against
     // sky-hack walls.
@@ -67,11 +67,11 @@ struct Clip
     int numspechit = 0;
 
     // The range of the shot in progress. This looks like a result and is not: it is
-    // an INPUT that Doom::lineAttack sets before its pathTraverse runs, and
+    // an INPUT that lineAttack sets before its pathTraverse runs, and
     // Sim/Mobj.cpp's spawnPuff reads it from *inside* that same traversal's call
     // stack (nested, not stale) to give a punch's puff its StateNum::Puff3. aimTraverse and
     // shootTraverse's actual results (the aim slope, the locked-on target) are
-    // returned by value from Doom::aimLineAttack now - see AimResult in MapAction.h.
+    // returned by value from aimLineAttack now - see AimResult in MapAction.h.
     //
     // attackrange also carries a genuine cross-tic leak that is load-bearing vanilla
     // behaviour: spawnPuff has a third caller in no hitscan chain at all - the
@@ -80,10 +80,17 @@ struct Clip
     // recent punch can flip that smoke to StateNum::Puff3 too. Threading an explicit "no
     // range" through the tracer would be a behaviour change wearing a refactor's
     // clothes, not a fix - leave it leaking.
-    fixed_t attackrange {};
+    Fixed attackrange {};
 };
 
 // The one Clip, a view onto the Engine's member - the same pattern as level(),
 // wad() and randomness().
-Clip& clip();
+//
+// Spelled clipping() rather than clip() for the same reason Random's accessor is
+// randomness(): eighteen call sites hoist it as `Clip& clip = clipping();`, and a
+// local of the accessor's own name is in scope from its own declarator, so
+// `Clip& clip = clip();` binds the reference to itself rather than to the Engine's
+// member. Clang diagnoses it, but only because Clip has no call operator - had the
+// cluster carried one, the self-reference would have compiled.
+Clip& clipping();
 } // namespace Doom

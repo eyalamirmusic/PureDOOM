@@ -52,7 +52,7 @@ Level& level()
     return engine().level;
 }
 
-Clip& clip()
+Clip& clipping()
 {
     return engine().clip;
 }
@@ -160,6 +160,11 @@ PlaneScratch& planeScratch()
 RenderMainState& renderMainState()
 {
     return engine().renderMainState;
+}
+
+Drawers& drawers()
+{
+    return engine().drawers;
 }
 
 RenderScratch& renderScratch()

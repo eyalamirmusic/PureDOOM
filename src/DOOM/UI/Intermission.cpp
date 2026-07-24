@@ -272,7 +272,9 @@ static Array<anim_t_wi_stuff*, NUMEPISODES> anims_wi_stuff = {
 
 void slamBackground()
 {
-    doom_memcpy(screens[0], screens[1], SCREENWIDTH * SCREENHEIGHT);
+    doom_memcpy(videoState().screens[0],
+                videoState().screens[1],
+                SCREENWIDTH * SCREENHEIGHT);
     markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 }
 
@@ -852,9 +854,9 @@ void drawDeathmatchStats()
         }
         else
         {
-            // Doom::drawPatch(x-littleEndian(bp[i]->width)/2,
+            // drawPatch(x-littleEndian(bp[i]->width)/2,
             //   DM_MATRIXY - WI_SPACINGY, FB, bp[i]);
-            // Doom::drawPatch(DM_MATRIXX-littleEndian(bp[i]->width)/2,
+            // drawPatch(DM_MATRIXX-littleEndian(bp[i]->width)/2,
             //   y, FB, bp[i]);
         }
         x += DM_SPACINGX;
@@ -1524,7 +1526,7 @@ void loadIntermissionData()
 
 void unloadIntermissionData()
 {
-    // The patches are all lumps, and Doom::WadFile owns those now (Wad/WadFile.h):
+    // The patches are all lumps, and WadFile owns those now (Wad/WadFile.h):
     // they are permanent, and there is nothing to hand back. This whole function
     // used to be Z_ChangeTag(..., PU_CACHE) twenty-five times over, which said
     // "purge these if you need the space".

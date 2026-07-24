@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../doomtype.h" // byte
-#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/FixedPoint.h" // Doom::Fixed
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // LightTable
 
@@ -28,25 +28,26 @@ struct DrawState
     int dc_x = 0; // screen column being drawn
     int dc_yl = 0; // column top (inclusive)
     int dc_yh = 0; // column bottom (inclusive)
-    fixed_t dc_iscale {}; // inverse scale (texels per pixel)
-    fixed_t dc_texturemid {}; // texture vertical anchor
+    Fixed dc_iscale {}; // inverse scale (texels per pixel)
+    Fixed dc_texturemid {}; // texture vertical anchor
     byte* dc_source = nullptr; // the column's source texels
     byte* dc_translation = nullptr; // colour-translation row for sprites
 
-    // The three player-colour translation tables, built once. RAII-owned (Step 9):
-    // this vector is the backing buffer and the vanilla name `translationtables`
-    // (r_draw.cpp) is a 256-byte-aligned view into its data(), set by
-    // Doom::initTranslationTables. dc_translation indexes a colour row of that view.
+    // The three player-colour translation tables, built once. translationTableStorage
+    // is the backing buffer and translationTables is a 256-byte-aligned view into its
+    // data(), set by initTranslationTables - which is why it is a stored pointer and
+    // not translationTableStorage.data(). dc_translation indexes a colour row of it.
     Vector<byte> translationTableStorage;
+    byte* translationTables = nullptr;
 
     int ds_y = 0; // screen row of the current span
     int ds_x1 = 0; // span start column
     int ds_x2 = 0; // span stop column
     LightTable* ds_colormap = nullptr; // colormap row for the span
-    fixed_t ds_xfrac {}; // texture x position
-    fixed_t ds_yfrac {}; // texture y position
-    fixed_t ds_xstep {}; // texture x step per pixel
-    fixed_t ds_ystep {}; // texture y step per pixel
+    Fixed ds_xfrac {}; // texture x position
+    Fixed ds_yfrac {}; // texture y position
+    Fixed ds_xstep {}; // texture x step per pixel
+    Fixed ds_ystep {}; // texture y step per pixel
     byte* ds_source = nullptr; // the flat's source texels
 };
 

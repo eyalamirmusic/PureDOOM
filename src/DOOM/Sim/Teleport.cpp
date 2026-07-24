@@ -29,9 +29,9 @@ int teleport(Line& line, int side, Mobj& thing)
         return 0;
 
     int tag = line.tag;
-    for (int i = 0; i < numsectors; i++)
+    for (int i = 0; i < level().sectors.size(); i++)
     {
-        if (sectors[i].tag == tag)
+        if (level().sectors[i].tag == tag)
         {
             Thinker* thinker = thinkers.cap.next;
             for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
@@ -49,12 +49,12 @@ int teleport(Line& line, int side, Mobj& thing)
 
                 Sector* sector = m->subsector->sector;
                 // wrong sector
-                if (sector - sectors != i)
+                if (sector - level().sectors.data() != i)
                     continue;
 
-                fixed_t oldx = thing.x;
-                fixed_t oldy = thing.y;
-                fixed_t oldz = thing.z;
+                Fixed oldx = thing.x;
+                Fixed oldy = thing.y;
+                Fixed oldz = thing.z;
 
                 if (!teleportMove(thing, m->x, m->y))
                     return 0;
@@ -67,8 +67,8 @@ int teleport(Line& line, int side, Mobj& thing)
                 Mobj* fog = spawnMobj(oldx, oldy, oldz, MobjType::Tfog);
                 startSound(fog, SfxEnum::Telept);
                 const auto anFine = m->angle.fineIndex();
-                fog = spawnMobj(m->x + 20 * finecosine[anFine],
-                                m->y + 20 * finesine[anFine],
+                fog = spawnMobj(m->x + 20 * finecosine()[anFine],
+                                m->y + 20 * finesine()[anFine],
                                 thing.z,
                                 MobjType::Tfog);
 
@@ -80,7 +80,7 @@ int teleport(Line& line, int side, Mobj& thing)
                     thing.reactiontime = 18;
 
                 thing.angle = m->angle;
-                thing.momx = thing.momy = thing.momz = fixed_t {};
+                thing.momx = thing.momy = thing.momz = Fixed {};
                 return 1;
             }
         }

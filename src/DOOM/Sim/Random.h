@@ -3,13 +3,14 @@
 #include "../Containers.h"
 #include "../doomtype.h"
 
-// A view onto Doom::Random's fixed 256-entry table. Was m_random.h.
-extern const unsigned char* rndtable;
-
 #include <cstdint>
 
 namespace Doom
 {
+// A view onto Random's fixed 256-entry table, read as rndtable()[i]. Was an
+// `extern const unsigned char*` global (m_random.h).
+const unsigned char* rndtable();
+
 // DOOM is not random at all. It walks a fixed 256-byte table with an index, and
 // keeps two indices into it.
 //

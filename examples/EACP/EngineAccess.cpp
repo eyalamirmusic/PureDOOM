@@ -38,11 +38,14 @@
 #include <DOOM/Sim/WeaponTypes.h>
 #include <DOOM/UI/Automap.h>
 #include <DOOM/UI/AutomapTypes.h>
+#include <DOOM/UI/AutomapView.h>
+#include <DOOM/UI/MenuState.h>
 #include <DOOM/UI/Hud.h>
 #include <DOOM/UI/Menu.h>
 #include <DOOM/UI/MenuSettings.h>
 #include <DOOM/UI/StatusBarTypes.h>
 #include <DOOM/UI/Wipe.h>
+#include <DOOM/UI/WipeState.h>
 #include <DOOM/Wad/WadFile.h>
 
 #include <algorithm>
@@ -52,7 +55,6 @@
 // The engine's live palette, which no header declares - UI/Menu.cpp reaches it
 // the same way. It is the natural candidate for a real interface as the engine
 // gets refactored further.
-extern unsigned char screen_palette[256 * 3];
 
 namespace PureDoom::Engine
 {
@@ -81,7 +83,7 @@ constexpr auto skyHeight = 9000.0f;
 // cylinder into the screen row DOOM would have drawn it at.
 constexpr auto skyFocal = 133.33f;
 
-// angle_t maps the full circle onto 32 bits, so 2^31 is half a turn.
+// Doom::Angle maps the full circle onto 32 bits, so 2^31 is half a turn.
 constexpr auto halfTurn = 2147483648.0;
 
 // Whether a caller's buffer is big enough for what is about to be written into
@@ -93,28 +95,29 @@ bool fits(std::span<const std::uint8_t> buffer, int bytes)
     return buffer.size() >= static_cast<std::size_t>(bytes);
 }
 
-double toDouble(fixed_t value)
+double toDouble(Doom::Fixed value)
 {
     return static_cast<double>(value.raw) / static_cast<double>(FRACUNIT.raw);
 }
 
-float toFloat(fixed_t value)
+float toFloat(Doom::Fixed value)
 {
     return static_cast<float>(value.raw) / static_cast<float>(FRACUNIT.raw);
 }
 
-fixed_t toFixed(double value)
+Doom::Fixed toFixed(double value)
 {
-    return fixed_t {static_cast<std::int32_t>(value * FRACUNIT.raw)};
+    return Doom::Fixed {static_cast<std::int32_t>(value * FRACUNIT.raw)};
 }
 
 // The engine's 32-bit angle for a heading in radians, so the view being drawn
 // can index the same sine tables the engine uses.
-angle_t angleFromRadians(float radians)
+Doom::Angle angleFromRadians(float radians)
 {
     auto turns = static_cast<double>(radians) * (halfTurn / std::numbers::pi);
 
-    return angle_t {static_cast<std::uint32_t>(static_cast<std::int64_t>(turns))};
+    return Doom::Angle {
+        static_cast<std::uint32_t>(static_cast<std::int64_t>(turns))};
 }
 
 // A point in the map's own ground plane, in whole map units. Every double in
@@ -196,7 +199,7 @@ float interpolatedHeight(const Vector<float>& previous, int index, float now)
 
 int sectorIndex(const Doom::Sector& sector)
 {
-    return static_cast<int>(&sector - sectors);
+    return static_cast<int>(&sector - Doom::level().sectors.data());
 }
 
 float floorHeight(const Doom::Sector& sector)
@@ -338,7 +341,7 @@ void blitPatch(IndexImage& image, const Doom::Patch& patch, int originX, int ori
 
 IndexImage decodeWall(int id)
 {
-    const auto& texture = *textures[id];
+    const auto& texture = *Doom::graphicsData().textures[id];
     auto image = IndexImage {texture.width, texture.height};
 
     for (auto i = 0; i < texture.patchcount; ++i)
@@ -364,21 +367,25 @@ void ensureTextureTable()
 {
     auto& gfx = Doom::graphicsData();
 
-    if (textureTable.ready() || gfx.numtextures <= 0 || textures == nullptr)
+    if (textureTable.ready() || gfx.numtextures <= 0
+        || Doom::graphicsData().textures == nullptr)
         return;
 
     textureTable.infos.resize(gfx.numtextures + gfx.numflats + gfx.numspritelumps);
 
     for (auto id = 0; id < gfx.numtextures; ++id)
-        textureTable.infos[id] = {
-            textures[id]->width, textures[id]->height, decodeWall(id).hasHoles()};
+        textureTable.infos[id] = {Doom::graphicsData().textures[id]->width,
+                                  Doom::graphicsData().textures[id]->height,
+                                  decodeWall(id).hasHoles()};
 
     for (auto i = 0; i < gfx.numflats; ++i)
         textureTable.infos[gfx.numtextures + i] = {flatSize, flatSize, false};
 
     for (auto i = 0; i < gfx.numspritelumps; ++i)
         textureTable.infos[spriteBase() + i] = {
-            spritewidth[i].toInt(), patchAt(gfx.firstspritelump + i)->height, true};
+            Doom::graphicsData().spritewidth[i].toInt(),
+            patchAt(gfx.firstspritelump + i)->height,
+            true};
 }
 
 int spriteHeight(int lump)
@@ -450,12 +457,12 @@ Polygon clipToLine(const Polygon& in,
 // them.
 void storeSubsector(int index, const Polygon& poly)
 {
-    const auto& subsector = subsectors[index];
+    const auto& subsector = Doom::level().subsectors[index];
     auto current = poly;
 
     for (auto i = 0; i < subsector.numlines && current.count >= 3; ++i)
     {
-        const auto& seg = segs[subsector.firstline + i];
+        const auto& seg = Doom::level().segs[subsector.firstline + i];
 
         auto origin = Point {toDouble(seg.v1->x), toDouble(seg.v1->y)};
         auto delta =
@@ -488,7 +495,7 @@ void descend(int nodenum, const Polygon& poly)
         return;
     }
 
-    const auto& node = nodes[nodenum];
+    const auto& node = Doom::level().nodes[nodenum];
 
     auto origin = Point {toDouble(node.x), toDouble(node.y)};
     auto delta = Point {toDouble(node.dx), toDouble(node.dy)};
@@ -502,12 +509,12 @@ void descend(int nodenum, const Polygon& poly)
 // than thousands of times a frame.
 void measureLines()
 {
-    cells.lineLengths.resize(numlines);
+    cells.lineLengths.resize(Doom::level().lines.size());
 
-    for (auto i = 0; i < numlines; ++i)
+    for (auto i = 0; i < Doom::level().lines.size(); ++i)
     {
-        auto dx = toDouble(lines[i].dx);
-        auto dy = toDouble(lines[i].dy);
+        auto dx = toDouble(Doom::level().lines[i].dx);
+        auto dy = toDouble(Doom::level().lines[i].dy);
 
         cells.lineLengths[i] = static_cast<float>(std::sqrt(dx * dx + dy * dy));
     }
@@ -519,13 +526,14 @@ void ensureLevel()
 {
     auto& session = Doom::gameSession();
 
-    if (nodes == cells.cachedNodes && numsubsectors == cells.cachedSubsectors
+    if (Doom::level().nodes.data() == cells.cachedNodes
+        && Doom::level().subsectors.size() == cells.cachedSubsectors
         && session.gameepisode == cells.cachedEpisode
         && session.gamemap == cells.cachedMap)
         return;
 
-    cells.cachedNodes = nodes;
-    cells.cachedSubsectors = numsubsectors;
+    cells.cachedNodes = Doom::level().nodes.data();
+    cells.cachedSubsectors = Doom::level().subsectors.size();
     cells.cachedEpisode = session.gameepisode;
     cells.cachedMap = session.gamemap;
 
@@ -533,12 +541,13 @@ void ensureLevel()
     cells.start.clear();
     cells.count.clear();
 
-    if (numsubsectors <= 0 || numnodes <= 0 || nodes == nullptr)
+    if (Doom::level().subsectors.size() <= 0 || Doom::level().nodes.size() <= 0
+        || Doom::level().nodes.data() == nullptr)
         return;
 
-    cells.start.resize(numsubsectors);
-    cells.count.resize(numsubsectors);
-    cells.corners.reserveAtLeast(numsubsectors * maxPolyVertices);
+    cells.start.resize(Doom::level().subsectors.size());
+    cells.count.resize(Doom::level().subsectors.size());
+    cells.corners.reserveAtLeast(Doom::level().subsectors.size() * maxPolyVertices);
 
     measureLines();
 
@@ -548,7 +557,7 @@ void ensureLevel()
     square.add({mapLimit, mapLimit});
     square.add({-mapLimit, mapLimit});
 
-    descend(numnodes - 1, square);
+    descend(Doom::level().nodes.size() - 1, square);
 }
 
 //
@@ -646,11 +655,11 @@ struct WallTexture
 
 WallTexture wallTexture(int index)
 {
-    auto id = texturetranslation[index];
+    auto id = Doom::graphicsData().texturetranslation[index];
 
     return {id,
-            static_cast<float>(textures[id]->width),
-            static_cast<float>(textures[id]->height)};
+            static_cast<float>(Doom::graphicsData().textures[id]->width),
+            static_cast<float>(Doom::graphicsData().textures[id]->height)};
 }
 
 // One textured band of a linedef. `textureTop` is where the texture's own top
@@ -697,10 +706,11 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
     if (line.sidenum[s] < 0)
         return;
 
-    const auto& side = sides[line.sidenum[s]];
+    const auto& side = Doom::level().sides[line.sidenum[s]];
     const auto& front = *side.sector;
-    const auto* back =
-        line.sidenum[s ^ 1] >= 0 ? sides[line.sidenum[s ^ 1]].sector : nullptr;
+    const auto* back = line.sidenum[s ^ 1] >= 0
+                           ? Doom::level().sides[line.sidenum[s ^ 1]].sector
+                           : nullptr;
 
     const auto& v1 = s == 0 ? *line.v1 : *line.v2;
     const auto& v2 = s == 0 ? *line.v2 : *line.v1;
@@ -815,7 +825,7 @@ void emitSprite(Emitter& emitter,
     if (&thing == &viewer || sprite < 0 || sprite >= gfx.numsprites)
         return;
 
-    const auto& definition = sprites[sprite];
+    const auto& definition = Doom::graphicsData().sprites[sprite];
     auto frameIndex = static_cast<int>(thing.frame & Doom::FF_FRAMEMASK);
 
     if (frameIndex >= definition.numframes)
@@ -840,7 +850,7 @@ void emitSprite(Emitter& emitter,
     if (lump < 0 || lump >= gfx.numspritelumps)
         return;
 
-    auto width = static_cast<float>(spritewidth[lump].toInt());
+    auto width = static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt());
     auto height = static_cast<float>(spriteHeight(lump));
 
     // A thing moves once a tic, so drawing it where the tic left it makes it
@@ -848,14 +858,14 @@ void emitSprite(Emitter& emitter,
     // get there, so winding that back by the part of the tic still to come puts
     // it where it would be at the moment being drawn.
     auto back = 1.0 - static_cast<double>(snapshot.alpha);
-    auto offset = toDouble(spriteoffset[lump]);
+    auto offset = toDouble(Doom::graphicsData().spriteoffset[lump]);
 
     auto left =
         Point {toDouble(thing.x) - toDouble(thing.momx) * back - right.x * offset,
                toDouble(thing.y) - toDouble(thing.momy) * back - right.y * offset};
 
     auto feet = toFloat(thing.z) - static_cast<float>(toDouble(thing.momz) * back);
-    auto top = feet + toFloat(spritetopoffset[lump]);
+    auto top = feet + toFloat(Doom::graphicsData().spritetopoffset[lump]);
 
     auto light = (thing.frame & Doom::FF_FULLBRIGHT)
                      ? fullbrightLight()
@@ -877,8 +887,8 @@ void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camer
     // The view plane's right axis, the one DOOM measures a sprite's width along,
     // so the billboards stay square-on to the camera being drawn.
     auto facing = angleFromRadians(camera.angle);
-    auto right = Point {toDouble(finesine[facing.fineIndex()]),
-                        -toDouble(finecosine[facing.fineIndex()])};
+    auto right = Point {toDouble(Doom::finesine()[facing.fineIndex()]),
+                        -toDouble(Doom::finecosine()[facing.fineIndex()])};
 
     for (auto* thinker = thinkers.cap.next; thinker != &thinkers.cap;
          thinker = thinker->next)
@@ -907,7 +917,7 @@ void emitSky(Emitter& emitter, const Camera& camera)
     if (sky.skytexture <= 0 || sky.skytexture >= Doom::graphicsData().numtextures)
         return;
 
-    auto texture = texturetranslation[sky.skytexture];
+    auto texture = Doom::graphicsData().texturetranslation[sky.skytexture];
 
     // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
     // row is linear in height on the cylinder, so two rings are exact.
@@ -917,14 +927,15 @@ void emitSky(Emitter& emitter, const Camera& camera)
 
     for (auto i = 0; i < skySegments; ++i)
     {
-        auto a0 = angle_t {static_cast<std::uint32_t>(i)} << 26;
-        auto a1 = angle_t {static_cast<std::uint32_t>(i + 1)} << 26;
+        auto a0 = Doom::Angle {static_cast<std::uint32_t>(i)} << 26;
+        auto a1 = Doom::Angle {static_cast<std::uint32_t>(i + 1)} << 26;
 
-        auto from =
-            Point {camera.x + skyRadius * toDouble(finecosine[a0.fineIndex()]),
-                   camera.y + skyRadius * toDouble(finesine[a0.fineIndex()])};
-        auto to = Point {camera.x + skyRadius * toDouble(finecosine[a1.fineIndex()]),
-                         camera.y + skyRadius * toDouble(finesine[a1.fineIndex()])};
+        auto from = Point {
+            camera.x + skyRadius * toDouble(Doom::finecosine()[a0.fineIndex()]),
+            camera.y + skyRadius * toDouble(Doom::finesine()[a0.fineIndex()])};
+        auto to = Point {
+            camera.x + skyRadius * toDouble(Doom::finecosine()[a1.fineIndex()]),
+            camera.y + skyRadius * toDouble(Doom::finesine()[a1.fineIndex()])};
 
         uv.uStart = 4.0f * static_cast<float>(i) / skySegments;
         uv.uEnd = 4.0f * static_cast<float>(i + 1) / skySegments;
@@ -940,7 +951,8 @@ void emitSky(Emitter& emitter, const Camera& camera)
 void emitFlat(
     Emitter& emitter, int index, int flat, float height, const Light& light)
 {
-    auto textureId = Doom::graphicsData().numtextures + flattranslation[flat];
+    auto textureId = Doom::graphicsData().numtextures
+                     + Doom::graphicsData().flattranslation[flat];
     auto first = cells.start[index];
 
     auto emitCorner = [&](int corner)
@@ -963,7 +975,7 @@ void emitSubsector(Emitter& emitter, int index)
 {
     auto& sky = Doom::skyState();
 
-    const auto* sector = subsectors[index].sector;
+    const auto* sector = Doom::level().subsectors[index].sector;
 
     if (cells.count[index] < 3 || sector == nullptr)
         return;
@@ -982,13 +994,13 @@ void emitSubsector(Emitter& emitter, int index)
 
 void emitWorld(Emitter& emitter, const Camera& camera)
 {
-    for (auto i = 0; i < numlines; ++i)
+    for (auto i = 0; i < Doom::level().lines.size(); ++i)
     {
-        emitLineSide(emitter, lines[i], i, 0);
-        emitLineSide(emitter, lines[i], i, 1);
+        emitLineSide(emitter, Doom::level().lines[i], i, 0);
+        emitLineSide(emitter, Doom::level().lines[i], i, 1);
     }
 
-    for (auto i = 0; i < numsubsectors; ++i)
+    for (auto i = 0; i < Doom::level().subsectors.size(); ++i)
         emitSubsector(emitter, i);
 
     const auto* viewer = displayPlayer().mo;
@@ -1048,16 +1060,16 @@ void drawUnderLayers()
 
 void captureLayer(auto&& draw, CapturedLayer& into)
 {
-    auto* frame = screens[0];
+    auto* frame = Doom::videoState().screens[0];
 
     for (auto pass = 0; pass < 2; ++pass)
     {
         overlayPasses[pass].fill(pass == 0 ? 0x00 : 0xff);
-        screens[0] = overlayPasses[pass].data();
+        Doom::videoState().screens[0] = overlayPasses[pass].data();
         draw();
     }
 
-    screens[0] = frame;
+    Doom::videoState().screens[0] = frame;
 
     for (auto i = 0; i < screenPixels; ++i)
     {
@@ -1109,24 +1121,27 @@ struct AutomapEmitter
 
     // CXMTOF and CYMTOF's transform, in floating point and without their
     // rounding to whole pixels: the map's y runs up and the frame's runs down.
-    Point toFrame(fixed_t x, fixed_t y) const
+    Point toFrame(Doom::Fixed x, Doom::Fixed y) const
     {
-        return {f_x + (toDouble(x) - origin.x) * pixelsPerMapUnit,
-                f_y + f_h - (toDouble(y) - origin.y) * pixelsPerMapUnit};
+        return {Doom::automapView().f_x
+                    + (toDouble(x) - origin.x) * pixelsPerMapUnit,
+                Doom::automapView().f_y + Doom::automapView().f_h
+                    - (toDouble(y) - origin.y) * pixelsPerMapUnit};
     }
 
-    void line(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int color)
+    void line(
+        Doom::Fixed x1, Doom::Fixed y1, Doom::Fixed x2, Doom::Fixed y2, int color)
     {
         frameLine(toFrame(x1, y1), toFrame(x2, y2), color);
     }
 
     // drawLineCharacter, emitting instead of rasterizing.
     void lineCharacter(std::span<const Doom::MapLine> shape,
-                       fixed_t size,
-                       angle_t angle,
+                       Doom::Fixed size,
+                       Doom::Angle angle,
                        int color,
-                       fixed_t x,
-                       fixed_t y)
+                       Doom::Fixed x,
+                       Doom::Fixed y)
     {
         for (const auto& original: shape)
         {
@@ -1162,34 +1177,37 @@ struct AutomapEmitter
 
 void automapWalls(AutomapEmitter& emitter)
 {
-    for (auto i = 0; i < numlines; i++)
+    for (auto i = 0; i < Doom::level().lines.size(); i++)
     {
-        const auto& line = lines[i];
+        const auto& line = Doom::level().lines[i];
 
         auto draw = [&](int color)
         { emitter.line(line.v1->x, line.v1->y, line.v2->x, line.v2->y, color); };
 
-        if (cheating || (line.flags & Doom::ML_MAPPED))
+        if (Doom::automapView().cheating || (line.flags & Doom::ML_MAPPED))
         {
-            if ((line.flags & LINE_NEVERSEE) && !cheating)
+            if ((line.flags & LINE_NEVERSEE) && !Doom::automapView().cheating)
                 continue;
 
             if (!line.backsector)
-                draw(WALLCOLORS + lightlev);
+                draw(WALLCOLORS + Doom::automapView().lightlev);
             else if (line.special == 39)
                 draw(WALLCOLORS + WALLRANGE / 2);
             else if (line.flags & Doom::ML_SECRET)
-                draw(cheating ? SECRETWALLCOLORS + lightlev : WALLCOLORS + lightlev);
+                draw(Doom::automapView().cheating
+                         ? SECRETWALLCOLORS + Doom::automapView().lightlev
+                         : WALLCOLORS + Doom::automapView().lightlev);
             else if (line.backsector->floorheight != line.frontsector->floorheight)
-                draw(FDWALLCOLORS + lightlev);
+                draw(FDWALLCOLORS + Doom::automapView().lightlev);
             else if (line.backsector->ceilingheight
                      != line.frontsector->ceilingheight)
-                draw(CDWALLCOLORS + lightlev);
-            else if (cheating)
-                draw(TSWALLCOLORS + lightlev);
+                draw(CDWALLCOLORS + Doom::automapView().lightlev);
+            else if (Doom::automapView().cheating)
+                draw(TSWALLCOLORS + Doom::automapView().lightlev);
         }
-        else if (am_plr != nullptr
-                 && am_plr->powers[Doom::toIndex(Doom::PowerType::AllMap)])
+        else if (Doom::automapView().am_plr != nullptr
+                 && Doom::automapView()
+                        .am_plr->powers[Doom::toIndex(Doom::PowerType::AllMap)])
         {
             if (!(line.flags & LINE_NEVERSEE))
                 draw(GRAYS + 3);
@@ -1205,18 +1223,22 @@ void automapGrid(AutomapEmitter& emitter, int color)
 
     // The first grid line at or past `from`, the grid being pinned to the
     // blockmap's own origin rather than to the map's.
-    auto firstLine = [&](fixed_t from, fixed_t blockmapOrigin)
+    auto firstLine = [&](Doom::Fixed from, Doom::Fixed blockmapOrigin)
     {
-        auto past = fixed_t {(from - blockmapOrigin).raw % block.raw};
+        auto past = Doom::Fixed {(from - blockmapOrigin).raw % block.raw};
 
         return past ? from + block - past : from;
     };
 
-    for (auto x = firstLine(originX, bmaporgx); x < originX + m_w; x += block)
-        emitter.line(x, originY, x, originY + m_h, color);
+    for (auto x = firstLine(originX, Doom::level().blockmap.origin.x);
+         x < originX + Doom::automapView().m_w;
+         x += block)
+        emitter.line(x, originY, x, originY + Doom::automapView().m_h, color);
 
-    for (auto y = firstLine(originY, bmaporgy); y < originY + m_h; y += block)
-        emitter.line(originX, y, originX + m_w, y, color);
+    for (auto y = firstLine(originY, Doom::level().blockmap.origin.y);
+         y < originY + Doom::automapView().m_h;
+         y += block)
+        emitter.line(originX, y, originX + Doom::automapView().m_w, y, color);
 }
 
 // Drawn from the view rather than from the player: the arrow is the one thing on
@@ -1224,29 +1246,32 @@ void automapGrid(AutomapEmitter& emitter, int color)
 // what would be seen.
 void automapPlayer(AutomapEmitter& emitter, const Camera& camera)
 {
-    if (am_plr == nullptr || am_plr->mo == nullptr)
+    if (Doom::automapView().am_plr == nullptr
+        || Doom::automapView().am_plr->mo == nullptr)
         return;
 
     auto x = toFixed(camera.x);
     auto y = toFixed(camera.y);
     auto angle = angleFromRadians(camera.angle);
-    auto unscaled = fixed_t {};
+    auto unscaled = Doom::Fixed {};
 
-    if (cheating)
-        emitter.lineCharacter(cheat_player_arrow, unscaled, angle, WHITE, x, y);
+    if (Doom::automapView().cheating)
+        emitter.lineCharacter(
+            Doom::mapShapes().cheatPlayerArrow, unscaled, angle, WHITE, x, y);
     else
-        emitter.lineCharacter(player_arrow, unscaled, angle, WHITE, x, y);
+        emitter.lineCharacter(
+            Doom::mapShapes().playerArrow, unscaled, angle, WHITE, x, y);
 }
 
 void automapThings(AutomapEmitter& emitter, int color)
 {
-    for (auto i = 0; i < numsectors; i++)
-        for (auto* thing = sectors[i].thinglist; thing != nullptr;
+    for (auto i = 0; i < Doom::level().sectors.size(); i++)
+        for (auto* thing = Doom::level().sectors[i].thinglist; thing != nullptr;
              thing = thing->snext)
-            emitter.lineCharacter(thintriangle_guy,
+            emitter.lineCharacter(Doom::mapShapes().thinTriangleGuy,
                                   Doom::Fixed::fromInt(16),
                                   thing->angle,
-                                  color + lightlev,
+                                  color + Doom::automapView().lightlev,
                                   thing->x,
                                   thing->y);
 }
@@ -1255,8 +1280,8 @@ void automapThings(AutomapEmitter& emitter, int color)
 // the same dot, and widens with everything else.
 void automapCrosshair(AutomapEmitter& emitter, int color)
 {
-    auto x = f_w * 0.5;
-    auto y = f_h * 0.5;
+    auto x = Doom::automapView().f_w * 0.5;
+    auto y = Doom::automapView().f_h * 0.5;
 
     emitter.frameLine({x - 0.5, y}, {x + 0.5, y}, color);
 }
@@ -1314,17 +1339,18 @@ float weaponRowShift()
 
 void snapshotTic()
 {
-    if (Doom::gameFlow().gamestate != Doom::GameState::Level || sectors == nullptr
-        || numsectors <= 0)
+    if (Doom::gameFlow().gamestate != Doom::GameState::Level
+        || Doom::level().sectors.data() == nullptr
+        || Doom::level().sectors.size() <= 0)
         return;
 
-    snapshot.floor.resize(numsectors);
-    snapshot.ceiling.resize(numsectors);
+    snapshot.floor.resize(Doom::level().sectors.size());
+    snapshot.ceiling.resize(Doom::level().sectors.size());
 
-    for (auto i = 0; i < numsectors; ++i)
+    for (auto i = 0; i < Doom::level().sectors.size(); ++i)
     {
-        snapshot.floor[i] = toFloat(sectors[i].floorheight);
-        snapshot.ceiling[i] = toFloat(sectors[i].ceilingheight);
+        snapshot.floor[i] = toFloat(Doom::level().sectors[i].floorheight);
+        snapshot.ceiling[i] = toFloat(Doom::level().sectors[i].ceilingheight);
     }
 }
 
@@ -1376,7 +1402,7 @@ void revealAutomap()
     // Drawing the map again puts it back. The GPU path does not read that frame
     // for anything but the status bar, which the view never reaches; the
     // software one reads all of it.
-    Doom::renderBSPNode(numnodes - 1);
+    Doom::renderBSPNode(Doom::level().nodes.size() - 1);
     Doom::drawAutomap();
 }
 
@@ -1384,8 +1410,8 @@ int darkenRow()
 {
     // drawMenu only reaches its darkening once it is actually showing a menu: a
     // confirmation prompt draws its text and returns before then.
-    if (Doom::overlayState().menuactive && !messageToPrint
-        && (doom_flags & Doom::DOOM_FLAG_MENU_DARKEN_BG))
+    if (Doom::overlayState().menuactive && !Doom::menuState().messageToPrint
+        && (Doom::host().flags & Doom::DOOM_FLAG_MENU_DARKEN_BG))
         return menuDarkenRow;
 
     return 0;
@@ -1396,17 +1422,17 @@ bool buildOverlay(std::span<std::uint8_t> outRgba)
     if (!fits(outRgba, screenPixels * 4))
         return false;
 
-    auto flags = doom_flags;
+    auto flags = Doom::host().flags;
 
     // Left to the GPU view, which can darken at full resolution and exactly (see
     // darkenRow). Were it left on, it would write to all 64000 pixels and the
     // whole screen would come back as covered.
-    doom_flags &= ~Doom::DOOM_FLAG_MENU_DARKEN_BG;
+    Doom::host().flags &= ~Doom::DOOM_FLAG_MENU_DARKEN_BG;
 
     captureLayer(drawUnderLayers, underLayer);
     captureLayer(Doom::drawMenu, menuLayer);
 
-    doom_flags = flags;
+    Doom::host().flags = flags;
 
     auto covered = false;
 
@@ -1432,9 +1458,9 @@ bool buildOverlay(std::span<std::uint8_t> outRgba)
 
 void bindKeys()
 {
-    for (auto i = 0; i < numdefaults; ++i)
+    for (auto i = 0; i < numdefaults(); ++i)
     {
-        auto& entry = defaults[i];
+        auto& entry = defaults()[i];
 
         if (entry.defaultvalue != Doom::STRING_VALUE
             && entry.name.starts_with("key_"))
@@ -1447,7 +1473,7 @@ double ticTime()
     auto sec = 0;
     auto usec = 0;
 
-    doom_gettime(&sec, &usec);
+    Doom::host().gettime(&sec, &usec);
 
     // currentTic's own expression, kept fractional instead of truncated, so this
     // steps from one tic to the next at exactly the moment the engine does. It
@@ -1465,7 +1491,7 @@ bool isWiping()
 
 bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffsets)
 {
-    const auto* start = wipe_scr_start;
+    const auto* start = Doom::wipeState().scrStart;
 
     if (!Doom::gameFlow().is_wiping_screen || start == nullptr
         || !fits(outStart, screenPixels) || !fits(outOffsets, wipeColumns))
@@ -1475,7 +1501,7 @@ bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffs
     // one to test: exitMelt frees the column table but leaves the pointer to it
     // alone, so between melts it is non-null and dangling. Until the melt is set
     // up, the outgoing screen is still row-major and nothing has slid.
-    if (!wipe_melt_running)
+    if (!Doom::wipeState().meltRunning)
     {
         std::copy_n(start, screenPixels, outStart.begin());
         std::fill_n(outOffsets.begin(), wipeColumns, std::uint8_t {0});
@@ -1487,7 +1513,8 @@ bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffs
     {
         // A column that has not started moving sits at a negative offset; it has
         // slid nothing, which is what zero says.
-        auto slid = std::clamp(wipe_melt_offsets[column], 0, screenHeight);
+        auto slid =
+            std::clamp(Doom::wipeState().wipe_melt_offsets[column], 0, screenHeight);
 
         outOffsets[column] = static_cast<std::uint8_t>(slid);
 
@@ -1534,9 +1561,9 @@ void readPalette(std::span<std::uint8_t> outRgba)
 
     for (auto i = 0; i < 256; ++i)
     {
-        outRgba[i * 4 + 0] = screen_palette[i * 3 + 0];
-        outRgba[i * 4 + 1] = screen_palette[i * 3 + 1];
-        outRgba[i * 4 + 2] = screen_palette[i * 3 + 2];
+        outRgba[i * 4 + 0] = Doom::videoState().screen_palette[i * 3 + 0];
+        outRgba[i * 4 + 1] = Doom::videoState().screen_palette[i * 3 + 1];
+        outRgba[i * 4 + 2] = Doom::videoState().screen_palette[i * 3 + 2];
         outRgba[i * 4 + 3] = 255;
     }
 }
@@ -1545,7 +1572,7 @@ int textureCount()
 {
     auto& gfx = Doom::graphicsData();
 
-    if (gfx.numtextures <= 0 || textures == nullptr)
+    if (gfx.numtextures <= 0 || Doom::graphicsData().textures == nullptr)
         return 0;
 
     return gfx.numtextures + gfx.numflats + gfx.numspritelumps;
@@ -1603,10 +1630,10 @@ void readTexturePixels(int id, std::span<std::uint8_t> out)
 
 void readColormaps(std::span<std::uint8_t> out)
 {
-    if (colormaps == nullptr || !fits(out, 256 * colormapRows))
+    if (Doom::graphicsData().colormaps == nullptr || !fits(out, 256 * colormapRows))
         return;
 
-    std::copy_n(colormaps, 256 * colormapRows, out.begin());
+    std::copy_n(Doom::graphicsData().colormaps, 256 * colormapRows, out.begin());
 }
 
 WorldGeometry
@@ -1618,7 +1645,7 @@ WorldGeometry
     ensureTextureTable();
 
     if (Doom::gameFlow().gamestate != Doom::GameState::Level || into.vertices.empty()
-        || into.draws.empty() || count <= 0 || lines == nullptr
+        || into.draws.empty() || count <= 0 || Doom::level().lines.data() == nullptr
         || !textureTable.ready())
         return {};
 
@@ -1669,7 +1696,7 @@ std::span<const AutomapVertex> buildAutomap(const Camera& camera,
 {
     if (!Doom::overlayState().automapactive
         || Doom::gameFlow().gamestate != Doom::GameState::Level || into.empty()
-        || lines == nullptr)
+        || Doom::level().lines.data() == nullptr)
         return {};
 
     auto emitter = AutomapEmitter {};
@@ -1678,26 +1705,28 @@ std::span<const AutomapVertex> buildAutomap(const Camera& camera,
     // MTOF, as a plain number: the engine's own is FixedMul(x, scale_mtof) shifted
     // back down twice, which is x_raw * scale_mtof_raw / 2^32 - so one whole map
     // unit spans scale_mtof whole frame pixels.
-    emitter.pixelsPerMapUnit = toDouble(scale_mtof);
+    emitter.pixelsPerMapUnit = toDouble(Doom::automapView().scale_mtof);
 
     // Vanilla recentres on the player once a tic and snaps the map to whole frame
     // pixels as it does it (doFollowPlayer's FTOM(MTOF(x))). Following the
     // interpolated view instead, and not rounding, is what makes the map glide
     // rather than crawl. Panned by hand, it is the engine's window that moves,
     // and that still steps.
-    if (followplayer && am_plr != nullptr && am_plr->mo != nullptr)
-        emitter.origin = {camera.x - toDouble(m_w) / 2.0,
-                          camera.y - toDouble(m_h) / 2.0};
+    if (Doom::automapView().followplayer && Doom::automapView().am_plr != nullptr
+        && Doom::automapView().am_plr->mo != nullptr)
+        emitter.origin = {camera.x - toDouble(Doom::automapView().m_w) / 2.0,
+                          camera.y - toDouble(Doom::automapView().m_h) / 2.0};
     else
-        emitter.origin = {toDouble(m_x), toDouble(m_y)};
+        emitter.origin = {toDouble(Doom::automapView().m_x),
+                          toDouble(Doom::automapView().m_y)};
 
-    if (grid)
+    if (Doom::automapView().grid)
         automapGrid(emitter, GRIDCOLORS);
 
     automapWalls(emitter);
     automapPlayer(emitter, camera);
 
-    if (cheating == 2)
+    if (Doom::automapView().cheating == 2)
         automapThings(emitter, THINGCOLORS);
 
     automapCrosshair(emitter, XHAIRCOLORS);
@@ -1727,7 +1756,8 @@ Array<HudSprite, hudSpriteCount> hudSprites()
             || Doom::toIndex(state->sprite) >= gfx.numsprites)
             continue;
 
-        const auto& definition = sprites[Doom::toIndex(state->sprite)];
+        const auto& definition =
+            Doom::graphicsData().sprites[Doom::toIndex(state->sprite)];
         auto frameIndex = static_cast<int>(state->frame & Doom::FF_FRAMEMASK);
 
         if (frameIndex >= definition.numframes)
@@ -1739,14 +1769,15 @@ Array<HudSprite, hudSpriteCount> hudSprites()
         if (lump < 0 || lump >= gfx.numspritelumps)
             continue;
 
-        out[i] = {spriteBase() + lump,
-                  toFloat(weapon.sx) - toFloat(spriteoffset[lump]),
-                  toFloat(weapon.sy) - toFloat(spritetopoffset[lump])
-                      - weaponRowShift(),
-                  static_cast<float>(spritewidth[lump].toInt()),
-                  static_cast<float>(spriteHeight(lump)),
-                  weaponLight((state->frame & Doom::FF_FULLBRIGHT) != 0),
-                  frame.flip[0] != 0};
+        out[i] = {
+            spriteBase() + lump,
+            toFloat(weapon.sx) - toFloat(Doom::graphicsData().spriteoffset[lump]),
+            toFloat(weapon.sy) - toFloat(Doom::graphicsData().spritetopoffset[lump])
+                - weaponRowShift(),
+            static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt()),
+            static_cast<float>(spriteHeight(lump)),
+            weaponLight((state->frame & Doom::FF_FULLBRIGHT) != 0),
+            frame.flip[0] != 0};
     }
 
     return out;

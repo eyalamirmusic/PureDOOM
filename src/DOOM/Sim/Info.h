@@ -1183,13 +1183,15 @@ constexpr int numStates = toIndex(StateNum::NumStates);
 // The count, for array sizes and loop bounds; derived from the enum's own
 // sentinel so the two cannot drift.
 constexpr int numSprites = toIndex(SpriteNum::NumSprites);
-} // namespace Doom
 
-extern Doom::State states[Doom::numStates];
-extern const Doom::Array<std::string_view, Doom::numSprites> sprnames;
+// The state table and the sprite-name table. states[] is mutable - fast-monster
+// mode halves every state's tics (Game/Game.cpp) - so it is handed out as a
+// pointer; sprnames is immutable. They were `extern` globals; the storage is
+// file-local to Sim/Info.cpp now and reached through these, so `states()[i]` and
+// `sprnames()[i]` read what `states[i]` / `sprnames[i]` did.
+State* states();
+const Array<std::string_view, numSprites>& sprnames();
 
-namespace Doom
-{
 enum class MobjType
 {
     Player,
@@ -1357,8 +1359,8 @@ struct MobjInfo
     // missile stores a fixed-point velocity (20*FRACUNIT). The missile sites
     // reinterpret it with Fixed{...}; do not "fix" this to one type.
     int speed;
-    fixed_t radius;
-    fixed_t height;
+    Fixed radius;
+    Fixed height;
     int mass;
     int damage;
     SfxEnum activesound;
@@ -1369,9 +1371,13 @@ struct MobjInfo
 // The count, for array sizes and loop bounds; derived from the enum's own
 // sentinel so the two cannot drift.
 constexpr int numMobjTypes = toIndex(MobjType::NumMobjTypes);
-} // namespace Doom
 
-extern Doom::MobjInfo mobjinfo[Doom::numMobjTypes];
+// The mobj-info table, mutable (fast-monster mode and -turbo rewrite projectile
+// speeds - Game/Game.cpp), so handed out as a pointer. Was an `extern` global;
+// storage is file-local to Sim/Info.cpp now. mobjinfo()[i] reads what mobjinfo[i]
+// did.
+MobjInfo* mobjinfo();
+} // namespace Doom
 
 //-----------------------------------------------------------------------------
 //

@@ -59,8 +59,8 @@ void Doom::playerReborn(int player);
 namespace Doom
 {
 
-constexpr fixed_t STOPSPEED {0x1000};
-constexpr fixed_t FRICTION {0xe800};
+constexpr Fixed STOPSPEED {0x1000};
+constexpr Fixed FRICTION {0xe800};
 
 bool setMobjState(Mobj& mobj, StateNum state)
 {
@@ -73,18 +73,16 @@ bool setMobjState(Mobj& mobj, StateNum state)
             return false;
         }
 
-        State* st = &states[toIndex(state)];
+        State* st = &states()[toIndex(state)];
         mobj.state = st;
         mobj.tics = st->tics;
         mobj.sprite = st->sprite;
         mobj.frame = st->frame;
 
         // Modified handling.
-        // Call action functions when the state is set. The action is stored
-        // type-erased; a mobj state carries a (Mobj*) action, cast back from the
-        // erased pointer here (a round-trip conversion, hence well-defined).
-        if (st->action.fn)
-            reinterpret_cast<void (*)(Mobj*)>(st->action.fn)(&mobj);
+        // Call action functions when the state is set.
+        if (st->action.mobj)
+            st->action.mobj(mobj);
 
         state = st->nextstate;
     } while (!mobj.tics);
@@ -97,9 +95,9 @@ bool setMobjState(Mobj& mobj, StateNum state)
 //
 void explodeMissile(Mobj& mo)
 {
-    mo.momx = mo.momy = mo.momz = fixed_t {};
+    mo.momx = mo.momy = mo.momz = Fixed {};
 
-    setMobjState(mo, static_cast<StateNum>(mobjinfo[toIndex(mo.type)].deathstate));
+    setMobjState(mo, static_cast<StateNum>(mobjinfo()[toIndex(mo.type)].deathstate));
 
     mo.tics -= randomness().forPlay() & 3;
 
@@ -117,10 +115,10 @@ void explodeMissile(Mobj& mo)
 //
 void xyMovement(Mobj& mo)
 {
-    fixed_t ptryx;
-    fixed_t ptryy;
+    Fixed ptryx;
+    Fixed ptryy;
 
-    auto& c = clip();
+    auto& c = clipping();
 
     if (!mo.momx && !mo.momy)
     {
@@ -128,7 +126,7 @@ void xyMovement(Mobj& mo)
         {
             // the skull slammed into something
             mo.flags = withoutFlags(mo.flags, MobjFlag::SkullFly);
-            mo.momx = mo.momy = mo.momz = fixed_t {};
+            mo.momx = mo.momy = mo.momz = Fixed {};
 
             setMobjState(mo, static_cast<StateNum>(mo.info->spawnstate));
         }
@@ -147,8 +145,8 @@ void xyMovement(Mobj& mo)
     else if (mo.momy < -MAXMOVE)
         mo.momy = -MAXMOVE;
 
-    fixed_t xmove = mo.momx;
-    fixed_t ymove = mo.momy;
+    Fixed xmove = mo.momx;
+    Fixed ymove = mo.momy;
 
     do
     {
@@ -163,7 +161,7 @@ void xyMovement(Mobj& mo)
         {
             ptryx = mo.x + xmove;
             ptryy = mo.y + ymove;
-            xmove = ymove = fixed_t {};
+            xmove = ymove = Fixed {};
         }
 
         if (!tryMove(mo, ptryx, ptryy))
@@ -189,7 +187,7 @@ void xyMovement(Mobj& mo)
                 explodeMissile(mo);
             }
             else
-                mo.momx = mo.momy = fixed_t {};
+                mo.momx = mo.momy = Fixed {};
         }
     } while (xmove || ymove);
 
@@ -197,7 +195,7 @@ void xyMovement(Mobj& mo)
     if (player && hasFlag(player->cheats, CheatFlag::NoMomentum))
     {
         // debug option for no sliding at all
-        mo.momx = mo.momy = fixed_t {};
+        mo.momx = mo.momy = Fixed {};
         return;
     }
 
@@ -225,13 +223,13 @@ void xyMovement(Mobj& mo)
     {
         // if in a walking frame, stop moving
         if (player
-            && static_cast<unsigned>((player->mo->state - states)
+            && static_cast<unsigned>((player->mo->state - states())
                                      - toIndex(StateNum::PlayRun1))
                    < 4)
             setMobjState(*player->mo, StateNum::Play);
 
-        mo.momx = fixed_t {};
-        mo.momy = fixed_t {};
+        mo.momx = Fixed {};
+        mo.momy = Fixed {};
     }
     else
     {
@@ -262,9 +260,9 @@ void zMovement(Mobj& mo)
         if (!(hasFlag(mo.flags, MobjFlag::SkullFly))
             && !(hasFlag(mo.flags, MobjFlag::InFloat)))
         {
-            fixed_t dist = approxDistance(mo.x - mo.target->x, mo.y - mo.target->y);
+            Fixed dist = approxDistance(mo.x - mo.target->x, mo.y - mo.target->y);
 
-            fixed_t delta = (mo.target->z + (mo.height >> 1)) - mo.z;
+            Fixed delta = (mo.target->z + (mo.height >> 1)) - mo.z;
 
             if (delta.isNegative() && dist < -(delta * 3))
                 mo.z -= FLOATSPEED;
@@ -298,7 +296,7 @@ void zMovement(Mobj& mo)
                 mo.player->deltaviewheight = mo.momz >> 3;
                 startSound(&mo, SfxEnum::Oof);
             }
-            mo.momz = fixed_t {};
+            mo.momz = Fixed {};
         }
         mo.z = mo.floorz;
 
@@ -321,7 +319,7 @@ void zMovement(Mobj& mo)
     {
         // hit the ceiling
         if (mo.momz.isPositive())
-            mo.momz = fixed_t {};
+            mo.momz = Fixed {};
         {
             mo.z = mo.ceilingz - mo.height;
         }
@@ -345,10 +343,10 @@ void zMovement(Mobj& mo)
 //
 void nightmareRespawn(Mobj& mobj)
 {
-    fixed_t z;
+    Fixed z;
 
-    fixed_t x = Fixed::fromInt(mobj.spawnpoint.x);
-    fixed_t y = Fixed::fromInt(mobj.spawnpoint.y);
+    Fixed x = Fixed::fromInt(mobj.spawnpoint.x);
+    Fixed y = Fixed::fromInt(mobj.spawnpoint.y);
 
     // somthing is occupying it's position?
     if (!checkPosition(mobj, x, y))
@@ -452,10 +450,10 @@ void mobjThinker(Mobj& mobj)
 //
 // spawnMobj
 //
-Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
+Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type)
 {
     Mobj* mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
-    MobjInfo* info = &mobjinfo[toIndex(type)];
+    MobjInfo* info = &mobjinfo()[toIndex(type)];
 
     mobj->type = type;
     mobj->info = info;
@@ -472,7 +470,7 @@ Mobj* spawnMobj(fixed_t x, fixed_t y, fixed_t z, MobjType type)
     mobj->lastlook = randomness().forPlay() % MAXPLAYERS;
     // do not set the state with setMobjState,
     // because action routines can not be called yet
-    State* st = &states[toIndex(info->spawnstate)];
+    State* st = &states()[toIndex(info->spawnstate)];
 
     mobj->state = st;
     mobj->tics = st->tics;
@@ -532,7 +530,7 @@ void removeMobj(Mobj& mobj)
 //
 void respawnSpecials()
 {
-    fixed_t z;
+    Fixed z;
 
     int i;
 
@@ -552,8 +550,8 @@ void respawnSpecials()
 
     MapThing* mthing = &queue.itemrespawnque[queue.iquetail];
 
-    fixed_t x = Fixed::fromInt(mthing->x);
-    fixed_t y = Fixed::fromInt(mthing->y);
+    Fixed x = Fixed::fromInt(mthing->x);
+    Fixed y = Fixed::fromInt(mthing->y);
 
     // spawn a teleport fog at the new spot
     SubSector* ss = pointInSubsector(x, y);
@@ -563,12 +561,12 @@ void respawnSpecials()
     // find which type to spawn
     for (i = 0; i < numMobjTypes; i++)
     {
-        if (mthing->type == mobjinfo[i].doomednum)
+        if (mthing->type == mobjinfo()[i].doomednum)
             break;
     }
 
     // spawn it
-    if (hasFlag(mobjinfo[i].flags, MobjFlag::SpawnCeiling))
+    if (hasFlag(mobjinfo()[i].flags, MobjFlag::SpawnCeiling))
         z = ONCEILINGZ;
     else
         z = ONFLOORZ;
@@ -600,9 +598,9 @@ void spawnPlayer(MapThing& mthing)
     if (p->playerstate == PlayerLifeState::Reborn)
         playerReborn(mthing.type - 1);
 
-    fixed_t x = Fixed::fromInt(mthing.x);
-    fixed_t y = Fixed::fromInt(mthing.y);
-    fixed_t z = ONFLOORZ;
+    Fixed x = Fixed::fromInt(mthing.x);
+    Fixed y = Fixed::fromInt(mthing.y);
+    Fixed z = ONFLOORZ;
     Mobj* mobj = spawnMobj(x, y, z, MobjType::Player);
 
     // set color translations for player sprites
@@ -649,7 +647,7 @@ void spawnMapThing(MapThing& mthing)
 {
     int i;
     int bit;
-    fixed_t z;
+    Fixed z;
 
     auto& spawns = mapSpawns();
     const auto& session = gameSession();
@@ -698,7 +696,7 @@ void spawnMapThing(MapThing& mthing)
 
     // find which type to spawn
     for (i = 0; i < numMobjTypes; i++)
-        if (mthing.type == mobjinfo[i].doomednum)
+        if (mthing.type == mobjinfo()[i].doomednum)
             break;
 
     if (i == numMobjTypes)
@@ -717,22 +715,22 @@ void spawnMapThing(MapThing& mthing)
     }
 
     // don't spawn keycards and players in deathmatch
-    if (session.deathmatch && hasFlag(mobjinfo[i].flags, MobjFlag::NotDmatch))
+    if (session.deathmatch && hasFlag(mobjinfo()[i].flags, MobjFlag::NotDmatch))
         return;
 
     // don't spawn any monsters if -nomonsters
     if (launchOptions().nomonsters
         && (i == toIndex(MobjType::Skull)
-            || (hasFlag(mobjinfo[i].flags, MobjFlag::CountKill))))
+            || (hasFlag(mobjinfo()[i].flags, MobjFlag::CountKill))))
     {
         return;
     }
 
     // spawn it
-    fixed_t x = Fixed::fromInt(mthing.x);
-    fixed_t y = Fixed::fromInt(mthing.y);
+    Fixed x = Fixed::fromInt(mthing.x);
+    Fixed y = Fixed::fromInt(mthing.y);
 
-    if (hasFlag(mobjinfo[i].flags, MobjFlag::SpawnCeiling))
+    if (hasFlag(mobjinfo()[i].flags, MobjFlag::SpawnCeiling))
         z = ONCEILINGZ;
     else
         z = ONFLOORZ;
@@ -761,7 +759,7 @@ void spawnMapThing(MapThing& mthing)
 //
 // spawnPuff
 //
-void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
+void spawnPuff(Fixed x, Fixed y, Fixed z)
 {
     z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
 
@@ -773,14 +771,14 @@ void spawnPuff(fixed_t x, fixed_t y, fixed_t z)
         th->tics = 1;
 
     // don't make punches spark on the wall
-    if (clip().attackrange == MELEERANGE)
+    if (clipping().attackrange == MELEERANGE)
         setMobjState(*th, StateNum::Puff3);
 }
 
 //
 // spawnBlood
 //
-void spawnBlood(fixed_t x, fixed_t y, fixed_t z, int damage)
+void spawnBlood(Fixed x, Fixed y, Fixed z, int damage)
 {
     z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
     Mobj* th = spawnMobj(x, y, z, MobjType::Blood);
@@ -828,17 +826,17 @@ Mobj* spawnMissile(Mobj& source, Mobj* dest, MobjType type)
         startSound(th, th->info->seesound);
 
     th->target = &source; // where it came from
-    angle_t an = pointToAngle2(source.x, source.y, dest->x, dest->y);
+    Angle an = pointToAngle2(source.x, source.y, dest->x, dest->y);
 
     // fuzzy player
     if (hasFlag(dest->flags, MobjFlag::Shadow))
-        an += angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay())
-                       << 20};
+        an += Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                     << 20};
 
     th->angle = an;
     const auto anFine = an.fineIndex();
-    th->momx = FixedMul(Fixed {th->info->speed}, finecosine[anFine]);
-    th->momy = FixedMul(Fixed {th->info->speed}, finesine[anFine]);
+    th->momx = FixedMul(Fixed {th->info->speed}, finecosine()[anFine]);
+    th->momy = FixedMul(Fixed {th->info->speed}, finesine()[anFine]);
 
     // dist is vanilla's tic count, not a length: the raw distance divided by the
     // missile's raw speed as plain integers, then used as the divisor for momz.
@@ -861,19 +859,19 @@ Mobj* spawnMissile(Mobj& source, Mobj* dest, MobjType type)
 void spawnPlayerMissile(Mobj& source, MobjType type)
 {
     // see which target is to be aimed at
-    angle_t an = source.angle;
+    Angle an = source.angle;
     auto aim = aimLineAttack(&source, an, 16 * 64 * FRACUNIT);
-    fixed_t slope = aim.slope;
+    Fixed slope = aim.slope;
 
     if (!aim.target)
     {
-        an += angle_t {1u << 26};
+        an += Angle {1u << 26};
         aim = aimLineAttack(&source, an, 16 * 64 * FRACUNIT);
         slope = aim.slope;
 
         if (!aim.target)
         {
-            an -= angle_t {2u << 26};
+            an -= Angle {2u << 26};
             aim = aimLineAttack(&source, an, 16 * 64 * FRACUNIT);
             slope = aim.slope;
         }
@@ -881,13 +879,13 @@ void spawnPlayerMissile(Mobj& source, MobjType type)
         if (!aim.target)
         {
             an = source.angle;
-            slope = fixed_t {};
+            slope = Fixed {};
         }
     }
 
-    fixed_t x = source.x;
-    fixed_t y = source.y;
-    fixed_t z = source.z + 4 * 8 * FRACUNIT;
+    Fixed x = source.x;
+    Fixed y = source.y;
+    Fixed z = source.z + 4 * 8 * FRACUNIT;
 
     Mobj* th = spawnMobj(x, y, z, type);
 
@@ -896,8 +894,8 @@ void spawnPlayerMissile(Mobj& source, MobjType type)
 
     th->target = &source;
     th->angle = an;
-    th->momx = FixedMul(Fixed {th->info->speed}, finecosine[an.fineIndex()]);
-    th->momy = FixedMul(Fixed {th->info->speed}, finesine[an.fineIndex()]);
+    th->momx = FixedMul(Fixed {th->info->speed}, finecosine()[an.fineIndex()]);
+    th->momy = FixedMul(Fixed {th->info->speed}, finesine()[an.fineIndex()]);
     th->momz = FixedMul(Fixed {th->info->speed}, slope);
 
     checkMissileSpawn(th);

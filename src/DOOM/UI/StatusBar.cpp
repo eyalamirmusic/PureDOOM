@@ -71,9 +71,6 @@
 
 #include <algorithm>
 
-// doom_flags is another subsystem's global this file reads.
-extern int doom_flags;
-
 //
 // STATUS BAR DATA
 //
@@ -204,11 +201,11 @@ constexpr int ST_MAXAMMO3WIDTH = ST_MAXAMMO0WIDTH;
 constexpr int ST_MAXAMMO3X = 314;
 constexpr int ST_MAXAMMO3Y = 185;
 
-// The status bar's residual runtime state is a Doom::StatusBarState owned by the Engine
-// (StatusBarState.h); the loaded patches are a Doom::StatusBarGraphics (StatusBarGraphics.h,
+// The status bar's residual runtime state is a StatusBarState owned by the Engine
+// (StatusBarState.h); the loaded patches are a StatusBarGraphics (StatusBarGraphics.h,
 // faces[ST_NUMFACES] sized off the same ST_NUMFACES macro); the STlib widgets are a
-// Doom::StatusBarWidgets (StatusBarWidgets.h); and the animated face's selection state is a
-// Doom::StatusBarFace (StatusBarFace.h). All four used to be reached through file-scope
+// StatusBarWidgets (StatusBarWidgets.h); and the animated face's selection state is a
+// StatusBarFace (StatusBarFace.h). All four used to be reached through file-scope
 // `static T& x = cluster().x;` reference aliases (moved in by the file-scope-statics sweep,
 // REFACTOR.md Step 5); the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them -
 // every function below reaches its cluster(s) through a hoisted local instead, taken once per
@@ -537,7 +534,7 @@ bool statusBarResponder(Event& ev)
 
 int calcPainOffset()
 {
-    // The pain-offset cache: Doom::StatusBarFace members (Engine) now, reached by a local
+    // The pain-offset cache: StatusBarFace members (Engine) now, reached by a local
     // reference (formerly function-local statics, never reset - identical persistence).
     int& lastcalc = statusBarFace().lastcalc;
     int& oldhealth = statusBarFace().oldhealth;
@@ -562,8 +559,8 @@ int calcPainOffset()
 void updateFaceWidget()
 {
     int i;
-    angle_t diffang;
-    // The face state machine's carry: Doom::StatusBarFace members (Engine) now, reached by a
+    Angle diffang;
+    // The face state machine's carry: StatusBarFace members (Engine) now, reached by a
     // hoisted local (formerly function-local statics, never reset - identical persistence).
     auto& face = statusBarFace();
     auto& bar = statusBarState();
@@ -619,10 +616,10 @@ void updateFaceWidget()
             }
             else
             {
-                angle_t badguyangle = pointToAngle2(bar.plyr->mo->x,
-                                                    bar.plyr->mo->y,
-                                                    bar.plyr->attacker->x,
-                                                    bar.plyr->attacker->y);
+                Angle badguyangle = pointToAngle2(bar.plyr->mo->x,
+                                                  bar.plyr->mo->y,
+                                                  bar.plyr->attacker->x,
+                                                  bar.plyr->attacker->y);
 
                 if (badguyangle > bar.plyr->mo->angle)
                 {
@@ -725,17 +722,17 @@ void updateFaceWidget()
 void updateWidgets()
 {
     auto& bar = statusBarState();
-    // The "n/a" ammo sentinel: a Doom::StatusBarWidgets member (Engine) now, reached through the
+    // The "n/a" ammo sentinel: a StatusBarWidgets member (Engine) now, reached through the
     // hoisted cluster (w_ready.num takes its address, so the member's stable address is what it
     // needs).
     auto& widgets = statusBarWidgets();
 
-    if (weaponinfo[toIndex(bar.plyr->readyweapon)].ammo == AmmoType::NoAmmo)
+    if (weaponinfo()[toIndex(bar.plyr->readyweapon)].ammo == AmmoType::NoAmmo)
         widgets.w_ready.num = &widgets.largeammo;
     else
         widgets.w_ready.num =
             &bar.plyr
-                 ->ammo[toIndex(weaponinfo[toIndex(bar.plyr->readyweapon)].ammo)];
+                 ->ammo[toIndex(weaponinfo()[toIndex(bar.plyr->readyweapon)].ammo)];
 
     widgets.w_ready.data = toIndex(bar.plyr->readyweapon);
 
@@ -900,7 +897,7 @@ void drawStatusBar(bool fullscreen, bool refresh)
     doPaletteStuff();
 
     // If just after startStatusBar(), refresh all
-    if (doom_flags & DOOM_FLAG_MENU_DARKEN_BG)
+    if (host().flags & DOOM_FLAG_MENU_DARKEN_BG)
     {
         doRefresh();
     }
@@ -992,7 +989,7 @@ void loadData()
 
 void unloadGraphics()
 {
-    // Nothing to unload any more: Doom::WadFile owns the lumps and they are
+    // Nothing to unload any more: WadFile owns the lumps and they are
     // permanent (Wad/WadFile.h). This used to hand each patch back to the zone
     // as PU_CACHE, meaning "purge me if you need the space".
 }
@@ -1037,7 +1034,7 @@ void createWidgets()
         ST_AMMOX,
         ST_AMMOY,
         gfx.tallnum.data(),
-        &bar.plyr->ammo[toIndex(weaponinfo[toIndex(bar.plyr->readyweapon)].ammo)],
+        &bar.plyr->ammo[toIndex(weaponinfo()[toIndex(bar.plyr->readyweapon)].ammo)],
         &bar.st_statusbaron,
         ST_AMMOWIDTH);
 
@@ -1218,7 +1215,7 @@ void initStatusBar()
     // screens[4] is the raw view onto its data(). initStatusBar runs once at boot.
     auto& statusBar = videoState().statusBar;
     statusBar.resize(ST_WIDTH * ST_HEIGHT);
-    screens[4] = statusBar.data();
+    videoState().screens[4] = statusBar.data();
 }
 
 } // namespace Doom

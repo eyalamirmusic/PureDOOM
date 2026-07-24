@@ -1,16 +1,16 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/FixedPoint.h" // Doom::Fixed
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // VisPlane
-#include "../Math/TrigTables.h" // angle_t
+#include "../Math/TrigTables.h" // Doom::Angle
 
 namespace Doom
 {
 // The transient state of the frame in progress, overwritten continuously as the BSP is
 // walked and never persisted: the current wall segment's projection (rw_distance and
-// the angles Doom::storeWallRange derives, read back by the seg loop), and the floor and ceiling
-// visplanes the current subsector is drawing into (Doom::subsector picks them, the plane
+// the angles storeWallRange derives, read back by the seg loop), and the floor and ceiling
+// visplanes the current subsector is drawing into (subsector picks them, the plane
 // code fills them). It is pure scratch - every reader writes
 // it just before, so its value between frames means nothing.
 //
@@ -19,15 +19,15 @@ namespace Doom
 // with no reader outside the renderer; the storage moves off the r_segs.cpp / r_plane.cpp
 // / r_main.cpp file-scope globals and the vanilla names are references onto these
 // members. Nothing here is hashed (and being scratch it could not meaningfully be), so
-// gathering it is golden-neutral. sscount, the subsector counter Doom::subsector bumped,
+// gathering it is golden-neutral. sscount, the subsector counter subsector bumped,
 // was deleted in a later audit: incremented once a subsector but read nowhere, in vanilla
 // too (matching AutomapView::min_w/min_h and WeaponScratch::swingx/swingy).
 struct RenderScratch
 {
     // The current wall segment: its distance and the angles the seg loop reads back.
-    fixed_t rw_distance {};
-    angle_t rw_normalangle {};
-    angle_t rw_angle1 {}; // angle to the line origin
+    Fixed rw_distance {};
+    Angle rw_normalangle {};
+    Angle rw_angle1 {}; // angle to the line origin
 
     // The visplanes the current subsector draws its floor and ceiling into.
     VisPlane* floorplane = nullptr;
@@ -35,7 +35,7 @@ struct RenderScratch
 };
 
 // The one RenderScratch, a view onto the Engine's member - the same pattern as
-// graphicsData(), lighting(), viewWindow(), viewProjection(), viewPoint(), clip(),
+// graphicsData(), lighting(), viewWindow(), viewProjection(), viewPoint(), clipping(),
 // level(), wad() and randomness().
 RenderScratch& renderScratch();
 } // namespace Doom

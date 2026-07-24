@@ -20,7 +20,7 @@ namespace Doom
 // Moved off the loose globals into the Engine (REFACTOR.md, Step 5). Both were defined in
 // Game/Game.cpp (bodyqueslot externed in doomstat.h, bodyque[] file-local there); the vanilla
 // names become references onto these members, bodyque[] as a reference-to-array. bodyqueslot's
-// Doom::setupLevel reset (`bodyqueslot = 0`) is on the demos' level-load path, so a reference
+// setupLevel reset (`bodyqueslot = 0`) is on the demos' level-load path, so a reference
 // reads the identical value and the move is golden-neutral.
 struct CorpseQueue
 {

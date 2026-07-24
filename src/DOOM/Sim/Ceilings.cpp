@@ -197,7 +197,7 @@ int doCeiling(Line& line, CeilingType type)
 
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        Sector* sec = &sectors[secnum];
+        Sector* sec = &level().sectors[secnum];
         if (sec->specialdata)
             continue;
 

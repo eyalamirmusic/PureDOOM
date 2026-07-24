@@ -9,8 +9,8 @@ namespace Doom
 {
 // Floor thinkers and handlers; p_floor.cpp keeps the vanilla names as shims.
 MoveResult movePlane(Sector& sector,
-                     fixed_t speed,
-                     fixed_t dest,
+                     Fixed speed,
+                     Fixed dest,
                      bool crush,
                      int floorOrCeiling,
                      int direction);

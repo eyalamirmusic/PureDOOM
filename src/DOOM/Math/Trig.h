@@ -34,29 +34,37 @@ constexpr auto fineTangentCount = fineAngles / 2;
 // rather than in the table. Wrapping sixteen thousand literals in `Fixed {...}`
 // would be a sixteen-thousand-line diff on data whose whole point is that it has
 // not changed - and it is the data, not its spelling, that the demos replay
-// through. The tables are `const` and defined once, not `constexpr` in a header:
-// they are read at runtime, and a header copy in each of sixty translation units
-// buys nothing and costs compile time.
-extern const Array<std::int32_t, fineSineCount> fineSineTable;
-extern const Array<std::int32_t, fineTangentCount> fineTangentTable;
+// through. The tables are `const` and defined once in Math/Trig.cpp, not
+// `constexpr` in a header: they are read at runtime, and a header copy in each of
+// sixty translation units buys nothing and costs compile time. `const` at
+// namespace scope has internal linkage, so the three tables are file-local to
+// Trig.cpp (which is the only reader) and need no declaration here.
 
-// Maps a slope to the angle that has it. The +1 entry is there so that the x == y
-// case needs no extra check.
-extern const Array<std::uint32_t, slopeRange + 1> tanToAngleTable;
+// The typed views onto those tables - a `const T*` reinterpreting the raw words as
+// Fixed / Angle. Free functions (defined in Trig.cpp, where the tables live)
+// because the tables are file-local there; they were four `extern const T*` globals
+// the whole engine indexed as finesine[i]. finecosine() is finesine() advanced a
+// quarter circle, which is why finesine's table is 5/4 of a circle long.
+const Fixed* finesine();
+const Fixed* finecosine();
+const Fixed* finetangent();
+const Angle* tantoangle();
 
+// The typed lookups the engine reads a single entry through. Thin spellings over
+// the views above, so they need no direct sight of the tables.
 inline Fixed fineSine(int fineIndex)
 {
-    return Fixed {fineSineTable[fineIndex]};
+    return finesine()[fineIndex];
 }
 
 inline Fixed fineCosine(int fineIndex)
 {
-    return Fixed {fineSineTable[fineIndex + fineAngles / 4]};
+    return finecosine()[fineIndex];
 }
 
 inline Fixed fineTangent(int fineIndex)
 {
-    return Fixed {fineTangentTable[fineIndex]};
+    return finetangent()[fineIndex];
 }
 
 inline Fixed sine(Angle angle)
@@ -70,7 +78,7 @@ inline Fixed cosine(Angle angle)
 
 inline Angle tanToAngle(int slope)
 {
-    return Angle {tanToAngleTable[slope]};
+    return tantoangle()[slope];
 }
 
 // Turns a slope into an index into tanToAngleTable.
@@ -78,7 +86,7 @@ inline Angle tanToAngle(int slope)
 // It gives up on any denominator under 512 and answers slopeRange - the steepest
 // slope it can name - whatever the numerator, so slopeDiv(0, 1) is 2048 and not
 // 0. That reads as a bug and is not one: the result indexes tanToAngleTable, the
-// guard is what keeps the index inside it, and Doom::pointToAngle only ever calls it
+// guard is what keeps the index inside it, and pointToAngle only ever calls it
 // with a denominator it has already made large.
 int slopeDiv(unsigned num, unsigned den);
 } // namespace Doom

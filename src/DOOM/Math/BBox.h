@@ -10,7 +10,7 @@ namespace Doom
 // An axis-aligned bounding box, as the blockmap, the BSP and every collision
 // check use one.
 //
-// Vanilla spells this as a bare fixed_t[4] indexed by BOXTOP/BOXBOTTOM/BOXLEFT/
+// Vanilla spells this as a bare Fixed[4] indexed by BOXTOP/BOXBOTTOM/BOXLEFT/
 // BOXRIGHT, which is why so much of the engine passes bounding boxes around as
 // naked pointers. It is the same four numbers, in the same order, so a BBox and a
 // vanilla box are layout-compatible - which is what lets the two coexist while
@@ -39,9 +39,9 @@ struct BBox
     // box and vanilla moves `left` and leaves `right` at its sentinel, because
     // the point cannot be both below the minimum and above the maximum in one
     // call. Add points in descending x and `right` is never written at all. The
-    // engine gets away with it - Doom::groupLines feeds it whole linedefs, and
-    // Doom::markRect feeds it a top-left then a bottom-right - but "gets away with"
-    // is not "does not depend on", and min/max here changes what Doom::groupLines
+    // engine gets away with it - groupLines feeds it whole linedefs, and
+    // markRect feeds it a top-left then a bottom-right - but "gets away with"
+    // is not "does not depend on", and min/max here changes what groupLines
     // computes for a sector's bounding box, which changes what the renderer and
     // P_BlockLinesIterator see.
     //
@@ -60,15 +60,15 @@ struct BBox
     }
 };
 
-// The vanilla index names for a bare fixed_t[4] box, and the bridge onto BBox.
+// The vanilla index names for a bare Fixed[4] box, and the bridge onto BBox.
 //
-// Vanilla passes boxes around as a fixed_t[4] indexed by these, and half the engine
+// Vanilla passes boxes around as a Fixed[4] indexed by these, and half the engine
 // still holds them that way - a sector's bbox, a linedef's, the blockmap's. (The
-// element type is spelled std::int32_t rather than the vanilla fixed_t so Math/ stays
+// element type is spelled std::int32_t rather than the vanilla Fixed so Math/ stays
 // free of the vanilla headers; they are the same type.) BBox has
 // the same four numbers in the same order (asserted in BBox.cpp), so the bridge can
-// reinterpret rather than copy. Scaffolding: it goes when the last fixed_t[4] does.
-// Positions within that fixed_t[4], not a type: nothing ever declares a variable
+// reinterpret rather than copy. Scaffolding: it goes when the last Fixed[4] does.
+// Positions within that Fixed[4], not a type: nothing ever declares a variable
 // of this kind, they only ever subscript the raw array. So they are constants
 // rather than an enum class, which would need a cast at all 100+ subscripts and
 // buy no type safety on a C array.

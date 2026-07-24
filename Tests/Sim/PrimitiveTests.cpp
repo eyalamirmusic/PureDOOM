@@ -78,9 +78,9 @@ void checkTable(std::string_view table, const Checksum& sum, std::uint64_t expec
 
 auto tFixedMulIdentity = test("Fixed/mulByOneIsIdentity") = []
 {
-    check(FixedMul(fixed_t {12345}, one) == fixed_t {12345});
-    check(FixedMul(one, fixed_t {12345}) == fixed_t {12345});
-    check(FixedMul(fixed_t {-12345}, one) == fixed_t {-12345});
+    check(FixedMul(Doom::Fixed {12345}, one) == Doom::Fixed {12345});
+    check(FixedMul(one, Doom::Fixed {12345}) == Doom::Fixed {12345});
+    check(FixedMul(Doom::Fixed {-12345}, one) == Doom::Fixed {-12345});
 };
 
 auto tFixedMulHalves = test("Fixed/mulHalves") = []
@@ -99,7 +99,7 @@ auto tFixedMulDoesNotOverflowMidway = test("Fixed/mulWidensTo64Bit") = []
 
 auto tFixedDivIdentity = test("Fixed/divByOneIsIdentity") = []
 {
-    check(FixedDiv(fixed_t {12345}, one) == fixed_t {12345});
+    check(FixedDiv(Doom::Fixed {12345}, one) == Doom::Fixed {12345});
     check(FixedDiv(one, one) == one);
 };
 
@@ -115,14 +115,14 @@ auto tFixedDivHalves = test("Fixed/divHalves") = []
 // how a divide by a near-zero denominator stays finite instead of trapping.
 auto tFixedDivSaturates = test("Fixed/divSaturatesRatherThanOverflowing") = []
 {
-    check(FixedDiv(one, fixed_t {1}) == fixed_t {DOOM_MAXINT});
-    check(FixedDiv(-one, fixed_t {1}) == fixed_t {DOOM_MININT});
-    check(FixedDiv(one, fixed_t {-1}) == fixed_t {DOOM_MININT});
+    check(FixedDiv(one, Doom::Fixed {1}) == Doom::Fixed {DOOM_MAXINT});
+    check(FixedDiv(-one, Doom::Fixed {1}) == Doom::Fixed {DOOM_MININT});
+    check(FixedDiv(one, Doom::Fixed {-1}) == Doom::Fixed {DOOM_MININT});
 };
 
 // Dividing and multiplying back is lossy - there are only 16 bits of fraction to
 // round into - but it must be lossy by a hair, not by a unit of world space. A
-// fixed_t unit is 1/65536 of a map unit; the player is 32 map units wide.
+// Doom::Fixed unit is 1/65536 of a map unit; the player is 32 map units wide.
 auto tFixedRoundTripLosesAlmostNothing = test("Fixed/mulAndDivRoundTrip") = []
 {
     for (auto value = one; value < 100 * one; value += 7 * one)
@@ -132,7 +132,7 @@ auto tFixedRoundTripLosesAlmostNothing = test("Fixed/mulAndDivRoundTrip") = []
             auto back = FixedMul(FixedDiv(value, divisor), divisor);
             auto lost = back > value ? back - value : value - back;
 
-            check(lost <= fixed_t {8});
+            check(lost <= Doom::Fixed {8});
         }
     }
 };
@@ -177,7 +177,7 @@ auto tRandomAdvancesBeforeReading = test("Random/advancesBeforeReading") = []
 
     Doom::randomness().forPlay();
     check(Doom::randomness().playIndex == 1);
-    check(rndtable[1] == 8);
+    check(Doom::rndtable()[1] == 8);
 };
 
 // The index wraps at 256 and the sequence repeats exactly.
@@ -231,9 +231,9 @@ auto tClearRandomResetsBoth = test("Random/clearResetsBoth") = []
 
 auto tFineCosineIsFineSineShifted = test("Tables/cosineIsSineQuarterTurnOn") = []
 {
-    // Not an accident of layout but the definition: finecosine points a quarter
-    // of a circle into finesine, which is why finesine is 5/4 of a table long.
-    check(finecosine == finesine + Doom::fineAngles / 4);
+    // Not an accident of layout but the definition: Doom::finecosine() points a quarter
+    // of a circle into Doom::finesine(), which is why Doom::finesine() is 5/4 of a table long.
+    check(Doom::finecosine() == Doom::finesine() + Doom::fineAngles / 4);
 };
 
 // The table is sampled at the CENTRE of each fine-angle bucket, not at its edge:
@@ -248,23 +248,26 @@ auto tFineCosineIsFineSineShifted = test("Tables/cosineIsSineQuarterTurnOn") = [
 auto tFineSineIsSampledAtBucketCentres =
     test("Tables/sineIsSampledAtBucketCentres") = []
 {
-    check(finesine[0] == fixed_t {25}); // sin(~0.02 deg)
-    check(finesine[Doom::fineAngles / 4]
-          == fixed_t {65535}); // sin(~90 deg), not 65536
-    check(finesine[Doom::fineAngles / 2] == fixed_t {-25}); // sin(~180 deg)
-    check(finesine[3 * Doom::fineAngles / 4] == fixed_t {-65535}); // sin(~270 deg)
+    check(Doom::finesine()[0] == Doom::Fixed {25}); // sin(~0.02 deg)
+    check(Doom::finesine()[Doom::fineAngles / 4]
+          == Doom::Fixed {65535}); // sin(~90 deg), not 65536
+    check(Doom::finesine()[Doom::fineAngles / 2]
+          == Doom::Fixed {-25}); // sin(~180 deg)
+    check(Doom::finesine()[3 * Doom::fineAngles / 4]
+          == Doom::Fixed {-65535}); // sin(~270 deg)
 
-    check(finecosine[0] == fixed_t {65535}); // cos(~0 deg)
-    check(finecosine[Doom::fineAngles / 4] == fixed_t {-25}); // cos(~90 deg)
+    check(Doom::finecosine()[0] == Doom::Fixed {65535}); // cos(~0 deg)
+    check(Doom::finecosine()[Doom::fineAngles / 4]
+          == Doom::Fixed {-25}); // cos(~90 deg)
 
     // Near enough to the real thing to be the real thing, one part in 65536.
-    check(finesine[Doom::fineAngles / 4] > FRACUNIT - fixed_t {4});
+    check(Doom::finesine()[Doom::fineAngles / 4] > FRACUNIT - Doom::Fixed {4});
 };
 
 auto tFineSineStaysInUnitRange = test("Tables/sineStaysInUnitRange") = []
 {
     for (auto i = 0; i < Doom::fineAngles; ++i)
-        check(finesine[i] >= -FRACUNIT && finesine[i] <= FRACUNIT);
+        check(Doom::finesine()[i] >= -FRACUNIT && Doom::finesine()[i] <= FRACUNIT);
 };
 
 auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []
@@ -273,9 +276,9 @@ auto tTanToAngleIsMonotonic = test("Tables/tanToAngleIsMonotonic") = []
     // steeper slope is always a wider angle. Doom::pointToAngle indexes straight
     // into it and would aim the player wrongly if it did.
     for (auto i = 1; i <= Doom::slopeRange; ++i)
-        check(tantoangle[i] >= tantoangle[i - 1]);
+        check(Doom::tantoangle()[i] >= Doom::tantoangle()[i - 1]);
 
-    check(tantoangle[0] == angle_t {0});
+    check(Doom::tantoangle()[0] == Doom::Angle {0});
 };
 
 // Doom::slopeDiv gives up rather than divide by anything under 512 - it answers
@@ -296,7 +299,7 @@ auto tSlopeDivGivesUpOnSmallDenominators =
 
 auto tSlopeDivStaysInTable = test("Tables/slopeDivStaysInTable") = []
 {
-    // Whatever it is handed, the answer must index tantoangle, whose last entry
+    // Whatever it is handed, the answer must index Doom::tantoangle(), whose last entry
     // is Doom::slopeRange. Anything past that reads off the end of the table.
     check(Doom::slopeDiv(1000000, 512) == Doom::slopeRange);
     check(Doom::slopeDiv(1, 1000000) == 0);
@@ -314,12 +317,12 @@ auto tSlopeDivStaysInTable = test("Tables/slopeDivStaysInTable") = []
 // it. It is not a bug to be fixed: the monsters' behaviour is tuned to it.
 auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
 {
-    auto distance = [](fixed_t dx, fixed_t dy)
+    auto distance = [](Doom::Fixed dx, Doom::Fixed dy)
     { return Doom::approxDistance(dx, dy); };
 
-    check(distance(3 * one, fixed_t {}) == 3 * one);
-    check(distance(fixed_t {}, 3 * one) == 3 * one);
-    check(distance(-3 * one, fixed_t {}) == 3 * one);
+    check(distance(3 * one, Doom::Fixed {}) == 3 * one);
+    check(distance(Doom::Fixed {}, 3 * one) == 3 * one);
+    check(distance(-3 * one, Doom::Fixed {}) == 3 * one);
 
     // The diagonal: dx + dy - min/2, not the hypotenuse. A true 3-4-5 triangle
     // would give 5; this gives 3 + 4 - 3/2 = 5.5.
@@ -336,21 +339,21 @@ auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
 // replay: it is what the recorded demos were aimed with.
 auto tPointToAngleCardinals = test("Geometry/pointToAngleCardinals") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, fixed_t {})
-          == angle_t {}); // east, exact
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, one)
-          == Doom::ang90 - angle_t {1}); // north
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, fixed_t {})
-          == Doom::ang180 - angle_t {1}); // west
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, fixed_t {}, -one)
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, Doom::Fixed {})
+          == Doom::Angle {}); // east, exact
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, Doom::Fixed {}, one)
+          == Doom::ang90 - Doom::Angle {1}); // north
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, Doom::Fixed {})
+          == Doom::ang180 - Doom::Angle {1}); // west
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, Doom::Fixed {}, -one)
           == Doom::ang270); // south, exact
 };
 
 auto tPointToAngleDiagonal = test("Geometry/pointToAngleDiagonal") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one)
-          == Doom::ang45 - angle_t {1});
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one)
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, one)
+          == Doom::ang45 - Doom::Angle {1});
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, one)
           == Doom::ang90 + Doom::ang45);
 };
 
@@ -358,23 +361,28 @@ auto tPointToAngleDiagonal = test("Geometry/pointToAngleDiagonal") = []
 // quadrants - this is the property a rewrite would actually break.
 auto tPointToAngleQuadrants = test("Geometry/pointToAngleQuadrants") = []
 {
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, one) < Doom::ang90); // NE
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one)
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, one)
+          < Doom::ang90); // NE
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, one)
           > Doom::ang90); // NW
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, one) < Doom::ang180);
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, -one)
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, one)
+          < Doom::ang180);
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, -one)
           > Doom::ang180); // SW
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, -one, -one) < Doom::ang270);
-    check(Doom::pointToAngle2(fixed_t {}, fixed_t {}, one, -one)
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, -one)
+          < Doom::ang270);
+    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, -one)
           > Doom::ang270); // SE
 };
 
 // The same point is no angle at all, rather than an out-of-range index.
 auto tPointToAngleDegenerate = test("Geometry/pointToAngleAtSamePoint") = []
 {
-    check(Doom::pointToAngle2(
-              fixed_t {100}, fixed_t {100}, fixed_t {100}, fixed_t {100})
-          == angle_t {});
+    check(Doom::pointToAngle2(Doom::Fixed {100},
+                              Doom::Fixed {100},
+                              Doom::Fixed {100},
+                              Doom::Fixed {100})
+          == Doom::Angle {});
 };
 
 // ---------------------------------------------------------------------------
@@ -396,7 +404,7 @@ auto tFineSineTableIsIntact = test("Tables/fineSineIsIntact") = []
     auto sum = Checksum {};
 
     for (auto i = 0; i < 5 * Doom::fineAngles / 4; ++i)
-        sum << finesine[i].raw;
+        sum << Doom::finesine()[i].raw;
 
     checkTable("finesine", sum, 0xd68e94130bb61a68ULL);
 };
@@ -406,7 +414,7 @@ auto tFineTangentTableIsIntact = test("Tables/fineTangentIsIntact") = []
     auto sum = Checksum {};
 
     for (auto i = 0; i < Doom::fineAngles / 2; ++i)
-        sum << finetangent[i].raw;
+        sum << Doom::finetangent()[i].raw;
 
     checkTable("finetangent", sum, 0xa0ba8deb9438b0dbULL);
 };
@@ -416,7 +424,7 @@ auto tTanToAngleTableIsIntact = test("Tables/tanToAngleIsIntact") = []
     auto sum = Checksum {};
 
     for (auto i = 0; i <= Doom::slopeRange; ++i)
-        sum << tantoangle[i].raw;
+        sum << Doom::tantoangle()[i].raw;
 
     checkTable("tantoangle", sum, 0x373392e3c4a34270ULL);
 };
@@ -426,7 +434,7 @@ auto tRandomTableIsIntact = test("Random/tableIsIntact") = []
     auto sum = Checksum {};
 
     for (auto i = 0; i < 256; ++i)
-        sum << rndtable[i];
+        sum << Doom::rndtable()[i];
 
     checkTable("rndtable", sum, 0xff36db03f01bc0f7ULL);
 };
@@ -440,7 +448,7 @@ auto tStateTableIsIntact = test("Info/stateTableIsIntact") = []
 
     for (auto i = 0; i < Doom::numStates; ++i)
     {
-        const auto& state = states[i];
+        const auto& state = Doom::states()[i];
 
         // The enum-typed fields are mixed as their integer values, exactly as they
         // were when they were plain enums - so the golden checksum below is
@@ -458,7 +466,7 @@ auto tMobjInfoTableIsIntact = test("Info/mobjInfoTableIsIntact") = []
 
     for (auto i = 0; i < Doom::numMobjTypes; ++i)
     {
-        const auto& info = mobjinfo[i];
+        const auto& info = Doom::mobjinfo()[i];
 
         // As above: enum-typed fields mixed as their integer values, so the golden
         // checksum is unchanged by the conversion.

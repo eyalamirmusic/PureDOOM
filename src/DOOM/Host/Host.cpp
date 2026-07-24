@@ -96,7 +96,7 @@ Host::Host()
     static_assert(toIndex(SeekOrigin::Set) == SEEK_SET
                       && toIndex(SeekOrigin::Current) == SEEK_CUR
                       && toIndex(SeekOrigin::End) == SEEK_END,
-                  "Doom::SeekOrigin must match the C library's SEEK_* values");
+                  "SeekOrigin must match the C library's SEEK_* values");
 
     seek = [](void* handle, int offset, SeekOrigin origin)
     { return std::fseek(static_cast<FILE*>(handle), offset, toIndex(origin)); };

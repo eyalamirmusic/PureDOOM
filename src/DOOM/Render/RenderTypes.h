@@ -87,18 +87,18 @@ struct DrawSeg
     int x1;
     int x2;
 
-    fixed_t scale1;
-    fixed_t scale2;
-    fixed_t scalestep;
+    Fixed scale1;
+    Fixed scale2;
+    Fixed scalestep;
 
     // 0=none, 1=bottom, 2=top, 3=both
     int silhouette;
 
     // do not clip sprites above this
-    fixed_t bsilheight;
+    Fixed bsilheight;
 
     // do not clip sprites below this
-    fixed_t tsilheight;
+    Fixed tsilheight;
 
     // Pointers to lists for sprite clipping,
     //  all three adjusted so [x1] is first value.
@@ -141,22 +141,22 @@ struct VisSprite
     int x2;
 
     // for line side calculation
-    fixed_t gx;
-    fixed_t gy;
+    Fixed gx;
+    Fixed gy;
 
     // global bottom / top for silhouette clipping
-    fixed_t gz;
-    fixed_t gzt;
+    Fixed gz;
+    Fixed gzt;
 
     // horizontal position of x1
-    fixed_t startfrac;
+    Fixed startfrac;
 
-    fixed_t scale;
+    Fixed scale;
 
     // negative if flipped
-    fixed_t xiscale;
+    Fixed xiscale;
 
-    fixed_t texturemid;
+    Fixed texturemid;
     int patch;
 
     // for color translation and shadow draw,
@@ -200,7 +200,7 @@ struct SpriteFrame
     // relies on the third state - it tests the two real values separately, and a
     // frame that is still -1 must match neither. As a C++ bool the -1 would read
     // back as true, every sprite with rotations would look like a frame that
-    // already had a rot=0 lump, and the engine would Doom::fatalError on the very
+    // already had a rot=0 lump, and the engine would fatalError on the very
     // first one it loaded (TROO frame I).
     //
     // Those tests were spelled `== false` and `== true` until MSVC objected to
@@ -240,7 +240,7 @@ namespace Doom
 {
 struct VisPlane
 {
-    fixed_t height;
+    Fixed height;
     int picnum;
     int lightlevel;
     int minx;

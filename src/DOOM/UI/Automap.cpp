@@ -32,6 +32,8 @@
 #include "../Host/Platform.h"
 #include "../Sim/Level.h"
 
+#include <span>
+
 #include "AutomapTypes.h"
 #include "../Game/GameDefs.h"
 #include "../Game/MapSpawns.h" // State (automapactive, viewactive).
@@ -81,38 +83,40 @@ constexpr int AM_GRIDKEY = 'g';
 constexpr int AM_MARKKEY = 'm';
 constexpr int AM_CLEARMARKKEY = 'c';
 
-// scale on entry
-constexpr fixed_t INITSCALEMTOF {(std::int32_t) (.2 * FRACUNIT.raw)};
+// INITSCALEMTOF, the scale on entry, moved to UI/AutomapView.h - AutomapView's
+// scale_mtof member is initialised from it, and a header cannot read a constant
+// that is file-local here.
 // how much the automap moves window per tic in frame-buffer coordinates
 // moves 140 pixels in 1 second
 constexpr int F_PANINC = 4;
 // how much zoom-in per tic
 // goes to 2x in 1 second
-constexpr fixed_t M_ZOOMIN {(std::int32_t) (1.02 * FRACUNIT.raw)};
+constexpr Fixed M_ZOOMIN {(std::int32_t) (1.02 * FRACUNIT.raw)};
 // how much zoom-out per tic
 // pulls out to 0.5x in 1 second
-constexpr fixed_t M_ZOOMOUT {(std::int32_t) (FRACUNIT.raw / 1.02)};
+constexpr Fixed M_ZOOMOUT {(std::int32_t) (FRACUNIT.raw / 1.02)};
 
 // translates between frame-buffer and map distances
-static inline fixed_t frameToMap(const AutomapView& view, int x)
+static inline Fixed frameToMap(const AutomapView& view, int x)
 {
     return FixedMul(Fixed::fromInt(x), view.scale_ftom);
 }
 
-static inline int mapToFrame(fixed_t x)
+static inline int mapToFrame(Fixed x)
 {
-    return FixedMul(x, scale_mtof).toInt();
+    return FixedMul(x, automapView().scale_mtof).toInt();
 }
 
 // translates between frame-buffer and map coordinates
-static inline int mapXToFrame(fixed_t x)
+static inline int mapXToFrame(Fixed x)
 {
-    return f_x + mapToFrame(x - m_x);
+    return automapView().f_x + mapToFrame(x - automapView().m_x);
 }
 
-static inline int mapYToFrame(fixed_t y)
+static inline int mapYToFrame(Fixed y)
 {
-    return f_y + (f_h - mapToFrame(y - m_y));
+    return automapView().f_y
+           + (automapView().f_h - mapToFrame(y - automapView().m_y));
 }
 
 struct FPoint
@@ -127,7 +131,7 @@ struct FLine
 
 struct ISlope
 {
-    fixed_t slp, islp;
+    Fixed slp, islp;
 };
 
 //
@@ -137,10 +141,10 @@ struct ISlope
 //
 
 // Scale a double by the raw unit and truncate - what the old
-// static_cast<fixed_t>(-.867 * R) did when fixed_t was an int.
-static constexpr fixed_t amFixed(double value)
+// static_cast<Fixed>(-.867 * R) did when Fixed was an int.
+static constexpr Fixed amFixed(double value)
 {
-    return fixed_t {(std::int32_t) value};
+    return Fixed {(std::int32_t) value};
 }
 // The raw fixed-point unit, as an int32 and NOT a Fixed. Scale a `double`
 // literal by this and truncate with amFixed; scaling FRACUNIT itself converts
@@ -150,12 +154,10 @@ constexpr std::int32_t R_UNIT = FRACUNIT.raw;
 Array<MapLine, 3> triangle_guy = {
     {{amFixed(-.867 * R_UNIT), amFixed(-.5 * R_UNIT)},
      {amFixed(.867 * R_UNIT), amFixed(-.5 * R_UNIT)}},
-    {{amFixed(.867 * R_UNIT), amFixed(-.5 * R_UNIT)},
-     {fixed_t {}, fixed_t {R_UNIT}}},
-    {{fixed_t {}, fixed_t {R_UNIT}},
-     {amFixed(-.867 * R_UNIT), amFixed(-.5 * R_UNIT)}}};
+    {{amFixed(.867 * R_UNIT), amFixed(-.5 * R_UNIT)}, {Fixed {}, Fixed {R_UNIT}}},
+    {{Fixed {}, Fixed {R_UNIT}}, {amFixed(-.867 * R_UNIT), amFixed(-.5 * R_UNIT)}}};
 
-// The automap's internal view state is a Doom::AutomapView owned by the Engine (AutomapView.h). It
+// The automap's internal view state is a AutomapView owned by the Engine (AutomapView.h). It
 // used to be reached through file-scope `static T& x = automapView().x;` reference aliases (the
 // arrays as references-to-array), moved in by the file-scope-statics sweep (REFACTOR.md, Step 5);
 // the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - every function below
@@ -171,14 +173,14 @@ static CheatSequence cheat_amap = {{cheat_amap_seq}};
 // that it can be used with the brain-dead drawing stuff.
 void getIslope(const MapLine& ml, ISlope& is)
 {
-    fixed_t dy = ml.a.y - ml.b.y;
-    fixed_t dx = ml.b.x - ml.a.x;
+    Fixed dy = ml.a.y - ml.b.y;
+    Fixed dx = ml.b.x - ml.a.x;
     if (!dy)
-        is.islp = dx.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
+        is.islp = dx.isNegative() ? Fixed {-DOOM_MAXINT} : Fixed {DOOM_MAXINT};
     else
         is.islp = FixedDiv(dx, dy);
     if (!dx)
-        is.slp = dy.isNegative() ? fixed_t {-DOOM_MAXINT} : fixed_t {DOOM_MAXINT};
+        is.slp = dy.isNegative() ? Fixed {-DOOM_MAXINT} : Fixed {DOOM_MAXINT};
     else
         is.slp = FixedDiv(dy, dx);
 }
@@ -190,14 +192,14 @@ void activateNewScale()
 {
     auto& map = automapView();
 
-    m_x += m_w / 2;
-    m_y += m_h / 2;
-    m_w = frameToMap(map, f_w);
-    m_h = frameToMap(map, f_h);
-    m_x -= m_w / 2;
-    m_y -= m_h / 2;
-    map.m_x2 = m_x + m_w;
-    map.m_y2 = m_y + m_h;
+    automapView().m_x += automapView().m_w / 2;
+    automapView().m_y += automapView().m_h / 2;
+    automapView().m_w = frameToMap(map, automapView().f_w);
+    automapView().m_h = frameToMap(map, automapView().f_h);
+    automapView().m_x -= automapView().m_w / 2;
+    automapView().m_y -= automapView().m_h / 2;
+    map.m_x2 = automapView().m_x + automapView().m_w;
+    map.m_y2 = automapView().m_y + automapView().m_h;
 }
 
 //
@@ -207,10 +209,10 @@ void saveScaleAndLoc()
 {
     auto& map = automapView();
 
-    map.old_m_x = m_x;
-    map.old_m_y = m_y;
-    map.old_m_w = m_w;
-    map.old_m_h = m_h;
+    map.old_m_x = automapView().m_x;
+    map.old_m_y = automapView().m_y;
+    map.old_m_w = automapView().m_w;
+    map.old_m_h = automapView().m_h;
 }
 
 //
@@ -220,24 +222,25 @@ void restoreScaleAndLoc()
 {
     auto& map = automapView();
 
-    m_w = map.old_m_w;
-    m_h = map.old_m_h;
-    if (!followplayer)
+    automapView().m_w = map.old_m_w;
+    automapView().m_h = map.old_m_h;
+    if (!automapView().followplayer)
     {
-        m_x = map.old_m_x;
-        m_y = map.old_m_y;
+        automapView().m_x = map.old_m_x;
+        automapView().m_y = map.old_m_y;
     }
     else
     {
-        m_x = am_plr->mo->x - m_w / 2;
-        m_y = am_plr->mo->y - m_h / 2;
+        automapView().m_x = automapView().am_plr->mo->x - automapView().m_w / 2;
+        automapView().m_y = automapView().am_plr->mo->y - automapView().m_h / 2;
     }
-    map.m_x2 = m_x + m_w;
-    map.m_y2 = m_y + m_h;
+    map.m_x2 = automapView().m_x + automapView().m_w;
+    map.m_y2 = automapView().m_y + automapView().m_h;
 
     // Change the scaling multipliers
-    scale_mtof = FixedDiv(Fixed::fromInt(f_w), m_w);
-    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    automapView().scale_mtof =
+        FixedDiv(Fixed::fromInt(automapView().f_w), automapView().m_w);
+    map.scale_ftom = FixedDiv(FRACUNIT, automapView().scale_mtof);
 }
 
 //
@@ -247,8 +250,8 @@ void addMark()
 {
     auto& map = automapView();
 
-    map.markpoints[map.markpointnum].x = m_x + m_w / 2;
-    map.markpoints[map.markpointnum].y = m_y + m_h / 2;
+    map.markpoints[map.markpointnum].x = automapView().m_x + automapView().m_w / 2;
+    map.markpoints[map.markpointnum].y = automapView().m_y + automapView().m_h / 2;
     map.markpointnum = (map.markpointnum + 1) % AutomapView::numMarkPoints;
 }
 
@@ -260,30 +263,31 @@ void findMinMaxBoundaries()
 {
     auto& map = automapView();
 
-    map.min_x = map.min_y = fixed_t {DOOM_MAXINT};
-    map.max_x = map.max_y = fixed_t {-DOOM_MAXINT};
+    map.min_x = map.min_y = Fixed {DOOM_MAXINT};
+    map.max_x = map.max_y = Fixed {-DOOM_MAXINT};
 
-    for (int i = 0; i < numvertexes; i++)
+    for (int i = 0; i < level().vertexes.size(); i++)
     {
-        if (vertexes[i].x < map.min_x)
-            map.min_x = vertexes[i].x;
-        else if (vertexes[i].x > map.max_x)
-            map.max_x = vertexes[i].x;
+        if (level().vertexes[i].x < map.min_x)
+            map.min_x = level().vertexes[i].x;
+        else if (level().vertexes[i].x > map.max_x)
+            map.max_x = level().vertexes[i].x;
 
-        if (vertexes[i].y < map.min_y)
-            map.min_y = vertexes[i].y;
-        else if (vertexes[i].y > map.max_y)
-            map.max_y = vertexes[i].y;
+        if (level().vertexes[i].y < map.min_y)
+            map.min_y = level().vertexes[i].y;
+        else if (level().vertexes[i].y > map.max_y)
+            map.max_y = level().vertexes[i].y;
     }
 
     map.max_w = map.max_x - map.min_x;
     map.max_h = map.max_y - map.min_y;
 
-    fixed_t a = FixedDiv(Fixed::fromInt(f_w), map.max_w);
-    fixed_t b = FixedDiv(Fixed::fromInt(f_h), map.max_h);
+    Fixed a = FixedDiv(Fixed::fromInt(automapView().f_w), map.max_w);
+    Fixed b = FixedDiv(Fixed::fromInt(automapView().f_h), map.max_h);
 
     map.min_scale_mtof = a < b ? a : b;
-    map.max_scale_mtof = FixedDiv(Fixed::fromInt(f_h), 2 * PLAYERRADIUS);
+    map.max_scale_mtof =
+        FixedDiv(Fixed::fromInt(automapView().f_h), 2 * PLAYERRADIUS);
 }
 
 //
@@ -295,25 +299,25 @@ void changeWindowLoc()
 
     if (map.m_paninc.x || map.m_paninc.y)
     {
-        followplayer = 0;
-        map.f_oldloc.x = fixed_t {DOOM_MAXINT};
+        automapView().followplayer = 0;
+        map.f_oldloc.x = Fixed {DOOM_MAXINT};
     }
 
-    m_x += map.m_paninc.x;
-    m_y += map.m_paninc.y;
+    automapView().m_x += map.m_paninc.x;
+    automapView().m_y += map.m_paninc.y;
 
-    if (m_x + m_w / 2 > map.max_x)
-        m_x = map.max_x - m_w / 2;
-    else if (m_x + m_w / 2 < map.min_x)
-        m_x = map.min_x - m_w / 2;
+    if (automapView().m_x + automapView().m_w / 2 > map.max_x)
+        automapView().m_x = map.max_x - automapView().m_w / 2;
+    else if (automapView().m_x + automapView().m_w / 2 < map.min_x)
+        automapView().m_x = map.min_x - automapView().m_w / 2;
 
-    if (m_y + m_h / 2 > map.max_y)
-        m_y = map.max_y - m_h / 2;
-    else if (m_y + m_h / 2 < map.min_y)
-        m_y = map.min_y - m_h / 2;
+    if (automapView().m_y + automapView().m_h / 2 > map.max_y)
+        automapView().m_y = map.max_y - automapView().m_h / 2;
+    else if (automapView().m_y + automapView().m_h / 2 < map.min_y)
+        automapView().m_y = map.min_y - automapView().m_h / 2;
 
-    map.m_x2 = m_x + m_w;
-    map.m_y2 = m_y + m_h;
+    map.m_x2 = automapView().m_x + automapView().m_w;
+    map.m_y2 = automapView().m_y + automapView().m_h;
 }
 
 //
@@ -327,18 +331,18 @@ void initAutomapVariables()
     static Event st_notify = {EventType::KeyUp, AM_MSGENTERED, 0, 0};
 
     overlayState().automapactive = true;
-    map.fb = screens[0];
+    map.fb = videoState().screens[0];
 
-    map.f_oldloc.x = fixed_t {DOOM_MAXINT};
+    map.f_oldloc.x = Fixed {DOOM_MAXINT};
     map.amclock = 0;
-    lightlev = 0;
+    automapView().lightlev = 0;
 
-    map.m_paninc.x = map.m_paninc.y = fixed_t {};
+    map.m_paninc.x = map.m_paninc.y = Fixed {};
     map.ftom_zoommul = FRACUNIT;
     map.mtof_zoommul = FRACUNIT;
 
-    m_w = frameToMap(map, f_w);
-    m_h = frameToMap(map, f_h);
+    automapView().m_w = frameToMap(map, automapView().f_w);
+    automapView().m_h = frameToMap(map, automapView().f_h);
 
     auto& players_ = playerState();
 
@@ -348,16 +352,16 @@ void initAutomapVariables()
             if (players_.playeringame[pnum])
                 break;
 
-    am_plr = &players_.players[pnum];
-    m_x = am_plr->mo->x - m_w / 2;
-    m_y = am_plr->mo->y - m_h / 2;
+    automapView().am_plr = &players_.players[pnum];
+    automapView().m_x = automapView().am_plr->mo->x - automapView().m_w / 2;
+    automapView().m_y = automapView().am_plr->mo->y - automapView().m_h / 2;
     changeWindowLoc();
 
     // for saving & restoring
-    map.old_m_x = m_x;
-    map.old_m_y = m_y;
-    map.old_m_w = m_w;
-    map.old_m_h = m_h;
+    map.old_m_x = automapView().m_x;
+    map.old_m_y = automapView().m_y;
+    map.old_m_w = automapView().m_w;
+    map.old_m_h = automapView().m_h;
 
     // inform the status bar of the change
     statusBarResponder(st_notify);
@@ -378,7 +382,7 @@ void loadPics()
 
 void unloadPics()
 {
-    // Nothing to unload any more: Doom::WadFile owns the lumps and they are
+    // Nothing to unload any more: WadFile owns the lumps and they are
     // permanent (Wad/WadFile.h). This used to hand each patch back to the zone
     // as PU_CACHE, meaning "purge me if you need the space".
 }
@@ -388,7 +392,7 @@ void clearMarks()
     auto& map = automapView();
 
     for (auto& mark: map.markpoints)
-        mark.x = fixed_t {-1}; // means empty
+        mark.x = Fixed {-1}; // means empty
     map.markpointnum = 0;
 }
 
@@ -400,17 +404,17 @@ void levelInit()
 {
     auto& map = automapView();
 
-    f_x = f_y = 0;
-    f_w = map.finit_width;
-    f_h = map.finit_height;
+    automapView().f_x = automapView().f_y = 0;
+    automapView().f_w = map.finit_width;
+    automapView().f_h = map.finit_height;
 
     clearMarks();
 
     findMinMaxBoundaries();
-    scale_mtof = FixedDiv(map.min_scale_mtof, amFixed(0.7 * R_UNIT));
-    if (scale_mtof > map.max_scale_mtof)
-        scale_mtof = map.min_scale_mtof;
-    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    automapView().scale_mtof = FixedDiv(map.min_scale_mtof, amFixed(0.7 * R_UNIT));
+    if (automapView().scale_mtof > map.max_scale_mtof)
+        automapView().scale_mtof = map.min_scale_mtof;
+    map.scale_ftom = FixedDiv(FRACUNIT, automapView().scale_mtof);
 }
 
 //
@@ -462,8 +466,8 @@ void minOutWindowScale()
 {
     auto& map = automapView();
 
-    scale_mtof = map.min_scale_mtof;
-    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    automapView().scale_mtof = map.min_scale_mtof;
+    map.scale_ftom = FixedDiv(FRACUNIT, automapView().scale_mtof);
     activateNewScale();
 }
 
@@ -474,8 +478,8 @@ void maxOutWindowScale()
 {
     auto& map = automapView();
 
-    scale_mtof = map.max_scale_mtof;
-    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    automapView().scale_mtof = map.max_scale_mtof;
+    map.scale_ftom = FixedDiv(FRACUNIT, automapView().scale_mtof);
     activateNewScale();
 }
 
@@ -506,25 +510,25 @@ bool automapResponder(Event& ev)
         switch (ev.data1)
         {
             case AM_PANRIGHTKEY: // pan right
-                if (!followplayer)
+                if (!automapView().followplayer)
                     map.m_paninc.x = frameToMap(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANLEFTKEY: // pan left
-                if (!followplayer)
+                if (!automapView().followplayer)
                     map.m_paninc.x = -frameToMap(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANUPKEY: // pan up
-                if (!followplayer)
+                if (!automapView().followplayer)
                     map.m_paninc.y = frameToMap(map, F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANDOWNKEY: // pan down
-                if (!followplayer)
+                if (!automapView().followplayer)
                     map.m_paninc.y = -frameToMap(map, F_PANINC);
                 else
                     rc = false;
@@ -553,23 +557,25 @@ bool automapResponder(Event& ev)
                     restoreScaleAndLoc();
                 break;
             case AM_FOLLOWKEY:
-                followplayer = !followplayer;
-                map.f_oldloc.x = fixed_t {DOOM_MAXINT};
-                am_plr->message = followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF;
+                automapView().followplayer = !automapView().followplayer;
+                map.f_oldloc.x = Fixed {DOOM_MAXINT};
+                automapView().am_plr->message =
+                    automapView().followplayer ? AMSTR_FOLLOWON : AMSTR_FOLLOWOFF;
                 break;
             case AM_GRIDKEY:
-                grid = !grid;
-                am_plr->message = grid ? AMSTR_GRIDON : AMSTR_GRIDOFF;
+                automapView().grid = !automapView().grid;
+                automapView().am_plr->message =
+                    automapView().grid ? AMSTR_GRIDON : AMSTR_GRIDOFF;
                 break;
             case AM_MARKKEY:
                 //doom_sprintf(buffer, "%s %d", AMSTR_MARKEDSPOT, markpointnum);
                 buffer = concat(AMSTR_MARKEDSPOT, " ", map.markpointnum);
-                am_plr->message = buffer;
+                automapView().am_plr->message = buffer;
                 addMark();
                 break;
             case AM_CLEARMARKKEY:
                 clearMarks();
-                am_plr->message = AMSTR_MARKSCLEARED;
+                automapView().am_plr->message = AMSTR_MARKSCLEARED;
                 break;
             default:
                 rc = false;
@@ -577,7 +583,7 @@ bool automapResponder(Event& ev)
         if (!gameSession().deathmatch && checkCheat(cheat_amap, ev.data1))
         {
             rc = false;
-            cheating = (cheating + 1) % 3;
+            automapView().cheating = (automapView().cheating + 1) % 3;
         }
     }
 
@@ -587,20 +593,20 @@ bool automapResponder(Event& ev)
         switch (ev.data1)
         {
             case AM_PANRIGHTKEY:
-                if (!followplayer)
-                    map.m_paninc.x = fixed_t {};
+                if (!automapView().followplayer)
+                    map.m_paninc.x = Fixed {};
                 break;
             case AM_PANLEFTKEY:
-                if (!followplayer)
-                    map.m_paninc.x = fixed_t {};
+                if (!automapView().followplayer)
+                    map.m_paninc.x = Fixed {};
                 break;
             case AM_PANUPKEY:
-                if (!followplayer)
-                    map.m_paninc.y = fixed_t {};
+                if (!automapView().followplayer)
+                    map.m_paninc.y = Fixed {};
                 break;
             case AM_PANDOWNKEY:
-                if (!followplayer)
-                    map.m_paninc.y = fixed_t {};
+                if (!automapView().followplayer)
+                    map.m_paninc.y = Fixed {};
                 break;
             case AM_ZOOMOUTKEY:
             case AM_ZOOMINKEY:
@@ -621,12 +627,12 @@ void changeWindowScale()
     auto& map = automapView();
 
     // Change the scaling multipliers
-    scale_mtof = FixedMul(scale_mtof, map.mtof_zoommul);
-    map.scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+    automapView().scale_mtof = FixedMul(automapView().scale_mtof, map.mtof_zoommul);
+    map.scale_ftom = FixedDiv(FRACUNIT, automapView().scale_mtof);
 
-    if (scale_mtof < map.min_scale_mtof)
+    if (automapView().scale_mtof < map.min_scale_mtof)
         minOutWindowScale();
-    else if (scale_mtof > map.max_scale_mtof)
+    else if (automapView().scale_mtof > map.max_scale_mtof)
         maxOutWindowScale();
     else
         activateNewScale();
@@ -639,14 +645,17 @@ void doFollowPlayer()
 {
     auto& map = automapView();
 
-    if (map.f_oldloc.x != am_plr->mo->x || map.f_oldloc.y != am_plr->mo->y)
+    if (map.f_oldloc.x != automapView().am_plr->mo->x
+        || map.f_oldloc.y != automapView().am_plr->mo->y)
     {
-        m_x = frameToMap(map, mapToFrame(am_plr->mo->x)) - m_w / 2;
-        m_y = frameToMap(map, mapToFrame(am_plr->mo->y)) - m_h / 2;
-        map.m_x2 = m_x + m_w;
-        map.m_y2 = m_y + m_h;
-        map.f_oldloc.x = am_plr->mo->x;
-        map.f_oldloc.y = am_plr->mo->y;
+        automapView().m_x = frameToMap(map, mapToFrame(automapView().am_plr->mo->x))
+                            - automapView().m_w / 2;
+        automapView().m_y = frameToMap(map, mapToFrame(automapView().am_plr->mo->y))
+                            - automapView().m_h / 2;
+        map.m_x2 = automapView().m_x + automapView().m_w;
+        map.m_y2 = automapView().m_y + automapView().m_h;
+        map.f_oldloc.x = automapView().am_plr->mo->x;
+        map.f_oldloc.y = automapView().am_plr->mo->y;
     }
 }
 
@@ -663,7 +672,7 @@ void updateLightLev()
     // Change light level
     if (map.amclock > map.nexttic)
     {
-        lightlev = litelevels[map.litelevelscnt++];
+        automapView().lightlev = litelevels[map.litelevelscnt++];
         if (map.litelevelscnt == litelevels.size())
             map.litelevelscnt = 0;
         map.nexttic = map.amclock + 6 - (map.amclock % 6);
@@ -682,7 +691,7 @@ void automapTicker()
 
     map.amclock++;
 
-    if (followplayer)
+    if (automapView().followplayer)
         doFollowPlayer();
 
     // Change the zoom if necessary
@@ -702,7 +711,7 @@ void automapTicker()
 //
 void clearFB(int color)
 {
-    doom_memset(automapView().fb, color, f_w * f_h);
+    doom_memset(automapView().fb, color, automapView().f_w * automapView().f_h);
 }
 
 namespace
@@ -721,11 +730,11 @@ int computeOutcode(int mx, int my)
     int oc = 0;
     if (my < 0)
         oc = withFlags(oc, Outcode::Top);
-    else if (my >= f_h)
+    else if (my >= automapView().f_h)
         oc = withFlags(oc, Outcode::Bottom);
     if (mx < 0)
         oc = withFlags(oc, Outcode::Left);
-    else if (mx >= f_w)
+    else if (mx >= automapView().f_w)
         oc = withFlags(oc, Outcode::Right);
     return oc;
 }
@@ -758,23 +767,23 @@ bool clipMline(const MapLine& ml, FLine& fl)
     // do trivial rejects and outcodes
     if (ml.a.y > map.m_y2)
         outcode1 = flagBits(Outcode::Top);
-    else if (ml.a.y < m_y)
+    else if (ml.a.y < automapView().m_y)
         outcode1 = flagBits(Outcode::Bottom);
 
     if (ml.b.y > map.m_y2)
         outcode2 = flagBits(Outcode::Top);
-    else if (ml.b.y < m_y)
+    else if (ml.b.y < automapView().m_y)
         outcode2 = flagBits(Outcode::Bottom);
 
     if (outcode1 & outcode2)
         return false; // trivially outside
 
-    if (ml.a.x < m_x)
+    if (ml.a.x < automapView().m_x)
         outcode1 = withFlags(outcode1, Outcode::Left);
     else if (ml.a.x > map.m_x2)
         outcode1 = withFlags(outcode1, Outcode::Right);
 
-    if (ml.b.x < m_x)
+    if (ml.b.x < automapView().m_x)
         outcode2 = withFlags(outcode2, Outcode::Left);
     else if (ml.b.x > map.m_x2)
         outcode2 = withFlags(outcode2, Outcode::Right);
@@ -815,15 +824,15 @@ bool clipMline(const MapLine& ml, FLine& fl)
         {
             dy = fl.a.y - fl.b.y;
             dx = fl.b.x - fl.a.x;
-            tmp.x = fl.a.x + (dx * (fl.a.y - f_h)) / dy;
-            tmp.y = f_h - 1;
+            tmp.x = fl.a.x + (dx * (fl.a.y - automapView().f_h)) / dy;
+            tmp.y = automapView().f_h - 1;
         }
         else if (hasFlag(outside, Outcode::Right))
         {
             dy = fl.b.y - fl.a.y;
             dx = fl.b.x - fl.a.x;
-            tmp.y = fl.a.y + (dy * (f_w - 1 - fl.a.x)) / dx;
-            tmp.x = f_w - 1;
+            tmp.y = fl.a.y + (dy * (automapView().f_w - 1 - fl.a.x)) / dx;
+            tmp.x = automapView().f_w - 1;
         }
         else if (hasFlag(outside, Outcode::Left))
         {
@@ -853,7 +862,7 @@ bool clipMline(const MapLine& ml, FLine& fl)
 
 static inline void putDot(byte* fb, int xx, int yy, int cc)
 {
-    fb[yy * f_w + xx] = cc;
+    fb[yy * automapView().f_w + xx] = cc;
 }
 
 //
@@ -954,16 +963,17 @@ void drawGrid(int color)
     const auto blockSpacing = Fixed::fromInt(MAPBLOCKUNITS);
 
     // Figure out start of vertical gridlines
-    fixed_t start = m_x;
-    if (fixed_t {(start - bmaporgx).raw % blockSpacing.raw})
+    Fixed start = automapView().m_x;
+    if (Fixed {(start - level().blockmap.origin.x).raw % blockSpacing.raw})
         start +=
-            blockSpacing - (fixed_t {(start - bmaporgx).raw % blockSpacing.raw});
-    fixed_t end = m_x + m_w;
+            blockSpacing
+            - (Fixed {(start - level().blockmap.origin.x).raw % blockSpacing.raw});
+    Fixed end = automapView().m_x + automapView().m_w;
 
     // draw vertical gridlines
-    ml.a.y = m_y;
-    ml.b.y = m_y + m_h;
-    for (fixed_t x = start; x < end; x += blockSpacing)
+    ml.a.y = automapView().m_y;
+    ml.b.y = automapView().m_y + automapView().m_h;
+    for (Fixed x = start; x < end; x += blockSpacing)
     {
         ml.a.x = x;
         ml.b.x = x;
@@ -971,16 +981,17 @@ void drawGrid(int color)
     }
 
     // Figure out start of horizontal gridlines
-    start = m_y;
-    if (fixed_t {(start - bmaporgy).raw % blockSpacing.raw})
+    start = automapView().m_y;
+    if (Fixed {(start - level().blockmap.origin.y).raw % blockSpacing.raw})
         start +=
-            blockSpacing - (fixed_t {(start - bmaporgy).raw % blockSpacing.raw});
-    end = m_y + m_h;
+            blockSpacing
+            - (Fixed {(start - level().blockmap.origin.y).raw % blockSpacing.raw});
+    end = automapView().m_y + automapView().m_h;
 
     // draw horizontal gridlines
-    ml.a.x = m_x;
-    ml.b.x = m_x + m_w;
-    for (fixed_t y = start; y < end; y += blockSpacing)
+    ml.a.x = automapView().m_x;
+    ml.b.x = automapView().m_x + automapView().m_w;
+    for (Fixed y = start; y < end; y += blockSpacing)
     {
         ml.a.y = y;
         ml.b.y = y;
@@ -996,52 +1007,56 @@ void drawWalls()
 {
     static MapLine l;
 
-    for (int i = 0; i < numlines; i++)
+    for (int i = 0; i < level().lines.size(); i++)
     {
-        l.a.x = lines[i].v1->x;
-        l.a.y = lines[i].v1->y;
-        l.b.x = lines[i].v2->x;
-        l.b.y = lines[i].v2->y;
-        if (cheating || (lines[i].flags & ML_MAPPED))
+        l.a.x = level().lines[i].v1->x;
+        l.a.y = level().lines[i].v1->y;
+        l.b.x = level().lines[i].v2->x;
+        l.b.y = level().lines[i].v2->y;
+        if (automapView().cheating || (level().lines[i].flags & ML_MAPPED))
         {
-            if ((lines[i].flags & LINE_NEVERSEE) && !cheating)
+            if ((level().lines[i].flags & LINE_NEVERSEE) && !automapView().cheating)
                 continue;
-            if (!lines[i].backsector)
+            if (!level().lines[i].backsector)
             {
-                drawMline(l, WALLCOLORS + lightlev);
+                drawMline(l, WALLCOLORS + automapView().lightlev);
             }
             else
             {
-                if (lines[i].special == 39)
+                if (level().lines[i].special == 39)
                 { // teleporters
                     drawMline(l, WALLCOLORS + WALLRANGE / 2);
                 }
-                else if (lines[i].flags & ML_SECRET) // secret door
+                else if (level().lines[i].flags & ML_SECRET) // secret door
                 {
-                    if (cheating)
-                        drawMline(l, SECRETWALLCOLORS + lightlev);
+                    if (automapView().cheating)
+                        drawMline(l, SECRETWALLCOLORS + automapView().lightlev);
                     else
-                        drawMline(l, WALLCOLORS + lightlev);
+                        drawMline(l, WALLCOLORS + automapView().lightlev);
                 }
-                else if (lines[i].backsector->floorheight
-                         != lines[i].frontsector->floorheight)
+                else if (level().lines[i].backsector->floorheight
+                         != level().lines[i].frontsector->floorheight)
                 {
-                    drawMline(l, FDWALLCOLORS + lightlev); // floor level change
+                    drawMline(l,
+                              FDWALLCOLORS
+                                  + automapView().lightlev); // floor level change
                 }
-                else if (lines[i].backsector->ceilingheight
-                         != lines[i].frontsector->ceilingheight)
+                else if (level().lines[i].backsector->ceilingheight
+                         != level().lines[i].frontsector->ceilingheight)
                 {
-                    drawMline(l, CDWALLCOLORS + lightlev); // ceiling level change
+                    drawMline(l,
+                              CDWALLCOLORS
+                                  + automapView().lightlev); // ceiling level change
                 }
-                else if (cheating)
+                else if (automapView().cheating)
                 {
-                    drawMline(l, TSWALLCOLORS + lightlev);
+                    drawMline(l, TSWALLCOLORS + automapView().lightlev);
                 }
             }
         }
-        else if (am_plr->powers[toIndex(PowerType::AllMap)])
+        else if (automapView().am_plr->powers[toIndex(PowerType::AllMap)])
         {
-            if (!(lines[i].flags & LINE_NEVERSEE))
+            if (!(level().lines[i].flags & LINE_NEVERSEE))
                 drawMline(l, GRAYS + 3);
         }
     }
@@ -1051,28 +1066,31 @@ void drawWalls()
 // Rotation in 2D.
 // Used to rotate player arrow line character.
 //
-void rotateAutomapPoint(fixed_t& x, fixed_t& y, angle_t a)
+void rotateAutomapPoint(Fixed& x, Fixed& y, Angle a)
 {
-    fixed_t tmpx = FixedMul(x, finecosine[a.fineIndex()])
-                   - FixedMul(y, finesine[a.fineIndex()]);
+    Fixed tmpx = FixedMul(x, finecosine()[a.fineIndex()])
+                 - FixedMul(y, finesine()[a.fineIndex()]);
 
-    y = FixedMul(x, finesine[a.fineIndex()])
-        + FixedMul(y, finecosine[a.fineIndex()]);
+    y = FixedMul(x, finesine()[a.fineIndex()])
+        + FixedMul(y, finecosine()[a.fineIndex()]);
 
     x = tmpx;
 }
 
-void drawLineCharacter(MapLine* lineguy,
-                       int lineguylines,
-                       fixed_t scale,
-                       angle_t angle,
+// The shape and its length arrive together as a span, so the count cannot drift
+// from the table it counts - vanilla passed a pointer and a separate NUM*LINES
+// constant at every call site, which is exactly the guard-and-bound pairing this
+// repository has a rule against.
+void drawLineCharacter(std::span<const MapLine> lineguy,
+                       Fixed scale,
+                       Angle angle,
                        int color,
-                       fixed_t x,
-                       fixed_t y)
+                       Fixed x,
+                       Fixed y)
 {
     MapLine l;
 
-    for (int i = 0; i < lineguylines; i++)
+    for (auto i = 0u; i < lineguy.size(); i++)
     {
         l.a.x = lineguy[i].a.x;
         l.a.y = lineguy[i].a.y;
@@ -1118,22 +1136,20 @@ void drawPlayers()
 
     if (!session.netgame)
     {
-        if (cheating)
-            drawLineCharacter(cheat_player_arrow,
-                              NUMCHEATPLYRLINES,
-                              fixed_t {},
-                              am_plr->mo->angle,
+        if (automapView().cheating)
+            drawLineCharacter(mapShapes().cheatPlayerArrow,
+                              Fixed {},
+                              automapView().am_plr->mo->angle,
                               WHITE,
-                              am_plr->mo->x,
-                              am_plr->mo->y);
+                              automapView().am_plr->mo->x,
+                              automapView().am_plr->mo->y);
         else
-            drawLineCharacter(player_arrow,
-                              NUMPLYRLINES,
-                              fixed_t {},
-                              am_plr->mo->angle,
+            drawLineCharacter(mapShapes().playerArrow,
+                              Fixed {},
+                              automapView().am_plr->mo->angle,
                               WHITE,
-                              am_plr->mo->x,
-                              am_plr->mo->y);
+                              automapView().am_plr->mo->x,
+                              automapView().am_plr->mo->y);
         return;
     }
 
@@ -1144,7 +1160,8 @@ void drawPlayers()
         their_color++;
         Player* p = &players_.players[i];
 
-        if ((session.deathmatch && !demoState().singledemo) && p != am_plr)
+        if ((session.deathmatch && !demoState().singledemo)
+            && p != automapView().am_plr)
             continue;
 
         if (!players_.playeringame[i])
@@ -1155,9 +1172,8 @@ void drawPlayers()
         else
             color = their_colors[their_color];
 
-        drawLineCharacter(player_arrow,
-                          NUMPLYRLINES,
-                          fixed_t {},
+        drawLineCharacter(mapShapes().playerArrow,
+                          Fixed {},
                           p->mo->angle,
                           color,
                           p->mo->x,
@@ -1167,16 +1183,15 @@ void drawPlayers()
 
 void drawThings(int colors)
 {
-    for (int i = 0; i < numsectors; i++)
+    for (int i = 0; i < level().sectors.size(); i++)
     {
-        Mobj* t = sectors[i].thinglist;
+        Mobj* t = level().sectors[i].thinglist;
         while (t)
         {
-            drawLineCharacter(thintriangle_guy,
-                              NUMTHINTRIANGLEGUYLINES,
+            drawLineCharacter(mapShapes().thinTriangleGuy,
                               Fixed::fromInt(16),
                               t->angle,
-                              colors + lightlev,
+                              colors + automapView().lightlev,
                               t->x,
                               t->y);
             t = t->snext;
@@ -1190,7 +1205,7 @@ void drawAutomapMarks()
 
     for (int i = 0; i < AutomapView::numMarkPoints; i++)
     {
-        if (map.markpoints[i].x != fixed_t {-1})
+        if (map.markpoints[i].x != Fixed {-1})
         {
             //      w = littleEndian(marknums[i]->width);
             //      h = littleEndian(marknums[i]->height);
@@ -1198,7 +1213,8 @@ void drawAutomapMarks()
             int h = 6; // because something's wrong with the wad, i guess
             int fx = mapXToFrame(map.markpoints[i].x);
             int fy = mapYToFrame(map.markpoints[i].y);
-            if (fx >= f_x && fx <= f_w - w && fy >= f_y && fy <= f_h - h)
+            if (fx >= automapView().f_x && fx <= automapView().f_w - w
+                && fy >= automapView().f_y && fy <= automapView().f_h - h)
                 drawPatch(fx, fy, FB, map.marknums[i]);
         }
     }
@@ -1206,7 +1222,8 @@ void drawAutomapMarks()
 
 void amDrawCrosshair(int color)
 {
-    automapView().fb[(f_w * (f_h + 1)) / 2] = color; // single point for now
+    automapView().fb[(automapView().f_w * (automapView().f_h + 1)) / 2] =
+        color; // single point for now
 }
 
 void drawAutomap()
@@ -1215,91 +1232,88 @@ void drawAutomap()
         return;
 
     clearFB(BACKGROUND);
-    if (grid)
+    if (automapView().grid)
         drawGrid(GRIDCOLORS);
     drawWalls();
     drawPlayers();
-    if (cheating == 2)
+    if (automapView().cheating == 2)
         drawThings(THINGCOLORS);
     amDrawCrosshair(XHAIRCOLORS);
 
     drawAutomapMarks();
 
-    markRect(f_x, f_y, f_w, f_h);
+    markRect(
+        automapView().f_x, automapView().f_y, automapView().f_w, automapView().f_h);
 }
 
 } // namespace Doom
 
 // ---------------------------------------------------------------------------
-// Global-scope data that was am_map.cpp: the vector shapes the automap draws the
-// player and things with, and the view state the eacp port's GPU automap reads.
-// Stays at :: scope because those are the names it links against.
+// The vector shapes the automap draws the player and things with, which the eacp
+// port's GPU automap reads too.
 // ---------------------------------------------------------------------------
 
 // The player arrow's radius, a Fixed. Both arrow tables are drawn to it.
-constexpr fixed_t R = (8 * Doom::PLAYERRADIUS) / 7;
+constexpr Doom::Fixed R = (8 * Doom::PLAYERRADIUS) / 7;
 
-Doom::MapLine player_arrow[] = {
-    {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
-    {{R, fixed_t {}}, {R - R / 2, R / 4}}, // ----->
-    {{R, fixed_t {}}, {R - R / 2, -R / 4}},
-    {{-R + R / 8, fixed_t {}}, {-R - R / 8, R / 4}}, // >---->
-    {{-R + R / 8, fixed_t {}}, {-R - R / 8, -R / 4}},
-    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, R / 4}}, // >>--->
-    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, -R / 4}}};
-
-Doom::MapLine cheat_player_arrow[] = {
-    {{-R + R / 8, fixed_t {}}, {R, fixed_t {}}}, // -----
-    {{R, fixed_t {}}, {R - R / 2, R / 6}}, // ----->
-    {{R, fixed_t {}}, {R - R / 2, -R / 6}},
-    {{-R + R / 8, fixed_t {}}, {-R - R / 8, R / 6}}, // >----->
-    {{-R + R / 8, fixed_t {}}, {-R - R / 8, -R / 6}},
-    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, R / 6}}, // >>----->
-    {{-R + 3 * R / 8, fixed_t {}}, {-R + R / 8, -R / 6}},
-    {{-R / 2, fixed_t {}}, {-R / 2, -R / 6}}, // >>-d--->
-    {{-R / 2, -R / 6}, {-R / 2 + R / 6, -R / 6}},
-    {{-R / 2 + R / 6, -R / 6}, {-R / 2 + R / 6, R / 4}},
-    {{-R / 6, fixed_t {}}, {-R / 6, -R / 6}}, // >>-dd-->
-    {{-R / 6, -R / 6}, {fixed_t {}, -R / 6}},
-    {{fixed_t {}, -R / 6}, {fixed_t {}, R / 4}},
-    {{R / 6, R / 4}, {R / 6, -R / 7}}, // >>-ddt->
-    {{R / 6, -R / 7}, {R / 6 + R / 32, -R / 7 - R / 32}},
-    {{R / 6 + R / 32, -R / 7 - R / 32}, {R / 6 + R / 10, -R / 7}}};
-
-// Scales Doom::R_UNIT, the raw int32 unit, and NOT the Fixed `R` the arrows
-// above use: these vertices are fractions of the unit, and `-.5 * FRACUNIT` is
-// `double * Fixed`, which converts -.5 to `int` 0 before multiplying and
-// collapses the shape to a point. Scale R_UNIT and truncate with amFixed.
+namespace Doom
+{
+// The three line drawings, immutable after static init and handed out const, so
+// the GPU compositor reads the same tables the software automap draws from.
 //
-// No frame golden reaches this table - drawThings needs `cheating == 2` (IDDT
-// twice) and no test or demo cheats - so Automap/shapeTablesAreScaled asserts
-// the vertex values directly. Change these numbers and that is what fails.
-Doom::MapLine thintriangle_guy[] = {
-    {{Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(-.7 * Doom::R_UNIT)},
-     {fixed_t {Doom::R_UNIT}, fixed_t {}}},
-    {{fixed_t {Doom::R_UNIT}, fixed_t {}},
-     {Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(.7 * Doom::R_UNIT)}},
-    {{Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(.7 * Doom::R_UNIT)},
-     {Doom::amFixed(-.5 * Doom::R_UNIT), Doom::amFixed(-.7 * Doom::R_UNIT)}}};
+// thinTriangleGuy scales R_UNIT, the raw int32 unit, and NOT the Fixed `R` the two
+// arrows use: its vertices are fractions of the unit, and `-.5 * FRACUNIT` is
+// `double * Fixed`, which converts -.5 to `int` 0 before multiplying and collapses
+// the shape to a point. Scale R_UNIT and truncate with amFixed.
+//
+// No frame golden reaches thinTriangleGuy - drawThings needs `cheating == 2` (IDDT
+// twice) and no test or demo cheats - so Automap/shapeTablesAreScaled asserts the
+// vertex values directly. Change these numbers and that is what fails.
+const MapShapes& mapShapes()
+{
+    static const MapShapes shapes = {
+        // playerArrow
+        {{MapLine {{-R + R / 8, Fixed {}}, {R, Fixed {}}}, // -----
+          {{R, Fixed {}}, {R - R / 2, R / 4}}, // ----->
+          {{R, Fixed {}}, {R - R / 2, -R / 4}},
+          {{-R + R / 8, Fixed {}}, {-R - R / 8, R / 4}}, // >---->
+          {{-R + R / 8, Fixed {}}, {-R - R / 8, -R / 4}},
+          {{-R + 3 * R / 8, Fixed {}}, {-R + R / 8, R / 4}}, // >>--->
+          {{-R + 3 * R / 8, Fixed {}}, {-R + R / 8, -R / 4}}}},
 
-// Map-window position/size and scale (map coords), read by the GPU automap.
-fixed_t m_x, m_y;
-fixed_t m_w;
-fixed_t m_h;
+        // cheatPlayerArrow
+        {{MapLine {{-R + R / 8, Fixed {}}, {R, Fixed {}}}, // -----
+          {{R, Fixed {}}, {R - R / 2, R / 6}}, // ----->
+          {{R, Fixed {}}, {R - R / 2, -R / 6}},
+          {{-R + R / 8, Fixed {}}, {-R - R / 8, R / 6}}, // >----->
+          {{-R + R / 8, Fixed {}}, {-R - R / 8, -R / 6}},
+          {{-R + 3 * R / 8, Fixed {}}, {-R + R / 8, R / 6}}, // >>----->
+          {{-R + 3 * R / 8, Fixed {}}, {-R + R / 8, -R / 6}},
+          {{-R / 2, Fixed {}}, {-R / 2, -R / 6}}, // >>-d--->
+          {{-R / 2, -R / 6}, {-R / 2 + R / 6, -R / 6}},
+          {{-R / 2 + R / 6, -R / 6}, {-R / 2 + R / 6, R / 4}},
+          {{-R / 6, Fixed {}}, {-R / 6, -R / 6}}, // >>-dd-->
+          {{-R / 6, -R / 6}, {Fixed {}, -R / 6}},
+          {{Fixed {}, -R / 6}, {Fixed {}, R / 4}},
+          {{R / 6, R / 4}, {R / 6, -R / 7}}, // >>-ddt->
+          {{R / 6, -R / 7}, {R / 6 + R / 32, -R / 7 - R / 32}},
+          {{R / 6 + R / 32, -R / 7 - R / 32}, {R / 6 + R / 10, -R / 7}}}},
 
-fixed_t scale_mtof = Doom::INITSCALEMTOF;
+        // thinTriangleGuy
+        {{MapLine {{amFixed(-.5 * R_UNIT), amFixed(-.7 * R_UNIT)},
+                   {Fixed {R_UNIT}, Fixed {}}},
+          {{Fixed {R_UNIT}, Fixed {}},
+           {amFixed(-.5 * R_UNIT), amFixed(.7 * R_UNIT)}},
+          {{amFixed(-.5 * R_UNIT), amFixed(.7 * R_UNIT)},
+           {amFixed(-.5 * R_UNIT), amFixed(-.7 * R_UNIT)}}}}};
 
-// Frame-window position/size (screen coords).
-int f_x;
-int f_y;
-int f_w;
-int f_h;
+    return shapes;
+}
+} // namespace Doom
 
-Doom::Player* am_plr; // the player represented by an arrow
-int followplayer = 1; // whether to follow the player around
-int cheating = 0;
-int grid = 0;
-int lightlev; // used for funky strobing effect
+// The map window's position, extent, scale and frame rect, the player it follows,
+// and the two cheats used to be twelve loose globals here. They are AutomapView
+// members now (UI/AutomapView.h).
 
 // automapactive (with menuactive) is a Doom::OverlayState owned by the Engine now; this is a
 // reference onto it (REFACTOR.md, Step 5).

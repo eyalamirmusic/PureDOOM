@@ -70,20 +70,27 @@ Breaking one silently defeats the whole apparatus.
 
   Two carve-outs. **`DOOM.h` stays standard-library-only** and spells its argument
   vector `std::vector` — an embedder should not need eacp's containers to call
-  `initGame`. And the ~16 declarations that sit at **`::` scope on purpose** (the
-  ones `EngineAccess.cpp` reads by bare name — `gammatable`, `mapnames`,
-  `chat_macros`, `player_names`, `sprnames`, `button_states`, …) are spelled
-  `Doom::Array` / `Doom::Vector`, since the using-declarations are inside the
-  namespace and do not reach them.
+  `initGame`. And a handful of `::`-scope **accessor functions** returning the
+  shared tables (`mapnames()`, `chat_macros()`, `player_names()`, `mixbuffer()`, …)
+  spell their `Doom::Array` / `Doom::Vector` return types in full, since the
+  using-declarations are inside the namespace and do not reach `::` scope. **There
+  are no `extern` variables anywhere in the repository** — a grep for a bare
+  `extern` (outside comments and `extern "C"` prose) comes back empty, and it
+  should stay that way. What used to be an `extern` global is now either a member
+  of an `Engine` state cluster reached through its accessor (`level().sectors`,
+  `graphicsData().textures`, `automapView().m_x`, `videoState().screens`,
+  `wipeState().meltRunning`, …) or, for the generated/config data tables that stay
+  defined in one `.cpp`, a free accessor function (`states()`, `mobjinfo()`,
+  `finesine()`, `S_sfx()`, `defaults()`, …).
 
   **The eight subdirectories *are* the engine**, all real C++ in `namespace Doom`:
 
   | Directory | Files | What it is |
   |---|---|---|
-  | `Sim/` | 73 | the whole playsim — `Mobj`, `Movement`, `MapAction`, `Enemy`, `Player`, `Weapon`, `Sight`, `Interaction`, the eight specials, `Thinker`, `Tick`, `Setup`, `SaveGame`, `Info`, plus `Random`/`Level`/`MapGeometry` |
+  | `Sim/` | 71 | the whole playsim — `Mobj`, `Movement`, `MapAction`, `Enemy`, `Player`, `Weapon`, `Sight`, `Interaction`, the eight specials, `Thinker`, `Tick`, `Setup`, `SaveGame`, `Info`, plus `Random`/`Level`/`MapGeometry` |
   | `Game/` | 56 | game loop, netcode, config, args, sound dispatch, and most of the `Engine`'s state clusters |
   | `UI/` | 42 | menu, HUD, status bar, automap, intermission, finale, screen melt, cheats |
-  | `Render/` | 37 | the software renderer, all eight units — `Main`, `BSP`, `Segs`, `Planes`, `Things`, `Draw`, `Data`, `Sky`, plus `Video` |
+  | `Render/` | 38 | the software renderer, all eight units — `Main`, `BSP`, `Segs`, `Planes`, `Things`, `Draw`, `Data`, `Sky`, plus `Video`, and the `Drawers` drawer-selection cluster |
   | `Math/` | 12 | `Fixed`, `Angle`, `Trig`, `BBox`, `Vec2`, `Swap` |
   | `Host/` | 12 | the platform boundary — `Video`, `System`, `Sound`, `Net`, `Api`, `Host` |
   | `Wad/` | 3 | `WadFile` |
@@ -109,24 +116,31 @@ function (`auto& draw = drawState();`) rather than calling the out-of-line acces
 per access, which matters in the per-pixel drawers. The `Engine` is **constructed**,
 not booted; `Engine/resetEngineMakesAFreshInstance` proves it.
 
-**13 aliases survive on purpose**: the host callbacks (`doom_print`,
-`doom_malloc`, …) are references onto `Doom::host()`, a deliberately separate
-immortal singleton that must *not* be reset with a fresh Engine. The members are
+**The host callbacks live on `Doom::host()`**, a deliberately separate immortal
+singleton that must *not* be reset with a fresh Engine. The `doom_print` /
+`doom_malloc` / … reference-aliases that used to stand in front of them are gone;
+call sites reach the members directly (`host().print(...)`, `host().malloc(...)`),
+and `doom_flags` moved onto the same singleton as `host().flags`. The members are
 `std::function`s constructed with working defaults (stdio, `gettimeofday`,
 `eacp::getEnv` — `Host/Host.cpp`); an embedder overrides them by assigning
 `Doom::host().print = …` directly. String-shaped hooks take `std::string_view`
 (`getenv` returns `std::optional<std::string>`).
 
-**What survives as loose names is data and views**, and it lives inside the
-subdirectories: the pointer-and-count views (`vertexes`/`numsegs`/`sectors`/… onto
-`Doom::Level`, defined in `Sim/Setup.cpp`; `textures`/`sprites` onto
-`GraphicsData`; `finesine`/`finecosine` onto `Math/Trig`), each refreshed by its
-loader after it fills the owning vector. The drawer function pointers
-`colfunc`/`spanfunc` stay raw in `Render/Main` — they are the per-column inner
-loop. The automap's vector shapes and the melt's state are deliberate exported
-carve-outs (`UI/AutomapTypes.h`, `UI/Wipe.h`) that the eacp compositor reads by
-name; `UI/AutomapTypes.h` is deliberately **all** at `::` scope, so keep it that
-way.
+**The loose pointer-and-count views are gone.** `vertexes`/`numsegs`/`sectors`/…
+were views onto `Doom::Level` refreshed by each loader; readers index the vectors
+directly now (`level().sectors[i]`, `level().segs.size()`), so a count cannot drift
+from the thing it counts and the view cannot go stale. The same happened to
+`GraphicsData`'s (`textures`/`sprites`/`textureheight`/… are `graphicsData()`
+members) and `Math/Trig`'s (`finesine`/`finecosine`/… are `finesine()`-style
+accessors over tables now file-local to `Trig.cpp`). The **drawer function
+pointers** are gone too: `colfunc`/`spanfunc`/`fuzzcolfunc`/… were raw
+`void(*)()` globals and are now `std::function` members of the `Drawers` cluster
+(`Render/Drawers.h`), reached as `drawers().column()` / `drawers().span()` — the
+per-column indirection was measured and the demo suite's wall clock did not move.
+The automap's vector shapes and the melt's state are deliberate exported
+carve-outs (`UI/AutomapTypes.h`, `UI/Wipe.h`, both including their state clusters)
+that the eacp compositor reads through accessors (`mapShapes()`, `automapView()`,
+`wipeState()`); `UI/AutomapTypes.h`'s `MapLine` shapes stay all at `::` scope.
 
 Three constraints died with the single header and the code may rely on their
 absence: **two files may share a file-scope name**, a source file may include a
@@ -218,14 +232,19 @@ Two hazards when converting or extending an enum:
 `namespace Doom` (`mobj_t`→`Mobj`, `line_t`→`Line`, `player_t`→`Player`, …), and
 every call site calls the namespaced function (`Doom::drawPlanes`, `Doom::tryMove`,
 `Doom::displayFrame`, `Doom::fatalError`, `Doom::cacheLumpNum`). No prefixed
-spelling survives; do not go looking for one. Two families are pinned *by address*
-and keep an adapter: the 75 state actions are `Doom::Actions::look`-style forwards
-in `Sim/Actions.{h,cpp}` (because `Sim/Info.cpp`'s `states[]` stores them and every
-entry needs one pointer shape), and the drawer function pointers stay raw.
+spelling survives; do not go looking for one. The state-action adapter layer is
+gone: `Sim/Info.cpp`'s `states[]` used to store every action through one
+type-erased `void(*)(void*)` and a `Sim/Actions.{h,cpp}` forwarding shim, and now
+`State::action` (`Sim/ActionFunc.h`) carries **two typed function pointers** — a
+`void(*)(Mobj&)` and a `void(*)(Player&, PspDef&)`, only one set per state — so the
+table names the real playsim/weapon functions directly with no cast on the call
+path.
 
-**`fixed_t` and `angle_t` are aliases onto the strong types** — `using fixed_t =
-Doom::Fixed;`, `using angle_t = Doom::Angle;` — not raw typedefs beside them.
-`FixedMul`/`FixedDiv` survive as thin operator wrappers for readability.
+**`Fixed` and `Angle` are the strong types, spelled by their own names
+everywhere.** The `using fixed_t = Doom::Fixed;` / `using angle_t = Doom::Angle;`
+aliases that used to stand in for them are retired — a grep for `fixed_t`/`angle_t`
+finds only the comments recording that they are gone. `FixedMul`/`FixedDiv` survive
+as thin operator wrappers for readability.
 
 **`doom_boolean` is gone**; a boolean is a `bool`. Four declarations **stay `int`**
 on purpose, each saying so at its site, because each is storage that only *looks*
@@ -419,7 +438,6 @@ site, not assumed.
 | `drawMaskedColumn`, `drawColumnInCache` | the parameter is a loop *cursor*, reassigned to walk posts |
 | `startIntermission` | it **stores** the pointer well past the call |
 | the `drawPatch` family | ~45 call sites pass `cacheLumpName(...)` straight in; the real fix is a `Patch&`-returning lookup |
-| `Actions.cpp`'s 75 state actions, `callWeaponAction` | address-pinned by `states[]` |
 
 `SaveGame.cpp` nulls **every** mobj's `target` on load, which is what turns those
 unguarded `.target` reads from theoretical into reachable. That single fact holds up
@@ -665,7 +683,7 @@ not.
 |---|---|---|
 | `Sim/DemoTests.cpp` | SimTests | the three attract demos, world + frame goldens |
 | `Sim/ReplayTests.cpp` | SimTests | replay-twice and load-a-second-demo; the per-level reset |
-| `Sim/LevelTests.cpp` | SimTests | the geometry-view invariant after a load |
+| `Sim/LevelTests.cpp` | SimTests | the loaded geometry is well-formed (every cross-reference lands in its vector) |
 | `Sim/WadTests.cpp` | SimTests | all 1,264 lumps against `doom1.lumps` |
 | `Sim/MenuTests.cpp` `Sim/AutomapTests.cpp` `Sim/FinaleTests.cpp` | SimTests | the three screens no demo reaches — plus, in `AutomapTests`, the automap's vector shape tables, which its *frame* golden cannot reach (they are drawn only under IDDT) |
 | `Sim/IntermissionTests.cpp` | SimTests | the fourth screen: the real E1M1 → scoreboard → E1M2 transition, its state machine and its frame golden |
@@ -746,9 +764,13 @@ PureDOOM's `D_UpdateWipe` advances one tic per call), and **the config is pinned
 `Tests/Sim/ReplayTests.cpp` replays a demo a second time in one process (identical
 tic for tic) and loads a *different* demo over the first. Together they prove the
 per-level reset is clean — the thing that makes scenario tests possible and the only
-test of `Doom::Level`'s reload path. `Tests/Sim/LevelTests.cpp` separately checks the
-view invariant after a load: that `vertexes`/`numsegs`/… still equal their `Level`
-vector's `data()`/`size()`.
+test of `Doom::Level`'s reload path. `Tests/Sim/LevelTests.cpp` separately checks
+that the geometry a loader wires together from raw WAD lump numbers is
+well-formed after a load — every seg's vertexes/linedef/sidedef/sectors, every
+subsector's seg range and sector, every sector's slice of the shared line buffer —
+lands inside the vector it points into. (It used to check a *view* invariant, that
+the loose `vertexes`/`numsegs`/… globals still equalled their `Level` vector's
+`data()`/`size()`; those globals are gone, so that failure mode no longer exists.)
 
 ### What the tests do not cover
 

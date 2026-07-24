@@ -3,7 +3,7 @@
 // The actual column and span blitting: the wall/sprite column drawers, the
 // spectre fuzz and translated-colour variants, the flat span drawers, and the
 // view-buffer / border setup they all draw through. r_draw.cpp shims the R_ names
-// (r_main stores those shim addresses in colfunc/spanfunc/...) and owns the
+// (executeSetViewSize stores them on the Drawers cluster) and owns the
 // drawer input state (dc_*, ds_*) the other renderer files fill in; the frame
 // address tables and the fuzz walk are file-local here. Golden-neutral.
 
@@ -45,7 +45,7 @@ constexpr int FUZZOFF = SCREENWIDTH;
 // These frame-address lookup tables (and fuzzpos below) now live on the Engine (Render/DrawTables.h,
 // moved by the file-scope-statics sweep - REFACTOR.md, Step 5). Every drawer below hoists
 // drawTables() once and reaches them through it, rather than through file-scope reference aliases
-// (REFACTOR.md, Step 9 strand (a)); only the drawers use them, through Doom::initBuffer.
+// (REFACTOR.md, Step 9 strand (a)); only the drawers use them, through initBuffer.
 
 //
 // A column is a vertical slice/span from a wall texture that, given the DOOM
@@ -60,8 +60,8 @@ void drawColumn()
 
     int count;
     byte* dest;
-    fixed_t frac;
-    fixed_t fracstep;
+    Fixed frac;
+    Fixed fracstep;
 
     count = draw.dc_yh - draw.dc_yl;
 
@@ -73,7 +73,7 @@ void drawColumn()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        fatalError("Error: Doom::drawColumn: ",
+        fatalError("Error: drawColumn: ",
                    draw.dc_yl,
                    " to ",
                    draw.dc_yh,
@@ -115,8 +115,8 @@ void drawColumnLow()
     int count;
     byte* dest;
     byte* dest2;
-    fixed_t frac;
-    fixed_t fracstep;
+    Fixed frac;
+    Fixed fracstep;
 
     count = draw.dc_yh - draw.dc_yl;
 
@@ -128,7 +128,7 @@ void drawColumnLow()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        fatalError("Error: Doom::drawColumn: ",
+        fatalError("Error: drawColumn: ",
                    draw.dc_yl,
                    " to ",
                    draw.dc_yh,
@@ -205,7 +205,7 @@ void drawFuzzColumn()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        fatalError("Error: Doom::drawFuzzColumn: ",
+        fatalError("Error: drawFuzzColumn: ",
                    draw.dc_yl,
                    " to ",
                    draw.dc_yh,
@@ -227,7 +227,7 @@ void drawFuzzColumn()
         //  a pixel that is either one column
         //  left or right of the current one.
         // Add index from colormap to index.
-        *dest = colormaps[6 * 256 + dest[fuzzoffset[tables.fuzzpos]]];
+        *dest = graphicsData().colormaps[6 * 256 + dest[fuzzoffset[tables.fuzzpos]]];
 
         // Clamp table lookup index.
         if (++tables.fuzzpos == FUZZTABLE)
@@ -238,7 +238,7 @@ void drawFuzzColumn()
 }
 
 //
-// Doom::drawTranslatedColumn
+// drawTranslatedColumn
 // Used to draw player sprites
 //  with the green colorramp mapped to others.
 // Could be used with different translation
@@ -253,8 +253,8 @@ void drawTranslatedColumn()
 
     int count;
     byte* dest;
-    fixed_t frac;
-    fixed_t fracstep;
+    Fixed frac;
+    Fixed fracstep;
 
     count = draw.dc_yh - draw.dc_yl;
     if (count < 0)
@@ -264,7 +264,7 @@ void drawTranslatedColumn()
     if (static_cast<unsigned>(draw.dc_x) >= SCREENWIDTH || draw.dc_yl < 0
         || draw.dc_yh >= SCREENHEIGHT)
     {
-        fatalError("Error: Doom::drawColumn: ",
+        fatalError("Error: drawColumn: ",
                    draw.dc_yl,
                    " to ",
                    draw.dc_yh,
@@ -296,7 +296,7 @@ void drawTranslatedColumn()
 }
 
 //
-// Doom::initTranslationTables
+// initTranslationTables
 // Creates the translation tables to map
 // the green color ramp to gray, brown, red.
 // Assumes a given structure of the PLAYPAL.
@@ -304,11 +304,11 @@ void drawTranslatedColumn()
 //
 void initTranslationTables()
 {
-    // DrawState owns the backing buffer now (RAII, Step 9); translationtables is the
-    // 256-byte-aligned view into it, as the original doom_malloc + align was.
+    // DrawState owns the backing buffer; translationTables is the 256-byte-aligned
+    // view into it, as the original doom_malloc + align was.
     auto& ds = drawState();
     ds.translationTableStorage.resize(256 * 3 + 255);
-    translationtables = reinterpret_cast<byte*>(
+    ds.translationTables = reinterpret_cast<byte*>(
         (reinterpret_cast<unsigned long long>(ds.translationTableStorage.data())
          + 255)
         & ~255ULL);
@@ -319,21 +319,22 @@ void initTranslationTables()
         if (i >= 0x70 && i <= 0x7f)
         {
             // map green ramp to gray, brown, red
-            translationtables[i] = 0x60 + (i & 0xf);
-            translationtables[i + 256] = 0x40 + (i & 0xf);
-            translationtables[i + 512] = 0x20 + (i & 0xf);
+            drawState().translationTables[i] = 0x60 + (i & 0xf);
+            drawState().translationTables[i + 256] = 0x40 + (i & 0xf);
+            drawState().translationTables[i + 512] = 0x20 + (i & 0xf);
         }
         else
         {
             // Keep all other colors as is.
-            translationtables[i] = translationtables[i + 256] =
-                translationtables[i + 512] = i;
+            drawState().translationTables[i] =
+                drawState().translationTables[i + 256] =
+                    drawState().translationTables[i + 512] = i;
         }
     }
 }
 
 //
-// Doom::drawSpan
+// drawSpan
 // With DOOM style restrictions on view orientation,
 // the floors and ceilings consist of horizontal slices
 // or spans with constant z depth.
@@ -349,8 +350,8 @@ void drawSpan()
     auto& draw = drawState();
     auto& tables = drawTables();
 
-    fixed_t xfrac;
-    fixed_t yfrac;
+    Fixed xfrac;
+    Fixed yfrac;
     byte* dest;
     int count;
     int spot;
@@ -359,12 +360,8 @@ void drawSpan()
     if (draw.ds_x2 < draw.ds_x1 || draw.ds_x1 < 0 || draw.ds_x2 >= SCREENWIDTH
         || static_cast<unsigned>(draw.ds_y) > SCREENHEIGHT)
     {
-        fatalError("Error: Doom::drawSpan: ",
-                   draw.ds_x1,
-                   " to ",
-                   draw.ds_x2,
-                   " at ",
-                   draw.ds_y);
+        fatalError(
+            "Error: drawSpan: ", draw.ds_x1, " to ", draw.ds_x2, " at ", draw.ds_y);
     }
 #endif
 
@@ -400,8 +397,8 @@ void drawSpanLow()
     auto& draw = drawState();
     auto& tables = drawTables();
 
-    fixed_t xfrac;
-    fixed_t yfrac;
+    Fixed xfrac;
+    Fixed yfrac;
     byte* dest;
     int count;
     int spot;
@@ -410,12 +407,8 @@ void drawSpanLow()
     if (draw.ds_x2 < draw.ds_x1 || draw.ds_x1 < 0 || draw.ds_x2 >= SCREENWIDTH
         || static_cast<unsigned>(draw.ds_y) > SCREENHEIGHT)
     {
-        fatalError("Error: Doom::drawSpan: ",
-                   draw.ds_x1,
-                   " to ",
-                   draw.ds_x2,
-                   " at ",
-                   draw.ds_y);
+        fatalError(
+            "Error: drawSpan: ", draw.ds_x1, " to ", draw.ds_x2, " at ", draw.ds_y);
     }
 #endif
 
@@ -444,7 +437,7 @@ void drawSpanLow()
 }
 
 //
-// Doom::initBuffer
+// initBuffer
 // Creats lookup tables that avoid
 //  multiplies and other hazzles
 //  for getting the framebuffer address
@@ -472,11 +465,12 @@ void initBuffer(int width, int height)
 
     // Preclaculate all row offsets.
     for (int i = 0; i < height; i++)
-        tables.ylookup[i] = screens[0] + (i + view.viewwindowy) * SCREENWIDTH;
+        tables.ylookup[i] =
+            videoState().screens[0] + (i + view.viewwindowy) * SCREENWIDTH;
 }
 
 //
-// Doom::fillBackScreen
+// fillBackScreen
 // Fills the back screen with a pattern
 //  for variable screen sizes
 // Also draws a beveled edge.
@@ -502,8 +496,8 @@ void fillBackScreen()
 
     auto name = gameVersion().gamemode == GameMode::Commercial ? name2 : name1;
 
-    src = static_cast<byte*>(Doom::cacheLumpName(name));
-    dest = screens[1];
+    src = static_cast<byte*>(cacheLumpName(name));
+    dest = videoState().screens[1];
 
     for (y = 0; y < SCREENHEIGHT - SBARHEIGHT; y++)
     {
@@ -520,45 +514,45 @@ void fillBackScreen()
         }
     }
 
-    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_t"));
+    patch = static_cast<Patch*>(cacheLumpName("brdr_t"));
 
     for (x = 0; x < view.scaledviewwidth; x += 8)
-        Doom::drawPatch(view.viewwindowx + x, view.viewwindowy - 8, 1, patch);
-    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_b"));
+        drawPatch(view.viewwindowx + x, view.viewwindowy - 8, 1, patch);
+    patch = static_cast<Patch*>(cacheLumpName("brdr_b"));
 
     for (x = 0; x < view.scaledviewwidth; x += 8)
-        Doom::drawPatch(
+        drawPatch(
             view.viewwindowx + x, view.viewwindowy + view.viewheight, 1, patch);
-    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_l"));
+    patch = static_cast<Patch*>(cacheLumpName("brdr_l"));
 
     for (y = 0; y < view.viewheight; y += 8)
-        Doom::drawPatch(view.viewwindowx - 8, view.viewwindowy + y, 1, patch);
-    patch = static_cast<Patch*>(Doom::cacheLumpName("brdr_r"));
+        drawPatch(view.viewwindowx - 8, view.viewwindowy + y, 1, patch);
+    patch = static_cast<Patch*>(cacheLumpName("brdr_r"));
 
     for (y = 0; y < view.viewheight; y += 8)
-        Doom::drawPatch(
+        drawPatch(
             view.viewwindowx + view.scaledviewwidth, view.viewwindowy + y, 1, patch);
 
     // Draw beveled edge.
-    Doom::drawPatch(view.viewwindowx - 8,
-                    view.viewwindowy - 8,
-                    1,
-                    static_cast<Patch*>(Doom::cacheLumpName("brdr_tl")));
+    drawPatch(view.viewwindowx - 8,
+              view.viewwindowy - 8,
+              1,
+              static_cast<Patch*>(cacheLumpName("brdr_tl")));
 
-    Doom::drawPatch(view.viewwindowx + view.scaledviewwidth,
-                    view.viewwindowy - 8,
-                    1,
-                    static_cast<Patch*>(Doom::cacheLumpName("brdr_tr")));
+    drawPatch(view.viewwindowx + view.scaledviewwidth,
+              view.viewwindowy - 8,
+              1,
+              static_cast<Patch*>(cacheLumpName("brdr_tr")));
 
-    Doom::drawPatch(view.viewwindowx - 8,
-                    view.viewwindowy + view.viewheight,
-                    1,
-                    static_cast<Patch*>(Doom::cacheLumpName("brdr_bl")));
+    drawPatch(view.viewwindowx - 8,
+              view.viewwindowy + view.viewheight,
+              1,
+              static_cast<Patch*>(cacheLumpName("brdr_bl")));
 
-    Doom::drawPatch(view.viewwindowx + view.scaledviewwidth,
-                    view.viewwindowy + view.viewheight,
-                    1,
-                    static_cast<Patch*>(Doom::cacheLumpName("brdr_br")));
+    drawPatch(view.viewwindowx + view.scaledviewwidth,
+              view.viewwindowy + view.viewheight,
+              1,
+              static_cast<Patch*>(cacheLumpName("brdr_br")));
 }
 
 //
@@ -571,11 +565,11 @@ void videoErase(unsigned ofs, int count)
     //  is not optiomal, e.g. byte by byte on
     //  a 32bit CPU, as GNU GCC/Linux libc did
     //  at one point.
-    doom_memcpy(screens[0] + ofs, screens[1] + ofs, count);
+    doom_memcpy(videoState().screens[0] + ofs, videoState().screens[1] + ofs, count);
 }
 
 //
-// Doom::drawViewBorder
+// drawViewBorder
 // Draws the border around the view
 //  for different size windows?
 //
@@ -612,7 +606,7 @@ void drawViewBorder()
     }
 
     // ?
-    Doom::markRect(0, 0, SCREENWIDTH, SCREENHEIGHT - SBARHEIGHT);
+    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT - SBARHEIGHT);
 }
 
 } // namespace Doom

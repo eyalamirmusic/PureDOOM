@@ -45,7 +45,7 @@ auto tFixedIsTrivial = test("Fixed/isATrivialWrapper") = []
 {
     // It has to stay one. Half the engine still holds 16.16 numbers as bare
     // int32s in structs read straight out of the WAD, and a BBox is reinterpreted
-    // over a vanilla fixed_t[4]. The moment Fixed grows a vtable or padding, all
+    // over a vanilla Doom::Fixed[4]. The moment Fixed grows a vtable or padding, all
     // of that quietly breaks.
     static_assert(sizeof(Fixed) == sizeof(std::int32_t));
     static_assert(std::is_trivially_copyable_v<Fixed>);
@@ -103,7 +103,7 @@ auto tFixedWrapsAt32Bits = test("Fixed/arithmeticWrapsAt32Bits") = []
 
 // (Fixed/agreesWithVanillaFixedMul lived here. It held Doom::Fixed's operators
 // against the vanilla FixedMul/FixedDiv functions - the claim the shim layer
-// made. fixed_t IS Doom::Fixed now and FixedMul(a, b) is literally `a * b`, so
+// made. Doom::Fixed IS Doom::Fixed now and FixedMul(a, b) is literally `a * b`, so
 // the comparison has become `(x * y).raw == (x * y).raw`. There is no longer
 // anything for it to disagree about. The numeric behaviour it guarded is pinned
 // by Fixed/multiplyWidensToAvoidOverflow and Fixed/divideSaturates above, which
@@ -168,13 +168,13 @@ auto tSlopeDivGivesUp = test("Trig/slopeDivGivesUpOnSmallDenominators") = []
 
 auto tBBoxIsLayoutCompatible = test("BBox/isLayoutCompatibleWithVanilla") = []
 {
-    // Doom::groupLines and Doom::markRect still hand it a bare fixed_t[4], and m_bbox.cpp
+    // Doom::groupLines and Doom::markRect still hand it a bare Doom::Fixed[4], and m_bbox.cpp
     // reinterprets one as a BBox. These four are what make that legal.
-    static_assert(sizeof(BBox) == 4 * sizeof(fixed_t));
-    static_assert(offsetof(BBox, top) == boxTop * sizeof(fixed_t));
-    static_assert(offsetof(BBox, bottom) == boxBottom * sizeof(fixed_t));
-    static_assert(offsetof(BBox, left) == boxLeft * sizeof(fixed_t));
-    static_assert(offsetof(BBox, right) == boxRight * sizeof(fixed_t));
+    static_assert(sizeof(BBox) == 4 * sizeof(Doom::Fixed));
+    static_assert(offsetof(BBox, top) == boxTop * sizeof(Doom::Fixed));
+    static_assert(offsetof(BBox, bottom) == boxBottom * sizeof(Doom::Fixed));
+    static_assert(offsetof(BBox, left) == boxLeft * sizeof(Doom::Fixed));
+    static_assert(offsetof(BBox, right) == boxRight * sizeof(Doom::Fixed));
 
     check(true);
 };
@@ -214,7 +214,7 @@ auto tBBoxAddIsElseIf = test("BBox/addIsElseIfAndNotMinMax") = []
 
 auto tBBoxMatchesVanilla = test("BBox/matchesVanillaAddToBox") = []
 {
-    fixed_t vanilla[4];
+    Doom::Fixed vanilla[4];
     Doom::clearBox(vanilla);
 
     auto box = BBox::empty();

@@ -84,11 +84,15 @@ struct MusicInfo
 };
 } // namespace Doom
 
-// the complete set of sound effects
-extern Doom::SfxInfo S_sfx[];
-
-// the complete set of music
-extern Doom::MusicInfo S_music[];
+// The complete sets of sound effects and music. S_sfx[] is mutated as sounds load
+// (each row's lump number and cached PCM), so it is handed out as a pointer; the
+// storage is file-local to Game/SoundData.cpp. S_sfx()[i] / S_music()[i] read what
+// the `extern` globals S_sfx[i] / S_music[i] did.
+namespace Doom
+{
+SfxInfo* S_sfx();
+MusicInfo* S_music();
+} // namespace Doom
 
 //
 // Identifiers for all music in game.

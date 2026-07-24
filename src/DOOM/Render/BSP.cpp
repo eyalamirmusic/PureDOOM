@@ -58,7 +58,7 @@ void clipSolidWallSegment(int first, int last);
 void clipPassWallSegment(int first, int last);
 void clearClipSegs();
 void addLine(Seg& line);
-bool checkBBox(fixed_t* bspcoord);
+bool checkBBox(Fixed* bspcoord);
 void subsector(int num);
 void renderBSPNode(int bspnum);
 
@@ -94,7 +94,7 @@ void clipSolidWallSegment(int first, int last)
         {
             // Post is entirely visible (above start),
             //  so insert a new clippost.
-            Doom::storeWallRange(first, last);
+            storeWallRange(first, last);
             next = solid.newend;
             solid.newend++;
 
@@ -109,7 +109,7 @@ void clipSolidWallSegment(int first, int last)
         }
 
         // There is a fragment above *start.
-        Doom::storeWallRange(first, start->first - 1);
+        storeWallRange(first, start->first - 1);
         // Now adjust the clip size.
         start->first = first;
     }
@@ -122,7 +122,7 @@ void clipSolidWallSegment(int first, int last)
     while (last >= (next + 1)->first - 1)
     {
         // There is a fragment between two posts.
-        Doom::storeWallRange(next->last + 1, (next + 1)->first - 1);
+        storeWallRange(next->last + 1, (next + 1)->first - 1);
         next++;
 
         if (last <= next->last)
@@ -135,7 +135,7 @@ void clipSolidWallSegment(int first, int last)
     }
 
     // There is a fragment after *next.
-    Doom::storeWallRange(next->last + 1, last);
+    storeWallRange(next->last + 1, last);
     // Adjust the clip size.
     start->last = last;
 
@@ -181,12 +181,12 @@ void clipPassWallSegment(int first, int last)
         if (last < start->first - 1)
         {
             // Post is entirely visible (above start).
-            Doom::storeWallRange(first, last);
+            storeWallRange(first, last);
             return;
         }
 
         // There is a fragment above *start.
-        Doom::storeWallRange(first, start->first - 1);
+        storeWallRange(first, start->first - 1);
     }
 
     // Bottom contained in start?
@@ -196,7 +196,7 @@ void clipPassWallSegment(int first, int last)
     while (last >= (start + 1)->first - 1)
     {
         // There is a fragment between two posts.
-        Doom::storeWallRange(start->last + 1, (start + 1)->first - 1);
+        storeWallRange(start->last + 1, (start + 1)->first - 1);
         start++;
 
         if (last <= start->last)
@@ -204,7 +204,7 @@ void clipPassWallSegment(int first, int last)
     }
 
     // There is a fragment after *next.
-    Doom::storeWallRange(start->last + 1, last);
+    storeWallRange(start->last + 1, last);
 }
 
 //
@@ -230,10 +230,10 @@ void addLine(Seg& line)
 {
     int x1;
     int x2;
-    angle_t angle1;
-    angle_t angle2;
-    angle_t span;
-    angle_t tspan;
+    Angle angle1;
+    Angle angle2;
+    Angle span;
+    Angle tspan;
 
     auto& bsp = bspScratch();
     auto& pt = viewPoint();
@@ -242,8 +242,8 @@ void addLine(Seg& line)
     bsp.curline = &line;
 
     // OPTIMIZE: quickly reject orthogonal back sides.
-    angle1 = Doom::pointToAngle(line.v1->x, line.v1->y);
-    angle2 = Doom::pointToAngle(line.v2->x, line.v2->y);
+    angle1 = pointToAngle(line.v1->x, line.v1->y);
+    angle2 = pointToAngle(line.v2->x, line.v2->y);
 
     // Clip to view edges.
     // OPTIMIZE: make constant out of 2*clipangle (FIELDOFVIEW).
@@ -341,21 +341,21 @@ clipsolid:
 // Returns true
 //  if some part of the bbox might be visible.
 //
-bool checkBBox(fixed_t* bspcoord)
+bool checkBBox(Fixed* bspcoord)
 {
     int boxx;
     int boxy;
     int boxpos;
 
-    fixed_t x1;
-    fixed_t y1;
-    fixed_t x2;
-    fixed_t y2;
+    Fixed x1;
+    Fixed y1;
+    Fixed x2;
+    Fixed y2;
 
-    angle_t angle1;
-    angle_t angle2;
-    angle_t span;
-    angle_t tspan;
+    Angle angle1;
+    Angle angle2;
+    Angle span;
+    Angle tspan;
 
     ClipRange* start;
 
@@ -392,8 +392,8 @@ bool checkBBox(fixed_t* bspcoord)
     y2 = bspcoord[checkcoord[boxpos][3]];
 
     // check clip list for an open space
-    angle1 = Doom::pointToAngle(x1, y1) - pt.viewangle;
-    angle2 = Doom::pointToAngle(x2, y2) - pt.viewangle;
+    angle1 = pointToAngle(x1, y1) - pt.viewangle;
+    angle2 = pointToAngle(x2, y2) - pt.viewangle;
 
     span = angle1 - angle2;
 
@@ -471,13 +471,16 @@ void subsector(int num)
     SubSector* sub;
 
 #ifdef RANGECHECK
-    if (num >= numsubsectors)
+    if (num >= level().subsectors.size())
     {
         //fatalError("Error: subsector: ss %i with numss = %i",
         //        num,
         //        numsubsectors);
 
-        fatalError("Error: subsector: ss ", num, " with numss = ", numsubsectors);
+        fatalError("Error: subsector: ss ",
+                   num,
+                   " with numss = ",
+                   level().subsectors.size());
     }
 #endif
 
@@ -485,16 +488,16 @@ void subsector(int num)
     auto& scratch = renderScratch();
     auto& pt = viewPoint();
 
-    sub = &subsectors[num];
+    sub = &level().subsectors[num];
     bsp.frontsector = sub->sector;
     count = sub->numlines;
-    line = &segs[sub->firstline];
+    line = &level().segs[sub->firstline];
 
     if (bsp.frontsector->floorheight < pt.viewz)
     {
-        scratch.floorplane = Doom::findPlane(bsp.frontsector->floorheight,
-                                             bsp.frontsector->floorpic,
-                                             bsp.frontsector->lightlevel);
+        scratch.floorplane = findPlane(bsp.frontsector->floorheight,
+                                       bsp.frontsector->floorpic,
+                                       bsp.frontsector->lightlevel);
     }
     else
         scratch.floorplane = nullptr;
@@ -502,14 +505,14 @@ void subsector(int num)
     if (bsp.frontsector->ceilingheight > pt.viewz
         || bsp.frontsector->ceilingpic == skyState().skyflatnum)
     {
-        scratch.ceilingplane = Doom::findPlane(bsp.frontsector->ceilingheight,
-                                               bsp.frontsector->ceilingpic,
-                                               bsp.frontsector->lightlevel);
+        scratch.ceilingplane = findPlane(bsp.frontsector->ceilingheight,
+                                         bsp.frontsector->ceilingpic,
+                                         bsp.frontsector->lightlevel);
     }
     else
         scratch.ceilingplane = nullptr;
 
-    Doom::addSprites(*bsp.frontsector);
+    addSprites(*bsp.frontsector);
 
     while (count--)
     {
@@ -538,11 +541,11 @@ void renderBSPNode(int bspnum)
         return;
     }
 
-    bsp = &nodes[bspnum];
+    bsp = &level().nodes[bspnum];
 
     // Decide which side the view point is on.
     auto& pt = viewPoint();
-    side = Doom::pointOnSide(pt.viewx, pt.viewy, *bsp);
+    side = pointOnSide(pt.viewx, pt.viewy, *bsp);
 
     // Recursively divide front space.
     renderBSPNode(bsp->children[side]);

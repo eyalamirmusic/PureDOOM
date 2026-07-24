@@ -45,7 +45,7 @@ using namespace Doom;
 // atkstate, i.e. attack/fire/hit frame
 // flashstate, muzzle flash
 //
-WeaponInfo weaponinfo[numWeapons] =
+WeaponInfo weaponinfoData[numWeapons] =
 {
     {
         // fist
@@ -131,3 +131,13 @@ WeaponInfo weaponinfo[numWeapons] =
 };
 
 // clang-format on
+
+// Hands out the file-local table above (Sim/Items.cpp opens with `using namespace
+// Doom`, so it sits at :: scope). const: nothing rewrites weapon data at runtime.
+namespace Doom
+{
+const WeaponInfo* weaponinfo()
+{
+    return weaponinfoData;
+}
+} // namespace Doom

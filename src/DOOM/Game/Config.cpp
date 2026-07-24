@@ -109,10 +109,6 @@ struct PcxHeader
 // sound params below, their defaults[] entries are bound to those members at runtime by
 // bindEngineDefaults() rather than capturing their addresses here at static-init.
 
-extern Doom::Array<std::string_view, 10> chat_macros;
-
-extern byte scantokey[128];
-
 // crosshair/always_run are Doom::InputConfig members (Engine); references, still read by
 // UI/Menu.cpp, Game/Game.cpp and Host/Api.cpp through their own extern declarations.
 
@@ -123,7 +119,7 @@ extern byte scantokey[128];
 // which GCC then warned about not recognising.
 DOOM_DIAGNOSTIC_PUSH
 DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
-Doom::ConfigDefault defaults[] = {
+Doom::ConfigDefault defaultsData[] = {
     // These config-backed globals are Engine members reached through references, so their
     // location is bound to the member at runtime (bindEngineDefaults) rather than captured
     // here: a static &member would take the address of a reference before the Engine exists
@@ -173,74 +169,83 @@ Doom::ConfigDefault defaults[] = {
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[0],
+     &chat_macros()[0],
      Doom::HUSTR_CHATMACRO0},
     {"chatmacro1",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[1],
+     &chat_macros()[1],
      Doom::HUSTR_CHATMACRO1},
     {"chatmacro2",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[2],
+     &chat_macros()[2],
      Doom::HUSTR_CHATMACRO2},
     {"chatmacro3",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[3],
+     &chat_macros()[3],
      Doom::HUSTR_CHATMACRO3},
     {"chatmacro4",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[4],
+     &chat_macros()[4],
      Doom::HUSTR_CHATMACRO4},
     {"chatmacro5",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[5],
+     &chat_macros()[5],
      Doom::HUSTR_CHATMACRO5},
     {"chatmacro6",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[6],
+     &chat_macros()[6],
      Doom::HUSTR_CHATMACRO6},
     {"chatmacro7",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[7],
+     &chat_macros()[7],
      Doom::HUSTR_CHATMACRO7},
     {"chatmacro8",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[8],
+     &chat_macros()[8],
      Doom::HUSTR_CHATMACRO8},
     {"chatmacro9",
      0,
      Doom::STRING_VALUE,
      0,
      0,
-     &chat_macros[9],
+     &chat_macros()[9],
      Doom::HUSTR_CHATMACRO9}};
 
 DOOM_DIAGNOSTIC_POP
-int numdefaults = sizeof(defaults) / sizeof(Doom::ConfigDefault);
+int numdefaultsValue = sizeof(defaultsData) / sizeof(Doom::ConfigDefault);
+
+Doom::ConfigDefault* defaults()
+{
+    return defaultsData;
+}
+int numdefaults()
+{
+    return numdefaultsValue;
+}
 
 namespace Doom
 {
@@ -265,9 +270,9 @@ int drawText(int x, int y, bool direct, std::string_view string)
         if (x + w > SCREENWIDTH)
             break;
         if (direct)
-            Doom::drawPatchDirect(x, y, 0, font.hu_font[c]);
+            drawPatchDirect(x, y, 0, font.hu_font[c]);
         else
-            Doom::drawPatch(x, y, 0, font.hu_font[c]);
+            drawPatch(x, y, 0, font.hu_font[c]);
         x += w;
     }
 
@@ -282,13 +287,13 @@ bool writeFile(std::string_view name, void* source, int length)
     void* handle;
     int count;
 
-    handle = doom_open(name, "wb");
+    handle = host().open(name, "wb");
 
     if (handle == nullptr)
         return false;
 
-    count = doom_write(handle, source, length);
-    doom_close(handle);
+    count = host().write(handle, source, length);
+    host().close(handle);
 
     if (count < length)
         return false;
@@ -301,20 +306,20 @@ bool writeFile(std::string_view name, void* source, int length)
 //
 int readFile(std::string_view name, Vector<byte>& buffer)
 {
-    void* handle = doom_open(name, "rb");
+    void* handle = host().open(name, "rb");
     if (handle == nullptr)
     {
         fatalError("Error: Couldn't read file ", name);
     }
-    doom_seek(handle, 0, Doom::SeekOrigin::End);
-    int length = doom_tell(handle);
-    doom_seek(handle, 0, Doom::SeekOrigin::Set);
+    host().seek(handle, 0, SeekOrigin::End);
+    int length = host().tell(handle);
+    host().seek(handle, 0, SeekOrigin::Set);
 
     // resize zeroes where the old doom_malloc did not, which is unobservable: the
     // doom_read below fills all `length` bytes or the read is fatal.
     buffer.resize(length);
-    int count = doom_read(handle, buffer.data(), length);
-    doom_close(handle);
+    int count = host().read(handle, buffer.data(), length);
+    host().close(handle);
 
     if (count < length)
     {
@@ -332,10 +337,10 @@ int readFile(std::string_view name, Vector<byte>& buffer)
 // loadDefaults and saveDefaults call it before touching a location pointer.
 static void bindEngineDefault(std::string_view name, int* location)
 {
-    for (int i = 0; i < numdefaults; i++)
-        if (name == defaults[i].name)
+    for (int i = 0; i < numdefaults(); i++)
+        if (name == defaults()[i].name)
         {
-            defaults[i].location = location;
+            defaults()[i].location = location;
             return;
         }
 }
@@ -400,28 +405,32 @@ void saveDefaults()
 
     bindEngineDefaults();
 
-    f = doom_open(configPaths().defaultfile.c_str(), "w");
+    f = host().open(configPaths().defaultfile.c_str(), "w");
     if (!f)
         return; // can't write the file, but don't complain
 
-    for (int i = 0; i < numdefaults; i++)
+    for (int i = 0; i < numdefaults(); i++)
     {
-        if (defaults[i].defaultvalue > -0xfff && defaults[i].defaultvalue < 0xfff)
+        if (defaults()[i].defaultvalue > -0xfff
+            && defaults()[i].defaultvalue < 0xfff)
         {
-            v = *defaults[i].location;
+            v = *defaults()[i].location;
             //fprintf(f, "%s\t\t%i\n", defaults[i].name, v);
-            printTo(f, defaults[i].name, "\t\t", v, "\n");
+            printTo(f, defaults()[i].name, "\t\t", v, "\n");
         }
         else
         {
             //fprintf(f, "%s\t\t\"%s\"\n", defaults[i].name,
             //        *(char**)(defaults[i].text_location));
-            printTo(
-                f, defaults[i].name, "\t\t\"", *defaults[i].text_location, "\"\n");
+            printTo(f,
+                    defaults()[i].name,
+                    "\t\t\"",
+                    *defaults()[i].text_location,
+                    "\"\n");
         }
     }
 
-    doom_close(f);
+    host().close(f);
 }
 
 //
@@ -448,7 +457,7 @@ void loadDefaults()
     // buffer, which is what keeps every .c_str() already handed to an
     // earlier entry valid.
     static Vector<std::string> stringDefaultStorage;
-    stringDefaultStorage.resize(numdefaults);
+    stringDefaultStorage.resize(numdefaults());
 
     auto& paths = configPaths();
 
@@ -456,19 +465,19 @@ void loadDefaults()
 
     // set everything to base values
     // numdefaults = sizeof(defaults)/sizeof(defaults[0]);
-    for (i = 0; i < numdefaults; i++)
+    for (i = 0; i < numdefaults(); i++)
     {
-        if (defaults[i].defaultvalue == 0xFFFF)
-            *defaults[i].text_location = defaults[i].default_text_value;
+        if (defaults()[i].defaultvalue == 0xFFFF)
+            *defaults()[i].text_location = defaults()[i].default_text_value;
         else
-            *defaults[i].location = static_cast<int>(defaults[i].defaultvalue);
+            *defaults()[i].location = static_cast<int>(defaults()[i].defaultvalue);
     }
 
     // check for a custom default file
-    i = Doom::checkParm("-config");
+    i = checkParm("-config");
     if (i && i < myargCount() - 1)
     {
-        paths.defaultfile = myargv[i + 1];
+        paths.defaultfile = myargv()[i + 1];
         //doom_print("        default file: %s\n", defaultfile);
         print("        default file: ", paths.defaultfile, "\n");
     }
@@ -476,10 +485,10 @@ void loadDefaults()
         paths.defaultfile = paths.basedefault;
 
     // read the file in, overriding any set defaults
-    f = doom_open(paths.defaultfile.c_str(), "r");
+    f = host().open(paths.defaultfile.c_str(), "r");
     if (f)
     {
-        while (!doom_eof(f))
+        while (!host().eof(f))
         {
             // def
             int arg_read = 0;
@@ -487,7 +496,7 @@ void loadDefaults()
             def.clear();
             for (i = 0; i < 79; ++i)
             {
-                doom_read(f, &c, 1);
+                host().read(f, &c, 1);
                 if (c == ' ' || c == '\n' || c == '\t')
                 {
                     if (i > 0)
@@ -503,7 +512,7 @@ void loadDefaults()
             {
                 while (1)
                 {
-                    doom_read(f, &c, 1);
+                    host().read(f, &c, 1);
                     if (c != ' ' && c != '\t')
                         break;
                 }
@@ -514,7 +523,7 @@ void loadDefaults()
                     while (static_cast<int>(strparm.size()) < 260)
                     {
                         strparm += c;
-                        doom_read(f, &c, 1);
+                        host().read(f, &c, 1);
                         if (c == '\n')
                         {
                             if (!strparm.empty())
@@ -545,25 +554,25 @@ void loadDefaults()
                     //sscanf(strparm, "%i", &parm);
                     parm = parseInt(strparm);
                 }
-                for (i = 0; i < numdefaults; i++)
-                    if (def == defaults[i].name)
+                for (i = 0; i < numdefaults(); i++)
+                    if (def == defaults()[i].name)
                     {
                         if (!isstring)
-                            *defaults[i].location = parm;
+                            *defaults()[i].location = parm;
                         else
                         {
                             // Strip the opening quote too; the slot owns the
                             // copy for the life of the process.
                             auto& owned = stringDefaultStorage[i];
                             owned = strparm.substr(1);
-                            *defaults[i].text_location = owned;
+                            *defaults()[i].text_location = owned;
                         }
                         break;
                     }
             }
         }
 
-        doom_close(f);
+        host().close(f);
     }
 }
 
@@ -631,7 +640,7 @@ void writeScreenshot()
     void* f;
 
     // munge planar buffer to linear
-    linear = screens[2];
+    linear = videoState().screens[2];
     readScreen(linear);
 
     // find a file name to save it to
@@ -641,9 +650,9 @@ void writeScreenshot()
     {
         lbmname[4] = static_cast<char>(i / 10 + '0');
         lbmname[5] = static_cast<char>(i % 10 + '0');
-        if ((f = doom_open(lbmname, "wb")) == nullptr)
+        if ((f = host().open(lbmname, "wb")) == nullptr)
             break; // file doesn't exist
-        doom_close(f);
+        host().close(f);
     }
     if (i == 100)
         fatalError("Error: writeScreenshot: Couldn't create a PCX");
@@ -653,7 +662,7 @@ void writeScreenshot()
                  linear,
                  SCREENWIDTH,
                  SCREENHEIGHT,
-                 static_cast<byte*>((Doom::cacheLumpName("PLAYPAL"))));
+                 static_cast<byte*>((cacheLumpName("PLAYPAL"))));
 
     auto& state = playerState();
     state.players[state.consoleplayer].message = "screen shot";

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/FixedPoint.h" // Doom::Fixed
 
 #include "../Containers.h"
 
@@ -31,8 +31,8 @@ namespace Doom
 struct EnemyAI
 {
     Mobj* corpsehit = nullptr; // the corpse A_VileChase is raising
-    fixed_t viletryx {}; // where it is trying to stand the corpse up
-    fixed_t viletryy {};
+    Fixed viletryx {}; // where it is trying to stand the corpse up
+    Fixed viletryy {};
 
     // The boss brain's spawn-cube targets: however many MobjType::Bosstarget things the
     // map placed, so a Vector rather than the vanilla cap of 32 - which had no

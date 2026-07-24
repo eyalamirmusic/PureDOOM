@@ -75,7 +75,7 @@ void archivePlayers()
             if (dest->psprites[j].state)
             {
                 dest->psprites[j].state =
-                    reinterpret_cast<State*>(dest->psprites[j].state - states);
+                    reinterpret_cast<State*>(dest->psprites[j].state - states());
             }
         }
     }
@@ -109,7 +109,7 @@ void unArchivePlayers()
             if (players_.players[i].psprites[j].state)
             {
                 players_.players[i].psprites[j].state =
-                    &states[reinterpret_cast<long long>(
+                    &states()[reinterpret_cast<long long>(
                         players_.players[i].psprites[j].state)];
             }
         }
@@ -130,7 +130,7 @@ void archiveWorld()
     short* put = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
-    for (i = 0, sec = sectors; i < numsectors; i++, sec++)
+    for (i = 0, sec = level().sectors.data(); i < level().sectors.size(); i++, sec++)
     {
         // The on-disk format stores heights in WHOLE map units, as vanilla's
         // `>> fracBits` into a short did - so toInt(), not raw.
@@ -144,7 +144,7 @@ void archiveWorld()
     }
 
     // do lines
-    for (i = 0, li = lines; i < numlines; i++, li++)
+    for (i = 0, li = level().lines.data(); i < level().lines.size(); i++, li++)
     {
         *put++ = li->flags;
         *put++ = li->special;
@@ -154,7 +154,7 @@ void archiveWorld()
             if (sidenum == -1)
                 continue;
 
-            Side* si = &sides[sidenum];
+            Side* si = &level().sides[sidenum];
 
             *put++ = si->textureoffset.toInt();
             *put++ = si->rowoffset.toInt();
@@ -181,7 +181,7 @@ void unArchiveWorld()
     short* get = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
-    for (i = 0, sec = sectors; i < numsectors; i++, sec++)
+    for (i = 0, sec = level().sectors.data(); i < level().sectors.size(); i++, sec++)
     {
         sec->floorheight = Fixed::fromInt(*get++);
         sec->ceilingheight = Fixed::fromInt(*get++);
@@ -195,7 +195,7 @@ void unArchiveWorld()
     }
 
     // do lines
-    for (i = 0, li = lines; i < numlines; i++, li++)
+    for (i = 0, li = level().lines.data(); i < level().lines.size(); i++, li++)
     {
         li->flags = *get++;
         li->special = *get++;
@@ -204,7 +204,7 @@ void unArchiveWorld()
         {
             if (sidenum == -1)
                 continue;
-            Side* si = &sides[sidenum];
+            Side* si = &level().sides[sidenum];
             si->textureoffset = Fixed::fromInt(*get++);
             si->rowoffset = Fixed::fromInt(*get++);
             si->toptexture = *get++;
@@ -259,7 +259,8 @@ static void archiveSectorThinker(const Thinker* th)
 
     T record {};
     doom_memcpy(&record, th, sizeof(record));
-    record.sector = reinterpret_cast<Sector*>(record.sector - sectors);
+    record.sector =
+        reinterpret_cast<Sector*>(record.sector - level().sectors.data());
 
     doom_memcpy(save.cursor, &record, sizeof(record));
     save.cursor += sizeof(record);
@@ -287,7 +288,7 @@ void archiveThinkers()
             // gives; the state and player pointers become indices in the copy.
             Mobj mobj {};
             doom_memcpy(&mobj, th, sizeof(mobj));
-            mobj.state = reinterpret_cast<State*>(mobj.state - states);
+            mobj.state = reinterpret_cast<State*>(mobj.state - states());
 
             if (mobj.player)
                 mobj.player = reinterpret_cast<Player*>(
@@ -342,7 +343,7 @@ void unArchiveThinkers()
             case ThinkerClass::Mobj:
                 padSaveCursor(save.cursor);
                 mobj = unarchiveThinker<Mobj>();
-                mobj->state = &states[reinterpret_cast<long long>(mobj->state)];
+                mobj->state = &states()[reinterpret_cast<long long>(mobj->state)];
                 mobj->target = nullptr;
                 if (mobj->player)
                 {
@@ -351,7 +352,7 @@ void unArchiveThinkers()
                     mobj->player->mo = mobj;
                 }
                 setThingPosition(*mobj);
-                mobj->info = &mobjinfo[toIndex(mobj->type)];
+                mobj->info = &mobjinfo()[toIndex(mobj->type)];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;
                 addThinker(*mobj);
@@ -500,7 +501,7 @@ void unArchiveSpecials()
                 padSaveCursor(save.cursor);
                 ceiling = unarchiveThinker<Ceiling>();
                 ceiling->sector =
-                    &sectors[reinterpret_cast<long long>(ceiling->sector)];
+                    &level().sectors[reinterpret_cast<long long>(ceiling->sector)];
                 ceiling->sector->specialdata = ceiling;
 
                 addThinker(*ceiling);
@@ -510,7 +511,8 @@ void unArchiveSpecials()
             case SpecialClass::Door:
                 padSaveCursor(save.cursor);
                 door = unarchiveThinker<Door>();
-                door->sector = &sectors[reinterpret_cast<long long>(door->sector)];
+                door->sector =
+                    &level().sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
                 addThinker(*door);
                 break;
@@ -518,7 +520,8 @@ void unArchiveSpecials()
             case SpecialClass::Floor:
                 padSaveCursor(save.cursor);
                 floor = unarchiveThinker<FloorMove>();
-                floor->sector = &sectors[reinterpret_cast<long long>(floor->sector)];
+                floor->sector =
+                    &level().sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
                 addThinker(*floor);
                 break;
@@ -526,7 +529,8 @@ void unArchiveSpecials()
             case SpecialClass::Plat:
                 padSaveCursor(save.cursor);
                 plat = unarchiveThinker<Plat>();
-                plat->sector = &sectors[reinterpret_cast<long long>(plat->sector)];
+                plat->sector =
+                    &level().sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
 
                 addThinker(*plat);
@@ -536,7 +540,8 @@ void unArchiveSpecials()
             case SpecialClass::Flash:
                 padSaveCursor(save.cursor);
                 flash = unarchiveThinker<LightFlash>();
-                flash->sector = &sectors[reinterpret_cast<long long>(flash->sector)];
+                flash->sector =
+                    &level().sectors[reinterpret_cast<long long>(flash->sector)];
                 addThinker(*flash);
                 break;
 
@@ -544,14 +549,15 @@ void unArchiveSpecials()
                 padSaveCursor(save.cursor);
                 strobe = unarchiveThinker<Strobe>();
                 strobe->sector =
-                    &sectors[reinterpret_cast<long long>(strobe->sector)];
+                    &level().sectors[reinterpret_cast<long long>(strobe->sector)];
                 addThinker(*strobe);
                 break;
 
             case SpecialClass::Glow:
                 padSaveCursor(save.cursor);
                 glow = unarchiveThinker<Glow>();
-                glow->sector = &sectors[reinterpret_cast<long long>(glow->sector)];
+                glow->sector =
+                    &level().sectors[reinterpret_cast<long long>(glow->sector)];
                 addThinker(*glow);
                 break;
 

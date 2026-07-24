@@ -52,7 +52,8 @@
 
 Doom::Side* getSide(int currentSector, int line, int side)
 {
-    return &sides[(sectors[currentSector].lines[line])->sidenum[side]];
+    return &Doom::level().sides[(Doom::level().sectors[currentSector].lines[line])
+                                    ->sidenum[side]];
 }
 
 //
@@ -63,7 +64,9 @@ Doom::Side* getSide(int currentSector, int line, int side)
 //
 Doom::Sector* getSector(int currentSector, int line, int side)
 {
-    return sides[(sectors[currentSector].lines[line])->sidenum[side]].sector;
+    return Doom::level()
+        .sides[(Doom::level().sectors[currentSector].lines[line])->sidenum[side]]
+        .sector;
 }
 
 //
@@ -73,7 +76,7 @@ Doom::Sector* getSector(int currentSector, int line, int side)
 //
 int twoSided(int sector, int line)
 {
-    return (sectors[sector].lines[line])->flags & Doom::ML_TWOSIDED;
+    return (Doom::level().sectors[sector].lines[line])->flags & Doom::ML_TWOSIDED;
 }
 
 //
@@ -106,7 +109,7 @@ constexpr int MAX_ADJOINING_SECTORS = 20;
 struct AnimDef
 {
     // Not a boolean, despite the name and despite what vanilla called it: the
-    // table below ends with {-1}, and Doom::initPicAnims walks until it finds that.
+    // table below ends with {-1}, and initPicAnims walks until it finds that.
     // Compiled as C this was an int-sized enum and -1 fitted. As a C++ bool the
     // terminator would quietly become `true`, never be recognised, and the loop
     // would run off the end of the array.
@@ -154,11 +157,11 @@ Array<AnimDef, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},
 
 // Forward declarations so call order needs no rearranging.
 void initPicAnims();
-fixed_t findLowestFloorSurrounding(Sector& sec);
-fixed_t findHighestFloorSurrounding(Sector& sec);
-fixed_t findNextHighestFloor(Sector& sec, fixed_t currentheight);
-fixed_t findLowestCeilingSurrounding(Sector& sec);
-fixed_t findHighestCeilingSurrounding(Sector& sec);
+Fixed findLowestFloorSurrounding(Sector& sec);
+Fixed findHighestFloorSurrounding(Sector& sec);
+Fixed findNextHighestFloor(Sector& sec, Fixed currentheight);
+Fixed findLowestCeilingSurrounding(Sector& sec);
+Fixed findHighestCeilingSurrounding(Sector& sec);
 int findSectorFromLineTag(Line& line, int start);
 int findMinSurroundingLight(Sector& sector, int max);
 void crossSpecialLine(int linenum, int side, Mobj& thing);
@@ -226,9 +229,9 @@ void initPicAnims()
 //  given the number of the current sector,
 //  the line number, and the side (0/1) that you want.
 //
-fixed_t findLowestFloorSurrounding(Sector& sec)
+Fixed findLowestFloorSurrounding(Sector& sec)
 {
-    fixed_t floor = sec.floorheight;
+    Fixed floor = sec.floorheight;
 
     for (int i = 0; i < sec.linecount; i++)
     {
@@ -249,9 +252,9 @@ fixed_t findLowestFloorSurrounding(Sector& sec)
 // findHighestFloorSurrounding()
 // FIND HIGHEST FLOOR HEIGHT IN SURROUNDING SECTORS
 //
-fixed_t findHighestFloorSurrounding(Sector& sec)
+Fixed findHighestFloorSurrounding(Sector& sec)
 {
-    fixed_t floor = -500 * FRACUNIT;
+    Fixed floor = -500 * FRACUNIT;
 
     for (int i = 0; i < sec.linecount; i++)
     {
@@ -272,13 +275,13 @@ fixed_t findHighestFloorSurrounding(Sector& sec)
 // findNextHighestFloor
 // FIND NEXT HIGHEST FLOOR IN SURROUNDING SECTORS
 // Note: this should be doable w/o a fixed array.
-fixed_t findNextHighestFloor(Sector& sec, fixed_t currentheight)
+Fixed findNextHighestFloor(Sector& sec, Fixed currentheight)
 {
     int i;
     int h;
-    fixed_t height = currentheight;
+    Fixed height = currentheight;
 
-    Array<fixed_t, MAX_ADJOINING_SECTORS> heightlist;
+    Array<Fixed, MAX_ADJOINING_SECTORS> heightlist;
 
     for (i = 0, h = 0; i < sec.linecount; i++)
     {
@@ -303,7 +306,7 @@ fixed_t findNextHighestFloor(Sector& sec, fixed_t currentheight)
     if (!h)
         return currentheight;
 
-    fixed_t min = heightlist[0];
+    Fixed min = heightlist[0];
 
     // Range checking?
     for (i = 1; i < h; i++)
@@ -316,9 +319,9 @@ fixed_t findNextHighestFloor(Sector& sec, fixed_t currentheight)
 //
 // FIND LOWEST CEILING IN THE SURROUNDING SECTORS
 //
-fixed_t findLowestCeilingSurrounding(Sector& sec)
+Fixed findLowestCeilingSurrounding(Sector& sec)
 {
-    auto height = fixed_t {DOOM_MAXINT};
+    auto height = Fixed {DOOM_MAXINT};
 
     for (int i = 0; i < sec.linecount; i++)
     {
@@ -338,9 +341,9 @@ fixed_t findLowestCeilingSurrounding(Sector& sec)
 //
 // FIND HIGHEST CEILING IN THE SURROUNDING SECTORS
 //
-fixed_t findHighestCeilingSurrounding(Sector& sec)
+Fixed findHighestCeilingSurrounding(Sector& sec)
 {
-    fixed_t height {};
+    Fixed height {};
 
     for (int i = 0; i < sec.linecount; i++)
     {
@@ -362,8 +365,8 @@ fixed_t findHighestCeilingSurrounding(Sector& sec)
 //
 int findSectorFromLineTag(Line& line, int start)
 {
-    for (int i = start + 1; i < numsectors; i++)
-        if (sectors[i].tag == line.tag)
+    for (int i = start + 1; i < level().sectors.size(); i++)
+        if (level().sectors[i].tag == line.tag)
             return i;
 
     return -1;
@@ -403,7 +406,7 @@ int findMinSurroundingLight(Sector& sector, int max)
 //
 void crossSpecialLine(int linenum, int side, Mobj& thing)
 {
-    Line& line = lines[linenum];
+    Line& line = level().lines[linenum];
 
     //        Triggers that other things can activate
     if (!thing.player)
@@ -1000,9 +1003,9 @@ void updateSpecials()
             int pic = anim.basepic
                       + ((levelStats().leveltime / anim.speed + i) % anim.numpics);
             if (anim.istexture)
-                texturetranslation[i] = pic;
+                graphicsData().texturetranslation[i] = pic;
             else
-                flattranslation[i] = pic;
+                graphicsData().flattranslation[i] = pic;
         }
     }
 
@@ -1013,7 +1016,7 @@ void updateSpecials()
         {
             case 48:
                 // EFFECT FIRSTCOL SCROLL +
-                sides[line->sidenum[0]].textureoffset += FRACUNIT;
+                level().sides[line->sidenum[0]].textureoffset += FRACUNIT;
                 break;
         }
     }
@@ -1028,15 +1031,17 @@ void updateSpecials()
                 switch (button.where)
                 {
                     case ButtonWhere::Top:
-                        sides[button.line->sidenum[0]].toptexture = button.btexture;
+                        level().sides[button.line->sidenum[0]].toptexture =
+                            button.btexture;
                         break;
 
                     case ButtonWhere::Middle:
-                        sides[button.line->sidenum[0]].midtexture = button.btexture;
+                        level().sides[button.line->sidenum[0]].midtexture =
+                            button.btexture;
                         break;
 
                     case ButtonWhere::Bottom:
-                        sides[button.line->sidenum[0]].bottomtexture =
+                        level().sides[button.line->sidenum[0]].bottomtexture =
                             button.btexture;
                         break;
                 }
@@ -1058,7 +1063,7 @@ int doDonut(Line& line)
     int rtn = 0;
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        Sector* s1 = &sectors[secnum];
+        Sector* s1 = &level().sectors[secnum];
 
         // ALREADY MOVING?  IF SO, KEEP GOING...
         if (s1->specialdata)
@@ -1134,14 +1139,14 @@ void spawnSpecials()
     i = checkParm("-timer");
     if (i && session.deathmatch)
     {
-        int time = parseInt(myargv[i + 1]) * 60 * 35;
+        int time = parseInt(myargv()[i + 1]) * 60 * 35;
         timer.levelTimer = true;
         timer.levelTimeCount = time;
     }
 
     //        Init special SECTORs.
-    Sector* sector = sectors;
-    for (i = 0; i < numsectors; i++, sector++)
+    Sector* sector = level().sectors.data();
+    for (i = 0; i < level().sectors.size(); i++, sector++)
     {
         if (!sector->special)
             continue;
@@ -1206,13 +1211,13 @@ void spawnSpecials()
 
     // Init line EFFECTs
     surf.linespeciallist.clear();
-    for (i = 0; i < numlines; i++)
+    for (i = 0; i < level().lines.size(); i++)
     {
-        switch (lines[i].special)
+        switch (level().lines[i].special)
         {
             case 48:
                 // EFFECT FIRSTCOL SCROLL+
-                surf.linespeciallist.add(&lines[i]);
+                surf.linespeciallist.add(&level().lines[i]);
                 break;
         }
     }

@@ -49,7 +49,7 @@ int currentTic()
     int sec, usec;
     static int basetime = 0;
 
-    doom_gettime(&sec, &usec);
+    host().gettime(&sec, &usec);
     if (!basetime)
         basetime = sec;
     int newtics = (sec - basetime) * TICRATE + usec * TICRATE / 1000000;
@@ -69,12 +69,12 @@ void initHost()
 //
 void quitGame()
 {
-    Doom::quitNetGame();
+    quitNetGame();
     shutdownSoundHost();
     shutdownMusic();
-    Doom::saveDefaults();
+    saveDefaults();
     shutdownGraphics();
-    doom_exit(0);
+    host().exit(0);
 }
 
 void waitVBlank(int)
@@ -98,16 +98,16 @@ void waitVBlank(int)
 void fatalError(const std::string& error)
 {
     // Message first.
-    doom_print(error);
-    doom_print("\n");
+    host().print(error);
+    host().print("\n");
 
     // Shutdown. Here might be other errors.
     if (demoState().demorecording)
-        Doom::checkDemoStatus();
+        checkDemoStatus();
 
-    Doom::quitNetGame();
+    quitNetGame();
     shutdownGraphics();
 
-    doom_exit(-1);
+    host().exit(-1);
 }
 } // namespace Doom

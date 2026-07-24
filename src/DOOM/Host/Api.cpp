@@ -16,6 +16,7 @@
 
 #include "../Game/OverlayState.h"
 #include "../Render/ViewWindow.h"
+#include "../Render/VideoState.h" // screens[] and screen_palette
 #include "Sound.h"
 
 #include "System.h"
@@ -26,12 +27,6 @@
 #include <map>
 #include <string>
 
-extern byte* screens[5];
-extern unsigned char screen_palette[256 * 3];
-extern Doom::ConfigDefault defaults[];
-extern int numdefaults;
-extern signed short mixbuffer[2048];
-
 // The host output buffers, RAII-owned (Step 9): the 8-bit palette-index snapshot the
 // embedder reads, and the RGB(A)-expanded frame. Sized once in initGame and returned
 // to the embedder as raw pointers into data(), which is stable (never resized after).
@@ -39,26 +34,6 @@ static Doom::Vector<unsigned char> screen_buffer;
 static Doom::Vector<unsigned char> final_screen_buffer;
 static int last_update_time = 0;
 static Doom::Array<int, 3> button_states = {0};
-
-int doom_flags = 0;
-
-// The 13 host callbacks live in Doom::host() (DOOM.h); these names are
-// references onto its members, so every internal call site (doom_print(...),
-// doom_malloc(...)) resolves unchanged. Bound at static-init time, which
-// constructs the host() singleton before main().
-Doom::PrintHandler& doom_print = Doom::host().print;
-Doom::MallocHandler& doom_malloc = Doom::host().malloc;
-Doom::FreeHandler& doom_free = Doom::host().free;
-Doom::OpenHandler& doom_open = Doom::host().open;
-Doom::CloseHandler& doom_close = Doom::host().close;
-Doom::ReadHandler& doom_read = Doom::host().read;
-Doom::WriteHandler& doom_write = Doom::host().write;
-Doom::SeekHandler& doom_seek = Doom::host().seek;
-Doom::TellHandler& doom_tell = Doom::host().tell;
-Doom::EofHandler& doom_eof = Doom::host().eof;
-Doom::GetTimeHandler& doom_gettime = Doom::host().gettime;
-Doom::ExitHandler& doom_exit = Doom::host().exit;
-Doom::GetEnvHandler& doom_getenv = Doom::host().getenv;
 
 void doom_memset(void* ptr, int value, int num)
 {
@@ -86,10 +61,10 @@ namespace Doom
 {
 static ConfigDefault* getDefault(std::string_view name)
 {
-    for (int i = 0; i < numdefaults; ++i)
+    for (int i = 0; i < numdefaults(); ++i)
     {
-        if (name == defaults[i].name)
-            return &defaults[i];
+        if (name == defaults()[i].name)
+            return &defaults()[i];
     }
     return nullptr;
 }
@@ -98,8 +73,8 @@ void setResolution(int width, int height)
 {
     if (width <= 0 || height <= 0)
         return;
-    // Doom::SCREENWIDTH = width;
-    // Doom::SCREENHEIGHT = height;
+    // SCREENWIDTH = width;
+    // SCREENHEIGHT = height;
 }
 
 void setDefaultInt(std::string_view name, int value)
@@ -139,8 +114,8 @@ void initGame(const std::vector<std::string>& args, int flags)
     final_screen_buffer.resize(SCREENWIDTH * SCREENHEIGHT * 4);
     last_update_time = currentTic();
 
-    myargv = args;
-    doom_flags = flags;
+    myargv() = args;
+    host().flags = flags;
 
     doomMain();
 }
@@ -171,9 +146,10 @@ void forceUpdateGame()
 
 const unsigned char* framebuffer(int channels)
 {
-    doom_memcpy(screen_buffer.data(), screens[0], SCREENWIDTH * SCREENHEIGHT);
+    doom_memcpy(
+        screen_buffer.data(), videoState().screens[0], SCREENWIDTH * SCREENHEIGHT);
 
-    // Draw Doom::inputConfig().crosshair
+    // Draw inputConfig().crosshair
     if (inputConfig().crosshair && !overlayState().menuactive
         && gameFlow().gamestate == GameState::Level && !overlayState().automapactive)
     {
@@ -204,9 +180,9 @@ const unsigned char* framebuffer(int channels)
         {
             int k = i * 3;
             int kpal = screen_buffer[i] * 3;
-            final_screen_buffer[k + 0] = screen_palette[kpal + 0];
-            final_screen_buffer[k + 1] = screen_palette[kpal + 1];
-            final_screen_buffer[k + 2] = screen_palette[kpal + 2];
+            final_screen_buffer[k + 0] = videoState().screen_palette[kpal + 0];
+            final_screen_buffer[k + 1] = videoState().screen_palette[kpal + 1];
+            final_screen_buffer[k + 2] = videoState().screen_palette[kpal + 2];
         }
         return final_screen_buffer.data();
     }
@@ -216,9 +192,9 @@ const unsigned char* framebuffer(int channels)
         {
             int k = i * 4;
             int kpal = screen_buffer[i] * 3;
-            final_screen_buffer[k + 0] = screen_palette[kpal + 0];
-            final_screen_buffer[k + 1] = screen_palette[kpal + 1];
-            final_screen_buffer[k + 2] = screen_palette[kpal + 2];
+            final_screen_buffer[k + 0] = videoState().screen_palette[kpal + 0];
+            final_screen_buffer[k + 1] = videoState().screen_palette[kpal + 1];
+            final_screen_buffer[k + 2] = videoState().screen_palette[kpal + 2];
             final_screen_buffer[k + 3] = 255;
         }
         return final_screen_buffer.data();
@@ -237,7 +213,7 @@ unsigned long tickMidi()
 short* soundBuffer()
 {
     updateSound();
-    return mixbuffer;
+    return mixbuffer();
 }
 
 void keyDown(Key key)

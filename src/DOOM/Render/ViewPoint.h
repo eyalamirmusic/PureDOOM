@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Game/PlayerTypes.h" // Player, and fixed_t / angle_t through it.
+#include "../Game/PlayerTypes.h" // Player, and Doom::Fixed / Doom::Angle through it.
 #include "../Math/FixedPoint.h"
 #include "../Math/TrigTables.h"
 
@@ -23,20 +23,20 @@ namespace Doom
 // readers resolving unchanged until each file takes an Engine& of its own.
 struct ViewPoint
 {
-    fixed_t viewx {};
-    fixed_t viewy {};
-    fixed_t viewz {};
+    Fixed viewx {};
+    Fixed viewy {};
+    Fixed viewz {};
 
-    angle_t viewangle {};
+    Angle viewangle {};
 
     // sin/cos of viewangle, sampled from the fine tables alongside it.
-    fixed_t viewcos {};
-    fixed_t viewsin {};
+    Fixed viewcos {};
+    Fixed viewsin {};
 
     Player* viewplayer = nullptr;
 };
 
-// The one ViewPoint, a view onto the Engine's member - the same pattern as clip(),
+// The one ViewPoint, a view onto the Engine's member - the same pattern as clipping(),
 // level(), wad() and randomness().
 ViewPoint& viewPoint();
 } // namespace Doom

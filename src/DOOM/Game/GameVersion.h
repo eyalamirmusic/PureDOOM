@@ -31,6 +31,6 @@ struct GameVersion
 };
 
 // The one GameVersion, a view onto the Engine's member - the same pattern as
-// launchOptions(), levelStats(), viewPoint(), clip(), level(), wad() and randomness().
+// launchOptions(), levelStats(), viewPoint(), clipping(), level(), wad() and randomness().
 GameVersion& gameVersion();
 } // namespace Doom

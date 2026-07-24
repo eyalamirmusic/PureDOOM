@@ -95,7 +95,7 @@ void drawTextLine(HudTextLine& l, bool drawcursor)
     }
 }
 
-// sorta called by Doom::eraseHud and just better darn get things straight
+// sorta called by eraseHud and just better darn get things straight
 void eraseTextLine(HudTextLine& l)
 {
     auto& view = viewWindow();

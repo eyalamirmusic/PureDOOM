@@ -71,8 +71,8 @@
 //
 // These are the only menu globals anything outside the menu touches, so they
 // stay at file scope rather than moving into namespace Doom below. mouseSensitivity
-// is declared in doomstat.h; messageToPrint (m_menu.h) is read by the eacp overlay
-// capture.
+// is declared in doomstat.h. (messageToPrint is a MenuState member now, read by the
+// eacp overlay through menuState() like the rest of the cluster.)
 // menuactive, automapactive and inhelpscreens (which gates Doom::displayFrame's border
 // redraw) are a Doom::OverlayState owned by the Engine now; these are references
 // onto it (REFACTOR.md, Step 5).
@@ -80,21 +80,11 @@
 // size) are Engine members now (UI/MenuSettings.h); these are references onto
 // them. Config.cpp binds its defaults[] entries to the members at runtime rather
 // than capturing their addresses at static-init, which is what unblocked the move.
-int messageToPrint; // 1 = message to be printed
-
-// Globals owned elsewhere that the menu reads or writes. They are declared here,
-// at file scope, so the uses inside namespace Doom below resolve to these ::
-// entities - a matching extern placed *inside* the namespace would instead be
-// taken for a Doom:: member and fail to link (the trap the Step 8 notes call
-// out). screens (v_video.h) and colormaps (r_state.h) already come in through
-// headers; screen_palette has no header, so it is declared here.
-extern int doom_flags;
-extern unsigned char screen_palette[256 * 3]; // i_video, no header
 
 // The quit-screen taunts, drawn by quitDOOM. Declared in dstrings.h, read only
 // here, so their definition moved out of dstrings.cpp to sit with their one
 // reader. ::-scoped for the extern; const so the literals stay off -Wwritable.
-std::string_view endmsg[Doom::NUM_QUITMESSAGES + 1] = {
+std::string_view endmsgData[Doom::NUM_QUITMESSAGES + 1] = {
     // DOOM1
     Doom::QUITMSG,
     "please don't leave, there's more\ndemons to toast!",
@@ -125,6 +115,12 @@ std::string_view endmsg[Doom::NUM_QUITMESSAGES + 1] = {
 
     // Internal debug. Different style, too.
     "THIS IS NO MESSAGE!\nPage intentionally left blank."};
+
+// Hands out the file-local quit-taunt table above (was the `extern endmsg[]`).
+const std::string_view* endmsg()
+{
+    return endmsgData;
+}
 
 namespace Doom
 {
@@ -728,7 +724,7 @@ void readSaveStrings()
         //doom_sprintf(name, SAVEGAMENAME"%d.dsg", i);
         auto name = concat(SAVEGAMENAME, i, ".dsg");
 
-        handle = doom_open(name.c_str(), "r");
+        handle = host().open(name.c_str(), "r");
         if (handle == nullptr)
         {
             state.savegamestrings[i] = EMPTYSTRING;
@@ -739,9 +735,9 @@ void readSaveStrings()
         // The description is a fixed menuSaveStringSize-byte field on disk,
         // zero-padded; keep the text up to its first NUL.
         Array<char, menuSaveStringSize> field = {};
-        doom_read(handle, field.data(), menuSaveStringSize);
+        host().read(handle, field.data(), menuSaveStringSize);
         state.savegamestrings[i] = nameView(field.data(), menuSaveStringSize);
-        doom_close(handle);
+        host().close(handle);
         DOOM_LoadMenu[i].status = 1;
     }
 }
@@ -909,7 +905,7 @@ void quickSave()
         state.quickSaveSlot = -2; // means to pick a slot now
         return;
     }
-    //doom_sprintf(tempstring, Doom::QSPROMPT, savegamestrings[quickSaveSlot]);
+    //doom_sprintf(tempstring, QSPROMPT, savegamestrings[quickSaveSlot]);
     // The lineage's last call was doom_strcpy where concat was meant, so the
     // prompt it shows is QSPROMPT_2 alone and the savegame name never appears.
     // Preserved, not fixed - restoring the name is a behaviour change.
@@ -946,7 +942,7 @@ void quickLoad()
         startMessage(QSAVESPOT, {}, false);
         return;
     }
-    //doom_sprintf(tempstring, Doom::QLPROMPT, savegamestrings[quickSaveSlot]);
+    //doom_sprintf(tempstring, QLPROMPT, savegamestrings[quickSaveSlot]);
     // Same lineage bug as quickSave above: the last doom_strcpy overwrote the
     // name it just built. Preserved, not fixed.
     state.tempstring =
@@ -1010,9 +1006,9 @@ void drawSound()
 
     drawPatchDirect(60, 38, 0, static_cast<Patch*>(cacheLumpName("M_SVOL")));
 
-    if (!(doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
+    if (!(host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
     {
-        int offset = (doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
+        int offset = (host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
                          ? static_cast<int>(toIndex(SoundNoMusicItem::SfxVolNoMusic))
                          : static_cast<int>(toIndex(SoundItem::SfxVol));
         drawThermo(SoundDef.x,
@@ -1021,9 +1017,9 @@ void drawSound()
                    sndset.sfxVolume);
     }
 
-    if (!(doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS))
+    if (!(host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS))
     {
-        int offset = (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
+        int offset = (host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
                          ? static_cast<int>(toIndex(SoundNoSfxItem::MusicVolNoSfx))
                          : static_cast<int>(toIndex(SoundItem::MusicVol));
         drawThermo(SoundDef.x,
@@ -1173,8 +1169,8 @@ void drawOptions()
 
     drawPatchDirect(108, 15, 0, static_cast<Patch*>(cacheLumpName("M_OPTTTL")));
 
-    //Doom::drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
-    //                Doom::cacheLumpName(detailNames[detailLevel])); // Details do nothing?
+    //drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
+    //                cacheLumpName(detailNames[detailLevel])); // Details do nothing?
 
     drawPatchDirect(
         OptionsDef.x + 120,
@@ -1352,13 +1348,13 @@ void quitDOOM(int)
     if (gameVersion().language != Language::English)
     {
         //doom_sprintf(endstring, "%s\n\n"DOSY, endmsg[0]);
-        state.endstring = concat(endmsg[0], "\n\n" DOSY);
+        state.endstring = concat(endmsg()[0], "\n\n" DOSY);
     }
     else
     {
         //doom_sprintf(endstring, "%s\n\n" DOSY, endmsg[gametic % (NUM_QUITMESSAGES - 2) + 1]);
         state.endstring = concat(
-            endmsg[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1], "\n\n" DOSY);
+            endmsg()[gameClock().gametic % (NUM_QUITMESSAGES - 2) + 1], "\n\n" DOSY);
     }
 
     startMessage(state.endstring, quitResponse, true);
@@ -1471,7 +1467,7 @@ void startMessage(std::string_view string,
     auto& state = menuState();
 
     state.messageLastMenuActive = overlay.menuactive;
-    messageToPrint = 1;
+    state.messageToPrint = 1;
     state.messageString = string;
     // An empty routine means "no answer needed"; keep the member callable so the
     // responder never has to test it.
@@ -1484,7 +1480,7 @@ void startMessage(std::string_view string,
 void stopMessage()
 {
     overlayState().menuactive = menuState().messageLastMenuActive;
-    messageToPrint = 0;
+    menuState().messageToPrint = 0;
 }
 
 //
@@ -1700,14 +1696,14 @@ bool menuResponder(Event& ev)
     }
 
     // Take care of any messages that need input
-    if (messageToPrint)
+    if (state.messageToPrint)
     {
         if (state.messageNeedsInput == true
             && !(ch == ' ' || ch == 'n' || ch == 'y' || ch == KEY_ESCAPE))
             return false;
 
         overlay.menuactive = state.messageLastMenuActive;
-        messageToPrint = 0;
+        state.messageToPrint = 0;
         state.messageRoutine(ch);
 
         overlay.menuactive = false;
@@ -1772,7 +1768,7 @@ bool menuResponder(Event& ev)
 
                 // case KEY_F5:            // Detail toggle
                 //     changeDetail(0);
-                //     Doom::startSound(0, SfxEnum::Swtchn);
+                //     startSound(0, SfxEnum::Swtchn);
                 //     return true;
 
             case KEY_F5: // Crosshair toggle
@@ -1960,7 +1956,7 @@ void drawMenu()
     overlay.inhelpscreens = false;
 
     // Horiz. & Vertically center string and print it.
-    if (messageToPrint)
+    if (state.messageToPrint)
     {
         auto message = state.messageString;
         y = 100 - stringHeight(state.messageString) / 2;
@@ -1982,13 +1978,13 @@ void drawMenu()
         return;
 
     // Darken background so the menu is more readable.
-    if (doom_flags & DOOM_FLAG_MENU_DARKEN_BG)
+    if (host().flags & DOOM_FLAG_MENU_DARKEN_BG)
     {
         for (int j = 0, len = SCREENWIDTH * SCREENHEIGHT; j < len; ++j)
         {
-            byte color = screens[0][j];
-            color = colormaps[color + (20 * 256)];
-            screens[0][j] = color;
+            byte color = videoState().screens[0][j];
+            color = graphicsData().colormaps[color + (20 * 256)];
+            videoState().screens[0][j] = color;
         }
     }
 
@@ -2066,9 +2062,9 @@ void initMenu()
     auto& overlay = overlayState();
     auto& state = menuState();
 
-    bool hide_mouse = (doom_flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
-    bool hide_sound = ((doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
-                       && (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
+    bool hide_mouse = (host().flags & DOOM_FLAG_HIDE_MOUSE_OPTIONS) ? true : false;
+    bool hide_sound = ((host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
+                       && (host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
                           ? true
                           : false;
 
@@ -2090,12 +2086,12 @@ void initMenu()
     }
 
     SoundMenu = SoundMenuFull.data();
-    if (doom_flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
+    if (host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
     {
         SoundMenu = SoundMenuNoMusic.data();
         doom_memcpy(&SoundDef, &SoundNoMusicDef, sizeof(SoundDef));
     }
-    else if (doom_flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
+    else if (host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
     {
         SoundMenu = SoundMenuNoSFX.data();
         doom_memcpy(&SoundDef, &SoundNoSFXDef, sizeof(SoundDef));
@@ -2107,7 +2103,7 @@ void initMenu()
     state.whichSkull = 0;
     state.skullAnimCounter = 10;
     state.screenSize = menuSettings().screenblocks - 3;
-    messageToPrint = 0;
+    state.messageToPrint = 0;
     state.messageString = {};
     state.messageLastMenuActive = overlay.menuactive;
     state.quickSaveSlot = -1;

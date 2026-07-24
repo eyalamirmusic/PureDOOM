@@ -12,7 +12,7 @@
 #include "../Game/GameDefs.h"
 #include "../Sim/Random.h"
 
-#include "Wipe.h" // the shim's globals (wipe_scr_start / offsets / running)
+#include "Wipe.h"
 #include "Wipe.h"
 #include "WipeState.h"
 
@@ -45,7 +45,7 @@ void colMajorXform(short* array, int width, int height)
 
 int initColorXForm(int width, int height, [[maybe_unused]] int ticks)
 {
-    doom_memcpy(wipeState().wipe_scr, wipe_scr_start, width * height);
+    doom_memcpy(wipeState().wipe_scr, wipeState().scrStart, width * height);
     return 0;
 }
 
@@ -101,11 +101,11 @@ int initMelt(int width, int height, [[maybe_unused]] int ticks)
     auto& scratch = wipeState();
 
     // copy start screen to main screen
-    doom_memcpy(scratch.wipe_scr, wipe_scr_start, width * height);
+    doom_memcpy(scratch.wipe_scr, scratch.scrStart, width * height);
 
     // makes this wipe faster (in theory)
     // to have stuff in column-major format
-    colMajorXform(reinterpret_cast<short*>(wipe_scr_start), width / 2, height);
+    colMajorXform(reinterpret_cast<short*>(scratch.scrStart), width / 2, height);
     colMajorXform(reinterpret_cast<short*>(scratch.wipe_scr_end), width / 2, height);
 
     // setup initial column positions
@@ -113,16 +113,15 @@ int initMelt(int width, int height, [[maybe_unused]] int ticks)
     // RAII-owned (Step 9): scratch.wipe_melt_offsets is the owning vector; the
     // vanilla name wipe_melt_offsets is a view refreshed here after the resize.
     scratch.wipe_melt_offsets.resize(width);
-    wipe_melt_offsets = scratch.wipe_melt_offsets.data();
-    wipe_melt_offsets[0] = -(randomness().forMenu() % 16);
+    scratch.wipe_melt_offsets[0] = -(randomness().forMenu() % 16);
     for (int i = 1; i < width; i++)
     {
         int r = (randomness().forMenu() % 3) - 1;
-        wipe_melt_offsets[i] = wipe_melt_offsets[i - 1] + r;
-        if (wipe_melt_offsets[i] > 0)
-            wipe_melt_offsets[i] = 0;
-        else if (wipe_melt_offsets[i] == -16)
-            wipe_melt_offsets[i] = -15;
+        scratch.wipe_melt_offsets[i] = scratch.wipe_melt_offsets[i - 1] + r;
+        if (scratch.wipe_melt_offsets[i] > 0)
+            scratch.wipe_melt_offsets[i] = 0;
+        else if (scratch.wipe_melt_offsets[i] == -16)
+            scratch.wipe_melt_offsets[i] = -15;
     }
 
     return 0;
@@ -140,32 +139,35 @@ int doMelt(int width, int height, int ticks)
     {
         for (int i = 0; i < width; i++)
         {
-            if (wipe_melt_offsets[i] < 0)
+            if (scratch.wipe_melt_offsets[i] < 0)
             {
-                wipe_melt_offsets[i]++;
+                scratch.wipe_melt_offsets[i]++;
                 done = false;
             }
-            else if (wipe_melt_offsets[i] < height)
+            else if (scratch.wipe_melt_offsets[i] < height)
             {
-                int dy = (wipe_melt_offsets[i] < 16) ? wipe_melt_offsets[i] + 1 : 8;
-                if (wipe_melt_offsets[i] + dy >= height)
-                    dy = height - wipe_melt_offsets[i];
+                int dy = (scratch.wipe_melt_offsets[i] < 16)
+                             ? scratch.wipe_melt_offsets[i] + 1
+                             : 8;
+                if (scratch.wipe_melt_offsets[i] + dy >= height)
+                    dy = height - scratch.wipe_melt_offsets[i];
                 short* s = &(reinterpret_cast<short*>(
-                    scratch.wipe_scr_end))[i * height + wipe_melt_offsets[i]];
+                    scratch
+                        .wipe_scr_end))[i * height + scratch.wipe_melt_offsets[i]];
                 short* d = &(reinterpret_cast<short*>(
-                    scratch.wipe_scr))[wipe_melt_offsets[i] * width + i];
+                    scratch.wipe_scr))[scratch.wipe_melt_offsets[i] * width + i];
                 int idx = 0;
                 for (int j = dy; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
                 }
-                wipe_melt_offsets[i] += dy;
-                s = &(reinterpret_cast<short*>(wipe_scr_start))[i * height];
+                scratch.wipe_melt_offsets[i] += dy;
+                s = &(reinterpret_cast<short*>(scratch.scrStart))[i * height];
                 d = &(reinterpret_cast<short*>(
-                    scratch.wipe_scr))[wipe_melt_offsets[i] * width + i];
+                    scratch.wipe_scr))[scratch.wipe_melt_offsets[i] * width + i];
                 idx = 0;
-                for (int j = height - wipe_melt_offsets[i]; j; j--)
+                for (int j = height - scratch.wipe_melt_offsets[i]; j; j--)
                 {
                     d[idx] = *(s++);
                     idx += width;
@@ -194,8 +196,8 @@ int startScreen([[maybe_unused]] int x,
                 [[maybe_unused]] int width,
                 [[maybe_unused]] int height)
 {
-    wipe_scr_start = screens[2];
-    readScreen(wipe_scr_start);
+    wipeState().scrStart = videoState().screens[2];
+    readScreen(wipeState().scrStart);
     return 0;
 }
 
@@ -203,9 +205,9 @@ int endScreen(int x, int y, int width, int height)
 {
     auto& scratch = wipeState();
 
-    scratch.wipe_scr_end = screens[3];
+    scratch.wipe_scr_end = videoState().screens[3];
     readScreen(scratch.wipe_scr_end);
-    drawBlock(x, y, 0, width, height, wipe_scr_start); // restore start scr.
+    drawBlock(x, y, 0, width, height, scratch.scrStart); // restore start scr.
     return 0;
 }
 
@@ -220,10 +222,10 @@ int screenWipe(WipeType wipeno,
         initColorXForm, doColorXForm, exitColorXForm, initMelt, doMelt, exitMelt};
 
     // initial stuff
-    if (!wipe_melt_running)
+    if (!wipeState().meltRunning)
     {
-        wipe_melt_running = true;
-        wipeState().wipe_scr = screens[0];
+        wipeState().meltRunning = true;
+        wipeState().wipe_scr = videoState().screens[0];
         (*wipes[toIndex(wipeno) * 3])(width, height, ticks);
     }
 
@@ -234,11 +236,11 @@ int screenWipe(WipeType wipeno,
     // final stuff
     if (rc)
     {
-        wipe_melt_running = false;
+        wipeState().meltRunning = false;
         (*wipes[toIndex(wipeno) * 3 + 2])(width, height, ticks);
     }
 
-    return !wipe_melt_running;
+    return !wipeState().meltRunning;
 }
 
 } // namespace Doom
@@ -250,17 +252,3 @@ int screenWipe(WipeType wipeno,
 //
 // SCREEN WIPE PACKAGE
 //
-
-// Raised while a melt is running, and the only safe thing to test: exitMelt clears
-// the column table's owning vector without refreshing the pointer to it. (Read by
-// the GPU melt compositor in EngineAccess.)
-bool wipe_melt_running = false;
-
-// The outgoing frame, as palette indices; wipe_initMelt leaves it column-major.
-byte* wipe_scr_start;
-
-// How far down each two-pixel column of the outgoing screen has slid so far.
-// Negative means the column has not started moving yet. RAII-owned (Step 9): this is
-// now a VIEW onto WipeState::wipe_melt_offsets.data(), refreshed by initMelt; see
-// UI/WipeState.h.
-int* wipe_melt_offsets;

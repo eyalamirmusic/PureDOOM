@@ -327,15 +327,15 @@ void initNetwork()
 
     // RAII now (Step 9): doomcom is the view onto NetState's owned doomcomStorage,
     // value-initialised here as the old doom_malloc + doom_memset(0) block was.
-    auto& net = Doom::netState();
+    auto& net = netState();
     net.doomcomStorage = DoomCom {};
     net.doomcom = &net.doomcomStorage;
 
     // set up for network
-    i = Doom::checkParm("-dup");
+    i = checkParm("-dup");
     if (i && i < myargCount() - 1)
     {
-        net.doomcom->ticdup = myargv[i + 1][0] - '0';
+        net.doomcom->ticdup = myargv()[i + 1][0] - '0';
         if (net.doomcom->ticdup < 1)
             net.doomcom->ticdup = 1;
         if (net.doomcom->ticdup > 9)
@@ -344,30 +344,30 @@ void initNetwork()
     else
         net.doomcom->ticdup = 1;
 
-    if (Doom::checkParm("-extratic"))
+    if (checkParm("-extratic"))
         net.doomcom->extratics = 1;
     else
         net.doomcom->extratics = 0;
 
-    p = Doom::checkParm("-port");
+    p = checkParm("-port");
     if (p && p < myargCount() - 1)
     {
-        DOOMPORT = parseInt(myargv[p + 1]);
+        DOOMPORT = parseInt(myargv()[p + 1]);
         // doom_print("using alternate port %i\n", DOOMPORT);
         print("using alternate port ", DOOMPORT, "\n");
     }
 
-    p = Doom::checkParm("-sendport");
+    p = checkParm("-sendport");
     if (p && p < myargCount() - 1)
     {
-        DOOMPORT_SEND = parseInt(myargv[p + 1]);
+        DOOMPORT_SEND = parseInt(myargv()[p + 1]);
         // doom_print("using alternate send port %i\n", DOOMPORT_SEND);
         print("using alternate send port ", DOOMPORT_SEND, "\n");
     }
 
     // parse network game options,
     //  -net <consoleplayer> <host> <host> ...
-    i = Doom::checkParm("-net");
+    i = checkParm("-net");
     if (!i)
     {
         // single player game
@@ -385,28 +385,28 @@ void initNetwork()
     gameSession().netgame = true;
 
     // parse player number and host list
-    net.doomcom->consoleplayer = myargv[i + 1][0] - '1';
+    net.doomcom->consoleplayer = myargv()[i + 1][0] - '1';
 
     net.doomcom->numnodes = 1; // this node for sure
 
     i++;
-    while (++i < myargCount() && myargv[i][0] != '-')
+    while (++i < myargCount() && myargv()[i][0] != '-')
     {
         sendaddress[net.doomcom->numnodes].sin_family = AF_INET;
         sendaddress[net.doomcom->numnodes].sin_port = htons(DOOMPORT);
-        if (myargv[i][0] == '.')
+        if (myargv()[i][0] == '.')
         {
             sendaddress[net.doomcom->numnodes].sin_addr.s_addr =
-                inet_addr(myargv[i].c_str() + 1);
+                inet_addr(myargv()[i].c_str() + 1);
         }
         else
         {
-            hostentry = gethostbyname(myargv[i].c_str());
+            hostentry = gethostbyname(myargv()[i].c_str());
             if (!hostentry)
             {
                 // fatalError("Error: gethostbyname: couldn't find %s", myargv[i]);
 
-                fatalError("Error: gethostbyname: couldn't find ", myargv[i]);
+                fatalError("Error: gethostbyname: couldn't find ", myargv()[i]);
             }
             sendaddress[net.doomcom->numnodes].sin_addr.s_addr =
                 *(int*) hostentry->h_addr_list[0];

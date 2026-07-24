@@ -44,7 +44,7 @@ namespace Doom
 void initPlanes();
 void mapPlane(int y, int x1, int x2);
 void clearPlanes();
-VisPlane* findPlane(fixed_t height, int picnum, int lightlevel);
+VisPlane* findPlane(Fixed height, int picnum, int lightlevel);
 VisPlane* checkPlane(VisPlane* pl, int start, int stop);
 void makeSpans(int x, int t1, int b1, int t2, int b2);
 void drawPlanes();
@@ -73,9 +73,10 @@ void mapPlane(int y, int x1, int x2)
     auto& plane = planeScratch();
     auto& pt = viewPoint();
     auto& lights = lighting();
+    auto& drawer = drawers();
 
-    fixed_t distance;
-    fixed_t length;
+    Fixed distance;
+    Fixed length;
     unsigned index;
 
 #ifdef RANGECHECK
@@ -108,8 +109,8 @@ void mapPlane(int y, int x1, int x2)
     length = FixedMul(distance, plane.distscale[x1]);
     const auto angleFine =
         (pt.viewangle + viewProjection().xtoviewangle[x1]).fineIndex();
-    draw.ds_xfrac = pt.viewx + FixedMul(finecosine[angleFine], length);
-    draw.ds_yfrac = -pt.viewy - FixedMul(finesine[angleFine], length);
+    draw.ds_xfrac = pt.viewx + FixedMul(finecosine()[angleFine], length);
+    draw.ds_yfrac = -pt.viewy - FixedMul(finesine()[angleFine], length);
 
     if (lights.fixedcolormap)
         draw.ds_colormap = lights.fixedcolormap;
@@ -128,7 +129,7 @@ void mapPlane(int y, int x1, int x2)
     draw.ds_x2 = x2;
 
     // high or low detail
-    spanfunc();
+    drawer.span();
 }
 
 //
@@ -158,14 +159,14 @@ void clearPlanes()
     const auto angleFine = (viewPoint().viewangle - ang90).fineIndex();
 
     // scale will be unit scale at SCREENWIDTH/2 distance
-    plane.basexscale = FixedDiv(finecosine[angleFine], proj.centerxfrac);
-    plane.baseyscale = -FixedDiv(finesine[angleFine], proj.centerxfrac);
+    plane.basexscale = FixedDiv(finecosine()[angleFine], proj.centerxfrac);
+    plane.baseyscale = -FixedDiv(finesine()[angleFine], proj.centerxfrac);
 }
 
 //
 // findPlane
 //
-VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
+VisPlane* findPlane(Fixed height, int picnum, int lightlevel)
 {
     VisPlane* check;
 
@@ -173,7 +174,7 @@ VisPlane* findPlane(fixed_t height, int picnum, int lightlevel)
 
     if (picnum == skyState().skyflatnum)
     {
-        height = fixed_t {}; // all skys map together
+        height = Fixed {}; // all skys map together
         lightlevel = 0;
     }
 
@@ -309,6 +310,7 @@ void drawPlanes()
     auto& proj = viewProjection();
     auto& lights = lighting();
     auto& plane = planeScratch();
+    auto& drawer = drawers();
 
     VisPlane* pl;
     int light;
@@ -363,7 +365,7 @@ void drawPlanes()
             //  i.e. colormaps[0] is used.
             // Because of this hack, sky is not affected
             //  by INVUL inverse mapping.
-            draw.dc_colormap = colormaps;
+            draw.dc_colormap = graphicsData().colormaps;
             draw.dc_texturemid = sky.skytexturemid;
             for (int x = pl->minx; x <= pl->maxx; x++)
             {
@@ -376,16 +378,16 @@ void drawPlanes()
                         ((pt.viewangle + proj.xtoviewangle[x]) >> ANGLETOSKYSHIFT)
                             .raw;
                     draw.dc_x = x;
-                    draw.dc_source = Doom::getColumn(sky.skytexture, angle);
-                    colfunc();
+                    draw.dc_source = getColumn(sky.skytexture, angle);
+                    drawer.column();
                 }
             }
             continue;
         }
 
         // regular flat
-        draw.ds_source = static_cast<byte*>(Doom::cacheLumpNum(
-            graphicsData().firstflat + flattranslation[pl->picnum]));
+        draw.ds_source = static_cast<byte*>(cacheLumpNum(
+            graphicsData().firstflat + graphicsData().flattranslation[pl->picnum]));
 
         plane.planeheight = doom_abs(pl->height - pt.viewz);
         light = (pl->lightlevel >> LIGHTSEGSHIFT) + lights.extralight;

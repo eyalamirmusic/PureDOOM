@@ -22,7 +22,7 @@ namespace Doom
 // sweep (REFACTOR.md, Step 9 strand (a)) retired them - every function in UI/StatusBar that touches
 // more than one of these members now hoists a single `auto& bar = statusBarState();` and reaches
 // them through it (a function touching only one keeps the inline `statusBarState().member` call).
-// Doom::startStatusBar / ST_initData reset most of these before use, so the defaults matter little,
+// startStatusBar / ST_initData reset most of these before use, so the defaults matter little,
 // but they reproduce vanilla's zero/one/true initializers exactly. The bar is drawn into screens[0]
 // every tic, so this is frame-golden-covered.
 //
@@ -55,8 +55,8 @@ namespace Doom
 struct StatusBarState
 {
     // Lifecycle and timing.
-    Player* plyr = nullptr; // the console player, refreshed at Doom::startStatusBar
-    bool st_firsttime = false; // Doom::startStatusBar just ran (force a full redraw)
+    Player* plyr = nullptr; // the console player, refreshed at startStatusBar
+    bool st_firsttime = false; // startStatusBar just ran (force a full redraw)
     int lu_palette = 0; // the PLAYPAL lump number
     bool st_stopped = true; // ST_Stop has parked the bar
 

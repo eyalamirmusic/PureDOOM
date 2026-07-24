@@ -63,7 +63,9 @@ namespace Doom
 constexpr int NUM_QUITMESSAGES = 22;
 } // namespace Doom
 
-extern std::string_view endmsg[];
+// The quit-screen taunts. Was an `extern` array; endmsg() hands out the
+// file-local storage in UI/Menu.cpp, read as endmsg()[i].
+const std::string_view* endmsg();
 
 //-----------------------------------------------------------------------------
 //

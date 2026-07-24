@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/FixedPoint.h" // Doom::Fixed
 
 // Forward declarations at global scope (that is where p_mobj.h / r_defs.h declare them) - the
 // scratch holds pointers to these, not their layout. Declaring them inside namespace Doom would make
@@ -17,7 +17,7 @@ struct Line; // Line
 namespace Doom
 {
 
-// The p_map "action" scratch - the working state Doom::slideMove sets up and reads
+// The p_map "action" scratch - the working state slideMove sets up and reads
 // back within one call, but which vanilla kept as globals because PTR_SlideTraverse,
 // the blockmap iterator's callback, needs to see it: the best slide fraction and
 // line, the sliding mobj, and the residual move.
@@ -37,15 +37,15 @@ namespace Doom
 // AutomapView::min_w/min_h and WeaponScratch::swingx/swingy).
 struct ActionScratch
 {
-    // Doom::slideMove.
-    fixed_t bestslidefrac {}; // closest slide so far along the move
+    // slideMove.
+    Fixed bestslidefrac {}; // closest slide so far along the move
     Line* bestslideline = nullptr; // the wall slid against
     Mobj* slidemo = nullptr; // the mobj sliding
-    fixed_t tmxmove {}; // residual x move after the slide
-    fixed_t tmymove {}; // residual y move after the slide
+    Fixed tmxmove {}; // residual x move after the slide
+    Fixed tmymove {}; // residual y move after the slide
 };
 
 // The one ActionScratch, a view onto the Engine's member - the same pattern as the other clusters
-// (clip(), wallScratch(), ...).
+// (clipping(), wallScratch(), ...).
 ActionScratch& actionScratch();
 } // namespace Doom

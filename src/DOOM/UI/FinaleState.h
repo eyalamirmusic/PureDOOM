@@ -37,7 +37,7 @@ struct FinaleState
     // The DOOM II cast call.
     int castnum = 0; // which monster in castorder is on screen
     int casttics = 0; // tics left in the current cast state
-    State* caststate = nullptr; // current animation state (into the global states[])
+    State* caststate = nullptr; // current animation state (into states()[])
     bool castdeath = false; // the shown monster is dying
     int castframes = 0; // frames shown in the current cycle
     int castonmelee = 0; // alternate melee/missile attack toggle

@@ -157,7 +157,7 @@ void generateComposite(int texnum)
     short* collump;
     unsigned short* colofs;
 
-    texture = textures[texnum];
+    texture = graphicsData().textures[texnum];
 
     // A 64-byte zero tail, as WadFile gives each lump, so the renderer's
     // tutti-frutti over-read past a composited column draws a deterministic zero
@@ -180,7 +180,7 @@ void generateComposite(int texnum)
     for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
          i++, patch++)
     {
-        realpatch = static_cast<Patch*>(Doom::cacheLumpNum(patch->patch));
+        realpatch = static_cast<Patch*>(cacheLumpNum(patch->patch));
         x1 = patch->originx;
         x2 = x1 + littleEndian(realpatch->width);
 
@@ -226,7 +226,7 @@ void generateLookup(int texnum)
     short* collump;
     unsigned short* colofs;
 
-    texture = textures[texnum];
+    texture = graphicsData().textures[texnum];
 
     // Composited texture not created yet.
     texturecomposite[texnum] = nullptr;
@@ -247,7 +247,7 @@ void generateLookup(int texnum)
     for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
          i++, patch++)
     {
-        realpatch = static_cast<Patch*>(Doom::cacheLumpNum(patch->patch));
+        realpatch = static_cast<Patch*>(cacheLumpNum(patch->patch));
         x1 = patch->originx;
         x2 = x1 + littleEndian(realpatch->width);
 
@@ -311,7 +311,7 @@ byte* getColumn(int tex, int col)
     ofs = texturecolumnofs[tex][col];
 
     if (lump > 0)
-        return static_cast<byte*>(Doom::cacheLumpNum(lump)) + ofs;
+        return static_cast<byte*>(cacheLumpNum(lump)) + ofs;
 
     if (!texturecomposite[tex])
         generateComposite(tex);
@@ -357,27 +357,27 @@ void initTextures()
     auto& gd = graphicsData();
 
     // Load the patch names from pnames.lmp.
-    names = static_cast<const char*>(Doom::cacheLumpName("PNAMES"));
+    names = static_cast<const char*>(cacheLumpName("PNAMES"));
     nummappatches = littleEndian(*(reinterpret_cast<const int*>(names)));
     name_p = names + 4;
     auto patchlookup = Vector<int>(nummappatches);
 
     for (i = 0; i < nummappatches; i++)
-        patchlookup[i] = Doom::wad().find(nameView(name_p + i * 8, 8));
+        patchlookup[i] = wad().find(nameView(name_p + i * 8, 8));
 
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
-    maptex = maptex1 = static_cast<int*>(Doom::cacheLumpName("TEXTURE1"));
+    maptex = maptex1 = static_cast<int*>(cacheLumpName("TEXTURE1"));
     numtextures1 = littleEndian(*maptex);
-    maxoff = Doom::wad().length(Doom::wad().number("TEXTURE1"));
+    maxoff = wad().length(wad().number("TEXTURE1"));
     directory = maptex + 1;
 
-    if (Doom::wad().find("TEXTURE2") != -1)
+    if (wad().find("TEXTURE2") != -1)
     {
-        maptex2 = static_cast<int*>(Doom::cacheLumpName("TEXTURE2"));
+        maptex2 = static_cast<int*>(cacheLumpName("TEXTURE2"));
         numtextures2 = littleEndian(*maptex2);
-        maxoff2 = Doom::wad().length(Doom::wad().number("TEXTURE2"));
+        maxoff2 = wad().length(wad().number("TEXTURE2"));
     }
     else
     {
@@ -393,7 +393,7 @@ void initTextures()
     // loop below only fills them, never resizes).
     gd.textureStorage.resize(gd.numtextures);
     gd.texturePointers.resize(gd.numtextures);
-    textures = gd.texturePointers.data();
+    gd.textures = gd.texturePointers.data();
 
     // The composition tables are CompositeCache-owned Vectors now (Step 9); size them once
     // here and point the views at their data(). columnlump/ofs/composite own an inner vector per
@@ -417,11 +417,10 @@ void initTextures()
     // textureheight and texturetranslation are GraphicsData-owned too (Step 9); views
     // onto data() refreshed after each resize.
     gd.textureheight.resize(gd.numtextures);
-    textureheight = gd.textureheight.data();
 
     // Really complex printing shit...
-    temp1 = Doom::wad().number("S_START"); // P_???????
-    temp2 = Doom::wad().number("S_END") - 1;
+    temp1 = wad().number("S_START"); // P_???????
+    temp2 = wad().number("S_END") - 1;
     temp3 = ((temp2 - temp1 + 63) / 64) + ((gd.numtextures + 63) / 64);
     print("[");
     for (i = 0; i < temp3; i++)
@@ -502,7 +501,7 @@ void initTextures()
             j <<= 1;
 
         texturewidthmask[i] = j - 1;
-        textureheight[i] = Doom::Fixed::fromInt(texture->height);
+        graphicsData().textureheight[i] = Fixed::fromInt(texture->height);
     }
 
     // Precalculate whatever possible.
@@ -511,7 +510,6 @@ void initTextures()
 
     // Create translation table for global animation.
     gd.texturetranslation.resize(gd.numtextures + 1);
-    texturetranslation = gd.texturetranslation.data();
 
     // Only numtextures entries: the vector is sized one larger, and vanilla leaves
     // that spare slot alone.
@@ -528,14 +526,13 @@ void initFlats()
     auto& gd = graphicsData();
     auto& cc = compositeCache();
 
-    gd.firstflat = Doom::wad().number("F_START") + 1;
-    cc.lastflat = Doom::wad().number("F_END") - 1;
+    gd.firstflat = wad().number("F_START") + 1;
+    cc.lastflat = wad().number("F_END") - 1;
     gd.numflats = cc.lastflat - gd.firstflat + 1;
 
     // Create translation table for global animation. GraphicsData owns it (Step 9);
     // flattranslation is a view onto data() (P_ animation writes through it).
     gd.flattranslation.resize(gd.numflats + 1);
-    flattranslation = gd.flattranslation.data();
 
     std::iota(
         gd.flattranslation.begin(), gd.flattranslation.begin() + gd.numflats, 0);
@@ -553,8 +550,8 @@ void initSpriteLumps()
 
     auto& gd = graphicsData();
 
-    gd.firstspritelump = Doom::wad().number("S_START") + 1;
-    gd.lastspritelump = Doom::wad().number("S_END") - 1;
+    gd.firstspritelump = wad().number("S_START") + 1;
+    gd.lastspritelump = wad().number("S_END") - 1;
 
     gd.numspritelumps = gd.lastspritelump - gd.firstspritelump + 1;
 
@@ -564,19 +561,18 @@ void initSpriteLumps()
     gd.spritewidth.resize(gd.numspritelumps);
     gd.spriteoffset.resize(gd.numspritelumps);
     gd.spritetopoffset.resize(gd.numspritelumps);
-    spritewidth = gd.spritewidth.data();
-    spriteoffset = gd.spriteoffset.data();
-    spritetopoffset = gd.spritetopoffset.data();
 
     for (int i = 0; i < gd.numspritelumps; i++)
     {
         if (!(i & 63))
             print(".");
 
-        patch = static_cast<Patch*>(Doom::cacheLumpNum(gd.firstspritelump + i));
-        spritewidth[i] = Doom::Fixed::fromInt(littleEndian(patch->width));
-        spriteoffset[i] = Doom::Fixed::fromInt(littleEndian(patch->leftoffset));
-        spritetopoffset[i] = Doom::Fixed::fromInt(littleEndian(patch->topoffset));
+        patch = static_cast<Patch*>(cacheLumpNum(gd.firstspritelump + i));
+        graphicsData().spritewidth[i] = Fixed::fromInt(littleEndian(patch->width));
+        graphicsData().spriteoffset[i] =
+            Fixed::fromInt(littleEndian(patch->leftoffset));
+        graphicsData().spritetopoffset[i] =
+            Fixed::fromInt(littleEndian(patch->topoffset));
     }
 }
 
@@ -591,14 +587,14 @@ void initColormaps()
     //  256 byte align tables.
     // GraphicsData owns the backing buffer now (RAII, Step 9); colormaps is the
     // 256-byte-aligned view into it, as the original doom_malloc(length) + align was.
-    lump = Doom::wad().number("COLORMAP");
-    length = Doom::wad().length(lump) + 255;
+    lump = wad().number("COLORMAP");
+    length = wad().length(lump) + 255;
     auto& gd = graphicsData();
     gd.colormapStorage.resize(length);
-    colormaps = reinterpret_cast<LightTable*>(
+    gd.colormaps = reinterpret_cast<LightTable*>(
         (reinterpret_cast<unsigned long long>(gd.colormapStorage.data()) + 255)
         & ~0xffULL);
-    Doom::wad().read(lump, colormaps);
+    wad().read(lump, gd.colormaps);
 }
 
 //
@@ -625,7 +621,7 @@ void initData()
 //
 int flatNumForName(std::string_view name)
 {
-    int i = Doom::wad().find(name);
+    int i = wad().find(name);
 
     if (i == -1)
     {
@@ -668,7 +664,7 @@ int checkTextureNumForName(std::string_view name)
     auto& gd = graphicsData();
 
     for (int i = 0; i < gd.numtextures; i++)
-        if (textureNameMatches(textures[i]->name, name))
+        if (textureNameMatches(graphicsData().textures[i]->name, name))
             return i;
 
     return -1;
@@ -703,7 +699,7 @@ void precacheLevel()
     int lump;
 
     Texture* texture;
-    Doom::Thinker* th;
+    Thinker* th;
 
     if (demoState().demoplayback)
         return;
@@ -713,10 +709,10 @@ void precacheLevel()
     // Precache flats.
     auto flatpresent = Vector<char>(gd.numflats);
 
-    for (i = 0; i < numsectors; i++)
+    for (i = 0; i < level().sectors.size(); i++)
     {
-        flatpresent[sectors[i].floorpic] = 1;
-        flatpresent[sectors[i].ceilingpic] = 1;
+        flatpresent[level().sectors[i].floorpic] = 1;
+        flatpresent[level().sectors[i].ceilingpic] = 1;
     }
 
     for (i = 0; i < gd.numflats; i++)
@@ -724,18 +720,18 @@ void precacheLevel()
         if (flatpresent[i])
         {
             lump = gd.firstflat + i;
-            Doom::cacheLumpNum(lump);
+            cacheLumpNum(lump);
         }
     }
 
     // Precache textures.
     auto texturepresent = Vector<char>(gd.numtextures);
 
-    for (i = 0; i < numsides; i++)
+    for (i = 0; i < level().sides.size(); i++)
     {
-        texturepresent[sides[i].toptexture] = 1;
-        texturepresent[sides[i].midtexture] = 1;
-        texturepresent[sides[i].bottomtexture] = 1;
+        texturepresent[level().sides[i].toptexture] = 1;
+        texturepresent[level().sides[i].midtexture] = 1;
+        texturepresent[level().sides[i].bottomtexture] = 1;
     }
 
     // Sky texture is always present.
@@ -751,10 +747,10 @@ void precacheLevel()
         if (!texturepresent[i])
             continue;
 
-        texture = textures[i];
+        texture = graphicsData().textures[i];
 
         for (const auto& patch: texture->patches)
-            Doom::cacheLumpNum(patch.patch);
+            cacheLumpNum(patch.patch);
     }
 
     // Precache sprites.
@@ -764,7 +760,7 @@ void precacheLevel()
 
     for (th = cap.next; th != &cap; th = th->next)
     {
-        if (th->kind() == Doom::ThinkerKind::Mobj && !th->removed)
+        if (th->kind() == ThinkerKind::Mobj && !th->removed)
             spritepresent[static_cast<int>(reinterpret_cast<Mobj*>(th)->sprite)] = 1;
     }
 
@@ -773,9 +769,9 @@ void precacheLevel()
         if (!spritepresent[i])
             continue;
 
-        for (const auto& frame: sprites[i].spriteframes)
+        for (const auto& frame: graphicsData().sprites[i].spriteframes)
             for (short spriteLump: frame.lump)
-                Doom::cacheLumpNum(gd.firstspritelump + spriteLump);
+                cacheLumpNum(gd.firstspritelump + spriteLump);
     }
 }
 } // namespace Doom
@@ -788,13 +784,9 @@ void precacheLevel()
 // Doom::GraphicsData owned by the Engine now; these vanilla names are references onto it.
 // R_InitData fills the members once at startup; they are read-only after.
 
-// A Doom::Texture** view onto GraphicsData's owned texturePointers array (Step 9);
-// R_InitTextures points it at data() after the resize.
-Doom::Texture** textures = nullptr;
-
 // needed for texture pegging. A view onto GraphicsData's owned Vector (Step 9);
 // initTextures points it at data() after the resize.
-fixed_t* textureheight = nullptr;
+Doom::Fixed* textureheight = nullptr;
 
 // for global animation. Views onto GraphicsData's owned Vectors (Step 9), set to
 // data() by initTextures / initFlats; P_ animation writes through them.
@@ -803,9 +795,9 @@ int* texturetranslation = nullptr;
 
 // needed for pre rendering. Plain-pointer views onto GraphicsData's owned Vectors
 // (Step 9); initSpriteLumps points them at data() after filling the vectors.
-fixed_t* spritewidth = nullptr;
-fixed_t* spriteoffset = nullptr;
-fixed_t* spritetopoffset = nullptr;
+Doom::Fixed* spritewidth = nullptr;
+Doom::Fixed* spriteoffset = nullptr;
+Doom::Fixed* spritetopoffset = nullptr;
 
 // A 256-byte-aligned view into GraphicsData's owned colormapStorage; initColormaps
 // points it at the aligned offset after reading the COLORMAP lump (Step 9).

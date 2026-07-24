@@ -1,12 +1,12 @@
 #pragma once
 
 #include "../Game/PlayerTypes.h" // Player, PspDef
-#include "MobjTypes.h" // Mobj, Sector, angle_t
+#include "MobjTypes.h" // Mobj, Sector, Doom::Angle
 
 namespace Doom
 {
 // Enemy AI: the action functions info.cpp's state table drives, plus the noise
-// alert Doom::noiseAlert weapons trigger. p_enemy.cpp keeps the vanilla names as shims.
+// alert noiseAlert weapons trigger. p_enemy.cpp keeps the vanilla names as shims.
 // Covered by the demos (a level's worth of monsters chasing, attacking, dying) and
 // golden-neutral.
 void keenDie(Mobj& mo);
@@ -40,7 +40,7 @@ void fatAttack1(Mobj& actor);
 void fatAttack2(Mobj& actor);
 void fatAttack3(Mobj& actor);
 void skullAttack(Mobj& actor);
-void painShootSkull(Mobj& actor, angle_t angle);
+void painShootSkull(Mobj& actor, Angle angle);
 void painAttack(Mobj& actor);
 void painDie(Mobj& actor);
 void scream(Mobj& actor);

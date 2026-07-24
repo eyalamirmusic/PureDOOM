@@ -140,7 +140,7 @@ int doPlat(Line& line, PlatType type, int amount)
 
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        Sector* sec = &sectors[secnum];
+        Sector* sec = &level().sectors[secnum];
 
         if (sec->specialdata)
             continue;
@@ -160,7 +160,7 @@ int doPlat(Line& line, PlatType type, int amount)
         {
             case PlatType::RaiseToNearestAndChange:
                 plat->speed = PLATSPEED / 2;
-                sec->floorpic = sides[line.sidenum[0]].sector->floorpic;
+                sec->floorpic = level().sides[line.sidenum[0]].sector->floorpic;
                 plat->high = findNextHighestFloor(*sec, sec->floorheight);
                 plat->wait = 0;
                 plat->status = PlatState::Up;
@@ -172,7 +172,7 @@ int doPlat(Line& line, PlatType type, int amount)
 
             case PlatType::RaiseAndChange:
                 plat->speed = PLATSPEED / 2;
-                sec->floorpic = sides[line.sidenum[0]].sector->floorpic;
+                sec->floorpic = level().sides[line.sidenum[0]].sector->floorpic;
                 plat->high = sec->floorheight + amount * FRACUNIT;
                 plat->wait = 0;
                 plat->status = PlatState::Up;

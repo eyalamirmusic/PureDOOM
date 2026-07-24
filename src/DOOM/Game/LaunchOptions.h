@@ -22,6 +22,6 @@ struct LaunchOptions
 };
 
 // The one LaunchOptions, a view onto the Engine's member - the same pattern as
-// levelStats(), renderScratch(), viewPoint(), clip(), level(), wad() and randomness().
+// levelStats(), renderScratch(), viewPoint(), clipping(), level(), wad() and randomness().
 LaunchOptions& launchOptions();
 } // namespace Doom

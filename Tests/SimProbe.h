@@ -104,7 +104,7 @@ unsigned long long doomSimLumpHash(int lump);
 // it: every pointer equal to its vector's data(), every count equal to its
 // vector's size(). The transitional design leans on a loader refreshing the
 // global after every resize; this catches one that forgot.
-int doomSimGeometryViewsConsistent();
+int doomSimLevelGeometryIsWellFormed();
 
 // Individual probes, so a failure can say what actually differs rather than
 // just that two hashes do.
@@ -132,7 +132,7 @@ int doomSimMobjCount();
 // DOOM-typed leaks through this header; a level load invalidates every handle
 // (its mobjs are freed) and re-registers the player as handle 0.
 //
-// Coordinates are raw 16.16 fixed-point (fixed_t is int32), so a test can place
+// Coordinates are raw 16.16 fixed-point (Doom::Fixed is int32), so a test can place
 // and read a thing to the exact unit rather than the truncated whole units the
 // human-readable player probes above report.
 

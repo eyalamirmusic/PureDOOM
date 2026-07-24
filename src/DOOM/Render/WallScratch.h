@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // fixed_t
-#include "../Math/TrigTables.h" // angle_t
+#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/TrigTables.h" // Doom::Angle
 
 namespace Doom
 {
-// The per-wall-segment rendering intermediates Doom::storeWallRange / Doom::renderSegLoop overwrite for each
+// The per-wall-segment rendering intermediates storeWallRange / renderSegLoop overwrite for each
 // seg: whether the seg has a masked (see-through) middle texture, the seg's centre angle and texture
 // offset, the scale and its per-column step, the three texture mid heights, the world-space top/
 // bottom/high/low edges, and the running top/bottom fractions and their steps that walk the wall
@@ -24,27 +24,27 @@ struct WallScratch
 {
     bool maskedtexture = false; // the seg has a masked middle texture
 
-    angle_t rw_centerangle {}; // angle from the view to the seg's centre
-    fixed_t rw_offset {}; // texture x offset along the seg
-    fixed_t rw_scale {}; // scale at the current column
-    fixed_t rw_scalestep {}; // per-column scale step
-    fixed_t rw_midtexturemid {}; // mid-texture vertical anchor
-    fixed_t rw_toptexturemid {}; // upper-texture vertical anchor
-    fixed_t rw_bottomtexturemid {}; // lower-texture vertical anchor
+    Angle rw_centerangle {}; // angle from the view to the seg's centre
+    Fixed rw_offset {}; // texture x offset along the seg
+    Fixed rw_scale {}; // scale at the current column
+    Fixed rw_scalestep {}; // per-column scale step
+    Fixed rw_midtexturemid {}; // mid-texture vertical anchor
+    Fixed rw_toptexturemid {}; // upper-texture vertical anchor
+    Fixed rw_bottomtexturemid {}; // lower-texture vertical anchor
 
-    fixed_t worldtop {}; // seg top edge, world space
-    fixed_t worldbottom {}; // seg bottom edge, world space
-    fixed_t worldhigh {}; // back-sector ceiling edge
-    fixed_t worldlow {}; // back-sector floor edge
+    Fixed worldtop {}; // seg top edge, world space
+    Fixed worldbottom {}; // seg bottom edge, world space
+    Fixed worldhigh {}; // back-sector ceiling edge
+    Fixed worldlow {}; // back-sector floor edge
 
-    fixed_t pixhigh {}; // screen y of the upper edge
-    fixed_t pixlow {}; // screen y of the lower edge
-    fixed_t pixhighstep {}; // per-column step of pixhigh
-    fixed_t pixlowstep {}; // per-column step of pixlow
-    fixed_t topfrac {}; // running top of the wall column
-    fixed_t topstep {}; // per-column step of topfrac
-    fixed_t bottomfrac {}; // running bottom of the wall column
-    fixed_t bottomstep {}; // per-column step of bottomfrac
+    Fixed pixhigh {}; // screen y of the upper edge
+    Fixed pixlow {}; // screen y of the lower edge
+    Fixed pixhighstep {}; // per-column step of pixhigh
+    Fixed pixlowstep {}; // per-column step of pixlow
+    Fixed topfrac {}; // running top of the wall column
+    Fixed topstep {}; // per-column step of topfrac
+    Fixed bottomfrac {}; // running bottom of the wall column
+    Fixed bottomstep {}; // per-column step of bottomfrac
 };
 
 // The one WallScratch, a view onto the Engine's member - the same pattern as the other clusters

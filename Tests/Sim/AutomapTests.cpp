@@ -20,13 +20,13 @@ auto tAutomap = test("Sim/automap") = [] { checkAutomapMatchesGolden(); };
 // The vector shapes the automap draws the player and the things with. The frame
 // golden above cannot see thintriangle_guy at all: drawThings is gated on
 // `cheating == 2` (IDDT pressed twice) and neither the script nor any demo
-// cheats. That blind spot hid a real regression from the fixed_t -> Doom::Fixed
+// cheats. That blind spot hid a real regression from the Doom::Fixed -> Doom::Fixed
 // migration, so these pin the numbers directly rather than through a picture.
 //
 // The bug: thintriangle_guy scaled its vertices with `#define R (FRACUNIT)`,
 // making each `-.5 * R` a `double * Fixed`. That converts -.5 to `int` 0 before
 // multiplying, so every scaled vertex collapsed to the origin and the shape
-// became one degenerate line. Vanilla's fixed_t was a plain int, where
+// became one degenerate line. Vanilla's Doom::Fixed was a plain int, where
 // -.5 * 65536 truncated to -32768 as intended. triangle_guy next to it scales
 // off FRACUNIT.raw and was always right, which is what made the difference
 // visible. Values below are vanilla's, from git show 110ddbe:src/DOOM/am_map.c.
@@ -38,19 +38,19 @@ auto tShapeTables = test("Automap/shapeTablesAreScaled") = []
     constexpr auto half = static_cast<std::int32_t>(-.5 * unit); // -32768
     constexpr auto lean = static_cast<std::int32_t>(.7 * unit); //  45875
 
-    check(thintriangle_guy[0].a.x == fixed_t {half});
-    check(thintriangle_guy[0].a.y == fixed_t {-lean});
-    check(thintriangle_guy[0].b.x == fixed_t {unit});
-    check(thintriangle_guy[0].b.y == fixed_t {});
-    check(thintriangle_guy[1].b.x == fixed_t {half});
-    check(thintriangle_guy[1].b.y == fixed_t {lean});
-    check(thintriangle_guy[2].a.y == fixed_t {lean});
-    check(thintriangle_guy[2].b.y == fixed_t {-lean});
+    check(Doom::mapShapes().thinTriangleGuy[0].a.x == Doom::Fixed {half});
+    check(Doom::mapShapes().thinTriangleGuy[0].a.y == Doom::Fixed {-lean});
+    check(Doom::mapShapes().thinTriangleGuy[0].b.x == Doom::Fixed {unit});
+    check(Doom::mapShapes().thinTriangleGuy[0].b.y == Doom::Fixed {});
+    check(Doom::mapShapes().thinTriangleGuy[1].b.x == Doom::Fixed {half});
+    check(Doom::mapShapes().thinTriangleGuy[1].b.y == Doom::Fixed {lean});
+    check(Doom::mapShapes().thinTriangleGuy[2].a.y == Doom::Fixed {lean});
+    check(Doom::mapShapes().thinTriangleGuy[2].b.y == Doom::Fixed {-lean});
 
     // The shape must enclose an area. Under the bug every vertex above except
     // b.x collapsed to zero, and this is the assertion that caught it.
     auto distinct = 0;
-    for (const auto& line: thintriangle_guy)
+    for (const auto& line: Doom::mapShapes().thinTriangleGuy)
         if (line.a.x != line.b.x || line.a.y != line.b.y)
             ++distinct;
 
@@ -59,6 +59,8 @@ auto tShapeTables = test("Automap/shapeTablesAreScaled") = []
     // The player arrows scale off PLAYERRADIUS, which is integer arithmetic on a
     // Fixed and was never at risk - checked so the whole category is pinned, not
     // just the member that broke.
-    check(player_arrow[0].a.x != player_arrow[0].b.x);
-    check(cheat_player_arrow[0].a.x != cheat_player_arrow[0].b.x);
+    check(Doom::mapShapes().playerArrow[0].a.x
+          != Doom::mapShapes().playerArrow[0].b.x);
+    check(Doom::mapShapes().cheatPlayerArrow[0].a.x
+          != Doom::mapShapes().cheatPlayerArrow[0].b.x);
 };

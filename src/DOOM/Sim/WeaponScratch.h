@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/FixedPoint.h" // Doom::Fixed
 
 namespace Doom
 {
 // The weapon code's small scratch: the auto-aim vertical slope the fire actions shoot along
-// (bulletslope, set by Doom::computeBulletSlope before a hitscan weapon fires).
+// (bulletslope, set by computeBulletSlope before a hitscan weapon fires).
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); this was
 // Sim/Weapon's own namespace-scope private global, read by no other file. computeBulletSlope
@@ -18,10 +18,10 @@ namespace Doom
 // into psp->sx/sy from player->bob, and no reader anywhere ever set or read these two.)
 struct WeaponScratch
 {
-    fixed_t bulletslope {}; // auto-aim vertical slope for a hitscan shot
+    Fixed bulletslope {}; // auto-aim vertical slope for a hitscan shot
 };
 
 // The one WeaponScratch, a view onto the Engine's member - the same pattern as the other clusters
-// (actionScratch(), clip(), ...).
+// (actionScratch(), clipping(), ...).
 WeaponScratch& weaponScratch();
 } // namespace Doom

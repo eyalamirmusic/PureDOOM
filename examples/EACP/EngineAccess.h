@@ -9,7 +9,7 @@
 // The snapshot interface between the DOOM engine's internals and the eacp
 // renderer. EngineAccess.cpp is an ordinary translation unit that includes the
 // engine's headers; nothing DOOM-typed leaks out through here, and the renderer
-// never sees a fixed_t.
+// never sees a Doom::Fixed.
 //
 // PureDoom::Engine is this port's view of the engine, not Doom::Engine - which
 // is the engine's own composition root and is always spelled with its namespace.

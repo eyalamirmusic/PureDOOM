@@ -2,6 +2,10 @@
 
 #include "../Game/Event.h" // Event
 
+#include "../Containers.h" // Doom::Array
+
+#include <string_view>
+
 // The heads-up font's character range, and the message widget's placement and
 // timeout. Was hu_stuff.h.
 namespace Doom
@@ -30,3 +34,10 @@ void drawHud();
 char dequeueChatChar();
 void eraseHud();
 } // namespace Doom
+
+// The chat macros, player-colour names and built-in map names. ::-scope accessors
+// (the config persists the chat macros; the map names are chosen by game mode)
+// handing out storage defined in UI/Hud.cpp. Were per-file `extern` arrays.
+Doom::Array<std::string_view, 10>& chat_macros();
+Doom::Array<std::string_view, 4>& player_names();
+Doom::Array<std::string_view, 45>& mapnames();

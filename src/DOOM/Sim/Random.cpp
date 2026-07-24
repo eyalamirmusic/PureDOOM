@@ -38,8 +38,11 @@ const Array<std::uint8_t, Random::tableSize>& Random::table()
 // clang-format on
 } // namespace Doom
 
-// ---------------------------------------------------------------------------
-// Global-scope data that was m_random.cpp. It stays at :: scope because these are the
-// vanilla names other translation units (and the eacp port) still link against.
-// ---------------------------------------------------------------------------
-const unsigned char* rndtable = Doom::Random::table().data();
+// A view onto Random's fixed 256-entry table (was the m_random.cpp global).
+namespace Doom
+{
+const unsigned char* rndtable()
+{
+    return Random::table().data();
+}
+} // namespace Doom

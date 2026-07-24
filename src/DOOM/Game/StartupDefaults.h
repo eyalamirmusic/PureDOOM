@@ -6,7 +6,7 @@ namespace Doom
 {
 // The skill, episode and map a new game starts on when nothing else picks them - the menu's
 // defaults, and what -skill / -episode / -warp fill in at launch. autostart is set when the
-// command line asked for a specific start, so Doom::doomMain jumps straight into the game rather
+// command line asked for a specific start, so doomMain jumps straight into the game rather
 // than the title loop. doomstat.h's "Defaults for menu" half of the skill/map section.
 //
 // A cluster of doomstat.h's game state moved off the loose globals into the Engine
@@ -23,6 +23,6 @@ struct StartupDefaults
 };
 
 // The one StartupDefaults, a view onto the Engine's member - the same pattern as
-// gameSession(), gameVersion(), launchOptions(), levelStats(), clip(), level() and wad().
+// gameSession(), gameVersion(), launchOptions(), levelStats(), clipping(), level() and wad().
 StartupDefaults& startupDefaults();
 } // namespace Doom

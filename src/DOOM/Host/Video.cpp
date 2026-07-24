@@ -29,7 +29,6 @@
 // EngineAccess) and the frame hash, so it stays at file scope rather than moving
 #include "../Game/LaunchOptions.h"
 // into namespace Doom below.
-unsigned char screen_palette[256 * 3];
 
 namespace Doom
 {
@@ -72,9 +71,9 @@ void finishUpdate()
             tics = 20;
 
         for (i = 0; i < tics * 2; i += 2)
-            screens[0][(SCREENHEIGHT - 1) * SCREENWIDTH + i] = 0xff;
+            videoState().screens[0][(SCREENHEIGHT - 1) * SCREENWIDTH + i] = 0xff;
         for (; i < 20 * 2; i += 2)
-            screens[0][(SCREENHEIGHT - 1) * SCREENWIDTH + i] = 0x0;
+            videoState().screens[0][(SCREENHEIGHT - 1) * SCREENWIDTH + i] = 0x0;
     }
 }
 
@@ -83,7 +82,7 @@ void finishUpdate()
 //
 void readScreen(byte* scr)
 {
-    doom_memcpy(scr, screens[0], SCREENWIDTH * SCREENHEIGHT);
+    doom_memcpy(scr, videoState().screens[0], SCREENWIDTH * SCREENHEIGHT);
 }
 
 //
@@ -91,16 +90,16 @@ void readScreen(byte* scr)
 //
 void setPalette(byte* palette)
 {
-    doom_memcpy(screen_palette, palette, 256 * 3);
+    doom_memcpy(videoState().screen_palette.data(), palette, 256 * 3);
 }
 
 void initGraphics()
 {
     // RAII now (Step 9): the software frame is a VideoState-owned vector; screens[0]
-    // is the raw view onto its data(). This runs after Doom::initVideo, so it overwrites
-    // Doom::initVideo's screens[0] slice - the framebuffer proper, which the app reads back.
+    // is the raw view onto its data(). This runs after initVideo, so it overwrites
+    // initVideo's screens[0] slice - the framebuffer proper, which the app reads back.
     auto& frame = videoState().frame;
     frame.resize(SCREENWIDTH * SCREENHEIGHT);
-    screens[0] = frame.data();
+    videoState().screens[0] = frame.data();
 }
 } // namespace Doom

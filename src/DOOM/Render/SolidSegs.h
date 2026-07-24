@@ -4,7 +4,7 @@
 
 namespace Doom
 {
-// The BSP occlusion clip ranges (Doom::clearClipSegs / Doom::clipSolidWallSegment): as the BSP is walked
+// The BSP occlusion clip ranges (clearClipSegs / clipSolidWallSegment): as the BSP is walked
 // front-to-back, solidsegs holds the sorted column spans already fully occluded by solid walls, and
 // newend points one past the last valid range. A wall is drawn only where it falls outside every
 // range; a solid wall then merges its span in.
@@ -16,7 +16,7 @@ namespace Doom
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were Render/BSP's
 // own namespace-scope private globals, read by no other file (its const checkcoord corner table stays
 // file-local). solidsegs and newend were both references onto the member (solidsegs a
-// reference-to-array; newend points into solidsegs but is set at runtime by Doom::clearClipSegs, not
+// reference-to-array; newend points into solidsegs but is set at runtime by clearClipSegs, not
 // by a self-referential initializer, so it was safe as one) until the file-local-alias sweep
 // (REFACTOR.md, Step 9 strand (a)) retired them; clipSolidWallSegment, clipPassWallSegment,
 // clearClipSegs and checkBBox each hoist solidSegs() once and reach its members through it. Live

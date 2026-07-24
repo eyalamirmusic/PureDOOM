@@ -2,27 +2,18 @@
 
 #include "../Containers.h"
 
-// Plain-pointer views onto the GraphicsData vectors above, refreshed by each
 #include "../Render/Data.h"
-// loader after it fills its vector. Were r_state.h.
 #include "../Math/FixedPoint.h"
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h"
-extern fixed_t* textureheight;
-extern fixed_t* spritewidth;
-extern fixed_t* spriteoffset;
-extern fixed_t* spritetopoffset;
-extern Doom::LightTable* colormaps;
-extern int* flattranslation;
-extern int* texturetranslation;
-extern Doom::SpriteDef* sprites;
+
 namespace Doom
 {
 // The graphics the renderer loads from the WAD once at startup and then only reads:
 // the composed wall textures and their heights, the flats, the sprite lumps and their
-// pre-measured dimensions, the sprite frame table, and the COLORMAP. Doom::initData builds
-// all of it (Doom::initTextures / Doom::initFlats / Doom::initSpriteLumps / Doom::initColormaps, and
-// Doom::initSprites for the frame table), the wall/plane/sprite drawers read it every
+// pre-measured dimensions, the sprite frame table, and the COLORMAP. initData builds
+// all of it (initTextures / initFlats / initSpriteLumps / initColormaps, and
+// initSprites for the frame table), the wall/plane/sprite drawers read it every
 // column, and the GPU port uploads straight from it.
 //
 // The fifth scalar cluster off the loose globals into the Engine (REFACTOR.md, Step 5),
@@ -40,11 +31,16 @@ struct GraphicsData
     // (Step 9): textureStorage owns the Texture structs by value (each owning its
     // own patches vector); texturePointers is the Texture* array that the vanilla
     // name `textures` (a Texture** view, r_data.cpp) points at, so readers using
-    // textures[i]->field are unchanged. Both sized once by Doom::initTextures.
+    // textures[i]->field are unchanged. Both sized once by initTextures.
     int numtextures = 0;
     Vector<Texture> textureStorage;
     Vector<Texture*> texturePointers;
-    Vector<fixed_t> textureheight; // RAII-owned (Step 9); r_data's name is a view
+    // A Texture** view onto texturePointers, so a reader can subscript it
+    // (textures[i]->field) and compare it to null. A stored pointer rather than
+    // texturePointers.data() because the port tests it against null before the load
+    // has filled it.
+    Texture** textures = nullptr;
+    Vector<Fixed> textureheight; // RAII-owned (Step 9); r_data's name is a view
     Vector<int>
         texturetranslation; // RAII-owned (Step 9); animation writes through the view
 
@@ -62,11 +58,11 @@ struct GraphicsData
     int firstspritelump = 0;
     int lastspritelump = 0;
     int numspritelumps = 0;
-    Vector<fixed_t> spritewidth;
-    Vector<fixed_t> spriteoffset;
-    Vector<fixed_t> spritetopoffset;
+    Vector<Fixed> spritewidth;
+    Vector<Fixed> spriteoffset;
+    Vector<Fixed> spritetopoffset;
 
-    // Sprite frames: the per-sprite frame/rotation table Doom::initSprites builds.
+    // Sprite frames: the per-sprite frame/rotation table initSprites builds.
     // RAII-owned (Step 9): the sprite table is an Vector of spritedef_ts, each
     // owning its own frames vector; the vanilla name `sprites` (r_things.cpp) is a
     // plain-pointer view onto data(), refreshed by R_InitSpriteDefs.
@@ -74,15 +70,17 @@ struct GraphicsData
     Vector<SpriteDef> sprites;
 
     // The COLORMAP lump: the base every light row (see Lighting) indexes into.
-    // RAII-owned (Step 9): this vector is the backing buffer, and the vanilla name
-    // `colormaps` (r_data.cpp) is a 256-byte-aligned VIEW into its data() that
-    // initColormaps sets after reading the lump. The +255 slack for that alignment is
-    // part of this buffer's length, as the original doom_malloc(length + 255) was.
+    // colormapStorage is the backing buffer; `colormaps` is a 256-byte-aligned VIEW
+    // into its data() that initColormaps sets after reading the lump. The +255 slack
+    // for that alignment is part of the buffer's length, as the original
+    // doom_malloc(length + 255) was - which is why this is a stored pointer and not
+    // colormapStorage.data().
     Vector<LightTable> colormapStorage;
+    LightTable* colormaps = nullptr;
 };
 
 // The one GraphicsData, a view onto the Engine's member - the same pattern as
-// lighting(), viewWindow(), viewProjection(), viewPoint(), clip(), level(), wad() and
+// lighting(), viewWindow(), viewProjection(), viewPoint(), clipping(), level(), wad() and
 // randomness().
 GraphicsData& graphicsData();
 } // namespace Doom

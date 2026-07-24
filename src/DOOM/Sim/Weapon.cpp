@@ -41,38 +41,11 @@
 
 namespace Doom
 {
-namespace
-{
-// Sim/Info.cpp's states[] stores every action under one pointer shape
-// (actionf_p1, void(*)(void*)), because a single table holds actions of three
-// different signatures. A weapon state's action really is a (Player*, PspDef*)
-// function, so casting the erased pointer back to that exact signature before
-// calling it is a round trip and therefore well-defined - but neither compiler
-// can see the round trip, and both object to the cast on arity alone. (The
-// sibling cast in Sim/Mobj.cpp draws no warning: void(*)(Mobj*) keeps the one
-// parameter, so only this two-parameter one differs in shape.)
-//
-// The suppression is scoped to this one function, and its spelling lives in
-// Host/Diagnostics.h: the compilers disagree on the flag's name, naming the
-// wrong one is itself a warning (GCC raises -Wpragmas for Clang's spelling,
-// which is how three stale suppressions in this tree were found), and MSVC
-// understands none of the spellings at all.
-DOOM_DIAGNOSTIC_PUSH
-DOOM_IGNORE_CAST_FUNCTION_TYPE
+constexpr Fixed LOWERSPEED = FRACUNIT * 6;
+constexpr Fixed RAISESPEED = FRACUNIT * 6;
 
-void callWeaponAction(actionf_p1 action, Player* player, PspDef* psp)
-{
-    reinterpret_cast<void (*)(Player*, PspDef*)>(action)(player, psp);
-}
-
-DOOM_DIAGNOSTIC_POP
-} // namespace
-
-constexpr fixed_t LOWERSPEED = FRACUNIT * 6;
-constexpr fixed_t RAISESPEED = FRACUNIT * 6;
-
-constexpr fixed_t WEAPONBOTTOM = 128 * FRACUNIT;
-constexpr fixed_t WEAPONTOP = 32 * FRACUNIT;
+constexpr Fixed WEAPONBOTTOM = 128 * FRACUNIT;
+constexpr Fixed WEAPONTOP = 32 * FRACUNIT;
 
 // plasma cells for a bfg attack
 constexpr int BFGCELLS = 40;
@@ -126,7 +99,7 @@ void setPsprite(Player& player, PspNum position, StateNum stnum)
             break;
         }
 
-        State* state = &states[toIndex(stnum)];
+        State* state = &states()[toIndex(stnum)];
         psp->state = state;
         psp->tics = state->tics; // could be 0
 
@@ -137,12 +110,10 @@ void setPsprite(Player& player, PspNum position, StateNum stnum)
             psp->sy = Fixed::fromInt(state->misc2);
         }
 
-        // Call action routine. The action is stored type-erased; a weapon state
-        // carries a (Player*, PspDef*) action, cast back from the erased pointer
-        // here (a round-trip conversion, hence well-defined).
-        if (state->action.fn)
+        // Call action routine.
+        if (state->action.weapon)
         {
-            callWeaponAction(state->action.fn, &player, psp);
+            state->action.weapon(player, *psp);
             if (!psp->state)
                 break;
         }
@@ -168,7 +139,7 @@ void bringUpWeapon(Player& player)
         startSound(player.mo, SfxEnum::Sawup);
 
     StateNum newstate =
-        static_cast<StateNum>(weaponinfo[toIndex(player.pendingweapon)].upstate);
+        static_cast<StateNum>(weaponinfo()[toIndex(player.pendingweapon)].upstate);
 
     player.pendingweapon = WeaponType::NoChange;
     player.psprites[toIndex(PspNum::Weapon)].sy = WEAPONBOTTOM;
@@ -185,7 +156,7 @@ bool checkAmmo(Player& player)
 {
     int count;
 
-    AmmoType ammo = weaponinfo[toIndex(player.readyweapon)].ammo;
+    AmmoType ammo = weaponinfo()[toIndex(player.readyweapon)].ammo;
 
     // Minimal amount for one shot varies.
     if (player.readyweapon == WeaponType::Bfg)
@@ -259,7 +230,7 @@ bool checkAmmo(Player& player)
     setPsprite(
         player,
         PspNum::Weapon,
-        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].downstate));
+        static_cast<StateNum>(weaponinfo()[toIndex(player.readyweapon)].downstate));
 
     return false;
 }
@@ -274,7 +245,7 @@ void fireWeapon(Player& player)
 
     setMobjState(*player.mo, StateNum::PlayAtk1);
     StateNum newstate =
-        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].atkstate);
+        static_cast<StateNum>(weaponinfo()[toIndex(player.readyweapon)].atkstate);
     setPsprite(player, PspNum::Weapon, newstate);
     noiseAlert(*player.mo, *player.mo);
 
@@ -293,7 +264,7 @@ void dropWeapon(Player& player)
     setPsprite(
         player,
         PspNum::Weapon,
-        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].downstate));
+        static_cast<StateNum>(weaponinfo()[toIndex(player.readyweapon)].downstate));
 }
 
 //
@@ -306,14 +277,14 @@ void dropWeapon(Player& player)
 void weaponReady(Player& player, PspDef& psp)
 {
     // get out of attack state
-    if (player.mo->state == &states[toIndex(StateNum::PlayAtk1)]
-        || player.mo->state == &states[toIndex(StateNum::PlayAtk2)])
+    if (player.mo->state == &states()[toIndex(StateNum::PlayAtk1)]
+        || player.mo->state == &states()[toIndex(StateNum::PlayAtk2)])
     {
         setMobjState(*player.mo, StateNum::Play);
     }
 
     if (player.readyweapon == WeaponType::Chainsaw
-        && psp.state == &states[toIndex(StateNum::Saw)])
+        && psp.state == &states()[toIndex(StateNum::Saw)])
     {
         startSound(player.mo, SfxEnum::Sawidl);
     }
@@ -324,8 +295,8 @@ void weaponReady(Player& player, PspDef& psp)
     {
         // change weapon
         //  (pending weapon should allready be validated)
-        StateNum newstate =
-            static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].downstate);
+        StateNum newstate = static_cast<StateNum>(
+            weaponinfo()[toIndex(player.readyweapon)].downstate);
         setPsprite(player, PspNum::Weapon, newstate);
         return;
     }
@@ -348,9 +319,9 @@ void weaponReady(Player& player, PspDef& psp)
 
     // bob the weapon based on movement speed
     int angle = (128 * levelStats().leveltime) & fineMask;
-    psp.sx = FRACUNIT + FixedMul(player.bob, finecosine[angle]);
+    psp.sx = FRACUNIT + FixedMul(player.bob, finecosine()[angle]);
     angle &= fineAngles / 2 - 1;
-    psp.sy = WEAPONTOP + FixedMul(player.bob, finesine[angle]);
+    psp.sy = WEAPONTOP + FixedMul(player.bob, finesine()[angle]);
 }
 
 //
@@ -431,7 +402,7 @@ void raise(Player& player, PspDef& psp)
     // The weapon has been raised all the way,
     //  so change to the ready state.
     StateNum newstate =
-        static_cast<StateNum>(weaponinfo[toIndex(player.readyweapon)].readystate);
+        static_cast<StateNum>(weaponinfo()[toIndex(player.readyweapon)].readystate);
 
     setPsprite(player, PspNum::Weapon, newstate);
 }
@@ -445,7 +416,7 @@ void gunFlash(Player& player, PspDef&)
     setPsprite(player,
                PspNum::Flash,
                static_cast<StateNum>(
-                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
+                   toIndex(weaponinfo()[toIndex(player.readyweapon)].flashstate)));
 }
 
 //
@@ -462,9 +433,9 @@ void punch(Player& player, PspDef&)
     if (player.powers[toIndex(PowerType::Strength)])
         damage *= 10;
 
-    angle_t angle = player.mo->angle;
+    Angle angle = player.mo->angle;
     angle +=
-        angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 18};
+        Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 18};
     const auto aim = aimLineAttack(player.mo, angle, MELEERANGE);
     lineAttack(*player.mo, angle, MELEERANGE, aim.slope, damage);
 
@@ -483,13 +454,13 @@ void punch(Player& player, PspDef&)
 void saw(Player& player, PspDef&)
 {
     int damage = 2 * (randomness().forPlay() % 10 + 1);
-    angle_t angle = player.mo->angle;
+    Angle angle = player.mo->angle;
     angle +=
-        angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 18};
+        Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 18};
 
     // use meleerange + 1 se the puff doesn't skip the flash
-    const auto aim = aimLineAttack(player.mo, angle, MELEERANGE + fixed_t {1});
-    lineAttack(*player.mo, angle, MELEERANGE + fixed_t {1}, aim.slope, damage);
+    const auto aim = aimLineAttack(player.mo, angle, MELEERANGE + Fixed {1});
+    lineAttack(*player.mo, angle, MELEERANGE + Fixed {1}, aim.slope, damage);
 
     if (!aim.target)
     {
@@ -502,7 +473,7 @@ void saw(Player& player, PspDef&)
     angle = pointToAngle2(player.mo->x, player.mo->y, aim.target->x, aim.target->y);
     if (angle - player.mo->angle > ang180)
     {
-        if (angle - player.mo->angle < static_cast<angle_t>(-ang90 / 20))
+        if (angle - player.mo->angle < static_cast<Angle>(-ang90 / 20))
             player.mo->angle = angle + ang90 / 21;
         else
             player.mo->angle -= ang90 / 20;
@@ -522,7 +493,7 @@ void saw(Player& player, PspDef&)
 //
 void fireMissile(Player& player, PspDef&)
 {
-    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
+    player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)]--;
     spawnPlayerMissile(*player.mo, MobjType::Rocket);
 }
 
@@ -531,7 +502,7 @@ void fireMissile(Player& player, PspDef&)
 //
 void fireBFG(Player& player, PspDef&)
 {
-    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)] -= BFGCELLS;
+    player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)] -= BFGCELLS;
     spawnPlayerMissile(*player.mo, MobjType::Bfg);
 }
 
@@ -540,12 +511,12 @@ void fireBFG(Player& player, PspDef&)
 //
 void firePlasma(Player& player, PspDef&)
 {
-    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
+    player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
                PspNum::Flash,
                static_cast<StateNum>(
-                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)
+                   toIndex(weaponinfo()[toIndex(player.readyweapon)].flashstate)
                    + (randomness().forPlay() & 1)));
 
     spawnPlayerMissile(*player.mo, MobjType::Plasma);
@@ -561,18 +532,18 @@ void computeBulletSlope(Mobj& mo)
     auto& scratch = weaponScratch();
 
     // see which target is to be aimed at
-    angle_t an = mo.angle;
+    Angle an = mo.angle;
     auto aim = aimLineAttack(&mo, an, 16 * 64 * FRACUNIT);
     scratch.bulletslope = aim.slope;
 
     if (!aim.target)
     {
-        an += angle_t {1u << 26};
+        an += Angle {1u << 26};
         aim = aimLineAttack(&mo, an, 16 * 64 * FRACUNIT);
         scratch.bulletslope = aim.slope;
         if (!aim.target)
         {
-            an -= angle_t {2u << 26};
+            an -= Angle {2u << 26};
             aim = aimLineAttack(&mo, an, 16 * 64 * FRACUNIT);
             scratch.bulletslope = aim.slope;
         }
@@ -585,11 +556,11 @@ void computeBulletSlope(Mobj& mo)
 void gunShot(Mobj& mo, bool accurate)
 {
     int damage = 5 * (randomness().forPlay() % 3 + 1);
-    angle_t angle = mo.angle;
+    Angle angle = mo.angle;
 
     if (!accurate)
-        angle += angle_t {
-            (unsigned) (randomness().forPlay() - randomness().forPlay()) << 18};
+        angle += Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                        << 18};
 
     lineAttack(mo, angle, MISSILERANGE, weaponScratch().bulletslope, damage);
 }
@@ -602,12 +573,12 @@ void firePistol(Player& player, PspDef&)
     startSound(player.mo, SfxEnum::Pistol);
 
     setMobjState(*player.mo, StateNum::PlayAtk2);
-    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
+    player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
                PspNum::Flash,
                static_cast<StateNum>(
-                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
+                   toIndex(weaponinfo()[toIndex(player.readyweapon)].flashstate)));
 
     computeBulletSlope(*player.mo);
     gunShot(*player.mo, !player.refire);
@@ -621,12 +592,12 @@ void fireShotgun(Player& player, PspDef&)
     startSound(player.mo, SfxEnum::Shotgn);
     setMobjState(*player.mo, StateNum::PlayAtk2);
 
-    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
+    player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
                PspNum::Flash,
                static_cast<StateNum>(
-                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
+                   toIndex(weaponinfo()[toIndex(player.readyweapon)].flashstate)));
 
     computeBulletSlope(*player.mo);
 
@@ -642,27 +613,27 @@ void fireShotgun2(Player& player, PspDef&)
     startSound(player.mo, SfxEnum::Dshtgn);
     setMobjState(*player.mo, StateNum::PlayAtk2);
 
-    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)] -= 2;
+    player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)] -= 2;
 
     setPsprite(player,
                PspNum::Flash,
                static_cast<StateNum>(
-                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)));
+                   toIndex(weaponinfo()[toIndex(player.readyweapon)].flashstate)));
 
     computeBulletSlope(*player.mo);
 
     for (int i = 0; i < 20; i++)
     {
         int damage = 5 * (randomness().forPlay() % 3 + 1);
-        angle_t angle = player.mo->angle;
-        angle += angle_t {
-            (unsigned) (randomness().forPlay() - randomness().forPlay()) << 19};
+        Angle angle = player.mo->angle;
+        angle += Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                        << 19};
         lineAttack(
             *player.mo,
             angle,
             MISSILERANGE,
             weaponScratch().bulletslope
-                + fixed_t {(randomness().forPlay() - randomness().forPlay()) << 5},
+                + Fixed {(randomness().forPlay() - randomness().forPlay()) << 5},
             damage);
     }
 }
@@ -674,17 +645,17 @@ void fireCGun(Player& player, PspDef& psp)
 {
     startSound(player.mo, SfxEnum::Pistol);
 
-    if (!player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)])
+    if (!player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)])
         return;
 
     setMobjState(*player.mo, StateNum::PlayAtk2);
-    player.ammo[toIndex(weaponinfo[toIndex(player.readyweapon)].ammo)]--;
+    player.ammo[toIndex(weaponinfo()[toIndex(player.readyweapon)].ammo)]--;
 
     setPsprite(player,
                PspNum::Flash,
                static_cast<StateNum>(
-                   toIndex(weaponinfo[toIndex(player.readyweapon)].flashstate)
-                   + psp.state - &states[toIndex(StateNum::Chain1)]));
+                   toIndex(weaponinfo()[toIndex(player.readyweapon)].flashstate)
+                   + psp.state - &states()[toIndex(StateNum::Chain1)]));
 
     computeBulletSlope(*player.mo);
 
@@ -718,7 +689,7 @@ void bfgSpray(Mobj& mo)
     // offset angles from its attack angle
     for (int i = 0; i < 40; i++)
     {
-        angle_t an = mo.angle - ang90 / 2 + ang90 / 40 * i;
+        Angle an = mo.angle - ang90 / 2 + ang90 / 40 * i;
 
         // mo.target is the originator (player)
         //  of the missile

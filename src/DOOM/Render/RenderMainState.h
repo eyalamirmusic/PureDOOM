@@ -2,10 +2,10 @@
 
 namespace Doom
 {
-// Render/Main's residual scalar: setdetail, the pending detail-mode change Doom::setViewSize
-// stashes from the menu for Doom::executeSetViewSize to apply. (The drawer dispatch pointers
-// colfunc/spanfunc/transcolfunc stay in the shim - they are the renderer's shared drawer
-// selection, not Render/Main's own state.)
+// Render/Main's residual scalar: setdetail, the pending detail-mode change setViewSize
+// stashes from the menu for executeSetViewSize to apply. (The drawer dispatch is its own
+// cluster, Render/Drawers.h - it is the renderer's shared drawer selection, not
+// Render/Main's own state.)
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); this was
 // Render/Main's own namespace-scope private global, read by no other file. The vanilla name was

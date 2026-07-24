@@ -70,13 +70,13 @@ namespace Doom
 
 // when to clip out sounds
 // Does not fit the large outdoor areas.
-constexpr fixed_t S_CLIPPING_DIST = 1200 * FRACUNIT;
+constexpr Fixed S_CLIPPING_DIST = 1200 * FRACUNIT;
 
 // Distance tp origin when sounds should be maxed out.
 // This should relate to movement clipping resolution
 // (see BLOCKMAP handling).
 // Originally: (200*0x10000).
-constexpr fixed_t S_CLOSE_DIST = 160 * FRACUNIT;
+constexpr Fixed S_CLOSE_DIST = 160 * FRACUNIT;
 
 // A plain integer divisor in whole map units (1040), not a fixed value: the volume
 // ramp below divides a whole-unit distance by it.
@@ -86,7 +86,7 @@ constexpr int NORM_PITCH = 128;
 constexpr int NORM_PRIORITY = 64;
 constexpr int NORM_SEP = 128;
 
-constexpr fixed_t S_STEREO_SWING = 96 * FRACUNIT;
+constexpr Fixed S_STEREO_SWING = 96 * FRACUNIT;
 
 //
 // Prototypes
@@ -117,7 +117,7 @@ void initSound(int sfxVolume, int musicVolume)
     // simultaneously). RAII now (Step 9): SoundState owns the vector; channels_s_sound
     // is the view onto its data(). resize value-initialises each SoundChannel (sfxinfo
     // null), so the explicit clear below is kept only to match vanilla verbatim.
-    auto& snd = Doom::soundState();
+    auto& snd = soundState();
     auto& sndset = soundSettings();
     snd.channels.resize(sndset.numChannels);
     channels_s_sound = snd.channels.data();
@@ -131,7 +131,7 @@ void initSound(int sfxVolume, int musicVolume)
 
     // Note that sounds have not been cached (yet).
     for (int i = 1; i < numSfx; i++)
-        S_sfx[i].lumpnum = S_sfx[i].usefulness = -1;
+        S_sfx()[i].lumpnum = S_sfx()[i].usefulness = -1;
 }
 
 //
@@ -208,7 +208,7 @@ void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
         fatalError("Error: Bad sfx #: ", toIndex(sfx_id));
     }
 
-    sfx = &S_sfx[toIndex(sfx_id)];
+    sfx = &S_sfx()[toIndex(sfx_id)];
 
     // Initialize sound parameters
     if (sfx->link)
@@ -255,7 +255,7 @@ void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
     // hacks to vary the sfx pitches
     if (sfx_id >= SfxEnum::Sawup && sfx_id <= SfxEnum::Sawhit)
     {
-        pitch += 8 - (Doom::randomness().forMenu() & 15);
+        pitch += 8 - (randomness().forMenu() & 15);
 
         if (pitch < 0)
             pitch = 0;
@@ -264,7 +264,7 @@ void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
     }
     else if (sfx_id != SfxEnum::Itemup && sfx_id != SfxEnum::Tink)
     {
-        pitch += 16 - (Doom::randomness().forMenu() & 31);
+        pitch += 16 - (randomness().forMenu() & 31);
 
         if (pitch < 0)
             pitch = 0;
@@ -298,7 +298,7 @@ void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
         print("startSoundAtVolume: 16bit and not pre-cached - wtf?\n");
 
         // DOS remains, 8bit handling
-        //sfx->data = (void *) Doom::cacheLumpNum(sfx->lumpnum);
+        //sfx->data = (void *) cacheLumpNum(sfx->lumpnum);
         // fprintf( stderr,
         //             "startSoundAtVolume: loading %d (lump %d) : 0x%x\n",
         //       sfx_id, sfx->lumpnum, (int)sfx->data );
@@ -476,7 +476,7 @@ void changeMusic(MusicEnum musicnum, int looping)
         fatalError("Error: Bad music number ", toIndex(musicnum));
     }
     else
-        music = &S_music[toIndex(musicnum)];
+        music = &S_music()[toIndex(musicnum)];
 
     if (sound.mus_playing == music)
         return;
@@ -486,10 +486,10 @@ void changeMusic(MusicEnum musicnum, int looping)
 
     // get lumpnum if neccessary
     if (!music->lumpnum)
-        music->lumpnum = Doom::wad().number(concat("d_", music->name));
+        music->lumpnum = wad().number(concat("d_", music->name));
 
     // load & it
-    music->data = (void*) Doom::cacheLumpNum(music->lumpnum);
+    music->data = (void*) cacheLumpNum(music->lumpnum);
     music->handle = registerSong(music->data);
 
     // play it
@@ -525,7 +525,7 @@ void stopChannel(int cnum)
         if (soundIsPlaying(c.handle))
         {
 #ifdef SAWDEBUG
-            if (c.sfxinfo == &S_sfx[toIndex(SfxEnum::Sawful)])
+            if (c.sfxinfo == &S_sfx()[toIndex(SfxEnum::Sawful)])
                 print("stopped\n");
 #endif
             stopSoundHost(c.handle);
@@ -558,10 +558,10 @@ void stopChannel(int cnum)
 int adjustSoundParams(
     Mobj* listener, Mobj* source, int* vol, int* sep, [[maybe_unused]] int* pitch)
 {
-    fixed_t approx_dist;
-    fixed_t adx;
-    fixed_t ady;
-    angle_t angle;
+    Fixed approx_dist;
+    Fixed adx;
+    Fixed ady;
+    Angle angle;
 
     auto& sndset = soundSettings();
     auto& session = gameSession();
@@ -580,17 +580,17 @@ int adjustSoundParams(
     }
 
     // angle of source to listener
-    angle = Doom::pointToAngle2(listener->x, listener->y, source->x, source->y);
+    angle = pointToAngle2(listener->x, listener->y, source->x, source->y);
 
     if (angle > listener->angle)
         angle = angle - listener->angle;
     else
-        angle = angle + (angle_t {0xffffffff} - listener->angle);
+        angle = angle + (Angle {0xffffffff} - listener->angle);
 
     const auto angleFine = angle.fineIndex();
 
     // stereo separation
-    *sep = 128 - FixedMul(S_STEREO_SWING, finesine[angleFine]).toInt();
+    *sep = 128 - FixedMul(S_STEREO_SWING, finesine()[angleFine]).toInt();
 
     // volume calculation
     if (approx_dist < S_CLOSE_DIST)

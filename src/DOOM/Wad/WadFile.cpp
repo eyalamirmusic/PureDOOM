@@ -92,7 +92,7 @@ WadFile::~WadFile()
     // Vanilla never closed them - it had no shutdown at all, which is the whole
     // reason the engine could not be booted twice.
     for (auto* handle: handles)
-        doom_close(handle);
+        host().close(handle);
 }
 
 void WadFile::addFile(std::string_view path)
@@ -107,7 +107,7 @@ void WadFile::addFile(std::string_view path)
     }
 
     auto owned = std::string {path};
-    auto* handle = doom_open(owned.c_str(), "rb");
+    auto* handle = host().open(owned.c_str(), "rb");
 
     if (handle == nullptr)
     {
@@ -125,7 +125,7 @@ void WadFile::addFile(std::string_view path)
     // A reloadable file is re-opened on every read, so its lumps carry no handle
     // and this one is done with.
     if (reloadable)
-        doom_close(handle);
+        host().close(handle);
     else
         handles.push_back(handle);
 
@@ -134,14 +134,14 @@ void WadFile::addFile(std::string_view path)
 
 void WadFile::addSingleLump(std::string_view path, void* handle)
 {
-    doom_seek(handle, 0, Doom::SeekOrigin::End);
+    host().seek(handle, 0, SeekOrigin::End);
 
     auto lump = Lump {};
     lump.handle = reloadName.empty() ? handle : nullptr;
     lump.position = 0;
-    lump.size = doom_tell(handle);
+    lump.size = host().tell(handle);
 
-    doom_seek(handle, 0, Doom::SeekOrigin::Set);
+    host().seek(handle, 0, SeekOrigin::Set);
 
     // The lump is named after the file it came from. Lump::name is eight bytes,
     // zero-padded (value-initialised above), and NOT terminated when full.
@@ -154,7 +154,7 @@ void WadFile::addSingleLump(std::string_view path, void* handle)
 void WadFile::addDirectory(std::string_view path, void* handle)
 {
     auto header = WadHeader {};
-    doom_read(handle, &header, sizeof(header));
+    host().read(handle, &header, sizeof(header));
 
     if (std::memcmp(header.identification, "IWAD", 4) != 0
         && std::memcmp(header.identification, "PWAD", 4) != 0)
@@ -165,8 +165,8 @@ void WadFile::addDirectory(std::string_view path, void* handle)
     auto lumpCount = littleEndian(header.numlumps);
     auto entries = Vector<FileLump>(lumpCount);
 
-    doom_seek(handle, littleEndian(header.infotableofs), Doom::SeekOrigin::Set);
-    doom_read(
+    host().seek(handle, littleEndian(header.infotableofs), SeekOrigin::Set);
+    host().read(
         handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
 
     for (const auto& entry: entries)
@@ -231,17 +231,17 @@ void WadFile::read(int lump, void* destination) const
 
     if (reopened)
     {
-        handle = doom_open(reloadName.c_str(), "rb");
+        handle = host().open(reloadName.c_str(), "rb");
 
         if (handle == nullptr)
             fatalError("Error: W_ReadLump: couldn't open ", reloadName);
     }
 
-    doom_seek(handle, entry.position, Doom::SeekOrigin::Set);
-    auto read = doom_read(handle, destination, entry.size);
+    host().seek(handle, entry.position, SeekOrigin::Set);
+    auto read = host().read(handle, destination, entry.size);
 
     if (reopened)
-        doom_close(handle);
+        host().close(handle);
 
     if (read < entry.size)
         fatalError("Error: W_ReadLump: only read part of lump ", lump);
@@ -298,21 +298,21 @@ void WadFile::reload()
     if (reloadName.empty())
         return;
 
-    auto* handle = doom_open(reloadName.c_str(), "rb");
+    auto* handle = host().open(reloadName.c_str(), "rb");
 
     if (handle == nullptr)
         fatalError("Error: W_Reload: couldn't open ", reloadName);
 
     auto header = WadHeader {};
-    doom_read(handle, &header, sizeof(header));
+    host().read(handle, &header, sizeof(header));
 
     auto lumpCount = littleEndian(header.numlumps);
     auto entries = Vector<FileLump>(lumpCount);
 
-    doom_seek(handle, littleEndian(header.infotableofs), Doom::SeekOrigin::Set);
-    doom_read(
+    host().seek(handle, littleEndian(header.infotableofs), SeekOrigin::Set);
+    host().read(
         handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
-    doom_close(handle);
+    host().close(handle);
 
     for (auto i = 0; i < lumpCount; ++i)
     {

@@ -40,9 +40,9 @@ namespace Doom
 constexpr int INVERSECOLORMAP = 32;
 
 // 16 pixels of bob (a raw fixed value: 0x100000 is 16.0)
-constexpr fixed_t MAXBOB {0x100000};
+constexpr Fixed MAXBOB {0x100000};
 
-constexpr angle_t ANG5 = ang90 / 18;
+constexpr Angle ANG5 = ang90 / 18;
 
 //
 // Movement.
@@ -57,12 +57,12 @@ constexpr angle_t ANG5 = ang90 / 18;
 // thrust
 // Moves the given origin along a given angle.
 //
-void thrust(Player& player, angle_t angle, fixed_t move)
+void thrust(Player& player, Angle angle, Fixed move)
 {
     const auto angleFine = angle.fineIndex();
 
-    player.mo->momx += FixedMul(move, finecosine[angleFine]);
-    player.mo->momy += FixedMul(move, finesine[angleFine]);
+    player.mo->momx += FixedMul(move, finecosine()[angleFine]);
+    player.mo->momy += FixedMul(move, finesine()[angleFine]);
 }
 
 //
@@ -97,7 +97,7 @@ void calcHeight(Player& player)
     }
 
     int angle = (fineAngles / 20 * levelStats().leveltime) & fineMask;
-    fixed_t bob = FixedMul(player.bob / 2, finesine[angle]);
+    Fixed bob = FixedMul(player.bob / 2, finesine()[angle]);
 
     // move viewheight
     if (player.playerstate == PlayerLifeState::Live)
@@ -107,21 +107,21 @@ void calcHeight(Player& player)
         if (player.viewheight > VIEWHEIGHT)
         {
             player.viewheight = VIEWHEIGHT;
-            player.deltaviewheight = fixed_t {};
+            player.deltaviewheight = Fixed {};
         }
 
         if (player.viewheight < VIEWHEIGHT / 2)
         {
             player.viewheight = VIEWHEIGHT / 2;
             if (!player.deltaviewheight.isPositive())
-                player.deltaviewheight = fixed_t {1};
+                player.deltaviewheight = Fixed {1};
         }
 
         if (player.deltaviewheight)
         {
             player.deltaviewheight += FRACUNIT / 4;
             if (!player.deltaviewheight)
-                player.deltaviewheight = fixed_t {1};
+                player.deltaviewheight = Fixed {1};
         }
     }
     player.viewz = player.mo->z + player.viewheight + bob;
@@ -139,20 +139,20 @@ void movePlayer(Player& player)
 
     auto& scratch = playerScratch();
 
-    player.mo->angle += angle_t {(unsigned) cmd->angleturn << 16};
+    player.mo->angle += Angle {(unsigned) cmd->angleturn << 16};
 
     // Do not let the player control movement
     //  if not onground.
     scratch.onground = (player.mo->z <= player.mo->floorz);
 
     if (cmd->forwardmove && scratch.onground)
-        thrust(player, player.mo->angle, fixed_t {cmd->forwardmove * 2048});
+        thrust(player, player.mo->angle, Fixed {cmd->forwardmove * 2048});
 
     if (cmd->sidemove && scratch.onground)
-        thrust(player, player.mo->angle - ang90, fixed_t {cmd->sidemove * 2048});
+        thrust(player, player.mo->angle - ang90, Fixed {cmd->sidemove * 2048});
 
     if ((cmd->forwardmove || cmd->sidemove)
-        && player.mo->state == &states[toIndex(StateNum::Play)])
+        && player.mo->state == &states()[toIndex(StateNum::Play)])
     {
         setMobjState(*player.mo, StateNum::PlayRun1);
     }
@@ -174,16 +174,16 @@ void deathThink(Player& player)
     if (player.viewheight < 6 * FRACUNIT)
         player.viewheight = 6 * FRACUNIT;
 
-    player.deltaviewheight = fixed_t {};
+    player.deltaviewheight = Fixed {};
     playerScratch().onground = (player.mo->z <= player.mo->floorz);
     calcHeight(player);
 
     if (player.attacker && player.attacker != player.mo)
     {
-        angle_t angle = pointToAngle2(
+        Angle angle = pointToAngle2(
             player.mo->x, player.mo->y, player.attacker->x, player.attacker->y);
 
-        angle_t delta = angle - player.mo->angle;
+        Angle delta = angle - player.mo->angle;
 
         if (delta < ANG5 || delta > -ANG5)
         {

@@ -9,13 +9,18 @@
 
 #include "Args.h"
 
-std::vector<std::string> myargv;
+std::vector<std::string> myargvData;
+
+std::vector<std::string>& myargv()
+{
+    return myargvData;
+}
 
 namespace Doom
 {
 
 //
-// Doom::checkParm
+// checkParm
 // Checks for the given parameter in the program's command line arguments.
 // Returns the argument number (1 to argc-1) or 0 if not present.
 //
@@ -23,7 +28,7 @@ int checkParm(std::string_view check)
 {
     for (int i = 1; i < myargCount(); i++)
     {
-        if (equalsIgnoreCase(check, myargv[i]))
+        if (equalsIgnoreCase(check, myargv()[i]))
             return i;
     }
 

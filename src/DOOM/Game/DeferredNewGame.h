@@ -5,9 +5,9 @@
 namespace Doom
 {
 // The deferred new-game request. Starting a game cannot happen inside the responder that asks
-// for it (a level load mid-event would be unsafe), so Doom::deferInitNew - the menu's skill/episode
+// for it (a level load mid-event would be unsafe), so deferInitNew - the menu's skill/episode
 // pick, or -warp / -skill on the command line - stashes the chosen skill, episode and map here
-// and raises gameaction = GameAction::NewGame; Doom::gameTicker replays them into Doom::initNewGame (initNewGame) when the
+// and raises gameaction = GameAction::NewGame; gameTicker replays them into initNewGame (initNewGame) when the
 // tic runs. g_game's own file-scope state, read by no other file.
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); the vanilla names

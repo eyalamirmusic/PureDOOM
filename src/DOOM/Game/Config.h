@@ -8,7 +8,7 @@
 
 namespace Doom
 {
-// Config I/O, file I/O, screenshots, Doom::drawText; m_misc.cpp keeps the M_ names
+// Config I/O, file I/O, screenshots, drawText; m_misc.cpp keeps the M_ names
 // as shims.
 int drawText(int x, int y, bool direct, std::string_view string);
 bool writeFile(std::string_view name, void* source, int length);

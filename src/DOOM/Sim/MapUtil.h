@@ -33,7 +33,7 @@ int lineSide(Vec2 point, const Line& line);
 
 // The same question for a whole bounding box, in vanilla's tmbox order
 // (boxTop, boxBottom, boxLeft, boxRight): 0 in front, 1 behind, -1 straddling.
-int boxLineSide(const fixed_t* box, const Line& line);
+int boxLineSide(const Fixed* box, const Line& line);
 
 // P_LineOpening: the vertical window the line leaves, written into Clip's
 // opentop / openbottom / openrange / lowfloor. A single-sided line closes it -
@@ -63,7 +63,7 @@ bool forEachLineInBlock(int x, int y, LineFunc&& func)
     for (short* list = bmap.lump + bmap.offsets[bmap.index(x, y)]; *list != -1;
          ++list)
     {
-        Line* ld = &lines[*list];
+        Line* ld = &level().lines[*list];
 
         if (ld->validcount == vc.validcount)
             continue; // already checked from another cell
@@ -88,7 +88,7 @@ bool forEachThingInBlock(int x, int y, ThingFunc&& func)
     if (!bmap.contains(x, y))
         return true;
 
-    for (Mobj* mobj = blocklinks[bmap.index(x, y)]; mobj; mobj = mobj->bnext)
+    for (Mobj* mobj = level().blockLinks[bmap.index(x, y)]; mobj; mobj = mobj->bnext)
         if (!func(mobj))
             return false;
 
@@ -106,7 +106,6 @@ void unsetThingPosition(Mobj& thing);
 // (PT_ADDLINES) and/or things (PT_ADDTHINGS) it crosses into Clip's intercept list,
 // then call trav for each in near-to-far order. Returns false if any iterator or
 // trav bailed early (PT_EARLYOUT hitting a solid line, a traverser saying stop).
-// The segment it walked is left in clip().trace for the traversers to read back.
-bool pathTraverse(
-    fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, Traverser trav);
+// The segment it walked is left in clipping().trace for the traversers to read back.
+bool pathTraverse(Fixed x1, Fixed y1, Fixed x2, Fixed y2, int flags, Traverser trav);
 } // namespace Doom

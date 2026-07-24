@@ -338,7 +338,7 @@ void getPackets()
             net.exitmsg[7] += static_cast<char>(netconsole);
             state.players[state.consoleplayer].message = net.exitmsg;
             if (demoState().demorecording)
-                Doom::checkDemoStatus();
+                checkDemoStatus();
             continue;
         }
 
@@ -467,17 +467,17 @@ void netUpdate()
     for (int i = 0; i < newtics; i++)
     {
         startTic();
-        Doom::processEvents();
+        processEvents();
 
-        // [pd] A singletic update is synchronous: Doom::doomLoop builds the tic's
+        // [pd] A singletic update is synchronous: doomLoop builds the tic's
         // command and runs it in the same breath, advancing maketic and gametic
         // together. Building another one here would consume the input that
         // command is about to read, and would advance maketic with no gametic to
-        // match it -- and this runs from Doom::displayFrame and R_RenderPlayerView too,
+        // match it -- and this runs from displayFrame and R_RenderPlayerView too,
         // which vanilla called to keep the netcode fed while a slow frame
         // rendered. maketic therefore climbed until it jammed against the cap
-        // below and stayed there, and since Doom::doomLoop writes the command to
-        // netcmds[maketic] while Doom::gameTicker reads netcmds[gametic], every command
+        // below and stayed there, and since doomLoop writes the command to
+        // netcmds[maketic] while gameTicker reads netcmds[gametic], every command
         // was executed five tics (143ms) after it was built. Events are still
         // drained above; there is simply no second command to build.
         if (singletics)
@@ -487,7 +487,7 @@ void netUpdate()
             break; // can't hold any more
 
         //doom_print ("mk:%i ",maketic);
-        Doom::buildTiccmd(net.localcmds[net.maketic % BACKUPTICS]);
+        buildTiccmd(net.localcmds[net.maketic % BACKUPTICS]);
         net.maketic++;
     }
 
@@ -714,7 +714,7 @@ void quitNetGame()
     const int consoleplayer = playerState().consoleplayer;
 
     if (debugfile)
-        doom_close(debugfile);
+        host().close(debugfile);
 
     if (!gameSession().netgame || !demo.usergame || consoleplayer == -1
         || demo.demoplayback)
@@ -855,9 +855,9 @@ void tryRunTics()
             if (clock.gametic / net.ticdup > lowtic)
                 fatalError("Error: gametic>lowtic");
             if (attractMode().advancedemo)
-                Doom::doAdvanceDemo();
+                doAdvanceDemo();
             menuTicker();
-            Doom::gameTicker();
+            gameTicker();
             clock.gametic++;
 
             // modify command for duplicated tics

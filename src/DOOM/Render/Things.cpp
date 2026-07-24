@@ -38,7 +38,7 @@
 namespace Doom
 {
 
-constexpr fixed_t MINZ = FRACUNIT * 4;
+constexpr Fixed MINZ = FRACUNIT * 4;
 constexpr int BASEYCENTER = 100;
 
 // File-local scratch, now on the Engine (Render/SpriteScratch.h, moved by the file-scope-statics
@@ -85,7 +85,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
         // the lump should be used for all rotations
         if (scratch.sprtemp[frame].rotate == singleRotation)
         {
-            fatalError("Error: Doom::initSprites: Sprite ",
+            fatalError("Error: initSprites: Sprite ",
                        scratch.spritename,
                        " frame ",
                        char('A' + frame),
@@ -94,7 +94,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
 
         if (scratch.sprtemp[frame].rotate == eightRotations)
         {
-            fatalError("Error: Doom::initSprites: Sprite ",
+            fatalError("Error: initSprites: Sprite ",
                        scratch.spritename,
                        " frame ",
                        char('A' + frame),
@@ -113,7 +113,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
     // the lump is only used for one rotation
     if (scratch.sprtemp[frame].rotate == singleRotation)
     {
-        fatalError("Error: Doom::initSprites: Sprite ",
+        fatalError("Error: initSprites: Sprite ",
                    scratch.spritename,
                    " frame ",
                    char('A' + frame),
@@ -126,7 +126,7 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
     rotation--;
     if (scratch.sprtemp[frame].lump[rotation] != -1)
     {
-        fatalError("Error: Doom::initSprites: Sprite ",
+        fatalError("Error: initSprites: Sprite ",
                    scratch.spritename,
                    " : ",
                    char('A' + frame),
@@ -177,7 +177,6 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
     // view onto its data(), refreshed after the resize. The resize constructs each
     // SpriteDef (with an empty frames vector), which the loop below fills.
     gd.sprites.resize(gd.numsprites);
-    sprites = gd.sprites.data();
 
     start = gd.firstspritelump - 1;
     end = gd.lastspritelump + 1;
@@ -197,7 +196,7 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
         //  filling in the frames for whatever is found
         for (l = start + 1; l < end; l++)
         {
-            const Lump& entry = Doom::wad().info(l);
+            const Lump& entry = wad().info(l);
 
             if (*reinterpret_cast<const int*>(entry.name.data()) == intname)
             {
@@ -205,7 +204,7 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
                 rotation = entry.name[5] - '0';
 
                 if (gameVersion().modifiedgame)
-                    patched = Doom::wad().number(nameView(entry.name.data(), 8));
+                    patched = wad().number(nameView(entry.name.data(), 8));
                 else
                     patched = l;
 
@@ -223,7 +222,7 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
         // check the frames that were found for completeness
         if (scratch.maxframe == -1)
         {
-            sprites[i].numframes = 0;
+            graphicsData().sprites[i].numframes = 0;
             continue;
         }
 
@@ -236,7 +235,7 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
                 case noRotationsSeen:
                 {
                     // no rotations were found for that frame at all
-                    fatalError("Error: Doom::initSprites: No patches found for ",
+                    fatalError("Error: initSprites: No patches found for ",
                                namelist[i],
                                " frame ",
                                char(frame + 'A'));
@@ -252,7 +251,7 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
                     for (short lump: scratch.sprtemp[frame].lump)
                         if (lump == -1)
                         {
-                            fatalError("Error: Doom::initSprites: Sprite ",
+                            fatalError("Error: initSprites: Sprite ",
                                        namelist[i],
                                        " frame ",
                                        char(frame + 'A'),
@@ -265,9 +264,9 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
         // allocate space for the frames present and copy sprtemp to it. The frames
         // vector is RAII-owned by the SpriteDef now (Step 9); resize then copy the
         // POD sprtemp entries into its storage, as the malloc + memcpy did.
-        sprites[i].numframes = scratch.maxframe;
-        sprites[i].spriteframes.resize(scratch.maxframe);
-        doom_memcpy(sprites[i].spriteframes.data(),
+        graphicsData().sprites[i].numframes = scratch.maxframe;
+        graphicsData().sprites[i].spriteframes.resize(scratch.maxframe);
+        doom_memcpy(graphicsData().sprites[i].spriteframes.data(),
                     scratch.sprtemp.data(),
                     scratch.maxframe * sizeof(SpriteFrame));
     }
@@ -328,13 +327,14 @@ VisSprite* newVisSprite()
 void drawMaskedColumn(Column* column)
 {
     // Vanilla declares these int, but they are fixed-point screen positions
-    // (sprtopscreen and spryscale are both fixed_t).
-    fixed_t topscreen;
-    fixed_t bottomscreen;
-    fixed_t basetexturemid;
+    // (sprtopscreen and spryscale are both Fixed).
+    Fixed topscreen;
+    Fixed bottomscreen;
+    Fixed basetexturemid;
 
     auto& draw = drawState();
     auto& sprState = spriteState();
+    auto& drawer = drawers();
 
     basetexturemid = draw.dc_texturemid;
 
@@ -356,13 +356,12 @@ void drawMaskedColumn(Column* column)
         if (draw.dc_yl <= draw.dc_yh)
         {
             draw.dc_source = reinterpret_cast<byte*>(column) + 3;
-            draw.dc_texturemid =
-                basetexturemid - Doom::Fixed::fromInt(column->topdelta);
+            draw.dc_texturemid = basetexturemid - Fixed::fromInt(column->topdelta);
             // dc_source = (byte *)column + 3 - column->topdelta;
 
-            // Drawn by either Doom::drawColumn
-            //  or (SHADOW) Doom::drawFuzzColumn.
-            colfunc();
+            // Drawn by either drawColumn
+            //  or (SHADOW) drawFuzzColumn.
+            drawer.column();
         }
         column = reinterpret_cast<Column*>(reinterpret_cast<byte*>(column)
                                            + column->length + 4);
@@ -379,27 +378,28 @@ void drawVisSprite(VisSprite& vis)
 {
     Column* column;
     int texturecolumn;
-    fixed_t frac;
+    Fixed frac;
     Patch* patch;
 
     auto& draw = drawState();
     auto& sprState = spriteState();
+    auto& drawer = drawers();
 
     patch = static_cast<Patch*>(
-        Doom::cacheLumpNum(vis.patch + graphicsData().firstspritelump));
+        cacheLumpNum(vis.patch + graphicsData().firstspritelump));
 
     draw.dc_colormap = vis.colormap;
 
     if (!draw.dc_colormap)
     {
         // 0 colormap = shadow draw
-        colfunc = fuzzcolfunc;
+        drawer.column = drawer.fuzzColumn;
     }
     else if (vis.mobjflags & mobjTranslationMask)
     {
-        colfunc = Doom::drawTranslatedColumn;
+        drawer.column = drawer.translatedColumn;
         draw.dc_translation =
-            translationtables - 256
+            drawState().translationTables - 256
             + ((vis.mobjflags & mobjTranslationMask) >> (mobjTranslationShift - 8));
     }
 
@@ -423,7 +423,7 @@ void drawVisSprite(VisSprite& vis)
         drawMaskedColumn(column);
     }
 
-    colfunc = basecolfunc;
+    drawer.column = drawer.baseColumn;
 }
 
 //
@@ -433,16 +433,16 @@ void drawVisSprite(VisSprite& vis)
 //
 void projectSprite(Mobj& thing)
 {
-    fixed_t tr_x;
-    fixed_t tr_y;
+    Fixed tr_x;
+    Fixed tr_y;
 
-    fixed_t gxt;
-    fixed_t gyt;
+    Fixed gxt;
+    Fixed gyt;
 
-    fixed_t tx;
-    fixed_t tz;
+    Fixed tx;
+    Fixed tz;
 
-    fixed_t xscale;
+    Fixed xscale;
 
     int x1;
     int x2;
@@ -458,8 +458,8 @@ void projectSprite(Mobj& thing)
 
     VisSprite* vis;
 
-    angle_t ang;
-    fixed_t iscale;
+    Angle ang;
+    Fixed iscale;
 
     auto& pt = viewPoint();
     auto& proj = viewProjection();
@@ -499,7 +499,7 @@ void projectSprite(Mobj& thing)
                    " ");
     }
 #endif
-    sprdef = &sprites[toIndex(thing.sprite)];
+    sprdef = &graphicsData().sprites[toIndex(thing.sprite)];
 #ifdef RANGECHECK
     if ((thing.frame & FF_FRAMEMASK) >= sprdef->numframes)
     {
@@ -515,7 +515,7 @@ void projectSprite(Mobj& thing)
     if (sprframe->rotate)
     {
         // choose a different rotation based on player view
-        ang = Doom::pointToAngle(thing.x, thing.y);
+        ang = pointToAngle(thing.x, thing.y);
         rot = ((ang - thing.angle + (ang45 / 2u) * 9u) >> 29).raw;
         lump = sprframe->lump[rot];
         flip = static_cast<bool>(sprframe->flip[rot]);
@@ -528,14 +528,14 @@ void projectSprite(Mobj& thing)
     }
 
     // calculate edges of the shape
-    tx -= spriteoffset[lump];
+    tx -= graphicsData().spriteoffset[lump];
     x1 = (proj.centerxfrac + FixedMul(tx, xscale)).toInt();
 
     // off the right side?
     if (x1 > view.viewwidth)
         return;
 
-    tx += spritewidth[lump];
+    tx += graphicsData().spritewidth[lump];
     x2 = (proj.centerxfrac + FixedMul(tx, xscale)).toInt() - 1;
 
     // off the left side
@@ -549,7 +549,7 @@ void projectSprite(Mobj& thing)
     vis->gx = thing.x;
     vis->gy = thing.y;
     vis->gz = thing.z;
-    vis->gzt = thing.z + spritetopoffset[lump];
+    vis->gzt = thing.z + graphicsData().spritetopoffset[lump];
     vis->texturemid = vis->gzt - pt.viewz;
     vis->x1 = x1 < 0 ? 0 : x1;
     vis->x2 = x2 >= view.viewwidth ? view.viewwidth - 1 : x2;
@@ -557,12 +557,12 @@ void projectSprite(Mobj& thing)
 
     if (flip)
     {
-        vis->startfrac = spritewidth[lump] - fixed_t {1};
+        vis->startfrac = graphicsData().spritewidth[lump] - Fixed {1};
         vis->xiscale = -iscale;
     }
     else
     {
-        vis->startfrac = fixed_t {};
+        vis->startfrac = Fixed {};
         vis->xiscale = iscale;
     }
 
@@ -584,7 +584,7 @@ void projectSprite(Mobj& thing)
     else if (thing.frame & FF_FULLBRIGHT)
     {
         // full bright
-        vis->colormap = colormaps;
+        vis->colormap = graphicsData().colormaps;
     }
 
     else
@@ -640,7 +640,7 @@ void addSprites(Sector& sec)
 //
 void drawPSprite(PspDef& psp)
 {
-    fixed_t tx;
+    Fixed tx;
     int x1;
     int x2;
     SpriteDef* sprdef;
@@ -666,7 +666,7 @@ void drawPSprite(PspDef& psp)
                    " ");
     }
 #endif
-    sprdef = &sprites[toIndex(psp.state->sprite)];
+    sprdef = &graphicsData().sprites[toIndex(psp.state->sprite)];
 #ifdef RANGECHECK
     if ((psp.state->frame & FF_FRAMEMASK) >= sprdef->numframes)
     {
@@ -685,14 +685,14 @@ void drawPSprite(PspDef& psp)
     // calculate edges of the shape
     tx = psp.sx - 160 * FRACUNIT;
 
-    tx -= spriteoffset[lump];
+    tx -= graphicsData().spriteoffset[lump];
     x1 = (proj.centerxfrac + FixedMul(tx, sprState.pspritescale)).toInt();
 
     // off the right side
     if (x1 > view.viewwidth)
         return;
 
-    tx += spritewidth[lump];
+    tx += graphicsData().spritewidth[lump];
     x2 = (proj.centerxfrac + FixedMul(tx, sprState.pspritescale)).toInt() - 1;
 
     // off the left side
@@ -702,8 +702,8 @@ void drawPSprite(PspDef& psp)
     // store information in a vissprite
     vis = &avis;
     vis->mobjflags = 0;
-    vis->texturemid = Doom::Fixed::fromInt(BASEYCENTER) + FRACUNIT / 2
-                      - (psp.sy - spritetopoffset[lump]);
+    vis->texturemid = Fixed::fromInt(BASEYCENTER) + FRACUNIT / 2
+                      - (psp.sy - graphicsData().spritetopoffset[lump]);
     vis->x1 = x1 < 0 ? 0 : x1;
     vis->x2 = x2 >= view.viewwidth ? view.viewwidth - 1 : x2;
     vis->scale = sprState.pspritescale << view.detailshift;
@@ -711,12 +711,12 @@ void drawPSprite(PspDef& psp)
     if (flip)
     {
         vis->xiscale = -sprState.pspriteiscale;
-        vis->startfrac = spritewidth[lump] - fixed_t {1};
+        vis->startfrac = graphicsData().spritewidth[lump] - Fixed {1};
     }
     else
     {
         vis->xiscale = sprState.pspriteiscale;
-        vis->startfrac = fixed_t {};
+        vis->startfrac = Fixed {};
     }
 
     if (vis->x1 > x1)
@@ -738,7 +738,7 @@ void drawPSprite(PspDef& psp)
     else if (psp.state->frame & FF_FULLBRIGHT)
     {
         // full bright
-        vis->colormap = colormaps;
+        vis->colormap = graphicsData().colormaps;
     }
     else
     {
@@ -837,8 +837,8 @@ void drawSprite(VisSprite& spr)
     int x;
     int r1;
     int r2;
-    fixed_t scale;
-    fixed_t lowscale;
+    Fixed scale;
+    Fixed lowscale;
     int silhouette;
 
     auto& bsp = bspScratch();
@@ -877,11 +877,11 @@ void drawSprite(VisSprite& spr)
 
         if (scale < spr.scale
             || (lowscale < spr.scale
-                && !Doom::pointOnSegSide(spr.gx, spr.gy, *ds->curline)))
+                && !pointOnSegSide(spr.gx, spr.gy, *ds->curline)))
         {
             // masked mid texture?
             if (ds->maskedtexturecol)
-                Doom::renderMaskedSegRange(*ds, r1, r2);
+                renderMaskedSegRange(*ds, r1, r2);
             // seg is behind sprite
             continue;
         }
@@ -965,7 +965,7 @@ void drawMasked()
     // render any remaining masked mid textures
     for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs.data(); ds--)
         if (ds->maskedtexturecol)
-            Doom::renderMaskedSegRange(*ds, ds->x1, ds->x2);
+            renderMaskedSegRange(*ds, ds->x1, ds->x2);
 
     // draw the psprites on top of everything
     drawPlayerSprites();

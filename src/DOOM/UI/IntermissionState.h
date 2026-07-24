@@ -104,7 +104,7 @@ struct IntermissionState
     // (Step 9): what was a raw doom_malloc'd Patch** is now an owning Vector of
     // pointers - read only within Intermission.cpp, so unlike wipe_melt_offsets this
     // needs no separate view onto it. The pointed-to Patch lumps themselves are owned
-    // by the WAD (Doom::WadFile), not by this vector, and must not be freed here.
+    // by the WAD (WadFile), not by this vector, and must not be freed here.
     Vector<Patch*> lnames;
 };
 

@@ -2076,27 +2076,30 @@ const Array<std::uint32_t, slopeRange + 1> tanToAngleTable = {
     536870912
 };
 // clang-format on
+// The typed views onto the three raw tables above. They were four `extern const T*`
+// globals other translation units linked against; they are accessor functions now
+// (TrigTables.h). The tables are stored as raw int32 and read as fixed-point: Fixed
+// is a standard-layout struct wrapping exactly one int32, which the assert pins, so
+// a view reinterprets rather than copies 10,000 entries.
+static_assert(sizeof(Fixed) == sizeof(std::int32_t));
+static_assert(alignof(Fixed) == alignof(std::int32_t));
+static_assert(sizeof(Angle) == sizeof(std::uint32_t));
+static_assert(alignof(Angle) == alignof(std::uint32_t));
+
+const Fixed* finesine()
+{
+    return reinterpret_cast<const Fixed*>(fineSineTable.data());
+}
+const Fixed* finecosine()
+{
+    return reinterpret_cast<const Fixed*>(fineSineTable.data()) + fineAngles / 4;
+}
+const Fixed* finetangent()
+{
+    return reinterpret_cast<const Fixed*>(fineTangentTable.data());
+}
+const Angle* tantoangle()
+{
+    return reinterpret_cast<const Angle*>(tanToAngleTable.data());
+}
 } // namespace Doom
-
-// ---------------------------------------------------------------------------
-// Global-scope data that was tables.cpp. It stays at :: scope because these are the
-// vanilla names other translation units (and the eacp port) still link against.
-// ---------------------------------------------------------------------------
-// The tables are stored as raw int32 and read as fixed-point. Fixed is a
-// standard-layout struct wrapping exactly one int32, which the assert pins, so
-// the view can reinterpret rather than copy 10,000 entries.
-static_assert(sizeof(Doom::Fixed) == sizeof(std::int32_t));
-static_assert(alignof(Doom::Fixed) == alignof(std::int32_t));
-
-const fixed_t* finesine =
-    reinterpret_cast<const fixed_t*>(Doom::fineSineTable.data());
-const fixed_t* finecosine =
-    reinterpret_cast<const fixed_t*>(Doom::fineSineTable.data())
-    + Doom::fineAngles / 4;
-const fixed_t* finetangent =
-    reinterpret_cast<const fixed_t*>(Doom::fineTangentTable.data());
-static_assert(sizeof(Doom::Angle) == sizeof(std::uint32_t));
-static_assert(alignof(Doom::Angle) == alignof(std::uint32_t));
-
-const angle_t* tantoangle =
-    reinterpret_cast<const angle_t*>(Doom::tanToAngleTable.data());

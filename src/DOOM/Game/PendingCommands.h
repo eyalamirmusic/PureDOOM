@@ -2,9 +2,9 @@
 
 namespace Doom
 {
-// The pending special-command requests. A pause (the pause key, in Doom::gameResponder) or a save (menu
-// save, in Doom::saveGame) cannot be applied inside the event that asks for it, so it is deferred:
-// sendpause/sendsave are raised, and next tic Doom::buildTiccmd folds the request into the ticcmd it
+// The pending special-command requests. A pause (the pause key, in gameResponder) or a save (menu
+// save, in saveGame) cannot be applied inside the event that asks for it, so it is deferred:
+// sendpause/sendsave are raised, and next tic buildTiccmd folds the request into the ticcmd it
 // builds as a ButtonCode::Special command (SpecialCommand::Pause / SpecialCommand::SaveGame) and clears the flag. G_DoLoadLevel
 // resets both. g_game's own file-scope state, read by no other file (m_menu carried a dead
 // `extern doom_boolean sendpause;` it never used - dropped with this move).

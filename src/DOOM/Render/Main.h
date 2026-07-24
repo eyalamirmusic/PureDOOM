@@ -4,13 +4,7 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Node, Seg, SubSector
 
-// The column/span drawers the renderer switches between for detail mode and for
-// the fuzz effect. Raw function pointers on purpose: these are called once per
-// column and once per span, the hottest loop in the engine. Were r_main.h.
-extern void (*colfunc)();
-extern void (*basecolfunc)();
-extern void (*fuzzcolfunc)();
-extern void (*spanfunc)();
+#include "Drawers.h" // the column/span drawer selection, was four externs here
 
 namespace Doom
 {
@@ -20,21 +14,21 @@ namespace Doom
 constexpr int DISTMAP = 2;
 
 // Renderer main/setup; r_main.cpp keeps the vanilla R_ names as shims.
-void addPointToBox(int x, int y, fixed_t* box);
-int pointOnSide(fixed_t x, fixed_t y, Node& node);
-int pointOnSegSide(fixed_t x, fixed_t y, Seg& line);
-angle_t pointToAngle(fixed_t x, fixed_t y);
-angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
-fixed_t pointToDist(fixed_t x, fixed_t y);
+void addPointToBox(int x, int y, Fixed* box);
+int pointOnSide(Fixed x, Fixed y, Node& node);
+int pointOnSegSide(Fixed x, Fixed y, Seg& line);
+Angle pointToAngle(Fixed x, Fixed y);
+Angle pointToAngle2(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
+Fixed pointToDist(Fixed x, Fixed y);
 void initPointToAngle();
-fixed_t scaleFromGlobalAngle(angle_t visangle);
+Fixed scaleFromGlobalAngle(Angle visangle);
 void initTables();
 void initTextureMapping();
 void initLightTables();
 void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
-SubSector* pointInSubsector(fixed_t x, fixed_t y);
+SubSector* pointInSubsector(Fixed x, Fixed y);
 void setupFrame(Player& player);
 void renderPlayerView(Player& player);
 } // namespace Doom

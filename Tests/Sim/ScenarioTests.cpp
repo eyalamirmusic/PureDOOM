@@ -27,7 +27,7 @@ using namespace nano;
 
 namespace
 {
-// The engine's coordinates are 16.16 fixed-point (fixed_t is int32); the harness
+// The engine's coordinates are 16.16 fixed-point (Doom::Fixed is int32); the harness
 // takes and returns them raw. One map unit is therefore FRACUNIT.
 constexpr int unit = 1 << 16;
 

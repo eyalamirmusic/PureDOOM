@@ -28,7 +28,7 @@ namespace Doom
 // golden-neutral - and the demo replays drive demobuffer/demo_p end to end, confirming it.
 //
 // demobuffer has dual ownership (REFACTOR.md, Step 9 strand (b)): recordDemo() allocates it to
-// write a demo out, but doPlayDemo() instead points it at Doom::cacheLumpName's return - memory
+// write a demo out, but doPlayDemo() instead points it at cacheLumpName's return - memory
 // WadFile owns for the run of the process - to read one back. demobuffer can therefore not
 // become an owning vector itself: doing so would make checkDemoStatus's demorecording cleanup
 // free WAD lump memory on every demo playback. demoRecordBuffer is the RAII owner for the
@@ -52,6 +52,6 @@ struct DemoState
 };
 
 // The one DemoState, a view onto the Engine's member - the same pattern as
-// gameFlow(), playerState(), gameSession(), levelStats(), clip(), level() and wad().
+// gameFlow(), playerState(), gameSession(), levelStats(), clipping(), level() and wad().
 DemoState& demoState();
 } // namespace Doom

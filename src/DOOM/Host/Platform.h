@@ -29,24 +29,10 @@ constexpr T doom_abs(T x)
     return x < T {} ? -x : x;
 }
 
-extern int doom_flags;
-
-// The 13 host callbacks are references onto Doom::host()'s members (Host/Host.h) - the
-// storage moved off these loose globals into one Host owner (REFACTOR.md, the
-// doom_config->Host fold). Every reader resolves through the reference unchanged.
-extern Doom::PrintHandler& doom_print;
-extern Doom::MallocHandler& doom_malloc;
-extern Doom::FreeHandler& doom_free;
-extern Doom::OpenHandler& doom_open;
-extern Doom::CloseHandler& doom_close;
-extern Doom::ReadHandler& doom_read;
-extern Doom::WriteHandler& doom_write;
-extern Doom::SeekHandler& doom_seek;
-extern Doom::TellHandler& doom_tell;
-extern Doom::EofHandler& doom_eof;
-extern Doom::GetTimeHandler& doom_gettime;
-extern Doom::ExitHandler& doom_exit;
-extern Doom::GetEnvHandler& doom_getenv;
+// The doom_print / doom_malloc / ... aliases that used to sit here are gone. They
+// were thirteen extern references bound at static-init time onto Doom::host()'s
+// members, plus doom_flags beside them; call sites reach host() directly now, which
+// is the singleton they were always naming.
 
 void doom_memset(void* ptr, int value, int num);
 void* doom_memcpy(void* destination, const void* source, int num);

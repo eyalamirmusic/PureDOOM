@@ -4,10 +4,13 @@
 // point-on-side (with the load-bearing "one below north" quirk preserved), the light
 // and texture-mapping tables, view-size handling, R_SetupFrame/R_RenderPlayerView.
 // r_main.cpp shims the R_ names and owns the view-state globals (viewx/viewangle/...,
-// validcount, the drawer pointers other renderer files switch, the pending-view
-// flags d_main/g_game/DOOM read); r_main's own bookkeeping (setdetail,
-// transcolfunc) is file-local here. renderInit is Doom::renderInit (renamed to avoid a clash
-// with Setup's init).
+// validcount, the pending-view flags d_main/g_game/DOOM read); r_main's own
+// bookkeeping (setdetail) is file-local here. renderInit is renderInit (renamed to
+// avoid a clash with Setup's init).
+//
+// executeSetViewSize chooses the column and span drawers for the detail mode; they
+// live on the Drawers cluster (Render/Drawers.h) rather than in the four raw
+// function-pointer globals this file used to define.
 
 #include "../Host/Platform.h" // doom_abs, doom_print
 
@@ -53,40 +56,38 @@ constexpr int FIELDOFVIEW = 2048;
 // file-scope-statics sweep - REFACTOR.md, Step 5); it was a reference onto that member until the
 // file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired it - setViewSize and executeSetViewSize
 // each reach it through renderMainState() directly.
-void (*transcolfunc)();
-
 // Forward declarations so call order needs no rearranging.
-void addPointToBox(int x, int y, fixed_t* box);
-int pointOnSide(fixed_t x, fixed_t y, Node& node);
-int pointOnSegSide(fixed_t x, fixed_t y, Seg& line);
-angle_t pointToAngle(fixed_t x, fixed_t y);
-angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
-fixed_t pointToDist(fixed_t x, fixed_t y);
+void addPointToBox(int x, int y, Fixed* box);
+int pointOnSide(Fixed x, Fixed y, Node& node);
+int pointOnSegSide(Fixed x, Fixed y, Seg& line);
+Angle pointToAngle(Fixed x, Fixed y);
+Angle pointToAngle2(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
+Fixed pointToDist(Fixed x, Fixed y);
 void initPointToAngle();
-fixed_t scaleFromGlobalAngle(angle_t visangle);
+Fixed scaleFromGlobalAngle(Angle visangle);
 void initTables();
 void initTextureMapping();
 void initLightTables();
 void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
-SubSector* pointInSubsector(fixed_t x, fixed_t y);
+SubSector* pointInSubsector(Fixed x, Fixed y);
 void setupFrame(Player& player);
 void renderPlayerView(Player& player);
 
 // Vanilla takes x/y as plain ints although they are raw fixed-point coordinates
-// (the box is fixed_t). Nothing calls this, so the signature is left alone and the
+// (the box is Fixed). Nothing calls this, so the signature is left alone and the
 // raw values are wrapped here.
-void addPointToBox(int x, int y, fixed_t* box)
+void addPointToBox(int x, int y, Fixed* box)
 {
-    if (fixed_t {x} < box[boxLeft])
-        box[boxLeft] = fixed_t {x};
-    if (fixed_t {x} > box[boxRight])
-        box[boxRight] = fixed_t {x};
-    if (fixed_t {y} < box[boxBottom])
-        box[boxBottom] = fixed_t {y};
-    if (fixed_t {y} > box[boxTop])
-        box[boxTop] = fixed_t {y};
+    if (Fixed {x} < box[boxLeft])
+        box[boxLeft] = Fixed {x};
+    if (Fixed {x} > box[boxRight])
+        box[boxRight] = Fixed {x};
+    if (Fixed {y} < box[boxBottom])
+        box[boxBottom] = Fixed {y};
+    if (Fixed {y} > box[boxTop])
+        box[boxTop] = Fixed {y};
 }
 
 //
@@ -95,12 +96,12 @@ void addPointToBox(int x, int y, fixed_t* box)
 //  check point against partition plane.
 // Returns side 0 (front) or 1 (back).
 //
-int pointOnSide(fixed_t x, fixed_t y, Node& node)
+int pointOnSide(Fixed x, Fixed y, Node& node)
 {
-    fixed_t dx;
-    fixed_t dy;
-    fixed_t left;
-    fixed_t right;
+    Fixed dx;
+    Fixed dy;
+    Fixed left;
+    Fixed right;
 
     if (!node.dx)
     {
@@ -143,16 +144,16 @@ int pointOnSide(fixed_t x, fixed_t y, Node& node)
     return 1;
 }
 
-int pointOnSegSide(fixed_t x, fixed_t y, Seg& line)
+int pointOnSegSide(Fixed x, Fixed y, Seg& line)
 {
-    fixed_t lx;
-    fixed_t ly;
-    fixed_t ldx;
-    fixed_t ldy;
-    fixed_t dx;
-    fixed_t dy;
-    fixed_t left;
-    fixed_t right;
+    Fixed lx;
+    Fixed ly;
+    Fixed ldx;
+    Fixed ldy;
+    Fixed dx;
+    Fixed dy;
+    Fixed left;
+    Fixed right;
 
     lx = line.v1->x;
     ly = line.v1->y;
@@ -210,7 +211,7 @@ int pointOnSegSide(fixed_t x, fixed_t y, Seg& line)
 //  tangent (slope) value which is looked up in the
 //  tantoangle[] table.
 
-angle_t pointToAngle(fixed_t x, fixed_t y)
+Angle pointToAngle(Fixed x, Fixed y)
 {
     auto& pt = viewPoint();
 
@@ -218,7 +219,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
     y -= pt.viewy;
 
     if ((!x) && (!y))
-        return angle_t {};
+        return Angle {};
 
     if (!x.isNegative())
     {
@@ -230,13 +231,12 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 0
-                return tantoangle[Doom::slopeDiv(y.raw, x.raw)];
+                return tantoangle()[slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 1
-                return ang90 - angle_t {1}
-                       - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ang90 - Angle {1} - tantoangle()[slopeDiv(x.raw, y.raw)];
             }
         }
         else
@@ -251,7 +251,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
-                return -tantoangle[Doom::slopeDiv(y.raw, x.raw)];
+                return -tantoangle()[slopeDiv(y.raw, x.raw)];
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
@@ -259,7 +259,7 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             else
             {
                 // octant 7
-                return ang270 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ang270 + tantoangle()[slopeDiv(x.raw, y.raw)];
             }
         }
     }
@@ -274,13 +274,12 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 3
-                return ang180 - angle_t {1}
-                       - tantoangle[Doom::slopeDiv(y.raw, x.raw)];
+                return ang180 - Angle {1} - tantoangle()[slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 2
-                return ang90 + tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ang90 + tantoangle()[slopeDiv(x.raw, y.raw)];
             }
         }
         else
@@ -291,20 +290,19 @@ angle_t pointToAngle(fixed_t x, fixed_t y)
             if (x > y)
             {
                 // octant 4
-                return ang180 + tantoangle[Doom::slopeDiv(y.raw, x.raw)];
+                return ang180 + tantoangle()[slopeDiv(y.raw, x.raw)];
             }
             else
             {
                 // octant 5
-                return ang270 - angle_t {1}
-                       - tantoangle[Doom::slopeDiv(x.raw, y.raw)];
+                return ang270 - Angle {1} - tantoangle()[slopeDiv(x.raw, y.raw)];
             }
         }
     }
-    return angle_t {};
+    return Angle {};
 }
 
-angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2)
+Angle pointToAngle2(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
 {
     auto& pt = viewPoint();
 
@@ -314,12 +312,12 @@ angle_t pointToAngle2(fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2)
     return pointToAngle(x2, y2);
 }
 
-fixed_t pointToDist(fixed_t x, fixed_t y)
+Fixed pointToDist(Fixed x, Fixed y)
 {
-    fixed_t dx;
-    fixed_t dy;
-    fixed_t temp;
-    fixed_t dist;
+    Fixed dx;
+    Fixed dy;
+    Fixed temp;
+    Fixed dist;
 
     auto& pt = viewPoint();
 
@@ -334,10 +332,11 @@ fixed_t pointToDist(fixed_t x, fixed_t y)
     }
 
     const auto fine =
-        (tantoangle[FixedDiv(dy, dx).raw >> slopeToFixedShift] + ang90).fineIndex();
+        (tantoangle()[FixedDiv(dy, dx).raw >> slopeToFixedShift] + ang90)
+            .fineIndex();
 
     // use as cosine
-    dist = FixedDiv(dx, finesine[fine]);
+    dist = FixedDiv(dx, finesine()[fine]);
 
     return dist;
 }
@@ -354,15 +353,15 @@ void initPointToAngle() {}
 //  at the given angle.
 // rw_distance must be calculated first.
 //
-fixed_t scaleFromGlobalAngle(angle_t visangle)
+Fixed scaleFromGlobalAngle(Angle visangle)
 {
-    fixed_t scale;
-    angle_t anglea {};
-    angle_t angleb {};
-    fixed_t sinea;
-    fixed_t sineb;
-    fixed_t num;
-    fixed_t den;
+    Fixed scale;
+    Angle anglea {};
+    Angle angleb {};
+    Fixed sinea;
+    Fixed sineb;
+    Fixed num;
+    Fixed den;
 
     auto& scratch = renderScratch();
 
@@ -370,8 +369,8 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
     angleb = ang90 + (visangle - scratch.rw_normalangle);
 
     // both sines are allways positive
-    sinea = finesine[anglea.fineIndex()];
-    sineb = finesine[angleb.fineIndex()];
+    sinea = finesine()[anglea.fineIndex()];
+    sineb = finesine()[angleb.fineIndex()];
     num = FixedMul(viewProjection().projection, sineb) << viewWindow().detailshift;
     den = FixedMul(scratch.rw_distance, sinea);
 
@@ -381,8 +380,8 @@ fixed_t scaleFromGlobalAngle(angle_t visangle)
 
         if (scale > 64 * FRACUNIT)
             scale = 64 * FRACUNIT;
-        else if (scale < fixed_t {256})
-            scale = fixed_t {256};
+        else if (scale < Fixed {256})
+            scale = Fixed {256};
     }
     else
         scale = 64 * FRACUNIT;
@@ -402,7 +401,7 @@ void initTextureMapping()
 {
     int i;
     int t;
-    fixed_t focallength;
+    Fixed focallength;
 
     auto& proj = viewProjection();
     auto& view = viewWindow();
@@ -414,18 +413,18 @@ void initTextureMapping()
     // Calc focallength
     // so FIELDOFVIEW angles covers SCREENWIDTH.
     focallength =
-        FixedDiv(proj.centerxfrac, finetangent[fineAngles / 4 + FIELDOFVIEW / 2]);
+        FixedDiv(proj.centerxfrac, finetangent()[fineAngles / 4 + FIELDOFVIEW / 2]);
 
     for (i = 0; i < fineAngles / 2; i++)
     {
-        if (finetangent[i] > FRACUNIT * 2)
+        if (finetangent()[i] > FRACUNIT * 2)
             t = -1;
-        else if (finetangent[i] < -FRACUNIT * 2)
+        else if (finetangent()[i] < -FRACUNIT * 2)
             t = view.viewwidth + 1;
         else
         {
             // t is dual-purpose: a raw fixed product here, a screen column below.
-            t = FixedMul(finetangent[i], focallength).raw;
+            t = FixedMul(finetangent()[i], focallength).raw;
             t = (proj.centerxfrac.raw - t + fracUnit - 1) >> fracBits;
 
             if (t < -1)
@@ -445,13 +444,13 @@ void initTextureMapping()
         while (proj.viewangletox[i] > x)
             i++;
         proj.xtoviewangle[x] =
-            angle_t {(unsigned) i << Angle::angleToFineShift} - ang90;
+            Angle {(unsigned) i << Angle::angleToFineShift} - ang90;
     }
 
     // Take out the fencepost cases from viewangletox.
     for (i = 0; i < fineAngles / 2; i++)
     {
-        t = FixedMul(finetangent[i], focallength).raw;
+        t = FixedMul(finetangent()[i], focallength).raw;
         t = proj.centerx - t;
 
         if (proj.viewangletox[i] == -1)
@@ -485,9 +484,9 @@ void initLightTables()
         for (int j = 0; j < MAXLIGHTZ; j++)
         {
             // scale is dual-purpose: a raw fixed quotient, then a light index.
-            scale = FixedDiv(SCREENWIDTH / 2 * FRACUNIT,
-                             fixed_t {(j + 1) << LIGHTZSHIFT})
-                        .raw;
+            scale =
+                FixedDiv(SCREENWIDTH / 2 * FRACUNIT, Fixed {(j + 1) << LIGHTZSHIFT})
+                    .raw;
             scale >>= LIGHTSCALESHIFT;
             level = startmap - scale / DISTMAP;
 
@@ -497,7 +496,7 @@ void initLightTables()
             if (level >= NUMCOLORMAPS)
                 level = NUMCOLORMAPS - 1;
 
-            lights.zlight[i][j] = colormaps + level * 256;
+            lights.zlight[i][j] = graphicsData().colormaps + level * 256;
         }
     }
 }
@@ -523,8 +522,8 @@ void setViewSize(int blocks, int detail)
 //
 void executeSetViewSize()
 {
-    fixed_t cosadj;
-    fixed_t dy;
+    Fixed cosadj;
+    Fixed dy;
     int i;
     int j;
     int level;
@@ -554,26 +553,27 @@ void executeSetViewSize()
 
     proj.centery = view.viewheight / 2;
     proj.centerx = view.viewwidth / 2;
-    proj.centerxfrac = Doom::Fixed::fromInt(proj.centerx);
-    proj.centeryfrac = Doom::Fixed::fromInt(proj.centery);
+    proj.centerxfrac = Fixed::fromInt(proj.centerx);
+    proj.centeryfrac = Fixed::fromInt(proj.centery);
     proj.projection = proj.centerxfrac;
+
+    auto& drawer = drawers();
 
     if (!view.detailshift)
     {
-        colfunc = basecolfunc = Doom::drawColumn;
-        fuzzcolfunc = Doom::drawFuzzColumn;
-        transcolfunc = Doom::drawTranslatedColumn;
-        spanfunc = Doom::drawSpan;
+        drawer.column = drawer.baseColumn = drawColumn;
+        drawer.span = drawSpan;
     }
     else
     {
-        colfunc = basecolfunc = Doom::drawColumnLow;
-        fuzzcolfunc = Doom::drawFuzzColumn;
-        transcolfunc = Doom::drawTranslatedColumn;
-        spanfunc = Doom::drawSpanLow;
+        drawer.column = drawer.baseColumn = drawColumnLow;
+        drawer.span = drawSpanLow;
     }
 
-    Doom::initBuffer(view.scaledviewwidth, view.viewheight);
+    drawer.fuzzColumn = drawFuzzColumn;
+    drawer.translatedColumn = drawTranslatedColumn;
+
+    initBuffer(view.scaledviewwidth, view.viewheight);
 
     initTextureMapping();
 
@@ -588,7 +588,7 @@ void executeSetViewSize()
     // planes
     for (i = 0; i < view.viewheight; i++)
     {
-        dy = Doom::Fixed::fromInt(i - view.viewheight / 2) + FRACUNIT / 2;
+        dy = Fixed::fromInt(i - view.viewheight / 2) + FRACUNIT / 2;
         dy = doom_abs(dy);
         plane.yslope[i] =
             FixedDiv((view.viewwidth << view.detailshift) / 2 * FRACUNIT, dy);
@@ -596,7 +596,7 @@ void executeSetViewSize()
 
     for (i = 0; i < view.viewwidth; i++)
     {
-        cosadj = doom_abs(finecosine[proj.xtoviewangle[i].fineIndex()]);
+        cosadj = doom_abs(finecosine()[proj.xtoviewangle[i].fineIndex()]);
         plane.distscale[i] = FixedDiv(FRACUNIT, cosadj);
     }
 
@@ -617,7 +617,7 @@ void executeSetViewSize()
             if (level >= NUMCOLORMAPS)
                 level = NUMCOLORMAPS - 1;
 
-            lights.scalelight[i][j] = colormaps + level * 256;
+            lights.scalelight[i][j] = graphicsData().colormaps + level * 256;
         }
     }
 }
@@ -627,48 +627,48 @@ void executeSetViewSize()
 //
 void renderInit()
 {
-    Doom::initData();
-    doom_print("\nR_InitData");
+    initData();
+    host().print("\nR_InitData");
     initPointToAngle();
-    doom_print("\nR_InitPointToAngle");
+    host().print("\nR_InitPointToAngle");
     initTables();
     // viewwidth / viewheight / menuSettings().detailLevel are set by the defaults
-    doom_print("\nR_InitTables");
+    host().print("\nR_InitTables");
 
     setViewSize(menuSettings().screenblocks, menuSettings().detailLevel);
-    Doom::initPlanes();
-    doom_print("\nR_InitPlanes");
+    initPlanes();
+    host().print("\nR_InitPlanes");
     initLightTables();
-    doom_print("\nR_InitLightTables");
-    Doom::initSkyMap();
-    doom_print("\nR_InitSkyMap");
-    Doom::initTranslationTables();
-    doom_print("\nR_InitTranslationsTables");
+    host().print("\nR_InitLightTables");
+    initSkyMap();
+    host().print("\nR_InitSkyMap");
+    initTranslationTables();
+    host().print("\nR_InitTranslationsTables");
 }
 
 //
 // pointInSubsector
 //
-SubSector* pointInSubsector(fixed_t x, fixed_t y)
+SubSector* pointInSubsector(Fixed x, Fixed y)
 {
     Node* node;
     int side;
     int nodenum;
 
     // single subsector is a special case
-    if (!numnodes)
-        return subsectors;
+    if (!level().nodes.size())
+        return level().subsectors.data();
 
-    nodenum = numnodes - 1;
+    nodenum = level().nodes.size() - 1;
 
     while (!(nodenum & NF_SUBSECTOR))
     {
-        node = &nodes[nodenum];
+        node = &level().nodes[nodenum];
         side = pointOnSide(x, y, *node);
         nodenum = node->children[side];
     }
 
-    return &subsectors[nodenum & ~NF_SUBSECTOR];
+    return &level().subsectors[nodenum & ~NF_SUBSECTOR];
 }
 
 //
@@ -687,13 +687,13 @@ void setupFrame(Player& player)
 
     pt.viewz = player.viewz;
 
-    pt.viewsin = finesine[pt.viewangle.fineIndex()];
-    pt.viewcos = finecosine[pt.viewangle.fineIndex()];
+    pt.viewsin = finesine()[pt.viewangle.fineIndex()];
+    pt.viewcos = finecosine()[pt.viewangle.fineIndex()];
 
     if (player.fixedcolormap)
     {
-        lights.fixedcolormap =
-            colormaps + player.fixedcolormap * 256 * sizeof(LightTable);
+        lights.fixedcolormap = graphicsData().colormaps
+                               + player.fixedcolormap * 256 * sizeof(LightTable);
 
         segState().walllights = lights.scalelightfixed.data();
 
@@ -713,29 +713,29 @@ void renderPlayerView(Player& player)
     setupFrame(player);
 
     // Clear buffers.
-    Doom::clearClipSegs();
-    Doom::clearDrawSegs();
-    Doom::clearPlanes();
-    Doom::clearSprites();
+    clearClipSegs();
+    clearDrawSegs();
+    clearPlanes();
+    clearSprites();
 
     // check for new console commands.
-    Doom::netUpdate();
+    netUpdate();
 
     // The head node is the last node output.
-    Doom::renderBSPNode(numnodes - 1);
+    renderBSPNode(level().nodes.size() - 1);
 
     // Check for new console commands.
-    Doom::netUpdate();
+    netUpdate();
 
-    Doom::drawPlanes();
-
-    // Check for new console commands.
-    Doom::netUpdate();
-
-    Doom::drawMasked();
+    drawPlanes();
 
     // Check for new console commands.
-    Doom::netUpdate();
+    netUpdate();
+
+    drawMasked();
+
+    // Check for new console commands.
+    netUpdate();
 }
 } // namespace Doom
 
@@ -786,11 +786,6 @@ void renderPlayerView(Player& player)
 
 // The pending view-size request, stashed by R_SetViewSize (Render/Main.cpp) for
 // R_ExecuteSetViewSize. Part of Doom::ViewWindow now; references onto it.
-
-void (*colfunc)();
-void (*basecolfunc)();
-void (*fuzzcolfunc)();
-void (*spanfunc)();
 
 //
 // R_AddPointToBox

@@ -7,9 +7,7 @@
 
 #include "../Containers.h"
 
-// Was v_video.h.
-extern byte* screens[5];
-extern Doom::Array<Doom::Array<byte, 256>, 5> gammatable;
+#include "VideoState.h" // screens[] is a VideoState member now; gammatable was dead
 
 namespace Doom
 {

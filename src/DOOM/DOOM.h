@@ -145,7 +145,7 @@ enum class MouseButton
 
 // The platform hooks the embedder may override, all pre-filled with working
 // defaults (stdio file I/O, gettimeofday, printf, malloc; see Host.cpp).
-// Assign members of Doom::host() before initGame. Every hook is invoked
+// Assign members of host() before initGame. Every hook is invoked
 // without a null check - keep them non-null, eacp style.
 using PrintHandler = std::function<void(std::string_view text)>;
 using MallocHandler = std::function<void*(int size)>;
@@ -178,6 +178,11 @@ struct Host
     GetTimeHandler gettime;
     ExitHandler exit;
     GetEnvHandler getenv;
+
+    // The DOOM_FLAG_* set initGame was handed. Host state rather than Engine
+    // state - it is what the embedder wants hidden or darkened, the same whichever
+    // world is running - so it survives resetEngine() with the callbacks.
+    int flags = 0;
 
     Host();
 };

@@ -1,13 +1,9 @@
 #pragma once
 
 #include "../doomtype.h"
-// The screen-melt's cross-read state: whether a melt is running, the outgoing
-// frame it reads, and the per-column offsets it composites by. The eacp port's
-// GPU melt reads all three. Was f_wipe.h.
 
-extern bool wipe_melt_running;
-extern byte* wipe_scr_start;
-extern int* wipe_melt_offsets;
+#include "WipeState.h" // the melt's cross-read state - was three externs here
+
 namespace Doom
 {
 // Which wipe to run. Unlike the melt state above, nothing outside the engine reads

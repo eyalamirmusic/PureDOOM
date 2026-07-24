@@ -169,9 +169,9 @@ void changeSwitchTexture(Line& line, int useAgain)
     if (!useAgain)
         line.special = 0;
 
-    int texTop = sides[line.sidenum[0]].toptexture;
-    int texMid = sides[line.sidenum[0]].midtexture;
-    int texBot = sides[line.sidenum[0]].bottomtexture;
+    int texTop = level().sides[line.sidenum[0]].toptexture;
+    int texMid = level().sides[line.sidenum[0]].midtexture;
+    int texBot = level().sides[line.sidenum[0]].bottomtexture;
 
     SfxEnum sound = SfxEnum::Swtchn;
 
@@ -186,7 +186,7 @@ void changeSwitchTexture(Line& line, int useAgain)
         if (list.switchlist[i] == texTop)
         {
             startSound(specials.buttonlist.data()->soundorg, sound);
-            sides[line.sidenum[0]].toptexture = list.switchlist[i ^ 1];
+            level().sides[line.sidenum[0]].toptexture = list.switchlist[i ^ 1];
 
             if (useAgain)
                 startButton(line, ButtonWhere::Top, list.switchlist[i], BUTTONTIME);
@@ -198,7 +198,7 @@ void changeSwitchTexture(Line& line, int useAgain)
             if (list.switchlist[i] == texMid)
             {
                 startSound(specials.buttonlist.data()->soundorg, sound);
-                sides[line.sidenum[0]].midtexture = list.switchlist[i ^ 1];
+                level().sides[line.sidenum[0]].midtexture = list.switchlist[i ^ 1];
 
                 if (useAgain)
                     startButton(
@@ -211,7 +211,8 @@ void changeSwitchTexture(Line& line, int useAgain)
                 if (list.switchlist[i] == texBot)
                 {
                     startSound(specials.buttonlist.data()->soundorg, sound);
-                    sides[line.sidenum[0]].bottomtexture = list.switchlist[i ^ 1];
+                    level().sides[line.sidenum[0]].bottomtexture =
+                        list.switchlist[i ^ 1];
 
                     if (useAgain)
                         startButton(line,

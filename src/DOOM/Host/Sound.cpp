@@ -45,11 +45,14 @@ constexpr int SAMPLECOUNT = 512;
 constexpr int BUFMUL = 4;
 constexpr int MIXBUFFERSIZE = SAMPLECOUNT * BUFMUL;
 
-// The global mixing buffer stays at ::-file-scope: DOOM.cpp externs it as
-// `signed short mixbuffer[2048]` and hands it out through doom_get_sound_buffer,
-// so it must not become a Doom:: member. Everything else in this seam is
-// file-local to namespace Doom below.
-signed short mixbuffer[MIXBUFFERSIZE];
+// The global mixing buffer. doom_get_sound_buffer (Host/Api.cpp) hands it to the
+// audio callback, so it is reached through the accessor mixbuffer() rather than a
+// Doom:: member; the storage is file-local here.
+signed short mixbufferData[MIXBUFFERSIZE];
+signed short* mixbuffer()
+{
+    return mixbufferData;
+}
 
 namespace Doom
 {
@@ -205,14 +208,14 @@ void* getsfx(std::string_view sfxname, int* len)
     // I do not do runtime patches to that
     //  variable. Instead, we will use a
     //  default sound for replacement.
-    if (Doom::wad().find(name) == -1)
-        sfxlump = Doom::wad().number("dspistol");
+    if (wad().find(name) == -1)
+        sfxlump = wad().number("dspistol");
     else
-        sfxlump = Doom::wad().number(name);
+        sfxlump = wad().number(name);
 
-    size = Doom::wad().length(sfxlump);
+    size = wad().length(sfxlump);
 
-    const auto* sfx = static_cast<const unsigned char*>(Doom::cacheLumpNum(sfxlump));
+    const auto* sfx = static_cast<const unsigned char*>(cacheLumpNum(sfxlump));
 
     // Pads the sound effect out to the mixing buffer size.
     // The original realloc would interfere with zone memory.
@@ -294,7 +297,7 @@ int addsfx(SfxEnum sfxid, int volume, int step, int seperation)
     // Okay, in the less recent channel,
     //  we will handle the new SFX.
     // Set pointer to raw data.
-    channels[slot] = (unsigned char*) S_sfx[toIndex(sfxid)].data;
+    channels[slot] = (unsigned char*) S_sfx()[toIndex(sfxid)].data;
     // Set pointer to end of raw data.
     channelsend[slot] = channels[slot] + lengths[toIndex(sfxid)];
 
@@ -347,7 +350,7 @@ int addsfx(SfxEnum sfxid, int volume, int step, int seperation)
 
 //
 // SFX API
-// Note: this was called by Doom::initSound.
+// Note: this was called by initSound.
 // However, whatever they did in the
 // old DPMS based DOS version, this
 // were simply dummies in the Linux
@@ -676,7 +679,7 @@ void setMusicVolume(int volume)
 //
 int sfxLumpNum(SfxInfo& sfx)
 {
-    return Doom::wad().number(concat("ds", sfx.name));
+    return wad().number(concat("ds", sfx.name));
 }
 
 //
@@ -756,13 +759,13 @@ void updateSound()
 
     // Left and right channel
     //  are in global mixbuffer, alternating.
-    leftout = mixbuffer;
-    rightout = mixbuffer + 1;
+    leftout = mixbuffer();
+    rightout = mixbuffer() + 1;
     step = 2;
 
     // Determine end, for left channel only
     //  (right channel is implicit).
-    leftend = mixbuffer + SAMPLECOUNT * step;
+    leftend = mixbuffer() + SAMPLECOUNT * step;
 
     // Mix sounds into the mixing buffer.
     // Loop over step*SAMPLECOUNT,
@@ -890,22 +893,22 @@ void initSoundHost()
     for (i = 1; i < numSfx; i++)
     {
         // Alias? Example is the chaingun sound linked to pistol.
-        if (!S_sfx[i].link)
+        if (!S_sfx()[i].link)
         {
             // Load data from WAD file.
-            S_sfx[i].data = getsfx(S_sfx[i].name, &lengths[i]);
+            S_sfx()[i].data = getsfx(S_sfx()[i].name, &lengths[i]);
         }
         else
         {
             // Previously loaded already?
-            S_sfx[i].data = S_sfx[i].link->data;
+            S_sfx()[i].data = S_sfx()[i].link->data;
             // Vanilla's own defect, preserved: the pointer difference is already
             // an element index, so dividing it by sizeof lands on entry 0 rather
             // than on the link target. No build here plays audio, so no gate
             // could check the fix; the cast narrows the index, it does not
             // correct it.
-            lengths[i] =
-                lengths[static_cast<int>((S_sfx[i].link - S_sfx) / sizeof(SfxInfo))];
+            lengths[i] = lengths[static_cast<int>((S_sfx()[i].link - S_sfx())
+                                                  / sizeof(SfxInfo))];
         }
     }
 
@@ -913,7 +916,7 @@ void initSoundHost()
 
     // Now initialize mixbuffer with zero.
     for (i = 0; i < MIXBUFFERSIZE; i++)
-        mixbuffer[i] = 0;
+        mixbuffer()[i] = 0;
 
     // Finished initialization.
     print("initSoundHost: sound module ready\n");

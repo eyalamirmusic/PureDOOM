@@ -305,7 +305,7 @@ void textWrite()
 
     // erase the entire screen to a tiled background
     byte* src = static_cast<byte*>(cacheLumpName(fin.finaleflat));
-    byte* dest = screens[0];
+    byte* dest = videoState().screens[0];
 
     for (int y = 0; y < SCREENHEIGHT; y++)
     {
@@ -378,8 +378,8 @@ void startCast()
 
     gameFlow().wipegamestate = GS_FORCE_WIPE;
     fin.castnum = 0;
-    fin.caststate =
-        &states[toIndex(mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)];
+    fin.caststate = &states()[toIndex(
+        mobjinfo()[toIndex(castorder[fin.castnum].type)].seestate)];
     fin.casttics = fin.caststate->tics;
     fin.castdeath = false;
     fin.finalestage = 2;
@@ -409,20 +409,21 @@ void castTicker()
         fin.castdeath = false;
         if (castorder[fin.castnum].name.empty())
             fin.castnum = 0;
-        if (mobjinfo[toIndex(castorder[fin.castnum].type)].seesound != SfxEnum::None)
+        if (mobjinfo()[toIndex(castorder[fin.castnum].type)].seesound
+            != SfxEnum::None)
             startSound(nullptr,
-                       mobjinfo[toIndex(castorder[fin.castnum].type)].seesound);
-        fin.caststate = &states[toIndex(
-            mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)];
+                       mobjinfo()[toIndex(castorder[fin.castnum].type)].seesound);
+        fin.caststate = &states()[toIndex(
+            mobjinfo()[toIndex(castorder[fin.castnum].type)].seestate)];
         fin.castframes = 0;
     }
     else
     {
         // just advance to next state in animation
-        if (fin.caststate == &states[toIndex(StateNum::PlayAtk1)])
+        if (fin.caststate == &states()[toIndex(StateNum::PlayAtk1)])
             goto stopattack; // Oh, gross hack!
         st = fin.caststate->nextstate;
-        fin.caststate = &states[toIndex(st)];
+        fin.caststate = &states()[toIndex(st)];
         fin.castframes++;
 
         // sound hacks....
@@ -502,20 +503,20 @@ void castTicker()
         // go into attack frame
         fin.castattacking = true;
         if (fin.castonmelee)
-            fin.caststate = &states[toIndex(
-                mobjinfo[toIndex(castorder[fin.castnum].type)].meleestate)];
+            fin.caststate = &states()[toIndex(
+                mobjinfo()[toIndex(castorder[fin.castnum].type)].meleestate)];
         else
-            fin.caststate = &states[toIndex(
-                mobjinfo[toIndex(castorder[fin.castnum].type)].missilestate)];
+            fin.caststate = &states()[toIndex(
+                mobjinfo()[toIndex(castorder[fin.castnum].type)].missilestate)];
         fin.castonmelee ^= 1;
-        if (fin.caststate == &states[toIndex(StateNum::Null)])
+        if (fin.caststate == &states()[toIndex(StateNum::Null)])
         {
             if (fin.castonmelee)
-                fin.caststate = &states[toIndex(
-                    mobjinfo[toIndex(castorder[fin.castnum].type)].meleestate)];
+                fin.caststate = &states()[toIndex(
+                    mobjinfo()[toIndex(castorder[fin.castnum].type)].meleestate)];
             else
-                fin.caststate = &states[toIndex(
-                    mobjinfo[toIndex(castorder[fin.castnum].type)].missilestate)];
+                fin.caststate = &states()[toIndex(
+                    mobjinfo()[toIndex(castorder[fin.castnum].type)].missilestate)];
         }
     }
 
@@ -523,14 +524,14 @@ void castTicker()
     {
         if (fin.castframes == 24
             || fin.caststate
-                   == &states[toIndex(
-                       mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)])
+                   == &states()[toIndex(
+                       mobjinfo()[toIndex(castorder[fin.castnum].type)].seestate)])
         {
         stopattack:
             fin.castattacking = false;
             fin.castframes = 0;
-            fin.caststate = &states[toIndex(
-                mobjinfo[toIndex(castorder[fin.castnum].type)].seestate)];
+            fin.caststate = &states()[toIndex(
+                mobjinfo()[toIndex(castorder[fin.castnum].type)].seestate)];
         }
     }
 
@@ -554,14 +555,14 @@ bool castResponder(Event& ev)
 
     // go into death frame
     fin.castdeath = true;
-    fin.caststate =
-        &states[toIndex(mobjinfo[toIndex(castorder[fin.castnum].type)].deathstate)];
+    fin.caststate = &states()[toIndex(
+        mobjinfo()[toIndex(castorder[fin.castnum].type)].deathstate)];
     fin.casttics = fin.caststate->tics;
     fin.castframes = 0;
     fin.castattacking = false;
-    if (mobjinfo[toIndex(castorder[fin.castnum].type)].deathsound != SfxEnum::None)
+    if (mobjinfo()[toIndex(castorder[fin.castnum].type)].deathsound != SfxEnum::None)
         startSound(nullptr,
-                   mobjinfo[toIndex(castorder[fin.castnum].type)].deathsound);
+                   mobjinfo()[toIndex(castorder[fin.castnum].type)].deathsound);
 
     return true;
 }
@@ -620,7 +621,7 @@ void castDrawer()
     castPrint(castorder[fin.castnum].name);
 
     // draw the current frame in the middle of the screen
-    SpriteDef* sprdef = &sprites[toIndex(fin.caststate->sprite)];
+    SpriteDef* sprdef = &graphicsData().sprites[toIndex(fin.caststate->sprite)];
     SpriteFrame* sprframe =
         &sprdef->spriteframes[fin.caststate->frame & FF_FRAMEMASK];
     int lump = sprframe->lump[0];
@@ -641,7 +642,7 @@ void drawPatchCol(int x, Patch* patch, int col)
 {
     Column* column = reinterpret_cast<Column*>(
         reinterpret_cast<byte*>(patch) + littleEndian(patch->columnofs[col]));
-    byte* desttop = screens[0] + x;
+    byte* desttop = videoState().screens[0] + x;
 
     // step through the posts in a column
     while (column->topdelta != 0xff)

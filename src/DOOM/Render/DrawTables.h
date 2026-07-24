@@ -7,7 +7,7 @@
 namespace Doom
 {
 // Render/Draw's frame-address lookup tables and fuzz cursor: ylookup[y] is the framebuffer address
-// of screen row y and columnofs[x] the byte offset of column x (both filled by Doom::initBuffer, so the
+// of screen row y and columnofs[x] the byte offset of column x (both filled by initBuffer, so the
 // column/span drawers reach a pixel by table lookup instead of a multiply), and fuzzpos is the
 // spectre-fuzz drawer's running index into its distortion table.
 //
@@ -15,7 +15,7 @@ namespace Doom
 // Render/Draw's own namespace-scope private globals, read by no other file (every apparent cross-read
 // of "columnofs" is the Patch::columnofs struct member). Every drawer that touches ylookup,
 // columnofs or fuzzpos - drawColumn, drawColumnLow, drawFuzzColumn, drawTranslatedColumn, drawSpan,
-// drawSpanLow and Doom::initBuffer - hoists drawTables() once and reaches them through it, rather
+// drawSpanLow and initBuffer - hoists drawTables() once and reaches them through it, rather
 // than through file-scope reference aliases (REFACTOR.md, Step 9 strand (a)). Live
 // frame-golden-covered - every column and span the demos draw is addressed through these.
 struct DrawTables

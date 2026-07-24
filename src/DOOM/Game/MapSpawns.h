@@ -10,10 +10,10 @@ namespace Doom
 // The deathmatch start table's size. Was doomstat.h.
 constexpr int MAX_DM_STARTS = 10;
 
-// Where players and deathmatch frags spawn on the current map. Doom::setupLevel walks the map's
+// Where players and deathmatch frags spawn on the current map. setupLevel walks the map's
 // things and records each player-start into playerstarts (indexed by player number) and each
 // deathmatch start into deathmatchstarts, with deathmatch_p the append cursor into that array.
-// PureDOOM is single-player, so only playerstarts[0] is really used, but Doom::loadThings fills
+// PureDOOM is single-player, so only playerstarts[0] is really used, but loadThings fills
 // all three. doomstat.h's spawn-spot pair in "Internal parameters, fixed".
 //
 // A cluster of doomstat.h's game state moved off the loose globals into the Engine

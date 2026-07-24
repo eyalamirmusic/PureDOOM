@@ -9,11 +9,11 @@ namespace Doom
 {
 // Specials coordinator; p_spec.cpp keeps the vanilla names as shims.
 void initPicAnims();
-fixed_t findLowestFloorSurrounding(Sector& sec);
-fixed_t findHighestFloorSurrounding(Sector& sec);
-fixed_t findNextHighestFloor(Sector& sec, fixed_t currentheight);
-fixed_t findLowestCeilingSurrounding(Sector& sec);
-fixed_t findHighestCeilingSurrounding(Sector& sec);
+Fixed findLowestFloorSurrounding(Sector& sec);
+Fixed findHighestFloorSurrounding(Sector& sec);
+Fixed findNextHighestFloor(Sector& sec, Fixed currentheight);
+Fixed findLowestCeilingSurrounding(Sector& sec);
+Fixed findHighestCeilingSurrounding(Sector& sec);
 int findSectorFromLineTag(Line& line, int start);
 int findMinSurroundingLight(Sector& sector, int max);
 void crossSpecialLine(int linenum, int side, Mobj& thing);

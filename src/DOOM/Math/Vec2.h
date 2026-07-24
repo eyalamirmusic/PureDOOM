@@ -9,7 +9,7 @@ namespace Doom
 // is where they earn their keep - the renderer has its own.
 //
 // It is a plain aggregate over two Fixed, so it is trivially copyable and
-// layout-compatible with the pair of `fixed_t`s the vanilla structs still store
+// layout-compatible with the pair of `Fixed`s the vanilla structs still store
 // (a mobj's x/y, a line's dx/dy). That is what lets a rewritten function take a
 // Vec2 while the struct it came from is still 1993 C.
 struct Vec2

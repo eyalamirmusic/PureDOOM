@@ -98,7 +98,7 @@ template <typename... Parts>
 void printTo(void* handle, const Parts&... parts)
 {
     auto text = concat(parts...);
-    doom_write(handle, text.data(), static_cast<int>(text.size()));
+    host().write(handle, text.data(), static_cast<int>(text.size()));
 }
 
 // Writes text into a fixed-width, zero-padded field (the savegame's description
@@ -132,6 +132,6 @@ inline std::string_view nameView(const char* text, int size)
 template <typename... Parts>
 void print(const Parts&... parts)
 {
-    doom_print(concat(parts...));
+    host().print(concat(parts...));
 }
 } // namespace Doom

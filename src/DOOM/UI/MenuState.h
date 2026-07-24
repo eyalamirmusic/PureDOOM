@@ -44,7 +44,7 @@ inline constexpr int menuSaveStringSize = 24;
 // Three groups of Menu globals stay put and do *not* move in here:
 //  - the config-backed / cross-read globals (screenblocks / detailLevel / showMessages /
 //    mouseSensitivity / inhelpscreens / messageToPrint, and menuactive which is already a
-//    Doom::OverlayState reference) keep their :: file scope above the namespace - the config-backed
+//    OverlayState reference) keep their :: file scope above the namespace - the config-backed
 //    ones are blocked until the config rework, the rest are read by other subsystems;
 //  - the immutable reference data (the gamma/skull/detail/message lump-name tables, the quit-sound
 //    tables, the custom-text segments) stays file-local - fixed constants, not per-run state;
@@ -68,7 +68,10 @@ struct MenuState
     int mousex = 0; // accumulated mouse X since last step
     int lastx = 0; // mouse X at the last step
 
-    // The pop-up message box.
+    // The pop-up message box. messageToPrint is raised while one is on screen; the
+    // eacp overlay reads it to know the menu is showing a prompt rather than a menu.
+    // It was a loose :: global (m_menu.h) exported for exactly that read.
+    int messageToPrint = 0;
     std::string_view messageString; // the message text
     int messageLastMenuActive = 0; // menuactive as the message opened
     bool messageNeedsInput = false; // timed message = no user input

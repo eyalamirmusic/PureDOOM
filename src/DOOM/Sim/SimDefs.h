@@ -31,32 +31,32 @@
 
 namespace Doom
 {
-constexpr fixed_t FLOATSPEED = FRACUNIT * 4;
+constexpr Fixed FLOATSPEED = FRACUNIT * 4;
 
 constexpr int MAXHEALTH = 100;
-constexpr fixed_t VIEWHEIGHT = 41 * FRACUNIT;
+constexpr Fixed VIEWHEIGHT = 41 * FRACUNIT;
 
 // mapblocks are used to check movement
 // against lines and things
 constexpr int MAPBLOCKUNITS = 128;
-constexpr fixed_t MAPBLOCKSIZE = MAPBLOCKUNITS * FRACUNIT;
+constexpr Fixed MAPBLOCKSIZE = MAPBLOCKUNITS * FRACUNIT;
 constexpr int MAPBLOCKSHIFT = fracBits + 7;
 constexpr int MAPBTOFRAC = MAPBLOCKSHIFT - fracBits;
 
 // player radius for movement checking
-constexpr fixed_t PLAYERRADIUS = 16 * FRACUNIT;
+constexpr Fixed PLAYERRADIUS = 16 * FRACUNIT;
 
 // MAXRADIUS is for precalculated sector block boxes
 // the spider demon is larger,
 // but we do not have any moving sectors nearby
-constexpr fixed_t MAXRADIUS = 32 * FRACUNIT;
+constexpr Fixed MAXRADIUS = 32 * FRACUNIT;
 
-constexpr fixed_t GRAVITY = FRACUNIT;
-constexpr fixed_t MAXMOVE = 30 * FRACUNIT;
+constexpr Fixed GRAVITY = FRACUNIT;
+constexpr Fixed MAXMOVE = 30 * FRACUNIT;
 
-constexpr fixed_t USERANGE = 64 * FRACUNIT;
-constexpr fixed_t MELEERANGE = 64 * FRACUNIT;
-constexpr fixed_t MISSILERANGE = 32 * 64 * FRACUNIT;
+constexpr Fixed USERANGE = 64 * FRACUNIT;
+constexpr Fixed MELEERANGE = 64 * FRACUNIT;
+constexpr Fixed MISSILERANGE = 32 * 64 * FRACUNIT;
 
 // follow a player exlusively for 3 seconds
 constexpr int BASETHRESHOLD = 100;
@@ -110,7 +110,7 @@ namespace Doom
 {
 struct Intercept
 {
-    fixed_t frac; // along trace line
+    Fixed frac; // along trace line
     bool isaline;
     union
     {
@@ -125,7 +125,7 @@ namespace Doom
 constexpr int MAXINTERCEPTS = 128;
 } // namespace Doom
 // intercepts[] and intercept_p moved into Doom::Clip (Sim/Clip.h), reached through
-// Doom::clip(); they were p_maputl's own scratch, read by no other file.
+// Doom::clipping(); they were p_maputl's own scratch, read by no other file.
 
 // The callback pathTraverse hands each crossed line and thing to, in near-to-far
 // order. A FunctionRef rather than a bare function pointer so a traverser can be
@@ -150,14 +150,10 @@ constexpr int PT_EARLYOUT = 4;
 //
 // P_SETUP
 //
-extern byte* rejectmatrix; // for fast sight rejection
-extern short* blockmaplump; // offsets in blockmap are from here
-extern short* blockmap;
-extern int bmapwidth;
-extern int bmapheight; // in mapblocks
-extern fixed_t bmaporgx;
-extern fixed_t bmaporgy; // origin of block map
-extern Doom::Mobj** blocklinks; // for thing chains
+// The blockmap and reject views (blockmap/blockmaplump/bmapwidth/bmapheight/
+// bmaporgx/bmaporgy/blocklinks/rejectmatrix) were here. They are read off
+// Level::blockmap, Level::blockLinks and Level::rejectMatrix now - the descriptor
+// that already owned the same numbers.
 
 //
 // P_INTER

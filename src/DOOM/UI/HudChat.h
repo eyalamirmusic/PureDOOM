@@ -20,7 +20,7 @@ namespace Doom
 // UI/Hud's own file-local statics, read by no other file. UI/Hud reaches them through a hoisted
 // `auto& chat = hudChat();` local per function rather than a file-scope or function-scope alias
 // (REFACTOR.md, Step 9 strand (a)). PureDOOM ships single-player, so no demo drives the chat -
-// golden-neutral, and confirmed so. (Doom::hudResponder's send-path state - lastmessage,
+// golden-neutral, and confirmed so. (hudResponder's send-path state - lastmessage,
 // shiftdown/altdown, num_nobrainers - had already folded in from function-local statics; the
 // destination-key table stays file-local, being fixed reference data.)
 struct HudChat
@@ -39,7 +39,7 @@ struct HudChat
     int head = 0; // chatchars ring head
     int tail = 0; // chatchars ring tail
 
-    // Doom::hudResponder's own send-path state, folded in from its function-local statics.
+    // hudResponder's own send-path state, folded in from its function-local statics.
     std::string lastmessage; // the last message sent (HU_MSGREFRESH)
     bool shiftdown = false; // shift held (chat input)
     bool altdown = false; // alt held (chat input)

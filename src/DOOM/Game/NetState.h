@@ -16,7 +16,7 @@ namespace Doom
 // indexed by tic modulo BACKUPTICS; nettics counts the tics received per node; maketic is the
 // next tic to build and ticdup how many display tics one game tic spans. consistancy is the
 // per-player, per-tic desync checksum (each tic's player x, or the random index in -devparm):
-// Doom::buildTiccmd stamps the current tic's value into the command it sends, and Doom::gameTicker compares
+// buildTiccmd stamps the current tic's value into the command it sends, and gameTicker compares
 // the value that comes back, calling fatalError on a mismatch. doomstat.h's netgame-buffers tail of
 // "Internal parameters, used for engine", plus g_game's own consistancy array beside it.
 //
@@ -70,8 +70,8 @@ struct NetState
     bool reboundpacket = false; // a loopback packet is queued
     NetPacket reboundstore = {}; // the loopback packet
     std::string exitmsg; // netgame exit message scratch; players[].message views it
-    int gametime = 0; // currentTic at the last Doom::tryRunTics
-    int oldentertics = 0; // entertic at the last Doom::tryRunTics (was a static)
+    int gametime = 0; // currentTic at the last tryRunTics
+    int oldentertics = 0; // entertic at the last tryRunTics (was a static)
     int frameon = 0; // rate-meter frame counter
     Array<int, 4> frameskip = {}; // per-frame skip flags (rate meter)
     int oldnettics = 0; // nettics at the last rate sample

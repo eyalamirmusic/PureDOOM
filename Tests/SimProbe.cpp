@@ -49,7 +49,6 @@
 // rather than a workaround.
 #include <DOOM/Sim/MapUtil.h>
 #include <DOOM/Sim/Movement.h>
-extern unsigned char screen_palette[256 * 3];
 
 // Doom::fatalError reports through Doom::host().exit, which by default takes the
 // process with it. A test wants the failure, not the corpse, so the engine is
@@ -225,13 +224,13 @@ unsigned long long doomSimStateHash()
 
     if (player->mo)
     {
-        simMix(&player->mo->x, sizeof(fixed_t));
-        simMix(&player->mo->y, sizeof(fixed_t));
-        simMix(&player->mo->z, sizeof(fixed_t));
-        simMix(&player->mo->angle, sizeof(angle_t));
-        simMix(&player->mo->momx, sizeof(fixed_t));
-        simMix(&player->mo->momy, sizeof(fixed_t));
-        simMix(&player->mo->momz, sizeof(fixed_t));
+        simMix(&player->mo->x, sizeof(Doom::Fixed));
+        simMix(&player->mo->y, sizeof(Doom::Fixed));
+        simMix(&player->mo->z, sizeof(Doom::Fixed));
+        simMix(&player->mo->angle, sizeof(Doom::Angle));
+        simMix(&player->mo->momx, sizeof(Doom::Fixed));
+        simMix(&player->mo->momy, sizeof(Doom::Fixed));
+        simMix(&player->mo->momz, sizeof(Doom::Fixed));
     }
 
     for (thinker = thinkers.cap.next; thinker && thinker != &thinkers.cap;
@@ -243,12 +242,12 @@ unsigned long long doomSimStateHash()
         if (!simIsMobj(thinker))
             continue;
 
-        frame = (int) (mobj->state - states);
+        frame = (int) (mobj->state - Doom::states());
 
-        simMix(&mobj->x, sizeof(fixed_t));
-        simMix(&mobj->y, sizeof(fixed_t));
-        simMix(&mobj->z, sizeof(fixed_t));
-        simMix(&mobj->angle, sizeof(angle_t));
+        simMix(&mobj->x, sizeof(Doom::Fixed));
+        simMix(&mobj->y, sizeof(Doom::Fixed));
+        simMix(&mobj->z, sizeof(Doom::Fixed));
+        simMix(&mobj->angle, sizeof(Doom::Angle));
         simMix(&mobj->health, sizeof(int));
         simMix(&mobj->type, sizeof(int));
         simMix(&frame, sizeof(frame));
@@ -267,8 +266,8 @@ unsigned long long doomSimFrameHash()
     // index per pixel. The palette goes in beside it because it is live: a
     // damage flash or an invulnerability sphere changes what those same indices
     // resolve to without changing a single one of them.
-    simMix(screens[0], Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
-    simMix(screen_palette, 256 * 3);
+    simMix(Doom::videoState().screens[0], Doom::SCREENWIDTH * Doom::SCREENHEIGHT);
+    simMix(Doom::videoState().screen_palette.data(), 256 * 3);
 
     return simHash;
 }
@@ -378,7 +377,7 @@ int doomSimPlayerAngleDegrees()
     if (!players_.players[0].mo)
         return 0;
 
-    // angle_t spans a circle in 2^32 units.
+    // Doom::Angle spans a circle in 2^32 units.
     return (int) (players_.players[0].mo->angle.raw / (Doom::ang45.raw / 45));
 }
 
@@ -397,21 +396,76 @@ int doomSimMobjCount()
     return count;
 }
 
-int doomSimGeometryViewsConsistent()
+// Every cross-reference the loaders build between the Level's vectors, checked to
+// land inside the vector it points into.
+//
+// This replaced doomSimGeometryViewsConsistent, which checked that the vanilla
+// pointer-and-count globals still viewed the vectors after a load. Those globals
+// are gone - readers index the vectors - so that invariant cannot be violated any
+// more, and a test that cannot fail is worse than no test.
+//
+// What is left to get wrong is the loaders' own arithmetic: they wire the geometry
+// together from raw WAD lump numbers (a seg naming its vertexes, a subsector its
+// first seg, a sector its slice of the shared line buffer), with no bounds check
+// on any of it. A demo notices a bad one only as a segfault or an unexplained
+// desync somewhere downstream; this names it.
+int doomSimLevelGeometryIsWellFormed()
 {
     const auto& lvl = Doom::level();
 
-    auto view = [](const void* ptr, int num, const auto& vec)
-    { return ptr == vec.data() && num == (int) vec.size(); };
+    if (lvl.vertexes.size() <= 0 || lvl.segs.size() <= 0 || lvl.sectors.size() <= 0
+        || lvl.subsectors.size() <= 0 || lvl.nodes.size() <= 0
+        || lvl.lines.size() <= 0 || lvl.sides.size() <= 0)
+        return 0;
 
-    return view(vertexes, numvertexes, lvl.vertexes) && view(segs, numsegs, lvl.segs)
-           && view(subsectors, numsubsectors, lvl.subsectors)
-           && view(sectors, numsectors, lvl.sectors)
-           && view(nodes, numnodes, lvl.nodes) && view(lines, numlines, lvl.lines)
-           && view(sides, numsides, lvl.sides) && blocklinks == lvl.blockLinks.data()
-           && bmaporgx == lvl.blockmap.origin.x && bmaporgy == lvl.blockmap.origin.y
-           && bmapwidth == lvl.blockmap.width && bmapheight == lvl.blockmap.height
-           && blockmap == lvl.blockmap.offsets && blockmaplump == lvl.blockmap.lump;
+    auto within = [](const auto* p, const auto& vec)
+    { return p >= vec.data() && p < vec.data() + vec.size(); };
+
+    for (auto i = 0; i < lvl.segs.size(); ++i)
+    {
+        const auto& seg = lvl.segs[i];
+        if (!within(seg.v1, lvl.vertexes) || !within(seg.v2, lvl.vertexes))
+            return 0;
+        if (!within(seg.linedef, lvl.lines) || !within(seg.sidedef, lvl.sides))
+            return 0;
+        if (!within(seg.frontsector, lvl.sectors))
+            return 0;
+        if (seg.backsector && !within(seg.backsector, lvl.sectors))
+            return 0;
+    }
+
+    for (auto i = 0; i < lvl.subsectors.size(); ++i)
+    {
+        const auto& ss = lvl.subsectors[i];
+        if (ss.firstline < 0 || ss.firstline + ss.numlines > lvl.segs.size())
+            return 0;
+        if (!within(ss.sector, lvl.sectors))
+            return 0;
+    }
+
+    for (auto i = 0; i < lvl.sides.size(); ++i)
+        if (!within(lvl.sides[i].sector, lvl.sectors))
+            return 0;
+
+    // Each sector's lines point into one flat buffer carved into per-sector slices.
+    for (auto i = 0; i < lvl.sectors.size(); ++i)
+    {
+        const auto& sec = lvl.sectors[i];
+        if (sec.linecount < 0 || !sec.lines)
+            return 0;
+        if (sec.lines < lvl.sectorLines.data()
+            || sec.lines + sec.linecount
+                   > lvl.sectorLines.data() + lvl.sectorLines.size())
+            return 0;
+        for (auto j = 0; j < sec.linecount; ++j)
+            if (!within(sec.lines[j], lvl.lines))
+                return 0;
+    }
+
+    // The blockmap descriptor and the chain array it indexes must agree.
+    return lvl.blockmap.width > 0 && lvl.blockmap.height > 0 && lvl.blockmap.offsets
+           && lvl.blockmap.lump
+           && lvl.blockLinks.size() == lvl.blockmap.width * lvl.blockmap.height;
 }
 
 // --- The scenario harness (Step 6) ------------------------------------------
@@ -471,7 +525,7 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
         return -1;
 
     Doom::Mobj* mobj = Doom::spawnMobj(
-        fixed_t {x}, fixed_t {y}, fixed_t {z}, (Doom::MobjType) type);
+        Doom::Fixed {x}, Doom::Fixed {y}, Doom::Fixed {z}, (Doom::MobjType) type);
 
     if (!mobj)
         return -1;
@@ -490,7 +544,7 @@ int doomSimCheckPosition(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return Doom::checkPosition(*mobj, fixed_t {x}, fixed_t {y}) ? 1 : 0;
+    return Doom::checkPosition(*mobj, Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
 }
 
 int doomSimTryMove(int handle, int x, int y)
@@ -503,7 +557,7 @@ int doomSimTryMove(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return Doom::tryMove(*mobj, fixed_t {x}, fixed_t {y}) ? 1 : 0;
+    return Doom::tryMove(*mobj, Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
 }
 
 int doomSimMobjX(int handle)
@@ -559,8 +613,10 @@ int doomSimThingsInBlockOf(int handle)
     if (setjmp(simAbort))
         return -1;
 
-    int blockx = (mobj->x - bmaporgx).raw >> Doom::MAPBLOCKSHIFT;
-    int blocky = (mobj->y - bmaporgy).raw >> Doom::MAPBLOCKSHIFT;
+    int blockx =
+        (mobj->x - Doom::level().blockmap.origin.x).raw >> Doom::MAPBLOCKSHIFT;
+    int blocky =
+        (mobj->y - Doom::level().blockmap.origin.y).raw >> Doom::MAPBLOCKSHIFT;
 
     simBlockThingCount = 0;
     Doom::forEachThingInBlock(blockx, blocky, simCountThing);
@@ -648,9 +704,9 @@ static unsigned long long simWorldHash()
 
     // The world - sectors, lines and sides, exactly the fields Doom::archiveWorld
     // walks (moving floors/ceilings and switched textures live here).
-    for (int i = 0; i < numsectors; i++)
+    for (int i = 0; i < Doom::level().sectors.size(); i++)
     {
-        Doom::Sector* s = &sectors[i];
+        Doom::Sector* s = &Doom::level().sectors[i];
         simMix(&s->floorheight, sizeof(s->floorheight));
         simMix(&s->ceilingheight, sizeof(s->ceilingheight));
         simMix(&s->floorpic, sizeof(s->floorpic));
@@ -659,16 +715,16 @@ static unsigned long long simWorldHash()
         simMix(&s->special, sizeof(s->special));
         simMix(&s->tag, sizeof(s->tag));
     }
-    for (int i = 0; i < numlines; i++)
+    for (int i = 0; i < Doom::level().lines.size(); i++)
     {
-        Doom::Line* l = &lines[i];
+        Doom::Line* l = &Doom::level().lines[i];
         simMix(&l->flags, sizeof(l->flags));
         simMix(&l->special, sizeof(l->special));
         simMix(&l->tag, sizeof(l->tag));
     }
-    for (int i = 0; i < numsides; i++)
+    for (int i = 0; i < Doom::level().sides.size(); i++)
     {
-        Doom::Side* sd = &sides[i];
+        Doom::Side* sd = &Doom::level().sides[i];
         simMix(&sd->textureoffset, sizeof(sd->textureoffset));
         simMix(&sd->rowoffset, sizeof(sd->rowoffset));
         simMix(&sd->toptexture, sizeof(sd->toptexture));
@@ -689,14 +745,14 @@ static unsigned long long simWorldHash()
         if (!simIsMobj(th))
             continue;
         Doom::Mobj* m = (Doom::Mobj*) th;
-        int frame = (int) (m->state - states);
-        simMix(&m->x, sizeof(fixed_t));
-        simMix(&m->y, sizeof(fixed_t));
-        simMix(&m->z, sizeof(fixed_t));
-        simMix(&m->angle, sizeof(angle_t));
-        simMix(&m->momx, sizeof(fixed_t));
-        simMix(&m->momy, sizeof(fixed_t));
-        simMix(&m->momz, sizeof(fixed_t));
+        int frame = (int) (m->state - Doom::states());
+        simMix(&m->x, sizeof(Doom::Fixed));
+        simMix(&m->y, sizeof(Doom::Fixed));
+        simMix(&m->z, sizeof(Doom::Fixed));
+        simMix(&m->angle, sizeof(Doom::Angle));
+        simMix(&m->momx, sizeof(Doom::Fixed));
+        simMix(&m->momy, sizeof(Doom::Fixed));
+        simMix(&m->momz, sizeof(Doom::Fixed));
         simMix(&m->health, sizeof(int));
         simMix(&m->type, sizeof(int));
         simMix(&frame, sizeof(frame));

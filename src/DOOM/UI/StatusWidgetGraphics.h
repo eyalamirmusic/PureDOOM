@@ -6,7 +6,7 @@
 namespace Doom
 {
 // The status-bar widget library's own loaded graphic: sttminus, the STTMINUS lump the number
-// widget draws in front of a negative count (the "hack display negative frags"). Doom::initStatusWidgets caches
+// widget draws in front of a negative count (the "hack display negative frags"). initStatusWidgets caches
 // it from the WAD once, at widget-creation time, and drawNum reads it after - init-once, read-only,
 // UI/StatusWidgets' single piece of file-scope state, distinct from StatusBarGraphics (which the
 // status bar proper loads and owns).

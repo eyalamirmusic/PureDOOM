@@ -6,7 +6,7 @@ namespace Doom
 {
 // The parameters the intermission screen runs on. When a level ends, G_DoCompleted fills
 // wminfo - the previous and next map, the par time, and each player's kill/item/secret
-// tallies against the map totals - and Doom::startIntermission reads it to animate the between-levels
+// tallies against the map totals - and startIntermission reads it to animate the between-levels
 // scoreboard. doomstat.h's wminfo in "Internal parameters, fixed".
 //
 // A cluster of doomstat.h's game state moved off the loose globals into the Engine

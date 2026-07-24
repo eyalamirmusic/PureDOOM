@@ -24,12 +24,12 @@ namespace
 // PIT_StompThing: telefrag a shootable thing occupying the teleport destination.
 bool stompThing(Mobj* thing)
 {
-    Clip& clip = Doom::clip();
+    Clip& clip = clipping();
 
     if (!(hasFlag(thing->flags, MobjFlag::Shootable)))
         return true;
 
-    fixed_t blockdist = thing->radius + clip.tmthing->radius;
+    Fixed blockdist = thing->radius + clip.tmthing->radius;
 
     if (doom_abs(thing->x - clip.tmx) >= blockdist
         || doom_abs(thing->y - clip.tmy) >= blockdist)
@@ -56,7 +56,7 @@ bool stompThing(Mobj* thing)
 // the opening it leaves and records a special line for later.
 bool checkLine(Line* ld)
 {
-    Clip& clip = Doom::clip();
+    Clip& clip = clipping();
 
     if (clip.tmbbox[boxRight] <= ld->bbox[boxLeft]
         || clip.tmbbox[boxLeft] >= ld->bbox[boxRight]
@@ -117,13 +117,13 @@ bool checkLine(Line* ld)
 // pickup, or a plain solid block.
 bool checkThing(Mobj* thing)
 {
-    Clip& clip = Doom::clip();
+    Clip& clip = clipping();
 
     if (!(hasFlag(
             thing->flags, MobjFlag::Solid, MobjFlag::Special, MobjFlag::Shootable)))
         return true;
 
-    fixed_t blockdist = thing->radius + clip.tmthing->radius;
+    Fixed blockdist = thing->radius + clip.tmthing->radius;
 
     if (doom_abs(thing->x - clip.tmx) >= blockdist
         || doom_abs(thing->y - clip.tmy) >= blockdist)
@@ -144,7 +144,7 @@ bool checkThing(Mobj* thing)
         damageMobj(*thing, clip.tmthing, clip.tmthing, damage);
 
         clip.tmthing->flags = withoutFlags(clip.tmthing->flags, MobjFlag::SkullFly);
-        clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = fixed_t {};
+        clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = Fixed {};
 
         setMobjState(*clip.tmthing,
                      static_cast<StateNum>(clip.tmthing->info->spawnstate));
@@ -210,9 +210,9 @@ bool checkThing(Mobj* thing)
 }
 } // namespace
 
-bool checkPosition(Mobj& thing, fixed_t x, fixed_t y)
+bool checkPosition(Mobj& thing, Fixed x, Fixed y)
 {
-    Clip& clip = Doom::clip();
+    Clip& clip = clipping();
 
     clip.tmthing = &thing;
     clip.tmflags = thing.flags;
@@ -268,9 +268,9 @@ bool checkPosition(Mobj& thing, fixed_t x, fixed_t y)
     return true;
 }
 
-bool tryMove(Mobj& thing, fixed_t x, fixed_t y)
+bool tryMove(Mobj& thing, Fixed x, Fixed y)
 {
-    Clip& clip = Doom::clip();
+    Clip& clip = clipping();
 
     clip.floatok = false;
     if (!checkPosition(thing, x, y))
@@ -299,8 +299,8 @@ bool tryMove(Mobj& thing, fixed_t x, fixed_t y)
     // the move is ok, so link the thing into its new position
     unsetThingPosition(thing);
 
-    fixed_t oldx = thing.x;
-    fixed_t oldy = thing.y;
+    Fixed oldx = thing.x;
+    Fixed oldy = thing.y;
     thing.floorz = clip.tmfloorz;
     thing.ceilingz = clip.tmceilingz;
     thing.x = x;
@@ -320,7 +320,8 @@ bool tryMove(Mobj& thing, fixed_t x, fixed_t y)
             if (side != oldside)
             {
                 if (ld->special)
-                    crossSpecialLine(static_cast<int>(ld - lines), oldside, thing);
+                    crossSpecialLine(
+                        static_cast<int>(ld - level().lines.data()), oldside, thing);
             }
         }
     }
@@ -328,9 +329,9 @@ bool tryMove(Mobj& thing, fixed_t x, fixed_t y)
     return true;
 }
 
-bool teleportMove(Mobj& thing, fixed_t x, fixed_t y)
+bool teleportMove(Mobj& thing, Fixed x, Fixed y)
 {
-    Clip& clip = Doom::clip();
+    Clip& clip = clipping();
 
     // kill anything occupying the position
     clip.tmthing = &thing;
@@ -357,10 +358,14 @@ bool teleportMove(Mobj& thing, fixed_t x, fixed_t y)
 
     // stomp on any things contacted. Blockmap cell indices: the shift is
     // MAPBLOCKSHIFT over the raw 16.16 bits, not a fixed-to-whole conversion.
-    int xl = (clip.tmbbox[boxLeft] - bmaporgx - MAXRADIUS).raw >> MAPBLOCKSHIFT;
-    int xh = (clip.tmbbox[boxRight] - bmaporgx + MAXRADIUS).raw >> MAPBLOCKSHIFT;
-    int yl = (clip.tmbbox[boxBottom] - bmaporgy - MAXRADIUS).raw >> MAPBLOCKSHIFT;
-    int yh = (clip.tmbbox[boxTop] - bmaporgy + MAXRADIUS).raw >> MAPBLOCKSHIFT;
+    int xl = (clip.tmbbox[boxLeft] - level().blockmap.origin.x - MAXRADIUS).raw
+             >> MAPBLOCKSHIFT;
+    int xh = (clip.tmbbox[boxRight] - level().blockmap.origin.x + MAXRADIUS).raw
+             >> MAPBLOCKSHIFT;
+    int yl = (clip.tmbbox[boxBottom] - level().blockmap.origin.y - MAXRADIUS).raw
+             >> MAPBLOCKSHIFT;
+    int yh = (clip.tmbbox[boxTop] - level().blockmap.origin.y + MAXRADIUS).raw
+             >> MAPBLOCKSHIFT;
 
     for (int bx = xl; bx <= xh; bx++)
         for (int by = yl; by <= yh; by++)
@@ -382,7 +387,7 @@ bool teleportMove(Mobj& thing, fixed_t x, fixed_t y)
 
 bool thingHeightClip(Mobj& thing)
 {
-    Clip& clip = Doom::clip();
+    Clip& clip = clipping();
 
     bool onfloor = (thing.z == thing.floorz);
 

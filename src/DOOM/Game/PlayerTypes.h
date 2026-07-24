@@ -85,13 +85,13 @@ struct Player
     // Determine POV,
     //  including viewpoint bobbing during movement.
     // Focal origin above r.z
-    fixed_t viewz;
+    Fixed viewz;
     // Base height above floor for viewz.
-    fixed_t viewheight;
+    Fixed viewheight;
     // Bob/squat speed.
-    fixed_t deltaviewheight;
+    Fixed deltaviewheight;
     // bounded/scaled total momentum.
-    fixed_t bob;
+    Fixed bob;
 
     // This is only used between levels,
     // mo->health is used during levels.

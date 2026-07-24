@@ -13,7 +13,7 @@ struct Line; // Line
 
 namespace Doom
 {
-// One animating flat or wall texture: a run of numpics frames from basepic that Doom::updateSpecials
+// One animating flat or wall texture: a run of numpics frames from basepic that updateSpecials
 // cycles picnum through every speed tics (istexture picks the texture vs flat translation table).
 // Moved out of Sim/Specials so anims/lastanim can be Engine members (the type was defined there - as
 // a file-scope typedef and, redundantly, a namespace one; the dead file-scope copy was deleted).
@@ -26,8 +26,8 @@ struct SurfaceAnim
     int speed; // tics between frames
 };
 
-// The level's animated surfaces, built by Doom::initPicAnims / Doom::spawnSpecials and driven by
-// Doom::updateSpecials: the animating flats/textures (anims, up to lastanim) and the list of scrolling-
+// The level's animated surfaces, built by initPicAnims / spawnSpecials and driven by
+// updateSpecials: the animating flats/textures (anims, up to lastanim) and the list of scrolling-
 // texture linedefs (linespeciallist, numlinespecials of them).
 //
 // Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were

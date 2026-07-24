@@ -176,7 +176,7 @@ void startLightStrobing(Line& line)
     int secnum = -1;
     while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
     {
-        Sector* sec = &sectors[secnum];
+        Sector* sec = &level().sectors[secnum];
         if (sec->specialdata)
             continue;
 
@@ -189,9 +189,9 @@ void startLightStrobing(Line& line)
 //
 void turnTagLightsOff(Line& line)
 {
-    Sector* sector = sectors;
+    Sector* sector = level().sectors.data();
 
-    for (int j = 0; j < numsectors; j++, sector++)
+    for (int j = 0; j < level().sectors.size(); j++, sector++)
     {
         if (sector->tag == line.tag)
         {
@@ -215,9 +215,9 @@ void turnTagLightsOff(Line& line)
 //
 void lightTurnOn(Line& line, int bright)
 {
-    Sector* sector = sectors;
+    Sector* sector = level().sectors.data();
 
-    for (int i = 0; i < numsectors; i++, sector++)
+    for (int i = 0; i < level().sectors.size(); i++, sector++)
     {
         if (sector->tag == line.tag)
         {

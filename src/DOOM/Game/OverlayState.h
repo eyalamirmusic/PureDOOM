@@ -5,7 +5,7 @@ namespace Doom
 // Whether an interactive overlay is up over the world. automapactive is true while the
 // full-screen automap has replaced the 3D view; menuactive while the menu is open. Both
 // change what the frame shows and what a keypress means, and the loop, the HUD and the
-// crosshair draw read them together (Doom::displayFrame, Host/Api's crosshair test). doomstat.h's
+// crosshair draw read them together (displayFrame, Host/Api's crosshair test). doomstat.h's
 // "Status flags for refresh" overlay pair.
 //
 // A cluster of doomstat.h's game state moved off the loose globals into the Engine
@@ -19,8 +19,7 @@ struct OverlayState
 {
     bool automapactive = false; // the automap has replaced the view
     bool menuactive = false; // the menu is open over the view
-    bool inhelpscreens =
-        false; // a full-screen help page is showing (Doom::displayFrame
+    bool inhelpscreens = false; // a full-screen help page is showing (displayFrame
     // forces a border redraw when it clears)
 };
 

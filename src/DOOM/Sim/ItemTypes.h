@@ -43,9 +43,11 @@ struct WeaponInfo
     StateNum atkstate;
     StateNum flashstate;
 };
+// The per-weapon data table, read-only. Was an `extern` global; storage is
+// file-local to Sim/Items.cpp now, and weaponinfo()[i] reads what weaponinfo[i]
+// did.
+const WeaponInfo* weaponinfo();
 } // namespace Doom
-
-extern Doom::WeaponInfo weaponinfo[Doom::numWeapons];
 
 //-----------------------------------------------------------------------------
 //

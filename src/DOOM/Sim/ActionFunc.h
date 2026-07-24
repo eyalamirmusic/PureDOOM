@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -23,36 +23,52 @@
 
 #pragma once
 
-
-//
-// A state's action: the free function setMobjState / setPsprite runs when a mobj
-// or weapon enters the state. mobj states are called with (Doom::Mobj*), weapon states
-// with (Doom::Player*, Doom::PspDef*) - the two shapes never mix for a given state. The
-// pointer is stored type-erased (fn) and cast back to its exact signature at the
-// two call sites, which is a round-trip conversion and therefore well-defined.
-//
-// This retired the 1993 "ANSI C with classes" union of three incompatible
-// function-pointer types (acp1/acv/acp2), whose only purpose was to let one slot
-// hold either shape. The generated states[] table (Sim/Info.cpp) still casts each
-// action to actionf_p1 as it stores it, so that type is kept.
-//
-typedef void (*actionf_p1)(void*);
-
 namespace Doom
 {
+struct Mobj;
+struct Player;
+struct PspDef;
+
+// A state's action: what setMobjState / setPsprite runs when a mobj or a weapon
+// enters the state.
+//
+// There are two shapes and they never mix for a given state - a mobj state's
+// action takes (Mobj&), a weapon state's takes (Player&, PspDef&) - so the slot
+// carries one of each and the caller reads the one its state kind uses. Only ever
+// one is set.
+//
+// This is the third shape the slot has had. Vanilla was an "ANSI C with classes"
+// union of three incompatible function-pointer types (acp1/acv/acp2) whose only
+// purpose was to let one slot hold either signature. That became a single
+// type-erased `void (*)(void*)` (the vanilla `actionf_p1` typedef), which each of
+// Sim/Info.cpp's 449 table entries cast into and the two call sites
+// reinterpret_cast back out of - well-defined, being a round trip, but invisibly
+// so to both compilers, which objected on arity and needed a scoped
+// -Wcast-function-type suppression to stay quiet.
+//
+// Two typed members cost eight bytes per state - under 8KB across the whole table
+// - and buy back the type system: the table entries are ordinary designated
+// initializers the compiler checks, there is no cast anywhere on the path, and a
+// weapon action can no longer be installed on a mobj state.
+//
+// It stays a raw function pointer rather than a std::function, and it is the last
+// one in the engine. states[] has 968 entries and is a statically initialised
+// table shared by the whole engine; std::function members would make it
+// dynamically initialised and non-trivially destructible, and buy nothing -
+// nothing ever binds a closure to a state.
 struct ActionFunc
 {
-    actionf_p1 fn;
+    using MobjAction = void (*)(Mobj&);
+    using WeaponAction = void (*)(Player&, PspDef&);
+
+    MobjAction mobj = nullptr;
+    WeaponAction weapon = nullptr;
 };
 } // namespace Doom
 
-
 // The doubly-linked list node is now a real base class with a virtual tick() -
-// Doom::Thinker (Sim/Thinker.h). Doom::Thinker stays as the vanilla spelling the
-// engine still writes, aliased onto it.
+// Thinker (Sim/Thinker.h).
 #include "Thinker.h"
-
-
 
 //-----------------------------------------------------------------------------
 //

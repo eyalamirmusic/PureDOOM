@@ -204,23 +204,23 @@ namespace Doom
 {
 struct Mobj : Thinker
 {
-    // Was `Doom::Thinker thinker;` as the first member; a mobj now *is* a Thinker.
+    // Was `Thinker thinker;` as the first member; a mobj now *is* a Thinker.
     // Its per-tic action (vanilla's P_MobjThinker) is tick(), defined in Mobj.cpp.
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Mobj; }
 
     // Info for drawing: position.
-    fixed_t x;
-    fixed_t y;
-    fixed_t z;
+    Fixed x;
+    Fixed y;
+    Fixed z;
 
     // More list: links in sector (if needed)
     struct Mobj* snext;
     struct Mobj* sprev;
 
     //More drawing info: to determine current sprite.
-    angle_t angle; // orientation
-    SpriteNum sprite; // used to find Doom::Patch and flip value
+    Angle angle; // orientation
+    SpriteNum sprite; // used to find Patch and flip value
     int frame; // might be ORed with FF_FULLBRIGHT
 
     // Interaction info, by BLOCKMAP.
@@ -231,23 +231,23 @@ struct Mobj : Thinker
     SubSector* subsector;
 
     // The closest interval over all contacted Sectors.
-    fixed_t floorz;
-    fixed_t ceilingz;
+    Fixed floorz;
+    Fixed ceilingz;
 
     // For movement checking.
-    fixed_t radius;
-    fixed_t height;
+    Fixed radius;
+    Fixed height;
 
     // Momentums, used to update position.
-    fixed_t momx;
-    fixed_t momy;
-    fixed_t momz;
+    Fixed momx;
+    Fixed momy;
+    Fixed momz;
 
     // If == validcount, already checked.
     int validcount;
 
     MobjType type;
-    MobjInfo* info; // &mobjinfo[mobj->type]
+    MobjInfo* info; // &mobjinfo()[mobj->type]
 
     int tics; // state tic counter
     State* state;

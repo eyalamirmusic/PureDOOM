@@ -27,7 +27,7 @@
 // are in Render/RenderTypes.h.
 
 #include "../Game/GameDefs.h" // SCREENWIDTH
-#include "../Math/FixedPoint.h" // fixed_t
+#include "../Math/FixedPoint.h" // Doom::Fixed
 #include "ActionFunc.h" // Thinker, for a sector's sound origin
 #include "MobjTypes.h" // Mobj, which a sector holds a list of
 
@@ -47,8 +47,8 @@ namespace Doom
 {
 struct Vertex
 {
-    fixed_t x;
-    fixed_t y;
+    Fixed x;
+    Fixed y;
 };
 } // namespace Doom
 
@@ -75,9 +75,9 @@ namespace Doom
 {
 struct DegenMobj : Thinker
 {
-    fixed_t x;
-    fixed_t y;
-    fixed_t z;
+    Fixed x;
+    Fixed y;
+    Fixed z;
 };
 } // namespace Doom
 
@@ -89,8 +89,8 @@ namespace Doom
 {
 struct Sector
 {
-    fixed_t floorheight;
-    fixed_t ceilingheight;
+    Fixed floorheight;
+    Fixed ceilingheight;
     short floorpic;
     short ceilingpic;
     short lightlevel;
@@ -115,7 +115,7 @@ struct Sector
     // list of mobjs in sector
     Mobj* thinglist;
 
-    // Doom::Thinker for reversable actions
+    // Thinker for reversable actions
     void* specialdata;
 
     int linecount;
@@ -131,10 +131,10 @@ namespace Doom
 struct Side
 {
     // add this to the calculated texture column
-    fixed_t textureoffset;
+    Fixed textureoffset;
 
     // add this to the calculated texture top
-    fixed_t rowoffset;
+    Fixed rowoffset;
 
     // Texture indices.
     // We do not maintain names here.
@@ -170,8 +170,8 @@ struct Line
     Vertex* v2;
 
     // Precalculated v2 - v1 for side checking.
-    fixed_t dx;
-    fixed_t dy;
+    Fixed dx;
+    Fixed dy;
 
     // Animation related.
     short flags;
@@ -184,7 +184,7 @@ struct Line
 
     // Neat. Another bounding box, for the extent
     // of the LineDef.
-    Array<fixed_t, 4> bbox;
+    Array<Fixed, 4> bbox;
 
     // To aid move clipping.
     SlopeType slopetype;
@@ -197,7 +197,7 @@ struct Line
     // if == validcount, already checked
     int validcount;
 
-    // Doom::Thinker for reversable actions
+    // Thinker for reversable actions
     void* specialdata;
 };
 } // namespace Doom
@@ -229,9 +229,9 @@ struct Seg
     Vertex* v1;
     Vertex* v2;
 
-    fixed_t offset;
+    Fixed offset;
 
-    angle_t angle;
+    Angle angle;
 
     Side* sidedef;
     Line* linedef;
@@ -252,13 +252,13 @@ namespace Doom
 struct Node
 {
     // Partition line.
-    fixed_t x;
-    fixed_t y;
-    fixed_t dx;
-    fixed_t dy;
+    Fixed x;
+    Fixed y;
+    Fixed dx;
+    Fixed dy;
 
     // Bounding box for each child.
-    Array<Array<fixed_t, 4>, 2> bbox;
+    Array<Array<Fixed, 4>, 2> bbox;
 
     // If NF_SUBSECTOR its a subsector.
     Array<unsigned short, 2> children;

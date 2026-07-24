@@ -43,28 +43,11 @@
 // slopeToFixedShift, ang45/ang90/ang180/ang270, Angle::angleToFineShift - belong
 // to Math/Trig.h and Math/Angle.h. Read them from there.
 
-// Views onto the tables in Math/Trig.h, which owns them. Pointers rather than
-// arrays, because there is one copy of the data and this is the vanilla name for
-// it - indexing them reads exactly what it always did.
-
-// Effective size is 10240.
-extern const fixed_t* finesine;
-
-// Re-use data, is just PI/2 pahse shift.
-extern const fixed_t* finecosine;
-
-// Effective size is 4096.
-extern const fixed_t* finetangent;
-
-// angle_t IS Doom::Angle - Binary Angle Measurement, a whole turn in 2^32 units
-// so it wraps by itself. The ang* constants (Math/Angle.h) are Angles, which is
-// what lets the engine keep writing `ang45 * (thing->angle / 45)` unchanged.
-using angle_t = Doom::Angle;
-
-// Effective size is 2049;
-// The +1 size is to handle the case when x==y
-//  without additional checking.
-extern const angle_t* tantoangle;
+// finesine() / finecosine() / finetangent() / tantoangle() - the typed views onto
+// the trig tables - are declared in Math/Trig.h, included above. They used to be
+// four `extern const T*` globals spelled here; the engine reads them as
+// finesine()[i] now, and Doom::Angle is spelled by its own name (this header used
+// to alias it `angle_t`).
 
 // Utility function,
 //  called by Doom::pointToAngle.

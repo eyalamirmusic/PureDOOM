@@ -6,7 +6,7 @@
 // AM_Drawer rasterizes. It cannot see this code at all: the port re-implements
 // AM_Drawer's decisions as geometry and only its rasterizer is shared with
 // nothing. So a transform that put every line of the map in the wrong place left
-// automap.frames green, which is exactly what happened - the fixed_t strong-type
+// automap.frames green, which is exactly what happened - the Doom::Fixed strong-type
 // sweep turned `(double) x1` into a whole-units conversion while the origin it is
 // measured against stayed in raw fixed-point, and the map collapsed to a point
 // about ninety pixels left of where it belonged.
@@ -21,6 +21,7 @@
 
 #include <DOOM/DOOM.h>
 #include <DOOM/UI/AutomapTypes.h>
+#include <DOOM/UI/AutomapView.h>
 
 #include <cmath>
 #include <vector>
@@ -87,7 +88,8 @@ void openAutomapOnE1M1()
     doomSimPostKeyUp(static_cast<int>(Doom::Key::Tab));
     check(doomSimStepTic() != 0, "the tic ran");
     check(doomSimAutomapActive() != 0, "AM_STARTKEY opened the automap");
-    check(followplayer != 0, "the map starts following the player");
+    check(Doom::automapView().followplayer != 0,
+          "the map starts following the player");
 }
 
 // Following the player, the map window is centred on where the player stands -
@@ -117,8 +119,10 @@ auto tAutomapIsCentredOnThePlayer = test("Port/automapIsCentredOnThePlayer") = [
 
     check(map.size() >= arrowCorners + cornersPerLine, "the arrow was emitted");
 
-    auto centreX = static_cast<float>(f_x) + static_cast<float>(f_w) * 0.5f;
-    auto centreY = static_cast<float>(f_y) + static_cast<float>(f_h) * 0.5f;
+    auto centreX = static_cast<float>(Doom::automapView().f_x)
+                   + static_cast<float>(Doom::automapView().f_w) * 0.5f;
+    auto centreY = static_cast<float>(Doom::automapView().f_y)
+                   + static_cast<float>(Doom::automapView().f_h) * 0.5f;
 
     auto crosshair = boundsOf(map.last(cornersPerLine));
 
@@ -172,7 +176,7 @@ auto tAutomapSpansTheFrame = test("Port/automapSpansTheFrame") = []
     check(walls.height() > 20.0f, "the revealed walls span real frame pixels down");
 
     // And they stay the size of a room rather than a scale factor away from one.
-    check(walls.width() < static_cast<float>(f_w) * 4.0f,
+    check(walls.width() < static_cast<float>(Doom::automapView().f_w) * 4.0f,
           "the revealed walls are not scaled up out of all proportion");
 };
 } // namespace

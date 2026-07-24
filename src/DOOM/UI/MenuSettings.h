@@ -3,7 +3,7 @@
 namespace Doom
 {
 // The menu-adjustable, config-persisted user preferences: the mouse sensitivity
-// Doom::buildTiccmd scales the aim by, the screen-message toggle, and the two that
+// buildTiccmd scales the aim by, the screen-message toggle, and the two that
 // shape the rendered frame - the detail level and the view size (screenblocks).
 //
 // These are config-backed, and stayed loose globals through the earlier sweep
@@ -21,10 +21,10 @@ namespace Doom
 struct MenuSettings
 {
     int mouseSensitivity = 0; // has default (5)
-    int showMessages = 0;     // has default (1), 0 = off, 1 = on
-    int detailLevel = 0;      // has default (0), 0 = high, 1 = normal
-    int screenblocks = 0;     // has default (9)
-    int usegamma = 0;         // has default (0), gamma-correction level 0-4 (F11)
+    int showMessages = 0; // has default (1), 0 = off, 1 = on
+    int detailLevel = 0; // has default (0), 0 = high, 1 = normal
+    int screenblocks = 0; // has default (9)
+    int usegamma = 0; // has default (0), gamma-correction level 0-4 (F11)
 };
 
 MenuSettings& menuSettings();

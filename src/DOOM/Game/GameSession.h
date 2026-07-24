@@ -37,6 +37,6 @@ struct GameSession
 };
 
 // The one GameSession, a view onto the Engine's member - the same pattern as
-// gameVersion(), launchOptions(), levelStats(), clip(), level(), wad() and randomness().
+// gameVersion(), launchOptions(), levelStats(), clipping(), level(), wad() and randomness().
 GameSession& gameSession();
 } // namespace Doom

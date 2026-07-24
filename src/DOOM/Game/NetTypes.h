@@ -67,7 +67,7 @@ struct NetPacket
     byte starttic;
     byte player;
     byte numtics;
-    Doom::Ticcmd cmds[BACKUPTICS];
+    Ticcmd cmds[BACKUPTICS];
 };
 } // namespace Doom
 

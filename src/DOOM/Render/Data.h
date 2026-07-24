@@ -50,10 +50,6 @@ struct Texture
 // no patch covered. Anything that wants the pixels rather than the engine's
 // cached columns (which are post data, not pixels, for exactly those textures)
 // has to compose them the same way.
-// The texture table lives in Doom::GraphicsData (an Engine member) now. It owns the
-// Doom::Texture structs by value; `textures` stays a Doom::Texture** (a view onto a pointer
-// array into that storage) so every `textures[i]->field` reader is unchanged (Step 9).
-extern Doom::Texture** textures;
 
 // I/O, setting up the stuff.
 

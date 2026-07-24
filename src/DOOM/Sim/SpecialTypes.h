@@ -204,9 +204,9 @@ struct Plat : Thinker
     void tick() override;
     ThinkerKind kind() const override { return ThinkerKind::Plat; }
     Sector* sector;
-    fixed_t speed;
-    fixed_t low;
-    fixed_t high;
+    Fixed speed;
+    Fixed low;
+    Fixed high;
     int wait;
     int count;
     PlatState status;
@@ -220,7 +220,7 @@ struct Plat : Thinker
 namespace Doom
 {
 constexpr int PLATWAIT = 3;
-constexpr fixed_t PLATSPEED = FRACUNIT;
+constexpr Fixed PLATSPEED = FRACUNIT;
 constexpr int MAXPLATS = 30;
 } // namespace Doom
 
@@ -250,8 +250,8 @@ struct Door : Thinker
     ThinkerKind kind() const override { return ThinkerKind::Door; }
     DoorType type;
     Sector* sector;
-    fixed_t topheight;
-    fixed_t speed;
+    Fixed topheight;
+    Fixed speed;
 
     // 1 = up, 0 = waiting at top, -1 = down
     int direction;
@@ -267,7 +267,7 @@ struct Door : Thinker
 
 namespace Doom
 {
-constexpr fixed_t VDOORSPEED = FRACUNIT * 2;
+constexpr Fixed VDOORSPEED = FRACUNIT * 2;
 constexpr int VDOORWAIT = 150;
 } // namespace Doom
 
@@ -295,9 +295,9 @@ struct Ceiling : Thinker
     ThinkerKind kind() const override { return ThinkerKind::Ceiling; }
     CeilingType type;
     Sector* sector;
-    fixed_t bottomheight;
-    fixed_t topheight;
-    fixed_t speed;
+    Fixed bottomheight;
+    Fixed topheight;
+    Fixed speed;
     bool crush;
 
     // 1 = up, 0 = waiting, -1 = down
@@ -311,7 +311,7 @@ struct Ceiling : Thinker
 
 namespace Doom
 {
-constexpr fixed_t CEILSPEED = FRACUNIT;
+constexpr Fixed CEILSPEED = FRACUNIT;
 constexpr int MAXCEILINGS = 30;
 } // namespace Doom
 
@@ -376,14 +376,14 @@ struct FloorMove : Thinker
     int direction;
     int newspecial;
     short texture;
-    fixed_t floordestheight;
-    fixed_t speed;
+    Fixed floordestheight;
+    Fixed speed;
 };
 } // namespace Doom
 
 namespace Doom
 {
-constexpr fixed_t FLOORSPEED = FRACUNIT;
+constexpr Fixed FLOORSPEED = FRACUNIT;
 } // namespace Doom
 
 namespace Doom

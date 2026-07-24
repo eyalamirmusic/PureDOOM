@@ -9,11 +9,10 @@
 // DESCRIPTION:
 //        Enemy thinking, AI. Action pointers for the states/definitions.
 //
-// Rewritten into namespace Doom out of vanilla p_enemy; p_enemy.cpp keeps the
-// vanilla Doom::noiseAlert name as a shim (Sim/Info.cpp's state table references
-// the Doom::Actions:: adapters by address instead, in Sim/Actions.{h,cpp}). The AI
-// scratch is file-local; soundtarget stays global (p_saveg archives it), and the
-// thinker-identity comparison keeps the global Doom::mobjThinker.
+// Rewritten into namespace Doom out of vanilla p_enemy. Sim/Info.cpp's state table
+// names these functions directly - the Actions:: adapter layer that used to bend
+// them into one pointer shape is gone. The AI scratch is file-local; soundtarget
+// stays global (p_saveg archives it).
 //
 //-----------------------------------------------------------------------------
 
@@ -57,12 +56,12 @@
 
 namespace Doom
 {
-constexpr angle_t FATSPREAD = ang90 / 8;
-constexpr fixed_t SKULLSPEED = 20 * FRACUNIT;
+constexpr Angle FATSPREAD = ang90 / 8;
+constexpr Fixed SKULLSPEED = 20 * FRACUNIT;
 
 // P_NewChaseDir movement LUTs and the transient targets the AI threads through its
 // state actions (the vile's corpse, the fat/brain spit targets). All file-local;
-// soundtarget alone is shared (now a Doom::SoundTarget Engine member, reached above).
+// soundtarget alone is shared (now a SoundTarget Engine member, reached above).
 enum class DirType
 {
     East,
@@ -91,23 +90,23 @@ Array<DirType, 4> diags = {
     DirType::NorthWest, DirType::NorthEast, DirType::SouthWest, DirType::SouthEast};
 
 // Raw fixed values: 47000 is FRACUNIT * cos(45) rounded, as vanilla wrote it.
-Array<fixed_t, 8> xspeed = {FRACUNIT,
-                            fixed_t {47000},
-                            fixed_t {},
-                            fixed_t {-47000},
-                            -FRACUNIT,
-                            fixed_t {-47000},
-                            fixed_t {},
-                            fixed_t {47000}};
-Array<fixed_t, 8> yspeed = {fixed_t {},
-                            fixed_t {47000},
-                            FRACUNIT,
-                            fixed_t {47000},
-                            fixed_t {},
-                            fixed_t {-47000},
-                            -FRACUNIT,
-                            fixed_t {-47000}};
-angle_t TRACEANGLE {0xc000000};
+Array<Fixed, 8> xspeed = {FRACUNIT,
+                          Fixed {47000},
+                          Fixed {},
+                          Fixed {-47000},
+                          -FRACUNIT,
+                          Fixed {-47000},
+                          Fixed {},
+                          Fixed {47000}};
+Array<Fixed, 8> yspeed = {Fixed {},
+                          Fixed {47000},
+                          FRACUNIT,
+                          Fixed {47000},
+                          Fixed {},
+                          Fixed {-47000},
+                          -FRACUNIT,
+                          Fixed {-47000}};
+Angle TRACEANGLE {0xc000000};
 // The monster-AI scratch now lives on the Engine (Sim/EnemyAI.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). vileCheck, vileChase, brainAwake and brainSpit each hoist
 // enemyAI() once and reach its members through it, rather than through file-scope reference
@@ -155,7 +154,7 @@ void fatAttack1(Mobj& actor);
 void fatAttack2(Mobj& actor);
 void fatAttack3(Mobj& actor);
 void skullAttack(Mobj& actor);
-void painShootSkull(Mobj& actor, angle_t angle);
+void painShootSkull(Mobj& actor, Angle angle);
 void painAttack(Mobj& actor);
 void painDie(Mobj& actor);
 void scream(Mobj& actor);
@@ -204,13 +203,13 @@ void recursiveSound(Sector* sec, int soundblocks)
 
         updateLineOpening(*check);
 
-        if (!clip().openrange.isPositive())
+        if (!clipping().openrange.isPositive())
             continue; // closed door
 
-        if (sides[check->sidenum[0]].sector == sec)
-            other = sides[check->sidenum[1]].sector;
+        if (level().sides[check->sidenum[0]].sector == sec)
+            other = level().sides[check->sidenum[1]].sector;
         else
-            other = sides[check->sidenum[0]].sector;
+            other = level().sides[check->sidenum[0]].sector;
 
         if (check->flags & ML_SOUNDBLOCK)
         {
@@ -243,7 +242,7 @@ bool checkMeleeRange(Mobj& actor)
         return false;
 
     Mobj* pl = actor.target;
-    fixed_t dist = approxDistance(pl->x - actor.x, pl->y - actor.y);
+    Fixed dist = approxDistance(pl->x - actor.x, pl->y - actor.y);
 
     if (dist >= MELEERANGE - 20 * FRACUNIT + pl->info->radius)
         return false;
@@ -259,7 +258,7 @@ bool checkMeleeRange(Mobj& actor)
 //
 bool checkMissileRange(Mobj& actor)
 {
-    // Vanilla declares dist fixed_t and then shifts it down to whole units
+    // Vanilla declares dist Fixed and then shifts it down to whole units
     // half way through, after which every use of it is a plain integer -
     // compared against 14*64, 196, 200, 160 and P_Random's 0..255.
 
@@ -278,7 +277,7 @@ bool checkMissileRange(Mobj& actor)
         return false; // do not attack yet
 
     // OPTIMIZE: get this from a global checksight
-    fixed_t distance =
+    Fixed distance =
         approxDistance(actor.x - actor.target->x, actor.y - actor.target->y)
         - 64 * FRACUNIT;
 
@@ -328,7 +327,7 @@ bool move(Mobj& actor)
     // warning: 'catch', 'throw', and 'try'
     // are all C++ reserved words
 
-    auto& c = clip();
+    auto& c = clipping();
 
     if (actor.movedir == toIndex(DirType::NoDir))
         return false;
@@ -336,8 +335,8 @@ bool move(Mobj& actor)
     if (static_cast<unsigned>(actor.movedir) >= 8)
         fatalError("Error: Weird actor->movedir!");
 
-    fixed_t tryx = actor.x + actor.info->speed * xspeed[actor.movedir];
-    fixed_t tryy = actor.y + actor.info->speed * yspeed[actor.movedir];
+    Fixed tryx = actor.x + actor.info->speed * xspeed[actor.movedir];
+    Fixed tryy = actor.y + actor.info->speed * yspeed[actor.movedir];
 
     bool try_ok = tryMove(actor, tryx, tryy);
 
@@ -417,8 +416,8 @@ void newChaseDir(Mobj& actor)
     DirType olddir = static_cast<DirType>(actor.movedir);
     DirType turnaround = opposite[toIndex(olddir)];
 
-    fixed_t deltax = actor.target->x - actor.x;
-    fixed_t deltay = actor.target->y - actor.y;
+    Fixed deltax = actor.target->x - actor.x;
+    Fixed deltay = actor.target->y - actor.y;
 
     if (deltax > 10 * FRACUNIT)
         d[1] = DirType::East;
@@ -557,13 +556,12 @@ bool lookForPlayers(Mobj& actor, bool allaround)
 
         if (!allaround)
         {
-            angle_t an =
-                pointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
-                - actor.angle;
+            Angle an = pointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
+                       - actor.angle;
 
             if (an > ang90 && an < ang270)
             {
-                fixed_t dist =
+                Fixed dist =
                     approxDistance(player->mo->x - actor.x, player->mo->y - actor.y);
                 // if real close, react anyway
                 if (dist > MELEERANGE)
@@ -706,9 +704,8 @@ void chase(Mobj& actor)
     // turn towards movement direction if not there yet
     if (actor.movedir < 8)
     {
-        actor.angle = angle_t {actor.angle.raw & (7u << 29)};
-        int delta =
-            (int) (actor.angle - angle_t {(unsigned) actor.movedir << 29}).raw;
+        actor.angle = Angle {actor.angle.raw & (7u << 29)};
+        int delta = (int) (actor.angle - Angle {(unsigned) actor.movedir << 29}).raw;
 
         if (delta > 0)
             actor.angle -= ang90 / 2u;
@@ -800,7 +797,7 @@ void faceTarget(Mobj& actor)
     actor.angle = pointToAngle2(actor.x, actor.y, actor.target->x, actor.target->y);
 
     if (hasFlag(actor.target->flags, MobjFlag::Shadow))
-        actor.angle += angle_t {
+        actor.angle += Angle {
             (unsigned) (randomness().forPlay() - randomness().forPlay()) << 21};
 }
 
@@ -813,34 +810,33 @@ void posAttack(Mobj& actor)
         return;
 
     faceTarget(actor);
-    angle_t angle = actor.angle;
-    fixed_t slope = aimLineAttack(&actor, angle, MISSILERANGE).slope;
+    Angle angle = actor.angle;
+    Fixed slope = aimLineAttack(&actor, angle, MISSILERANGE).slope;
 
     startSound(&actor, SfxEnum::Pistol);
     angle +=
-        angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
+        Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(actor, angle, MISSILERANGE, slope, damage);
 }
 
 void sPosAttack(Mobj& actor)
 {
-    angle_t angle {};
+    Angle angle {};
 
     if (!actor.target)
         return;
 
     startSound(&actor, SfxEnum::Shotgn);
     faceTarget(actor);
-    angle_t bangle = actor.angle;
-    fixed_t slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
+    Angle bangle = actor.angle;
+    Fixed slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
     for (int i = 0; i < 3; i++)
     {
-        angle =
-            bangle
-            + angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay())
-                       << 20};
+        angle = bangle
+                + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
+                         << 20};
         int damage = ((randomness().forPlay() % 5) + 1) * 3;
         lineAttack(actor, angle, MISSILERANGE, slope, damage);
     }
@@ -848,19 +844,19 @@ void sPosAttack(Mobj& actor)
 
 void cPosAttack(Mobj& actor)
 {
-    angle_t angle {};
+    Angle angle {};
 
     if (!actor.target)
         return;
 
     startSound(&actor, SfxEnum::Shotgn);
     faceTarget(actor);
-    angle_t bangle = actor.angle;
-    fixed_t slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
+    Angle bangle = actor.angle;
+    Fixed slope = aimLineAttack(&actor, bangle, MISSILERANGE).slope;
 
-    angle = bangle
-            + angle_t {(unsigned) (randomness().forPlay() - randomness().forPlay())
-                       << 20};
+    angle =
+        bangle
+        + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
     lineAttack(actor, angle, MISSILERANGE, slope, damage);
 }
@@ -1027,7 +1023,7 @@ void tracer(Mobj& actor)
         return;
 
     // change angle
-    angle_t exact = pointToAngle2(actor.x, actor.y, dest->x, dest->y);
+    Angle exact = pointToAngle2(actor.x, actor.y, dest->x, dest->y);
 
     if (exact != actor.angle)
     {
@@ -1046,8 +1042,8 @@ void tracer(Mobj& actor)
     }
 
     const auto fine = actor.angle.fineIndex();
-    actor.momx = FixedMul(Fixed {actor.info->speed}, finecosine[fine]);
-    actor.momy = FixedMul(Fixed {actor.info->speed}, finesine[fine]);
+    actor.momx = FixedMul(Fixed {actor.info->speed}, finecosine()[fine]);
+    actor.momy = FixedMul(Fixed {actor.info->speed}, finesine()[fine]);
 
     // change slope
     int dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
@@ -1056,7 +1052,7 @@ void tracer(Mobj& actor)
 
     if (dist < 1)
         dist = 1;
-    fixed_t slope = (dest->z + 40 * FRACUNIT - actor.z) / dist;
+    Fixed slope = (dest->z + 40 * FRACUNIT - actor.z) / dist;
 
     if (slope < actor.momz)
         actor.momz -= FRACUNIT / 8;
@@ -1105,14 +1101,14 @@ bool vileCheck(Mobj* thing)
     if (thing->info->raisestate == StateNum::Null)
         return true; // monster doesn't have a raise state
 
-    fixed_t maxdist = thing->info->radius + mobjinfo[toIndex(MobjType::Vile)].radius;
+    Fixed maxdist = thing->info->radius + mobjinfo()[toIndex(MobjType::Vile)].radius;
 
     if (doom_abs(thing->x - ai.viletryx) > maxdist
         || doom_abs(thing->y - ai.viletryy) > maxdist)
         return true; // not actually touching
 
     ai.corpsehit = thing;
-    ai.corpsehit->momx = ai.corpsehit->momy = fixed_t {};
+    ai.corpsehit->momx = ai.corpsehit->momy = Fixed {};
     ai.corpsehit->height <<= 2;
     bool check = checkPosition(*ai.corpsehit, ai.corpsehit->x, ai.corpsehit->y);
     ai.corpsehit->height >>= 2;
@@ -1137,10 +1133,14 @@ void vileChase(Mobj& actor)
         ai.viletryx = actor.x + actor.info->speed * xspeed[actor.movedir];
         ai.viletryy = actor.y + actor.info->speed * yspeed[actor.movedir];
 
-        int xl = (ai.viletryx - bmaporgx - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        int xh = (ai.viletryx - bmaporgx + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        int yl = (ai.viletryy - bmaporgy - MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
-        int yh = (ai.viletryy - bmaporgy + MAXRADIUS * 2).raw >> MAPBLOCKSHIFT;
+        int xl = (ai.viletryx - level().blockmap.origin.x - MAXRADIUS * 2).raw
+                 >> MAPBLOCKSHIFT;
+        int xh = (ai.viletryx - level().blockmap.origin.x + MAXRADIUS * 2).raw
+                 >> MAPBLOCKSHIFT;
+        int yl = (ai.viletryy - level().blockmap.origin.y - MAXRADIUS * 2).raw
+                 >> MAPBLOCKSHIFT;
+        int yh = (ai.viletryy - level().blockmap.origin.y + MAXRADIUS * 2).raw
+                 >> MAPBLOCKSHIFT;
 
         for (int bx = xl; bx <= xh; bx++)
         {
@@ -1214,8 +1214,8 @@ void fire(Mobj& actor)
     const auto anFine = dest->angle.fineIndex();
 
     unsetThingPosition(actor);
-    actor.x = dest->x + FixedMul(24 * FRACUNIT, finecosine[anFine]);
-    actor.y = dest->y + FixedMul(24 * FRACUNIT, finesine[anFine]);
+    actor.x = dest->x + FixedMul(24 * FRACUNIT, finecosine()[anFine]);
+    actor.y = dest->y + FixedMul(24 * FRACUNIT, finesine()[anFine]);
     actor.z = dest->z;
     setThingPosition(actor);
 }
@@ -1265,8 +1265,8 @@ void vileAttack(Mobj& actor)
         return;
 
     // move the fire between the vile and the player
-    fire->x = actor.target->x - FixedMul(24 * FRACUNIT, finecosine[anFine]);
-    fire->y = actor.target->y - FixedMul(24 * FRACUNIT, finesine[anFine]);
+    fire->x = actor.target->x - FixedMul(24 * FRACUNIT, finecosine()[anFine]);
+    fire->y = actor.target->y - FixedMul(24 * FRACUNIT, finesine()[anFine]);
     radiusAttack(*fire, &actor, 70);
 }
 
@@ -1292,8 +1292,8 @@ void fatAttack1(Mobj& actor)
     Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle += FATSPREAD;
     const auto an1Fine = mo->angle.fineIndex();
-    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an1Fine]);
-    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine[an1Fine]);
+    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an1Fine]);
+    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an1Fine]);
 }
 
 void fatAttack2(Mobj& actor)
@@ -1306,8 +1306,8 @@ void fatAttack2(Mobj& actor)
     Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle -= FATSPREAD * 2;
     const auto an2Fine = mo->angle.fineIndex();
-    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an2Fine]);
-    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine[an2Fine]);
+    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an2Fine]);
+    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an2Fine]);
 }
 
 void fatAttack3(Mobj& actor)
@@ -1317,14 +1317,14 @@ void fatAttack3(Mobj& actor)
     Mobj* mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle -= FATSPREAD / 2;
     const auto an3Fine = mo->angle.fineIndex();
-    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an3Fine]);
-    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine[an3Fine]);
+    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an3Fine]);
+    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an3Fine]);
 
     mo = spawnMissile(actor, actor.target, MobjType::Fatshot);
     mo->angle += FATSPREAD / 2;
     const auto an4Fine = mo->angle.fineIndex();
-    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine[an4Fine]);
-    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine[an4Fine]);
+    mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an4Fine]);
+    mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an4Fine]);
 }
 
 //
@@ -1342,8 +1342,8 @@ void skullAttack(Mobj& actor)
     startSound(&actor, actor.info->attacksound);
     faceTarget(actor);
     const auto fine = actor.angle.fineIndex();
-    actor.momx = FixedMul(SKULLSPEED, finecosine[fine]);
-    actor.momy = FixedMul(SKULLSPEED, finesine[fine]);
+    actor.momx = FixedMul(SKULLSPEED, finecosine()[fine]);
+    actor.momy = FixedMul(SKULLSPEED, finesine()[fine]);
     int dist = approxDistance(dest->x - actor.x, dest->y - actor.y).raw;
     dist = dist / SKULLSPEED.raw;
 
@@ -1356,7 +1356,7 @@ void skullAttack(Mobj& actor)
 // painShootSkull
 // Spawn a lost soul and launch it at the target
 //
-void painShootSkull(Mobj& actor, angle_t angle)
+void painShootSkull(Mobj& actor, Angle angle)
 {
     auto& thinkers = thinkerList();
 
@@ -1380,13 +1380,13 @@ void painShootSkull(Mobj& actor, angle_t angle)
     // okay, there's playe for another one
     const auto anFine = angle.fineIndex();
 
-    fixed_t prestep =
+    Fixed prestep =
         4 * FRACUNIT
-        + 3 * (actor.info->radius + mobjinfo[toIndex(MobjType::Skull)].radius) / 2;
+        + 3 * (actor.info->radius + mobjinfo()[toIndex(MobjType::Skull)].radius) / 2;
 
-    fixed_t x = actor.x + FixedMul(prestep, finecosine[anFine]);
-    fixed_t y = actor.y + FixedMul(prestep, finesine[anFine]);
-    fixed_t z = actor.z + 8 * FRACUNIT;
+    Fixed x = actor.x + FixedMul(prestep, finecosine()[anFine]);
+    Fixed y = actor.y + FixedMul(prestep, finesine()[anFine]);
+    Fixed z = actor.z + 8 * FRACUNIT;
 
     Mobj* newmobj = spawnMobj(x, y, z, MobjType::Skull);
 
@@ -1712,12 +1712,12 @@ void brainPain(Mobj&)
 
 void brainScream(Mobj& mo)
 {
-    for (fixed_t x = mo.x - 196 * FRACUNIT; x < mo.x + 320 * FRACUNIT;
+    for (Fixed x = mo.x - 196 * FRACUNIT; x < mo.x + 320 * FRACUNIT;
          x += FRACUNIT * 8)
     {
-        fixed_t y = mo.y - 320 * FRACUNIT;
+        Fixed y = mo.y - 320 * FRACUNIT;
         // vanilla's raw 128 added to a whole-unit-scaled random; kept as it stands.
-        fixed_t z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+        Fixed z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
         Mobj* th = spawnMobj(x, y, z, MobjType::Rocket);
         th->momz = Fixed {randomness().forPlay() * 512};
 
@@ -1733,10 +1733,10 @@ void brainScream(Mobj& mo)
 
 void brainExplode(Mobj& mo)
 {
-    fixed_t x =
+    Fixed x =
         mo.x + Fixed {(randomness().forPlay() - randomness().forPlay()) * 2048};
-    fixed_t y = mo.y;
-    fixed_t z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
+    Fixed y = mo.y;
+    Fixed z = Fixed {128} + randomness().forPlay() * 2 * FRACUNIT;
     Mobj* th = spawnMobj(x, y, z, MobjType::Rocket);
     th->momz = Fixed {randomness().forPlay() * 512};
 

@@ -54,8 +54,10 @@ namespace Doom
 constexpr int STRING_VALUE = 0xFFFF;
 } // namespace Doom
 
-extern Doom::ConfigDefault defaults[];
-extern int numdefaults;
+// The config default table and its length. Was two `extern` globals; storage is
+// file-local to Game/Config.cpp now, reached as defaults()[i] and numdefaults().
+Doom::ConfigDefault* defaults();
+int numdefaults();
 
 //-----------------------------------------------------------------------------
 //

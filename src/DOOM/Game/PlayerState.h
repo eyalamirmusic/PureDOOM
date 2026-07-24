@@ -37,6 +37,6 @@ struct PlayerState
 };
 
 // The one PlayerState, a view onto the Engine's member - the same pattern as
-// gameSession(), gameVersion(), launchOptions(), levelStats(), clip(), level() and wad().
+// gameSession(), gameVersion(), launchOptions(), levelStats(), clipping(), level() and wad().
 PlayerState& playerState();
 } // namespace Doom

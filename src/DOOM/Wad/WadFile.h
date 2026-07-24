@@ -96,7 +96,7 @@ private:
 WadFile& wad();
 
 // The boot-time WAD list: add every file in turn, and refuse to go on if the lot
-// of them yielded no lumps at all. Doom::addWadFile builds the list this consumes;
+// of them yielded no lumps at all. addWadFile builds the list this consumes;
 // nothing else calls it.
 void initWadFiles(const Vector<std::string>& filenames);
 

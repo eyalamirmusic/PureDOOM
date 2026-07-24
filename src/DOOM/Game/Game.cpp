@@ -168,15 +168,15 @@ std::string savedescription;
 // bodyqueslot is a Doom::CorpseQueue owned by the Engine now; this is a reference onto it
 // (doomstat.h externs it, bodyque[] alongside it does not need one) (REFACTOR.md, Step 5).
 
-void* statcopy; // for statistics driver
+void* statcopyValue = nullptr; // for statistics driver
+void*& statcopy()
+{
+    return statcopyValue;
+}
 
 bool secretexit;
 
 std::string defdemoname;
-
-// Other subsystems' globals this file reads (declared at global scope so the
-// namespace code below resolves them to ::, not Doom::).
-extern Doom::Array<std::string_view, 4> player_names; // hu_stuff
 
 namespace Doom
 {
@@ -329,7 +329,7 @@ void buildTiccmd(Ticcmd& cmd)
         side -= speeds.sidemove[speed];
 
     // buttons
-    cmd.chatchar = Doom::dequeueChatChar();
+    cmd.chatchar = dequeueChatChar();
 
     if (input.gamekeydown[config.key_fire] || mousebuttons[config.mousebfire]
         || joybuttons[config.joybfire])
@@ -459,7 +459,7 @@ void doLoadLevel()
     //  a flat. The data is in the WAD only because
     //  we look for an actual index, instead of simply
     //  setting one.
-    sky.skyflatnum = Doom::flatNumForName(SKYFLATNAME);
+    sky.skyflatnum = flatNumForName(SKYFLATNAME);
 
     // DOOM determines the sky texture to be used
     // depending on the current episode, and the game version.
@@ -468,11 +468,11 @@ void doLoadLevel()
         || (static_cast<int>(mode) == static_cast<int>(GameMission::PackTnt))
         || (static_cast<int>(mode) == static_cast<int>(GameMission::PackPlut)))
     {
-        sky.skytexture = Doom::textureNumForName("SKY3");
+        sky.skytexture = textureNumForName("SKY3");
         if (session.gamemap < 12)
-            sky.skytexture = Doom::textureNumForName("SKY1");
+            sky.skytexture = textureNumForName("SKY1");
         else if (session.gamemap < 21)
-            sky.skytexture = Doom::textureNumForName("SKY2");
+            sky.skytexture = textureNumForName("SKY2");
     }
 
     if (flow.wipegamestate == GameState::Level)
@@ -488,7 +488,7 @@ void doLoadLevel()
         doom_memset(players_.players[i].frags, 0, sizeof(players_.players[i].frags));
     }
 
-    Doom::setupLevel(session.gameepisode, session.gamemap, 0, session.gameskill);
+    setupLevel(session.gameepisode, session.gamemap, 0, session.gameskill);
     players_.displayplayer = players_.consoleplayer; // view the guy you are playing
     timeDemo().starttime = currentTic();
     flow.gameaction = GameAction::Nothing;
@@ -555,17 +555,17 @@ bool gameResponder(Event& ev)
             return true;
         }
 #endif
-        if (Doom::hudResponder(ev))
+        if (hudResponder(ev))
             return true; // chat ate the event
-        if (Doom::statusBarResponder(ev))
+        if (statusBarResponder(ev))
             return true; // status window ate it
-        if (Doom::automapResponder(ev))
+        if (automapResponder(ev))
             return true; // automap ate it
     }
 
     if (flow.gamestate == GameState::Finale)
     {
-        if (Doom::finaleResponder(ev))
+        if (finaleResponder(ev))
             return true; // finale ate the event
     }
 
@@ -655,13 +655,13 @@ void gameTicker()
                 doCompleted();
                 break;
             case GameAction::Victory:
-                Doom::startFinale();
+                startFinale();
                 break;
             case GameAction::WorldDone:
                 doWorldDone();
                 break;
             case GameAction::Screenshot:
-                Doom::writeScreenshot();
+                writeScreenshot();
                 flow.gameaction = GameAction::Nothing;
                 break;
             case GameAction::Nothing:
@@ -692,7 +692,7 @@ void gameTicker()
             {
                 static std::string turbomessage;
                 //doom_sprintf(turbomessage, "%s is turbo!", player_names[i]);
-                turbomessage = concat(player_names[i], " is turbo!");
+                turbomessage = concat(player_names()[i], " is turbo!");
                 players_.players[players_.consoleplayer].message =
                     turbomessage.c_str();
             }
@@ -733,9 +733,9 @@ void gameTicker()
                     case SpecialCommand::Pause:
                         refreshFlags().paused ^= 1;
                         if (refreshFlags().paused)
-                            Doom::pauseSound();
+                            pauseSound();
                         else
-                            Doom::resumeSound();
+                            resumeSound();
                         break;
 
                     case SpecialCommand::SaveGame:
@@ -755,29 +755,29 @@ void gameTicker()
     switch (flow.gamestate)
     {
         case GameState::Level:
-            Doom::ticker();
-            Doom::statusBarTicker();
-            Doom::automapTicker();
-            Doom::hudTicker();
+            ticker();
+            statusBarTicker();
+            automapTicker();
+            hudTicker();
             break;
 
         case GameState::Intermission:
-            Doom::intermissionTicker();
+            intermissionTicker();
             break;
 
         case GameState::Finale:
-            Doom::finaleTicker();
+            finaleTicker();
             break;
 
         case GameState::DemoScreen:
-            Doom::pageTicker();
+            pageTicker();
             break;
     }
 }
 
 //
 // PLAYER STRUCTURE FUNCTIONS
-// also see Doom::spawnPlayer in P_Things
+// also see spawnPlayer in P_Things
 //
 
 //
@@ -865,8 +865,8 @@ bool checkSpot(int playernum, MapThing& mthing)
     auto& players_ = playerState();
     auto& corpses = corpseQueue();
 
-    fixed_t x;
-    fixed_t y;
+    Fixed x;
+    Fixed y;
     SubSector* ss;
     Mobj* mo;
 
@@ -874,37 +874,37 @@ bool checkSpot(int playernum, MapThing& mthing)
     {
         // first spawn of level, before corpses
         for (int i = 0; i < playernum; i++)
-            if (players_.players[i].mo->x == Doom::Fixed::fromInt(mthing.x)
-                && players_.players[i].mo->y == Doom::Fixed::fromInt(mthing.y))
+            if (players_.players[i].mo->x == Fixed::fromInt(mthing.x)
+                && players_.players[i].mo->y == Fixed::fromInt(mthing.y))
                 return false;
         return true;
     }
 
-    x = Doom::Fixed::fromInt(mthing.x);
-    y = Doom::Fixed::fromInt(mthing.y);
+    x = Fixed::fromInt(mthing.x);
+    y = Fixed::fromInt(mthing.y);
 
-    if (!Doom::checkPosition(*players_.players[playernum].mo, x, y))
+    if (!checkPosition(*players_.players[playernum].mo, x, y))
         return false;
 
     // flush an old corpse if needed
     if (corpses.bodyqueslot >= BODYQUESIZE)
-        Doom::removeMobj(*corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE]);
+        removeMobj(*corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE]);
     corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE] =
         players_.players[playernum].mo;
     corpses.bodyqueslot++;
 
     // spawn a teleport fog
-    ss = Doom::pointInSubsector(x, y);
+    ss = pointInSubsector(x, y);
     const auto anFine = (ang45 * (mthing.angle / 45)).fineIndex();
 
-    mo = Doom::spawnMobj(x + 20 * finecosine[anFine],
-                         y + 20 * finesine[anFine],
-                         ss->sector->floorheight,
-                         MobjType::Tfog);
+    mo = spawnMobj(x + 20 * finecosine()[anFine],
+                   y + 20 * finesine()[anFine],
+                   ss->sector->floorheight,
+                   MobjType::Tfog);
 
-    // viewz is the raw sentinel 1 that Doom::setupLevel plants, not one world unit.
-    if (players_.players[players_.consoleplayer].viewz != fixed_t {1})
-        Doom::startSound(mo, SfxEnum::Telept); // don't start sound on first frame
+    // viewz is the raw sentinel 1 that setupLevel plants, not one world unit.
+    if (players_.players[players_.consoleplayer].viewz != Fixed {1})
+        startSound(mo, SfxEnum::Telept); // don't start sound on first frame
 
     return true;
 }
@@ -930,17 +930,17 @@ void deathMatchSpawnPlayer(int playernum)
 
     for (int j = 0; j < 20; j++)
     {
-        i = Doom::randomness().forPlay() % selections;
+        i = randomness().forPlay() % selections;
         if (checkSpot(playernum, spawns.deathmatchstarts[i]))
         {
             spawns.deathmatchstarts[i].type = playernum + 1;
-            Doom::spawnPlayer(spawns.deathmatchstarts[i]);
+            spawnPlayer(spawns.deathmatchstarts[i]);
             return;
         }
     }
 
     // no good spot, so the player will probably get stuck
-    Doom::spawnPlayer(spawns.playerstarts[playernum]);
+    spawnPlayer(spawns.playerstarts[playernum]);
 }
 
 //
@@ -972,7 +972,7 @@ void doReborn(int playernum)
 
         if (checkSpot(playernum, spawns.playerstarts[playernum]))
         {
-            Doom::spawnPlayer(spawns.playerstarts[playernum]);
+            spawnPlayer(spawns.playerstarts[playernum]);
             return;
         }
 
@@ -982,13 +982,13 @@ void doReborn(int playernum)
             if (checkSpot(playernum, spawns.playerstarts[i]))
             {
                 spawns.playerstarts[i].type = playernum + 1; // fake as other player
-                Doom::spawnPlayer(spawns.playerstarts[i]);
+                spawnPlayer(spawns.playerstarts[i]);
                 spawns.playerstarts[i].type = i + 1; // restore
                 return;
             }
             // he's going to be inside something.  Too bad.
         }
-        Doom::spawnPlayer(spawns.playerstarts[playernum]);
+        spawnPlayer(spawns.playerstarts[playernum]);
     }
 }
 
@@ -1011,7 +1011,7 @@ void secretExitLevel()
 {
     // IF NO WOLF3D LEVELS, NO SECRET EXIT!
     if ((gameVersion().gamemode == GameMode::Commercial)
-        && (Doom::wad().find("map31") < 0))
+        && (wad().find("map31") < 0))
         secretexit = false;
     else
         secretexit = true;
@@ -1036,7 +1036,7 @@ void doCompleted()
             playerFinishLevel(i); // take away cards and stuff
 
     if (overlay.automapactive)
-        Doom::stopAutomap();
+        stopAutomap();
 
     if (mode != GameMode::Commercial)
         switch (session.gamemap)
@@ -1152,10 +1152,10 @@ void doCompleted()
     // this repository consumes statcopy, and the flag cannot work against a modern
     // process anyway (an absolute pointer between two processes), so this is left
     // to move with the rest of the struct rather than carved out.
-    if (statcopy)
-        doom_memcpy(statcopy, &wminfo_, sizeof(wminfo_));
+    if (statcopy())
+        doom_memcpy(statcopy(), &wminfo_, sizeof(wminfo_));
 
-    Doom::startIntermission(&wminfo_);
+    startIntermission(&wminfo_);
 }
 
 //
@@ -1186,7 +1186,7 @@ void worldDone()
             case 11:
             case 20:
             case 30:
-                Doom::startFinale();
+                startFinale();
                 break;
         }
     }
@@ -1226,7 +1226,7 @@ void doLoadGame()
 
     // readFile() fills the owner directly; buffer is left a view onto it, as it is a
     // view onto the framebuffer scratch on the save path (see SaveGameState.h).
-    Doom::readFile(save.name, save.loadStorage);
+    readFile(save.name, save.loadStorage);
     save.buffer = save.loadStorage.data();
     save.cursor = save.buffer + SAVESTRINGSIZE;
 
@@ -1255,10 +1255,10 @@ void doLoadGame()
     levelStats().leveltime = (a << 16) + (b << 8) + c;
 
     // dearchive all the modifications
-    Doom::unArchivePlayers();
-    Doom::unArchiveWorld();
-    Doom::unArchiveThinkers();
-    Doom::unArchiveSpecials();
+    unArchivePlayers();
+    unArchiveWorld();
+    unArchiveThinkers();
+    unArchiveSpecials();
 
     if (*save.cursor != 0x1d)
         fatalError("Error: Bad savegame");
@@ -1267,10 +1267,10 @@ void doLoadGame()
     // owns this memory now; no manual free needed.
 
     if (viewWindow().setsizeneeded)
-        Doom::executeSetViewSize();
+        executeSetViewSize();
 
     // draw the pattern into the back screen
-    Doom::fillBackScreen();
+    fillBackScreen();
 }
 
 //
@@ -1295,13 +1295,13 @@ void doSaveGame()
     int length;
 
 #if 0
-    if (Doom::checkParm("-cdrom"))
+    if (checkParm("-cdrom"))
         doom_sprintf(name, "c:\\doomdata\\"SAVEGAMENAME"%d.dsg", savegameslot);
 #endif
     //doom_sprintf(name, SAVEGAMENAME"%d.dsg", savegameslot);
     auto name = concat(SAVEGAMENAME, savegameslot, ".dsg");
 
-    save.cursor = save.buffer = screens[1] + 0x4000;
+    save.cursor = save.buffer = videoState().screens[1] + 0x4000;
 
     fillField(save.cursor, SAVESTRINGSIZE, savedescription);
     save.cursor += SAVESTRINGSIZE;
@@ -1318,24 +1318,24 @@ void doSaveGame()
     *save.cursor++ = stats.leveltime >> 8;
     *save.cursor++ = stats.leveltime;
 
-    Doom::archivePlayers();
-    Doom::archiveWorld();
-    Doom::archiveThinkers();
-    Doom::archiveSpecials();
+    archivePlayers();
+    archiveWorld();
+    archiveThinkers();
+    archiveSpecials();
 
     *save.cursor++ = 0x1d; // consistancy marker
 
     length = static_cast<int>((save.cursor - save.buffer));
     if (length > SAVEGAMESIZE)
         fatalError("Error: Savegame buffer overrun");
-    Doom::writeFile(name, save.buffer, length);
+    writeFile(name, save.buffer, length);
     gameFlow().gameaction = GameAction::Nothing;
     savedescription.clear();
 
     players_.players[players_.consoleplayer].message = GGSAVED;
 
     // draw the pattern into the back screen
-    Doom::fillBackScreen();
+    fillBackScreen();
 }
 
 //
@@ -1387,7 +1387,7 @@ void initNewGame(Skill skill, int episode, int map)
     if (refresh.paused)
     {
         refresh.paused = false;
-        Doom::resumeSound();
+        resumeSound();
     }
 
     if (skill > Skill::Nightmare)
@@ -1421,7 +1421,7 @@ void initNewGame(Skill skill, int episode, int map)
     if ((map > 9) && (mode != GameMode::Commercial))
         map = 9;
 
-    Doom::randomness().clear();
+    randomness().clear();
 
     if (skill == Skill::Nightmare || opts.respawnparm)
         session.respawnmonsters = true;
@@ -1433,19 +1433,19 @@ void initNewGame(Skill skill, int episode, int map)
     {
         for (int i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
              i++)
-            states[i].tics >>= 1;
-        mobjinfo[toIndex(MobjType::Bruisershot)].speed = (20 * FRACUNIT).raw;
-        mobjinfo[toIndex(MobjType::Headshot)].speed = (20 * FRACUNIT).raw;
-        mobjinfo[toIndex(MobjType::Troopshot)].speed = (20 * FRACUNIT).raw;
+            states()[i].tics >>= 1;
+        mobjinfo()[toIndex(MobjType::Bruisershot)].speed = (20 * FRACUNIT).raw;
+        mobjinfo()[toIndex(MobjType::Headshot)].speed = (20 * FRACUNIT).raw;
+        mobjinfo()[toIndex(MobjType::Troopshot)].speed = (20 * FRACUNIT).raw;
     }
     else if (skill != Skill::Nightmare && session.gameskill == Skill::Nightmare)
     {
         for (int i = toIndex(StateNum::SargRun1); i <= toIndex(StateNum::SargPain2);
              i++)
-            states[i].tics <<= 1;
-        mobjinfo[toIndex(MobjType::Bruisershot)].speed = (15 * FRACUNIT).raw;
-        mobjinfo[toIndex(MobjType::Headshot)].speed = (10 * FRACUNIT).raw;
-        mobjinfo[toIndex(MobjType::Troopshot)].speed = (10 * FRACUNIT).raw;
+            states()[i].tics <<= 1;
+        mobjinfo()[toIndex(MobjType::Bruisershot)].speed = (15 * FRACUNIT).raw;
+        mobjinfo()[toIndex(MobjType::Headshot)].speed = (10 * FRACUNIT).raw;
+        mobjinfo()[toIndex(MobjType::Troopshot)].speed = (10 * FRACUNIT).raw;
     }
 
     // force players to be initialized upon first level load
@@ -1466,26 +1466,26 @@ void initNewGame(Skill skill, int episode, int map)
     // set the sky map for the episode
     if (mode == GameMode::Commercial)
     {
-        sky.skytexture = Doom::textureNumForName("SKY3");
+        sky.skytexture = textureNumForName("SKY3");
         if (session.gamemap < 12)
-            sky.skytexture = Doom::textureNumForName("SKY1");
+            sky.skytexture = textureNumForName("SKY1");
         else if (session.gamemap < 21)
-            sky.skytexture = Doom::textureNumForName("SKY2");
+            sky.skytexture = textureNumForName("SKY2");
     }
     else
         switch (episode)
         {
             case 1:
-                sky.skytexture = Doom::textureNumForName("SKY1");
+                sky.skytexture = textureNumForName("SKY1");
                 break;
             case 2:
-                sky.skytexture = Doom::textureNumForName("SKY2");
+                sky.skytexture = textureNumForName("SKY2");
                 break;
             case 3:
-                sky.skytexture = Doom::textureNumForName("SKY3");
+                sky.skytexture = textureNumForName("SKY3");
                 break;
             case 4: // Special Edition sky
-                sky.skytexture = Doom::textureNumForName("SKY4");
+                sky.skytexture = textureNumForName("SKY4");
                 break;
         }
 
@@ -1546,9 +1546,9 @@ void recordDemo(std::string_view name)
     demo.usergame = false;
     demo.demoname = concat(name, ".lmp");
     maxsize = 0x20000;
-    i = Doom::checkParm("-maxdemo");
+    i = checkParm("-maxdemo");
     if (i && i < myargCount() - 1)
-        maxsize = parseInt(myargv[i + 1]) * 1024;
+        maxsize = parseInt(myargv()[i + 1]) * 1024;
     demo.demoRecordBuffer.resize(maxsize);
     demo.demobuffer = demo.demoRecordBuffer.data();
     demo.demoend = demo.demobuffer + maxsize;
@@ -1601,8 +1601,7 @@ void doPlayDemo()
     int episode, map;
 
     flow.gameaction = GameAction::Nothing;
-    demo.demobuffer = demo.demo_p =
-        static_cast<byte*>((Doom::cacheLumpName(defdemoname)));
+    demo.demobuffer = demo.demo_p = static_cast<byte*>((cacheLumpName(defdemoname)));
     byte demo_version = *demo.demo_p++;
     if (demo_version != VERSION
         && demo_version != 109) // Demos seem to run fine with version 109
@@ -1650,8 +1649,8 @@ void startTimeDemo(std::string_view name)
 {
     auto& refresh = refreshFlags();
 
-    refresh.nodrawers = Doom::checkParm("-nodraw");
-    refresh.noblit = Doom::checkParm("-noblit");
+    refresh.nodrawers = checkParm("-nodraw");
+    refresh.noblit = checkParm("-noblit");
     timeDemo().timingdemo = true;
     engineParams().singletics = true;
 
@@ -1705,16 +1704,16 @@ bool checkDemoStatus()
         opts.fastparm = false;
         opts.nomonsters = false;
         players_.consoleplayer = 0;
-        Doom::advanceDemo();
+        advanceDemo();
         return true;
     }
 
     if (demo.demorecording)
     {
         *demo.demo_p++ = DEMOMARKER;
-        Doom::writeFile(demo.demoname,
-                        demo.demobuffer,
-                        static_cast<int>((demo.demo_p - demo.demobuffer)));
+        writeFile(demo.demoname,
+                  demo.demobuffer,
+                  static_cast<int>((demo.demo_p - demo.demobuffer)));
         // demoRecordBuffer (not demobuffer, which also views the playback lump) owns this
         // memory now; no manual free needed.
         demo.demorecording = false;

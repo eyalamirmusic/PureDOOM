@@ -2,9 +2,6 @@
 
 #include "../Game/Event.h" // Event
 
-// Set while a pop-up message is on screen. Was m_menu.h.
-extern int messageToPrint;
-
 namespace Doom
 {
 // The DOOM menu: the main menu, options and their toggles, the episode/skill,

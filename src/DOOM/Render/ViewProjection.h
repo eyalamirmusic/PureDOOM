@@ -1,17 +1,17 @@
 #pragma once
 
 #include "../Game/GameDefs.h" // SCREENWIDTH
-#include "../Math/FixedPoint.h" // fixed_t
-#include "../Math/TrigTables.h" // angle_t, fineAngles
+#include "../Math/FixedPoint.h" // Doom::Fixed
+#include "../Math/TrigTables.h" // Doom::Angle, fineAngles
 
 #include "../Containers.h"
 
 namespace Doom
 {
-// How the 3D view projects onto the screen. Doom::executeSetViewSize computes it once
+// How the 3D view projects onto the screen. executeSetViewSize computes it once
 // whenever the view size changes (the menu's screen-size slider, or startup) and the
 // renderer reads it back on every seg and sprite: the screen centre in pixels and in
-// fixed point, the projection scale, and the angle<->column tables Doom::initTextureMapping
+// fixed point, the projection scale, and the angle<->column tables initTextureMapping
 // builds (viewangletox maps a view angle to its screen column, xtoviewangle the
 // reverse, and clipangle is the field-of-view edge, xtoviewangle[0]).
 //
@@ -28,19 +28,19 @@ struct ViewProjection
     int centerx = 0;
     int centery = 0;
 
-    fixed_t centerxfrac {};
-    fixed_t centeryfrac {};
-    fixed_t projection {};
+    Fixed centerxfrac {};
+    Fixed centeryfrac {};
+    Fixed projection {};
 
     // The field-of-view edge angle (xtoviewangle[0]), clipped against per seg.
-    angle_t clipangle {};
+    Angle clipangle {};
 
-    // Doom::initTextureMapping's angle<->column maps.
+    // initTextureMapping's angle<->column maps.
     Array<int, fineAngles / 2> viewangletox = {};
-    Array<angle_t, SCREENWIDTH + 1> xtoviewangle = {};
+    Array<Angle, SCREENWIDTH + 1> xtoviewangle = {};
 };
 
 // The one ViewProjection, a view onto the Engine's member - the same pattern as
-// viewPoint(), clip(), level(), wad() and randomness().
+// viewPoint(), clipping(), level(), wad() and randomness().
 ViewProjection& viewProjection();
 } // namespace Doom

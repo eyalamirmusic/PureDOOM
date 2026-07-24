@@ -64,9 +64,6 @@
 // Globals owned by the hu_stuff.cpp shim (read by other files through their own
 // externs): the config-persisted chat macros, the player names and the level-name
 // tables (st_stuff reads mapnames).
-extern Doom::Array<std::string_view, 10> chat_macros;
-extern Doom::Array<std::string_view, 4> player_names;
-extern Doom::Array<std::string_view, 45> mapnames;
 
 //
 // Locally used constants, shortcuts.
@@ -96,9 +93,9 @@ constexpr int QUEUESIZE = 128;
 static_assert(HudFont::fontSize == HU_FONTSIZE,
               "the glyph array's size and the lookups' bound must stay one number");
 
-// The HUD's residual state (the player, the level-title line, the active flag) is a Doom::HudState
-// owned by the Engine (HudState.h); the heads-up chat state is a Doom::HudChat (HudChat.h); the
-// message line is a Doom::HudMessage (HudMessage.h). All three used to be reached through
+// The HUD's residual state (the player, the level-title line, the active flag) is a HudState
+// owned by the Engine (HudState.h); the heads-up chat state is a HudChat (HudChat.h); the
+// message line is a HudMessage (HudMessage.h). All three used to be reached through
 // file-scope `static T& x = cluster().x;` reference aliases (moved in by the file-scope-statics
 // sweep, REFACTOR.md Step 5); the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired
 // them - every function below reaches its cluster(s) through a hoisted local instead.
@@ -231,7 +228,7 @@ Array<std::string_view, 32> mapnamest = // TNT WAD map names.
 std::string_view hudTitle()
 {
     const auto& session = gameSession();
-    return mapnames[(session.gameepisode - 1) * 9 + session.gamemap - 1];
+    return mapnames()[(session.gameepisode - 1) * 9 + session.gamemap - 1];
 }
 
 std::string_view hudTitle2()
@@ -444,7 +441,7 @@ void hudTicker()
                                 || chat.chat_dest[i] == HU_BROADCAST))
                         {
                             addMessageToSText(msg.w_message,
-                                              player_names[i],
+                                              player_names()[i],
                                               chat.w_inputbuffer[i].l.l);
 
                             msg.message_nottobefuckedwith = true;
@@ -583,7 +580,7 @@ bool hudResponder(Event& ev)
             c = c - '0';
             if (c > 9)
                 return false;
-            auto macromessage = chat_macros[c];
+            auto macromessage = chat_macros()[c];
 
             // kill last message with a '\n'
             queueChatChar(KEY_ENTER); // DEBUG!!!
@@ -595,7 +592,7 @@ bool hudResponder(Event& ev)
 
             // leave chat mode and notify that it was sent
             hud.chat_on = false;
-            chat.lastmessage = chat_macros[c];
+            chat.lastmessage = chat_macros()[c];
             state.plr->message = chat.lastmessage;
             eatkey = true;
         }
@@ -645,29 +642,29 @@ bool hudResponder(Event& ev)
 // are a Doom::HudFlags owned by the Engine now; these are references onto its members.
 
 // The chat macros (m_misc persists them in the config).
-Doom::Array<std::string_view, 10> chat_macros = {Doom::HUSTR_CHATMACRO0,
-                                                 Doom::HUSTR_CHATMACRO1,
-                                                 Doom::HUSTR_CHATMACRO2,
-                                                 Doom::HUSTR_CHATMACRO3,
-                                                 Doom::HUSTR_CHATMACRO4,
-                                                 Doom::HUSTR_CHATMACRO5,
-                                                 Doom::HUSTR_CHATMACRO6,
-                                                 Doom::HUSTR_CHATMACRO7,
-                                                 Doom::HUSTR_CHATMACRO8,
-                                                 Doom::HUSTR_CHATMACRO9};
+Doom::Array<std::string_view, 10> chat_macrosData = {Doom::HUSTR_CHATMACRO0,
+                                                     Doom::HUSTR_CHATMACRO1,
+                                                     Doom::HUSTR_CHATMACRO2,
+                                                     Doom::HUSTR_CHATMACRO3,
+                                                     Doom::HUSTR_CHATMACRO4,
+                                                     Doom::HUSTR_CHATMACRO5,
+                                                     Doom::HUSTR_CHATMACRO6,
+                                                     Doom::HUSTR_CHATMACRO7,
+                                                     Doom::HUSTR_CHATMACRO8,
+                                                     Doom::HUSTR_CHATMACRO9};
 
 // The player colour names (g_game uses them for obituary messages).
-Doom::Array<std::string_view, 4> player_names = {Doom::HUSTR_PLRGREEN,
-                                                 Doom::HUSTR_PLRINDIGO,
-                                                 Doom::HUSTR_PLRBROWN,
-                                                 Doom::HUSTR_PLRRED};
+Doom::Array<std::string_view, 4> player_namesData = {Doom::HUSTR_PLRGREEN,
+                                                     Doom::HUSTR_PLRINDIGO,
+                                                     Doom::HUSTR_PLRBROWN,
+                                                     Doom::HUSTR_PLRRED};
 
 //
 // Builtin map names. The actual names can be found in dstrings.h. st_stuff reads
 // mapnames for the deathmatch/coop level title.
 //
 Doom::Array<std::string_view, 45>
-    mapnames = // DOOM shareware/registered/retail (Ultimate) names.
+    mapnamesData = // DOOM shareware/registered/retail (Ultimate) names.
     {Doom::HUSTR_E1M1, Doom::HUSTR_E1M2, Doom::HUSTR_E1M3,
      Doom::HUSTR_E1M4, Doom::HUSTR_E1M5, Doom::HUSTR_E1M6,
      Doom::HUSTR_E1M7, Doom::HUSTR_E1M8, Doom::HUSTR_E1M9,
@@ -687,3 +684,19 @@ Doom::Array<std::string_view, 45>
      "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL",
      "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL",
      "NEWLEVEL",       "NEWLEVEL",       "NEWLEVEL"};
+
+// The three tables above are file-local storage; these hand them out. Non-const
+// references: the config binds &chat_macros()[i] and rewrites the macros, and the
+// map-name table is chosen by game mode. See UI/Hud.cpp's readers.
+Doom::Array<std::string_view, 10>& chat_macros()
+{
+    return chat_macrosData;
+}
+Doom::Array<std::string_view, 4>& player_names()
+{
+    return player_namesData;
+}
+Doom::Array<std::string_view, 45>& mapnames()
+{
+    return mapnamesData;
+}

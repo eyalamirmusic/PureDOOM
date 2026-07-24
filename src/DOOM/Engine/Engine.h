@@ -39,6 +39,7 @@
 #include "../Render/GraphicsData.h"
 #include "../Render/Lighting.h"
 #include "../Render/PlaneScratch.h"
+#include "../Render/Drawers.h"
 #include "../Render/RenderMainState.h"
 #include "../Render/RenderScratch.h"
 #include "../Render/SegState.h"
@@ -102,7 +103,7 @@ namespace Doom
 // (OwningPointer<Engine>, Engine.cpp), and resetEngine() drops it and makes a
 // fresh one in its place. A test can therefore own a genuinely clean world
 // mid-process - dirty some state, reset, and find the new instance has none of it -
-// rather than relying on the per-level reset Doom::Level already does, which resets
+// rather than relying on the per-level reset Level already does, which resets
 // the *level*, not every cluster (Tests/Sim/EngineTests.cpp proves the difference).
 //
 // resetEngine() is a test/embedder facility, not part of normal engine operation:
@@ -139,6 +140,7 @@ struct Engine
     SolidSegs solidSegs;
     PlaneScratch planeScratch;
     RenderMainState renderMainState;
+    Drawers drawers;
     LevelStats levelStats;
     LaunchOptions launchOptions;
     GameVersion gameVersion;

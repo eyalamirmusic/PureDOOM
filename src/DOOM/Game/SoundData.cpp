@@ -45,7 +45,7 @@ DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
 //
 // Information about all the music
 //
-Doom::MusicInfo S_music[] =
+Doom::MusicInfo S_musicData[] =
 {
     // MusicEnum::None. Was `{ 0 }` - a null name, which no reachable path dereferenced
     // (changeMusic builds "d_" + name and is never called with MusicEnum::None). An empty
@@ -124,7 +124,7 @@ Doom::MusicInfo S_music[] =
 //
 // Information about all the sfx
 //
-Doom::SfxInfo S_sfx[] =
+Doom::SfxInfo S_sfxData[] =
 {
     // S_sfx[0] needs to be a dummy for odd reasons.
     { "none", false,  0, 0, -1, -1, 0 },
@@ -213,7 +213,7 @@ Doom::SfxInfo S_sfx[] =
     { "punch", false, 64, 0, -1, -1, 0 },
     { "hoof", false, 70, 0, -1, -1, 0 },
     { "metal", false, 70, 0, -1, -1, 0 },
-    { "chgun", false, 64, &S_sfx[toIndex(SfxEnum::Pistol)], 150, 0, 0 },
+    { "chgun", false, 64, &Doom::S_sfx()[toIndex(SfxEnum::Pistol)], 150, 0, 0 },
     { "tink", false, 60, 0, -1, -1, 0 },
     { "bdopn", false, 100, 0, -1, -1, 0 },
     { "bdcls", false, 100, 0, -1, -1, 0 },
@@ -240,3 +240,18 @@ Doom::SfxInfo S_sfx[] =
 
 DOOM_DIAGNOSTIC_POP
 // clang-format on
+
+// The two tables above are file-local storage (Game/SoundData.cpp opens with
+// `using namespace Doom`, so they sit at :: scope); these hand them out.
+namespace Doom
+{
+SfxInfo* S_sfx()
+{
+    return S_sfxData;
+}
+
+MusicInfo* S_music()
+{
+    return S_musicData;
+}
+} // namespace Doom
