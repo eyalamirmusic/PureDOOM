@@ -1017,9 +1017,8 @@ void doomMain()
     }
 
     // init subsystems
-    host().print("initVideo: allocate screens.\n");
-    initVideo();
-
+    // (The video screens are allocated by VideoState's constructor now, not a boot
+    // step - see Render/VideoState.h.)
     host().print("loadDefaults: Load system defaults.\n");
     loadDefaults(); // load before initing other systems
 

@@ -7,8 +7,9 @@
 
 namespace Doom
 {
-// Door thinker and handlers; p_doors.cpp keeps the vanilla names as shims.
-void verticalDoor(Door& door);
+// Door handlers; p_doors.cpp keeps the vanilla names as shims. The per-tic
+// behaviour is Door::tick() (Thinkers/Door.cpp); verticalDoor(Line&, Mobj&) below
+// is the separate line-triggered open.
 int doLockedDoor(Line& line, DoorType type, Mobj& thing);
 int doDoor(Line& line, DoorType type);
 void verticalDoor(Line& line, Mobj& thing);

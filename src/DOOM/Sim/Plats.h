@@ -7,8 +7,8 @@
 
 namespace Doom
 {
-// Platform thinker and handlers; p_plats.cpp keeps the vanilla names as shims.
-void platRaise(Plat& plat);
+// Platform handlers; p_plats.cpp keeps the vanilla names as shims. The per-tic
+// behaviour is Plat::tick() (Thinkers/Plat.cpp).
 int doPlat(Line& line, PlatType type, int amount);
 void activateInStasis(int tag);
 void stopPlat(Line& line);

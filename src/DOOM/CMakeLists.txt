@@ -20,6 +20,7 @@ list(REMOVE_ITEM DOOM_VANILLA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Containers.h)
 file(GLOB DOOM_REWRITTEN_SOURCES CONFIGURE_DEPENDS
         Math/*.cpp Math/*.h
         Sim/*.cpp Sim/*.h
+        Thinkers/*.cpp Thinkers/*.h
         Render/*.cpp Render/*.h
         UI/*.cpp UI/*.h
         Game/*.cpp Game/*.h

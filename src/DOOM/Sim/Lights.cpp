@@ -21,32 +21,13 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void fireFlicker(FireFlicker& flick);
 void spawnFireFlicker(Sector& sector);
-void lightFlash(LightFlash& flash);
 void spawnLightFlash(Sector& sector);
-void strobeFlash(Strobe& flash);
 void spawnStrobeFlash(Sector& sector, int fastOrSlow, int inSync);
 void startLightStrobing(Line& line);
 void turnTagLightsOff(Line& line);
 void lightTurnOn(Line& line, int bright);
-void glow(Glow& g);
 void spawnGlowingLight(Sector& sector);
-
-void fireFlicker(FireFlicker& flick)
-{
-    if (--flick.count)
-        return;
-
-    int amount = (randomness().forPlay() & 3) * 16;
-
-    if (flick.sector->lightlevel - amount < flick.minlight)
-        flick.sector->lightlevel = flick.minlight;
-    else
-        flick.sector->lightlevel = flick.maxlight - amount;
-
-    flick.count = 4;
-}
 
 //
 // spawnFireFlicker
@@ -70,27 +51,6 @@ void spawnFireFlicker(Sector& sector)
 //
 // BROKEN LIGHT FLASHING
 //
-
-//
-// lightFlash
-// Do flashing lights.
-//
-void lightFlash(LightFlash& flash)
-{
-    if (--flash.count)
-        return;
-
-    if (flash.sector->lightlevel == flash.maxlight)
-    {
-        flash.sector->lightlevel = flash.minlight;
-        flash.count = (randomness().forPlay() & flash.mintime) + 1;
-    }
-    else
-    {
-        flash.sector->lightlevel = flash.maxlight;
-        flash.count = (randomness().forPlay() & flash.maxtime) + 1;
-    }
-}
 
 //
 // spawnLightFlash
@@ -118,26 +78,6 @@ void spawnLightFlash(Sector& sector)
 //
 // STROBE LIGHT FLASHING
 //
-
-//
-// strobeFlash
-//
-void strobeFlash(Strobe& flash)
-{
-    if (--flash.count)
-        return;
-
-    if (flash.sector->lightlevel == flash.minlight)
-    {
-        flash.sector->lightlevel = flash.maxlight;
-        flash.count = flash.brighttime;
-    }
-    else
-    {
-        flash.sector->lightlevel = flash.minlight;
-        flash.count = flash.darktime;
-    }
-}
 
 //
 // spawnStrobeFlash
@@ -246,32 +186,6 @@ void lightTurnOn(Line& line, int bright)
 //
 // Spawn glowing light
 //
-void glow(Glow& g)
-{
-    switch (g.direction)
-    {
-        case -1:
-            // DOWN
-            g.sector->lightlevel -= GLOWSPEED;
-            if (g.sector->lightlevel <= g.minlight)
-            {
-                g.sector->lightlevel += GLOWSPEED;
-                g.direction = 1;
-            }
-            break;
-
-        case 1:
-            // UP
-            g.sector->lightlevel += GLOWSPEED;
-            if (g.sector->lightlevel >= g.maxlight)
-            {
-                g.sector->lightlevel -= GLOWSPEED;
-                g.direction = -1;
-            }
-            break;
-    }
-}
-
 void spawnGlowingLight(Sector& sector)
 {
     Glow* g = new (levelAlloc(sizeof(*g))) Glow {};

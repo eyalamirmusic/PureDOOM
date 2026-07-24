@@ -33,7 +33,6 @@ MoveResult movePlane(Sector& sector,
                      bool crush,
                      int floorOrCeiling,
                      int direction);
-void moveFloor(FloorMove& floor);
 int doFloor(Line& line, FloorType floortype);
 int buildStairs(Line& line, StairType type);
 
@@ -190,80 +189,6 @@ MoveResult movePlane(Sector& sector,
     }
 
     return MoveResult::Ok;
-}
-
-//
-// MOVE A FLOOR TO IT'S DESTINATION (UP OR DOWN)
-//
-void moveFloor(FloorMove& floor)
-{
-    MoveResult res = movePlane(*floor.sector,
-                               floor.speed,
-                               floor.floordestheight,
-                               floor.crush,
-                               0,
-                               floor.direction);
-
-    if (!(levelStats().leveltime & 7))
-        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg),
-                   SfxEnum::Stnmov);
-
-    if (res == MoveResult::PastDest)
-    {
-        floor.sector->specialdata = nullptr;
-
-        if (floor.direction == 1)
-        {
-            switch (floor.type)
-            {
-                case FloorType::DonutRaise:
-                    floor.sector->special = floor.newspecial;
-                    floor.sector->floorpic = floor.texture;
-                    break;
-
-                case FloorType::LowerFloor:
-                case FloorType::LowerFloorToLowest:
-                case FloorType::TurboLower:
-                case FloorType::RaiseFloor:
-                case FloorType::RaiseFloorToNearest:
-                case FloorType::RaiseToTexture:
-                case FloorType::LowerAndChange:
-                case FloorType::RaiseFloor24:
-                case FloorType::RaiseFloor24AndChange:
-                case FloorType::RaiseFloorCrush:
-                case FloorType::RaiseFloorTurbo:
-                case FloorType::RaiseFloor512:
-                    break;
-            }
-        }
-        else if (floor.direction == -1)
-        {
-            switch (floor.type)
-            {
-                case FloorType::LowerAndChange:
-                    floor.sector->special = floor.newspecial;
-                    floor.sector->floorpic = floor.texture;
-                    break;
-
-                case FloorType::LowerFloor:
-                case FloorType::LowerFloorToLowest:
-                case FloorType::TurboLower:
-                case FloorType::RaiseFloor:
-                case FloorType::RaiseFloorToNearest:
-                case FloorType::RaiseToTexture:
-                case FloorType::RaiseFloor24:
-                case FloorType::RaiseFloor24AndChange:
-                case FloorType::RaiseFloorCrush:
-                case FloorType::RaiseFloorTurbo:
-                case FloorType::DonutRaise:
-                case FloorType::RaiseFloor512:
-                    break;
-            }
-        }
-        removeThinker(floor);
-
-        startSound(reinterpret_cast<Mobj*>(&floor.sector->soundorg), SfxEnum::Pstop);
-    }
 }
 
 //

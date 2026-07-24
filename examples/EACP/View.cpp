@@ -87,7 +87,7 @@ void View::prepareQuadShader(ScreenQuadShader& shader)
     shader.setVertices(unitQuad);
     prepareShader(shader);
 }
-void View::update(Threads::FrameTime frame_time)
+void View::update(Threads::FrameTime)
 {
     if (window.isCommandPressed())
         window.setMouseLocked(false);

@@ -10,10 +10,11 @@
 //        Moving object handling. Spawn functions, the mobj thinker, missiles.
 //
 // Rewritten into namespace Doom out of vanilla p_mobj; p_mobj.cpp keeps the vanilla
-// names as shims and the item-respawn queue globals. Doom::mobjThinker in particular
-// stays a global shim: p_saveg and the sim probe identify mobjs by comparing a
-// thinker's function pointer to it, so spawnMobj below stores that global address,
-// not this file's mobjThinker.
+// names as shims and the item-respawn queue globals. The per-tic mobj thinker is
+// Mobj::tick() (Thinkers/Mobj.cpp) now, dispatched virtually - p_saveg and the sim
+// probe identify a mobj by its kind() rather than by comparing a stored function
+// pointer, so nothing here holds the thinker's address. The movement steps it drives
+// (xyMovement / zMovement / nightmareRespawn) stay here and are declared in Mobj.h.
 //
 //-----------------------------------------------------------------------------
 
@@ -387,64 +388,6 @@ void nightmareRespawn(Mobj& mobj)
 
     // remove the old monster,
     removeMobj(mobj);
-}
-
-//
-// mobjThinker
-//
-void mobjThinker(Mobj& mobj)
-{
-    // momentum movement
-    if (mobj.momx || mobj.momy || (hasFlag(mobj.flags, MobjFlag::SkullFly)))
-    {
-        xyMovement(mobj);
-
-        // FIXME: decent NOP/0/Nil function pointer please.
-        if (mobj.removed)
-            return; // mobj was removed
-    }
-    if ((mobj.z != mobj.floorz) || mobj.momz)
-    {
-        zMovement(mobj);
-
-        // FIXME: decent NOP/0/Nil function pointer please.
-        if (mobj.removed)
-            return; // mobj was removed
-    }
-
-    // cycle through states,
-    // calling action functions at transitions
-    if (mobj.tics != -1)
-    {
-        mobj.tics--;
-
-        // you can cycle through multiple states in a tic
-        if (!mobj.tics)
-            if (!setMobjState(mobj, mobj.state->nextstate))
-                return; // freed itself
-    }
-    else
-    {
-        // check for nightmare respawn
-        if (!(hasFlag(mobj.flags, MobjFlag::CountKill)))
-            return;
-
-        if (!gameSession().respawnmonsters)
-            return;
-
-        mobj.movecount++;
-
-        if (mobj.movecount < 12 * 35)
-            return;
-
-        if (levelStats().leveltime & 31)
-            return;
-
-        if (randomness().forPlay() > 4)
-            return;
-
-        nightmareRespawn(mobj);
-    }
 }
 
 //

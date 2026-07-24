@@ -14,7 +14,7 @@ MoveResult movePlane(Sector& sector,
                      bool crush,
                      int floorOrCeiling,
                      int direction);
-void moveFloor(FloorMove& floor);
+// moveFloor's per-tic behaviour is FloorMove::tick() (Thinkers/FloorMove.cpp) now.
 int doFloor(Line& line, FloorType floortype);
 int buildStairs(Line& line, StairType type);
 } // namespace Doom

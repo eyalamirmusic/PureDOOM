@@ -124,10 +124,13 @@ void freeLevelAllocations()
     levelPool().releaseAll();
 }
 
+// The per-level reset: forget every thinker, leaving an empty circular list. The
+// invariant it re-establishes is the same one ThinkerList's constructor seeds, so
+// both go through reset() - teardown and construction cannot drift apart, the way
+// freeLevelAllocations and ~LevelPool share releaseAll().
 void initThinkers()
 {
-    auto& thinkers = thinkerList();
-    thinkers.cap.prev = thinkers.cap.next = &thinkers.cap;
+    thinkerList().reset();
 }
 
 //

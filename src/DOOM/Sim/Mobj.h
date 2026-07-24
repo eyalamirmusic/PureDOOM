@@ -10,7 +10,15 @@ namespace Doom
 // by the demos (every monster, missile and item is an mobj) and golden-neutral.
 
 bool setMobjState(Mobj& mobj, StateNum state);
-void mobjThinker(Mobj& mobj);
+
+// The three steps of the mobj's per-tic thinker. Their bodies stay in Mobj.cpp
+// (they reach deep into this file's movement/collision helpers), but Mobj::tick()
+// - which drives them - lives in Thinkers/Mobj.cpp, so they are declared here for
+// it to call. Nothing else calls them.
+void xyMovement(Mobj& mo);
+void zMovement(Mobj& mo);
+void nightmareRespawn(Mobj& mobj);
+
 Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type);
 void removeMobj(Mobj& mobj);
 void respawnSpecials();

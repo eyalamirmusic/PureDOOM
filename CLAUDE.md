@@ -83,11 +83,12 @@ Breaking one silently defeats the whole apparatus.
   defined in one `.cpp`, a free accessor function (`states()`, `mobjinfo()`,
   `finesine()`, `S_sfx()`, `defaults()`, …).
 
-  **The eight subdirectories *are* the engine**, all real C++ in `namespace Doom`:
+  **The nine subdirectories *are* the engine**, all real C++ in `namespace Doom`:
 
   | Directory | Files | What it is |
   |---|---|---|
-  | `Sim/` | 71 | the whole playsim — `Mobj`, `Movement`, `MapAction`, `Enemy`, `Player`, `Weapon`, `Sight`, `Interaction`, the eight specials, `Thinker`, `Tick`, `Setup`, `SaveGame`, `Info`, plus `Random`/`Level`/`MapGeometry` |
+  | `Sim/` | 70 | the whole playsim — `Movement`, `MapAction`, `Enemy`, `Player`, `Weapon`, `Sight`, `Interaction`, the specials' spawners/handlers, `Thinker`, `Tick`, `Setup`, `SaveGame`, `Info`, plus `Random`/`Level`/`MapGeometry` |
+  | `Thinkers/` | 18 | the nine things that act once a tic, one type per file — `Mobj` and the eight specials (`FireFlicker`, `LightFlash`, `Strobe`, `Glow`, `Plat`, `Door`, `Ceiling`, `FloorMove`), each carrying its own `tick()` |
   | `Game/` | 56 | game loop, netcode, config, args, sound dispatch, and most of the `Engine`'s state clusters |
   | `UI/` | 42 | menu, HUD, status bar, automap, intermission, finale, screen melt, cheats |
   | `Render/` | 38 | the software renderer, all eight units — `Main`, `BSP`, `Segs`, `Planes`, `Things`, `Draw`, `Data`, `Sky`, plus `Video`, and the `Drawers` drawer-selection cluster |
@@ -637,18 +638,6 @@ eacp is fetched from GitHub via CPM. To co-develop against a local checkout, pas
 tildes, and a quoted `~/...` path silently configures against a non-existent
 directory.
 
-**Build it with a second compiler before believing a warning count.** GCC catches
-things Apple Clang does not:
-
-```bash
-brew install gcc   # /usr/bin/gcc on macOS is Apple Clang wearing a hat
-cmake -G Ninja -B build-gcc -DCMAKE_BUILD_TYPE=Release \
-      -DPUREDOOM_BUILD_EACP_EXAMPLE=OFF \
-      -DCMAKE_C_COMPILER=$(brew --prefix)/bin/gcc-16 \
-      -DCMAKE_CXX_COMPILER=$(brew --prefix)/bin/g++-16
-cmake --build build-gcc && ctest --test-dir build-gcc
-```
-
 The GPU render paths need four eacp features this port surfaced
 (`TextureFormat::R8Unorm`, `Buffer::update`, `ShaderProgram::setDiscardBelow`, and
 the raw-mouse/warp input fixes). These have merged to eacp `main`, so the default
@@ -963,11 +952,10 @@ which CMake happens to do for MSVC-style drivers.
 
 The engine builds under `-Wall -Wextra -Wpedantic` with **zero warnings**. **Anything
 at all is a regression.** That zero is measured on Apple Clang (`Debug` and
-`Release`), real GCC 16 (`Release`), and Windows arm64 with both clang-cl and MSVC.
-Only Ubuntu's gcc/clang remain; `-Werror` waits on them — and **CI no longer
-measures them**: the matrix is macOS and Windows only, so real GCC and Linux are a
-local gate
-(the second-compiler recipe above) rather than an automatic one.
+`Release`) and Windows arm64 with both clang-cl and MSVC — the configurations CI
+builds. Real GCC and Ubuntu's gcc/clang are no longer a gate here (CI's matrix is
+macOS and Windows only, and the local macOS GCC build is retired); `-Werror` waits on
+that Linux work.
 
 On Clang the zero includes **`-Wshorten-64-to-32`**, appended to `DOOM_WARNINGS_ON`.
 The Xcode generator passes that flag on its own, which is how 15 `long`→`int`

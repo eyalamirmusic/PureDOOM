@@ -96,8 +96,9 @@ void setPalette(byte* palette)
 void initGraphics()
 {
     // RAII now (Step 9): the software frame is a VideoState-owned vector; screens[0]
-    // is the raw view onto its data(). This runs after initVideo, so it overwrites
-    // initVideo's screens[0] slice - the framebuffer proper, which the app reads back.
+    // is the raw view onto its data(). This runs after VideoState's constructor, so it
+    // overwrites the constructor's screens[0] slice - the framebuffer proper, which
+    // the app reads back.
     auto& frame = videoState().frame;
     frame.resize(SCREENWIDTH * SCREENHEIGHT);
     videoState().screens[0] = frame.data();

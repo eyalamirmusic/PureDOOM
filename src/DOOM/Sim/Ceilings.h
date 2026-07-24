@@ -7,8 +7,8 @@
 
 namespace Doom
 {
-// Ceiling thinker and handlers; p_ceilng.cpp keeps the vanilla names as shims.
-void moveCeiling(Ceiling& ceiling);
+// Ceiling handlers; p_ceilng.cpp keeps the vanilla names as shims. The per-tic
+// behaviour is Ceiling::tick() (Thinkers/Ceiling.cpp).
 int doCeiling(Line& line, CeilingType type);
 void addActiveCeiling(Ceiling& c);
 void removeActiveCeiling(Ceiling& c);

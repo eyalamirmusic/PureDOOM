@@ -29,92 +29,11 @@
 namespace Doom
 {
 // Forward declarations so the file's own call order needs no rearranging.
-void platRaise(Plat& plat);
 int doPlat(Line& line, PlatType type, int amount);
 void activateInStasis(int tag);
 void stopPlat(Line& line);
 void addActivePlat(Plat& plat);
 void removeActivePlat(Plat& plat);
-
-void platRaise(Plat& plat)
-{
-    MoveResult res;
-
-    switch (plat.status)
-    {
-        case PlatState::Up:
-            res = movePlane(*plat.sector, plat.speed, plat.high, plat.crush, 0, 1);
-
-            if (plat.type == PlatType::RaiseAndChange
-                || plat.type == PlatType::RaiseToNearestAndChange)
-            {
-                if (!(levelStats().leveltime & 7))
-                    startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                               SfxEnum::Stnmov);
-            }
-
-            if (res == MoveResult::Crushed && (!plat.crush))
-            {
-                plat.count = plat.wait;
-                plat.status = PlatState::Down;
-                startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                           SfxEnum::Pstart);
-            }
-            else
-            {
-                if (res == MoveResult::PastDest)
-                {
-                    plat.count = plat.wait;
-                    plat.status = PlatState::Waiting;
-                    startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                               SfxEnum::Pstop);
-
-                    switch (plat.type)
-                    {
-                        case PlatType::BlazeDWUS:
-                        case PlatType::DownWaitUpStay:
-                            removeActivePlat(plat);
-                            break;
-
-                        case PlatType::RaiseAndChange:
-                        case PlatType::RaiseToNearestAndChange:
-                            removeActivePlat(plat);
-                            break;
-
-                        case PlatType::PerpetualRaise:
-                            break;
-                    }
-                }
-            }
-            break;
-
-        case PlatState::Down:
-            res = movePlane(*plat.sector, plat.speed, plat.low, false, 0, -1);
-
-            if (res == MoveResult::PastDest)
-            {
-                plat.count = plat.wait;
-                plat.status = PlatState::Waiting;
-                startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                           SfxEnum::Pstop);
-            }
-            break;
-
-        case PlatState::Waiting:
-            if (!--plat.count)
-            {
-                if (plat.sector->floorheight == plat.low)
-                    plat.status = PlatState::Up;
-                else
-                    plat.status = PlatState::Down;
-                startSound(reinterpret_cast<Mobj*>(&plat.sector->soundorg),
-                           SfxEnum::Pstart);
-            }
-
-        case PlatState::InStasis:
-            break;
-    }
-}
 
 //
 // Do Platforms

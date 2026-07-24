@@ -376,21 +376,19 @@ void getBlock(int x, int y, int scrn, int width, int height, byte* dest)
 }
 
 //
-// initVideo
+// VideoState
 //
-void initVideo()
+// What initVideo used to do at boot, now owned by construction (see VideoState.h):
+// the base block is the workspace vector, zero-filled by assign() and sliced into the
+// screens[] view. screens[0]'s slice is overwritten by initGraphics, exactly as
+// vanilla left it.
+VideoState::VideoState()
 {
-    // stick these in low dos memory on PCs
-
-    // RAII now (Step 9): the base block is VideoState's workspace vector, zero-filled
-    // by assign() below and sliced into the screens[] view. screens[0]'s slice is
-    // overwritten by initGraphics, exactly as vanilla left it.
-    auto& workspace = videoState().workspace;
     workspace.assign(SCREENWIDTH * SCREENHEIGHT * 4, byte(0));
     byte* base = workspace.data();
 
     for (int i = 0; i < 4; i++)
-        videoState().screens[i] = base + i * SCREENWIDTH * SCREENHEIGHT;
+        screens[i] = base + i * SCREENWIDTH * SCREENHEIGHT;
 }
 
 } // namespace Doom

@@ -6,7 +6,8 @@ namespace Doom
 {
 // The head of the thinker list - vanilla's thinkercap. Every actor that acts once a
 // tic (a mobj, a moving-sector special) is linked onto a circular doubly-linked list
-// whose sentinel this is: initThinkers seeds it pointing at itself, addThinker splices
+// whose sentinel this is: the constructor (and per-level reset) seeds it pointing at
+// itself, addThinker splices
 // new thinkers in before it, and runThinkers walks thinkercap.next .. thinkercap,
 // ticking each and skipping the sentinel (which is never ticked - its kind() is None).
 // SaveGame, Enemy and Render/Data walk the same list; all reach it through p_local.h.
@@ -20,8 +21,21 @@ namespace Doom
 struct ThinkerList
 {
     // the circular list's sentinel head; default-constructed as the None-kind Thinker,
-    // relinked to point at itself by initThinkers
+    // relinked to point at itself by reset()
     Thinker cap;
+
+    // The constructor establishes the empty-list invariant, so a freshly constructed
+    // ThinkerList is already walkable - before this, cap.prev/next were nullptr until
+    // the first initThinkers, a window a reset-fresh Engine (resetEngine) would open.
+    ThinkerList() { reset(); }
+
+    // Seeds the circular list empty: the sentinel points at itself, so a walk from
+    // cap.next round to cap visits nothing. Construction and the per-level reset
+    // (initThinkers) both go through here, so a fresh list and an emptied one are the
+    // same state - the same split LevelPool draws between its destructor and
+    // releaseAll(). The blocks themselves are freed separately, by the LevelPool; this
+    // only forgets the list threaded through them.
+    void reset() { cap.prev = cap.next = &cap; }
 };
 
 // The one ThinkerList, a view onto the Engine's member - the same pattern as the other

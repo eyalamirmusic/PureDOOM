@@ -20,12 +20,19 @@ namespace Doom
 // data(), because it is legitimately reseated - the eacp port swaps screens[0] to its
 // overlay-capture scratch and restores it - so it is a pointer that merely refers, kept raw
 // by the RAII rules. workspace is the one contiguous SCREENWIDTH*SCREENHEIGHT*4 block
-// initVideo fills and slices into screens[0..3] (screens[0]'s slice is then
+// the constructor fills and slices into screens[0..3] (screens[0]'s slice is then
 // overwritten by initGraphics, as vanilla left it); frame is the software frame proper
 // (screens[0], initGraphics); statusBar is the status bar back-buffer (screens[4],
 // initStatusBar). Each is filled by the drawers, so the frame goldens pin them exactly.
 struct VideoState
 {
+    // Allocates the workspace and slices screens[0..3] into it - what initVideo used
+    // to do at boot, now owned by construction so a freshly built (or resetEngine'd)
+    // Engine has a valid framebuffer without a separate init step. Defined in
+    // Render/Video.cpp, where SCREENWIDTH/SCREENHEIGHT already are. screens[0]'s slice
+    // is later overwritten by initGraphics, exactly as vanilla left it.
+    VideoState();
+
     // boxLeft/boxBottom/boxRight/boxTop (Math/BBox.h) of the drawn region, in screen
     // pixels. It is plain int, not Fixed - there is no fixed-point quantity here,
     // only pixel coordinates - so Render/Video.cpp grows it with its own int-typed
@@ -33,7 +40,8 @@ struct VideoState
     Array<int, 4> dirtybox = {};
 
     Vector<byte> frame; // screens[0]: the software framebuffer
-    Vector<byte> workspace; // the initVideo base block sliced into screens[0..3]
+    Vector<byte>
+        workspace; // the base block the constructor slices into screens[0..3]
     Vector<byte> statusBar; // screens[4]: the status bar back-buffer
 
     // The five drawing surfaces as raw byte* views into the three owners above.
