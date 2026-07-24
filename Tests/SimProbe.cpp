@@ -883,6 +883,57 @@ int doomSimGameMode()
     return (int) Doom::gameVersion().gamemode;
 }
 
+// --- The cast-call harness ----------------------------------------------------
+
+void doomSimCastConfigure(
+    int stateIndex, int castnum, int casttics, int castframes, int attacking)
+{
+    auto& fin = Doom::finaleState();
+
+    fin.finalestage = 2;
+    fin.castnum = castnum;
+    fin.caststate = &Doom::states()[stateIndex];
+    fin.casttics = casttics;
+    fin.castframes = castframes;
+    fin.castattacking = attacking != 0;
+    fin.castdeath = false;
+    fin.castonmelee = 0;
+}
+
+void doomSimCastTick()
+{
+    if (setjmp(simAbort))
+        return;
+
+    Doom::castTicker();
+}
+
+int doomSimCastStateIndex()
+{
+    return (int) (Doom::finaleState().caststate - Doom::states());
+}
+
+int doomSimCastFrames()
+{
+    return Doom::finaleState().castframes;
+}
+
+int doomSimCastAttacking()
+{
+    return Doom::finaleState().castattacking ? 1 : 0;
+}
+
+int doomSimStateIndexPlayerAttack()
+{
+    return Doom::toIndex(Doom::StateNum::PlayAtk1);
+}
+
+int doomSimStateIndexZombiemanSee()
+{
+    return Doom::toIndex(
+        Doom::mobjinfo()[Doom::toIndex(Doom::MobjType::Possessed)].seestate);
+}
+
 // --- The intermission harness -------------------------------------------------
 
 void doomSimExitLevel()

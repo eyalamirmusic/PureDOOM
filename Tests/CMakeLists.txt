@@ -46,6 +46,7 @@ nano_add_executable(SimTests
         Sim/MenuTests.cpp
         Sim/AutomapTests.cpp
         Sim/FinaleTests.cpp
+        Sim/CastCallTests.cpp
         Sim/IntermissionTests.cpp
         Port/GeometryTests.cpp
         Port/AutomapTests.cpp

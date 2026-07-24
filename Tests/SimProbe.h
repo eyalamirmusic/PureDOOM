@@ -279,6 +279,49 @@ int doomSimFinaleStage();
 // branches are reachable from the booted IWAD rather than assume it.
 int doomSimGameMode();
 
+// --- The cast-call harness ------------------------------------------------
+//
+// Doom::castTicker steps the DOOM II / episode-3 "cast of characters" screen -
+// each monster's walk/attack animation, and the "gross hack" that stops the
+// player's own attack frame (PLAY_ATK1) from looping forever. It is the one
+// finale path no golden reaches: an attract demo never completes an episode, and
+// the shareware finale the FinaleReplay golden drives stops at the credits
+// screen (finalestage 1) - it never enters the cast (finalestage 2). So the cast
+// is driven here directly instead.
+//
+// The state is configured field by field rather than through Doom::startCast()
+// on purpose: startCast changes the music to D_EVIL, whose lump is absent from
+// the shareware WAD and would abort the boot. Configuring the FinaleState
+// directly reproduces startCast's setup without touching the missing lump, and
+// the animation states it steps through touch only the always-present states()
+// and mobjinfo() tables.
+
+// Configure FinaleState's cast fields for a single castTicker step: put
+// `stateIndex` (an index into states()) on screen for cast member `castnum`,
+// with the given tics-remaining, frame counter, and attacking flag. Death is
+// cleared and the melee toggle reset, as startCast leaves them. Must be called
+// after doomSimBoot().
+void doomSimCastConfigure(
+    int stateIndex, int castnum, int casttics, int castframes, int attacking);
+
+// One Doom::castTicker() step against whatever doomSimCastConfigure last set.
+void doomSimCastTick();
+
+// FinaleState's cast readbacks after a step: the current animation state as an
+// index into states() (so a test names the transition), the frame counter, and
+// whether the cast is mid-attack.
+int doomSimCastStateIndex();
+int doomSimCastFrames();
+int doomSimCastAttacking();
+
+// The two states the hack test names: the player's attack frame (StateNum::
+// PlayAtk1, the frame castTicker must special-case) and the zombieman's see
+// state (mobjinfo[Possessed].seestate, an ordinary walk cycle for the
+// normal-advance test). Resolved from the engine's own tables so the test does
+// not hard-code a state number.
+int doomSimStateIndexPlayerAttack();
+int doomSimStateIndexZombiemanSee();
+
 // --- The intermission harness ---------------------------------------------
 //
 // UI/Intermission.cpp is the between-levels scoreboard, and it was the one

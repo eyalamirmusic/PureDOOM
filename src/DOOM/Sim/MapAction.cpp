@@ -93,6 +93,19 @@ bool slideTraverse(Intercept* in)
 
     Line* li = in->d.line;
 
+    // The line does block movement: see if it is closer than the best so far,
+    // then stop the traversal.
+    auto isblocking = [&]
+    {
+        if (in->frac < scratch.bestslidefrac)
+        {
+            scratch.bestslidefrac = in->frac;
+            scratch.bestslideline = li;
+        }
+
+        return false; // stop
+    };
+
     if (!(li->flags & ML_TWOSIDED))
     {
         if (lineSide({scratch.slidemo->x, scratch.slidemo->y}, *li))
@@ -100,34 +113,23 @@ bool slideTraverse(Intercept* in)
             // don't hit the back side
             return true;
         }
-        goto isblocking;
+        return isblocking();
     }
 
     // set openrange, opentop, openbottom
     updateLineOpening(*li);
 
     if (clip.openrange < scratch.slidemo->height)
-        goto isblocking; // doesn't fit
+        return isblocking(); // doesn't fit
 
     if (clip.opentop - scratch.slidemo->z < scratch.slidemo->height)
-        goto isblocking; // mobj is too high
+        return isblocking(); // mobj is too high
 
     if (clip.openbottom - scratch.slidemo->z > 24 * FRACUNIT)
-        goto isblocking; // too big a step up
+        return isblocking(); // too big a step up
 
     // this line doesn't block movement
     return true;
-
-    // the line does block movement,
-    // see if it is closer than best so far
-isblocking:
-    if (in->frac < scratch.bestslidefrac)
-    {
-        scratch.bestslidefrac = in->frac;
-        scratch.bestslideline = li;
-    }
-
-    return false; // stop
 }
 
 //
@@ -252,8 +254,35 @@ bool shootTraverse(
         if (li->special)
             shootSpecialLine(*shootthing, *li);
 
+        // The shot hits this line: position the impact a bit closer, respect the
+        // sky hack, spawn a puff, and stop the traversal.
+        auto hitline = [&]
+        {
+            frac = in->frac - FixedDiv(4 * FRACUNIT, clip.attackrange);
+            x = clip.trace.origin.x + FixedMul(clip.trace.delta.x, frac);
+            y = clip.trace.origin.y + FixedMul(clip.trace.delta.y, frac);
+            z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
+
+            if (li->frontsector->ceilingpic == sky.skyflatnum)
+            {
+                // don't shoot the sky!
+                if (z > li->frontsector->ceilingheight)
+                    return false;
+
+                // it's a sky hack wall
+                if (li->backsector && li->backsector->ceilingpic == sky.skyflatnum)
+                    return false;
+            }
+
+            // Spawn bullet puffs.
+            spawnPuff(x, y, z);
+
+            // don't go any farther
+            return false;
+        };
+
         if (!(li->flags & ML_TWOSIDED))
-            goto hitline;
+            return hitline();
 
         // crosses a two sided line
         updateLineOpening(*li);
@@ -264,43 +293,18 @@ bool shootTraverse(
         {
             slope = FixedDiv(clip.openbottom - shootz, dist);
             if (slope > aimslope)
-                goto hitline;
+                return hitline();
         }
 
         if (li->frontsector->ceilingheight != li->backsector->ceilingheight)
         {
             slope = FixedDiv(clip.opentop - shootz, dist);
             if (slope < aimslope)
-                goto hitline;
+                return hitline();
         }
 
         // shot continues
         return true;
-
-        // hit line
-    hitline:
-        // position a bit closer
-        frac = in->frac - FixedDiv(4 * FRACUNIT, clip.attackrange);
-        x = clip.trace.origin.x + FixedMul(clip.trace.delta.x, frac);
-        y = clip.trace.origin.y + FixedMul(clip.trace.delta.y, frac);
-        z = shootz + FixedMul(aimslope, FixedMul(frac, clip.attackrange));
-
-        if (li->frontsector->ceilingpic == sky.skyflatnum)
-        {
-            // don't shoot the sky!
-            if (z > li->frontsector->ceilingheight)
-                return false;
-
-            // it's a sky hack wall
-            if (li->backsector && li->backsector->ceilingpic == sky.skyflatnum)
-                return false;
-        }
-
-        // Spawn bullet puffs.
-        spawnPuff(x, y, z);
-
-        // don't go any farther
-        return false;
     }
 
     // shoot a thing
@@ -505,92 +509,111 @@ void slideMove(Mobj& mo)
     scratch.slidemo = &mo;
     int hitcount = 0;
 
-retry:
-    if (++hitcount == 3)
-        goto stairstep; // don't loop forever
-
-    // trace along the three leading corners
-    if (mo.momx.isPositive())
+    // The move hit the middle, or the retry cap was reached: step along one axis
+    // at a time instead of sliding. Reads mo's current momentum and position,
+    // which is what each vanilla `goto stairstep` did at the point it jumped.
+    auto stairstep = [&]
     {
-        leadx = mo.x + mo.radius;
-        trailx = mo.x - mo.radius;
-    }
-    else
-    {
-        leadx = mo.x - mo.radius;
-        trailx = mo.x + mo.radius;
-    }
-
-    if (mo.momy.isPositive())
-    {
-        leady = mo.y + mo.radius;
-        traily = mo.y - mo.radius;
-    }
-    else
-    {
-        leady = mo.y - mo.radius;
-        traily = mo.y + mo.radius;
-    }
-
-    scratch.bestslidefrac = FRACUNIT + Fixed {1};
-
-    pathTraverse(
-        leadx, leady, leadx + mo.momx, leady + mo.momy, PT_ADDLINES, slideTraverse);
-    pathTraverse(trailx,
-                 leady,
-                 trailx + mo.momx,
-                 leady + mo.momy,
-                 PT_ADDLINES,
-                 slideTraverse);
-    pathTraverse(leadx,
-                 traily,
-                 leadx + mo.momx,
-                 traily + mo.momy,
-                 PT_ADDLINES,
-                 slideTraverse);
-
-    // move up to the wall
-    if (scratch.bestslidefrac == FRACUNIT + Fixed {1})
-    {
-        // the move most have hit the middle, so stairstep
-    stairstep:
         if (!tryMove(mo, mo.x, mo.y + mo.momy))
             tryMove(mo, mo.x + mo.momx, mo.y);
-        return;
-    }
+    };
 
-    // fudge a bit to make sure it doesn't hit
-    scratch.bestslidefrac -= Fixed {0x800};
-    if (scratch.bestslidefrac.isPositive())
+    for (;;) // vanilla's `retry:` loop
     {
-        newx = FixedMul(mo.momx, scratch.bestslidefrac);
-        newy = FixedMul(mo.momy, scratch.bestslidefrac);
+        if (++hitcount == 3)
+        {
+            // don't loop forever
+            stairstep();
+            return;
+        }
 
-        if (!tryMove(mo, mo.x + newx, mo.y + newy))
-            goto stairstep;
-    }
+        // trace along the three leading corners
+        if (mo.momx.isPositive())
+        {
+            leadx = mo.x + mo.radius;
+            trailx = mo.x - mo.radius;
+        }
+        else
+        {
+            leadx = mo.x - mo.radius;
+            trailx = mo.x + mo.radius;
+        }
 
-    // Now continue along the wall.
-    // First calculate remainder.
-    scratch.bestslidefrac = FRACUNIT - (scratch.bestslidefrac + Fixed {0x800});
+        if (mo.momy.isPositive())
+        {
+            leady = mo.y + mo.radius;
+            traily = mo.y - mo.radius;
+        }
+        else
+        {
+            leady = mo.y - mo.radius;
+            traily = mo.y + mo.radius;
+        }
 
-    if (scratch.bestslidefrac > FRACUNIT)
-        scratch.bestslidefrac = FRACUNIT;
+        scratch.bestslidefrac = FRACUNIT + Fixed {1};
 
-    if (!scratch.bestslidefrac.isPositive())
-        return;
+        pathTraverse(leadx,
+                     leady,
+                     leadx + mo.momx,
+                     leady + mo.momy,
+                     PT_ADDLINES,
+                     slideTraverse);
+        pathTraverse(trailx,
+                     leady,
+                     trailx + mo.momx,
+                     leady + mo.momy,
+                     PT_ADDLINES,
+                     slideTraverse);
+        pathTraverse(leadx,
+                     traily,
+                     leadx + mo.momx,
+                     traily + mo.momy,
+                     PT_ADDLINES,
+                     slideTraverse);
 
-    scratch.tmxmove = FixedMul(mo.momx, scratch.bestslidefrac);
-    scratch.tmymove = FixedMul(mo.momy, scratch.bestslidefrac);
+        // move up to the wall
+        if (scratch.bestslidefrac == FRACUNIT + Fixed {1})
+        {
+            // the move most have hit the middle, so stairstep
+            stairstep();
+            return;
+        }
 
-    hitSlideLine(scratch.bestslideline); // clip the moves
+        // fudge a bit to make sure it doesn't hit
+        scratch.bestslidefrac -= Fixed {0x800};
+        if (scratch.bestslidefrac.isPositive())
+        {
+            newx = FixedMul(mo.momx, scratch.bestslidefrac);
+            newy = FixedMul(mo.momy, scratch.bestslidefrac);
 
-    mo.momx = scratch.tmxmove;
-    mo.momy = scratch.tmymove;
+            if (!tryMove(mo, mo.x + newx, mo.y + newy))
+            {
+                stairstep();
+                return;
+            }
+        }
 
-    if (!tryMove(mo, mo.x + scratch.tmxmove, mo.y + scratch.tmymove))
-    {
-        goto retry;
+        // Now continue along the wall.
+        // First calculate remainder.
+        scratch.bestslidefrac = FRACUNIT - (scratch.bestslidefrac + Fixed {0x800});
+
+        if (scratch.bestslidefrac > FRACUNIT)
+            scratch.bestslidefrac = FRACUNIT;
+
+        if (!scratch.bestslidefrac.isPositive())
+            return;
+
+        scratch.tmxmove = FixedMul(mo.momx, scratch.bestslidefrac);
+        scratch.tmymove = FixedMul(mo.momy, scratch.bestslidefrac);
+
+        hitSlideLine(scratch.bestslideline); // clip the moves
+
+        mo.momx = scratch.tmxmove;
+        mo.momy = scratch.tmymove;
+
+        // A successful move ends the slide; a blocked one retries the loop.
+        if (tryMove(mo, mo.x + scratch.tmxmove, mo.y + scratch.tmymove))
+            return;
     }
 }
 

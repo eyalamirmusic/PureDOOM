@@ -621,58 +621,63 @@ void look(Mobj& actor)
     actor.threshold = 0; // any shot will wake up
     Mobj* targ = actor.subsector->sector->soundtarget;
 
+    // go into chase state
+    auto seeyou = [&]
+    {
+        if (actor.info->seesound != SfxEnum::None)
+        {
+            SfxEnum sound;
+
+            switch (actor.info->seesound)
+            {
+                case SfxEnum::Posit1:
+                case SfxEnum::Posit2:
+                case SfxEnum::Posit3:
+                    sound = static_cast<SfxEnum>(toIndex(SfxEnum::Posit1)
+                                                 + randomness().forPlay() % 3);
+                    break;
+
+                case SfxEnum::Bgsit1:
+                case SfxEnum::Bgsit2:
+                    sound = static_cast<SfxEnum>(toIndex(SfxEnum::Bgsit1)
+                                                 + randomness().forPlay() % 2);
+                    break;
+
+                default:
+                    sound = actor.info->seesound;
+                    break;
+            }
+
+            if (actor.type == MobjType::Spider || actor.type == MobjType::Cyborg)
+            {
+                // full volume
+                startSound(0, sound);
+            }
+            else
+                startSound(&actor, sound);
+        }
+
+        setMobjState(actor, static_cast<StateNum>(actor.info->seestate));
+    };
+
     if (targ && (hasFlag(targ->flags, MobjFlag::Shootable)))
     {
         actor.target = targ;
 
-        if (hasFlag(actor.flags, MobjFlag::Ambush))
+        // An ambush monster waits for line of sight; any other wakes on the
+        // sound target alone.
+        if (!hasFlag(actor.flags, MobjFlag::Ambush)
+            || checkSight(&actor, actor.target))
         {
-            if (checkSight(&actor, actor.target))
-                goto seeyou;
+            seeyou();
+            return;
         }
-        else
-            goto seeyou;
     }
 
     if (!lookForPlayers(actor, false))
         return;
 
-    // go into chase state
-seeyou:
-    if (actor.info->seesound != SfxEnum::None)
-    {
-        SfxEnum sound;
-
-        switch (actor.info->seesound)
-        {
-            case SfxEnum::Posit1:
-            case SfxEnum::Posit2:
-            case SfxEnum::Posit3:
-                sound = static_cast<SfxEnum>(toIndex(SfxEnum::Posit1)
-                                             + randomness().forPlay() % 3);
-                break;
-
-            case SfxEnum::Bgsit1:
-            case SfxEnum::Bgsit2:
-                sound = static_cast<SfxEnum>(toIndex(SfxEnum::Bgsit1)
-                                             + randomness().forPlay() % 2);
-                break;
-
-            default:
-                sound = actor.info->seesound;
-                break;
-        }
-
-        if (actor.type == MobjType::Spider || actor.type == MobjType::Cyborg)
-        {
-            // full volume
-            startSound(0, sound);
-        }
-        else
-            startSound(&actor, sound);
-    }
-
-    setMobjState(actor, static_cast<StateNum>(actor.info->seestate));
+    seeyou();
 }
 
 //
@@ -748,22 +753,21 @@ void chase(Mobj& actor)
     // check for missile attack
     if (actor.info->missilestate != StateNum::Null)
     {
-        if (session.gameskill < Skill::Nightmare && !opts.fastparm
-            && actor.movecount)
+        // Below Nightmare/fast, a monster that still has moves left in its
+        // current direction holds fire; otherwise it fires if in range. Either
+        // way a "no" falls through to the chase logic below. checkMissileRange is
+        // evaluated only when not holding fire, exactly as the two gotos did.
+        const bool holdFire = session.gameskill < Skill::Nightmare && !opts.fastparm
+                              && actor.movecount;
+
+        if (!holdFire && checkMissileRange(actor))
         {
-            goto nomissile;
+            setMobjState(actor, actor.info->missilestate);
+            actor.flags = withFlags(actor.flags, MobjFlag::JustAttacked);
+            return;
         }
-
-        if (!checkMissileRange(actor))
-            goto nomissile;
-
-        setMobjState(actor, actor.info->missilestate);
-        actor.flags = withFlags(actor.flags, MobjFlag::JustAttacked);
-        return;
     }
 
-    // ?
-nomissile:
     // possibly choose another target
     if (session.netgame && !actor.threshold && !checkSight(&actor, actor.target))
     {

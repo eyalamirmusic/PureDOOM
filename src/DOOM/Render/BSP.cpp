@@ -118,6 +118,25 @@ void clipSolidWallSegment(int first, int last)
     if (last <= start->last)
         return;
 
+    // Remove start+1 to next from the clip list, because start now covers their
+    // area.
+    auto crunch = [&]
+    {
+        if (next == start)
+        {
+            // Post just extended past the bottom of one post.
+            return;
+        }
+
+        while (next++ != solid.newend)
+        {
+            // Remove a post.
+            *++start = *next;
+        }
+
+        solid.newend = start + 1;
+    };
+
     next = start;
     while (last >= (next + 1)->first - 1)
     {
@@ -130,7 +149,8 @@ void clipSolidWallSegment(int first, int last)
             // Bottom is contained in next.
             // Adjust the clip size.
             start->last = next->last;
-            goto crunch;
+            crunch();
+            return;
         }
     }
 
@@ -139,22 +159,7 @@ void clipSolidWallSegment(int first, int last)
     // Adjust the clip size.
     start->last = last;
 
-    // Remove start+1 to next from the clip list,
-    // because start now covers their area.
-crunch:
-    if (next == start)
-    {
-        // Post just extended past the bottom of one post.
-        return;
-    }
-
-    while (next++ != solid.newend)
-    {
-        // Remove a post.
-        *++start = *next;
-    }
-
-    solid.newend = start + 1;
+    crunch();
 }
 
 //
@@ -300,19 +305,23 @@ void addLine(Seg& line)
 
     bsp.backsector = line.backsector;
 
-    // Single sided line?
-    if (!bsp.backsector)
-        goto clipsolid;
-
-    // Closed door.
-    if (bsp.backsector->ceilingheight <= bsp.frontsector->floorheight
+    // Single sided line, or a closed door: a solid wall. (The closed-door test
+    // dereferences backsector, so the null check must short-circuit ahead of it.)
+    if (!bsp.backsector
+        || bsp.backsector->ceilingheight <= bsp.frontsector->floorheight
         || bsp.backsector->floorheight >= bsp.frontsector->ceilingheight)
-        goto clipsolid;
+    {
+        clipSolidWallSegment(x1, x2 - 1);
+        return;
+    }
 
     // Window.
     if (bsp.backsector->ceilingheight != bsp.frontsector->ceilingheight
         || bsp.backsector->floorheight != bsp.frontsector->floorheight)
-        goto clippass;
+    {
+        clipPassWallSegment(x1, x2 - 1);
+        return;
+    }
 
     // Reject empty lines used for triggers
     //  and special events.
@@ -327,12 +336,7 @@ void addLine(Seg& line)
         return;
     }
 
-clippass:
     clipPassWallSegment(x1, x2 - 1);
-    return;
-
-clipsolid:
-    clipSolidWallSegment(x1, x2 - 1);
 }
 
 //

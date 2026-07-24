@@ -446,82 +446,84 @@ void netUpdate()
     newtics = nowtime - net.gametime;
     net.gametime = nowtime;
 
-    if (newtics <= 0) // nothing new to update
-        goto listen;
-
-    if (net.skiptics <= newtics)
+    // Build (and, in a net game, send) commands only when new game time has
+    // passed; either way, fall through to listen for other nodes' packets.
+    if (newtics > 0)
     {
-        newtics -= net.skiptics;
-        net.skiptics = 0;
-    }
-    else
-    {
-        net.skiptics -= newtics;
-        newtics = 0;
-    }
-
-    net.netbuffer->player = playerState().consoleplayer;
-
-    // build new ticcmds for console player
-    gameticdiv = gameClock().gametic / net.ticdup;
-    for (int i = 0; i < newtics; i++)
-    {
-        startTic();
-        processEvents();
-
-        // [pd] A singletic update is synchronous: doomLoop builds the tic's
-        // command and runs it in the same breath, advancing maketic and gametic
-        // together. Building another one here would consume the input that
-        // command is about to read, and would advance maketic with no gametic to
-        // match it -- and this runs from displayFrame and R_RenderPlayerView too,
-        // which vanilla called to keep the netcode fed while a slow frame
-        // rendered. maketic therefore climbed until it jammed against the cap
-        // below and stayed there, and since doomLoop writes the command to
-        // netcmds[maketic] while gameTicker reads netcmds[gametic], every command
-        // was executed five tics (143ms) after it was built. Events are still
-        // drained above; there is simply no second command to build.
-        if (singletics)
-            continue;
-
-        if (net.maketic - gameticdiv >= BACKUPTICS / 2 - 1)
-            break; // can't hold any more
-
-        //doom_print ("mk:%i ",maketic);
-        buildTiccmd(net.localcmds[net.maketic % BACKUPTICS]);
-        net.maketic++;
-    }
-
-    if (singletics)
-        return; // singletic update is syncronous
-
-    // send the packet to the other nodes
-    for (int i = 0; i < net.doomcom->numnodes; i++)
-        if (net.nodeingame[i])
+        if (net.skiptics <= newtics)
         {
-            net.netbuffer->starttic = realstart = net.resendto[i];
-            net.netbuffer->numtics = net.maketic - realstart;
-            if (net.netbuffer->numtics > BACKUPTICS)
-                fatalError("Error: netUpdate: netbuffer->numtics > BACKUPTICS");
-
-            net.resendto[i] = net.maketic - net.doomcom->extratics;
-
-            for (int j = 0; j < net.netbuffer->numtics; j++)
-                net.netbuffer->cmds[j] = net.localcmds[(realstart + j) % BACKUPTICS];
-
-            if (net.remoteresend[i])
-            {
-                net.netbuffer->retransmitfrom = net.nettics[i];
-                hSendPacket(i, NCMD_RETRANSMIT);
-            }
-            else
-            {
-                net.netbuffer->retransmitfrom = 0;
-                hSendPacket(i, 0);
-            }
+            newtics -= net.skiptics;
+            net.skiptics = 0;
+        }
+        else
+        {
+            net.skiptics -= newtics;
+            newtics = 0;
         }
 
+        net.netbuffer->player = playerState().consoleplayer;
+
+        // build new ticcmds for console player
+        gameticdiv = gameClock().gametic / net.ticdup;
+        for (int i = 0; i < newtics; i++)
+        {
+            startTic();
+            processEvents();
+
+            // [pd] A singletic update is synchronous: doomLoop builds the tic's
+            // command and runs it in the same breath, advancing maketic and gametic
+            // together. Building another one here would consume the input that
+            // command is about to read, and would advance maketic with no gametic to
+            // match it -- and this runs from displayFrame and R_RenderPlayerView too,
+            // which vanilla called to keep the netcode fed while a slow frame
+            // rendered. maketic therefore climbed until it jammed against the cap
+            // below and stayed there, and since doomLoop writes the command to
+            // netcmds[maketic] while gameTicker reads netcmds[gametic], every command
+            // was executed five tics (143ms) after it was built. Events are still
+            // drained above; there is simply no second command to build.
+            if (singletics)
+                continue;
+
+            if (net.maketic - gameticdiv >= BACKUPTICS / 2 - 1)
+                break; // can't hold any more
+
+            //doom_print ("mk:%i ",maketic);
+            buildTiccmd(net.localcmds[net.maketic % BACKUPTICS]);
+            net.maketic++;
+        }
+
+        if (singletics)
+            return; // singletic update is syncronous
+
+        // send the packet to the other nodes
+        for (int i = 0; i < net.doomcom->numnodes; i++)
+            if (net.nodeingame[i])
+            {
+                net.netbuffer->starttic = realstart = net.resendto[i];
+                net.netbuffer->numtics = net.maketic - realstart;
+                if (net.netbuffer->numtics > BACKUPTICS)
+                    fatalError("Error: netUpdate: netbuffer->numtics > BACKUPTICS");
+
+                net.resendto[i] = net.maketic - net.doomcom->extratics;
+
+                for (int j = 0; j < net.netbuffer->numtics; j++)
+                    net.netbuffer->cmds[j] =
+                        net.localcmds[(realstart + j) % BACKUPTICS];
+
+                if (net.remoteresend[i])
+                {
+                    net.netbuffer->retransmitfrom = net.nettics[i];
+                    hSendPacket(i, NCMD_RETRANSMIT);
+                }
+                else
+                {
+                    net.netbuffer->retransmitfrom = 0;
+                    hSendPacket(i, 0);
+                }
+            }
+    }
+
     // listen for other packets
-listen:
     getPackets();
 }
 

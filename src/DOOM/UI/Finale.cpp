@@ -131,7 +131,6 @@ Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MobjType::Possessed},
 //
 
 void startCast();
-void castTicker();
 bool castResponder(Event& ev);
 void castDrawer();
 
@@ -402,6 +401,25 @@ void castTicker()
     if (--fin.casttics > 0)
         return; // not time to change state yet
 
+    // Stop attacking: return to the see frame with the attack cleared. Vanilla
+    // reached this body by label from two places, so it is a lambda now.
+    auto stopAttack = [&]
+    {
+        fin.castattacking = false;
+        fin.castframes = 0;
+        fin.caststate = &states()[toIndex(
+            mobjinfo()[toIndex(castorder[fin.castnum].type)].seestate)];
+    };
+
+    // Set the tics for the state now on screen; a -1 rest frame becomes 15. Every
+    // path ends on this tail, including the gross hack's early return below.
+    auto setCastTics = [&]
+    {
+        fin.casttics = fin.caststate->tics;
+        if (fin.casttics == -1)
+            fin.casttics = 15;
+    };
+
     if (fin.caststate->tics == -1 || fin.caststate->nextstate == StateNum::Null)
     {
         // switch from deathstate to next monster
@@ -421,7 +439,13 @@ void castTicker()
     {
         // just advance to next state in animation
         if (fin.caststate == &states()[toIndex(StateNum::PlayAtk1)])
-            goto stopattack; // Oh, gross hack!
+        {
+            // Oh, gross hack! The player's attack frame has no natural end, so
+            // stop attacking rather than advance it, then finish the tic.
+            stopAttack();
+            setCastTics();
+            return;
+        }
         st = fin.caststate->nextstate;
         fin.caststate = &states()[toIndex(st)];
         fin.castframes++;
@@ -527,17 +551,11 @@ void castTicker()
                    == &states()[toIndex(
                        mobjinfo()[toIndex(castorder[fin.castnum].type)].seestate)])
         {
-        stopattack:
-            fin.castattacking = false;
-            fin.castframes = 0;
-            fin.caststate = &states()[toIndex(
-                mobjinfo()[toIndex(castorder[fin.castnum].type)].seestate)];
+            stopAttack();
         }
     }
 
-    fin.casttics = fin.caststate->tics;
-    if (fin.casttics == -1)
-        fin.casttics = 15;
+    setCastTics();
 }
 
 //
