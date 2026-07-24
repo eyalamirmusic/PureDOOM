@@ -307,7 +307,7 @@ bool Mobj::move()
             // if the special is not a door
             // that can be opened,
             // return false
-            if (useSpecialLine(*this, *ld, 0))
+            if (ld->useSpecialLine(*this, 0))
                 good = true;
         }
         return good;
@@ -545,7 +545,7 @@ void Mobj::keenDie()
     }
 
     junk.tag = 666;
-    doDoor(junk, DoorType::Open);
+    junk.doDoor(DoorType::Open);
 }
 
 //
@@ -1541,14 +1541,14 @@ void Mobj::bossDeath()
             if (type == MobjType::Fatso)
             {
                 junk.tag = 666;
-                doFloor(junk, FloorType::LowerFloorToLowest);
+                junk.doFloor(FloorType::LowerFloorToLowest);
                 return;
             }
 
             if (type == MobjType::Baby)
             {
                 junk.tag = 667;
-                doFloor(junk, FloorType::RaiseToTexture);
+                junk.doFloor(FloorType::RaiseToTexture);
                 return;
             }
         }
@@ -1559,7 +1559,7 @@ void Mobj::bossDeath()
         {
             case 1:
                 junk.tag = 666;
-                doFloor(junk, FloorType::LowerFloorToLowest);
+                junk.doFloor(FloorType::LowerFloorToLowest);
                 return;
                 break;
 
@@ -1568,13 +1568,13 @@ void Mobj::bossDeath()
                 {
                     case 6:
                         junk.tag = 666;
-                        doDoor(junk, DoorType::BlazeOpen);
+                        junk.doDoor(DoorType::BlazeOpen);
                         return;
                         break;
 
                     case 8:
                         junk.tag = 666;
-                        doFloor(junk, FloorType::LowerFloorToLowest);
+                        junk.doFloor(FloorType::LowerFloorToLowest);
                         return;
                         break;
                 }

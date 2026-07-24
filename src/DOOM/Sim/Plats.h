@@ -7,11 +7,12 @@
 
 namespace Doom
 {
-// Platform handlers; p_plats.cpp keeps the vanilla names as shims. The per-tic
-// behaviour is Plat::tick() (Thinkers/Plat.cpp).
-int doPlat(Line& line, PlatType type, int amount);
+// Platform handlers. The line-triggered ones are Line methods now (Line::doPlat /
+// Line::stopPlat, declared in MapTypes.h); the per-tic behaviour is Plat::tick()
+// (Thinkers/Plat.cpp). activateInStasis keys off a plain tag with no owning object,
+// and addActivePlat/removeActivePlat insert/remove a Plat in the level's activeplats
+// slot table (the registry role addThinker/removeThinker keep), so these stay free.
 void activateInStasis(int tag);
-void stopPlat(Line& line);
 void addActivePlat(Plat& plat);
 void removeActivePlat(Plat& plat);
 } // namespace Doom

@@ -7,14 +7,9 @@
 
 namespace Doom
 {
-// Floor thinkers and handlers; p_floor.cpp keeps the vanilla names as shims.
-MoveResult movePlane(Sector& sector,
-                     Fixed speed,
-                     Fixed dest,
-                     bool crush,
-                     int floorOrCeiling,
-                     int direction);
-// moveFloor's per-tic behaviour is FloorMove::tick() (Thinkers/FloorMove.cpp) now.
-int doFloor(Line& line, FloorType floortype);
-int buildStairs(Line& line, StairType type);
+// Floor handlers. movePlane (the shared height-mover) is now Sector::movePlane and
+// the EV_ handlers are Line::doFloor / Line::buildStairs, declared on the types in
+// MapTypes.h; the moving floor's per-tic behaviour is FloorMove::tick()
+// (Thinkers/FloorMove.cpp). This header remains the include point that carries
+// MoveResult (via SpecialTypes.h) to the floor/ceiling/plat/door thinkers.
 } // namespace Doom

@@ -7,11 +7,11 @@
 
 namespace Doom
 {
-// Ceiling handlers; p_ceilng.cpp keeps the vanilla names as shims. The per-tic
-// behaviour is Ceiling::tick() (Thinkers/Ceiling.cpp).
-int doCeiling(Line& line, CeilingType type);
+// Ceiling handlers. The line-triggered ones are Line methods now (Line::doCeiling /
+// Line::activateInStasisCeiling / Line::ceilingCrushStop, declared in MapTypes.h);
+// the per-tic behaviour is Ceiling::tick() (Thinkers/Ceiling.cpp). addActiveCeiling /
+// removeActiveCeiling stay free: they insert/remove a Ceiling in the level's
+// activeceilings slot table, the registry role addThinker/removeThinker also keep.
 void addActiveCeiling(Ceiling& c);
 void removeActiveCeiling(Ceiling& c);
-void activateInStasisCeiling(Line& line);
-int ceilingCrushStop(Line& line);
 } // namespace Doom

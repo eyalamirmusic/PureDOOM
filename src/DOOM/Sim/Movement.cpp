@@ -319,8 +319,7 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
             if (side != oldside)
             {
                 if (ld->special)
-                    crossSpecialLine(
-                        static_cast<int>(ld - level().lines.data()), oldside, *this);
+                    ld->crossSpecialLine(oldside, *this);
             }
         }
     }

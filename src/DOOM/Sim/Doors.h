@@ -7,12 +7,8 @@
 
 namespace Doom
 {
-// Door handlers; p_doors.cpp keeps the vanilla names as shims. The per-tic
-// behaviour is Door::tick() (Thinkers/Door.cpp); verticalDoor(Line&, Mobj&) below
-// is the separate line-triggered open.
-int doLockedDoor(Line& line, DoorType type, Mobj& thing);
-int doDoor(Line& line, DoorType type);
-void verticalDoor(Line& line, Mobj& thing);
-void spawnDoorCloseIn30(Sector& sec);
-void spawnDoorRaiseIn5Mins(Sector& sec, int secnum);
+// Door handlers, now methods on the types they key off (declared in MapTypes.h): the
+// line-triggered opens are Line::doDoor / Line::doLockedDoor / Line::verticalDoor and
+// the timed spawners are Sector::spawnDoorCloseIn30 / Sector::spawnDoorRaiseIn5Mins.
+// The per-tic behaviour is Door::tick() (Thinkers/Door.cpp).
 } // namespace Doom

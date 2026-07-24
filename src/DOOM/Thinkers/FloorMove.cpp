@@ -1,10 +1,10 @@
 // The moving-floor thinker's per-tic behaviour. Moved out of vanilla p_floor'
 // T_MoveFloor so tick() carries the implementation directly rather than delegating
-// to a free function. (movePlane and the EV_ handlers stay in Sim/Floors.cpp.)
+// to a free function. (Sector::movePlane and the EV_ handlers stay in Sim/Floors.cpp.)
 
 #include "FloorMove.h"
 
-#include "../Sim/Floors.h" // movePlane, MoveResult
+#include "../Sim/Floors.h" // MoveResult
 #include "../Sim/Tick.h" // removeThinker
 #include "../Sim/MapTypes.h" // Sector
 #include "../Game/LevelStats.h" // levelStats()
@@ -15,7 +15,7 @@ namespace Doom
 {
 void FloorMove::tick()
 {
-    MoveResult res = movePlane(*sector, speed, floordestheight, crush, 0, direction);
+    MoveResult res = sector->movePlane(speed, floordestheight, crush, 0, direction);
 
     if (!(levelStats().leveltime & 7))
         startSound(reinterpret_cast<Mobj*>(&sector->soundorg), SfxEnum::Stnmov);

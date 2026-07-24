@@ -15,7 +15,7 @@
 namespace Doom
 {
 
-int teleport(Line& line, int side, Mobj& thing)
+int Line::teleport(int side, Mobj& thing)
 {
     auto& thinkers = thinkerList();
 
@@ -28,7 +28,7 @@ int teleport(Line& line, int side, Mobj& thing)
     if (side == 1)
         return 0;
 
-    int tag = line.tag;
+    // `tag` here is this line's own tag member.
     for (int i = 0; i < level().sectors.size(); i++)
     {
         if (level().sectors[i].tag == tag)

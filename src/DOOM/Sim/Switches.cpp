@@ -1,11 +1,9 @@
 // Rewritten out of vanilla p_switch into namespace Doom.
 //
-// Wall switches and the buttons they arm: build the switch texture-pair list,
-// start a button's timed return, flip a switch's texture, and use a special line.
-// Doom::useSpecialLine is called by the map-action use code and Doom::changeSwitchTexture
-// by the door/floor/lift specials, so p_switch.cpp shims every name; the switch data
-// is file-local and buttonlist stays global (p_spec ticks it). Golden-neutral - the
-// demos flip switches.
+// Wall switches and the buttons they arm: initSwitchList builds the switch
+// texture-pair list, and Line::startButton / Line::changeSwitchTexture /
+// Line::useSpecialLine start a button's timed return, flip a switch's texture, and
+// use a special line. Golden-neutral - the demos flip switches.
 
 #include "../Host/Platform.h"
 #include "Level.h"
@@ -91,11 +89,10 @@ SwitchListEntry alphSwitchList[] = {
 // and reach its members through it, rather than through file-scope reference aliases (REFACTOR.md,
 // Step 9 strand (a)).
 
-// Forward declarations so the file's own call order needs no rearranging.
+// startButton, changeSwitchTexture and useSpecialLine are Line methods now (declared
+// in MapTypes.h). initSwitchList builds the level's switch-pair table and has no
+// owning object, so it stays a free function.
 void initSwitchList();
-void startButton(Line& line, ButtonWhere w, int texture, int time);
-void changeSwitchTexture(Line& line, int useAgain);
-bool useSpecialLine(Mobj& thing, Line& line, int side);
 
 void initSwitchList()
 {
@@ -128,12 +125,14 @@ void initSwitchList()
 //
 // Start a button counting down till it turns off.
 //
-void startButton(Line& line, ButtonWhere w, int texture, int time)
+void Line::startButton(ButtonWhere w, int texture, int time)
 {
     auto& specials = activeSpecials();
 
-    const auto isThisButton = [&line](const Button& button)
-    { return button.btimer && button.line == &line; };
+    // Capture `this` (a pointer), not the Line by value - a by-value capture would
+    // compare against the address of a copy and never match (METHODIZE hazard 1).
+    const auto isThisButton = [this](const Button& button)
+    { return button.btimer && button.line == this; };
 
     if (std::any_of(
             specials.buttonlist.begin(), specials.buttonlist.end(), isThisButton))
@@ -143,13 +142,13 @@ void startButton(Line& line, ButtonWhere w, int texture, int time)
     {
         if (!button.btimer)
         {
-            button.line = &line;
+            button.line = this;
             button.where = w;
             button.btexture = texture;
             button.btimer = time;
             // vanilla's degenmobj pun: the sound source is the address of the
             // sector's soundorg member, not a Mobj.
-            button.soundorg = reinterpret_cast<Mobj*>(&line.frontsector->soundorg);
+            button.soundorg = reinterpret_cast<Mobj*>(&frontsector->soundorg);
             return;
         }
     }
@@ -161,22 +160,22 @@ void startButton(Line& line, ButtonWhere w, int texture, int time)
 // Function that changes wall texture.
 // Tell it if switch is ok to use again (1=yes, it's a button).
 //
-void changeSwitchTexture(Line& line, int useAgain)
+void Line::changeSwitchTexture(int useAgain)
 {
     auto& specials = activeSpecials();
     auto& list = switchList();
 
     if (!useAgain)
-        line.special = 0;
+        special = 0;
 
-    int texTop = level().sides[line.sidenum[0]].toptexture;
-    int texMid = level().sides[line.sidenum[0]].midtexture;
-    int texBot = level().sides[line.sidenum[0]].bottomtexture;
+    int texTop = level().sides[sidenum[0]].toptexture;
+    int texMid = level().sides[sidenum[0]].midtexture;
+    int texBot = level().sides[sidenum[0]].bottomtexture;
 
     SfxEnum sound = SfxEnum::Swtchn;
 
     // EXIT SWITCH?
-    if (line.special == 11)
+    if (special == 11)
         sound = SfxEnum::Swtchx;
 
     // Not a ranged-for: the index is load-bearing, switchlist[i ^ 1] being the
@@ -186,10 +185,10 @@ void changeSwitchTexture(Line& line, int useAgain)
         if (list.switchlist[i] == texTop)
         {
             startSound(specials.buttonlist.data()->soundorg, sound);
-            level().sides[line.sidenum[0]].toptexture = list.switchlist[i ^ 1];
+            level().sides[sidenum[0]].toptexture = list.switchlist[i ^ 1];
 
             if (useAgain)
-                startButton(line, ButtonWhere::Top, list.switchlist[i], BUTTONTIME);
+                startButton(ButtonWhere::Top, list.switchlist[i], BUTTONTIME);
 
             return;
         }
@@ -198,11 +197,10 @@ void changeSwitchTexture(Line& line, int useAgain)
             if (list.switchlist[i] == texMid)
             {
                 startSound(specials.buttonlist.data()->soundorg, sound);
-                level().sides[line.sidenum[0]].midtexture = list.switchlist[i ^ 1];
+                level().sides[sidenum[0]].midtexture = list.switchlist[i ^ 1];
 
                 if (useAgain)
-                    startButton(
-                        line, ButtonWhere::Middle, list.switchlist[i], BUTTONTIME);
+                    startButton(ButtonWhere::Middle, list.switchlist[i], BUTTONTIME);
 
                 return;
             }
@@ -211,14 +209,11 @@ void changeSwitchTexture(Line& line, int useAgain)
                 if (list.switchlist[i] == texBot)
                 {
                     startSound(specials.buttonlist.data()->soundorg, sound);
-                    level().sides[line.sidenum[0]].bottomtexture =
-                        list.switchlist[i ^ 1];
+                    level().sides[sidenum[0]].bottomtexture = list.switchlist[i ^ 1];
 
                     if (useAgain)
-                        startButton(line,
-                                    ButtonWhere::Bottom,
-                                    list.switchlist[i],
-                                    BUTTONTIME);
+                        startButton(
+                            ButtonWhere::Bottom, list.switchlist[i], BUTTONTIME);
 
                     return;
                 }
@@ -232,13 +227,13 @@ void changeSwitchTexture(Line& line, int useAgain)
 // Called when a thing uses a special line.
 // Only the front sides of lines are usable.
 //
-bool useSpecialLine(Mobj& thing, Line& line, int side)
+bool Line::useSpecialLine(Mobj& thing, int side)
 {
     // Err...
     // Use the back sides of VERY SPECIAL lines...
     if (side)
     {
-        switch (line.special)
+        switch (special)
         {
             case 124:
                 // Sliding door open&close
@@ -255,10 +250,10 @@ bool useSpecialLine(Mobj& thing, Line& line, int side)
     if (!thing.player)
     {
         // never open secret doors
-        if (line.flags & ML_SECRET)
+        if (flags & ML_SECRET)
             return false;
 
-        switch (line.special)
+        switch (special)
         {
             case 1: // MANUAL DOOR RAISE
             case 32: // MANUAL BLUE
@@ -273,7 +268,7 @@ bool useSpecialLine(Mobj& thing, Line& line, int side)
     }
 
     // do something
-    switch (line.special)
+    switch (special)
     {
         // MANUALS
         case 1: // Vertical Door
@@ -288,163 +283,163 @@ bool useSpecialLine(Mobj& thing, Line& line, int side)
 
         case 117: // Blazing door raise
         case 118: // Blazing door open
-            verticalDoor(line, thing);
+            verticalDoor(thing);
             break;
 
             //UNUSED - Door Slide Open&Close
             // case 124:
-            // EV_SlidingDoor (line, thing);
+            // EV_SlidingDoor (thing);
             // break;
 
             // SWITCHES
         case 7:
             // Build Stairs
-            if (buildStairs(line, StairType::Build8))
-                changeSwitchTexture(line, 0);
+            if (buildStairs(StairType::Build8))
+                changeSwitchTexture(0);
             break;
 
         case 9:
             // Change Donut
-            if (doDonut(line))
-                changeSwitchTexture(line, 0);
+            if (doDonut())
+                changeSwitchTexture(0);
             break;
 
         case 11:
             // Exit level
-            changeSwitchTexture(line, 0);
+            changeSwitchTexture(0);
             exitLevel();
             break;
 
         case 14:
             // Raise Floor 32 and change texture
-            if (doPlat(line, PlatType::RaiseAndChange, 32))
-                changeSwitchTexture(line, 0);
+            if (doPlat(PlatType::RaiseAndChange, 32))
+                changeSwitchTexture(0);
             break;
 
         case 15:
             // Raise Floor 24 and change texture
-            if (doPlat(line, PlatType::RaiseAndChange, 24))
-                changeSwitchTexture(line, 0);
+            if (doPlat(PlatType::RaiseAndChange, 24))
+                changeSwitchTexture(0);
             break;
 
         case 18:
             // Raise Floor to next highest floor
-            if (doFloor(line, FloorType::RaiseFloorToNearest))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::RaiseFloorToNearest))
+                changeSwitchTexture(0);
             break;
 
         case 20:
             // Raise Plat next highest floor and change texture
-            if (doPlat(line, PlatType::RaiseToNearestAndChange, 0))
-                changeSwitchTexture(line, 0);
+            if (doPlat(PlatType::RaiseToNearestAndChange, 0))
+                changeSwitchTexture(0);
             break;
 
         case 21:
             // PlatDownWaitUpStay
-            if (doPlat(line, PlatType::DownWaitUpStay, 0))
-                changeSwitchTexture(line, 0);
+            if (doPlat(PlatType::DownWaitUpStay, 0))
+                changeSwitchTexture(0);
             break;
 
         case 23:
             // Lower Floor to Lowest
-            if (doFloor(line, FloorType::LowerFloorToLowest))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::LowerFloorToLowest))
+                changeSwitchTexture(0);
             break;
 
         case 29:
             // Raise Door
-            if (doDoor(line, DoorType::Normal))
-                changeSwitchTexture(line, 0);
+            if (doDoor(DoorType::Normal))
+                changeSwitchTexture(0);
             break;
 
         case 41:
             // Lower Ceiling to Floor
-            if (doCeiling(line, CeilingType::LowerToFloor))
-                changeSwitchTexture(line, 0);
+            if (doCeiling(CeilingType::LowerToFloor))
+                changeSwitchTexture(0);
             break;
 
         case 71:
             // Turbo Lower Floor
-            if (doFloor(line, FloorType::TurboLower))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::TurboLower))
+                changeSwitchTexture(0);
             break;
 
         case 49:
             // Ceiling Crush And Raise
-            if (doCeiling(line, CeilingType::CrushAndRaise))
-                changeSwitchTexture(line, 0);
+            if (doCeiling(CeilingType::CrushAndRaise))
+                changeSwitchTexture(0);
             break;
 
         case 50:
             // Close Door
-            if (doDoor(line, DoorType::Close))
-                changeSwitchTexture(line, 0);
+            if (doDoor(DoorType::Close))
+                changeSwitchTexture(0);
             break;
 
         case 51:
             // Secret EXIT
-            changeSwitchTexture(line, 0);
+            changeSwitchTexture(0);
             secretExitLevel();
             break;
 
         case 55:
             // Raise Floor Crush
-            if (doFloor(line, FloorType::RaiseFloorCrush))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::RaiseFloorCrush))
+                changeSwitchTexture(0);
             break;
 
         case 101:
             // Raise Floor
-            if (doFloor(line, FloorType::RaiseFloor))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::RaiseFloor))
+                changeSwitchTexture(0);
             break;
 
         case 102:
             // Lower Floor to Surrounding floor height
-            if (doFloor(line, FloorType::LowerFloor))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::LowerFloor))
+                changeSwitchTexture(0);
             break;
 
         case 103:
             // Open Door
-            if (doDoor(line, DoorType::Open))
-                changeSwitchTexture(line, 0);
+            if (doDoor(DoorType::Open))
+                changeSwitchTexture(0);
             break;
 
         case 111:
             // Blazing Door Raise (faster than TURBO!)
-            if (doDoor(line, DoorType::BlazeRaise))
-                changeSwitchTexture(line, 0);
+            if (doDoor(DoorType::BlazeRaise))
+                changeSwitchTexture(0);
             break;
 
         case 112:
             // Blazing Door Open (faster than TURBO!)
-            if (doDoor(line, DoorType::BlazeOpen))
-                changeSwitchTexture(line, 0);
+            if (doDoor(DoorType::BlazeOpen))
+                changeSwitchTexture(0);
             break;
 
         case 113:
             // Blazing Door Close (faster than TURBO!)
-            if (doDoor(line, DoorType::BlazeClose))
-                changeSwitchTexture(line, 0);
+            if (doDoor(DoorType::BlazeClose))
+                changeSwitchTexture(0);
             break;
 
         case 122:
             // Blazing PlatDownWaitUpStay
-            if (doPlat(line, PlatType::BlazeDWUS, 0))
-                changeSwitchTexture(line, 0);
+            if (doPlat(PlatType::BlazeDWUS, 0))
+                changeSwitchTexture(0);
             break;
 
         case 127:
             // Build Stairs Turbo 16
-            if (buildStairs(line, StairType::Turbo16))
-                changeSwitchTexture(line, 0);
+            if (buildStairs(StairType::Turbo16))
+                changeSwitchTexture(0);
             break;
 
         case 131:
             // Raise Floor Turbo
-            if (doFloor(line, FloorType::RaiseFloorTurbo))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::RaiseFloorTurbo))
+                changeSwitchTexture(0);
             break;
 
         case 133:
@@ -453,129 +448,129 @@ bool useSpecialLine(Mobj& thing, Line& line, int side)
             // BlzOpenDoor RED
         case 137:
             // BlzOpenDoor YELLOW
-            if (doLockedDoor(line, DoorType::BlazeOpen, thing))
-                changeSwitchTexture(line, 0);
+            if (doLockedDoor(DoorType::BlazeOpen, thing))
+                changeSwitchTexture(0);
             break;
 
         case 140:
             // Raise Floor 512
-            if (doFloor(line, FloorType::RaiseFloor512))
-                changeSwitchTexture(line, 0);
+            if (doFloor(FloorType::RaiseFloor512))
+                changeSwitchTexture(0);
             break;
 
             // BUTTONS
         case 42:
             // Close Door
-            if (doDoor(line, DoorType::Close))
-                changeSwitchTexture(line, 1);
+            if (doDoor(DoorType::Close))
+                changeSwitchTexture(1);
             break;
 
         case 43:
             // Lower Ceiling to Floor
-            if (doCeiling(line, CeilingType::LowerToFloor))
-                changeSwitchTexture(line, 1);
+            if (doCeiling(CeilingType::LowerToFloor))
+                changeSwitchTexture(1);
             break;
 
         case 45:
             // Lower Floor to Surrounding floor height
-            if (doFloor(line, FloorType::LowerFloor))
-                changeSwitchTexture(line, 1);
+            if (doFloor(FloorType::LowerFloor))
+                changeSwitchTexture(1);
             break;
 
         case 60:
             // Lower Floor to Lowest
-            if (doFloor(line, FloorType::LowerFloorToLowest))
-                changeSwitchTexture(line, 1);
+            if (doFloor(FloorType::LowerFloorToLowest))
+                changeSwitchTexture(1);
             break;
 
         case 61:
             // Open Door
-            if (doDoor(line, DoorType::Open))
-                changeSwitchTexture(line, 1);
+            if (doDoor(DoorType::Open))
+                changeSwitchTexture(1);
             break;
 
         case 62:
             // PlatDownWaitUpStay
-            if (doPlat(line, PlatType::DownWaitUpStay, 1))
-                changeSwitchTexture(line, 1);
+            if (doPlat(PlatType::DownWaitUpStay, 1))
+                changeSwitchTexture(1);
             break;
 
         case 63:
             // Raise Door
-            if (doDoor(line, DoorType::Normal))
-                changeSwitchTexture(line, 1);
+            if (doDoor(DoorType::Normal))
+                changeSwitchTexture(1);
             break;
 
         case 64:
             // Raise Floor to ceiling
-            if (doFloor(line, FloorType::RaiseFloor))
-                changeSwitchTexture(line, 1);
+            if (doFloor(FloorType::RaiseFloor))
+                changeSwitchTexture(1);
             break;
 
         case 66:
             // Raise Floor 24 and change texture
-            if (doPlat(line, PlatType::RaiseAndChange, 24))
-                changeSwitchTexture(line, 1);
+            if (doPlat(PlatType::RaiseAndChange, 24))
+                changeSwitchTexture(1);
             break;
 
         case 67:
             // Raise Floor 32 and change texture
-            if (doPlat(line, PlatType::RaiseAndChange, 32))
-                changeSwitchTexture(line, 1);
+            if (doPlat(PlatType::RaiseAndChange, 32))
+                changeSwitchTexture(1);
             break;
 
         case 65:
             // Raise Floor Crush
-            if (doFloor(line, FloorType::RaiseFloorCrush))
-                changeSwitchTexture(line, 1);
+            if (doFloor(FloorType::RaiseFloorCrush))
+                changeSwitchTexture(1);
             break;
 
         case 68:
             // Raise Plat to next highest floor and change texture
-            if (doPlat(line, PlatType::RaiseToNearestAndChange, 0))
-                changeSwitchTexture(line, 1);
+            if (doPlat(PlatType::RaiseToNearestAndChange, 0))
+                changeSwitchTexture(1);
             break;
 
         case 69:
             // Raise Floor to next highest floor
-            if (doFloor(line, FloorType::RaiseFloorToNearest))
-                changeSwitchTexture(line, 1);
+            if (doFloor(FloorType::RaiseFloorToNearest))
+                changeSwitchTexture(1);
             break;
 
         case 70:
             // Turbo Lower Floor
-            if (doFloor(line, FloorType::TurboLower))
-                changeSwitchTexture(line, 1);
+            if (doFloor(FloorType::TurboLower))
+                changeSwitchTexture(1);
             break;
 
         case 114:
             // Blazing Door Raise (faster than TURBO!)
-            if (doDoor(line, DoorType::BlazeRaise))
-                changeSwitchTexture(line, 1);
+            if (doDoor(DoorType::BlazeRaise))
+                changeSwitchTexture(1);
             break;
 
         case 115:
             // Blazing Door Open (faster than TURBO!)
-            if (doDoor(line, DoorType::BlazeOpen))
-                changeSwitchTexture(line, 1);
+            if (doDoor(DoorType::BlazeOpen))
+                changeSwitchTexture(1);
             break;
 
         case 116:
             // Blazing Door Close (faster than TURBO!)
-            if (doDoor(line, DoorType::BlazeClose))
-                changeSwitchTexture(line, 1);
+            if (doDoor(DoorType::BlazeClose))
+                changeSwitchTexture(1);
             break;
 
         case 123:
             // Blazing PlatDownWaitUpStay
-            if (doPlat(line, PlatType::BlazeDWUS, 0))
-                changeSwitchTexture(line, 1);
+            if (doPlat(PlatType::BlazeDWUS, 0))
+                changeSwitchTexture(1);
             break;
 
         case 132:
             // Raise Floor Turbo
-            if (doFloor(line, FloorType::RaiseFloorTurbo))
-                changeSwitchTexture(line, 1);
+            if (doFloor(FloorType::RaiseFloorTurbo))
+                changeSwitchTexture(1);
             break;
 
         case 99:
@@ -584,20 +579,20 @@ bool useSpecialLine(Mobj& thing, Line& line, int side)
             // BlzOpenDoor RED
         case 136:
             // BlzOpenDoor YELLOW
-            if (doLockedDoor(line, DoorType::BlazeOpen, thing))
-                changeSwitchTexture(line, 1);
+            if (doLockedDoor(DoorType::BlazeOpen, thing))
+                changeSwitchTexture(1);
             break;
 
         case 138:
             // Light Turn On
-            lightTurnOn(line, 255);
-            changeSwitchTexture(line, 1);
+            lightTurnOn(255);
+            changeSwitchTexture(1);
             break;
 
         case 139:
             // Light Turn Off
-            lightTurnOn(line, 35);
-            changeSwitchTexture(line, 1);
+            lightTurnOn(35);
+            changeSwitchTexture(1);
             break;
     }
 

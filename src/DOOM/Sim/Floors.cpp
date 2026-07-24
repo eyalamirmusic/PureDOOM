@@ -1,9 +1,8 @@
 // Rewritten out of vanilla p_floor into namespace Doom.
 //
-// Floor movement: movePlane (the shared height-mover the ceiling, plat and door
-// thinkers all call), the moveFloor thinker, and the EV_ floor/stairs handlers.
-// T_MovePlane stays global because other specials call it. p_floor.cpp shims every
-// name. Golden-neutral - the demos lower floors and build stairs.
+// Floor movement: Sector::movePlane (the shared height-mover the ceiling, plat and
+// door thinkers all call) and the EV_ floor/stairs handlers, now Line::doFloor and
+// Line::buildStairs. Golden-neutral - the demos lower floors and build stairs.
 
 #include "../Host/Platform.h"
 
@@ -26,22 +25,11 @@
 #include "../Sim/Level.h"
 namespace Doom
 {
-// Forward declarations so the file's own call order needs no rearranging.
-MoveResult movePlane(Sector& sector,
-                     Fixed speed,
-                     Fixed dest,
-                     bool crush,
-                     int floorOrCeiling,
-                     int direction);
-int doFloor(Line& line, FloorType floortype);
-int buildStairs(Line& line, StairType type);
+// movePlane is a Sector method and doFloor/buildStairs are Line methods now
+// (declared on the types in MapTypes.h); no file-scope forward declarations needed.
 
-MoveResult movePlane(Sector& sector,
-                     Fixed speed,
-                     Fixed dest,
-                     bool crush,
-                     int floorOrCeiling,
-                     int direction)
+MoveResult Sector::movePlane(
+    Fixed speed, Fixed dest, bool crush, int floorOrCeiling, int direction)
 {
     bool flag;
     Fixed lastpos;
@@ -54,28 +42,28 @@ MoveResult movePlane(Sector& sector,
             {
                 case -1:
                     // DOWN
-                    if (sector.floorheight - speed < dest)
+                    if (floorheight - speed < dest)
                     {
-                        lastpos = sector.floorheight;
-                        sector.floorheight = dest;
-                        flag = sector.changeSector(crush);
+                        lastpos = floorheight;
+                        floorheight = dest;
+                        flag = changeSector(crush);
                         if (flag == true)
                         {
-                            sector.floorheight = lastpos;
-                            sector.changeSector(crush);
+                            floorheight = lastpos;
+                            changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
                     }
                     else
                     {
-                        lastpos = sector.floorheight;
-                        sector.floorheight -= speed;
-                        flag = sector.changeSector(crush);
+                        lastpos = floorheight;
+                        floorheight -= speed;
+                        flag = changeSector(crush);
                         if (flag == true)
                         {
-                            sector.floorheight = lastpos;
-                            sector.changeSector(crush);
+                            floorheight = lastpos;
+                            changeSector(crush);
                             return MoveResult::Crushed;
                         }
                     }
@@ -83,15 +71,15 @@ MoveResult movePlane(Sector& sector,
 
                 case 1:
                     // UP
-                    if (sector.floorheight + speed > dest)
+                    if (floorheight + speed > dest)
                     {
-                        lastpos = sector.floorheight;
-                        sector.floorheight = dest;
-                        flag = sector.changeSector(crush);
+                        lastpos = floorheight;
+                        floorheight = dest;
+                        flag = changeSector(crush);
                         if (flag == true)
                         {
-                            sector.floorheight = lastpos;
-                            sector.changeSector(crush);
+                            floorheight = lastpos;
+                            changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
@@ -99,15 +87,15 @@ MoveResult movePlane(Sector& sector,
                     else
                     {
                         // COULD GET CRUSHED
-                        lastpos = sector.floorheight;
-                        sector.floorheight += speed;
-                        flag = sector.changeSector(crush);
+                        lastpos = floorheight;
+                        floorheight += speed;
+                        flag = changeSector(crush);
                         if (flag == true)
                         {
                             if (crush == true)
                                 return MoveResult::Crushed;
-                            sector.floorheight = lastpos;
-                            sector.changeSector(crush);
+                            floorheight = lastpos;
+                            changeSector(crush);
                             return MoveResult::Crushed;
                         }
                     }
@@ -121,16 +109,16 @@ MoveResult movePlane(Sector& sector,
             {
                 case -1:
                     // DOWN
-                    if (sector.ceilingheight - speed < dest)
+                    if (ceilingheight - speed < dest)
                     {
-                        lastpos = sector.ceilingheight;
-                        sector.ceilingheight = dest;
-                        flag = sector.changeSector(crush);
+                        lastpos = ceilingheight;
+                        ceilingheight = dest;
+                        flag = changeSector(crush);
 
                         if (flag == true)
                         {
-                            sector.ceilingheight = lastpos;
-                            sector.changeSector(crush);
+                            ceilingheight = lastpos;
+                            changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
@@ -138,16 +126,16 @@ MoveResult movePlane(Sector& sector,
                     else
                     {
                         // COULD GET CRUSHED
-                        lastpos = sector.ceilingheight;
-                        sector.ceilingheight -= speed;
-                        flag = sector.changeSector(crush);
+                        lastpos = ceilingheight;
+                        ceilingheight -= speed;
+                        flag = changeSector(crush);
 
                         if (flag == true)
                         {
                             if (crush == true)
                                 return MoveResult::Crushed;
-                            sector.ceilingheight = lastpos;
-                            sector.changeSector(crush);
+                            ceilingheight = lastpos;
+                            changeSector(crush);
                             return MoveResult::Crushed;
                         }
                     }
@@ -155,30 +143,30 @@ MoveResult movePlane(Sector& sector,
 
                 case 1:
                     // UP
-                    if (sector.ceilingheight + speed > dest)
+                    if (ceilingheight + speed > dest)
                     {
-                        lastpos = sector.ceilingheight;
-                        sector.ceilingheight = dest;
-                        flag = sector.changeSector(crush);
+                        lastpos = ceilingheight;
+                        ceilingheight = dest;
+                        flag = changeSector(crush);
                         if (flag == true)
                         {
-                            sector.ceilingheight = lastpos;
-                            sector.changeSector(crush);
+                            ceilingheight = lastpos;
+                            changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
                     }
                     else
                     {
-                        lastpos = sector.ceilingheight;
-                        sector.ceilingheight += speed;
-                        flag = sector.changeSector(crush);
+                        lastpos = ceilingheight;
+                        ceilingheight += speed;
+                        flag = changeSector(crush);
                         // UNUSED
 #if 0
                         if (flag == true)
                         {
-                            sector.ceilingheight = lastpos;
-                            (&sector).changeSector(crush);
+                            ceilingheight = lastpos;
+                            changeSector(crush);
                             return MoveResult::Crushed;
                         }
 #endif
@@ -194,11 +182,11 @@ MoveResult movePlane(Sector& sector,
 //
 // HANDLE FLOOR TYPES
 //
-int doFloor(Line& line, FloorType floortype)
+int Line::doFloor(FloorType floortype)
 {
     int secnum = -1;
     int rtn = 0;
-    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
         Sector* sec = &level().sectors[secnum];
 
@@ -220,21 +208,21 @@ int doFloor(Line& line, FloorType floortype)
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findHighestFloorSurrounding(*sec);
+                floor->floordestheight = sec->findHighestFloorSurrounding();
                 break;
 
             case FloorType::LowerFloorToLowest:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findLowestFloorSurrounding(*sec);
+                floor->floordestheight = sec->findLowestFloorSurrounding();
                 break;
 
             case FloorType::TurboLower:
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
-                floor->floordestheight = findHighestFloorSurrounding(*sec);
+                floor->floordestheight = sec->findHighestFloorSurrounding();
                 if (floor->floordestheight != sec->floorheight)
                     floor->floordestheight += 8 * FRACUNIT;
                 break;
@@ -246,7 +234,7 @@ int doFloor(Line& line, FloorType floortype)
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findLowestCeilingSurrounding(*sec);
+                floor->floordestheight = sec->findLowestCeilingSurrounding();
                 if (floor->floordestheight > sec->ceilingheight)
                     floor->floordestheight = sec->ceilingheight;
                 floor->floordestheight -=
@@ -257,16 +245,14 @@ int doFloor(Line& line, FloorType floortype)
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED * 4;
-                floor->floordestheight =
-                    findNextHighestFloor(*sec, sec->floorheight);
+                floor->floordestheight = sec->findNextHighestFloor(sec->floorheight);
                 break;
 
             case FloorType::RaiseFloorToNearest:
                 floor->direction = 1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight =
-                    findNextHighestFloor(*sec, sec->floorheight);
+                floor->floordestheight = sec->findNextHighestFloor(sec->floorheight);
                 break;
 
             case FloorType::RaiseFloor24:
@@ -287,8 +273,8 @@ int doFloor(Line& line, FloorType floortype)
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
                 floor->floordestheight = floor->sector->floorheight + 24 * FRACUNIT;
-                sec->floorpic = line.frontsector->floorpic;
-                sec->special = line.frontsector->special;
+                sec->floorpic = frontsector->floorpic;
+                sec->special = frontsector->special;
                 break;
 
             case FloorType::RaiseToTexture:
@@ -324,7 +310,7 @@ int doFloor(Line& line, FloorType floortype)
                 floor->direction = -1;
                 floor->sector = sec;
                 floor->speed = FLOORSPEED;
-                floor->floordestheight = findLowestFloorSurrounding(*sec);
+                floor->floordestheight = sec->findLowestFloorSurrounding();
                 floor->texture = sec->floorpic;
 
                 for (int i = 0; i < sec->linecount; i++)
@@ -369,7 +355,7 @@ int doFloor(Line& line, FloorType floortype)
 //
 // BUILD A STAIRCASE!
 //
-int buildStairs(Line& line, StairType type)
+int Line::buildStairs(StairType type)
 {
     int ok;
 
@@ -378,7 +364,7 @@ int buildStairs(Line& line, StairType type)
 
     int secnum = -1;
     int rtn = 0;
-    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
         Sector* sec = &level().sectors[secnum];
 

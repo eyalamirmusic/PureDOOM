@@ -252,7 +252,7 @@ bool shootTraverse(
         li = in->d.line;
 
         if (li->special)
-            shootSpecialLine(*shootthing, *li);
+            li->shootSpecialLine(*shootthing);
 
         // The shot hits this line: position the impact a bit closer, respect the
         // sky hack, spawn a puff, and stop the traversal.
@@ -378,7 +378,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
     if (lineSide({usething->x, usething->y}, *in->d.line) == 1)
         side = 1;
 
-    useSpecialLine(*usething, *in->d.line, side);
+    in->d.line->useSpecialLine(*usething, side);
 
     // can't use for than one special line in a row
     return false;

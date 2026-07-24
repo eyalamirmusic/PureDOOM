@@ -5,7 +5,7 @@
 #include "Plat.h"
 
 #include "../Sim/Plats.h" // removeActivePlat
-#include "../Sim/Floors.h" // movePlane, MoveResult
+#include "../Sim/Floors.h" // MoveResult
 #include "../Sim/MapTypes.h" // Sector
 #include "../Game/LevelStats.h" // levelStats()
 #include "../Game/Sound.h" // startSound
@@ -20,7 +20,7 @@ void Plat::tick()
     switch (status)
     {
         case PlatState::Up:
-            res = movePlane(*sector, speed, high, crush, 0, 1);
+            res = sector->movePlane(speed, high, crush, 0, 1);
 
             if (type == PlatType::RaiseAndChange
                 || type == PlatType::RaiseToNearestAndChange)
@@ -66,7 +66,7 @@ void Plat::tick()
             break;
 
         case PlatState::Down:
-            res = movePlane(*sector, speed, low, false, 0, -1);
+            res = sector->movePlane(speed, low, false, 0, -1);
 
             if (res == MoveResult::PastDest)
             {

@@ -28,10 +28,11 @@
 #include "../Sim/Level.h"
 namespace Doom
 {
-// Forward declarations so the file's own call order needs no rearranging.
-int doPlat(Line& line, PlatType type, int amount);
+// doPlat and stopPlat are Line methods now (declared in MapTypes.h). activateInStasis
+// keys off a plain tag with no owning object, and addActivePlat/removeActivePlat
+// insert/remove a Plat in the level's activeplats slot table - the same registry role
+// addThinker/removeThinker keep as free functions - so these three stay free.
 void activateInStasis(int tag);
-void stopPlat(Line& line);
 void addActivePlat(Plat& plat);
 void removeActivePlat(Plat& plat);
 
@@ -39,7 +40,7 @@ void removeActivePlat(Plat& plat);
 // Do Platforms
 //  "amount" is only used for SOME platforms.
 //
-int doPlat(Line& line, PlatType type, int amount)
+int Line::doPlat(PlatType type, int amount)
 {
     int secnum = -1;
     int rtn = 0;
@@ -48,7 +49,7 @@ int doPlat(Line& line, PlatType type, int amount)
     switch (type)
     {
         case PlatType::PerpetualRaise:
-            activateInStasis(line.tag);
+            activateInStasis(tag);
             break;
         case PlatType::DownWaitUpStay:
         case PlatType::RaiseAndChange:
@@ -57,7 +58,7 @@ int doPlat(Line& line, PlatType type, int amount)
             break;
     }
 
-    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
         Sector* sec = &level().sectors[secnum];
 
@@ -73,14 +74,14 @@ int doPlat(Line& line, PlatType type, int amount)
         plat->sector = sec;
         plat->sector->specialdata = plat;
         plat->crush = false;
-        plat->tag = line.tag;
+        plat->tag = tag;
 
         switch (type)
         {
             case PlatType::RaiseToNearestAndChange:
                 plat->speed = PLATSPEED / 2;
-                sec->floorpic = level().sides[line.sidenum[0]].sector->floorpic;
-                plat->high = findNextHighestFloor(*sec, sec->floorheight);
+                sec->floorpic = level().sides[sidenum[0]].sector->floorpic;
+                plat->high = sec->findNextHighestFloor(sec->floorheight);
                 plat->wait = 0;
                 plat->status = PlatState::Up;
                 // NO MORE DAMAGE, IF APPLICABLE
@@ -91,7 +92,7 @@ int doPlat(Line& line, PlatType type, int amount)
 
             case PlatType::RaiseAndChange:
                 plat->speed = PLATSPEED / 2;
-                sec->floorpic = level().sides[line.sidenum[0]].sector->floorpic;
+                sec->floorpic = level().sides[sidenum[0]].sector->floorpic;
                 plat->high = sec->floorheight + amount * FRACUNIT;
                 plat->wait = 0;
                 plat->status = PlatState::Up;
@@ -101,7 +102,7 @@ int doPlat(Line& line, PlatType type, int amount)
 
             case PlatType::DownWaitUpStay:
                 plat->speed = PLATSPEED * 4;
-                plat->low = findLowestFloorSurrounding(*sec);
+                plat->low = sec->findLowestFloorSurrounding();
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
@@ -114,7 +115,7 @@ int doPlat(Line& line, PlatType type, int amount)
 
             case PlatType::BlazeDWUS:
                 plat->speed = PLATSPEED * 8;
-                plat->low = findLowestFloorSurrounding(*sec);
+                plat->low = sec->findLowestFloorSurrounding();
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
@@ -127,12 +128,12 @@ int doPlat(Line& line, PlatType type, int amount)
 
             case PlatType::PerpetualRaise:
                 plat->speed = PLATSPEED;
-                plat->low = findLowestFloorSurrounding(*sec);
+                plat->low = sec->findLowestFloorSurrounding();
 
                 if (plat->low > sec->floorheight)
                     plat->low = sec->floorheight;
 
-                plat->high = findHighestFloorSurrounding(*sec);
+                plat->high = sec->findHighestFloorSurrounding();
 
                 if (plat->high < sec->floorheight)
                     plat->high = sec->floorheight;
@@ -160,11 +161,11 @@ void activateInStasis(int tag)
         }
 }
 
-void stopPlat(Line& line)
+void Line::stopPlat()
 {
     auto& specials = activeSpecials();
     for (auto* plat: specials.activeplats)
-        if (plat && plat->status != PlatState::InStasis && plat->tag == line.tag)
+        if (plat && plat->status != PlatState::InStasis && plat->tag == tag)
         {
             plat->oldstatus = plat->status;
             plat->status = PlatState::InStasis;

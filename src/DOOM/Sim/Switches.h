@@ -7,9 +7,8 @@
 
 namespace Doom
 {
-// Switch/button handling; p_switch.cpp keeps the vanilla names as shims.
+// Switch/button handling. startButton / changeSwitchTexture / useSpecialLine are Line
+// methods now (declared in MapTypes.h); initSwitchList builds the level's switch-pair
+// table and has no owning object, so it stays a free function.
 void initSwitchList();
-void startButton(Line& line, ButtonWhere w, int texture, int time);
-void changeSwitchTexture(Line& line, int useAgain);
-bool useSpecialLine(Mobj& thing, Line& line, int side);
 } // namespace Doom

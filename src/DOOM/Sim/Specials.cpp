@@ -155,19 +155,11 @@ Array<AnimDef, 23> animdefs = {{false, "NUKAGE3", "NUKAGE1", 8},
 // members through it, rather than through file-scope reference aliases (REFACTOR.md, Step 9
 // strand (a)).
 
-// Forward declarations so call order needs no rearranging.
+// Forward declarations so call order needs no rearranging. The height/light queries,
+// the line-special dispatchers and doDonut are now Sector/Line methods (MapTypes.h);
+// only the level-wide coordinators, which have no single owner, stay free functions.
 void initPicAnims();
-Fixed findLowestFloorSurrounding(Sector& sec);
-Fixed findHighestFloorSurrounding(Sector& sec);
-Fixed findNextHighestFloor(Sector& sec, Fixed currentheight);
-Fixed findLowestCeilingSurrounding(Sector& sec);
-Fixed findHighestCeilingSurrounding(Sector& sec);
-int findSectorFromLineTag(Line& line, int start);
-int findMinSurroundingLight(Sector& sector, int max);
-void crossSpecialLine(int linenum, int side, Mobj& thing);
-void shootSpecialLine(Mobj& thing, Line& line);
 void updateSpecials();
-int doDonut(Line& line);
 void spawnSpecials();
 
 void initPicAnims()
@@ -228,14 +220,14 @@ void initPicAnims()
 //  given the number of the current sector,
 //  the line number, and the side (0/1) that you want.
 //
-Fixed findLowestFloorSurrounding(Sector& sec)
+Fixed Sector::findLowestFloorSurrounding()
 {
-    Fixed floor = sec.floorheight;
+    Fixed floor = floorheight;
 
-    for (int i = 0; i < sec.linecount; i++)
+    for (int i = 0; i < linecount; i++)
     {
-        Line* check = sec.lines[i];
-        Sector* other = getNextSector(*check, sec);
+        Line* check = lines[i];
+        Sector* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -251,14 +243,14 @@ Fixed findLowestFloorSurrounding(Sector& sec)
 // findHighestFloorSurrounding()
 // FIND HIGHEST FLOOR HEIGHT IN SURROUNDING SECTORS
 //
-Fixed findHighestFloorSurrounding(Sector& sec)
+Fixed Sector::findHighestFloorSurrounding()
 {
     Fixed floor = -500 * FRACUNIT;
 
-    for (int i = 0; i < sec.linecount; i++)
+    for (int i = 0; i < linecount; i++)
     {
-        Line* check = sec.lines[i];
-        Sector* other = getNextSector(*check, sec);
+        Line* check = lines[i];
+        Sector* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -274,7 +266,7 @@ Fixed findHighestFloorSurrounding(Sector& sec)
 // findNextHighestFloor
 // FIND NEXT HIGHEST FLOOR IN SURROUNDING SECTORS
 // Note: this should be doable w/o a fixed array.
-Fixed findNextHighestFloor(Sector& sec, Fixed currentheight)
+Fixed Sector::findNextHighestFloor(Fixed currentheight)
 {
     int i;
     int h;
@@ -282,10 +274,10 @@ Fixed findNextHighestFloor(Sector& sec, Fixed currentheight)
 
     Array<Fixed, MAX_ADJOINING_SECTORS> heightlist;
 
-    for (i = 0, h = 0; i < sec.linecount; i++)
+    for (i = 0, h = 0; i < linecount; i++)
     {
-        Line* check = sec.lines[i];
-        Sector* other = getNextSector(*check, sec);
+        Line* check = lines[i];
+        Sector* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -318,14 +310,14 @@ Fixed findNextHighestFloor(Sector& sec, Fixed currentheight)
 //
 // FIND LOWEST CEILING IN THE SURROUNDING SECTORS
 //
-Fixed findLowestCeilingSurrounding(Sector& sec)
+Fixed Sector::findLowestCeilingSurrounding()
 {
     auto height = Fixed {DOOM_MAXINT};
 
-    for (int i = 0; i < sec.linecount; i++)
+    for (int i = 0; i < linecount; i++)
     {
-        Line* check = sec.lines[i];
-        Sector* other = getNextSector(*check, sec);
+        Line* check = lines[i];
+        Sector* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -340,14 +332,14 @@ Fixed findLowestCeilingSurrounding(Sector& sec)
 //
 // FIND HIGHEST CEILING IN THE SURROUNDING SECTORS
 //
-Fixed findHighestCeilingSurrounding(Sector& sec)
+Fixed Sector::findHighestCeilingSurrounding()
 {
     Fixed height {};
 
-    for (int i = 0; i < sec.linecount; i++)
+    for (int i = 0; i < linecount; i++)
     {
-        Line* check = sec.lines[i];
-        Sector* other = getNextSector(*check, sec);
+        Line* check = lines[i];
+        Sector* other = getNextSector(*check, *this);
 
         if (!other)
             continue;
@@ -362,10 +354,10 @@ Fixed findHighestCeilingSurrounding(Sector& sec)
 //
 // RETURN NEXT SECTOR # THAT LINE TAG REFERS TO
 //
-int findSectorFromLineTag(Line& line, int start)
+int Line::findSectorFromLineTag(int start)
 {
     for (int i = start + 1; i < level().sectors.size(); i++)
-        if (level().sectors[i].tag == line.tag)
+        if (level().sectors[i].tag == tag)
             return i;
 
     return -1;
@@ -374,13 +366,13 @@ int findSectorFromLineTag(Line& line, int start)
 //
 // Find minimum light from an adjacent sector
 //
-int findMinSurroundingLight(Sector& sector, int max)
+int Sector::findMinSurroundingLight(int max)
 {
     int min = max;
-    for (int i = 0; i < sector.linecount; i++)
+    for (int i = 0; i < linecount; i++)
     {
-        Line* line = sector.lines[i];
-        Sector* check = getNextSector(*line, sector);
+        Line* line = lines[i];
+        Sector* check = getNextSector(*line, *this);
 
         if (!check)
             continue;
@@ -403,10 +395,8 @@ int findMinSurroundingLight(Sector& sector, int max)
 // Called every time a thing origin is about
 //  to cross a line with a non 0 special.
 //
-void crossSpecialLine(int linenum, int side, Mobj& thing)
+void Line::crossSpecialLine(int side, Mobj& thing)
 {
-    Line& line = level().lines[linenum];
-
     //        Triggers that other things can activate
     if (!thing.player)
     {
@@ -427,7 +417,7 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
         }
 
         int ok = 0;
-        switch (line.special)
+        switch (special)
         {
             case 39: // TELEPORT TRIGGER
             case 97: // TELEPORT RETRIGGER
@@ -444,142 +434,142 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
     }
 
     // Note: could use some const's here.
-    switch (line.special)
+    switch (special)
     {
         // TRIGGERS.
         // All from here to RETRIGGERS.
         case 2:
             // Open Door
-            doDoor(line, DoorType::Open);
-            line.special = 0;
+            doDoor(DoorType::Open);
+            special = 0;
             break;
 
         case 3:
             // Close Door
-            doDoor(line, DoorType::Close);
-            line.special = 0;
+            doDoor(DoorType::Close);
+            special = 0;
             break;
 
         case 4:
             // Raise Door
-            doDoor(line, DoorType::Normal);
-            line.special = 0;
+            doDoor(DoorType::Normal);
+            special = 0;
             break;
 
         case 5:
             // Raise Floor
-            doFloor(line, FloorType::RaiseFloor);
-            line.special = 0;
+            doFloor(FloorType::RaiseFloor);
+            special = 0;
             break;
 
         case 6:
             // Fast Ceiling Crush & Raise
-            doCeiling(line, CeilingType::FastCrushAndRaise);
-            line.special = 0;
+            doCeiling(CeilingType::FastCrushAndRaise);
+            special = 0;
             break;
 
         case 8:
             // Build Stairs
-            buildStairs(line, StairType::Build8);
-            line.special = 0;
+            buildStairs(StairType::Build8);
+            special = 0;
             break;
 
         case 10:
             // PlatDownWaitUp
-            doPlat(line, PlatType::DownWaitUpStay, 0);
-            line.special = 0;
+            doPlat(PlatType::DownWaitUpStay, 0);
+            special = 0;
             break;
 
         case 12:
             // Light Turn On - brightest near
-            lightTurnOn(line, 0);
-            line.special = 0;
+            lightTurnOn(0);
+            special = 0;
             break;
 
         case 13:
             // Light Turn On 255
-            lightTurnOn(line, 255);
-            line.special = 0;
+            lightTurnOn(255);
+            special = 0;
             break;
 
         case 16:
             // Close Door 30
-            doDoor(line, DoorType::Close30ThenOpen);
-            line.special = 0;
+            doDoor(DoorType::Close30ThenOpen);
+            special = 0;
             break;
 
         case 17:
             // Start Light Strobing
-            startLightStrobing(line);
-            line.special = 0;
+            startLightStrobing();
+            special = 0;
             break;
 
         case 19:
             // Lower Floor
-            doFloor(line, FloorType::LowerFloor);
-            line.special = 0;
+            doFloor(FloorType::LowerFloor);
+            special = 0;
             break;
 
         case 22:
             // Raise floor to nearest height and change texture
-            doPlat(line, PlatType::RaiseToNearestAndChange, 0);
-            line.special = 0;
+            doPlat(PlatType::RaiseToNearestAndChange, 0);
+            special = 0;
             break;
 
         case 25:
             // Ceiling Crush and Raise
-            doCeiling(line, CeilingType::CrushAndRaise);
-            line.special = 0;
+            doCeiling(CeilingType::CrushAndRaise);
+            special = 0;
             break;
 
         case 30:
             // Raise floor to shortest texture height
             //  on either side of lines.
-            doFloor(line, FloorType::RaiseToTexture);
-            line.special = 0;
+            doFloor(FloorType::RaiseToTexture);
+            special = 0;
             break;
 
         case 35:
             // Lights Very Dark
-            lightTurnOn(line, 35);
-            line.special = 0;
+            lightTurnOn(35);
+            special = 0;
             break;
 
         case 36:
             // Lower Floor (TURBO)
-            doFloor(line, FloorType::TurboLower);
-            line.special = 0;
+            doFloor(FloorType::TurboLower);
+            special = 0;
             break;
 
         case 37:
             // LowerAndChange
-            doFloor(line, FloorType::LowerAndChange);
-            line.special = 0;
+            doFloor(FloorType::LowerAndChange);
+            special = 0;
             break;
 
         case 38:
             // Lower Floor To Lowest
-            doFloor(line, FloorType::LowerFloorToLowest);
-            line.special = 0;
+            doFloor(FloorType::LowerFloorToLowest);
+            special = 0;
             break;
 
         case 39:
             // TELEPORT!
-            teleport(line, side, thing);
-            line.special = 0;
+            teleport(side, thing);
+            special = 0;
             break;
 
         case 40:
             // RaiseCeilingLowerFloor
-            doCeiling(line, CeilingType::RaiseToHighest);
-            doFloor(line, FloorType::LowerFloorToLowest);
-            line.special = 0;
+            doCeiling(CeilingType::RaiseToHighest);
+            doFloor(FloorType::LowerFloorToLowest);
+            special = 0;
             break;
 
         case 44:
             // Ceiling Crush
-            doCeiling(line, CeilingType::LowerAndCrush);
-            line.special = 0;
+            doCeiling(CeilingType::LowerAndCrush);
+            special = 0;
             break;
 
         case 52:
@@ -589,80 +579,80 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 
         case 53:
             // Perpetual Platform Raise
-            doPlat(line, PlatType::PerpetualRaise, 0);
-            line.special = 0;
+            doPlat(PlatType::PerpetualRaise, 0);
+            special = 0;
             break;
 
         case 54:
             // Platform Stop
-            stopPlat(line);
-            line.special = 0;
+            stopPlat();
+            special = 0;
             break;
 
         case 56:
             // Raise Floor Crush
-            doFloor(line, FloorType::RaiseFloorCrush);
-            line.special = 0;
+            doFloor(FloorType::RaiseFloorCrush);
+            special = 0;
             break;
 
         case 57:
             // Ceiling Crush Stop
-            ceilingCrushStop(line);
-            line.special = 0;
+            ceilingCrushStop();
+            special = 0;
             break;
 
         case 58:
             // Raise Floor 24
-            doFloor(line, FloorType::RaiseFloor24);
-            line.special = 0;
+            doFloor(FloorType::RaiseFloor24);
+            special = 0;
             break;
 
         case 59:
             // Raise Floor 24 And Change
-            doFloor(line, FloorType::RaiseFloor24AndChange);
-            line.special = 0;
+            doFloor(FloorType::RaiseFloor24AndChange);
+            special = 0;
             break;
 
         case 104:
             // Turn lights off in sector(tag)
-            turnTagLightsOff(line);
-            line.special = 0;
+            turnTagLightsOff();
+            special = 0;
             break;
 
         case 108:
             // Blazing Door Raise (faster than TURBO!)
-            doDoor(line, DoorType::BlazeRaise);
-            line.special = 0;
+            doDoor(DoorType::BlazeRaise);
+            special = 0;
             break;
 
         case 109:
             // Blazing Door Open (faster than TURBO!)
-            doDoor(line, DoorType::BlazeOpen);
-            line.special = 0;
+            doDoor(DoorType::BlazeOpen);
+            special = 0;
             break;
 
         case 100:
             // Build Stairs Turbo 16
-            buildStairs(line, StairType::Turbo16);
-            line.special = 0;
+            buildStairs(StairType::Turbo16);
+            special = 0;
             break;
 
         case 110:
             // Blazing Door Close (faster than TURBO!)
-            doDoor(line, DoorType::BlazeClose);
-            line.special = 0;
+            doDoor(DoorType::BlazeClose);
+            special = 0;
             break;
 
         case 119:
             // Raise floor to nearest surr. floor
-            doFloor(line, FloorType::RaiseFloorToNearest);
-            line.special = 0;
+            doFloor(FloorType::RaiseFloorToNearest);
+            special = 0;
             break;
 
         case 121:
             // Blazing PlatDownWaitUpStay
-            doPlat(line, PlatType::BlazeDWUS, 0);
-            line.special = 0;
+            doPlat(PlatType::BlazeDWUS, 0);
+            special = 0;
             break;
 
         case 124:
@@ -674,185 +664,185 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
             // TELEPORT MonsterONLY
             if (!thing.player)
             {
-                teleport(line, side, thing);
-                line.special = 0;
+                teleport(side, thing);
+                special = 0;
             }
             break;
 
         case 130:
             // Raise Floor Turbo
-            doFloor(line, FloorType::RaiseFloorTurbo);
-            line.special = 0;
+            doFloor(FloorType::RaiseFloorTurbo);
+            special = 0;
             break;
 
         case 141:
             // Silent Ceiling Crush & Raise
-            doCeiling(line, CeilingType::SilentCrushAndRaise);
-            line.special = 0;
+            doCeiling(CeilingType::SilentCrushAndRaise);
+            special = 0;
             break;
 
             // RETRIGGERS.  All from here till end.
         case 72:
             // Ceiling Crush
-            doCeiling(line, CeilingType::LowerAndCrush);
+            doCeiling(CeilingType::LowerAndCrush);
             break;
 
         case 73:
             // Ceiling Crush and Raise
-            doCeiling(line, CeilingType::CrushAndRaise);
+            doCeiling(CeilingType::CrushAndRaise);
             break;
 
         case 74:
             // Ceiling Crush Stop
-            ceilingCrushStop(line);
+            ceilingCrushStop();
             break;
 
         case 75:
             // Close Door
-            doDoor(line, DoorType::Close);
+            doDoor(DoorType::Close);
             break;
 
         case 76:
             // Close Door 30
-            doDoor(line, DoorType::Close30ThenOpen);
+            doDoor(DoorType::Close30ThenOpen);
             break;
 
         case 77:
             // Fast Ceiling Crush & Raise
-            doCeiling(line, CeilingType::FastCrushAndRaise);
+            doCeiling(CeilingType::FastCrushAndRaise);
             break;
 
         case 79:
             // Lights Very Dark
-            lightTurnOn(line, 35);
+            lightTurnOn(35);
             break;
 
         case 80:
             // Light Turn On - brightest near
-            lightTurnOn(line, 0);
+            lightTurnOn(0);
             break;
 
         case 81:
             // Light Turn On 255
-            lightTurnOn(line, 255);
+            lightTurnOn(255);
             break;
 
         case 82:
             // Lower Floor To Lowest
-            doFloor(line, FloorType::LowerFloorToLowest);
+            doFloor(FloorType::LowerFloorToLowest);
             break;
 
         case 83:
             // Lower Floor
-            doFloor(line, FloorType::LowerFloor);
+            doFloor(FloorType::LowerFloor);
             break;
 
         case 84:
             // LowerAndChange
-            doFloor(line, FloorType::LowerAndChange);
+            doFloor(FloorType::LowerAndChange);
             break;
 
         case 86:
             // Open Door
-            doDoor(line, DoorType::Open);
+            doDoor(DoorType::Open);
             break;
 
         case 87:
             // Perpetual Platform Raise
-            doPlat(line, PlatType::PerpetualRaise, 0);
+            doPlat(PlatType::PerpetualRaise, 0);
             break;
 
         case 88:
             // PlatDownWaitUp
-            doPlat(line, PlatType::DownWaitUpStay, 0);
+            doPlat(PlatType::DownWaitUpStay, 0);
             break;
 
         case 89:
             // Platform Stop
-            stopPlat(line);
+            stopPlat();
             break;
 
         case 90:
             // Raise Door
-            doDoor(line, DoorType::Normal);
+            doDoor(DoorType::Normal);
             break;
 
         case 91:
             // Raise Floor
-            doFloor(line, FloorType::RaiseFloor);
+            doFloor(FloorType::RaiseFloor);
             break;
 
         case 92:
             // Raise Floor 24
-            doFloor(line, FloorType::RaiseFloor24);
+            doFloor(FloorType::RaiseFloor24);
             break;
 
         case 93:
             // Raise Floor 24 And Change
-            doFloor(line, FloorType::RaiseFloor24AndChange);
+            doFloor(FloorType::RaiseFloor24AndChange);
             break;
 
         case 94:
             // Raise Floor Crush
-            doFloor(line, FloorType::RaiseFloorCrush);
+            doFloor(FloorType::RaiseFloorCrush);
             break;
 
         case 95:
             // Raise floor to nearest height
             // and change texture.
-            doPlat(line, PlatType::RaiseToNearestAndChange, 0);
+            doPlat(PlatType::RaiseToNearestAndChange, 0);
             break;
 
         case 96:
             // Raise floor to shortest texture height
             // on either side of lines.
-            doFloor(line, FloorType::RaiseToTexture);
+            doFloor(FloorType::RaiseToTexture);
             break;
 
         case 97:
             // TELEPORT!
-            teleport(line, side, thing);
+            teleport(side, thing);
             break;
 
         case 98:
             // Lower Floor (TURBO)
-            doFloor(line, FloorType::TurboLower);
+            doFloor(FloorType::TurboLower);
             break;
 
         case 105:
             // Blazing Door Raise (faster than TURBO!)
-            doDoor(line, DoorType::BlazeRaise);
+            doDoor(DoorType::BlazeRaise);
             break;
 
         case 106:
             // Blazing Door Open (faster than TURBO!)
-            doDoor(line, DoorType::BlazeOpen);
+            doDoor(DoorType::BlazeOpen);
             break;
 
         case 107:
             // Blazing Door Close (faster than TURBO!)
-            doDoor(line, DoorType::BlazeClose);
+            doDoor(DoorType::BlazeClose);
             break;
 
         case 120:
             // Blazing PlatDownWaitUpStay.
-            doPlat(line, PlatType::BlazeDWUS, 0);
+            doPlat(PlatType::BlazeDWUS, 0);
             break;
 
         case 126:
             // TELEPORT MonsterONLY.
             if (!thing.player)
-                teleport(line, side, thing);
+                teleport(side, thing);
             break;
 
         case 128:
             // Raise To Nearest Floor
-            doFloor(line, FloorType::RaiseFloorToNearest);
+            doFloor(FloorType::RaiseFloorToNearest);
             break;
 
         case 129:
             // Raise Floor Turbo
-            doFloor(line, FloorType::RaiseFloorTurbo);
+            doFloor(FloorType::RaiseFloorTurbo);
             break;
     }
 }
@@ -861,13 +851,13 @@ void crossSpecialLine(int linenum, int side, Mobj& thing)
 // shootSpecialLine - IMPACT SPECIALS
 // Called when a thing shoots a special line.
 //
-void shootSpecialLine(Mobj& thing, Line& line)
+void Line::shootSpecialLine(Mobj& thing)
 {
     // Impacts that other things can activate.
     if (!thing.player)
     {
         int ok = 0;
-        switch (line.special)
+        switch (special)
         {
             case 46:
                 // OPEN DOOR IMPACT
@@ -878,24 +868,24 @@ void shootSpecialLine(Mobj& thing, Line& line)
             return;
     }
 
-    switch (line.special)
+    switch (special)
     {
         case 24:
             // RAISE FLOOR
-            doFloor(line, FloorType::RaiseFloor);
-            changeSwitchTexture(line, 0);
+            doFloor(FloorType::RaiseFloor);
+            changeSwitchTexture(0);
             break;
 
         case 46:
             // OPEN DOOR
-            doDoor(line, DoorType::Open);
-            changeSwitchTexture(line, 1);
+            doDoor(DoorType::Open);
+            changeSwitchTexture(1);
             break;
 
         case 47:
             // RAISE FLOOR NEAR AND CHANGE
-            doPlat(line, PlatType::RaiseToNearestAndChange, 0);
-            changeSwitchTexture(line, 0);
+            doPlat(PlatType::RaiseToNearestAndChange, 0);
+            changeSwitchTexture(0);
             break;
     }
 }
@@ -1056,11 +1046,11 @@ void updateSpecials()
 //
 // Special Stuff that can not be categorized
 //
-int doDonut(Line& line)
+int Line::doDonut()
 {
     int secnum = -1;
     int rtn = 0;
-    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
         Sector* s1 = &level().sectors[secnum];
 
@@ -1154,28 +1144,28 @@ void spawnSpecials()
         {
             case 1:
                 // FLICKERING LIGHTS
-                spawnLightFlash(*sector);
+                sector->spawnLightFlash();
                 break;
 
             case 2:
                 // STROBE FAST
-                spawnStrobeFlash(*sector, FASTDARK, 0);
+                sector->spawnStrobeFlash(FASTDARK, 0);
                 break;
 
             case 3:
                 // STROBE SLOW
-                spawnStrobeFlash(*sector, SLOWDARK, 0);
+                sector->spawnStrobeFlash(SLOWDARK, 0);
                 break;
 
             case 4:
                 // STROBE FAST/DEATH SLIME
-                spawnStrobeFlash(*sector, FASTDARK, 0);
+                sector->spawnStrobeFlash(FASTDARK, 0);
                 sector->special = 4;
                 break;
 
             case 8:
                 // GLOWING LIGHT
-                spawnGlowingLight(*sector);
+                sector->spawnGlowingLight();
                 break;
             case 9:
                 // SECRET SECTOR
@@ -1184,26 +1174,26 @@ void spawnSpecials()
 
             case 10:
                 // DOOR CLOSE IN 30 SECONDS
-                spawnDoorCloseIn30(*sector);
+                sector->spawnDoorCloseIn30();
                 break;
 
             case 12:
                 // SYNC STROBE SLOW
-                spawnStrobeFlash(*sector, SLOWDARK, 1);
+                sector->spawnStrobeFlash(SLOWDARK, 1);
                 break;
 
             case 13:
                 // SYNC STROBE FAST
-                spawnStrobeFlash(*sector, FASTDARK, 1);
+                sector->spawnStrobeFlash(FASTDARK, 1);
                 break;
 
             case 14:
                 // DOOR RAISE IN 5 MINUTES
-                spawnDoorRaiseIn5Mins(*sector, i);
+                sector->spawnDoorRaiseIn5Mins(i);
                 break;
 
             case 17:
-                spawnFireFlicker(*sector);
+                sector->spawnFireFlicker();
                 break;
         }
     }

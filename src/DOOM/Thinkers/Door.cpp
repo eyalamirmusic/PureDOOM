@@ -5,7 +5,7 @@
 
 #include "Door.h"
 
-#include "../Sim/Floors.h" // movePlane, MoveResult
+#include "../Sim/Floors.h" // MoveResult
 #include "../Sim/Tick.h" // removeThinker
 #include "../Sim/MapTypes.h" // Sector
 #include "../Game/Sound.h" // startSound
@@ -80,8 +80,7 @@ void Door::tick()
 
         case -1:
             // DOWN
-            res =
-                movePlane(*sector, speed, sector->floorheight, false, 1, direction);
+            res = sector->movePlane(speed, sector->floorheight, false, 1, direction);
             if (res == MoveResult::PastDest)
             {
                 switch (type)
@@ -135,7 +134,7 @@ void Door::tick()
 
         case 1:
             // UP
-            res = movePlane(*sector, speed, topheight, false, 1, direction);
+            res = sector->movePlane(speed, topheight, false, 1, direction);
 
             if (res == MoveResult::PastDest)
             {

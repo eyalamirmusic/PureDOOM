@@ -20,31 +20,26 @@
 #include "../Sim/Level.h"
 namespace Doom
 {
-// Forward declarations so the file's own call order needs no rearranging.
-void spawnFireFlicker(Sector& sector);
-void spawnLightFlash(Sector& sector);
-void spawnStrobeFlash(Sector& sector, int fastOrSlow, int inSync);
-void startLightStrobing(Line& line);
-void turnTagLightsOff(Line& line);
-void lightTurnOn(Line& line, int bright);
-void spawnGlowingLight(Sector& sector);
+// The per-sector light spawners are Sector methods and the EV_ line handlers are
+// Line methods now (declared on the types in MapTypes.h); no forward declarations
+// needed.
 
 //
 // spawnFireFlicker
 //
-void spawnFireFlicker(Sector& sector)
+void Sector::spawnFireFlicker()
 {
     // Note that we are resetting sector attributes.
     // Nothing special about it during gameplay.
-    sector.special = 0;
+    special = 0;
 
     FireFlicker* flick = new (levelAlloc(sizeof(*flick))) FireFlicker {};
 
     addThinker(*flick);
 
-    flick->sector = &sector;
-    flick->maxlight = sector.lightlevel;
-    flick->minlight = findMinSurroundingLight(sector, sector.lightlevel) + 16;
+    flick->sector = this;
+    flick->maxlight = lightlevel;
+    flick->minlight = findMinSurroundingLight(lightlevel) + 16;
     flick->count = 4;
 }
 
@@ -57,19 +52,19 @@ void spawnFireFlicker(Sector& sector)
 // After the map has been loaded, scan each sector
 // for specials that spawn thinkers
 //
-void spawnLightFlash(Sector& sector)
+void Sector::spawnLightFlash()
 {
     // nothing special about it during gameplay
-    sector.special = 0;
+    special = 0;
 
     LightFlash* flash = new (levelAlloc(sizeof(*flash))) LightFlash {};
 
     addThinker(*flash);
 
-    flash->sector = &sector;
-    flash->maxlight = sector.lightlevel;
+    flash->sector = this;
+    flash->maxlight = lightlevel;
 
-    flash->minlight = findMinSurroundingLight(sector, sector.lightlevel);
+    flash->minlight = findMinSurroundingLight(lightlevel);
     flash->maxtime = 64;
     flash->mintime = 7;
     flash->count = (randomness().forPlay() & flash->maxtime) + 1;
@@ -84,23 +79,23 @@ void spawnLightFlash(Sector& sector)
 // After the map has been loaded, scan each sector
 // for specials that spawn thinkers
 //
-void spawnStrobeFlash(Sector& sector, int fastOrSlow, int inSync)
+void Sector::spawnStrobeFlash(int fastOrSlow, int inSync)
 {
     Strobe* flash = new (levelAlloc(sizeof(*flash))) Strobe {};
 
     addThinker(*flash);
 
-    flash->sector = &sector;
+    flash->sector = this;
     flash->darktime = fastOrSlow;
     flash->brighttime = STROBEBRIGHT;
-    flash->maxlight = sector.lightlevel;
-    flash->minlight = findMinSurroundingLight(sector, sector.lightlevel);
+    flash->maxlight = lightlevel;
+    flash->minlight = findMinSurroundingLight(lightlevel);
 
     if (flash->minlight == flash->maxlight)
         flash->minlight = 0;
 
     // nothing special about it during gameplay
-    sector.special = 0;
+    special = 0;
 
     if (!inSync)
         flash->count = (randomness().forPlay() & 7) + 1;
@@ -111,29 +106,29 @@ void spawnStrobeFlash(Sector& sector, int fastOrSlow, int inSync)
 //
 // Start strobing lights (usually from a trigger)
 //
-void startLightStrobing(Line& line)
+void Line::startLightStrobing()
 {
     int secnum = -1;
-    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
         Sector* sec = &level().sectors[secnum];
         if (sec->specialdata)
             continue;
 
-        spawnStrobeFlash(*sec, SLOWDARK, 0);
+        sec->spawnStrobeFlash(SLOWDARK, 0);
     }
 }
 
 //
 // TURN LINE'S TAG LIGHTS OFF
 //
-void turnTagLightsOff(Line& line)
+void Line::turnTagLightsOff()
 {
     Sector* sector = level().sectors.data();
 
     for (int j = 0; j < level().sectors.size(); j++, sector++)
     {
-        if (sector->tag == line.tag)
+        if (sector->tag == tag)
         {
             int min = sector->lightlevel;
             for (int i = 0; i < sector->linecount; i++)
@@ -153,13 +148,13 @@ void turnTagLightsOff(Line& line)
 //
 // TURN LINE'S TAG LIGHTS ON
 //
-void lightTurnOn(Line& line, int bright)
+void Line::lightTurnOn(int bright)
 {
     Sector* sector = level().sectors.data();
 
     for (int i = 0; i < level().sectors.size(); i++, sector++)
     {
-        if (sector->tag == line.tag)
+        if (sector->tag == tag)
         {
             // bright = 0 means to search
             // for highest light level
@@ -186,17 +181,17 @@ void lightTurnOn(Line& line, int bright)
 //
 // Spawn glowing light
 //
-void spawnGlowingLight(Sector& sector)
+void Sector::spawnGlowingLight()
 {
     Glow* g = new (levelAlloc(sizeof(*g))) Glow {};
 
     addThinker(*g);
 
-    g->sector = &sector;
-    g->minlight = findMinSurroundingLight(sector, sector.lightlevel);
-    g->maxlight = sector.lightlevel;
+    g->sector = this;
+    g->minlight = findMinSurroundingLight(lightlevel);
+    g->maxlight = lightlevel;
     g->direction = -1;
 
-    sector.special = 0;
+    special = 0;
 }
 } // namespace Doom

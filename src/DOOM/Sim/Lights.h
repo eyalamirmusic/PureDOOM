@@ -7,14 +7,9 @@
 
 namespace Doom
 {
-// Light spawners and handlers; p_lights.cpp keeps the vanilla names as shims. The
-// per-tic behaviour is each type's tick() (Thinkers/{FireFlicker,LightFlash,Strobe,
-// Glow}.cpp).
-void spawnFireFlicker(Sector& sector);
-void spawnLightFlash(Sector& sector);
-void spawnStrobeFlash(Sector& sector, int fastOrSlow, int inSync);
-void startLightStrobing(Line& line);
-void turnTagLightsOff(Line& line);
-void lightTurnOn(Line& line, int bright);
-void spawnGlowingLight(Sector& sector);
+// Light spawners and handlers, now methods on the types they key off (declared in
+// MapTypes.h): the per-sector spawners are Sector::spawnFireFlicker /
+// spawnLightFlash / spawnStrobeFlash / spawnGlowingLight and the EV_ line handlers
+// are Line::startLightStrobing / turnTagLightsOff / lightTurnOn. The per-tic
+// behaviour is each type's tick() (Thinkers/{FireFlicker,LightFlash,Strobe,Glow}.cpp).
 } // namespace Doom

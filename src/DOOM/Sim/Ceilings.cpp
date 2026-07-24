@@ -25,18 +25,18 @@
 #include "../Sim/Level.h"
 namespace Doom
 {
-// Forward declarations so the file's own call order needs no rearranging.
-int doCeiling(Line& line, CeilingType type);
+// doCeiling, activateInStasisCeiling and ceilingCrushStop are Line methods now
+// (declared in MapTypes.h). addActiveCeiling/removeActiveCeiling stay free: they
+// insert/remove a Ceiling in the level's activeceilings slot table, the same
+// registry role addThinker/removeThinker keep as free functions.
 void addActiveCeiling(Ceiling& c);
 void removeActiveCeiling(Ceiling& c);
-void activateInStasisCeiling(Line& line);
-int ceilingCrushStop(Line& line);
 
 //
 // doCeiling
 // Move a ceiling up/down and all around!
 //
-int doCeiling(Line& line, CeilingType type)
+int Line::doCeiling(CeilingType type)
 {
     int secnum = -1;
     int rtn = 0;
@@ -47,7 +47,7 @@ int doCeiling(Line& line, CeilingType type)
         case CeilingType::FastCrushAndRaise:
         case CeilingType::SilentCrushAndRaise:
         case CeilingType::CrushAndRaise:
-            activateInStasisCeiling(line);
+            activateInStasisCeiling();
             break;
         case CeilingType::LowerToFloor:
         case CeilingType::RaiseToHighest:
@@ -55,7 +55,7 @@ int doCeiling(Line& line, CeilingType type)
             break;
     }
 
-    while ((secnum = findSectorFromLineTag(line, secnum)) >= 0)
+    while ((secnum = findSectorFromLineTag(secnum)) >= 0)
     {
         Sector* sec = &level().sectors[secnum];
         if (sec->specialdata)
@@ -94,7 +94,7 @@ int doCeiling(Line& line, CeilingType type)
                 break;
 
             case CeilingType::RaiseToHighest:
-                ceiling->topheight = findHighestCeilingSurrounding(*sec);
+                ceiling->topheight = sec->findHighestCeilingSurrounding();
                 ceiling->direction = 1;
                 ceiling->speed = CEILSPEED;
                 break;
@@ -145,12 +145,12 @@ void removeActiveCeiling(Ceiling& c)
 //
 // Restart a ceiling that's in-stasis
 //
-void activateInStasisCeiling(Line& line)
+void Line::activateInStasisCeiling()
 {
     auto& specials = activeSpecials();
     for (auto* ceiling: specials.activeceilings)
     {
-        if (ceiling && ceiling->tag == line.tag && ceiling->direction == 0)
+        if (ceiling && ceiling->tag == tag && ceiling->direction == 0)
         {
             ceiling->direction = ceiling->olddirection;
             ceiling->stopped = false;
@@ -162,13 +162,13 @@ void activateInStasisCeiling(Line& line)
 // ceilingCrushStop
 // Stop a ceiling from crushing!
 //
-int ceilingCrushStop(Line& line)
+int Line::ceilingCrushStop()
 {
     int rtn = 0;
     auto& specials = activeSpecials();
     for (auto* ceiling: specials.activeceilings)
     {
-        if (ceiling && ceiling->tag == line.tag && ceiling->direction != 0)
+        if (ceiling && ceiling->tag == tag && ceiling->direction != 0)
         {
             ceiling->olddirection = ceiling->direction;
             ceiling->stopped = true;

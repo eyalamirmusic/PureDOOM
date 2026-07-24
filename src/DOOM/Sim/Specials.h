@@ -7,18 +7,11 @@
 
 namespace Doom
 {
-// Specials coordinator; p_spec.cpp keeps the vanilla names as shims.
+// Specials coordinator. The surrounding-sector height/light queries are now Sector
+// methods and the line-special dispatch (crossSpecialLine/shootSpecialLine/doDonut/
+// findSectorFromLineTag) are Line methods, declared in MapTypes.h. Only the
+// level-wide coordinators, which have no single owner, remain free functions here.
 void initPicAnims();
-Fixed findLowestFloorSurrounding(Sector& sec);
-Fixed findHighestFloorSurrounding(Sector& sec);
-Fixed findNextHighestFloor(Sector& sec, Fixed currentheight);
-Fixed findLowestCeilingSurrounding(Sector& sec);
-Fixed findHighestCeilingSurrounding(Sector& sec);
-int findSectorFromLineTag(Line& line, int start);
-int findMinSurroundingLight(Sector& sector, int max);
-void crossSpecialLine(int linenum, int side, Mobj& thing);
-void shootSpecialLine(Mobj& thing, Line& line);
 void updateSpecials();
-int doDonut(Line& line);
 void spawnSpecials();
 } // namespace Doom

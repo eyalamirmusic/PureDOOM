@@ -58,6 +58,23 @@ namespace Doom
 struct Line;
 } // namespace Doom
 
+// The p_spec handler enums, opaque-declared so Sector/Line below can name them in
+// their method signatures without this low-level header pulling in the whole
+// Thinkers/ special family (which forward-declares Sector - the reverse dependency).
+// Each is a scoped enum with the default int underlying type, so the opaque
+// declaration is a complete type; the real definitions live in
+// Thinkers/{FloorMove,Door,Ceiling,Plat}.h and Sim/SpecialTypes.h.
+namespace Doom
+{
+enum class FloorType;
+enum class StairType;
+enum class DoorType;
+enum class CeilingType;
+enum class PlatType;
+enum class MoveResult;
+enum class ButtonWhere;
+} // namespace Doom
+
 // Each sector has a Doom::DegenMobj in its center
 // for sound origin purposes.
 // I suppose this does not handle sound from
@@ -125,6 +142,25 @@ struct Sector
     // that no longer fit if `crunch`. Returns true if anything did not fit (vanilla
     // P_ChangeSector). Body in Sim/MapAction.cpp.
     bool changeSector(bool crunch);
+
+    // The p_spec surrounding-sector height/light queries and the shared height-mover
+    // the floor/ceiling/plat/door thinkers drive (Sim/Specials.cpp, Sim/Floors.cpp),
+    // plus the per-sector light/door spawners (Sim/Lights.cpp, Sim/Doors.cpp). Each
+    // is keyed off a single Sector, so each is a method.
+    MoveResult movePlane(
+        Fixed speed, Fixed dest, bool crush, int floorOrCeiling, int direction);
+    Fixed findLowestFloorSurrounding();
+    Fixed findHighestFloorSurrounding();
+    Fixed findNextHighestFloor(Fixed currentheight);
+    Fixed findLowestCeilingSurrounding();
+    Fixed findHighestCeilingSurrounding();
+    int findMinSurroundingLight(int max);
+    void spawnFireFlicker();
+    void spawnLightFlash();
+    void spawnStrobeFlash(int fastOrSlow, int inSync);
+    void spawnGlowingLight();
+    void spawnDoorCloseIn30();
+    void spawnDoorRaiseIn5Mins(int secnum);
 };
 } // namespace Doom
 
@@ -204,6 +240,32 @@ struct Line
 
     // Thinker for reversable actions
     void* specialdata;
+
+    // The p_spec line-special handlers: the cross/shoot/use dispatchers and the
+    // individual door/floor/ceiling/plat/light/teleport/switch effects they trigger,
+    // each keyed off this Line. Bodies in Sim/{Specials,Floors,Doors,Ceilings,Plats,
+    // Lights,Teleport,Switches}.cpp.
+    int findSectorFromLineTag(int start);
+    void crossSpecialLine(int side, Mobj& thing);
+    void shootSpecialLine(Mobj& thing);
+    bool useSpecialLine(Mobj& thing, int side);
+    int doDonut();
+    int doFloor(FloorType floortype);
+    int buildStairs(StairType type);
+    int doDoor(DoorType type);
+    int doLockedDoor(DoorType type, Mobj& thing);
+    void verticalDoor(Mobj& thing);
+    int doCeiling(CeilingType type);
+    void activateInStasisCeiling();
+    int ceilingCrushStop();
+    int doPlat(PlatType type, int amount);
+    void stopPlat();
+    void startLightStrobing();
+    void turnTagLightsOff();
+    void lightTurnOn(int bright);
+    int teleport(int side, Mobj& thing);
+    void startButton(ButtonWhere w, int texture, int time);
+    void changeSwitchTexture(int useAgain);
 };
 } // namespace Doom
 

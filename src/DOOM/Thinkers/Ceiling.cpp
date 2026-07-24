@@ -5,7 +5,7 @@
 #include "Ceiling.h"
 
 #include "../Sim/Ceilings.h" // removeActiveCeiling
-#include "../Sim/Floors.h" // movePlane, MoveResult
+#include "../Sim/Floors.h" // MoveResult
 #include "../Sim/MapTypes.h" // Sector
 #include "../Game/LevelStats.h" // levelStats()
 #include "../Game/Sound.h" // startSound
@@ -26,7 +26,7 @@ void Ceiling::tick()
             break;
         case 1:
             // UP
-            res = movePlane(*sector, speed, topheight, false, 1, direction);
+            res = sector->movePlane(speed, topheight, false, 1, direction);
 
             if (!(stats.leveltime & 7))
             {
@@ -72,7 +72,7 @@ void Ceiling::tick()
 
         case -1:
             // DOWN
-            res = movePlane(*sector, speed, bottomheight, crush, 1, direction);
+            res = sector->movePlane(speed, bottomheight, crush, 1, direction);
 
             if (!(stats.leveltime & 7))
             {
