@@ -323,7 +323,7 @@ void unArchiveThinkers()
         Thinker* next = currentthinker->next;
 
         if (currentthinker->kind() == ThinkerKind::Mobj)
-            removeMobj(*reinterpret_cast<Mobj*>(currentthinker));
+            (reinterpret_cast<Mobj*>(currentthinker))->remove();
         else
             levelFree(currentthinker);
 

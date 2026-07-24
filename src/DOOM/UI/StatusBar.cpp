@@ -436,7 +436,7 @@ bool statusBarResponder(Event& ev)
                 if (checkCheat(cheat_powerup[i], ev.data1))
                 {
                     if (!bar.plyr->powers[i])
-                        givePower(*bar.plyr, static_cast<PowerType>(i));
+                        bar.plyr->givePower(static_cast<PowerType>(i));
                     else if (i != toIndex(PowerType::Strength))
                         bar.plyr->powers[i] = 1;
                     else

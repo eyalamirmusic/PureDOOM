@@ -56,7 +56,7 @@ int teleport(Line& line, int side, Mobj& thing)
                 Fixed oldy = thing.y;
                 Fixed oldz = thing.z;
 
-                if (!teleportMove(thing, m->x, m->y))
+                if (!thing.teleportMove(m->x, m->y))
                     return 0;
 
                 thing.z = thing.floorz; //fixme: not needed?

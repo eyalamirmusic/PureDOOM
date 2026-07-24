@@ -166,7 +166,6 @@ int findSectorFromLineTag(Line& line, int start);
 int findMinSurroundingLight(Sector& sector, int max);
 void crossSpecialLine(int linenum, int side, Mobj& thing);
 void shootSpecialLine(Mobj& thing, Line& line);
-void playerInSpecialSector(Player& player);
 void updateSpecials();
 int doDonut(Line& line);
 void spawnSpecials();
@@ -906,14 +905,14 @@ void shootSpecialLine(Mobj& thing, Line& line)
 // Called every tic frame
 //  that the player origin is in a special sector
 //
-void playerInSpecialSector(Player& player)
+void Player::inSpecialSector()
 {
     auto& stats = levelStats();
 
-    Sector* sector = player.mo->subsector->sector;
+    Sector* sector = mo->subsector->sector;
 
     // Falling, not all the way down yet?
-    if (player.mo->z != sector->floorheight)
+    if (mo->z != sector->floorheight)
         return;
 
     // Has hitten ground.
@@ -921,46 +920,46 @@ void playerInSpecialSector(Player& player)
     {
         case 5:
             // HELLSLIME DAMAGE
-            if (!player.powers[toIndex(PowerType::IronFeet)])
+            if (!powers[toIndex(PowerType::IronFeet)])
                 if (!(stats.leveltime & 0x1f))
-                    damageMobj(*player.mo, 0, 0, 10);
+                    mo->damage(0, 0, 10);
             break;
 
         case 7:
             // NUKAGE DAMAGE
-            if (!player.powers[toIndex(PowerType::IronFeet)])
+            if (!powers[toIndex(PowerType::IronFeet)])
                 if (!(stats.leveltime & 0x1f))
-                    damageMobj(*player.mo, 0, 0, 5);
+                    mo->damage(0, 0, 5);
             break;
 
         case 16:
             // SUPER HELLSLIME DAMAGE
         case 4:
             // STROBE HURT
-            if (!player.powers[toIndex(PowerType::IronFeet)]
+            if (!powers[toIndex(PowerType::IronFeet)]
                 || (randomness().forPlay() < 5))
             {
                 if (!(stats.leveltime & 0x1f))
-                    damageMobj(*player.mo, 0, 0, 20);
+                    mo->damage(0, 0, 20);
             }
             break;
 
         case 9:
             // SECRET SECTOR
-            player.secretcount++;
-            player.message = "A secret is revealed!";
+            secretcount++;
+            message = "A secret is revealed!";
             startSound(nullptr, SfxEnum::Getpow);
             sector->special = 0;
             break;
 
         case 11:
             // EXIT SUPER DAMAGE! (for E1M8 finale)
-            player.cheats = withoutFlags(player.cheats, CheatFlag::GodMode);
+            cheats = withoutFlags(cheats, CheatFlag::GodMode);
 
             if (!(stats.leveltime & 0x1f))
-                damageMobj(*player.mo, 0, 0, 20);
+                mo->damage(0, 0, 20);
 
-            if (player.health <= 10)
+            if (health <= 10)
                 exitLevel();
             break;
 

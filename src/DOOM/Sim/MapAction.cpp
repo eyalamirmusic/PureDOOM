@@ -342,7 +342,7 @@ bool shootTraverse(
         spawnBlood(x, y, z, la_damage);
 
     if (la_damage)
-        damageMobj(*th, shootthing, shootthing, la_damage);
+        th->damage(shootthing, shootthing, la_damage);
 
     // don't go any farther
     return false;
@@ -420,7 +420,7 @@ static bool
     if (checkSight(thing, bombspot))
     {
         // must be in direct path
-        damageMobj(*thing, bombspot, bombsource, bombdamage - dist);
+        thing->damage(bombspot, bombsource, bombdamage - dist);
     }
 
     return true;
@@ -436,7 +436,7 @@ static bool
 //
 static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 {
-    if (thingHeightClip(*thing))
+    if (thing->thingHeightClip())
     {
         // keep checking
         return true;
@@ -445,7 +445,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     // crunch bodies to giblets
     if (thing->health <= 0)
     {
-        setMobjState(*thing, StateNum::Gibs);
+        thing->setState(StateNum::Gibs);
 
         thing->flags = withoutFlags(thing->flags, MobjFlag::Solid);
         thing->height = Fixed {};
@@ -458,7 +458,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
     // crunch dropped items
     if (hasFlag(thing->flags, MobjFlag::Dropped))
     {
-        removeMobj(*thing);
+        thing->remove();
 
         // keep checking
         return true;
@@ -474,7 +474,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 
     if (crushchange && !(levelStats().leveltime & 3))
     {
-        damageMobj(*thing, nullptr, nullptr, 10);
+        thing->damage(nullptr, nullptr, 10);
 
         // spray blood in a random direction
         Mobj* mo = spawnMobj(
@@ -495,7 +495,7 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
 // The momx / momy move is bad, so try to slide along a wall. Find the first line
 // hit, move flush to it, and slide along it. This is a kludgy mess.
 //
-void slideMove(Mobj& mo)
+void Mobj::slideMove()
 {
     auto& scratch = actionScratch();
 
@@ -506,16 +506,16 @@ void slideMove(Mobj& mo)
     Fixed newx;
     Fixed newy;
 
-    scratch.slidemo = &mo;
+    scratch.slidemo = this;
     int hitcount = 0;
 
     // The move hit the middle, or the retry cap was reached: step along one axis
-    // at a time instead of sliding. Reads mo's current momentum and position,
+    // at a time instead of sliding. Reads the mobj's current momentum and position,
     // which is what each vanilla `goto stairstep` did at the point it jumped.
     auto stairstep = [&]
     {
-        if (!tryMove(mo, mo.x, mo.y + mo.momy))
-            tryMove(mo, mo.x + mo.momx, mo.y);
+        if (!tryMove(x, y + momy))
+            tryMove(x + momx, y);
     };
 
     for (;;) // vanilla's `retry:` loop
@@ -528,48 +528,36 @@ void slideMove(Mobj& mo)
         }
 
         // trace along the three leading corners
-        if (mo.momx.isPositive())
+        if (momx.isPositive())
         {
-            leadx = mo.x + mo.radius;
-            trailx = mo.x - mo.radius;
+            leadx = x + radius;
+            trailx = x - radius;
         }
         else
         {
-            leadx = mo.x - mo.radius;
-            trailx = mo.x + mo.radius;
+            leadx = x - radius;
+            trailx = x + radius;
         }
 
-        if (mo.momy.isPositive())
+        if (momy.isPositive())
         {
-            leady = mo.y + mo.radius;
-            traily = mo.y - mo.radius;
+            leady = y + radius;
+            traily = y - radius;
         }
         else
         {
-            leady = mo.y - mo.radius;
-            traily = mo.y + mo.radius;
+            leady = y - radius;
+            traily = y + radius;
         }
 
         scratch.bestslidefrac = FRACUNIT + Fixed {1};
 
-        pathTraverse(leadx,
-                     leady,
-                     leadx + mo.momx,
-                     leady + mo.momy,
-                     PT_ADDLINES,
-                     slideTraverse);
-        pathTraverse(trailx,
-                     leady,
-                     trailx + mo.momx,
-                     leady + mo.momy,
-                     PT_ADDLINES,
-                     slideTraverse);
-        pathTraverse(leadx,
-                     traily,
-                     leadx + mo.momx,
-                     traily + mo.momy,
-                     PT_ADDLINES,
-                     slideTraverse);
+        pathTraverse(
+            leadx, leady, leadx + momx, leady + momy, PT_ADDLINES, slideTraverse);
+        pathTraverse(
+            trailx, leady, trailx + momx, leady + momy, PT_ADDLINES, slideTraverse);
+        pathTraverse(
+            leadx, traily, leadx + momx, traily + momy, PT_ADDLINES, slideTraverse);
 
         // move up to the wall
         if (scratch.bestslidefrac == FRACUNIT + Fixed {1})
@@ -583,10 +571,10 @@ void slideMove(Mobj& mo)
         scratch.bestslidefrac -= Fixed {0x800};
         if (scratch.bestslidefrac.isPositive())
         {
-            newx = FixedMul(mo.momx, scratch.bestslidefrac);
-            newy = FixedMul(mo.momy, scratch.bestslidefrac);
+            newx = FixedMul(momx, scratch.bestslidefrac);
+            newy = FixedMul(momy, scratch.bestslidefrac);
 
-            if (!tryMove(mo, mo.x + newx, mo.y + newy))
+            if (!tryMove(x + newx, y + newy))
             {
                 stairstep();
                 return;
@@ -603,16 +591,16 @@ void slideMove(Mobj& mo)
         if (!scratch.bestslidefrac.isPositive())
             return;
 
-        scratch.tmxmove = FixedMul(mo.momx, scratch.bestslidefrac);
-        scratch.tmymove = FixedMul(mo.momy, scratch.bestslidefrac);
+        scratch.tmxmove = FixedMul(momx, scratch.bestslidefrac);
+        scratch.tmymove = FixedMul(momy, scratch.bestslidefrac);
 
         hitSlideLine(scratch.bestslideline); // clip the moves
 
-        mo.momx = scratch.tmxmove;
-        mo.momy = scratch.tmymove;
+        momx = scratch.tmxmove;
+        momy = scratch.tmymove;
 
         // A successful move ends the slide; a blocked one retries the loop.
-        if (tryMove(mo, mo.x + scratch.tmxmove, mo.y + scratch.tmymove))
+        if (tryMove(x + scratch.tmxmove, y + scratch.tmymove))
             return;
     }
 }
@@ -654,42 +642,42 @@ AimResult aimLineAttack(Mobj* t1, Angle angle, Fixed distance)
 // lineAttack
 // If damage == 0, it is just a test trace used only to find an aim target.
 //
-void lineAttack(Mobj& t1, Angle angle, Fixed distance, Fixed slope, int damage)
+void Mobj::lineAttack(Angle angleToUse, Fixed distance, Fixed slope, int damage)
 {
     Clip& clip = clipping();
 
-    const auto angleFine = angle.fineIndex();
-    Mobj* shootthing = &t1;
+    const auto angleFine = angleToUse.fineIndex();
+    Mobj* shootthing = this;
     int la_damage = damage;
     // Whole units scaling the fixed cosine - an integer product. See aimLineAttack.
-    Fixed x2 = t1.x + distance.toInt() * finecosine()[angleFine];
-    Fixed y2 = t1.y + distance.toInt() * finesine()[angleFine];
-    Fixed shootz = t1.z + (t1.height >> 1) + 8 * FRACUNIT;
+    Fixed x2 = x + distance.toInt() * finecosine()[angleFine];
+    Fixed y2 = y + distance.toInt() * finesine()[angleFine];
+    Fixed shootz = z + (height >> 1) + 8 * FRACUNIT;
     clip.attackrange = distance;
     Fixed aimslope = slope;
 
     const auto tryShoot = [shootthing, shootz, aimslope, la_damage](Intercept* in)
     { return shootTraverse(in, shootthing, shootz, aimslope, la_damage); };
 
-    pathTraverse(t1.x, t1.y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryShoot);
+    pathTraverse(x, y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryShoot);
 }
 
 //
 // useLines
 // Looks for special lines in front of the player to activate.
 //
-void useLines(Player& player)
+void Player::useLines()
 {
-    Angle angle = player.mo->angle;
+    Angle angle = mo->angle;
     const auto angleFine = angle.fineIndex();
 
-    Fixed x1 = player.mo->x;
-    Fixed y1 = player.mo->y;
+    Fixed x1 = mo->x;
+    Fixed y1 = mo->y;
     // USERANGE in whole units scaling the fixed cosine - an integer product.
     Fixed x2 = x1 + USERANGE.toInt() * finecosine()[angleFine];
     Fixed y2 = y1 + USERANGE.toInt() * finesine()[angleFine];
 
-    Mobj* usething = player.mo;
+    Mobj* usething = mo;
 
     const auto tryLine = [usething](Intercept* in)
     { return useTraverse(in, usething); };
@@ -701,7 +689,7 @@ void useLines(Player& player)
 // radiusAttack
 // Source is the creature that caused the explosion at spot.
 //
-void radiusAttack(Mobj& spot, Mobj* source, int damage)
+void Mobj::radiusAttack(Mobj* source, int damage)
 {
     // Vanilla, overflow and all: MAXRADIUS is already a fixed value, so shifting
     // (damage + MAXRADIUS) up by another fracBits wraps the MAXRADIUS term away
@@ -710,22 +698,22 @@ void radiusAttack(Mobj& spot, Mobj* source, int damage)
     Fixed dist {(damage + (MAXRADIUS).raw) << fracBits};
 
     // Blockmap cell indices: a raw shift by MAPBLOCKSHIFT, not a conversion.
-    int yh = (spot.y + dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
-    int yl = (spot.y - dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
-    int xh = (spot.x + dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
-    int xl = (spot.x - dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
-    const auto hitThing = [&spot, source, damage](Mobj* thing)
-    { return radiusAttackThing(thing, &spot, source, damage); };
+    int yh = (y + dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
+    int yl = (y - dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
+    int xh = (x + dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
+    int xl = (x - dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
+    const auto hitThing = [this, source, damage](Mobj* thing)
+    { return radiusAttackThing(thing, this, source, damage); };
 
-    for (int y = yl; y <= yh; y++)
-        for (int x = xl; x <= xh; x++)
-            forEachThingInBlock(x, y, hitThing);
+    for (int by = yl; by <= yh; by++)
+        for (int bx = xl; bx <= xh; bx++)
+            forEachThingInBlock(bx, by, hitThing);
 }
 
 //
 // changeSector
 //
-bool changeSector(Sector& sector, bool crunch)
+bool Sector::changeSector(bool crunch)
 {
     bool nofit = false;
 
@@ -733,8 +721,8 @@ bool changeSector(Sector& sector, bool crunch)
     { return changeSectorThing(thing, crunch, nofit); };
 
     // re-check heights for all things near the moving sector
-    for (int x = sector.blockbox[boxLeft]; x <= sector.blockbox[boxRight]; x++)
-        for (int y = sector.blockbox[boxBottom]; y <= sector.blockbox[boxTop]; y++)
+    for (int x = blockbox[boxLeft]; x <= blockbox[boxRight]; x++)
+        for (int y = blockbox[boxBottom]; y <= blockbox[boxTop]; y++)
             forEachThingInBlock(x, y, clipThing);
 
     return nofit;

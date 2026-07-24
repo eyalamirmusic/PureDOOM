@@ -58,11 +58,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight = dest;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            changeSector(sector, crush);
+                            sector.changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
@@ -71,11 +71,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight -= speed;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            changeSector(sector, crush);
+                            sector.changeSector(crush);
                             return MoveResult::Crushed;
                         }
                     }
@@ -87,11 +87,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.floorheight;
                         sector.floorheight = dest;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
                         if (flag == true)
                         {
                             sector.floorheight = lastpos;
-                            changeSector(sector, crush);
+                            sector.changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
@@ -101,13 +101,13 @@ MoveResult movePlane(Sector& sector,
                         // COULD GET CRUSHED
                         lastpos = sector.floorheight;
                         sector.floorheight += speed;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
                         if (flag == true)
                         {
                             if (crush == true)
                                 return MoveResult::Crushed;
                             sector.floorheight = lastpos;
-                            changeSector(sector, crush);
+                            sector.changeSector(crush);
                             return MoveResult::Crushed;
                         }
                     }
@@ -125,12 +125,12 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight = dest;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
 
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            changeSector(sector, crush);
+                            sector.changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
@@ -140,14 +140,14 @@ MoveResult movePlane(Sector& sector,
                         // COULD GET CRUSHED
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight -= speed;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
 
                         if (flag == true)
                         {
                             if (crush == true)
                                 return MoveResult::Crushed;
                             sector.ceilingheight = lastpos;
-                            changeSector(sector, crush);
+                            sector.changeSector(crush);
                             return MoveResult::Crushed;
                         }
                     }
@@ -159,11 +159,11 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight = dest;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            changeSector(sector, crush);
+                            sector.changeSector(crush);
                             //return MoveResult::Crushed;
                         }
                         return MoveResult::PastDest;
@@ -172,13 +172,13 @@ MoveResult movePlane(Sector& sector,
                     {
                         lastpos = sector.ceilingheight;
                         sector.ceilingheight += speed;
-                        flag = changeSector(sector, crush);
+                        flag = sector.changeSector(crush);
                         // UNUSED
 #if 0
                         if (flag == true)
                         {
                             sector.ceilingheight = lastpos;
-                            changeSector(&sector, crush);
+                            (&sector).changeSector(crush);
                             return MoveResult::Crushed;
                         }
 #endif

@@ -9,12 +9,14 @@
 // DESCRIPTION:
 //        Moving object handling. Spawn functions, the mobj thinker, missiles.
 //
-// Rewritten into namespace Doom out of vanilla p_mobj; p_mobj.cpp keeps the vanilla
-// names as shims and the item-respawn queue globals. The per-tic mobj thinker is
+// Rewritten into namespace Doom out of vanilla p_mobj. The per-tic mobj thinker is
 // Mobj::tick() (Thinkers/Mobj.cpp) now, dispatched virtually - p_saveg and the sim
 // probe identify a mobj by its kind() rather than by comparing a stored function
-// pointer, so nothing here holds the thinker's address. The movement steps it drives
-// (xyMovement / zMovement / nightmareRespawn) stay here and are declared in Mobj.h.
+// pointer, so nothing here holds the thinker's address. The state driver, movement
+// steps, removal and missile spawning it drives (setState / xyMovement / zMovement /
+// nightmareRespawn / remove / spawnMissile / ...) are Mobj methods, declared on the
+// struct in Thinkers/Mobj.h. The spawn* factories stay free functions here (they
+// have no mobj to be a method of).
 //
 //-----------------------------------------------------------------------------
 
@@ -63,30 +65,30 @@ namespace Doom
 constexpr Fixed STOPSPEED {0x1000};
 constexpr Fixed FRICTION {0xe800};
 
-bool setMobjState(Mobj& mobj, StateNum state)
+bool Mobj::setState(StateNum stateToUse)
 {
     do
     {
-        if (state == StateNum::Null)
+        if (stateToUse == StateNum::Null)
         {
-            mobj.state = nullptr; // was (State*) S_NULL, i.e. a null pointer
-            removeMobj(mobj);
+            state = nullptr; // was (State*) S_NULL, i.e. a null pointer
+            remove();
             return false;
         }
 
-        State* st = &states()[toIndex(state)];
-        mobj.state = st;
-        mobj.tics = st->tics;
-        mobj.sprite = st->sprite;
-        mobj.frame = st->frame;
+        State* st = &states()[toIndex(stateToUse)];
+        state = st;
+        tics = st->tics;
+        sprite = st->sprite;
+        frame = st->frame;
 
         // Modified handling.
         // Call action functions when the state is set.
         if (st->action.mobj)
-            (mobj.*(st->action.mobj))();
+            (this->*(st->action.mobj))();
 
-        state = st->nextstate;
-    } while (!mobj.tics);
+        stateToUse = st->nextstate;
+    } while (!tics);
 
     return true;
 }
@@ -94,85 +96,85 @@ bool setMobjState(Mobj& mobj, StateNum state)
 //
 // explodeMissile
 //
-void explodeMissile(Mobj& mo)
+void Mobj::explodeMissile()
 {
-    mo.momx = mo.momy = mo.momz = Fixed {};
+    momx = momy = momz = Fixed {};
 
-    setMobjState(mo, static_cast<StateNum>(mobjinfo()[toIndex(mo.type)].deathstate));
+    setState(static_cast<StateNum>(mobjinfo()[toIndex(type)].deathstate));
 
-    mo.tics -= randomness().forPlay() & 3;
+    tics -= randomness().forPlay() & 3;
 
-    if (mo.tics < 1)
-        mo.tics = 1;
+    if (tics < 1)
+        tics = 1;
 
-    mo.flags = withoutFlags(mo.flags, MobjFlag::Missile);
+    flags = withoutFlags(flags, MobjFlag::Missile);
 
-    if (mo.info->deathsound != SfxEnum::None)
-        startSound(&mo, mo.info->deathsound);
+    if (info->deathsound != SfxEnum::None)
+        startSound(this, info->deathsound);
 }
 
 //
 // xyMovement
 //
-void xyMovement(Mobj& mo)
+void Mobj::xyMovement()
 {
     Fixed ptryx;
     Fixed ptryy;
 
     auto& c = clipping();
 
-    if (!mo.momx && !mo.momy)
+    if (!momx && !momy)
     {
-        if (hasFlag(mo.flags, MobjFlag::SkullFly))
+        if (hasFlag(flags, MobjFlag::SkullFly))
         {
             // the skull slammed into something
-            mo.flags = withoutFlags(mo.flags, MobjFlag::SkullFly);
-            mo.momx = mo.momy = mo.momz = Fixed {};
+            flags = withoutFlags(flags, MobjFlag::SkullFly);
+            momx = momy = momz = Fixed {};
 
-            setMobjState(mo, static_cast<StateNum>(mo.info->spawnstate));
+            setState(static_cast<StateNum>(info->spawnstate));
         }
         return;
     }
 
-    Player* player = mo.player;
+    Player* playerToUse = player;
 
-    if (mo.momx > MAXMOVE)
-        mo.momx = MAXMOVE;
-    else if (mo.momx < -MAXMOVE)
-        mo.momx = -MAXMOVE;
+    if (momx > MAXMOVE)
+        momx = MAXMOVE;
+    else if (momx < -MAXMOVE)
+        momx = -MAXMOVE;
 
-    if (mo.momy > MAXMOVE)
-        mo.momy = MAXMOVE;
-    else if (mo.momy < -MAXMOVE)
-        mo.momy = -MAXMOVE;
+    if (momy > MAXMOVE)
+        momy = MAXMOVE;
+    else if (momy < -MAXMOVE)
+        momy = -MAXMOVE;
 
-    Fixed xmove = mo.momx;
-    Fixed ymove = mo.momy;
+    Fixed xmove = momx;
+    Fixed ymove = momy;
 
     do
     {
         if (xmove > MAXMOVE / 2 || ymove > MAXMOVE / 2)
         {
-            ptryx = mo.x + xmove / 2;
-            ptryy = mo.y + ymove / 2;
+            ptryx = x + xmove / 2;
+            ptryy = y + ymove / 2;
             xmove >>= 1;
             ymove >>= 1;
         }
         else
         {
-            ptryx = mo.x + xmove;
-            ptryy = mo.y + ymove;
+            ptryx = x + xmove;
+            ptryy = y + ymove;
             xmove = ymove = Fixed {};
         }
 
-        if (!tryMove(mo, ptryx, ptryy))
+        if (!tryMove(ptryx, ptryy))
         {
             // blocked move
-            if (mo.player)
+            if (playerToUse)
             { // try to slide along it
-                slideMove(mo);
+                slideMove();
             }
-            else if (hasFlag(mo.flags, MobjFlag::Missile))
+            else if (hasFlag(flags, MobjFlag::Missile))
             {
                 // explode a missile
                 if (c.ceilingline && c.ceilingline->backsector
@@ -182,158 +184,160 @@ void xyMovement(Mobj& mo)
                     // Hack to prevent missiles exploding
                     // against the sky.
                     // Does not handle sky floors.
-                    removeMobj(mo);
+                    remove();
                     return;
                 }
-                explodeMissile(mo);
+                explodeMissile();
             }
             else
-                mo.momx = mo.momy = Fixed {};
+                momx = momy = Fixed {};
         }
     } while (xmove || ymove);
 
     // slow down
-    if (player && hasFlag(player->cheats, CheatFlag::NoMomentum))
+    if (playerToUse && hasFlag(playerToUse->cheats, CheatFlag::NoMomentum))
     {
         // debug option for no sliding at all
-        mo.momx = mo.momy = Fixed {};
+        momx = momy = Fixed {};
         return;
     }
 
-    if (hasFlag(mo.flags, MobjFlag::Missile, MobjFlag::SkullFly))
+    if (hasFlag(flags, MobjFlag::Missile, MobjFlag::SkullFly))
         return; // no friction for missiles ever
 
-    if (mo.z > mo.floorz)
+    if (z > floorz)
         return; // no friction when airborne
 
-    if (hasFlag(mo.flags, MobjFlag::Corpse))
+    if (hasFlag(flags, MobjFlag::Corpse))
     {
         // do not stop sliding
         //  if halfway off a step with some momentum
-        if (mo.momx > FRACUNIT / 4 || mo.momx < -FRACUNIT / 4
-            || mo.momy > FRACUNIT / 4 || mo.momy < -FRACUNIT / 4)
+        if (momx > FRACUNIT / 4 || momx < -FRACUNIT / 4 || momy > FRACUNIT / 4
+            || momy < -FRACUNIT / 4)
         {
-            if (mo.floorz != mo.subsector->sector->floorheight)
+            if (floorz != subsector->sector->floorheight)
                 return;
         }
     }
 
-    if (mo.momx > -STOPSPEED && mo.momx < STOPSPEED && mo.momy > -STOPSPEED
-        && mo.momy < STOPSPEED
-        && (!player || (player->cmd.forwardmove == 0 && player->cmd.sidemove == 0)))
+    if (momx > -STOPSPEED && momx < STOPSPEED && momy > -STOPSPEED
+        && momy < STOPSPEED
+        && (!playerToUse
+            || (playerToUse->cmd.forwardmove == 0
+                && playerToUse->cmd.sidemove == 0)))
     {
         // if in a walking frame, stop moving
-        if (player
-            && static_cast<unsigned>((player->mo->state - states())
+        if (playerToUse
+            && static_cast<unsigned>((playerToUse->mo->state - states())
                                      - toIndex(StateNum::PlayRun1))
                    < 4)
-            setMobjState(*player->mo, StateNum::Play);
+            playerToUse->mo->setState(StateNum::Play);
 
-        mo.momx = Fixed {};
-        mo.momy = Fixed {};
+        momx = Fixed {};
+        momy = Fixed {};
     }
     else
     {
-        mo.momx = FixedMul(mo.momx, FRICTION);
-        mo.momy = FixedMul(mo.momy, FRICTION);
+        momx = FixedMul(momx, FRICTION);
+        momy = FixedMul(momy, FRICTION);
     }
 }
 
 //
 // zMovement
 //
-void zMovement(Mobj& mo)
+void Mobj::zMovement()
 {
     // check for smooth step up
-    if (mo.player && mo.z < mo.floorz)
+    if (player && z < floorz)
     {
-        mo.player->viewheight -= mo.floorz - mo.z;
+        player->viewheight -= floorz - z;
 
-        mo.player->deltaviewheight = (VIEWHEIGHT - mo.player->viewheight) >> 3;
+        player->deltaviewheight = (VIEWHEIGHT - player->viewheight) >> 3;
     }
 
     // adjust height
-    mo.z += mo.momz;
+    z += momz;
 
-    if (hasFlag(mo.flags, MobjFlag::Float) && mo.target)
+    if (hasFlag(flags, MobjFlag::Float) && target)
     {
         // float down towards target if too close
-        if (!(hasFlag(mo.flags, MobjFlag::SkullFly))
-            && !(hasFlag(mo.flags, MobjFlag::InFloat)))
+        if (!(hasFlag(flags, MobjFlag::SkullFly))
+            && !(hasFlag(flags, MobjFlag::InFloat)))
         {
-            Fixed dist = approxDistance(mo.x - mo.target->x, mo.y - mo.target->y);
+            Fixed dist = approxDistance(x - target->x, y - target->y);
 
-            Fixed delta = (mo.target->z + (mo.height >> 1)) - mo.z;
+            Fixed delta = (target->z + (height >> 1)) - z;
 
             if (delta.isNegative() && dist < -(delta * 3))
-                mo.z -= FLOATSPEED;
+                z -= FLOATSPEED;
             else if (delta.isPositive() && dist < (delta * 3))
-                mo.z += FLOATSPEED;
+                z += FLOATSPEED;
         }
     }
 
     // clip movement
-    if (mo.z <= mo.floorz)
+    if (z <= floorz)
     {
         // hit the floor
 
         // Note (id):
         //  somebody left this after the setting momz to 0,
         //  kinda useless there.
-        if (hasFlag(mo.flags, MobjFlag::SkullFly))
+        if (hasFlag(flags, MobjFlag::SkullFly))
         {
             // the skull slammed into something
-            mo.momz = -mo.momz;
+            momz = -momz;
         }
 
-        if (mo.momz.isNegative())
+        if (momz.isNegative())
         {
-            if (mo.player && mo.momz < -GRAVITY * 8)
+            if (player && momz < -GRAVITY * 8)
             {
                 // Squat down.
                 // Decrease viewheight for a moment
                 // after hitting the ground (hard),
                 // and utter appropriate sound.
-                mo.player->deltaviewheight = mo.momz >> 3;
-                startSound(&mo, SfxEnum::Oof);
+                player->deltaviewheight = momz >> 3;
+                startSound(this, SfxEnum::Oof);
             }
-            mo.momz = Fixed {};
+            momz = Fixed {};
         }
-        mo.z = mo.floorz;
+        z = floorz;
 
-        if ((hasFlag(mo.flags, MobjFlag::Missile))
-            && !(hasFlag(mo.flags, MobjFlag::NoClip)))
+        if ((hasFlag(flags, MobjFlag::Missile))
+            && !(hasFlag(flags, MobjFlag::NoClip)))
         {
-            explodeMissile(mo);
+            explodeMissile();
             return;
         }
     }
-    else if (!(hasFlag(mo.flags, MobjFlag::NoGravity)))
+    else if (!(hasFlag(flags, MobjFlag::NoGravity)))
     {
-        if (mo.momz.isZero())
-            mo.momz = -GRAVITY * 2;
+        if (momz.isZero())
+            momz = -GRAVITY * 2;
         else
-            mo.momz -= GRAVITY;
+            momz -= GRAVITY;
     }
 
-    if (mo.z + mo.height > mo.ceilingz)
+    if (z + height > ceilingz)
     {
         // hit the ceiling
-        if (mo.momz.isPositive())
-            mo.momz = Fixed {};
+        if (momz.isPositive())
+            momz = Fixed {};
         {
-            mo.z = mo.ceilingz - mo.height;
+            z = ceilingz - height;
         }
 
-        if (hasFlag(mo.flags, MobjFlag::SkullFly))
+        if (hasFlag(flags, MobjFlag::SkullFly))
         { // the skull slammed into something
-            mo.momz = -mo.momz;
+            momz = -momz;
         }
 
-        if ((hasFlag(mo.flags, MobjFlag::Missile))
-            && !(hasFlag(mo.flags, MobjFlag::NoClip)))
+        if ((hasFlag(flags, MobjFlag::Missile))
+            && !(hasFlag(flags, MobjFlag::NoClip)))
         {
-            explodeMissile(mo);
+            explodeMissile();
             return;
         }
     }
@@ -342,43 +346,43 @@ void zMovement(Mobj& mo)
 //
 // nightmareRespawn
 //
-void nightmareRespawn(Mobj& mobj)
+void Mobj::nightmareRespawn()
 {
-    Fixed z;
+    Fixed zToUse;
 
-    Fixed x = Fixed::fromInt(mobj.spawnpoint.x);
-    Fixed y = Fixed::fromInt(mobj.spawnpoint.y);
+    Fixed xToUse = Fixed::fromInt(spawnpoint.x);
+    Fixed yToUse = Fixed::fromInt(spawnpoint.y);
 
     // somthing is occupying it's position?
-    if (!checkPosition(mobj, x, y))
+    if (!checkPosition(xToUse, yToUse))
         return; // no respwan
 
     // spawn a teleport fog at old spot
     // because of removal of the body?
-    Mobj* mo = spawnMobj(
-        mobj.x, mobj.y, mobj.subsector->sector->floorheight, MobjType::Tfog);
+    Mobj* mo =
+        spawnMobj(xToUse, yToUse, subsector->sector->floorheight, MobjType::Tfog);
     // initiate teleport sound
     startSound(mo, SfxEnum::Telept);
 
     // spawn a teleport fog at the new spot
-    SubSector* ss = pointInSubsector(x, y);
+    SubSector* ss = pointInSubsector(xToUse, yToUse);
 
-    mo = spawnMobj(x, y, ss->sector->floorheight, MobjType::Tfog);
+    mo = spawnMobj(xToUse, yToUse, ss->sector->floorheight, MobjType::Tfog);
 
     startSound(mo, SfxEnum::Telept);
 
     // spawn the new monster
-    MapThing* mthing = &mobj.spawnpoint;
+    MapThing* mthing = &spawnpoint;
 
     // spawn it
-    if (hasFlag(mobj.info->flags, MobjFlag::SpawnCeiling))
-        z = ONCEILINGZ;
+    if (hasFlag(info->flags, MobjFlag::SpawnCeiling))
+        zToUse = ONCEILINGZ;
     else
-        z = ONFLOORZ;
+        zToUse = ONFLOORZ;
 
     // inherit attributes from deceased one
-    mo = spawnMobj(x, y, z, mobj.type);
-    mo->spawnpoint = mobj.spawnpoint;
+    mo = spawnMobj(xToUse, yToUse, zToUse, type);
+    mo->spawnpoint = spawnpoint;
     mo->angle = ang45 * (mthing->angle / 45);
 
     if (mthing->options & MTF_AMBUSH)
@@ -387,7 +391,7 @@ void nightmareRespawn(Mobj& mobj)
     mo->reactiontime = 18;
 
     // remove the old monster,
-    removeMobj(mobj);
+    remove();
 }
 
 //
@@ -441,15 +445,14 @@ Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type)
 //
 // removeMobj
 //
-void removeMobj(Mobj& mobj)
+void Mobj::remove()
 {
-    if ((hasFlag(mobj.flags, MobjFlag::Special))
-        && !(hasFlag(mobj.flags, MobjFlag::Dropped)) && (mobj.type != MobjType::Inv)
-        && (mobj.type != MobjType::Ins))
+    if ((hasFlag(flags, MobjFlag::Special)) && !(hasFlag(flags, MobjFlag::Dropped))
+        && (type != MobjType::Inv) && (type != MobjType::Ins))
     {
         auto& queue = itemRespawnQueue();
 
-        queue.itemrespawnque[queue.iquehead] = mobj.spawnpoint;
+        queue.itemrespawnque[queue.iquehead] = spawnpoint;
         queue.itemrespawntime[queue.iquehead] = levelStats().leveltime;
         queue.iquehead = (queue.iquehead + 1) & (ITEMQUESIZE - 1);
 
@@ -459,13 +462,13 @@ void removeMobj(Mobj& mobj)
     }
 
     // unlink from sector and block lists
-    unsetThingPosition(mobj);
+    unsetThingPosition(*this);
 
     // stop any playing sound
-    stopSound(&mobj);
+    stopSound(this);
 
     // free block
-    removeThinker(mobj);
+    removeThinker(*this);
 }
 
 //
@@ -565,7 +568,7 @@ void spawnPlayer(MapThing& mthing)
     p->viewheight = VIEWHEIGHT;
 
     // setup gun psprite
-    setupPsprites(*p);
+    p->setupPsprites();
 
     // give all cards in death match mode
     if (gameSession().deathmatch)
@@ -715,7 +718,7 @@ void spawnPuff(Fixed x, Fixed y, Fixed z)
 
     // don't make punches spark on the wall
     if (clipping().attackrange == MELEERANGE)
-        setMobjState(*th, StateNum::Puff3);
+        th->setState(StateNum::Puff3);
 }
 
 //
@@ -732,9 +735,9 @@ void spawnBlood(Fixed x, Fixed y, Fixed z, int damage)
         th->tics = 1;
 
     if (damage <= 12 && damage >= 9)
-        setMobjState(*th, StateNum::Blood2);
+        th->setState(StateNum::Blood2);
     else if (damage < 9)
-        setMobjState(*th, StateNum::Blood3);
+        th->setState(StateNum::Blood3);
 }
 
 //
@@ -742,34 +745,34 @@ void spawnBlood(Fixed x, Fixed y, Fixed z, int damage)
 // Moves the missile forward a bit
 //  and possibly explodes it right there.
 //
-void checkMissileSpawn(Mobj* th)
+void Mobj::checkMissileSpawn()
 {
-    th->tics -= randomness().forPlay() & 3;
-    if (th->tics < 1)
-        th->tics = 1;
+    tics -= randomness().forPlay() & 3;
+    if (tics < 1)
+        tics = 1;
 
     // move a little forward so an angle can
     // be computed if it immediately explodes
-    th->x += (th->momx >> 1);
-    th->y += (th->momy >> 1);
-    th->z += (th->momz >> 1);
+    x += (momx >> 1);
+    y += (momy >> 1);
+    z += (momz >> 1);
 
-    if (!tryMove(*th, th->x, th->y))
-        explodeMissile(*th);
+    if (!tryMove(x, y))
+        explodeMissile();
 }
 
 //
 // spawnMissile
 //
-Mobj* spawnMissile(Mobj& source, Mobj* dest, MobjType type)
+Mobj* Mobj::spawnMissile(Mobj* dest, MobjType typeToUse)
 {
-    Mobj* th = spawnMobj(source.x, source.y, source.z + 4 * 8 * FRACUNIT, type);
+    Mobj* th = spawnMobj(x, y, z + 4 * 8 * FRACUNIT, typeToUse);
 
     if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);
 
-    th->target = &source; // where it came from
-    Angle an = pointToAngle2(source.x, source.y, dest->x, dest->y);
+    th->target = this; // where it came from
+    Angle an = pointToAngle2(x, y, dest->x, dest->y);
 
     // fuzzy player
     if (hasFlag(dest->flags, MobjFlag::Shadow))
@@ -783,14 +786,14 @@ Mobj* spawnMissile(Mobj& source, Mobj* dest, MobjType type)
 
     // dist is vanilla's tic count, not a length: the raw distance divided by the
     // missile's raw speed as plain integers, then used as the divisor for momz.
-    int dist = approxDistance(dest->x - source.x, dest->y - source.y).raw;
+    int dist = approxDistance(dest->x - x, dest->y - y).raw;
     dist = dist / th->info->speed;
 
     if (dist < 1)
         dist = 1;
 
-    th->momz = (dest->z - source.z) / dist;
-    checkMissileSpawn(th);
+    th->momz = (dest->z - z) / dist;
+    th->checkMissileSpawn();
 
     return th;
 }
@@ -799,48 +802,48 @@ Mobj* spawnMissile(Mobj& source, Mobj* dest, MobjType type)
 // spawnPlayerMissile
 // Tries to aim at a nearby monster
 //
-void spawnPlayerMissile(Mobj& source, MobjType type)
+void Mobj::spawnPlayerMissile(MobjType typeToUse)
 {
     // see which target is to be aimed at
-    Angle an = source.angle;
-    auto aim = aimLineAttack(&source, an, 16 * 64 * FRACUNIT);
+    Angle an = angle;
+    auto aim = aimLineAttack(this, an, 16 * 64 * FRACUNIT);
     Fixed slope = aim.slope;
 
     if (!aim.target)
     {
         an += Angle {1u << 26};
-        aim = aimLineAttack(&source, an, 16 * 64 * FRACUNIT);
+        aim = aimLineAttack(this, an, 16 * 64 * FRACUNIT);
         slope = aim.slope;
 
         if (!aim.target)
         {
             an -= Angle {2u << 26};
-            aim = aimLineAttack(&source, an, 16 * 64 * FRACUNIT);
+            aim = aimLineAttack(this, an, 16 * 64 * FRACUNIT);
             slope = aim.slope;
         }
 
         if (!aim.target)
         {
-            an = source.angle;
+            an = angle;
             slope = Fixed {};
         }
     }
 
-    Fixed x = source.x;
-    Fixed y = source.y;
-    Fixed z = source.z + 4 * 8 * FRACUNIT;
+    Fixed xToUse = x;
+    Fixed yToUse = y;
+    Fixed zToUse = z + 4 * 8 * FRACUNIT;
 
-    Mobj* th = spawnMobj(x, y, z, type);
+    Mobj* th = spawnMobj(xToUse, yToUse, zToUse, typeToUse);
 
     if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);
 
-    th->target = &source;
+    th->target = this;
     th->angle = an;
     th->momx = FixedMul(Fixed {th->info->speed}, finecosine()[an.fineIndex()]);
     th->momy = FixedMul(Fixed {th->info->speed}, finesine()[an.fineIndex()]);
     th->momz = FixedMul(Fixed {th->info->speed}, slope);
 
-    checkMissileSpawn(th);
+    th->checkMissileSpawn();
 }
 } // namespace Doom

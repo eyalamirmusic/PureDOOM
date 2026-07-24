@@ -10,10 +10,11 @@
 // DESCRIPTION:
 //        Handling interactions (i.e., collisions): pickups, damage, death.
 //
-// Rewritten into namespace Doom out of vanilla p_inter; p_inter.cpp keeps the
-// vanilla names (Doom::touchSpecialThing, Doom::damageMobj, Doom::givePower) as shims and the
-// maxammo/clipammo data tables. The give-* helpers stay Doom:: functions here,
-// called only within this file. No mutable module state, so nothing moved to Clip.
+// Rewritten into namespace Doom out of vanilla p_inter. One thing damaging another is
+// Mobj::damage, and the pickups (the give-* helpers and givePower) are Player methods;
+// see Interaction.h. touchSpecialThing and killMobj stay free functions - each takes
+// two mobjs with no single owner. The maxammo/clipammo data tables live in
+// Game/AmmoLimits.h. No mutable module state, so nothing moved to Clip.
 //
 //-----------------------------------------------------------------------------
 
@@ -61,29 +62,29 @@ constexpr int BONUSADD = 6;
 // Returns false if the ammo can't be picked up at all
 //
 
-bool giveAmmo(Player& player, AmmoType ammo, int num)
+bool Player::giveAmmo(AmmoType ammoType, int num)
 {
     auto& ammoLimit = ammoLimits();
 
-    if (ammo == AmmoType::NoAmmo)
+    if (ammoType == AmmoType::NoAmmo)
         return false;
 
     // Vanilla's own bounds test, kept exactly: `> numAmmo`, not `>=`, so the
     // NumAmmo sentinel itself passes through. Preserved, not tightened.
-    if (toIndex(ammo) < 0 || toIndex(ammo) > numAmmo)
+    if (toIndex(ammoType) < 0 || toIndex(ammoType) > numAmmo)
     {
         //fatalError ("giveAmmo: bad type %i", ammo);
 
-        fatalError("giveAmmo: bad type ", static_cast<int>(ammo));
+        fatalError("giveAmmo: bad type ", static_cast<int>(ammoType));
     }
 
-    if (player.ammo[toIndex(ammo)] == player.maxammo[toIndex(ammo)])
+    if (ammo[toIndex(ammoType)] == maxammo[toIndex(ammoType)])
         return false;
 
     if (num)
-        num *= ammoLimit.clipammo[toIndex(ammo)];
+        num *= ammoLimit.clipammo[toIndex(ammoType)];
     else
-        num = ammoLimit.clipammo[toIndex(ammo)] / 2;
+        num = ammoLimit.clipammo[toIndex(ammoType)] / 2;
 
     const auto skill = gameSession().gameskill;
 
@@ -94,56 +95,54 @@ bool giveAmmo(Player& player, AmmoType ammo, int num)
         num <<= 1;
     }
 
-    int oldammo = player.ammo[toIndex(ammo)];
-    player.ammo[toIndex(ammo)] += num;
+    int oldammo = ammo[toIndex(ammoType)];
+    ammo[toIndex(ammoType)] += num;
 
-    if (player.ammo[toIndex(ammo)] > player.maxammo[toIndex(ammo)])
-        player.ammo[toIndex(ammo)] = player.maxammo[toIndex(ammo)];
+    if (ammo[toIndex(ammoType)] > maxammo[toIndex(ammoType)])
+        ammo[toIndex(ammoType)] = maxammo[toIndex(ammoType)];
 
     // If non zero ammo,
     // don't change up weapons,
-    // player was lower on purpose.
+    // it was lower on purpose.
     if (oldammo)
         return true;
 
     // We were down to zero,
     // so select a new weapon.
     // Preferences are not user selectable.
-    switch (ammo)
+    switch (ammoType)
     {
         case AmmoType::Clip:
-            if (player.readyweapon == WeaponType::Fist)
+            if (readyweapon == WeaponType::Fist)
             {
-                if (player.weaponowned[toIndex(WeaponType::Chaingun)])
-                    player.pendingweapon = WeaponType::Chaingun;
+                if (weaponowned[toIndex(WeaponType::Chaingun)])
+                    pendingweapon = WeaponType::Chaingun;
                 else
-                    player.pendingweapon = WeaponType::Pistol;
+                    pendingweapon = WeaponType::Pistol;
             }
             break;
 
         case AmmoType::Shell:
-            if (player.readyweapon == WeaponType::Fist
-                || player.readyweapon == WeaponType::Pistol)
+            if (readyweapon == WeaponType::Fist || readyweapon == WeaponType::Pistol)
             {
-                if (player.weaponowned[toIndex(WeaponType::Shotgun)])
-                    player.pendingweapon = WeaponType::Shotgun;
+                if (weaponowned[toIndex(WeaponType::Shotgun)])
+                    pendingweapon = WeaponType::Shotgun;
             }
             break;
 
         case AmmoType::Cell:
-            if (player.readyweapon == WeaponType::Fist
-                || player.readyweapon == WeaponType::Pistol)
+            if (readyweapon == WeaponType::Fist || readyweapon == WeaponType::Pistol)
             {
-                if (player.weaponowned[toIndex(WeaponType::Plasma)])
-                    player.pendingweapon = WeaponType::Plasma;
+                if (weaponowned[toIndex(WeaponType::Plasma)])
+                    pendingweapon = WeaponType::Plasma;
             }
             break;
 
         case AmmoType::Misl:
-            if (player.readyweapon == WeaponType::Fist)
+            if (readyweapon == WeaponType::Fist)
             {
-                if (player.weaponowned[toIndex(WeaponType::Missile)])
-                    player.pendingweapon = WeaponType::Missile;
+                if (weaponowned[toIndex(WeaponType::Missile)])
+                    pendingweapon = WeaponType::Missile;
             }
             break;
 
@@ -161,7 +160,7 @@ bool giveAmmo(Player& player, AmmoType ammo, int num)
 // giveWeapon
 // The weapon name may have a flagBits(MobjFlag::Dropped) flag ored in.
 //
-bool giveWeapon(Player& player, WeaponType weapon, bool dropped)
+bool Player::giveWeapon(WeaponType weapon, bool dropped)
 {
     bool gaveammo;
     bool gaveweapon;
@@ -171,21 +170,21 @@ bool giveWeapon(Player& player, WeaponType weapon, bool dropped)
     if (session.netgame && (session.deathmatch != 2) && !dropped)
     {
         // leave placed weapons forever on net games
-        if (player.weaponowned[toIndex(weapon)])
+        if (weaponowned[toIndex(weapon)])
             return false;
 
-        player.bonuscount += BONUSADD;
-        player.weaponowned[toIndex(weapon)] = true;
+        bonuscount += BONUSADD;
+        weaponowned[toIndex(weapon)] = true;
 
         if (session.deathmatch)
-            giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 5);
+            giveAmmo(weaponinfo()[toIndex(weapon)].ammo, 5);
         else
-            giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 2);
-        player.pendingweapon = weapon;
+            giveAmmo(weaponinfo()[toIndex(weapon)].ammo, 2);
+        pendingweapon = weapon;
 
         const auto& players_ = playerState();
 
-        if (&player == &players_.players[players_.consoleplayer])
+        if (this == &players_.players[players_.consoleplayer])
             startSound(nullptr, SfxEnum::Wpnup);
         return false;
     }
@@ -195,20 +194,20 @@ bool giveWeapon(Player& player, WeaponType weapon, bool dropped)
         // give one clip with a dropped weapon,
         // two clips with a found weapon
         if (dropped)
-            gaveammo = giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 1);
+            gaveammo = giveAmmo(weaponinfo()[toIndex(weapon)].ammo, 1);
         else
-            gaveammo = giveAmmo(player, weaponinfo()[toIndex(weapon)].ammo, 2);
+            gaveammo = giveAmmo(weaponinfo()[toIndex(weapon)].ammo, 2);
     }
     else
         gaveammo = false;
 
-    if (player.weaponowned[toIndex(weapon)])
+    if (weaponowned[toIndex(weapon)])
         gaveweapon = false;
     else
     {
         gaveweapon = true;
-        player.weaponowned[toIndex(weapon)] = true;
-        player.pendingweapon = weapon;
+        weaponowned[toIndex(weapon)] = true;
+        pendingweapon = weapon;
     }
 
     return (gaveweapon || gaveammo);
@@ -218,15 +217,15 @@ bool giveWeapon(Player& player, WeaponType weapon, bool dropped)
 // giveBody
 // Returns false if the body isn't needed at all
 //
-bool giveBody(Player& player, int num)
+bool Player::giveBody(int num)
 {
-    if (player.health >= MAXHEALTH)
+    if (health >= MAXHEALTH)
         return false;
 
-    player.health += num;
-    if (player.health > MAXHEALTH)
-        player.health = MAXHEALTH;
-    player.mo->health = player.health;
+    health += num;
+    if (health > MAXHEALTH)
+        health = MAXHEALTH;
+    mo->health = health;
 
     return true;
 }
@@ -236,14 +235,14 @@ bool giveBody(Player& player, int num)
 // Returns false if the armor is worse
 // than the current armor.
 //
-bool giveArmor(Player& player, int armortype)
+bool Player::giveArmor(int armortypeToUse)
 {
-    int hits = armortype * 100;
-    if (player.armorpoints >= hits)
+    int hits = armortypeToUse * 100;
+    if (armorpoints >= hits)
         return false; // don't pick up
 
-    player.armortype = armortype;
-    player.armorpoints = hits;
+    armortype = armortypeToUse;
+    armorpoints = hits;
 
     return true;
 }
@@ -251,56 +250,56 @@ bool giveArmor(Player& player, int armortype)
 //
 // giveCard
 //
-void giveCard(Player& player, Card card)
+void Player::giveCard(Card card)
 {
-    if (player.cards[toIndex(card)])
+    if (cards[toIndex(card)])
         return;
 
-    player.bonuscount = BONUSADD;
-    player.cards[toIndex(card)] = true;
+    bonuscount = BONUSADD;
+    cards[toIndex(card)] = true;
 }
 
 //
 // givePower
 //
-bool givePower(Player& player, PowerType power)
+bool Player::givePower(PowerType power)
 {
     if (power == PowerType::Invulnerability)
     {
-        player.powers[toIndex(power)] = invulnTics;
+        powers[toIndex(power)] = invulnTics;
         return true;
     }
 
     if (power == PowerType::Invisibility)
     {
-        player.powers[toIndex(power)] = invisTics;
-        player.mo->flags = withFlags(player.mo->flags, MobjFlag::Shadow);
+        powers[toIndex(power)] = invisTics;
+        mo->flags = withFlags(mo->flags, MobjFlag::Shadow);
         return true;
     }
 
     if (power == PowerType::Infrared)
     {
-        player.powers[toIndex(power)] = infraTics;
+        powers[toIndex(power)] = infraTics;
         return true;
     }
 
     if (power == PowerType::IronFeet)
     {
-        player.powers[toIndex(power)] = ironTics;
+        powers[toIndex(power)] = ironTics;
         return true;
     }
 
     if (power == PowerType::Strength)
     {
-        giveBody(player, 100);
-        player.powers[toIndex(power)] = 1;
+        giveBody(100);
+        powers[toIndex(power)] = 1;
         return true;
     }
 
-    if (player.powers[toIndex(power)])
+    if (powers[toIndex(power)])
         return false; // already got it
 
-    player.powers[toIndex(power)] = 1;
+    powers[toIndex(power)] = 1;
     return true;
 }
 
@@ -332,13 +331,13 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
     {
             // armor
         case SpriteNum::Arm1:
-            if (!giveArmor(*player, 1))
+            if (!player->giveArmor(1))
                 return;
             player->message = GOTARMOR;
             break;
 
         case SpriteNum::Arm2:
-            if (!giveArmor(*player, 2))
+            if (!player->giveArmor(2))
                 return;
             player->message = GOTMEGA;
             break;
@@ -375,7 +374,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
                 return;
             player->health = 200;
             player->mo->health = player->health;
-            giveArmor(*player, 2);
+            player->giveArmor(2);
             player->message = GOTMSPHERE;
             sound = SfxEnum::Getpow;
             break;
@@ -385,7 +384,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Bkey:
             if (!player->cards[toIndex(Card::BlueCard)])
                 player->message = GOTBLUECARD;
-            giveCard(*player, Card::BlueCard);
+            player->giveCard(Card::BlueCard);
             if (!session.netgame)
                 break;
             return;
@@ -393,7 +392,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Ykey:
             if (!player->cards[toIndex(Card::YellowCard)])
                 player->message = GOTYELWCARD;
-            giveCard(*player, Card::YellowCard);
+            player->giveCard(Card::YellowCard);
             if (!session.netgame)
                 break;
             return;
@@ -401,7 +400,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Rkey:
             if (!player->cards[toIndex(Card::RedCard)])
                 player->message = GOTREDCARD;
-            giveCard(*player, Card::RedCard);
+            player->giveCard(Card::RedCard);
             if (!session.netgame)
                 break;
             return;
@@ -409,7 +408,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Bsku:
             if (!player->cards[toIndex(Card::BlueSkull)])
                 player->message = GOTBLUESKUL;
-            giveCard(*player, Card::BlueSkull);
+            player->giveCard(Card::BlueSkull);
             if (!session.netgame)
                 break;
             return;
@@ -417,7 +416,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Ysku:
             if (!player->cards[toIndex(Card::YellowSkull)])
                 player->message = GOTYELWSKUL;
-            giveCard(*player, Card::YellowSkull);
+            player->giveCard(Card::YellowSkull);
             if (!session.netgame)
                 break;
             return;
@@ -425,20 +424,20 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Rsku:
             if (!player->cards[toIndex(Card::RedSkull)])
                 player->message = GOTREDSKULL;
-            giveCard(*player, Card::RedSkull);
+            player->giveCard(Card::RedSkull);
             if (!session.netgame)
                 break;
             return;
 
             // medikits, heals
         case SpriteNum::Stim:
-            if (!giveBody(*player, 10))
+            if (!player->giveBody(10))
                 return;
             player->message = GOTSTIM;
             break;
 
         case SpriteNum::Medi:
-            if (!giveBody(*player, 25))
+            if (!player->giveBody(25))
                 return;
 
             if (player->health < 25)
@@ -449,14 +448,14 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
 
             // power ups
         case SpriteNum::Pinv:
-            if (!givePower(*player, PowerType::Invulnerability))
+            if (!player->givePower(PowerType::Invulnerability))
                 return;
             player->message = GOTINVUL;
             sound = SfxEnum::Getpow;
             break;
 
         case SpriteNum::Pstr:
-            if (!givePower(*player, PowerType::Strength))
+            if (!player->givePower(PowerType::Strength))
                 return;
             player->message = GOTBERSERK;
             if (player->readyweapon != WeaponType::Fist)
@@ -465,28 +464,28 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
             break;
 
         case SpriteNum::Pins:
-            if (!givePower(*player, PowerType::Invisibility))
+            if (!player->givePower(PowerType::Invisibility))
                 return;
             player->message = GOTINVIS;
             sound = SfxEnum::Getpow;
             break;
 
         case SpriteNum::Suit:
-            if (!givePower(*player, PowerType::IronFeet))
+            if (!player->givePower(PowerType::IronFeet))
                 return;
             player->message = GOTSUIT;
             sound = SfxEnum::Getpow;
             break;
 
         case SpriteNum::Pmap:
-            if (!givePower(*player, PowerType::AllMap))
+            if (!player->givePower(PowerType::AllMap))
                 return;
             player->message = GOTMAP;
             sound = SfxEnum::Getpow;
             break;
 
         case SpriteNum::Pvis:
-            if (!givePower(*player, PowerType::Infrared))
+            if (!player->givePower(PowerType::Infrared))
                 return;
             player->message = GOTVISOR;
             sound = SfxEnum::Getpow;
@@ -496,55 +495,55 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Clip:
             if (hasFlag(special.flags, MobjFlag::Dropped))
             {
-                if (!giveAmmo(*player, AmmoType::Clip, 0))
+                if (!player->giveAmmo(AmmoType::Clip, 0))
                     return;
             }
             else
             {
-                if (!giveAmmo(*player, AmmoType::Clip, 1))
+                if (!player->giveAmmo(AmmoType::Clip, 1))
                     return;
             }
             player->message = GOTCLIP;
             break;
 
         case SpriteNum::Ammo:
-            if (!giveAmmo(*player, AmmoType::Clip, 5))
+            if (!player->giveAmmo(AmmoType::Clip, 5))
                 return;
             player->message = GOTCLIPBOX;
             break;
 
         case SpriteNum::Rock:
-            if (!giveAmmo(*player, AmmoType::Misl, 1))
+            if (!player->giveAmmo(AmmoType::Misl, 1))
                 return;
             player->message = GOTROCKET;
             break;
 
         case SpriteNum::Brok:
-            if (!giveAmmo(*player, AmmoType::Misl, 5))
+            if (!player->giveAmmo(AmmoType::Misl, 5))
                 return;
             player->message = GOTROCKBOX;
             break;
 
         case SpriteNum::Cell:
-            if (!giveAmmo(*player, AmmoType::Cell, 1))
+            if (!player->giveAmmo(AmmoType::Cell, 1))
                 return;
             player->message = GOTCELL;
             break;
 
         case SpriteNum::Celp:
-            if (!giveAmmo(*player, AmmoType::Cell, 5))
+            if (!player->giveAmmo(AmmoType::Cell, 5))
                 return;
             player->message = GOTCELLBOX;
             break;
 
         case SpriteNum::Shel:
-            if (!giveAmmo(*player, AmmoType::Shell, 1))
+            if (!player->giveAmmo(AmmoType::Shell, 1))
                 return;
             player->message = GOTSHELLS;
             break;
 
         case SpriteNum::Sbox:
-            if (!giveAmmo(*player, AmmoType::Shell, 5))
+            if (!player->giveAmmo(AmmoType::Shell, 5))
                 return;
             player->message = GOTSHELLBOX;
             break;
@@ -557,61 +556,58 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
                 player->backpack = true;
             }
             for (int i = 0; i < numAmmo; i++)
-                giveAmmo(*player, static_cast<AmmoType>(i), 1);
+                player->giveAmmo(static_cast<AmmoType>(i), 1);
             player->message = GOTBACKPACK;
             break;
 
             // weapons
         case SpriteNum::Bfug:
-            if (!giveWeapon(*player, WeaponType::Bfg, false))
+            if (!player->giveWeapon(WeaponType::Bfg, false))
                 return;
             player->message = GOTBFG9000;
             sound = SfxEnum::Wpnup;
             break;
 
         case SpriteNum::Mgun:
-            if (!giveWeapon(*player,
-                            WeaponType::Chaingun,
-                            hasFlag(special.flags, MobjFlag::Dropped)))
+            if (!player->giveWeapon(WeaponType::Chaingun,
+                                    hasFlag(special.flags, MobjFlag::Dropped)))
                 return;
             player->message = GOTCHAINGUN;
             sound = SfxEnum::Wpnup;
             break;
 
         case SpriteNum::Csaw:
-            if (!giveWeapon(*player, WeaponType::Chainsaw, false))
+            if (!player->giveWeapon(WeaponType::Chainsaw, false))
                 return;
             player->message = GOTCHAINSAW;
             sound = SfxEnum::Wpnup;
             break;
 
         case SpriteNum::Laun:
-            if (!giveWeapon(*player, WeaponType::Missile, false))
+            if (!player->giveWeapon(WeaponType::Missile, false))
                 return;
             player->message = GOTLAUNCHER;
             sound = SfxEnum::Wpnup;
             break;
 
         case SpriteNum::Plas:
-            if (!giveWeapon(*player, WeaponType::Plasma, false))
+            if (!player->giveWeapon(WeaponType::Plasma, false))
                 return;
             player->message = GOTPLASMA;
             sound = SfxEnum::Wpnup;
             break;
 
         case SpriteNum::Shot:
-            if (!giveWeapon(*player,
-                            WeaponType::Shotgun,
-                            hasFlag(special.flags, MobjFlag::Dropped)))
+            if (!player->giveWeapon(WeaponType::Shotgun,
+                                    hasFlag(special.flags, MobjFlag::Dropped)))
                 return;
             player->message = GOTSHOTGUN;
             sound = SfxEnum::Wpnup;
             break;
 
         case SpriteNum::Sgn2:
-            if (!giveWeapon(*player,
-                            WeaponType::SuperShotgun,
-                            hasFlag(special.flags, MobjFlag::Dropped)))
+            if (!player->giveWeapon(WeaponType::SuperShotgun,
+                                    hasFlag(special.flags, MobjFlag::Dropped)))
                 return;
             player->message = GOTSHOTGUN2;
             sound = SfxEnum::Wpnup;
@@ -623,7 +619,7 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
 
     if (hasFlag(special.flags, MobjFlag::CountItem))
         player->itemcount++;
-    removeMobj(special);
+    special.remove();
     player->bonuscount += BONUSADD;
 
     const auto& players_ = playerState();
@@ -674,7 +670,7 @@ void killMobj(Mobj* source, Mobj& target)
 
         target.flags = withoutFlags(target.flags, MobjFlag::Solid);
         target.player->playerstate = PlayerLifeState::Dead;
-        dropWeapon(*target.player);
+        target.player->dropWeapon();
 
         if (target.player == &players_.players[players_.consoleplayer]
             && overlayState().automapactive)
@@ -688,10 +684,10 @@ void killMobj(Mobj* source, Mobj& target)
     if (target.health < -target.info->spawnhealth
         && target.info->xdeathstate != StateNum::Null)
     {
-        setMobjState(target, target.info->xdeathstate);
+        target.setState(target.info->xdeathstate);
     }
     else
-        setMobjState(target, static_cast<StateNum>(target.info->deathstate));
+        target.setState(static_cast<StateNum>(target.info->deathstate));
     target.tics -= randomness().forPlay() & 3;
 
     if (target.tics < 1)
@@ -736,40 +732,39 @@ void killMobj(Mobj* source, Mobj& target)
 // Source can be 0 for slime, barrel explosions
 // and other environmental stuff.
 //
-void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
+void Mobj::damage(Mobj* inflictor, Mobj* source, int damage)
 {
     Angle ang {};
     int saved;
 
-    if (!(hasFlag(target.flags, MobjFlag::Shootable)))
+    if (!(hasFlag(flags, MobjFlag::Shootable)))
         return; // shouldn't happen...
 
-    if (target.health <= 0)
+    if (health <= 0)
         return;
 
-    if (hasFlag(target.flags, MobjFlag::SkullFly))
+    if (hasFlag(flags, MobjFlag::SkullFly))
     {
-        target.momx = target.momy = target.momz = Fixed {};
+        momx = momy = momz = Fixed {};
     }
 
-    Player* player = target.player;
-    if (player && gameSession().gameskill == Skill::Baby)
+    Player* playerToUse = player;
+    if (playerToUse && gameSession().gameskill == Skill::Baby)
         damage >>= 1; // take half damage in trainer mode
 
     // Some close combat weapons should not
     // inflict thrust and push the victim out of reach,
     // thus kick away unless using the chainsaw.
-    if (inflictor && !(hasFlag(target.flags, MobjFlag::NoClip))
+    if (inflictor && !(hasFlag(flags, MobjFlag::NoClip))
         && (!source || !source->player
             || source->player->readyweapon != WeaponType::Chainsaw))
     {
-        ang = pointToAngle2(inflictor->x, inflictor->y, target.x, target.y);
+        ang = pointToAngle2(inflictor->x, inflictor->y, x, y);
 
-        Fixed thrust = damage * (FRACUNIT >> 3) * 100 / target.info->mass;
+        Fixed thrust = damage * (FRACUNIT >> 3) * 100 / info->mass;
 
         // make fall forwards sometimes
-        if (damage < 40 && damage > target.health
-            && target.z - inflictor->z > 64 * FRACUNIT
+        if (damage < 40 && damage > health && z - inflictor->z > 64 * FRACUNIT
             && (randomness().forPlay() & 1))
         {
             ang += ang180;
@@ -777,90 +772,90 @@ void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage)
         }
 
         const auto angFine = ang.fineIndex();
-        target.momx += FixedMul(thrust, finecosine()[angFine]);
-        target.momy += FixedMul(thrust, finesine()[angFine]);
+        momx += FixedMul(thrust, finecosine()[angFine]);
+        momy += FixedMul(thrust, finesine()[angFine]);
     }
 
     // player specific
-    if (player)
+    if (playerToUse)
     {
         // end of game hell hack
-        if (target.subsector->sector->special == 11 && damage >= target.health)
+        if (subsector->sector->special == 11 && damage >= health)
         {
-            damage = target.health - 1;
+            damage = health - 1;
         }
 
         // Below certain threshold,
         // ignore damage in GOD mode, or with INVUL power.
         if (damage < 1000
-            && ((hasFlag(player->cheats, CheatFlag::GodMode))
-                || player->powers[toIndex(PowerType::Invulnerability)]))
+            && ((hasFlag(playerToUse->cheats, CheatFlag::GodMode))
+                || playerToUse->powers[toIndex(PowerType::Invulnerability)]))
         {
             return;
         }
 
-        if (player->armortype)
+        if (playerToUse->armortype)
         {
-            if (player->armortype == 1)
+            if (playerToUse->armortype == 1)
                 saved = damage / 3;
             else
                 saved = damage / 2;
 
-            if (player->armorpoints <= saved)
+            if (playerToUse->armorpoints <= saved)
             {
                 // armor is used up
-                saved = player->armorpoints;
-                player->armortype = 0;
+                saved = playerToUse->armorpoints;
+                playerToUse->armortype = 0;
             }
-            player->armorpoints -= saved;
+            playerToUse->armorpoints -= saved;
             damage -= saved;
         }
-        player->health -= damage; // mirror mobj health here for Dave
-        if (player->health < 0)
-            player->health = 0;
+        playerToUse->health -= damage; // mirror mobj health here for Dave
+        if (playerToUse->health < 0)
+            playerToUse->health = 0;
 
-        player->attacker = source;
-        player->damagecount += damage; // add damage after armor / invuln
+        playerToUse->attacker = source;
+        playerToUse->damagecount += damage; // add damage after armor / invuln
 
-        if (player->damagecount > 100)
-            player->damagecount = 100; // teleport stomp does 10k points...
+        if (playerToUse->damagecount > 100)
+            playerToUse->damagecount = 100; // teleport stomp does 10k points...
 
         int temp = damage < 100 ? damage : 100;
 
         const auto& players_ = playerState();
 
-        if (player == &players_.players[players_.consoleplayer])
+        if (playerToUse == &players_.players[players_.consoleplayer])
             tactileFeedback(40, 10, 40 + temp * 2);
     }
 
     // do the damage
-    target.health -= damage;
-    if (target.health <= 0)
+    health -= damage;
+    if (health <= 0)
     {
-        killMobj(source, target);
+        killMobj(source, *this);
         return;
     }
 
-    if ((randomness().forPlay() < target.info->painchance)
-        && !(hasFlag(target.flags, MobjFlag::SkullFly)))
+    if ((randomness().forPlay() < info->painchance)
+        && !(hasFlag(flags, MobjFlag::SkullFly)))
     {
-        target.flags = withFlags(target.flags, MobjFlag::JustHit); // fight back!
+        flags = withFlags(flags, MobjFlag::JustHit); // fight back!
 
-        setMobjState(target, static_cast<StateNum>(target.info->painstate));
+        setState(static_cast<StateNum>(info->painstate));
     }
 
-    target.reactiontime = 0; // we're awake now...
+    reactiontime = 0; // we're awake now...
 
-    if ((!target.threshold || target.type == MobjType::Vile) && source
-        && source != &target && source->type != MobjType::Vile)
+    if ((!threshold || type == MobjType::Vile) && source && source != this
+        && source->type != MobjType::Vile)
     {
         // if not intent on another player,
         // chase after this one
-        target.target = source;
-        target.threshold = BASETHRESHOLD;
-        if (target.state == &states()[toIndex(target.info->spawnstate)]
-            && target.info->seestate != StateNum::Null)
-            setMobjState(target, static_cast<StateNum>(target.info->seestate));
+        target = source;
+        threshold = BASETHRESHOLD;
+        if (state == &states()[toIndex(info->spawnstate)]
+            && info->seestate != StateNum::Null)
+            setState(static_cast<StateNum>(info->seestate));
     }
 }
 } // namespace Doom

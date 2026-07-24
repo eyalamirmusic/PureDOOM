@@ -18,7 +18,7 @@ void Mobj::tick()
     // momentum movement
     if (momx || momy || (hasFlag(flags, MobjFlag::SkullFly)))
     {
-        xyMovement(*this);
+        xyMovement();
 
         // FIXME: decent NOP/0/Nil function pointer please.
         if (removed)
@@ -26,7 +26,7 @@ void Mobj::tick()
     }
     if ((z != floorz) || momz)
     {
-        zMovement(*this);
+        zMovement();
 
         // FIXME: decent NOP/0/Nil function pointer please.
         if (removed)
@@ -41,7 +41,7 @@ void Mobj::tick()
 
         // you can cycle through multiple states in a tic
         if (!tics)
-            if (!setMobjState(*this, state->nextstate))
+            if (!setState(state->nextstate))
                 return; // freed itself
     }
     else
@@ -64,7 +64,7 @@ void Mobj::tick()
         if (randomness().forPlay() > 4)
             return;
 
-        nightmareRespawn(*this);
+        nightmareRespawn();
     }
 }
 } // namespace Doom

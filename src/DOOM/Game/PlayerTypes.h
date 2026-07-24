@@ -198,6 +198,31 @@ struct Player
     void openShotgun2(PspDef& psp);
     void loadShotgun2(PspDef& psp);
     void closeShotgun2(PspDef& psp);
+
+    // Weapon / psprite plumbing the think loop and interaction code drive directly
+    // (vanilla's P_* psprite routines). Bodies in Sim/Weapon.cpp.
+    void setupPsprites();
+    void movePsprites();
+    void bringUpWeapon();
+    bool checkAmmo();
+    void fireWeapon();
+    void dropWeapon();
+    void setPsprite(PspNum position, StateNum stnum);
+
+    // Use the special line the player is facing (vanilla P_UseLines, body in
+    // Sim/MapAction.cpp), and apply the effect of the special sector under the player
+    // (vanilla P_PlayerInSpecialSector, body in Sim/Specials.cpp).
+    void useLines();
+    void inSpecialSector();
+
+    // Pickups (vanilla P_Give*): grant ammo/weapon/health/armor/key/powerup, each
+    // returning false if it had no effect. Bodies in Sim/Interaction.cpp.
+    bool giveAmmo(AmmoType ammo, int num);
+    bool giveWeapon(WeaponType weapon, bool dropped);
+    bool giveBody(int num);
+    bool giveArmor(int armortype);
+    void giveCard(Card card);
+    bool givePower(PowerType power);
 };
 } // namespace Doom
 

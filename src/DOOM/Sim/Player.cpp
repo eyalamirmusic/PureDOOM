@@ -141,7 +141,7 @@ void Player::movePlayer()
 
     mo->angle += Angle {(unsigned) cmdToUse->angleturn << 16};
 
-    // Do not let the *this control movement
+    // Do not let the player control movement
     //  if not onground.
     scratch.onground = (mo->z <= mo->floorz);
 
@@ -154,7 +154,7 @@ void Player::movePlayer()
     if ((cmdToUse->forwardmove || cmdToUse->sidemove)
         && mo->state == &states()[toIndex(StateNum::Play)])
     {
-        setMobjState(*mo, StateNum::PlayRun1);
+        mo->setState(StateNum::PlayRun1);
     }
 }
 
@@ -165,7 +165,7 @@ void Player::movePlayer()
 //
 void Player::deathThink()
 {
-    movePsprites(*this);
+    movePsprites();
 
     // fall to the ground
     if (viewheight > 6 * FRACUNIT)
@@ -243,7 +243,7 @@ void Player::think()
     calcHeight();
 
     if (mo->subsector->sector->special)
-        playerInSpecialSector(*this);
+        inSpecialSector();
 
     // Check for weapon change.
 
@@ -294,7 +294,7 @@ void Player::think()
     {
         if (!usedown)
         {
-            useLines(*this);
+            useLines();
             usedown = true;
         }
     }
@@ -302,7 +302,7 @@ void Player::think()
         usedown = false;
 
     // cycle psprites
-    movePsprites(*this);
+    movePsprites();
 
     // Counters, time dependend power ups.
 

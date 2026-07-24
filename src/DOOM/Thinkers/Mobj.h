@@ -252,6 +252,54 @@ struct Mobj : Thinker
     void spawnFly();
     void playerScream();
 
+    // Monster-AI helpers the action methods drive (vanilla p_enemy internals):
+    // stepping in the current direction, choosing a new one, target acquisition and
+    // the range checks. Bodies in Sim/Enemy.cpp.
+    bool checkMeleeRange();
+    bool checkMissileRange();
+    bool move();
+    bool tryWalk();
+    void newChaseDir();
+    bool lookForPlayers(bool allaround);
+    void painShootSkull(Angle angle);
+
+    // Hitscan helpers for the player's weapons, run on the shooter mobj (vanilla
+    // P_BulletSlope / P_GunShot). Bodies in Sim/Weapon.cpp.
+    void computeBulletSlope();
+    void gunShot(bool accurate);
+
+    // Core mobj machinery (vanilla p_mobj): the state driver, the per-tic movement
+    // steps, removal and missile spawning. Bodies in Sim/Mobj.cpp. spawnMobj and the
+    // other factories stay free functions there (they have no mobj to be a method of).
+    bool setState(StateNum stateToUse);
+    void explodeMissile();
+    void xyMovement();
+    void zMovement();
+    void nightmareRespawn();
+    void remove();
+    Mobj* spawnMissile(Mobj* dest, MobjType type);
+    void spawnPlayerMissile(MobjType type);
+    void checkMissileSpawn();
+
+    // Movement clipping (vanilla p_map core): does this thing fit at (x, y), and the
+    // commit of a move if it does. Bodies in Sim/Movement.cpp. The PIT_* blockmap
+    // callbacks stay free functions there (the iterator takes their address).
+    bool checkPosition(Fixed xToUse, Fixed yToUse);
+    bool tryMove(Fixed xToUse, Fixed yToUse);
+    bool teleportMove(Fixed xToUse, Fixed yToUse);
+    bool thingHeightClip();
+
+    // Hitscan, splash and sliding (vanilla p_map, past the movement core). Bodies in
+    // Sim/MapAction.cpp; aimLineAttack stays a free function there (its t1 may null).
+    void slideMove();
+    void lineAttack(Angle angle, Fixed distance, Fixed slope, int damage);
+    void radiusAttack(Mobj* source, int damage);
+
+    // Apply `damage` to this thing from inflictor/source (either may be null for
+    // environmental damage): thrust, armor, pain and death (vanilla P_DamageMobj).
+    // Body in Sim/Interaction.cpp; killMobj stays a free function there.
+    void damage(Mobj* inflictor, Mobj* source, int damage);
+
     // Info for drawing: position.
     Fixed x;
     Fixed y;

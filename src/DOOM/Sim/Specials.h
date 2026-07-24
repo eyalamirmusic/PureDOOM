@@ -18,7 +18,6 @@ int findSectorFromLineTag(Line& line, int start);
 int findMinSurroundingLight(Sector& sector, int max);
 void crossSpecialLine(int linenum, int side, Mobj& thing);
 void shootSpecialLine(Mobj& thing, Line& line);
-void playerInSpecialSector(Player& player);
 void updateSpecials();
 int doDonut(Line& line);
 void spawnSpecials();

@@ -120,6 +120,11 @@ struct Sector
 
     int linecount;
     struct Line** lines; // [linecount] size
+
+    // After this sector changed height, re-clip every thing touching it; crush those
+    // that no longer fit if `crunch`. Returns true if anything did not fit (vanilla
+    // P_ChangeSector). Body in Sim/MapAction.cpp.
+    bool changeSector(bool crunch);
 };
 } // namespace Doom
 

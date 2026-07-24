@@ -12,10 +12,11 @@
 // Rewritten into namespace Doom out of vanilla p_enemy. The A_* codepointers are
 // Mobj methods now (chase, look, the attacks, the deaths) and, for the super-
 // shotgun, Player methods; Sim/Info.cpp's state table installs each as &Mobj::name /
-// &Player::name. What stays a free function here is the internal AI the actions call
-// (move, tryWalk, newChaseDir, lookForPlayers, the range checks) and the noiseAlert /
-// recursiveSound sound flood. The AI scratch is file-local; soundtarget stays global
-// (p_saveg archives it).
+// &Player::name. The internal AI they call is Mobj methods too (move, tryWalk,
+// newChaseDir, lookForPlayers, the range checks, painShootSkull). What stays a free
+// function is what has no single owning mobj: the recursiveSound flood over sectors,
+// noiseAlert (a source and an emitter), and the vileCheck blockmap callback. The AI
+// scratch is file-local; soundtarget stays global (p_saveg archives it).
 //
 //-----------------------------------------------------------------------------
 
@@ -119,14 +120,7 @@ Angle TRACEANGLE {0xc000000};
 // Forward declarations so the file's own call order needs no rearranging.
 void recursiveSound(Sector* sec, int soundblocks);
 void noiseAlert(Mobj& target, Mobj& emmiter);
-bool checkMeleeRange(Mobj& actor);
-bool checkMissileRange(Mobj& actor);
-bool move(Mobj& actor);
-bool tryWalk(Mobj& actor);
-void newChaseDir(Mobj& actor);
-bool lookForPlayers(Mobj& actor, bool allaround);
 bool vileCheck(Mobj* thing);
-void painShootSkull(Mobj& actor, Angle angle);
 
 void recursiveSound(Sector* sec, int soundblocks)
 {
@@ -185,18 +179,18 @@ void noiseAlert(Mobj& target, Mobj& emmiter)
 //
 // checkMeleeRange
 //
-bool checkMeleeRange(Mobj& actor)
+bool Mobj::checkMeleeRange()
 {
-    if (!actor.target)
+    if (!target)
         return false;
 
-    Mobj* pl = actor.target;
-    Fixed dist = approxDistance(pl->x - actor.x, pl->y - actor.y);
+    Mobj* pl = target;
+    Fixed dist = approxDistance(pl->x - x, pl->y - y);
 
     if (dist >= MELEERANGE - 20 * FRACUNIT + pl->info->radius)
         return false;
 
-    if (!checkSight(&actor, actor.target))
+    if (!checkSight(this, target))
         return false;
 
     return true;
@@ -205,51 +199,49 @@ bool checkMeleeRange(Mobj& actor)
 //
 // checkMissileRange
 //
-bool checkMissileRange(Mobj& actor)
+bool Mobj::checkMissileRange()
 {
     // Vanilla declares dist Fixed and then shifts it down to whole units
     // half way through, after which every use of it is a plain integer -
     // compared against 14*64, 196, 200, 160 and P_Random's 0..255.
 
-    if (!checkSight(&actor, actor.target))
+    if (!checkSight(this, target))
         return false;
 
-    if (hasFlag(actor.flags, MobjFlag::JustHit))
+    if (hasFlag(flags, MobjFlag::JustHit))
     {
         // the target just hit the enemy,
         // so fight back!
-        actor.flags = withoutFlags(actor.flags, MobjFlag::JustHit);
+        flags = withoutFlags(flags, MobjFlag::JustHit);
         return true;
     }
 
-    if (actor.reactiontime)
+    if (reactiontime)
         return false; // do not attack yet
 
     // OPTIMIZE: get this from a global checksight
-    Fixed distance =
-        approxDistance(actor.x - actor.target->x, actor.y - actor.target->y)
-        - 64 * FRACUNIT;
+    Fixed distance = approxDistance(x - target->x, y - target->y) - 64 * FRACUNIT;
 
-    if (actor.info->meleestate == StateNum::Null)
+    if (info->meleestate == StateNum::Null)
         distance -= 128 * FRACUNIT; // no melee attack, so fire more
 
     int dist = distance.toInt();
 
-    if (actor.type == MobjType::Vile)
+    if (type == MobjType::Vile)
     {
         if (dist > 14 * 64)
             return false; // too far away
     }
 
-    if (actor.type == MobjType::Undead)
+    if (type == MobjType::Undead)
     {
         if (dist < 196)
             return false; // close for fist attack
         dist >>= 1;
     }
 
-    if (actor.type == MobjType::Cyborg || actor.type == MobjType::Spider
-        || actor.type == MobjType::Skull)
+    if (type == MobjType::Cyborg || type == MobjType::Spider
+        || type == MobjType::Skull)
     {
         dist >>= 1;
     }
@@ -257,7 +249,7 @@ bool checkMissileRange(Mobj& actor)
     if (dist > 200)
         dist = 200;
 
-    if (actor.type == MobjType::Cyborg && dist > 160)
+    if (type == MobjType::Cyborg && dist > 160)
         dist = 160;
 
     if (randomness().forPlay() < dist)
@@ -271,43 +263,43 @@ bool checkMissileRange(Mobj& actor)
 // Move in the current direction,
 // returns false if the move is blocked.
 //
-bool move(Mobj& actor)
+bool Mobj::move()
 {
     // warning: 'catch', 'throw', and 'try'
     // are all C++ reserved words
 
     auto& c = clipping();
 
-    if (actor.movedir == toIndex(DirType::NoDir))
+    if (movedir == toIndex(DirType::NoDir))
         return false;
 
-    if (static_cast<unsigned>(actor.movedir) >= 8)
-        fatalError("Error: Weird actor->movedir!");
+    if (static_cast<unsigned>(movedir) >= 8)
+        fatalError("Error: Weird *this->movedir!");
 
-    Fixed tryx = actor.x + actor.info->speed * xspeed[actor.movedir];
-    Fixed tryy = actor.y + actor.info->speed * yspeed[actor.movedir];
+    Fixed tryx = x + info->speed * xspeed[movedir];
+    Fixed tryy = y + info->speed * yspeed[movedir];
 
-    bool try_ok = tryMove(actor, tryx, tryy);
+    bool try_ok = tryMove(tryx, tryy);
 
     if (!try_ok)
     {
         // open any specials
-        if (hasFlag(actor.flags, MobjFlag::Float) && c.floatok)
+        if (hasFlag(flags, MobjFlag::Float) && c.floatok)
         {
             // must adjust height
-            if (actor.z < c.tmfloorz)
-                actor.z += FLOATSPEED;
+            if (z < c.tmfloorz)
+                z += FLOATSPEED;
             else
-                actor.z -= FLOATSPEED;
+                z -= FLOATSPEED;
 
-            actor.flags = withFlags(actor.flags, MobjFlag::InFloat);
+            flags = withFlags(flags, MobjFlag::InFloat);
             return true;
         }
 
         if (!c.numspechit)
             return false;
 
-        actor.movedir = toIndex(DirType::NoDir);
+        movedir = toIndex(DirType::NoDir);
         bool good = false;
         while (c.numspechit--)
         {
@@ -315,18 +307,18 @@ bool move(Mobj& actor)
             // if the special is not a door
             // that can be opened,
             // return false
-            if (useSpecialLine(actor, *ld, 0))
+            if (useSpecialLine(*this, *ld, 0))
                 good = true;
         }
         return good;
     }
     else
     {
-        actor.flags = withoutFlags(actor.flags, MobjFlag::InFloat);
+        flags = withoutFlags(flags, MobjFlag::InFloat);
     }
 
-    if (!(hasFlag(actor.flags, MobjFlag::Float)))
-        actor.z = actor.floorz;
+    if (!(hasFlag(flags, MobjFlag::Float)))
+        z = floorz;
 
     return true;
 }
@@ -342,31 +334,31 @@ bool move(Mobj& actor)
 // If a door is in the way,
 // an OpenDoor call is made to start it opening.
 //
-bool tryWalk(Mobj& actor)
+bool Mobj::tryWalk()
 {
-    if (!move(actor))
+    if (!move())
     {
         return false;
     }
 
-    actor.movecount = randomness().forPlay() & 15;
+    movecount = randomness().forPlay() & 15;
     return true;
 }
 
-void newChaseDir(Mobj& actor)
+void Mobj::newChaseDir()
 {
     Array<DirType, 3> d;
 
     int tdir;
 
-    if (!actor.target)
+    if (!target)
         fatalError("Error: newChaseDir: called with no target");
 
-    DirType olddir = static_cast<DirType>(actor.movedir);
+    DirType olddir = static_cast<DirType>(movedir);
     DirType turnaround = opposite[toIndex(olddir)];
 
-    Fixed deltax = actor.target->x - actor.x;
-    Fixed deltay = actor.target->y - actor.y;
+    Fixed deltax = target->x - x;
+    Fixed deltay = target->y - y;
 
     if (deltax > 10 * FRACUNIT)
         d[1] = DirType::East;
@@ -385,9 +377,8 @@ void newChaseDir(Mobj& actor)
     // try direct route
     if (d[1] != DirType::NoDir && d[2] != DirType::NoDir)
     {
-        actor.movedir =
-            toIndex(diags[(deltay.isNegative() << 1) + deltax.isPositive()]);
-        if (actor.movedir != toIndex(turnaround) && tryWalk(actor))
+        movedir = toIndex(diags[(deltay.isNegative() << 1) + deltax.isPositive()]);
+        if (movedir != toIndex(turnaround) && tryWalk())
             return;
     }
 
@@ -406,8 +397,8 @@ void newChaseDir(Mobj& actor)
 
     if (d[1] != DirType::NoDir)
     {
-        actor.movedir = toIndex(d[1]);
-        if (tryWalk(actor))
+        movedir = toIndex(d[1]);
+        if (tryWalk())
         {
             // either moved forward or attacked
             return;
@@ -416,9 +407,9 @@ void newChaseDir(Mobj& actor)
 
     if (d[2] != DirType::NoDir)
     {
-        actor.movedir = toIndex(d[2]);
+        movedir = toIndex(d[2]);
 
-        if (tryWalk(actor))
+        if (tryWalk())
             return;
     }
 
@@ -426,9 +417,9 @@ void newChaseDir(Mobj& actor)
     // so pick another direction.
     if (olddir != DirType::NoDir)
     {
-        actor.movedir = toIndex(olddir);
+        movedir = toIndex(olddir);
 
-        if (tryWalk(actor))
+        if (tryWalk())
             return;
     }
 
@@ -440,9 +431,9 @@ void newChaseDir(Mobj& actor)
         {
             if (tdir != toIndex(turnaround))
             {
-                actor.movedir = tdir;
+                movedir = tdir;
 
-                if (tryWalk(actor))
+                if (tryWalk())
                     return;
             }
         }
@@ -454,9 +445,9 @@ void newChaseDir(Mobj& actor)
         {
             if (tdir != toIndex(turnaround))
             {
-                actor.movedir = tdir;
+                movedir = tdir;
 
-                if (tryWalk(actor))
+                if (tryWalk())
                     return;
             }
         }
@@ -464,12 +455,12 @@ void newChaseDir(Mobj& actor)
 
     if (turnaround != DirType::NoDir)
     {
-        actor.movedir = toIndex(turnaround);
-        if (tryWalk(actor))
+        movedir = toIndex(turnaround);
+        if (tryWalk())
             return;
     }
 
-    actor.movedir = toIndex(DirType::NoDir); // can not move
+    movedir = toIndex(DirType::NoDir); // can not move
 }
 
 //
@@ -477,48 +468,48 @@ void newChaseDir(Mobj& actor)
 // If allaround is false, only look 180 degrees in front.
 // Returns true if a player is targeted.
 //
-bool lookForPlayers(Mobj& actor, bool allaround)
+bool Mobj::lookForPlayers(bool allaround)
 {
     int c = 0;
-    int stop = (actor.lastlook - 1) & 3;
+    int stop = (lastlook - 1) & 3;
 
     auto& players_ = playerState();
 
-    for (;; actor.lastlook = (actor.lastlook + 1) & 3)
+    for (;; lastlook = (lastlook + 1) & 3)
     {
-        if (!players_.playeringame[actor.lastlook])
+        if (!players_.playeringame[lastlook])
             continue;
 
-        if (c++ == 2 || actor.lastlook == stop)
+        if (c++ == 2 || lastlook == stop)
         {
             // done looking
             return false;
         }
 
-        Player* player = &players_.players[actor.lastlook];
+        Player* playerToUse = &players_.players[lastlook];
 
-        if (player->health <= 0)
+        if (playerToUse->health <= 0)
             continue; // dead
 
-        if (!checkSight(&actor, player->mo))
+        if (!checkSight(this, playerToUse->mo))
             continue; // out of sight
 
         if (!allaround)
         {
-            Angle an = pointToAngle2(actor.x, actor.y, player->mo->x, player->mo->y)
-                       - actor.angle;
+            Angle an =
+                pointToAngle2(x, y, playerToUse->mo->x, playerToUse->mo->y) - angle;
 
             if (an > ang90 && an < ang270)
             {
                 Fixed dist =
-                    approxDistance(player->mo->x - actor.x, player->mo->y - actor.y);
+                    approxDistance(playerToUse->mo->x - x, playerToUse->mo->y - y);
                 // if real close, react anyway
                 if (dist > MELEERANGE)
                     continue; // behind back
             }
         }
 
-        actor.target = player->mo;
+        target = playerToUse->mo;
         return true;
     }
 
@@ -606,7 +597,7 @@ void Mobj::look()
                 startSound(this, sound);
         }
 
-        setMobjState(*this, static_cast<StateNum>(info->seestate));
+        setState(static_cast<StateNum>(info->seestate));
     };
 
     if (targ && (hasFlag(targ->flags, MobjFlag::Shootable)))
@@ -622,7 +613,7 @@ void Mobj::look()
         }
     }
 
-    if (!lookForPlayers(*this, false))
+    if (!lookForPlayers(false))
         return;
 
     seeyou();
@@ -669,10 +660,10 @@ void Mobj::chase()
     if (!target || !(hasFlag(target->flags, MobjFlag::Shootable)))
     {
         // look for a new target
-        if (lookForPlayers(*this, true))
+        if (lookForPlayers(true))
             return; // got a new target
 
-        setMobjState(*this, static_cast<StateNum>(info->spawnstate));
+        setState(static_cast<StateNum>(info->spawnstate));
         return;
     }
 
@@ -684,17 +675,17 @@ void Mobj::chase()
     {
         flags = withoutFlags(flags, MobjFlag::JustAttacked);
         if (session.gameskill != Skill::Nightmare && !opts.fastparm)
-            newChaseDir(*this);
+            newChaseDir();
         return;
     }
 
     // check for melee attack
-    if (info->meleestate != StateNum::Null && checkMeleeRange(*this))
+    if (info->meleestate != StateNum::Null && checkMeleeRange())
     {
         if (info->attacksound != SfxEnum::None)
             startSound(this, info->attacksound);
 
-        setMobjState(*this, info->meleestate);
+        setState(info->meleestate);
         return;
     }
 
@@ -708,9 +699,9 @@ void Mobj::chase()
         const bool holdFire =
             session.gameskill < Skill::Nightmare && !opts.fastparm && movecount;
 
-        if (!holdFire && checkMissileRange(*this))
+        if (!holdFire && checkMissileRange())
         {
-            setMobjState(*this, info->missilestate);
+            setState(info->missilestate);
             flags = withFlags(flags, MobjFlag::JustAttacked);
             return;
         }
@@ -719,14 +710,14 @@ void Mobj::chase()
     // possibly choose another target
     if (session.netgame && !threshold && !checkSight(this, target))
     {
-        if (lookForPlayers(*this, true))
+        if (lookForPlayers(true))
             return; // got a new target
     }
 
     // chase towards player
-    if (--movecount < 0 || !move(*this))
+    if (--movecount < 0 || !move())
     {
-        newChaseDir(*this);
+        newChaseDir();
     }
 
     // make active sound
@@ -769,7 +760,7 @@ void Mobj::posAttack()
     angleToUse +=
         Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
-    lineAttack(*this, angleToUse, MISSILERANGE, slope, damage);
+    lineAttack(angleToUse, MISSILERANGE, slope, damage);
 }
 
 void Mobj::sPosAttack()
@@ -791,7 +782,7 @@ void Mobj::sPosAttack()
             + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay())
                      << 20};
         int damage = ((randomness().forPlay() % 5) + 1) * 3;
-        lineAttack(*this, angleToUse, MISSILERANGE, slope, damage);
+        lineAttack(angleToUse, MISSILERANGE, slope, damage);
     }
 }
 
@@ -811,7 +802,7 @@ void Mobj::cPosAttack()
         bangle
         + Angle {(unsigned) (randomness().forPlay() - randomness().forPlay()) << 20};
     int damage = ((randomness().forPlay() % 5) + 1) * 3;
-    lineAttack(*this, angleToUse, MISSILERANGE, slope, damage);
+    lineAttack(angleToUse, MISSILERANGE, slope, damage);
 }
 
 void Mobj::cPosRefire()
@@ -824,7 +815,7 @@ void Mobj::cPosRefire()
 
     if (!target || target->health <= 0 || !checkSight(this, target))
     {
-        setMobjState(*this, static_cast<StateNum>(info->seestate));
+        setState(static_cast<StateNum>(info->seestate));
     }
 }
 
@@ -838,7 +829,7 @@ void Mobj::spidRefire()
 
     if (!target || target->health <= 0 || !checkSight(this, target))
     {
-        setMobjState(*this, static_cast<StateNum>(info->seestate));
+        setState(static_cast<StateNum>(info->seestate));
     }
 }
 
@@ -850,7 +841,7 @@ void Mobj::bspiAttack()
     faceTarget();
 
     // launch a missile
-    spawnMissile(*this, target, MobjType::Arachplaz);
+    spawnMissile(target, MobjType::Arachplaz);
 }
 
 //
@@ -862,16 +853,16 @@ void Mobj::troopAttack()
         return;
 
     faceTarget();
-    if (checkMeleeRange(*this))
+    if (checkMeleeRange())
     {
         startSound(this, SfxEnum::Claw);
         int damage = (randomness().forPlay() % 8 + 1) * 3;
-        damageMobj(*target, this, this, damage);
+        target->damage(this, this, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(*this, target, MobjType::Troopshot);
+    spawnMissile(target, MobjType::Troopshot);
 }
 
 void Mobj::sargAttack()
@@ -880,10 +871,10 @@ void Mobj::sargAttack()
         return;
 
     faceTarget();
-    if (checkMeleeRange(*this))
+    if (checkMeleeRange())
     {
         int damage = ((randomness().forPlay() % 10) + 1) * 4;
-        damageMobj(*target, this, this, damage);
+        target->damage(this, this, damage);
     }
 }
 
@@ -893,15 +884,15 @@ void Mobj::headAttack()
         return;
 
     faceTarget();
-    if (checkMeleeRange(*this))
+    if (checkMeleeRange())
     {
         int damage = (randomness().forPlay() % 6 + 1) * 10;
-        damageMobj(*target, this, this, damage);
+        target->damage(this, this, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(*this, target, MobjType::Headshot);
+    spawnMissile(target, MobjType::Headshot);
 }
 
 void Mobj::cyberAttack()
@@ -910,7 +901,7 @@ void Mobj::cyberAttack()
         return;
 
     faceTarget();
-    spawnMissile(*this, target, MobjType::Rocket);
+    spawnMissile(target, MobjType::Rocket);
 }
 
 void Mobj::bruisAttack()
@@ -918,16 +909,16 @@ void Mobj::bruisAttack()
     if (!target)
         return;
 
-    if (checkMeleeRange(*this))
+    if (checkMeleeRange())
     {
         startSound(this, SfxEnum::Claw);
         int damage = (randomness().forPlay() % 8 + 1) * 10;
-        damageMobj(*target, this, this, damage);
+        target->damage(this, this, damage);
         return;
     }
 
     // launch a missile
-    spawnMissile(*this, target, MobjType::Bruisershot);
+    spawnMissile(target, MobjType::Bruisershot);
 }
 
 //
@@ -940,7 +931,7 @@ void Mobj::skelMissile()
 
     faceTarget();
     z += 16 * FRACUNIT; // so missile spawns higher
-    Mobj* mo = spawnMissile(*this, target, MobjType::Tracer);
+    Mobj* mo = spawnMissile(target, MobjType::Tracer);
     z -= 16 * FRACUNIT; // back to normal
 
     mo->x += mo->momx;
@@ -1026,11 +1017,11 @@ void Mobj::skelFist()
 
     faceTarget();
 
-    if (checkMeleeRange(*this))
+    if (checkMeleeRange())
     {
         int damage = ((randomness().forPlay() % 10) + 1) * 6;
         startSound(this, SfxEnum::Skepch);
-        damageMobj(*target, this, this, damage);
+        target->damage(this, this, damage);
     }
 }
 
@@ -1060,7 +1051,7 @@ bool vileCheck(Mobj* thing)
     ai.corpsehit = thing;
     ai.corpsehit->momx = ai.corpsehit->momy = Fixed {};
     ai.corpsehit->height <<= 2;
-    bool check = checkPosition(*ai.corpsehit, ai.corpsehit->x, ai.corpsehit->y);
+    bool check = ai.corpsehit->checkPosition(ai.corpsehit->x, ai.corpsehit->y);
     ai.corpsehit->height >>= 2;
 
     if (!check)
@@ -1107,11 +1098,11 @@ void Mobj::vileChase()
                     faceTarget();
                     target = temp;
 
-                    setMobjState(*this, StateNum::VileHeal1);
+                    setState(StateNum::VileHeal1);
                     startSound(ai.corpsehit, SfxEnum::Slop);
                     MobjInfo* corpseInfo = ai.corpsehit->info;
 
-                    setMobjState(*ai.corpsehit, corpseInfo->raisestate);
+                    ai.corpsehit->setState(corpseInfo->raisestate);
                     ai.corpsehit->height <<= 2;
                     ai.corpsehit->flags = corpseInfo->flags;
                     ai.corpsehit->health = corpseInfo->spawnhealth;
@@ -1203,7 +1194,7 @@ void Mobj::vileAttack()
         return;
 
     startSound(this, SfxEnum::Barexp);
-    damageMobj(*target, this, this, 20);
+    target->damage(this, this, 20);
     target->momz = 1000 * FRACUNIT / target->info->mass;
 
     const auto anFine = angle.fineIndex();
@@ -1216,7 +1207,7 @@ void Mobj::vileAttack()
     // move the fire between the vile and the player
     fire->x = target->x - FixedMul(24 * FRACUNIT, finecosine()[anFine]);
     fire->y = target->y - FixedMul(24 * FRACUNIT, finesine()[anFine]);
-    radiusAttack(*fire, this, 70);
+    fire->radiusAttack(this, 70);
 }
 
 //
@@ -1236,9 +1227,9 @@ void Mobj::fatAttack1()
     faceTarget();
     // Change direction  to ...
     angle += FATSPREAD;
-    spawnMissile(*this, target, MobjType::Fatshot);
+    spawnMissile(target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(*this, target, MobjType::Fatshot);
+    Mobj* mo = spawnMissile(target, MobjType::Fatshot);
     mo->angle += FATSPREAD;
     const auto an1Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an1Fine]);
@@ -1250,9 +1241,9 @@ void Mobj::fatAttack2()
     faceTarget();
     // Now here choose opposite deviation.
     angle -= FATSPREAD;
-    spawnMissile(*this, target, MobjType::Fatshot);
+    spawnMissile(target, MobjType::Fatshot);
 
-    Mobj* mo = spawnMissile(*this, target, MobjType::Fatshot);
+    Mobj* mo = spawnMissile(target, MobjType::Fatshot);
     mo->angle -= FATSPREAD * 2;
     const auto an2Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an2Fine]);
@@ -1263,13 +1254,13 @@ void Mobj::fatAttack3()
 {
     faceTarget();
 
-    Mobj* mo = spawnMissile(*this, target, MobjType::Fatshot);
+    Mobj* mo = spawnMissile(target, MobjType::Fatshot);
     mo->angle -= FATSPREAD / 2;
     const auto an3Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an3Fine]);
     mo->momy = FixedMul(Fixed {mo->info->speed}, finesine()[an3Fine]);
 
-    mo = spawnMissile(*this, target, MobjType::Fatshot);
+    mo = spawnMissile(target, MobjType::Fatshot);
     mo->angle += FATSPREAD / 2;
     const auto an4Fine = mo->angle.fineIndex();
     mo->momx = FixedMul(Fixed {mo->info->speed}, finecosine()[an4Fine]);
@@ -1305,7 +1296,7 @@ void Mobj::skullAttack()
 // painShootSkull
 // Spawn a lost soul and launch it at the target
 //
-void painShootSkull(Mobj& actor, Angle angle)
+void Mobj::painShootSkull(Angle angleToUse)
 {
     auto& thinkers = thinkerList();
 
@@ -1327,27 +1318,27 @@ void painShootSkull(Mobj& actor, Angle angle)
         return;
 
     // okay, there's playe for another one
-    const auto anFine = angle.fineIndex();
+    const auto anFine = angleToUse.fineIndex();
 
     Fixed prestep =
         4 * FRACUNIT
-        + 3 * (actor.info->radius + mobjinfo()[toIndex(MobjType::Skull)].radius) / 2;
+        + 3 * (info->radius + mobjinfo()[toIndex(MobjType::Skull)].radius) / 2;
 
-    Fixed x = actor.x + FixedMul(prestep, finecosine()[anFine]);
-    Fixed y = actor.y + FixedMul(prestep, finesine()[anFine]);
-    Fixed z = actor.z + 8 * FRACUNIT;
+    Fixed xToUse = x + FixedMul(prestep, finecosine()[anFine]);
+    Fixed yToUse = y + FixedMul(prestep, finesine()[anFine]);
+    Fixed zToUse = z + 8 * FRACUNIT;
 
-    Mobj* newmobj = spawnMobj(x, y, z, MobjType::Skull);
+    Mobj* newmobj = spawnMobj(xToUse, yToUse, zToUse, MobjType::Skull);
 
     // Check for movements.
-    if (!tryMove(*newmobj, newmobj->x, newmobj->y))
+    if (!newmobj->tryMove(newmobj->x, newmobj->y))
     {
         // kill it immediately
-        damageMobj(*newmobj, &actor, &actor, 10000);
+        newmobj->damage(this, this, 10000);
         return;
     }
 
-    newmobj->target = actor.target;
+    newmobj->target = target;
     newmobj->skullAttack();
 }
 
@@ -1361,15 +1352,15 @@ void Mobj::painAttack()
         return;
 
     faceTarget();
-    painShootSkull(*this, angle);
+    painShootSkull(angle);
 }
 
 void Mobj::painDie()
 {
     fall();
-    painShootSkull(*this, angle + ang90);
-    painShootSkull(*this, angle + ang180);
-    painShootSkull(*this, angle + ang270);
+    painShootSkull(angle + ang90);
+    painShootSkull(angle + ang180);
+    painShootSkull(angle + ang270);
 }
 
 void Mobj::scream()
@@ -1422,7 +1413,7 @@ void Mobj::pain()
 
 void Mobj::fall()
 {
-    // *this is on ground, it can be walked over
+    // it is on the ground, it can be walked over
     flags = withoutFlags(flags, MobjFlag::Solid);
 
     // So change this if corpse objects
@@ -1434,7 +1425,7 @@ void Mobj::fall()
 //
 void Mobj::explode()
 {
-    radiusAttack(*this, target, 128);
+    radiusAttack(target, 128);
 }
 
 //
@@ -1670,7 +1661,7 @@ void Mobj::brainScream()
         Mobj* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
         th->momz = Fixed {randomness().forPlay() * 512};
 
-        setMobjState(*th, StateNum::Brainexplode1);
+        th->setState(StateNum::Brainexplode1);
 
         th->tics -= randomness().forPlay() & 7;
         if (th->tics < 1)
@@ -1689,7 +1680,7 @@ void Mobj::brainExplode()
     Mobj* th = spawnMobj(xToUse, yToUse, zToUse, MobjType::Rocket);
     th->momz = Fixed {randomness().forPlay() * 512};
 
-    setMobjState(*th, StateNum::Brainexplode1);
+    th->setState(StateNum::Brainexplode1);
 
     th->tics -= randomness().forPlay() & 7;
     if (th->tics < 1)
@@ -1714,7 +1705,7 @@ void Mobj::brainSpit()
     ai.braintargeton = (ai.braintargeton + 1) % ai.braintargets.size();
 
     // spawn brain missile
-    Mobj* newmobj = spawnMissile(*this, targ, MobjType::Spawnshot);
+    Mobj* newmobj = spawnMissile(targ, MobjType::Spawnshot);
     newmobj->target = targ;
     // Vanilla divides the raw values as plain integers here - the result is a tic
     // count, not a length. A fixed-point divide would scale it by 65536.
@@ -1773,14 +1764,14 @@ void Mobj::spawnFly()
         spawnType = MobjType::Bruiser;
 
     Mobj* newmobj = spawnMobj(targ->x, targ->y, targ->z, spawnType);
-    if (lookForPlayers(*newmobj, true))
-        setMobjState(*newmobj, static_cast<StateNum>(newmobj->info->seestate));
+    if (newmobj->lookForPlayers(true))
+        newmobj->setState(static_cast<StateNum>(newmobj->info->seestate));
 
     // telefrag anything in this spot
-    teleportMove(*newmobj, newmobj->x, newmobj->y);
+    newmobj->teleportMove(newmobj->x, newmobj->y);
 
     // remove self (i.e., cube).
-    removeMobj(*this);
+    remove();
 }
 
 void Mobj::playerScream()

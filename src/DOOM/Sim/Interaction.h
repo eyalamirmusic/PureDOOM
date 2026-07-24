@@ -5,19 +5,17 @@
 
 namespace Doom
 {
-// Interactions: a player touching a pickup, one thing damaging another, and death.
-// The vanilla names (touchSpecialThing, damageMobj, givePower) forward here
-// from p_inter.cpp; the give-* helpers are internal to Interaction.cpp. Covered by
-// the demos' combat (damage, death, thrust) and golden-neutral.
+// Interactions. One thing damaging another is Mobj::damage (declared on the struct in
+// Thinkers/Mobj.h), and the pickup effects - the give-* helpers and givePower - are
+// Player methods (Game/PlayerTypes.h); bodies in Interaction.cpp. Covered by the
+// demos' combat (damage, death, thrust) and golden-neutral.
+//
+// What stays a free function is touchSpecialThing: it takes two mobjs (the special
+// picked up and the toucher) with no single owner, so it reads as a free function
+// rather than a method on either. killMobj is the same shape (a source and a target)
+// and stays file-local to Interaction.cpp.
 
-// Player `toucher` picks up `special` (an flagBits(MobjFlag::Special) thing), applying its effect and
-// removing it. No-op if out of reach or already at the relevant maximum.
+// Player `toucher` picks up `special` (a MobjFlag::Special thing), applying its effect
+// and removing it. No-op if out of reach or already at the relevant maximum.
 void touchSpecialThing(Mobj& special, Mobj& toucher);
-
-// Apply `damage` to target from inflictor/source (either may be null for
-// environmental damage), including thrust, armor, pain and death.
-void damageMobj(Mobj& target, Mobj* inflictor, Mobj* source, int damage);
-
-// Grant a powerup to the player; returns false if it had no effect.
-bool givePower(Player& player, PowerType power);
 } // namespace Doom

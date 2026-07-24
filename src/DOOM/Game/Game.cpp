@@ -883,12 +883,12 @@ bool checkSpot(int playernum, MapThing& mthing)
     x = Fixed::fromInt(mthing.x);
     y = Fixed::fromInt(mthing.y);
 
-    if (!checkPosition(*players_.players[playernum].mo, x, y))
+    if (!players_.players[playernum].mo->checkPosition(x, y))
         return false;
 
     // flush an old corpse if needed
     if (corpses.bodyqueslot >= BODYQUESIZE)
-        removeMobj(*corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE]);
+        corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE]->remove();
     corpses.bodyque[corpses.bodyqueslot % BODYQUESIZE] =
         players_.players[playernum].mo;
     corpses.bodyqueslot++;

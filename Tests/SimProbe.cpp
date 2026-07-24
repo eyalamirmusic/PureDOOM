@@ -544,7 +544,7 @@ int doomSimCheckPosition(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return Doom::checkPosition(*mobj, Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
+    return mobj->checkPosition(Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
 }
 
 int doomSimTryMove(int handle, int x, int y)
@@ -557,7 +557,7 @@ int doomSimTryMove(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return Doom::tryMove(*mobj, Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
+    return mobj->tryMove(Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
 }
 
 int doomSimMobjX(int handle)
