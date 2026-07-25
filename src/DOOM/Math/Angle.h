@@ -18,13 +18,6 @@ struct Angle
     {
     }
 
-    static constexpr Angle fromDegrees(double degrees)
-    {
-        return Angle {(std::uint32_t) (degrees / 360.0 * 4294967296.0)};
-    }
-
-    constexpr double toDegrees() const { return raw / 4294967296.0 * 360.0; }
-
     constexpr Angle operator+(Angle other) const { return Angle {raw + other.raw}; }
     constexpr Angle operator-(Angle other) const { return Angle {raw - other.raw}; }
     constexpr Angle operator-() const { return Angle {0u - raw}; }

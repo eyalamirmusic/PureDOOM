@@ -420,21 +420,6 @@ void storeWallRange(int start, int stop)
     }
     else
     {
-        // UNUSED: try to fix the stretched line bug
-#if 0
-        if (scratch.rw_distance < FRACUNIT / 2)
-        {
-            Fixed                trx, try;
-            Fixed                gxt, gyt;
-
-            trx = bsp.curline->v1->x - pt.viewx;
-            try = bsp.curline->v1->y - pt.viewy;
-
-            gxt = FixedMul(trx, pt.viewcos);
-            gyt = -FixedMul(try, pt.viewsin);
-            bsp.ds_p->scale1 = FixedDiv(proj.projection, gxt - gyt) << viewWindow().detailshift;
-        }
-#endif
         bsp.ds_p->scale2 = bsp.ds_p->scale1;
     }
 

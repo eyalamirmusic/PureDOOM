@@ -350,32 +350,6 @@ void drawBlock(int x, int y, int scrn, int width, int height, byte* src)
 }
 
 //
-// getBlock
-// Gets a linear block of pixels from the view buffer.
-//
-void getBlock(int x, int y, int scrn, int width, int height, byte* dest)
-{
-    byte* src;
-
-#ifdef RANGECHECK
-    if (x < 0 || x + width > SCREENWIDTH || y < 0 || y + height > SCREENHEIGHT
-        || static_cast<unsigned>(scrn) > 4)
-    {
-        fatalError("Error: Bad drawBlock");
-    }
-#endif
-
-    src = videoState().screens[scrn] + y * SCREENWIDTH + x;
-
-    while (height--)
-    {
-        doom_memcpy(dest, src, width);
-        src += SCREENWIDTH;
-        dest += width;
-    }
-}
-
-//
 // VideoState
 //
 // What initVideo used to do at boot, now owned by construction (see VideoState.h):

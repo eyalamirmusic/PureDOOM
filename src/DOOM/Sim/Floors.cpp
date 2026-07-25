@@ -160,16 +160,11 @@ MoveResult Sector::movePlane(
                     {
                         lastpos = ceilingheight;
                         ceilingheight += speed;
+                        // A ceiling on its way UP never reports a crush: vanilla
+                        // marked the check UNUSED and compiled it out, so flag is
+                        // deliberately dropped on this one path. Reinstating it
+                        // would desync every demo.
                         flag = changeSector(crush);
-                        // UNUSED
-#if 0
-                        if (flag == true)
-                        {
-                            ceilingheight = lastpos;
-                            changeSector(crush);
-                            return MoveResult::Crushed;
-                        }
-#endif
                     }
                     break;
             }

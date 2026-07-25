@@ -42,7 +42,7 @@ Breaking one silently defeats the whole apparatus.
    New code is written to the strict flags without asking. Zero warnings is a
    state to hold, not a number to admire.
 4. **Some things that look like bugs are load-bearing and must survive.**
-   `FixedDiv2` goes through `double`; the trig tables are sampled at bucket
+   `fixedDivUnchecked` goes through `double`; the trig tables are sampled at bucket
    centres; `slopeDiv` gives up under 512; `pointToAngle2` lands one unit below
    north; and `BBox::add` is `else if`, not an independent min and max.
    `Tests/Sim/PrimitiveTests.cpp` and `Tests/Sim/MathTests.cpp` pin these on
@@ -1071,7 +1071,7 @@ Two things the first GCC build taught, neither visible from a Clang-only measure
 
 **The goldens are compiler-independent**, checked rather than assumed: every test
 passes built by GCC at `Release`. That is what `-ffp-contract=off` and the single
-documented `double` in `FixedDiv2` were supposed to buy. Also worth knowing: **CI
+documented `double` in `fixedDivUnchecked` were supposed to buy. Also worth knowing: **CI
 builds `Release` and the local instructions build `Debug`.** The goldens hold across
 both, as they must, but run `Release` once before trusting a green `Debug` on
 anything that touches optimisation-sensitive code.

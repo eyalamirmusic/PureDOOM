@@ -26,7 +26,7 @@
 
 // Rewritten out of vanilla m_misc into namespace Doom.
 //
-// Config load/save, the raw file I/O, the screenshot writer and drawText.
+// Config load/save, the raw file I/O and the screenshot writer.
 // m_misc.cpp shims the M_ names. The defaults[] table (binding config keys to
 // the engine's option globals) stays at file scope here, above the namespace,
 // alongside the externs the still-loose entries take addresses of; the config
@@ -92,12 +92,6 @@ struct PcxHeader
     char filler[58] = {};
     unsigned char data = 0; // unbounded
 };
-
-//
-// drawText
-// Returns the final X coordinate
-// initHud must have been called to init the font
-//
 
 //
 // DEFAULTS
@@ -166,16 +160,16 @@ ConfigDefault defaultsData[] = {
 
     {"usegamma", 0, 0}, // bound to menuSettings().usegamma at runtime
 
-    {"chatmacro0", 0, STRING_VALUE, 0, 0, &chat_macros()[0], HUSTR_CHATMACRO0},
-    {"chatmacro1", 0, STRING_VALUE, 0, 0, &chat_macros()[1], HUSTR_CHATMACRO1},
-    {"chatmacro2", 0, STRING_VALUE, 0, 0, &chat_macros()[2], HUSTR_CHATMACRO2},
-    {"chatmacro3", 0, STRING_VALUE, 0, 0, &chat_macros()[3], HUSTR_CHATMACRO3},
-    {"chatmacro4", 0, STRING_VALUE, 0, 0, &chat_macros()[4], HUSTR_CHATMACRO4},
-    {"chatmacro5", 0, STRING_VALUE, 0, 0, &chat_macros()[5], HUSTR_CHATMACRO5},
-    {"chatmacro6", 0, STRING_VALUE, 0, 0, &chat_macros()[6], HUSTR_CHATMACRO6},
-    {"chatmacro7", 0, STRING_VALUE, 0, 0, &chat_macros()[7], HUSTR_CHATMACRO7},
-    {"chatmacro8", 0, STRING_VALUE, 0, 0, &chat_macros()[8], HUSTR_CHATMACRO8},
-    {"chatmacro9", 0, STRING_VALUE, 0, 0, &chat_macros()[9], HUSTR_CHATMACRO9}};
+    {"chatmacro0", 0, STRING_VALUE, &chat_macros()[0], HUSTR_CHATMACRO0},
+    {"chatmacro1", 0, STRING_VALUE, &chat_macros()[1], HUSTR_CHATMACRO1},
+    {"chatmacro2", 0, STRING_VALUE, &chat_macros()[2], HUSTR_CHATMACRO2},
+    {"chatmacro3", 0, STRING_VALUE, &chat_macros()[3], HUSTR_CHATMACRO3},
+    {"chatmacro4", 0, STRING_VALUE, &chat_macros()[4], HUSTR_CHATMACRO4},
+    {"chatmacro5", 0, STRING_VALUE, &chat_macros()[5], HUSTR_CHATMACRO5},
+    {"chatmacro6", 0, STRING_VALUE, &chat_macros()[6], HUSTR_CHATMACRO6},
+    {"chatmacro7", 0, STRING_VALUE, &chat_macros()[7], HUSTR_CHATMACRO7},
+    {"chatmacro8", 0, STRING_VALUE, &chat_macros()[8], HUSTR_CHATMACRO8},
+    {"chatmacro9", 0, STRING_VALUE, &chat_macros()[9], HUSTR_CHATMACRO9}};
 
 DOOM_DIAGNOSTIC_POP
 int numdefaultsValue = sizeof(defaultsData) / sizeof(ConfigDefault);
@@ -187,35 +181,6 @@ ConfigDefault* defaults()
 int numdefaults()
 {
     return numdefaultsValue;
-}
-
-int drawText(int x, int y, bool direct, std::string_view string)
-{
-    auto& font = hudFont();
-
-    int c;
-    int w;
-
-    for (auto character: string)
-    {
-        c = toUpper(character) - HU_FONTSTART;
-        if (c < 0 || c > HU_FONTSIZE)
-        {
-            x += 4;
-            continue;
-        }
-
-        w = littleEndian(font.hu_font[c]->width);
-        if (x + w > SCREENWIDTH)
-            break;
-        if (direct)
-            drawPatchDirect(x, y, 0, font.hu_font[c]);
-        else
-            drawPatch(x, y, 0, font.hu_font[c]);
-        x += w;
-    }
-
-    return x;
 }
 
 //

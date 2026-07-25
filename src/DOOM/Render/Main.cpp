@@ -57,7 +57,6 @@ constexpr int FIELDOFVIEW = 2048;
 // file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired it - setViewSize and executeSetViewSize
 // each reach it through renderMainState() directly.
 // Forward declarations so call order needs no rearranging.
-void addPointToBox(int x, int y, Fixed* box);
 int pointOnSide(Fixed x, Fixed y, Node& node);
 int pointOnSegSide(Fixed x, Fixed y, Seg& line);
 Angle pointToAngle(Fixed x, Fixed y);
@@ -74,21 +73,6 @@ void renderInit();
 SubSector* pointInSubsector(Fixed x, Fixed y);
 void setupFrame(Player& player);
 void renderPlayerView(Player& player);
-
-// Vanilla takes x/y as plain ints although they are raw fixed-point coordinates
-// (the box is Fixed). Nothing calls this, so the signature is left alone and the
-// raw values are wrapped here.
-void addPointToBox(int x, int y, Fixed* box)
-{
-    if (Fixed {x} < box[boxLeft])
-        box[boxLeft] = Fixed {x};
-    if (Fixed {x} > box[boxRight])
-        box[boxRight] = Fixed {x};
-    if (Fixed {y} < box[boxBottom])
-        box[boxBottom] = Fixed {y};
-    if (Fixed {y} > box[boxTop])
-        box[boxTop] = Fixed {y};
-}
 
 //
 // pointOnSide

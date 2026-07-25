@@ -8,7 +8,6 @@ namespace Doom
 {
 // Heads-up text widgets. The vanilla HUlib_ names that used to shim these
 // have been retired; call sites use these  names directly.
-void initWidgets();
 void clearTextLine(HudTextLine& t);
 void initTextLine(HudTextLine& t, int x, int y, Patch** f, int sc);
 bool addCharToTextLine(HudTextLine& t, char ch);
@@ -26,9 +25,7 @@ void eraseSText(HudScrollingText& s);
 void initIText(
     HudInputText& it, int x, int y, Patch** font, int startchar, bool* on);
 void delCharFromIText(HudInputText& it);
-void eraseLineFromIText(HudInputText& it);
 void resetIText(HudInputText& it);
-void addPrefixToIText(HudInputText& it, std::string_view str);
 bool keyInIText(HudInputText& it, unsigned char ch);
 void drawIText(HudInputText& it);
 void eraseIText(HudInputText& it);

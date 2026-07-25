@@ -154,9 +154,6 @@ struct anim_t_wi_stuff
     // next value of bcnt (used in conjunction with period)
     int nexttic = 0;
 
-    // last drawn animation frame
-    int lastdrawn = 0;
-
     // next frame number to animate
     int ctr = 0;
 
@@ -276,13 +273,6 @@ void slamBackground()
                 videoState().screens[1],
                 SCREENWIDTH * SCREENHEIGHT);
     markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
-}
-
-// The ticker is used to detect keys
-//  because of timing issues in netgames.
-bool intermissionResponder(Event*)
-{
-    return false;
 }
 
 // Draws "<Levelname> Finished!"

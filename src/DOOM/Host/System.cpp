@@ -77,20 +77,9 @@ void quitGame()
     host().exit(0);
 }
 
-void waitVBlank(int)
-{
-#if 0 // [pd] Never sleep in main thread
-#ifdef SGI
-    sginap(1);
-#else
-#ifdef SUN
-    sleep(0);
-#else
-    usleep(count * (1000000 / 70));
-#endif
-#endif
-#endif
-}
+// A no-op on purpose: vanilla slept here to pace itself against a 70Hz refresh,
+// and this engine is stepped by its host, which must never block its main thread.
+void waitVBlank(int) {}
 
 //
 // fatalError

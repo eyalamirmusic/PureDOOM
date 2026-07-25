@@ -26,5 +26,4 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch);
 void drawPatchRectDirect(int x, int y, int scrn, Patch* patch, int src_x, int src_w);
 void drawPatchDirect(int x, int y, int scrn, Patch* patch);
 void drawBlock(int x, int y, int scrn, int width, int height, byte* src);
-void getBlock(int x, int y, int scrn, int width, int height, byte* dest);
 } // namespace Doom

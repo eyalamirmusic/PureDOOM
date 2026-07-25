@@ -14,7 +14,6 @@ namespace Doom
 constexpr int DISTMAP = 2;
 
 // Renderer main/setup; r_main.cpp keeps the vanilla R_ names as shims.
-void addPointToBox(int x, int y, Fixed* box);
 int pointOnSide(Fixed x, Fixed y, Node& node);
 int pointOnSegSide(Fixed x, Fixed y, Seg& line);
 Angle pointToAngle(Fixed x, Fixed y);

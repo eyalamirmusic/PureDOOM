@@ -56,8 +56,6 @@ struct AutomapView
     int lastlevel = -1; // startAutomap: last map, to re-init on change
     int lastepisode = -1; // startAutomap: last episode
     int bigstate = 0; // automapResponder: the "big" (zoomed-out overview) toggle
-    int nexttic = 0; // automapTicker: next tic the fuse animation advances
-    int litelevelscnt = 0; // automapTicker: cursor into the fuse brightness ramp
 
     // Where the map is looking, and how far in. m_x/m_y is the lower-left corner in
     // map coordinates; scale_mtof converts a map distance to a frame one. m_w/m_h is
@@ -78,7 +76,10 @@ struct AutomapView
     int cheating = 0;
     int grid = 0;
 
-    // Wall brightness, which the map strobes.
+    // Wall brightness, added to every map colour. Vanilla strobed it from an
+    // updateLightLev the shipping automapTicker never called, so it is pinned at 0
+    // and the ramp that drove it is gone; the offset itself stays because both this
+    // automap and the port's add it at every drawMline.
     int lightlev = 0;
 
     MapPoint m_paninc = {}; // window pan per tic (map coords)

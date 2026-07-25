@@ -125,9 +125,6 @@ static int musicdies = -1;
 // The actual lengths of all sound effects.
 Array<int, numSfx> lengths;
 
-// The actual output device.
-int audio_fd;
-
 // The global mixing buffer is defined at ::-file-scope above (DOOM.cpp reads it):
 // samples from all active internal channels are modified and added and stored
 // there, then submitted to the audio device.
@@ -375,15 +372,10 @@ void setChannels()
 
     // This table provides step widths for pitch parameters.
     // I fail to see that this is currently used.
-#if 0
-    for (i = -128; i < 128; i++)
-    {
-        print("steptablemid[", i, "] = ",
-              static_cast<int>(pow(2.0, (i / 64.0)) * 65536.0), ";\n");
-        //steptablemid[i] = (int)(pow(2.0, (i / 64.0)) * 65536.0);
-    }
-#endif
-
+    //
+    // The 256 constants below are pow(2, i / 64.0) * 65536 for i in [-128, 128),
+    // written out rather than computed so this file needs no <cmath> and the
+    // numbers cannot drift with the host's libm.
     steptablemid[-128] = 16384;
     steptablemid[-127] = 16562;
     steptablemid[-126] = 16742;

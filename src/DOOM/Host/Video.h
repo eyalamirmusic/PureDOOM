@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace Doom
 {
 // The engine's video seam. In PureDOOM this is a thin host stub - the real
@@ -16,5 +15,4 @@ void finishUpdate();
 void readScreen(byte* scr);
 void startFrame();
 void startTic();
-void pollHostEvent();
 } // namespace Doom

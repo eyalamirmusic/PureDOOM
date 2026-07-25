@@ -39,8 +39,6 @@ void shutdownGraphics() {}
 //
 void startFrame() {}
 
-void pollHostEvent() {}
-
 //
 // startTic
 //

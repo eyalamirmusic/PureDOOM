@@ -23,8 +23,6 @@
 namespace Doom
 {
 
-void initWidgets() {}
-
 void clearTextLine(HudTextLine& t)
 {
     t.l.clear();
@@ -209,25 +207,11 @@ void delCharFromIText(HudInputText& it)
         delCharFromTextLine(it.l);
 }
 
-void eraseLineFromIText(HudInputText& it)
-{
-    while (it.lm != static_cast<int>(it.l.l.size()))
-        delCharFromTextLine(it.l);
-}
-
 // Resets left margin as well
 void resetIText(HudInputText& it)
 {
     it.lm = 0;
     clearTextLine(it.l);
-}
-
-void addPrefixToIText(HudInputText& it, std::string_view str)
-{
-    for (auto character: str)
-        addCharToTextLine(it.l, character);
-
-    it.lm = static_cast<int>(it.l.l.size());
 }
 
 // wrapper function for handling general keyed input.

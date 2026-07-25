@@ -62,11 +62,6 @@ inline Fixed fineCosine(int fineIndex)
     return finecosine()[fineIndex];
 }
 
-inline Fixed fineTangent(int fineIndex)
-{
-    return finetangent()[fineIndex];
-}
-
 inline Fixed sine(Angle angle)
 {
     return fineSine(angle.fineIndex());
@@ -74,11 +69,6 @@ inline Fixed sine(Angle angle)
 inline Fixed cosine(Angle angle)
 {
     return fineCosine(angle.fineIndex());
-}
-
-inline Angle tanToAngle(int slope)
-{
-    return tantoangle()[slope];
 }
 
 // Turns a slope into an index into tanToAngleTable.

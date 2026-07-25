@@ -72,12 +72,6 @@ enum class Language
 // most parameter validation debugging code will not be compiled.
 // This one stays a macro: it is a feature toggle read by #ifdef, not a value.
 
-//
-// For resize of screen, at start of game.
-// It will not work dynamically, see visplanes.
-//
-constexpr int BASE_WIDTH = 320;
-
 // It is educational but futile to change this
 //  scaling e.g. to 2. Drawing of status bar,
 //  menues etc. is tied to the scale implied

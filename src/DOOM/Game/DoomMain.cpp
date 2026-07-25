@@ -330,22 +330,9 @@ void displayFrame()
     // wipe update
     endScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
-#if 0 // [pd] Moved to updateWipe
-    do
-    {
-        do
-        {
-            nowtime = currentTic();
-            tics = nowtime - wipestart;
-        } while (!tics);
-        wipestart = nowtime;
-        done = screenWipe(WipeType::Melt
-                               , 0, 0, SCREENWIDTH, SCREENHEIGHT, tics);
-        updateNoBlit();
-        drawMenu();                            // menu is drawn even on top of wipes
-        finishUpdate();                      // page flip or blit buffer
-    } while (!done);
-#endif
+    // The melt itself runs from updateWipe below, one tic per call. Vanilla ran it
+    // here instead, busy-waiting on the clock until it finished - which is why the
+    // frame goldens can hash a wipe at all: nothing in this path reads the time.
 }
 
 //
@@ -359,21 +346,6 @@ void updateWipe()
 
 void doomLoop()
 {
-#if 0 // [pd] Moved to doomMain()
-    if (demorecording)
-        beginRecording();
-
-    if (checkParm("-debugfile"))
-    {
-        Array<char, 20> filename;
-        //doom_sprintf(filename, "debug%i.txt", consoleplayer);
-        doom_print("debug output to: %s\n", filename.data());
-        debugfile = doom_open(filename.data(), "w");
-    }
-
-    initGraphics();
-#endif
-
     auto& state = playerState();
 
     // while (1)
@@ -870,15 +842,6 @@ void doomMain()
     if (opts.devparm)
         print(D_DEVSTR);
 
-#if 0 // [pd] Ignore cdrom
-    if (checkParm("-cdrom"))
-    {
-        doom_print(D_CDROM);
-        mkdir("c:\\doomdata", 0);
-        doom_strcpy(basedefault, "c:/doomdata/default.cfg");
-    }
-#endif
-
     // turbo option
     if ((p = checkParm("-turbo")))
     {
@@ -1146,17 +1109,7 @@ void doomMain()
     p = checkParm("-loadgame");
     if (p && p < myargCount() - 1)
     {
-#if 0 // [pd] We don't support the cdrom flag
-        if (checkParm("-cdrom"))
-        {
-            //doom_sprintf(file, "c:\\doomdata\\"SAVEGAMENAME"%c.dsg", myargv[p + 1][0]);
-        }
-        else
-#endif
-        {
-            //doom_sprintf(file, SAVEGAMENAME"%c.dsg", myargv[p + 1][0]);
-            file = concat(SAVEGAMENAME, myargv()[p + 1][0], ".dsg");
-        }
+        file = concat(SAVEGAMENAME, myargv()[p + 1][0], ".dsg");
         loadGame(file.c_str());
     }
 

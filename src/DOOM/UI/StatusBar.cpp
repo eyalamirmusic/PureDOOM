@@ -987,18 +987,6 @@ void loadData()
     loadGraphics();
 }
 
-void unloadGraphics()
-{
-    // Nothing to unload any more: WadFile owns the lumps and they are
-    // permanent (Wad/WadFile.h). This used to hand each patch back to the zone
-    // as PU_CACHE, meaning "purge me if you need the space".
-}
-
-void unloadData()
-{
-    unloadGraphics();
-}
-
 void initStatusBarData()
 {
     auto& players_ = playerState();

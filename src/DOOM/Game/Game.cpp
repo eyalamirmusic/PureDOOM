@@ -220,16 +220,6 @@ void doCompleted();
 void doWorldDone();
 void doSaveGame();
 
-int cmdChecksum(Ticcmd& cmd)
-{
-    auto sum = 0;
-
-    for (auto i = 0; i < static_cast<int>((sizeof(cmd) / 4 - 1)); i++)
-        sum += (reinterpret_cast<int*>(&cmd))[i];
-
-    return sum;
-}
-
 //
 // buildTiccmd
 // Builds a ticcmd from all of the available inputs
@@ -547,13 +537,6 @@ bool gameResponder(Event& ev)
 
     if (flow.gamestate == GameState::Level)
     {
-#if 0 
-        if (devparm && ev.type == EventType::KeyDown && ev.data1 == ';')
-        {
-            deathMatchSpawnPlayer(0);
-            return true;
-        }
-#endif
         if (hudResponder(ev))
             return true; // chat ate the event
         if (statusBarResponder(ev))
@@ -778,17 +761,6 @@ void gameTicker()
 // PLAYER STRUCTURE FUNCTIONS
 // also see spawnPlayer in P_Things
 //
-
-//
-// initPlayer
-// Called at the start.
-// Called by the game initialization functions.
-//
-void initPlayer(int player)
-{
-    // clear everything else to defaults
-    playerReborn(player);
-}
 
 //
 // playerFinishLevel
@@ -1293,11 +1265,6 @@ void doSaveGame()
 
     int length;
 
-#if 0
-    if (checkParm("-cdrom"))
-        doom_sprintf(name, "c:\\doomdata\\"SAVEGAMENAME"%d.dsg", savegameslot);
-#endif
-    //doom_sprintf(name, SAVEGAMENAME"%d.dsg", savegameslot);
     auto name = concat(SAVEGAMENAME, savegameslot, ".dsg");
 
     save.cursor = save.buffer = videoState().screens[1] + 0x4000;

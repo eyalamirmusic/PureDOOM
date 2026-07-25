@@ -23,10 +23,12 @@ namespace Doom
 // strong type by its own name everywhere now.
 constexpr Fixed FRACUNIT {fracUnit};
 
-// Vanilla's three arithmetic entry points. They are now thin spellings of the
-// operators - kept because 150-odd call sites read better as FixedMul(a, b) than
-// as (a * b) in the middle of a projection, and because FixedDiv's saturating
-// behaviour is a documented engine dependency distinct from FixedDiv2's.
+// Two of vanilla's three arithmetic entry points. They are now thin spellings of
+// the operators - kept because 150-odd call sites read better as FixedMul(a, b)
+// than as (a * b) in the middle of a projection. FixedDiv2 was the third and is
+// gone: nothing called it, and the unsaturated division it named is spelled
+// fixedDivUnchecked (Math/Fixed.h), which is what FixedDiv falls through to and
+// what Tests/Sim/PrimitiveTests.cpp pins the double-precision behaviour on.
 inline Fixed FixedMul(Fixed a, Fixed b)
 {
     return a * b;
@@ -34,9 +36,5 @@ inline Fixed FixedMul(Fixed a, Fixed b)
 inline Fixed FixedDiv(Fixed a, Fixed b)
 {
     return fixedDiv(a, b);
-}
-inline Fixed FixedDiv2(Fixed a, Fixed b)
-{
-    return fixedDivUnchecked(a, b);
 }
 } // namespace Doom

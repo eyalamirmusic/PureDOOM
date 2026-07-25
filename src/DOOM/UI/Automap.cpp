@@ -129,11 +129,6 @@ struct FLine
     FPoint a, b;
 };
 
-struct ISlope
-{
-    Fixed slp, islp;
-};
-
 //
 // The vector graphics for the automap.
 // A line drawing of the player pointing right,
@@ -167,23 +162,6 @@ Array<MapLine, 3> triangle_guy = {
 
 static Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
 static CheatSequence cheat_amap = {{cheat_amap_seq}};
-
-// Calculates the slope and slope according to the x-axis of a line
-// segment in map coordinates (with the upright y-axis n' all) so
-// that it can be used with the brain-dead drawing stuff.
-void getIslope(const MapLine& ml, ISlope& is)
-{
-    auto dy = ml.a.y - ml.b.y;
-    auto dx = ml.b.x - ml.a.x;
-    if (!dy)
-        is.islp = dx.isNegative() ? Fixed {-DOOM_MAXINT} : Fixed {DOOM_MAXINT};
-    else
-        is.islp = FixedDiv(dx, dy);
-    if (!dx)
-        is.slp = dy.isNegative() ? Fixed {-DOOM_MAXINT} : Fixed {DOOM_MAXINT};
-    else
-        is.slp = FixedDiv(dy, dx);
-}
 
 //
 //
@@ -660,26 +638,6 @@ void doFollowPlayer()
 }
 
 //
-//
-//
-void updateLightLev()
-{
-    auto& map = automapView();
-
-    //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
-    static Array<int, 8> litelevels = {0, 4, 7, 10, 12, 14, 15, 15};
-
-    // Change light level
-    if (map.amclock > map.nexttic)
-    {
-        automapView().lightlev = litelevels[map.litelevelscnt++];
-        if (map.litelevelscnt == litelevels.size())
-            map.litelevelscnt = 0;
-        map.nexttic = map.amclock + 6 - (map.amclock % 6);
-    }
-}
-
-//
 // Updates on Game Tick
 //
 void automapTicker()
@@ -701,9 +659,6 @@ void automapTicker()
     // Change x,y location
     if (map.m_paninc.x || map.m_paninc.y)
         changeWindowLoc();
-
-    // Update light level
-    // updateLightLev();
 }
 
 //
@@ -881,18 +836,6 @@ void drawFline(const FLine& fl, int color)
     int ax;
     int ay;
     int d;
-
-    // For debugging only
-#if 0 // [pd] Don't waste CPU cycles testing this then
-    if (fl.a.x < 0 || fl.a.x >= f_w
-        || fl.a.y < 0 || fl.a.y >= f_h
-        || fl.b.x < 0 || fl.b.x >= f_w
-        || fl.b.y < 0 || fl.b.y >= f_h)
-    {
-        print("fuck ", fuck++, "\r");
-        return;
-    }
-#endif
 
     dx = fl.b.x - fl.a.x;
     ax = 2 * (dx < 0 ? -dx : dx);

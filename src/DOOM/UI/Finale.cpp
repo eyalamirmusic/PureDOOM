@@ -91,19 +91,10 @@ std::string_view c4text = C4TEXT;
 std::string_view c5text = C5TEXT;
 std::string_view c6text = C6TEXT;
 
-std::string_view p1text = P1TEXT;
-std::string_view p2text = P2TEXT;
-std::string_view p3text = P3TEXT;
-std::string_view p4text = P4TEXT;
-std::string_view p5text = P5TEXT;
-std::string_view p6text = P6TEXT;
-
-std::string_view t1text = T1TEXT;
-std::string_view t2text = T2TEXT;
-std::string_view t3text = T3TEXT;
-std::string_view t4text = T4TEXT;
-std::string_view t5text = T5TEXT;
-std::string_view t6text = T6TEXT;
+// The Plutonia (P*TEXT) and TNT (T*TEXT) ending texts have no table here:
+// startFinale below selects on GameMode, which names no Final Doom mission, so
+// nothing could ever have read them. The string constants stay in
+// Game/StringsEnglish.h with the rest of the text resources.
 
 Array<CastInfo, 18> castorder = {{CC_ZOMBIE, MobjType::Possessed},
                                  {CC_SHOTGUN, MobjType::Shotguy},

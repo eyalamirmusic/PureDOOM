@@ -35,8 +35,6 @@ struct ConfigDefault
     std::string_view name;
     int* location = nullptr;
     int defaultvalue = 0;
-    int scantranslate = 0; // PC scan code hack
-    int untranslated = 0; // lousy hack
 
     // A text-valued default (defaultvalue == STRING_VALUE) writes through
     // text_location instead of location. The view does not own what it points at:

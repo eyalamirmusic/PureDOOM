@@ -38,7 +38,7 @@ These outlive the refactor. Breaking one silently defeats the apparatus.
    *how* it finds state; it may never change *what* it mixes, or in what order.
 
 3. **Some things that look like bugs are load-bearing and must survive.**
-   `FixedDiv2` goes through `double`; the trig tables are sampled at bucket
+   `fixedDivUnchecked` goes through `double`; the trig tables are sampled at bucket
    centres; `slopeDiv` gives up under 512; `pointToAngle2` lands one unit below
    north; `BBox::add` is `else if`, not an independent min and max.
    `Tests/Sim/PrimitiveTests.cpp` and `Tests/Sim/MathTests.cpp` pin these on
@@ -166,8 +166,8 @@ Each is in the 1993-lineage source too, and each is behaviour the goldens record
   faithfully. It takes a backtick to reach — `toUpper` upper-cases `a`..`z` and
   leaves everything else alone, and a backtick sits at `HU_FONTSTART + 63` — and
   nothing that reaches those loops contains one: the finale texts are fixed
-  strings, and the fourth site, `Game/Config.cpp`'s `drawText`, has no callers
-  here or at 110ddbe. Worth knowing anyway, because
+  strings. There was a fourth site, `Game/Config.cpp`'s `drawText`; it had no
+  callers here or at 110ddbe and the dead-code sweep deleted it. Worth knowing anyway, because
   unlike `shiftxform` this one indexes an `Array` rather than a raw pointer, so if
   a caller ever does pass user text through it the Windows `Debug` failure is an
   STL assertion rather than vanilla's silent garbage glyph.

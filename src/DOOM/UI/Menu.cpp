@@ -174,7 +174,7 @@ struct MenuCustomText
 // The menu's transient interaction state lives on the Engine (UI/MenuState.h). Every function
 // below reaches it through a hoisted local instead of a file-scope alias (REFACTOR.md, Step 9
 // strand (a)). The immutable reference-data tables interspersed among them (gammamsg / skullName /
-// detailNames / msgNames / quitsounds / menu_custom_texts) and the self-referential menu-definition
+// msgNames / quitsounds / menu_custom_texts) and the self-referential menu-definition
 // apparatus further down stay file-local.
 
 // Was Array<Array<char, 26>, 5>, a fixed 26-byte buffer per message that
@@ -230,7 +230,6 @@ Array<MenuCustomText, 4> menu_custom_texts = {
       {}}},
 };
 
-Array<std::string_view, 2> detailNames = {"M_GDHIGH", "M_GDLOW"};
 Array<std::string_view, 2> msgNames = {"M_MSGOFF", "M_MSGON"};
 
 Array<SfxEnum, 8> quitsounds = {SfxEnum::Pldeth,
@@ -268,7 +267,6 @@ void quitDOOM(int choice);
 void changeMessages(int choice);
 void sfxVol(int choice);
 void musicVol(int choice);
-void changeDetail(int choice);
 void mouseOptions(int choice);
 void sizeDisplay(int choice);
 void startGame(int choice);
@@ -299,8 +297,6 @@ void drawSave();
 void drawSaveLoadBorder(int x, int y);
 void setupNextMenu(MenuDef* menudef);
 void drawThermo(int x, int y, int thermWidth, int thermDot);
-void drawEmptyCell(MenuDef* menu, int item);
-void drawSelCell(MenuDef* menu, int item);
 void writeText(int x, int y, std::string_view string);
 int stringWidth(std::string_view string);
 int stringHeight(std::string_view string);
@@ -308,7 +304,6 @@ void startControlPanel();
 void startMessage(std::string_view string,
                   std::function<void(int)> routine,
                   bool input);
-void stopMessage();
 void clearMenus();
 void drawMouseOptions();
 
@@ -412,16 +407,14 @@ enum class OptionsItem
     End
 };
 
-Array<MenuItem, 8> OptionsMenuFull = {
-    {1, "M_ENDGAM", endGame, 'e'},
-    {1, "M_MESSG", changeMessages, 'm'},
-    {1, "TXT_CROS", changeCrosshair, 'c'},
-    {1, "TXT_ARUN", changeAlwaysRun, 'r'},
-    //{1,"M_DETAIL", changeDetail,'g'},  // Details do nothing?
-    {2, "M_SCRNSZ", sizeDisplay, 's'},
-    {-1, "", nullptr},
-    {1, "TXT_MOPT", mouseOptions, 'f'},
-    {1, "M_SVOL", sound, 's'}};
+Array<MenuItem, 8> OptionsMenuFull = {{1, "M_ENDGAM", endGame, 'e'},
+                                      {1, "M_MESSG", changeMessages, 'm'},
+                                      {1, "TXT_CROS", changeCrosshair, 'c'},
+                                      {1, "TXT_ARUN", changeAlwaysRun, 'r'},
+                                      {2, "M_SCRNSZ", sizeDisplay, 's'},
+                                      {-1, "", nullptr},
+                                      {1, "TXT_MOPT", mouseOptions, 'f'},
+                                      {1, "M_SVOL", sound, 's'}};
 
 MenuDef OptionsDef = {toIndex(OptionsItem::End),
                       &MainDef,
@@ -444,15 +437,13 @@ enum class OptionsNoMouseItem
     OptEndNoMouse
 };
 
-Array<MenuItem, 7> OptionsMenuNoMouse = {
-    {1, "M_ENDGAM", endGame, 'e'},
-    {1, "M_MESSG", changeMessages, 'm'},
-    {1, "TXT_CROS", changeCrosshair, 'c'},
-    {1, "TXT_ARUN", changeAlwaysRun, 'r'},
-    //{1,"M_DETAIL",  changeDetail,'g'}, // Details do nothing?
-    {2, "M_SCRNSZ", sizeDisplay, 's'},
-    {-1, "", nullptr},
-    {1, "M_SVOL", sound, 's'}};
+Array<MenuItem, 7> OptionsMenuNoMouse = {{1, "M_ENDGAM", endGame, 'e'},
+                                         {1, "M_MESSG", changeMessages, 'm'},
+                                         {1, "TXT_CROS", changeCrosshair, 'c'},
+                                         {1, "TXT_ARUN", changeAlwaysRun, 'r'},
+                                         {2, "M_SCRNSZ", sizeDisplay, 's'},
+                                         {-1, "", nullptr},
+                                         {1, "M_SVOL", sound, 's'}};
 
 MenuDef OptionsNoMouseDef = {toIndex(OptionsNoMouseItem::OptEndNoMouse),
                              &MainDef,
@@ -475,15 +466,13 @@ enum class OptionsNoSoundItem
     OptEndNoSound
 };
 
-Array<MenuItem, 7> OptionsMenuNoSound = {
-    {1, "M_ENDGAM", endGame, 'e'},
-    {1, "M_MESSG", changeMessages, 'm'},
-    {1, "TXT_CROS", changeCrosshair, 'c'},
-    {1, "TXT_ARUN", changeAlwaysRun, 'r'},
-    //{1,"M_DETAIL",  changeDetail,'g'}, // Details do nothing?
-    {2, "M_SCRNSZ", sizeDisplay, 's'},
-    {-1, "", nullptr},
-    {1, "TXT_MOPT", mouseOptions, 'f'}};
+Array<MenuItem, 7> OptionsMenuNoSound = {{1, "M_ENDGAM", endGame, 'e'},
+                                         {1, "M_MESSG", changeMessages, 'm'},
+                                         {1, "TXT_CROS", changeCrosshair, 'c'},
+                                         {1, "TXT_ARUN", changeAlwaysRun, 'r'},
+                                         {2, "M_SCRNSZ", sizeDisplay, 's'},
+                                         {-1, "", nullptr},
+                                         {1, "TXT_MOPT", mouseOptions, 'f'}};
 
 MenuDef OptionsNoSoundDef = {toIndex(OptionsNoSoundItem::OptEndNoSound),
                              &MainDef,
@@ -510,7 +499,6 @@ Array<MenuItem, 6> OptionsMenuNoSoundNoMouse = {
     {1, "M_MESSG", changeMessages, 'm'},
     {1, "TXT_CROS", changeCrosshair, 'c'},
     {1, "TXT_ARUN", changeAlwaysRun, 'r'},
-    //{1,"M_DETAIL",  changeDetail,'g'}, // Details do nothing?
     {2, "M_SCRNSZ", sizeDisplay, 's'},
     {-1, "", nullptr}};
 
@@ -1169,9 +1157,6 @@ void drawOptions()
 
     drawPatchDirect(108, 15, 0, static_cast<Patch*>(cacheLumpName("M_OPTTTL")));
 
-    //drawPatchDirect (OptionsDef.x + 175,OptionsDef.y+LINEHEIGHT*detail,0,
-    //                cacheLumpName(detailNames[detailLevel])); // Details do nothing?
-
     drawPatchDirect(
         OptionsDef.x + 120,
         OptionsDef.y + LINEHEIGHT * toIndex(OptionsItem::Messages),
@@ -1386,16 +1371,6 @@ void mouseMove(int)
     return;
 }
 
-void changeDetail(int)
-{
-    auto& settings = menuSettings();
-
-    settings.detailLevel = 1 - settings.detailLevel;
-
-    // FIXME - does not work. Remove anyway?
-    print("changeDetail: low detail mode n.a.\n");
-}
-
 void sizeDisplay(int choice)
 {
     auto& settings = menuSettings();
@@ -1443,22 +1418,6 @@ void drawThermo(int x, int y, int thermWidth, int thermDot)
                     static_cast<Patch*>(cacheLumpName("M_THERMO")));
 }
 
-void drawEmptyCell(MenuDef* menu, int item)
-{
-    drawPatchDirect(menu->x - 10,
-                    menu->y + item * LINEHEIGHT - 1,
-                    0,
-                    static_cast<Patch*>(cacheLumpName("M_CELL1")));
-}
-
-void drawSelCell(MenuDef* menu, int item)
-{
-    drawPatchDirect(menu->x - 10,
-                    menu->y + item * LINEHEIGHT - 1,
-                    0,
-                    static_cast<Patch*>(cacheLumpName("M_CELL2")));
-}
-
 void startMessage(std::string_view string,
                   std::function<void(int)> routine,
                   bool input)
@@ -1475,12 +1434,6 @@ void startMessage(std::string_view string,
         routine ? std::move(routine) : std::function<void(int)> {[](int) {}};
     state.messageNeedsInput = input;
     overlay.menuactive = true;
-}
-
-void stopMessage()
-{
-    overlayState().menuactive = menuState().messageLastMenuActive;
-    menuState().messageToPrint = 0;
 }
 
 //
@@ -1765,11 +1718,6 @@ bool menuResponder(Event& ev)
                 state.itemOn = toIndex(SoundItem::SfxVol);
                 startSound(nullptr, SfxEnum::Swtchn);
                 return true;
-
-                // case KEY_F5:            // Detail toggle
-                //     changeDetail(0);
-                //     startSound(0, SfxEnum::Swtchn);
-                //     return true;
 
             case KEY_F5: // Crosshair toggle
                 changeCrosshair(0);
