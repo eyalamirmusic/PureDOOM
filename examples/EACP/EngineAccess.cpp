@@ -344,10 +344,8 @@ IndexImage decodeWall(int id)
     const auto& texture = *Doom::graphicsData().textures[id];
     auto image = IndexImage {texture.width, texture.height};
 
-    for (auto i = 0; i < texture.patchcount; ++i)
+    for (const auto& piece: texture.patches)
     {
-        const auto& piece = texture.patches[i];
-
         blitPatch(image, *patchAt(piece.patch), piece.originx, piece.originy);
     }
 
@@ -1179,10 +1177,8 @@ struct AutomapEmitter
 
 void automapWalls(AutomapEmitter& emitter)
 {
-    for (auto i = 0; i < Doom::level().lines.size(); i++)
+    for (const auto& line: Doom::level().lines)
     {
-        const auto& line = Doom::level().lines[i];
-
         auto draw = [&](int color)
         { emitter.line(line.v1->x, line.v1->y, line.v2->x, line.v2->y, color); };
 
@@ -1267,9 +1263,8 @@ void automapPlayer(AutomapEmitter& emitter, const Camera& camera)
 
 void automapThings(AutomapEmitter& emitter, int color)
 {
-    for (auto i = 0; i < Doom::level().sectors.size(); i++)
-        for (auto* thing = Doom::level().sectors[i].thinglist; thing != nullptr;
-             thing = thing->snext)
+    for (const auto& sector: Doom::level().sectors)
+        for (auto* thing = sector.thinglist; thing != nullptr; thing = thing->snext)
             emitter.lineCharacter(Doom::mapShapes().thinTriangleGuy,
                                   Doom::Fixed::fromInt(16),
                                   thing->angle,
@@ -1460,10 +1455,8 @@ bool buildOverlay(std::span<std::uint8_t> outRgba)
 
 void bindKeys()
 {
-    for (auto i = 0; i < Doom::numdefaults(); ++i)
+    for (auto& entry: Doom::defaults())
     {
-        auto& entry = Doom::defaults()[i];
-
         if (entry.defaultvalue != Doom::STRING_VALUE
             && entry.name.starts_with("key_"))
             *entry.location = entry.defaultvalue;

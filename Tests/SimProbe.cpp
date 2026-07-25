@@ -421,9 +421,8 @@ int doomSimLevelGeometryIsWellFormed()
     auto within = [](const auto* p, const auto& vec)
     { return p >= vec.data() && p < vec.data() + vec.size(); };
 
-    for (auto i = 0; i < lvl.segs.size(); ++i)
+    for (const auto& seg: lvl.segs)
     {
-        const auto& seg = lvl.segs[i];
         if (!within(seg.v1, lvl.vertexes) || !within(seg.v2, lvl.vertexes))
             return 0;
         if (!within(seg.linedef, lvl.lines) || !within(seg.sidedef, lvl.sides))
@@ -434,31 +433,29 @@ int doomSimLevelGeometryIsWellFormed()
             return 0;
     }
 
-    for (auto i = 0; i < lvl.subsectors.size(); ++i)
+    for (const auto& ss: lvl.subsectors)
     {
-        const auto& ss = lvl.subsectors[i];
         if (ss.firstline < 0 || ss.firstline + ss.numlines > lvl.segs.size())
             return 0;
         if (!within(ss.sector, lvl.sectors))
             return 0;
     }
 
-    for (auto i = 0; i < lvl.sides.size(); ++i)
-        if (!within(lvl.sides[i].sector, lvl.sectors))
+    for (const auto& side: lvl.sides)
+        if (!within(side.sector, lvl.sectors))
             return 0;
 
     // Each sector's lines point into one flat buffer carved into per-sector slices.
-    for (auto i = 0; i < lvl.sectors.size(); ++i)
+    for (const auto& sec: lvl.sectors)
     {
-        const auto& sec = lvl.sectors[i];
         if (sec.linecount < 0 || !sec.lines)
             return 0;
         if (sec.lines < lvl.sectorLines.data()
             || sec.lines + sec.linecount
                    > lvl.sectorLines.data() + lvl.sectorLines.size())
             return 0;
-        for (auto j = 0; j < sec.linecount; ++j)
-            if (!within(sec.lines[j], lvl.lines))
+        for (const auto* line: sec.lineSlice())
+            if (!within(line, lvl.lines))
                 return 0;
     }
 
@@ -704,32 +701,29 @@ static unsigned long long simWorldHash()
 
     // The world - sectors, lines and sides, exactly the fields Doom::archiveWorld
     // walks (moving floors/ceilings and switched textures live here).
-    for (auto i = 0; i < Doom::level().sectors.size(); i++)
+    for (const auto& s: Doom::level().sectors)
     {
-        Doom::Sector* s = &Doom::level().sectors[i];
-        simMix(&s->floorheight, sizeof(s->floorheight));
-        simMix(&s->ceilingheight, sizeof(s->ceilingheight));
-        simMix(&s->floorpic, sizeof(s->floorpic));
-        simMix(&s->ceilingpic, sizeof(s->ceilingpic));
-        simMix(&s->lightlevel, sizeof(s->lightlevel));
-        simMix(&s->special, sizeof(s->special));
-        simMix(&s->tag, sizeof(s->tag));
+        simMix(&s.floorheight, sizeof(s.floorheight));
+        simMix(&s.ceilingheight, sizeof(s.ceilingheight));
+        simMix(&s.floorpic, sizeof(s.floorpic));
+        simMix(&s.ceilingpic, sizeof(s.ceilingpic));
+        simMix(&s.lightlevel, sizeof(s.lightlevel));
+        simMix(&s.special, sizeof(s.special));
+        simMix(&s.tag, sizeof(s.tag));
     }
-    for (auto i = 0; i < Doom::level().lines.size(); i++)
+    for (const auto& l: Doom::level().lines)
     {
-        Doom::Line* l = &Doom::level().lines[i];
-        simMix(&l->flags, sizeof(l->flags));
-        simMix(&l->special, sizeof(l->special));
-        simMix(&l->tag, sizeof(l->tag));
+        simMix(&l.flags, sizeof(l.flags));
+        simMix(&l.special, sizeof(l.special));
+        simMix(&l.tag, sizeof(l.tag));
     }
-    for (auto i = 0; i < Doom::level().sides.size(); i++)
+    for (const auto& sd: Doom::level().sides)
     {
-        Doom::Side* sd = &Doom::level().sides[i];
-        simMix(&sd->textureoffset, sizeof(sd->textureoffset));
-        simMix(&sd->rowoffset, sizeof(sd->rowoffset));
-        simMix(&sd->toptexture, sizeof(sd->toptexture));
-        simMix(&sd->bottomtexture, sizeof(sd->bottomtexture));
-        simMix(&sd->midtexture, sizeof(sd->midtexture));
+        simMix(&sd.textureoffset, sizeof(sd.textureoffset));
+        simMix(&sd.rowoffset, sizeof(sd.rowoffset));
+        simMix(&sd.toptexture, sizeof(sd.toptexture));
+        simMix(&sd.bottomtexture, sizeof(sd.bottomtexture));
+        simMix(&sd.midtexture, sizeof(sd.midtexture));
     }
 
     // Every thinker: each mobj by the scalar fields Doom::archiveThinkers restores,

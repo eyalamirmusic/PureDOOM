@@ -224,9 +224,8 @@ Fixed Sector::findLowestFloorSurrounding()
 {
     auto floor = floorheight;
 
-    for (auto i = 0; i < linecount; i++)
+    for (auto* check: lineSlice())
     {
-        auto* check = lines[i];
         auto* other = check->nextSector(*this);
 
         if (!other)
@@ -247,9 +246,8 @@ Fixed Sector::findHighestFloorSurrounding()
 {
     auto floor = -500 * FRACUNIT;
 
-    for (auto i = 0; i < linecount; i++)
+    for (auto* check: lineSlice())
     {
-        auto* check = lines[i];
         auto* other = check->nextSector(*this);
 
         if (!other)
@@ -268,15 +266,13 @@ Fixed Sector::findHighestFloorSurrounding()
 // Note: this should be doable w/o a fixed array.
 Fixed Sector::findNextHighestFloor(Fixed currentheight)
 {
-    int i;
-    int h;
+    auto h = 0;
     auto height = currentheight;
 
     Array<Fixed, MAX_ADJOINING_SECTORS> heightlist;
 
-    for (i = 0, h = 0; i < linecount; i++)
+    for (auto* check: lineSlice())
     {
-        auto* check = lines[i];
         auto* other = check->nextSector(*this);
 
         if (!other)
@@ -300,7 +296,7 @@ Fixed Sector::findNextHighestFloor(Fixed currentheight)
     auto min = heightlist[0];
 
     // Range checking?
-    for (i = 1; i < h; i++)
+    for (auto i = 1; i < h; i++)
         if (heightlist[i] < min)
             min = heightlist[i];
 
@@ -314,9 +310,8 @@ Fixed Sector::findLowestCeilingSurrounding()
 {
     auto height = Fixed {DOOM_MAXINT};
 
-    for (auto i = 0; i < linecount; i++)
+    for (auto* check: lineSlice())
     {
-        auto* check = lines[i];
         auto* other = check->nextSector(*this);
 
         if (!other)
@@ -336,9 +331,8 @@ Fixed Sector::findHighestCeilingSurrounding()
 {
     Fixed height {};
 
-    for (auto i = 0; i < linecount; i++)
+    for (auto* check: lineSlice())
     {
-        auto* check = lines[i];
         auto* other = check->nextSector(*this);
 
         if (!other)
@@ -369,9 +363,8 @@ int Line::findSectorFromLineTag(int start)
 int Sector::findMinSurroundingLight(int max)
 {
     auto min = max;
-    for (auto i = 0; i < linecount; i++)
+    for (auto* line: lineSlice())
     {
-        auto* line = lines[i];
         auto* check = line->nextSector(*this);
 
         if (!check)
@@ -1060,12 +1053,11 @@ int Line::doDonut()
 
         rtn = 1;
         auto* s2 = s1->lines[0]->nextSector(*s1);
-        for (auto i = 0; i < s2->linecount; i++)
+        for (auto* line: s2->lineSlice())
         {
-            if ((!(s2->lines[i]->flags & ML_TWOSIDED))
-                || (s2->lines[i]->backsector == s1))
+            if ((!(line->flags & ML_TWOSIDED)) || (line->backsector == s1))
                 continue;
-            auto* s3 = s2->lines[i]->backsector;
+            auto* s3 = line->backsector;
 
             //        Spawn rising slime
             FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
@@ -1200,13 +1192,13 @@ void spawnSpecials()
 
     // Init line EFFECTs
     surf.linespeciallist.clear();
-    for (i = 0; i < level().lines.size(); i++)
+    for (auto& line: level().lines)
     {
-        switch (level().lines[i].special)
+        switch (line.special)
         {
             case 48:
                 // EFFECT FIRSTCOL SCROLL+
-                surf.linespeciallist.add(&level().lines[i]);
+                surf.linespeciallist.add(&line);
                 break;
         }
     }

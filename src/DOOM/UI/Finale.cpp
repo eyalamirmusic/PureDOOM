@@ -237,8 +237,6 @@ bool finaleResponder(Event& event)
 //
 void finaleTicker()
 {
-    int i;
-
     const auto& version = gameVersion();
     const auto& players_ = playerState();
     auto& fin = finaleState();
@@ -247,11 +245,15 @@ void finaleTicker()
     if ((version.gamemode == GameMode::Commercial) && (fin.finalecount > 50))
     {
         // go on to the next level
-        for (i = 0; i < MAXPLAYERS; i++)
-            if (players_.players[i].cmd.buttons)
+        auto anyPressed = false;
+        for (const auto& player: players_.players)
+            if (player.cmd.buttons)
+            {
+                anyPressed = true;
                 break;
+            }
 
-        if (i < MAXPLAYERS)
+        if (anyPressed)
         {
             if (gameSession().gamemap == 30)
                 startCast();

@@ -379,24 +379,22 @@ void groupLines()
     Array<Fixed, 4> bbox;
 
     // look up sector number for each subsector
-    auto* ss = level().subsectors.data();
-    for (auto i = 0; i < level().subsectors.size(); i++, ss++)
+    for (auto& ss: level().subsectors)
     {
-        auto* seg = &level().segs[ss->firstline];
-        ss->sector = seg->sidedef->sector;
+        auto* seg = &level().segs[ss.firstline];
+        ss.sector = seg->sidedef->sector;
     }
 
     // count number of lines in each sector
-    auto* li = level().lines.data();
     auto total = 0;
-    for (auto i = 0; i < level().lines.size(); i++, li++)
+    for (auto& li: level().lines)
     {
         total++;
-        li->frontsector->linecount++;
+        li.frontsector->linecount++;
 
-        if (li->backsector && li->backsector != li->frontsector)
+        if (li.backsector && li.backsector != li.frontsector)
         {
-            li->backsector->linecount++;
+            li.backsector->linecount++;
             total++;
         }
     }
@@ -406,49 +404,47 @@ void groupLines()
     // did, and sector->lines points into it.
     level().sectorLines.assign(total, nullptr);
     auto** linebuffer = level().sectorLines.data();
-    auto* sector = level().sectors.data();
-    for (auto i = 0; i < level().sectors.size(); i++, sector++)
+    for (auto& sector: level().sectors)
     {
         clearBox(bbox.data());
-        sector->lines = linebuffer;
-        li = level().lines.data();
-        for (auto j = 0; j < level().lines.size(); j++, li++)
+        sector.lines = linebuffer;
+        for (auto& li: level().lines)
         {
-            if (li->frontsector == sector || li->backsector == sector)
+            if (li.frontsector == &sector || li.backsector == &sector)
             {
-                *linebuffer++ = li;
-                addToBox(bbox.data(), *li->v1);
-                addToBox(bbox.data(), *li->v2);
+                *linebuffer++ = &li;
+                addToBox(bbox.data(), *li.v1);
+                addToBox(bbox.data(), *li.v2);
             }
         }
-        if (linebuffer - sector->lines != sector->linecount)
+        if (linebuffer - sector.lines != sector.linecount)
             fatalError("Error: groupLines: miscounted");
 
         // set the DegenMobj to the middle of the bounding box
-        sector->soundorg.pos.x = (bbox[boxRight] + bbox[boxLeft]) / 2;
-        sector->soundorg.pos.y = (bbox[boxTop] + bbox[boxBottom]) / 2;
+        sector.soundorg.pos.x = (bbox[boxRight] + bbox[boxLeft]) / 2;
+        sector.soundorg.pos.y = (bbox[boxTop] + bbox[boxBottom]) / 2;
 
         // adjust bounding box to map blocks
         auto block = (bbox[boxTop] - level().blockmap.origin.y + MAXRADIUS).raw
                      >> MAPBLOCKSHIFT;
         block =
             block >= level().blockmap.height ? level().blockmap.height - 1 : block;
-        sector->blockbox[boxTop] = block;
+        sector.blockbox[boxTop] = block;
 
         block = (bbox[boxBottom] - level().blockmap.origin.y - MAXRADIUS).raw
                 >> MAPBLOCKSHIFT;
         block = block < 0 ? 0 : block;
-        sector->blockbox[boxBottom] = block;
+        sector.blockbox[boxBottom] = block;
 
         block = (bbox[boxRight] - level().blockmap.origin.x + MAXRADIUS).raw
                 >> MAPBLOCKSHIFT;
         block = block >= level().blockmap.width ? level().blockmap.width - 1 : block;
-        sector->blockbox[boxRight] = block;
+        sector.blockbox[boxRight] = block;
 
         block = (bbox[boxLeft] - level().blockmap.origin.x - MAXRADIUS).raw
                 >> MAPBLOCKSHIFT;
         block = block < 0 ? 0 : block;
-        sector->blockbox[boxLeft] = block;
+        sector.blockbox[boxLeft] = block;
     }
 }
 

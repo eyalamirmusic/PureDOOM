@@ -221,17 +221,17 @@ void findMinMaxBoundaries()
     map.minBound.x = map.minBound.y = Fixed {DOOM_MAXINT};
     map.maxBound.x = map.maxBound.y = Fixed {-DOOM_MAXINT};
 
-    for (auto i = 0; i < level().vertexes.size(); i++)
+    for (const auto& vertex: level().vertexes)
     {
-        if (level().vertexes[i].x < map.minBound.x)
-            map.minBound.x = level().vertexes[i].x;
-        else if (level().vertexes[i].x > map.maxBound.x)
-            map.maxBound.x = level().vertexes[i].x;
+        if (vertex.x < map.minBound.x)
+            map.minBound.x = vertex.x;
+        else if (vertex.x > map.maxBound.x)
+            map.maxBound.x = vertex.x;
 
-        if (level().vertexes[i].y < map.minBound.y)
-            map.minBound.y = level().vertexes[i].y;
-        else if (level().vertexes[i].y > map.maxBound.y)
-            map.maxBound.y = level().vertexes[i].y;
+        if (vertex.y < map.minBound.y)
+            map.minBound.y = vertex.y;
+        else if (vertex.y > map.maxBound.y)
+            map.maxBound.y = vertex.y;
     }
 
     map.maxSize = map.maxBound - map.minBound;
@@ -926,40 +926,40 @@ void drawWalls()
 {
     static MapLine l;
 
-    for (auto i = 0; i < level().lines.size(); i++)
+    for (const auto& line: level().lines)
     {
-        l.a = *level().lines[i].v1;
-        l.b = *level().lines[i].v2;
-        if (automapView().cheating || (level().lines[i].flags & ML_MAPPED))
+        l.a = *line.v1;
+        l.b = *line.v2;
+        if (automapView().cheating || (line.flags & ML_MAPPED))
         {
-            if ((level().lines[i].flags & LINE_NEVERSEE) && !automapView().cheating)
+            if ((line.flags & LINE_NEVERSEE) && !automapView().cheating)
                 continue;
-            if (!level().lines[i].backsector)
+            if (!line.backsector)
             {
                 drawMline(l, WALLCOLORS + automapView().lightlev);
             }
             else
             {
-                if (level().lines[i].special == 39)
+                if (line.special == 39)
                 { // teleporters
                     drawMline(l, WALLCOLORS + WALLRANGE / 2);
                 }
-                else if (level().lines[i].flags & ML_SECRET) // secret door
+                else if (line.flags & ML_SECRET) // secret door
                 {
                     if (automapView().cheating)
                         drawMline(l, SECRETWALLCOLORS + automapView().lightlev);
                     else
                         drawMline(l, WALLCOLORS + automapView().lightlev);
                 }
-                else if (level().lines[i].backsector->floorheight
-                         != level().lines[i].frontsector->floorheight)
+                else if (line.backsector->floorheight
+                         != line.frontsector->floorheight)
                 {
                     drawMline(l,
                               FDWALLCOLORS
                                   + automapView().lightlev); // floor level change
                 }
-                else if (level().lines[i].backsector->ceilingheight
-                         != level().lines[i].frontsector->ceilingheight)
+                else if (line.backsector->ceilingheight
+                         != line.frontsector->ceilingheight)
                 {
                     drawMline(l,
                               CDWALLCOLORS
@@ -973,7 +973,7 @@ void drawWalls()
         }
         else if (automapView().am_plr->powers[toIndex(PowerType::AllMap)])
         {
-            if (!(level().lines[i].flags & LINE_NEVERSEE))
+            if (!(line.flags & LINE_NEVERSEE))
                 drawMline(l, GRAYS + 3);
         }
     }
@@ -1007,9 +1007,9 @@ void drawLineCharacter(std::span<const MapLine> lineguy,
 {
     MapLine l;
 
-    for (auto i = 0u; i < lineguy.size(); i++)
+    for (const auto& shapeLine: lineguy)
     {
-        l.a = lineguy[i].a;
+        l.a = shapeLine.a;
 
         if (scale)
         {
@@ -1023,7 +1023,7 @@ void drawLineCharacter(std::span<const MapLine> lineguy,
         l.a.x += x;
         l.a.y += y;
 
-        l.b = lineguy[i].b;
+        l.b = shapeLine.b;
 
         if (scale)
         {
@@ -1098,9 +1098,9 @@ void drawPlayers()
 
 void drawThings(int colors)
 {
-    for (auto i = 0; i < level().sectors.size(); i++)
+    for (const auto& sector: level().sectors)
     {
-        auto* t = level().sectors[i].thinglist;
+        auto* t = sector.thinglist;
         while (t)
         {
             drawLineCharacter(mapShapes().thinTriangleGuy,

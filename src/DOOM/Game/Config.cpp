@@ -172,15 +172,13 @@ ConfigDefault defaultsData[] = {
     {"chatmacro9", 0, STRING_VALUE, &chat_macros()[9], HUSTR_CHATMACRO9}};
 
 DOOM_DIAGNOSTIC_POP
-int numdefaultsValue = sizeof(defaultsData) / sizeof(ConfigDefault);
-
-ConfigDefault* defaults()
+std::span<ConfigDefault> defaults()
 {
     return defaultsData;
 }
 int numdefaults()
 {
-    return numdefaultsValue;
+    return static_cast<int>(defaults().size());
 }
 
 //
@@ -241,10 +239,10 @@ int readFile(std::string_view name, Vector<byte>& buffer)
 // loadDefaults and saveDefaults call it before touching a location pointer.
 static void bindEngineDefault(std::string_view name, int* location)
 {
-    for (auto i = 0; i < numdefaults(); i++)
-        if (name == defaults()[i].name)
+    for (auto& def: defaults())
+        if (name == def.name)
         {
-            defaults()[i].location = location;
+            def.location = location;
             return;
         }
 }
@@ -313,24 +311,19 @@ void saveDefaults()
     if (!f)
         return; // can't write the file, but don't complain
 
-    for (auto i = 0; i < numdefaults(); i++)
+    for (const auto& def: defaults())
     {
-        if (defaults()[i].defaultvalue > -0xfff
-            && defaults()[i].defaultvalue < 0xfff)
+        if (def.defaultvalue > -0xfff && def.defaultvalue < 0xfff)
         {
-            v = *defaults()[i].location;
+            v = *def.location;
             //fprintf(f, "%s\t\t%i\n", defaults[i].name, v);
-            printTo(f, defaults()[i].name, "\t\t", v, "\n");
+            printTo(f, def.name, "\t\t", v, "\n");
         }
         else
         {
             //fprintf(f, "%s\t\t\"%s\"\n", defaults[i].name,
             //        *(char**)(defaults[i].text_location));
-            printTo(f,
-                    defaults()[i].name,
-                    "\t\t\"",
-                    *defaults()[i].text_location,
-                    "\"\n");
+            printTo(f, def.name, "\t\t\"", *def.text_location, "\"\n");
         }
     }
 
@@ -369,12 +362,12 @@ void loadDefaults()
 
     // set everything to base values
     // numdefaults = sizeof(defaults)/sizeof(defaults[0]);
-    for (i = 0; i < numdefaults(); i++)
+    for (const auto& def: defaults())
     {
-        if (defaults()[i].defaultvalue == 0xFFFF)
-            *defaults()[i].text_location = defaults()[i].default_text_value;
+        if (def.defaultvalue == 0xFFFF)
+            *def.text_location = def.default_text_value;
         else
-            *defaults()[i].location = static_cast<int>(defaults()[i].defaultvalue);
+            *def.location = static_cast<int>(def.defaultvalue);
     }
 
     // check for a custom default file

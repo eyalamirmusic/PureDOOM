@@ -29,9 +29,9 @@ int Line::teleport(int side, Mobj& thing)
         return 0;
 
     // `tag` here is this line's own tag member.
-    for (auto i = 0; i < level().sectors.size(); i++)
+    for (auto& destination: level().sectors)
     {
-        if (level().sectors[i].tag == tag)
+        if (destination.tag == tag)
         {
             auto* thinker = thinkers.cap.next;
             for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
@@ -47,9 +47,8 @@ int Line::teleport(int side, Mobj& thing)
                 if (m->type != MobjType::Teleportman)
                     continue;
 
-                auto* sector = m->subsector->sector;
                 // wrong sector
-                if (sector - level().sectors.data() != i)
+                if (m->subsector->sector != &destination)
                     continue;
 
                 auto oldx = thing.pos.x;

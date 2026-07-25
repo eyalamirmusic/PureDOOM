@@ -124,23 +124,20 @@ void Line::startLightStrobing()
 //
 void Line::turnTagLightsOff()
 {
-    auto* sector = level().sectors.data();
-
-    for (auto j = 0; j < level().sectors.size(); j++, sector++)
+    for (auto& sector: level().sectors)
     {
-        if (sector->tag == tag)
+        if (sector.tag == tag)
         {
-            auto min = sector->lightlevel;
-            for (auto i = 0; i < sector->linecount; i++)
+            auto min = sector.lightlevel;
+            for (auto* templine: sector.lineSlice())
             {
-                auto* templine = sector->lines[i];
-                auto* tsec = templine->nextSector(*sector);
+                auto* tsec = templine->nextSector(sector);
                 if (!tsec)
                     continue;
                 if (tsec->lightlevel < min)
                     min = tsec->lightlevel;
             }
-            sector->lightlevel = min;
+            sector.lightlevel = min;
         }
     }
 }
@@ -150,21 +147,18 @@ void Line::turnTagLightsOff()
 //
 void Line::lightTurnOn(int bright)
 {
-    auto* sector = level().sectors.data();
-
-    for (auto i = 0; i < level().sectors.size(); i++, sector++)
+    for (auto& sector: level().sectors)
     {
-        if (sector->tag == tag)
+        if (sector.tag == tag)
         {
             // bright = 0 means to search
             // for highest light level
             // surrounding sector
             if (!bright)
             {
-                for (auto j = 0; j < sector->linecount; j++)
+                for (auto* templine: sector.lineSlice())
                 {
-                    auto* templine = sector->lines[j];
-                    auto* temp = templine->nextSector(*sector);
+                    auto* temp = templine->nextSector(sector);
 
                     if (!temp)
                         continue;
@@ -173,7 +167,7 @@ void Line::lightTurnOn(int bright)
                         bright = temp->lightlevel;
                 }
             }
-            sector->lightlevel = bright;
+            sector.lightlevel = bright;
         }
     }
 }

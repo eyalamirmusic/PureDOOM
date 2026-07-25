@@ -551,8 +551,8 @@ void touchSpecialThing(Mobj& special, Mobj& toucher)
         case SpriteNum::Bpak:
             if (!player->backpack)
             {
-                for (auto i = 0; i < numAmmo; i++)
-                    player->maxammo[i] *= 2;
+                for (auto& maxammo: player->maxammo)
+                    maxammo *= 2;
                 player->backpack = true;
             }
             for (auto i = 0; i < numAmmo; i++)

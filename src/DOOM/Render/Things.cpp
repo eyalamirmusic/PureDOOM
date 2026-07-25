@@ -753,9 +753,7 @@ void drawPSprite(PspDef& psp)
 //
 void drawPlayerSprites()
 {
-    int i;
     int lightnum;
-    PspDef* psp;
 
     auto& pt = viewPoint();
     auto& lights = lighting();
@@ -778,10 +776,10 @@ void drawPlayerSprites()
     sprState.mceilingclip = sprState.negonearray.data();
 
     // add all active psprites
-    for (i = 0, psp = pt.viewplayer->psprites; i < numPSprites; i++, psp++)
+    for (auto& psp: pt.viewplayer->psprites)
     {
-        if (psp->state)
-            drawPSprite(*psp);
+        if (psp.state)
+            drawPSprite(psp);
     }
 }
 

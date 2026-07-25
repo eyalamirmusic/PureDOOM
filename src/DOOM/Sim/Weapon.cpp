@@ -684,8 +684,8 @@ void Player::bfgSound(PspDef&)
 void Player::setupPsprites()
 {
     // remove all psprites
-    for (auto i = 0; i < numPSprites; i++)
-        psprites[i].state = nullptr;
+    for (auto& psp: psprites)
+        psp.state = nullptr;
 
     // spawn the gun
     pendingweapon = readyweapon;

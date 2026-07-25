@@ -397,18 +397,18 @@ int Line::buildStairs(StairType type)
         do
         {
             ok = 0;
-            for (auto i = 0; i < sec->linecount; i++)
+            for (auto* line: sec->lineSlice())
             {
-                if (!((sec->lines[i])->flags & ML_TWOSIDED))
+                if (!(line->flags & ML_TWOSIDED))
                     continue;
 
-                auto* tsec = (sec->lines[i])->frontsector;
+                auto* tsec = line->frontsector;
                 auto newsecnum = static_cast<int>(tsec - level().sectors.data());
 
                 if (secnum != newsecnum)
                     continue;
 
-                tsec = (sec->lines[i])->backsector;
+                tsec = line->backsector;
                 newsecnum = static_cast<int>(tsec - level().sectors.data());
 
                 if (tsec->floorpic != texture)

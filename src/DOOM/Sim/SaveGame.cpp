@@ -70,13 +70,10 @@ void archivePlayers()
         auto* dest = reinterpret_cast<Player*>(save.cursor);
         doom_memcpy(dest, &players_.players[i], sizeof(Player));
         save.cursor += sizeof(Player);
-        for (auto j = 0; j < numPSprites; j++)
+        for (auto& psp: dest->psprites)
         {
-            if (dest->psprites[j].state)
-            {
-                dest->psprites[j].state =
-                    reinterpret_cast<State*>(dest->psprites[j].state - states());
-            }
+            if (psp.state)
+                psp.state = reinterpret_cast<State*>(psp.state - states());
         }
     }
 }
@@ -104,14 +101,10 @@ void unArchivePlayers()
         players_.players[i].message = {};
         players_.players[i].attacker = nullptr;
 
-        for (auto j = 0; j < numPSprites; j++)
+        for (auto& psp: players_.players[i].psprites)
         {
-            if (players_.players[i].psprites[j].state)
-            {
-                players_.players[i].psprites[j].state =
-                    &states()[reinterpret_cast<long long>(
-                        players_.players[i].psprites[j].state)];
-            }
+            if (psp.state)
+                psp.state = &states()[reinterpret_cast<long long>(psp.state)];
         }
     }
 }
@@ -121,35 +114,31 @@ void unArchivePlayers()
 //
 void archiveWorld()
 {
-    int i;
-    Sector* sec;
-    Line* li;
-
     auto& save = saveGameState();
 
     auto* put = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
-    for (i = 0, sec = level().sectors.data(); i < level().sectors.size(); i++, sec++)
+    for (const auto& sec: level().sectors)
     {
         // The on-disk format stores heights in WHOLE map units, as vanilla's
         // `>> fracBits` into a short did - so toInt(), not raw.
-        *put++ = sec->floorheight.toInt();
-        *put++ = sec->ceilingheight.toInt();
-        *put++ = sec->floorpic;
-        *put++ = sec->ceilingpic;
-        *put++ = sec->lightlevel;
-        *put++ = sec->special; // needed?
-        *put++ = sec->tag; // needed?
+        *put++ = sec.floorheight.toInt();
+        *put++ = sec.ceilingheight.toInt();
+        *put++ = sec.floorpic;
+        *put++ = sec.ceilingpic;
+        *put++ = sec.lightlevel;
+        *put++ = sec.special; // needed?
+        *put++ = sec.tag; // needed?
     }
 
     // do lines
-    for (i = 0, li = level().lines.data(); i < level().lines.size(); i++, li++)
+    for (const auto& li: level().lines)
     {
-        *put++ = li->flags;
-        *put++ = li->special;
-        *put++ = li->tag;
-        for (short sidenum: li->sidenum)
+        *put++ = li.flags;
+        *put++ = li.special;
+        *put++ = li.tag;
+        for (short sidenum: li.sidenum)
         {
             if (sidenum == -1)
                 continue;
@@ -172,35 +161,31 @@ void archiveWorld()
 //
 void unArchiveWorld()
 {
-    int i;
-    Sector* sec;
-    Line* li;
-
     auto& save = saveGameState();
 
     auto* get = reinterpret_cast<short*>(save.cursor);
 
     // do sectors
-    for (i = 0, sec = level().sectors.data(); i < level().sectors.size(); i++, sec++)
+    for (auto& sec: level().sectors)
     {
-        sec->floorheight = Fixed::fromInt(*get++);
-        sec->ceilingheight = Fixed::fromInt(*get++);
-        sec->floorpic = *get++;
-        sec->ceilingpic = *get++;
-        sec->lightlevel = *get++;
-        sec->special = *get++; // needed?
-        sec->tag = *get++; // needed?
-        sec->specialdata = nullptr;
-        sec->soundtarget = nullptr;
+        sec.floorheight = Fixed::fromInt(*get++);
+        sec.ceilingheight = Fixed::fromInt(*get++);
+        sec.floorpic = *get++;
+        sec.ceilingpic = *get++;
+        sec.lightlevel = *get++;
+        sec.special = *get++; // needed?
+        sec.tag = *get++; // needed?
+        sec.specialdata = nullptr;
+        sec.soundtarget = nullptr;
     }
 
     // do lines
-    for (i = 0, li = level().lines.data(); i < level().lines.size(); i++, li++)
+    for (auto& li: level().lines)
     {
-        li->flags = *get++;
-        li->special = *get++;
-        li->tag = *get++;
-        for (short sidenum: li->sidenum)
+        li.flags = *get++;
+        li.special = *get++;
+        li.tag = *get++;
+        for (short sidenum: li.sidenum)
         {
             if (sidenum == -1)
                 continue;

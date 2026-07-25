@@ -34,6 +34,8 @@
 
 #include "../Containers.h"
 
+#include <span>
+
 //
 // INTERNAL MAP TYPES
 // used by play and refresh
@@ -127,6 +129,14 @@ struct Sector
 
     int linecount = 0;
     struct Line** lines = nullptr; // [linecount] size
+
+    // The sector's slice of the Level's one flat sectorLines buffer (Sim/Setup.cpp's
+    // groupLines carves it). It stays a raw pointer and count because the storage is
+    // shared, so this pairs the two into the view every reader actually wants.
+    std::span<struct Line*> lineSlice() const
+    {
+        return {lines, static_cast<std::size_t>(linecount)};
+    }
 
     // After this sector changed height, re-clip every thing touching it; crush those
     // that no longer fit if `crunch`. Returns true if anything did not fit (vanilla

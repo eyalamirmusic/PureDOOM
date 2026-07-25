@@ -148,12 +148,10 @@ void generateComposite(int texnum)
 {
     byte* block;
     Texture* texture;
-    TexPatch* patch;
     Patch* realpatch;
     int x;
     int x1;
     int x2;
-    int i;
     Column* patchcol;
     short* collump;
     unsigned short* colofs;
@@ -176,13 +174,10 @@ void generateComposite(int texnum)
     colofs = texturecolumnofs[texnum];
 
     // Composite the columns together.
-    patch = texture->patches.data();
-
-    for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
-         i++, patch++)
+    for (const auto& patch: texture->patches)
     {
-        realpatch = static_cast<Patch*>(cacheLumpNum(patch->patch));
-        x1 = patch->originx;
+        realpatch = static_cast<Patch*>(cacheLumpNum(patch.patch));
+        x1 = patch.originx;
         x2 = x1 + littleEndian(realpatch->width);
 
         if (x1 < 0)
@@ -203,7 +198,7 @@ void generateComposite(int texnum)
                 reinterpret_cast<byte*>(realpatch)
                 + littleEndian(realpatch->columnofs[x - x1]));
             drawColumnInCache(
-                patchcol, block + colofs[x], patch->originy, texture->height);
+                patchcol, block + colofs[x], patch.originy, texture->height);
         }
     }
 
@@ -218,12 +213,10 @@ void generateComposite(int texnum)
 void generateLookup(int texnum)
 {
     Texture* texture;
-    TexPatch* patch;
     Patch* realpatch;
     int x;
     int x1;
     int x2;
-    int i;
     short* collump;
     unsigned short* colofs;
 
@@ -243,13 +236,10 @@ void generateLookup(int texnum)
     // RAII scratch: value-initialised to zero and released on every exit, including
     // the early "column without a patch" return below (which the manual free leaked).
     auto patchcount = Vector<byte>(texture->width);
-    patch = texture->patches.data();
-
-    for (i = 0, patch = texture->patches.data(); i < texture->patchcount;
-         i++, patch++)
+    for (const auto& patch: texture->patches)
     {
-        realpatch = static_cast<Patch*>(cacheLumpNum(patch->patch));
-        x1 = patch->originx;
+        realpatch = static_cast<Patch*>(cacheLumpNum(patch.patch));
+        x1 = patch.originx;
         x2 = x1 + littleEndian(realpatch->width);
 
         if (x1 < 0)
@@ -262,7 +252,7 @@ void generateLookup(int texnum)
         for (; x < x2; x++)
         {
             patchcount[x]++;
-            collump[x] = patch->patch;
+            collump[x] = patch.patch;
             colofs[x] = littleEndian(realpatch->columnofs[x - x1]) + 3;
         }
     }
@@ -710,10 +700,10 @@ void precacheLevel()
     // Precache flats.
     auto flatpresent = Vector<char>(gd.numflats);
 
-    for (i = 0; i < level().sectors.size(); i++)
+    for (const auto& sector: level().sectors)
     {
-        flatpresent[level().sectors[i].floorpic] = 1;
-        flatpresent[level().sectors[i].ceilingpic] = 1;
+        flatpresent[sector.floorpic] = 1;
+        flatpresent[sector.ceilingpic] = 1;
     }
 
     for (i = 0; i < gd.numflats; i++)
@@ -728,11 +718,11 @@ void precacheLevel()
     // Precache textures.
     auto texturepresent = Vector<char>(gd.numtextures);
 
-    for (i = 0; i < level().sides.size(); i++)
+    for (const auto& side: level().sides)
     {
-        texturepresent[level().sides[i].toptexture] = 1;
-        texturepresent[level().sides[i].midtexture] = 1;
-        texturepresent[level().sides[i].bottomtexture] = 1;
+        texturepresent[side.toptexture] = 1;
+        texturepresent[side.midtexture] = 1;
+        texturepresent[side.bottomtexture] = 1;
     }
 
     // Sky texture is always present.

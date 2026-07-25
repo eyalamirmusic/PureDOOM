@@ -23,6 +23,7 @@
 
 #include "../doomtype.h"
 
+#include <span>
 #include <string_view>
 
 //
@@ -48,9 +49,11 @@ struct ConfigDefault
 // sentinel and the string lives in text_location.
 constexpr int STRING_VALUE = 0xFFFF;
 
-// The config default table and its length. Was two `extern` globals; storage is
-// file-local to Game/Config.cpp now, reached as defaults()[i] and numdefaults().
-ConfigDefault* defaults();
+// The config default table. Was two `extern` globals; storage is file-local to
+// Game/Config.cpp now, handed out as one span so the length cannot drift from the
+// table it counts. numdefaults() is derived from it for the callers that want a
+// plain int.
+std::span<ConfigDefault> defaults();
 int numdefaults();
 } // namespace Doom
 

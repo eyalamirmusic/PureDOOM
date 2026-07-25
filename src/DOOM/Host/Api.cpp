@@ -61,10 +61,10 @@ static Array<int, 3> button_states = {0};
 
 static ConfigDefault* getDefault(std::string_view name)
 {
-    for (auto i = 0; i < numdefaults(); ++i)
+    for (auto& def: defaults())
     {
-        if (name == defaults()[i].name)
-            return &defaults()[i];
+        if (name == def.name)
+            return &def;
     }
     return nullptr;
 }

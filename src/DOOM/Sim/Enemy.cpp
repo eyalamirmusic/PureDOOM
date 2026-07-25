@@ -138,9 +138,8 @@ void recursiveSound(Sector* sec, int soundblocks)
     sec->soundtraversed = soundblocks + 1;
     sec->soundtarget = soundTarget().soundtarget;
 
-    for (auto i = 0; i < sec->linecount; i++)
+    for (auto* check: sec->lineSlice())
     {
-        auto* check = sec->lines[i];
         if (!(check->flags & ML_TWOSIDED))
             continue;
 

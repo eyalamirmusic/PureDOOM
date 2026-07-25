@@ -122,8 +122,8 @@ void initSound(int sfxVolume, int musicVolume)
     channels_s_sound = snd.channels.data();
 
     // Free all channels for use
-    for (auto i = 0; i < sndset.numChannels; i++)
-        channels_s_sound[i].sfxinfo = nullptr;
+    for (auto& channel: snd.channels)
+        channel.sfxinfo = nullptr;
 
     // no sounds are playing, and they are not mus_paused
     snd.mus_paused = false;

@@ -375,8 +375,8 @@ bool statusBarResponder(Event& ev)
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
 
-                for (auto i = 0; i < numWeapons; i++)
-                    bar.plyr->weaponowned[i] = true;
+                for (bool& owned: bar.plyr->weaponowned)
+                    owned = true;
 
                 for (auto i = 0; i < numAmmo; i++)
                     bar.plyr->ammo[i] = bar.plyr->maxammo[i];
