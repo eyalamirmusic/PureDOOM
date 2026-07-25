@@ -23,7 +23,8 @@
 
 #include "../doomtype.h"
 
-#include <span>
+#include <map>
+#include <string>
 #include <string_view>
 
 //
@@ -31,30 +32,51 @@
 //
 namespace Doom
 {
+// A default whose value is text rather than a number: `defaultvalue` is this
+// sentinel and the string lives in text_value.
+constexpr int STRING_VALUE = 0xFFFF;
+
 struct ConfigDefault
 {
-    std::string_view name;
+    // Bound to the Engine member this default writes through at runtime
+    // (bindEngineDefaults), not captured in the table: a static &member would take
+    // the address of a reference before the Engine exists.
     int* location = nullptr;
     int defaultvalue = 0;
 
     // A text-valued default (defaultvalue == STRING_VALUE) writes through
-    // text_location instead of location. The view does not own what it points at:
-    // before the config file is read that is default_text_value's literal, and
-    // after it is a slot of loadDefaults' process-lifetime string storage.
+    // text_location instead of location. Both strings are owned here and map nodes
+    // never move, so the view text_location holds stays valid for the life of the
+    // process - which it must, since the engine reads it whenever a chat macro
+    // fires and saveDefaults reads it back out to write the file.
     std::string_view* text_location = nullptr;
-    std::string_view default_text_value;
+    std::string default_text_value;
+    std::string text_value;
+
+    void setText(std::string_view value)
+    {
+        text_value = value;
+        *text_location = text_value;
+    }
+
+    void resetToDefault()
+    {
+        if (defaultvalue == STRING_VALUE)
+            setText(default_text_value);
+        else
+            *location = defaultvalue;
+    }
 };
 
-// A default whose value is text rather than a number: `defaultvalue` is this
-// sentinel and the string lives in text_location.
-constexpr int STRING_VALUE = 0xFFFF;
+// The config default table, keyed by the name that appears in ~/.doomrc. Was two
+// `extern` globals, then a span over a file-local array every lookup scanned;
+// storage stays file-local to Game/Config.cpp. std::less<> so a std::string_view -
+// or the std::string loadDefaults reads out of the file - looks one up without
+// allocating a key.
+using ConfigDefaults = std::map<std::string, ConfigDefault, std::less<>>;
 
-// The config default table. Was two `extern` globals; storage is file-local to
-// Game/Config.cpp now, handed out as one span so the length cannot drift from the
-// table it counts. numdefaults() is derived from it for the callers that want a
-// plain int.
-std::span<ConfigDefault> defaults();
-int numdefaults();
+ConfigDefaults& defaults();
+ConfigDefault* findDefault(std::string_view name);
 } // namespace Doom
 
 //-----------------------------------------------------------------------------

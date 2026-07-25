@@ -1455,10 +1455,9 @@ bool buildOverlay(std::span<std::uint8_t> outRgba)
 
 void bindKeys()
 {
-    for (auto& entry: Doom::defaults())
+    for (auto& [name, entry]: Doom::defaults())
     {
-        if (entry.defaultvalue != Doom::STRING_VALUE
-            && entry.name.starts_with("key_"))
+        if (entry.defaultvalue != Doom::STRING_VALUE && name.starts_with("key_"))
             *entry.location = entry.defaultvalue;
     }
 }

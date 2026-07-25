@@ -24,7 +24,6 @@
 #include "../Game/InputConfig.h"
 #include "../Containers.h"
 
-#include <map>
 #include <string>
 
 void doom_memset(void* ptr, int value, int num)
@@ -59,16 +58,6 @@ static Vector<unsigned char> final_screen_buffer;
 static int last_update_time = 0;
 static Array<int, 3> button_states = {0};
 
-static ConfigDefault* getDefault(std::string_view name)
-{
-    for (auto& def: defaults())
-    {
-        if (name == def.name)
-            return &def;
-    }
-    return nullptr;
-}
-
 void setResolution(int width, int height)
 {
     if (width <= 0 || height <= 0)
@@ -79,26 +68,17 @@ void setResolution(int width, int height)
 
 void setDefaultInt(std::string_view name, int value)
 {
-    auto* def = getDefault(name);
-    if (!def)
-        return;
-    def->defaultvalue = value;
+    if (auto* def = findDefault(name))
+        def->defaultvalue = value;
 }
 
 void setDefaultString(std::string_view name, std::string_view value)
 {
-    auto* def = getDefault(name);
-    if (!def)
-        return;
-
-    // The table holds a non-owning view read for the life of the process; own a
-    // copy per name (map nodes never move, so the view stays valid). Assigning the
-    // view after `owned` is written is what keeps it pointing at the live buffer if
-    // the same name is set twice.
-    static auto overrides = std::map<std::string, std::string, std::less<>> {};
-    auto& owned = overrides[std::string {name}];
-    owned = value;
-    def->default_text_value = owned;
+    // The default, not the live value: loadDefaults copies it into place, so an
+    // embedder can call this before initGame and still be overridden by ~/.doomrc,
+    // exactly as setDefaultInt is.
+    if (auto* def = findDefault(name))
+        def->default_text_value = value;
 }
 
 void initGame(int argc, char** argv, int flags)

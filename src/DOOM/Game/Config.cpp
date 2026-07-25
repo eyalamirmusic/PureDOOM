@@ -26,14 +26,12 @@
 
 // Rewritten out of vanilla m_misc into namespace Doom.
 //
-// Config load/save, the raw file I/O and the screenshot writer.
-// m_misc.cpp shims the M_ names. The defaults[] table (binding config keys to
-// the engine's option globals) stays at file scope here, above the namespace,
-// alongside the externs the still-loose entries take addresses of; the config
-// paths are read straight off configPaths() (Game/ConfigPaths.h).
+// Config load/save, the raw file I/O and the screenshot writer. The defaults
+// table (binding each config key to the Engine member it writes through) is
+// file-local here and handed out by defaults(); the config paths are read
+// straight off configPaths() (Game/ConfigPaths.h).
 // loadDefaults reads the test config, so the frame goldens pin it.
 
-#include "../Host/Diagnostics.h"
 #include "../Host/Platform.h"
 
 #include "GameDefs.h"
@@ -96,89 +94,83 @@ struct PcxHeader
 //
 // DEFAULTS
 //
-// The keyboard/mouse/joystick bindings are InputConfig members (Engine) now, so their
-// defaults[] entries are bound to those members at runtime by bindEngineDefaults() rather than
-// capturing their addresses here at static-init. Config.cpp no longer needs to name them.
+// Every numeric default writes through an Engine member (InputConfig,
+// MenuSettings, SoundSettings), so the table below carries the name and the
+// value and bindEngineDefaults() supplies the address at runtime.
 
-// mouseSensitivity / showMessages / detailLevel / screenblocks are Engine members now
-// (UI/MenuSettings.h), reached through references (doomstat.h / their owner files). Like the
-// sound params below, their defaults[] entries are bound to those members at runtime by
-// bindEngineDefaults() rather than capturing their addresses here at static-init.
-
-// crosshair/always_run are InputConfig members (Engine); references, still read by
-// UI/Menu.cpp, Game/Game.cpp and Host/Api.cpp through their own extern declarations.
-
-// Only the trailing fields are given, so the rest are zero-initialized. The
-// writable-strings suppression that used to sit here went stale when
-// ConfigDefault::name stopped being a writable char* and has been removed - it
-// named a warning this table can no longer raise, in Clang's spelling of the flag,
-// which GCC then warned about not recognising.
-DOOM_DIAGNOSTIC_PUSH
-DOOM_IGNORE_MISSING_FIELD_INITIALIZERS
-ConfigDefault defaultsData[] = {
-    // These config-backed globals are Engine members reached through references, so their
-    // location is bound to the member at runtime (bindEngineDefaults) rather than captured
-    // here: a static &member would take the address of a reference before the Engine exists
-    // and race its binding across translation units (it segfaulted every test when tried).
-    {"mouse_sensitivity", 0, 5},
-    {"sfx_volume", 0, 8},
-    {"music_volume", 0, 8},
-    {"show_messages", 0, 1},
-
-    // The control bindings are bound to their InputConfig members at runtime
-    // (bindEngineDefaults); a static &member here would race that binding across TUs.
-    {"key_right", 0, KEY_RIGHTARROW},
-    {"key_left", 0, KEY_LEFTARROW},
-    {"key_up", 0, KEY_UPARROW},
-    {"key_down", 0, KEY_DOWNARROW},
-    {"key_strafeleft", 0, ','},
-    {"key_straferight", 0, '.'},
-
-    {"key_fire", 0, KEY_RCTRL},
-    {"key_use", 0, ' '},
-    {"key_strafe", 0, KEY_RALT},
-    {"key_speed", 0, KEY_RSHIFT},
-
-    {"use_mouse", 0, 1},
-    {"mouseb_fire", 0, 0},
-    {"mouseb_strafe", 0, 1},
-    {"mouseb_forward", 0, 2},
-    {"mouse_move", 0, 0},
-
-    {"use_joystick", 0, 0},
-    {"joyb_fire", 0, 0},
-    {"joyb_strafe", 0, 1},
-    {"joyb_use", 0, 3},
-    {"joyb_speed", 0, 2},
-
-    {"screenblocks", 0, 9},
-    {"detaillevel", 0, 0},
-    {"crosshair", 0, 0},
-    {"always_run", 0, 0},
-
-    {"snd_channels", 0, 3}, // bound to soundSettings().numChannels at runtime
-
-    {"usegamma", 0, 0}, // bound to menuSettings().usegamma at runtime
-
-    {"chatmacro0", 0, STRING_VALUE, &chat_macros()[0], HUSTR_CHATMACRO0},
-    {"chatmacro1", 0, STRING_VALUE, &chat_macros()[1], HUSTR_CHATMACRO1},
-    {"chatmacro2", 0, STRING_VALUE, &chat_macros()[2], HUSTR_CHATMACRO2},
-    {"chatmacro3", 0, STRING_VALUE, &chat_macros()[3], HUSTR_CHATMACRO3},
-    {"chatmacro4", 0, STRING_VALUE, &chat_macros()[4], HUSTR_CHATMACRO4},
-    {"chatmacro5", 0, STRING_VALUE, &chat_macros()[5], HUSTR_CHATMACRO5},
-    {"chatmacro6", 0, STRING_VALUE, &chat_macros()[6], HUSTR_CHATMACRO6},
-    {"chatmacro7", 0, STRING_VALUE, &chat_macros()[7], HUSTR_CHATMACRO7},
-    {"chatmacro8", 0, STRING_VALUE, &chat_macros()[8], HUSTR_CHATMACRO8},
-    {"chatmacro9", 0, STRING_VALUE, &chat_macros()[9], HUSTR_CHATMACRO9}};
-
-DOOM_DIAGNOSTIC_POP
-std::span<ConfigDefault> defaults()
+static ConfigDefault intDefault(int value)
 {
-    return defaultsData;
+    return {.defaultvalue = value};
 }
-int numdefaults()
+
+static ConfigDefault textDefault(std::string_view* location, std::string_view value)
 {
-    return static_cast<int>(defaults().size());
+    return {.defaultvalue = STRING_VALUE,
+            .text_location = location,
+            .default_text_value = std::string {value}};
+}
+
+ConfigDefaults& defaults()
+{
+    // Built on first use rather than at static-init: the chatmacro entries take the
+    // address of a chat_macros() element, and every location is bound to its Engine
+    // member later still (bindEngineDefaults).
+    static auto table = ConfigDefaults {
+        {"mouse_sensitivity", intDefault(5)},
+        {"sfx_volume", intDefault(8)},
+        {"music_volume", intDefault(8)},
+        {"show_messages", intDefault(1)},
+
+        {"key_right", intDefault(KEY_RIGHTARROW)},
+        {"key_left", intDefault(KEY_LEFTARROW)},
+        {"key_up", intDefault(KEY_UPARROW)},
+        {"key_down", intDefault(KEY_DOWNARROW)},
+        {"key_strafeleft", intDefault(',')},
+        {"key_straferight", intDefault('.')},
+
+        {"key_fire", intDefault(KEY_RCTRL)},
+        {"key_use", intDefault(' ')},
+        {"key_strafe", intDefault(KEY_RALT)},
+        {"key_speed", intDefault(KEY_RSHIFT)},
+
+        {"use_mouse", intDefault(1)},
+        {"mouseb_fire", intDefault(0)},
+        {"mouseb_strafe", intDefault(1)},
+        {"mouseb_forward", intDefault(2)},
+        {"mouse_move", intDefault(0)},
+
+        {"use_joystick", intDefault(0)},
+        {"joyb_fire", intDefault(0)},
+        {"joyb_strafe", intDefault(1)},
+        {"joyb_use", intDefault(3)},
+        {"joyb_speed", intDefault(2)},
+
+        {"screenblocks", intDefault(9)},
+        {"detaillevel", intDefault(0)},
+        {"crosshair", intDefault(0)},
+        {"always_run", intDefault(0)},
+
+        {"snd_channels", intDefault(3)},
+        {"usegamma", intDefault(0)},
+
+        {"chatmacro0", textDefault(&chat_macros()[0], HUSTR_CHATMACRO0)},
+        {"chatmacro1", textDefault(&chat_macros()[1], HUSTR_CHATMACRO1)},
+        {"chatmacro2", textDefault(&chat_macros()[2], HUSTR_CHATMACRO2)},
+        {"chatmacro3", textDefault(&chat_macros()[3], HUSTR_CHATMACRO3)},
+        {"chatmacro4", textDefault(&chat_macros()[4], HUSTR_CHATMACRO4)},
+        {"chatmacro5", textDefault(&chat_macros()[5], HUSTR_CHATMACRO5)},
+        {"chatmacro6", textDefault(&chat_macros()[6], HUSTR_CHATMACRO6)},
+        {"chatmacro7", textDefault(&chat_macros()[7], HUSTR_CHATMACRO7)},
+        {"chatmacro8", textDefault(&chat_macros()[8], HUSTR_CHATMACRO8)},
+        {"chatmacro9", textDefault(&chat_macros()[9], HUSTR_CHATMACRO9)}};
+
+    return table;
+}
+
+ConfigDefault* findDefault(std::string_view name)
+{
+    auto found = defaults().find(name);
+    return found == defaults().end() ? nullptr : &found->second;
 }
 
 //
@@ -231,70 +223,52 @@ int readFile(std::string_view name, Vector<byte>& buffer)
     return length;
 }
 
-// Point the defaults[] entries for the config-backed globals that now live on the
-// Engine at their members. Done at runtime rather than by capturing &member in the
-// static table initializer, because those members are reached through references
-// bound at dynamic-init time: a static &member would race that binding across
-// translation units (it segfaulted every test when tried). Idempotent, so both
-// loadDefaults and saveDefaults call it before touching a location pointer.
-static void bindEngineDefault(std::string_view name, int* location)
-{
-    for (auto& def: defaults())
-        if (name == def.name)
-        {
-            def.location = location;
-            return;
-        }
-}
-
+// Point each numeric default at the Engine member it writes through. Done at
+// runtime rather than by capturing &member in the table above, because those
+// members are reached through references bound at dynamic-init time: a static
+// &member would race that binding across translation units (it segfaulted every
+// test when tried). Idempotent, so both loadDefaults and saveDefaults call it
+// before touching a location pointer.
 static void bindEngineDefaults()
 {
     auto& e = engine();
 
-    // The member addresses are taken here, at runtime, not in the static defaults[] table -
-    // that is the whole point (a static &member captures the address of a reference before the
-    // Engine exists). A local table keeps the pairing readable.
-    struct Bind
+    auto bind = [](std::string_view name, int* location)
     {
-        std::string_view name;
-        int* location = nullptr;
+        if (auto* def = findDefault(name))
+            def->location = location;
     };
 
-    const Array<Bind, 30> binds = {
-        {"sfx_volume", &e.soundSettings.sfxVolume},
-        {"music_volume", &e.soundSettings.musicVolume},
-        {"snd_channels", &e.soundSettings.numChannels},
-        {"mouse_sensitivity", &e.menuSettings.mouseSensitivity},
-        {"show_messages", &e.menuSettings.showMessages},
-        {"screenblocks", &e.menuSettings.screenblocks},
-        {"detaillevel", &e.menuSettings.detailLevel},
-        {"usegamma", &e.menuSettings.usegamma},
-        {"key_right", &e.inputConfig.key_right},
-        {"key_left", &e.inputConfig.key_left},
-        {"key_up", &e.inputConfig.key_up},
-        {"key_down", &e.inputConfig.key_down},
-        {"key_strafeleft", &e.inputConfig.key_strafeleft},
-        {"key_straferight", &e.inputConfig.key_straferight},
-        {"key_fire", &e.inputConfig.key_fire},
-        {"key_use", &e.inputConfig.key_use},
-        {"key_strafe", &e.inputConfig.key_strafe},
-        {"key_speed", &e.inputConfig.key_speed},
-        {"use_mouse", &e.inputConfig.usemouse},
-        {"mouseb_fire", &e.inputConfig.mousebfire},
-        {"mouseb_strafe", &e.inputConfig.mousebstrafe},
-        {"mouseb_forward", &e.inputConfig.mousebforward},
-        {"mouse_move", &e.inputConfig.mousemove},
-        {"use_joystick", &e.inputConfig.usejoystick},
-        {"joyb_fire", &e.inputConfig.joybfire},
-        {"joyb_strafe", &e.inputConfig.joybstrafe},
-        {"joyb_use", &e.inputConfig.joybuse},
-        {"joyb_speed", &e.inputConfig.joybspeed},
-        {"crosshair", &e.inputConfig.crosshair},
-        {"always_run", &e.inputConfig.always_run},
-    };
-
-    for (const auto& b: binds)
-        bindEngineDefault(b.name, b.location);
+    bind("sfx_volume", &e.soundSettings.sfxVolume);
+    bind("music_volume", &e.soundSettings.musicVolume);
+    bind("snd_channels", &e.soundSettings.numChannels);
+    bind("mouse_sensitivity", &e.menuSettings.mouseSensitivity);
+    bind("show_messages", &e.menuSettings.showMessages);
+    bind("screenblocks", &e.menuSettings.screenblocks);
+    bind("detaillevel", &e.menuSettings.detailLevel);
+    bind("usegamma", &e.menuSettings.usegamma);
+    bind("key_right", &e.inputConfig.key_right);
+    bind("key_left", &e.inputConfig.key_left);
+    bind("key_up", &e.inputConfig.key_up);
+    bind("key_down", &e.inputConfig.key_down);
+    bind("key_strafeleft", &e.inputConfig.key_strafeleft);
+    bind("key_straferight", &e.inputConfig.key_straferight);
+    bind("key_fire", &e.inputConfig.key_fire);
+    bind("key_use", &e.inputConfig.key_use);
+    bind("key_strafe", &e.inputConfig.key_strafe);
+    bind("key_speed", &e.inputConfig.key_speed);
+    bind("use_mouse", &e.inputConfig.usemouse);
+    bind("mouseb_fire", &e.inputConfig.mousebfire);
+    bind("mouseb_strafe", &e.inputConfig.mousebstrafe);
+    bind("mouseb_forward", &e.inputConfig.mousebforward);
+    bind("mouse_move", &e.inputConfig.mousemove);
+    bind("use_joystick", &e.inputConfig.usejoystick);
+    bind("joyb_fire", &e.inputConfig.joybfire);
+    bind("joyb_strafe", &e.inputConfig.joybstrafe);
+    bind("joyb_use", &e.inputConfig.joybuse);
+    bind("joyb_speed", &e.inputConfig.joybspeed);
+    bind("crosshair", &e.inputConfig.crosshair);
+    bind("always_run", &e.inputConfig.always_run);
 }
 
 //
@@ -302,29 +276,18 @@ static void bindEngineDefaults()
 //
 void saveDefaults()
 {
-    int v;
-    void* f;
-
     bindEngineDefaults();
 
-    f = host().open(configPaths().defaultfile.c_str(), "w");
+    auto* f = host().open(configPaths().defaultfile.c_str(), "w");
     if (!f)
         return; // can't write the file, but don't complain
 
-    for (const auto& def: defaults())
+    for (const auto& [name, def]: defaults())
     {
         if (def.defaultvalue > -0xfff && def.defaultvalue < 0xfff)
-        {
-            v = *def.location;
-            //fprintf(f, "%s\t\t%i\n", defaults[i].name, v);
-            printTo(f, def.name, "\t\t", v, "\n");
-        }
+            printTo(f, name, "\t\t", *def.location, "\n");
         else
-        {
-            //fprintf(f, "%s\t\t\"%s\"\n", defaults[i].name,
-            //        *(char**)(defaults[i].text_location));
-            printTo(f, def.name, "\t\t\"", *def.text_location, "\"\n");
-        }
+            printTo(f, name, "\t\t\"", *def.text_location, "\"\n");
     }
 
     host().close(f);
@@ -337,38 +300,18 @@ void loadDefaults()
 {
     int i;
     void* f;
-    auto def = std::string {};
+    auto key = std::string {};
     auto strparm = std::string {};
     bool isstring;
     auto parm = 0;
-
-    // Owns the storage for the string-valued defaults (currently the ten
-    // chatmacroN entries) read from ~/.doomrc, in place of what was a
-    // doom_malloc per string that nothing ever freed. Function-local static:
-    // process lifetime, because the pointer this hands to
-    // defaults[i].text_location is read for the life of the program
-    // (Hud.cpp reads chat_macros[] whenever a chat macro fires; saveDefaults
-    // reads it back out to write the file). One slot per defaults[] entry,
-    // sized once up front so filling a later slot never reallocates the
-    // outer vector; reassigning one slot's string never moves another's
-    // buffer, which is what keeps every .c_str() already handed to an
-    // earlier entry valid.
-    static Vector<std::string> stringDefaultStorage;
-    stringDefaultStorage.resize(numdefaults());
 
     auto& paths = configPaths();
 
     bindEngineDefaults();
 
     // set everything to base values
-    // numdefaults = sizeof(defaults)/sizeof(defaults[0]);
-    for (const auto& def: defaults())
-    {
-        if (def.defaultvalue == 0xFFFF)
-            *def.text_location = def.default_text_value;
-        else
-            *def.location = static_cast<int>(def.defaultvalue);
-    }
+    for (auto& entry: defaults())
+        entry.second.resetToDefault();
 
     // check for a custom default file
     i = checkParm("-config");
@@ -387,10 +330,10 @@ void loadDefaults()
     {
         while (!host().eof(f))
         {
-            // def
+            // the key
             auto arg_read = 0;
             char c;
-            def.clear();
+            key.clear();
             for (i = 0; i < 79; ++i)
             {
                 host().read(f, &c, 1);
@@ -400,7 +343,7 @@ void loadDefaults()
                         arg_read++;
                     break;
                 }
-                def += c;
+                key += c;
             }
 
             // Ignore spaces
@@ -451,21 +394,13 @@ void loadDefaults()
                     //sscanf(strparm, "%i", &parm);
                     parm = parseInt(strparm);
                 }
-                for (i = 0; i < numdefaults(); i++)
-                    if (def == defaults()[i].name)
-                    {
-                        if (!isstring)
-                            *defaults()[i].location = parm;
-                        else
-                        {
-                            // Strip the opening quote too; the slot owns the
-                            // copy for the life of the process.
-                            auto& owned = stringDefaultStorage[i];
-                            owned = strparm.substr(1);
-                            *defaults()[i].text_location = owned;
-                        }
-                        break;
-                    }
+                if (auto* def = findDefault(key))
+                {
+                    if (isstring)
+                        def->setText(std::string_view {strparm}.substr(1));
+                    else
+                        *def->location = parm;
+                }
             }
         }
 
