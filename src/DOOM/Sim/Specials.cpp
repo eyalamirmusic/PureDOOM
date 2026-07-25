@@ -902,7 +902,7 @@ void Player::inSpecialSector()
     auto* sector = mo->subsector->sector;
 
     // Falling, not all the way down yet?
-    if (mo->z != sector->floorheight)
+    if (mo->pos.z != sector->floorheight)
         return;
 
     // Has hitten ground.

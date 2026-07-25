@@ -272,7 +272,7 @@ void slamBackground()
     doom_memcpy(videoState().screens[0],
                 videoState().screens[1],
                 SCREENWIDTH * SCREENHEIGHT);
-    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    markRect({0, 0}, {SCREENWIDTH, SCREENHEIGHT});
 }
 
 // Draws "<Levelname> Finished!"
@@ -283,8 +283,7 @@ void drawLF()
     auto y = WI_TITLEY;
 
     // draw <LevelName>
-    drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->last]->width)) / 2,
-              y,
+    drawPatch({(SCREENWIDTH - littleEndian(im.lnames[im.wbs->last]->width)) / 2, y},
               FB,
               im.lnames[im.wbs->last]);
 
@@ -292,7 +291,7 @@ void drawLF()
     y += (5 * littleEndian(im.lnames[im.wbs->last]->height)) / 4;
 
     drawPatch(
-        (SCREENWIDTH - littleEndian(im.finished->width)) / 2, y, FB, im.finished);
+        {(SCREENWIDTH - littleEndian(im.finished->width)) / 2, y}, FB, im.finished);
 }
 
 // Draws "Entering <LevelName>"
@@ -304,13 +303,12 @@ void drawEL()
 
     // draw "Entering"
     drawPatch(
-        (SCREENWIDTH - littleEndian(im.entering->width)) / 2, y, FB, im.entering);
+        {(SCREENWIDTH - littleEndian(im.entering->width)) / 2, y}, FB, im.entering);
 
     // draw level
     y += (5 * littleEndian(im.lnames[im.wbs->next]->height)) / 4;
 
-    drawPatch((SCREENWIDTH - littleEndian(im.lnames[im.wbs->next]->width)) / 2,
-              y,
+    drawPatch({(SCREENWIDTH - littleEndian(im.lnames[im.wbs->next]->width)) / 2, y},
               FB,
               im.lnames[im.wbs->next]);
 }
@@ -341,7 +339,7 @@ void drawOnLnode(int n, Patch* c[])
 
     if (fits && i < 2)
     {
-        drawPatch(lnodes[im.wbs->epsd][n].x, lnodes[im.wbs->epsd][n].y, FB, c[i]);
+        drawPatch({lnodes[im.wbs->epsd][n].x, lnodes[im.wbs->epsd][n].y}, FB, c[i]);
     }
     else
     {
@@ -457,7 +455,7 @@ void drawAnimatedBack()
         a = &anims_wi_stuff[im.wbs->epsd][i];
 
         if (a->ctr >= 0)
-            drawPatch(a->loc.x, a->loc.y, FB, a->p[a->ctr]);
+            drawPatch({a->loc.x, a->loc.y}, FB, a->p[a->ctr]);
     }
 }
 
@@ -506,13 +504,13 @@ int drawIntermissionNum(int x, int y, int n, int digits)
     while (digits--)
     {
         x -= fontwidth;
-        drawPatch(x, y, FB, im.num[n % 10]);
+        drawPatch({x, y}, FB, im.num[n % 10]);
         n /= 10;
     }
 
     // draw a minus sign if necessary
     if (neg)
-        drawPatch(x -= 8, y, FB, im.wiminus);
+        drawPatch({x -= 8, y}, FB, im.wiminus);
 
     return x;
 }
@@ -522,7 +520,7 @@ void drawPercent(int x, int y, int p)
     if (p < 0)
         return;
 
-    drawPatch(x, y, FB, intermissionState().percent);
+    drawPatch({x, y}, FB, intermissionState().percent);
     drawIntermissionNum(x, y, p, -1);
 }
 
@@ -549,14 +547,14 @@ void drawTime(int x, int y, int t)
 
             // draw
             if (div == 60 || t / div)
-                drawPatch(x, y, FB, im.colon);
+                drawPatch({x, y}, FB, im.colon);
 
         } while (t / div);
     }
     else
     {
         // "sucks"
-        drawPatch(x - littleEndian(im.sucks->width), y, FB, im.sucks);
+        drawPatch({x - littleEndian(im.sucks->width), y}, FB, im.sucks);
     }
 }
 
@@ -808,13 +806,13 @@ void drawDeathmatchStats()
     drawLF();
 
     // draw stat titles (top line)
-    drawPatch(DM_TOTALSX - littleEndian(im.total->width) / 2,
-              DM_MATRIXY - WI_SPACINGY + 10,
+    drawPatch({DM_TOTALSX - littleEndian(im.total->width) / 2,
+               DM_MATRIXY - WI_SPACINGY + 10},
               FB,
               im.total);
 
-    drawPatch(DM_KILLERSX, DM_KILLERSY, FB, im.killers);
-    drawPatch(DM_VICTIMSX, DM_VICTIMSY, FB, im.victims);
+    drawPatch({DM_KILLERSX, DM_KILLERSY}, FB, im.killers);
+    drawPatch({DM_VICTIMSX, DM_VICTIMSY}, FB, im.victims);
 
     // draw P?
     auto x = DM_MATRIXX + DM_SPACINGX;
@@ -824,30 +822,31 @@ void drawDeathmatchStats()
     {
         if (players_.playeringame[i])
         {
-            drawPatch(x - littleEndian(im.p[i]->width) / 2,
-                      DM_MATRIXY - WI_SPACINGY,
-                      FB,
-                      im.p[i]);
+            drawPatch(
+                {x - littleEndian(im.p[i]->width) / 2, DM_MATRIXY - WI_SPACINGY},
+                FB,
+                im.p[i]);
 
-            drawPatch(DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.p[i]);
+            drawPatch(
+                {DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y}, FB, im.p[i]);
 
             if (i == im.me)
             {
-                drawPatch(x - littleEndian(im.p[i]->width) / 2,
-                          DM_MATRIXY - WI_SPACINGY,
-                          FB,
-                          im.bstar);
+                drawPatch(
+                    {x - littleEndian(im.p[i]->width) / 2, DM_MATRIXY - WI_SPACINGY},
+                    FB,
+                    im.bstar);
 
                 drawPatch(
-                    DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y, FB, im.star);
+                    {DM_MATRIXX - littleEndian(im.p[i]->width) / 2, y}, FB, im.star);
             }
         }
         else
         {
-            // drawPatch(x-littleEndian(bp[i]->width)/2,
-            //   DM_MATRIXY - WI_SPACINGY, FB, bp[i]);
-            // drawPatch(DM_MATRIXX-littleEndian(bp[i]->width)/2,
-            //   y, FB, bp[i]);
+            // drawPatch({x-littleEndian(bp[i]->width)/2,
+            //   DM_MATRIXY - WI_SPACINGY}, FB, bp[i]);
+            // drawPatch({DM_MATRIXX-littleEndian(bp[i]->width)/2,
+            //   y}, FB, bp[i]);
         }
         x += DM_SPACINGX;
         y += WI_SPACINGY;
@@ -1071,26 +1070,23 @@ void drawNetgameStats()
     drawLF();
 
     // draw stat titles (top line)
-    drawPatch(statsX + NG_SPACINGX - littleEndian(im.kills->width),
-              NG_STATSY,
+    drawPatch({statsX + NG_SPACINGX - littleEndian(im.kills->width), NG_STATSY},
               FB,
               im.kills);
 
-    drawPatch(statsX + 2 * NG_SPACINGX - littleEndian(im.items->width),
-              NG_STATSY,
+    drawPatch({statsX + 2 * NG_SPACINGX - littleEndian(im.items->width), NG_STATSY},
               FB,
               im.items);
 
-    drawPatch(statsX + 3 * NG_SPACINGX - littleEndian(im.secret->width),
-              NG_STATSY,
+    drawPatch({statsX + 3 * NG_SPACINGX - littleEndian(im.secret->width), NG_STATSY},
               FB,
               im.secret);
 
     if (im.dofrags)
-        drawPatch(statsX + 4 * NG_SPACINGX - littleEndian(im.frags->width),
-                  NG_STATSY,
-                  FB,
-                  im.frags);
+        drawPatch(
+            {statsX + 4 * NG_SPACINGX - littleEndian(im.frags->width), NG_STATSY},
+            FB,
+            im.frags);
 
     // draw stats
     auto y = NG_STATSY + littleEndian(im.kills->height);
@@ -1101,10 +1097,10 @@ void drawNetgameStats()
             continue;
 
         auto x = statsX;
-        drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.p[i]);
+        drawPatch({x - littleEndian(im.p[i]->width), y}, FB, im.p[i]);
 
         if (i == im.me)
-            drawPatch(x - littleEndian(im.p[i]->width), y, FB, im.star);
+            drawPatch({x - littleEndian(im.p[i]->width), y}, FB, im.star);
 
         x += NG_SPACINGX;
         drawPercent(x - pwidth, y + 10, im.cnt_kills[i]);
@@ -1256,21 +1252,21 @@ void drawStats()
 
     drawLF();
 
-    drawPatch(SP_STATSX, SP_STATSY, FB, im.kills);
+    drawPatch({SP_STATSX, SP_STATSY}, FB, im.kills);
     drawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY, im.cnt_kills[0]);
 
-    drawPatch(SP_STATSX, SP_STATSY + lh, FB, im.items);
+    drawPatch({SP_STATSX, SP_STATSY + lh}, FB, im.items);
     drawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY + lh, im.cnt_items[0]);
 
-    drawPatch(SP_STATSX, SP_STATSY + 2 * lh, FB, im.sp_secret);
+    drawPatch({SP_STATSX, SP_STATSY + 2 * lh}, FB, im.sp_secret);
     drawPercent(SCREENWIDTH - SP_STATSX, SP_STATSY + 2 * lh, im.cnt_secret[0]);
 
-    drawPatch(SP_TIMEX, SP_TIMEY, FB, im.time_patch);
+    drawPatch({SP_TIMEX, SP_TIMEY}, FB, im.time_patch);
     drawTime(SCREENWIDTH / 2 - SP_TIMEX, SP_TIMEY, im.cnt_time);
 
     if (im.wbs->epsd < 3)
     {
-        drawPatch(SCREENWIDTH / 2 + SP_TIMEX, SP_TIMEY, FB, im.par);
+        drawPatch({SCREENWIDTH / 2 + SP_TIMEX, SP_TIMEY}, FB, im.par);
         drawTime(SCREENWIDTH - SP_TIMEX, SP_TIMEY, im.cnt_par);
     }
 }
@@ -1370,7 +1366,7 @@ void loadIntermissionData()
 
     // background
     im.bg = static_cast<Patch*>(cacheLumpName(name));
-    drawPatch(0, 0, 1, im.bg);
+    drawPatch({0, 0}, 1, im.bg);
 
     if (version.gamemode == GameMode::Commercial)
     {

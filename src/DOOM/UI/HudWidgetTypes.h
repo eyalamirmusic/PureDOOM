@@ -31,6 +31,8 @@
 
 // background and foreground screen numbers
 // different from other modules.
+#include "../Math/Vec.h"
+
 namespace Doom
 {
 constexpr int FG = 0;
@@ -47,8 +49,7 @@ constexpr int HU_MAXLINELENGTH = 80;
 struct HudTextLine
 {
     // left-justified position of scrolling text window
-    int x = 0;
-    int y = 0;
+    Vec2i pos;
 
     Patch** f = nullptr; // font
     int sc = 0; // start character
@@ -59,7 +60,7 @@ struct HudTextLine
 
     // The vanilla HUlib_*TextLine family, each keyed off one line, so each is a
     // method. Bodies in UI/HudWidgets.cpp.
-    void init(int xToUse, int yToUse, Patch** fToUse, int scToUse);
+    void init(Vec2i posToUse, Patch** fToUse, int scToUse);
     void clear();
     bool addChar(char ch);
     bool delChar();
@@ -80,7 +81,7 @@ struct HudScrollingText
     bool laston = false; // last value of *->on.
 
     // The vanilla HUlib_*SText family. Bodies in UI/HudWidgets.cpp.
-    void init(int x, int y, int hToUse, Patch** font, int startchar, bool* onToUse);
+    void init(Vec2i at, int hToUse, Patch** font, int startchar, bool* onToUse);
     void addLine();
     void addMessage(std::string_view prefix, std::string_view msg);
     void draw();
@@ -101,7 +102,7 @@ struct HudInputText
     bool laston = false; // last value of *->on;
 
     // The vanilla HUlib_*IText family. Bodies in UI/HudWidgets.cpp.
-    void init(int x, int y, Patch** font, int startchar, bool* onToUse);
+    void init(Vec2i at, Patch** font, int startchar, bool* onToUse);
     void reset();
     void delChar();
     bool keyIn(unsigned char ch);

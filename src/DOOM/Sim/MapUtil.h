@@ -86,5 +86,5 @@ bool forEachThingInBlock(int x, int y, ThingFunc&& func)
 // then call trav for each in near-to-far order. Returns false if any iterator or
 // trav bailed early (PT_EARLYOUT hitting a solid line, a traverser saying stop).
 // The segment it walked is left in clipping().trace for the traversers to read back.
-bool pathTraverse(Fixed x1, Fixed y1, Fixed x2, Fixed y2, int flags, Traverser trav);
+bool pathTraverse(Vec2 from, Vec2 to, int flags, Traverser trav);
 } // namespace Doom

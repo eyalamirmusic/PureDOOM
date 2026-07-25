@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Math/FixedPoint.h" // Fixed
+#include "../Math/Vec.h"
 
 // Forward declarations at global scope (that is where p_mobj.h / r_defs.h declare them) - the
 // scratch holds pointers to these, not their layout. Declaring them inside namespace Doom would make
@@ -34,8 +35,7 @@ struct ActionScratch
     Fixed bestslidefrac {}; // closest slide so far along the move
     Line* bestslideline = nullptr; // the wall slid against
     Mobj* slidemo = nullptr; // the mobj sliding
-    Fixed tmxmove {}; // residual x move after the slide
-    Fixed tmymove {}; // residual y move after the slide
+    Vec2 tmmove {}; // residual move after the slide
 };
 
 // The one ActionScratch, a view onto the Engine's member - the same pattern as the other clusters

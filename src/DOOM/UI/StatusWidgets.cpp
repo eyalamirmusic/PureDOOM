@@ -35,10 +35,9 @@ void initStatusWidgets()
 }
 
 void StatusNumber::init(
-    int xToUse, int yToUse, Patch** pl, int* numToUse, bool* onToUse, int widthToUse)
+    Vec2i posToUse, Patch** pl, int* numToUse, bool* onToUse, int widthToUse)
 {
-    x = xToUse;
-    y = yToUse;
+    pos = posToUse;
     oldnum = 0;
     width = widthToUse;
     num = numToUse;
@@ -74,34 +73,38 @@ void StatusNumber::draw()
     }
 
     // clear the area
-    auto drawX = x - numdigits * w;
+    auto drawX = pos.x - numdigits * w;
 
-    if (y - ST_Y < 0)
+    if (pos.y - ST_Y < 0)
         fatalError("Error: StatusNumber::draw: y - ST_Y < 0");
 
-    copyRect(drawX, y - ST_Y, STLIB_BG, w * numdigits, h, drawX, y, STLIB_FG);
+    copyRect({drawX, pos.y - ST_Y},
+             STLIB_BG,
+             {w * numdigits, h},
+             {drawX, pos.y},
+             STLIB_FG);
 
     // if non-number, do not draw it
     if (value == 1994)
         return;
 
-    drawX = x;
+    drawX = pos.x;
 
     // in the special case of 0, you draw 0
     if (!value)
-        drawPatch(drawX - w, y, STLIB_FG, p[0]);
+        drawPatch({drawX - w, pos.y}, STLIB_FG, p[0]);
 
     // draw the new number
     while (value && numdigits--)
     {
         drawX -= w;
-        drawPatch(drawX, y, STLIB_FG, p[value % 10]);
+        drawPatch({drawX, pos.y}, STLIB_FG, p[value % 10]);
         value /= 10;
     }
 
     // draw a minus sign if necessary
     if (neg)
-        drawPatch(drawX - 8, y, STLIB_FG, sttminus);
+        drawPatch({drawX - 8, pos.y}, STLIB_FG, sttminus);
 }
 
 void StatusNumber::update([[maybe_unused]] bool refresh)
@@ -110,26 +113,23 @@ void StatusNumber::update([[maybe_unused]] bool refresh)
         draw();
 }
 
-void StatusPercent::init(
-    int x, int y, Patch** pl, int* num, bool* on, Patch* percent)
+void StatusPercent::init(Vec2i at, Patch** pl, int* num, bool* on, Patch* percent)
 {
-    n.init(x, y, pl, num, on, 3);
+    n.init(at, pl, num, on, 3);
     p = percent;
 }
 
 void StatusPercent::update(int refresh)
 {
     if (refresh && *n.on)
-        drawPatch(n.x, n.y, STLIB_FG, p);
+        drawPatch(n.pos, STLIB_FG, p);
 
     n.update(refresh);
 }
 
-void StatusMultIcon::init(
-    int xToUse, int yToUse, Patch** il, int* inumToUse, bool* onToUse)
+void StatusMultIcon::init(Vec2i posToUse, Patch** il, int* inumToUse, bool* onToUse)
 {
-    x = xToUse;
-    y = yToUse;
+    pos = posToUse;
     oldinum = -1;
     inum = inumToUse;
     on = onToUse;
@@ -142,26 +142,24 @@ void StatusMultIcon::update(bool refresh)
     {
         if (oldinum != -1)
         {
-            int oldX = x - littleEndian(p[oldinum]->leftoffset);
-            int oldY = y - littleEndian(p[oldinum]->topoffset);
+            int oldX = pos.x - littleEndian(p[oldinum]->leftoffset);
+            int oldY = pos.y - littleEndian(p[oldinum]->topoffset);
             auto w = littleEndian(p[oldinum]->width);
             auto h = littleEndian(p[oldinum]->height);
 
             if (oldY - ST_Y < 0)
                 fatalError("Error: StatusMultIcon::update: y - ST_Y < 0");
 
-            copyRect(oldX, oldY - ST_Y, STLIB_BG, w, h, oldX, oldY, STLIB_FG);
+            copyRect({oldX, oldY - ST_Y}, STLIB_BG, {w, h}, {oldX, oldY}, STLIB_FG);
         }
-        drawPatch(x, y, STLIB_FG, p[*inum]);
+        drawPatch(pos, STLIB_FG, p[*inum]);
         oldinum = *inum;
     }
 }
 
-void StatusBinIcon::init(
-    int xToUse, int yToUse, Patch* i, bool* valToUse, bool* onToUse)
+void StatusBinIcon::init(Vec2i posToUse, Patch* i, bool* valToUse, bool* onToUse)
 {
-    x = xToUse;
-    y = yToUse;
+    pos = posToUse;
     oldval = 0;
     val = valToUse;
     on = onToUse;
@@ -172,8 +170,8 @@ void StatusBinIcon::update(bool refresh)
 {
     if (*on && (oldval != *val || refresh))
     {
-        int drawX = x - littleEndian(p->leftoffset);
-        int drawY = y - littleEndian(p->topoffset);
+        int drawX = pos.x - littleEndian(p->leftoffset);
+        int drawY = pos.y - littleEndian(p->topoffset);
         auto w = littleEndian(p->width);
         auto h = littleEndian(p->height);
 
@@ -181,9 +179,10 @@ void StatusBinIcon::update(bool refresh)
             fatalError("Error: StatusBinIcon::update: y - ST_Y < 0");
 
         if (*val)
-            drawPatch(x, y, STLIB_FG, p);
+            drawPatch(pos, STLIB_FG, p);
         else
-            copyRect(drawX, drawY - ST_Y, STLIB_BG, w, h, drawX, drawY, STLIB_FG);
+            copyRect(
+                {drawX, drawY - ST_Y}, STLIB_BG, {w, h}, {drawX, drawY}, STLIB_FG);
 
         oldval = *val;
     }

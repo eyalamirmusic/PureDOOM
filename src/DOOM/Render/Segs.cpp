@@ -109,7 +109,7 @@ void DrawSeg::renderMaskedRange(int from, int to)
                 ? bsp.frontsector->floorheight
                 : bsp.backsector->floorheight;
         draw.dc_texturemid =
-            draw.dc_texturemid + graphicsData().textureheight[texnum] - pt.viewz;
+            draw.dc_texturemid + graphicsData().textureheight[texnum] - pt.pos.z;
     }
     else
     {
@@ -117,7 +117,7 @@ void DrawSeg::renderMaskedRange(int from, int to)
             bsp.frontsector->ceilingheight < bsp.backsector->ceilingheight
                 ? bsp.frontsector->ceilingheight
                 : bsp.backsector->ceilingheight;
-        draw.dc_texturemid = draw.dc_texturemid - pt.viewz;
+        draw.dc_texturemid = draw.dc_texturemid - pt.pos.z;
     }
     draw.dc_texturemid += bsp.curline->sidedef->rowoffset;
 
@@ -397,7 +397,7 @@ void storeWallRange(int start, int stop)
         offsetangle = ang90;
 
     distangle = ang90 - offsetangle;
-    hyp = pointToDist(bsp.curline->v1->x, bsp.curline->v1->y);
+    hyp = pointToDist({bsp.curline->v1->x, bsp.curline->v1->y});
     sineval = finesine()[distangle.fineIndex()];
     scratch.rw_distance = FixedMul(hyp, sineval);
 
@@ -424,8 +424,8 @@ void storeWallRange(int start, int stop)
 
     // calculate texture boundaries
     //  and decide if floor / ceiling marks are needed
-    wall.worldtop = bsp.frontsector->ceilingheight - pt.viewz;
-    wall.worldbottom = bsp.frontsector->floorheight - pt.viewz;
+    wall.worldtop = bsp.frontsector->ceilingheight - pt.pos.z;
+    wall.worldbottom = bsp.frontsector->floorheight - pt.pos.z;
 
     seg.midtexture = seg.toptexture = seg.bottomtexture = wall.maskedtexture = 0;
     bsp.ds_p->maskedtexturecol = nullptr;
@@ -441,7 +441,7 @@ void storeWallRange(int start, int stop)
             vtop = bsp.frontsector->floorheight
                    + graphicsData().textureheight[bsp.sidedef->midtexture];
             // bottom of texture at bottom
-            wall.rw_midtexturemid = vtop - pt.viewz;
+            wall.rw_midtexturemid = vtop - pt.pos.z;
         }
         else
         {
@@ -467,7 +467,7 @@ void storeWallRange(int start, int stop)
             bsp.ds_p->silhouette = SIL_BOTTOM;
             bsp.ds_p->bsilheight = bsp.frontsector->floorheight;
         }
-        else if (bsp.backsector->floorheight > pt.viewz)
+        else if (bsp.backsector->floorheight > pt.pos.z)
         {
             bsp.ds_p->silhouette = SIL_BOTTOM;
             bsp.ds_p->bsilheight = Fixed {DOOM_MAXINT};
@@ -479,7 +479,7 @@ void storeWallRange(int start, int stop)
             bsp.ds_p->silhouette |= SIL_TOP;
             bsp.ds_p->tsilheight = bsp.frontsector->ceilingheight;
         }
-        else if (bsp.backsector->ceilingheight < pt.viewz)
+        else if (bsp.backsector->ceilingheight < pt.pos.z)
         {
             bsp.ds_p->silhouette |= SIL_TOP;
             bsp.ds_p->tsilheight = Fixed {DOOM_MININT};
@@ -500,8 +500,8 @@ void storeWallRange(int start, int stop)
             bsp.ds_p->silhouette |= SIL_TOP;
         }
 
-        wall.worldhigh = bsp.backsector->ceilingheight - pt.viewz;
-        wall.worldlow = bsp.backsector->floorheight - pt.viewz;
+        wall.worldhigh = bsp.backsector->ceilingheight - pt.pos.z;
+        wall.worldlow = bsp.backsector->floorheight - pt.pos.z;
 
         // hack to allow height changes in outdoor areas
         if (bsp.frontsector->ceilingpic == sky.skyflatnum
@@ -557,7 +557,7 @@ void storeWallRange(int start, int stop)
                        + graphicsData().textureheight[bsp.sidedef->toptexture];
 
                 // bottom of texture
-                wall.rw_toptexturemid = vtop - pt.viewz;
+                wall.rw_toptexturemid = vtop - pt.pos.z;
             }
         }
         if (wall.worldlow > wall.worldbottom)
@@ -646,13 +646,13 @@ void storeWallRange(int start, int stop)
     //  of the view plane, it is definitely invisible
     //  and doesn't need to be marked.
 
-    if (bsp.frontsector->floorheight >= pt.viewz)
+    if (bsp.frontsector->floorheight >= pt.pos.z)
     {
         // above view plane
         seg.markfloor = false;
     }
 
-    if (bsp.frontsector->ceilingheight <= pt.viewz
+    if (bsp.frontsector->ceilingheight <= pt.pos.z
         && bsp.frontsector->ceilingpic != sky.skyflatnum)
     {
         // below view plane

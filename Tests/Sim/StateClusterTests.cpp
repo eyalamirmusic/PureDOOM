@@ -131,4 +131,31 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&engineParams() == &engine().engineParams, "engineParams()");
     check(&soundState() == &engine().soundState, "soundState()");
 };
+
+// A sector's sound origin is a DegenMobj, and every startSound on a door, a lift,
+// a floor or a ceiling reaches it by reinterpret_cast'ing one to a Mobj* and
+// reading the position off it. That only works while the two put their position at
+// the same offset - both inherit Thinker and both lead with a Vec3, and Mobj's
+// first field reuses the base's tail padding only because DegenMobj inherits the
+// base the same way rather than holding a Thinker member.
+//
+// MapTypes.h has said so in a comment for a long time and nothing checked it. It
+// cannot be a static_assert: both types are polymorphic, so offsetof on them is
+// conditionally supported and -Winvalid-offsetof would fire. So put the actual
+// cast through its paces instead, which is the thing that has to keep working.
+//
+// Getting this wrong is close to unfindable from the outside - the sound plays at
+// the wrong place, or reads four bytes of the wrong field as a coordinate, and no
+// golden here hashes audio.
+auto tSoundOriginCast = test("StateClusters/degenMobjCastsToMobjPosition") = []
+{
+    DegenMobj origin;
+    origin.pos = {Fixed::fromInt(1024), Fixed::fromInt(-2048), Fixed::fromInt(64)};
+
+    const auto* asMobj = reinterpret_cast<const Mobj*>(&origin);
+
+    check(asMobj->pos.x == origin.pos.x, "x survives the cast");
+    check(asMobj->pos.y == origin.pos.y, "y survives the cast");
+    check(asMobj->pos.z == origin.pos.z, "z survives the cast");
+};
 } // namespace

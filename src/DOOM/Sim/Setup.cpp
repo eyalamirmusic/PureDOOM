@@ -190,10 +190,10 @@ void loadNodes(int lump)
 
     for (auto i = 0; i < count; i++, no++, mn++)
     {
-        no->x = Fixed::fromInt(littleEndian(mn->x));
-        no->y = Fixed::fromInt(littleEndian(mn->y));
-        no->dx = Fixed::fromInt(littleEndian(mn->dx));
-        no->dy = Fixed::fromInt(littleEndian(mn->dy));
+        no->partition.origin = {Fixed::fromInt(littleEndian(mn->x)),
+                                Fixed::fromInt(littleEndian(mn->y))};
+        no->partition.delta = {Fixed::fromInt(littleEndian(mn->dx)),
+                               Fixed::fromInt(littleEndian(mn->dy))};
         for (auto j = 0; j < 2; j++)
         {
             no->children[j] = littleEndian(mn->children[j]);
@@ -270,16 +270,15 @@ void loadLineDefs(int lump)
         ld->tag = littleEndian(mld->tag);
         auto* v1 = ld->v1 = &level().vertexes[littleEndian(mld->v1)];
         auto* v2 = ld->v2 = &level().vertexes[littleEndian(mld->v2)];
-        ld->dx = v2->x - v1->x;
-        ld->dy = v2->y - v1->y;
+        ld->delta = *v2 - *v1;
 
-        if (!ld->dx)
+        if (!ld->delta.x)
             ld->slopetype = SlopeType::Vertical;
-        else if (!ld->dy)
+        else if (!ld->delta.y)
             ld->slopetype = SlopeType::Horizontal;
         else
         {
-            if (FixedDiv(ld->dy, ld->dx).isPositive())
+            if (FixedDiv(ld->delta.y, ld->delta.x).isPositive())
                 ld->slopetype = SlopeType::Positive;
             else
                 ld->slopetype = SlopeType::Negative;
@@ -418,16 +417,16 @@ void groupLines()
             if (li->frontsector == sector || li->backsector == sector)
             {
                 *linebuffer++ = li;
-                addToBox(bbox.data(), li->v1->x, li->v1->y);
-                addToBox(bbox.data(), li->v2->x, li->v2->y);
+                addToBox(bbox.data(), *li->v1);
+                addToBox(bbox.data(), *li->v2);
             }
         }
         if (linebuffer - sector->lines != sector->linecount)
             fatalError("Error: groupLines: miscounted");
 
         // set the DegenMobj to the middle of the bounding box
-        sector->soundorg.x = (bbox[boxRight] + bbox[boxLeft]) / 2;
-        sector->soundorg.y = (bbox[boxTop] + bbox[boxBottom]) / 2;
+        sector->soundorg.pos.x = (bbox[boxRight] + bbox[boxLeft]) / 2;
+        sector->soundorg.pos.y = (bbox[boxTop] + bbox[boxBottom]) / 2;
 
         // adjust bounding box to map blocks
         auto block = (bbox[boxTop] - level().blockmap.origin.y + MAXRADIUS).raw

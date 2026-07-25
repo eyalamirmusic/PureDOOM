@@ -10,12 +10,12 @@ namespace Doom
 {
 DivLine Line::toDivLine() const
 {
-    return {{v1->x, v1->y}, {dx, dy}};
+    return {*v1, delta};
 }
 
 int Line::pointSide(Vec2 point) const
 {
-    return pointOnLineSide(point, {v1->x, v1->y}, {dx, dy});
+    return pointOnLineSide(point, *v1, delta);
 }
 
 int Line::boxSide(const Fixed* box) const
@@ -24,8 +24,8 @@ int Line::boxSide(const Fixed* box) const
                          box[boxBottom],
                          box[boxLeft],
                          box[boxRight],
-                         {v1->x, v1->y},
-                         {dx, dy},
+                         *v1,
+                         delta,
                          static_cast<int>(slopetype));
 }
 
@@ -118,19 +118,19 @@ bool addThingIntercept(Mobj* thing)
     // check a corner to corner crossection for hit
     if (tracepositive)
     {
-        x1 = thing->x - thing->radius;
-        y1 = thing->y + thing->radius;
+        x1 = thing->pos.x - thing->radius;
+        y1 = thing->pos.y + thing->radius;
 
-        x2 = thing->x + thing->radius;
-        y2 = thing->y - thing->radius;
+        x2 = thing->pos.x + thing->radius;
+        y2 = thing->pos.y - thing->radius;
     }
     else
     {
-        x1 = thing->x - thing->radius;
-        y1 = thing->y - thing->radius;
+        x1 = thing->pos.x - thing->radius;
+        y1 = thing->pos.y - thing->radius;
 
-        x2 = thing->x + thing->radius;
-        y2 = thing->y + thing->radius;
+        x2 = thing->pos.x + thing->radius;
+        y2 = thing->pos.y + thing->radius;
     }
 
     auto s1 = pointOnDivlineSide({x1, y1}, trace);
@@ -193,7 +193,7 @@ bool traverseIntercepts(Traverser func, Fixed maxfrac)
 void Mobj::setPosition()
 {
     // link into subsector
-    auto* ss = pointInSubsector(x, y);
+    auto* ss = pointInSubsector(pos.xy());
     subsector = ss;
 
     if (!(hasFlag(flags, MobjFlag::NoSector)))
@@ -215,12 +215,11 @@ void Mobj::setPosition()
     {
         // inert things don't need to be in the blockmap
         const auto& bmap = level().blockmap;
-        auto blockx = bmap.blockX(x);
-        auto blocky = bmap.blockY(y);
+        auto cell = bmap.blockOf(pos.xy());
 
-        if (bmap.contains(blockx, blocky))
+        if (bmap.contains(cell))
         {
-            auto** link = &level().blockLinks[bmap.index(blockx, blocky)];
+            auto** link = &level().blockLinks[bmap.index(cell)];
             bprev = nullptr;
             bnext = *link;
             if (*link)
@@ -262,18 +261,24 @@ void Mobj::unsetPosition()
         else
         {
             const auto& bmap = level().blockmap;
-            auto blockx = bmap.blockX(x);
-            auto blocky = bmap.blockY(y);
+            auto cell = bmap.blockOf(pos.xy());
 
-            if (bmap.contains(blockx, blocky))
-                level().blockLinks[bmap.index(blockx, blocky)] = bnext;
+            if (bmap.contains(cell))
+                level().blockLinks[bmap.index(cell)] = bnext;
         }
     }
 }
 
-bool pathTraverse(Fixed x1, Fixed y1, Fixed x2, Fixed y2, int flags, Traverser trav)
+bool pathTraverse(Vec2 from, Vec2 to, int flags, Traverser trav)
 {
     auto& clip = clipping();
+
+    // Unpacked rather than rewritten: what follows is vanilla P_PathTraverse's
+    // arithmetic line for line, and every demo's hitscans went through it.
+    auto x1 = from.x;
+    auto y1 = from.y;
+    auto x2 = to.x;
+    auto y2 = to.y;
 
     clip.earlyOut = flags & PT_EARLYOUT;
 

@@ -301,12 +301,12 @@ void refreshBackground()
     {
         auto& gfx = statusBarGraphics();
 
-        drawPatch(ST_X, 0, STLIB_BG, gfx.sbar);
+        drawPatch({ST_X, 0}, STLIB_BG, gfx.sbar);
 
         if (gameSession().netgame)
-            drawPatch(ST_FX, 0, STLIB_BG, gfx.faceback);
+            drawPatch({ST_FX, 0}, STLIB_BG, gfx.faceback);
 
-        copyRect(ST_X, 0, STLIB_BG, ST_WIDTH, ST_HEIGHT, ST_X, ST_Y, STLIB_FG);
+        copyRect({ST_X, 0}, STLIB_BG, {ST_WIDTH, ST_HEIGHT}, {ST_X, ST_Y}, STLIB_FG);
     }
 }
 
@@ -471,9 +471,9 @@ bool statusBarResponder(Event& ev)
                 buf = concat("ang=0x",
                              hexString((int) mo->angle.raw),
                              ";x,y=(0x",
-                             hexString(mo->x.raw),
+                             hexString(mo->pos.x.raw),
                              ",0x",
-                             hexString(mo->y.raw),
+                             hexString(mo->pos.y.raw),
                              ")");
                 bar.plyr->message = buf;
             }
@@ -615,10 +615,8 @@ void updateFaceWidget()
             }
             else
             {
-                auto badguyangle = pointToAngle2(bar.plyr->mo->x,
-                                                 bar.plyr->mo->y,
-                                                 bar.plyr->attacker->x,
-                                                 bar.plyr->attacker->y);
+                auto badguyangle = pointToAngle2(bar.plyr->mo->pos.xy(),
+                                                 bar.plyr->attacker->pos.xy());
 
                 if (badguyangle > bar.plyr->mo->angle)
                 {
@@ -1017,8 +1015,7 @@ void createWidgets()
 
     // ready weapon ammo
     widgets.w_ready.init(
-        ST_AMMOX,
-        ST_AMMOY,
+        {ST_AMMOX, ST_AMMOY},
         gfx.tallnum.data(),
         &bar.plyr->ammo[toIndex(weaponinfo()[toIndex(bar.plyr->readyweapon)].ammo)],
         &bar.st_statusbaron,
@@ -1028,16 +1025,14 @@ void createWidgets()
     widgets.w_ready.data = toIndex(bar.plyr->readyweapon);
 
     // health percentage
-    widgets.w_health.init(ST_HEALTHX,
-                          ST_HEALTHY,
+    widgets.w_health.init({ST_HEALTHX, ST_HEALTHY},
                           gfx.tallnum.data(),
                           &bar.plyr->health,
                           &bar.st_statusbaron,
                           gfx.tallpercent);
 
     // arms background
-    widgets.w_armsbg.init(ST_ARMSBGX,
-                          ST_ARMSBGY,
+    widgets.w_armsbg.init({ST_ARMSBGX, ST_ARMSBGY},
                           gfx.armsbg,
                           &bar.st_notdeathmatch,
                           &bar.st_statusbaron);
@@ -1045,99 +1040,94 @@ void createWidgets()
     // weapons owned
     for (auto i = 0; i < 6; i++)
     {
-        widgets.w_arms[i].init(ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
-                               ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
-                               gfx.arms[i].data(),
-                               &widgets.w_armsindex[i],
-                               &bar.st_armson);
+        widgets.w_arms[i].init(
+            {ST_ARMSX + (i % 3) * ST_ARMSXSPACE, ST_ARMSY + (i / 3) * ST_ARMSYSPACE},
+            gfx.arms[i].data(),
+            &widgets.w_armsindex[i],
+            &bar.st_armson);
     }
 
     // frags sum
-    widgets.w_frags.init(ST_FRAGSX,
-                         ST_FRAGSY,
+    widgets.w_frags.init({ST_FRAGSX, ST_FRAGSY},
                          gfx.tallnum.data(),
                          &bar.st_fragscount,
                          &bar.st_fragson,
                          ST_FRAGSWIDTH);
 
     // faces
-    widgets.w_faces.init(ST_FACESX,
-                         ST_FACESY,
+    widgets.w_faces.init({ST_FACESX, ST_FACESY},
                          gfx.faces.data(),
                          &statusBarFace().st_faceindex,
                          &bar.st_statusbaron);
 
     // armor percentage - should be colored later
-    widgets.w_armor.init(ST_ARMORX,
-                         ST_ARMORY,
+    widgets.w_armor.init({ST_ARMORX, ST_ARMORY},
                          gfx.tallnum.data(),
                          &bar.plyr->armorpoints,
                          &bar.st_statusbaron,
                          gfx.tallpercent);
 
     // keyboxes 0-2
-    widgets.w_keyboxes[0].init(
-        ST_KEY0X, ST_KEY0Y, gfx.keys.data(), &bar.keyboxes[0], &bar.st_statusbaron);
+    widgets.w_keyboxes[0].init({ST_KEY0X, ST_KEY0Y},
+                               gfx.keys.data(),
+                               &bar.keyboxes[0],
+                               &bar.st_statusbaron);
 
-    widgets.w_keyboxes[1].init(
-        ST_KEY1X, ST_KEY1Y, gfx.keys.data(), &bar.keyboxes[1], &bar.st_statusbaron);
+    widgets.w_keyboxes[1].init({ST_KEY1X, ST_KEY1Y},
+                               gfx.keys.data(),
+                               &bar.keyboxes[1],
+                               &bar.st_statusbaron);
 
-    widgets.w_keyboxes[2].init(
-        ST_KEY2X, ST_KEY2Y, gfx.keys.data(), &bar.keyboxes[2], &bar.st_statusbaron);
+    widgets.w_keyboxes[2].init({ST_KEY2X, ST_KEY2Y},
+                               gfx.keys.data(),
+                               &bar.keyboxes[2],
+                               &bar.st_statusbaron);
 
     // ammo count (all four kinds)
-    widgets.w_ammo[0].init(ST_AMMO0X,
-                           ST_AMMO0Y,
+    widgets.w_ammo[0].init({ST_AMMO0X, ST_AMMO0Y},
                            gfx.shortnum.data(),
                            &bar.plyr->ammo[0],
                            &bar.st_statusbaron,
                            ST_AMMO0WIDTH);
 
-    widgets.w_ammo[1].init(ST_AMMO1X,
-                           ST_AMMO1Y,
+    widgets.w_ammo[1].init({ST_AMMO1X, ST_AMMO1Y},
                            gfx.shortnum.data(),
                            &bar.plyr->ammo[1],
                            &bar.st_statusbaron,
                            ST_AMMO1WIDTH);
 
-    widgets.w_ammo[2].init(ST_AMMO2X,
-                           ST_AMMO2Y,
+    widgets.w_ammo[2].init({ST_AMMO2X, ST_AMMO2Y},
                            gfx.shortnum.data(),
                            &bar.plyr->ammo[2],
                            &bar.st_statusbaron,
                            ST_AMMO2WIDTH);
 
-    widgets.w_ammo[3].init(ST_AMMO3X,
-                           ST_AMMO3Y,
+    widgets.w_ammo[3].init({ST_AMMO3X, ST_AMMO3Y},
                            gfx.shortnum.data(),
                            &bar.plyr->ammo[3],
                            &bar.st_statusbaron,
                            ST_AMMO3WIDTH);
 
     // max ammo count (all four kinds)
-    widgets.w_maxammo[0].init(ST_MAXAMMO0X,
-                              ST_MAXAMMO0Y,
+    widgets.w_maxammo[0].init({ST_MAXAMMO0X, ST_MAXAMMO0Y},
                               gfx.shortnum.data(),
                               &bar.plyr->maxammo[0],
                               &bar.st_statusbaron,
                               ST_MAXAMMO0WIDTH);
 
-    widgets.w_maxammo[1].init(ST_MAXAMMO1X,
-                              ST_MAXAMMO1Y,
+    widgets.w_maxammo[1].init({ST_MAXAMMO1X, ST_MAXAMMO1Y},
                               gfx.shortnum.data(),
                               &bar.plyr->maxammo[1],
                               &bar.st_statusbaron,
                               ST_MAXAMMO1WIDTH);
 
-    widgets.w_maxammo[2].init(ST_MAXAMMO2X,
-                              ST_MAXAMMO2Y,
+    widgets.w_maxammo[2].init({ST_MAXAMMO2X, ST_MAXAMMO2Y},
                               gfx.shortnum.data(),
                               &bar.plyr->maxammo[2],
                               &bar.st_statusbaron,
                               ST_MAXAMMO2WIDTH);
 
-    widgets.w_maxammo[3].init(ST_MAXAMMO3X,
-                              ST_MAXAMMO3Y,
+    widgets.w_maxammo[3].init({ST_MAXAMMO3X, ST_MAXAMMO3Y},
                               gfx.shortnum.data(),
                               &bar.plyr->maxammo[3],
                               &bar.st_statusbaron,

@@ -97,7 +97,7 @@ bool Mobj::setState(StateNum stateToUse)
 //
 void Mobj::explodeMissile()
 {
-    momx = momy = momz = Fixed {};
+    mom = {};
 
     setState(static_cast<StateNum>(mobjinfo()[toIndex(type)].deathstate));
 
@@ -122,13 +122,13 @@ void Mobj::xyMovement()
 
     auto& c = clipping();
 
-    if (!momx && !momy)
+    if (!mom.x && !mom.y)
     {
         if (hasFlag(flags, MobjFlag::SkullFly))
         {
             // the skull slammed into something
             flags = withoutFlags(flags, MobjFlag::SkullFly);
-            momx = momy = momz = Fixed {};
+            mom = {};
 
             setState(static_cast<StateNum>(info->spawnstate));
         }
@@ -137,36 +137,36 @@ void Mobj::xyMovement()
 
     auto* playerToUse = player;
 
-    if (momx > MAXMOVE)
-        momx = MAXMOVE;
-    else if (momx < -MAXMOVE)
-        momx = -MAXMOVE;
+    if (mom.x > MAXMOVE)
+        mom.x = MAXMOVE;
+    else if (mom.x < -MAXMOVE)
+        mom.x = -MAXMOVE;
 
-    if (momy > MAXMOVE)
-        momy = MAXMOVE;
-    else if (momy < -MAXMOVE)
-        momy = -MAXMOVE;
+    if (mom.y > MAXMOVE)
+        mom.y = MAXMOVE;
+    else if (mom.y < -MAXMOVE)
+        mom.y = -MAXMOVE;
 
-    auto xmove = momx;
-    auto ymove = momy;
+    auto xmove = mom.x;
+    auto ymove = mom.y;
 
     do
     {
         if (xmove > MAXMOVE / 2 || ymove > MAXMOVE / 2)
         {
-            ptryx = x + xmove / 2;
-            ptryy = y + ymove / 2;
+            ptryx = pos.x + xmove / 2;
+            ptryy = pos.y + ymove / 2;
             xmove >>= 1;
             ymove >>= 1;
         }
         else
         {
-            ptryx = x + xmove;
-            ptryy = y + ymove;
+            ptryx = pos.x + xmove;
+            ptryy = pos.y + ymove;
             xmove = ymove = Fixed {};
         }
 
-        if (!tryMove(ptryx, ptryy))
+        if (!tryMove({ptryx, ptryy}))
         {
             // blocked move
             if (playerToUse)
@@ -189,7 +189,7 @@ void Mobj::xyMovement()
                 explodeMissile();
             }
             else
-                momx = momy = Fixed {};
+                mom.setXY({});
         }
     } while (xmove || ymove);
 
@@ -197,30 +197,30 @@ void Mobj::xyMovement()
     if (playerToUse && hasFlag(playerToUse->cheats, CheatFlag::NoMomentum))
     {
         // debug option for no sliding at all
-        momx = momy = Fixed {};
+        mom.setXY({});
         return;
     }
 
     if (hasFlag(flags, MobjFlag::Missile, MobjFlag::SkullFly))
         return; // no friction for missiles ever
 
-    if (z > floorz)
+    if (pos.z > floorz)
         return; // no friction when airborne
 
     if (hasFlag(flags, MobjFlag::Corpse))
     {
         // do not stop sliding
         //  if halfway off a step with some momentum
-        if (momx > FRACUNIT / 4 || momx < -FRACUNIT / 4 || momy > FRACUNIT / 4
-            || momy < -FRACUNIT / 4)
+        if (mom.x > FRACUNIT / 4 || mom.x < -FRACUNIT / 4 || mom.y > FRACUNIT / 4
+            || mom.y < -FRACUNIT / 4)
         {
             if (floorz != subsector->sector->floorheight)
                 return;
         }
     }
 
-    if (momx > -STOPSPEED && momx < STOPSPEED && momy > -STOPSPEED
-        && momy < STOPSPEED
+    if (mom.x > -STOPSPEED && mom.x < STOPSPEED && mom.y > -STOPSPEED
+        && mom.y < STOPSPEED
         && (!playerToUse
             || (playerToUse->cmd.forwardmove == 0
                 && playerToUse->cmd.sidemove == 0)))
@@ -232,13 +232,12 @@ void Mobj::xyMovement()
                    < 4)
             playerToUse->mo->setState(StateNum::Play);
 
-        momx = Fixed {};
-        momy = Fixed {};
+        mom.setXY({});
     }
     else
     {
-        momx = FixedMul(momx, FRICTION);
-        momy = FixedMul(momy, FRICTION);
+        mom.x = FixedMul(mom.x, FRICTION);
+        mom.y = FixedMul(mom.y, FRICTION);
     }
 }
 
@@ -248,15 +247,15 @@ void Mobj::xyMovement()
 void Mobj::zMovement()
 {
     // check for smooth step up
-    if (player && z < floorz)
+    if (player && pos.z < floorz)
     {
-        player->viewheight -= floorz - z;
+        player->viewheight -= floorz - pos.z;
 
         player->deltaviewheight = (VIEWHEIGHT - player->viewheight) >> 3;
     }
 
     // adjust height
-    z += momz;
+    pos.z += mom.z;
 
     if (hasFlag(flags, MobjFlag::Float) && target)
     {
@@ -264,19 +263,19 @@ void Mobj::zMovement()
         if (!(hasFlag(flags, MobjFlag::SkullFly))
             && !(hasFlag(flags, MobjFlag::InFloat)))
         {
-            auto dist = approxDistance(x - target->x, y - target->y);
+            auto dist = approxDistance(pos.xy() - target->pos.xy());
 
-            auto delta = (target->z + (height >> 1)) - z;
+            auto delta = (target->pos.z + (height >> 1)) - pos.z;
 
             if (delta.isNegative() && dist < -(delta * 3))
-                z -= FLOATSPEED;
+                pos.z -= FLOATSPEED;
             else if (delta.isPositive() && dist < (delta * 3))
-                z += FLOATSPEED;
+                pos.z += FLOATSPEED;
         }
     }
 
     // clip movement
-    if (z <= floorz)
+    if (pos.z <= floorz)
     {
         // hit the floor
 
@@ -286,23 +285,23 @@ void Mobj::zMovement()
         if (hasFlag(flags, MobjFlag::SkullFly))
         {
             // the skull slammed into something
-            momz = -momz;
+            mom.z = -mom.z;
         }
 
-        if (momz.isNegative())
+        if (mom.z.isNegative())
         {
-            if (player && momz < -GRAVITY * 8)
+            if (player && mom.z < -GRAVITY * 8)
             {
                 // Squat down.
                 // Decrease viewheight for a moment
                 // after hitting the ground (hard),
                 // and utter appropriate sound.
-                player->deltaviewheight = momz >> 3;
+                player->deltaviewheight = mom.z >> 3;
                 startSound(this, SfxEnum::Oof);
             }
-            momz = Fixed {};
+            mom.z = Fixed {};
         }
-        z = floorz;
+        pos.z = floorz;
 
         if ((hasFlag(flags, MobjFlag::Missile))
             && !(hasFlag(flags, MobjFlag::NoClip)))
@@ -313,24 +312,24 @@ void Mobj::zMovement()
     }
     else if (!(hasFlag(flags, MobjFlag::NoGravity)))
     {
-        if (momz.isZero())
-            momz = -GRAVITY * 2;
+        if (mom.z.isZero())
+            mom.z = -GRAVITY * 2;
         else
-            momz -= GRAVITY;
+            mom.z -= GRAVITY;
     }
 
-    if (z + height > ceilingz)
+    if (pos.z + height > ceilingz)
     {
         // hit the ceiling
-        if (momz.isPositive())
-            momz = Fixed {};
+        if (mom.z.isPositive())
+            mom.z = Fixed {};
         {
-            z = ceilingz - height;
+            pos.z = ceilingz - height;
         }
 
         if (hasFlag(flags, MobjFlag::SkullFly))
         { // the skull slammed into something
-            momz = -momz;
+            mom.z = -mom.z;
         }
 
         if ((hasFlag(flags, MobjFlag::Missile))
@@ -353,20 +352,20 @@ void Mobj::nightmareRespawn()
     auto yToUse = Fixed::fromInt(spawnpoint.y);
 
     // somthing is occupying it's position?
-    if (!checkPosition(xToUse, yToUse))
+    if (!checkPosition({xToUse, yToUse}))
         return; // no respwan
 
     // spawn a teleport fog at old spot
     // because of removal of the body?
     auto* mo =
-        spawnMobj(xToUse, yToUse, subsector->sector->floorheight, MobjType::Tfog);
+        spawnMobj({xToUse, yToUse, subsector->sector->floorheight}, MobjType::Tfog);
     // initiate teleport sound
     startSound(mo, SfxEnum::Telept);
 
     // spawn a teleport fog at the new spot
-    auto* ss = pointInSubsector(xToUse, yToUse);
+    auto* ss = pointInSubsector({xToUse, yToUse});
 
-    mo = spawnMobj(xToUse, yToUse, ss->sector->floorheight, MobjType::Tfog);
+    mo = spawnMobj({xToUse, yToUse, ss->sector->floorheight}, MobjType::Tfog);
 
     startSound(mo, SfxEnum::Telept);
 
@@ -380,7 +379,7 @@ void Mobj::nightmareRespawn()
         zToUse = ONFLOORZ;
 
     // inherit attributes from deceased one
-    mo = spawnMobj(xToUse, yToUse, zToUse, type);
+    mo = spawnMobj({xToUse, yToUse, zToUse}, type);
     mo->spawnpoint = spawnpoint;
     mo->angle = ang45 * (mthing->angle / 45);
 
@@ -396,15 +395,14 @@ void Mobj::nightmareRespawn()
 //
 // spawnMobj
 //
-Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type)
+Mobj* spawnMobj(Vec3 pos, MobjType type)
 {
     Mobj* mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
     auto* info = &mobjinfo()[toIndex(type)];
 
     mobj->type = type;
     mobj->info = info;
-    mobj->x = x;
-    mobj->y = y;
+    mobj->pos.setXY(pos.xy());
     mobj->radius = info->radius;
     mobj->height = info->height;
     mobj->flags = info->flags;
@@ -429,12 +427,12 @@ Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type)
     mobj->floorz = mobj->subsector->sector->floorheight;
     mobj->ceilingz = mobj->subsector->sector->ceilingheight;
 
-    if (z == ONFLOORZ)
-        mobj->z = mobj->floorz;
-    else if (z == ONCEILINGZ)
-        mobj->z = mobj->ceilingz - mobj->info->height;
+    if (pos.z == ONFLOORZ)
+        mobj->pos.z = mobj->floorz;
+    else if (pos.z == ONCEILINGZ)
+        mobj->pos.z = mobj->ceilingz - mobj->info->height;
     else
-        mobj->z = z;
+        mobj->pos.z = pos.z;
 
     addThinker(*mobj);
 
@@ -499,8 +497,8 @@ void respawnSpecials()
     auto y = Fixed::fromInt(mthing->y);
 
     // spawn a teleport fog at the new spot
-    auto* ss = pointInSubsector(x, y);
-    auto* mo = spawnMobj(x, y, ss->sector->floorheight, MobjType::Ifog);
+    auto* ss = pointInSubsector({x, y});
+    auto* mo = spawnMobj({x, y, ss->sector->floorheight}, MobjType::Ifog);
     startSound(mo, SfxEnum::Itmbk);
 
     // find which type to spawn
@@ -516,7 +514,7 @@ void respawnSpecials()
     else
         z = ONFLOORZ;
 
-    mo = spawnMobj(x, y, z, static_cast<MobjType>(i));
+    mo = spawnMobj({x, y, z}, static_cast<MobjType>(i));
     mo->spawnpoint = *mthing;
     mo->angle = ang45 * (mthing->angle / 45);
 
@@ -546,7 +544,7 @@ void spawnPlayer(MapThing& mthing)
     auto x = Fixed::fromInt(mthing.x);
     auto y = Fixed::fromInt(mthing.y);
     auto z = ONFLOORZ;
-    auto* mobj = spawnMobj(x, y, z, MobjType::Player);
+    auto* mobj = spawnMobj({x, y, z}, MobjType::Player);
 
     // set color translations for player sprites
     if (mthing.type > 1)
@@ -680,7 +678,7 @@ void spawnMapThing(MapThing& mthing)
     else
         z = ONFLOORZ;
 
-    auto* mobj = spawnMobj(x, y, z, static_cast<MobjType>(i));
+    auto* mobj = spawnMobj({x, y, z}, static_cast<MobjType>(i));
     mobj->spawnpoint = mthing;
 
     if (mobj->tics > 0)
@@ -704,12 +702,12 @@ void spawnMapThing(MapThing& mthing)
 //
 // spawnPuff
 //
-void spawnPuff(Fixed x, Fixed y, Fixed z)
+void spawnPuff(Vec3 pos)
 {
-    z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
+    pos.z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
 
-    auto* th = spawnMobj(x, y, z, MobjType::Puff);
-    th->momz = FRACUNIT;
+    auto* th = spawnMobj(pos, MobjType::Puff);
+    th->mom.z = FRACUNIT;
     th->tics -= randomness().forPlay() & 3;
 
     if (th->tics < 1)
@@ -723,11 +721,11 @@ void spawnPuff(Fixed x, Fixed y, Fixed z)
 //
 // spawnBlood
 //
-void spawnBlood(Fixed x, Fixed y, Fixed z, int damage)
+void spawnBlood(Vec3 pos, int damage)
 {
-    z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
-    auto* th = spawnMobj(x, y, z, MobjType::Blood);
-    th->momz = FRACUNIT * 2;
+    pos.z += Fixed {(randomness().forPlay() - randomness().forPlay()) << 10};
+    auto* th = spawnMobj(pos, MobjType::Blood);
+    th->mom.z = FRACUNIT * 2;
     th->tics -= randomness().forPlay() & 3;
 
     if (th->tics < 1)
@@ -752,11 +750,9 @@ void Mobj::checkMissileSpawn()
 
     // move a little forward so an angle can
     // be computed if it immediately explodes
-    x += (momx >> 1);
-    y += (momy >> 1);
-    z += (momz >> 1);
+    pos += mom >> 1;
 
-    if (!tryMove(x, y))
+    if (!tryMove(pos.xy()))
         explodeMissile();
 }
 
@@ -765,13 +761,13 @@ void Mobj::checkMissileSpawn()
 //
 Mobj* Mobj::spawnMissile(Mobj* dest, MobjType typeToUse)
 {
-    auto* th = spawnMobj(x, y, z + 4 * 8 * FRACUNIT, typeToUse);
+    auto* th = spawnMobj({pos.x, pos.y, pos.z + 4 * 8 * FRACUNIT}, typeToUse);
 
     if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);
 
     th->target = this; // where it came from
-    auto an = pointToAngle2(x, y, dest->x, dest->y);
+    auto an = pointToAngle2(pos.xy(), dest->pos.xy());
 
     // fuzzy player
     if (hasFlag(dest->flags, MobjFlag::Shadow))
@@ -780,18 +776,18 @@ Mobj* Mobj::spawnMissile(Mobj* dest, MobjType typeToUse)
 
     th->angle = an;
     const auto anFine = an.fineIndex();
-    th->momx = FixedMul(Fixed {th->info->speed}, finecosine()[anFine]);
-    th->momy = FixedMul(Fixed {th->info->speed}, finesine()[anFine]);
+    th->mom.x = FixedMul(Fixed {th->info->speed}, finecosine()[anFine]);
+    th->mom.y = FixedMul(Fixed {th->info->speed}, finesine()[anFine]);
 
     // dist is vanilla's tic count, not a length: the raw distance divided by the
     // missile's raw speed as plain integers, then used as the divisor for momz.
-    auto dist = approxDistance(dest->x - x, dest->y - y).raw;
+    auto dist = approxDistance(dest->pos.xy() - pos.xy()).raw;
     dist = dist / th->info->speed;
 
     if (dist < 1)
         dist = 1;
 
-    th->momz = (dest->z - z) / dist;
+    th->mom.z = (dest->pos.z - pos.z) / dist;
     th->checkMissileSpawn();
 
     return th;
@@ -828,20 +824,20 @@ void Mobj::spawnPlayerMissile(MobjType typeToUse)
         }
     }
 
-    auto xToUse = x;
-    auto yToUse = y;
-    auto zToUse = z + 4 * 8 * FRACUNIT;
+    auto xToUse = pos.x;
+    auto yToUse = pos.y;
+    auto zToUse = pos.z + 4 * 8 * FRACUNIT;
 
-    auto* th = spawnMobj(xToUse, yToUse, zToUse, typeToUse);
+    auto* th = spawnMobj({xToUse, yToUse, zToUse}, typeToUse);
 
     if (th->info->seesound != SfxEnum::None)
         startSound(th, th->info->seesound);
 
     th->target = this;
     th->angle = an;
-    th->momx = FixedMul(Fixed {th->info->speed}, finecosine()[an.fineIndex()]);
-    th->momy = FixedMul(Fixed {th->info->speed}, finesine()[an.fineIndex()]);
-    th->momz = FixedMul(Fixed {th->info->speed}, slope);
+    th->mom.x = FixedMul(Fixed {th->info->speed}, finecosine()[an.fineIndex()]);
+    th->mom.y = FixedMul(Fixed {th->info->speed}, finesine()[an.fineIndex()]);
+    th->mom.z = FixedMul(Fixed {th->info->speed}, slope);
 
     th->checkMissileSpawn();
 }

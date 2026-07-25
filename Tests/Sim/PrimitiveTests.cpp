@@ -319,7 +319,7 @@ auto tSlopeDivStaysInTable = test("Tables/slopeDivStaysInTable") = []
 auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
 {
     auto distance = [](Doom::Fixed dx, Doom::Fixed dy)
-    { return Doom::approxDistance(dx, dy); };
+    { return Doom::approxDistance({dx, dy}); };
 
     check(distance(3 * one, Doom::Fixed {}) == 3 * one);
     check(distance(Doom::Fixed {}, 3 * one) == 3 * one);
@@ -340,21 +340,25 @@ auto tAproxDistanceIsOctagonal = test("Geometry/aproxDistanceIsOctagonal") = []
 // replay: it is what the recorded demos were aimed with.
 auto tPointToAngleCardinals = test("Geometry/pointToAngleCardinals") = []
 {
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, Doom::Fixed {})
-          == Doom::Angle {}); // east, exact
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, Doom::Fixed {}, one)
-          == Doom::ang90 - Doom::Angle {1}); // north
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, Doom::Fixed {})
-          == Doom::ang180 - Doom::Angle {1}); // west
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, Doom::Fixed {}, -one)
-          == Doom::ang270); // south, exact
+    check(
+        Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {one, Doom::Fixed {}})
+        == Doom::Angle {}); // east, exact
+    check(
+        Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {Doom::Fixed {}, one})
+        == Doom::ang90 - Doom::Angle {1}); // north
+    check(
+        Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {-one, Doom::Fixed {}})
+        == Doom::ang180 - Doom::Angle {1}); // west
+    check(
+        Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {Doom::Fixed {}, -one})
+        == Doom::ang270); // south, exact
 };
 
 auto tPointToAngleDiagonal = test("Geometry/pointToAngleDiagonal") = []
 {
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {one, one})
           == Doom::ang45 - Doom::Angle {1});
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {-one, one})
           == Doom::ang90 + Doom::ang45);
 };
 
@@ -362,27 +366,25 @@ auto tPointToAngleDiagonal = test("Geometry/pointToAngleDiagonal") = []
 // quadrants - this is the property a rewrite would actually break.
 auto tPointToAngleQuadrants = test("Geometry/pointToAngleQuadrants") = []
 {
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {one, one})
           < Doom::ang90); // NE
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {-one, one})
           > Doom::ang90); // NW
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {-one, one})
           < Doom::ang180);
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, -one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {-one, -one})
           > Doom::ang180); // SW
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, -one, -one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {-one, -one})
           < Doom::ang270);
-    check(Doom::pointToAngle2(Doom::Fixed {}, Doom::Fixed {}, one, -one)
+    check(Doom::pointToAngle2({Doom::Fixed {}, Doom::Fixed {}}, {one, -one})
           > Doom::ang270); // SE
 };
 
 // The same point is no angle at all, rather than an out-of-range index.
 auto tPointToAngleDegenerate = test("Geometry/pointToAngleAtSamePoint") = []
 {
-    check(Doom::pointToAngle2(Doom::Fixed {100},
-                              Doom::Fixed {100},
-                              Doom::Fixed {100},
-                              Doom::Fixed {100})
+    check(Doom::pointToAngle2({Doom::Fixed {100}, Doom::Fixed {100}},
+                              {Doom::Fixed {100}, Doom::Fixed {100}})
           == Doom::Angle {});
 };
 

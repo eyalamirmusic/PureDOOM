@@ -313,15 +313,14 @@ void startHud()
     hud.chat_on = false;
 
     // create the message widget
-    msg.w_message.init(HU_MSGX,
-                       HU_MSGY,
+    msg.w_message.init({HU_MSGX, HU_MSGY},
                        HU_MSGHEIGHT,
                        font.hu_font.data(),
                        HU_FONTSTART,
                        &msg.message_on);
 
     // create the map title widget
-    state.w_title.init(HU_TITLEX, hudTitleY(), font.hu_font.data(), HU_FONTSTART);
+    state.w_title.init({HU_TITLEX, hudTitleY()}, font.hu_font.data(), HU_FONTSTART);
 
     switch (gameVersion().gamemode)
     {
@@ -351,11 +350,11 @@ void startHud()
 
     // create the chat widget
     chat.w_chat.init(
-        HU_INPUTX, hudInputY(), font.hu_font.data(), HU_FONTSTART, &hud.chat_on);
+        {HU_INPUTX, hudInputY()}, font.hu_font.data(), HU_FONTSTART, &hud.chat_on);
 
     // create the inputbuffer widgets
     for (auto& buffer: chat.w_inputbuffer)
-        buffer.init(0, 0, nullptr, 0, &chat.always_off);
+        buffer.init({0, 0}, nullptr, 0, &chat.always_off);
 
     state.headsupactive = true;
 }

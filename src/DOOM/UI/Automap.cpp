@@ -147,14 +147,13 @@ void activateNewScale()
 {
     auto& map = automapView();
 
-    automapView().m_x += automapView().m_w / 2;
-    automapView().m_y += automapView().m_h / 2;
-    automapView().m_w = map.frameToMap(automapView().f_w);
-    automapView().m_h = map.frameToMap(automapView().f_h);
-    automapView().m_x -= automapView().m_w / 2;
-    automapView().m_y -= automapView().m_h / 2;
-    map.m_x2 = automapView().m_x + automapView().m_w;
-    map.m_y2 = automapView().m_y + automapView().m_h;
+    automapView().m_origin.x += automapView().m_size.x / 2;
+    automapView().m_origin.y += automapView().m_size.y / 2;
+    automapView().m_size.x = map.frameToMap(automapView().f_size.x);
+    automapView().m_size.y = map.frameToMap(automapView().f_size.y);
+    automapView().m_origin.x -= automapView().m_size.x / 2;
+    automapView().m_origin.y -= automapView().m_size.y / 2;
+    map.m_far = automapView().m_origin + automapView().m_size;
 }
 
 //
@@ -164,10 +163,8 @@ void saveScaleAndLoc()
 {
     auto& map = automapView();
 
-    map.old_m_x = automapView().m_x;
-    map.old_m_y = automapView().m_y;
-    map.old_m_w = automapView().m_w;
-    map.old_m_h = automapView().m_h;
+    map.old_m_origin = automapView().m_origin;
+    map.old_m_size = automapView().m_size;
 }
 
 //
@@ -177,24 +174,25 @@ void restoreScaleAndLoc()
 {
     auto& map = automapView();
 
-    automapView().m_w = map.old_m_w;
-    automapView().m_h = map.old_m_h;
+    automapView().m_size.x = map.old_m_size.x;
+    automapView().m_size.y = map.old_m_size.y;
     if (!automapView().followplayer)
     {
-        automapView().m_x = map.old_m_x;
-        automapView().m_y = map.old_m_y;
+        automapView().m_origin.x = map.old_m_origin.x;
+        automapView().m_origin.y = map.old_m_origin.y;
     }
     else
     {
-        automapView().m_x = automapView().am_plr->mo->x - automapView().m_w / 2;
-        automapView().m_y = automapView().am_plr->mo->y - automapView().m_h / 2;
+        automapView().m_origin.x =
+            automapView().am_plr->mo->pos.x - automapView().m_size.x / 2;
+        automapView().m_origin.y =
+            automapView().am_plr->mo->pos.y - automapView().m_size.y / 2;
     }
-    map.m_x2 = automapView().m_x + automapView().m_w;
-    map.m_y2 = automapView().m_y + automapView().m_h;
+    map.m_far = automapView().m_origin + automapView().m_size;
 
     // Change the scaling multipliers
     automapView().scale_mtof =
-        FixedDiv(Fixed::fromInt(automapView().f_w), automapView().m_w);
+        FixedDiv(Fixed::fromInt(automapView().f_size.x), automapView().m_size.x);
     map.scale_ftom = FixedDiv(FRACUNIT, automapView().scale_mtof);
 }
 
@@ -205,8 +203,10 @@ void addMark()
 {
     auto& map = automapView();
 
-    map.markpoints[map.markpointnum].x = automapView().m_x + automapView().m_w / 2;
-    map.markpoints[map.markpointnum].y = automapView().m_y + automapView().m_h / 2;
+    map.markpoints[map.markpointnum].x =
+        automapView().m_origin.x + automapView().m_size.x / 2;
+    map.markpoints[map.markpointnum].y =
+        automapView().m_origin.y + automapView().m_size.y / 2;
     map.markpointnum = (map.markpointnum + 1) % AutomapView::numMarkPoints;
 }
 
@@ -218,31 +218,30 @@ void findMinMaxBoundaries()
 {
     auto& map = automapView();
 
-    map.min_x = map.min_y = Fixed {DOOM_MAXINT};
-    map.max_x = map.max_y = Fixed {-DOOM_MAXINT};
+    map.minBound.x = map.minBound.y = Fixed {DOOM_MAXINT};
+    map.maxBound.x = map.maxBound.y = Fixed {-DOOM_MAXINT};
 
     for (auto i = 0; i < level().vertexes.size(); i++)
     {
-        if (level().vertexes[i].x < map.min_x)
-            map.min_x = level().vertexes[i].x;
-        else if (level().vertexes[i].x > map.max_x)
-            map.max_x = level().vertexes[i].x;
+        if (level().vertexes[i].x < map.minBound.x)
+            map.minBound.x = level().vertexes[i].x;
+        else if (level().vertexes[i].x > map.maxBound.x)
+            map.maxBound.x = level().vertexes[i].x;
 
-        if (level().vertexes[i].y < map.min_y)
-            map.min_y = level().vertexes[i].y;
-        else if (level().vertexes[i].y > map.max_y)
-            map.max_y = level().vertexes[i].y;
+        if (level().vertexes[i].y < map.minBound.y)
+            map.minBound.y = level().vertexes[i].y;
+        else if (level().vertexes[i].y > map.maxBound.y)
+            map.maxBound.y = level().vertexes[i].y;
     }
 
-    map.max_w = map.max_x - map.min_x;
-    map.max_h = map.max_y - map.min_y;
+    map.maxSize = map.maxBound - map.minBound;
 
-    auto a = FixedDiv(Fixed::fromInt(automapView().f_w), map.max_w);
-    auto b = FixedDiv(Fixed::fromInt(automapView().f_h), map.max_h);
+    auto a = FixedDiv(Fixed::fromInt(automapView().f_size.x), map.maxSize.x);
+    auto b = FixedDiv(Fixed::fromInt(automapView().f_size.y), map.maxSize.y);
 
     map.min_scale_mtof = a < b ? a : b;
     map.max_scale_mtof =
-        FixedDiv(Fixed::fromInt(automapView().f_h), 2 * PLAYERRADIUS);
+        FixedDiv(Fixed::fromInt(automapView().f_size.y), 2 * PLAYERRADIUS);
 }
 
 //
@@ -258,21 +257,20 @@ void changeWindowLoc()
         map.f_oldloc.x = Fixed {DOOM_MAXINT};
     }
 
-    automapView().m_x += map.m_paninc.x;
-    automapView().m_y += map.m_paninc.y;
+    automapView().m_origin.x += map.m_paninc.x;
+    automapView().m_origin.y += map.m_paninc.y;
 
-    if (automapView().m_x + automapView().m_w / 2 > map.max_x)
-        automapView().m_x = map.max_x - automapView().m_w / 2;
-    else if (automapView().m_x + automapView().m_w / 2 < map.min_x)
-        automapView().m_x = map.min_x - automapView().m_w / 2;
+    if (automapView().m_origin.x + automapView().m_size.x / 2 > map.maxBound.x)
+        automapView().m_origin.x = map.maxBound.x - automapView().m_size.x / 2;
+    else if (automapView().m_origin.x + automapView().m_size.x / 2 < map.minBound.x)
+        automapView().m_origin.x = map.minBound.x - automapView().m_size.x / 2;
 
-    if (automapView().m_y + automapView().m_h / 2 > map.max_y)
-        automapView().m_y = map.max_y - automapView().m_h / 2;
-    else if (automapView().m_y + automapView().m_h / 2 < map.min_y)
-        automapView().m_y = map.min_y - automapView().m_h / 2;
+    if (automapView().m_origin.y + automapView().m_size.y / 2 > map.maxBound.y)
+        automapView().m_origin.y = map.maxBound.y - automapView().m_size.y / 2;
+    else if (automapView().m_origin.y + automapView().m_size.y / 2 < map.minBound.y)
+        automapView().m_origin.y = map.minBound.y - automapView().m_size.y / 2;
 
-    map.m_x2 = automapView().m_x + automapView().m_w;
-    map.m_y2 = automapView().m_y + automapView().m_h;
+    map.m_far = automapView().m_origin + automapView().m_size;
 }
 
 //
@@ -296,8 +294,8 @@ void initAutomapVariables()
     map.ftom_zoommul = FRACUNIT;
     map.mtof_zoommul = FRACUNIT;
 
-    automapView().m_w = map.frameToMap(automapView().f_w);
-    automapView().m_h = map.frameToMap(automapView().f_h);
+    automapView().m_size.x = map.frameToMap(automapView().f_size.x);
+    automapView().m_size.y = map.frameToMap(automapView().f_size.y);
 
     auto& players_ = playerState();
 
@@ -308,15 +306,15 @@ void initAutomapVariables()
                 break;
 
     automapView().am_plr = &players_.players[pnum];
-    automapView().m_x = automapView().am_plr->mo->x - automapView().m_w / 2;
-    automapView().m_y = automapView().am_plr->mo->y - automapView().m_h / 2;
+    automapView().m_origin.x =
+        automapView().am_plr->mo->pos.x - automapView().m_size.x / 2;
+    automapView().m_origin.y =
+        automapView().am_plr->mo->pos.y - automapView().m_size.y / 2;
     changeWindowLoc();
 
     // for saving & restoring
-    map.old_m_x = automapView().m_x;
-    map.old_m_y = automapView().m_y;
-    map.old_m_w = automapView().m_w;
-    map.old_m_h = automapView().m_h;
+    map.old_m_origin = automapView().m_origin;
+    map.old_m_size = automapView().m_size;
 
     // inform the status bar of the change
     statusBarResponder(st_notify);
@@ -359,9 +357,9 @@ void levelInit()
 {
     auto& map = automapView();
 
-    automapView().f_x = automapView().f_y = 0;
-    automapView().f_w = map.finit_width;
-    automapView().f_h = map.finit_height;
+    automapView().f_origin.x = automapView().f_origin.y = 0;
+    automapView().f_size.x = map.finit_width;
+    automapView().f_size.y = map.finit_height;
 
     clearMarks();
 
@@ -600,19 +598,17 @@ void doFollowPlayer()
 {
     auto& map = automapView();
 
-    if (map.f_oldloc.x != automapView().am_plr->mo->x
-        || map.f_oldloc.y != automapView().am_plr->mo->y)
+    if (map.f_oldloc.x != automapView().am_plr->mo->pos.x
+        || map.f_oldloc.y != automapView().am_plr->mo->pos.y)
     {
-        automapView().m_x =
-            map.frameToMap(map.mapToFrame(automapView().am_plr->mo->x))
-            - automapView().m_w / 2;
-        automapView().m_y =
-            map.frameToMap(map.mapToFrame(automapView().am_plr->mo->y))
-            - automapView().m_h / 2;
-        map.m_x2 = automapView().m_x + automapView().m_w;
-        map.m_y2 = automapView().m_y + automapView().m_h;
-        map.f_oldloc.x = automapView().am_plr->mo->x;
-        map.f_oldloc.y = automapView().am_plr->mo->y;
+        automapView().m_origin.x =
+            map.frameToMap(map.mapToFrame(automapView().am_plr->mo->pos.x))
+            - automapView().m_size.x / 2;
+        automapView().m_origin.y =
+            map.frameToMap(map.mapToFrame(automapView().am_plr->mo->pos.y))
+            - automapView().m_size.y / 2;
+        map.m_far = automapView().m_origin + automapView().m_size;
+        map.f_oldloc = automapView().am_plr->mo->pos.xy();
     }
 }
 
@@ -645,7 +641,8 @@ void automapTicker()
 //
 void clearFB(int color)
 {
-    doom_memset(automapView().fb, color, automapView().f_w * automapView().f_h);
+    doom_memset(
+        automapView().fb, color, automapView().f_size.x * automapView().f_size.y);
 }
 
 namespace
@@ -664,11 +661,11 @@ int computeOutcode(int mx, int my)
     auto oc = 0;
     if (my < 0)
         oc = withFlags(oc, Outcode::Top);
-    else if (my >= automapView().f_h)
+    else if (my >= automapView().f_size.y)
         oc = withFlags(oc, Outcode::Bottom);
     if (mx < 0)
         oc = withFlags(oc, Outcode::Left);
-    else if (mx >= automapView().f_w)
+    else if (mx >= automapView().f_size.x)
         oc = withFlags(oc, Outcode::Right);
     return oc;
 }
@@ -699,27 +696,27 @@ bool clipMline(const MapLine& ml, FLine& fl)
     int dy;
 
     // do trivial rejects and outcodes
-    if (ml.a.y > map.m_y2)
+    if (ml.a.y > map.m_far.y)
         outcode1 = flagBits(Outcode::Top);
-    else if (ml.a.y < automapView().m_y)
+    else if (ml.a.y < automapView().m_origin.y)
         outcode1 = flagBits(Outcode::Bottom);
 
-    if (ml.b.y > map.m_y2)
+    if (ml.b.y > map.m_far.y)
         outcode2 = flagBits(Outcode::Top);
-    else if (ml.b.y < automapView().m_y)
+    else if (ml.b.y < automapView().m_origin.y)
         outcode2 = flagBits(Outcode::Bottom);
 
     if (outcode1 & outcode2)
         return false; // trivially outside
 
-    if (ml.a.x < automapView().m_x)
+    if (ml.a.x < automapView().m_origin.x)
         outcode1 = withFlags(outcode1, Outcode::Left);
-    else if (ml.a.x > map.m_x2)
+    else if (ml.a.x > map.m_far.x)
         outcode1 = withFlags(outcode1, Outcode::Right);
 
-    if (ml.b.x < automapView().m_x)
+    if (ml.b.x < automapView().m_origin.x)
         outcode2 = withFlags(outcode2, Outcode::Left);
-    else if (ml.b.x > map.m_x2)
+    else if (ml.b.x > map.m_far.x)
         outcode2 = withFlags(outcode2, Outcode::Right);
 
     if (outcode1 & outcode2)
@@ -758,15 +755,15 @@ bool clipMline(const MapLine& ml, FLine& fl)
         {
             dy = fl.a.y - fl.b.y;
             dx = fl.b.x - fl.a.x;
-            tmp.x = fl.a.x + (dx * (fl.a.y - automapView().f_h)) / dy;
-            tmp.y = automapView().f_h - 1;
+            tmp.x = fl.a.x + (dx * (fl.a.y - automapView().f_size.y)) / dy;
+            tmp.y = automapView().f_size.y - 1;
         }
         else if (hasFlag(outside, Outcode::Right))
         {
             dy = fl.b.y - fl.a.y;
             dx = fl.b.x - fl.a.x;
-            tmp.y = fl.a.y + (dy * (automapView().f_w - 1 - fl.a.x)) / dx;
-            tmp.x = automapView().f_w - 1;
+            tmp.y = fl.a.y + (dy * (automapView().f_size.x - 1 - fl.a.x)) / dx;
+            tmp.x = automapView().f_size.x - 1;
         }
         else if (hasFlag(outside, Outcode::Left))
         {
@@ -796,7 +793,7 @@ bool clipMline(const MapLine& ml, FLine& fl)
 
 static inline void putDot(byte* fb, int xx, int yy, int cc)
 {
-    fb[yy * automapView().f_w + xx] = cc;
+    fb[yy * automapView().f_size.x + xx] = cc;
 }
 
 //
@@ -885,16 +882,16 @@ void drawGrid(int color)
     const auto blockSpacing = Fixed::fromInt(MAPBLOCKUNITS);
 
     // Figure out start of vertical gridlines
-    auto start = automapView().m_x;
+    auto start = automapView().m_origin.x;
     if (Fixed {(start - level().blockmap.origin.x).raw % blockSpacing.raw})
         start +=
             blockSpacing
             - (Fixed {(start - level().blockmap.origin.x).raw % blockSpacing.raw});
-    auto end = automapView().m_x + automapView().m_w;
+    auto end = automapView().m_origin.x + automapView().m_size.x;
 
     // draw vertical gridlines
-    ml.a.y = automapView().m_y;
-    ml.b.y = automapView().m_y + automapView().m_h;
+    ml.a.y = automapView().m_origin.y;
+    ml.b.y = automapView().m_origin.y + automapView().m_size.y;
     for (auto x = start; x < end; x += blockSpacing)
     {
         ml.a.x = x;
@@ -903,16 +900,16 @@ void drawGrid(int color)
     }
 
     // Figure out start of horizontal gridlines
-    start = automapView().m_y;
+    start = automapView().m_origin.y;
     if (Fixed {(start - level().blockmap.origin.y).raw % blockSpacing.raw})
         start +=
             blockSpacing
             - (Fixed {(start - level().blockmap.origin.y).raw % blockSpacing.raw});
-    end = automapView().m_y + automapView().m_h;
+    end = automapView().m_origin.y + automapView().m_size.y;
 
     // draw horizontal gridlines
-    ml.a.x = automapView().m_x;
-    ml.b.x = automapView().m_x + automapView().m_w;
+    ml.a.x = automapView().m_origin.x;
+    ml.b.x = automapView().m_origin.x + automapView().m_size.x;
     for (auto y = start; y < end; y += blockSpacing)
     {
         ml.a.y = y;
@@ -931,10 +928,8 @@ void drawWalls()
 
     for (auto i = 0; i < level().lines.size(); i++)
     {
-        l.a.x = level().lines[i].v1->x;
-        l.a.y = level().lines[i].v1->y;
-        l.b.x = level().lines[i].v2->x;
-        l.b.y = level().lines[i].v2->y;
+        l.a = *level().lines[i].v1;
+        l.b = *level().lines[i].v2;
         if (automapView().cheating || (level().lines[i].flags & ML_MAPPED))
         {
             if ((level().lines[i].flags & LINE_NEVERSEE) && !automapView().cheating)
@@ -1014,8 +1009,7 @@ void drawLineCharacter(std::span<const MapLine> lineguy,
 
     for (auto i = 0u; i < lineguy.size(); i++)
     {
-        l.a.x = lineguy[i].a.x;
-        l.a.y = lineguy[i].a.y;
+        l.a = lineguy[i].a;
 
         if (scale)
         {
@@ -1029,8 +1023,7 @@ void drawLineCharacter(std::span<const MapLine> lineguy,
         l.a.x += x;
         l.a.y += y;
 
-        l.b.x = lineguy[i].b.x;
-        l.b.y = lineguy[i].b.y;
+        l.b = lineguy[i].b;
 
         if (scale)
         {
@@ -1063,15 +1056,15 @@ void drawPlayers()
                               Fixed {},
                               automapView().am_plr->mo->angle,
                               WHITE,
-                              automapView().am_plr->mo->x,
-                              automapView().am_plr->mo->y);
+                              automapView().am_plr->mo->pos.x,
+                              automapView().am_plr->mo->pos.y);
         else
             drawLineCharacter(mapShapes().playerArrow,
                               Fixed {},
                               automapView().am_plr->mo->angle,
                               WHITE,
-                              automapView().am_plr->mo->x,
-                              automapView().am_plr->mo->y);
+                              automapView().am_plr->mo->pos.x,
+                              automapView().am_plr->mo->pos.y);
         return;
     }
 
@@ -1098,8 +1091,8 @@ void drawPlayers()
                           Fixed {},
                           p->mo->angle,
                           color,
-                          p->mo->x,
-                          p->mo->y);
+                          p->mo->pos.x,
+                          p->mo->pos.y);
     }
 }
 
@@ -1114,8 +1107,8 @@ void drawThings(int colors)
                               Fixed::fromInt(16),
                               t->angle,
                               colors + automapView().lightlev,
-                              t->x,
-                              t->y);
+                              t->pos.x,
+                              t->pos.y);
             t = t->snext;
         }
     }
@@ -1135,16 +1128,17 @@ void drawAutomapMarks()
             auto h = 6; // because something's wrong with the wad, i guess
             auto fx = map.mapXToFrame(map.markpoints[i].x);
             auto fy = map.mapYToFrame(map.markpoints[i].y);
-            if (fx >= automapView().f_x && fx <= automapView().f_w - w
-                && fy >= automapView().f_y && fy <= automapView().f_h - h)
-                drawPatch(fx, fy, FB, map.marknums[i]);
+            if (fx >= automapView().f_origin.x && fx <= automapView().f_size.x - w
+                && fy >= automapView().f_origin.y
+                && fy <= automapView().f_size.y - h)
+                drawPatch({fx, fy}, FB, map.marknums[i]);
         }
     }
 }
 
 void amDrawCrosshair(int color)
 {
-    automapView().fb[(automapView().f_w * (automapView().f_h + 1)) / 2] =
+    automapView().fb[(automapView().f_size.x * (automapView().f_size.y + 1)) / 2] =
         color; // single point for now
 }
 
@@ -1164,8 +1158,8 @@ void drawAutomap()
 
     drawAutomapMarks();
 
-    markRect(
-        automapView().f_x, automapView().f_y, automapView().f_w, automapView().f_h);
+    markRect({automapView().f_origin.x, automapView().f_origin.y},
+             {automapView().f_size.x, automapView().f_size.y});
 }
 
 // ---------------------------------------------------------------------------

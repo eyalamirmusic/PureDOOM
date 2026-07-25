@@ -14,10 +14,10 @@ namespace Doom
 // - which drives them - lives in Thinkers/Mobj.cpp, so they are declared here for
 // it to call. Nothing else calls them.
 
-Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type);
+Mobj* spawnMobj(Vec3 pos, MobjType type);
 void respawnSpecials();
 void spawnPlayer(MapThing& mthing);
 void spawnMapThing(MapThing& mthing);
-void spawnPuff(Fixed x, Fixed y, Fixed z);
-void spawnBlood(Fixed x, Fixed y, Fixed z, int damage);
+void spawnPuff(Vec3 pos);
+void spawnBlood(Vec3 pos, int damage);
 } // namespace Doom

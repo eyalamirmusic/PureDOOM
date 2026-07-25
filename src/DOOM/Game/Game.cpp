@@ -695,7 +695,7 @@ void gameTicker()
                     // Vanilla's checksum is the low 16 bits of the raw fixed x,
                     // truncated into a short - not the whole-unit part of it.
                     net.consistancy[i][buf] =
-                        static_cast<short>(players_.players[i].mo->x.raw);
+                        static_cast<short>(players_.players[i].mo->pos.x.raw);
                 else
                     net.consistancy[i][buf] = randomness().menuIndex;
             }
@@ -845,8 +845,8 @@ bool checkSpot(int playernum, MapThing& mthing)
     {
         // first spawn of level, before corpses
         for (auto i = 0; i < playernum; i++)
-            if (players_.players[i].mo->x == Fixed::fromInt(mthing.x)
-                && players_.players[i].mo->y == Fixed::fromInt(mthing.y))
+            if (players_.players[i].mo->pos.x == Fixed::fromInt(mthing.x)
+                && players_.players[i].mo->pos.y == Fixed::fromInt(mthing.y))
                 return false;
         return true;
     }
@@ -854,7 +854,7 @@ bool checkSpot(int playernum, MapThing& mthing)
     x = Fixed::fromInt(mthing.x);
     y = Fixed::fromInt(mthing.y);
 
-    if (!players_.players[playernum].mo->checkPosition(x, y))
+    if (!players_.players[playernum].mo->checkPosition({x, y}))
         return false;
 
     // flush an old corpse if needed
@@ -865,12 +865,12 @@ bool checkSpot(int playernum, MapThing& mthing)
     corpses.bodyqueslot++;
 
     // spawn a teleport fog
-    ss = pointInSubsector(x, y);
+    ss = pointInSubsector({x, y});
     const auto anFine = (ang45 * (mthing.angle / 45)).fineIndex();
 
-    mo = spawnMobj(x + 20 * finecosine()[anFine],
-                   y + 20 * finesine()[anFine],
-                   ss->sector->floorheight,
+    mo = spawnMobj({x + 20 * finecosine()[anFine],
+                    y + 20 * finesine()[anFine],
+                    ss->sector->floorheight},
                    MobjType::Tfog);
 
     // viewz is the raw sentinel 1 that setupLevel plants, not one world unit.

@@ -42,8 +42,7 @@ struct Clip
     // clipped, its flags and centre, and the bounding box its radius sweeps.
     Mobj* tmthing = nullptr;
     int tmflags = 0;
-    Fixed tmx {};
-    Fixed tmy {};
+    Vec2 tmpos {};
     Array<Fixed, 4> tmbbox = {};
 
     // floatok: the move would fit if the mobj sat between tmfloorz and tmceilingz.

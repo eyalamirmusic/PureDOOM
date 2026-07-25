@@ -46,11 +46,11 @@
 //
 namespace Doom
 {
-struct Vertex
-{
-    Fixed x;
-    Fixed y;
-};
+// A map vertex is a point in the plane and nothing else, so it is a Vec2 under
+// the name the VERTEXES lump gives it. The alias rather than a wrapper is what
+// lets a seg's or a linedef's endpoint be handed straight to the geometry
+// helpers - `line.pointSide(*seg.v1)` - with no member-by-member rebuild.
+using Vertex = Vec2;
 
 // Forward of LineDefs, for Sectors.
 struct Line;
@@ -75,18 +75,19 @@ enum class ButtonWhere;
 // moving objects (doppler), because
 // position is prolly just buffered, not
 // updated.
-// A sector's sound origin. The sound code casts it to Mobj* and reads x/y off
-// it, so x/y/z must sit at the same offsets as Mobj's. Mobj inherits
+// A sector's sound origin. The sound code casts it to Mobj* and reads the
+// position off it, so `pos` must sit at the same offset as Mobj's. Mobj inherits
 // Thinker and its first field reuses the base's tail padding, so this must
 // inherit it the same way rather than hold a `Thinker thinker` member - a member
-// gets no tail-padding reuse, which would push x/y/z 4 bytes later than Mobj's
+// gets no tail-padding reuse, which would push pos 4 bytes later than Mobj's
 // and make the cast read the wrong words (a silently misplaced, wrongly-inaudible
 // sound). The Thinker part is otherwise unused: this is never a real thinker.
+//
+// Nothing declared before `pos`, either, for the same reason. Pinned by
+// Tests/Sim/StateClusterTests.cpp - inserting a field here fails it three ways.
 struct DegenMobj : Thinker
 {
-    Fixed x;
-    Fixed y;
-    Fixed z;
+    Vec3 pos;
 };
 
 //
@@ -191,8 +192,7 @@ struct Line
     Vertex* v2 = nullptr;
 
     // Precalculated v2 - v1 for side checking.
-    Fixed dx;
-    Fixed dy;
+    Vec2 delta;
 
     // Animation related.
     short flags = 0;
@@ -315,11 +315,11 @@ struct Seg
 //
 struct Node
 {
-    // Partition line.
-    Fixed x;
-    Fixed y;
-    Fixed dx;
-    Fixed dy;
+    // The partition line. Vanilla spelled it as four loose fields and then cast
+    // the whole node to a divline_t wherever it wanted them as one - the first
+    // four fields being the same four numbers in the same order. It is the type
+    // outright now, so the cast has nothing left to do.
+    DivLine partition;
 
     // Bounding box for each child.
     Array<Array<Fixed, 4>, 2> bbox;

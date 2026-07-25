@@ -25,6 +25,8 @@
 #include "../Sim/MapTypes.h"
 #include "../Render/RenderTypes.h"
 
+#include "../Math/Vec.h"
+
 namespace Doom
 {
 //
@@ -42,8 +44,7 @@ struct StatusNumber
 {
     // upper right-hand corner
     //  of the number (right-justified)
-    int x = 0;
-    int y = 0;
+    Vec2i pos;
 
     // max # of digits in number
     int width = 0;
@@ -66,12 +67,8 @@ struct StatusNumber
 
     // The vanilla STlib_*Num family, each keyed off one widget, so each is a
     // method. Bodies in UI/StatusWidgets.cpp.
-    void init(int xToUse,
-              int yToUse,
-              Patch** pl,
-              int* numToUse,
-              bool* onToUse,
-              int widthToUse);
+    void init(
+        Vec2i posToUse, Patch** pl, int* numToUse, bool* onToUse, int widthToUse);
     void update(bool refresh);
     void draw();
 };
@@ -87,7 +84,7 @@ struct StatusPercent
     Patch* p = nullptr;
 
     // The vanilla STlib_*Percent family. Bodies in UI/StatusWidgets.cpp.
-    void init(int x, int y, Patch** pl, int* num, bool* on, Patch* percent);
+    void init(Vec2i at, Patch** pl, int* num, bool* on, Patch* percent);
     void update(int refresh);
 };
 
@@ -95,8 +92,7 @@ struct StatusPercent
 struct StatusMultIcon
 {
     // center-justified location of icons
-    int x = 0;
-    int y = 0;
+    Vec2i pos;
 
     // last icon number
     int oldinum = 0;
@@ -115,7 +111,7 @@ struct StatusMultIcon
     int data = 0;
 
     // The vanilla STlib_*MultIcon family. Bodies in UI/StatusWidgets.cpp.
-    void init(int xToUse, int yToUse, Patch** il, int* inumToUse, bool* onToUse);
+    void init(Vec2i posToUse, Patch** il, int* inumToUse, bool* onToUse);
     void update(bool refresh);
 };
 
@@ -123,8 +119,7 @@ struct StatusMultIcon
 struct StatusBinIcon
 {
     // center-justified location of icon
-    int x = 0;
-    int y = 0;
+    Vec2i pos;
 
     // last icon value
     int oldval = 0;
@@ -140,7 +135,7 @@ struct StatusBinIcon
     int data = 0; // user data
 
     // The vanilla STlib_*BinIcon family. Bodies in UI/StatusWidgets.cpp.
-    void init(int xToUse, int yToUse, Patch* i, bool* valToUse, bool* onToUse);
+    void init(Vec2i posToUse, Patch* i, bool* valToUse, bool* onToUse);
     void update(bool refresh);
 };
 } // namespace Doom

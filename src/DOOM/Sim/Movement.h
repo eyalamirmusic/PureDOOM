@@ -4,10 +4,10 @@
 
 // The movement-clipping core of vanilla p_map is now Mobj methods, declared on the
 // struct in Thinkers/Mobj.h and defined in Sim/Movement.cpp:
-//   checkPosition(x, y)  - is this thing clear to occupy (x, y)? Sets the tm*
+//   checkPosition({x, y})  - is this thing clear to occupy (x, y)? Sets the tm*
 //                          clipping results in Clip as a side effect.
-//   tryMove(x, y)        - try to move there, crossing special lines; false if blocked.
-//   teleportMove(x, y)   - move there unconditionally, telefragging what is in the way.
+//   tryMove({x, y})        - try to move there, crossing special lines; false if blocked.
+//   teleportMove({x, y})   - move there unconditionally, telefragging what is in the way.
 //   thingHeightClip()    - re-seat floorz/ceilingz after the sector under it moved.
 // The clipping state they read and write lives in Clip (Sim/Clip.h). The PIT_*
 // blockmap callbacks (stompThing / checkLine / checkThing) stay free functions in

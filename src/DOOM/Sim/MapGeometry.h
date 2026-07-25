@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Math/Fixed.h"
-#include "../Math/Vec2.h"
+#include "../Math/Vec.h"
 
 namespace Doom
 {
@@ -124,6 +124,49 @@ inline int pointOnDivlineSide(Vec2 point, const DivLine& line)
     return right < left ? 0 : 1;
 }
 
+// A third side test, and deliberately not either of the two above: it shifts one
+// factor by fracBits like pointOnLineSide, and takes the sign-bit fast path like
+// pointOnDivlineSide. That combination is R_PointOnSide's - what the BSP walk
+// descends by. Vanilla spelled the body out twice, once against a node's partition
+// and once against a seg's two vertices (R_PointOnSegSide), and the two were
+// character-for-character the same arithmetic; they are one function now, and
+// Render/Main.cpp's two names are the two ways of naming the line.
+//
+// Do not fold it into either neighbour. The four side tests in this engine - this
+// one, pointOnLineSide, pointOnDivlineSide and Sight.cpp's divlineSide - agree for
+// a point clearly off the line and differ at the margins, and every recorded demo
+// was collided, sighted and shot through the specific one its caller asked for.
+inline int pointOnPartitionSide(Vec2 point, const DivLine& partition)
+{
+    if (!partition.delta.x)
+    {
+        if (point.x <= partition.origin.x)
+            return partition.delta.y.isPositive();
+
+        return partition.delta.y.isNegative();
+    }
+
+    if (!partition.delta.y)
+    {
+        if (point.y <= partition.origin.y)
+            return partition.delta.x.isNegative();
+
+        return partition.delta.x.isPositive();
+    }
+
+    auto d = point - partition.origin;
+
+    // Try to quickly decide by looking at sign bits.
+    if ((partition.delta.y.raw ^ partition.delta.x.raw ^ d.x.raw ^ d.y.raw)
+        & 0x80000000)
+        return (partition.delta.y.raw ^ d.x.raw) & 0x80000000 ? 1 : 0;
+
+    auto left = fixedMul(partition.delta.y >> fracBits, d.x);
+    auto right = fixedMul(d.y, partition.delta.x >> fracBits);
+
+    return right < left ? 0 : 1;
+}
+
 // Where along `a` the two directed lines cross, as a fraction of `a`'s length.
 // Parallel lines answer 0. Only the intercept traversers call it.
 inline Fixed interceptVector(const DivLine& a, const DivLine& b)
@@ -147,10 +190,10 @@ inline Fixed interceptVector(const DivLine& a, const DivLine& b)
 // hypotenuse: the aim, the blockmap search radius and the sound attenuation were
 // all tuned against these numbers. The halve is an arithmetic shift of the raw
 // fixed value, matching vanilla's `(dx >> 1)`.
-inline Fixed approxDistance(Fixed dx, Fixed dy)
+inline Fixed approxDistance(Vec2 delta)
 {
-    dx = abs(dx);
-    dy = abs(dy);
+    auto dx = abs(delta.x);
+    auto dy = abs(delta.y);
 
     auto smaller = dx < dy ? dx : dy;
     return dx + dy - Fixed {smaller.raw >> 1};

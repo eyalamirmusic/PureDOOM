@@ -497,8 +497,10 @@ void descend(int nodenum, const Polygon& poly)
 
     const auto& node = Doom::level().nodes[nodenum];
 
-    auto origin = Point {toDouble(node.x), toDouble(node.y)};
-    auto delta = Point {toDouble(node.dx), toDouble(node.dy)};
+    auto origin =
+        Point {toDouble(node.partition.origin.x), toDouble(node.partition.origin.y)};
+    auto delta =
+        Point {toDouble(node.partition.delta.x), toDouble(node.partition.delta.y)};
 
     descend(node.children[0], clipToLine(poly, origin, delta, true));
     descend(node.children[1], clipToLine(poly, origin, delta, false));
@@ -513,8 +515,8 @@ void measureLines()
 
     for (auto i = 0; i < Doom::level().lines.size(); ++i)
     {
-        auto dx = toDouble(Doom::level().lines[i].dx);
-        auto dy = toDouble(Doom::level().lines[i].dy);
+        auto dx = toDouble(Doom::level().lines[i].delta.x);
+        auto dy = toDouble(Doom::level().lines[i].delta.y);
 
         cells.lineLengths[i] = static_cast<float>(std::sqrt(dx * dx + dy * dy));
     }
@@ -839,7 +841,7 @@ void emitSprite(Emitter& emitter,
 
     if (frame.rotate)
     {
-        auto seen = Doom::pointToAngle2(viewer.x, viewer.y, thing.x, thing.y);
+        auto seen = Doom::pointToAngle2(viewer.pos.xy(), thing.pos.xy());
 
         rotation = static_cast<int>(
             ((seen - thing.angle + (Doom::ang45 / 2u) * 9u) >> 29).raw);
@@ -860,11 +862,12 @@ void emitSprite(Emitter& emitter,
     auto back = 1.0 - static_cast<double>(snapshot.alpha);
     auto offset = toDouble(Doom::graphicsData().spriteoffset[lump]);
 
-    auto left =
-        Point {toDouble(thing.x) - toDouble(thing.momx) * back - right.x * offset,
-               toDouble(thing.y) - toDouble(thing.momy) * back - right.y * offset};
+    auto left = Point {
+        toDouble(thing.pos.x) - toDouble(thing.mom.x) * back - right.x * offset,
+        toDouble(thing.pos.y) - toDouble(thing.mom.y) * back - right.y * offset};
 
-    auto feet = toFloat(thing.z) - static_cast<float>(toDouble(thing.momz) * back);
+    auto feet =
+        toFloat(thing.pos.z) - static_cast<float>(toDouble(thing.mom.z) * back);
     auto top = feet + toFloat(Doom::graphicsData().spritetopoffset[lump]);
 
     auto light = (thing.frame & Doom::FF_FULLBRIGHT)
@@ -931,18 +934,18 @@ void emitSky(Emitter& emitter, const Camera& camera)
         auto a1 = Doom::Angle {static_cast<std::uint32_t>(i + 1)} << 26;
 
         auto from = Point {
-            camera.x + skyRadius * toDouble(Doom::finecosine()[a0.fineIndex()]),
-            camera.y + skyRadius * toDouble(Doom::finesine()[a0.fineIndex()])};
+            camera.pos.x + skyRadius * toDouble(Doom::finecosine()[a0.fineIndex()]),
+            camera.pos.y + skyRadius * toDouble(Doom::finesine()[a0.fineIndex()])};
         auto to = Point {
-            camera.x + skyRadius * toDouble(Doom::finecosine()[a1.fineIndex()]),
-            camera.y + skyRadius * toDouble(Doom::finesine()[a1.fineIndex()])};
+            camera.pos.x + skyRadius * toDouble(Doom::finecosine()[a1.fineIndex()]),
+            camera.pos.y + skyRadius * toDouble(Doom::finesine()[a1.fineIndex()])};
 
         uv.uStart = 4.0f * static_cast<float>(i) / skySegments;
         uv.uEnd = 4.0f * static_cast<float>(i + 1) / skySegments;
 
         emitter.quad(
             texture,
-            groundSpan(from, to, camera.z - skyHeight, camera.z + skyHeight),
+            groundSpan(from, to, camera.pos.z - skyHeight, camera.pos.z + skyHeight),
             uv,
             light);
     }
@@ -1051,8 +1054,7 @@ void drawUnderLayers()
         auto y = overlay.automapactive ? 4 : view.viewwindowy + 4;
 
         Doom::drawPatchDirect(
-            view.viewwindowx + (view.scaledviewwidth - 68) / 2,
-            y,
+            {view.viewwindowx + (view.scaledviewwidth - 68) / 2, y},
             0,
             static_cast<Doom::Patch*>(Doom::cacheLumpName("M_PAUSE")));
     }
@@ -1123,9 +1125,9 @@ struct AutomapEmitter
     // rounding to whole pixels: the map's y runs up and the frame's runs down.
     Point toFrame(Doom::Fixed x, Doom::Fixed y) const
     {
-        return {Doom::automapView().f_x
+        return {Doom::automapView().f_origin.x
                     + (toDouble(x) - origin.x) * pixelsPerMapUnit,
-                Doom::automapView().f_y + Doom::automapView().f_h
+                Doom::automapView().f_origin.y + Doom::automapView().f_size.y
                     - (toDouble(y) - origin.y) * pixelsPerMapUnit};
     }
 
@@ -1231,14 +1233,14 @@ void automapGrid(AutomapEmitter& emitter, int color)
     };
 
     for (auto x = firstLine(originX, Doom::level().blockmap.origin.x);
-         x < originX + Doom::automapView().m_w;
+         x < originX + Doom::automapView().m_size.x;
          x += block)
-        emitter.line(x, originY, x, originY + Doom::automapView().m_h, color);
+        emitter.line(x, originY, x, originY + Doom::automapView().m_size.y, color);
 
     for (auto y = firstLine(originY, Doom::level().blockmap.origin.y);
-         y < originY + Doom::automapView().m_h;
+         y < originY + Doom::automapView().m_size.y;
          y += block)
-        emitter.line(originX, y, originX + Doom::automapView().m_w, y, color);
+        emitter.line(originX, y, originX + Doom::automapView().m_size.x, y, color);
 }
 
 // Drawn from the view rather than from the player: the arrow is the one thing on
@@ -1250,8 +1252,8 @@ void automapPlayer(AutomapEmitter& emitter, const Camera& camera)
         || Doom::automapView().am_plr->mo == nullptr)
         return;
 
-    auto x = toFixed(camera.x);
-    auto y = toFixed(camera.y);
+    auto x = toFixed(camera.pos.x);
+    auto y = toFixed(camera.pos.y);
     auto angle = angleFromRadians(camera.angle);
     auto unscaled = Doom::Fixed {};
 
@@ -1272,16 +1274,16 @@ void automapThings(AutomapEmitter& emitter, int color)
                                   Doom::Fixed::fromInt(16),
                                   thing->angle,
                                   color + Doom::automapView().lightlev,
-                                  thing->x,
-                                  thing->y);
+                                  thing->pos.x,
+                                  thing->pos.y);
 }
 
 // drawCrosshair pokes the frame's middle pixel; a line a pixel long over it is
 // the same dot, and widens with everything else.
 void automapCrosshair(AutomapEmitter& emitter, int color)
 {
-    auto x = Doom::automapView().f_w * 0.5;
-    auto y = Doom::automapView().f_h * 0.5;
+    auto x = Doom::automapView().f_size.x * 0.5;
+    auto y = Doom::automapView().f_size.y * 0.5;
 
     emitter.frameLine({x - 0.5, y}, {x + 0.5, y}, color);
 }
@@ -1547,9 +1549,9 @@ Camera camera()
     if (player.mo == nullptr)
         return {};
 
-    return {toFloat(player.mo->x),
-            toFloat(player.mo->y),
-            toFloat(player.viewz),
+    return {{toFloat(player.mo->pos.x),
+             toFloat(player.mo->pos.y),
+             toFloat(player.viewz)},
             static_cast<float>(static_cast<double>(player.mo->angle.raw)
                                * (std::numbers::pi / halfTurn))};
 }
@@ -1714,11 +1716,12 @@ std::span<const AutomapVertex> buildAutomap(const Camera& camera,
     // and that still steps.
     if (Doom::automapView().followplayer && Doom::automapView().am_plr != nullptr
         && Doom::automapView().am_plr->mo != nullptr)
-        emitter.origin = {camera.x - toDouble(Doom::automapView().m_w) / 2.0,
-                          camera.y - toDouble(Doom::automapView().m_h) / 2.0};
+        emitter.origin = {
+            camera.pos.x - toDouble(Doom::automapView().m_size.x) / 2.0,
+            camera.pos.y - toDouble(Doom::automapView().m_size.y) / 2.0};
     else
-        emitter.origin = {toDouble(Doom::automapView().m_x),
-                          toDouble(Doom::automapView().m_y)};
+        emitter.origin = {toDouble(Doom::automapView().m_origin.x),
+                          toDouble(Doom::automapView().m_origin.y)};
 
     if (Doom::automapView().grid)
         automapGrid(emitter, Doom::GRIDCOLORS);
@@ -1771,11 +1774,11 @@ Array<HudSprite, hudSpriteCount> hudSprites()
 
         out[i] = {
             spriteBase() + lump,
-            toFloat(weapon.sx) - toFloat(Doom::graphicsData().spriteoffset[lump]),
-            toFloat(weapon.sy) - toFloat(Doom::graphicsData().spritetopoffset[lump])
-                - weaponRowShift(),
-            static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt()),
-            static_cast<float>(spriteHeight(lump)),
+            {toFloat(weapon.sx) - toFloat(Doom::graphicsData().spriteoffset[lump]),
+             toFloat(weapon.sy) - toFloat(Doom::graphicsData().spritetopoffset[lump])
+                 - weaponRowShift()},
+            {static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt()),
+             static_cast<float>(spriteHeight(lump))},
             weaponLight((state->frame & Doom::FF_FULLBRIGHT) != 0),
             frame.flip[0] != 0};
     }

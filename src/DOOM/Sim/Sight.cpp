@@ -27,8 +27,11 @@ namespace
 // because a sight line that runs exactly along a partition must cross both sides.
 // The `x == node.origin.y` in the horizontal branch is vanilla's own typo and is
 // load-bearing - every recorded demo's monster wake-ups went through it.
-int divlineSide(Fixed x, Fixed y, const DivLine& node)
+int divlineSide(Vec2 point, const DivLine& node)
 {
+    const auto x = point.x;
+    const auto y = point.y;
+
     if (!node.delta.x)
     {
         if (x == node.origin.x)
@@ -95,8 +98,7 @@ struct SightTrace
 {
     Fixed sightzstart; // eye z of looker
     DivLine strace; // from t1 to t2
-    Fixed t2x;
-    Fixed t2y;
+    Vec2 t2;
 };
 
 //
@@ -157,8 +159,8 @@ bool crossSubsector(int num,
 
         v1 = line->v1;
         v2 = line->v2;
-        s1 = divlineSide(v1->x, v1->y, trace.strace);
-        s2 = divlineSide(v2->x, v2->y, trace.strace);
+        s1 = divlineSide(*v1, trace.strace);
+        s2 = divlineSide(*v2, trace.strace);
 
         // line isn't crossed?
         if (s1 == s2)
@@ -166,8 +168,8 @@ bool crossSubsector(int num,
 
         divl.origin = {Fixed {v1->x}, Fixed {v1->y}};
         divl.delta = {Fixed {v2->x - v1->x}, Fixed {v2->y - v1->y}};
-        s1 = divlineSide(trace.strace.origin.x, trace.strace.origin.y, divl);
-        s2 = divlineSide(trace.t2x, trace.t2y, divl);
+        s1 = divlineSide(trace.strace.origin, divl);
+        s2 = divlineSide({trace.t2.x, trace.t2.y}, divl);
 
         // line isn't crossed?
         if (s1 == s2)
@@ -248,14 +250,10 @@ bool crossBSPNode(int bspnum,
 
     auto* bsp = &level().nodes[bspnum];
 
-    // The node's partition line, which vanilla read by casting the node itself to
-    // a divline_t - its first four fields are the same four numbers. Named now
-    // that DivLine is a real type, at no cost: the same four loads either way.
-    const DivLine partition {{Fixed {bsp->x}, Fixed {bsp->y}},
-                             {Fixed {bsp->dx}, Fixed {bsp->dy}}};
+    const DivLine& partition = bsp->partition;
 
     // decide which side the start point is on
-    auto side = divlineSide(trace.strace.origin.x, trace.strace.origin.y, partition);
+    auto side = divlineSide(trace.strace.origin, partition);
     if (side == 2)
         side = 0; // an "on" should cross both sides
 
@@ -264,7 +262,7 @@ bool crossBSPNode(int bspnum,
         return false;
 
     // the partition plane is crossed here
-    if (side == divlineSide(trace.t2x, trace.t2y, partition))
+    if (side == divlineSide({trace.t2.x, trace.t2.y}, partition))
     {
         // the line doesn't touch the other side
         return true;
@@ -297,14 +295,14 @@ bool checkSight(Mobj* t1, Mobj* t2)
     validCount().validcount++;
 
     SightTrace trace;
-    trace.sightzstart = t1->z + t1->height - (t1->height >> 2);
-    auto topslope = (t2->z + t2->height) - trace.sightzstart;
-    auto bottomslope = (t2->z) - trace.sightzstart;
+    trace.sightzstart = t1->pos.z + t1->height - (t1->height >> 2);
+    auto topslope = (t2->pos.z + t2->height) - trace.sightzstart;
+    auto bottomslope = (t2->pos.z) - trace.sightzstart;
 
-    trace.strace.origin = {Fixed {t1->x}, Fixed {t1->y}};
-    trace.t2x = t2->x;
-    trace.t2y = t2->y;
-    trace.strace.delta = {Fixed {t2->x - t1->x}, Fixed {t2->y - t1->y}};
+    trace.strace.origin = {Fixed {t1->pos.x}, Fixed {t1->pos.y}};
+    trace.t2 = t2->pos.xy();
+    trace.strace.delta = {Fixed {t2->pos.x - t1->pos.x},
+                          Fixed {t2->pos.y - t1->pos.y}};
 
     // the head node is the last node output
     return crossBSPNode(level().nodes.size() - 1, trace, topslope, bottomslope);

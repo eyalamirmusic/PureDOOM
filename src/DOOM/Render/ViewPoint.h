@@ -2,6 +2,7 @@
 
 #include "../Game/PlayerTypes.h" // Player, and Fixed / Angle through it.
 #include "../Math/FixedPoint.h"
+#include "../Math/Vec.h"
 #include "../Math/TrigTables.h"
 
 namespace Doom
@@ -23,9 +24,7 @@ namespace Doom
 // readers resolving unchanged until each file takes an Engine& of its own.
 struct ViewPoint
 {
-    Fixed viewx {};
-    Fixed viewy {};
-    Fixed viewz {};
+    Vec3 pos {};
 
     Angle viewangle {};
 

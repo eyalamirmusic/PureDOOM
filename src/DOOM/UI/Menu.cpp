@@ -152,8 +152,7 @@ struct MenuDef
     MenuDef* prevMenu = nullptr; // previous menu
     MenuItem* menuitems = nullptr; // menu items
     void (*routine)(); // draw routine
-    short x = 0;
-    short y = 0; // x,y of menu
+    Vec2i pos; // top-left of the menu in the 320x200 frame
     short lastOn = 0; // last item user was on in menu
 };
 
@@ -330,7 +329,7 @@ Array<MenuItem, 6> MainMenu = {{1, "M_NGAME", newGame, 'n'},
                                {1, "M_QUITG", quitDOOM, 'q'}};
 
 MenuDef MainDef = {
-    toIndex(MainItem::End), nullptr, MainMenu.data(), drawMainMenu, 97, 64, 0};
+    toIndex(MainItem::End), nullptr, MainMenu.data(), drawMainMenu, {97, 64}, 0};
 
 //
 // EPISODE SELECT
@@ -354,8 +353,7 @@ MenuDef EpiDef = {
     &MainDef, // previous menu
     EpisodeMenu.data(), // MenuItem ->
     drawEpisode, // drawing routine ->
-    48,
-    63, // x,y
+    {48, 63}, // x,y
     toIndex(EpisodeItem::Ep1) // lastOn
 };
 
@@ -383,8 +381,7 @@ MenuDef NewDef = {
     &EpiDef, // previous menu
     NewGameMenu.data(), // MenuItem ->
     drawNewGame, // drawing routine ->
-    48,
-    63, // x,y
+    {48, 63}, // x,y
     toIndex(SkillItem::HurtMe) // lastOn
 };
 
@@ -420,8 +417,7 @@ MenuDef OptionsDef = {toIndex(OptionsItem::End),
                       &MainDef,
                       OptionsMenuFull.data(),
                       drawOptions,
-                      60,
-                      37,
+                      {60, 37},
                       0};
 
 enum class OptionsNoMouseItem
@@ -449,8 +445,7 @@ MenuDef OptionsNoMouseDef = {toIndex(OptionsNoMouseItem::OptEndNoMouse),
                              &MainDef,
                              OptionsMenuNoMouse.data(),
                              drawOptions,
-                             60,
-                             37,
+                             {60, 37},
                              0};
 
 enum class OptionsNoSoundItem
@@ -478,8 +473,7 @@ MenuDef OptionsNoSoundDef = {toIndex(OptionsNoSoundItem::OptEndNoSound),
                              &MainDef,
                              OptionsMenuNoSound.data(),
                              drawOptions,
-                             60,
-                             37,
+                             {60, 37},
                              0};
 
 enum class OptionsNoSoundNoMouseItem
@@ -507,8 +501,7 @@ MenuDef OptionsNoSoundNoMouseDef = {
     &MainDef,
     OptionsMenuNoSoundNoMouse.data(),
     drawOptions,
-    60,
-    37,
+    {60, 37},
     0};
 
 //
@@ -532,8 +525,7 @@ MenuDef MouseOptionsDef = {toIndex(MouseItem::End),
                            &OptionsDef,
                            MouseOptionsMenu.data(),
                            drawMouseOptions,
-                           60,
-                           70,
+                           {60, 70},
                            0};
 
 //
@@ -551,8 +543,7 @@ MenuDef ReadDef1 = {toIndex(ReadThis1Item::End),
                     &MainDef,
                     ReadMenu1.data(),
                     drawReadThis1,
-                    280,
-                    185,
+                    {280, 185},
                     0};
 
 enum class ReadThis2Item
@@ -567,8 +558,7 @@ MenuDef ReadDef2 = {toIndex(ReadThis2Item::End),
                     &ReadDef1,
                     ReadMenu2.data(),
                     drawReadThis2,
-                    330,
-                    175,
+                    {330, 175},
                     0};
 
 //
@@ -594,8 +584,7 @@ MenuDef SoundDef = {toIndex(SoundItem::End),
                     &OptionsDef,
                     SoundMenuFull.data(),
                     drawSound,
-                    80,
-                    64,
+                    {80, 64},
                     0};
 
 enum class SoundNoSfxItem
@@ -612,8 +601,7 @@ MenuDef SoundNoSFXDef = {toIndex(SoundNoSfxItem::SoundEndNoSfx),
                          &OptionsDef,
                          SoundMenuNoSFX.data(),
                          drawSound,
-                         80,
-                         64,
+                         {80, 64},
                          0};
 
 enum class SoundNoMusicItem
@@ -630,8 +618,7 @@ MenuDef SoundNoMusicDef = {toIndex(SoundNoMusicItem::SoundEndNoMusic),
                            &OptionsDef,
                            SoundMenuNoMusic.data(),
                            drawSound,
-                           80,
-                           64,
+                           {80, 64},
                            0};
 
 //
@@ -656,7 +643,7 @@ Array<MenuItem, 6> DOOM_LoadMenu = {{1, "", loadSelect, '1'},
                                     {1, "", loadSelect, '6'}};
 
 MenuDef LoadDef = {
-    toIndex(LoadItem::End), &MainDef, DOOM_LoadMenu.data(), drawLoad, 80, 54, 0};
+    toIndex(LoadItem::End), &MainDef, DOOM_LoadMenu.data(), drawLoad, {80, 54}, 0};
 
 //
 // SAVE GAME MENU
@@ -669,7 +656,7 @@ Array<MenuItem, 6> SaveMenu = {{1, "", saveSelect, '1'},
                                {1, "", saveSelect, '6'}};
 
 MenuDef SaveDef = {
-    toIndex(LoadItem::End), &MainDef, SaveMenu.data(), drawSave, 80, 54, 0};
+    toIndex(LoadItem::End), &MainDef, SaveMenu.data(), drawSave, {80, 54}, 0};
 
 DOOM_DIAGNOSTIC_POP
 
@@ -687,8 +674,11 @@ void drawCustomMenuText(std::string_view name, int x, int y)
             while (!seg->lump.empty())
             {
                 void* lump = cacheLumpName(seg->lump);
-                drawPatchRectDirect(
-                    x + seg->offx, y, 0, static_cast<Patch*>(lump), seg->x, seg->w);
+                drawPatchRectDirect({x + seg->offx, y},
+                                    0,
+                                    static_cast<Patch*>(lump),
+                                    seg->x,
+                                    seg->w);
                 ++seg;
             }
             break;
@@ -736,12 +726,13 @@ void drawLoad()
 {
     auto& state = menuState();
 
-    drawPatchDirect(72, 28, 0, static_cast<Patch*>(cacheLumpName("M_LOADG")));
+    drawPatchDirect({72, 28}, 0, static_cast<Patch*>(cacheLumpName("M_LOADG")));
     for (auto i = 0; i < toIndex(LoadItem::End); i++)
     {
-        drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
-        writeText(
-            LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i].data());
+        drawSaveLoadBorder(LoadDef.pos.x, LoadDef.pos.y + LINEHEIGHT * i);
+        writeText(LoadDef.pos.x,
+                  LoadDef.pos.y + LINEHEIGHT * i,
+                  state.savegamestrings[i].data());
     }
 }
 
@@ -750,15 +741,17 @@ void drawLoad()
 //
 void drawSaveLoadBorder(int x, int y)
 {
-    drawPatchDirect(x - 8, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSLEFT")));
+    drawPatchDirect(
+        {x - 8, y + 7}, 0, static_cast<Patch*>(cacheLumpName("M_LSLEFT")));
 
     for (auto i = 0; i < 24; i++)
     {
-        drawPatchDirect(x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSCNTR")));
+        drawPatchDirect(
+            {x, y + 7}, 0, static_cast<Patch*>(cacheLumpName("M_LSCNTR")));
         x += 8;
     }
 
-    drawPatchDirect(x, y + 7, 0, static_cast<Patch*>(cacheLumpName("M_LSRGHT")));
+    drawPatchDirect({x, y + 7}, 0, static_cast<Patch*>(cacheLumpName("M_LSRGHT")));
 }
 
 //
@@ -795,18 +788,20 @@ void drawSave()
 
     int i;
 
-    drawPatchDirect(72, 28, 0, static_cast<Patch*>(cacheLumpName("M_SAVEG")));
+    drawPatchDirect({72, 28}, 0, static_cast<Patch*>(cacheLumpName("M_SAVEG")));
     for (i = 0; i < toIndex(LoadItem::End); i++)
     {
-        drawSaveLoadBorder(LoadDef.x, LoadDef.y + LINEHEIGHT * i);
-        writeText(
-            LoadDef.x, LoadDef.y + LINEHEIGHT * i, state.savegamestrings[i].c_str());
+        drawSaveLoadBorder(LoadDef.pos.x, LoadDef.pos.y + LINEHEIGHT * i);
+        writeText(LoadDef.pos.x,
+                  LoadDef.pos.y + LINEHEIGHT * i,
+                  state.savegamestrings[i].c_str());
     }
 
     if (state.saveStringEnter)
     {
         i = stringWidth(state.savegamestrings[state.saveSlot]);
-        writeText(LoadDef.x + i, LoadDef.y + LINEHEIGHT * state.saveSlot, "_");
+        writeText(
+            LoadDef.pos.x + i, LoadDef.pos.y + LINEHEIGHT * state.saveSlot, "_");
     }
 }
 
@@ -948,12 +943,12 @@ void drawReadThis1()
     switch (gameVersion().gamemode)
     {
         case GameMode::Commercial:
-            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP")));
+            drawPatchDirect({0, 0}, 0, static_cast<Patch*>(cacheLumpName("HELP")));
             break;
         case GameMode::Shareware:
         case GameMode::Registered:
         case GameMode::Retail:
-            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP1")));
+            drawPatchDirect({0, 0}, 0, static_cast<Patch*>(cacheLumpName("HELP1")));
             break;
         case GameMode::Indetermined:
             break;
@@ -972,11 +967,11 @@ void drawReadThis2()
         case GameMode::Retail:
         case GameMode::Commercial:
             // This hack keeps us from having to change menus.
-            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
+            drawPatchDirect({0, 0}, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
             break;
         case GameMode::Shareware:
         case GameMode::Registered:
-            drawPatchDirect(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
+            drawPatchDirect({0, 0}, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
             break;
         case GameMode::Indetermined:
             break;
@@ -991,7 +986,7 @@ void drawSound()
 {
     auto& sndset = soundSettings();
 
-    drawPatchDirect(60, 38, 0, static_cast<Patch*>(cacheLumpName("M_SVOL")));
+    drawPatchDirect({60, 38}, 0, static_cast<Patch*>(cacheLumpName("M_SVOL")));
 
     if (!(host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS))
     {
@@ -999,8 +994,8 @@ void drawSound()
             (host().flags & DOOM_FLAG_HIDE_MUSIC_OPTIONS)
                 ? static_cast<int>(toIndex(SoundNoMusicItem::SfxVolNoMusic))
                 : static_cast<int>(toIndex(SoundItem::SfxVol));
-        drawThermo(SoundDef.x,
-                   SoundDef.y + LINEHEIGHT * (offset + 1),
+        drawThermo(SoundDef.pos.x,
+                   SoundDef.pos.y + LINEHEIGHT * (offset + 1),
                    16,
                    sndset.sfxVolume);
     }
@@ -1010,8 +1005,8 @@ void drawSound()
         auto offset = (host().flags & DOOM_FLAG_HIDE_SOUND_OPTIONS)
                           ? static_cast<int>(toIndex(SoundNoSfxItem::MusicVolNoSfx))
                           : static_cast<int>(toIndex(SoundItem::MusicVol));
-        drawThermo(SoundDef.x,
-                   SoundDef.y + LINEHEIGHT * (offset + 1),
+        drawThermo(SoundDef.pos.x,
+                   SoundDef.pos.y + LINEHEIGHT * (offset + 1),
                    16,
                    sndset.musicVolume);
     }
@@ -1070,7 +1065,7 @@ void musicVol(int choice)
 //
 void drawMainMenu()
 {
-    drawPatchDirect(94, 2, 0, static_cast<Patch*>(cacheLumpName("M_DOOM")));
+    drawPatchDirect({94, 2}, 0, static_cast<Patch*>(cacheLumpName("M_DOOM")));
 }
 
 //
@@ -1078,8 +1073,8 @@ void drawMainMenu()
 //
 void drawNewGame()
 {
-    drawPatchDirect(96, 14, 0, static_cast<Patch*>(cacheLumpName("M_NEWG")));
-    drawPatchDirect(54, 38, 0, static_cast<Patch*>(cacheLumpName("M_SKILL")));
+    drawPatchDirect({96, 14}, 0, static_cast<Patch*>(cacheLumpName("M_NEWG")));
+    drawPatchDirect({54, 38}, 0, static_cast<Patch*>(cacheLumpName("M_SKILL")));
 }
 
 void newGame(int)
@@ -1101,7 +1096,7 @@ void newGame(int)
 //
 void drawEpisode()
 {
-    drawPatchDirect(54, 38, 0, static_cast<Patch*>(cacheLumpName("M_EPISOD")));
+    drawPatchDirect({54, 38}, 0, static_cast<Patch*>(cacheLumpName("M_EPISOD")));
 }
 
 void verifyNightmare(int ch)
@@ -1155,26 +1150,28 @@ void drawOptions()
 {
     auto& input = inputConfig();
 
-    drawPatchDirect(108, 15, 0, static_cast<Patch*>(cacheLumpName("M_OPTTTL")));
+    drawPatchDirect({108, 15}, 0, static_cast<Patch*>(cacheLumpName("M_OPTTTL")));
 
     drawPatchDirect(
-        OptionsDef.x + 120,
-        OptionsDef.y + LINEHEIGHT * toIndex(OptionsItem::Messages),
+        {OptionsDef.pos.x + 120,
+         OptionsDef.pos.y + LINEHEIGHT * toIndex(OptionsItem::Messages)},
         0,
         static_cast<Patch*>(cacheLumpName(msgNames[menuSettings().showMessages])));
 
-    drawPatchDirect(OptionsDef.x + 131,
-                    OptionsDef.y + LINEHEIGHT * toIndex(OptionsItem::CrosshairOpt),
-                    0,
-                    static_cast<Patch*>(cacheLumpName(msgNames[input.crosshair])));
+    drawPatchDirect(
+        {OptionsDef.pos.x + 131,
+         OptionsDef.pos.y + LINEHEIGHT * toIndex(OptionsItem::CrosshairOpt)},
+        0,
+        static_cast<Patch*>(cacheLumpName(msgNames[input.crosshair])));
 
-    drawPatchDirect(OptionsDef.x + 147,
-                    OptionsDef.y + LINEHEIGHT * toIndex(OptionsItem::AlwaysRunOpt),
-                    0,
-                    static_cast<Patch*>(cacheLumpName(msgNames[input.always_run])));
+    drawPatchDirect(
+        {OptionsDef.pos.x + 147,
+         OptionsDef.pos.y + LINEHEIGHT * toIndex(OptionsItem::AlwaysRunOpt)},
+        0,
+        static_cast<Patch*>(cacheLumpName(msgNames[input.always_run])));
 
-    drawThermo(OptionsDef.x,
-               OptionsDef.y + LINEHEIGHT * (toIndex(OptionsItem::ScrnSize) + 1),
+    drawThermo(OptionsDef.pos.x,
+               OptionsDef.pos.y + LINEHEIGHT * (toIndex(OptionsItem::ScrnSize) + 1),
                9,
                menuState().screenSize);
 }
@@ -1184,13 +1181,14 @@ void drawMouseOptions()
     drawCustomMenuText("TXT_MOPT", 74, 45);
 
     drawPatchDirect(
-        MouseOptionsDef.x + 149,
-        MouseOptionsDef.y + LINEHEIGHT * toIndex(MouseItem::MouseMov),
+        {MouseOptionsDef.pos.x + 149,
+         MouseOptionsDef.pos.y + LINEHEIGHT * toIndex(MouseItem::MouseMov)},
         0,
         static_cast<Patch*>(cacheLumpName(msgNames[inputConfig().mousemove])));
 
-    drawThermo(MouseOptionsDef.x,
-               MouseOptionsDef.y + LINEHEIGHT * (toIndex(MouseItem::MouseSens) + 1),
+    drawThermo(MouseOptionsDef.pos.x,
+               MouseOptionsDef.pos.y
+                   + LINEHEIGHT * (toIndex(MouseItem::MouseSens) + 1),
                10,
                menuSettings().mouseSensitivity);
 }
@@ -1403,17 +1401,16 @@ void sizeDisplay(int choice)
 void drawThermo(int x, int y, int thermWidth, int thermDot)
 {
     auto xx = x;
-    drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERML")));
+    drawPatchDirect({xx, y}, 0, static_cast<Patch*>(cacheLumpName("M_THERML")));
     xx += 8;
     for (auto i = 0; i < thermWidth; i++)
     {
-        drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMM")));
+        drawPatchDirect({xx, y}, 0, static_cast<Patch*>(cacheLumpName("M_THERMM")));
         xx += 8;
     }
-    drawPatchDirect(xx, y, 0, static_cast<Patch*>(cacheLumpName("M_THERMR")));
+    drawPatchDirect({xx, y}, 0, static_cast<Patch*>(cacheLumpName("M_THERMR")));
 
-    drawPatchDirect((x + 8) + thermDot * 8,
-                    y,
+    drawPatchDirect({(x + 8) + thermDot * 8, y},
                     0,
                     static_cast<Patch*>(cacheLumpName("M_THERMO")));
 }
@@ -1499,7 +1496,7 @@ void writeText(int x, int y, std::string_view string)
         auto w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        drawPatchDirect(cx, cy, 0, font.hu_font[c]);
+        drawPatchDirect({cx, cy}, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -1940,8 +1937,8 @@ void drawMenu()
         state.currentMenu->routine(); // call Draw routine
 
     // DRAW MENU
-    x = state.currentMenu->x;
-    y = state.currentMenu->y;
+    x = state.currentMenu->pos.x;
+    y = state.currentMenu->pos.y;
     short max = state.currentMenu->numitems;
 
     for (i = 0; i < max; i++)
@@ -1956,17 +1953,17 @@ void drawMenu()
             else
             {
                 drawPatchDirect(
-                    x, y, 0, static_cast<Patch*>(cacheLumpName(menuitem->name)));
+                    {x, y}, 0, static_cast<Patch*>(cacheLumpName(menuitem->name)));
             }
         }
         y += LINEHEIGHT;
     }
 
     // DRAW SKULL
-    drawPatchDirect(x + SKULLXOFF,
-                    state.currentMenu->y - 5 + state.itemOn * LINEHEIGHT,
-                    0,
-                    static_cast<Patch*>(cacheLumpName(skullName[state.whichSkull])));
+    drawPatchDirect(
+        {x + SKULLXOFF, state.currentMenu->pos.y - 5 + state.itemOn * LINEHEIGHT},
+        0,
+        static_cast<Patch*>(cacheLumpName(skullName[state.whichSkull])));
 }
 
 //
@@ -2068,11 +2065,10 @@ void initMenu()
             MainMenu[toIndex(MainItem::ReadThis)] =
                 MainMenu[toIndex(MainItem::QuitDoom)];
             MainDef.numitems--;
-            MainDef.y += 8;
+            MainDef.pos.y += 8;
             NewDef.prevMenu = &MainDef;
             ReadDef1.routine = drawReadThis1;
-            ReadDef1.x = 330;
-            ReadDef1.y = 165;
+            ReadDef1.pos = {330, 165};
             ReadMenu1[0].routine = finishReadThis;
             break;
         case GameMode::Shareware:

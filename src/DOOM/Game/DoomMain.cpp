@@ -222,7 +222,7 @@ void displayFrame()
     if (flow.gamestate != flow.wipegamestate)
     {
         wipe = true;
-        startScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
+        startScreen({0, 0}, {SCREENWIDTH, SCREENHEIGHT});
     }
     else
         wipe = false;
@@ -309,8 +309,7 @@ void displayFrame()
             y = 4;
         else
             y = view.viewwindowy + 4;
-        drawPatchDirect(view.viewwindowx + (view.scaledviewwidth - 68) / 2,
-                        y,
+        drawPatchDirect({view.viewwindowx + (view.scaledviewwidth - 68) / 2, y},
                         0,
                         static_cast<Patch*>((cacheLumpName("M_PAUSE"))));
     }
@@ -328,7 +327,7 @@ void displayFrame()
     }
 
     // wipe update
-    endScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    endScreen({0, 0}, {SCREENWIDTH, SCREENHEIGHT});
 
     // The melt itself runs from updateWipe below, one tic per call. Vanilla ran it
     // here instead, busy-waiting on the clock until it finished - which is why the
@@ -340,7 +339,7 @@ void displayFrame()
 //
 void updateWipe()
 {
-    if (screenWipe(WipeType::Melt, 0, 0, SCREENWIDTH, SCREENHEIGHT, 1))
+    if (screenWipe(WipeType::Melt, {0, 0}, {SCREENWIDTH, SCREENHEIGHT}, 1))
         gameFlow().is_wiping_screen = false;
 }
 
@@ -410,7 +409,8 @@ void pageTicker()
 //
 void drawPage()
 {
-    drawPatch(0, 0, 0, static_cast<Patch*>((cacheLumpName(attractMode().pagename))));
+    drawPatch(
+        {0, 0}, 0, static_cast<Patch*>((cacheLumpName(attractMode().pagename))));
 }
 
 //

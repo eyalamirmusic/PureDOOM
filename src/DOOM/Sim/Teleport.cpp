@@ -52,24 +52,24 @@ int Line::teleport(int side, Mobj& thing)
                 if (sector - level().sectors.data() != i)
                     continue;
 
-                auto oldx = thing.x;
-                auto oldy = thing.y;
-                auto oldz = thing.z;
+                auto oldx = thing.pos.x;
+                auto oldy = thing.pos.y;
+                auto oldz = thing.pos.z;
 
-                if (!thing.teleportMove(m->x, m->y))
+                if (!thing.teleportMove(m->pos.xy()))
                     return 0;
 
-                thing.z = thing.floorz; //fixme: not needed?
+                thing.pos.z = thing.floorz; //fixme: not needed?
                 if (thing.player)
-                    thing.player->viewz = thing.z + thing.player->viewheight;
+                    thing.player->viewz = thing.pos.z + thing.player->viewheight;
 
                 // spawn teleport fog at source and destination
-                auto* fog = spawnMobj(oldx, oldy, oldz, MobjType::Tfog);
+                auto* fog = spawnMobj({oldx, oldy, oldz}, MobjType::Tfog);
                 startSound(fog, SfxEnum::Telept);
                 const auto anFine = m->angle.fineIndex();
-                fog = spawnMobj(m->x + 20 * finecosine()[anFine],
-                                m->y + 20 * finesine()[anFine],
-                                thing.z,
+                fog = spawnMobj({m->pos.x + 20 * finecosine()[anFine],
+                                 m->pos.y + 20 * finesine()[anFine],
+                                 thing.pos.z},
                                 MobjType::Tfog);
 
                 // emit sound, where?
@@ -80,7 +80,7 @@ int Line::teleport(int side, Mobj& thing)
                     thing.reactiontime = 18;
 
                 thing.angle = m->angle;
-                thing.momx = thing.momy = thing.momz = Fixed {};
+                thing.mom = {};
                 return 1;
             }
         }

@@ -191,33 +191,28 @@ int exitMelt([[maybe_unused]] int width,
     return 0;
 }
 
-int startScreen([[maybe_unused]] int x,
-                [[maybe_unused]] int y,
-                [[maybe_unused]] int width,
-                [[maybe_unused]] int height)
+int startScreen([[maybe_unused]] Vec2i at, [[maybe_unused]] Vec2i size)
 {
     wipeState().scrStart = videoState().screens[2];
     readScreen(wipeState().scrStart);
     return 0;
 }
 
-int endScreen(int x, int y, int width, int height)
+int endScreen(Vec2i at, Vec2i size)
 {
     auto& scratch = wipeState();
 
     scratch.wipe_scr_end = videoState().screens[3];
     readScreen(scratch.wipe_scr_end);
-    drawBlock(x, y, 0, width, height, scratch.scrStart); // restore start scr.
+    drawBlock(at, 0, size, scratch.scrStart); // restore start scr.
     return 0;
 }
 
-int screenWipe(WipeType wipeno,
-               [[maybe_unused]] int x,
-               [[maybe_unused]] int y,
-               int width,
-               int height,
-               int ticks)
+int screenWipe(WipeType wipeno, [[maybe_unused]] Vec2i at, Vec2i size, int ticks)
 {
+    const auto width = size.x;
+    const auto height = size.y;
+
     static int (*wipes[])(int, int, int) = {
         initColorXForm, doColorXForm, exitColorXForm, initMelt, doMelt, exitMelt};
 
@@ -230,7 +225,7 @@ int screenWipe(WipeType wipeno,
     }
 
     // do a piece of wipe-in
-    markRect(0, 0, width, height);
+    markRect({0, 0}, size);
     auto rc = (*wipes[toIndex(wipeno) * 3 + 1])(width, height, ticks);
 
     // final stuff

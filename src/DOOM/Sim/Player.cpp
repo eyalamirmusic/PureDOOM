@@ -62,8 +62,8 @@ void Player::thrust(Angle angle, Fixed move)
 {
     const auto angleFine = angle.fineIndex();
 
-    mo->momx += FixedMul(move, finecosine()[angleFine]);
-    mo->momy += FixedMul(move, finesine()[angleFine]);
+    mo->mom.x += FixedMul(move, finecosine()[angleFine]);
+    mo->mom.y += FixedMul(move, finesine()[angleFine]);
 }
 
 //
@@ -78,7 +78,7 @@ void Player::calcHeight()
     // OPTIMIZE: tablify angle
     // Note: a LUT allows for effects
     //  like a ramp with low health.
-    bob = FixedMul(mo->momx, mo->momx) + FixedMul(mo->momy, mo->momy);
+    bob = FixedMul(mo->mom.x, mo->mom.x) + FixedMul(mo->mom.y, mo->mom.y);
 
     bob >>= 2;
 
@@ -87,12 +87,12 @@ void Player::calcHeight()
 
     if ((hasFlag(cheats, CheatFlag::NoMomentum)) || !playerScratch().onground)
     {
-        viewz = mo->z + VIEWHEIGHT;
+        viewz = mo->pos.z + VIEWHEIGHT;
 
         if (viewz > mo->ceilingz - 4 * FRACUNIT)
             viewz = mo->ceilingz - 4 * FRACUNIT;
 
-        viewz = mo->z + viewheight;
+        viewz = mo->pos.z + viewheight;
         return;
     }
 
@@ -124,7 +124,7 @@ void Player::calcHeight()
                 deltaviewheight = Fixed {1};
         }
     }
-    viewz = mo->z + viewheight + bobToUse;
+    viewz = mo->pos.z + viewheight + bobToUse;
 
     if (viewz > mo->ceilingz - 4 * FRACUNIT)
         viewz = mo->ceilingz - 4 * FRACUNIT;
@@ -143,7 +143,7 @@ void Player::movePlayer()
 
     // Do not let the player control movement
     //  if not onground.
-    scratch.onground = (mo->z <= mo->floorz);
+    scratch.onground = (mo->pos.z <= mo->floorz);
 
     if (cmdToUse->forwardmove && scratch.onground)
         thrust(mo->angle, Fixed {cmdToUse->forwardmove * 2048});
@@ -175,12 +175,12 @@ void Player::deathThink()
         viewheight = 6 * FRACUNIT;
 
     deltaviewheight = Fixed {};
-    playerScratch().onground = (mo->z <= mo->floorz);
+    playerScratch().onground = (mo->pos.z <= mo->floorz);
     calcHeight();
 
     if (attacker && attacker != mo)
     {
-        auto angle = pointToAngle2(mo->x, mo->y, attacker->x, attacker->y);
+        auto angle = pointToAngle2(mo->pos.xy(), attacker->pos.xy());
 
         auto delta = angle - mo->angle;
 

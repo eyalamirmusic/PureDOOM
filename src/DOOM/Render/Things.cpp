@@ -467,8 +467,8 @@ void projectSprite(Mobj& thing)
     auto& lights = lighting();
 
     // transform the origin point
-    tr_x = thing.x - pt.viewx;
-    tr_y = thing.y - pt.viewy;
+    tr_x = thing.pos.x - pt.pos.x;
+    tr_y = thing.pos.y - pt.pos.y;
 
     gxt = FixedMul(tr_x, pt.viewcos);
     gyt = -FixedMul(tr_y, pt.viewsin);
@@ -515,7 +515,7 @@ void projectSprite(Mobj& thing)
     if (sprframe->rotate)
     {
         // choose a different rotation based on player view
-        ang = pointToAngle(thing.x, thing.y);
+        ang = pointToAngle(thing.pos.xy());
         rot = ((ang - thing.angle + (ang45 / 2u) * 9u) >> 29).raw;
         lump = sprframe->lump[rot];
         flip = static_cast<bool>(sprframe->flip[rot]);
@@ -546,11 +546,10 @@ void projectSprite(Mobj& thing)
     vis = newVisSprite();
     vis->mobjflags = thing.flags;
     vis->scale = xscale << view.detailshift;
-    vis->gx = thing.x;
-    vis->gy = thing.y;
-    vis->gz = thing.z;
-    vis->gzt = thing.z + graphicsData().spritetopoffset[lump];
-    vis->texturemid = vis->gzt - pt.viewz;
+    vis->gpos = thing.pos.xy();
+    vis->gz = thing.pos.z;
+    vis->gzt = thing.pos.z + graphicsData().spritetopoffset[lump];
+    vis->texturemid = vis->gzt - pt.pos.z;
     vis->x1 = x1 < 0 ? 0 : x1;
     vis->x2 = x2 >= view.viewwidth ? view.viewwidth - 1 : x2;
     iscale = FixedDiv(FRACUNIT, xscale);
@@ -877,7 +876,7 @@ void drawSprite(VisSprite& spr)
 
         if (scale < spr.scale
             || (lowscale < spr.scale
-                && !pointOnSegSide(spr.gx, spr.gy, *ds->curline)))
+                && !pointOnSegSide({spr.gpos.x, spr.gpos.y}, *ds->curline)))
         {
             // masked mid texture?
             if (ds->maskedtexturecol)

@@ -128,10 +128,10 @@ struct VisSprite
     int x2 = 0;
 
     // for line side calculation
-    Fixed gx;
-    Fixed gy;
+    Vec2 gpos;
 
-    // global bottom / top for silhouette clipping
+    // global bottom / top for silhouette clipping. NOT gpos's third component -
+    // these are the two ends of the sprite's vertical extent, not one height.
     Fixed gz;
     Fixed gzt;
 

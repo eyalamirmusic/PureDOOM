@@ -224,13 +224,13 @@ unsigned long long doomSimStateHash()
 
     if (player->mo)
     {
-        simMix(&player->mo->x, sizeof(Doom::Fixed));
-        simMix(&player->mo->y, sizeof(Doom::Fixed));
-        simMix(&player->mo->z, sizeof(Doom::Fixed));
+        simMix(&player->mo->pos.x, sizeof(Doom::Fixed));
+        simMix(&player->mo->pos.y, sizeof(Doom::Fixed));
+        simMix(&player->mo->pos.z, sizeof(Doom::Fixed));
         simMix(&player->mo->angle, sizeof(Doom::Angle));
-        simMix(&player->mo->momx, sizeof(Doom::Fixed));
-        simMix(&player->mo->momy, sizeof(Doom::Fixed));
-        simMix(&player->mo->momz, sizeof(Doom::Fixed));
+        simMix(&player->mo->mom.x, sizeof(Doom::Fixed));
+        simMix(&player->mo->mom.y, sizeof(Doom::Fixed));
+        simMix(&player->mo->mom.z, sizeof(Doom::Fixed));
     }
 
     for (thinker = thinkers.cap.next; thinker && thinker != &thinkers.cap;
@@ -244,9 +244,9 @@ unsigned long long doomSimStateHash()
 
         frame = (int) (mobj->state - Doom::states());
 
-        simMix(&mobj->x, sizeof(Doom::Fixed));
-        simMix(&mobj->y, sizeof(Doom::Fixed));
-        simMix(&mobj->z, sizeof(Doom::Fixed));
+        simMix(&mobj->pos.x, sizeof(Doom::Fixed));
+        simMix(&mobj->pos.y, sizeof(Doom::Fixed));
+        simMix(&mobj->pos.z, sizeof(Doom::Fixed));
         simMix(&mobj->angle, sizeof(Doom::Angle));
         simMix(&mobj->health, sizeof(int));
         simMix(&mobj->type, sizeof(int));
@@ -360,14 +360,14 @@ int doomSimPlayerX()
 {
     auto& players_ = Doom::playerState();
 
-    return players_.players[0].mo ? players_.players[0].mo->x.toInt() : 0;
+    return players_.players[0].mo ? players_.players[0].mo->pos.x.toInt() : 0;
 }
 
 int doomSimPlayerY()
 {
     auto& players_ = Doom::playerState();
 
-    return players_.players[0].mo ? players_.players[0].mo->y.toInt() : 0;
+    return players_.players[0].mo ? players_.players[0].mo->pos.y.toInt() : 0;
 }
 
 int doomSimPlayerAngleDegrees()
@@ -525,7 +525,7 @@ int doomSimSpawnMobj(int type, int x, int y, int z)
         return -1;
 
     Doom::Mobj* mobj = Doom::spawnMobj(
-        Doom::Fixed {x}, Doom::Fixed {y}, Doom::Fixed {z}, (Doom::MobjType) type);
+        {Doom::Fixed {x}, Doom::Fixed {y}, Doom::Fixed {z}}, (Doom::MobjType) type);
 
     if (!mobj)
         return -1;
@@ -544,7 +544,7 @@ int doomSimCheckPosition(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return mobj->checkPosition(Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
+    return mobj->checkPosition({Doom::Fixed {x}, Doom::Fixed {y}}) ? 1 : 0;
 }
 
 int doomSimTryMove(int handle, int x, int y)
@@ -557,25 +557,25 @@ int doomSimTryMove(int handle, int x, int y)
     if (setjmp(simAbort))
         return 0;
 
-    return mobj->tryMove(Doom::Fixed {x}, Doom::Fixed {y}) ? 1 : 0;
+    return mobj->tryMove({Doom::Fixed {x}, Doom::Fixed {y}}) ? 1 : 0;
 }
 
 int doomSimMobjX(int handle)
 {
     Doom::Mobj* mobj = simMobj(handle);
-    return mobj ? mobj->x.raw : 0;
+    return mobj ? mobj->pos.x.raw : 0;
 }
 
 int doomSimMobjY(int handle)
 {
     Doom::Mobj* mobj = simMobj(handle);
-    return mobj ? mobj->y.raw : 0;
+    return mobj ? mobj->pos.y.raw : 0;
 }
 
 int doomSimMobjZ(int handle)
 {
     Doom::Mobj* mobj = simMobj(handle);
-    return mobj ? mobj->z.raw : 0;
+    return mobj ? mobj->pos.z.raw : 0;
 }
 
 int doomSimMobjFlags(int handle)
@@ -614,9 +614,9 @@ int doomSimThingsInBlockOf(int handle)
         return -1;
 
     auto blockx =
-        (mobj->x - Doom::level().blockmap.origin.x).raw >> Doom::MAPBLOCKSHIFT;
+        (mobj->pos.x - Doom::level().blockmap.origin.x).raw >> Doom::MAPBLOCKSHIFT;
     auto blocky =
-        (mobj->y - Doom::level().blockmap.origin.y).raw >> Doom::MAPBLOCKSHIFT;
+        (mobj->pos.y - Doom::level().blockmap.origin.y).raw >> Doom::MAPBLOCKSHIFT;
 
     simBlockThingCount = 0;
     Doom::forEachThingInBlock(blockx, blocky, simCountThing);
@@ -746,13 +746,13 @@ static unsigned long long simWorldHash()
             continue;
         Doom::Mobj* m = (Doom::Mobj*) th;
         auto frame = (int) (m->state - Doom::states());
-        simMix(&m->x, sizeof(Doom::Fixed));
-        simMix(&m->y, sizeof(Doom::Fixed));
-        simMix(&m->z, sizeof(Doom::Fixed));
+        simMix(&m->pos.x, sizeof(Doom::Fixed));
+        simMix(&m->pos.y, sizeof(Doom::Fixed));
+        simMix(&m->pos.z, sizeof(Doom::Fixed));
         simMix(&m->angle, sizeof(Doom::Angle));
-        simMix(&m->momx, sizeof(Doom::Fixed));
-        simMix(&m->momy, sizeof(Doom::Fixed));
-        simMix(&m->momz, sizeof(Doom::Fixed));
+        simMix(&m->mom.x, sizeof(Doom::Fixed));
+        simMix(&m->mom.y, sizeof(Doom::Fixed));
+        simMix(&m->mom.z, sizeof(Doom::Fixed));
         simMix(&m->health, sizeof(int));
         simMix(&m->type, sizeof(int));
         simMix(&frame, sizeof(frame));

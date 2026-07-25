@@ -517,40 +517,38 @@ void fillBackScreen()
     patch = static_cast<Patch*>(cacheLumpName("brdr_t"));
 
     for (x = 0; x < view.scaledviewwidth; x += 8)
-        drawPatch(view.viewwindowx + x, view.viewwindowy - 8, 1, patch);
+        drawPatch({view.viewwindowx + x, view.viewwindowy - 8}, 1, patch);
     patch = static_cast<Patch*>(cacheLumpName("brdr_b"));
 
     for (x = 0; x < view.scaledviewwidth; x += 8)
         drawPatch(
-            view.viewwindowx + x, view.viewwindowy + view.viewheight, 1, patch);
+            {view.viewwindowx + x, view.viewwindowy + view.viewheight}, 1, patch);
     patch = static_cast<Patch*>(cacheLumpName("brdr_l"));
 
     for (y = 0; y < view.viewheight; y += 8)
-        drawPatch(view.viewwindowx - 8, view.viewwindowy + y, 1, patch);
+        drawPatch({view.viewwindowx - 8, view.viewwindowy + y}, 1, patch);
     patch = static_cast<Patch*>(cacheLumpName("brdr_r"));
 
     for (y = 0; y < view.viewheight; y += 8)
-        drawPatch(
-            view.viewwindowx + view.scaledviewwidth, view.viewwindowy + y, 1, patch);
+        drawPatch({view.viewwindowx + view.scaledviewwidth, view.viewwindowy + y},
+                  1,
+                  patch);
 
     // Draw beveled edge.
-    drawPatch(view.viewwindowx - 8,
-              view.viewwindowy - 8,
+    drawPatch({view.viewwindowx - 8, view.viewwindowy - 8},
               1,
               static_cast<Patch*>(cacheLumpName("brdr_tl")));
 
-    drawPatch(view.viewwindowx + view.scaledviewwidth,
-              view.viewwindowy - 8,
+    drawPatch({view.viewwindowx + view.scaledviewwidth, view.viewwindowy - 8},
               1,
               static_cast<Patch*>(cacheLumpName("brdr_tr")));
 
-    drawPatch(view.viewwindowx - 8,
-              view.viewwindowy + view.viewheight,
+    drawPatch({view.viewwindowx - 8, view.viewwindowy + view.viewheight},
               1,
               static_cast<Patch*>(cacheLumpName("brdr_bl")));
 
-    drawPatch(view.viewwindowx + view.scaledviewwidth,
-              view.viewwindowy + view.viewheight,
+    drawPatch({view.viewwindowx + view.scaledviewwidth,
+               view.viewwindowy + view.viewheight},
               1,
               static_cast<Patch*>(cacheLumpName("brdr_br")));
 }
@@ -606,7 +604,7 @@ void drawViewBorder()
     }
 
     // ?
-    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT - SBARHEIGHT);
+    markRect({0, 0}, {SCREENWIDTH, SCREENHEIGHT - SBARHEIGHT});
 }
 
 } // namespace Doom

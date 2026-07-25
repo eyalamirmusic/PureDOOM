@@ -237,8 +237,8 @@ void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
         rc = adjustSoundParams(
             state.players[state.consoleplayer].mo, origin, &volume, &sep, &pitch);
 
-        if (origin->x == state.players[state.consoleplayer].mo->x
-            && origin->y == state.players[state.consoleplayer].mo->y)
+        if (origin->pos.x == state.players[state.consoleplayer].mo->pos.x
+            && origin->pos.y == state.players[state.consoleplayer].mo->pos.y)
         {
             sep = NORM_SEP;
         }
@@ -567,8 +567,8 @@ int adjustSoundParams(
 
     // calculate the distance to sound origin
     //  and clip it if necessary
-    adx = doom_abs(listener->x - source->x);
-    ady = doom_abs(listener->y - source->y);
+    adx = doom_abs(listener->pos.x - source->pos.x);
+    ady = doom_abs(listener->pos.y - source->pos.y);
 
     // From _GG1_ p.428. Appox. eucledian distance fast.
     approx_dist = adx + ady - ((adx < ady ? adx : ady) >> 1);
@@ -579,7 +579,7 @@ int adjustSoundParams(
     }
 
     // angle of source to listener
-    angle = pointToAngle2(listener->x, listener->y, source->x, source->y);
+    angle = pointToAngle2(listener->pos.xy(), source->pos.xy());
 
     if (angle > listener->angle)
         angle = angle - listener->angle;

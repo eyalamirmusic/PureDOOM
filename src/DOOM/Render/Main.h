@@ -14,11 +14,11 @@ namespace Doom
 constexpr int DISTMAP = 2;
 
 // Renderer main/setup; r_main.cpp keeps the vanilla R_ names as shims.
-int pointOnSide(Fixed x, Fixed y, Node& node);
-int pointOnSegSide(Fixed x, Fixed y, Seg& line);
-Angle pointToAngle(Fixed x, Fixed y);
-Angle pointToAngle2(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
-Fixed pointToDist(Fixed x, Fixed y);
+int pointOnSide(Vec2 point, Node& node);
+int pointOnSegSide(Vec2 point, Seg& line);
+Angle pointToAngle(Vec2 point);
+Angle pointToAngle2(Vec2 from, Vec2 to);
+Fixed pointToDist(Vec2 point);
 void initPointToAngle();
 Fixed scaleFromGlobalAngle(Angle visangle);
 void initTables();
@@ -27,7 +27,7 @@ void initLightTables();
 void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
-SubSector* pointInSubsector(Fixed x, Fixed y);
+SubSector* pointInSubsector(Vec2 point);
 void setupFrame(Player& player);
 void renderPlayerView(Player& player);
 } // namespace Doom

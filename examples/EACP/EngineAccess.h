@@ -3,6 +3,7 @@
 #include <eacp/Core/Utils/Containers.h>
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <span>
 
@@ -97,15 +98,45 @@ struct TextureInfo
     bool masked = false;
 };
 
+// The port's own float vectors. Deliberately not Doom::Vec2/Vec3: this header
+// is Doom-type-free by design, and these are whole map units and screen pixels
+// as floats, not the engine's 16.16 fixed point.
+//
+// The vertex layouts below keep their std::array<float, N> members instead, and
+// have to: GPU::ShaderValueOf is specialised for std::array<float, N> and raw
+// float[N] and for nothing else, so a Point2 there would not resolve to a Float2.
+struct Point2
+{
+    float x = 0.0f;
+    float y = 0.0f;
+};
+
+struct Point3
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+};
+
+inline Point2 lerp(Point2 from, Point2 to, float t)
+{
+    return {std::lerp(from.x, to.x, t), std::lerp(from.y, to.y, t)};
+}
+
+inline Point3 lerp(Point3 from, Point3 to, float t)
+{
+    return {std::lerp(from.x, to.x, t),
+            std::lerp(from.y, to.y, t),
+            std::lerp(from.z, to.z, t)};
+}
+
 // One of the screen-space sprites, positioned in the 320 x 168 view with a
 // top-left origin.
 struct HudSprite
 {
     int textureId = -1;
-    float x = 0.0f;
-    float y = 0.0f;
-    float width = 0.0f;
-    float height = 0.0f;
+    Point2 at;
+    Point2 size;
 
     // The COLORMAP row to draw it through, outright: a weapon is at no distance
     // from the camera, so nothing further is subtracted from this.
@@ -116,9 +147,7 @@ struct HudSprite
 
 struct Camera
 {
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
+    Point3 pos;
     float angle = 0.0f;
 };
 

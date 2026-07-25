@@ -119,10 +119,10 @@ auto tAutomapIsCentredOnThePlayer = test("Port/automapIsCentredOnThePlayer") = [
 
     check(map.size() >= arrowCorners + cornersPerLine, "the arrow was emitted");
 
-    auto centreX = static_cast<float>(Doom::automapView().f_x)
-                   + static_cast<float>(Doom::automapView().f_w) * 0.5f;
-    auto centreY = static_cast<float>(Doom::automapView().f_y)
-                   + static_cast<float>(Doom::automapView().f_h) * 0.5f;
+    auto centreX = static_cast<float>(Doom::automapView().f_origin.x)
+                   + static_cast<float>(Doom::automapView().f_size.x) * 0.5f;
+    auto centreY = static_cast<float>(Doom::automapView().f_origin.y)
+                   + static_cast<float>(Doom::automapView().f_size.y) * 0.5f;
 
     auto crosshair = boundsOf(map.last(cornersPerLine));
 
@@ -176,7 +176,7 @@ auto tAutomapSpansTheFrame = test("Port/automapSpansTheFrame") = []
     check(walls.height() > 20.0f, "the revealed walls span real frame pixels down");
 
     // And they stay the size of a room rather than a scale factor away from one.
-    check(walls.width() < static_cast<float>(Doom::automapView().f_w) * 4.0f,
+    check(walls.width() < static_cast<float>(Doom::automapView().f_size.x) * 4.0f,
           "the revealed walls are not scaled up out of all proportion");
 };
 } // namespace

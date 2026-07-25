@@ -41,7 +41,7 @@ set(DOOM_REWRITTEN_SOURCES
         Math/Trig.cpp
         Math/Trig.h
         Math/TrigTables.h
-        Math/Vec2.h
+        Math/Vec.h
 
         Sim/ActionFunc.h
         Sim/ActionScratch.h

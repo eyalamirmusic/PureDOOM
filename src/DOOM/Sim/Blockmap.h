@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Math/Fixed.h"
-#include "../Math/Vec2.h"
+#include "../Math/Vec.h"
 
 namespace Doom
 {
@@ -31,12 +31,21 @@ struct Blockmap
     int blockX(Fixed x) const { return (x.raw - origin.x.raw) >> shift; }
     int blockY(Fixed y) const { return (y.raw - origin.y.raw) >> shift; }
 
+    // The cell a world point falls in. The two above stay, and are not redundant:
+    // the iterators derive a *range* of cells from a bounding box's four edges,
+    // where there is no point to convert.
+    Vec2i blockOf(Vec2 point) const { return {blockX(point.x), blockY(point.y)}; }
+
     bool contains(int bx, int by) const
     {
         return bx >= 0 && bx < width && by >= 0 && by < height;
     }
 
+    bool contains(Vec2i cell) const { return contains(cell.x, cell.y); }
+
     // The flat index of cell (bx, by) into a width*height array (blocklinks, say).
     int index(int bx, int by) const { return by * width + bx; }
+
+    int index(Vec2i cell) const { return index(cell.x, cell.y); }
 };
 } // namespace Doom

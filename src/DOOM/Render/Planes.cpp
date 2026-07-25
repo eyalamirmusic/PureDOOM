@@ -109,8 +109,8 @@ void mapPlane(int y, int x1, int x2)
     length = FixedMul(distance, plane.distscale[x1]);
     const auto angleFine =
         (pt.viewangle + viewProjection().xtoviewangle[x1]).fineIndex();
-    draw.ds_xfrac = pt.viewx + FixedMul(finecosine()[angleFine], length);
-    draw.ds_yfrac = -pt.viewy - FixedMul(finesine()[angleFine], length);
+    draw.ds_xfrac = pt.pos.x + FixedMul(finecosine()[angleFine], length);
+    draw.ds_yfrac = -pt.pos.y - FixedMul(finesine()[angleFine], length);
 
     if (lights.fixedcolormap)
         draw.ds_colormap = lights.fixedcolormap;
@@ -389,7 +389,7 @@ void drawPlanes()
         draw.ds_source = static_cast<byte*>(cacheLumpNum(
             graphicsData().firstflat + graphicsData().flattranslation[pl->picnum]));
 
-        plane.planeheight = doom_abs(pl->height - pt.viewz);
+        plane.planeheight = doom_abs(pl->height - pt.pos.z);
         light = (pl->lightlevel >> LIGHTSEGSHIFT) + lights.extralight;
 
         if (light >= LIGHTLEVELS)

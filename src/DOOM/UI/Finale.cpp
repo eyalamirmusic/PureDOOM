@@ -310,7 +310,7 @@ void textWrite()
         }
     }
 
-    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    markRect({0, 0}, {SCREENWIDTH, SCREENHEIGHT});
 
     // draw some of the text onto the screen
     auto cx = 10;
@@ -351,7 +351,7 @@ void textWrite()
         auto w = littleEndian(font.hu_font[c]->width);
         if (cx + w > SCREENWIDTH)
             break;
-        drawPatch(cx, cy, 0, font.hu_font[c]);
+        drawPatch({cx, cy}, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -611,7 +611,7 @@ void castPrint(std::string_view text)
         }
 
         w = littleEndian(font.hu_font[c]->width);
-        drawPatch(cx, 180, 0, font.hu_font[c]);
+        drawPatch({cx, 180}, 0, font.hu_font[c]);
         cx += w;
     }
 }
@@ -624,7 +624,7 @@ void castDrawer()
     auto& fin = finaleState();
 
     // erase the entire screen to a background
-    drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("BOSSBACK")));
+    drawPatch({0, 0}, 0, static_cast<Patch*>(cacheLumpName("BOSSBACK")));
 
     castPrint(castorder[fin.castnum].name);
 
@@ -637,9 +637,9 @@ void castDrawer()
     auto* patch =
         static_cast<Patch*>(cacheLumpNum(lump + graphicsData().firstspritelump));
     if (flip)
-        drawPatchFlipped(160, 170, 0, patch);
+        drawPatchFlipped({160, 170}, 0, patch);
     else
-        drawPatch(160, 170, 0, patch);
+        drawPatch({160, 170}, 0, patch);
 }
 
 //
@@ -678,7 +678,7 @@ void bunnyScroll()
     auto* p1 = static_cast<Patch*>(cacheLumpName("PFUB2"));
     auto* p2 = static_cast<Patch*>(cacheLumpName("PFUB1"));
 
-    markRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    markRect({0, 0}, {SCREENWIDTH, SCREENHEIGHT});
 
     auto scrolled = 320 - (fin.finalecount - 230) / 2;
     scrolled = std::clamp(scrolled, 0, 320);
@@ -695,8 +695,7 @@ void bunnyScroll()
         return;
     if (fin.finalecount < 1180)
     {
-        drawPatch((SCREENWIDTH - 13 * 8) / 2,
-                  (SCREENHEIGHT - 8 * 8) / 2,
+        drawPatch({(SCREENWIDTH - 13 * 8) / 2, (SCREENHEIGHT - 8 * 8) / 2},
                   0,
                   static_cast<Patch*>(cacheLumpName("END0")));
         fin.laststage = 0;
@@ -712,8 +711,7 @@ void bunnyScroll()
         fin.laststage = stage;
     }
 
-    drawPatch((SCREENWIDTH - 13 * 8) / 2,
-              (SCREENHEIGHT - 8 * 8) / 2,
+    drawPatch({(SCREENWIDTH - 13 * 8) / 2, (SCREENHEIGHT - 8 * 8) / 2},
               0,
               static_cast<Patch*>(cacheLumpName(concat("END", stage))));
 }
@@ -739,18 +737,20 @@ void drawFinale()
         {
             case 1:
                 if (gameVersion().gamemode == GameMode::Retail)
-                    drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
+                    drawPatch(
+                        {0, 0}, 0, static_cast<Patch*>(cacheLumpName("CREDIT")));
                 else
-                    drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
+                    drawPatch(
+                        {0, 0}, 0, static_cast<Patch*>(cacheLumpName("HELP2")));
                 break;
             case 2:
-                drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("VICTORY2")));
+                drawPatch({0, 0}, 0, static_cast<Patch*>(cacheLumpName("VICTORY2")));
                 break;
             case 3:
                 bunnyScroll();
                 break;
             case 4:
-                drawPatch(0, 0, 0, static_cast<Patch*>(cacheLumpName("ENDPIC")));
+                drawPatch({0, 0}, 0, static_cast<Patch*>(cacheLumpName("ENDPIC")));
                 break;
         }
     }

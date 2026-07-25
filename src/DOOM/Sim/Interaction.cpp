@@ -308,7 +308,7 @@ bool Player::givePower(PowerType power)
 //
 void touchSpecialThing(Mobj& special, Mobj& toucher)
 {
-    auto delta = special.z - toucher.z;
+    auto delta = special.pos.z - toucher.pos.z;
 
     if (delta > toucher.height || delta < -8 * FRACUNIT)
     {
@@ -717,7 +717,7 @@ void killMobj(Mobj* source, Mobj& target)
             return;
     }
 
-    auto* mo = spawnMobj(target.x, target.y, ONFLOORZ, item);
+    auto* mo = spawnMobj({target.pos.x, target.pos.y, ONFLOORZ}, item);
     mo->flags = withFlags(mo->flags, MobjFlag::Dropped); // special versions of items
 }
 
@@ -745,7 +745,7 @@ void Mobj::damage(Mobj* inflictor, Mobj* source, int damage)
 
     if (hasFlag(flags, MobjFlag::SkullFly))
     {
-        momx = momy = momz = Fixed {};
+        mom = {};
     }
 
     auto* playerToUse = player;
@@ -759,12 +759,13 @@ void Mobj::damage(Mobj* inflictor, Mobj* source, int damage)
         && (!source || !source->player
             || source->player->readyweapon != WeaponType::Chainsaw))
     {
-        ang = pointToAngle2(inflictor->x, inflictor->y, x, y);
+        ang = pointToAngle2(inflictor->pos.xy(), pos.xy());
 
         auto thrust = damage * (FRACUNIT >> 3) * 100 / info->mass;
 
         // make fall forwards sometimes
-        if (damage < 40 && damage > health && z - inflictor->z > 64 * FRACUNIT
+        if (damage < 40 && damage > health
+            && pos.z - inflictor->pos.z > 64 * FRACUNIT
             && (randomness().forPlay() & 1))
         {
             ang += ang180;
@@ -772,8 +773,8 @@ void Mobj::damage(Mobj* inflictor, Mobj* source, int damage)
         }
 
         const auto angFine = ang.fineIndex();
-        momx += FixedMul(thrust, finecosine()[angFine]);
-        momy += FixedMul(thrust, finesine()[angFine]);
+        mom.x += FixedMul(thrust, finecosine()[angFine]);
+        mom.y += FixedMul(thrust, finesine()[angFine]);
     }
 
     // player specific

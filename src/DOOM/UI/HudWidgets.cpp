@@ -27,10 +27,9 @@ void HudTextLine::clear()
     needsupdate = true;
 }
 
-void HudTextLine::init(int xToUse, int yToUse, Patch** fToUse, int scToUse)
+void HudTextLine::init(Vec2i posToUse, Patch** fToUse, int scToUse)
 {
-    x = xToUse;
-    y = yToUse;
+    pos = posToUse;
     f = fToUse;
     sc = scToUse;
     clear();
@@ -59,7 +58,7 @@ bool HudTextLine::delChar()
 void HudTextLine::draw(bool drawcursor)
 {
     // draw the new stuff
-    auto drawX = x;
+    auto drawX = pos.x;
 
     for (char character: l)
     {
@@ -69,7 +68,7 @@ void HudTextLine::draw(bool drawcursor)
             auto w = littleEndian(f[c - sc]->width);
             if (drawX + w > SCREENWIDTH)
                 break;
-            drawPatchDirect(drawX, y, FG, f[c - sc]);
+            drawPatchDirect({drawX, pos.y}, FG, f[c - sc]);
             drawX += w;
         }
         else
@@ -83,7 +82,7 @@ void HudTextLine::draw(bool drawcursor)
     // draw the cursor if requested
     if (drawcursor && drawX + littleEndian(f['_' - sc]->width) <= SCREENWIDTH)
     {
-        drawPatchDirect(drawX, y, FG, f['_' - sc]);
+        drawPatchDirect({drawX, pos.y}, FG, f['_' - sc]);
     }
 }
 
@@ -99,7 +98,7 @@ void HudTextLine::erase()
     if (!overlayState().automapactive && view.viewwindowx && needsupdate)
     {
         auto lh = littleEndian(f[0]->height) + 1;
-        for (auto row = y, yoffset = y * SCREENWIDTH; row < y + lh;
+        for (auto row = pos.y, yoffset = pos.y * SCREENWIDTH; row < pos.y + lh;
              row++, yoffset += SCREENWIDTH)
         {
             if (row < view.viewwindowy || row >= view.viewwindowy + view.viewheight)
@@ -119,14 +118,15 @@ void HudTextLine::erase()
 }
 
 void HudScrollingText::init(
-    int x, int y, int hToUse, Patch** font, int startchar, bool* onToUse)
+    Vec2i at, int hToUse, Patch** font, int startchar, bool* onToUse)
 {
     h = hToUse;
     on = onToUse;
     laston = true;
     cl = 0;
     for (auto i = 0; i < h; i++)
-        l[i].init(x, y - i * (littleEndian(font[0]->height) + 1), font, startchar);
+        l[i].init(
+            {at.x, at.y - i * (littleEndian(font[0]->height) + 1)}, font, startchar);
 }
 
 void HudScrollingText::addLine()
@@ -180,12 +180,12 @@ void HudScrollingText::erase()
     laston = *on;
 }
 
-void HudInputText::init(int x, int y, Patch** font, int startchar, bool* onToUse)
+void HudInputText::init(Vec2i at, Patch** font, int startchar, bool* onToUse)
 {
     lm = 0; // default left margin is start of text
     on = onToUse;
     laston = true;
-    l.init(x, y, font, startchar);
+    l.init(at, font, startchar);
 }
 
 // The following deletion routines adhere to the left margin restriction

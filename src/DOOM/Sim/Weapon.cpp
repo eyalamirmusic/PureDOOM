@@ -408,7 +408,7 @@ void Player::punch(PspDef&)
     if (aim.target)
     {
         startSound(mo, SfxEnum::Punch);
-        mo->angle = pointToAngle2(mo->x, mo->y, aim.target->x, aim.target->y);
+        mo->angle = pointToAngle2(mo->pos.xy(), aim.target->pos.xy());
     }
 }
 
@@ -434,7 +434,7 @@ void Player::saw(PspDef&)
     startSound(mo, SfxEnum::Sawhit);
 
     // turn to face target
-    angle = pointToAngle2(mo->x, mo->y, aim.target->x, aim.target->y);
+    angle = pointToAngle2(mo->pos.xy(), aim.target->pos.xy());
     if (angle - mo->angle > ang180)
     {
         if (angle - mo->angle < static_cast<Angle>(-ang90 / 20))
@@ -656,9 +656,9 @@ void Mobj::bfgSpray()
         if (!aim.target)
             continue;
 
-        spawnMobj(aim.target->x,
-                  aim.target->y,
-                  aim.target->z + (aim.target->height >> 2),
+        spawnMobj({aim.target->pos.x,
+                   aim.target->pos.y,
+                   aim.target->pos.z + (aim.target->height >> 2)},
                   MobjType::Extrabfg);
 
         auto damage = 0;

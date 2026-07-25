@@ -57,16 +57,18 @@ struct AutomapView
     int lastepisode = -1; // startAutomap: last episode
     int bigstate = 0; // automapResponder: the "big" (zoomed-out overview) toggle
 
-    // Where the map is looking, and how far in. m_x/m_y is the lower-left corner in
-    // map coordinates; scale_mtof converts a map distance to a frame one. m_w/m_h is
-    // how much of the map the window spans. These four and scale_mtof used to be
-    // loose globals in UI/AutomapTypes.h, exported for the GPU automap to read.
-    Fixed m_x {}, m_y {};
-    Fixed m_w {}, m_h {};
+    // Where the map is looking, and how far in. m_origin is the lower-left corner
+    // in map coordinates and m_size how much of the map the window spans;
+    // scale_mtof converts a map distance to a frame one. These and scale_mtof used
+    // to be loose globals in UI/AutomapTypes.h, exported for the GPU automap to
+    // read.
+    MapPoint m_origin {};
+    MapPoint m_size {};
     Fixed scale_mtof = INITSCALEMTOF;
 
-    // The map's rect within the frame.
-    int f_x = 0, f_y = 0, f_w = 0, f_h = 0;
+    // The map's rect within the frame, in whole pixels.
+    Vec2i f_origin {};
+    Vec2i f_size {};
 
     // The player it draws the arrow for, and whether it is keeping them centred.
     Player* am_plr = nullptr;
@@ -86,10 +88,10 @@ struct AutomapView
     Fixed mtof_zoommul {}; // window zoom per tic (map -> frame)
     Fixed ftom_zoommul {}; // window zoom per tic (frame -> map)
 
-    Fixed m_x2 {}, m_y2 {}; // the window's upper-right corner (map coords)
+    MapPoint m_far {}; // the window's upper-right corner (map coords)
 
-    Fixed min_x {}, min_y {}, max_x {}, max_y {}; // the level's map bounds
-    Fixed max_w {}, max_h {}; // max_x - min_x, max_y - min_y
+    MapPoint minBound {}, maxBound {}; // the level's map bounds
+    MapPoint maxSize {}; // maxBound - minBound
     // No min_w/min_h: vanilla am_map.c assigned them 2*PLAYERRADIUS ("const? never
     // changed?", id's own comment) and read them nowhere - max_scale_mtof below is
     // computed from the literal, not from them. Verified against the 1993 source in
@@ -97,8 +99,8 @@ struct AutomapView
     Fixed min_scale_mtof {}; // zoom-out limit
     Fixed max_scale_mtof {}; // zoom-in limit
 
-    Fixed old_m_w {}, old_m_h {}; // saved window for resize recovery
-    Fixed old_m_x {}, old_m_y {};
+    MapPoint old_m_size {}; // saved window for resize recovery
+    MapPoint old_m_origin {};
     MapPoint f_oldloc = {}; // the follower's previous location
 
     Fixed scale_ftom {}; // frame -> map scale (1 / scale_mtof)
@@ -118,9 +120,15 @@ struct AutomapView
 
     int mapToFrame(Fixed x) const { return FixedMul(x, scale_mtof).toInt(); }
 
-    int mapXToFrame(Fixed x) const { return f_x + mapToFrame(x - m_x); }
+    int mapXToFrame(Fixed x) const
+    {
+        return f_origin.x + mapToFrame(x - m_origin.x);
+    }
 
-    int mapYToFrame(Fixed y) const { return f_y + (f_h - mapToFrame(y - m_y)); }
+    int mapYToFrame(Fixed y) const
+    {
+        return f_origin.y + (f_size.y - mapToFrame(y - m_origin.y));
+    }
 };
 
 // The one AutomapView, a view onto the Engine's member - the same pattern as the other clusters

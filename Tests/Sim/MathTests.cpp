@@ -194,7 +194,7 @@ auto tBBoxAddIsElseIf = test("BBox/addIsElseIfAndNotMinMax") = []
 {
     auto box = BBox::empty();
 
-    box.add(Fixed::fromInt(10), Fixed::fromInt(10));
+    box.add({Fixed::fromInt(10), Fixed::fromInt(10)});
 
     check(box.left == Fixed::fromInt(10));
     check(box.bottom == Fixed::fromInt(10));
@@ -204,7 +204,7 @@ auto tBBoxAddIsElseIf = test("BBox/addIsElseIfAndNotMinMax") = []
     check(box.top == Fixed {DOOM_MININT});
 
     // A second, larger point takes the other branch and the box closes up.
-    box.add(Fixed::fromInt(20), Fixed::fromInt(20));
+    box.add({Fixed::fromInt(20), Fixed::fromInt(20)});
 
     check(box.left == Fixed::fromInt(10));
     check(box.right == Fixed::fromInt(20));
@@ -223,8 +223,10 @@ auto tBBoxMatchesVanilla = test("BBox/matchesVanillaAddToBox") = []
 
     for (const auto& p: points)
     {
-        Doom::addToBox(vanilla, Fixed::fromInt(p[0]), Fixed::fromInt(p[1]));
-        box.add(Fixed::fromInt(p[0]), Fixed::fromInt(p[1]));
+        const Doom::Vec2 point {Fixed::fromInt(p[0]), Fixed::fromInt(p[1])};
+
+        Doom::addToBox(vanilla, point);
+        box.add(point);
     }
 
     check(box.top == vanilla[boxTop]);

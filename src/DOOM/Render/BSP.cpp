@@ -247,8 +247,8 @@ void addLine(Seg& line)
     bsp.curline = &line;
 
     // OPTIMIZE: quickly reject orthogonal back sides.
-    angle1 = pointToAngle(line.v1->x, line.v1->y);
-    angle2 = pointToAngle(line.v2->x, line.v2->y);
+    angle1 = pointToAngle({line.v1->x, line.v1->y});
+    angle2 = pointToAngle({line.v2->x, line.v2->y});
 
     // Clip to view edges.
     // OPTIMIZE: make constant out of 2*clipangle (FIELDOFVIEW).
@@ -372,16 +372,16 @@ bool checkBBox(Fixed* bspcoord)
 
     // Find the corners of the box
     // that define the edges from current viewpoint.
-    if (pt.viewx <= bspcoord[boxLeft])
+    if (pt.pos.x <= bspcoord[boxLeft])
         boxx = 0;
-    else if (pt.viewx < bspcoord[boxRight])
+    else if (pt.pos.x < bspcoord[boxRight])
         boxx = 1;
     else
         boxx = 2;
 
-    if (pt.viewy >= bspcoord[boxTop])
+    if (pt.pos.y >= bspcoord[boxTop])
         boxy = 0;
-    else if (pt.viewy > bspcoord[boxBottom])
+    else if (pt.pos.y > bspcoord[boxBottom])
         boxy = 1;
     else
         boxy = 2;
@@ -396,8 +396,8 @@ bool checkBBox(Fixed* bspcoord)
     y2 = bspcoord[checkcoord[boxpos][3]];
 
     // check clip list for an open space
-    angle1 = pointToAngle(x1, y1) - pt.viewangle;
-    angle2 = pointToAngle(x2, y2) - pt.viewangle;
+    angle1 = pointToAngle({x1, y1}) - pt.viewangle;
+    angle2 = pointToAngle({x2, y2}) - pt.viewangle;
 
     span = angle1 - angle2;
 
@@ -497,7 +497,7 @@ void subsector(int num)
     count = sub->numlines;
     line = &level().segs[sub->firstline];
 
-    if (bsp.frontsector->floorheight < pt.viewz)
+    if (bsp.frontsector->floorheight < pt.pos.z)
     {
         scratch.floorplane = findPlane(bsp.frontsector->floorheight,
                                        bsp.frontsector->floorpic,
@@ -506,7 +506,7 @@ void subsector(int num)
     else
         scratch.floorplane = nullptr;
 
-    if (bsp.frontsector->ceilingheight > pt.viewz
+    if (bsp.frontsector->ceilingheight > pt.pos.z
         || bsp.frontsector->ceilingpic == skyState().skyflatnum)
     {
         scratch.ceilingplane = findPlane(bsp.frontsector->ceilingheight,
@@ -549,7 +549,7 @@ void renderBSPNode(int bspnum)
 
     // Decide which side the view point is on.
     auto& pt = viewPoint();
-    side = pointOnSide(pt.viewx, pt.viewy, *bsp);
+    side = pointOnSide({pt.pos.x, pt.pos.y}, *bsp);
 
     // Recursively divide front space.
     renderBSPNode(bsp->children[side]);

@@ -86,24 +86,24 @@ void addToDirtyBox(int x, int y)
 //
 // markRect
 //
-void markRect(int x, int y, int width, int height)
+void markRect(Vec2i at, Vec2i size)
 {
-    addToDirtyBox(x, y);
-    addToDirtyBox(x + width - 1, y + height - 1);
+    addToDirtyBox(at.x, at.y);
+    addToDirtyBox(at.x + size.x - 1, at.y + size.y - 1);
 }
 
 //
 // copyRect
 //
-void copyRect(int srcx,
-              int srcy,
-              int srcscrn,
-              int width,
-              int height,
-              int destx,
-              int desty,
-              int destscrn)
+void copyRect(Vec2i srcAt, int srcscrn, Vec2i size, Vec2i destAt, int destscrn)
 {
+    const auto srcx = srcAt.x;
+    const auto srcy = srcAt.y;
+    const auto destx = destAt.x;
+    const auto desty = destAt.y;
+    const auto width = size.x;
+    auto height = size.y;
+
     byte* src;
     byte* dest;
 
@@ -116,7 +116,7 @@ void copyRect(int srcx,
         fatalError("Error: Bad copyRect");
     }
 #endif
-    markRect(destx, desty, width, height);
+    markRect(destAt, size);
 
     src = videoState().screens[srcscrn] + SCREENWIDTH * srcy + srcx;
     dest = videoState().screens[destscrn] + SCREENWIDTH * desty + destx;
@@ -133,8 +133,11 @@ void copyRect(int srcx,
 // drawPatch
 // Masks a column based masked pic to the screen.
 //
-void drawPatch(int x, int y, int scrn, Patch* patch)
+void drawPatch(Vec2i at, int scrn, Patch* patch)
 {
+    auto x = at.x;
+    auto y = at.y;
+
     int count;
     int col;
     Column* column;
@@ -159,7 +162,7 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
 #endif
 
     if (!scrn)
-        markRect(x, y, littleEndian(patch->width), littleEndian(patch->height));
+        markRect({x, y}, {littleEndian(patch->width), littleEndian(patch->height)});
 
     col = 0;
     desttop = videoState().screens[scrn] + y * SCREENWIDTH + x;
@@ -194,8 +197,11 @@ void drawPatch(int x, int y, int scrn, Patch* patch)
 // Masks a column based masked pic to the screen.
 // Flips horizontally, e.g. to mirror face.
 //
-void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
+void drawPatchFlipped(Vec2i at, int scrn, Patch* patch)
 {
+    auto x = at.x;
+    auto y = at.y;
+
     int count;
     int col;
     Column* column;
@@ -218,7 +224,7 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 #endif
 
     if (!scrn)
-        markRect(x, y, littleEndian(patch->width), littleEndian(patch->height));
+        markRect({x, y}, {littleEndian(patch->width), littleEndian(patch->height)});
 
     col = 0;
     desttop = videoState().screens[scrn] + y * SCREENWIDTH + x;
@@ -255,8 +261,11 @@ void drawPatchFlipped(int x, int y, int scrn, Patch* patch)
 // swap. The SHORT() this had inherited from the surrounding patch-width reads was
 // identity on a little-endian host and would have swapped a screen-space width on
 // a big-endian one.
-void drawPatchRectDirect(int x, int y, int scrn, Patch* patch, int src_x, int src_w)
+void drawPatchRectDirect(Vec2i at, int scrn, Patch* patch, int src_x, int src_w)
 {
+    auto x = at.x;
+    auto y = at.y;
+
     int count;
     int col;
     Column* column;
@@ -281,7 +290,7 @@ void drawPatchRectDirect(int x, int y, int scrn, Patch* patch, int src_x, int sr
 #endif
 
     if (!scrn)
-        markRect(x, y, src_w, littleEndian(patch->height));
+        markRect({x, y}, {src_w, littleEndian(patch->height)});
 
     col = 0;
     desttop = videoState().screens[scrn] + y * SCREENWIDTH + x;
@@ -316,17 +325,22 @@ void drawPatchRectDirect(int x, int y, int scrn, Patch* patch, int src_x, int sr
 // drawPatchDirect
 // Draws directly to the screen on the pc.
 //
-void drawPatchDirect(int x, int y, int scrn, Patch* patch)
+void drawPatchDirect(Vec2i at, int scrn, Patch* patch)
 {
-    drawPatch(x, y, scrn, patch);
+    drawPatch(at, scrn, patch);
 }
 
 //
 // drawBlock
 // Draw a linear block of pixels into the view buffer.
 //
-void drawBlock(int x, int y, int scrn, int width, int height, byte* src)
+void drawBlock(Vec2i at, int scrn, Vec2i size, byte* src)
 {
+    const auto x = at.x;
+    const auto y = at.y;
+    const auto width = size.x;
+    auto height = size.y;
+
     byte* dest;
 
 #ifdef RANGECHECK
@@ -337,7 +351,7 @@ void drawBlock(int x, int y, int scrn, int width, int height, byte* src)
     }
 #endif
 
-    markRect(x, y, width, height);
+    markRect(at, size);
 
     dest = videoState().screens[scrn] + y * SCREENWIDTH + x;
 

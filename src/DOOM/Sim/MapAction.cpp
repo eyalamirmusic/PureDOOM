@@ -46,25 +46,24 @@ void hitSlideLine(Line* ld)
 
     if (ld->slopetype == SlopeType::Horizontal)
     {
-        scratch.tmymove = Fixed {};
+        scratch.tmmove.y = Fixed {};
         return;
     }
 
     if (ld->slopetype == SlopeType::Vertical)
     {
-        scratch.tmxmove = Fixed {};
+        scratch.tmmove.x = Fixed {};
         return;
     }
 
-    auto side = ld->pointSide({scratch.slidemo->x, scratch.slidemo->y});
+    auto side = ld->pointSide({scratch.slidemo->pos.x, scratch.slidemo->pos.y});
 
-    auto lineangle = pointToAngle2(Fixed {}, Fixed {}, ld->dx, ld->dy);
+    auto lineangle = pointToAngle2({}, ld->delta);
 
     if (side == 1)
         lineangle += ang180;
 
-    auto moveangle =
-        pointToAngle2(Fixed {}, Fixed {}, scratch.tmxmove, scratch.tmymove);
+    auto moveangle = pointToAngle2({}, {scratch.tmmove.x, scratch.tmmove.y});
     auto deltaangle = moveangle - lineangle;
 
     if (deltaangle > ang180)
@@ -73,11 +72,11 @@ void hitSlideLine(Line* ld)
     const auto lineangleFine = lineangle.fineIndex();
     const auto deltaangleFine = deltaangle.fineIndex();
 
-    auto movelen = approxDistance(scratch.tmxmove, scratch.tmymove);
+    auto movelen = approxDistance({scratch.tmmove.x, scratch.tmmove.y});
     auto newlen = FixedMul(movelen, finecosine()[deltaangleFine]);
 
-    scratch.tmxmove = FixedMul(newlen, finecosine()[lineangleFine]);
-    scratch.tmymove = FixedMul(newlen, finesine()[lineangleFine]);
+    scratch.tmmove.x = FixedMul(newlen, finecosine()[lineangleFine]);
+    scratch.tmmove.y = FixedMul(newlen, finesine()[lineangleFine]);
 }
 
 //
@@ -108,7 +107,7 @@ bool slideTraverse(Intercept* in)
 
     if (!(li->flags & ML_TWOSIDED))
     {
-        if (li->pointSide({scratch.slidemo->x, scratch.slidemo->y}))
+        if (li->pointSide({scratch.slidemo->pos.x, scratch.slidemo->pos.y}))
         {
             // don't hit the back side
             return true;
@@ -122,10 +121,10 @@ bool slideTraverse(Intercept* in)
     if (clip.openrange < scratch.slidemo->height)
         return isblocking(); // doesn't fit
 
-    if (clip.opentop - scratch.slidemo->z < scratch.slidemo->height)
+    if (clip.opentop - scratch.slidemo->pos.z < scratch.slidemo->height)
         return isblocking(); // mobj is too high
 
-    if (clip.openbottom - scratch.slidemo->z > 24 * FRACUNIT)
+    if (clip.openbottom - scratch.slidemo->pos.z > 24 * FRACUNIT)
         return isblocking(); // too big a step up
 
     // this line doesn't block movement
@@ -197,12 +196,12 @@ bool aimTraverse(Intercept* in,
 
     // check angles to see if the thing can be aimed at
     dist = FixedMul(clip.attackrange, in->frac);
-    auto thingtopslope = FixedDiv(th->z + th->height - shootz, dist);
+    auto thingtopslope = FixedDiv(th->pos.z + th->height - shootz, dist);
 
     if (thingtopslope < bottomslope)
         return true; // shot over the thing
 
-    auto thingbottomslope = FixedDiv(th->z - shootz, dist);
+    auto thingbottomslope = FixedDiv(th->pos.z - shootz, dist);
 
     if (thingbottomslope > topslope)
         return true; // shot under the thing
@@ -275,7 +274,7 @@ bool shootTraverse(
             }
 
             // Spawn bullet puffs.
-            spawnPuff(x, y, z);
+            spawnPuff({x, y, z});
 
             // don't go any farther
             return false;
@@ -317,12 +316,12 @@ bool shootTraverse(
 
     // check angles to see if the thing can be aimed at
     dist = FixedMul(clip.attackrange, in->frac);
-    thingtopslope = FixedDiv(th->z + th->height - shootz, dist);
+    thingtopslope = FixedDiv(th->pos.z + th->height - shootz, dist);
 
     if (thingtopslope < aimslope)
         return true; // shot over the thing
 
-    thingbottomslope = FixedDiv(th->z - shootz, dist);
+    thingbottomslope = FixedDiv(th->pos.z - shootz, dist);
 
     if (thingbottomslope > aimslope)
         return true; // shot under the thing
@@ -337,9 +336,9 @@ bool shootTraverse(
 
     // Spawn bullet puffs or blod spots, depending on target type.
     if (hasFlag(in->d.thing->flags, MobjFlag::NoBlood))
-        spawnPuff(x, y, z);
+        spawnPuff({x, y, z});
     else
-        spawnBlood(x, y, z, la_damage);
+        spawnBlood({x, y, z}, la_damage);
 
     if (la_damage)
         th->damage(shootthing, shootthing, la_damage);
@@ -375,7 +374,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
     }
 
     auto side = 0;
-    if (in->d.line->pointSide({usething->x, usething->y}) == 1)
+    if (in->d.line->pointSide({usething->pos.x, usething->pos.y}) == 1)
         side = 1;
 
     in->d.line->useSpecialLine(*usething, side);
@@ -401,8 +400,8 @@ static bool
     if (thing->type == MobjType::Cyborg || thing->type == MobjType::Spider)
         return true;
 
-    auto dx = doom_abs(thing->x - bombspot->x);
-    auto dy = doom_abs(thing->y - bombspot->y);
+    auto dx = doom_abs(thing->pos.x - bombspot->pos.x);
+    auto dy = doom_abs(thing->pos.y - bombspot->pos.y);
 
     auto spread = dx > dy ? dx : dy;
 
@@ -477,12 +476,13 @@ static bool changeSectorThing(Mobj* thing, bool crushchange, bool& nofit)
         thing->damage(nullptr, nullptr, 10);
 
         // spray blood in a random direction
-        auto* mo = spawnMobj(
-            thing->x, thing->y, thing->z + thing->height / 2, MobjType::Blood);
+        auto* mo =
+            spawnMobj({thing->pos.x, thing->pos.y, thing->pos.z + thing->height / 2},
+                      MobjType::Blood);
 
         // Raw: the random difference shifted into the fraction, ~+-16 units/tic.
-        mo->momx = Fixed {(randomness().forPlay() - randomness().forPlay()) << 12};
-        mo->momy = Fixed {(randomness().forPlay() - randomness().forPlay()) << 12};
+        mo->mom.x = Fixed {(randomness().forPlay() - randomness().forPlay()) << 12};
+        mo->mom.y = Fixed {(randomness().forPlay() - randomness().forPlay()) << 12};
     }
 
     // keep checking (crush other things)
@@ -514,8 +514,8 @@ void Mobj::slideMove()
     // which is what each vanilla `goto stairstep` did at the point it jumped.
     auto stairstep = [&]
     {
-        if (!tryMove(x, y + momy))
-            tryMove(x + momx, y);
+        if (!tryMove({pos.x, pos.y + mom.y}))
+            tryMove({pos.x + mom.x, pos.y});
     };
 
     for (;;) // vanilla's `retry:` loop
@@ -528,36 +528,42 @@ void Mobj::slideMove()
         }
 
         // trace along the three leading corners
-        if (momx.isPositive())
+        if (mom.x.isPositive())
         {
-            leadx = x + radius;
-            trailx = x - radius;
+            leadx = pos.x + radius;
+            trailx = pos.x - radius;
         }
         else
         {
-            leadx = x - radius;
-            trailx = x + radius;
+            leadx = pos.x - radius;
+            trailx = pos.x + radius;
         }
 
-        if (momy.isPositive())
+        if (mom.y.isPositive())
         {
-            leady = y + radius;
-            traily = y - radius;
+            leady = pos.y + radius;
+            traily = pos.y - radius;
         }
         else
         {
-            leady = y - radius;
-            traily = y + radius;
+            leady = pos.y - radius;
+            traily = pos.y + radius;
         }
 
         scratch.bestslidefrac = FRACUNIT + Fixed {1};
 
-        pathTraverse(
-            leadx, leady, leadx + momx, leady + momy, PT_ADDLINES, slideTraverse);
-        pathTraverse(
-            trailx, leady, trailx + momx, leady + momy, PT_ADDLINES, slideTraverse);
-        pathTraverse(
-            leadx, traily, leadx + momx, traily + momy, PT_ADDLINES, slideTraverse);
+        pathTraverse({leadx, leady},
+                     {leadx + mom.x, leady + mom.y},
+                     PT_ADDLINES,
+                     slideTraverse);
+        pathTraverse({trailx, leady},
+                     {trailx + mom.x, leady + mom.y},
+                     PT_ADDLINES,
+                     slideTraverse);
+        pathTraverse({leadx, traily},
+                     {leadx + mom.x, traily + mom.y},
+                     PT_ADDLINES,
+                     slideTraverse);
 
         // move up to the wall
         if (scratch.bestslidefrac == FRACUNIT + Fixed {1})
@@ -571,10 +577,10 @@ void Mobj::slideMove()
         scratch.bestslidefrac -= Fixed {0x800};
         if (scratch.bestslidefrac.isPositive())
         {
-            newx = FixedMul(momx, scratch.bestslidefrac);
-            newy = FixedMul(momy, scratch.bestslidefrac);
+            newx = FixedMul(mom.x, scratch.bestslidefrac);
+            newy = FixedMul(mom.y, scratch.bestslidefrac);
 
-            if (!tryMove(x + newx, y + newy))
+            if (!tryMove({pos.x + newx, pos.y + newy}))
             {
                 stairstep();
                 return;
@@ -591,16 +597,15 @@ void Mobj::slideMove()
         if (!scratch.bestslidefrac.isPositive())
             return;
 
-        scratch.tmxmove = FixedMul(momx, scratch.bestslidefrac);
-        scratch.tmymove = FixedMul(momy, scratch.bestslidefrac);
+        scratch.tmmove.x = FixedMul(mom.x, scratch.bestslidefrac);
+        scratch.tmmove.y = FixedMul(mom.y, scratch.bestslidefrac);
 
         hitSlideLine(scratch.bestslideline); // clip the moves
 
-        momx = scratch.tmxmove;
-        momy = scratch.tmymove;
+        mom.setXY(scratch.tmmove);
 
         // A successful move ends the slide; a blocked one retries the loop.
-        if (tryMove(x + scratch.tmxmove, y + scratch.tmymove))
+        if (tryMove({pos.x + scratch.tmmove.x, pos.y + scratch.tmmove.y}))
             return;
     }
 }
@@ -617,9 +622,9 @@ AimResult aimLineAttack(Mobj* t1, Angle angle, Fixed distance)
 
     // The range in WHOLE units scales the fixed cosine: an integer product, not a
     // fixed-point one. FixedMul here would divide the reach by 65536.
-    auto x2 = t1->x + distance.toInt() * finecosine()[angleFine];
-    auto y2 = t1->y + distance.toInt() * finesine()[angleFine];
-    auto shootz = t1->z + (t1->height >> 1) + 8 * FRACUNIT;
+    auto x2 = t1->pos.x + distance.toInt() * finecosine()[angleFine];
+    auto y2 = t1->pos.y + distance.toInt() * finesine()[angleFine];
+    auto shootz = t1->pos.z + (t1->height >> 1) + 8 * FRACUNIT;
 
     // can't shoot outside view angles
     auto topslope = 100 * FRACUNIT / 160;
@@ -633,7 +638,7 @@ AimResult aimLineAttack(Mobj* t1, Angle angle, Fixed distance)
         [shootthing, shootz, &topslope, &bottomslope, &result](Intercept* in)
     { return aimTraverse(in, shootthing, shootz, topslope, bottomslope, result); };
 
-    pathTraverse(t1->x, t1->y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryAim);
+    pathTraverse(t1->pos.xy(), {x2, y2}, PT_ADDLINES | PT_ADDTHINGS, tryAim);
 
     return result;
 }
@@ -650,16 +655,16 @@ void Mobj::lineAttack(Angle angleToUse, Fixed distance, Fixed slope, int damage)
     auto* shootthing = this;
     auto la_damage = damage;
     // Whole units scaling the fixed cosine - an integer product. See aimLineAttack.
-    auto x2 = x + distance.toInt() * finecosine()[angleFine];
-    auto y2 = y + distance.toInt() * finesine()[angleFine];
-    auto shootz = z + (height >> 1) + 8 * FRACUNIT;
+    auto x2 = pos.x + distance.toInt() * finecosine()[angleFine];
+    auto y2 = pos.y + distance.toInt() * finesine()[angleFine];
+    auto shootz = pos.z + (height >> 1) + 8 * FRACUNIT;
     clip.attackrange = distance;
     auto aimslope = slope;
 
     const auto tryShoot = [shootthing, shootz, aimslope, la_damage](Intercept* in)
     { return shootTraverse(in, shootthing, shootz, aimslope, la_damage); };
 
-    pathTraverse(x, y, x2, y2, PT_ADDLINES | PT_ADDTHINGS, tryShoot);
+    pathTraverse(pos.xy(), {x2, y2}, PT_ADDLINES | PT_ADDTHINGS, tryShoot);
 }
 
 //
@@ -671,8 +676,8 @@ void Player::useLines()
     auto angle = mo->angle;
     const auto angleFine = angle.fineIndex();
 
-    auto x1 = mo->x;
-    auto y1 = mo->y;
+    auto x1 = mo->pos.x;
+    auto y1 = mo->pos.y;
     // USERANGE in whole units scaling the fixed cosine - an integer product.
     auto x2 = x1 + USERANGE.toInt() * finecosine()[angleFine];
     auto y2 = y1 + USERANGE.toInt() * finesine()[angleFine];
@@ -682,7 +687,7 @@ void Player::useLines()
     const auto tryLine = [usething](Intercept* in)
     { return useTraverse(in, usething); };
 
-    pathTraverse(x1, y1, x2, y2, PT_ADDLINES, tryLine);
+    pathTraverse({x1, y1}, {x2, y2}, PT_ADDLINES, tryLine);
 }
 
 //
@@ -698,10 +703,10 @@ void Mobj::radiusAttack(Mobj* source, int damage)
     Fixed dist {(damage + (MAXRADIUS).raw) << fracBits};
 
     // Blockmap cell indices: a raw shift by MAPBLOCKSHIFT, not a conversion.
-    auto yh = (y + dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
-    auto yl = (y - dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
-    auto xh = (x + dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
-    auto xl = (x - dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
+    auto yh = (pos.y + dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
+    auto yl = (pos.y - dist - level().blockmap.origin.y).raw >> MAPBLOCKSHIFT;
+    auto xh = (pos.x + dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
+    auto xl = (pos.x - dist - level().blockmap.origin.x).raw >> MAPBLOCKSHIFT;
     const auto hitThing = [this, source, damage](Mobj* thing)
     { return radiusAttackThing(thing, this, source, damage); };
 

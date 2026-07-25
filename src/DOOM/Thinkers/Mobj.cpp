@@ -16,7 +16,7 @@ namespace Doom
 void Mobj::tick()
 {
     // momentum movement
-    if (momx || momy || (hasFlag(flags, MobjFlag::SkullFly)))
+    if (mom.x || mom.y || (hasFlag(flags, MobjFlag::SkullFly)))
     {
         xyMovement();
 
@@ -24,7 +24,7 @@ void Mobj::tick()
         if (removed)
             return; // mobj was removed
     }
-    if ((z != floorz) || momz)
+    if ((pos.z != floorz) || mom.z)
     {
         zMovement();
 

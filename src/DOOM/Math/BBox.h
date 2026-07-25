@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Fixed.h"
+#include "Vec.h"
 
 #include <algorithm>
 #include <limits>
@@ -46,17 +47,17 @@ struct BBox
     // P_BlockLinesIterator see.
     //
     // Pinned by Tests/Sim/MathTests.cpp.
-    constexpr void add(Fixed x, Fixed y)
+    constexpr void add(Vec2 point)
     {
-        if (x < left)
-            left = x;
-        else if (x > right)
-            right = x;
+        if (point.x < left)
+            left = point.x;
+        else if (point.x > right)
+            right = point.x;
 
-        if (y < bottom)
-            bottom = y;
-        else if (y > top)
-            top = y;
+        if (point.y < bottom)
+            bottom = point.y;
+        else if (point.y > top)
+            top = point.y;
     }
 };
 
@@ -79,5 +80,5 @@ constexpr int boxRight = 3;
 
 BBox& asBBox(Fixed* box);
 void clearBox(Fixed* box);
-void addToBox(Fixed* box, Fixed x, Fixed y);
+void addToBox(Fixed* box, Vec2 point);
 } // namespace Doom

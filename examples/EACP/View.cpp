@@ -9,8 +9,9 @@ static bool jumped(const Engine::Camera& from, const Engine::Camera& to)
 {
     constexpr auto limit = 128.0f;
 
-    return std::abs(to.x - from.x) > limit || std::abs(to.y - from.y) > limit
-           || std::abs(to.z - from.z) > limit;
+    return std::abs(to.pos.x - from.pos.x) > limit
+           || std::abs(to.pos.y - from.pos.y) > limit
+           || std::abs(to.pos.z - from.pos.z) > limit;
 }
 
 static float shortestTurn(float from, float to)
@@ -138,9 +139,7 @@ Engine::Camera View::viewCamera() const
 {
     auto camera = currentCamera;
 
-    camera.x = std::lerp(previousCamera.x, currentCamera.x, ticFraction);
-    camera.y = std::lerp(previousCamera.y, currentCamera.y, ticFraction);
-    camera.z = std::lerp(previousCamera.z, currentCamera.z, ticFraction);
+    camera.pos = Engine::lerp(previousCamera.pos, currentCamera.pos, ticFraction);
     camera.angle = viewAngle();
 
     return camera;
@@ -290,9 +289,9 @@ void View::drawWorld(GPU::RenderPass& pass,
 
     worldBuffer.update(world.vertices.data(), world.vertices.size_bytes());
 
-    worldShader.camX = camera.x;
-    worldShader.camY = camera.z;
-    worldShader.camZ = -camera.y;
+    worldShader.camX = camera.pos.x;
+    worldShader.camY = camera.pos.z;
+    worldShader.camZ = -camera.pos.y;
     worldShader.yaw = camera.angle - pi / 2.0f;
 
     // The projection is built for the view with the status bar up, so a
@@ -339,19 +338,15 @@ void View::drawWeapon(GPU::RenderPass& pass,
 
         // The weapon bobs on the tic like everything else, so it is placed
         // between tics like everything else.
-        auto x = sprite.x;
-        auto y = sprite.y;
+        auto at = sprite.at;
 
         if (was.textureId >= 0)
-        {
-            x = std::lerp(was.x, sprite.x, ticFraction);
-            y = std::lerp(was.y, sprite.y, ticFraction);
-        }
+            at = Engine::lerp(was.at, sprite.at, ticFraction);
 
         hudShader.dstOrigin =
-            std::array {viewport.x + x * scaleX, viewport.y + y * scaleY};
+            std::array {viewport.x + at.x * scaleX, viewport.y + at.y * scaleY};
         hudShader.dstSize =
-            std::array {sprite.width * scaleX, sprite.height * scaleY};
+            std::array {sprite.size.x * scaleX, sprite.size.y * scaleY};
         hudShader.uRange =
             sprite.flip ? std::array {1.0f, 0.0f} : std::array {0.0f, 1.0f};
         hudShader.light = sprite.light;

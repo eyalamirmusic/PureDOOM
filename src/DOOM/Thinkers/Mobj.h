@@ -9,6 +9,7 @@
 // Basics.
 #include "../Math/TrigTables.h"
 #include "../Math/FixedPoint.h"
+#include "../Math/Vec.h"
 
 // We need the Thinker stuff.
 #include "../Sim/ActionFunc.h"
@@ -62,7 +63,7 @@ struct SubSector;
 //
 // Every Mobj is linked into a single sector
 // based on its origin coordinates.
-// The SubSector is found with pointInSubsector(x,y),
+// The SubSector is found with pointInSubsector({x, y}),
 // and the Sector can be found with subsector->sector.
 // The sector links are only used by the rendering code,
 // the play simulation does not care about them at all.
@@ -277,9 +278,9 @@ struct Mobj : Thinker
     // Movement clipping (vanilla p_map core): does this thing fit at (x, y), and the
     // commit of a move if it does. Bodies in Sim/Movement.cpp. The PIT_* blockmap
     // callbacks stay free functions there (the iterator takes their address).
-    bool checkPosition(Fixed xToUse, Fixed yToUse);
-    bool tryMove(Fixed xToUse, Fixed yToUse);
-    bool teleportMove(Fixed xToUse, Fixed yToUse);
+    bool checkPosition(Vec2 target);
+    bool tryMove(Vec2 target);
+    bool teleportMove(Vec2 target);
     bool thingHeightClip();
 
     // Hitscan, splash and sliding (vanilla p_map, past the movement core). Bodies in
@@ -294,9 +295,12 @@ struct Mobj : Thinker
     void damage(Mobj* inflictor, Mobj* source, int damage);
 
     // Info for drawing: position.
-    Fixed x;
-    Fixed y;
-    Fixed z;
+    //
+    // Sim/MapTypes.h's DegenMobj must keep this at the same offset - the sound
+    // code casts one to a Mobj* and reads the position off it. Both hold a Vec3
+    // as their first data member after the Thinker base, and
+    // Tests/Sim/StateClusterTests.cpp puts the cast through its paces.
+    Vec3 pos;
 
     // More list: links in sector (if needed)
     struct Mobj* snext = nullptr;
@@ -323,9 +327,7 @@ struct Mobj : Thinker
     Fixed height;
 
     // Momentums, used to update position.
-    Fixed momx;
-    Fixed momy;
-    Fixed momz;
+    Vec3 mom;
 
     // If == validcount, already checked.
     int validcount = 0;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Math/Vec.h"
 #include "../doomtype.h"
 
 #include "WipeState.h" // the melt's cross-read state - was three externs here
@@ -17,7 +18,7 @@ enum class WipeType
 };
 
 // Screen wipe / melt; f_wipe.cpp keeps the vanilla wipe_ names as shims.
-int startScreen(int x, int y, int width, int height);
-int endScreen(int x, int y, int width, int height);
-int screenWipe(WipeType wipeno, int x, int y, int width, int height, int ticks);
+int startScreen(Vec2i at, Vec2i size);
+int endScreen(Vec2i at, Vec2i size);
+int screenWipe(WipeType wipeno, Vec2i at, Vec2i size, int ticks);
 } // namespace Doom

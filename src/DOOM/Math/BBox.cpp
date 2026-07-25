@@ -28,8 +28,8 @@ void clearBox(Fixed* box)
     asBBox(box) = BBox::empty();
 }
 
-void addToBox(Fixed* box, Fixed x, Fixed y)
+void addToBox(Fixed* box, Vec2 point)
 {
-    asBBox(box).add(x, y);
+    asBBox(box).add(point);
 }
 } // namespace Doom

@@ -75,7 +75,7 @@ Breaking one silently defeats the whole apparatus.
   `extern` (outside comments and `extern "C"` prose) comes back empty, and it
   should stay that way. What used to be an `extern` global is now either a member
   of an `Engine` state cluster reached through its accessor (`level().sectors`,
-  `graphicsData().textures`, `automapView().m_x`, `videoState().screens`,
+  `graphicsData().textures`, `automapView().m_origin`, `videoState().screens`,
   `wipeState().meltRunning`, …) or, for the generated/config data tables that stay
   defined in one `.cpp`, a free accessor function (`states()`, `mobjinfo()`,
   `finesine()`, `S_sfx()`, `defaults()`, …).
@@ -89,7 +89,7 @@ Breaking one silently defeats the whole apparatus.
   | `Game/` | 56 | game loop, netcode, config, args, sound dispatch, and most of the `Engine`'s state clusters |
   | `UI/` | 42 | menu, HUD, status bar, automap, intermission, finale, screen melt, cheats |
   | `Render/` | 38 | the software renderer, all eight units — `Main`, `BSP`, `Segs`, `Planes`, `Things`, `Draw`, `Data`, `Sky`, plus `Video`, and the `Drawers` drawer-selection cluster |
-  | `Math/` | 12 | `Fixed`, `Angle`, `Trig`, `BBox`, `Vec2`, `Swap` |
+  | `Math/` | 12 | `Fixed`, `Angle`, `Trig`, `BBox`, `Vec` (`Vec2`/`Vec3`/`Vec2i`), `Swap` |
   | `Host/` | 12 | the platform boundary — `Video`, `System`, `Sound`, `Net`, `Api`, `Host` |
   | `Wad/` | 3 | `WadFile` |
   | `Engine/` | 2 | `Engine`, the composition root |
@@ -305,6 +305,35 @@ everywhere.** The `using fixed_t = Doom::Fixed;` / `using angle_t = Doom::Angle;
 aliases that used to stand in for them are retired — a grep for `fixed_t`/`angle_t`
 finds only the comments recording that they are gone. `FixedMul`/`FixedDiv` survive
 as thin operator wrappers for readability.
+
+#### Points are `Vec2` / `Vec3` / `Vec2i`, not loose pairs
+
+`Math/Vec.h` holds all three: `Vec2` (two `Fixed`, the map plane), `Vec3` (three,
+with `.xy()` and `setXY` — the playsim is mostly two-dimensional and z is carried
+along), and `Vec2i` (two `int`, a screen pixel). **`Vertex` and `MapPoint` are
+aliases of `Vec2`**, which is what lets `line.pointSide(*seg.v1)` take an endpoint
+straight from the map. A `Mobj` holds `pos` and `mom`; a `Line` holds `delta`; a
+`Node` holds a whole `DivLine partition`, so the cast vanilla used to reach it with
+has nothing left to do.
+
+**They are aggregates and must stay aggregates.** Every site builds one with
+`{x, y}` and the savegame still `memcpy`s a whole `Mobj`, so a user-declared
+constructor would break both at once.
+
+What deliberately stays a loose pair, and why — the rule is whether the two numbers
+are one *quantity*:
+
+| Stays loose | Why |
+|---|---|
+| `Wad/MapFormat.h`'s `short x, y` | `reinterpret_cast` onto raw WAD lump bytes |
+| `Blockmap::contains`/`index`, `forEach*InBlock` | `bx`/`by` are loop counters over a cell *range* derived from a box's four edges, not a point. `blockOf(Vec2)` exists for the sites that do convert a point |
+| `VisSprite::gz`/`gzt` | the two ends of a vertical extent, not `gpos`'s third component |
+| `DOOM.h`'s `mouseMove(int, int)` | the embedder's public interface; the pair is a delta an untyped caller supplies |
+
+`DegenMobj` must keep `pos` at the same offset as `Mobj`'s — the sound code casts
+one to the other. That is not a `static_assert` (both are polymorphic, so `offsetof`
+would draw `-Winvalid-offsetof`); `Tests/Sim/StateClusterTests.cpp` puts the actual
+cast through its paces instead, and inserting a field before `pos` fails it.
 
 **`doom_boolean` is gone**; a boolean is a `bool`. Four declarations **stay `int`**
 on purpose, each saying so at its site, because each is storage that only *looks*
@@ -716,7 +745,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-101 tests, roughly thirty-five seconds. **Run it before and after anything you change in
+104 tests, roughly thirty-five seconds. **Run it before and after anything you change in
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -962,12 +991,24 @@ deserve their own note:
   heap. Raising the tail to 256 made every test pass on both Windows toolchains
   **with no golden re-recorded**, which is the proof.
 
-- **`pointOnLineSide` and `pointOnDivlineSide` are different formulae** (both in
-  `Sim/MapGeometry.h`) and must stay different. The line version shifts one factor of
-  the cross product by `FRACBITS`; the divline version shifts both by 8 and has a
-  sign-bit fast path. They answer the same for a point clearly off the line but not
-  identically at the margins, and the collision/BSP/sight code depends on the specific
-  one it calls. Merging them desyncs the demos.
+- **There are four side tests and they are four different formulae.** Three are in
+  `Sim/MapGeometry.h` — `pointOnLineSide` shifts one factor of the cross product by
+  `FRACBITS` and has no fast path; `pointOnDivlineSide` shifts *both* by 8 and has a
+  sign-bit fast path; `pointOnPartitionSide` takes one of each (shift by `FRACBITS`,
+  *and* the fast path) and is what the BSP descends by. The fourth, `Sim/Sight.cpp`'s
+  `divlineSide`, returns 2 for "on" and multiplies as plain ints — and compares `x`
+  against `origin.y` in one branch, which is vanilla's own typo and load-bearing.
+
+  They answer the same for a point clearly off the line but not identically at the
+  margins, and the collision/BSP/sight code depends on the specific one it calls.
+  Merging any two desyncs the demos.
+
+  What *was* merged, safely, is the pair that were already character-for-character
+  identical: `R_PointOnSide` and `R_PointOnSegSide` were the same arithmetic over a
+  node's partition and a seg's two endpoints. `Render/Main.cpp` keeps both names —
+  they are the two ways of naming the line — and both forward to
+  `pointOnPartitionSide`. Establish byte-identity before doing that again; three of
+  the four look mergeable and are not.
 
 Those are spot-checks, which is the right shape for a property and the wrong shape
 for a transcription. So the tables are *also* checksummed whole — `finesine`,
@@ -1041,7 +1082,7 @@ at by accident on one.
 macOS universal build (AppleClang, `arm64;x86_64` — so the x86_64 half is compiled
 though only the arm64 slice is run, the runner being Apple silicon and Rosetta not
 installed on it), and Windows on **x64 and ARM64** under **both MSVC and clang-cl**.
-All five are Ninja, `Release`, every target built and all 101 tests run. The earlier
+All five are Ninja, `Release`, every target built and all 104 tests run. The earlier
 matrix had a `macos-latest × gcc` row that was the clang row run twice: on a macOS
 runner bare `gcc`/`g++` resolve to `/usr/bin`, which is Apple Clang wearing the name.
 

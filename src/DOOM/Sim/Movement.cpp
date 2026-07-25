@@ -31,8 +31,8 @@ bool stompThing(Mobj* thing)
 
     auto blockdist = thing->radius + clip.tmthing->radius;
 
-    if (doom_abs(thing->x - clip.tmx) >= blockdist
-        || doom_abs(thing->y - clip.tmy) >= blockdist)
+    if (doom_abs(thing->pos.x - clip.tmpos.x) >= blockdist
+        || doom_abs(thing->pos.y - clip.tmpos.y) >= blockdist)
     {
         // didn't hit it
         return true;
@@ -125,8 +125,8 @@ bool checkThing(Mobj* thing)
 
     auto blockdist = thing->radius + clip.tmthing->radius;
 
-    if (doom_abs(thing->x - clip.tmx) >= blockdist
-        || doom_abs(thing->y - clip.tmy) >= blockdist)
+    if (doom_abs(thing->pos.x - clip.tmpos.x) >= blockdist
+        || doom_abs(thing->pos.y - clip.tmpos.y) >= blockdist)
     {
         // didn't hit it
         return true;
@@ -145,7 +145,7 @@ bool checkThing(Mobj* thing)
         thing->damage(clip.tmthing, clip.tmthing, damage);
 
         clip.tmthing->flags = withoutFlags(clip.tmthing->flags, MobjFlag::SkullFly);
-        clip.tmthing->momx = clip.tmthing->momy = clip.tmthing->momz = Fixed {};
+        clip.tmthing->mom = {};
 
         clip.tmthing->setState(
             static_cast<StateNum>(clip.tmthing->info->spawnstate));
@@ -157,9 +157,9 @@ bool checkThing(Mobj* thing)
     if (hasFlag(clip.tmthing->flags, MobjFlag::Missile))
     {
         // see if it went over / under
-        if (clip.tmthing->z > thing->z + thing->height)
+        if (clip.tmthing->pos.z > thing->pos.z + thing->height)
             return true; // overhead
-        if (clip.tmthing->z + clip.tmthing->height < thing->z)
+        if (clip.tmthing->pos.z + clip.tmthing->height < thing->pos.z)
             return true; // underneath
 
         if (clip.tmthing->target
@@ -212,22 +212,21 @@ bool checkThing(Mobj* thing)
 }
 } // namespace
 
-bool Mobj::checkPosition(Fixed xToUse, Fixed yToUse)
+bool Mobj::checkPosition(Vec2 target)
 {
     auto& clip = clipping();
 
     clip.tmthing = this;
     clip.tmflags = flags;
 
-    clip.tmx = xToUse;
-    clip.tmy = yToUse;
+    clip.tmpos = target;
 
-    clip.tmbbox[boxTop] = yToUse + clip.tmthing->radius;
-    clip.tmbbox[boxBottom] = yToUse - clip.tmthing->radius;
-    clip.tmbbox[boxRight] = xToUse + clip.tmthing->radius;
-    clip.tmbbox[boxLeft] = xToUse - clip.tmthing->radius;
+    clip.tmbbox[boxTop] = target.y + clip.tmthing->radius;
+    clip.tmbbox[boxBottom] = target.y - clip.tmthing->radius;
+    clip.tmbbox[boxRight] = target.x + clip.tmthing->radius;
+    clip.tmbbox[boxLeft] = target.x - clip.tmthing->radius;
 
-    auto* newsubsec = pointInSubsector(xToUse, yToUse);
+    auto* newsubsec = pointInSubsector({target.x, target.y});
     clip.ceilingline = nullptr;
 
     // The base floor / ceiling is from the subsector that contains the point. Any
@@ -270,12 +269,12 @@ bool Mobj::checkPosition(Fixed xToUse, Fixed yToUse)
     return true;
 }
 
-bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
+bool Mobj::tryMove(Vec2 target)
 {
     auto& clip = clipping();
 
     clip.floatok = false;
-    if (!checkPosition(xToUse, yToUse))
+    if (!checkPosition({target.x, target.y}))
         return false; // solid wall or thing
 
     if (!(hasFlag(flags, MobjFlag::NoClip)))
@@ -285,11 +284,12 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
 
         clip.floatok = true;
 
-        if (!(hasFlag(flags, MobjFlag::Teleport)) && clip.tmceilingz - z < height)
+        if (!(hasFlag(flags, MobjFlag::Teleport))
+            && clip.tmceilingz - pos.z < height)
             return false; // mobj must lower itself to fit
 
         if (!(hasFlag(flags, MobjFlag::Teleport))
-            && clip.tmfloorz - z > 24 * FRACUNIT)
+            && clip.tmfloorz - pos.z > 24 * FRACUNIT)
             return false; // too big a step up
 
         if (!(hasFlag(flags, MobjFlag::DropOff, MobjFlag::Float))
@@ -300,12 +300,11 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
     // the move is ok, so link the thing into its new position
     unsetPosition();
 
-    auto oldx = x;
-    auto oldy = y;
+    auto oldx = pos.x;
+    auto oldy = pos.y;
     floorz = clip.tmfloorz;
     ceilingz = clip.tmceilingz;
-    x = xToUse;
-    y = yToUse;
+    pos.setXY(target);
 
     setPosition();
 
@@ -316,7 +315,7 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
         {
             // see if the line was crossed
             auto* ld = clip.spechit[clip.numspechit];
-            auto side = ld->pointSide({x, y});
+            auto side = ld->pointSide({pos.x, pos.y});
             auto oldside = ld->pointSide({oldx, oldy});
             if (side != oldside)
             {
@@ -329,7 +328,7 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
     return true;
 }
 
-bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
+bool Mobj::teleportMove(Vec2 target)
 {
     auto& clip = clipping();
 
@@ -337,15 +336,14 @@ bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
     clip.tmthing = this;
     clip.tmflags = flags;
 
-    clip.tmx = xToUse;
-    clip.tmy = yToUse;
+    clip.tmpos = target;
 
-    clip.tmbbox[boxTop] = yToUse + clip.tmthing->radius;
-    clip.tmbbox[boxBottom] = yToUse - clip.tmthing->radius;
-    clip.tmbbox[boxRight] = xToUse + clip.tmthing->radius;
-    clip.tmbbox[boxLeft] = xToUse - clip.tmthing->radius;
+    clip.tmbbox[boxTop] = target.y + clip.tmthing->radius;
+    clip.tmbbox[boxBottom] = target.y - clip.tmthing->radius;
+    clip.tmbbox[boxRight] = target.x + clip.tmthing->radius;
+    clip.tmbbox[boxLeft] = target.x - clip.tmthing->radius;
 
-    auto* newsubsec = pointInSubsector(xToUse, yToUse);
+    auto* newsubsec = pointInSubsector({target.x, target.y});
     clip.ceilingline = nullptr;
 
     // The base floor/ceiling is from the subsector that contains the point. Any
@@ -377,8 +375,7 @@ bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
 
     floorz = clip.tmfloorz;
     ceilingz = clip.tmceilingz;
-    x = xToUse;
-    y = yToUse;
+    pos.setXY(target);
 
     setPosition();
 
@@ -389,9 +386,9 @@ bool Mobj::thingHeightClip()
 {
     auto& clip = clipping();
 
-    auto onfloor = (z == floorz);
+    auto onfloor = (pos.z == floorz);
 
-    checkPosition(x, y);
+    checkPosition(pos.xy());
     // what about stranding a monster partially off an edge?
 
     floorz = clip.tmfloorz;
@@ -400,13 +397,13 @@ bool Mobj::thingHeightClip()
     if (onfloor)
     {
         // walking monsters rise and fall with the floor
-        z = floorz;
+        pos.z = floorz;
     }
     else
     {
         // don't adjust a floating monster unless forced to
-        if (z + height > ceilingz)
-            z = ceilingz - height;
+        if (pos.z + height > ceilingz)
+            pos.z = ceilingz - height;
     }
 
     if (ceilingz - floorz < height)

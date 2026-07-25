@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Game/GameDefs.h" // SCREENHEIGHT
+#include "../Math/Vec.h"
 #include "../doomtype.h" // byte
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h" // Patch
@@ -12,18 +13,11 @@
 namespace Doom
 {
 // Low-level framebuffer drawing; v_video.cpp keeps the vanilla V_ names as shims.
-void markRect(int x, int y, int width, int height);
-void copyRect(int srcx,
-              int srcy,
-              int srcscrn,
-              int width,
-              int height,
-              int destx,
-              int desty,
-              int destscrn);
-void drawPatch(int x, int y, int scrn, Patch* patch);
-void drawPatchFlipped(int x, int y, int scrn, Patch* patch);
-void drawPatchRectDirect(int x, int y, int scrn, Patch* patch, int src_x, int src_w);
-void drawPatchDirect(int x, int y, int scrn, Patch* patch);
-void drawBlock(int x, int y, int scrn, int width, int height, byte* src);
+void markRect(Vec2i at, Vec2i size);
+void copyRect(Vec2i srcAt, int srcscrn, Vec2i size, Vec2i destAt, int destscrn);
+void drawPatch(Vec2i at, int scrn, Patch* patch);
+void drawPatchFlipped(Vec2i at, int scrn, Patch* patch);
+void drawPatchRectDirect(Vec2i at, int scrn, Patch* patch, int src_x, int src_w);
+void drawPatchDirect(Vec2i at, int scrn, Patch* patch);
+void drawBlock(Vec2i at, int scrn, Vec2i size, byte* src);
 } // namespace Doom

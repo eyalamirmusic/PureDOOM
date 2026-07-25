@@ -57,11 +57,11 @@ constexpr int FIELDOFVIEW = 2048;
 // file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired it - setViewSize and executeSetViewSize
 // each reach it through renderMainState() directly.
 // Forward declarations so call order needs no rearranging.
-int pointOnSide(Fixed x, Fixed y, Node& node);
-int pointOnSegSide(Fixed x, Fixed y, Seg& line);
-Angle pointToAngle(Fixed x, Fixed y);
-Angle pointToAngle2(Fixed x1, Fixed y1, Fixed x2, Fixed y2);
-Fixed pointToDist(Fixed x, Fixed y);
+int pointOnSide(Vec2 point, Node& node);
+int pointOnSegSide(Vec2 point, Seg& line);
+Angle pointToAngle(Vec2 point);
+Angle pointToAngle2(Vec2 from, Vec2 to);
+Fixed pointToDist(Vec2 point);
 void initPointToAngle();
 Fixed scaleFromGlobalAngle(Angle visangle);
 void initTables();
@@ -70,7 +70,7 @@ void initLightTables();
 void setViewSize(int blocks, int detail);
 void executeSetViewSize();
 void renderInit();
-SubSector* pointInSubsector(Fixed x, Fixed y);
+SubSector* pointInSubsector(Vec2 point);
 void setupFrame(Player& player);
 void renderPlayerView(Player& player);
 
@@ -80,110 +80,20 @@ void renderPlayerView(Player& player);
 //  check point against partition plane.
 // Returns side 0 (front) or 1 (back).
 //
-int pointOnSide(Fixed x, Fixed y, Node& node)
+// Both of these were spelled out in full and were the same arithmetic; the
+// formula, and why it must not be merged with the engine's three other side
+// tests, is at pointOnPartitionSide (Sim/MapGeometry.h). All that differs is
+// where the line comes from: a node carries its partition, a seg has to have one
+// derived from its two endpoints.
+//
+int pointOnSide(Vec2 point, Node& node)
 {
-    Fixed dx;
-    Fixed dy;
-    Fixed left;
-    Fixed right;
-
-    if (!node.dx)
-    {
-        if (x <= node.x)
-            return node.dy.isPositive();
-
-        return node.dy.isNegative();
-    }
-    if (!node.dy)
-    {
-        if (y <= node.y)
-            return node.dx.isNegative();
-
-        return node.dx.isPositive();
-    }
-
-    dx = (x - node.x);
-    dy = (y - node.y);
-
-    // Try to quickly decide by looking at sign bits.
-    if ((node.dy.raw ^ node.dx.raw ^ dx.raw ^ dy.raw) & 0x80000000)
-    {
-        if ((node.dy.raw ^ dx.raw) & 0x80000000)
-        {
-            // (left is negative)
-            return 1;
-        }
-        return 0;
-    }
-
-    left = FixedMul(node.dy >> fracBits, dx);
-    right = FixedMul(dy, node.dx >> fracBits);
-
-    if (right < left)
-    {
-        // front side
-        return 0;
-    }
-    // back side
-    return 1;
+    return pointOnPartitionSide(point, node.partition);
 }
 
-int pointOnSegSide(Fixed x, Fixed y, Seg& line)
+int pointOnSegSide(Vec2 point, Seg& line)
 {
-    Fixed lx;
-    Fixed ly;
-    Fixed ldx;
-    Fixed ldy;
-    Fixed dx;
-    Fixed dy;
-    Fixed left;
-    Fixed right;
-
-    lx = line.v1->x;
-    ly = line.v1->y;
-
-    ldx = line.v2->x - lx;
-    ldy = line.v2->y - ly;
-
-    if (!ldx)
-    {
-        if (x <= lx)
-            return ldy.isPositive();
-
-        return ldy.isNegative();
-    }
-    if (!ldy)
-    {
-        if (y <= ly)
-            return ldx.isNegative();
-
-        return ldx.isPositive();
-    }
-
-    dx = (x - lx);
-    dy = (y - ly);
-
-    // Try to quickly decide by looking at sign bits.
-    if ((ldy.raw ^ ldx.raw ^ dx.raw ^ dy.raw) & 0x80000000)
-    {
-        if ((ldy.raw ^ dx.raw) & 0x80000000)
-        {
-            // (left is negative)
-            return 1;
-        }
-        return 0;
-    }
-
-    left = FixedMul(ldy >> fracBits, dx);
-    right = FixedMul(dy, ldx >> fracBits);
-
-    if (right < left)
-    {
-        // front side
-        return 0;
-    }
-    // back side
-    return 1;
+    return pointOnPartitionSide(point, {*line.v1, *line.v2 - *line.v1});
 }
 
 //
@@ -195,12 +105,12 @@ int pointOnSegSide(Fixed x, Fixed y, Seg& line)
 //  tangent (slope) value which is looked up in the
 //  tantoangle[] table.
 
-Angle pointToAngle(Fixed x, Fixed y)
+Angle pointToAngle(Vec2 point)
 {
     auto& pt = viewPoint();
 
-    x -= pt.viewx;
-    y -= pt.viewy;
+    auto x = point.x - pt.pos.x;
+    auto y = point.y - pt.pos.y;
 
     if ((!x) && (!y))
         return Angle {};
@@ -286,18 +196,23 @@ Angle pointToAngle(Fixed x, Fixed y)
     return Angle {};
 }
 
-Angle pointToAngle2(Fixed x1, Fixed y1, Fixed x2, Fixed y2)
+Angle pointToAngle2(Vec2 from, Vec2 to)
 {
     auto& pt = viewPoint();
 
-    pt.viewx = x1;
-    pt.viewy = y1;
+    // Clobbers the view point, exactly as vanilla's R_PointToAngle2 does: it is
+    // the only way to make pointToAngle measure from somewhere other than the
+    // camera, and the next setupFrame puts it back.
+    pt.pos.setXY(from);
 
-    return pointToAngle(x2, y2);
+    return pointToAngle(to);
 }
 
-Fixed pointToDist(Fixed x, Fixed y)
+Fixed pointToDist(Vec2 point)
 {
+    const auto x = point.x;
+    const auto y = point.y;
+
     Fixed dx;
     Fixed dy;
     Fixed temp;
@@ -305,8 +220,8 @@ Fixed pointToDist(Fixed x, Fixed y)
 
     auto& pt = viewPoint();
 
-    dx = doom_abs(x - pt.viewx);
-    dy = doom_abs(y - pt.viewy);
+    dx = doom_abs(x - pt.pos.x);
+    dy = doom_abs(y - pt.pos.y);
 
     if (dy > dx)
     {
@@ -633,7 +548,7 @@ void renderInit()
 //
 // pointInSubsector
 //
-SubSector* pointInSubsector(Fixed x, Fixed y)
+SubSector* pointInSubsector(Vec2 point)
 {
     Node* node;
     int side;
@@ -648,7 +563,7 @@ SubSector* pointInSubsector(Fixed x, Fixed y)
     while (!(nodenum & NF_SUBSECTOR))
     {
         node = &level().nodes[nodenum];
-        side = pointOnSide(x, y, *node);
+        side = pointOnSide(point, *node);
         nodenum = node->children[side];
     }
 
@@ -664,12 +579,11 @@ void setupFrame(Player& player)
     auto& lights = lighting();
 
     pt.viewplayer = &player;
-    pt.viewx = player.mo->x;
-    pt.viewy = player.mo->y;
+    pt.pos.setXY(player.mo->pos.xy());
     pt.viewangle = player.mo->angle;
     lights.extralight = player.extralight;
 
-    pt.viewz = player.viewz;
+    pt.pos.z = player.viewz;
 
     pt.viewsin = finesine()[pt.viewangle.fineIndex()];
     pt.viewcos = finecosine()[pt.viewangle.fineIndex()];

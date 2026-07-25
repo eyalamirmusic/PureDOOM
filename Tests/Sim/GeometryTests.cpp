@@ -14,7 +14,7 @@
 #include "../Common.h"
 
 #include <DOOM/Math/Fixed.h>
-#include <DOOM/Math/Vec2.h>
+#include <DOOM/Math/Vec.h>
 #include <DOOM/Sim/Blockmap.h>
 #include <DOOM/Sim/MapGeometry.h>
 
@@ -120,16 +120,16 @@ auto tInterceptVectorParallel = test("Geometry/interceptVectorParallelIsZero") =
 auto tApproxDistanceAxisAndSymmetry =
     test("Geometry/approxDistanceAxisAndSymmetry") = []
 {
-    check(approxDistance(Fixed::fromInt(5), Fixed {0}) == Fixed::fromInt(5),
+    check(approxDistance({Fixed::fromInt(5), Fixed {0}}) == Fixed::fromInt(5),
           "distance along x is exact");
-    check(approxDistance(Fixed {0}, Fixed::fromInt(5)) == Fixed::fromInt(5),
+    check(approxDistance({Fixed {0}, Fixed::fromInt(5)}) == Fixed::fromInt(5),
           "distance along y is exact");
 
-    check(approxDistance(Fixed::fromInt(3), Fixed::fromInt(4))
-              == approxDistance(Fixed::fromInt(4), Fixed::fromInt(3)),
+    check(approxDistance({Fixed::fromInt(3), Fixed::fromInt(4)})
+              == approxDistance({Fixed::fromInt(4), Fixed::fromInt(3)}),
           "symmetric in dx, dy");
-    check(approxDistance(Fixed::fromInt(-3), Fixed::fromInt(4))
-              == approxDistance(Fixed::fromInt(3), Fixed::fromInt(4)),
+    check(approxDistance({Fixed::fromInt(-3), Fixed::fromInt(4)})
+              == approxDistance({Fixed::fromInt(3), Fixed::fromInt(4)}),
           "the sign of the deltas does not matter");
 };
 
@@ -140,13 +140,14 @@ auto tApproxDistanceOverestimatesDiagonal =
     test("Geometry/approxDistanceOverestimatesDiagonal") = []
 {
     // 3-4-5: the true distance is 5, the estimate is 4 + 3/2 = 5.5.
-    check(approxDistance(Fixed::fromInt(3), Fixed::fromInt(4))
+    check(approxDistance({Fixed::fromInt(3), Fixed::fromInt(4)})
               == Fixed {Fixed::fromInt(11).raw / 2},
           "3,4 estimates 5.5 units, not 5");
     // Equal legs: true 4*sqrt(2) ~= 5.66, estimate 4 + 4/2 = 6.
-    check(approxDistance(Fixed::fromInt(4), Fixed::fromInt(4)) == Fixed::fromInt(6),
+    check(approxDistance({Fixed::fromInt(4), Fixed::fromInt(4)})
+              == Fixed::fromInt(6),
           "equal legs estimate 6 units");
-    check(approxDistance(Fixed::fromInt(3), Fixed::fromInt(4)) > Fixed::fromInt(5),
+    check(approxDistance({Fixed::fromInt(3), Fixed::fromInt(4)}) > Fixed::fromInt(5),
           "the estimate never underrates the diagonal");
 };
 

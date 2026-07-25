@@ -25,6 +25,7 @@
 #include "../Game/PlayerTypes.h"
 #include "../Wad/MapFormat.h"
 #include "../Math/FixedPoint.h"
+#include "../Math/Vec.h"
 #include "../Math/TrigTables.h"
 
 // Used by ST StatusBar stuff.
@@ -55,10 +56,9 @@ constexpr int AM_MSGEXITED = AM_MSGHEADER | ('x' << 8);
 // is what AM_Drawer reads, not what it writes. That is all this is: the state and
 // the shapes, named. The choices stay AM_Drawer's own.
 //
-struct MapPoint
-{
-    Fixed x, y;
-};
+// The automap's point is the engine's point; the name is kept because the map's
+// shapes and the port's reader both spell it.
+using MapPoint = Vec2;
 
 struct MapLine
 {
