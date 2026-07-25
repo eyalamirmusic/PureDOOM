@@ -108,6 +108,19 @@ struct AutomapView
     int markpointnum = 0; // the next mark slot
 
     bool stopped = true; // the automap is closed
+
+    // The window's own coordinate transform, both directions. These read nothing
+    // but this view's scale and rect, so they are methods rather than the file-local
+    // helpers in UI/Automap.cpp they used to be - three of which reached back through
+    // automapView() to find the very object they were transforming for. Kept inline
+    // here because the automap calls them per map line.
+    Fixed frameToMap(int x) const { return FixedMul(Fixed::fromInt(x), scale_ftom); }
+
+    int mapToFrame(Fixed x) const { return FixedMul(x, scale_mtof).toInt(); }
+
+    int mapXToFrame(Fixed x) const { return f_x + mapToFrame(x - m_x); }
+
+    int mapYToFrame(Fixed y) const { return f_y + (f_h - mapToFrame(y - m_y)); }
 };
 
 // The one AutomapView, a view onto the Engine's member - the same pattern as the other clusters

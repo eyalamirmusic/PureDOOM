@@ -47,17 +47,16 @@ constexpr int HEIGHTUNIT = 1 << HEIGHTBITS;
 // The per-wall-segment rendering intermediates now live on the Engine (Render/WallScratch.h, moved
 // by the file-scope-statics sweep - REFACTOR.md, Step 5); read by no other file. All twenty were
 // references onto that member until the file-local-alias sweep (REFACTOR.md, Step 9 strand (a))
-// retired them - renderMaskedSegRange, renderSegLoop and storeWallRange each hoist wallScratch() once
+// retired them - DrawSeg::renderMaskedRange, renderSegLoop and storeWallRange each hoist wallScratch() once
 // (renderSegLoop is the per-column inner loop, so this matters for more than style: a per-access
 // wallScratch() call there would be a real per-pixel cost no golden would catch) and reach every
 // member through it.
 
 // Forward declarations so call order needs no rearranging.
-void renderMaskedSegRange(DrawSeg& ds, int x1, int x2);
 void renderSegLoop();
 void storeWallRange(int start, int stop);
 
-void renderMaskedSegRange(DrawSeg& ds, int x1, int x2)
+void DrawSeg::renderMaskedRange(int from, int to)
 {
     auto& bsp = bspScratch();
     auto& seg = segState();
@@ -76,7 +75,7 @@ void renderMaskedSegRange(DrawSeg& ds, int x1, int x2)
     // Use different light tables
     //   for horizontal / vertical / diagonal. Diagonal?
     // OPTIMIZE: get rid of LIGHTSEGSHIFT globally
-    bsp.curline = ds.curline;
+    bsp.curline = curline;
     bsp.frontsector = bsp.curline->frontsector;
     bsp.backsector = bsp.curline->backsector;
     texnum = graphicsData().texturetranslation[bsp.curline->sidedef->midtexture];
@@ -95,12 +94,12 @@ void renderMaskedSegRange(DrawSeg& ds, int x1, int x2)
     else
         seg.walllights = lights.scalelight[lightnum].data();
 
-    seg.maskedtexturecol = ds.maskedtexturecol;
+    seg.maskedtexturecol = maskedtexturecol;
 
-    wall.rw_scalestep = ds.scalestep;
-    sprites.spryscale = ds.scale1 + (x1 - ds.x1) * wall.rw_scalestep;
-    sprites.mfloorclip = ds.sprbottomclip;
-    sprites.mceilingclip = ds.sprtopclip;
+    wall.rw_scalestep = scalestep;
+    sprites.spryscale = scale1 + (from - x1) * wall.rw_scalestep;
+    sprites.mfloorclip = sprbottomclip;
+    sprites.mceilingclip = sprtopclip;
 
     // find positioning
     if (bsp.curline->linedef->flags & ML_DONTPEGBOTTOM)
@@ -126,7 +125,7 @@ void renderMaskedSegRange(DrawSeg& ds, int x1, int x2)
         draw.dc_colormap = lights.fixedcolormap;
 
     // draw the columns
-    for (draw.dc_x = x1; draw.dc_x <= x2; draw.dc_x++)
+    for (draw.dc_x = from; draw.dc_x <= to; draw.dc_x++)
     {
         // calculate lighting
         if (seg.maskedtexturecol[draw.dc_x] != DOOM_MAXSHORT)

@@ -157,7 +157,7 @@ auto tLegalTryMoveCommits = test("Sim/scenarioLegalTryMoveCommits") = []
 };
 
 // The blockmap linking the collision code stands on, read directly. A spawned
-// thing is linked into its blockmap cell by Doom::setThingPosition and found there by
+// thing is linked into its blockmap cell by Mobj::setPosition and found there by
 // Doom::forEachThingInBlock; unlinking it takes it back out; relinking puts it back.
 // The demos exercise all three thousands of times per replay - this is the
 // locality that says which one broke. Geometry-free: two barrels share the
@@ -175,8 +175,7 @@ auto tThingLinkingAndBlockmap = test("Sim/scenarioThingLinkingAndBlockmap") = []
     check(first > 0, "a first barrel spawned on the player's cell");
 
     auto base = doomSimThingsInBlockOf(first);
-    check(base >= 1,
-          "the iterator finds the barrel Doom::setThingPosition linked in");
+    check(base >= 1, "the iterator finds the barrel Mobj::setPosition linked in");
 
     auto second = doomSimSpawnMobj(doomSimTypeBarrel(), sx, sy, doomSimOnFloorZ());
     check(second > 0, "a second barrel spawned on the same cell");
@@ -185,10 +184,10 @@ auto tThingLinkingAndBlockmap = test("Sim/scenarioThingLinkingAndBlockmap") = []
 
     doomSimUnsetThingPosition(second);
     check(doomSimThingsInBlockOf(first) == base,
-          "Doom::unsetThingPosition took it back out of the cell");
+          "Mobj::unsetPosition took it back out of the cell");
 
     doomSimSetThingPosition(second);
     check(doomSimThingsInBlockOf(first) == base + 1,
-          "Doom::setThingPosition relinked it into the cell");
+          "Mobj::setPosition relinked it into the cell");
 };
 } // namespace

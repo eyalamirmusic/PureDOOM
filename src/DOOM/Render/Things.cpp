@@ -881,7 +881,7 @@ void drawSprite(VisSprite& spr)
         {
             // masked mid texture?
             if (ds->maskedtexturecol)
-                renderMaskedSegRange(*ds, r1, r2);
+                ds->renderMaskedRange(r1, r2);
             // seg is behind sprite
             continue;
         }
@@ -965,7 +965,7 @@ void drawMasked()
     // render any remaining masked mid textures
     for (ds = bsp.ds_p - 1; ds >= bsp.drawsegs.data(); ds--)
         if (ds->maskedtexturecol)
-            renderMaskedSegRange(*ds, ds->x1, ds->x2);
+            ds->renderMaskedRange(ds->x1, ds->x2);
 
     // draw the psprites on top of everything
     drawPlayerSprites();

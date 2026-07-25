@@ -144,7 +144,7 @@ void recursiveSound(Sector* sec, int soundblocks)
         if (!(check->flags & ML_TWOSIDED))
             continue;
 
-        updateLineOpening(*check);
+        check->updateOpening();
 
         if (!clipping().openrange.isPositive())
             continue; // closed door
@@ -1154,11 +1154,11 @@ void Mobj::fire()
 
     const auto anFine = dest->angle.fineIndex();
 
-    unsetThingPosition(*this);
+    unsetPosition();
     x = dest->x + FixedMul(24 * FRACUNIT, finecosine()[anFine]);
     y = dest->y + FixedMul(24 * FRACUNIT, finesine()[anFine]);
     z = dest->z;
-    setThingPosition(*this);
+    setPosition();
 }
 
 //

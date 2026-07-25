@@ -134,7 +134,7 @@ void Line::turnTagLightsOff()
             for (auto i = 0; i < sector->linecount; i++)
             {
                 auto* templine = sector->lines[i];
-                auto* tsec = getNextSector(*templine, *sector);
+                auto* tsec = templine->nextSector(*sector);
                 if (!tsec)
                     continue;
                 if (tsec->lightlevel < min)
@@ -164,7 +164,7 @@ void Line::lightTurnOn(int bright)
                 for (auto j = 0; j < sector->linecount; j++)
                 {
                     auto* templine = sector->lines[j];
-                    auto* temp = getNextSector(*templine, *sector);
+                    auto* temp = templine->nextSector(*sector);
 
                     if (!temp)
                         continue;

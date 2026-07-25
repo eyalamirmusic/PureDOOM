@@ -628,7 +628,7 @@ void doomSimUnsetThingPosition(int handle)
     Doom::Mobj* mobj = simMobj(handle);
 
     if (mobj)
-        Doom::unsetThingPosition(*mobj);
+        mobj->unsetPosition();
 }
 
 void doomSimSetThingPosition(int handle)
@@ -636,7 +636,7 @@ void doomSimSetThingPosition(int handle)
     Doom::Mobj* mobj = simMobj(handle);
 
     if (mobj)
-        Doom::setThingPosition(*mobj);
+        mobj->setPosition();
 }
 
 int doomSimTypeBarrel()
@@ -668,7 +668,7 @@ int doomSimFlagNoClip()
 // append-only, and it covers only the mobjs and the player, not the sectors,
 // lines and sides Doom::archiveWorld round-trips. This one walks everything the
 // archive serializes - and only the scalar fields it restores exactly, never the
-// pointers (target, subsector, the blockmap/sector links) that Doom::setThingPosition
+// pointers (target, subsector, the blockmap/sector links) that Mobj::setPosition
 // legitimately recomputes on load and would differ between two world instances.
 // The random indices and leveltime ride outside the archive, so they are left
 // out of the hash rather than restored.

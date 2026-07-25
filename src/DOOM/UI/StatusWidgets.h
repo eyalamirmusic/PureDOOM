@@ -1,20 +1,10 @@
 #pragma once
 
-#include "StatusWidgetTypes.h" // StatusNumber / StatusPercent / StatusMultIcon / StatusBinIcon
-
 namespace Doom
 {
-// Status-bar widgets. The vanilla STlib_ names that used to shim these have
-// been retired; call sites use these  names directly.
+// The widgets themselves are StatusNumber / StatusPercent / StatusMultIcon /
+// StatusBinIcon in StatusWidgetTypes.h, each carrying its own init/update. What
+// is left here is the one-off lump cache the number widget's minus sign needs,
+// which belongs to no single widget.
 void initStatusWidgets();
-void initNum(
-    StatusNumber& n, int x, int y, Patch** pl, int* num, bool* on, int width);
-void updateNum(StatusNumber& n, bool refresh);
-void initPercent(
-    StatusPercent& p, int x, int y, Patch** pl, int* num, bool* on, Patch* percent);
-void updatePercent(StatusPercent& per, int refresh);
-void initMultIcon(StatusMultIcon& i, int x, int y, Patch** il, int* inum, bool* on);
-void updateMultIcon(StatusMultIcon& mi, bool refresh);
-void initBinIcon(StatusBinIcon& b, int x, int y, Patch* i, bool* val, bool* on);
-void updateBinIcon(StatusBinIcon& bi, bool refresh);
 } // namespace Doom

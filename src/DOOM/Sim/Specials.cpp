@@ -3,7 +3,7 @@
 // The specials coordinator: animated flats/textures, the surrounding-sector height
 // and light queries the movers use, line-special cross/shoot dispatch, per-sector
 // player damage/secret, the once-a-tic updateSpecials and level-spawn setup.
-// getSide/getSector/twoSided/getNextSector stay at global scope (p_spec.h API);
+// getSide/getSector/twoSided stay at global scope (p_spec.h API);
 // every P_/EV_ entry is shimmed by p_spec.cpp; the animation state is file-local and
 // levelTimer stays global. Golden-neutral - the demos scroll skies, damage in slime
 // and open exits.
@@ -82,19 +82,19 @@ int twoSided(int sector, int line)
 }
 
 //
-// getNextSector()
+// Line::nextSector()
 // Return Sector * of sector next to current.
 // 0 if not two-sided line
 //
-Sector* getNextSector(Line& line, Sector& sec)
+Sector* Line::nextSector(const Sector& sec) const
 {
-    if (!(line.flags & ML_TWOSIDED))
+    if (!(flags & ML_TWOSIDED))
         return nullptr;
 
-    if (line.frontsector == &sec)
-        return line.backsector;
+    if (frontsector == &sec)
+        return backsector;
 
-    return line.frontsector;
+    return frontsector;
 }
 
 //
@@ -227,7 +227,7 @@ Fixed Sector::findLowestFloorSurrounding()
     for (auto i = 0; i < linecount; i++)
     {
         auto* check = lines[i];
-        auto* other = getNextSector(*check, *this);
+        auto* other = check->nextSector(*this);
 
         if (!other)
             continue;
@@ -250,7 +250,7 @@ Fixed Sector::findHighestFloorSurrounding()
     for (auto i = 0; i < linecount; i++)
     {
         auto* check = lines[i];
-        auto* other = getNextSector(*check, *this);
+        auto* other = check->nextSector(*this);
 
         if (!other)
             continue;
@@ -277,7 +277,7 @@ Fixed Sector::findNextHighestFloor(Fixed currentheight)
     for (i = 0, h = 0; i < linecount; i++)
     {
         auto* check = lines[i];
-        auto* other = getNextSector(*check, *this);
+        auto* other = check->nextSector(*this);
 
         if (!other)
             continue;
@@ -317,7 +317,7 @@ Fixed Sector::findLowestCeilingSurrounding()
     for (auto i = 0; i < linecount; i++)
     {
         auto* check = lines[i];
-        auto* other = getNextSector(*check, *this);
+        auto* other = check->nextSector(*this);
 
         if (!other)
             continue;
@@ -339,7 +339,7 @@ Fixed Sector::findHighestCeilingSurrounding()
     for (auto i = 0; i < linecount; i++)
     {
         auto* check = lines[i];
-        auto* other = getNextSector(*check, *this);
+        auto* other = check->nextSector(*this);
 
         if (!other)
             continue;
@@ -372,7 +372,7 @@ int Sector::findMinSurroundingLight(int max)
     for (auto i = 0; i < linecount; i++)
     {
         auto* line = lines[i];
-        auto* check = getNextSector(*line, *this);
+        auto* check = line->nextSector(*this);
 
         if (!check)
             continue;
@@ -1059,7 +1059,7 @@ int Line::doDonut()
             continue;
 
         rtn = 1;
-        auto* s2 = getNextSector(*s1->lines[0], *s1);
+        auto* s2 = s1->lines[0]->nextSector(*s1);
         for (auto i = 0; i < s2->linecount; i++)
         {
             if ((!(s2->lines[i]->flags & ML_TWOSIDED))

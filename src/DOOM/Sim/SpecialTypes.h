@@ -64,7 +64,6 @@ namespace Doom
 int twoSided(int sector, int line);
 Sector* getSector(int currentSector, int line, int side);
 Side* getSide(int currentSector, int line, int side);
-Sector* getNextSector(Line& line, Sector& sec);
 
 //
 // SPECIAL

@@ -168,8 +168,8 @@ void doomSimSetMobjFlags(int handle, int flags);
 
 // The stateful map-utility functions, exposed so a scenario can pin them with
 // locality rather than only through the collision they feed. A thing is linked
-// into a blockmap cell (Doom::setThingPosition) and found there by the iterator
-// (Doom::forEachThingInBlock); unlinking it (Doom::unsetThingPosition) takes it back
+// into a blockmap cell (Mobj::setPosition) and found there by the iterator
+// (Doom::forEachThingInBlock); unlinking it (Mobj::unsetPosition) takes it back
 // out. doomSimThingsInBlockOf counts what the iterator finds in the cell that
 // holds a handle's mobj, so a test reads the link/unlink as a count that moves.
 int doomSimThingsInBlockOf(int handle);

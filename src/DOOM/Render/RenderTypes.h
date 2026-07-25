@@ -93,6 +93,11 @@ struct DrawSeg
     short* sprtopclip = nullptr;
     short* sprbottomclip = nullptr;
     short* maskedtexturecol = nullptr;
+
+    // Draw this drawseg's masked (two-sided middle) texture over the column range
+    // x1..x2, which the sprite pass narrows to the part actually in front of a
+    // sprite. Vanilla R_RenderMaskedSegRange; body in Render/Segs.cpp.
+    void renderMaskedRange(int from, int to);
 };
 
 // Patches.

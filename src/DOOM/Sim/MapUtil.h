@@ -21,26 +21,9 @@ namespace Doom
 // Nothing here is hashed, so it is golden-neutral, and the demos prove it by
 // replaying every collision, sight line and gunshot through it.
 
-// The linedef as a directed segment - its first vertex and the precomputed
-// v2 - v1 - which is the form the intercept traversers hand to interceptVector.
-DivLine makeDivLine(const Line& line);
-
-// Which side of a linedef's infinite extension a point is on: 0 in front, 1
-// behind. This goes through pointOnLineSide and NOT pointOnDivlineSide - the two
-// are different formulae on purpose (MapGeometry.h says why), and the callers
-// depend on the specific one they ask for.
-int lineSide(Vec2 point, const Line& line);
-
-// The same question for a whole bounding box, in vanilla's tmbox order
-// (boxTop, boxBottom, boxLeft, boxRight): 0 in front, 1 behind, -1 straddling.
-int boxLineSide(const Fixed* box, const Line& line);
-
-// P_LineOpening: the vertical window the line leaves, written into Clip's
-// opentop / openbottom / openrange / lowfloor. A single-sided line closes it -
-// openrange = 0, and the rest of the window left as it stood, which is vanilla's
-// own early return - because a line with no back sector has no two heights to
-// compare.
-void updateLineOpening(const Line& linedef);
+// The helpers that ask MapGeometry.h's arithmetic a question about one linedef
+// (toDivLine, pointSide, boxSide, updateOpening) are Line methods, declared in
+// MapTypes.h; their bodies are in MapUtil.cpp.
 
 // Walk the lines in one blockmap cell, calling func(Line*) for each line not
 // already seen this validcount, and stop early the moment func returns false.
@@ -95,12 +78,8 @@ bool forEachThingInBlock(int x, int y, ThingFunc&& func)
     return true;
 }
 
-// Link a thing into its subsector's sector list and its blockmap cell (or neither,
-// for flagBits(MobjFlag::NoSector) / flagBits(MobjFlag::NoBlockmap)), setting thing.subsector from its x,y.
-void setThingPosition(Mobj& thing);
-
-// Unlink a thing from both, ahead of a position change.
-void unsetThingPosition(Mobj& thing);
+// The thing-position linking (setPosition / unsetPosition) is a pair of Mobj
+// methods, declared in Thinkers/Mobj.h; their bodies are in MapUtil.cpp too.
 
 // Trace the segment (x1,y1)->(x2,y2) across the blockmap, gathering the lines
 // (PT_ADDLINES) and/or things (PT_ADDTHINGS) it crosses into Clip's intercept list,

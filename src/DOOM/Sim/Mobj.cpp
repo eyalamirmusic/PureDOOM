@@ -424,7 +424,7 @@ Mobj* spawnMobj(Fixed x, Fixed y, Fixed z, MobjType type)
     mobj->frame = st->frame;
 
     // set subsector and/or block links
-    setThingPosition(*mobj);
+    mobj->setPosition();
 
     mobj->floorz = mobj->subsector->sector->floorheight;
     mobj->ceilingz = mobj->subsector->sector->ceilingheight;
@@ -461,7 +461,7 @@ void Mobj::remove()
     }
 
     // unlink from sector and block lists
-    unsetThingPosition(*this);
+    unsetPosition();
 
     // stop any playing sound
     stopSound(this);

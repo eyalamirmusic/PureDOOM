@@ -669,9 +669,9 @@ void setMusicVolume(int volume)
 // Retrieve the raw data lump index
 //  for a given SFX name.
 //
-int sfxLumpNum(SfxInfo& sfx)
+int SfxInfo::findLumpNum() const
 {
-    return wad().number(concat("ds", sfx.name));
+    return wad().number(concat("ds", name));
 }
 
 //

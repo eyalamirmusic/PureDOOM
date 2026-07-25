@@ -366,5 +366,12 @@ struct Mobj : Thinker
 
     // Thing being chased/attacked for tracers.
     struct Mobj* tracer = nullptr;
+
+    // Link this thing into its subsector's sector list and its blockmap cell (or
+    // neither, for MobjFlag::NoSector / MobjFlag::NoBlockmap), setting subsector
+    // from x,y - and the unlink that precedes a position change. Vanilla
+    // P_SetThingPosition / P_UnsetThingPosition; bodies in Sim/MapUtil.cpp.
+    void setPosition();
+    void unsetPosition();
 };
 } // namespace Doom

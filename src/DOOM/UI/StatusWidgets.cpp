@@ -2,8 +2,9 @@
 //
 // Status-bar widgets: a difference-drawn number, a number with a trailing percent
 // glyph, a multi-icon (the arms/faces), and a binary on/off icon. The vanilla
-// STlib_ names that used to shim these have been retired; the minus-sign patch
-// is the only global, now a StatusWidgetGraphics member owned by the
+// STlib_ free functions are methods on StatusNumber / StatusPercent /
+// StatusMultIcon / StatusBinIcon, declared in StatusWidgetTypes.h; the minus-sign
+// patch is the only global, now a StatusWidgetGraphics member owned by the
 // Engine (reached by a reference alias). Covered by the frame goldens (the bar
 // lands in screens[0]).
 
@@ -28,23 +29,21 @@ namespace Doom
 // a plain pointer would clobber the reference's storage).
 Patch*& sttminus = statusWidgetGraphics().sttminus;
 
-void drawNum(StatusNumber& n);
-
 void initStatusWidgets()
 {
     sttminus = static_cast<Patch*>(cacheLumpName("STTMINUS"));
 }
 
-void initNum(
-    StatusNumber& n, int x, int y, Patch** pl, int* num, bool* on, int width)
+void StatusNumber::init(
+    int xToUse, int yToUse, Patch** pl, int* numToUse, bool* onToUse, int widthToUse)
 {
-    n.x = x;
-    n.y = y;
-    n.oldnum = 0;
-    n.width = width;
-    n.num = num;
-    n.on = on;
-    n.p = pl;
+    x = xToUse;
+    y = yToUse;
+    oldnum = 0;
+    width = widthToUse;
+    num = numToUse;
+    on = onToUse;
+    p = pl;
 }
 
 //
@@ -52,140 +51,141 @@ void initNum(
 //  based on differences from the old number.
 // Note: worth the trouble?
 //
-void drawNum(StatusNumber& n)
+void StatusNumber::draw()
 {
-    auto numdigits = n.width;
-    int num = *n.num;
+    auto numdigits = width;
+    int value = *num;
 
-    auto w = littleEndian(n.p[0]->width);
-    auto h = littleEndian(n.p[0]->height);
-    int x = n.x;
+    auto w = littleEndian(p[0]->width);
+    auto h = littleEndian(p[0]->height);
 
-    n.oldnum = *n.num;
+    oldnum = *num;
 
-    auto neg = num < 0;
+    auto neg = value < 0;
 
     if (neg)
     {
-        if (numdigits == 2 && num < -9)
-            num = -9;
-        else if (numdigits == 3 && num < -99)
-            num = -99;
+        if (numdigits == 2 && value < -9)
+            value = -9;
+        else if (numdigits == 3 && value < -99)
+            value = -99;
 
-        num = -num;
+        value = -value;
     }
 
     // clear the area
-    x = n.x - numdigits * w;
+    auto drawX = x - numdigits * w;
 
-    if (n.y - ST_Y < 0)
-        fatalError("Error: drawNum: n->y - ST_Y < 0");
+    if (y - ST_Y < 0)
+        fatalError("Error: StatusNumber::draw: y - ST_Y < 0");
 
-    copyRect(x, n.y - ST_Y, STLIB_BG, w * numdigits, h, x, n.y, STLIB_FG);
+    copyRect(drawX, y - ST_Y, STLIB_BG, w * numdigits, h, drawX, y, STLIB_FG);
 
     // if non-number, do not draw it
-    if (num == 1994)
+    if (value == 1994)
         return;
 
-    x = n.x;
+    drawX = x;
 
     // in the special case of 0, you draw 0
-    if (!num)
-        drawPatch(x - w, n.y, STLIB_FG, n.p[0]);
+    if (!value)
+        drawPatch(drawX - w, y, STLIB_FG, p[0]);
 
     // draw the new number
-    while (num && numdigits--)
+    while (value && numdigits--)
     {
-        x -= w;
-        drawPatch(x, n.y, STLIB_FG, n.p[num % 10]);
-        num /= 10;
+        drawX -= w;
+        drawPatch(drawX, y, STLIB_FG, p[value % 10]);
+        value /= 10;
     }
 
     // draw a minus sign if necessary
     if (neg)
-        drawPatch(x - 8, n.y, STLIB_FG, sttminus);
+        drawPatch(drawX - 8, y, STLIB_FG, sttminus);
 }
 
-void updateNum(StatusNumber& n, [[maybe_unused]] bool refresh)
+void StatusNumber::update([[maybe_unused]] bool refresh)
 {
-    if (*n.on)
-        drawNum(n);
+    if (*on)
+        draw();
 }
 
-void initPercent(
-    StatusPercent& p, int x, int y, Patch** pl, int* num, bool* on, Patch* percent)
+void StatusPercent::init(
+    int x, int y, Patch** pl, int* num, bool* on, Patch* percent)
 {
-    initNum(p.n, x, y, pl, num, on, 3);
-    p.p = percent;
+    n.init(x, y, pl, num, on, 3);
+    p = percent;
 }
 
-void updatePercent(StatusPercent& per, int refresh)
+void StatusPercent::update(int refresh)
 {
-    if (refresh && *per.n.on)
-        drawPatch(per.n.x, per.n.y, STLIB_FG, per.p);
+    if (refresh && *n.on)
+        drawPatch(n.x, n.y, STLIB_FG, p);
 
-    updateNum(per.n, refresh);
+    n.update(refresh);
 }
 
-void initMultIcon(StatusMultIcon& i, int x, int y, Patch** il, int* inum, bool* on)
+void StatusMultIcon::init(
+    int xToUse, int yToUse, Patch** il, int* inumToUse, bool* onToUse)
 {
-    i.x = x;
-    i.y = y;
-    i.oldinum = -1;
-    i.inum = inum;
-    i.on = on;
-    i.p = il;
+    x = xToUse;
+    y = yToUse;
+    oldinum = -1;
+    inum = inumToUse;
+    on = onToUse;
+    p = il;
 }
 
-void updateMultIcon(StatusMultIcon& mi, bool refresh)
+void StatusMultIcon::update(bool refresh)
 {
-    if (*mi.on && (mi.oldinum != *mi.inum || refresh) && (*mi.inum != -1))
+    if (*on && (oldinum != *inum || refresh) && (*inum != -1))
     {
-        if (mi.oldinum != -1)
+        if (oldinum != -1)
         {
-            int x = mi.x - littleEndian(mi.p[mi.oldinum]->leftoffset);
-            int y = mi.y - littleEndian(mi.p[mi.oldinum]->topoffset);
-            auto w = littleEndian(mi.p[mi.oldinum]->width);
-            auto h = littleEndian(mi.p[mi.oldinum]->height);
+            int oldX = x - littleEndian(p[oldinum]->leftoffset);
+            int oldY = y - littleEndian(p[oldinum]->topoffset);
+            auto w = littleEndian(p[oldinum]->width);
+            auto h = littleEndian(p[oldinum]->height);
 
-            if (y - ST_Y < 0)
-                fatalError("Error: updateMultIcon: y - ST_Y < 0");
+            if (oldY - ST_Y < 0)
+                fatalError("Error: StatusMultIcon::update: y - ST_Y < 0");
 
-            copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
+            copyRect(oldX, oldY - ST_Y, STLIB_BG, w, h, oldX, oldY, STLIB_FG);
         }
-        drawPatch(mi.x, mi.y, STLIB_FG, mi.p[*mi.inum]);
-        mi.oldinum = *mi.inum;
+        drawPatch(x, y, STLIB_FG, p[*inum]);
+        oldinum = *inum;
     }
 }
 
-void initBinIcon(StatusBinIcon& b, int x, int y, Patch* i, bool* val, bool* on)
+void StatusBinIcon::init(
+    int xToUse, int yToUse, Patch* i, bool* valToUse, bool* onToUse)
 {
-    b.x = x;
-    b.y = y;
-    b.oldval = 0;
-    b.val = val;
-    b.on = on;
-    b.p = i;
+    x = xToUse;
+    y = yToUse;
+    oldval = 0;
+    val = valToUse;
+    on = onToUse;
+    p = i;
 }
 
-void updateBinIcon(StatusBinIcon& bi, bool refresh)
+void StatusBinIcon::update(bool refresh)
 {
-    if (*bi.on && (bi.oldval != *bi.val || refresh))
+    if (*on && (oldval != *val || refresh))
     {
-        int x = bi.x - littleEndian(bi.p->leftoffset);
-        int y = bi.y - littleEndian(bi.p->topoffset);
-        auto w = littleEndian(bi.p->width);
-        auto h = littleEndian(bi.p->height);
+        int drawX = x - littleEndian(p->leftoffset);
+        int drawY = y - littleEndian(p->topoffset);
+        auto w = littleEndian(p->width);
+        auto h = littleEndian(p->height);
 
-        if (y - ST_Y < 0)
-            fatalError("Error: updateBinIcon: y - ST_Y < 0");
+        if (drawY - ST_Y < 0)
+            fatalError("Error: StatusBinIcon::update: y - ST_Y < 0");
 
-        if (*bi.val)
-            drawPatch(bi.x, bi.y, STLIB_FG, bi.p);
+        if (*val)
+            drawPatch(x, y, STLIB_FG, p);
         else
-            copyRect(x, y - ST_Y, STLIB_BG, w, h, x, y, STLIB_FG);
+            copyRect(drawX, drawY - ST_Y, STLIB_BG, w, h, drawX, drawY, STLIB_FG);
 
-        bi.oldval = *bi.val;
+        oldval = *val;
     }
 }
 

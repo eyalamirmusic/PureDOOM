@@ -288,7 +288,7 @@ void startSoundAtVolume(void* origin_p, SfxEnum sfx_id, int volume)
 
     // get lumpnum if necessary
     if (sfx->lumpnum < 0)
-        sfx->lumpnum = sfxLumpNum(*sfx);
+        sfx->lumpnum = sfx->findLumpNum();
 
 #ifndef SNDSRV
     // cache data if necessary

@@ -63,6 +63,17 @@ struct StatusNumber
 
     // user data
     int data = 0;
+
+    // The vanilla STlib_*Num family, each keyed off one widget, so each is a
+    // method. Bodies in UI/StatusWidgets.cpp.
+    void init(int xToUse,
+              int yToUse,
+              Patch** pl,
+              int* numToUse,
+              bool* onToUse,
+              int widthToUse);
+    void update(bool refresh);
+    void draw();
 };
 
 // Percent widget ("child" of number widget,
@@ -74,6 +85,10 @@ struct StatusPercent
 
     // percent sign graphic
     Patch* p = nullptr;
+
+    // The vanilla STlib_*Percent family. Bodies in UI/StatusWidgets.cpp.
+    void init(int x, int y, Patch** pl, int* num, bool* on, Patch* percent);
+    void update(int refresh);
 };
 
 // Multiple Icon widget
@@ -98,6 +113,10 @@ struct StatusMultIcon
 
     // user data
     int data = 0;
+
+    // The vanilla STlib_*MultIcon family. Bodies in UI/StatusWidgets.cpp.
+    void init(int xToUse, int yToUse, Patch** il, int* inumToUse, bool* onToUse);
+    void update(bool refresh);
 };
 
 // Binary Icon widget
@@ -119,6 +138,10 @@ struct StatusBinIcon
 
     Patch* p = nullptr; // icon
     int data = 0; // user data
+
+    // The vanilla STlib_*BinIcon family. Bodies in UI/StatusWidgets.cpp.
+    void init(int xToUse, int yToUse, Patch* i, bool* valToUse, bool* onToUse);
+    void update(bool refresh);
 };
 } // namespace Doom
 

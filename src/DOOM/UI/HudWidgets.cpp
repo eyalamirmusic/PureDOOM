@@ -1,10 +1,10 @@
 // Rewritten out of vanilla hu_lib into namespace Doom.
 //
 // Heads-up text widgets: a single text line, a scrolling multi-line message list,
-// and an editable input line. All state lives in the caller's structs, so this
-// unit holds no globals of its own. The vanilla HUlib_ names that used to shim
-// these have been retired; callers use the  names directly. Covered by
-// the frame goldens (messages and the level name land in screens[0]).
+// and an editable input line. All state lives in the widgets themselves, so this
+// unit holds no globals of its own - the vanilla HUlib_ free functions are methods
+// on HudTextLine / HudScrollingText / HudInputText, declared in HudWidgetTypes.h.
+// Covered by the frame goldens (messages and the level name land in screens[0]).
 
 #include "../Host/Platform.h"
 #include "../Host/Text.h"
@@ -12,8 +12,6 @@
 #include "../Game/GameDefs.h"
 #include "HudWidgetTypes.h"
 #include "../Math/Swap.h"
-
-#include "HudWidgets.h"
 
 #include "../Render/Draw.h"
 #include "../Game/OverlayState.h"
@@ -23,95 +21,88 @@
 namespace Doom
 {
 
-void clearTextLine(HudTextLine& t)
+void HudTextLine::clear()
 {
-    t.l.clear();
-    t.needsupdate = true;
+    l.clear();
+    needsupdate = true;
 }
 
-void initTextLine(HudTextLine& t, int x, int y, Patch** f, int sc)
+void HudTextLine::init(int xToUse, int yToUse, Patch** fToUse, int scToUse)
 {
-    t.x = x;
-    t.y = y;
-    t.f = f;
-    t.sc = sc;
-    clearTextLine(t);
+    x = xToUse;
+    y = yToUse;
+    f = fToUse;
+    sc = scToUse;
+    clear();
 }
 
-bool addCharToTextLine(HudTextLine& t, char ch)
+bool HudTextLine::addChar(char ch)
 {
-    if (static_cast<int>(t.l.size()) == HU_MAXLINELENGTH)
+    if (static_cast<int>(l.size()) == HU_MAXLINELENGTH)
         return false;
-    else
-    {
-        t.l.push_back(ch);
-        t.needsupdate = 4;
-        return true;
-    }
+
+    l.push_back(ch);
+    needsupdate = 4;
+    return true;
 }
 
-bool delCharFromTextLine(HudTextLine& t)
+bool HudTextLine::delChar()
 {
-    if (t.l.empty())
+    if (l.empty())
         return false;
-    else
-    {
-        t.l.pop_back();
-        t.needsupdate = 4;
-        return true;
-    }
+
+    l.pop_back();
+    needsupdate = 4;
+    return true;
 }
 
-void drawTextLine(HudTextLine& l, bool drawcursor)
+void HudTextLine::draw(bool drawcursor)
 {
     // draw the new stuff
-    auto x = l.x;
+    auto drawX = x;
 
-    for (char character: l.l)
+    for (char character: l)
     {
         auto c = static_cast<unsigned char>(toUpper(character));
-        if (c != ' ' && c >= l.sc && c <= '_')
+        if (c != ' ' && c >= sc && c <= '_')
         {
-            auto w = littleEndian(l.f[c - l.sc]->width);
-            if (x + w > SCREENWIDTH)
+            auto w = littleEndian(f[c - sc]->width);
+            if (drawX + w > SCREENWIDTH)
                 break;
-            drawPatchDirect(x, l.y, FG, l.f[c - l.sc]);
-            x += w;
+            drawPatchDirect(drawX, y, FG, f[c - sc]);
+            drawX += w;
         }
         else
         {
-            x += 4;
-            if (x >= SCREENWIDTH)
+            drawX += 4;
+            if (drawX >= SCREENWIDTH)
                 break;
         }
     }
 
     // draw the cursor if requested
-    if (drawcursor && x + littleEndian(l.f['_' - l.sc]->width) <= SCREENWIDTH)
+    if (drawcursor && drawX + littleEndian(f['_' - sc]->width) <= SCREENWIDTH)
     {
-        drawPatchDirect(x, l.y, FG, l.f['_' - l.sc]);
+        drawPatchDirect(drawX, y, FG, f['_' - sc]);
     }
 }
 
 // sorta called by eraseHud and just better darn get things straight
-void eraseTextLine(HudTextLine& l)
+void HudTextLine::erase()
 {
     auto& view = viewWindow();
-
-    int y;
-    int yoffset;
 
     // Only erases when NOT in automap and the screen is reduced,
     // and the text must either need updating or refreshing
     // (because of a recent change back from the automap)
 
-    if (!overlayState().automapactive && view.viewwindowx && l.needsupdate)
+    if (!overlayState().automapactive && view.viewwindowx && needsupdate)
     {
-        auto lh = littleEndian(l.f[0]->height) + 1;
-        for (y = l.y, yoffset = y * SCREENWIDTH; y < l.y + lh;
-             y++, yoffset += SCREENWIDTH)
+        auto lh = littleEndian(f[0]->height) + 1;
+        for (auto row = y, yoffset = y * SCREENWIDTH; row < y + lh;
+             row++, yoffset += SCREENWIDTH)
         {
-            if (y < view.viewwindowy || y >= view.viewwindowy + view.viewheight)
+            if (row < view.viewwindowy || row >= view.viewwindowy + view.viewheight)
                 videoErase(yoffset, SCREENWIDTH); // erase entire line
             else
             {
@@ -123,124 +114,121 @@ void eraseTextLine(HudTextLine& l)
         }
     }
 
-    if (l.needsupdate)
-        l.needsupdate--;
+    if (needsupdate)
+        needsupdate--;
 }
 
-void initSText(
-    HudScrollingText& s, int x, int y, int h, Patch** font, int startchar, bool* on)
+void HudScrollingText::init(
+    int x, int y, int hToUse, Patch** font, int startchar, bool* onToUse)
 {
-    s.h = h;
-    s.on = on;
-    s.laston = true;
-    s.cl = 0;
+    h = hToUse;
+    on = onToUse;
+    laston = true;
+    cl = 0;
     for (auto i = 0; i < h; i++)
-        initTextLine(
-            s.l[i], x, y - i * (littleEndian(font[0]->height) + 1), font, startchar);
+        l[i].init(x, y - i * (littleEndian(font[0]->height) + 1), font, startchar);
 }
 
-void addLineToSText(HudScrollingText& s)
+void HudScrollingText::addLine()
 {
     // add a clear line
-    if (++s.cl == s.h)
-        s.cl = 0;
-    clearTextLine(s.l[s.cl]);
+    if (++cl == h)
+        cl = 0;
+    l[cl].clear();
 
     // everything needs updating
-    for (auto i = 0; i < s.h; i++)
-        s.l[i].needsupdate = 4;
+    for (auto i = 0; i < h; i++)
+        l[i].needsupdate = 4;
 }
 
-void addMessageToSText(HudScrollingText& s,
-                       std::string_view prefix,
-                       std::string_view msg)
+void HudScrollingText::addMessage(std::string_view prefix, std::string_view msg)
 {
-    addLineToSText(s);
+    addLine();
 
     for (auto character: prefix)
-        addCharToTextLine(s.l[s.cl], character);
+        l[cl].addChar(character);
 
     for (auto character: msg)
-        addCharToTextLine(s.l[s.cl], character);
+        l[cl].addChar(character);
 }
 
-void drawSText(HudScrollingText& s)
+void HudScrollingText::draw()
 {
-    if (!*s.on)
+    if (!*on)
         return; // if not on, don't draw
 
     // draw everything
-    for (auto i = 0; i < s.h; i++)
+    for (auto i = 0; i < h; i++)
     {
-        auto idx = s.cl - i;
+        auto idx = cl - i;
         if (idx < 0)
-            idx += s.h; // handle queue of lines
+            idx += h; // handle queue of lines
 
         // need a decision made here on whether to skip the draw
-        drawTextLine(s.l[idx], false); // no cursor, please
+        l[idx].draw(false); // no cursor, please
     }
 }
 
-void eraseSText(HudScrollingText& s)
+void HudScrollingText::erase()
 {
-    for (auto i = 0; i < s.h; i++)
+    for (auto i = 0; i < h; i++)
     {
-        if (s.laston && !*s.on)
-            s.l[i].needsupdate = 4;
-        eraseTextLine(s.l[i]);
+        if (laston && !*on)
+            l[i].needsupdate = 4;
+        l[i].erase();
     }
-    s.laston = *s.on;
+    laston = *on;
 }
 
-void initIText(HudInputText& it, int x, int y, Patch** font, int startchar, bool* on)
+void HudInputText::init(int x, int y, Patch** font, int startchar, bool* onToUse)
 {
-    it.lm = 0; // default left margin is start of text
-    it.on = on;
-    it.laston = true;
-    initTextLine(it.l, x, y, font, startchar);
+    lm = 0; // default left margin is start of text
+    on = onToUse;
+    laston = true;
+    l.init(x, y, font, startchar);
 }
 
 // The following deletion routines adhere to the left margin restriction
-void delCharFromIText(HudInputText& it)
+void HudInputText::delChar()
 {
-    if (static_cast<int>(it.l.l.size()) != it.lm)
-        delCharFromTextLine(it.l);
+    if (static_cast<int>(l.l.size()) != lm)
+        l.delChar();
 }
 
 // Resets left margin as well
-void resetIText(HudInputText& it)
+void HudInputText::reset()
 {
-    it.lm = 0;
-    clearTextLine(it.l);
+    lm = 0;
+    l.clear();
 }
 
 // wrapper function for handling general keyed input.
 // returns true if it ate the key
-bool keyInIText(HudInputText& it, unsigned char ch)
+bool HudInputText::keyIn(unsigned char ch)
 {
     if (ch >= ' ' && ch <= '_')
-        addCharToTextLine(it.l, static_cast<char>(ch));
+        l.addChar(static_cast<char>(ch));
     else if (ch == KEY_BACKSPACE)
-        delCharFromIText(it);
+        delChar();
     else if (ch != KEY_ENTER)
         return false; // did not eat key
 
     return true; // ate the key
 }
 
-void drawIText(HudInputText& it)
+void HudInputText::draw()
 {
-    if (!*it.on)
+    if (!*on)
         return;
-    drawTextLine(it.l, true); // draw the line w/ cursor
+    l.draw(true); // draw the line w/ cursor
 }
 
-void eraseIText(HudInputText& it)
+void HudInputText::erase()
 {
-    if (it.laston && !*it.on)
-        it.l.needsupdate = 4;
-    eraseTextLine(it.l);
-    it.laston = *it.on;
+    if (laston && !*on)
+        l.needsupdate = 4;
+    l.erase();
+    laston = *on;
 }
 
 } // namespace Doom

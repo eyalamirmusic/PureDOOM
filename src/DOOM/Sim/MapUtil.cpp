@@ -8,40 +8,40 @@
 #include "../Math/BBox.h"
 namespace Doom
 {
-DivLine makeDivLine(const Line& line)
+DivLine Line::toDivLine() const
 {
-    return {{line.v1->x, line.v1->y}, {line.dx, line.dy}};
+    return {{v1->x, v1->y}, {dx, dy}};
 }
 
-int lineSide(Vec2 point, const Line& line)
+int Line::pointSide(Vec2 point) const
 {
-    return pointOnLineSide(point, {line.v1->x, line.v1->y}, {line.dx, line.dy});
+    return pointOnLineSide(point, {v1->x, v1->y}, {dx, dy});
 }
 
-int boxLineSide(const Fixed* box, const Line& line)
+int Line::boxSide(const Fixed* box) const
 {
     return boxOnLineSide(box[boxTop],
                          box[boxBottom],
                          box[boxLeft],
                          box[boxRight],
-                         {line.v1->x, line.v1->y},
-                         {line.dx, line.dy},
-                         static_cast<int>(line.slopetype));
+                         {v1->x, v1->y},
+                         {dx, dy},
+                         static_cast<int>(slopetype));
 }
 
-void updateLineOpening(const Line& linedef)
+void Line::updateOpening() const
 {
     auto& clip = clipping();
 
-    if (linedef.sidenum[1] == -1)
+    if (sidenum[1] == -1)
     {
         // single sided line
         clip.openrange = Fixed {};
         return;
     }
 
-    const auto& front = *linedef.frontsector;
-    const auto& back = *linedef.backsector;
+    const auto& front = *frontsector;
+    const auto& back = *backsector;
 
     const Opening opening = lineOpening(front.floorheight,
                                         front.ceilingheight,
@@ -75,15 +75,15 @@ bool addLineIntercept(Line* ld)
     }
     else
     {
-        s1 = lineSide(trace.origin, *ld);
-        s2 = lineSide(trace.origin + trace.delta, *ld);
+        s1 = ld->pointSide(trace.origin);
+        s2 = ld->pointSide(trace.origin + trace.delta);
     }
 
     if (s1 == s2)
         return true; // line isn't crossed
 
     // hit the line
-    DivLine dl = makeDivLine(*ld);
+    DivLine dl = ld->toDivLine();
     auto frac = interceptVector(trace, dl);
 
     if (frac.isNegative())
@@ -190,83 +190,83 @@ bool traverseIntercepts(Traverser func, Fixed maxfrac)
 }
 } // namespace
 
-void setThingPosition(Mobj& thing)
+void Mobj::setPosition()
 {
     // link into subsector
-    auto* ss = pointInSubsector(thing.x, thing.y);
-    thing.subsector = ss;
+    auto* ss = pointInSubsector(x, y);
+    subsector = ss;
 
-    if (!(hasFlag(thing.flags, MobjFlag::NoSector)))
+    if (!(hasFlag(flags, MobjFlag::NoSector)))
     {
         // invisible things don't go into the sector links
         auto* sec = ss->sector;
 
-        thing.sprev = nullptr;
-        thing.snext = sec->thinglist;
+        sprev = nullptr;
+        snext = sec->thinglist;
 
         if (sec->thinglist)
-            sec->thinglist->sprev = &thing;
+            sec->thinglist->sprev = this;
 
-        sec->thinglist = &thing;
+        sec->thinglist = this;
     }
 
     // link into blockmap
-    if (!(hasFlag(thing.flags, MobjFlag::NoBlockmap)))
+    if (!(hasFlag(flags, MobjFlag::NoBlockmap)))
     {
         // inert things don't need to be in the blockmap
         const auto& bmap = level().blockmap;
-        auto blockx = bmap.blockX(thing.x);
-        auto blocky = bmap.blockY(thing.y);
+        auto blockx = bmap.blockX(x);
+        auto blocky = bmap.blockY(y);
 
         if (bmap.contains(blockx, blocky))
         {
             auto** link = &level().blockLinks[bmap.index(blockx, blocky)];
-            thing.bprev = nullptr;
-            thing.bnext = *link;
+            bprev = nullptr;
+            bnext = *link;
             if (*link)
-                (*link)->bprev = &thing;
+                (*link)->bprev = this;
 
-            *link = &thing;
+            *link = this;
         }
         else
         {
             // thing is off the map
-            thing.bnext = thing.bprev = nullptr;
+            bnext = bprev = nullptr;
         }
     }
 }
 
-void unsetThingPosition(Mobj& thing)
+void Mobj::unsetPosition()
 {
-    if (!(hasFlag(thing.flags, MobjFlag::NoSector)))
+    if (!(hasFlag(flags, MobjFlag::NoSector)))
     {
         // inert things don't need to be in the blockmap?
         // unlink from subsector
-        if (thing.snext)
-            thing.snext->sprev = thing.sprev;
+        if (snext)
+            snext->sprev = sprev;
 
-        if (thing.sprev)
-            thing.sprev->snext = thing.snext;
+        if (sprev)
+            sprev->snext = snext;
         else
-            thing.subsector->sector->thinglist = thing.snext;
+            subsector->sector->thinglist = snext;
     }
 
-    if (!(hasFlag(thing.flags, MobjFlag::NoBlockmap)))
+    if (!(hasFlag(flags, MobjFlag::NoBlockmap)))
     {
         // unlink from the blockmap
-        if (thing.bnext)
-            thing.bnext->bprev = thing.bprev;
+        if (bnext)
+            bnext->bprev = bprev;
 
-        if (thing.bprev)
-            thing.bprev->bnext = thing.bnext;
+        if (bprev)
+            bprev->bnext = bnext;
         else
         {
             const auto& bmap = level().blockmap;
-            auto blockx = bmap.blockX(thing.x);
-            auto blocky = bmap.blockY(thing.y);
+            auto blockx = bmap.blockX(x);
+            auto blocky = bmap.blockY(y);
 
             if (bmap.contains(blockx, blocky))
-                level().blockLinks[bmap.index(blockx, blocky)] = thing.bnext;
+                level().blockLinks[bmap.index(blockx, blocky)] = bnext;
         }
     }
 }

@@ -1,15 +1,12 @@
 // Rewritten out of vanilla m_cheat into namespace Doom.
 //
 // Cheat-sequence matching: a rolling scrambled-key comparison against a target
-// sequence. m_cheat.cpp shims the cht_ names; the scramble table is file-local.
-// The demos never enter a cheat, so this is a faithful transcription driven by
-// the status bar / automap responders.
+// sequence. The scramble table is file-local. The demos never enter a cheat, so
+// this is a faithful transcription driven by the status bar / automap responders.
 
 #include "../Host/Platform.h"
 
 #include "CheatTypes.h"
-
-#include "Cheat.h"
 
 #include "../Containers.h"
 
@@ -33,11 +30,11 @@ static constexpr unsigned char scramble(int a)
 
 //
 // Called in st_stuff module, which handles the input.
-// Returns a 1 if the cheat was successful, 0 if failed.
+// Returns true if the cheat was successful.
 //
-int checkCheat(CheatSequence& cht, char key)
+bool CheatSequence::check(char key)
 {
-    auto rc = 0;
+    auto rc = false;
 
     if (firsttime)
     {
@@ -45,9 +42,6 @@ int checkCheat(CheatSequence& cht, char key)
         for (auto i = 0; i < 256; i++)
             cheat_xlate_table[i] = scramble(i);
     }
-
-    auto& sequence = cht.sequence;
-    auto& position = cht.position;
 
     if (sequence[position] == 0)
         sequence[position++] = static_cast<unsigned char>(key);
@@ -62,7 +56,7 @@ int checkCheat(CheatSequence& cht, char key)
     else if (sequence[position] == 0xff) // end of sequence character
     {
         position = 0;
-        rc = 1;
+        rc = true;
     }
 
     return rc;
@@ -71,10 +65,8 @@ int checkCheat(CheatSequence& cht, char key)
 // The parameter the player typed after the cheat's `1` marker, as text - and it
 // clears the slots on the way out, exactly as vanilla did, so the sequence is
 // ready to match again.
-std::string getParam(CheatSequence& cht)
+std::string CheatSequence::param()
 {
-    auto& sequence = cht.sequence;
-
     auto index = 0;
     while (sequence[index++] != 1)
     {

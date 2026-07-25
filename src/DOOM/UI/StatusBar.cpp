@@ -53,7 +53,6 @@
 #include "StatusBarWidgets.h"
 
 #include "../Render/Video.h"
-#include "Cheat.h"
 #include "StatusWidgets.h"
 #include "../Containers.h"
 
@@ -341,7 +340,7 @@ bool statusBarResponder(Event& ev)
             // if (gameskill != Skill::Nightmare) {
 
             // 'dqd' cheat for toggleable god mode
-            if (checkCheat(cheat_god, ev.data1))
+            if (cheat_god.check(ev.data1))
             {
                 bar.plyr->cheats =
                     toggledFlags(bar.plyr->cheats, CheatFlag::GodMode);
@@ -357,7 +356,7 @@ bool statusBarResponder(Event& ev)
                     bar.plyr->message = STSTR_DQDOFF;
             }
             // 'fa' cheat for killer fucking arsenal
-            else if (checkCheat(cheat_ammonokey, ev.data1))
+            else if (cheat_ammonokey.check(ev.data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -371,7 +370,7 @@ bool statusBarResponder(Event& ev)
                 bar.plyr->message = STSTR_FAADDED;
             }
             // 'kfa' cheat for key full ammo
-            else if (checkCheat(cheat_ammo, ev.data1))
+            else if (cheat_ammo.check(ev.data1))
             {
                 bar.plyr->armorpoints = 200;
                 bar.plyr->armortype = 2;
@@ -388,12 +387,12 @@ bool statusBarResponder(Event& ev)
                 bar.plyr->message = STSTR_KFAADDED;
             }
             // 'mus' cheat for changing music
-            else if (checkCheat(cheat_mus, ev.data1))
+            else if (cheat_mus.check(ev.data1))
             {
                 MusicEnum musnum;
 
                 bar.plyr->message = STSTR_MUS;
-                const auto buf = getParam(cheat_mus);
+                const auto buf = cheat_mus.param();
 
                 if (gameVersion().gamemode == GameMode::Commercial)
                 {
@@ -420,8 +419,8 @@ bool statusBarResponder(Event& ev)
             }
             // Simplified, accepting both "noclip" and "idspispopd".
             // no clipping mode cheat
-            else if (checkCheat(cheat_noclip, ev.data1)
-                     || checkCheat(cheat_commercial_noclip, ev.data1))
+            else if (cheat_noclip.check(ev.data1)
+                     || cheat_commercial_noclip.check(ev.data1))
             {
                 bar.plyr->cheats = toggledFlags(bar.plyr->cheats, CheatFlag::NoClip);
 
@@ -433,7 +432,7 @@ bool statusBarResponder(Event& ev)
             // 'behold?' power-up cheats
             for (auto i = 0; i < 6; i++)
             {
-                if (checkCheat(cheat_powerup[i], ev.data1))
+                if (cheat_powerup[i].check(ev.data1))
                 {
                     if (!bar.plyr->powers[i])
                         bar.plyr->givePower(static_cast<PowerType>(i));
@@ -447,19 +446,19 @@ bool statusBarResponder(Event& ev)
             }
 
             // 'behold' power-up menu
-            if (checkCheat(cheat_powerup[6], ev.data1))
+            if (cheat_powerup[6].check(ev.data1))
             {
                 bar.plyr->message = STSTR_BEHOLD;
             }
             // 'choppers' invulnerability & chainsaw
-            else if (checkCheat(cheat_choppers, ev.data1))
+            else if (cheat_choppers.check(ev.data1))
             {
                 bar.plyr->weaponowned[toIndex(WeaponType::Chainsaw)] = true;
                 bar.plyr->powers[toIndex(PowerType::Invulnerability)] = true;
                 bar.plyr->message = STSTR_CHOPPERS;
             }
             // 'mypos' for player position
-            else if (checkCheat(cheat_mypos, ev.data1))
+            else if (cheat_mypos.check(ev.data1))
             {
                 static std::string buf;
                 //doom_sprintf(buf, "ang=0x%x;x,y=(0x%x,0x%x)",
@@ -481,12 +480,12 @@ bool statusBarResponder(Event& ev)
         }
 
         // 'clev' change-level cheat
-        if (checkCheat(cheat_clev, ev.data1))
+        if (cheat_clev.check(ev.data1))
         {
             int epsd;
             int map;
 
-            const auto buf = getParam(cheat_clev);
+            const auto buf = cheat_clev.param();
 
             const auto& version = gameVersion();
 
@@ -839,18 +838,18 @@ void drawWidgets(bool refresh)
     // used by w_frags widget
     bar.st_fragson = session.deathmatch && bar.st_statusbaron;
 
-    updateNum(widgets.w_ready, refresh);
+    widgets.w_ready.update(refresh);
 
     for (auto i = 0; i < 4; i++)
     {
-        updateNum(widgets.w_ammo[i], refresh);
-        updateNum(widgets.w_maxammo[i], refresh);
+        widgets.w_ammo[i].update(refresh);
+        widgets.w_maxammo[i].update(refresh);
     }
 
-    updatePercent(widgets.w_health, refresh);
-    updatePercent(widgets.w_armor, refresh);
+    widgets.w_health.update(refresh);
+    widgets.w_armor.update(refresh);
 
-    updateBinIcon(widgets.w_armsbg, refresh);
+    widgets.w_armsbg.update(refresh);
 
     // The arms icons read w_armsindex, not the player directly - see StatusBarWidgets.h.
     // Refreshed here, immediately before the update, so each icon sees exactly the
@@ -859,14 +858,14 @@ void drawWidgets(bool refresh)
         widgets.w_armsindex[i] = bar.plyr->weaponowned[i + 1];
 
     for (auto& arm: widgets.w_arms)
-        updateMultIcon(arm, refresh);
+        arm.update(refresh);
 
-    updateMultIcon(widgets.w_faces, refresh);
+    widgets.w_faces.update(refresh);
 
     for (auto& keybox: widgets.w_keyboxes)
-        updateMultIcon(keybox, refresh);
+        keybox.update(refresh);
 
-    updateNum(widgets.w_frags, refresh);
+    widgets.w_frags.update(refresh);
 }
 
 void doRefresh()
@@ -1017,8 +1016,7 @@ void createWidgets()
     auto& gfx = statusBarGraphics();
 
     // ready weapon ammo
-    initNum(
-        widgets.w_ready,
+    widgets.w_ready.init(
         ST_AMMOX,
         ST_AMMOY,
         gfx.tallnum.data(),
@@ -1030,146 +1028,120 @@ void createWidgets()
     widgets.w_ready.data = toIndex(bar.plyr->readyweapon);
 
     // health percentage
-    initPercent(widgets.w_health,
-                ST_HEALTHX,
-                ST_HEALTHY,
-                gfx.tallnum.data(),
-                &bar.plyr->health,
-                &bar.st_statusbaron,
-                gfx.tallpercent);
+    widgets.w_health.init(ST_HEALTHX,
+                          ST_HEALTHY,
+                          gfx.tallnum.data(),
+                          &bar.plyr->health,
+                          &bar.st_statusbaron,
+                          gfx.tallpercent);
 
     // arms background
-    initBinIcon(widgets.w_armsbg,
-                ST_ARMSBGX,
-                ST_ARMSBGY,
-                gfx.armsbg,
-                &bar.st_notdeathmatch,
-                &bar.st_statusbaron);
+    widgets.w_armsbg.init(ST_ARMSBGX,
+                          ST_ARMSBGY,
+                          gfx.armsbg,
+                          &bar.st_notdeathmatch,
+                          &bar.st_statusbaron);
 
     // weapons owned
     for (auto i = 0; i < 6; i++)
     {
-        initMultIcon(widgets.w_arms[i],
-                     ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
-                     ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
-                     gfx.arms[i].data(),
-                     &widgets.w_armsindex[i],
-                     &bar.st_armson);
+        widgets.w_arms[i].init(ST_ARMSX + (i % 3) * ST_ARMSXSPACE,
+                               ST_ARMSY + (i / 3) * ST_ARMSYSPACE,
+                               gfx.arms[i].data(),
+                               &widgets.w_armsindex[i],
+                               &bar.st_armson);
     }
 
     // frags sum
-    initNum(widgets.w_frags,
-            ST_FRAGSX,
-            ST_FRAGSY,
-            gfx.tallnum.data(),
-            &bar.st_fragscount,
-            &bar.st_fragson,
-            ST_FRAGSWIDTH);
+    widgets.w_frags.init(ST_FRAGSX,
+                         ST_FRAGSY,
+                         gfx.tallnum.data(),
+                         &bar.st_fragscount,
+                         &bar.st_fragson,
+                         ST_FRAGSWIDTH);
 
     // faces
-    initMultIcon(widgets.w_faces,
-                 ST_FACESX,
-                 ST_FACESY,
-                 gfx.faces.data(),
-                 &statusBarFace().st_faceindex,
-                 &bar.st_statusbaron);
+    widgets.w_faces.init(ST_FACESX,
+                         ST_FACESY,
+                         gfx.faces.data(),
+                         &statusBarFace().st_faceindex,
+                         &bar.st_statusbaron);
 
     // armor percentage - should be colored later
-    initPercent(widgets.w_armor,
-                ST_ARMORX,
-                ST_ARMORY,
-                gfx.tallnum.data(),
-                &bar.plyr->armorpoints,
-                &bar.st_statusbaron,
-                gfx.tallpercent);
+    widgets.w_armor.init(ST_ARMORX,
+                         ST_ARMORY,
+                         gfx.tallnum.data(),
+                         &bar.plyr->armorpoints,
+                         &bar.st_statusbaron,
+                         gfx.tallpercent);
 
     // keyboxes 0-2
-    initMultIcon(widgets.w_keyboxes[0],
-                 ST_KEY0X,
-                 ST_KEY0Y,
-                 gfx.keys.data(),
-                 &bar.keyboxes[0],
-                 &bar.st_statusbaron);
+    widgets.w_keyboxes[0].init(
+        ST_KEY0X, ST_KEY0Y, gfx.keys.data(), &bar.keyboxes[0], &bar.st_statusbaron);
 
-    initMultIcon(widgets.w_keyboxes[1],
-                 ST_KEY1X,
-                 ST_KEY1Y,
-                 gfx.keys.data(),
-                 &bar.keyboxes[1],
-                 &bar.st_statusbaron);
+    widgets.w_keyboxes[1].init(
+        ST_KEY1X, ST_KEY1Y, gfx.keys.data(), &bar.keyboxes[1], &bar.st_statusbaron);
 
-    initMultIcon(widgets.w_keyboxes[2],
-                 ST_KEY2X,
-                 ST_KEY2Y,
-                 gfx.keys.data(),
-                 &bar.keyboxes[2],
-                 &bar.st_statusbaron);
+    widgets.w_keyboxes[2].init(
+        ST_KEY2X, ST_KEY2Y, gfx.keys.data(), &bar.keyboxes[2], &bar.st_statusbaron);
 
     // ammo count (all four kinds)
-    initNum(widgets.w_ammo[0],
-            ST_AMMO0X,
-            ST_AMMO0Y,
-            gfx.shortnum.data(),
-            &bar.plyr->ammo[0],
-            &bar.st_statusbaron,
-            ST_AMMO0WIDTH);
+    widgets.w_ammo[0].init(ST_AMMO0X,
+                           ST_AMMO0Y,
+                           gfx.shortnum.data(),
+                           &bar.plyr->ammo[0],
+                           &bar.st_statusbaron,
+                           ST_AMMO0WIDTH);
 
-    initNum(widgets.w_ammo[1],
-            ST_AMMO1X,
-            ST_AMMO1Y,
-            gfx.shortnum.data(),
-            &bar.plyr->ammo[1],
-            &bar.st_statusbaron,
-            ST_AMMO1WIDTH);
+    widgets.w_ammo[1].init(ST_AMMO1X,
+                           ST_AMMO1Y,
+                           gfx.shortnum.data(),
+                           &bar.plyr->ammo[1],
+                           &bar.st_statusbaron,
+                           ST_AMMO1WIDTH);
 
-    initNum(widgets.w_ammo[2],
-            ST_AMMO2X,
-            ST_AMMO2Y,
-            gfx.shortnum.data(),
-            &bar.plyr->ammo[2],
-            &bar.st_statusbaron,
-            ST_AMMO2WIDTH);
+    widgets.w_ammo[2].init(ST_AMMO2X,
+                           ST_AMMO2Y,
+                           gfx.shortnum.data(),
+                           &bar.plyr->ammo[2],
+                           &bar.st_statusbaron,
+                           ST_AMMO2WIDTH);
 
-    initNum(widgets.w_ammo[3],
-            ST_AMMO3X,
-            ST_AMMO3Y,
-            gfx.shortnum.data(),
-            &bar.plyr->ammo[3],
-            &bar.st_statusbaron,
-            ST_AMMO3WIDTH);
+    widgets.w_ammo[3].init(ST_AMMO3X,
+                           ST_AMMO3Y,
+                           gfx.shortnum.data(),
+                           &bar.plyr->ammo[3],
+                           &bar.st_statusbaron,
+                           ST_AMMO3WIDTH);
 
     // max ammo count (all four kinds)
-    initNum(widgets.w_maxammo[0],
-            ST_MAXAMMO0X,
-            ST_MAXAMMO0Y,
-            gfx.shortnum.data(),
-            &bar.plyr->maxammo[0],
-            &bar.st_statusbaron,
-            ST_MAXAMMO0WIDTH);
+    widgets.w_maxammo[0].init(ST_MAXAMMO0X,
+                              ST_MAXAMMO0Y,
+                              gfx.shortnum.data(),
+                              &bar.plyr->maxammo[0],
+                              &bar.st_statusbaron,
+                              ST_MAXAMMO0WIDTH);
 
-    initNum(widgets.w_maxammo[1],
-            ST_MAXAMMO1X,
-            ST_MAXAMMO1Y,
-            gfx.shortnum.data(),
-            &bar.plyr->maxammo[1],
-            &bar.st_statusbaron,
-            ST_MAXAMMO1WIDTH);
+    widgets.w_maxammo[1].init(ST_MAXAMMO1X,
+                              ST_MAXAMMO1Y,
+                              gfx.shortnum.data(),
+                              &bar.plyr->maxammo[1],
+                              &bar.st_statusbaron,
+                              ST_MAXAMMO1WIDTH);
 
-    initNum(widgets.w_maxammo[2],
-            ST_MAXAMMO2X,
-            ST_MAXAMMO2Y,
-            gfx.shortnum.data(),
-            &bar.plyr->maxammo[2],
-            &bar.st_statusbaron,
-            ST_MAXAMMO2WIDTH);
+    widgets.w_maxammo[2].init(ST_MAXAMMO2X,
+                              ST_MAXAMMO2Y,
+                              gfx.shortnum.data(),
+                              &bar.plyr->maxammo[2],
+                              &bar.st_statusbaron,
+                              ST_MAXAMMO2WIDTH);
 
-    initNum(widgets.w_maxammo[3],
-            ST_MAXAMMO3X,
-            ST_MAXAMMO3Y,
-            gfx.shortnum.data(),
-            &bar.plyr->maxammo[3],
-            &bar.st_statusbaron,
-            ST_MAXAMMO3WIDTH);
+    widgets.w_maxammo[3].init(ST_MAXAMMO3X,
+                              ST_MAXAMMO3Y,
+                              gfx.shortnum.data(),
+                              &bar.plyr->maxammo[3],
+                              &bar.st_statusbaron,
+                              ST_MAXAMMO3WIDTH);
 }
 
 void startStatusBar()

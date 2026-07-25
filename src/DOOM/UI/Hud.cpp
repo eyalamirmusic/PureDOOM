@@ -55,7 +55,6 @@
 #include "HudFont.h"
 #include "HudMessage.h"
 #include "HudState.h"
-#include "HudWidgets.h"
 
 #include "../Game/Sound.h"
 
@@ -314,17 +313,15 @@ void startHud()
     hud.chat_on = false;
 
     // create the message widget
-    initSText(msg.w_message,
-              HU_MSGX,
-              HU_MSGY,
-              HU_MSGHEIGHT,
-              font.hu_font.data(),
-              HU_FONTSTART,
-              &msg.message_on);
+    msg.w_message.init(HU_MSGX,
+                       HU_MSGY,
+                       HU_MSGHEIGHT,
+                       font.hu_font.data(),
+                       HU_FONTSTART,
+                       &msg.message_on);
 
     // create the map title widget
-    initTextLine(
-        state.w_title, HU_TITLEX, hudTitleY(), font.hu_font.data(), HU_FONTSTART);
+    state.w_title.init(HU_TITLEX, hudTitleY(), font.hu_font.data(), HU_FONTSTART);
 
     switch (gameVersion().gamemode)
     {
@@ -350,36 +347,32 @@ void startHud()
     }
 
     for (auto character: s)
-        addCharToTextLine(state.w_title, character);
+        state.w_title.addChar(character);
 
     // create the chat widget
-    initIText(chat.w_chat,
-              HU_INPUTX,
-              hudInputY(),
-              font.hu_font.data(),
-              HU_FONTSTART,
-              &hud.chat_on);
+    chat.w_chat.init(
+        HU_INPUTX, hudInputY(), font.hu_font.data(), HU_FONTSTART, &hud.chat_on);
 
     // create the inputbuffer widgets
     for (auto& buffer: chat.w_inputbuffer)
-        initIText(buffer, 0, 0, nullptr, 0, &chat.always_off);
+        buffer.init(0, 0, nullptr, 0, &chat.always_off);
 
     state.headsupactive = true;
 }
 
 void drawHud()
 {
-    drawSText(hudMessage().w_message);
-    drawIText(hudChat().w_chat);
+    hudMessage().w_message.draw();
+    hudChat().w_chat.draw();
     if (overlayState().automapactive)
-        drawTextLine(hudState().w_title, false);
+        hudState().w_title.draw(false);
 }
 
 void eraseHud()
 {
-    eraseSText(hudMessage().w_message);
-    eraseIText(hudChat().w_chat);
-    eraseTextLine(hudState().w_title);
+    hudMessage().w_message.erase();
+    hudChat().w_chat.erase();
+    hudState().w_title.erase();
 }
 
 void hudTicker()
@@ -404,7 +397,7 @@ void hudTicker()
         if ((!plr.message.empty() && !msg.message_nottobefuckedwith)
             || (!plr.message.empty() && hud.message_dontfuckwithme))
         {
-            addMessageToSText(msg.w_message, "", plr.message);
+            msg.w_message.addMessage("", plr.message);
             plr.message = {};
             msg.message_on = true;
             msg.message_counter = HU_MSGTIMEOUT;
@@ -433,16 +426,15 @@ void hudTicker()
                     if (c >= 'a' && c <= 'z')
                         c = static_cast<char>(
                             shiftxform[static_cast<unsigned char>(c)]);
-                    auto rc = keyInIText(chat.w_inputbuffer[i], c);
+                    auto rc = chat.w_inputbuffer[i].keyIn(c);
                     if (rc && c == KEY_ENTER)
                     {
                         if (!chat.w_inputbuffer[i].l.l.empty()
                             && (chat.chat_dest[i] == players_.consoleplayer + 1
                                 || chat.chat_dest[i] == HU_BROADCAST))
                         {
-                            addMessageToSText(msg.w_message,
-                                              player_names()[i],
-                                              chat.w_inputbuffer[i].l.l);
+                            msg.w_message.addMessage(player_names()[i],
+                                                     chat.w_inputbuffer[i].l.l);
 
                             msg.message_nottobefuckedwith = true;
                             msg.message_on = true;
@@ -452,7 +444,7 @@ void hudTicker()
                             else
                                 startSound(nullptr, SfxEnum::Tink);
                         }
-                        resetIText(chat.w_inputbuffer[i]);
+                        chat.w_inputbuffer[i].reset();
                     }
                 }
                 players_.players[i].cmd.chatchar = 0;
@@ -537,7 +529,7 @@ bool hudResponder(Event& ev)
         else if (gameSession().netgame && ev.data1 == HU_INPUTTOGGLE)
         {
             eatkey = hud.chat_on = true;
-            resetIText(chat.w_chat);
+            chat.w_chat.reset();
             queueChatChar(HU_BROADCAST);
         }
         else if (gameSession().netgame && numplayers > 2)
@@ -549,7 +541,7 @@ bool hudResponder(Event& ev)
                     if (players_.playeringame[i] && i != players_.consoleplayer)
                     {
                         eatkey = hud.chat_on = true;
-                        resetIText(chat.w_chat);
+                        chat.w_chat.reset();
                         queueChatChar(i + 1);
                         break;
                     }
@@ -604,7 +596,7 @@ bool hudResponder(Event& ev)
                 c = foreignTranslation(c);
             if (chat.shiftdown || (c >= 'a' && c <= 'z'))
                 c = shiftxform[c];
-            eatkey = keyInIText(chat.w_chat, c);
+            eatkey = chat.w_chat.keyIn(c);
             if (eatkey)
             {
                 queueChatChar(c);

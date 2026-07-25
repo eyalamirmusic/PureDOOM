@@ -177,7 +177,6 @@ set(DOOM_REWRITTEN_SOURCES
         UI/AutomapTypes.h
         UI/AutomapView.h
         UI/Cheat.cpp
-        UI/Cheat.h
         UI/CheatTypes.h
         UI/Finale.cpp
         UI/Finale.h
@@ -190,7 +189,6 @@ set(DOOM_REWRITTEN_SOURCES
         UI/HudMessage.h
         UI/HudState.h
         UI/HudWidgets.cpp
-        UI/HudWidgets.h
         UI/HudWidgetTypes.h
         UI/Intermission.cpp
         UI/Intermission.h

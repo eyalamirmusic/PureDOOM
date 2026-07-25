@@ -60,6 +60,10 @@ struct SfxInfo
 
     // lump number of sfx
     int lumpnum = 0;
+
+    // The WAD lump this sfx's name resolves to (vanilla I_GetSfxLumpNum), a query
+    // on the sfx alone. Body in Host/Sound.cpp.
+    int findLumpNum() const;
 };
 
 //

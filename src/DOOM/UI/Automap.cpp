@@ -53,7 +53,6 @@
 #include "AutomapView.h"
 
 #include "../Render/Video.h"
-#include "Cheat.h"
 #include "StatusBar.h"
 #include "../Containers.h"
 
@@ -96,29 +95,6 @@ constexpr Fixed M_ZOOMIN {(std::int32_t) (1.02 * FRACUNIT.raw)};
 // pulls out to 0.5x in 1 second
 constexpr Fixed M_ZOOMOUT {(std::int32_t) (FRACUNIT.raw / 1.02)};
 
-// translates between frame-buffer and map distances
-static inline Fixed frameToMap(const AutomapView& view, int x)
-{
-    return FixedMul(Fixed::fromInt(x), view.scale_ftom);
-}
-
-static inline int mapToFrame(Fixed x)
-{
-    return FixedMul(x, automapView().scale_mtof).toInt();
-}
-
-// translates between frame-buffer and map coordinates
-static inline int mapXToFrame(Fixed x)
-{
-    return automapView().f_x + mapToFrame(x - automapView().m_x);
-}
-
-static inline int mapYToFrame(Fixed y)
-{
-    return automapView().f_y
-           + (automapView().f_h - mapToFrame(y - automapView().m_y));
-}
-
 struct FPoint
 {
     int x = 0, y = 0;
@@ -157,8 +133,9 @@ Array<MapLine, 3> triangle_guy = {
 // arrays as references-to-array), moved in by the file-scope-statics sweep (REFACTOR.md, Step 5);
 // the file-local-alias sweep (REFACTOR.md, Step 9 strand (a)) retired them - every function below
 // reaches automapView() through a hoisted local instead, taken once per function (or inline where a
-// function touches it exactly once). frameToMap, the one helper that read a member (scale_ftom), now
-// takes the view explicitly. The "iddt" cheat below stays a file-local static.
+// function touches it exactly once). The four frame<->map transforms that used to be file-local
+// helpers here are AutomapView methods now (AutomapView.h) - they read nothing but the view.
+// The "iddt" cheat below stays a file-local static.
 
 static Array<unsigned char, 5> cheat_amap_seq = {0xb2, 0x26, 0x26, 0x2e, 0xff};
 static CheatSequence cheat_amap = {{cheat_amap_seq}};
@@ -172,8 +149,8 @@ void activateNewScale()
 
     automapView().m_x += automapView().m_w / 2;
     automapView().m_y += automapView().m_h / 2;
-    automapView().m_w = frameToMap(map, automapView().f_w);
-    automapView().m_h = frameToMap(map, automapView().f_h);
+    automapView().m_w = map.frameToMap(automapView().f_w);
+    automapView().m_h = map.frameToMap(automapView().f_h);
     automapView().m_x -= automapView().m_w / 2;
     automapView().m_y -= automapView().m_h / 2;
     map.m_x2 = automapView().m_x + automapView().m_w;
@@ -319,8 +296,8 @@ void initAutomapVariables()
     map.ftom_zoommul = FRACUNIT;
     map.mtof_zoommul = FRACUNIT;
 
-    automapView().m_w = frameToMap(map, automapView().f_w);
-    automapView().m_h = frameToMap(map, automapView().f_h);
+    automapView().m_w = map.frameToMap(automapView().f_w);
+    automapView().m_h = map.frameToMap(automapView().f_h);
 
     auto& players_ = playerState();
 
@@ -489,25 +466,25 @@ bool automapResponder(Event& ev)
         {
             case AM_PANRIGHTKEY: // pan right
                 if (!automapView().followplayer)
-                    map.m_paninc.x = frameToMap(map, F_PANINC);
+                    map.m_paninc.x = map.frameToMap(F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANLEFTKEY: // pan left
                 if (!automapView().followplayer)
-                    map.m_paninc.x = -frameToMap(map, F_PANINC);
+                    map.m_paninc.x = -map.frameToMap(F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANUPKEY: // pan up
                 if (!automapView().followplayer)
-                    map.m_paninc.y = frameToMap(map, F_PANINC);
+                    map.m_paninc.y = map.frameToMap(F_PANINC);
                 else
                     rc = false;
                 break;
             case AM_PANDOWNKEY: // pan down
                 if (!automapView().followplayer)
-                    map.m_paninc.y = -frameToMap(map, F_PANINC);
+                    map.m_paninc.y = -map.frameToMap(F_PANINC);
                 else
                     rc = false;
                 break;
@@ -558,7 +535,7 @@ bool automapResponder(Event& ev)
             default:
                 rc = false;
         }
-        if (!gameSession().deathmatch && checkCheat(cheat_amap, ev.data1))
+        if (!gameSession().deathmatch && cheat_amap.check(ev.data1))
         {
             rc = false;
             automapView().cheating = (automapView().cheating + 1) % 3;
@@ -626,10 +603,12 @@ void doFollowPlayer()
     if (map.f_oldloc.x != automapView().am_plr->mo->x
         || map.f_oldloc.y != automapView().am_plr->mo->y)
     {
-        automapView().m_x = frameToMap(map, mapToFrame(automapView().am_plr->mo->x))
-                            - automapView().m_w / 2;
-        automapView().m_y = frameToMap(map, mapToFrame(automapView().am_plr->mo->y))
-                            - automapView().m_h / 2;
+        automapView().m_x =
+            map.frameToMap(map.mapToFrame(automapView().am_plr->mo->x))
+            - automapView().m_w / 2;
+        automapView().m_y =
+            map.frameToMap(map.mapToFrame(automapView().am_plr->mo->y))
+            - automapView().m_h / 2;
         map.m_x2 = automapView().m_x + automapView().m_w;
         map.m_y2 = automapView().m_y + automapView().m_h;
         map.f_oldloc.x = automapView().am_plr->mo->x;
@@ -747,10 +726,10 @@ bool clipMline(const MapLine& ml, FLine& fl)
         return false; // trivially outside
 
     // transform to frame-buffer coordinates.
-    fl.a.x = mapXToFrame(ml.a.x);
-    fl.a.y = mapYToFrame(ml.a.y);
-    fl.b.x = mapXToFrame(ml.b.x);
-    fl.b.y = mapYToFrame(ml.b.y);
+    fl.a.x = map.mapXToFrame(ml.a.x);
+    fl.a.y = map.mapYToFrame(ml.a.y);
+    fl.b.x = map.mapXToFrame(ml.b.x);
+    fl.b.y = map.mapYToFrame(ml.b.y);
 
     outcode1 = computeOutcode(fl.a.x, fl.a.y);
     outcode2 = computeOutcode(fl.b.x, fl.b.y);
@@ -1154,8 +1133,8 @@ void drawAutomapMarks()
             //      h = littleEndian(marknums[i]->height);
             auto w = 5; // because something's wrong with the wad, i guess
             auto h = 6; // because something's wrong with the wad, i guess
-            auto fx = mapXToFrame(map.markpoints[i].x);
-            auto fy = mapYToFrame(map.markpoints[i].y);
+            auto fx = map.mapXToFrame(map.markpoints[i].x);
+            auto fy = map.mapYToFrame(map.markpoints[i].y);
             if (fx >= automapView().f_x && fx <= automapView().f_w - w
                 && fy >= automapView().f_y && fy <= automapView().f_h - h)
                 drawPatch(fx, fy, FB, map.marknums[i]);

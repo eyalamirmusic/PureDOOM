@@ -16,7 +16,6 @@ void updateSound();
 void submitSound();
 void shutdownSoundHost();
 void setChannels();
-int sfxLumpNum(SfxInfo& sfxinfo);
 int startSoundHost(SfxEnum id, int vol, int sep, int pitch, int priority);
 void stopSoundHost(int handle);
 int soundIsPlaying(int handle);

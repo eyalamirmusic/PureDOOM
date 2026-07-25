@@ -27,6 +27,7 @@
 #include "../Containers.h"
 
 #include <string>
+#include <string_view>
 
 // background and foreground screen numbers
 // different from other modules.
@@ -55,6 +56,15 @@ struct HudTextLine
 
     // whether this line needs to be udpated
     int needsupdate = 0;
+
+    // The vanilla HUlib_*TextLine family, each keyed off one line, so each is a
+    // method. Bodies in UI/HudWidgets.cpp.
+    void init(int xToUse, int yToUse, Patch** fToUse, int scToUse);
+    void clear();
+    bool addChar(char ch);
+    bool delChar();
+    void draw(bool drawcursor);
+    void erase();
 };
 
 // Scrolling Text window widget
@@ -68,6 +78,13 @@ struct HudScrollingText
     // pointer to bool stating whether to update window
     bool* on = nullptr;
     bool laston = false; // last value of *->on.
+
+    // The vanilla HUlib_*SText family. Bodies in UI/HudWidgets.cpp.
+    void init(int x, int y, int hToUse, Patch** font, int startchar, bool* onToUse);
+    void addLine();
+    void addMessage(std::string_view prefix, std::string_view msg);
+    void draw();
+    void erase();
 };
 
 // Input Text Line widget
@@ -82,6 +99,14 @@ struct HudInputText
     // pointer to bool stating whether to update window
     bool* on = nullptr;
     bool laston = false; // last value of *->on;
+
+    // The vanilla HUlib_*IText family. Bodies in UI/HudWidgets.cpp.
+    void init(int x, int y, Patch** font, int startchar, bool* onToUse);
+    void reset();
+    void delChar();
+    bool keyIn(unsigned char ch);
+    void draw();
+    void erase();
 };
 } // namespace Doom
 

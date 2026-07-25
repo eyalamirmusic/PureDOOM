@@ -351,7 +351,7 @@ void unArchiveThinkers()
                         reinterpret_cast<long long>(mobj->player) - 1)];
                     mobj->player->mo = mobj;
                 }
-                setThingPosition(*mobj);
+                mobj->setPosition();
                 mobj->info = &mobjinfo()[toIndex(mobj->type)];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;

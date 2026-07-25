@@ -56,7 +56,7 @@ void hitSlideLine(Line* ld)
         return;
     }
 
-    auto side = lineSide({scratch.slidemo->x, scratch.slidemo->y}, *ld);
+    auto side = ld->pointSide({scratch.slidemo->x, scratch.slidemo->y});
 
     auto lineangle = pointToAngle2(Fixed {}, Fixed {}, ld->dx, ld->dy);
 
@@ -108,7 +108,7 @@ bool slideTraverse(Intercept* in)
 
     if (!(li->flags & ML_TWOSIDED))
     {
-        if (lineSide({scratch.slidemo->x, scratch.slidemo->y}, *li))
+        if (li->pointSide({scratch.slidemo->x, scratch.slidemo->y}))
         {
             // don't hit the back side
             return true;
@@ -117,7 +117,7 @@ bool slideTraverse(Intercept* in)
     }
 
     // set openrange, opentop, openbottom
-    updateLineOpening(*li);
+    li->updateOpening();
 
     if (clip.openrange < scratch.slidemo->height)
         return isblocking(); // doesn't fit
@@ -160,7 +160,7 @@ bool aimTraverse(Intercept* in,
 
         // Crosses a two sided line. A two sided line will restrict the possible
         // target ranges.
-        updateLineOpening(*li);
+        li->updateOpening();
 
         if (clip.openbottom >= clip.opentop)
             return false; // stop
@@ -285,7 +285,7 @@ bool shootTraverse(
             return hitline();
 
         // crosses a two sided line
-        updateLineOpening(*li);
+        li->updateOpening();
 
         dist = FixedMul(clip.attackrange, in->frac);
 
@@ -362,7 +362,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
 
     if (!in->d.line->special)
     {
-        updateLineOpening(*in->d.line);
+        in->d.line->updateOpening();
         if (!clip.openrange.isPositive())
         {
             startSound(usething, SfxEnum::Noway);
@@ -375,7 +375,7 @@ static bool useTraverse(Intercept* in, Mobj* usething)
     }
 
     auto side = 0;
-    if (lineSide({usething->x, usething->y}, *in->d.line) == 1)
+    if (in->d.line->pointSide({usething->x, usething->y}) == 1)
         side = 1;
 
     in->d.line->useSpecialLine(*usething, side);

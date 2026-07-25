@@ -29,6 +29,7 @@
 #include "../Game/GameDefs.h" // SCREENWIDTH
 #include "../Math/FixedPoint.h" // Fixed
 #include "ActionFunc.h" // Thinker, for a sector's sound origin
+#include "MapGeometry.h" // DivLine / Vec2, which a linedef answers questions in
 #include "MobjTypes.h" // Mobj, which a sector holds a list of
 
 #include "../Containers.h"
@@ -224,6 +225,32 @@ struct Line
     // individual door/floor/ceiling/plat/light/teleport/switch effects they trigger,
     // each keyed off this Line. Bodies in Sim/{Specials,Floors,Doors,Ceilings,Plats,
     // Lights,Teleport,Switches}.cpp.
+    // The linedef as a directed segment - its first vertex and the precomputed
+    // v2 - v1 - which is the form the intercept traversers hand to interceptVector.
+    DivLine toDivLine() const;
+
+    // Which side of this line's infinite extension a point is on: 0 in front, 1
+    // behind. This goes through pointOnLineSide and NOT pointOnDivlineSide - the
+    // two are different formulae on purpose (MapGeometry.h says why), and the
+    // callers depend on the specific one they ask for.
+    int pointSide(Vec2 point) const;
+
+    // The same question for a whole bounding box, in vanilla's tmbox order
+    // (boxTop, boxBottom, boxLeft, boxRight): 0 in front, 1 behind, -1 straddling.
+    int boxSide(const Fixed* box) const;
+
+    // P_LineOpening: the vertical window this line leaves, written into Clip's
+    // opentop / openbottom / openrange / lowfloor. A single-sided line closes it -
+    // openrange = 0, and the rest of the window left as it stood, which is
+    // vanilla's own early return - because a line with no back sector has no two
+    // heights to compare. Bodies for the four above in Sim/MapUtil.cpp.
+    void updateOpening() const;
+
+    // The sector on the other side of this line from `sec`, or null if this line
+    // does not have two of them (vanilla P_GetNextSector). Body in
+    // Sim/Specials.cpp.
+    Sector* nextSector(const Sector& sec) const;
+
     int findSectorFromLineTag(int start);
     void crossSpecialLine(int side, Mobj& thing);
     void shootSpecialLine(Mobj& thing);

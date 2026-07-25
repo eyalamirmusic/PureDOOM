@@ -64,7 +64,7 @@ bool checkLine(Line* ld)
         || clip.tmbbox[boxBottom] >= ld->bbox[boxTop])
         return true;
 
-    if (boxLineSide(clip.tmbbox.data(), *ld) != -1)
+    if (ld->boxSide(clip.tmbbox.data()) != -1)
         return true;
 
     // A line has been hit.
@@ -88,7 +88,7 @@ bool checkLine(Line* ld)
     }
 
     // set openrange, opentop, openbottom
-    updateLineOpening(*ld);
+    ld->updateOpening();
 
     // adjust floor / ceiling heights
     if (clip.opentop < clip.tmceilingz)
@@ -298,7 +298,7 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
     }
 
     // the move is ok, so link the thing into its new position
-    unsetThingPosition(*this);
+    unsetPosition();
 
     auto oldx = x;
     auto oldy = y;
@@ -307,7 +307,7 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
     x = xToUse;
     y = yToUse;
 
-    setThingPosition(*this);
+    setPosition();
 
     // if any special lines were hit, do the effect
     if (!(hasFlag(flags, MobjFlag::Teleport, MobjFlag::NoClip)))
@@ -316,8 +316,8 @@ bool Mobj::tryMove(Fixed xToUse, Fixed yToUse)
         {
             // see if the line was crossed
             auto* ld = clip.spechit[clip.numspechit];
-            auto side = lineSide({x, y}, *ld);
-            auto oldside = lineSide({oldx, oldy}, *ld);
+            auto side = ld->pointSide({x, y});
+            auto oldside = ld->pointSide({oldx, oldy});
             if (side != oldside)
             {
                 if (ld->special)
@@ -373,14 +373,14 @@ bool Mobj::teleportMove(Fixed xToUse, Fixed yToUse)
                 return false;
 
     // the move is ok, so link the thing into its new position
-    unsetThingPosition(*this);
+    unsetPosition();
 
     floorz = clip.tmfloorz;
     ceilingz = clip.tmceilingz;
     x = xToUse;
     y = yToUse;
 
-    setThingPosition(*this);
+    setPosition();
 
     return true;
 }
