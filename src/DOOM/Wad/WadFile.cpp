@@ -57,9 +57,13 @@ std::string extractFileBase(std::string_view path)
 // The lump name as eight upper-case bytes, zero-padded - which is how the
 // directory stores it, and how the engine compares it. A name that fills all
 // eight is NOT terminated.
+//
+// key() is NOT truncated at a NUL. The memcmp it replaces ran over all eight
+// columns, so a NUL is a byte of the name like any other and has to meet a NUL in
+// the stored name to match; truncating would let a short query match a longer lump.
 struct LumpName
 {
-    Array<char, 9> text = {};
+    Array<char, 8> text = {};
 
     explicit LumpName(std::string_view name)
     {
@@ -69,11 +73,16 @@ struct LumpName
             text[i] = static_cast<char>(toUpper(name[i]));
     }
 
-    bool matches(const char* directoryName) const
-    {
-        return std::memcmp(text.data(), directoryName, 8) == 0;
-    }
+    std::string key() const { return std::string(text.data(), text.size()); }
 };
+
+// The stored side of the same key. The directory's bytes go in as they are: the
+// compare was a memcmp, so a lump whose name is not upper case in the WAD matched
+// nothing then and finds nothing now.
+std::string storedLumpKey(const Array<char, 8>& name)
+{
+    return std::string(name.data(), name.size());
+}
 
 bool endsInWad(std::string_view path)
 {
@@ -97,6 +106,8 @@ WadFile::~WadFile()
 
 void WadFile::addFile(std::string_view path)
 {
+    const auto firstNewLump = count();
+
     auto reloadable = !path.empty() && path.front() == '~';
 
     if (reloadable)
@@ -130,6 +141,12 @@ void WadFile::addFile(std::string_view path)
         handles.push_back(handle);
 
     cache.resize(lumps.size());
+
+    // Assigned, not emplaced, and walked forwards: a later lump wins, which is
+    // what find()'s backwards scan meant. That is how a PWAD overrides the IWAD -
+    // and how a repeated name within one file resolves.
+    for (auto lump = firstNewLump; lump < count(); ++lump)
+        byName[storedLumpKey(lumps[lump].name)] = lump;
 }
 
 void WadFile::addSingleLump(std::string_view path, void* handle)
@@ -191,15 +208,9 @@ void WadFile::addDirectory(std::string_view path, void* handle)
 
 int WadFile::find(std::string_view name) const
 {
-    const auto wanted = LumpName {name};
+    const auto found = byName.find(LumpName {name}.key());
 
-    // Backwards, so that a lump from a later file takes precedence over the same
-    // name in an earlier one. That is how a PWAD overrides the IWAD.
-    for (auto lump = count() - 1; lump >= 0; --lump)
-        if (wanted.matches(lumps[lump].name.data()))
-            return lump;
-
-    return -1;
+    return found == byName.end() ? -1 : found->second;
 }
 
 int WadFile::number(std::string_view name) const
@@ -314,6 +325,8 @@ void WadFile::reload()
         handle, entries.data(), static_cast<int>(entries.size() * sizeof(FileLump)));
     host().close(handle);
 
+    // Only the offsets and sizes are re-read; the names stay as they were, so the
+    // byName index needs no rebuilding.
     for (auto i = 0; i < lumpCount; ++i)
     {
         auto lump = reloadLump + i;

@@ -34,6 +34,8 @@
 #include "../Game/GameVersion.h"
 
 #include <algorithm>
+#include <map>
+#include <string>
 
 namespace Doom
 {
@@ -157,8 +159,6 @@ void installSpriteLump(int lump, unsigned frame, unsigned rotation, bool flipped
 void initSpriteDefs(std::span<const std::string_view> namelist)
 {
     int i;
-    int l;
-    int intname;
     int frame;
     int rotation;
     int start;
@@ -181,32 +181,40 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
     start = gd.firstspritelump - 1;
     end = gd.lastspritelump + 1;
 
-    // scan all the lump names for each of the names,
+    // Group the sprite lumps by the four-character actor prefix their names begin
+    // with, once, instead of rescanning the whole sprite range for each of the
+    // ~140 names. Vanilla compared those four characters as an int, punned off a
+    // char array; comparing them as four bytes answers the same and needs no cast.
+    // Built in ascending lump order, which installSpriteLump below depends on.
+    auto lumpsBySprite = std::map<std::string, Vector<int>, std::less<>> {};
+
+    for (auto lump = start + 1; lump < end; lump++)
+        lumpsBySprite[std::string {wad().info(lump).name.data(), 4}].add(lump);
+
+    // fill in the frames for whatever was found under each name,
     //  noting the highest frame letter.
-    // Just compare 4 characters as ints
     for (i = 0; i < gd.numsprites; i++)
     {
         scratch.spritename = namelist[i];
         doom_memset(scratch.sprtemp.data(), -1, sizeof(scratch.sprtemp));
 
         scratch.maxframe = -1;
-        intname = *reinterpret_cast<const int*>(namelist[i].data());
 
-        // scan the lumps,
-        //  filling in the frames for whatever is found
-        for (l = start + 1; l < end; l++)
+        const auto found = lumpsBySprite.find(namelist[i]);
+
+        if (found != lumpsBySprite.end())
         {
-            const auto& entry = wad().info(l);
-
-            if (*reinterpret_cast<const int*>(entry.name.data()) == intname)
+            for (const auto lump: found->second)
             {
+                const auto& entry = wad().info(lump);
+
                 frame = entry.name[4] - 'A';
                 rotation = entry.name[5] - '0';
 
                 if (gameVersion().modifiedgame)
                     patched = wad().number(nameView(entry.name.data(), 8));
                 else
-                    patched = l;
+                    patched = lump;
 
                 installSpriteLump(patched, frame, rotation, false);
 
@@ -214,7 +222,7 @@ void initSpriteDefs(std::span<const std::string_view> namelist)
                 {
                     frame = entry.name[6] - 'A';
                     rotation = entry.name[7] - '0';
-                    installSpriteLump(l, frame, rotation, true);
+                    installSpriteLump(lump, frame, rotation, true);
                 }
             }
         }

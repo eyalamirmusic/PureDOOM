@@ -1,32 +1,42 @@
 #pragma once
 
-#include "../Containers.h"
+#include <map>
 
 namespace Doom
 {
-// The wall-switch texture table initSwitchList builds from the WAD and changeSwitchTexture
-// looks a pressed switch up in: switchlist holds the on/off texture-number pairs, a switch flipping
-// between switchlist[i] and switchlist[i ^ 1].
+// What a wall switch flips to, and where in the switch table the pair was found.
+struct SwitchPair
+{
+    int paired = 0; // the texture the pressed one becomes
+
+    // Vanilla walked the switch table once per press, testing the side's top,
+    // middle and bottom texture against each entry in turn - so a side carrying
+    // two *different* switch textures flips whichever appears earlier in the
+    // table, not the higher surface. This is that position, and comparing it is
+    // what keeps the choice identical now that the lookup is keyed rather than
+    // scanned. Top-over-middle-over-bottom is only the tie-break, for a side
+    // wearing the same switch twice.
+    int order = 0;
+};
+
+// The wall-switch table initSwitchList builds from the WAD and
+// Line::changeSwitchTexture looks a pressed switch up in, keyed by texture
+// number. Both directions are in it: pressing the off texture yields the on one
+// and vice versa.
 //
-// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5); these were
-// Sim/Switches' own namespace-scope private globals, read by no other file. initSwitchList and
-// changeSwitchTexture each hoist switchList() once and reach its members through it, rather than
-// through file-scope reference aliases (REFACTOR.md, Step 9 strand (a)). Live simulation-golden-
-// covered - the demos press switches on E1M1 - so the byte-identical *.hashes are a live confirmation.
+// Moved into the Engine by the file-scope-statics sweep (REFACTOR.md, Step 5).
+// Live simulation-golden-covered - the demos press switches on E1M1 - so the
+// byte-identical *.hashes are a live confirmation.
 //
-// A Vector, because the table is built from whichever of Sim/Switches' switch
-// textures this game mode owns - shareware keeps episode 1's, retail all three -
-// so the length is data, and size() is now the only place it is written down.
-// The vanilla shape had three ways to say it and they did not agree: a
-// maxSwitches of 50 sizing the destination, a separate numswitches counting what
-// was live, and a -1 terminator that nothing ever read (changeSwitchTexture
-// bounded its scan by numswitches). Worse, initSwitchList bounded its walk of the
-// *source* table with the *destination's* constant - the "guard and array bound
-// are not the same token" hazard - and the source has 41 rows, so only its
-// terminator kept the read in bounds. It appends now and cannot overrun.
+// The vanilla shape was a flat int array whose *pairing was index parity*
+// (switchlist[i ^ 1]), sized by a maxSwitches of 50, counted by a separate
+// numswitches, and terminated by a -1 that nothing read - three ways to say the
+// length that did not agree, and initSwitchList bounded its walk of the *source*
+// table with the *destination's* constant. Only the source's terminator kept that
+// read in bounds. A map has one length and no encoding to remember.
 struct SwitchList
 {
-    Vector<int> switchlist; // on/off texture-number pairs
+    std::map<int, SwitchPair> pairs;
 };
 
 // The one SwitchList, a view onto the Engine's member - the same pattern as the other clusters.

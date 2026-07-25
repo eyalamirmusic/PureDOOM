@@ -310,6 +310,26 @@ byte* getColumn(int tex, int col)
     return texturecomposite[tex] + ofs;
 }
 
+// What doom_strncasecmp(stored, name, 8) == 0 answered, as a key: upper case, at
+// most eight characters, truncated at the first NUL. Two names match exactly when
+// their keys are equal - including the short-name case the compare handled by
+// requiring a NUL in one place to meet a NUL in the other, since a longer query
+// then differs from the stored key at that very position.
+static std::string textureNameKey(std::string_view name)
+{
+    auto key = std::string {};
+
+    for (auto c: name.substr(0, 8))
+    {
+        if (c == '\0')
+            break;
+
+        key += toUpper(c);
+    }
+
+    return key;
+}
+
 //
 // initTextures
 // Initializes the texture list
@@ -385,6 +405,7 @@ void initTextures()
     gd.textureStorage.resize(gd.numtextures);
     gd.texturePointers.resize(gd.numtextures);
     gd.textures = gd.texturePointers.data();
+    gd.textureByName.clear();
 
     // The composition tables are CompositeCache-owned Vectors now (Step 9); size them once
     // here and point the views at their data(). columnlump/ofs/composite own an inner vector per
@@ -461,6 +482,12 @@ void initTextures()
         texture->patches.resize(texture->patchcount);
 
         doom_memcpy(texture->name.data(), mtexture.name, sizeof(texture->name));
+
+        // emplace, not assign: the scan checkTextureNumForName used to run
+        // returned the first texture of a given name, not the last.
+        gd.textureByName.emplace(textureNameKey(nameView(texture->name.data(), 8)),
+                                 i);
+
         const auto* rawPatch = rawTexture + offsetof(MapTexture, patches);
         patch = &texture->patches[0];
 
@@ -622,25 +649,6 @@ int flatNumForName(std::string_view name)
     return i - graphicsData().firstflat;
 }
 
-// What doom_strncasecmp(stored, name, 8) == 0 answered: case-insensitive over
-// the eight columns, the stored name zero-padded when short. A NUL in either
-// place has to meet a NUL in the other.
-static bool textureNameMatches(const Array<char, 8>& stored, std::string_view name)
-{
-    for (auto i = 0; i < 8; ++i)
-    {
-        auto wanted = i < static_cast<int>(name.size()) ? name[i] : char(0);
-
-        if (toUpper(stored[i]) != toUpper(wanted))
-            return false;
-
-        if (wanted == 0)
-            return true;
-    }
-
-    return true;
-}
-
 //
 // checkTextureNumForName
 // Check whether texture is available.
@@ -652,13 +660,10 @@ int checkTextureNumForName(std::string_view name)
     if (!name.empty() && name.front() == '-')
         return 0;
 
-    auto& gd = graphicsData();
+    const auto& byName = graphicsData().textureByName;
+    const auto found = byName.find(textureNameKey(name));
 
-    for (auto i = 0; i < gd.numtextures; i++)
-        if (textureNameMatches(graphicsData().textures[i]->name, name))
-            return i;
-
-    return -1;
+    return found == byName.end() ? -1 : found->second;
 }
 
 //

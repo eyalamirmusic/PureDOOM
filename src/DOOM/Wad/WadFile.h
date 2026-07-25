@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <string_view>
 
@@ -51,6 +52,10 @@ public:
     // A directory Lump's own 8-byte name is NOT NUL-terminated when it fills
     // them: wrap it in nameView(name.data(), 8) rather than letting the
     // string_view constructor run off its end.
+    //
+    // A keyed lookup, not the scan over all 1,264 lumps it began as - it is under
+    // ~130 call sites, including the cacheLumpName the HUD, status bar and menu
+    // run several dozen times a frame.
     int find(std::string_view name) const;
 
     // The same, but a missing lump is fatal. Most callers want this one: a WAD
@@ -80,6 +85,13 @@ private:
     void addDirectory(std::string_view path, void* handle);
 
     Vector<Lump> lumps;
+
+    // What find() looks a name up in. The key is the eight raw name bytes (see
+    // LumpName in the .cpp); addFile indexes each file's new lumps as it appends
+    // them, overwriting, so the last lump of a given name wins - which is what the
+    // backwards scan this replaces meant. reload() rewrites offsets and sizes
+    // only, never names, so it leaves this alone.
+    std::map<std::string, int, std::less<>> byName;
 
     // One buffer per lump, filled the first time it is asked for and empty until
     // then. Indexed alongside `lumps`, so the two never disagree about how many

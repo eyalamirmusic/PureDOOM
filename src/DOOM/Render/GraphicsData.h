@@ -7,6 +7,9 @@
 #include "../Sim/MapTypes.h"
 #include "RenderTypes.h"
 
+#include <map>
+#include <string>
+
 namespace Doom
 {
 // The graphics the renderer loads from the WAD once at startup and then only reads:
@@ -43,6 +46,14 @@ struct GraphicsData
     Vector<Fixed> textureheight; // RAII-owned (Step 9); r_data's name is a view
     Vector<int>
         texturetranslation; // RAII-owned (Step 9); animation writes through the view
+
+    // Name -> index into textures[], filled by initTextures. This replaces the
+    // scan checkTextureNumForName used to run over every texture, which
+    // loadSideDefs calls three times per sidedef at every level load. The key is
+    // Render/Data.cpp's textureNameKey: upper case, at most eight characters,
+    // truncated at the first NUL - exactly what the eight-column
+    // case-insensitive compare it replaces answered.
+    std::map<std::string, int, std::less<>> textureByName;
 
     // Flats: the first flat lump, the flat count, and the flat animation redirect.
     int firstflat = 0;

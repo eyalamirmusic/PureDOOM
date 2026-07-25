@@ -84,7 +84,7 @@ SwitchListEntry alphSwitchList[] = {
 
     {"\0", "\0", 0}};
 
-// switchlist/numswitches now live on the Engine (Sim/SwitchList.h, moved by the file-scope-statics
+// The switch table now lives on the Engine (Sim/SwitchList.h, moved by the file-scope-statics
 // sweep - REFACTOR.md, Step 5). initSwitchList and changeSwitchTexture each hoist switchList() once
 // and reach its members through it, rather than through file-scope reference aliases (REFACTOR.md,
 // Step 9 strand (a)).
@@ -106,7 +106,13 @@ void initSwitchList()
     else if (version.gamemode == GameMode::Commercial)
         episode = 3;
 
-    list.switchlist.clear();
+    list.pairs.clear();
+
+    // Vanilla's flat array laid the pair out as switchlist[i] / switchlist[i ^ 1],
+    // so a texture's position was its index. `order` is that position, and it is
+    // still consumed for a duplicate the emplace rejects, so the numbering matches
+    // the array's whatever the table holds.
+    auto order = 0;
 
     for (const auto& entry: alphSwitchList)
     {
@@ -116,8 +122,13 @@ void initSwitchList()
 
         if (entry.episode <= episode)
         {
-            list.switchlist.add(textureNumForName(entry.name1));
-            list.switchlist.add(textureNumForName(entry.name2));
+            const auto off = textureNumForName(entry.name1);
+            const auto on = textureNumForName(entry.name2);
+
+            // emplace, not assign: the scan this replaces found the first entry
+            // for a texture, not the last.
+            list.pairs.emplace(off, SwitchPair {on, order++});
+            list.pairs.emplace(on, SwitchPair {off, order++});
         }
     }
 }
@@ -164,13 +175,10 @@ void Line::changeSwitchTexture(int useAgain)
 {
     auto& specials = activeSpecials();
     auto& list = switchList();
+    auto& side = level().sides[sidenum[0]];
 
     if (!useAgain)
         special = 0;
-
-    auto texTop = level().sides[sidenum[0]].toptexture;
-    auto texMid = level().sides[sidenum[0]].midtexture;
-    auto texBot = level().sides[sidenum[0]].bottomtexture;
 
     auto sound = SfxEnum::Swtchn;
 
@@ -178,48 +186,43 @@ void Line::changeSwitchTexture(int useAgain)
     if (special == 11)
         sound = SfxEnum::Swtchx;
 
-    // Not a ranged-for: the index is load-bearing, switchlist[i ^ 1] being the
-    // texture this one flips to.
-    for (auto i = 0; i < list.switchlist.size(); i++)
+    // Whichever of the three surfaces sits earliest in the switch table is the one
+    // that flips - see SwitchPair::order. The offer order below is the tie-break
+    // only, and it is vanilla's: top, then middle, then bottom.
+    struct Match
     {
-        if (list.switchlist[i] == texTop)
-        {
-            startSound(specials.buttonlist.data()->soundorg, sound);
-            level().sides[sidenum[0]].toptexture = list.switchlist[i ^ 1];
+        ButtonWhere where = ButtonWhere::Top;
+        short* texture = nullptr;
+        SwitchPair pair;
+    };
 
-            if (useAgain)
-                startButton(ButtonWhere::Top, list.switchlist[i], BUTTONTIME);
+    auto best = Match {};
 
-            return;
-        }
-        else
-        {
-            if (list.switchlist[i] == texMid)
-            {
-                startSound(specials.buttonlist.data()->soundorg, sound);
-                level().sides[sidenum[0]].midtexture = list.switchlist[i ^ 1];
+    auto consider = [&](ButtonWhere where, short& texture)
+    {
+        const auto found = list.pairs.find(texture);
 
-                if (useAgain)
-                    startButton(ButtonWhere::Middle, list.switchlist[i], BUTTONTIME);
+        if (found != list.pairs.end()
+            && (!best.texture || found->second.order < best.pair.order))
+            best = {where, &texture, found->second};
+    };
 
-                return;
-            }
-            else
-            {
-                if (list.switchlist[i] == texBot)
-                {
-                    startSound(specials.buttonlist.data()->soundorg, sound);
-                    level().sides[sidenum[0]].bottomtexture = list.switchlist[i ^ 1];
+    consider(ButtonWhere::Top, side.toptexture);
+    consider(ButtonWhere::Middle, side.midtexture);
+    consider(ButtonWhere::Bottom, side.bottomtexture);
 
-                    if (useAgain)
-                        startButton(
-                            ButtonWhere::Bottom, list.switchlist[i], BUTTONTIME);
+    if (!best.texture)
+        return;
 
-                    return;
-                }
-            }
-        }
-    }
+    startSound(specials.buttonlist.data()->soundorg, sound);
+
+    // The button remembers the texture that was pressed, so read it out before the
+    // flip overwrites it.
+    const auto pressed = *best.texture;
+    *best.texture = static_cast<short>(best.pair.paired);
+
+    if (useAgain)
+        startButton(best.where, pressed, BUTTONTIME);
 }
 
 //
