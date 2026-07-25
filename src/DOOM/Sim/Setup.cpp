@@ -28,7 +28,7 @@
 #include "../Game/PlayerState.h"
 #include "Level.h"
 #include "Setup.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "../Render/Data.h"
 
 #include "../Render/Things.h"
@@ -471,11 +471,12 @@ void setupLevel(int episode, int map, int, Skill)
 
     // Free the previous level's mobjs and thinker specials - what
     // Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1) reclaimed when they lived in the
-    // zone. Must run before initThinkers empties the thinker list.
-    freeLevelAllocations();
+    // zone. This was two calls, freeLevelAllocations then initThinkers, because the
+    // ownership and the ordering lived in two separate lists and both had to be told;
+    // the ThinkerList owns what it orders, so emptying it is the whole reset.
+    thinkerList().clear();
 
     // UNUSED W_Profile ();
-    initThinkers();
 
     // if working with a devlopment map, reload it
     wad().reload();

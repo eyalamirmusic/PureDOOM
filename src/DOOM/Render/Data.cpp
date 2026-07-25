@@ -695,7 +695,6 @@ void precacheLevel()
     int lump;
 
     Texture* texture;
-    Thinker* th;
 
     if (demoState().demoplayback)
         return;
@@ -752,12 +751,10 @@ void precacheLevel()
     // Precache sprites.
     auto spritepresent = Vector<char>(gd.numsprites);
 
-    auto& cap = thinkerList().cap;
-
-    for (th = cap.next; th != &cap; th = th->next)
+    for (auto& th: thinkerList())
     {
-        if (th->kind() == ThinkerKind::Mobj && !th->removed)
-            spritepresent[static_cast<int>(reinterpret_cast<Mobj*>(th)->sprite)] = 1;
+        if (auto* mobj = th->asMobj(); mobj && !th->removed)
+            spritepresent[static_cast<int>(mobj->sprite)] = 1;
     }
 
     for (i = 0; i < gd.numsprites; i++)

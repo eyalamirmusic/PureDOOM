@@ -13,7 +13,6 @@ struct Sector;
 struct LightFlash : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::LightFlash; }
     Sector* sector = nullptr;
     int count = 0;
     int maxlight = 0;

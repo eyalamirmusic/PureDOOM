@@ -187,7 +187,10 @@ struct Mobj : Thinker
     // Its per-tic action (vanilla's P_MobjThinker) is tick(), defined in
     // Thinkers/Mobj.cpp.
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::Mobj; }
+
+    // The one override of it: every mobj scan in the engine, the port and the probe
+    // asks a Thinker for this rather than reading a type tag and casting.
+    Mobj* asMobj() override { return this; }
 
     // State-action methods (vanilla's A_* codepointers): Sim/Info.cpp's state
     // table installs each as &Mobj::name, and setMobjState invokes the one its

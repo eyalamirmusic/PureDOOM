@@ -17,12 +17,11 @@
 #include "../Game/SaveGameState.h"
 #include "SaveGame.h"
 #include "ThinkerList.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "Ceilings.h"
 
 #include "Plats.h"
 #include <cstdint>
-#include <new> // placement new
 #include "../Host/System.h"
 
 // save.cursor is a reference onto SaveGameState's cursor (an Engine member), bound in
@@ -210,18 +209,23 @@ enum class ThinkerClass
     Mobj
 };
 
-// Reconstruct a saved thinker in a fresh level-pool block. placement-new sets the
-// vtable (and the base's prev/next/removed/stopped), then the saved bytes are copied
-// back over the object exactly as vanilla's whole-struct memcpy did - but the vtable
-// pointer is preserved across the copy, since the bytes on disk carry a stale one.
-// Every derived field lands byte-identical; only the (reconstructed) linkage and the
-// vtable are not taken from the save. This is what lets p_saveg keep memcpy'ing a now
-// polymorphic Mobj / special without corrupting its dispatch.
+// Reconstruct a saved thinker at the back of the thinker list. Construction sets the
+// vtable (and the base's removed/stopped), then the saved bytes are copied back over
+// the object exactly as vanilla's whole-struct memcpy did - but the vtable pointer is
+// preserved across the copy, since the bytes on disk carry a stale one. Every derived
+// field lands byte-identical; only the vtable is not taken from the save. This is what
+// lets p_saveg keep memcpy'ing a now polymorphic Mobj / special without corrupting its
+// dispatch.
+//
+// The thinker is registered here rather than by an addThinker call at the end of each
+// case below, which is where the list linkage used to be restored. The order is
+// unchanged - the cases run in file order and each appends exactly once - and nothing
+// between here and a case's last fixup walks the list.
 template <typename T>
 static T* unarchiveThinker()
 {
     auto& save = saveGameState();
-    auto* obj = new (levelAlloc(sizeof(T))) T {};
+    auto* obj = &addThinker<T>();
     auto* vtable = *reinterpret_cast<void**>(obj);
     doom_memcpy(obj, save.cursor, sizeof(T));
     *reinterpret_cast<void**>(obj) = vtable;
@@ -236,14 +240,17 @@ static T* unarchiveThinker()
 // pointers want 8 on a 64-bit host, so writing through a pointer into the
 // buffer was UB (UBSan flagged each such store). The bytes written are
 // identical.
+//
+// T is deduced from the special handed in rather than named at the call site, which
+// is what lets archiveSpecials state each type exactly once - see there.
 template <typename T>
-static void archiveSectorThinker(const Thinker* th)
+static void archiveSectorThinker(const T& special)
 {
     auto& save = saveGameState();
     padSaveCursor(save.cursor);
 
     T record {};
-    doom_memcpy(&record, th, sizeof(record));
+    doom_memcpy(&record, &special, sizeof(record));
     record.sector =
         reinterpret_cast<Sector*>(record.sector - level().sectors.data());
 
@@ -257,14 +264,13 @@ static void archiveSectorThinker(const Thinker* th)
 void archiveThinkers()
 {
     auto& save = saveGameState();
-    auto& thinkers = thinkerList();
 
     // save off the current thinkers
-    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto& th: thinkerList())
     {
         // A removed-but-not-yet-freed mobj is skipped, as vanilla did (its function
         // was the -1 sentinel, matching no archived type).
-        if (th->kind() == ThinkerKind::Mobj && !th->removed)
+        if (th->asMobj() && !th->removed)
         {
             *save.cursor++ = static_cast<byte>(ThinkerClass::Mobj);
             padSaveCursor(save.cursor);
@@ -301,20 +307,17 @@ void unArchiveThinkers()
     auto& save = saveGameState();
     auto& thinkers = thinkerList();
 
-    // remove all the current thinkers
-    auto* currentthinker = thinkers.cap.next;
-    while (currentthinker != &thinkers.cap)
-    {
-        auto* next = currentthinker->next;
+    // Remove all the current thinkers. Mobj::remove is called for its side effects -
+    // it unlinks from the blockmap and sector lists, stops any sound the mobj owns,
+    // and may push a respawn queue entry - and its own deallocation is lazy, so the
+    // clear below is what actually frees them. That used to leave every mobj orphaned
+    // on the level pool until the next level load, the freeing being split across two
+    // lists; one owning list has no such gap.
+    for (auto& thinker: thinkers)
+        if (auto* mobj = thinker->asMobj())
+            mobj->remove();
 
-        if (currentthinker->kind() == ThinkerKind::Mobj)
-            (reinterpret_cast<Mobj*>(currentthinker))->remove();
-        else
-            levelFree(currentthinker);
-
-        currentthinker = next;
-    }
-    initThinkers();
+    thinkers.clear();
 
     // read in saved thinkers
     while (1)
@@ -340,7 +343,6 @@ void unArchiveThinkers()
                 mobj->info = &mobjinfo()[toIndex(mobj->type)];
                 mobj->floorz = mobj->subsector->sector->floorheight;
                 mobj->ceilingz = mobj->subsector->sector->ceilingheight;
-                addThinker(*mobj);
                 break;
 
             default:
@@ -379,13 +381,38 @@ enum class SpecialClass
 // T_Glow, (Glow: Sector *),
 // T_PlatRaise, (Plat: Sector *), - active list
 //
+// Write one special: its class byte, then its whole record. This is the only place
+// in the engine that needs to know *which* special a Thinker is, and the only one
+// that cannot ask a virtual for it - archiveSectorThinker needs the static type, to
+// size the record it memcpy's to disk. So it dynamic_casts, which is affordable
+// (this runs once per save, over a few dozen specials) and is what deleted the type
+// tag: `kind() == ThinkerKind::Ceiling` next to `archiveSectorThinker<Ceiling>` was
+// two independent statements of one type that no compiler checked against each
+// other. Here the type is written once and the cast produces it.
+//
+// What remains paired is the type and its *wire* tag, and that pairing is the file
+// format itself - it cannot be derived from anything.
+template <typename T>
+static bool archiveSpecialIfType(const Thinker& th, SpecialClass cls)
+{
+    const auto* special = dynamic_cast<const T*>(&th);
+
+    if (!special)
+        return false;
+
+    auto& save = saveGameState();
+    *save.cursor++ = static_cast<byte>(cls);
+    archiveSectorThinker(*special);
+
+    return true;
+}
+
 void archiveSpecials()
 {
     auto& save = saveGameState();
-    auto& thinkers = thinkerList();
 
     // save off the current thinkers
-    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto& th: thinkerList())
     {
         // Skip a removed-but-not-yet-freed thinker (vanilla's -1 function matched
         // no type).
@@ -396,62 +423,17 @@ void archiveSpecials()
         // tracked this way; a stopped plat, as in vanilla, is not archived.
         if (th->stopped)
         {
-            if (th->kind() == ThinkerKind::Ceiling)
-            {
-                *save.cursor++ = static_cast<byte>(SpecialClass::Ceiling);
-                archiveSectorThinker<Ceiling>(th);
-            }
+            archiveSpecialIfType<Ceiling>(*th, SpecialClass::Ceiling);
             continue;
         }
 
-        if (th->kind() == ThinkerKind::Ceiling)
-        {
-            *save.cursor++ = static_cast<byte>(SpecialClass::Ceiling);
-            archiveSectorThinker<Ceiling>(th);
-            continue;
-        }
-
-        if (th->kind() == ThinkerKind::Door)
-        {
-            *save.cursor++ = static_cast<byte>(SpecialClass::Door);
-            archiveSectorThinker<Door>(th);
-            continue;
-        }
-
-        if (th->kind() == ThinkerKind::Floor)
-        {
-            *save.cursor++ = static_cast<byte>(SpecialClass::Floor);
-            archiveSectorThinker<FloorMove>(th);
-            continue;
-        }
-
-        if (th->kind() == ThinkerKind::Plat)
-        {
-            *save.cursor++ = static_cast<byte>(SpecialClass::Plat);
-            archiveSectorThinker<Plat>(th);
-            continue;
-        }
-
-        if (th->kind() == ThinkerKind::LightFlash)
-        {
-            *save.cursor++ = static_cast<byte>(SpecialClass::Flash);
-            archiveSectorThinker<LightFlash>(th);
-            continue;
-        }
-
-        if (th->kind() == ThinkerKind::StrobeFlash)
-        {
-            *save.cursor++ = static_cast<byte>(SpecialClass::Strobe);
-            archiveSectorThinker<Strobe>(th);
-            continue;
-        }
-
-        if (th->kind() == ThinkerKind::Glow)
-        {
-            *save.cursor++ = static_cast<byte>(SpecialClass::Glow);
-            archiveSectorThinker<Glow>(th);
-            continue;
-        }
+        archiveSpecialIfType<Ceiling>(*th, SpecialClass::Ceiling)
+            || archiveSpecialIfType<Door>(*th, SpecialClass::Door)
+            || archiveSpecialIfType<FloorMove>(*th, SpecialClass::Floor)
+            || archiveSpecialIfType<Plat>(*th, SpecialClass::Plat)
+            || archiveSpecialIfType<LightFlash>(*th, SpecialClass::Flash)
+            || archiveSpecialIfType<Strobe>(*th, SpecialClass::Strobe)
+            || archiveSpecialIfType<Glow>(*th, SpecialClass::Glow);
     }
 
     // add a terminating marker
@@ -489,7 +471,6 @@ void unArchiveSpecials()
                     &level().sectors[reinterpret_cast<long long>(ceiling->sector)];
                 ceiling->sector->specialdata = ceiling;
 
-                addThinker(*ceiling);
                 addActiveCeiling(*ceiling);
                 break;
 
@@ -499,7 +480,6 @@ void unArchiveSpecials()
                 door->sector =
                     &level().sectors[reinterpret_cast<long long>(door->sector)];
                 door->sector->specialdata = door;
-                addThinker(*door);
                 break;
 
             case SpecialClass::Floor:
@@ -508,7 +488,6 @@ void unArchiveSpecials()
                 floor->sector =
                     &level().sectors[reinterpret_cast<long long>(floor->sector)];
                 floor->sector->specialdata = floor;
-                addThinker(*floor);
                 break;
 
             case SpecialClass::Plat:
@@ -518,7 +497,6 @@ void unArchiveSpecials()
                     &level().sectors[reinterpret_cast<long long>(plat->sector)];
                 plat->sector->specialdata = plat;
 
-                addThinker(*plat);
                 addActivePlat(*plat);
                 break;
 
@@ -527,7 +505,6 @@ void unArchiveSpecials()
                 flash = unarchiveThinker<LightFlash>();
                 flash->sector =
                     &level().sectors[reinterpret_cast<long long>(flash->sector)];
-                addThinker(*flash);
                 break;
 
             case SpecialClass::Strobe:
@@ -535,7 +512,6 @@ void unArchiveSpecials()
                 strobe = unarchiveThinker<Strobe>();
                 strobe->sector =
                     &level().sectors[reinterpret_cast<long long>(strobe->sector)];
-                addThinker(*strobe);
                 break;
 
             case SpecialClass::Glow:
@@ -543,7 +519,6 @@ void unArchiveSpecials()
                 glow = unarchiveThinker<Glow>();
                 glow->sector =
                     &level().sectors[reinterpret_cast<long long>(glow->sector)];
-                addThinker(*glow);
                 break;
 
             default:

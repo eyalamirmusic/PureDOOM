@@ -522,18 +522,16 @@ void Mobj::keenDie()
 {
     Line junk;
 
-    auto& thinkers = thinkerList();
-
     fall();
 
     // scan the remaining thinkers
     // to see if all Keens are dead
-    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto& th: thinkerList())
     {
-        if (th->kind() != ThinkerKind::Mobj || th->removed)
+        auto* mo2 = th->asMobj();
+        if (!mo2 || th->removed)
             continue;
 
-        auto* mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != this && mo2->type == type && mo2->health > 0)
         {
             // other Keen not dead
@@ -1295,18 +1293,14 @@ void Mobj::skullAttack()
 //
 void Mobj::painShootSkull(Angle angleToUse)
 {
-    auto& thinkers = thinkerList();
-
     // count total number of skull currently on the level
     auto count = 0;
 
-    auto* currentthinker = thinkers.cap.next;
-    while (currentthinker != &thinkers.cap)
+    for (auto& th: thinkerList())
     {
-        if (currentthinker->kind() == ThinkerKind::Mobj && !currentthinker->removed
-            && (reinterpret_cast<Mobj*>(currentthinker))->type == MobjType::Skull)
+        auto* mo = th->asMobj();
+        if (mo && !th->removed && mo->type == MobjType::Skull)
             count++;
-        currentthinker = currentthinker->next;
     }
 
     // if there are allready 20 skulls on the level,
@@ -1434,7 +1428,6 @@ void Mobj::bossDeath()
 {
     Line junk;
 
-    auto& thinkers = thinkerList();
     const auto& version = gameVersion();
     const auto& session = gameSession();
     const auto& players_ = playerState();
@@ -1517,12 +1510,12 @@ void Mobj::bossDeath()
 
     // scan the remaining thinkers to see
     // if all bosses are dead
-    for (auto* th = thinkers.cap.next; th != &thinkers.cap; th = th->next)
+    for (auto& th: thinkerList())
     {
-        if (th->kind() != ThinkerKind::Mobj || th->removed)
+        auto* mo2 = th->asMobj();
+        if (!mo2 || th->removed)
             continue;
 
-        auto* mo2 = reinterpret_cast<Mobj*>(th);
         if (mo2 != this && mo2->type == type && mo2->health > 0)
         {
             // other boss not dead
@@ -1617,21 +1610,17 @@ void Player::closeShotgun2(PspDef& psp)
 
 void Mobj::brainAwake()
 {
-    auto& thinkers = thinkerList();
     auto& ai = enemyAI();
 
     // find all the target spots
     ai.braintargets.clear();
     ai.braintargeton = 0;
 
-    auto* thinker = thinkers.cap.next;
-    for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
-         thinker = thinker->next)
+    for (auto& thinker: thinkerList())
     {
-        if (thinker->kind() != ThinkerKind::Mobj || thinker->removed)
+        auto* m = thinker->asMobj();
+        if (!m || thinker->removed)
             continue; // not a mobj
-
-        auto* m = reinterpret_cast<Mobj*>(thinker);
 
         if (m->type == MobjType::Bosstarget)
         {

@@ -33,15 +33,21 @@ int Line::teleport(int side, Mobj& thing)
     {
         if (destination.tag == tag)
         {
-            auto* thinker = thinkers.cap.next;
-            for (thinker = thinkers.cap.next; thinker != &thinkers.cap;
-                 thinker = thinker->next)
+            // By index, not a range-for: the body spawns teleport fog, which appends
+            // to this very list and can reallocate its buffer. Every path that gets
+            // that far returns before the next iteration, so a range-for would be
+            // correct today and silently undefined the moment one of those returns
+            // goes away. An index survives an append; an iterator does not. (`m`
+            // itself stays valid either way - the vector owns pointers, so the mobjs
+            // never move.)
+            for (auto i = 0; i < thinkers.size(); i++)
             {
-                // not a mobj
-                if (thinker->kind() != ThinkerKind::Mobj || thinker->removed)
-                    continue;
+                auto* thinker = thinkers[i].get();
 
-                auto* m = reinterpret_cast<Mobj*>(thinker);
+                // not a mobj
+                auto* m = thinker->asMobj();
+                if (!m || thinker->removed)
+                    continue;
 
                 // not a teleportman
                 if (m->type != MobjType::Teleportman)

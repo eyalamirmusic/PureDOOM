@@ -13,10 +13,8 @@
 #include "../Game/SoundData.h"
 
 #include "Doors.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "Specials.h"
-
-#include <new>
 
 #include "../Game/Sound.h"
 
@@ -97,8 +95,7 @@ int Line::doDoor(DoorType type)
 
         // new door thinker
         rtn = 1;
-        Door* door = new (levelAlloc(sizeof(*door))) Door {};
-        addThinker(*door);
+        auto* door = &addThinker<Door>();
         sec->specialdata = door;
 
         door->sector = sec;
@@ -263,8 +260,7 @@ void Line::verticalDoor(Mobj& thing)
     }
 
     // new door thinker
-    door = new (levelAlloc(sizeof(*door))) Door {};
-    addThinker(*door);
+    door = &addThinker<Door>();
     sec->specialdata = door;
     door->sector = sec;
     door->direction = 1;
@@ -309,9 +305,7 @@ void Line::verticalDoor(Mobj& thing)
 //
 void Sector::spawnDoorCloseIn30()
 {
-    Door* door = new (levelAlloc(sizeof(*door))) Door {};
-
-    addThinker(*door);
+    auto* door = &addThinker<Door>();
 
     specialdata = door;
     special = 0;
@@ -328,9 +322,7 @@ void Sector::spawnDoorCloseIn30()
 //
 void Sector::spawnDoorRaiseIn5Mins(int)
 {
-    Door* door = new (levelAlloc(sizeof(*door))) Door {};
-
-    addThinker(*door);
+    auto* door = &addThinker<Door>();
 
     specialdata = door;
     special = 0;

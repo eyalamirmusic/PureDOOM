@@ -59,7 +59,6 @@
 #include "../Sim/EndLevelTimer.h"
 #include "../Sim/ItemRespawnQueue.h"
 #include "../Sim/Level.h"
-#include "../Sim/LevelPool.h"
 #include "../Sim/PlayerScratch.h"
 #include "../Sim/Random.h"
 #include "../Sim/SoundTarget.h"
@@ -124,7 +123,11 @@ struct Engine
     SwitchList switchList;
     PlayerScratch playerScratch;
     AnimatedSurfaces animatedSurfaces;
-    LevelPool levelPool;
+
+    // Owns every mobj and thinker special, so destroying an Engine returns them
+    // whether or not a level was ever unloaded - which is what resetEngine() and
+    // Tests/Sim/OwnershipTests.cpp depend on. It replaced a LevelPool member that
+    // held the same blocks on a second intrusive list purely to be able to free them.
     ThinkerList thinkerList;
     EngineParams engineParams;
     ViewPoint viewPoint;

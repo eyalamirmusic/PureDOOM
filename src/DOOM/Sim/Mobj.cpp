@@ -11,8 +11,8 @@
 //
 // Rewritten into namespace Doom out of vanilla p_mobj. The per-tic mobj thinker is
 // Mobj::tick() (Thinkers/Mobj.cpp) now, dispatched virtually - p_saveg and the sim
-// probe identify a mobj by its kind() rather than by comparing a stored function
-// pointer, so nothing here holds the thinker's address. The state driver, movement
+// probe identify a mobj by asking Thinker::asMobj() rather than by comparing a
+// stored function pointer, so nothing here holds the thinker's address. Movement
 // steps, removal and missile spawning it drives (setState / xyMovement / zMovement /
 // nightmareRespawn / remove / spawnMissile / ...) are Mobj methods, declared on the
 // struct in Thinkers/Mobj.h. The spawn* factories stay free functions here (they
@@ -38,11 +38,10 @@
 #include "../Game/SkyState.h"
 #include "Clip.h"
 #include "Mobj.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "../UI/Hud.h"
 
 #include "../UI/StatusBar.h"
-#include <new>
 
 #include "../Game/Game.h"
 #include "../Game/Sound.h"
@@ -397,7 +396,11 @@ void Mobj::nightmareRespawn()
 //
 Mobj* spawnMobj(Vec3 pos, MobjType type)
 {
-    Mobj* mobj = new (levelAlloc(sizeof(*mobj))) Mobj {};
+    // The mobj is on the thinker list from here, where it used to be appended at the
+    // end of this function. Nothing below walks the list, so it lands in the same
+    // place either way - and if this is running inside runThinkers, it is at the back
+    // and will be ticked this same tic, exactly as vanilla's tail-append was.
+    auto* mobj = &addThinker<Mobj>();
     auto* info = &mobjinfo()[toIndex(type)];
 
     mobj->type = type;
@@ -433,8 +436,6 @@ Mobj* spawnMobj(Vec3 pos, MobjType type)
         mobj->pos.z = mobj->ceilingz - mobj->info->height;
     else
         mobj->pos.z = pos.z;
-
-    addThinker(*mobj);
 
     return mobj;
 }

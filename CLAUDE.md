@@ -84,7 +84,7 @@ Breaking one silently defeats the whole apparatus.
 
   | Directory | Files | What it is |
   |---|---|---|
-  | `Sim/` | 70 | the whole playsim — `Movement`, `MapAction`, `Enemy`, `Player`, `Weapon`, `Sight`, `Interaction`, the specials' spawners/handlers, `Thinker`, `Tick`, `Setup`, `SaveGame`, `Info`, plus `Random`/`Level`/`MapGeometry` |
+  | `Sim/` | 69 | the whole playsim — `Movement`, `MapAction`, `Enemy`, `Player`, `Weapon`, `Sight`, `Interaction`, the specials' spawners/handlers, `Thinker`/`ThinkerList`, `Tick`, `Setup`, `SaveGame`, `Info`, plus `Random`/`Level`/`MapGeometry` |
   | `Thinkers/` | 18 | the nine things that act once a tic, one type per file — `Mobj` and the eight specials (`FireFlicker`, `LightFlash`, `Strobe`, `Glow`, `Plat`, `Door`, `Ceiling`, `FloorMove`), each carrying its own `tick()` |
   | `Game/` | 56 | game loop, netcode, config, args, sound dispatch, and most of the `Engine`'s state clusters |
   | `UI/` | 42 | menu, HUD, status bar, automap, intermission, finale, screen melt, cheats |
@@ -398,6 +398,77 @@ Before converting one, `grep` the owning struct for `memcpy`, `memset`, `sizeof`
 `reinterpret_cast` and `&…[`, and ask whether any pointer into it outlives the
 expression.
 
+#### The thinker list is an `OwnedVector<Thinker>`
+
+Vanilla's `thinkercap` — the circular doubly linked list every mobj and moving-sector
+special hangs on — is gone, and so is `LevelPool`, the *second* intrusive list that
+owned the same blocks purely so a level reload could free them. `Sim/ThinkerList.h`
+is `using ThinkerList = OwnedVector<Thinker>;` and it is both: it holds the order and
+it holds the ownership. `Thinker::prev`/`next`, `addThinker(Thinker&)`, `levelAlloc`,
+`levelFree`, `freeLevelAllocations`, `initThinkers`, `LevelChunk` and `LevelPool` all
+went with them; allocation and registration are one call, `addThinker<T>()`
+(`Sim/Tick.h`), and the level reset is `thinkerList().clear()`.
+
+The list earned none of its linked-ness — nothing walked it backwards, and nothing
+unlinked from the middle, removal being the lazy `removed` flag with the only unlink
+at `runThinkers`' own cursor. **`OwnedVector` is `Vector<OwningPointer<T>>`, so the
+elements never move**, which is the load-bearing fact: every `Mobj*` held elsewhere
+(a `target`, `player->mo`, a sector's `soundtarget`/`specialdata`, the
+`activeplats`/`activeceilings` slots, the blockmap and sector links) survives an
+append. A by-value `Vector<Thinker>` could not exist, and that distinction is what
+the old "a container is not available at any price" note in `REFACTOR.md` missed.
+
+Five things to respect:
+
+- **`runThinkers` iterates by index, re-reading `size()`.** A `tick()` spawns
+  thinkers, which append here, and vanilla ran those in the *same* tic; an index loop
+  reproduces that exactly. A range-for or cached iterator does not, and the append
+  reallocates the buffer under it.
+- **Erase at the cursor with `removeAt`** — an order-preserving `erase`. Never
+  swap-and-pop: the order *is* the simulation, and the demo goldens fail on the tic.
+- **Never bind a reference into the vector's buffer across a `tick()`.** `*thinkers[i]`
+  is safe because it is the object, not the slot. `thinkers[i]` is not.
+- **A walk that mutates must be by index too.** `Line::teleport` spawns fog mid-walk
+  and only survives a range-for because every such path `return`s first; it is written
+  as an index loop so that stays true. The read-only walks (`Enemy`, `SaveGame`,
+  `Render/Data`, the port, `SimProbe`) are plain range-fors over `OwningPointer<Thinker>&`.
+- **`Thinker` declares its own `operator new`/`operator delete` over
+  `host().malloc`/`free`,** because `DOOM.h` lets an embedder replace those and
+  `Tests/Sim/OwnershipTests.cpp` counts blocks through exactly that pair. A plain
+  `new Mobj` compiles and runs and makes the leak test measure nothing.
+
+`Thinker` is abstract (`tick()` is pure) — the sentinel head was the only thing that
+needed a concrete base. That promptly caught `DegenMobj`, a sector's sound origin,
+which inherits `Thinker` only so its `pos` sits at `Mobj::pos`'s offset and is the one
+`Thinker` never *in* the list; its `tick()` is empty and never called.
+
+#### There is no thinker type tag
+
+`ThinkerKind` — the `enum class` that replaced vanilla's function-pointer identity
+test — is gone too, and the reason generalises past this hierarchy. **A discriminator
+plus a cast is two independent statements of one type, and no compiler checks either
+against the other.** `kind() == ThinkerKind::Ceiling` sitting next to
+`archiveSectorThinker<Ceiling>` compiles just as happily with the wrong type in the
+second half. The tag was also answering two unrelated questions:
+
+| Question | Asked by | Now |
+|---|---|---|
+| "is this a `Mobj`?" | `Sim/Enemy` ×4, `Sim/Teleport`, `Render/Data`, `Sim/SaveGame` ×2, `examples/EACP`, `Tests/SimProbe` | `virtual Mobj* asMobj()` on `Thinker`, `return this` in `Mobj`, overridden nowhere else. It hands back the *typed pointer*, so a caller cannot test one type and cast to another |
+| "which special is this?" | `Sim/SaveGame`'s `archiveSpecials`, once per save | `dynamic_cast`, via `archiveSpecialIfType<T>` |
+
+`asMobj()` is a plain virtual rather than a `dynamic_cast` because it is genuinely
+hot: `Engine::emitSprites` asks it of every thinker on every frame, and `SimProbe`
+hashes through it every tic. `archiveSpecials` is the opposite — once per save — and
+is the only place that needs the *static* type, to size the record it `memcpy`s. What
+stays paired there is a type and its **wire tag** (`SpecialClass::Ceiling`), and that
+pairing is the file format; it cannot be derived from anything.
+
+**Its coverage is partial, and measured.** `Sim/saveLoadPreservesTheWorld` fails if the
+`LightFlash`/`Strobe`/`Glow` branches go (E1M1 spawns those at load) and passes with
+`Ceiling`, `Door`, `Floor` or `Plat` deleted — nothing in the suite saves a game with a
+door open or a lift moving. That gap predates the `dynamic_cast` and is unchanged by
+it, but it is the sharpest remaining hole in `p_saveg`.
+
 #### Constants, and the guard/bound rule
 
 **Every overflow guard must test the same constant that sizes the array**, not a
@@ -507,9 +578,9 @@ while the byte is `>= ' '+1` and `<= 'z'`), empty leading token included.
 
 #### References vs pointers
 
-**A pointer parameter that can never be null is a reference — 109 functions are.**
+**A pointer parameter that can never be null is a reference — 108 functions are.**
 The whole specials family, the playsim core (`tryMove`, `checkPosition`,
-`setMobjState`, `removeMobj`, `addThinker`, `touchSpecialThing`, `changeSector`,
+`setMobjState`, `removeMobj`, `removeThinker`, `touchSpecialThing`, `changeSector`,
 `slideMove`, `lineAttack`, the `give*` family), the seven `Event*` responders, the
 `Ticcmd` path, and the automap's line helpers. Nullability was established per call
 site, not assumed.

@@ -11,10 +11,8 @@
 #include "SimDefs.h"
 
 #include "Lights.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "Specials.h"
-
-#include <new>
 
 #include "Random.h"
 #include "../Sim/Level.h"
@@ -33,9 +31,7 @@ void Sector::spawnFireFlicker()
     // Nothing special about it during gameplay.
     special = 0;
 
-    FireFlicker* flick = new (levelAlloc(sizeof(*flick))) FireFlicker {};
-
-    addThinker(*flick);
+    auto* flick = &addThinker<FireFlicker>();
 
     flick->sector = this;
     flick->maxlight = lightlevel;
@@ -57,9 +53,7 @@ void Sector::spawnLightFlash()
     // nothing special about it during gameplay
     special = 0;
 
-    LightFlash* flash = new (levelAlloc(sizeof(*flash))) LightFlash {};
-
-    addThinker(*flash);
+    auto* flash = &addThinker<LightFlash>();
 
     flash->sector = this;
     flash->maxlight = lightlevel;
@@ -81,9 +75,7 @@ void Sector::spawnLightFlash()
 //
 void Sector::spawnStrobeFlash(int fastOrSlow, int inSync)
 {
-    Strobe* flash = new (levelAlloc(sizeof(*flash))) Strobe {};
-
-    addThinker(*flash);
+    auto* flash = &addThinker<Strobe>();
 
     flash->sector = this;
     flash->darktime = fastOrSlow;
@@ -177,9 +169,7 @@ void Line::lightTurnOn(int bright)
 //
 void Sector::spawnGlowingLight()
 {
-    Glow* g = new (levelAlloc(sizeof(*g))) Glow {};
-
-    addThinker(*g);
+    auto* g = &addThinker<Glow>();
 
     g->sector = this;
     g->minlight = findMinSurroundingLight(lightlevel);

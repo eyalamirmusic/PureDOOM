@@ -127,7 +127,7 @@ auto tAccessorsViewTheEngine = test("StateClusters/accessorsViewTheOneEngine") =
     check(&switchList() == &engine().switchList, "switchList()");
     check(&playerScratch() == &engine().playerScratch, "playerScratch()");
     check(&animatedSurfaces() == &engine().animatedSurfaces, "animatedSurfaces()");
-    check(&levelPool() == &engine().levelPool, "levelPool()");
+    check(&thinkerList() == &engine().thinkerList, "thinkerList()");
     check(&engineParams() == &engine().engineParams, "engineParams()");
     check(&soundState() == &engine().soundState, "soundState()");
 };

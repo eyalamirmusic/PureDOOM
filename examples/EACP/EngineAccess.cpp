@@ -883,22 +883,20 @@ void emitSprite(Emitter& emitter,
 
 void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camera)
 {
-    auto& thinkers = Doom::thinkerList();
-
     // The view plane's right axis, the one DOOM measures a sprite's width along,
     // so the billboards stay square-on to the camera being drawn.
     auto facing = angleFromRadians(camera.angle);
     auto right = Point {toDouble(Doom::finesine()[facing.fineIndex()]),
                         -toDouble(Doom::finecosine()[facing.fineIndex()])};
 
-    for (auto* thinker = thinkers.cap.next; thinker != &thinkers.cap;
-         thinker = thinker->next)
+    for (auto& thinker: Doom::thinkerList())
     {
         // Skip a removed-but-not-yet-freed thinker, as the engine's own scans do.
-        if (thinker->kind() != Doom::ThinkerKind::Mobj || thinker->removed)
+        auto* mobj = thinker->asMobj();
+        if (!mobj || thinker->removed)
             continue;
 
-        emitSprite(emitter, *static_cast<Doom::Mobj*>(thinker), viewer, right);
+        emitSprite(emitter, *mobj, viewer, right);
     }
 }
 

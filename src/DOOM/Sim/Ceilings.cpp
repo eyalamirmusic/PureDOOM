@@ -12,10 +12,8 @@
 #include "../Game/SoundData.h"
 
 #include "Ceilings.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "Specials.h"
-
-#include <new>
 
 #include "../Game/LevelStats.h"
 #include "../Game/Sound.h"
@@ -63,8 +61,7 @@ int Line::doCeiling(CeilingType type)
 
         // new door thinker
         rtn = 1;
-        Ceiling* ceiling = new (levelAlloc(sizeof(*ceiling))) Ceiling {};
-        addThinker(*ceiling);
+        auto* ceiling = &addThinker<Ceiling>();
         sec->specialdata = ceiling;
         ceiling->sector = sec;
         ceiling->crush = false;

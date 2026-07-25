@@ -239,11 +239,20 @@ transferable they are.
   defect in plain language in *every build* for months, inside an 81-warning
   haystack, and no golden could see it because the shape draws only under IDDT.
 
-- **RAII means owning the release, not owning the layout.** `LevelPool`'s blocks
-  are variable-sized and hold polymorphic `Thinker`s whose addresses are
-  serialised and threaded on a list, so they can never be relocated and a
-  container is not available at any price. It got a destructor instead. Recognise
-  this shape rather than treating it as a failure to convert.
+- **"A container is not available at any price" was wrong, and the way it was
+  wrong is the lesson.** This entry used to defend `LevelPool`, a hand-rolled
+  intrusive list of variable-sized blocks holding polymorphic `Thinker`s whose
+  addresses are serialised and threaded on a *second* list — so, the argument
+  went, they can never be relocated, and RAII there could only mean owning the
+  *release* (a destructor), never the layout. Every fact in that sentence is true
+  and the conclusion still did not follow: it silently assumed a container stores
+  its elements *by value*. `OwnedVector<T>` stores owning pointers, so the
+  elements never move, which answers the objection exactly. Both lists are now one
+  `OwnedVector<Thinker>` — see **The thinker list is a vector** below.
+
+  Generalise it as: before concluding that a hand-rolled owner cannot be a
+  container, check whether the objection is to *relocation* or to *ownership*.
+  Only the first rules out a container, and only a by-value one.
 
 - **A pointer that owns *sometimes* stays a raw view, and gains a separate owning
   member.** `DemoState::demobuffer` is allocated when recording but points at a
@@ -259,13 +268,52 @@ transferable they are.
 - **Names collide across clusters.** `UI/Menu.cpp`'s `mousex`/`mousey` are
   references into a different cluster than the identically-named ones elsewhere.
 
+- **The thinker list is a vector.** Vanilla's `thinkercap` was a circular doubly
+  linked list threaded through `prev`/`next` fields on `Thinker`, and it earned
+  none of that: nothing walked it backwards, and nothing unlinked from the middle
+  — removal is a `removed` flag, and the only unlink ever performed was at
+  `runThinkers`' own cursor. A doubly linked list buys O(1) middle-erase and
+  nothing else, so it was buying nothing. It is `OwnedVector<Thinker>`, which is
+  also the `LevelPool`, so allocation and registration are one step and a thinker
+  cannot be in one list and not the other.
+
+  Three things had to be reproduced exactly, and the goldens are what say so:
+  iterate by *index* re-reading `size()`, because a `tick()` spawns thinkers that
+  append here and vanilla reached those in the same tic; erase at the cursor with
+  an order-preserving `removeAt`, never swap-and-pop; and never hold a reference
+  into the vector's buffer across a `tick()`. Binding to `*thinkers[i]` is safe
+  precisely because that is the object, not the slot.
+
+  Two things it turned up. `Thinker` became abstract once the sentinel head was
+  gone, which promptly caught `DegenMobj` — a sector's sound origin, which
+  inherits `Thinker` only for layout parity with `Mobj` and is the one `Thinker`
+  never *in* the list. And a thinker needs a class-level `operator new`/`delete`
+  over `host().malloc`: a plain `new Mobj` compiles, runs, and quietly removes
+  every mobj from the embedder's allocator hook *and* from the leak test, which
+  would then have passed while measuring nothing.
+
+- **A type tag next to a cast is the same type written twice, and nothing checks
+  the two against each other.** `ThinkerKind` outlived the function-pointer
+  identity test it replaced, and every use of it was followed by a
+  `static_cast`/`archiveSectorThinker<T>` naming the type a second time — a
+  copy-paste error there compiles clean and corrupts a savegame. It is gone.
+  "Is this a `Mobj`?" is a virtual `asMobj()` returning the typed pointer, so the
+  test and the cast are one operation; the savegame's seven-way special dispatch,
+  which needs the *static* type to size its record, `dynamic_cast`s. Choose
+  between them on how hot the path is, not on taste: `asMobj()` runs per thinker
+  per frame in the port, `archiveSpecials` runs once per save.
+
+  A tag is worth keeping only when it is the *wire format* — `SpecialClass`, the
+  byte on disk, stays, because nothing can derive it.
+
 ### Tests and gates
 
 - **No golden can see a leak.** The goldens hash the world and the picture;
   leaked memory changes neither until the process runs out.
   `Tests/Sim/OwnershipTests.cpp` installs a counting `malloc`/`free` pair and
   asserts live blocks after `resetEngine()` return to the post-boot figure. That
-  is what found the level pool's missing destructor.
+  is what found the level pool's missing destructor — and it keeps working only
+  because `Thinker` allocates through `host().malloc` on purpose.
 
 - **Before refactoring a file, check what actually covers it — by running the
   code, not by reading a list.** The cheat matcher was live engine code with *no

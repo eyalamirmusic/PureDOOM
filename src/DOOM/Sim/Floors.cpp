@@ -12,10 +12,8 @@
 #include "../Game/SoundData.h"
 
 #include "Floors.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "Specials.h"
-
-#include <new>
 
 #include "../Game/LevelStats.h"
 #include "../Game/Sound.h"
@@ -191,8 +189,7 @@ int Line::doFloor(FloorType floortype)
 
         // new floor thinker
         rtn = 1;
-        FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-        addThinker(*floor);
+        auto* floor = &addThinker<FloorMove>();
         sec->specialdata = floor;
         floor->type = floortype;
         floor->crush = false;
@@ -369,8 +366,7 @@ int Line::buildStairs(StairType type)
 
         // new floor thinker
         rtn = 1;
-        FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-        addThinker(*floor);
+        auto* floor = &addThinker<FloorMove>();
         sec->specialdata = floor;
         floor->direction = 1;
         floor->sector = sec;
@@ -421,9 +417,7 @@ int Line::buildStairs(StairType type)
 
                 sec = tsec;
                 secnum = newsecnum;
-                floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-
-                addThinker(*floor);
+                floor = &addThinker<FloorMove>();
 
                 sec->specialdata = floor;
                 floor->direction = 1;

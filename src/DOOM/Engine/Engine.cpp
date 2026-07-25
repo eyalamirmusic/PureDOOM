@@ -87,11 +87,6 @@ AnimatedSurfaces& animatedSurfaces()
     return engine().animatedSurfaces;
 }
 
-LevelPool& levelPool()
-{
-    return engine().levelPool;
-}
-
 ThinkerList& thinkerList()
 {
     return engine().thinkerList;

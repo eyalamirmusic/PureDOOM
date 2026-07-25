@@ -28,7 +28,6 @@ constexpr int VDOORWAIT = 150;
 struct Door : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::Door; }
     DoorType type = DoorType::Normal;
     Sector* sector = nullptr;
     Fixed topheight;

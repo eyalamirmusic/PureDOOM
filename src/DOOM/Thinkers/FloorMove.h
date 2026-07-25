@@ -56,7 +56,6 @@ constexpr Fixed FLOORSPEED = FRACUNIT;
 struct FloorMove : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::Floor; }
     FloorType type = FloorType::LowerFloor;
     bool crush = false;
     Sector* sector = nullptr;

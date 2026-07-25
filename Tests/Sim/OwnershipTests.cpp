@@ -24,27 +24,27 @@ using namespace Doom;
 
 namespace
 {
-// The level pool (Sim/LevelPool) is the last hand-rolled owner in the engine, and it
-// cannot become a container: its blocks are variable-sized, hold polymorphic Thinkers
-// whose addresses Sim/SaveGame serialises and the thinker list threads, and so can
-// never be moved. RAII there means owning the *release*, which is a destructor - and
-// this is what holds it.
+// Every mobj and thinker special the engine owns, released when the Engine goes.
 //
-// It is sharp because Doom::host().malloc is now almost exclusively the pool's own
-// allocator:
-// the RAII sweep moved nearly everything else onto Doom::Vector, which allocates through
-// operator new and is not counted here. What the counter still sees besides the pool
-// is host-side and deliberately outlives the Engine - Host/System's buffer,
-// Host/Sound's audio-blocked paddedsfx, DoomMain's response-file argv - so the
-// post-reset figure lands back exactly on the post-boot one.
+// This used to hold a hand-rolled owner, Sim/LevelPool - an intrusive list of
+// variable-sized blocks whose destructor was the whole point, added when strand (b)
+// found that nothing freed it on teardown. That owner is gone: the ThinkerList is an
+// OwnedVector<Thinker>, so the container that holds the *order* holds the *ownership*
+// too, and there is no longer a way to allocate a thinker without registering it or
+// to drop it from one list while the other still has it.
 //
-// Measured against the code this replaced: 107 blocks after boot, +120 for E1M1, and
-// all 227 still outstanding after resetEngine(). The pool freed nothing, because a
-// bare `{ LevelChunk* head; }` has no destructor and only Doom::loadLevel's explicit
-// freeLevelAllocations ever emptied it - and teardown never called that. The leak
-// became reachable the moment strand (a) made the Engine constructible.
-auto tResetEngineReleasesTheLevelPool =
-    test("Engine/resetEngineReleasesTheLevelPool") = []
+// The test survives the change unaltered, and that is deliberate rather than lucky.
+// Thinker declares its own operator new / operator delete over Doom::host().malloc
+// (Sim/Thinker.h says why), so every thinker is still counted here - a plain
+// `new Mobj` would have made this measure nothing while still passing. What the
+// counter sees besides the thinkers is host-side and deliberately outlives the
+// Engine - Host/System's buffer, Host/Sound's audio-blocked paddedsfx, DoomMain's
+// response-file argv - so the post-reset figure lands back on the post-boot one.
+//
+// Measured against the code that first motivated it: 107 blocks after boot, +120 for
+// E1M1, and all 227 still outstanding after resetEngine().
+auto tResetEngineReleasesTheThinkers =
+    test("Engine/resetEngineReleasesTheThinkers") = []
 {
     // Before the boot, so every block the engine takes is one this counter saw.
     doomSimCountAllocations();
@@ -55,14 +55,15 @@ auto tResetEngineReleasesTheLevelPool =
     check(doomSimLoadLevel(1, 1, 2) != 0, "E1M1 loaded");
     const auto withLevel = doomSimLiveAllocations();
 
-    // Guards the test itself: if loading a level ever stopped allocating through the
-    // pool, the assertion below would pass while measuring nothing at all.
+    // Guards the test itself: if a thinker ever stopped allocating through
+    // Doom::host().malloc, the assertion below would pass while measuring nothing at
+    // all.
     check(withLevel > afterBoot,
-          "loading a level took blocks from the pool for its mobjs and specials");
+          "loading a level took blocks for its mobjs and thinker specials");
 
     resetEngine();
 
     check(doomSimLiveAllocations() <= afterBoot,
-          "destroying the Engine returned every block the level pool took");
+          "destroying the Engine returned every block its thinkers took");
 };
 } // namespace

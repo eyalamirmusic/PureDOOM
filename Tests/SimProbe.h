@@ -42,8 +42,9 @@ int doomSimRunTic();
 // engine twice". The engine cannot be re-inited (Z_Init would leak the arena),
 // but it does not need to be: Doom::initNewGame -> Doom::setupLevel already resets the
 // simulation each time a level loads - the geometry (Doom::Level assigns fresh
-// vectors), the thinkers (Doom::initThinkers), the random indices (M_ClearRandom),
-// the leftover mobjs and specials (Z_FreeTags). So a second scenario runs on a
+// vectors), the random indices (M_ClearRandom), and the leftover mobjs and
+// specials, which go with the thinker list that owns them
+// (Doom::thinkerList().clear(), what Z_FreeTags swept). So a second scenario runs on a
 // clean world in the same process. Replaying one demo twice and getting the
 // same tics both times is what proves that reset is clean.
 void doomSimReplayDemo(std::string_view demoLump);

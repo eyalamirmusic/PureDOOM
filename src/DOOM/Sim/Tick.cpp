@@ -1,10 +1,8 @@
 // Rewritten out of vanilla p_tick into namespace Doom.
 //
-// The thinker list (init/add/remove/run) and the per-tic ticker that thinks each
-// player and runs the thinkers, specials and respawns. The run loop dispatches
-// through the thinker function-pointer union, so the T_/mobjThinker addresses it
-// stores stay global. p_tick.cpp shims the vanilla names and owns leveltime and
-// thinkercap. Golden-neutral - this is the heartbeat every demo tic runs through.
+// The thinker list (add/remove/run) and the per-tic ticker that thinks each
+// player and runs the thinkers, specials and respawns. Golden-neutral - this is the
+// heartbeat every demo tic runs through.
 
 #include "../Host/Platform.h"
 
@@ -17,133 +15,37 @@
 #include "../Game/OverlayState.h"
 #include "../Game/PlayerState.h"
 #include "../Game/RefreshFlags.h"
-#include "LevelPool.h"
 #include "ThinkerList.h"
 #include "Tick.h"
 
-// The thinker functions stay global (p_saveg identity); declared so the spawners
 #include "Specials.h"
-// can store their address.
+
 #include "Mobj.h"
 
 #include "Player.h"
 namespace Doom
 {
-// Forward declarations so the file's own call order needs no rearranging.
-void initThinkers();
-void addThinker(Thinker& thinker);
-void removeThinker(Thinker& thinker);
-void runThinkers();
-void ticker();
-
-// The level-allocation pool. Each block carries a small header linking it into an
-// intrusive list, so a level reset frees every block malloc gave out - live
-// thinkers and the marked-but-orphaned alike - where Z_FreeTags(PU_LEVEL) once
-// swept the whole tag. The header is two pointers, so the returned block stays
-// 16-byte aligned, more than Mobj asks for.
-// LevelChunk and the list head now live on the Engine (Sim/LevelPool.h, moved by the
-// file-scope-statics sweep - REFACTOR.md, Step 5); levelAlloc, levelFree and freeLevelAllocations
-// each hoist levelPool() once and reach the list head through it (pool.head), so the pool is owned
-// per-Engine, rather than through a file-scope reference alias (REFACTOR.md, Step 9 strand (a)).
-// Read by no other file.
-
-void* levelAlloc(int size)
-{
-    auto& pool = levelPool();
-
-    auto total = static_cast<int>(sizeof(LevelChunk)) + size;
-    auto chunk = static_cast<LevelChunk*>(host().malloc(total));
-    doom_memset(chunk, 0, total);
-
-    chunk->prev = nullptr;
-    chunk->next = pool.head;
-    if (pool.head)
-        pool.head->prev = chunk;
-    pool.head = chunk;
-
-    return static_cast<void*>(chunk + 1);
-}
-
-void levelFree(void* block)
-{
-    if (!block)
-        return;
-
-    auto& pool = levelPool();
-
-    auto* chunk = static_cast<LevelChunk*>(block) - 1;
-    if (chunk->prev)
-        chunk->prev->next = chunk->next;
-    else
-        pool.head = chunk->next;
-    if (chunk->next)
-        chunk->next->prev = chunk->prev;
-
-    host().free(chunk);
-}
-
-// Every level allocation is a Thinker (mobj or special), so a chunk's payload can
-// be destroyed as one. The virtual destructor is defaulted and the fields are all
-// trivially destructible, so this frees no resources - it is here because ending
-// the lifetime of a polymorphic object by releasing its storage is only well-defined
-// once its destructor has run.
-static void destroyThinker(Thinker* thinker)
-{
-    thinker->~Thinker();
-    levelFree(thinker);
-}
-
-// Every payload is a Thinker (a mobj or a special), so each is destroyed as one
-// before its storage goes back - ending a polymorphic object's lifetime by
-// releasing its storage is only well-defined once its destructor has run. The
-// destructors are defaulted and every field trivially destructible, so this frees
-// no resources of its own; it is the storage that is being reclaimed.
-void LevelPool::releaseAll()
-{
-    auto* chunk = head;
-    while (chunk)
-    {
-        auto* next = chunk->next;
-        reinterpret_cast<Thinker*>(chunk + 1)->~Thinker();
-        host().free(chunk);
-        chunk = next;
-    }
-    head = nullptr;
-}
-
-// The whole point of the RAII change: teardown needs no cooperation from anybody.
-// Destroying an Engine returns the level's blocks whether or not a level was ever
-// unloaded, which is what resetEngine() depends on.
-LevelPool::~LevelPool()
-{
-    releaseAll();
-}
-
-void freeLevelAllocations()
-{
-    levelPool().releaseAll();
-}
-
-// The per-level reset: forget every thinker, leaving an empty circular list. The
-// invariant it re-establishes is the same one ThinkerList's constructor seeds, so
-// both go through reset() - teardown and construction cannot drift apart, the way
-// freeLevelAllocations and ~LevelPool share releaseAll().
-void initThinkers()
-{
-    thinkerList().reset();
-}
-
+// Every thinker's storage comes from the embedder's hook, which is what levelAlloc
+// existed to do before the ThinkerList owned these blocks (Sim/Thinker.h says why
+// the global operator new will not do). The list-threading half of levelAlloc is
+// gone with the LevelPool: the OwnedVector is the ownership now, so a block cannot
+// be allocated and left unregistered.
 //
-// addThinker
-// Adds a new thinker at the end of the list.
-//
-void addThinker(Thinker& thinker)
+// No zeroing here, where levelAlloc memset the block. It is not needed and its
+// absence is not a behaviour change: every thinker is created by
+// `new T()` (OwnedVector::createDerived), and a T whose default constructor is
+// implicit and non-trivial - which all nine are, being polymorphic with default
+// member initializers - is *value*-initialized by that syntax, so the object is
+// zeroed whole, padding included, before its members are initialized. The padding
+// matters because SaveGame memcpy's these structs to disk entire.
+void* Thinker::operator new(std::size_t size)
 {
-    auto& thinkers = thinkerList();
-    thinkers.cap.prev->next = &thinker;
-    thinker.next = &thinkers.cap;
-    thinker.prev = thinkers.cap.prev;
-    thinkers.cap.prev = &thinker;
+    return host().malloc(static_cast<int>(size));
+}
+
+void Thinker::operator delete(void* block)
+{
+    host().free(block);
 }
 
 //
@@ -164,33 +66,35 @@ void removeThinker(Thinker& thinker)
 void runThinkers()
 {
     auto& thinkers = thinkerList();
-    auto* currentthinker = thinkers.cap.next;
-    while (currentthinker != &thinkers.cap)
+
+    // By index, re-reading size() every iteration, and never through a reference
+    // into the vector's buffer: a thinker's tick() spawns thinkers, which append
+    // here and can reallocate. Binding to *thinkers[i] is safe because that is the
+    // object, not the slot, and the objects never move.
+    //
+    // The three orderings this reproduces, each pinned by the demo goldens: a
+    // thinker spawned during this walk runs in this same tic (it lands at the back,
+    // which the cursor has not reached); a removed thinker is freed when the cursor
+    // arrives, which may be this tic or the next depending on where it sits; and a
+    // stopped thinker (a crusher/lift in stasis - vanilla's null function) keeps its
+    // place without acting.
+    for (auto i = 0; i < thinkers.size();)
     {
-        if (currentthinker->removed)
+        auto& thinker = *thinkers[i];
+
+        if (thinker.removed)
         {
-            // Time to remove it. Vanilla advanced by reading currentthinker->next
-            // *after* Z_Free, which the zone tolerated because a freed block kept
-            // its bytes until reused; a real free() unmaps them, so capture next
-            // before releasing (the unlink leaves currentthinker->next intact, so
-            // this is the same value vanilla read - only sooner).
-            auto* next = currentthinker->next;
-            currentthinker->next->prev = currentthinker->prev;
-            currentthinker->prev->next = currentthinker->next;
-            destroyThinker(currentthinker);
-            currentthinker = next;
+            // Order-preserving erase, and the OwningPointer in the slot is what runs
+            // the destructor and returns the storage. Never swap-and-pop: the order
+            // is the simulation.
+            thinkers.removeAt(i);
+            continue;
         }
-        else
-        {
-            // A stopped thinker (a crusher/lift in stasis - vanilla's null function)
-            // stays on the list but does not act.
-            if (!currentthinker->stopped)
-                currentthinker->tick();
-            // Advance after the think, so a mobj its thinker just spawned (linked
-            // at the tail, i.e. onto currentthinker->next when it was last) runs
-            // this same tic, as vanilla does.
-            currentthinker = currentthinker->next;
-        }
+
+        if (!thinker.stopped)
+            thinker.tick();
+
+        ++i;
     }
 }
 

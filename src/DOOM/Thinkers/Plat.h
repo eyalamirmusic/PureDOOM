@@ -34,7 +34,6 @@ constexpr int MAXPLATS = 30;
 struct Plat : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::Plat; }
     Sector* sector = nullptr;
     Fixed speed;
     Fixed low;

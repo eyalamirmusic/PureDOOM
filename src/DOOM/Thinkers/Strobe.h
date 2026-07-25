@@ -20,7 +20,6 @@ constexpr int SLOWDARK = 35;
 struct Strobe : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::StrobeFlash; }
     Sector* sector = nullptr;
     int count = 0;
     int minlight = 0;

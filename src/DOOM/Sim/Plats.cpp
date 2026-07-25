@@ -13,10 +13,8 @@
 #include "../Game/SoundData.h"
 
 #include "Plats.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "Specials.h"
-
-#include <new>
 
 #include "../Game/LevelStats.h"
 #include "../Game/Sound.h"
@@ -67,8 +65,7 @@ int Line::doPlat(PlatType type, int amount)
 
         // Find lowest & highest floors around sector
         rtn = 1;
-        Plat* plat = new (levelAlloc(sizeof(*plat))) Plat {};
-        addThinker(*plat);
+        auto* plat = &addThinker<Plat>();
 
         plat->type = type;
         plat->sector = sec;

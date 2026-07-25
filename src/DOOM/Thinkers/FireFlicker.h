@@ -12,7 +12,6 @@ struct Sector;
 struct FireFlicker : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::FireFlicker; }
     Sector* sector = nullptr;
     int count = 0;
     int maxlight = 0;

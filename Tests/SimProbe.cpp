@@ -191,19 +191,20 @@ static void simMix(const void* bytes, int count)
     }
 }
 
-static int simIsMobj(Doom::Thinker* thinker)
+// The live mobj a thinker is, or null. How the probe finds mobjs, not what it mixes:
+// the virtual asMobj() replaced first the function-pointer identity test and then the
+// ThinkerKind tag, and hands back the typed pointer so the caller cannot cast wrong.
+static Doom::Mobj* simAsMobj(Doom::Thinker* thinker)
 {
-    // How the probe finds mobjs, not what it mixes: the thinker's virtual kind()
-    // replaces the old function-pointer identity test (Doom::Thinker -> Thinker).
-    return thinker->kind() == Doom::ThinkerKind::Mobj && !thinker->removed;
+    auto* mobj = thinker->asMobj();
+
+    return thinker->removed ? nullptr : mobj;
 }
 
 unsigned long long doomSimStateHash()
 {
     auto& rnd = Doom::randomness();
-    auto& thinkers = Doom::thinkerList();
 
-    Doom::Thinker* thinker;
     Doom::Player* player = &Doom::playerState().players[0];
     auto count = 0;
 
@@ -233,13 +234,12 @@ unsigned long long doomSimStateHash()
         simMix(&player->mo->mom.z, sizeof(Doom::Fixed));
     }
 
-    for (thinker = thinkers.cap.next; thinker && thinker != &thinkers.cap;
-         thinker = thinker->next)
+    for (auto& thinker: Doom::thinkerList())
     {
-        Doom::Mobj* mobj = (Doom::Mobj*) thinker;
         int frame;
 
-        if (!simIsMobj(thinker))
+        Doom::Mobj* mobj = simAsMobj(thinker.get());
+        if (!mobj)
             continue;
 
         frame = (int) (mobj->state - Doom::states());
@@ -383,14 +383,10 @@ int doomSimPlayerAngleDegrees()
 
 int doomSimMobjCount()
 {
-    auto& thinkers = Doom::thinkerList();
-
-    Doom::Thinker* thinker;
     auto count = 0;
 
-    for (thinker = thinkers.cap.next; thinker && thinker != &thinkers.cap;
-         thinker = thinker->next)
-        if (simIsMobj(thinker))
+    for (auto& thinker: Doom::thinkerList())
+        if (simAsMobj(thinker.get()))
             ++count;
 
     return count;
@@ -732,13 +728,12 @@ static unsigned long long simWorldHash()
     // through the sector state they drive.
     auto mobjCount = 0;
     auto thinkerCount = 0;
-    for (Doom::Thinker* th = thinkers.cap.next; th && th != &thinkers.cap;
-         th = th->next)
+    for (auto& th: thinkers)
     {
         ++thinkerCount;
-        if (!simIsMobj(th))
+        Doom::Mobj* m = simAsMobj(th.get());
+        if (!m)
             continue;
-        Doom::Mobj* m = (Doom::Mobj*) th;
         auto frame = (int) (m->state - Doom::states());
         simMix(&m->pos.x, sizeof(Doom::Fixed));
         simMix(&m->pos.y, sizeof(Doom::Fixed));

@@ -83,13 +83,20 @@ enum class ButtonWhere;
 // inherit it the same way rather than hold a `Thinker thinker` member - a member
 // gets no tail-padding reuse, which would push pos 4 bytes later than Mobj's
 // and make the cast read the wrong words (a silently misplaced, wrongly-inaudible
-// sound). The Thinker part is otherwise unused: this is never a real thinker.
+// sound). The Thinker part is otherwise unused: this is never a real thinker - it
+// is embedded in a Sector by value and never joins the ThinkerList, so tick() is
+// never called on it, and asMobj() inherits the base's null, which is the truthful
+// answer and the one every mobj scan wants. The empty tick() exists only because
+// Thinker is abstract; it adds no member and no second vptr, so the layout this
+// struct exists for is unchanged.
 //
 // Nothing declared before `pos`, either, for the same reason. Pinned by
 // Tests/Sim/StateClusterTests.cpp - inserting a field here fails it three ways.
 struct DegenMobj : Thinker
 {
     Vec3 pos;
+
+    void tick() override {}
 };
 
 //

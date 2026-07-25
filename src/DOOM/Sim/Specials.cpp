@@ -26,7 +26,7 @@
 #include "AnimatedSurfaces.h"
 #include "EndLevelTimer.h"
 #include "Specials.h"
-#include "Tick.h" // levelAlloc / levelFree / freeLevelAllocations
+#include "Tick.h" // addThinker / removeThinker
 #include "../Game/Args.h"
 
 #include "../Render/Data.h"
@@ -35,8 +35,6 @@
 #include "Plats.h"
 #include "Teleport.h"
 #include "../Containers.h"
-
-#include <new>
 
 #include "../Game/Game.h"
 #include "../Game/Sound.h"
@@ -1060,8 +1058,7 @@ int Line::doDonut()
             auto* s3 = line->backsector;
 
             //        Spawn rising slime
-            FloorMove* floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-            addThinker(*floor);
+            auto* floor = &addThinker<FloorMove>();
             s2->specialdata = floor;
             floor->type = FloorType::DonutRaise;
             floor->crush = false;
@@ -1073,8 +1070,7 @@ int Line::doDonut()
             floor->floordestheight = s3->floorheight;
 
             //        Spawn lowering donut-hole
-            floor = new (levelAlloc(sizeof(*floor))) FloorMove {};
-            addThinker(*floor);
+            floor = &addThinker<FloorMove>();
             s1->specialdata = floor;
             floor->type = FloorType::LowerFloor;
             floor->crush = false;

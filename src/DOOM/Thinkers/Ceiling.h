@@ -27,7 +27,6 @@ constexpr int MAXCEILINGS = 30;
 struct Ceiling : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::Ceiling; }
     CeilingType type = CeilingType::LowerToFloor;
     Sector* sector = nullptr;
     Fixed bottomheight;

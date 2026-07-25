@@ -15,7 +15,6 @@ constexpr int GLOWSPEED = 8;
 struct Glow : Thinker
 {
     void tick() override;
-    ThinkerKind kind() const override { return ThinkerKind::Glow; }
     Sector* sector = nullptr;
     int minlight = 0;
     int maxlight = 0;

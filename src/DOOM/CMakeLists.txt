@@ -67,7 +67,6 @@ set(DOOM_REWRITTEN_SOURCES
         Sim/Items.cpp
         Sim/ItemTypes.h
         Sim/Level.h
-        Sim/LevelPool.h
         Sim/Lights.cpp
         Sim/Lights.h
         Sim/MapAction.cpp
