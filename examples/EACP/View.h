@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Audio.h"
 #include "AutomapShader.h"
 #include "HudShader.h"
 #include "Input.h"
@@ -192,6 +193,11 @@ struct View final : GPU::GPUView
     Engine::Camera previousCamera {};
     Engine::Camera currentCamera {};
     bool hasCamera = false;
+
+    // The output device and the MIDI port. It is the view that owns them
+    // because it is the view that is called once a display refresh, and the
+    // engine's mixer has to be pulled from the same thread that steps it.
+    Audio audio;
 
     Graphics::Window& window;
     Graphics::ModifierKeys modifiers;

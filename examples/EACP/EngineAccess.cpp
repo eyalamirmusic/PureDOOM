@@ -1476,6 +1476,14 @@ double ticTime()
            + static_cast<double>(usec) * Doom::TICRATE / 1000000.0;
 }
 
+double midiTime()
+{
+    static_assert(Doom::DOOM_MIDI_RATE % Doom::TICRATE == 0,
+                  "the MIDI clock is counted as a multiple of the tic clock");
+
+    return ticTime() * (Doom::DOOM_MIDI_RATE / Doom::TICRATE);
+}
+
 bool isWiping()
 {
     return Doom::gameFlow().is_wiping_screen;

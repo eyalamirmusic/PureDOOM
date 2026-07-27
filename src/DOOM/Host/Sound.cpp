@@ -59,6 +59,12 @@ namespace Doom
 
 constexpr int NUM_CHANNELS = 8;
 
+// The sound settings hold their volumes as 0-15, the range the menu's sliders
+// count over; the mixer's volume tables are indexed 0-127. Eight is the factor
+// between them, and it is applied where a setting crosses into the mixer -
+// setMusicVolume for music, startSoundHost for sound effects.
+constexpr int settingToMixVolume = 8;
+
 constexpr int MAX_QUEUED_MIDI_MSGS = 256;
 
 constexpr int EVENT_RELEASE_NOTE = 0;
@@ -655,7 +661,7 @@ void setSfxVolumeHost(int volume)
 void setMusicVolume(int volume)
 {
     soundSettings().musicVolume = volume;
-    mus_volume = soundSettings().musicVolume * 8;
+    mus_volume = soundSettings().musicVolume * settingToMixVolume;
 
     for (auto i = 0; i < 16; ++i)
     {
@@ -689,8 +695,20 @@ int SfxInfo::findLumpNum() const
 int startSoundHost(
     SfxEnum id, int vol, int sep, int pitch, [[maybe_unused]] int priority)
 {
-    // Returns a handle (not used).
-    return addsfx(id, vol, steptable[pitch], sep);
+    // The 0-15 the sound settings carry, scaled to the 0-127 the mixer's volume
+    // tables are built over. setMusicVolume above already does this to
+    // soundSettings().musicVolume, and this is the same conversion at the same
+    // boundary - so the game plays at the level its slider says rather than at an
+    // eighth of it.
+    //
+    // Where it is NOT done is at the two sites that read as the obvious home for
+    // it, Game/DoomMain's initSound call and UI/Menu's sfxVol, both of which carry
+    // vanilla's own commented-out `/* *8 */`. Restoring it there would be wrong:
+    // soundSettings().sfxVolume is one field doing two jobs - the mixer's volume
+    // and the menu slider's position - so scaling it in place would put 120 into a
+    // slider that counts to 15. The scale belongs here, where a setting becomes an
+    // amplitude and nothing reads it back.
+    return addsfx(id, vol * settingToMixVolume, steptable[pitch], sep);
 }
 
 void stopSoundHost([[maybe_unused]] int handle)
@@ -1133,18 +1151,16 @@ unsigned long tickSong()
             do
             {
                 delay_byte = mus_data[mus_offset++];
-                // KNOWN DEFECT, preserved and parenthesized rather than fixed.
-                // `+` binds tighter than `&`, so the mask lands on the whole
-                // accumulator instead of on the byte being folded in. A MUS delay
-                // is a variable-length quantity of seven bits per byte, so the
-                // intended reading is `mus_delay * 128 + (delay_byte & 0x7f)`;
-                // as written, every delay needing more than one byte truncates to
-                // its low seven bits. The same line is in the 1993-lineage source
-                // (110ddbe:src/DOOM/i_sound.c:1158), so it predates this refactor.
-                // Left alone because it is a behaviour change no gate here can
-                // check: audio is unwired, nothing calls this, and no golden
-                // covers it. Move the parenthesis one term left to correct it.
-                mus_delay = (mus_delay * 128 + delay_byte) & 0b01111111;
+                // A MUS delay is a variable-length quantity, seven bits per
+                // byte, so the mask belongs on the byte being folded in and not
+                // on the accumulator. The 1993-lineage source has it the other
+                // way round (110ddbe:src/DOOM/i_sound.c:1158) - `+` binds tighter
+                // than `&` - which truncates every delay needing more than one
+                // byte to its low seven bits, so any rest longer than 127 ticks
+                // (0.9s) collapses. It was left alone while audio was unwired
+                // and nothing called this; the port drives it now, and the
+                // difference is audible as music that will not hold a rest.
+                mus_delay = mus_delay * 128 + (delay_byte & 0b01111111);
             } while (delay_byte & 0b10000000);
 
             return midi_event;

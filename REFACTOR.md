@@ -64,8 +64,8 @@ Every step is done. The detail that used to live in this table is now in
 | 5 | The `Engine` object: globals become members | done |
 | 6 | The playsim | done |
 | 7 | The renderer | done |
-| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker` | done, bar audio |
-| 9 | Modern C++ / RAII across the board | done, bar audio |
+| 8 | UI, game loop, host boundary; `thinker_t`→`Thinker` | done |
+| 9 | Modern C++ / RAII across the board | done |
 | 10 | Strings, and the `extern "C"` API removed | done |
 | 11 | Scoped enums: every `enum` becomes `enum class` | done |
 
@@ -79,11 +79,7 @@ has the working detail.
 
 ## What is left
 
-1. **Audio.** Blocked outside this repository, on an eacp audio stream. The
-   engine side is built: sound is a pull model at `DOOM_SAMPLERATE`, music a
-   140 Hz push. See `CLAUDE.md`'s "What the engine expects of its host".
-
-2. **Two unmeasured toolchains, and then `-Werror`.** The engine builds with zero
+1. **Two unmeasured toolchains, and then `-Werror`.** The engine builds with zero
    warnings on Apple Clang (`Debug` and `Release`), real GCC 16 (`Release`), and
    Windows arm64 under both clang-cl and MSVC. Ubuntu's gcc/clang and MSVC on
    `/W4` are the remainder, and `-Werror` waits on them.
@@ -103,8 +99,18 @@ has the working detail.
    corresponding to a GCC/Clang flag this project has deliberately not enabled;
    the reasoning is written out at the flags in `src/DOOM/CMakeLists.txt`.
 
-That is the whole list. Three items closed recently, kept here because each says
+That is the whole list. Four items closed recently, kept here because each says
 something the code alone does not:
+
+- **Audio.** No longer blocked, and no longer eacp's to answer: it came from
+  MakeASound, a dependency of `examples/EACP` alone. Sound plays and music goes out
+  as MIDI on a virtual port; `CLAUDE.md`'s **Audio** section has the design and its
+  own gap log has what MakeASound still lacks (a synth, above all). Wiring it made
+  two dormant engine defects reachable, and both are now fixed rather than
+  preserved — the MUS delay's mis-parenthesised variable-length quantity, and sound
+  effects playing at an eighth of their level because the 0-15 setting was never
+  scaled to the mixer's 0-127. Neither had a gate over it, and neither could have:
+  no golden hashes a sample.
 
 - **The intermission's frame golden.** `Tests/Goldens/intermission.frames` pins 401
   tics of the real E1M1 → scoreboard → E1M2 transition, and every screen a demo
@@ -136,8 +142,6 @@ something the code alone does not:
 Found during the refactor, preserved deliberately, documented at their sites.
 Each is in the 1993-lineage source too, and each is behaviour the goldens record.
 
-- **`Host/Sound.cpp`'s MUS delay decode** has an operator-precedence bug that
-  truncates any multi-byte delay.
 - **`UI/Intermission.cpp`'s `drawAnimatedBack`** tests the enum *constant*
   `commercial` rather than comparing against it, so the intermission's animated
   background has never drawn in this lineage.

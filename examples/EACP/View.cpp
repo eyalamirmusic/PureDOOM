@@ -90,6 +90,10 @@ void View::prepareQuadShader(ScreenQuadShader& shader)
 }
 void View::update(Threads::FrameTime)
 {
+    // Ahead of the early return below: the device wants feeding on every
+    // refresh, not only on the ones a tic falls on.
+    audio.pump();
+
     if (window.isCommandPressed())
         window.setMouseLocked(false);
 

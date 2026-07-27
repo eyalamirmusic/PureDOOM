@@ -22,6 +22,10 @@ Three goals:
    **Testing**. Read that section before touching anything in `src/DOOM`: DOOM's
    simulation is exactly reproducible, and the tests exist to keep it that way.
 
+Audio arrived separately, through
+[MakeASound](https://github.com/eyalamirmusic/MakeASound) rather than eacp, and has
+its own gap log at the end of this file.
+
 **The C++ refactor is finished.** `REFACTOR.md` records the end state, the short
 list of what remains (audio, and two unmeasured toolchains before `-Werror`), the
 preserved 1993 defects, and the traps the work turned up. Read it before a large
@@ -620,7 +624,9 @@ Three things that bite:
 
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
-  eacp platform layer and GPU renderer, and `EngineAccess.h/.cpp` is the snapshot
+  eacp platform layer and GPU renderer, `Audio.h/.cpp` is the output device and the
+  MIDI port (over MakeASound, and the one file here that needs no GPU besides
+  `EngineAccess`), and `EngineAccess.h/.cpp` is the snapshot
   interface to engine internals. `EngineAccess.cpp` is an ordinary translation unit
   that includes the engine's headers; nothing DOOM-typed leaks out through the `.h`,
   and the renderer never sees a `fixed_t`.
@@ -767,6 +773,80 @@ Two paths, toggled at runtime with **Shift+F8**:
   finale) falls back to the software frame automatically, which is right — those
   screens *are* 320x200 — and the status bar is always composited from it.
 
+## Audio
+
+Sound plays. Music leaves the process as MIDI. Both go through
+[MakeASound](https://github.com/eyalamirmusic/MakeASound), a CPM dependency of
+`examples/EACP` alone — audio is the *host's* job, not the engine's, so the
+engine-only test loop never fetches miniaudio, RtMidi or Miro.
+
+`examples/EACP/Audio.{h,cpp}` is the whole of it, and it is GPU-free: `View` owns an
+`Audio` and calls `audio.pump()` once a display refresh, **ahead of the early return**
+that skips refreshes no tic falls on — the device wants feeding either way.
+
+Five things to know.
+
+- **The mixer is pulled on the main thread, and this is the design, not a shortcut.**
+  `Doom::soundBuffer()` mixes 512 frames *on the call*, reaching into the same engine
+  state `Doom::updateGame()` writes. Pulling it from the device's callback — which is
+  what `DOOM.h`'s comment about a lock describes, and what the deleted SDL example
+  did — means holding a lock across the mix, on the audio thread. Pulling it from the
+  thread that steps the engine removes the lock outright. What crosses the thread
+  boundary is `MakeASound::SPSCQueue`, wait-free at both ends, carrying frames that
+  are already finished.
+- **The queue's occupancy is tracked separately, and it has to be.** `SPSCQueue` does
+  not report its own size, and the producer needs it to know when to stop pulling.
+  `Audio::queued` is an `std::atomic<int>` the producer adds to and the consumer
+  subtracts from. The asymmetry is what makes it safe: the consumer only ever
+  publishes a count *at or above* the true one, so a stale reading makes the producer
+  wait a refresh — it cannot make it overrun. The capacity is then provably enough
+  (`audioQueueFrames` = the headroom, plus the one indivisible DOOM block that tops it
+  up, at the highest rate a stream is opened at).
+- **512 frames at 11025 Hz is 46ms, and it is the floor under the latency.** There is
+  no smaller unit to ask the mixer for — one block is longer than a tic. The queue
+  keeps 40ms of headroom on top of that, which is what covers a display refresh plus
+  the device's own block.
+- **The resampler carries its phase and its previous frame across the block
+  boundary.** Restarting either per block puts a step at every join, 21 times a
+  second.
+- **The stream is built by hand rather than from `getDefaultConfig()`**, which also
+  opens the default *input* — and asking for a capture device is what puts a
+  microphone permission prompt in front of a game that never records anything.
+
+Music goes out as MIDI on a **virtual port named `PureDOOM`**, which appears in the
+system's MIDI graph and plays to nothing until the player routes it into a synth.
+RtMidi has no virtual ports on Windows, which is also the one platform shipping a
+General MIDI synth as an ordinary output port, so there the fallback is a real port,
+preferring one that names itself a synth.
+
+The MIDI clock is `Engine::midiTime()` — `ticTime()` in 140ths rather than 35ths, off
+the engine's clock for the reason everything else here is. Per tick, `tickMidi()` is
+drained until it returns 0, which is the contract `DOOM.h` states.
+
+Two engine defects this surfaced, both in `Host/Sound.cpp`, both previously
+unreachable and so unfixed:
+
+- **The MUS delay was a mis-parenthesised variable-length quantity** — the mask landed
+  on the accumulator instead of the byte, truncating any rest longer than 127 ticks
+  (0.9s). Corrected. It was documented at its site as preserved *because* nothing
+  called it; the port calls it now.
+- **Sound effects played at an eighth of their level.** The sound settings hold 0-15
+  (the menu slider's range) and the mixer's volume tables are indexed 0-127.
+  `setMusicVolume` already scaled by 8; `startSoundHost` did not. Fixed there rather
+  than at the two sites carrying vanilla's own commented-out `/* *8 */`, because
+  `soundSettings().sfxVolume` is one field doing two jobs and scaling it in place
+  would put 120 into a slider that counts to 15. Measured: peak mix level went from
+  ~2,500 to ~20,000 of 32,768 over the same attract demo.
+
+Verified by instrumenting a real run: the device opened at 48 kHz, the queue held
+between 550 and 1920 frames against its 1920 target and never emptied, the mix peaked
+at 16k-30k of 32,768 during the demo with no clipping, MIDI ticked at 138/second
+against the nominal 140, and the message rate matched the score's own — 8.8/second
+against `D_E1M5`'s first-30-seconds density of 9.8, read straight out of the WAD.
+
+**Still missing, and it is MakeASound's half:** there is no synth. See the note under
+the gap log.
+
 ## Build
 
 ```bash
@@ -791,6 +871,11 @@ no portable spelling, and `std::getenv` is deprecated by Microsoft's CRT). With 
 flag `OFF` the root `CMakeLists.txt` passes `EACP_BUILD_GRAPHICS OFF`, so eacp
 compiles Core, SIMD and Network and stops. `doom-engine` links `eacp-core`
 **PRIVATE**: `DOOM.h` stays a standard-library-only header with no eacp type in it.
+
+**MakeASound** is fetched by `examples/EACP/CMakeLists.txt` rather than at the root,
+because only the app needs it (see **Audio**). It brings miniaudio, RtMidi and Miro
+with it; CPM dedupes by NAME, so its `EADataStructures` — reached through Miro — is
+the one the root already added, and nothing is fetched twice.
 
 eacp is fetched from GitHub via CPM. To co-develop against a local checkout, pass
 `-DCPM_eacp_SOURCE=$HOME/Code/eacp`. Use `$HOME`, not `~` — CMake does not expand
@@ -922,8 +1007,12 @@ the loose `vertexes`/`numsegs`/… globals still equalled their `Level` vector's
 
 ### What the tests do not cover
 
-Audio, and `examples/EACP`'s GPU-bound half — `View`, the shaders, the platform
-layer. That is the whole list — but it has been wrong twice, and the way it was wrong
+Audio — the engine's mixer and MUS reader, and the port's `Audio` on top of them —
+and `examples/EACP`'s GPU-bound half — `View`, the shaders, the platform
+layer. The audio half of that is now *live* code rather than dormant code, which
+raises the stakes: both defects listed under **Audio** were found by instrumenting a
+running game and reading the score out of the WAD, because nothing in the suite could
+have. That is the whole list — but it has been wrong twice, and the way it was wrong
 each time is the lesson. **The cheat matcher** was live engine code with no gate over
 it at all, and went unlisted because this section was organised around *screens* and
 `checkCheat` is not a screen — so a category nobody had thought to name could not show
@@ -1243,23 +1332,26 @@ way that is easy to dismiss.
   built**. `netUpdate` now builds no command when `singletics` is set (it still drains
   events). This took the aim's input-to-screen lag from 163ms to 17ms.
 - The engine is single-threaded: `Doom::initGame`, `Doom::updateGame`,
-  `Doom::framebuffer` and all input calls happen on the main thread. Audio, once
-  wired, is the only exception — it is pulled from the audio callback, on another
-  thread, and must take a lock against `Doom::updateGame`.
+  `Doom::framebuffer` and all input calls happen on the main thread. **Audio is not
+  an exception, and deliberately so.** `Doom::soundBuffer()` mixes on call, out of
+  the same engine state `Doom::updateGame()` writes, so calling it from the device's
+  callback would mean holding a lock across the mix — on the audio thread. This port
+  pulls it from the main thread instead and hands finished frames across a wait-free
+  queue, so there is no lock anywhere. See **Audio**.
 
 ### What the engine expects of its host
 
 Two of these are not obvious, and getting either wrong makes the game feel broken
 rather than fail outright.
 
-- **Audio, when it is wired** (nothing here plays a sound yet — gap-log item 1). This
-  is what the deleted SDL example demonstrated and nothing else records. Sound is a
-  **pull** model: run an output stream at `Doom::DOOM_SAMPLERATE` (11025 Hz), 16-bit
-  stereo, 512 samples — 2,048 bytes a buffer — and call `Doom::soundBuffer()` from the
-  audio callback, taking the engine lock around it. Music is a **push** model: a
-  140 Hz timer (`Doom::DOOM_MIDI_RATE`) draining `Doom::tickMidi()` into a synth for
-  as long as it keeps returning messages. Resample if your device wants another rate;
-  the engine only produces that one.
+- **Audio is two different shapes, on two different clocks.** Sound is a **pull**:
+  `Doom::soundBuffer()` mixes the next 512 stereo frames at `Doom::DOOM_SAMPLERATE`
+  (11025 Hz, 16-bit — 2,048 bytes) *on the call*, out of whatever the playsim has
+  started. Music is a **push**: `Doom::tickMidi()` wants draining
+  `Doom::DOOM_MIDI_RATE` (140) times a second and hands back MIDI messages, not
+  samples, so it needs a synth on the other end. Resample if your device wants
+  another rate; the engine produces the one. See **Audio** for how this port drives
+  both.
 
 - **The keys the app asks for do not stick by themselves.** DOOM cannot rebind a key
   from inside the game, yet it still writes every binding to `~/.doomrc` and, at
@@ -1350,10 +1442,11 @@ the input and drawing with it. Lowering it to two therefore *raises* latency on 
 (measured: sample-to-screen 23ms at three, 32ms at two). **This port should not lower
 it.**
 
-1. **No audio subsystem.** Sound effects need a pull-model PCM output stream
-   (`DOOM_SAMPLERATE` = 11025 Hz, 16-bit stereo, mixed via `Doom::soundBuffer()`);
-   music needs a 140 Hz (`Doom::DOOM_MIDI_RATE`) tick draining `Doom::tickMidi()` into
-   a synth. Both are unwired; the game runs silent.
+1. **No audio subsystem** — and eacp is not where this was answered. Audio comes from
+   [MakeASound](https://github.com/eyalamirmusic/MakeASound), a separate CPM
+   dependency of `examples/EACP` (`MakeASound::DeviceManager` over miniaudio,
+   `MakeASound::MidiManager` over RtMidi). Sound effects play; music is emitted as
+   MIDI. See **Audio** below for what MakeASound still lacks.
 2. **Modifier keys produce no key events**, on any platform — DOOM binds them as
    ordinary keys (Ctrl = fire, Shift = run, Alt = strafe). Workaround: they are diffed
    once per frame from polled `Window::getModifiers()` into synthetic down/up events.
@@ -1412,6 +1505,51 @@ it.**
     declares no uniform parameter — benign, but it is what Xcode's runtime-issues panel
     fills up with. The emitter already computes `vertexUsesUniforms(graph)`, so gating
     the bind on it would settle it.
+
+## MakeASound Gap Log
+
+The same rule as above: MakeASound is not modified from here. Found while wiring
+audio, in the order the port hit them.
+
+1. **No synth, so DOOM's music cannot be *heard* without help.** `tickMidi()` yields
+   MIDI messages, and `MidiManager` carries them faithfully to a port — but a port is
+   not a sound. What is missing is a software synth to render General MIDI: a
+   SoundFont/`.sf2` player (TinySoundFont, FluidSynth) or an OPL emulator, taking
+   `MIDI::Event`s in and writing into an `Audio::Buffer`. That is the single thing
+   standing between this port and music out of the box, and it is a natural fit
+   beside `MidiBlockSync`, which already exists to align MIDI to audio blocks — it
+   solves the *input* half of exactly this problem. Workaround here: a virtual output
+   port the player routes into a synth themselves.
+
+2. **`getDefaultConfig()` always opens an input device**, so an output-only app gets a
+   duplex stream and, on macOS/iOS, a **microphone permission prompt** it has no use
+   for. There is no `getDefaultOutputConfig()`, and building the config by hand also
+   means reimplementing the rate choice: `pickCompatibleSampleRate` takes two
+   `DeviceInfo`s and has no output-only form. Workaround:
+   `examples/EACP/Audio.cpp` builds the `StreamConfig` itself and picks the rate with
+   a local `chooseSampleRate`.
+
+3. **`SPSCQueue` does not report its occupancy.** `push` returning false is the only
+   signal, and by then the producer has already generated the data it cannot place —
+   which for a pull-model source like DOOM's mixer means the samples are *gone*, not
+   merely delayed. A `size()`/`space()` on the producer side (a relaxed load of the
+   two indices, no extra state) would let a producer decide *before* generating.
+   Workaround: `Audio::queued`, an `std::atomic<int>` alongside the queue, which is a
+   second copy of state the queue already holds.
+
+4. **`openVirtualOutput` throws on Windows rather than reporting unsupported.** The
+   platform capability is knowable in advance, so a `supportsVirtualPorts()` — or the
+   call returning `bool` — would let a caller choose its fallback without using an
+   exception for control flow. Workaround: `Audio::openMidi` catches and falls back to
+   a real port.
+
+5. **No typed decoder from raw MIDI bytes to `MIDI::Event`.** `MIDI::toBytes` exists
+   for the send path, and `sendMessage(const std::uint8_t*, std::size_t)` takes raw
+   bytes, but a caller holding a packed status/data triple — which is exactly what
+   `Doom::tickMidi()` returns — has to know that program change and channel pressure
+   are two bytes and everything else is three. A `MIDI::fromBytes` (or a
+   `messageLength(status)`) would put that table in one place. Minor; the port spells
+   it out at `Audio::sendMidi`.
 
 ## Code Style
 

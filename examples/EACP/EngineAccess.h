@@ -242,6 +242,13 @@ void bindKeys();
 // steps and its fraction are meaningful; both agree with the engine's.
 double ticTime();
 
+// The same clock counted in MIDI ticks - Doom::tickMidi() wants draining
+// Doom::DOOM_MIDI_RATE times a second, which is a whole multiple of the tic
+// rate. Taken off the engine's clock rather than the display's for the reason
+// everything else here is: a display-paced ramp saturates early on some tics and
+// is cut short on others.
+double midiTime();
+
 bool isWiping();
 
 // The screen melt, while one is running: the frame it is sliding away, as
