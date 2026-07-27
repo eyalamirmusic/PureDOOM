@@ -1636,6 +1636,18 @@ void readColormaps(std::span<std::uint8_t> out)
     std::copy_n(Doom::graphicsData().colormaps, 256 * colormapRows, out.begin());
 }
 
+std::span<const std::uint8_t> genmidiLump()
+{
+    auto number = Doom::wad().find("GENMIDI");
+
+    if (number < 0)
+        return {};
+
+    const auto* bytes = static_cast<const std::uint8_t*>(Doom::cacheLumpNum(number));
+
+    return {bytes, static_cast<std::size_t>(Doom::wad().length(number))};
+}
+
 WorldGeometry
     buildGeometry(const Camera& camera, float alpha, const GeometryBuffers& into)
 {

@@ -15,12 +15,21 @@ namespace
 // DOOM mixes signed 16-bit.
 constexpr auto sampleScale = 1.0f / 32768.0f;
 
+// The synth against the sound effects, measured over an attract demo rather than
+// guessed: the OPL peaks around 0.28 of full scale where DOOM's mixer reaches
+// 0.82, so this leaves the two summing to about full scale at their loudest and
+// the clamp below to catch the rest. DOOM's own music volume setting is *not*
+// here - the engine applies it as MIDI channel volume, which the synth honours
+// like any other.
+constexpr auto musicGain = 0.8f;
+
 // One MUS tick can hand back a run of messages. The cap is a backstop against a
 // malformed score, not a real limit - a tick never legitimately reaches it.
 constexpr auto maxMidiMessagesPerTick = 256;
 
 // After a stall - a level load, a window drag - the music resyncs to the clock
-// rather than replaying at speed everything it missed.
+// rather than replaying at speed everything it missed. Only the MIDI-port path
+// needs this; the synth is paced by the stream, which cannot stall.
 constexpr auto maxMidiTicksPerPump = 16;
 
 void report(std::string_view text)
@@ -63,7 +72,7 @@ bool namesASynth(const std::string& name)
 Audio::Audio()
 {
     openDevice();
-    openMidi();
+    openMusic();
 }
 
 Audio::~Audio()
@@ -121,7 +130,26 @@ void Audio::openDevice()
     }
 }
 
-void Audio::openMidi()
+void Audio::openMusic()
+{
+    // The OPL first, and it needs nothing shipped with it: DOOM's music was
+    // written for the Adlib, and the instrument definitions are in the GENMIDI
+    // lump of the WAD the game already booted from.
+    if (deviceOpen && opl.start(sampleRate, Engine::genmidiLump()))
+    {
+        musicIsOpl = true;
+
+        report("PureDoom: music on an emulated OPL3, voiced from the IWAD's "
+               "GENMIDI bank\n");
+        return;
+    }
+
+    // No bank, or nowhere to render it to. The score can still leave the process
+    // as MIDI for something else to voice.
+    openMidiPort();
+}
+
+void Audio::openMidiPort()
 {
     // A virtual port is the polite answer: it appears in the system's MIDI graph
     // for the player to route into a synth of their choosing, and it plays to
@@ -129,10 +157,11 @@ void Audio::openMidi()
     try
     {
         midi.openVirtualOutput(virtualMidiPortName);
-        midiOpen = true;
+        midiPortOpen = true;
 
-        report(std::string("PureDoom: music on the virtual MIDI port \"")
-               + virtualMidiPortName + "\"; route it into a synth to hear it\n");
+        report(
+            std::string("PureDoom: no OPL bank; music on the virtual MIDI port \"")
+            + virtualMidiPortName + "\"\n");
         return;
     }
     catch (const std::exception&)
@@ -164,7 +193,7 @@ void Audio::openMidi()
         }
 
         midi.openOutput(chosen.id);
-        midiOpen = true;
+        midiPortOpen = true;
 
         report("PureDoom: music to MIDI port \"" + chosen.name + "\"\n");
     }
@@ -177,25 +206,105 @@ void Audio::openMidi()
 
 void Audio::pump()
 {
-    pumpSound();
-    pumpMidi();
+    produce();
+    pumpMidiPort();
 }
 
-void Audio::pumpSound()
+void Audio::produce()
 {
     if (!deviceOpen)
         return;
 
-    // Top up in whole DOOM blocks - the mixer has no smaller unit - until the
-    // queue holds the headroom the device needs to reach the next refresh.
+    // Top up a chunk at a time until the queue holds the headroom the device
+    // needs to reach the next refresh.
     while (queued.load(std::memory_order_acquire) < targetFrames)
-        pushBlock(Doom::soundBuffer());
+        produceChunk();
 }
 
-void Audio::pushBlock(const short* block)
+void Audio::produceChunk()
 {
+    // A MIDI tick is sampleRate/140 frames, which is not a whole number: the
+    // remainder is carried so 140 chunks come to exactly one second.
+    chunkRemainder += sampleRate;
+
+    auto frames = chunkRemainder / Doom::DOOM_MIDI_RATE;
+    chunkRemainder -= frames * Doom::DOOM_MIDI_RATE;
+
+    if (frames <= 0)
+        return;
+
+    // The score advances first, so its register writes take effect from the start
+    // of the frames they belong to.
+    advanceMusic();
+
+    if (musicIsOpl)
+    {
+        if (musicScratch.size() < frames * 2)
+            musicScratch.resize(frames * 2);
+
+        opl.render({musicScratch.data(), static_cast<std::size_t>(frames) * 2});
+    }
+
     auto pushed = 0;
 
+    for (auto i = 0; i < frames; ++i)
+    {
+        auto frame = nextSoundFrame();
+
+        if (musicIsOpl)
+        {
+            frame.left += musicScratch[i * 2] * musicGain;
+            frame.right += musicScratch[i * 2 + 1] * musicGain;
+        }
+
+        // Two independent sources summed can exceed full scale where neither
+        // did; clamping is what keeps that a loud moment rather than a wrap.
+        frame.left = std::clamp(frame.left, -1.0f, 1.0f);
+        frame.right = std::clamp(frame.right, -1.0f, 1.0f);
+
+        if (queue.push(frame))
+            ++pushed;
+    }
+
+    queued.fetch_add(pushed, std::memory_order_release);
+}
+
+void Audio::advanceMusic()
+{
+    if (!musicIsOpl)
+        return;
+
+    for (auto message = 0; message < maxMidiMessagesPerTick; ++message)
+    {
+        auto midiMessage = Doom::tickMidi();
+
+        if (midiMessage == 0)
+            break;
+
+        opl.handleMessage(midiMessage);
+    }
+}
+
+StereoFrame Audio::nextSoundFrame()
+{
+    if (stagingRead >= staging.size())
+    {
+        staging.clear();
+        stagingRead = 0;
+
+        // Mixed on the call, on this thread, out of whatever the playsim has
+        // started since the last block.
+        stageBlock(Doom::soundBuffer());
+    }
+
+    if (staging.empty())
+        return {};
+
+    return staging[stagingRead++];
+}
+
+void Audio::stageBlock(const short* block)
+{
     for (auto sample = 0; sample < doomBlockFrames; ++sample)
     {
         auto next = StereoFrame {(float) block[sample * 2] * sampleScale,
@@ -203,12 +312,9 @@ void Audio::pushBlock(const short* block)
 
         while (phase < 1.0f)
         {
-            auto blend = StereoFrame {
+            staging.add(StereoFrame {
                 previousFrame.left + (next.left - previousFrame.left) * phase,
-                previousFrame.right + (next.right - previousFrame.right) * phase};
-
-            if (frames.push(blend))
-                ++pushed;
+                previousFrame.right + (next.right - previousFrame.right) * phase});
 
             phase += step;
         }
@@ -216,8 +322,6 @@ void Audio::pushBlock(const short* block)
         phase -= 1.0f;
         previousFrame = next;
     }
-
-    queued.fetch_add(pushed, std::memory_order_release);
 }
 
 void Audio::render(MakeASound::AudioCallbackInfo& info)
@@ -238,7 +342,7 @@ void Audio::render(MakeASound::AudioCallbackInfo& info)
 
         // A frame the producer has not reached yet stays zero: a gap in the
         // queue is silence, which is what an underrun should sound like.
-        if (frames.pop(frame))
+        if (queue.pop(frame))
             ++taken;
 
         if (right != nullptr)
@@ -255,9 +359,9 @@ void Audio::render(MakeASound::AudioCallbackInfo& info)
     queued.fetch_sub(taken, std::memory_order_release);
 }
 
-void Audio::pumpMidi()
+void Audio::pumpMidiPort()
 {
-    if (!midiOpen)
+    if (!midiPortOpen)
         return;
 
     auto now = Engine::midiTime();

@@ -624,10 +624,10 @@ Three things that bite:
 
 - `Tests/` — the test suite. See **Testing**.
 - `examples/EACP/` — the eacp port. `Main.cpp` boots the engine, `View.h` is the
-  eacp platform layer and GPU renderer, `Audio.h/.cpp` is the output device and the
-  MIDI port (over MakeASound, and the one file here that needs no GPU besides
-  `EngineAccess`), and `EngineAccess.h/.cpp` is the snapshot
-  interface to engine internals. `EngineAccess.cpp` is an ordinary translation unit
+  eacp platform layer and GPU renderer, `Audio.h/.cpp`, `Genmidi.h/.cpp` and
+  `OplPlayer.h/.cpp` are the sound device and the music synth (the three files here
+  that need no GPU besides `EngineAccess`, and are compiled into the test binary for
+  it), and `EngineAccess.h/.cpp` is the snapshot interface to engine internals. `EngineAccess.cpp` is an ordinary translation unit
   that includes the engine's headers; nothing DOOM-typed leaks out through the `.h`,
   and the renderer never sees a `fixed_t`.
 
@@ -775,16 +775,29 @@ Two paths, toggled at runtime with **Shift+F8**:
 
 ## Audio
 
-Sound plays. Music leaves the process as MIDI. Both go through
-[MakeASound](https://github.com/eyalamirmusic/MakeASound), a CPM dependency of
-`examples/EACP` alone — audio is the *host's* job, not the engine's, so the
-engine-only test loop never fetches miniaudio, RtMidi or Miro.
+Sound and music both play, out of the box, with nothing shipped alongside the WAD.
 
-`examples/EACP/Audio.{h,cpp}` is the whole of it, and it is GPU-free: `View` owns an
-`Audio` and calls `audio.pump()` once a display refresh, **ahead of the early return**
-that skips refreshes no tic falls on — the device wants feeding either way.
+The output device comes from
+[MakeASound](https://github.com/eyalamirmusic/MakeASound) (miniaudio behind
+`DeviceManager`, RtMidi behind `MidiManager`), a CPM dependency of `examples/EACP`
+alone — audio is the *host's* job, not the engine's. The music is voiced by an
+emulated OPL3, [Nuked-OPL3](https://github.com/nukeykt/Nuked-OPL3), which is
+fetched at the **root** instead, because unlike the rest of the audio path it is
+testable and the test binary needs it too.
 
-Five things to know.
+Four files, all GPU-free:
+
+| File | What it is |
+|---|---|
+| `Audio.{h,cpp}` | the device, the producer, the mix |
+| `Genmidi.{h,cpp}` | the IWAD's OPL instrument bank, decoded |
+| `OplPlayer.{h,cpp}` | the synth: voice allocation over the emulated chip |
+
+`View` owns an `Audio` and calls `audio.pump()` once a display refresh, **ahead of
+the early return** that skips refreshes no tic falls on — the device wants feeding
+either way.
+
+Six things to know.
 
 - **The mixer is pulled on the main thread, and this is the design, not a shortcut.**
   `Doom::soundBuffer()` mixes 512 frames *on the call*, reaching into the same engine
@@ -800,12 +813,19 @@ Five things to know.
   subtracts from. The asymmetry is what makes it safe: the consumer only ever
   publishes a count *at or above* the true one, so a stale reading makes the producer
   wait a refresh — it cannot make it overrun. The capacity is then provably enough
-  (`audioQueueFrames` = the headroom, plus the one indivisible DOOM block that tops it
-  up, at the highest rate a stream is opened at).
-- **512 frames at 11025 Hz is 46ms, and it is the floor under the latency.** There is
-  no smaller unit to ask the mixer for — one block is longer than a tic. The queue
-  keeps 40ms of headroom on top of that, which is what covers a display refresh plus
-  the device's own block.
+  (`audioQueueFrames` = the headroom, plus the one chunk that tops it up, at the
+  highest rate a stream is opened at).
+- **The producer's clock is the stream, not the wall.** Frames are made one MIDI
+  tick at a time — `sampleRate / 140`, with the remainder carried so 140 chunks come
+  to exactly one second — and each tick's register writes land at the start of the
+  frames they affect. This is what an in-process synth costs you and an out-of-process
+  one does not: the producer runs *ahead* of the device by design, so pacing the music
+  by the display's refresh would scatter every note by up to a whole tick.
+- **512 frames at 11025 Hz is 46ms, and it is the floor under a sound effect's
+  latency.** There is no smaller unit to ask the mixer for — one block is longer than
+  a tic. It waits in a staging buffer and is drained across chunks, so it does not
+  size the queue; music, which has no such granularity, is only ever the queue's 40ms
+  behind.
 - **The resampler carries its phase and its previous frame across the block
   boundary.** Restarting either per block puts a step at every join, 21 times a
   second.
@@ -813,15 +833,70 @@ Five things to know.
   opens the default *input* — and asking for a capture device is what puts a
   microphone permission prompt in front of a game that never records anything.
 
-Music goes out as MIDI on a **virtual port named `PureDOOM`**, which appears in the
-system's MIDI graph and plays to nothing until the player routes it into a synth.
-RtMidi has no virtual ports on Windows, which is also the one platform shipping a
-General MIDI synth as an ordinary output port, so there the fallback is a real port,
-preferring one that names itself a synth.
+### The music is an OPL, and that is why it needs no assets
 
-The MIDI clock is `Engine::midiTime()` — `ticTime()` in 140ths rather than 35ths, off
-the engine's clock for the reason everything else here is. Per tick, `tickMidi()` is
-drained until it returns 0, which is the contract `DOOM.h` states.
+`Doom::tickMidi()` hands back MIDI messages, not samples, so something has to voice
+them. A General MIDI synth would need a sound bank shipped alongside the game — tens
+of megabytes against a 4 MB shareware WAD. An OPL needs nothing, because **DOOM's
+music was composed for the Adlib and the patches are already in the IWAD**:
+
+```
+GENMIDI  11908 bytes  ==  8 + 175 * (36 + 32)
+```
+
+`#OPL_II#`, then 175 instrument records, then 175 32-byte names — 128 General MIDI
+melodic instruments and 47 percussion voices keyed by note. `Genmidi.cpp` decodes it
+by offset rather than by casting a struct onto the bytes, so neither this machine's
+padding nor its endianness can change what comes out.
+
+Four things the bank turns out to say, none of which were assumptions worth making —
+`Tests/Port/GenmidiTests.cpp` pins each, and the first two were written wrong first
+and corrected by the test:
+
+- Program 127 is `Gun Shot`, with a space.
+- **Three of the 47 percussion voices are *not* fixed-pitch.** A player that assumes
+  every drum ignores its note is wrong about three of them.
+- 32 of the 128 melodic instruments are double-voice, so one note takes two of the
+  chip's channels.
+- Two *melodic* instruments are fixed-pitch.
+
+`OplPlayer` is the synth over Nuked-OPL3: 18 two-operator voices across the OPL3's
+two banks, stolen oldest-first (a voice the sustain pedal is holding goes before one
+the score still has down). Notes become an F-number and a block by the chip's own
+formula against its 49716 Hz clock rather than by a lookup table, so pitch bend is
+just a fractional note. Velocity, channel volume and expression multiply into a gain
+and then into attenuation steps at the chip's 0.75 dB each — **and only the carrier
+is attenuated unless the patch is additive**, because in FM the modulator shapes the
+timbre rather than carrying the level.
+
+**The fallback path is still there and still justified.** A WAD with no GENMIDI, or
+no audio device to render into, falls back to sending MIDI out of the process on a
+**virtual port named `PureDOOM`** — which appears in the system's MIDI graph and
+plays to nothing until the player routes it into a synth. RtMidi has no virtual ports
+on Windows, which is also the one platform shipping a General MIDI synth as an
+ordinary output port, so there the fallback's fallback is a real port, preferring one
+that names itself a synth. That path alone uses `Engine::midiTime()` — the wall clock
+in 140ths — because an external synth is not paced by our stream.
+
+### What the tests reach, and what they still do not
+
+`SimTests` compiles `Genmidi.cpp` and `OplPlayer.cpp` directly and links
+`nuked-opl3`, exactly as it already does with `EngineAccess.cpp`. **This is the first
+time anything in the suite has been able to assert on sound**, and it works for one
+reason: the chip is emulated, so rendering is arithmetic rather than a device — the
+player produces exactly the frames asked for, when asked, with no audio hardware and
+no timing. Fifteen cases: the bank decodes and rejects rubbish, a note sounds, a
+release decays to silence, a zero-velocity note-on releases (getting that wrong wedges
+every voice on), stealing never exceeds 18, a doubled instrument takes two voices and
+gives both back, percussion sounds, hard-panning is silent in the other channel, and
+channel volume changes loudness.
+
+They are **property checks, not a golden**. A golden over rendered samples would pin
+Nuked-OPL3's exact output, which is upstream code this repository does not own and has
+no business measuring.
+
+Still with no gate at all: the mixer, the MUS reader, the device, the resampler and
+the mix. Which is exactly how the two defects below survived.
 
 Two engine defects this surfaced, both in `Host/Sound.cpp`, both previously
 unreachable and so unfixed:
@@ -838,14 +913,19 @@ unreachable and so unfixed:
   would put 120 into a slider that counts to 15. Measured: peak mix level went from
   ~2,500 to ~20,000 of 32,768 over the same attract demo.
 
-Verified by instrumenting a real run: the device opened at 48 kHz, the queue held
-between 550 and 1920 frames against its 1920 target and never emptied, the mix peaked
-at 16k-30k of 32,768 during the demo with no clipping, MIDI ticked at 138/second
-against the nominal 140, and the message rate matched the score's own — 8.8/second
-against `D_E1M5`'s first-30-seconds density of 9.8, read straight out of the WAD.
+Both were found the only way they could be: by instrumenting a running game and
+reading the score out of the WAD. The same run measured the rest — the device opened
+at 48 kHz, the queue held between 550 and 1920 frames against its 1920 target and
+never emptied, sound effects peaked at 0.82 of full scale and the OPL at 0.28 (which
+is where `musicGain` at 0.8 comes from, rather than from taste), MIDI ticked at
+138/second against the nominal 140, and the message rate matched the score's own —
+8.8/second against `D_E1M5`'s first-30-seconds density of 9.8.
 
-**Still missing, and it is MakeASound's half:** there is no synth. See the note under
-the gap log.
+That last figure is worth keeping. It looked like a bug for an afternoon: 8/second
+against `D_E1M1`'s average of 60 is a sevenfold discrepancy, and the search went
+through the tick clock, the drain loop and the MUS delay decode before the answer
+turned out to be that **the attract demo plays E1M5, not E1M1**, and E1M5 opens on a
+slow bass line at 9.8 messages a second. Measure the thing that is actually playing.
 
 ## Build
 
@@ -857,7 +937,8 @@ cmake --build build --target PureDoomEACP
 ```
 
 Targets: `doom-engine`, `PureDoomEACP`, `SimTests` and `PrimitiveTests`,
-`record-goldens`, and `doom-sim-probe` (the static library holding
+`record-goldens`, `nuked-opl3` (the emulated OPL3 the music runs on, linked by the app
+*and* by `SimTests`), and `doom-sim-probe` (the static library holding
 `Tests/SimProbe.cpp`, which both test binaries link so the shim is compiled once).
 Two build options: `PUREDOOM_BUILD_TESTS` and `PUREDOOM_BUILD_EACP_EXAMPLE`.
 
@@ -901,7 +982,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-104 tests, roughly thirty-five seconds. **Run it before and after anything you change in
+119 tests, roughly forty seconds. **Run it before and after anything you change in
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -928,6 +1009,7 @@ not.
 | `Sim/EngineTests.cpp` | PrimitiveTests | the composition root, and that `resetEngine` is genuine |
 | `Sim/StateClusterTests.cpp` | PrimitiveTests | the `Engine`'s state clusters and accessor identity |
 | `Port/GeometryTests.cpp` `Port/AutomapTests.cpp` | SimTests | the *port's* builders — `Engine::buildGeometry` and `Engine::buildAutomap` — driven headlessly. See below |
+| `Port/GenmidiTests.cpp` `Port/OplTests.cpp` | SimTests | the IWAD's OPL instrument bank, and the synth over it — the only part of the audio path anything can measure. See **Audio** |
 
 Run the binaries through ctest, not bare. NanoTest registers one ctest case per test
 and re-runs the binary with `--test <name>`, so every test gets a fresh process —
@@ -1007,12 +1089,15 @@ the loose `vertexes`/`numsegs`/… globals still equalled their `Level` vector's
 
 ### What the tests do not cover
 
-Audio — the engine's mixer and MUS reader, and the port's `Audio` on top of them —
-and `examples/EACP`'s GPU-bound half — `View`, the shaders, the platform
-layer. The audio half of that is now *live* code rather than dormant code, which
-raises the stakes: both defects listed under **Audio** were found by instrumenting a
-running game and reading the score out of the WAD, because nothing in the suite could
-have. That is the whole list — but it has been wrong twice, and the way it was wrong
+The engine's sound mixer and MUS reader, the port's `Audio` on top of them — the
+device, the resampler, the mix — and `examples/EACP`'s GPU-bound half: `View`, the
+shaders, the platform layer. **The music synth is no longer on this list**
+(`Tests/Port/OplTests.cpp`), and the reason it could come off is worth generalising:
+it renders into a caller's buffer on demand, so it needs no device and no clock.
+What remains uncovered is what still insists on one. The stakes are higher than they
+were, because this is live code now rather than dormant code: both defects listed
+under **Audio** were found by instrumenting a running game and reading the score out
+of the WAD, because nothing in the suite could have. That is the whole list — but it has been wrong twice, and the way it was wrong
 each time is the lesson. **The cheat matcher** was live engine code with no gate over
 it at all, and went unlisted because this section was organised around *screens* and
 `checkCheat` is not a screen — so a category nobody had thought to name could not show
@@ -1242,7 +1327,7 @@ at by accident on one.
 macOS universal build (AppleClang, `arm64;x86_64` — so the x86_64 half is compiled
 though only the arm64 slice is run, the runner being Apple silicon and Rosetta not
 installed on it), and Windows on **x64 and ARM64** under **both MSVC and clang-cl**.
-All five are Ninja, `Release`, every target built and all 104 tests run. The earlier
+All five are Ninja, `Release`, every target built and all 119 tests run. The earlier
 matrix had a `macos-latest × gcc` row that was the clang row run twice: on a macOS
 runner bare `gcc`/`g++` resolve to `/usr/bin`, which is Apple Clang wearing the name.
 
@@ -1442,11 +1527,11 @@ the input and drawing with it. Lowering it to two therefore *raises* latency on 
 (measured: sample-to-screen 23ms at three, 32ms at two). **This port should not lower
 it.**
 
-1. **No audio subsystem** — and eacp is not where this was answered. Audio comes from
-   [MakeASound](https://github.com/eyalamirmusic/MakeASound), a separate CPM
-   dependency of `examples/EACP` (`MakeASound::DeviceManager` over miniaudio,
-   `MakeASound::MidiManager` over RtMidi). Sound effects play; music is emitted as
-   MIDI. See **Audio** below for what MakeASound still lacks.
+1. **No audio subsystem** — and eacp is not where this was answered. The output
+   device comes from [MakeASound](https://github.com/eyalamirmusic/MakeASound), a CPM
+   dependency of `examples/EACP`; the music is voiced by an emulated OPL3
+   (Nuked-OPL3) out of the IWAD's own GENMIDI bank. Both sound and music play. See
+   **Audio**.
 2. **Modifier keys produce no key events**, on any platform — DOOM binds them as
    ordinary keys (Ctrl = fire, Shift = run, Alt = strafe). Workaround: they are diffed
    once per frame from polled `Window::getModifiers()` into synthetic down/up events.
@@ -1511,15 +1596,27 @@ it.**
 The same rule as above: MakeASound is not modified from here. Found while wiring
 audio, in the order the port hit them.
 
-1. **No synth, so DOOM's music cannot be *heard* without help.** `tickMidi()` yields
-   MIDI messages, and `MidiManager` carries them faithfully to a port — but a port is
-   not a sound. What is missing is a software synth to render General MIDI: a
-   SoundFont/`.sf2` player (TinySoundFont, FluidSynth) or an OPL emulator, taking
-   `MIDI::Event`s in and writing into an `Audio::Buffer`. That is the single thing
-   standing between this port and music out of the box, and it is a natural fit
-   beside `MidiBlockSync`, which already exists to align MIDI to audio blocks — it
-   solves the *input* half of exactly this problem. Workaround here: a virtual output
-   port the player routes into a synth themselves.
+1. **No synth.** `MidiManager` carries MIDI faithfully to a port, but a port is not a
+   sound. Worked around here rather than blocked on: DOOM's music was written for the
+   Adlib, so this port voices it with its own OPL over Nuked-OPL3 and needs no bank
+   shipped with it (see **Audio**). That is DOOM-specific and belongs where it is; the
+   *general* gap is unchanged, and having built one, three things about its shape are
+   now measured rather than guessed:
+
+   - **The interface wants to be `render(Buffer&)` plus `send(MIDI::Event)`.** Both
+     halves already exist in MakeASound's vocabulary, and `MidiBlockSync` already
+     solves the input half — it assigns sample offsets, which is exactly what a
+     synth's `send` needs and what `MusicDeviceMIDIEvent`'s last parameter takes.
+   - **Rendering into the caller's buffer is what makes it testable**, and that turned
+     out to matter more than anything else here: it is the *only* part of this port's
+     audio path with a gate over it, because a synth that renders on demand needs no
+     device and no timing (`Tests/Port/OplTests.cpp`, 10 cases).
+   - **On Apple platforms it is nearly free.** `kAudioUnitSubType_MIDISynth` is a
+     public C API with a General MIDI bank already on the machine, renders
+     non-interleaved float — `Buffer`'s own layout — and compiles clean under
+     `-Wall -Wextra -Wpedantic` with no Objective-C. Windows and Linux have no
+     equivalent and need a bundled soft synth (TinySoundFont is MIT, single-header,
+     no dependencies, and its `TSF_STEREO_UNWEAVED` mode is also planar).
 
 2. **`getDefaultConfig()` always opens an input device**, so an output-only app gets a
    duplex stream and, on macOS/iOS, a **microphone permission prompt** it has no use

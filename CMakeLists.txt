@@ -100,6 +100,33 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     puredoom_scope_gnu_unique_flag(${eacp_SOURCE_DIR})
 endif ()
 
+# The OPL3 chip Nuked-OPL3 emulates is what DOOM's music was written for: the
+# instrument bank lives in the IWAD's GENMIDI lump, so this path needs no external
+# sound bank at all. Fetched here rather than in examples/EACP, unlike MakeASound,
+# because the OPL player is GPU-free and therefore *testable* - Tests/Port drives
+# it headlessly, so the test binary needs the chip too.
+#
+# Two files and no dependencies, so this costs the engine-only loop almost nothing.
+# It is LGPL-2.1-or-later against this repository's GPL-2, which is compatible;
+# it stays a separate target so the boundary is visible.
+CPMAddPackage(
+        NAME NukedOPL3
+        GITHUB_REPOSITORY nukeykt/Nuked-OPL3
+        GIT_TAG master
+        DOWNLOAD_ONLY YES)
+
+add_library(nuked-opl3 STATIC ${NukedOPL3_SOURCE_DIR}/opl3.c)
+target_include_directories(nuked-opl3 SYSTEM PUBLIC ${NukedOPL3_SOURCE_DIR})
+
+# Upstream C, compiled by our C++ warning flags otherwise. Silenced rather than
+# patched: nothing here may modify it, and its warnings are not ours to hold to
+# zero.
+if (MSVC)
+    target_compile_options(nuked-opl3 PRIVATE /w)
+else ()
+    target_compile_options(nuked-opl3 PRIVATE -w)
+endif ()
+
 # The engine. Everything else links it.
 add_subdirectory(src/DOOM)
 

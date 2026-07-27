@@ -50,8 +50,17 @@ nano_add_executable(SimTests
         Sim/IntermissionTests.cpp
         Port/GeometryTests.cpp
         Port/AutomapTests.cpp
+        Port/GenmidiTests.cpp
+        Port/OplTests.cpp
         ${CMAKE_SOURCE_DIR}/examples/EACP/EngineAccess.cpp
+        ${CMAKE_SOURCE_DIR}/examples/EACP/Genmidi.cpp
+        ${CMAKE_SOURCE_DIR}/examples/EACP/OplPlayer.cpp
         TARGETS doom-sim-probe)
+
+# The emulated OPL3. The music player is the one half of the audio path a test
+# can drive - the chip is arithmetic, so it renders without a device - which is
+# why the dependency is at the root rather than with the app.
+target_link_libraries(SimTests PRIVATE nuked-opl3)
 
 target_compile_definitions(SimTests PRIVATE
         PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")

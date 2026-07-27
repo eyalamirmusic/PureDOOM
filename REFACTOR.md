@@ -102,15 +102,21 @@ has the working detail.
 That is the whole list. Four items closed recently, kept here because each says
 something the code alone does not:
 
-- **Audio.** No longer blocked, and no longer eacp's to answer: it came from
-  MakeASound, a dependency of `examples/EACP` alone. Sound plays and music goes out
-  as MIDI on a virtual port; `CLAUDE.md`'s **Audio** section has the design and its
-  own gap log has what MakeASound still lacks (a synth, above all). Wiring it made
-  two dormant engine defects reachable, and both are now fixed rather than
-  preserved — the MUS delay's mis-parenthesised variable-length quantity, and sound
-  effects playing at an eighth of their level because the 0-15 setting was never
-  scaled to the mixer's 0-127. Neither had a gate over it, and neither could have:
-  no golden hashes a sample.
+- **Audio.** No longer blocked, and no longer eacp's to answer: the device came from
+  MakeASound and the music from an emulated OPL3 voiced out of the IWAD's own GENMIDI
+  bank, both dependencies of `examples/EACP`. Sound and music play with nothing
+  shipped alongside the WAD. `CLAUDE.md`'s **Audio** section has the design.
+
+  Two things it settled that the item could not have predicted. Wiring it made two
+  dormant engine defects *reachable*, and both are now fixed rather than preserved —
+  the MUS delay's mis-parenthesised variable-length quantity, and sound effects
+  playing at an eighth of their level because the 0-15 setting was never scaled to
+  the mixer's 0-127. Neither had a gate over it, and neither could have: no golden
+  hashes a sample. And the synth, alone in the audio path, turned out to be
+  *testable* — it renders into a caller's buffer on demand, so it needs no device and
+  no clock, and `Tests/Port/OplTests.cpp` drives it headlessly. That is the general
+  lesson: what makes audio untestable is the hardware and the wall clock, not the
+  sound.
 
 - **The intermission's frame golden.** `Tests/Goldens/intermission.frames` pins 401
   tics of the real E1M1 → scoreboard → E1M2 transition, and every screen a demo

@@ -290,6 +290,14 @@ void readTexturePixels(int id, std::span<std::uint8_t> out);
 // index to its appearance at light level r.
 void readColormaps(std::span<std::uint8_t> out);
 
+// The IWAD's GENMIDI lump: the OPL2 instrument bank DOOM's music was written
+// for, which is why the OPL path needs no sound bank shipped alongside it.
+// Empty when the WAD has no such lump.
+//
+// A view rather than a copy, and safe as one: a WadFile owns its lumps for as
+// long as it lives, so a pointer to lump data stays valid (Wad/WadFile.h).
+std::span<const std::uint8_t> genmidiLump();
+
 // The scratch a frame of world geometry is laid down in, and the prefix of it
 // that was actually filled.
 struct GeometryBuffers

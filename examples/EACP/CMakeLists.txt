@@ -31,6 +31,10 @@ add_executable(PureDoomEACP
         Audio.h
         Audio.cpp
         AutomapShader.h
+        Genmidi.h
+        Genmidi.cpp
+        OplPlayer.h
+        OplPlayer.cpp
         Common.h
         DoomShader.h
         EngineAccess.h
@@ -48,7 +52,11 @@ add_executable(PureDoomEACP
 # The engine is a library, and the same one the tests link - so a change to the
 # simulation reaches the game and the suite together, and neither can be running
 # code the other is not.
-target_link_libraries(PureDoomEACP PRIVATE eacp-gpu doom-engine MakeASound)
+# nuked-opl3 is added at the root, where the tests reach it too - the music
+# player is drivable headlessly, so it has a gate the rest of the audio path
+# does not.
+target_link_libraries(PureDoomEACP PRIVATE
+        eacp-gpu doom-engine MakeASound nuked-opl3)
 target_compile_definitions(PureDoomEACP PRIVATE
         PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
 
