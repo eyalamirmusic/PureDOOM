@@ -122,9 +122,34 @@ Host::Host()
 // the other twelve) at static-init time, before main(). The same shape as
 // engine(), and deliberately a *separate* singleton: the host callbacks are
 // platform state that must outlive any one constructed world.
+//
+// It is never destroyed, and that is the whole point rather than an oversight.
+// `Thinker::operator delete` calls `host().free` (Sim/Tick.cpp) and the Engine
+// owns every Thinker, so the Engine's destructor reaches in here. Both are
+// function-local statics, which are destroyed in reverse order of construction -
+// and the Engine is constructed *first*, at the first `engine()` any boot makes,
+// before anything has touched the host. So this one was being destroyed first,
+// and the Engine's destructor then called `free` through a `std::function` whose
+// lifetime had ended.
+//
+// On macOS that is invisible: the storage is still mapped and libc++ leaves the
+// bytes alone, so the call lands on a valid target and every test passes -
+// AddressSanitizer included, since nothing reads out of bounds. On Windows it is
+// fatal. Every test in the suite that booted the engine died at *exit*, after
+// its assertions had passed, with 0xC0000409 - which is what the UCRT's abort()
+// raises, reached through the terminate() that an empty std::function's
+// bad_function_call ends in. The only two that survived were the two that never
+// construct an Engine.
+//
+// Leaking it deliberately fixes that for good, and is the reason to prefer this
+// over making the Engine touch host() first: an ordering fix depends on who
+// constructs first, which is a property of each program that links this, while
+// an object that is never destroyed cannot be destroyed too early in any of
+// them. The cost is one Host - thirteen std::functions - still live at exit, and
+// LeakSanitizer does not report it, the pointer below still being reachable.
 Host& host()
 {
-    static auto instance = Host {};
-    return instance;
+    static auto* instance = new Host {};
+    return *instance;
 }
 } // namespace Doom
