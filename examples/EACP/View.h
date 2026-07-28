@@ -2,9 +2,12 @@
 
 #include "Audio.h"
 #include "AutomapShader.h"
+#include "FuzzShader.h"
+#include "HudFuzzShader.h"
 #include "HudShader.h"
 #include "Input.h"
 #include "OverlayShader.h"
+#include "ResolveShader.h"
 #include "ScreenShader.h"
 #include "Textures.h"
 #include "WipeShader.h"
@@ -28,6 +31,11 @@ struct View final : GPU::GPUView
 
     void prepareShader(DoomShader& shader) const;
     void prepareQuadShader(ScreenQuadShader& shader);
+
+    // The three that draw into the world target rather than onto the screen: a
+    // texture pass is single-sampled whatever the view is, and a pipeline has to
+    // name the format of the attachment it writes.
+    void prepareTargetShader(GPU::ShaderProgram& shader, GPU::BlendMode blend) const;
 
     void update(Threads::FrameTime) override;
 
@@ -73,15 +81,58 @@ struct View final : GPU::GPUView
                     float uvTop,
                     float uvBottom);
 
-    void drawWorld(GPU::RenderPass& pass,
-                   const Graphics::Rect& bounds,
-                   const Graphics::Rect& viewport,
-                   float rows);
+    // Renders the level into the world target - the surfaces, then the spectres'
+    // marks over them - and says whether anything came out. A pass of its own,
+    // ended before the screen's begins: a command buffer has one encoder open at
+    // a time, and a texture cannot be sampled by the pass that writes it.
+    bool renderWorld(GPU::Frame& frame,
+                     const Graphics::Rect& bounds,
+                     const Graphics::Rect& viewport,
+                     float rows);
+
+    // One run of the world's vertex buffer per texture, drawn by hand: the
+    // geometry is the app's rather than the program's, which is the one
+    // assumption RenderPass::draw(program) makes that this cannot meet (see the
+    // gap log's interface findings).
+    void drawGeometry(GPU::RenderPass& pass,
+                      WorldViewShader& shader,
+                      std::span<const Engine::TextureDraw> runs);
+
+    // The world target onto the screen: indices to colours, and the spectres.
+    void resolveWorld(GPU::RenderPass& pass,
+                      const Graphics::Rect& bounds,
+                      const Graphics::Rect& viewport,
+                      float rows);
+
+    // Created at the window's pixel size and rebuilt when that changes, which is
+    // the one thing that invalidates it.
+    void ensureWorldTarget();
+
+    // Where a HUD sprite lands in the window this frame - the weapon bobs on the
+    // tic like everything else, so it is placed between tics like everything
+    // else. An empty slot comes back invisible.
+    struct HudPlacement
+    {
+        Graphics::Rect dst;
+        std::array<float, 2> uRange {};
+        bool visible = false;
+    };
+
+    HudPlacement
+        placeHudSprite(int slot, const Graphics::Rect& viewport, float rows) const;
 
     void drawWeapon(GPU::RenderPass& pass,
                     const Graphics::Rect& bounds,
                     const Graphics::Rect& viewport,
                     float rows);
+
+    // The weapon's other half, and only while the invisibility sphere is up: a
+    // fuzzed weapon is marked into the world target with the spectres rather
+    // than drawn over the screen with the rest of the HUD.
+    void markWeaponFuzz(GPU::RenderPass& pass,
+                        const Graphics::Rect& bounds,
+                        const Graphics::Rect& viewport,
+                        float rows);
 
     // Rebuilt every frame rather than every tic, because it is centred on the
     // view, and between tics the view is somewhere the engine has not been yet.
@@ -135,10 +186,19 @@ struct View final : GPU::GPUView
 
     ScreenShader screenShader;
     WorldShader worldShader;
+    FuzzShader fuzzShader;
+    ResolveShader resolveShader;
     HudShader hudShader;
+    HudFuzzShader hudFuzzShader;
     AutomapShader automapShader;
     OverlayShader overlayShader;
     WipeShader wipeShader;
+
+    // DOOM's frame at the window's resolution: what the world is drawn into, and
+    // what the fuzz reads. Optional only because it is sized from the window,
+    // which the constructor has no size for yet.
+    std::optional<GPU::Texture> worldTarget;
+    Graphics::Point targetPixels;
 
     GPU::Texture framebuffer = makeIndexTexture();
     GPU::Texture paletteTexture = makePaletteTexture();

@@ -22,6 +22,7 @@
 #include <DOOM/Math/TrigTables.h>
 #include <DOOM/Render/BSP.h>
 #include <DOOM/Render/Data.h>
+#include <DOOM/Render/DrawTables.h>
 #include <DOOM/Render/GraphicsData.h>
 #include <DOOM/Render/Lighting.h>
 #include <DOOM/Render/Main.h>
@@ -174,11 +175,14 @@ struct TextureTable
 };
 
 // The per-texture vertex runs a frame is grouped into: counted on the first pass
-// over the world, written on the second.
+// over the world, written on the second. Twice over, because the spectres are
+// grouped by texture the same way and drawn separately (see Emitter).
 struct EmitScratch
 {
     Vector<int> counts;
     Vector<int> cursors;
+    Vector<int> fuzzCounts;
+    Vector<int> fuzzCursors;
 };
 
 TicSnapshot snapshot;
@@ -587,8 +591,23 @@ struct QuadUv
 // The frame's geometry, laid down twice: the first pass sizes each texture's
 // run, the second writes into the run reserved for it. `vertices` is empty while
 // counting.
+//
+// A spectre's quad goes to a second set of runs rather than the first. Its
+// pixels are never drawn - drawFuzzColumn reads the frame beneath it and never
+// touches the sprite - so all the renderer wants from it is its shape, in the
+// pixels the world has already been laid into. Same vertex buffer, same grouping
+// by texture, drawn afterwards by a shader that writes a mark instead of a
+// colour.
 struct Emitter
 {
+    // One stream's per-texture counts and, once the layout is decided, where
+    // each texture's run starts.
+    struct Runs
+    {
+        std::span<int> counts;
+        std::span<int> cursors;
+    };
+
     bool counting() const { return vertices.empty(); }
 
     void vertex(int textureId,
@@ -599,17 +618,7 @@ struct Emitter
                 float v,
                 const Light& light)
     {
-        if (counting())
-        {
-            ++counts[textureId];
-            return;
-        }
-
-        if (cursors[textureId] < 0)
-            return;
-
-        vertices[cursors[textureId]++] = {
-            {x, y, z}, {u, v}, light.row, light.falloff};
+        vertex(solid, textureId, x, y, z, u, v, light);
     }
 
     void quad(int textureId,
@@ -617,20 +626,79 @@ struct Emitter
               const QuadUv& uv,
               const Light& light)
     {
-        vertex(
-            textureId, span.ax, span.bottom, span.az, uv.uStart, uv.vBottom, light);
-        vertex(textureId, span.bx, span.bottom, span.bz, uv.uEnd, uv.vBottom, light);
-        vertex(textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
+        quad(solid, textureId, span, uv, light);
+    }
 
+    void fuzzQuad(int textureId,
+                  const QuadSpan& span,
+                  const QuadUv& uv,
+                  const Light& light)
+    {
+        quad(fuzz, textureId, span, uv, light);
+    }
+
+    void vertex(const Runs& runs,
+                int textureId,
+                float x,
+                float y,
+                float z,
+                float u,
+                float v,
+                const Light& light)
+    {
+        if (counting())
+        {
+            ++runs.counts[textureId];
+            return;
+        }
+
+        if (runs.cursors[textureId] < 0)
+            return;
+
+        vertices[runs.cursors[textureId]++] = {
+            {x, y, z}, {u, v}, light.row, light.falloff};
+    }
+
+    void quad(const Runs& runs,
+              int textureId,
+              const QuadSpan& span,
+              const QuadUv& uv,
+              const Light& light)
+    {
+        vertex(runs,
+               textureId,
+               span.ax,
+               span.bottom,
+               span.az,
+               uv.uStart,
+               uv.vBottom,
+               light);
+        vertex(runs,
+               textureId,
+               span.bx,
+               span.bottom,
+               span.bz,
+               uv.uEnd,
+               uv.vBottom,
+               light);
+        vertex(runs, textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
+
+        vertex(runs,
+               textureId,
+               span.ax,
+               span.bottom,
+               span.az,
+               uv.uStart,
+               uv.vBottom,
+               light);
+        vertex(runs, textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
         vertex(
-            textureId, span.ax, span.bottom, span.az, uv.uStart, uv.vBottom, light);
-        vertex(textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
-        vertex(textureId, span.ax, span.top, span.az, uv.uStart, uv.vTop, light);
+            runs, textureId, span.ax, span.top, span.az, uv.uStart, uv.vTop, light);
     }
 
     std::span<WorldVertex> vertices;
-    std::span<int> counts;
-    std::span<int> cursors;
+    Runs solid;
+    Runs fuzz;
 };
 
 // DOOM's map plane is (x, y) with z up; the renderer's is (x, up, -y).
@@ -875,10 +943,19 @@ void emitSprite(Emitter& emitter,
     auto flip = frame.flip[rotation] != 0;
     auto right_ = Point {left.x + right.x * width, left.y + right.y * width};
 
-    emitter.quad(spriteBase() + lump,
-                 groundSpan(left, right_, top - height, top),
-                 {flip ? 1.0f : 0.0f, flip ? 0.0f : 1.0f, 0.0f, 1.0f},
-                 light);
+    auto span = groundSpan(left, right_, top - height, top);
+    auto uv = QuadUv {flip ? 1.0f : 0.0f, flip ? 0.0f : 1.0f, 0.0f, 1.0f};
+    auto textureId = spriteBase() + lump;
+
+    // A spectre - and a player carrying the invisibility sphere - is drawn as a
+    // distortion of what is behind it rather than out of its own pixels
+    // (drawVisSprite picks fuzzColumn for it), so its quad goes to the runs the
+    // renderer fuzzes instead of the ones it textures. Its light is emitted all
+    // the same: the vertex layout is shared, and the fuzz shader ignores it.
+    if (Doom::hasFlag(thing.flags, Doom::MobjFlag::Shadow))
+        emitter.fuzzQuad(textureId, span, uv, light);
+    else
+        emitter.quad(textureId, span, uv, light);
 }
 
 void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camera)
@@ -1412,6 +1489,11 @@ int darkenRow()
     return 0;
 }
 
+int fuzzPhase()
+{
+    return Doom::drawTables().fuzzpos;
+}
+
 bool buildOverlay(std::span<std::uint8_t> outRgba)
 {
     if (!fits(outRgba, screenPixels * 4))
@@ -1668,39 +1750,59 @@ WorldGeometry
 
     scratch.counts.assign(count, 0);
     scratch.cursors.assign(count, 0);
+    scratch.fuzzCounts.assign(count, 0);
+    scratch.fuzzCursors.assign(count, 0);
+
+    auto span = [count](Vector<int>& of)
+    { return std::span<int> {of.data(), static_cast<std::size_t>(count)}; };
 
     auto emitter = Emitter {};
-    emitter.counts = {scratch.counts.data(), static_cast<std::size_t>(count)};
-    emitter.cursors = {scratch.cursors.data(), static_cast<std::size_t>(count)};
+    emitter.solid = {span(scratch.counts), span(scratch.cursors)};
+    emitter.fuzz = {span(scratch.fuzzCounts), span(scratch.fuzzCursors)};
 
     emitWorld(emitter, camera);
 
     // Each texture's vertices become one contiguous run, so the frame draws once
-    // per texture with no state changes in between.
+    // per texture with no state changes in between. The fuzz runs are laid out
+    // after the solid ones and kept in a span of their own, because they are
+    // drawn last: a fuzz mark stands for the frame beneath it, so everything
+    // that frame is made of has to be in it first.
     auto total = 0;
     auto drawCount = 0;
 
-    for (auto i = 0; i < count; ++i)
+    auto layout = [&](const Emitter::Runs& runs)
     {
-        auto vertexCount = scratch.counts[i];
+        auto first = drawCount;
 
-        if (vertexCount <= 0 || drawCount >= static_cast<int>(into.draws.size())
-            || total + vertexCount > static_cast<int>(into.vertices.size()))
+        for (auto i = 0; i < count; ++i)
         {
-            scratch.cursors[i] = -1;
-            continue;
+            auto vertexCount = runs.counts[i];
+
+            if (vertexCount <= 0 || drawCount >= static_cast<int>(into.draws.size())
+                || total + vertexCount > static_cast<int>(into.vertices.size()))
+            {
+                runs.cursors[i] = -1;
+                continue;
+            }
+
+            runs.cursors[i] = total;
+            into.draws[drawCount++] = {i, total, vertexCount};
+            total += vertexCount;
         }
 
-        scratch.cursors[i] = total;
-        into.draws[drawCount++] = {i, total, vertexCount};
-        total += vertexCount;
-    }
+        return drawCount - first;
+    };
+
+    auto solidDraws = layout(emitter.solid);
+    auto fuzzDraws = layout(emitter.fuzz);
 
     emitter.vertices = into.vertices;
     emitWorld(emitter, camera);
 
     return {into.vertices.first(static_cast<std::size_t>(total)),
-            into.draws.first(static_cast<std::size_t>(drawCount))};
+            into.draws.first(static_cast<std::size_t>(solidDraws)),
+            into.draws.subspan(static_cast<std::size_t>(solidDraws),
+                               static_cast<std::size_t>(fuzzDraws))};
 }
 
 std::span<const AutomapVertex> buildAutomap(const Camera& camera,
@@ -1760,6 +1862,12 @@ Array<HudSprite, hudSpriteCount> hudSprites()
         || player.mo == nullptr)
         return out;
 
+    // The blink as the sphere runs out is vanilla's own: over four seconds left
+    // it is steady, and under that the low bit of the countdown turns it on and
+    // off (drawPSprite).
+    auto invisibility = player.powers[Doom::toIndex(Doom::PowerType::Invisibility)];
+    auto fuzz = invisibility > 4 * 32 || (invisibility & 8) != 0;
+
     for (auto i = 0; i < Doom::numPSprites && i < hudSpriteCount; ++i)
     {
         const auto& weapon = player.psprites[i];
@@ -1790,7 +1898,8 @@ Array<HudSprite, hudSpriteCount> hudSprites()
             {static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt()),
              static_cast<float>(spriteHeight(lump))},
             weaponLight((state->frame & Doom::FF_FULLBRIGHT) != 0),
-            frame.flip[0] != 0};
+            frame.flip[0] != 0,
+            fuzz};
     }
 
     return out;

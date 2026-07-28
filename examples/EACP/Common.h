@@ -39,6 +39,12 @@ inline float worldViewportShare(float rows)
 // projection (View::drawWorld).
 constexpr auto worldAspect = displayWidth / (viewRowsWithStatusBar * crtStretch);
 
+// The world is rendered into a texture rather than onto the screen, so its
+// pipelines have to name that texture's format instead of the drawable's - and
+// a texture pass is single-sampled whatever the view is (GPU::Frame::beginPass).
+constexpr auto worldTargetFormat = GPU::TextureFormat::RGBA8Unorm;
+constexpr auto worldTargetSamples = 1;
+
 // Ceilings for one frame of geometry; a shareware level fills a small fraction.
 constexpr auto maxVertices = 262144;
 constexpr auto maxDraws = 2048;

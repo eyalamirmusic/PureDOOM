@@ -66,6 +66,27 @@ inline GPU::Texture makeWipeOffsetTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
+// What the world is rendered into, at the window's own resolution: DOOM's frame
+// rather than a picture of it - a palette index per pixel in red, and the fuzz
+// mark a spectre leaves in green (DoomShader::setIndexFragment). Its depth
+// buffer is the target's own, created with it and gone with it.
+//
+// RGBA8 for one useful channel and a half, because eacp has no single-channel
+// PixelFormat and a render target must name one (see the gap log). The second
+// channel is wanted regardless, so what R8 would save is two channels rather
+// than three.
+inline GPU::Texture makeWorldTarget(int width, int height)
+{
+    auto descriptor = GPU::TextureDescriptor {};
+    descriptor.width = width;
+    descriptor.height = height;
+    descriptor.format = worldTargetFormat;
+    descriptor.renderTarget = true;
+    descriptor.depth = true;
+
+    return GPU::Device::shared().makeTexture(descriptor, nullptr);
+}
+
 // Wall textures, flats and sprites tile across a surface, so WorldShader and
 // HudShader declare them repeating; they carry palette indices, which must never
 // be blended, so those shaders sample them nearest. A masked one needs a second

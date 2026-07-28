@@ -649,9 +649,13 @@ Three things that bite:
   for nothing else. And the shader uniforms are assigned `std::array` for the same
   reason.
 
-  The six shaders share `DoomShader.h`: `DoomShader` resolves a palette index the
-  way the software renderer does (index → COLORMAP row → palette), and
-  `ScreenQuadShader` adds the screen-space quad the four full-frame passes draw.
+  The nine shaders share `DoomShader.h`, which holds all three bases: `DoomShader`
+  resolves a palette index the way the software renderer does (index → COLORMAP row
+  → palette) or writes the index out unresolved (`setIndexFragment`, which is what
+  the world target holds); `ScreenQuadShader` adds the screen-space quad the
+  full-frame passes draw; and `WorldViewShader` adds the camera and the projection,
+  shared by the two shaders that draw off the world's vertex buffer — the surfaces,
+  and the spectres' silhouettes marked over them, which have to agree to the pixel.
   Every shader is the difference from those, and nothing else.
 - `doom1.wad` — the shareware data file the game boots with.
 
@@ -702,6 +706,51 @@ Two paths, toggled at runtime with **Shift+F8**:
     320-column view.
   - Geometry is grouped by texture into one draw per texture; textures upload
     lazily on first use (a WAD holds well over a thousand sprite lumps).
+  - **The world is rendered into a texture, not onto the screen** — and what it
+    writes there is DOOM's own frame, one palette index per pixel, resolved to
+    colour by a full-screen pass afterwards (`ResolveShader`). Spectre fuzz is why
+    (below): a pass cannot sample the target it is drawing into, so the world has to
+    be finished before anything can read it. Keeping it in index space to that point
+    is what makes the fuzz vanilla's own arithmetic rather than an imitation of it
+    in colour space.
+
+    The target is RGBA8 with the index in red and the fuzz mark in green, at the
+    window's pixel size, rebuilt only when that changes. Its depth buffer is its
+    own (`TextureDescriptor::depth`, eacp's E1), and a texture pass is
+    single-sampled whatever the view is — so the two pipelines that draw into it
+    are built at sample count 1 and name the target's format, which is what
+    `View::prepareTargetShader` exists to say.
+- **Spectre fuzz** (B4): what DOOM does with a thing carrying `MF_SHADOW`, which is
+  not to draw it. `R_DrawFuzzColumn` fills the sprite's shape with the pixels
+  already in the frame behind it, one row up or down, remapped through COLORMAP row
+  6 — so the sprite supplies only a silhouette.
+
+  Three pieces, and the awkward one is preserving what is underneath:
+  - `Engine::buildGeometry` hands the spectres back as their own runs
+    (`WorldGeometry::fuzzDraws`) of the same vertex buffer.
+  - `FuzzShader` draws them last, into the world target, **additively** — which is
+    what leaves the index the world wrote in red exactly as it was while raising the
+    mark in green. Overwriting it with a silhouette would leave nothing to distort.
+    Depth is the world's, so a spectre behind a wall is not marked at all; drawing
+    them last is what makes both true at once.
+  - `ResolveShader` replaces a marked pixel with its neighbour a frame-row away,
+    through row 6. Which neighbour comes from `drawFuzzColumn`'s own 50-entry table,
+    indexed by the pixel's place in DOOM's 320x200 frame rather than in the window's
+    — so the grain stays the size it was in 1993 however large the window is. The
+    phase is the engine's own `fuzzpos` (`Engine::fuzzPhase`), read once a tic: the
+    software renderer is still drawing the same spectres, and its walk advances a
+    step per fuzz pixel it lays down, so the animation is content-driven exactly as
+    vanilla's is and stands still when nothing in view is fuzzed. What cannot be
+    reproduced is *where* in the table a given column starts — vanilla's cursor runs
+    down one column and on into the next, which a fragment shader cannot know — so
+    the column contributes a fixed step instead.
+
+  The **weapon** is the same effect on the player's own sprite while the
+  invisibility sphere is up (`drawPSprite` nulls the colormap before it looks at the
+  light or at a powerup's fixed one, so it outranks both, and blinks as the sphere
+  runs out). `HudFuzzShader` marks it into the world target with the spectres rather
+  than drawing it over the screen with the rest of the HUD, so it needs no second
+  copy of any of the above.
 - **GPU automap**: the map as geometry rather than a rasterized frame. What it
   draws and the colour it picks are `AM_Drawer`'s own choices, mirrored in
   `Engine::buildAutomap`; only its Bresenham walk is replaced, by a quad per line
@@ -769,9 +818,17 @@ Two paths, toggled at runtime with **Shift+F8**:
   software frame stops being the status bar and becomes a slice of the world. A
   taller view also wants a wider vertical field of view, which is one more scale on
   the projected y — the horizontal 90 degrees is unchanged.
-- Still missing (B4): spectre fuzz. Anything outside a level (title, intermission,
-  finale) falls back to the software frame automatically, which is right — those
-  screens *are* 320x200 — and the status bar is always composited from it.
+- Anything outside a level (title, intermission, finale) falls back to the software
+  frame automatically, which is right — those screens *are* 320x200 — and the status
+  bar is always composited from it.
+
+**Nothing on this list has a golden over it.** `Tests/Port` covers the *builders*
+(`Engine::buildGeometry`, `Engine::buildAutomap`, and now the spectre split) as
+data, and the frame goldens run the software renderer, which does not execute a line
+of any shader here. A shader change is eyeball-verified, and the standing measurement
+for one is a window capture with `MTL_DEBUG_LAYER=1` on: on Apple silicon a depth
+test appears to work with no attachment at all, so a picture that looks right is only
+half the evidence and a silent validation layer is the other half.
 
 ## Audio
 
@@ -982,7 +1039,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-119 tests, roughly forty seconds. **Run it before and after anything you change in
+120 tests, roughly forty seconds. **Run it before and after anything you change in
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -1175,6 +1232,14 @@ whatever the port emits — they do not run a line of it.
   classifies triangles by their *vertices* rather than by texture id (a floor is the
   only horizontal triangle: walls are vertical quads and things are billboards), so
   it stays true through a rewrite of the emitter.
+
+  `Port/spectresAreFuzzed` is the same test file's answer to the same problem one
+  layer up: a spectre emitted as an ordinary sprite draws a perfectly solid demon on
+  the GPU path and passes every other gate in the repository, the software renderer
+  having fuzzed its own copy by hand in `drawFuzzColumn`. It spawns one into E1M1 —
+  which holds none, so the counts move only for what was spawned — with an ordinary
+  barrel as the control, and reads the split off the vertex counts. Demonstrated
+  sharp: routing the spectre back to the textured runs fails it and nothing else.
 - `Port/AutomapTests` grew out of the second, which is worth stating in full because
   it is the general hazard in its purest form. The map's transform read
   `((double) x1 - originX) * scale` with `x1` a raw `int` `fixed_t`. When `fixed_t`
@@ -1327,7 +1392,7 @@ at by accident on one.
 macOS universal build (AppleClang, `arm64;x86_64` — so the x86_64 half is compiled
 though only the arm64 slice is run, the runner being Apple silicon and Rosetta not
 installed on it), and Windows on **x64 and ARM64** under **both MSVC and clang-cl**.
-All five are Ninja, `Release`, every target built and all 119 tests run. The earlier
+All five are Ninja, `Release`, every target built and all 120 tests run. The earlier
 matrix had a `macos-latest × gcc` row that was the clang row run twice: on a macOS
 runner bare `gcc`/`g++` resolve to `/usr/bin`, which is Apple Clang wearing the name.
 
@@ -1595,6 +1660,16 @@ position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
    and treat a silent validation layer as the other half of the measurement.** D3D12 has
    no such luck (`OMSetRenderTargets` with a null DSV genuinely disables the test), which
    is the second reason the Windows leg of CI is worth its cost.
+
+   **Spectre fuzz is built on it and works** (see **Renderer status**), which is what
+   turns the feature from plausible into measured. Two of its consequences were
+   predicted here and one was not. The sample count *was* a consequence and cost
+   nothing: this view has always been `setSampleCount(1)`, so the world's pipeline
+   was already the single-sampled one a texture pass needs — it only had to name the
+   target's pixel format as well. The unpredicted one is that the world moving into
+   a texture makes the **melt's** remaining 320x200 capture a choice rather than a
+   constraint: the outgoing frame could now be the target itself. Still not done, and
+   no longer blocked.
 8. **No cull-mode state** in `RenderPipelineDescriptor`, which carries library, vertex
    layout, colour format, topology, sample count, blend mode and depth — and nothing
    about winding or faces. Not blocking (DOOM's walls are fine drawn double-sided, and
@@ -1632,13 +1707,21 @@ position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
     in `Engine::buildGeometry` goes with it.
 13. **`R8Unorm` is not a `PixelFormat`**, so a single-channel *render target* is not
     expressible: `PixelFormat` has BGRA8, RGBA8, RGBA16F and RGBA32F, while
-    `TextureFormat` has had R8Unorm since this port asked for it. That rules out the
-    most faithful answer to spectre fuzz — keep the world in palette-index space by
-    rendering the post-COLORMAP *index* into an R8 target, remap that index through
-    COLORMAP row 6 exactly as `R_DrawFuzzColumn` does, and resolve the palette in one
-    final full-screen pass. That is vanilla's own algorithm rather than an
-    approximation of it. RGBA8 with the index in `.r` round-trips an 8-bit unorm value
-    exactly and is the fallback, at four times the bandwidth.
+    `TextureFormat` has had R8Unorm since this port asked for it.
+
+    **The entry is worth less than it looked, and building spectre fuzz is what
+    measured that.** It was written as the thing standing between this port and
+    vanilla's own algorithm — render the post-COLORMAP *index* into an R8 target,
+    remap it through row 6 as `R_DrawFuzzColumn` does, resolve the palette at the
+    end — with RGBA8 as a fallback at four times the bandwidth. The port took the
+    fallback and the algorithm is exact, because the format was never what made it
+    faithful; keeping the frame in index space was, and RGBA8 round-trips an 8-bit
+    unorm index exactly. What the extra channels then turned out to be *for* is the
+    fuzz mask: a spectre has to raise a mark without disturbing the index beneath it,
+    which is one more channel and an additive blend. So R8 would not have served this
+    at all, and what it would save is two channels rather than three. It remains
+    worth having for a single-channel target that genuinely wants one; it is not
+    blocking anything here.
 
     Independently, and worth fixing either way:
     `pixelFormatFor(TextureFormat::R8Unorm)` falls through its `default:` and returns
@@ -1686,6 +1769,17 @@ I5. **`prepare(int sampleCount, bool depth)` is a positional bool**, at the fron
     at the call site says what the `true` is. A small descriptor, or a named enum,
     reads better — and would have somewhere obvious to put a depth *format* if entry
     7's offscreen depth ever needs one.
+
+    **Rendering into a texture makes this sharper, because the tail of the parameter
+    list is where a target's own answers live.** A shader drawing into the world
+    target has to say sample count 1, depth, topology and pixel format, so the call
+    becomes `prepare(1, true, GPU::PrimitiveTopology::Triangles, blend,
+    GPU::pixelFormatFor(worldTargetFormat))` — five positional arguments of which
+    three exist only to reach the fifth. The port hides it behind
+    `View::prepareTargetShader`, which is the workaround and also the shape of the
+    fix: the four that describe *where the draw lands* travel together and come from
+    one place, so a `prepare(const Texture&, …)` overload — or a descriptor carrying
+    them — would read as what it is.
 
 ## MakeASound Gap Log
 

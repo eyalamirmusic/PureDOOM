@@ -38,10 +38,13 @@ add_executable(PureDoomEACP
         Common.h
         DoomShader.h
         EngineAccess.h
+        FuzzShader.h
+        HudFuzzShader.h
         HudShader.h
         Input.h
         Layout.h
         OverlayShader.h
+        ResolveShader.h
         ScreenShader.h
         Textures.h
         View.h

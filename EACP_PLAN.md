@@ -52,6 +52,11 @@ above should start from, and what the default CPM fetch resolves to today. Every
 claim below was checked in the checkout rather than inferred from a commit
 message.
 
+**What this repository's branch is green against**, which the rule above says has
+to be stated: `eacp-puredoom` at `1f98229`, one commit past `a114455` — E1. It does
+not build against plain `~/Code/eacp` and is not meant to, `TextureDescriptor::depth`
+being what the world target is created with.
+
 ---
 
 ## Status: the gap log against today's eacp
@@ -92,9 +97,11 @@ turned out to cost and what it taught.
 
 ## Part 1 — Work available in this repository today
 
-No eacp change needed for any of these. Ranked by value per unit of risk.
+No eacp change needed for any of these. Ranked by value per unit of risk. **P1 and
+P2 are done** (see **Sequencing**); they are kept below because each says what it
+was for, and P1's caveat governs everything in this part.
 
-### P1. `fetch()` for the COLORMAP and palette lookups — small, do first
+### P1. `fetch()` for the COLORMAP and palette lookups — **done**
 
 `DoomShader.h:30-47` reaches both lookup tables through `sample` with hand-written
 half-texel arithmetic: `(index + 0.5f) / 256.0f` and `(row + 0.5f) /
@@ -117,7 +124,17 @@ golden over it. `Tests/Port` covers `Engine::buildGeometry` and
 software renderer, which does not execute a line of the shaders. A shader change
 is eyeball-verified. Weigh that when sequencing.
 
-### P2. `WindowOptions::aspectRatio` — small, mechanical
+Spectre fuzz sharpened both halves of that and neither is a golden. The **data**
+half went where it belongs: `Port/spectresAreFuzzed` spawns a spectre into a level
+that holds none and reads the split off the vertex counts, which is a decision the
+port makes and can therefore be tested. The **picture** half now has a method
+rather than a glance — capture the window on its own (`screencapture -l<id>`, never
+the screen) with `MTL_DEBUG_LAYER=1` on, and read the validation layer's silence as
+the other half of the measurement. Breaking a shader's *intent* still needs a
+deliberate experiment: marking every surface, or forcing the weapon's flag, each
+for one build.
+
+### P2. `WindowOptions::aspectRatio` — **done**
 
 `Layout.h:31` sets `options.onWillResize = keepDisplayAspect` and `Layout.h:9-21`
 hand-rolls the snap. `Window.h:124` now carries `std::optional<Point>
@@ -135,13 +152,17 @@ zoom and fullscreen is still true, and the letterbox is still needed there.
 (`ShaderProgram.h:47-53`, `RenderPass.h:209`). Two places:
 
 - **Things.** `Engine::buildGeometry` expands every visible thing into a
-  camera-facing quad on the CPU, every refresh (`View.cpp:289`). As one instance
-  record per thing — world position, size, frame UV, light, falloff — the quad
-  expansion moves into the vertex shader, which *has* the camera. The constraint
-  recorded in `CLAUDE.md` ("billboards must be built around the camera being drawn
-  from") stops being something the CPU has to honour and becomes something the
-  shader cannot get wrong.
-- **The weapon.** `View.cpp:325-361` issues one `pass.draw(hudShader)` per HUD
+  camera-facing quad on the CPU, every refresh (`View::renderWorld`). As one
+  instance record per thing — world position, size, frame UV, light, falloff — the
+  quad expansion moves into the vertex shader, which *has* the camera. The
+  constraint recorded in `CLAUDE.md` ("billboards must be built around the camera
+  being drawn from") stops being something the CPU has to honour and becomes
+  something the shader cannot get wrong.
+
+  Note what spectre fuzz added here: a thing is now emitted into one of *two*
+  streams, so an instanced emitter has to keep that split. It is one more field on
+  the instance record, or two buffers.
+- **The weapon.** `View::drawWeapon` issues one `pass.draw(hudShader)` per HUD
   sprite with every uniform rebound between them. There are at most a handful, so
   this is tidiness rather than throughput.
 
@@ -153,10 +174,10 @@ draw count stays one per sprite texture until **E6**.
 ### P4. `Uniform<InputBuffer>` for per-sector heights — large, measure first
 
 Structurally the biggest thing available, and the one most likely to be a mistake
-if taken on faith. `View.cpp:289` rebuilds the world and `:294` re-uploads it —
-up to 262,144 vertices (`Common.h:43`) — every refresh, largely because sector
-floor and ceiling heights move. A small per-sector buffer read by the *vertex*
-stage would make wall and flat geometry static per level.
+if taken on faith. `View::renderWorld` rebuilds the world and re-uploads it — up to
+262,144 vertices (`Common.h`) — every refresh, largely because sector floor and
+ceiling heights move. A small per-sector buffer read by the *vertex* stage would
+make wall and flat geometry static per level.
 
 Two caveats, both real:
 
@@ -170,6 +191,25 @@ Two caveats, both real:
 `buildGeometry` and the upload are actually hot, and nothing in this repository
 has measured them.
 
+### P5. A full-resolution melt — small, and newly possible
+
+A new entry, and the one thing spectre fuzz unblocked without meaning to. The
+screen melt composites the outgoing frame, which is a 320x200 software capture
+(`Engine::buildWipe` → `wipeTexture`) because there was no full-resolution GPU
+frame to be had. There is one now: the world target *is* the outgoing frame, at the
+window's resolution, and the melt only ever reads it.
+
+What it needs is a second target and a swap — the frame being melted away has to
+survive the frame that is drawing over it, and a texture cannot be sampled by the
+pass that writes it (`Frame.h` says so at `beginPass`). Two targets and a swap on
+the tic the melt starts.
+
+Two things not to lose. The outgoing frame is often *not* a world at all — the
+title, the intermission and the finale are genuinely 320x200 artwork — so the
+software capture stays as the other branch rather than being replaced. And the melt
+reads its own outgoing frame in *index* space, so if it moves onto the target it
+should composite before the resolve, not after.
+
 ---
 
 ## Part 2 — What eacp needs
@@ -181,7 +221,8 @@ build on, because in every case something does.
 
 Built on `~/Code/eacp-puredoom`, branch `puredoom`, and not upstream, so the gap
 log keeps its entry until it merges. All 809 eacp tests pass and so do this
-port's 119 against it.
+port's 120 against it — and spectre fuzz, the thing it was built for, is now
+running on top of it (sequencing step 3).
 
 **What shipped.** `TextureDescriptor::depth`, beside `renderTarget` and
 `computeWrite` — the first of the two shapes below, and it held up: the buffer is
@@ -205,10 +246,12 @@ half of the measurement — which, with the real implementation in, it is. D3D12
 has no such luck, since `OMSetRenderTargets` with a null DSV genuinely disables
 the test.
 
-**One consequence for this port, not yet acted on.** A texture pass is
-single-sampled, so the world rendered offscreen needs a *second* world pipeline at
-`sampleCount` 1; `View::prepareShader` builds one at the view's sample count
-today. That is the first thing spectre fuzz runs into.
+**One consequence for this port** — predicted here, and it cost nothing. A texture
+pass is single-sampled, so the world rendered offscreen needs a pipeline at
+`sampleCount` 1. This view has always been `setSampleCount(1)`, so the world's
+pipeline already was one; what it did have to learn is the target's *pixel format*,
+which is the other half of the same sentence in `Frame.h` and the one that would
+have failed the draw. `View::prepareTargetShader` says both in one place.
 
 ---
 
@@ -296,14 +339,18 @@ disappears with it.
 ### E7. `R8Unorm` as a `PixelFormat`, and a latent mismatch worth fixing regardless
 
 `PixelFormat` (`RenderPipeline.h:17-23`) has BGRA8, RGBA8, RGBA16F and RGBA32F —
-no R8 — so a single-channel render target is not expressible. That matters here
-because it rules out the *most faithful* answer to spectre fuzz: keep the world in
-palette-index space by rendering the post-COLORMAP index into an R8 target, let
-the fuzz pass remap that index through row 6 exactly as `R_DrawFuzzColumn` does,
-and resolve the palette in one final full-screen pass. That is vanilla's own
-algorithm rather than an approximation of it. (RGBA8 with the index in `.r` would
-round-trip an 8-bit unorm value exactly and is the fallback, at four times the
-bandwidth.)
+no R8 — so a single-channel render target is not expressible.
+
+**Written as the thing blocking the faithful spectre fuzz, and that was wrong.**
+The claim was that only an R8 target could keep the world in palette-index space
+and so let the fuzz remap through row 6 exactly as `R_DrawFuzzColumn` does. The
+port has since done exactly that on the RGBA8 fallback: index space was what made
+it faithful, and RGBA8 round-trips an 8-bit unorm index exactly, so the picture is
+vanilla's own algorithm and the format never entered into it. The extra channels
+then turned out to be *load-bearing* — a spectre raises its mark in green while
+leaving the index in red alone, which is one more channel and an additive blend —
+so R8 could not have carried this at all, and what it would save is two channels
+rather than three. Worth having; not blocking.
 
 Independently: `pixelFormatFor(TextureFormat::R8Unorm)` falls through the `default:`
 at `RenderPipeline.h:35` and returns `PixelFormat::RGBA8Unorm` — a silent
@@ -328,19 +375,19 @@ geometry.
 
 The world's geometry is app-owned and persistent — a `Buffer` updated in place
 every frame — and it is drawn as sub-ranges with a different texture per range. So
-`View.cpp:313-322` cannot use `draw(program)` and instead reassembles it by hand:
+`View::drawGeometry` cannot use `draw(program)` and instead reassembles it by hand:
 
 ```cpp
-pass.setPipeline(worldShader.pipeline());
+pass.setPipeline(shader.pipeline());
 pass.setVertexBuffer(worldBuffer);
-pass.setVertexUniforms(worldShader);
-pass.setFragmentUniforms(worldShader);
+pass.setVertexUniforms(shader);
+pass.setFragmentUniforms(shader);
 
-for (const auto& draw: world.draws)
+for (const auto& run: runs)
 {
-    worldShader.texture = textureFor(draw.textureId);
-    worldShader.bindTextures(pass);
-    pass.draw(draw.vertexCount, draw.firstVertex);
+    shader.texture = textureFor(run.textureId);
+    shader.bindTextures(pass);
+    pass.draw(run.vertexCount, run.firstVertex);
 }
 ```
 
@@ -349,6 +396,11 @@ assumption in it does not hold. This is the single clearest interface finding of
 the port. A `draw(program, buffer, vertexCount, firstVertex)` overload — or a
 program that can be told its geometry lives elsewhere — puts the largest draw in
 the whole renderer back on the supported path.
+
+Spectre fuzz made it worse in the way that confirms the diagnosis: the fuzz marks
+come off the *same* app-owned buffer with a different program, so the hand-rolled
+body had to be lifted into a function taking a `WorldViewShader&` and called twice.
+The workaround is now a small abstraction of eacp's own draw, living here.
 
 ### I2. `bindTextures` is public only because `draw(program)` calls it
 
@@ -377,27 +429,53 @@ named separately.
 
 ### I5. `prepare(int sampleCount, bool depth)` is a positional bool
 
-Minor, and mentioned only because it is at the front door of every shader: this
-port writes `shader.prepare(sampleCount(), true)`, and nothing at the call site
-says what `true` is. A small descriptor, or a named enum, reads better and would
-have somewhere obvious to put E1's depth format if it ever needs one.
+Written as minor, and mentioned only because it is at the front door of every
+shader: this port writes `shader.prepare(sampleCount(), true)`, and nothing at the
+call site says what `true` is.
+
+**Rendering into a texture is what promoted it.** The tail of that parameter list
+is where a *target's* answers live, and a shader drawing into the world target has
+to give four of them — sample count 1, depth, topology, pixel format — so the call
+becomes
+
+```cpp
+shader.prepare(1,
+               true,
+               GPU::PrimitiveTopology::Triangles,
+               blend,
+               GPU::pixelFormatFor(worldTargetFormat));
+```
+
+five positional arguments of which three exist only to reach the fifth, and two of
+them (the sample count and the format) are not the shader's choice at all but the
+target's. `View::prepareTargetShader` hides it, which is the workaround and also
+the shape of the fix: a `prepare(const Texture&, …)` overload could read all four
+off the target it is handed, and a descriptor would at least name them.
 
 ---
 
-## Part 4 — Edits to the gap log in `CLAUDE.md`
+## Part 4 — Edits to the gap log in `CLAUDE.md` — **done**
 
-The gap log is the deliverable of goal 2, so it should be accurate:
+The gap log is the deliverable of goal 2, so it should be accurate. All of the
+below has landed:
 
-- **Close 5** and move it to the "already merged" paragraph.
-- **Close 6.** Replace it with nothing; the entry's premise is gone.
-- **Rewrite 7** from "no offscreen render targets" to **"an offscreen pass has no
-  depth attachment"**, with the B4 and melt consequences named. That is the entry
-  E1 answers, and it is sharper than what it replaces.
-- **Add** E6 (no texture arrays) and E7 (no single-channel render-target format).
-- **Add** the Part 3 items as an *interface* section of the log. They are findings
-  of the same kind and are currently recorded nowhere.
+- ~~**Close 5**~~ and move it to the "already merged" paragraph.
+- ~~**Close 6.**~~ Replaced with nothing; the entry's premise is gone.
+- ~~**Rewrite 7**~~ from "no offscreen render targets" to **"an offscreen pass has
+  no depth attachment"**, with the B4 and melt consequences named. That is the
+  entry E1 answers, and it is sharper than what it replaces.
+- ~~**Add** E6 (no texture arrays) and E7 (no single-channel render-target
+  format)~~ — 12 and 13 in the log.
+- ~~**Add** the Part 3 items as an *interface* section of the log.~~
 - Leave 1, 2, 2b, 3, 4, 8, 9, 10 and 11 as they stand — all re-verified against
   `a114455`.
+
+Since then, building spectre fuzz on top of E1 revised three of them, and the
+revisions are in the log rather than here: **7** gains what the feature cost in
+practice (nothing for the sample count, and the melt unblocked as a side effect),
+**13** is downgraded — the fuzz mask needs a second channel, so R8 could not have
+served the case the entry was written for — and **I5** is upgraded, for the reason
+above.
 
 ---
 
@@ -408,23 +486,53 @@ The gap log is the deliverable of goal 2, so it should be accurate:
    log closes 5 and 6, rewrites 7 as "an offscreen pass has no depth attachment",
    adds 12 (texture arrays) and 13 (R8 render target), and gains an **Interface
    findings** section carrying I1–I5.
-2. ~~**P1** (`fetch`).~~ **Done, eyeball check outstanding.** Both lookups are
+2. ~~**P1** (`fetch`).~~ **Done, and now eyeballed.** Both lookups are
    `fetch(t, Int2)`. Two things the sampler had been supplying silently are now
    written down: the rounding (`texelOf` adds the half before truncating, because
    an index is a unorm scaled back up) and the **clamp** — `Clamp` addressing was
    holding the light row at the table's first entry, and a texel outside a
    `fetch` reads zero instead, which without the clamp would have drawn every
-   near surface black. The two paths are arithmetically identical, all 119 tests
-   are green and the shaders compile on Metal at boot, but the picture itself has
-   not been compared against Shift+F8.
-3. ~~**E1** in eacp~~ **done** (see above), then **spectre fuzz here** — still to
-   do, and now unblocked. It is the item that finishes the renderer. Note the
-   sample-count consequence recorded under E1 before starting.
+   near surface black. The picture was compared against the software frame while
+   building the item below, and the light banding, the palette and the flats all
+   come out where they were.
+3. ~~**E1** in eacp, then **spectre fuzz here**.~~ **Done — the renderer's last
+   item.** What it cost, beyond the fuzz itself: the world now renders into a
+   texture in *index* space and a full-screen pass resolves it, because a pass
+   cannot sample the target it is drawing into. See **Renderer status** in
+   `CLAUDE.md` for the three pieces and for the additive mark that is what keeps
+   the pixels behind a spectre readable.
+
+   Three things it settled that were open questions here. The sample-count
+   consequence recorded under E1 **cost nothing** — this view has always been
+   `setSampleCount(1)`. Entry **13** (R8 render targets) turns out not to have
+   been blocking this at all, and is worth less than it looked: the fuzz mask
+   needs a second channel regardless, so what R8 would save is two channels
+   rather than three. And **I5** got sharper, a pipeline that names a target
+   needing five positional arguments of which three exist only to reach the
+   fifth.
+
+   Still open, and no longer blocked: the **melt** composites a 320x200 software
+   capture of the outgoing frame, which was a constraint and is now only a
+   choice — the world target could be it. That is **P5**.
+
+**Where it stands: the renderer's feature list is finished.** Everything below is
+either eacp work that removes a workaround here, or a cost that has not been
+measured yet. Nothing left is a hole in the picture.
+
 4. **E2**, **E5**, **E3**, **E4** in eacp — small, independent, and each removes a
-   workaround that exists in this repository today.
+   workaround that exists in this repository today. **E5** is the one this port
+   would notice: the world target's two pipelines add passes whose vertex stage
+   declares no uniform block, so Metal's validation layer now logs more unused
+   binds than it did — and the validation layer's silence is the port's own
+   measurement for a shader change (see P1's caveat), so noise there costs
+   something real.
 5. **Measure** `buildGeometry` and the per-frame upload. Only then decide between
    **P3**, **P4** and **E6**, which all aim at the same cost from different sides
-   and should not all be built.
+   and should not all be built. The fuzz work added a second full-frame pass and a
+   full-window RGBA8 target to every frame, neither measured either — so a
+   measurement pass over the whole renderer is worth more now than it was.
+6. **P5**, the full-resolution melt — small, self-contained, and the last thing in
+   the renderer still running at 320x200 when it does not have to.
 
 Two standing constraints from `CLAUDE.md` apply throughout and are worth
 restating here because everything above is renderer work:
