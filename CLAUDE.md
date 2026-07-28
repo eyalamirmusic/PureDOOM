@@ -987,7 +987,8 @@ slow bass line at 9.8 messages a second. Measure the thing that is actually play
 ## Build
 
 ```bash
-cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug \
+      -DCPM_eacp_SOURCE=$HOME/Code/eacp-puredoom
 cmake --build build --target PureDoomEACP
 
 ./build/examples/EACP/PureDoomEACP.app/Contents/MacOS/PureDoomEACP
@@ -1016,14 +1017,24 @@ with it; CPM dedupes by NAME, so its `EADataStructures` — reached through Miro
 the one the root already added, and nothing is fetched twice.
 
 eacp is fetched from GitHub via CPM. To co-develop against a local checkout, pass
-`-DCPM_eacp_SOURCE=$HOME/Code/eacp`. Use `$HOME`, not `~` — CMake does not expand
-tildes, and a quoted `~/...` path silently configures against a non-existent
+`-DCPM_eacp_SOURCE=$HOME/Code/eacp-puredoom`. Use `$HOME`, not `~` — CMake does not
+expand tildes, and a quoted `~/...` path silently configures against a non-existent
 directory.
 
-The GPU render paths need four eacp features this port surfaced
+**The app does not build against eacp `main`, and `-DCPM_eacp_SOURCE` is not
+optional for it.** Four of the features it needs merged long ago
 (`TextureFormat::R8Unorm`, `Buffer::update`, `ShaderProgram::setDiscardBelow`, and
-the raw-mouse/warp input fixes). These have merged to eacp `main`, so the default
-CPM fetch builds the app cleanly.
+the raw-mouse/warp input fixes), but five more live on the **`puredoom` branch of
+`~/Code/eacp-puredoom`** and have not: `TextureDescriptor::depth` (what the world
+target is created with), `RenderPass::setUniforms` (what the hand-rolled draws bind
+through), `RenderPipelineDescriptor::cullMode`, `Graphics::primaryDisplay()` (what
+the window is sized from) and `View::getWindow()` (what the input path asks). See
+`EACP_PLAN.md` for why the checkout is a second one at that path and not
+`~/Code/eacp`.
+
+`doom-engine` and the tests are unaffected — they link `eacp-core` only, which is
+why the `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` loop builds against either checkout.
+Checked rather than assumed: all 120 pass configured against plain `~/Code/eacp`.
 
 The app boots `doom1.wad` from the repository root by default: PureDOOM has no
 `-iwad` argument — it locates WADs via `DOOMWADDIR` (falling back to the current
@@ -1034,7 +1045,8 @@ straight through.
 ## Testing
 
 ```bash
-cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug \
+      -DCPM_eacp_SOURCE=$HOME/Code/eacp-puredoom
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
