@@ -1584,7 +1584,7 @@ rather than fail outright.
 
 Found while porting, newest last. Remove entries once fixed in eacp.
 
-Already merged to eacp `main` (all gaps this port surfaced):
+Already merged to eacp `main` (the first batch this port surfaced):
 `TextureFormat::R8Unorm`, so indexed data uploads as one byte per pixel;
 `Buffer::update`, so the world's geometry buffer is re-uploaded rather than
 reallocated; `ShaderProgram::setDiscardBelow`, an alpha test in the shader EDSL; and
@@ -1612,6 +1612,14 @@ step smoothstep mix sign fmod pow sqrt rsqrt exp log ceil round atan2 dot cross
 normalize length distance reflect`, each taking a float literal in any argument
 position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
 `ifThen`, `loop`), `Array<T, N>`, and texel `fetch`.
+
+**Answered on a branch, and not upstream** — `~/Code/eacp-puredoom` at `94ee5de`,
+branch `puredoom`, five commits past the eacp `main` it started from:
+`TextureDescriptor::depth` (entry 7), `RenderPass::setUniforms` (11),
+`RenderPipelineDescriptor::cullMode` (8), `Graphics::primaryDisplay()` (4) and
+`View::getWindow()` (9). Each entry says so at its own site; the list is repeated
+here because a reader scanning the log otherwise reads five **Answered** headings as
+*shipped*, and **the app does not build without that checkout** — see **Build**.
 
 **Numbers are never reused**, so a hole in the sequence below is an entry that closed.
 
