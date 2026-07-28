@@ -1022,20 +1022,27 @@ eacp is fetched from GitHub via CPM. To co-develop against a local checkout, pas
 expand tildes, and a quoted `~/...` path silently configures against a non-existent
 directory.
 
-**The app does not build against eacp `main`, and `-DCPM_eacp_SOURCE` is not
-optional for it.** Four of the features it needs merged long ago
-(`TextureFormat::R8Unorm`, `Buffer::update`, `ShaderProgram::setDiscardBelow`, and
-the raw-mouse/warp input fixes), but five more live on the **`puredoom` branch of
-`~/Code/eacp-puredoom`** and have not: `TextureDescriptor::depth` (what the world
-target is created with), `RenderPass::setUniforms` (what the hand-rolled draws bind
-through), `RenderPipelineDescriptor::cullMode`, `Graphics::primaryDisplay()` (what
-the window is sized from) and `View::getWindow()` (what the input path asks). See
-`EACP_PLAN.md` for why the checkout is a second one at that path and not
-`~/Code/eacp`.
+**`-DCPM_eacp_SOURCE` is no longer required.** It was, for a while: nine features
+this port asked for reached eacp in two waves, and the second wave —
+`TextureDescriptor::depth` (what the world target is created with),
+`RenderPass::setUniforms` (what the hand-rolled draws bind through),
+`RenderPipelineDescriptor::cullMode`, `Graphics::primaryDisplay()` (what the window
+is sized from) and `View::getWindow()` (what the input path asks) — lived only on
+the `puredoom` branch, so the app could not be built without pointing at that
+checkout. All nine are in eacp `main` now.
 
-`doom-engine` and the tests are unaffected — they link `eacp-core` only, which is
-why the `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` loop builds against either checkout.
-Checked rather than assumed: all 120 pass configured against plain `~/Code/eacp`.
+Checked rather than assumed, which is the only reason this paragraph is allowed to
+say so: a scratch tree configured with **no** `CPM_eacp_SOURCE` at all builds every
+target including the app, and all 120 tests pass in `Release`.
+
+The flag is still what you want for **co-developing** against a local eacp — that
+is what it is for — and `~/Code/eacp-puredoom` is still the checkout to do it in
+(see `EACP_PLAN.md` for why it is a second one at that path and not `~/Code/eacp`).
+It is now a convenience rather than a prerequisite.
+
+`doom-engine` and the tests were never affected either way — they link `eacp-core`
+only, which is why the `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` loop builds against any
+checkout.
 
 The app boots `doom1.wad` from the repository root by default: PureDOOM has no
 `-iwad` argument — it locates WADs via `DOOMWADDIR` (falling back to the current
@@ -1674,13 +1681,19 @@ normalize length distance reflect`, each taking a float literal in any argument
 position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
 `ifThen`, `loop`), `Array<T, N>`, and texel `fetch`.
 
-**Answered on a branch, and not upstream** — `~/Code/eacp-puredoom` at `94ee5de`,
-branch `puredoom`, five commits past the eacp `main` it started from:
-`TextureDescriptor::depth` (entry 7), `RenderPass::setUniforms` (11),
-`RenderPipelineDescriptor::cullMode` (8), `Graphics::primaryDisplay()` (4) and
-`View::getWindow()` (9). Each entry says so at its own site; the list is repeated
-here because a reader scanning the log otherwise reads five **Answered** headings as
-*shipped*, and **the app does not build without that checkout** — see **Build**.
+**And merged since that**, the five this port built on the `puredoom` branch and
+carried for a while as *answered but not shipped*: `TextureDescriptor::depth`
+(entry 7), `RenderPass::setUniforms` (11), `RenderPipelineDescriptor::cullMode`
+(8), `Graphics::primaryDisplay()` (4) and `View::getWindow()` (9). All five are in
+eacp `main`, so **`-DCPM_eacp_SOURCE` is no longer needed to build the app** — see
+**Build**, where that is measured rather than assumed.
+
+Their entries below are marked **Closed** but kept rather than deleted, because
+each carries a lesson that outlived the gap — the depth attachment's *"a passing
+render test is not evidence the attachment happened"*, and cull mode's *"a
+cross-backend convention cannot be established on one backend and inferred onto the
+other"*, which Windows demonstrated by failing two `CullModeTests` cases on its
+first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
 
 **Numbers are never reused**, so a hole in the sequence below is an entry that closed.
 
@@ -1709,8 +1722,7 @@ here because a reader scanning the log otherwise reads five **Answered** heading
    eacp is the top-level project, so `set_default_target_setting()` on a consumer app
    target would stamp an empty Info.plist template. Workaround:
    `examples/EACP/CMakeLists.txt` sets the `EACP_MACOS_PLIST` cache variable itself.
-4. **There was no display-metrics API.** **Answered** — `~/Code/eacp-puredoom` on
-   branch `puredoom`, not yet upstream, so this stays in the log until it merges.
+4. **There was no display-metrics API.** **Closed** — merged into eacp `main`.
 
    Nothing public reported the screen's visible size, so an app could not pick an
    initial window size that fits the display, nor clamp or centre itself.
@@ -1724,8 +1736,8 @@ here because a reader scanning the log otherwise reads five **Answered** heading
    Whole multiples because a fractional one puts a texel grid on a pixel grid it does
    not divide into. On the machine this was built on it picks 3 — the same number the
    guess had, now derived rather than assumed, and 4 on a larger display.
-7. **An offscreen pass had no depth attachment.** **Answered** — `~/Code/eacp-puredoom`
-   on branch `puredoom`, not yet upstream, so this stays in the log until it merges.
+7. **An offscreen pass had no depth attachment.** **Closed** — merged into eacp
+   `main`.
 
    `TextureDescriptor::renderTarget` and `Frame::beginPass(target, …)` were real, so a
    pass could render into a texture a later pass sampled — but `Frame.h` said the limit
@@ -1762,9 +1774,8 @@ here because a reader scanning the log otherwise reads five **Answered** heading
    a texture makes the **melt's** remaining 320x200 capture a choice rather than a
    constraint: the outgoing frame could now be the target itself. Still not done, and
    no longer blocked.
-8. **There was no cull-mode state** in `RenderPipelineDescriptor`. **Answered** —
-   `~/Code/eacp-puredoom` on branch `puredoom`, not yet upstream, so this stays in the
-   log until it merges.
+8. **There was no cull-mode state** in `RenderPipelineDescriptor`. **Closed** —
+   merged into eacp `main`.
 
    `RenderPipelineDescriptor::cullMode` reaches Metal's encoder (culling being encoder
    state there, so it is set on *every* `setPipeline`, or a culled draw leaves its mode
@@ -1780,15 +1791,24 @@ here because a reader scanning the log otherwise reads five **Answered** heading
    produces it. That measurement corrected a first attempt that had reasoned it out
    and got it backwards.
 
+   **Then Windows corrected the correction.** The Metal half was measured; the D3D12
+   half was left as what its rasterizer rule *implies*, with `CullModeTests` there to
+   say so if the implication was wrong. On its first Windows run it failed exactly
+   two cases — `CullMode/backKeepsTheFrontFace` and `CullMode/frontKeepsTheBackFace`,
+   on all four Windows rows — and the fix is upstream. **A cross-backend convention
+   cannot be established on one backend and inferred onto the other**; that is the
+   same lesson as the y-flip, one level up, and the only reason it cost a test run
+   rather than an app finding its world inside out is that the gate was written
+   before the answer was known.
+
    **This port does not enable it yet**, which is the honest position rather than a
    free win: `Engine::buildGeometry` emits walls from both sides of a linedef and
    floors from clipped subsector polygons, and nothing has ever measured whether their
    winding is consistent. A wrongly-wound triangle under culling does not draw wrongly,
    it does not draw at all — which is the Windows-missing-floors failure again, and
    `Tests/Port/GeometryTests` is where that measurement would belong.
-9. **A `View` could not reach the `Window` it is in.** **Answered** —
-   `~/Code/eacp-puredoom` on branch `puredoom`, not yet upstream, so this stays in the
-   log until it merges.
+9. **A `View` could not reach the `Window` it is in.** **Closed** — merged into
+   eacp `main`.
 
    `View::getWindow()` returns the window or null. A pointer rather than the reference
    this port used to be handed, because a view can precede its window, outlive it or
@@ -1809,9 +1829,8 @@ here because a reader scanning the log otherwise reads five **Answered** heading
     `$<$<COMPILE_LANGUAGE:CXX>:-fno-gnu-unique>` on every target under eacp's directory
     tree after `CPMAddPackage` — on the targets, not the directories, because a target
     snapshots its directory's `COMPILE_OPTIONS` at creation.
-11. **eacp bound the uniform buffer to both stages.** **Answered** —
-    `~/Code/eacp-puredoom` on branch `puredoom`, not yet upstream, so this stays in
-    the log until it merges.
+11. **eacp bound the uniform buffer to both stages.** **Closed** — merged into
+    eacp `main`.
 
     `RenderPass::draw(program)` bound the block to both stages unconditionally, so
     every pass whose vertex or fragment function declares no uniform parameter drew

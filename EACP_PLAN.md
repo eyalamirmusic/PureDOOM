@@ -47,19 +47,22 @@ Both halves matter. A feature that exists but can only be reached by taking
 that discovers it is a real consumer with real geometry. That is what this port is
 for.
 
-Measured against eacp `main` at `a114455` (2026-07-27) — the commit the branch
-above should start from, and what the default CPM fetch resolves to today. Every
-claim below was checked in the checkout rather than inferred from a commit
-message.
+Measured against eacp `main` at `a114455` (2026-07-27), which is where this batch
+of work started. `main` has moved well past it since — it now carries everything
+below marked **Closed**, plus GPU pass timing, `StreamingBuffers` and packed vertex
+formats. Every claim below was checked in the checkout rather than inferred from a
+commit message.
 
 **What this repository's branch is green against**, which the rule above says has
-to be stated: `eacp-puredoom` at `94ee5de`, six commits past `a114455` — E1, E5,
-E2, E3, E4 and the docs for them. It does not build against plain `~/Code/eacp` and
-is not meant to: `TextureDescriptor::depth` is what the world target is created
-with, `RenderPass::setUniforms` is what the hand-rolled draws bind through,
-`Graphics::primaryDisplay()` is what the window is sized from, and
-`View::getWindow()` is what the input path asks. The engine and the tests link
-`eacp-core` only and build against either checkout — measured, all 120 pass.
+to be stated: **eacp `main`**, and nothing else is needed any more. E1, E5, E2, E3
+and E4 all lived on the `puredoom` branch for a while — that is what the paragraph
+here used to say, and why `-DCPM_eacp_SOURCE` was mandatory — and all five have
+since merged upstream, along with the Windows fixes that followed them.
+
+Measured rather than assumed, because this is exactly the claim that rots: a
+scratch tree configured with **no** `CPM_eacp_SOURCE` builds every target including
+the app, and all 120 tests pass in `Release`. The flag remains the right tool for
+co-developing against a local eacp; it is no longer a prerequisite.
 
 ## What is left
 
@@ -180,14 +183,14 @@ Gap-log entries with no plan item behind them, because none is a rendering probl
 | 2 | Modifier keys produce no key events | Open |
 | 2b | `charactersIgnoringModifiers` is macOS-only | Open |
 | 3 | CPM consumers don't get app-bundle setup | Open |
-| 4 | No display-metrics API | **Closed on the branch** — see **E3** |
+| 4 | No display-metrics API | **Closed** — see **E3** |
 | 5 | No declarative window aspect-ratio constraint | **Closed** — `WindowOptions::aspectRatio` |
 | 6 | The shader EDSL has almost no scalar maths | **Closed** — the full intrinsic set landed |
-| 7 | No offscreen render targets | **Closed on the branch** — `TextureDescriptor::depth`. See **E1** |
-| 8 | No cull-mode state | **Closed on the branch** — see **E2** |
-| 9 | A `View` cannot reach the `Window` it is in | **Closed on the branch** — see **E4** |
+| 7 | No offscreen render targets | **Closed** — `TextureDescriptor::depth`. See **E1** |
+| 8 | No cull-mode state | **Closed** — see **E2** |
+| 9 | A `View` cannot reach the `Window` it is in | **Closed** — see **E4** |
 | 10 | `-fno-gnu-unique` is added for every language | Open |
-| 11 | eacp binds the uniform buffer to both stages | **Closed on the branch** — see **E5** |
+| 11 | eacp binds the uniform buffer to both stages | **Closed** — see **E5** |
 
 Gap 6 is not merely closed, it is obsolete as written: the EDSL now has `floor
 fract abs min max clamp step smoothstep mix sign fmod pow sqrt rsqrt exp log ceil
@@ -432,10 +435,20 @@ backend to produce it.
 out from the y-flip and got it backwards; the test failed, and the answer came from
 printing the pixels and from a second experiment that proved the snapshot path does
 not flip (a clip-space top-half quad lands at image row 0). *Reasoning about
-handedness is not evidence; a rendered pixel is.* The Metal half is now measured and
-the D3D12 half is what its rasterizer rule implies — and `CullModeTests` is what
-says so on Windows if that implication is wrong, rather than an app finding its
-world inside out.
+handedness is not evidence; a rendered pixel is.*
+
+**And the D3D12 half was wrong too, which is the part worth keeping.** This entry
+used to end by saying the Metal half was measured while the D3D12 half was "what
+its rasterizer rule implies", with `CullModeTests` there to say so on Windows if
+the implication was wrong "rather than an app finding its world inside out." The
+first Windows run of that test failed exactly two cases —
+`CullMode/backKeepsTheFrontFace` and `CullMode/frontKeepsTheBackFace`, on all four
+Windows rows — and the fix is upstream as `5bc7ec2`.
+
+So the inference *was* wrong, on the backend where reasoning was all there was, and
+the gate caught it on its first exposure rather than an app doing so. That is worth
+more than the feature: **a cross-backend convention cannot be established on one
+backend and inferred onto the other.** Both halves are measured now.
 
 Four cases, and the shape is the point: two quads of opposite winding side by side,
 so `None` is a control that makes `Front` and `Back` mean something and neither can
