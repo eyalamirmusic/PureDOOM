@@ -351,8 +351,7 @@ void View::drawGeometry(GPU::RenderPass& pass,
 
     pass.setPipeline(shader.pipeline());
     pass.setVertexBuffer(worldBuffer);
-    pass.setVertexUniforms(shader);
-    pass.setFragmentUniforms(shader);
+    pass.setUniforms(shader);
 
     for (const auto& run: runs)
     {
@@ -491,8 +490,7 @@ void View::drawAutomap(GPU::RenderPass& pass,
 
     pass.setPipeline(automapShader.pipeline());
     pass.setVertexBuffer(automapBuffer);
-    pass.setVertexUniforms(automapShader);
-    pass.setFragmentUniforms(automapShader);
+    pass.setUniforms(automapShader);
     automapShader.bindTextures(pass);
     pass.draw((int) map.size(), 0);
 

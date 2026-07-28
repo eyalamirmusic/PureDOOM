@@ -1692,12 +1692,27 @@ position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
     `$<$<COMPILE_LANGUAGE:CXX>:-fno-gnu-unique>` on every target under eacp's directory
     tree after `CPMAddPackage` — on the targets, not the directories, because a target
     snapshots its directory's `COMPILE_OPTIONS` at creation.
-11. **eacp binds the uniform buffer to both stages**, so Metal's validation layer logs
-    an "unused binding" warning for every pass whose vertex or fragment function
-    declares no uniform parameter — benign, but it is what Xcode's runtime-issues panel
-    fills up with. The emitter already computes `vertexUsesUniforms(graph)` — and
-    consults it to decide whether the vertex function declares the block at all — so
-    exposing that answer through `ShaderProgram` closes this with no new analysis.
+11. **eacp bound the uniform buffer to both stages.** **Answered** —
+    `~/Code/eacp-puredoom` on branch `puredoom`, not yet upstream, so this stays in
+    the log until it merges.
+
+    `RenderPass::draw(program)` bound the block to both stages unconditionally, so
+    every pass whose vertex or fragment function declares no uniform parameter drew
+    an "unused binding" from Metal's validation layer — benign, but it is what
+    Xcode's runtime-issues panel fills up with, and the validation layer's *silence*
+    is this port's own measurement for a shader change.
+
+    The answer was already computed and thrown away: the emitter decides per stage
+    whether to declare the block at all. `vertexReadsUniforms`/`fragmentReadsUniforms`
+    are public now, `GeneratedShader` carries both and `ShaderProgram` hands them on,
+    so the bind and the signature it is aimed at come from one walk and cannot drift.
+    `RenderPass::setUniforms(program)` is what `draw` calls — **and what app code
+    hand-rolling a draw should call**, which is why this port's two hand-rolled draws
+    (`View::drawGeometry`, the automap) now do.
+
+    Two shaders here are the case it was written for: `FuzzShader` and
+    `HudFuzzShader` write a constant colour, so their fragment stage declares no
+    block and was being bound anyway, once per run, every frame.
 12. **No texture arrays, and no atlas primitive.** There is no `Texture2DArray` and no
     array-slice binding anywhere in the GPU module. That is why the world is drawn as
     one draw per texture (`View::drawWorld`), which is the largest draw count in the

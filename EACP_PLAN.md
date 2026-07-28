@@ -74,7 +74,7 @@ being what the world target is created with.
 | 8 | No cull-mode state | Open — **E2** |
 | 9 | A `View` cannot reach the `Window` it is in | Open — **E4** |
 | 10 | `-fno-gnu-unique` is added for every language | Open |
-| 11 | eacp binds the uniform buffer to both stages | Open — **E5** |
+| 11 | eacp binds the uniform buffer to both stages | **Closed on the branch** — see **E5** |
 
 Gap 6 is not merely closed, it is obsolete as written: the EDSL now has `floor
 fract abs min max clamp step smoothstep mix sign fmod pow sqrt rsqrt exp log ceil
@@ -313,18 +313,50 @@ a `Graphics::Window&` at construction (`View::View`), which makes it impossible 
 be null and constrains member order in `App` forever. A `View::getWindow()`, or a
 window reference given on `setContentView`, settles it.
 
-### E5. Gate the uniform bind on the stage that reads it (gap 11)
+### E5. Gate the uniform bind on the stage that reads it (gap 11) — **done**
 
-`RenderPass::draw(Program&)` binds the uniform block to both stages
-unconditionally (`RenderPass.h:184-189`), and the header now *documents* the
-unused bind — "a stage whose generated function never declares the block ignores
-the bind" — rather than avoiding it. Metal's validation layer logs an unused
-binding for every such pass, which is what fills Xcode's runtime-issues panel.
+Built on `~/Code/eacp-puredoom`, branch `puredoom`, at `a644b3e`, and not
+upstream, so the gap log keeps its entry until it merges. All 811 eacp tests
+pass (one pre-existing failure aside, below) and so do this port's 120 against
+it.
 
-The emitter already computes the predicate: `vertexUsesUniforms(graph)`
-(`ShaderEmitter.cpp:842`), consulted at `:1226` to decide whether the vertex
-function declares the block at all. Exposing that answer through `ShaderProgram`
-so `draw` can ask it closes this with no new analysis.
+**What shipped.** The predicate the emitter already computed is now the one the
+bind asks: `vertexReadsUniforms`/`fragmentReadsUniforms` are public in
+`ShaderEmitter.h`, `GeneratedShader` carries both, `ShaderProgram` hands them
+on, and `draw`/`drawInstanced` go through a new
+`RenderPass::setUniforms(program)`. One walk decides both the signature and the
+bind aimed at it, so they cannot drift — which is worth more than the saved
+bind, and is the same argument as `Tests/Port` covering the port's builders.
+
+**What it is worth here.** `setUniforms` is also the call app code should make
+when it hand-rolls a draw over its own geometry, so it is I1's workaround made
+one line shorter rather than longer: `View::drawGeometry` and the automap draw
+both use it. Two of this port's shaders are the case the entry was written for —
+`FuzzShader` and `HudFuzzShader` write a constant colour, so their fragment
+stage declares no block and was bound anyway, every frame.
+
+**Two tests, demonstrated sharp** the way this repository's goldens are: forcing
+`vertexReadsUniforms` true fails both. `codegenUniformStages` checks each flag
+against the emitted Metal signature beside it, over a vertex-only, a
+fragment-only and a declared-but-unread uniform; `codegenUniformInStatementBinds`
+covers what the colour expression alone would miss — a uniform read only from
+inside a branch, which is the trap the declaration walk already guards against
+and the bind now inherits.
+
+**Measured after**: the app run under `MTL_DEBUG_LAYER=1` prints `Metal API
+Validation Enabled` and then nothing at all across the title, the attract demo
+and the menu, with the picture unchanged. No before/after count of the unused
+binds themselves — gap 11 says they land in Xcode's runtime-issues panel, which
+a terminal capture cannot read.
+
+**One thing found on the way, and it is eacp's, not this port's.**
+`GPU/textureUpdates` **aborts** under `MTL_DEBUG_LAYER=1` and passes without it:
+the test feeds `Texture::update` a `bytesPerRow` of 10 to exercise the stride
+path, and Metal requires a multiple of the pixel size (4 for RGBA8). Since the
+validation layer's silence is the measurement standard for a shader change here,
+a suite that aborts under it costs something real. Left alone — it is not E5's
+to fix, and the stride the test means to exercise is any multiple of 4 greater
+than `width * 4`.
 
 ### E6. Texture arrays, or an atlas primitive
 
