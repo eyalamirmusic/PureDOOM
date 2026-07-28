@@ -54,15 +54,16 @@ formats. Every claim below was checked in the checkout rather than inferred from
 commit message.
 
 **What this repository's branch is green against**, which the rule above says has
-to be stated: **eacp `main`**, and nothing else is needed any more. E1, E5, E2, E3
-and E4 all lived on the `puredoom` branch for a while — that is what the paragraph
-here used to say, and why `-DCPM_eacp_SOURCE` was mandatory — and all five have
-since merged upstream, along with the Windows fixes that followed them.
+to be stated: **`~/Code/eacp-puredoom`, branch `puredoom`**, which is eacp `main`
+plus **I1** (`RenderPass::bind`). E1, E5, E2, E3 and E4 lived there for a while too
+and have all merged upstream, along with the Windows fixes that followed them; for a
+spell in between, nothing local was needed at all and a scratch tree with **no**
+`CPM_eacp_SOURCE` built every target and passed all 121 tests in `Release`.
 
-Measured rather than assumed, because this is exactly the claim that rots: a
-scratch tree configured with **no** `CPM_eacp_SOURCE` builds every target including
-the app, and all 121 tests pass in `Release`. The flag remains the right tool for
-co-developing against a local eacp; it is no longer a prerequisite.
+That is the rhythm this split is for, and it swings both ways — the flag is
+mandatory again now and will stop being so when `bind` merges. The claim worth
+keeping current is not "the flag is needed" but *which* eacp a green build was green
+against.
 
 ## What is left
 
@@ -77,9 +78,9 @@ none of the three is worth building for its cost.
 | ~~**next**~~ | ~~Measure `buildGeometry` and the per-frame upload~~ | **Done.** `Tests/Bench/GeometryBench.cpp`, target `port-bench` |
 | | **P3** instancing, **P4** per-sector heights, **E6** texture arrays | **Not worth building for the cost they attack** — the whole of it is 4% of a refresh. See below; E6 keeps a case that is not about speed |
 | ~~**next**~~ | ~~**P5** full-resolution melt~~ | **Done.** Not the way this plan expected — see below |
+| ~~**next**~~ | ~~**I1** app-owned geometry falls off `draw(program)`~~ | **Done** on the `puredoom` branch — `RenderPass::bind`. Not upstream yet |
+| | **I2** `bindTextures` public only because of I1 | **Resolved, not closed** — it stays app-facing, on purpose. See below |
 | **next** | **E7** `R8Unorm` as a `PixelFormat` | not blocking; carries a latent `pixelFormatFor` mismatch worth fixing regardless |
-| | **I1** app-owned geometry falls off `draw(program)` | open, and the clearest interface finding of the port |
-| | **I2** `bindTextures` public only because of I1 | closes when I1 does |
 
 Withdrawn rather than done: **I3** and **I4**, both of which asked eacp to document
 something it had already documented (`SAMPLERS.md`, `GPUView.h`). **I5** is
@@ -136,9 +137,10 @@ per-frame upload, in other words, was never a cost at all.
 - **E6, texture arrays — keep, but not for speed.** ~125 draws a frame is the
   biggest single item left, and it is still only the submission cost above. The
   reason to want it is what its own entry says — the group-by-texture bookkeeping
-  in `buildGeometry` disappears, and one draw over app-owned geometry is a far
-  smaller ask of **I1** than 125 are. It is an eacp feature worth having; it is not
-  a frame-time fix.
+  in `buildGeometry` disappears. (It used to say the other half was that one draw
+  is a far smaller ask of **I1** than 125 are; **I1** is answered now and took the
+  125 without complaint, so that argument has expired.) It is an eacp feature worth
+  having; it is not a frame-time fix.
 
 ### What it found that was not on the list
 
@@ -560,9 +562,10 @@ bind aimed at it, so they cannot drift — which is worth more than the saved
 bind, and is the same argument as `Tests/Port` covering the port's builders.
 
 **What it is worth here.** `setUniforms` is also the call app code should make
-when it hand-rolls a draw over its own geometry, so it is I1's workaround made
-one line shorter rather than longer: `View::drawGeometry` and the automap draw
-both use it. Two of this port's shaders are the case the entry was written for —
+when it hand-rolls a draw over its own geometry, so it was I1's workaround made
+one line shorter rather than longer. `RenderPass::bind` has since retired the
+workaround outright and calls `setUniforms` on the app's behalf — this entry's
+"one walk decides both" is the argument that fix repeats one level up. Two of this port's shaders are the case the entry was written for —
 `FuzzShader` and `HudFuzzShader` write a constant colour, so their fragment
 stage declares no block and was bound anyway, every frame.
 
@@ -603,9 +606,13 @@ disappears with it.
 **Measured**: 119 to 131 draws a frame across the three attract demos, costing
 26-31% of `render()`'s CPU — the largest single item left in the renderer, and
 still around 1% of a refresh. So this stays on the list, but **for its shape rather
-than its speed**: the bookkeeping goes, and asking **I1** to put *one* draw over
-app-owned geometry back on the supported path is a far smaller request than asking
-it for 125.
+than its speed**: the group-by-texture bookkeeping in `buildGeometry` goes.
+
+The entry used to lean on a second argument — that asking **I1** for *one* draw
+over app-owned geometry is a far smaller request than asking it for 125. **I1** is
+answered, and `RenderPass::bind` serves 125 as readily as one, so that half is
+gone. What is left is the bookkeeping, which is a real simplification and not a
+performance one.
 
 ### E7. `R8Unorm` as a `PixelFormat`, and a latent mismatch worth fixing regardless
 
@@ -637,9 +644,51 @@ The feature list above is the easy half. These are the places where eacp can do
 the thing but the shape of the API made this port write something awkward, and
 they are worth as much as any feature.
 
-### I1. `ShaderProgram` owns its vertex buffer, so app-owned geometry falls off the path
+### I1. `ShaderProgram` owned its vertex buffer — **done**, as `RenderPass::bind`
 
-**Open, and the clearest interface finding of the port.**
+Built on `~/Code/eacp-puredoom`, branch `puredoom`, and not upstream, so the gap
+log keeps its entry until it merges. All 871 eacp tests pass and so do this port's
+121 against it.
+
+**What shipped.** `bind(program, vertices)` binds everything `draw(program)` binds
+— pipeline, uniform block on the stage that reads it, textures, storage buffers —
+over geometry the caller supplies, and issues no draw. `bind(program)` is the same
+over the program's own. `draw(program, vertices, count, firstVertex)` is the
+one-shot form, and `draw(program)` and `drawInstanced(program, …)` are now written
+on top of `bind`, so **one list of what has to be bound serves both** — the same
+argument E5 made about a predicate computed twice.
+
+The port's two hand-rolled draws are gone: `View::drawGeometry` binds once and
+loops, and the automap's five lines collapsed to
+`pass.draw(automapShader, automapBuffer, count)`.
+
+**What the work found that this entry had not.**
+
+- **The copy had already fallen behind.** eacp grew `bindBuffers` and an indexed
+  path after `drawGeometry` inlined `draw(program)`'s body, and the inlined version
+  has neither. A workaround that duplicates a body stops being a workaround and
+  becomes a second implementation nobody maintains — which is the argument for
+  fixing this that the entry did not make.
+- **A whole-draw overload alone would have been a regression here.** The entry
+  asked for `draw(program, buffer, vertexCount, firstVertex)`, and using it per run
+  would re-set the pipeline and re-upload the uniform block 125 times a frame where
+  the workaround did each once. That is why `bind` is the primitive and the
+  one-shot draw is written on top of it, rather than the other way round.
+- **A program drawn this way need not own a vertex buffer at all**, and this port's
+  `worldShader` and `fuzzShader` never did — `vertices()` dereferences an empty
+  optional for both, so they could not be passed to `draw(program)` even in
+  principle. `hasVertices()` exists so the property can be asserted rather than
+  described, and `ExternalGeometry/programNeedsNoBufferOfItsOwn` asserts it.
+
+**Four tests, demonstrated sharp**, and one of them was not at first: written
+against range 0, the `firstVertex` case passed with `firstVertex` dropped from the
+one-shot draw entirely. Drawn from the *second* range it fails. *A test for an
+offset must use a non-zero one* — the same shape as the automap's bounding box
+measuring the arrow instead of the walls.
+
+---
+
+The original entry, kept because it is what the work was scoped against:
 
 `pass.draw(program)` (`RenderPass.h`, `draw(Program&)`) does six things: sets the
 pipeline, binds `program.vertices()`, binds the uniform block to the stage that
@@ -680,12 +729,19 @@ come off the *same* app-owned buffer with a different program, so the hand-rolle
 body had to be lifted into a function taking a `WorldViewShader&` and called twice.
 The workaround is now a small abstraction of eacp's own draw, living here.
 
-### I2. `bindTextures` is public only because `draw(program)` calls it
+### I2. `bindTextures` is public only because `draw(program)` calls it — **resolved, and the prediction was wrong**
 
-**Open**, and a direct consequence of I1: `program.bindTextures(pass)` reads like
-an internal — its own comment says "RenderPass::draw(program) calls this" — and app
-code has to call it because it took the draw apart. Fix I1 and this leaves app code
-on its own.
+This entry said fixing I1 would hand `bindTextures` back to eacp. It does not, and
+why not is worth more than the entry was.
+
+The port binds one texture **per run** over one buffer. After a single `bind`, the
+state that changes between draws is genuinely the caller's — a texture here, a
+uniform in another renderer — so `bindTextures` is app-facing on purpose now and
+says so at its declaration, rather than reading as an internal that leaked.
+
+**Splitting a convenience into state + draw does not make the state private again.
+It makes explicit which half is whose** — which is the outcome to want, and not the
+one this entry asked for.
 
 ### I3. A texture's sampling is fixed when the shader compiles — **already answered**
 
@@ -895,8 +951,25 @@ below is measurement, and one item that measurement should decide.
    something the engine and the port each implement and neither shares, and
    `Tests/Port/WipeTests.cpp` now holds the two against each other every tic of a
    real melt.
-7. **E7**, **I1**/**I2**. What is left is one eacp feature that blocks nothing and
-   one interface finding that is worth more than any feature on the list. **Next.**
+7. ~~**I1**/**I2**.~~ **Done — `RenderPass::bind` on the `puredoom` branch.** Both
+   of this port's hand-rolled draws are back on the supported path, and
+   `draw(program)` is now written on top of the same call app code makes, so the
+   two cannot drift again. See **I1** above for the three things the work found
+   that the entry had not — chiefly that the copy had *already* fallen behind
+   eacp, and that the overload the entry actually asked for would have been a
+   regression at this call site.
+
+   **I2 resolved the other way**, and that is the more interesting half: the
+   prediction was that fixing I1 would make `bindTextures` private again, and
+   instead it made it app-facing on purpose. Splitting a convenience into state and
+   draw does not take the state back; it says which half is whose.
+
+   The cost is the flag: this port needs `-DCPM_eacp_SOURCE` again until `bind`
+   merges, which is the second time that has swung. Recorded under **Build** in
+   `CLAUDE.md` so a fresh clone failing to build the app reads as expected rather
+   than broken.
+8. **E7**, and that is the list. One eacp feature that blocks nothing, carrying a
+   latent `pixelFormatFor` mismatch worth fixing on its own. **Next.**
 
 Two standing constraints from `CLAUDE.md` apply throughout and are worth
 restating here because everything above is renderer work:

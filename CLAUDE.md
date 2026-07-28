@@ -1056,23 +1056,23 @@ eacp is fetched from GitHub via CPM. To co-develop against a local checkout, pas
 expand tildes, and a quoted `~/...` path silently configures against a non-existent
 directory.
 
-**`-DCPM_eacp_SOURCE` is no longer required.** It was, for a while: nine features
-this port asked for reached eacp in two waves, and the second wave —
-`TextureDescriptor::depth` (what the world target is created with),
-`RenderPass::setUniforms` (what the hand-rolled draws bind through),
-`RenderPipelineDescriptor::cullMode`, `Graphics::primaryDisplay()` (what the window
-is sized from) and `View::getWindow()` (what the input path asks) — lived only on
-the `puredoom` branch, so the app could not be built without pointing at that
-checkout. All nine are in eacp `main` now.
+**`-DCPM_eacp_SOURCE` is required again to build the app**, and it is worth knowing
+that this has swung twice. Nine features this port asked for reached eacp in two
+waves, and while the second wave — `TextureDescriptor::depth`,
+`RenderPass::setUniforms`, `RenderPipelineDescriptor::cullMode`,
+`Graphics::primaryDisplay()`, `View::getWindow()` — lived only on the `puredoom`
+branch, the app could not be built without pointing at that checkout. All nine
+merged, and for a while a scratch tree with **no** flag built every target and
+passed all 121 tests in `Release` (measured, not assumed).
 
-Checked rather than assumed, which is the only reason this paragraph is allowed to
-say so: a scratch tree configured with **no** `CPM_eacp_SOURCE` at all builds every
-target including the app, and all 121 tests pass in `Release`.
+**`GPU::RenderPass::bind` is the tenth**, and it is on the `puredoom` branch and
+not upstream, so the app needs the flag until it merges. `View::drawGeometry` and
+the automap draw use it — see the gap log's **I1**. Nothing else does, so reverting
+those two call sites is all it would take to build against `main`; that is not
+worth doing, and this note is here so the swing is not mistaken for a broken tree.
 
-The flag is still what you want for **co-developing** against a local eacp — that
-is what it is for — and `~/Code/eacp-puredoom` is still the checkout to do it in
-(see `EACP_PLAN.md` for why it is a second one at that path and not `~/Code/eacp`).
-It is now a convenience rather than a prerequisite.
+`~/Code/eacp-puredoom` is the checkout to co-develop in (see `EACP_PLAN.md` for why
+it is a second one at that path and not `~/Code/eacp`).
 
 `doom-engine` and the tests were never affected either way — they link `eacp-core`
 only, which is why the `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` loop builds against any
@@ -1964,7 +1964,9 @@ first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
     so the bind and the signature it is aimed at come from one walk and cannot drift.
     `RenderPass::setUniforms(program)` is what `draw` calls — **and what app code
     hand-rolling a draw should call**, which is why this port's two hand-rolled draws
-    (`View::drawGeometry`, the automap) now do.
+    (`View::drawGeometry`, the automap) did. Both have since stopped hand-rolling
+    anything: `RenderPass::bind` calls `setUniforms` for them (**I1**), which is the
+    same fix one level up — the list of what a draw binds now exists once.
 
     Two shaders here are the case it was written for: `FuzzShader` and
     `HudFuzzShader` write a constant colour, so their fragment stage declares no
@@ -1980,9 +1982,10 @@ first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
     **Measured** (see **Measuring the renderer**): 119 to 131 draws a frame across
     the three attract demos, costing 26-31% of `render()`'s CPU — the largest single
     item left, and still around 1% of a refresh. So the entry stands **for its shape
-    rather than its speed**. The sharpest version of it is that asking **I1** to put
-    *one* draw over app-owned geometry back on the supported path is a far smaller
-    request than asking it for 125.
+    rather than its speed**: the group-by-texture bookkeeping in `buildGeometry`
+    goes with it. It used to lean on a second argument, that one draw is a far
+    smaller ask of **I1** than 125 are — **I1** is answered now and `RenderPass::bind`
+    serves 125 as readily as one, so that half has expired.
 13. **`R8Unorm` is not a `PixelFormat`**, so a single-channel *render target* is not
     expressible: `PixelFormat` has BGRA8, RGBA8, RGBA16F and RGBA32F, while
     `TextureFormat` has had R8Unorm since this port asked for it.
@@ -2014,22 +2017,35 @@ The same rule and the same log, but these are not missing features. eacp can do 
 thing; the *shape* of the API made this port write something it should not have had
 to. They are worth as much as any feature, and were recorded nowhere before.
 
-I1. **A `ShaderProgram` owns its vertex buffer, so app-owned geometry falls off the
-    supported path.** `RenderPass::draw(program)` does six things — sets the pipeline,
-    binds `program.vertices()`, binds the uniform block to both stages, binds textures,
-    binds storage buffers, and issues the draw — and every one assumes the program owns
-    its geometry. The world's does not: it is a `Buffer` this port owns and updates in
-    place every frame, drawn as sub-ranges with a different texture per range. So
-    `View::drawGeometry` cannot call `draw(program)` and reassembles its body by hand
-    instead, line for line, because one assumption in it does not hold. That is the
-    clearest interface finding of the port, and it is the largest draw in the whole
-    renderer. A `draw(program, buffer, vertexCount, firstVertex)` overload — or a
-    program that can be told its geometry lives elsewhere — puts it back on the path.
+I1. **A `ShaderProgram` owned its vertex buffer, so app-owned geometry fell off the
+    supported path** — **answered**, on the `puredoom` branch, as
+    `GPU::RenderPass::bind`.
 
-I2. **`bindTextures` is public only because `draw(program)` calls it.** A direct
-    consequence of I1: it reads as an internal and documents itself as one — its own
-    comment is *"`RenderPass::draw(program)` calls this"* — and app code has to call it
-    because it took the draw apart. Fixing I1 hands it back to eacp.
+    `draw(program)` assumed both halves of a draw belong to the program: its buffer
+    and its whole vertex count. The world's geometry is a `Buffer` this port owns
+    and updates in place, drawn as sub-ranges with a different texture per range, so
+    it could supply neither — and `View::drawGeometry` inlined `draw(program)`'s body
+    instead. **The copy had already fallen behind**, which is the part worth keeping:
+    eacp grew `bindBuffers` and an indexed path, and the hand-rolled version had
+    neither. A workaround that duplicates a body does not stay a workaround; it
+    becomes a second implementation nobody is maintaining.
+
+    `bind(program, vertices)` binds everything `draw(program)` binds and issues no
+    draw; `draw(program, vertices, count, firstVertex)` is the one-shot form. Both
+    halves of `draw(program)` now go through the same lines, so a seventh thing added
+    there reaches app code too. `Tests/GPU/ExternalGeometryTests.cpp` pins it, and
+    the `firstVertex` case had to be rewritten to be sharp — drawn from range 0, a
+    `firstVertex` that never reached the draw call paints the same picture.
+
+I2. **`bindTextures` is public only because `draw(program)` calls it** — **resolved,
+    but not the way this entry expected, and the difference is the finding.**
+
+    The prediction was that fixing I1 would hand it back to eacp. It does not: the
+    port binds one texture *per run* over one buffer, so after a single `bind` the
+    per-draw state is genuinely the caller's to restate. `bindTextures` is therefore
+    app-facing on purpose now and says so at its declaration, rather than reading as
+    an internal that leaked. **Splitting a convenience into state + draw does not
+    make the state private again — it makes which half is whose explicit.**
 
 I3. **A texture's sampling is fixed when the shader compiles.** Deliberate, documented,
     and with a Windows driver bug behind it (eacp's `SAMPLERS.md`), so this is a note

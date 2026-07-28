@@ -95,10 +95,10 @@ struct View final : GPU::GPUView
                      const Graphics::Rect& viewport,
                      float rows);
 
-    // One run of the world's vertex buffer per texture, drawn by hand: the
-    // geometry is the app's rather than the program's, which is the one
-    // assumption RenderPass::draw(program) makes that this cannot meet (see the
-    // gap log's interface findings).
+    // One run of the world's vertex buffer per texture. The geometry is the
+    // app's rather than the program's - a buffer updated in place every frame
+    // and issued as sub-ranges - which is what GPU::RenderPass::bind exists for;
+    // this used to be draw(program)'s body copied out line for line.
     void drawGeometry(GPU::RenderPass& pass,
                       WorldViewShader& shader,
                       std::span<const Engine::TextureDraw> runs);

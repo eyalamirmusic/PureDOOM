@@ -420,9 +420,9 @@ void View::drawGeometry(GPU::RenderPass& pass,
     if (runs.empty())
         return;
 
-    pass.setPipeline(shader.pipeline());
-    pass.setVertexBuffer(worldBuffer);
-    pass.setUniforms(shader);
+    // Bound once; only the texture changes between runs, and restating that is
+    // the caller's job by design (GPU::RenderPass::bind).
+    pass.bind(shader, worldBuffer);
 
     for (const auto& run: runs)
     {
@@ -566,13 +566,7 @@ void View::drawAutomap(GPU::RenderPass& pass,
     // letterbox bars. Scissor state persists for the rest of the pass, hence
     // the clear.
     pass.setScissorRect(inPixels(viewport));
-
-    pass.setPipeline(automapShader.pipeline());
-    pass.setVertexBuffer(automapBuffer);
-    pass.setUniforms(automapShader);
-    automapShader.bindTextures(pass);
-    pass.draw((int) map.size(), 0);
-
+    pass.draw(automapShader, automapBuffer, (int) map.size());
     pass.clearScissorRect();
 }
 
