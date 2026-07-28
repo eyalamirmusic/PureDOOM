@@ -67,11 +67,11 @@ being what the world target is created with.
 | 2 | Modifier keys produce no key events | Open |
 | 2b | `charactersIgnoringModifiers` is macOS-only | Open |
 | 3 | CPM consumers don't get app-bundle setup | Open |
-| 4 | No display-metrics API | Open — **E3** |
+| 4 | No display-metrics API | **Closed on the branch** — see **E3** |
 | 5 | No declarative window aspect-ratio constraint | **Closed** — `WindowOptions::aspectRatio` |
 | 6 | The shader EDSL has almost no scalar maths | **Closed** — the full intrinsic set landed |
 | 7 | No offscreen render targets | **Closed on the branch** — `TextureDescriptor::depth`. See **E1** |
-| 8 | No cull-mode state | Open — **E2** |
+| 8 | No cull-mode state | **Closed on the branch** — see **E2** |
 | 9 | A `View` cannot reach the `Window` it is in | Open — **E4** |
 | 10 | `-fno-gnu-unique` is added for every language | Open |
 | 11 | eacp binds the uniform buffer to both stages | **Closed on the branch** — see **E5** |
@@ -285,25 +285,70 @@ texture is the other option and is more flexible for a shared depth buffer.
 MSAA on an offscreen pass is genuinely optional and should stay absent unless
 something asks; depth is not.
 
-### E2. Cull mode (gap 8)
+### E2. Cull mode (gap 8) — **done**
 
-`RenderPipelineDescriptor` (`RenderPipeline.h:63-77`) carries library, vertex
-layout, colour format, topology, sample count, blend mode and depth — and no cull
-state. Every triangle in the level is rasterised from both faces. DOOM's walls are
-correct drawn double-sided so this has never blocked anything, which is exactly
-why it has stayed open; it is pure waste, at a fixed cost. Metal wants
-`setCullMode` on the encoder, D3D12 a rasterizer-desc field on the PSO, and both
-want a winding convention stated once.
+Built on `~/Code/eacp-puredoom` at `f002eba`. `RenderPipelineDescriptor::cullMode`
+reaches Metal's encoder and D3D12's rasterizer desc; `None` stays the default.
 
-### E3. Display metrics (gap 4)
+**The winding was the work, and the entry underestimated it.** It said the two
+backends "want a winding convention stated once", which reads like paperwork. They
+want more than that: both default to *"clockwise is front-facing"* and mean
+different things by it — Metal decides facing in **clip** space and D3D12 in
+**screen** space, one viewport y-flip apart — so a mesh culled correctly on one is
+inside out on the other. eacp now states the convention in the space a shader is
+written in (counter-clockwise in clip space, as glTF has it) and configures each
+backend to produce it.
 
-Nothing public reports the screen's visible size — the only uses are internal
-(`Window-Windows.cpp:126`, `[NSScreen mainScreen]` inside the Apple view code). An
-app cannot pick an initial window size that fits the display, nor clamp or centre
-itself. This port ships a conservative 3x guess (`Common.h:57`) plus a resizable
-window and letterboxing, which is a workaround that happens to be tolerable
-because DOOM is 320x200. It would not be tolerable for anything with a native
-resolution near the display's.
+**How that was settled is the transferable part.** The first attempt reasoned it
+out from the y-flip and got it backwards; the test failed, and the answer came from
+printing the pixels and from a second experiment that proved the snapshot path does
+not flip (a clip-space top-half quad lands at image row 0). *Reasoning about
+handedness is not evidence; a rendered pixel is.* The Metal half is now measured and
+the D3D12 half is what its rasterizer rule implies — and `CullModeTests` is what
+says so on Windows if that implication is wrong, rather than an app finding its
+world inside out.
+
+Four cases, and the shape is the point: two quads of opposite winding side by side,
+so `None` is a control that makes `Front` and `Back` mean something and neither can
+pass by drawing nothing. The fourth covers what Metal's encoder state costs — the
+mode is set on every `setPipeline`, not only the culling ones — and was demonstrated
+sharp by gating it on `cullMode != None`.
+
+`ShaderProgram::prepare` gained a **descriptor overload** on the way, because cull
+mode had nowhere else to go: the positional form was already five arguments deep.
+That is **I5**, answered as a side effect rather than as its own item.
+
+**This port has not enabled culling**, and should not until something measures the
+winding `Engine::buildGeometry` emits. Walls come from both sides of a linedef and
+floors from clipped subsector polygons; a wrongly-wound triangle under culling does
+not draw wrongly, it does not draw at all — which is the Windows-missing-floors
+failure again, and `Tests/Port/GeometryTests` is where the measurement belongs.
+
+### E3. Display metrics (gap 4) — **done**
+
+Built on `~/Code/eacp-puredoom` at `3c19ea9`. `Graphics::primaryDisplay()` returns a
+frame, a work area and a backing scale, in **points** — the unit
+`WindowOptions::width` is already in, so a size read from it goes straight to a
+window with no conversion.
+
+Two things it is careful about, and each is a way the naive version is wrong. An
+implementation handing back **pixels** would open every window at twice the intended
+size on a Retina panel while passing any is-it-positive check, which is what
+`Display/frameIsInPoints` exists to catch. And the **work area** is not the frame:
+the difference is the menu bar and the Dock, or the taskbar — measured here as
+1312x848 with a 1312x822 work area at y=26.
+
+The macOS backend flips AppKit's bottom-left origin about the **primary** screen
+rather than about the screen being converted, which is the subtlety a single-monitor
+test cannot see: a display sitting above or below the primary one otherwise comes
+back in the wrong place. Enumerating those other displays is the obvious next step
+and is not done.
+
+**The port's half**: `Layout.h`'s `windowScale()` replaced the 3x guess with the
+largest *whole* multiple of 320x240 that fits 90% of the work area, capped at 4.
+Whole, because a fractional multiple puts a texel grid on a pixel grid it does not
+divide into. It picks 3 on the machine this was built on — the same number the guess
+had, now derived — and 4 on a larger display.
 
 ### E4. A `View` can reach its `Window` (gap 9)
 

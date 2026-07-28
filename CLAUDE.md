@@ -1628,10 +1628,21 @@ position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
    eacp is the top-level project, so `set_default_target_setting()` on a consumer app
    target would stamp an empty Info.plist template. Workaround:
    `examples/EACP/CMakeLists.txt` sets the `EACP_MACOS_PLIST` cache variable itself.
-4. **No display-metrics API.** Nothing public reports the screen's visible size, so an
-   app cannot pick an initial window size that fits the display, nor clamp/center
-   itself. Workaround: a conservative 3x default plus a resizable window with
-   letterboxed rendering.
+4. **There was no display-metrics API.** **Answered** — `~/Code/eacp-puredoom` on
+   branch `puredoom`, not yet upstream, so this stays in the log until it merges.
+
+   Nothing public reported the screen's visible size, so an app could not pick an
+   initial window size that fits the display, nor clamp or centre itself.
+   `Graphics::primaryDisplay()` returns a frame, a **work area** (the frame less the
+   menu bar and the Dock, or the taskbar) and a backing scale, all in **points** —
+   the unit `WindowOptions::width` is already in, so a size read from it goes
+   straight to a window.
+
+   `Layout.h`'s `windowScale()` is what replaced the 3x guess: the largest whole
+   multiple of 320x240 that fits 90% of the work area, capped at 4 and floored at 1.
+   Whole multiples because a fractional one puts a texel grid on a pixel grid it does
+   not divide into. On the machine this was built on it picks 3 — the same number the
+   guess had, now derived rather than assumed, and 4 on a larger display.
 7. **An offscreen pass had no depth attachment.** **Answered** — `~/Code/eacp-puredoom`
    on branch `puredoom`, not yet upstream, so this stays in the log until it merges.
 
@@ -1670,13 +1681,30 @@ position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
    a texture makes the **melt's** remaining 320x200 capture a choice rather than a
    constraint: the outgoing frame could now be the target itself. Still not done, and
    no longer blocked.
-8. **No cull-mode state** in `RenderPipelineDescriptor`, which carries library, vertex
-   layout, colour format, topology, sample count, blend mode and depth — and nothing
-   about winding or faces. Not blocking (DOOM's walls are fine drawn double-sided, and
-   the D3D12 backend hardcodes `D3D12_CULL_MODE_NONE` to match Metal's default), which
-   is exactly why it has stayed open: it is pure waste at a fixed cost. Metal wants
-   `setCullMode` on the encoder, D3D12 a rasterizer-desc field on the PSO, and both
-   want a winding convention stated once.
+8. **There was no cull-mode state** in `RenderPipelineDescriptor`. **Answered** —
+   `~/Code/eacp-puredoom` on branch `puredoom`, not yet upstream, so this stays in the
+   log until it merges.
+
+   `RenderPipelineDescriptor::cullMode` reaches Metal's encoder (culling being encoder
+   state there, so it is set on *every* `setPipeline`, or a culled draw leaves its mode
+   behind for the next one) and D3D12's rasterizer desc.
+
+   **The winding turned out to be the whole of it, and it is worth knowing here
+   because the same trap is one this port could have walked into.** Both backends
+   default to "clockwise is front-facing" and mean different things by it: Metal
+   decides facing in *clip* space — measured, not assumed — and D3D12 in *screen*
+   space, one viewport y-flip apart, so left alone the two cull opposite faces of the
+   same mesh. eacp now states the convention in the space a shader is written in
+   (counter-clockwise in clip space, as glTF has it) and sets each backend to whatever
+   produces it. That measurement corrected a first attempt that had reasoned it out
+   and got it backwards.
+
+   **This port does not enable it yet**, which is the honest position rather than a
+   free win: `Engine::buildGeometry` emits walls from both sides of a linedef and
+   floors from clipped subsector polygons, and nothing has ever measured whether their
+   winding is consistent. A wrongly-wound triangle under culling does not draw wrongly,
+   it does not draw at all — which is the Windows-missing-floors failure again, and
+   `Tests/Port/GeometryTests` is where that measurement would belong.
 9. **A `View` cannot reach the `Window` it is in.** Anything a view needs from its
    window — the mouse lock, the modifier keys — has to be handed to it by the app.
    This port declares the window *before* the view and hands it over as a
