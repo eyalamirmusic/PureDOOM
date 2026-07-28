@@ -25,6 +25,7 @@
 #include <EngineAccess.h>
 
 #include <DOOM/Render/GraphicsData.h>
+#include <DOOM/Sim/Info.h>
 
 #include <cmath>
 #include <span>
@@ -44,11 +45,25 @@ constexpr int skillMedium = 2;
 constexpr int maxVertices = 262144;
 constexpr int maxDraws = 2048;
 
+// One quad - a wall band, a flat's fan segment, a billboard - as the emitter
+// lays it down: two triangles.
+constexpr int verticesPerQuad = 6;
+
 struct Surfaces
 {
     int horizontal = 0;
     int vertical = 0;
 };
+
+int totalVertices(std::span<const Engine::TextureDraw> runs)
+{
+    auto total = 0;
+
+    for (const auto& run: runs)
+        total += run.vertexCount;
+
+    return total;
+}
 
 // The scratch a frame is built into, and the frame built into it. Held together
 // so each case can ask for one line and then read the result as data.
@@ -243,15 +258,83 @@ auto tWorldGeometryDrawsAreInRange = test("Port/worldGeometryDrawsAreInRange") =
     check(!world.draws.empty(), "the builder emitted at least one draw");
     check(textureCount > 0, "the engine loaded a texture id space");
 
-    for (const auto& draw: world.draws)
+    // The fuzzed runs are laid into the same buffer after the textured ones, so
+    // they are held to the same rule and by the same walk - a layout that put
+    // one of them past the end would be a wild read with nothing else to notice
+    // it.
+    for (auto runs: {world.draws, world.fuzzDraws})
     {
-        check(draw.textureId >= 0 && draw.textureId < textureCount,
-              "the draw's texture is inside the id space");
-        check(draw.vertexCount > 0, "the draw covers at least one vertex");
-        check(draw.firstVertex >= 0
-                  && draw.firstVertex + draw.vertexCount
-                         <= static_cast<int>(world.vertices.size()),
-              "the draw's run lies inside the emitted vertices");
+        for (const auto& draw: runs)
+        {
+            check(draw.textureId >= 0 && draw.textureId < textureCount,
+                  "the draw's texture is inside the id space");
+            check(draw.vertexCount > 0, "the draw covers at least one vertex");
+            check(draw.firstVertex >= 0
+                      && draw.firstVertex + draw.vertexCount
+                             <= static_cast<int>(world.vertices.size()),
+                  "the draw's run lies inside the emitted vertices");
+        }
     }
+};
+
+// A spectre is drawn as a distortion of the frame behind it, never out of its
+// own pixels, so the builder has to hand it over as its own run: the renderer
+// draws those last, with a shader that writes a mark instead of a colour.
+//
+// Nothing else can see this. The frame goldens run the software renderer, which
+// fuzzes a spectre by hand in drawFuzzColumn and never touches a line of the
+// port; a spectre quietly emitted as an ordinary sprite would draw a perfectly
+// solid demon on the GPU path and pass every gate in the repository.
+//
+// E1M1 holds no spectres, which is what makes the check sharp: the counts move
+// only for the thing that was spawned, and the ordinary thing is the control.
+auto tSpectresAreFuzzed = test("Port/spectresAreFuzzed") = []
+{
+    check(doomSimBoot() != 0, "the engine booted");
+    check(doomSimLoadLevel(e1, m1, skillMedium) != 0, "E1M1 loaded");
+
+    auto player = doomSimPlayerHandle();
+    check(player >= 0, "the player spawned");
+
+    auto x = doomSimMobjX(player);
+    auto y = doomSimMobjY(player);
+    auto floor = doomSimOnFloorZ();
+
+    auto frame = Frame {};
+    auto before = frame.build();
+    auto solid = totalVertices(before.draws);
+
+    check(solid > 0, "E1M1 emitted geometry");
+    check(before.fuzzDraws.empty(), "E1M1 holds no spectres, so nothing is fuzzed");
+
+    // The control: an ordinary thing, spawned the same way, in the same place.
+    check(doomSimSpawnMobj(Doom::toIndex(Doom::MobjType::Barrel), x, y, floor) >= 0,
+          "a barrel spawned");
+
+    auto withBarrel = frame.build();
+
+    check(withBarrel.fuzzDraws.empty(), "an ordinary thing is not fuzzed");
+    check(totalVertices(withBarrel.draws) == solid + verticesPerQuad,
+          "and it added its one quad to the textured runs");
+
+    check(doomSimSpawnMobj(Doom::toIndex(Doom::MobjType::Shadows), x, y, floor) >= 0,
+          "a spectre spawned");
+
+    auto withSpectre = frame.build();
+
+    check(totalVertices(withSpectre.fuzzDraws) == verticesPerQuad,
+          "the spectre came out as one fuzzed quad");
+    check(totalVertices(withSpectre.draws) == solid + verticesPerQuad,
+          "and added nothing to the textured runs");
+
+    // What the fuzz run names is still a sprite: the shape is all the renderer
+    // reads from it, and a sprite is where the shape comes from.
+    const auto& run = withSpectre.fuzzDraws.front();
+    auto quad = withSpectre.vertices.subspan(run.firstVertex, run.vertexCount);
+
+    check(Engine::textureInfo(run.textureId).masked,
+          "the fuzzed run names a masked texture, as every sprite is");
+    check(classify(quad).horizontal == 0,
+          "the spectre's quad stands up like a billboard rather than lying flat");
 };
 } // namespace

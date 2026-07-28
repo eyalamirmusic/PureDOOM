@@ -22,6 +22,7 @@
 #include <DOOM/Math/TrigTables.h>
 #include <DOOM/Render/BSP.h>
 #include <DOOM/Render/Data.h>
+#include <DOOM/Render/DrawTables.h>
 #include <DOOM/Render/GraphicsData.h>
 #include <DOOM/Render/Lighting.h>
 #include <DOOM/Render/Main.h>
@@ -174,11 +175,14 @@ struct TextureTable
 };
 
 // The per-texture vertex runs a frame is grouped into: counted on the first pass
-// over the world, written on the second.
+// over the world, written on the second. Twice over, because the spectres are
+// grouped by texture the same way and drawn separately (see Emitter).
 struct EmitScratch
 {
     Vector<int> counts;
     Vector<int> cursors;
+    Vector<int> fuzzCounts;
+    Vector<int> fuzzCursors;
 };
 
 TicSnapshot snapshot;
@@ -197,21 +201,33 @@ float interpolatedHeight(const Vector<float>& previous, int index, float now)
     return std::lerp(previous[index], now, snapshot.alpha);
 }
 
-int sectorIndex(const Doom::Sector& sector)
+// The engine's state clusters are reached through out-of-line accessors over a
+// function-local static - Doom::level() calls Doom::engine(), which loads a
+// guard and a pointer - and nothing in this translation unit can inline any of
+// it. The geometry pass asks per line, per side, per texture band and then does
+// the whole walk a second time, which came to tens of thousands of calls a
+// frame: measured at just over half of buildGeometry's time, against a fifth for
+// the arithmetic the calls were fetching operands for.
+//
+// So the hot path takes its cluster as a parameter and the caller hoists one
+// reference for the walk. That is CLAUDE.md's own rule for the engine's per-pixel
+// drawers, which this file had not been following. Tests/Bench/GeometryBench.cpp
+// is what measured it and what says the geometry came out identical afterwards.
+int sectorIndex(const Doom::Level& level, const Doom::Sector& sector)
 {
-    return static_cast<int>(&sector - Doom::level().sectors.data());
+    return static_cast<int>(&sector - level.sectors.data());
 }
 
-float floorHeight(const Doom::Sector& sector)
+float floorHeight(const Doom::Level& level, const Doom::Sector& sector)
 {
     return interpolatedHeight(
-        snapshot.floor, sectorIndex(sector), toFloat(sector.floorheight));
+        snapshot.floor, sectorIndex(level, sector), toFloat(sector.floorheight));
 }
 
-float ceilingHeight(const Doom::Sector& sector)
+float ceilingHeight(const Doom::Level& level, const Doom::Sector& sector)
 {
     return interpolatedHeight(
-        snapshot.ceiling, sectorIndex(sector), toFloat(sector.ceilingheight));
+        snapshot.ceiling, sectorIndex(level, sector), toFloat(sector.ceilingheight));
 }
 
 int spriteBase()
@@ -250,8 +266,10 @@ Light fixedLight(int row)
 // fake contrast walls get for their orientation.
 Light sectorLight(int lightlevel, int contrast)
 {
-    if (fixedRow())
-        return fixedLight(fixedRow());
+    // One ask, not two: the accessor behind it is a call this file cannot
+    // inline, and the emitter reaches here once per surface.
+    if (auto fixed = fixedRow())
+        return fixedLight(fixed);
 
     auto lightnum = std::clamp((lightlevel >> Doom::LIGHTSEGSHIFT)
                                    + Doom::lighting().extralight + contrast,
@@ -587,8 +605,23 @@ struct QuadUv
 // The frame's geometry, laid down twice: the first pass sizes each texture's
 // run, the second writes into the run reserved for it. `vertices` is empty while
 // counting.
+//
+// A spectre's quad goes to a second set of runs rather than the first. Its
+// pixels are never drawn - drawFuzzColumn reads the frame beneath it and never
+// touches the sprite - so all the renderer wants from it is its shape, in the
+// pixels the world has already been laid into. Same vertex buffer, same grouping
+// by texture, drawn afterwards by a shader that writes a mark instead of a
+// colour.
 struct Emitter
 {
+    // One stream's per-texture counts and, once the layout is decided, where
+    // each texture's run starts.
+    struct Runs
+    {
+        std::span<int> counts;
+        std::span<int> cursors;
+    };
+
     bool counting() const { return vertices.empty(); }
 
     void vertex(int textureId,
@@ -599,17 +632,7 @@ struct Emitter
                 float v,
                 const Light& light)
     {
-        if (counting())
-        {
-            ++counts[textureId];
-            return;
-        }
-
-        if (cursors[textureId] < 0)
-            return;
-
-        vertices[cursors[textureId]++] = {
-            {x, y, z}, {u, v}, light.row, light.falloff};
+        vertex(solid, textureId, x, y, z, u, v, light);
     }
 
     void quad(int textureId,
@@ -617,20 +640,79 @@ struct Emitter
               const QuadUv& uv,
               const Light& light)
     {
-        vertex(
-            textureId, span.ax, span.bottom, span.az, uv.uStart, uv.vBottom, light);
-        vertex(textureId, span.bx, span.bottom, span.bz, uv.uEnd, uv.vBottom, light);
-        vertex(textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
+        quad(solid, textureId, span, uv, light);
+    }
 
+    void fuzzQuad(int textureId,
+                  const QuadSpan& span,
+                  const QuadUv& uv,
+                  const Light& light)
+    {
+        quad(fuzz, textureId, span, uv, light);
+    }
+
+    void vertex(const Runs& runs,
+                int textureId,
+                float x,
+                float y,
+                float z,
+                float u,
+                float v,
+                const Light& light)
+    {
+        if (counting())
+        {
+            ++runs.counts[textureId];
+            return;
+        }
+
+        if (runs.cursors[textureId] < 0)
+            return;
+
+        vertices[runs.cursors[textureId]++] = {
+            {x, y, z}, {u, v}, light.row, light.falloff};
+    }
+
+    void quad(const Runs& runs,
+              int textureId,
+              const QuadSpan& span,
+              const QuadUv& uv,
+              const Light& light)
+    {
+        vertex(runs,
+               textureId,
+               span.ax,
+               span.bottom,
+               span.az,
+               uv.uStart,
+               uv.vBottom,
+               light);
+        vertex(runs,
+               textureId,
+               span.bx,
+               span.bottom,
+               span.bz,
+               uv.uEnd,
+               uv.vBottom,
+               light);
+        vertex(runs, textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
+
+        vertex(runs,
+               textureId,
+               span.ax,
+               span.bottom,
+               span.az,
+               uv.uStart,
+               uv.vBottom,
+               light);
+        vertex(runs, textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
         vertex(
-            textureId, span.ax, span.bottom, span.az, uv.uStart, uv.vBottom, light);
-        vertex(textureId, span.bx, span.top, span.bz, uv.uEnd, uv.vTop, light);
-        vertex(textureId, span.ax, span.top, span.az, uv.uStart, uv.vTop, light);
+            runs, textureId, span.ax, span.top, span.az, uv.uStart, uv.vTop, light);
     }
 
     std::span<WorldVertex> vertices;
-    std::span<int> counts;
-    std::span<int> cursors;
+    Runs solid;
+    Runs fuzz;
 };
 
 // DOOM's map plane is (x, y) with z up; the renderer's is (x, up, -y).
@@ -653,13 +735,13 @@ struct WallTexture
     float height = 0.0f;
 };
 
-WallTexture wallTexture(int index)
+WallTexture wallTexture(const Doom::GraphicsData& gfx, int index)
 {
-    auto id = Doom::graphicsData().texturetranslation[index];
+    auto id = gfx.texturetranslation[index];
 
     return {id,
-            static_cast<float>(Doom::graphicsData().textures[id]->width),
-            static_cast<float>(Doom::graphicsData().textures[id]->height)};
+            static_cast<float>(gfx.textures[id]->width),
+            static_cast<float>(gfx.textures[id]->height)};
 }
 
 // One textured band of a linedef. `textureTop` is where the texture's own top
@@ -699,18 +781,21 @@ int wallContrast(const Doom::Line& line)
     return 0;
 }
 
-void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
+void emitLineSide(Emitter& emitter,
+                  const Doom::Level& level,
+                  const Doom::GraphicsData& gfx,
+                  const Doom::SkyState& sky,
+                  const Doom::Line& line,
+                  int index,
+                  int s)
 {
-    auto& sky = Doom::skyState();
-
     if (line.sidenum[s] < 0)
         return;
 
-    const auto& side = Doom::level().sides[line.sidenum[s]];
+    const auto& side = level.sides[line.sidenum[s]];
     const auto& front = *side.sector;
-    const auto* back = line.sidenum[s ^ 1] >= 0
-                           ? Doom::level().sides[line.sidenum[s ^ 1]].sector
-                           : nullptr;
+    const auto* back =
+        line.sidenum[s ^ 1] >= 0 ? level.sides[line.sidenum[s ^ 1]].sector : nullptr;
 
     const auto& v1 = s == 0 ? *line.v1 : *line.v2;
     const auto& v2 = s == 0 ? *line.v2 : *line.v1;
@@ -719,8 +804,8 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
     auto to = Point {toDouble(v2.x), toDouble(v2.y)};
 
     auto length = cells.lineLengths[index];
-    auto frontFloor = floorHeight(front);
-    auto frontCeiling = ceilingHeight(front);
+    auto frontFloor = floorHeight(level, front);
+    auto frontCeiling = ceilingHeight(level, front);
     auto rowOffset = toFloat(side.rowoffset);
     auto light = sectorLight(front.lightlevel, wallContrast(line));
     auto pegBottom = (line.flags & Doom::ML_DONTPEGBOTTOM) != 0;
@@ -730,7 +815,7 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
         if (side.midtexture <= 0)
             return;
 
-        auto texture = wallTexture(side.midtexture);
+        auto texture = wallTexture(gfx, side.midtexture);
         auto textureTop =
             (pegBottom ? frontFloor + texture.height : frontCeiling) + rowOffset;
 
@@ -744,12 +829,12 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
         return;
     }
 
-    auto backFloor = floorHeight(*back);
-    auto backCeiling = ceilingHeight(*back);
+    auto backFloor = floorHeight(level, *back);
+    auto backCeiling = ceilingHeight(level, *back);
 
     if (side.bottomtexture > 0 && backFloor > frontFloor)
     {
-        auto texture = wallTexture(side.bottomtexture);
+        auto texture = wallTexture(gfx, side.bottomtexture);
         auto textureTop = (pegBottom ? frontCeiling : backFloor) + rowOffset;
 
         emitWall(emitter,
@@ -768,7 +853,7 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
 
     if (side.toptexture > 0 && backCeiling < frontCeiling && !bothSky)
     {
-        auto texture = wallTexture(side.toptexture);
+        auto texture = wallTexture(gfx, side.toptexture);
         auto pegTop = (line.flags & Doom::ML_DONTPEGTOP) != 0;
         auto textureTop =
             (pegTop ? frontCeiling : backCeiling + texture.height) + rowOffset;
@@ -788,7 +873,7 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
     // leaves a gap rather than repeating.
     if (side.midtexture > 0)
     {
-        auto texture = wallTexture(side.midtexture);
+        auto texture = wallTexture(gfx, side.midtexture);
 
         auto openingBottom = std::max(backFloor, frontFloor);
         auto openingTop = std::min(backCeiling, frontCeiling);
@@ -815,17 +900,17 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
 // left of the thing's position along the view plane, and its top sits the
 // sprite's top offset above the thing's feet.
 void emitSprite(Emitter& emitter,
+                const Doom::GraphicsData& gfx,
                 const Doom::Mobj& thing,
                 const Doom::Mobj& viewer,
                 const Point& right)
 {
-    auto& gfx = Doom::graphicsData();
     auto sprite = Doom::toIndex(thing.sprite);
 
     if (&thing == &viewer || sprite < 0 || sprite >= gfx.numsprites)
         return;
 
-    const auto& definition = Doom::graphicsData().sprites[sprite];
+    const auto& definition = gfx.sprites[sprite];
     auto frameIndex = static_cast<int>(thing.frame & Doom::FF_FRAMEMASK);
 
     if (frameIndex >= definition.numframes)
@@ -850,7 +935,7 @@ void emitSprite(Emitter& emitter,
     if (lump < 0 || lump >= gfx.numspritelumps)
         return;
 
-    auto width = static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt());
+    auto width = static_cast<float>(gfx.spritewidth[lump].toInt());
     auto height = static_cast<float>(spriteHeight(lump));
 
     // A thing moves once a tic, so drawing it where the tic left it makes it
@@ -858,7 +943,7 @@ void emitSprite(Emitter& emitter,
     // get there, so winding that back by the part of the tic still to come puts
     // it where it would be at the moment being drawn.
     auto back = 1.0 - static_cast<double>(snapshot.alpha);
-    auto offset = toDouble(Doom::graphicsData().spriteoffset[lump]);
+    auto offset = toDouble(gfx.spriteoffset[lump]);
 
     auto left = Point {
         toDouble(thing.pos.x) - toDouble(thing.mom.x) * back - right.x * offset,
@@ -866,7 +951,7 @@ void emitSprite(Emitter& emitter,
 
     auto feet =
         toFloat(thing.pos.z) - static_cast<float>(toDouble(thing.mom.z) * back);
-    auto top = feet + toFloat(Doom::graphicsData().spritetopoffset[lump]);
+    auto top = feet + toFloat(gfx.spritetopoffset[lump]);
 
     auto light = (thing.frame & Doom::FF_FULLBRIGHT)
                      ? fullbrightLight()
@@ -875,13 +960,25 @@ void emitSprite(Emitter& emitter,
     auto flip = frame.flip[rotation] != 0;
     auto right_ = Point {left.x + right.x * width, left.y + right.y * width};
 
-    emitter.quad(spriteBase() + lump,
-                 groundSpan(left, right_, top - height, top),
-                 {flip ? 1.0f : 0.0f, flip ? 0.0f : 1.0f, 0.0f, 1.0f},
-                 light);
+    auto span = groundSpan(left, right_, top - height, top);
+    auto uv = QuadUv {flip ? 1.0f : 0.0f, flip ? 0.0f : 1.0f, 0.0f, 1.0f};
+    auto textureId = spriteBase() + lump;
+
+    // A spectre - and a player carrying the invisibility sphere - is drawn as a
+    // distortion of what is behind it rather than out of its own pixels
+    // (drawVisSprite picks fuzzColumn for it), so its quad goes to the runs the
+    // renderer fuzzes instead of the ones it textures. Its light is emitted all
+    // the same: the vertex layout is shared, and the fuzz shader ignores it.
+    if (Doom::hasFlag(thing.flags, Doom::MobjFlag::Shadow))
+        emitter.fuzzQuad(textureId, span, uv, light);
+    else
+        emitter.quad(textureId, span, uv, light);
 }
 
-void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camera)
+void emitSprites(Emitter& emitter,
+                 const Doom::GraphicsData& gfx,
+                 const Doom::Mobj& viewer,
+                 const Camera& camera)
 {
     // The view plane's right axis, the one DOOM measures a sprite's width along,
     // so the billboards stay square-on to the camera being drawn.
@@ -896,7 +993,7 @@ void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camer
         if (!mobj || thinker->removed)
             continue;
 
-        emitSprite(emitter, *mobj, viewer, right);
+        emitSprite(emitter, gfx, *mobj, viewer, right);
     }
 }
 
@@ -904,19 +1001,20 @@ void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camer
 // at a column picked by the direction the player faces. A cylinder around the
 // camera reproduces that - it never moves relative to the viewer, so it has no
 // parallax, and its texture repeats four times around, as the engine's does.
-void emitSky(Emitter& emitter, const Camera& camera)
+void emitSky(Emitter& emitter,
+             const Doom::GraphicsData& gfx,
+             const Doom::SkyState& sky,
+             const Camera& camera)
 {
-    auto& sky = Doom::skyState();
-
     // "Sky is allways drawn full bright, i.e. colormaps[0] is used. Because of
     // this hack, sky is not affected by INVUL inverse mapping" - drawPlanes,
     // whose words those are. Row 0 at any distance, and through any powerup.
     auto light = fixedLight(0);
 
-    if (sky.skytexture <= 0 || sky.skytexture >= Doom::graphicsData().numtextures)
+    if (sky.skytexture <= 0 || sky.skytexture >= gfx.numtextures)
         return;
 
-    auto texture = Doom::graphicsData().texturetranslation[sky.skytexture];
+    auto texture = gfx.texturetranslation[sky.skytexture];
 
     // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
     // row is linear in height on the cylinder, so two rings are exact.
@@ -947,11 +1045,14 @@ void emitSky(Emitter& emitter, const Camera& camera)
     }
 }
 
-void emitFlat(
-    Emitter& emitter, int index, int flat, float height, const Light& light)
+void emitFlat(Emitter& emitter,
+              const Doom::GraphicsData& gfx,
+              int index,
+              int flat,
+              float height,
+              const Light& light)
 {
-    auto textureId = Doom::graphicsData().numtextures
-                     + Doom::graphicsData().flattranslation[flat];
+    auto textureId = gfx.numtextures + gfx.flattranslation[flat];
     auto first = cells.start[index];
 
     auto emitCorner = [&](int corner)
@@ -970,11 +1071,13 @@ void emitFlat(
     }
 }
 
-void emitSubsector(Emitter& emitter, int index)
+void emitSubsector(Emitter& emitter,
+                   const Doom::Level& level,
+                   const Doom::GraphicsData& gfx,
+                   const Doom::SkyState& sky,
+                   int index)
 {
-    auto& sky = Doom::skyState();
-
-    const auto* sector = Doom::level().subsectors[index].sector;
+    const auto* sector = level.subsectors[index].sector;
 
     if (cells.count[index] < 3 || sector == nullptr)
         return;
@@ -985,30 +1088,48 @@ void emitSubsector(Emitter& emitter, int index)
     // drawPlanes paints the sky wherever it finds one, and a floor is as free to
     // carry it as a ceiling.
     if (sector->floorpic != sky.skyflatnum)
-        emitFlat(emitter, index, sector->floorpic, floorHeight(*sector), light);
+        emitFlat(emitter,
+                 gfx,
+                 index,
+                 sector->floorpic,
+                 floorHeight(level, *sector),
+                 light);
 
     if (sector->ceilingpic != sky.skyflatnum)
-        emitFlat(emitter, index, sector->ceilingpic, ceilingHeight(*sector), light);
+        emitFlat(emitter,
+                 gfx,
+                 index,
+                 sector->ceilingpic,
+                 ceilingHeight(level, *sector),
+                 light);
 }
 
+// One reference each, for the whole walk. See sectorIndex above for what asking
+// per line instead was costing.
 void emitWorld(Emitter& emitter, const Camera& camera)
 {
-    for (auto i = 0; i < Doom::level().lines.size(); ++i)
+    const auto& level = Doom::level();
+    const auto& gfx = Doom::graphicsData();
+    const auto& sky = Doom::skyState();
+
+    for (auto i = 0; i < level.lines.size(); ++i)
     {
-        emitLineSide(emitter, Doom::level().lines[i], i, 0);
-        emitLineSide(emitter, Doom::level().lines[i], i, 1);
+        const auto& line = level.lines[i];
+
+        emitLineSide(emitter, level, gfx, sky, line, i, 0);
+        emitLineSide(emitter, level, gfx, sky, line, i, 1);
     }
 
-    for (auto i = 0; i < Doom::level().subsectors.size(); ++i)
-        emitSubsector(emitter, i);
+    for (auto i = 0; i < level.subsectors.size(); ++i)
+        emitSubsector(emitter, level, gfx, sky, i);
 
     const auto* viewer = displayPlayer().mo;
 
     if (viewer == nullptr)
         return;
 
-    emitSky(emitter, camera);
-    emitSprites(emitter, *viewer, camera);
+    emitSky(emitter, gfx, sky, camera);
+    emitSprites(emitter, gfx, *viewer, camera);
 }
 
 //
@@ -1412,6 +1533,11 @@ int darkenRow()
     return 0;
 }
 
+int fuzzPhase()
+{
+    return Doom::drawTables().fuzzpos;
+}
+
 bool buildOverlay(std::span<std::uint8_t> outRgba)
 {
     if (!fits(outRgba, screenPixels * 4))
@@ -1668,39 +1794,59 @@ WorldGeometry
 
     scratch.counts.assign(count, 0);
     scratch.cursors.assign(count, 0);
+    scratch.fuzzCounts.assign(count, 0);
+    scratch.fuzzCursors.assign(count, 0);
+
+    auto span = [count](Vector<int>& of)
+    { return std::span<int> {of.data(), static_cast<std::size_t>(count)}; };
 
     auto emitter = Emitter {};
-    emitter.counts = {scratch.counts.data(), static_cast<std::size_t>(count)};
-    emitter.cursors = {scratch.cursors.data(), static_cast<std::size_t>(count)};
+    emitter.solid = {span(scratch.counts), span(scratch.cursors)};
+    emitter.fuzz = {span(scratch.fuzzCounts), span(scratch.fuzzCursors)};
 
     emitWorld(emitter, camera);
 
     // Each texture's vertices become one contiguous run, so the frame draws once
-    // per texture with no state changes in between.
+    // per texture with no state changes in between. The fuzz runs are laid out
+    // after the solid ones and kept in a span of their own, because they are
+    // drawn last: a fuzz mark stands for the frame beneath it, so everything
+    // that frame is made of has to be in it first.
     auto total = 0;
     auto drawCount = 0;
 
-    for (auto i = 0; i < count; ++i)
+    auto layout = [&](const Emitter::Runs& runs)
     {
-        auto vertexCount = scratch.counts[i];
+        auto first = drawCount;
 
-        if (vertexCount <= 0 || drawCount >= static_cast<int>(into.draws.size())
-            || total + vertexCount > static_cast<int>(into.vertices.size()))
+        for (auto i = 0; i < count; ++i)
         {
-            scratch.cursors[i] = -1;
-            continue;
+            auto vertexCount = runs.counts[i];
+
+            if (vertexCount <= 0 || drawCount >= static_cast<int>(into.draws.size())
+                || total + vertexCount > static_cast<int>(into.vertices.size()))
+            {
+                runs.cursors[i] = -1;
+                continue;
+            }
+
+            runs.cursors[i] = total;
+            into.draws[drawCount++] = {i, total, vertexCount};
+            total += vertexCount;
         }
 
-        scratch.cursors[i] = total;
-        into.draws[drawCount++] = {i, total, vertexCount};
-        total += vertexCount;
-    }
+        return drawCount - first;
+    };
+
+    auto solidDraws = layout(emitter.solid);
+    auto fuzzDraws = layout(emitter.fuzz);
 
     emitter.vertices = into.vertices;
     emitWorld(emitter, camera);
 
     return {into.vertices.first(static_cast<std::size_t>(total)),
-            into.draws.first(static_cast<std::size_t>(drawCount))};
+            into.draws.first(static_cast<std::size_t>(solidDraws)),
+            into.draws.subspan(static_cast<std::size_t>(solidDraws),
+                               static_cast<std::size_t>(fuzzDraws))};
 }
 
 std::span<const AutomapVertex> buildAutomap(const Camera& camera,
@@ -1760,6 +1906,12 @@ Array<HudSprite, hudSpriteCount> hudSprites()
         || player.mo == nullptr)
         return out;
 
+    // The blink as the sphere runs out is vanilla's own: over four seconds left
+    // it is steady, and under that the low bit of the countdown turns it on and
+    // off (drawPSprite).
+    auto invisibility = player.powers[Doom::toIndex(Doom::PowerType::Invisibility)];
+    auto fuzz = invisibility > 4 * 32 || (invisibility & 8) != 0;
+
     for (auto i = 0; i < Doom::numPSprites && i < hudSpriteCount; ++i)
     {
         const auto& weapon = player.psprites[i];
@@ -1790,7 +1942,8 @@ Array<HudSprite, hudSpriteCount> hudSprites()
             {static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt()),
              static_cast<float>(spriteHeight(lump))},
             weaponLight((state->frame & Doom::FF_FULLBRIGHT) != 0),
-            frame.flip[0] != 0};
+            frame.flip[0] != 0,
+            fuzz};
     }
 
     return out;

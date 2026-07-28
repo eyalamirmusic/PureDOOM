@@ -649,9 +649,13 @@ Three things that bite:
   for nothing else. And the shader uniforms are assigned `std::array` for the same
   reason.
 
-  The six shaders share `DoomShader.h`: `DoomShader` resolves a palette index the
-  way the software renderer does (index → COLORMAP row → palette), and
-  `ScreenQuadShader` adds the screen-space quad the four full-frame passes draw.
+  The nine shaders share `DoomShader.h`, which holds all three bases: `DoomShader`
+  resolves a palette index the way the software renderer does (index → COLORMAP row
+  → palette) or writes the index out unresolved (`setIndexFragment`, which is what
+  the world target holds); `ScreenQuadShader` adds the screen-space quad the
+  full-frame passes draw; and `WorldViewShader` adds the camera and the projection,
+  shared by the two shaders that draw off the world's vertex buffer — the surfaces,
+  and the spectres' silhouettes marked over them, which have to agree to the pixel.
   Every shader is the difference from those, and nothing else.
 - `doom1.wad` — the shareware data file the game boots with.
 
@@ -702,6 +706,51 @@ Two paths, toggled at runtime with **Shift+F8**:
     320-column view.
   - Geometry is grouped by texture into one draw per texture; textures upload
     lazily on first use (a WAD holds well over a thousand sprite lumps).
+  - **The world is rendered into a texture, not onto the screen** — and what it
+    writes there is DOOM's own frame, one palette index per pixel, resolved to
+    colour by a full-screen pass afterwards (`ResolveShader`). Spectre fuzz is why
+    (below): a pass cannot sample the target it is drawing into, so the world has to
+    be finished before anything can read it. Keeping it in index space to that point
+    is what makes the fuzz vanilla's own arithmetic rather than an imitation of it
+    in colour space.
+
+    The target is RGBA8 with the index in red and the fuzz mark in green, at the
+    window's pixel size, rebuilt only when that changes. Its depth buffer is its
+    own (`TextureDescriptor::depth`, eacp's E1), and a texture pass is
+    single-sampled whatever the view is — so the two pipelines that draw into it
+    are built at sample count 1 and name the target's format, which is what
+    `View::prepareTargetShader` exists to say.
+- **Spectre fuzz** (B4): what DOOM does with a thing carrying `MF_SHADOW`, which is
+  not to draw it. `R_DrawFuzzColumn` fills the sprite's shape with the pixels
+  already in the frame behind it, one row up or down, remapped through COLORMAP row
+  6 — so the sprite supplies only a silhouette.
+
+  Three pieces, and the awkward one is preserving what is underneath:
+  - `Engine::buildGeometry` hands the spectres back as their own runs
+    (`WorldGeometry::fuzzDraws`) of the same vertex buffer.
+  - `FuzzShader` draws them last, into the world target, **additively** — which is
+    what leaves the index the world wrote in red exactly as it was while raising the
+    mark in green. Overwriting it with a silhouette would leave nothing to distort.
+    Depth is the world's, so a spectre behind a wall is not marked at all; drawing
+    them last is what makes both true at once.
+  - `ResolveShader` replaces a marked pixel with its neighbour a frame-row away,
+    through row 6. Which neighbour comes from `drawFuzzColumn`'s own 50-entry table,
+    indexed by the pixel's place in DOOM's 320x200 frame rather than in the window's
+    — so the grain stays the size it was in 1993 however large the window is. The
+    phase is the engine's own `fuzzpos` (`Engine::fuzzPhase`), read once a tic: the
+    software renderer is still drawing the same spectres, and its walk advances a
+    step per fuzz pixel it lays down, so the animation is content-driven exactly as
+    vanilla's is and stands still when nothing in view is fuzzed. What cannot be
+    reproduced is *where* in the table a given column starts — vanilla's cursor runs
+    down one column and on into the next, which a fragment shader cannot know — so
+    the column contributes a fixed step instead.
+
+  The **weapon** is the same effect on the player's own sprite while the
+  invisibility sphere is up (`drawPSprite` nulls the colormap before it looks at the
+  light or at a powerup's fixed one, so it outranks both, and blinks as the sphere
+  runs out). `HudFuzzShader` marks it into the world target with the spectres rather
+  than drawing it over the screen with the rest of the HUD, so it needs no second
+  copy of any of the above.
 - **GPU automap**: the map as geometry rather than a rasterized frame. What it
   draws and the colour it picks are `AM_Drawer`'s own choices, mirrored in
   `Engine::buildAutomap`; only its Bresenham walk is replaced, by a quad per line
@@ -769,9 +818,17 @@ Two paths, toggled at runtime with **Shift+F8**:
   software frame stops being the status bar and becomes a slice of the world. A
   taller view also wants a wider vertical field of view, which is one more scale on
   the projected y — the horizontal 90 degrees is unchanged.
-- Still missing (B4): spectre fuzz. Anything outside a level (title, intermission,
-  finale) falls back to the software frame automatically, which is right — those
-  screens *are* 320x200 — and the status bar is always composited from it.
+- Anything outside a level (title, intermission, finale) falls back to the software
+  frame automatically, which is right — those screens *are* 320x200 — and the status
+  bar is always composited from it.
+
+**Nothing on this list has a golden over it.** `Tests/Port` covers the *builders*
+(`Engine::buildGeometry`, `Engine::buildAutomap`, and now the spectre split) as
+data, and the frame goldens run the software renderer, which does not execute a line
+of any shader here. A shader change is eyeball-verified, and the standing measurement
+for one is a window capture with `MTL_DEBUG_LAYER=1` on: on Apple silicon a depth
+test appears to work with no attachment at all, so a picture that looks right is only
+half the evidence and a silent validation layer is the other half.
 
 ## Audio
 
@@ -930,14 +987,16 @@ slow bass line at 9.8 messages a second. Measure the thing that is actually play
 ## Build
 
 ```bash
-cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug \
+      -DCPM_eacp_SOURCE=$HOME/Code/eacp-puredoom
 cmake --build build --target PureDoomEACP
 
 ./build/examples/EACP/PureDoomEACP.app/Contents/MacOS/PureDoomEACP
 ```
 
 Targets: `doom-engine`, `PureDoomEACP`, `SimTests` and `PrimitiveTests`,
-`record-goldens`, `nuked-opl3` (the emulated OPL3 the music runs on, linked by the app
+`record-goldens`, `port-bench` (the renderer's CPU cost — see **Measuring the
+renderer**), `nuked-opl3` (the emulated OPL3 the music runs on, linked by the app
 *and* by `SimTests`), and `doom-sim-probe` (the static library holding
 `Tests/SimProbe.cpp`, which both test binaries link so the shim is compiled once).
 Two build options: `PUREDOOM_BUILD_TESTS` and `PUREDOOM_BUILD_EACP_EXAMPLE`.
@@ -959,14 +1018,31 @@ with it; CPM dedupes by NAME, so its `EADataStructures` — reached through Miro
 the one the root already added, and nothing is fetched twice.
 
 eacp is fetched from GitHub via CPM. To co-develop against a local checkout, pass
-`-DCPM_eacp_SOURCE=$HOME/Code/eacp`. Use `$HOME`, not `~` — CMake does not expand
-tildes, and a quoted `~/...` path silently configures against a non-existent
+`-DCPM_eacp_SOURCE=$HOME/Code/eacp-puredoom`. Use `$HOME`, not `~` — CMake does not
+expand tildes, and a quoted `~/...` path silently configures against a non-existent
 directory.
 
-The GPU render paths need four eacp features this port surfaced
-(`TextureFormat::R8Unorm`, `Buffer::update`, `ShaderProgram::setDiscardBelow`, and
-the raw-mouse/warp input fixes). These have merged to eacp `main`, so the default
-CPM fetch builds the app cleanly.
+**`-DCPM_eacp_SOURCE` is no longer required.** It was, for a while: nine features
+this port asked for reached eacp in two waves, and the second wave —
+`TextureDescriptor::depth` (what the world target is created with),
+`RenderPass::setUniforms` (what the hand-rolled draws bind through),
+`RenderPipelineDescriptor::cullMode`, `Graphics::primaryDisplay()` (what the window
+is sized from) and `View::getWindow()` (what the input path asks) — lived only on
+the `puredoom` branch, so the app could not be built without pointing at that
+checkout. All nine are in eacp `main` now.
+
+Checked rather than assumed, which is the only reason this paragraph is allowed to
+say so: a scratch tree configured with **no** `CPM_eacp_SOURCE` at all builds every
+target including the app, and all 120 tests pass in `Release`.
+
+The flag is still what you want for **co-developing** against a local eacp — that
+is what it is for — and `~/Code/eacp-puredoom` is still the checkout to do it in
+(see `EACP_PLAN.md` for why it is a second one at that path and not `~/Code/eacp`).
+It is now a convenience rather than a prerequisite.
+
+`doom-engine` and the tests were never affected either way — they link `eacp-core`
+only, which is why the `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` loop builds against any
+checkout.
 
 The app boots `doom1.wad` from the repository root by default: PureDOOM has no
 `-iwad` argument — it locates WADs via `DOOMWADDIR` (falling back to the current
@@ -977,12 +1053,13 @@ straight through.
 ## Testing
 
 ```bash
-cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCPM_eacp_SOURCE=$HOME/Code/eacp
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug \
+      -DCPM_eacp_SOURCE=$HOME/Code/eacp-puredoom
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-119 tests, roughly forty seconds. **Run it before and after anything you change in
+120 tests, roughly forty seconds. **Run it before and after anything you change in
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -1175,6 +1252,14 @@ whatever the port emits — they do not run a line of it.
   classifies triangles by their *vertices* rather than by texture id (a floor is the
   only horizontal triangle: walls are vertical quads and things are billboards), so
   it stays true through a rewrite of the emitter.
+
+  `Port/spectresAreFuzzed` is the same test file's answer to the same problem one
+  layer up: a spectre emitted as an ordinary sprite draws a perfectly solid demon on
+  the GPU path and passes every other gate in the repository, the software renderer
+  having fuzzed its own copy by hand in `drawFuzzColumn`. It spawns one into E1M1 —
+  which holds none, so the counts move only for what was spawned — with an ordinary
+  barrel as the control, and reads the split off the vertex counts. Demonstrated
+  sharp: routing the spectre back to the textured runs fails it and nothing else.
 - `Port/AutomapTests` grew out of the second, which is worth stating in full because
   it is the general hazard in its purest form. The map's transform read
   `((double) x1 - originX) * scale` with `x1` a raw `int` `fixed_t`. When `fixed_t`
@@ -1327,7 +1412,7 @@ at by accident on one.
 macOS universal build (AppleClang, `arm64;x86_64` — so the x86_64 half is compiled
 though only the arm64 slice is run, the runner being Apple silicon and Rosetta not
 installed on it), and Windows on **x64 and ARM64** under **both MSVC and clang-cl**.
-All five are Ninja, `Release`, every target built and all 119 tests run. The earlier
+All five are Ninja, `Release`, every target built and all 120 tests run. The earlier
 matrix had a `macos-latest × gcc` row that was the clang row run twice: on a macOS
 runner bare `gcc`/`g++` resolve to `/usr/bin`, which is Apple Clang wearing the name.
 
@@ -1390,6 +1475,66 @@ way that is easy to dismiss.
   that `View` owns and delegates to is the prerequisite, and it is where the port's
   subtlest bugs have lived (the double-clock-read that drew frames a tic in the past,
   the five-tic input lag, mouse accumulate-and-flush).
+
+## Measuring the renderer
+
+```bash
+cmake --build build --target port-bench && ./build/Tests/port-bench   # Release
+```
+
+`Tests/Bench/GeometryBench.cpp` builds a frame of world geometry three times per
+tic through all three attract demos and reports what it cost. It is a **benchmark,
+not a test** — ctest never runs it, it asserts nothing, and the output is a number
+to read. It needs no GPU for the same reason `Tests/Port` does not, so the one part
+of a real frame it cannot see is the upload.
+
+**Build it in Release.** A Debug figure is a measurement of the standard library's
+bounds checks.
+
+Three things about it are worth keeping.
+
+- **It carries its own correctness gate**, and that is what made acting on it safe.
+  Every run hashes every vertex and every draw it emitted, so an optimisation is
+  honest exactly when the hash is unchanged. Nothing else could say: the frame
+  goldens run the software renderer, which never executes a line of the port, so
+  "faster" and "quietly emitting less" would otherwise read identically. A benchmark
+  wants a correctness gate as much as a test does.
+- **It reports the walk separately from the stores.** Asking for a frame with a
+  one-vertex buffer makes every run fail the layout's bounds check, so the emitter
+  walks the whole world twice and writes none of it — which is how the double pass
+  (count, then write) was priced without instrumenting the emitter at all. The
+  stores are 7-10µs of it; the rest is the walk, done twice.
+- **The app is the other half, and its absolute numbers are not to be trusted.**
+  Everything in a frame scales together by up to 3x depending which core the
+  display-link thread lands on, which is Apple silicon's scheduler rather than the
+  renderer. The **proportions** hold: `buildGeometry` ~45-55% of `render()`'s CPU,
+  submitting the per-texture draws ~26-31%, the upload 2.2-2.5%. The display holds
+  120.5Hz without dropping a frame, and `render()` uses a few hundred microseconds
+  of an 8.33ms refresh.
+
+**What it found, and the rule it is a case of.** Just over half of `buildGeometry`
+was the engine's *state accessors* rather than geometry: `Doom::level()`,
+`Doom::graphicsData()`, `Doom::skyState()`, `Doom::playerState()` and
+`Doom::lighting()` are out-of-line calls over a function-local static, each
+reaching `Doom::engine()` and its guard, and `EngineAccess.cpp` can inline none of
+them. The emitter asked per line, per side, per texture band, then walked the world
+again — tens of thousands of calls a frame, **51.7% of the builder's disjoint self
+time** against a fifth for the arithmetic they were fetching operands for. Hoisting
+one reference per walk and passing it down cut `buildGeometry` by **43%** (80.9 →
+45.7µs on demo1) with every geometry hash bit-identical.
+
+That is the rule stated under **The `Engine` is the composition root** — hoist a
+cluster's reference once per function rather than calling the accessor per access —
+which had been written for the engine's per-pixel drawers and never applied to the
+port. **It applies to anything that reaches engine state in a loop.** The port is
+the worst case for it, being a separate translation unit where not one accessor can
+be inlined.
+
+Two things generalise past this measurement, both recorded in `EACP_PLAN.md`: the
+item that pays is rarely the item on the list — three plan entries had been written
+against a cost none of them had measured, and the real answer was in none of the
+three — and the whole exercise found nothing a player could see, because the
+renderer has 95% of its frame spare.
 
 ## Porting Rules
 
@@ -1507,7 +1652,7 @@ rather than fail outright.
 
 Found while porting, newest last. Remove entries once fixed in eacp.
 
-Already merged to eacp `main` (all gaps this port surfaced):
+Already merged to eacp `main` (the first batch this port surfaced):
 `TextureFormat::R8Unorm`, so indexed data uploads as one byte per pixel;
 `Buffer::update`, so the world's geometry buffer is re-uploaded rather than
 reallocated; `ShaderProgram::setDiscardBelow`, an alpha test in the shader EDSL; and
@@ -1526,6 +1671,31 @@ find no free buffer and block the calling thread, and that wait lands between sa
 the input and drawing with it. Lowering it to two therefore *raises* latency on Metal
 (measured: sample-to-screen 23ms at three, 32ms at two). **This port should not lower
 it.**
+
+Merged since: **`WindowOptions::aspectRatio`**, the declarative window shape
+constraint — honoured by macOS's native `setContentAspectRatio` and by a `WM_SIZING`
+snap on Windows, so it anchors resize better than the callback did and also governs
+zoom; and **the shader EDSL's full intrinsic set** — `floor fract abs min max clamp
+step smoothstep mix sign fmod pow sqrt rsqrt exp log ceil round atan2 dot cross
+normalize length distance reflect`, each taking a float literal in any argument
+position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
+`ifThen`, `loop`), `Array<T, N>`, and texel `fetch`.
+
+**And merged since that**, the five this port built on the `puredoom` branch and
+carried for a while as *answered but not shipped*: `TextureDescriptor::depth`
+(entry 7), `RenderPass::setUniforms` (11), `RenderPipelineDescriptor::cullMode`
+(8), `Graphics::primaryDisplay()` (4) and `View::getWindow()` (9). All five are in
+eacp `main`, so **`-DCPM_eacp_SOURCE` is no longer needed to build the app** — see
+**Build**, where that is measured rather than assumed.
+
+Their entries below are marked **Closed** but kept rather than deleted, because
+each carries a lesson that outlived the gap — the depth attachment's *"a passing
+render test is not evidence the attachment happened"*, and cull mode's *"a
+cross-backend convention cannot be established on one backend and inferred onto the
+other"*, which Windows demonstrated by failing two `CullModeTests` cases on its
+first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
+
+**Numbers are never reused**, so a hole in the sequence below is an entry that closed.
 
 1. **No audio subsystem** — and eacp is not where this was answered. The output
    device comes from [MakeASound](https://github.com/eyalamirmusic/MakeASound), a CPM
@@ -1552,30 +1722,104 @@ it.**
    eacp is the top-level project, so `set_default_target_setting()` on a consumer app
    target would stamp an empty Info.plist template. Workaround:
    `examples/EACP/CMakeLists.txt` sets the `EACP_MACOS_PLIST` cache variable itself.
-4. **No display-metrics API.** Nothing public reports the screen's visible size, so an
-   app cannot pick an initial window size that fits the display, nor clamp/center
-   itself. Workaround: a conservative 3x default plus a resizable window with
-   letterboxed rendering.
-5. **No declarative window aspect-ratio constraint.** `WindowOptions::onWillResize`
-   works for keeping a window 4:3, but macOS has a native
-   `NSWindow.contentAspectRatio` that anchors resize better and also governs zoom.
-6. **The shader EDSL has almost no scalar maths.** `sin`/`cos` exist but there is no
-   `floor`, `fract`, `abs`, `min`/`max`/`clamp`, `step` or `mix` for `Float`. B2 dodged
-   this by letting the samplers do the work — `Repeat` tiles wall textures instead of
-   `fract`, `Nearest` rounds the COLORMAP row instead of `floor`, `Clamp` bounds it —
-   but any shader wanting real arithmetic will hit this.
-7. **No offscreen render targets.** `Frame` only ever renders into the view's
-   drawable, so a pass cannot render into a texture and sample it later. Any
-   post-processing pass — a CRT/scanline filter — needs exactly that. (DOOM's melt
-   turned out not to; see **Renderer status**.)
-8. **No cull-mode state** in `RenderPipelineDescriptor`. Not blocking (DOOM's walls
-   are fine drawn double-sided), but every triangle is rasterised from both faces.
-9. **A `View` cannot reach the `Window` it is in.** Anything a view needs from its
-   window — the mouse lock, the modifier keys — has to be handed to it by the app.
-   This port declares the window *before* the view and hands it over as a
-   `Graphics::Window&` at construction, which makes it impossible to be null. That is
-   a workaround, not a fix: it constrains member order in `App`. A `View::getWindow()`,
-   or a window reference given on `setContentView`, would settle it.
+4. **There was no display-metrics API.** **Closed** — merged into eacp `main`.
+
+   Nothing public reported the screen's visible size, so an app could not pick an
+   initial window size that fits the display, nor clamp or centre itself.
+   `Graphics::primaryDisplay()` returns a frame, a **work area** (the frame less the
+   menu bar and the Dock, or the taskbar) and a backing scale, all in **points** —
+   the unit `WindowOptions::width` is already in, so a size read from it goes
+   straight to a window.
+
+   `Layout.h`'s `windowScale()` is what replaced the 3x guess: the largest whole
+   multiple of 320x240 that fits 90% of the work area, capped at 4 and floored at 1.
+   Whole multiples because a fractional one puts a texel grid on a pixel grid it does
+   not divide into. On the machine this was built on it picks 3 — the same number the
+   guess had, now derived rather than assumed, and 4 on a larger display.
+7. **An offscreen pass had no depth attachment.** **Closed** — merged into eacp
+   `main`.
+
+   `TextureDescriptor::renderTarget` and `Frame::beginPass(target, …)` were real, so a
+   pass could render into a texture a later pass sampled — but `Frame.h` said the limit
+   outright: *"Multisampling and depth are deliberately absent."* The GPU world path
+   sets `setDepth(true)` and depends on it, so **the world could not be rendered into a
+   texture**, which is the one thing this port wants an offscreen target for. It blocked
+   two things at once: **spectre fuzz** (B4), whose faithful implementation is
+   world→texture then a fuzz pass sampling that texture at a jittered offset through
+   COLORMAP row 6, and the **screen melt**, which composites an outgoing frame that
+   stays a 320x200 software capture for the same reason.
+
+   The fix is `TextureDescriptor::depth`, beside `renderTarget` and `computeWrite`: the
+   buffer is created with the colour texture and dies with it, so a target stays one
+   object with no second lifetime to keep in step, and every pass clears it to the far
+   plane and stores nothing. `Texture::hasDepth()` is what a pipeline is built from.
+   MSAA there stays absent and should — a texture target has nothing to resolve *into*.
+
+   **What that work taught, and it generalises past eacp: on Apple silicon a depth test
+   appears to work with no depth attachment at all.** The tile memory is there either
+   way, so nulling the attachment left the new test green while Metal's validation layer
+   reported `MTLDepthStencilDescriptor sets depth test but MTLRenderPassDescriptor has a
+   nil depthAttachment texture` for every draw. A rendering test that passes is therefore
+   *not* evidence the attachment happened — **run the GPU suite under `MTL_DEBUG_LAYER=1`
+   and treat a silent validation layer as the other half of the measurement.** D3D12 has
+   no such luck (`OMSetRenderTargets` with a null DSV genuinely disables the test), which
+   is the second reason the Windows leg of CI is worth its cost.
+
+   **Spectre fuzz is built on it and works** (see **Renderer status**), which is what
+   turns the feature from plausible into measured. Two of its consequences were
+   predicted here and one was not. The sample count *was* a consequence and cost
+   nothing: this view has always been `setSampleCount(1)`, so the world's pipeline
+   was already the single-sampled one a texture pass needs — it only had to name the
+   target's pixel format as well. The unpredicted one is that the world moving into
+   a texture makes the **melt's** remaining 320x200 capture a choice rather than a
+   constraint: the outgoing frame could now be the target itself. Still not done, and
+   no longer blocked.
+8. **There was no cull-mode state** in `RenderPipelineDescriptor`. **Closed** —
+   merged into eacp `main`.
+
+   `RenderPipelineDescriptor::cullMode` reaches Metal's encoder (culling being encoder
+   state there, so it is set on *every* `setPipeline`, or a culled draw leaves its mode
+   behind for the next one) and D3D12's rasterizer desc.
+
+   **The winding turned out to be the whole of it, and it is worth knowing here
+   because the same trap is one this port could have walked into.** Both backends
+   default to "clockwise is front-facing" and mean different things by it: Metal
+   decides facing in *clip* space — measured, not assumed — and D3D12 in *screen*
+   space, one viewport y-flip apart, so left alone the two cull opposite faces of the
+   same mesh. eacp now states the convention in the space a shader is written in
+   (counter-clockwise in clip space, as glTF has it) and sets each backend to whatever
+   produces it. That measurement corrected a first attempt that had reasoned it out
+   and got it backwards.
+
+   **Then Windows corrected the correction.** The Metal half was measured; the D3D12
+   half was left as what its rasterizer rule *implies*, with `CullModeTests` there to
+   say so if the implication was wrong. On its first Windows run it failed exactly
+   two cases — `CullMode/backKeepsTheFrontFace` and `CullMode/frontKeepsTheBackFace`,
+   on all four Windows rows — and the fix is upstream. **A cross-backend convention
+   cannot be established on one backend and inferred onto the other**; that is the
+   same lesson as the y-flip, one level up, and the only reason it cost a test run
+   rather than an app finding its world inside out is that the gate was written
+   before the answer was known.
+
+   **This port does not enable it yet**, which is the honest position rather than a
+   free win: `Engine::buildGeometry` emits walls from both sides of a linedef and
+   floors from clipped subsector polygons, and nothing has ever measured whether their
+   winding is consistent. A wrongly-wound triangle under culling does not draw wrongly,
+   it does not draw at all — which is the Windows-missing-floors failure again, and
+   `Tests/Port/GeometryTests` is where that measurement would belong.
+9. **A `View` could not reach the `Window` it is in.** **Closed** — merged into
+   eacp `main`.
+
+   `View::getWindow()` returns the window or null. A pointer rather than the reference
+   this port used to be handed, because a view can precede its window, outlive it or
+   never have one; only the view a window adopts carries it, and everything under that
+   walks up. `Window` owns the back-pointer as a member, so a view outliving its window
+   reports none rather than a dangling one.
+
+   `View` here no longer takes a `Graphics::Window&`, and `App`'s member order is now
+   only an order rather than a constraint. The four call sites became `isAiming()` and
+   one guarded block — the mouse lock and the polled modifier keys, which is entry 2's
+   workaround and still needed.
 10. **`-fno-gnu-unique` is added for every language.** eacp's top-level CMake adds it
     when the CXX compiler is GCC, but the option lands on all languages — including
     the OBJCXX its Apple platform files compile, and OBJCXX on macOS is always Apple
@@ -1585,11 +1829,122 @@ it.**
     `$<$<COMPILE_LANGUAGE:CXX>:-fno-gnu-unique>` on every target under eacp's directory
     tree after `CPMAddPackage` — on the targets, not the directories, because a target
     snapshots its directory's `COMPILE_OPTIONS` at creation.
-11. **eacp binds the uniform buffer to both stages**, so Metal's validation layer logs
-    an "unused binding" warning for every pass whose vertex or fragment function
-    declares no uniform parameter — benign, but it is what Xcode's runtime-issues panel
-    fills up with. The emitter already computes `vertexUsesUniforms(graph)`, so gating
-    the bind on it would settle it.
+11. **eacp bound the uniform buffer to both stages.** **Closed** — merged into
+    eacp `main`.
+
+    `RenderPass::draw(program)` bound the block to both stages unconditionally, so
+    every pass whose vertex or fragment function declares no uniform parameter drew
+    an "unused binding" from Metal's validation layer — benign, but it is what
+    Xcode's runtime-issues panel fills up with, and the validation layer's *silence*
+    is this port's own measurement for a shader change.
+
+    The answer was already computed and thrown away: the emitter decides per stage
+    whether to declare the block at all. `vertexReadsUniforms`/`fragmentReadsUniforms`
+    are public now, `GeneratedShader` carries both and `ShaderProgram` hands them on,
+    so the bind and the signature it is aimed at come from one walk and cannot drift.
+    `RenderPass::setUniforms(program)` is what `draw` calls — **and what app code
+    hand-rolling a draw should call**, which is why this port's two hand-rolled draws
+    (`View::drawGeometry`, the automap) now do.
+
+    Two shaders here are the case it was written for: `FuzzShader` and
+    `HudFuzzShader` write a constant colour, so their fragment stage declares no
+    block and was being bound anyway, once per run, every frame.
+12. **No texture arrays, and no atlas primitive.** There is no `Texture2DArray` and no
+    array-slice binding anywhere in the GPU module. That is why the world is drawn as
+    one draw per texture (`View::drawGeometry`), which is the largest draw count in the
+    renderer, and why instancing the billboards would win CPU work rather than draws.
+    With an array texture — or a sampler-visible atlas with a slice index per vertex —
+    the whole level collapses into a single draw, and the group-by-texture bookkeeping
+    in `Engine::buildGeometry` goes with it.
+
+    **Measured** (see **Measuring the renderer**): 119 to 131 draws a frame across
+    the three attract demos, costing 26-31% of `render()`'s CPU — the largest single
+    item left, and still around 1% of a refresh. So the entry stands **for its shape
+    rather than its speed**. The sharpest version of it is that asking **I1** to put
+    *one* draw over app-owned geometry back on the supported path is a far smaller
+    request than asking it for 125.
+13. **`R8Unorm` is not a `PixelFormat`**, so a single-channel *render target* is not
+    expressible: `PixelFormat` has BGRA8, RGBA8, RGBA16F and RGBA32F, while
+    `TextureFormat` has had R8Unorm since this port asked for it.
+
+    **The entry is worth less than it looked, and building spectre fuzz is what
+    measured that.** It was written as the thing standing between this port and
+    vanilla's own algorithm — render the post-COLORMAP *index* into an R8 target,
+    remap it through row 6 as `R_DrawFuzzColumn` does, resolve the palette at the
+    end — with RGBA8 as a fallback at four times the bandwidth. The port took the
+    fallback and the algorithm is exact, because the format was never what made it
+    faithful; keeping the frame in index space was, and RGBA8 round-trips an 8-bit
+    unorm index exactly. What the extra channels then turned out to be *for* is the
+    fuzz mask: a spectre has to raise a mark without disturbing the index beneath it,
+    which is one more channel and an additive blend. So R8 would not have served this
+    at all, and what it would save is two channels rather than three. It remains
+    worth having for a single-channel target that genuinely wants one; it is not
+    blocking anything here.
+
+    Independently, and worth fixing either way:
+    `pixelFormatFor(TextureFormat::R8Unorm)` falls through its `default:` and returns
+    `PixelFormat::RGBA8Unorm` — a silent disagreement between a pipeline and its
+    attachment, of exactly the kind that function's own comment says neither backend
+    will accept. Unreachable today only because R8 cannot be a render target; it stops
+    being unreachable the moment this entry lands.
+
+### Interface findings
+
+The same rule and the same log, but these are not missing features. eacp can do the
+thing; the *shape* of the API made this port write something it should not have had
+to. They are worth as much as any feature, and were recorded nowhere before.
+
+I1. **A `ShaderProgram` owns its vertex buffer, so app-owned geometry falls off the
+    supported path.** `RenderPass::draw(program)` does six things — sets the pipeline,
+    binds `program.vertices()`, binds the uniform block to both stages, binds textures,
+    binds storage buffers, and issues the draw — and every one assumes the program owns
+    its geometry. The world's does not: it is a `Buffer` this port owns and updates in
+    place every frame, drawn as sub-ranges with a different texture per range. So
+    `View::drawGeometry` cannot call `draw(program)` and reassembles its body by hand
+    instead, line for line, because one assumption in it does not hold. That is the
+    clearest interface finding of the port, and it is the largest draw in the whole
+    renderer. A `draw(program, buffer, vertexCount, firstVertex)` overload — or a
+    program that can be told its geometry lives elsewhere — puts it back on the path.
+
+I2. **`bindTextures` is public only because `draw(program)` calls it.** A direct
+    consequence of I1: it reads as an internal and documents itself as one — its own
+    comment is *"`RenderPass::draw(program)` calls this"* — and app code has to call it
+    because it took the draw apart. Fixing I1 hands it back to eacp.
+
+I3. **A texture's sampling is fixed when the shader compiles.** Deliberate, documented,
+    and with a Windows driver bug behind it (eacp's `SAMPLERS.md`), so this is a note
+    rather than a request — but the consequence should be written where a reader meets
+    it before hitting it: `WorldShader` has to set `texture.sampling` *before*
+    `compile()`, and a program wanting one texture slot sampled two ways needs two
+    programs.
+
+I4. **`setFramesInFlight` means two different things** — the note above the list, which
+    belongs at eacp's own declaration rather than here. One name, two meanings, and the
+    wrong intuition is the natural one.
+
+I5. **`prepare(int sampleCount, bool depth)` is a positional bool**, at the front door
+    of every shader: this port writes `shader.prepare(sampleCount(), true)` and nothing
+    at the call site says what the `true` is. A small descriptor, or a named enum,
+    reads better — and would have somewhere obvious to put a depth *format* if entry
+    7's offscreen depth ever needs one.
+
+    **Rendering into a texture makes this sharper, because the tail of the parameter
+    list is where a target's own answers live.** A shader drawing into the world
+    target has to say sample count 1, depth, topology and pixel format, so the call
+    becomes `prepare(1, true, GPU::PrimitiveTopology::Triangles, blend,
+    GPU::pixelFormatFor(worldTargetFormat))` — five positional arguments of which
+    three exist only to reach the fifth. The port hides it behind
+    `View::prepareTargetShader`, which is the workaround and also the shape of the
+    fix: the four that describe *where the draw lands* travel together and come from
+    one place, so a `prepare(const Texture&, …)` overload — or a descriptor carrying
+    them — would read as what it is.
+
+    **Half-answered on the branch, by entry 8's work rather than on its own.**
+    `ShaderProgram::prepare` takes a `RenderPipelineDescriptor` too now, so every
+    field has a name at the call site — which is what let cull mode land at all,
+    there being no sixth positional slot worth adding. The better half is still
+    open: the descriptor is filled in by hand from a target the caller is holding,
+    so `prepareTargetShader` still exists to do it.
 
 ## MakeASound Gap Log
 

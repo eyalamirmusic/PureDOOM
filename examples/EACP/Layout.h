@@ -2,33 +2,39 @@
 
 #include "Common.h"
 
+#include <eacp/Graphics/Window/Display.h>
+
+#include <algorithm>
+
 namespace PureDoom
 {
-// Snaps a proposed content size back to DOOM's 4:3 shape by applying the smaller
-// of the two possible corrections, so dragging any edge or corner feels natural.
-inline void keepDisplayAspect(int& width, int& height)
+// How many times 320x240 fits in what the display will actually give a window,
+// with a margin for the title bar the work area does not know about. At least
+// one, so a display smaller than DOOM still opens a window rather than none.
+inline int windowScale()
 {
-    constexpr auto aspect = displayWidth / displayHeight;
+    const auto work = Graphics::primaryDisplay().workArea;
 
-    auto heightFromWidth = (float) width / aspect;
-    auto widthFromHeight = (float) height * aspect;
+    const auto horizontal = (int) (work.w * 0.9f / displayWidth);
+    const auto vertical = (int) (work.h * 0.9f / displayHeight);
 
-    if (std::abs(heightFromWidth - (float) height)
-        <= std::abs(widthFromHeight - (float) width))
-        height = (int) std::lround(heightFromWidth);
-    else
-        width = (int) std::lround(widthFromHeight);
+    return std::max(1, std::min({horizontal, vertical, maxWindowScale}));
 }
 
 inline Graphics::WindowOptions windowOptions()
 {
+    const auto scale = windowScale();
+
     auto options = Graphics::WindowOptions {};
-    options.width = (int) displayWidth * windowScale;
-    options.height = (int) displayHeight * windowScale;
+    options.width = (int) displayWidth * scale;
+    options.height = (int) displayHeight * scale;
     options.title = "Pure DOOM (eacp)";
     options.minWidth = (int) displayWidth;
     options.minHeight = (int) displayHeight;
-    options.onWillResize = keepDisplayAspect;
+
+    // The constraint governs resizing but is not retro-fitted to the size asked
+    // for above, which is already 4:3 because the scale multiplies both.
+    options.aspectRatio = Graphics::Point {displayWidth, displayHeight};
     return options;
 }
 

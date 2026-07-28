@@ -4,28 +4,13 @@
 
 namespace PureDoom
 {
-// The level as hardware 3D, at the window's resolution. DOOM's map coordinates
-// (x, y on the ground, z up) arrive as (x, z, -y), and the full-frame projection
-// is squeezed into the 3D viewport's sub-rect of the window - offsets scale by w
-// so they survive the perspective divide - leaving the status bar and the
-// letterbox bars alone.
-struct WorldShader final : DoomShader
+// The level's surfaces - walls, floors, ceilings, the sky and every thing in it
+// as a billboard - drawn into the world target as palette indices rather than as
+// colours (DoomShader::setIndexFragment). The camera and the projection are
+// WorldViewShader's; what is here is the texture and the light.
+struct WorldShader final : WorldViewShader
 {
-    WorldShader()
-    {
-        // Wall textures and flats tile across a surface, so they repeat. A floor
-        // needs it most: its UVs are world coordinates over 64, running to
-        // hundreds, where clamping would sample one texel and draw the whole
-        // surface a single flat colour.
-        //
-        // Declared here rather than on the Texture because the sampler is fixed
-        // when the shader compiles - see GPU::TextureSampling. Set before
-        // compile(), which is what reads it.
-        texture.sampling = {GPU::TextureFilter::Nearest,
-                            GPU::TextureAddressMode::Repeat};
-
-        compile();
-    }
+    WorldShader() { compile(); }
 
     void define() override
     {
@@ -34,18 +19,7 @@ struct WorldShader final : DoomShader
         auto light = vertexInput(&Engine::WorldVertex::light);
         auto falloff = vertexInput(&Engine::WorldVertex::falloff);
 
-        auto view = rotateY(-yaw) * translate(-camX, -camY, -camZ);
-        auto fovY = 2.0f * std::atan(1.0f / worldAspect);
-        auto projection = perspective(constant(worldAspect), fovY, 4.0f, 16384.0f);
-        auto clip = projection * view * float4(position, 1.0f);
-
-        auto x = clip.x() * ndcScale.x() + clip.w() * ndcOffset.x();
-        auto y = clip.y() * ndcScale.y() + clip.w() * ndcOffset.y();
-        setPosition(float4(x, y, clip.z(), clip.w()));
-
-        // The projection's w is the view depth, so the distance the light
-        // falloff needs comes free with the transform.
-        auto depth = varying(clip.w());
+        auto depth = varying(setWorldPosition(position));
         auto startMap = varying(light);
         auto recedes = varying(falloff);
         auto texel = sample(texture, varying(uv));
@@ -64,28 +38,9 @@ struct WorldShader final : DoomShader
         auto row =
             startMap - recedes * (constant(1280.0f) / (depth + constant(16.0f)));
 
-        setPaletteFragment(darkened(remap(indexOf(texel), row)));
+        setIndexFragment(remap(indexOf(texel), row));
     }
 
-    GPU::Uniform<GPU::Float> camX;
-    GPU::Uniform<GPU::Float> camY;
-    GPU::Uniform<GPU::Float> camZ;
-    GPU::Uniform<GPU::Float> yaw;
-    GPU::Uniform<GPU::Float2> ndcScale;
-    GPU::Uniform<GPU::Float2> ndcOffset;
-
-    // Rebound per draw: the frame's geometry is grouped by texture.
-    GPU::Uniform<GPU::Texture2D> texture;
-
-    EACP_SHADER(camX,
-                camY,
-                camZ,
-                yaw,
-                ndcScale,
-                ndcOffset,
-                darkenRow,
-                texture,
-                colormap,
-                palette)
+    EACP_SHADER(camX, camY, camZ, yaw, ndcScale, ndcOffset, texture, colormap)
 };
 } // namespace PureDoom

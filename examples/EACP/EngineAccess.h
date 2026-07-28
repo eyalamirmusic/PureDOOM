@@ -143,6 +143,12 @@ struct HudSprite
     float light = 0.0f;
 
     bool flip = false;
+
+    // Whether the weapon is fuzzed, which it is while the player is carrying
+    // the invisibility sphere: drawPSprite makes that choice before it looks at
+    // the light or at a powerup's fixed colormap, so it outranks both. Drawn
+    // like a spectre and for the same reason - see fuzzDraws.
+    bool fuzz = false;
 };
 
 struct Camera
@@ -209,6 +215,13 @@ void revealAutomap();
 // menu is up. Row 0 is the identity map, so applying it unconditionally costs
 // one lookup and changes nothing.
 int darkenRow();
+
+// Where drawFuzzColumn's walk through its distortion table has reached. The
+// software renderer draws the same spectres this frame does, and the walk
+// advances one step per fuzz pixel it lays down, so reading it once a tic gives
+// the GPU path vanilla's own animation - content-driven, and standing still
+// when nothing in view is fuzzed - rather than a clock.
+int fuzzPhase();
 
 // The layers the engine draws over the view in software and nothing else
 // reproduces: HUD messages, the level name, the PAUSE graphic, the menu, and
@@ -310,6 +323,13 @@ struct WorldGeometry
 {
     std::span<const WorldVertex> vertices;
     std::span<const TextureDraw> draws;
+
+    // The spectres, and anything else the engine draws with fuzz - a player
+    // carrying the invisibility sphere. Runs of the same vertex buffer, grouped
+    // by texture the same way, but drawn last and not for their pixels: DOOM
+    // fills those quads with the frame beneath them, so what the renderer wants
+    // from them is only their shape (View::drawFuzz).
+    std::span<const TextureDraw> fuzzDraws;
 };
 
 // Builds this frame's world geometry - textured walls, floors, ceilings, the

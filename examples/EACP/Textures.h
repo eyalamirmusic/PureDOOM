@@ -29,9 +29,8 @@ inline GPU::Texture makePaletteTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
-// One row per light level. The shaders sample it clamped, so a surface too
-// bright or too far simply lands on the first or the last row and none of them
-// needs a clamp of its own.
+// One row per light level. It is fetched by texel rather than sampled, so no
+// address mode bounds it and DoomShader::remap does the clamping.
 inline GPU::Texture makeColormapTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};
@@ -63,6 +62,27 @@ inline GPU::Texture makeWipeOffsetTexture()
     descriptor.width = Engine::wipeColumns;
     descriptor.height = 1;
     descriptor.format = GPU::TextureFormat::R8Unorm;
+
+    return GPU::Device::shared().makeTexture(descriptor, nullptr);
+}
+
+// What the world is rendered into, at the window's own resolution: DOOM's frame
+// rather than a picture of it - a palette index per pixel in red, and the fuzz
+// mark a spectre leaves in green (DoomShader::setIndexFragment). Its depth
+// buffer is the target's own, created with it and gone with it.
+//
+// RGBA8 for one useful channel and a half, because eacp has no single-channel
+// PixelFormat and a render target must name one (see the gap log). The second
+// channel is wanted regardless, so what R8 would save is two channels rather
+// than three.
+inline GPU::Texture makeWorldTarget(int width, int height)
+{
+    auto descriptor = GPU::TextureDescriptor {};
+    descriptor.width = width;
+    descriptor.height = height;
+    descriptor.format = worldTargetFormat;
+    descriptor.renderTarget = true;
+    descriptor.depth = true;
 
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }

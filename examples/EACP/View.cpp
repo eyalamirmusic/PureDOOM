@@ -48,8 +48,7 @@ static void syncModifierKey(bool pressed, bool wasPressed, Doom::Key key)
         Doom::keyUp(key);
 }
 
-View::View(Graphics::Window& windowToUse)
-    : window(windowToUse)
+View::View()
 {
     setSampleCount(1);
     setDepth(true);
@@ -58,11 +57,22 @@ View::View(Graphics::Window& windowToUse)
     setContinuous(true);
 
     prepareQuadShader(screenShader);
+    prepareQuadShader(resolveShader);
     prepareQuadShader(hudShader);
     prepareQuadShader(overlayShader);
     prepareQuadShader(wipeShader);
     prepareShader(automapShader);
-    prepareShader(worldShader);
+
+    prepareTargetShader(worldShader, GPU::BlendMode::None);
+    prepareTargetShader(fuzzShader, GPU::BlendMode::Additive);
+
+    hudFuzzShader.setVertices(unitQuad);
+    prepareTargetShader(hudFuzzShader, GPU::BlendMode::Additive);
+
+    // The world resolves its own COLORMAP row on the way into the target; the
+    // palette waits for the resolve, and the fuzz shaders write no colour at
+    // all, so neither lookup is theirs.
+    worldShader.colormap = colormapTexture;
 
     screenShader.screenIndices = framebuffer;
     overlayShader.overlay = overlayTexture;
@@ -88,16 +98,31 @@ void View::prepareQuadShader(ScreenQuadShader& shader)
     shader.setVertices(unitQuad);
     prepareShader(shader);
 }
+void View::prepareTargetShader(GPU::ShaderProgram& shader,
+                               GPU::BlendMode blend) const
+{
+    shader.prepare(worldTargetSamples,
+                   true,
+                   GPU::PrimitiveTopology::Triangles,
+                   blend,
+                   GPU::pixelFormatFor(worldTargetFormat));
+}
 void View::update(Threads::FrameTime)
 {
     // Ahead of the early return below: the device wants feeding on every
     // refresh, not only on the ones a tic falls on.
     audio.pump();
 
-    if (window.isCommandPressed())
-        window.setMouseLocked(false);
+    // Command releases the mouse, which is the only way out of a locked window
+    // on macOS - and the modifiers have to be polled because eacp reports no key
+    // events for them (gap 2), which DOOM binds as ordinary keys.
+    if (auto* host = getWindow())
+    {
+        if (host->isCommandPressed())
+            host->setMouseLocked(false);
 
-    syncModifierKeys(window.getModifiers());
+        syncModifierKeys(host->getModifiers());
+    }
 
     // One reading of the engine's clock answers both of the questions the
     // frame has for it: whether a tic is due, and how far into the tic the
@@ -205,13 +230,12 @@ void View::render(GPU::Frame& frame)
     auto gpuView = gpuWorld && Engine::viewActive() && !worldTextures.empty()
                    && (!Engine::isWiping() || wipeVisible);
 
-    auto pass = frame.beginPass({Graphics::Color::black()});
-
     setDarkenRow((float) Engine::darkenRow());
 
     if (!gpuView)
     {
-        drawScreen(pass, bounds, dst, 0.0f, 1.0f);
+        auto screenPass = frame.beginPass({Graphics::Color::black()});
+        drawScreen(screenPass, bounds, dst, 0.0f, 1.0f);
         frameChanged = false;
         return;
     }
@@ -223,11 +247,21 @@ void View::render(GPU::Frame& frame)
 
     // The engine skips the 3D view entirely while the automap is up, so the
     // two never share the frame.
-    if (Engine::automapActive())
+    auto onMap = Engine::automapActive();
+
+    // Into a texture, and before the screen's pass opens: what a spectre shows
+    // is the frame behind it, and no pass can read the one it is writing.
+    auto worldDrawn = !onMap && renderWorld(frame, bounds, viewport, rows);
+
+    auto pass = frame.beginPass({Graphics::Color::black()});
+
+    if (onMap)
         drawAutomap(pass, bounds, viewport);
     else
     {
-        drawWorld(pass, bounds, viewport, rows);
+        if (worldDrawn)
+            resolveWorld(pass, bounds, viewport, rows);
+
         drawWeapon(pass, bounds, viewport, rows);
     }
 
@@ -277,11 +311,16 @@ void View::drawScreen(GPU::RenderPass& pass,
     screenShader.uvY = std::array {uvTop, uvBottom};
     pass.draw(screenShader);
 }
-void View::drawWorld(GPU::RenderPass& pass,
-                     const Graphics::Rect& bounds,
-                     const Graphics::Rect& viewport,
-                     float rows)
+bool View::renderWorld(GPU::Frame& frame,
+                       const Graphics::Rect& bounds,
+                       const Graphics::Rect& viewport,
+                       float rows)
 {
+    ensureWorldTarget();
+
+    if (!worldTarget)
+        return false;
+
     // Rebuilt every frame rather than every tic, because the billboards and
     // the sky are built around the camera being drawn from, and that moves
     // with the view between tics rather than with the engine.
@@ -289,74 +328,141 @@ void View::drawWorld(GPU::RenderPass& pass,
     auto world = Engine::buildGeometry(camera, ticFraction, {geometry, draws});
 
     if (world.draws.empty())
-        return;
+        return false;
 
     worldBuffer.update(world.vertices.data(), world.vertices.size_bytes());
 
-    worldShader.camX = camera.pos.x;
-    worldShader.camY = camera.pos.z;
-    worldShader.camZ = -camera.pos.y;
-    worldShader.yaw = camera.angle - pi / 2.0f;
+    worldShader.setView(camera, bounds, viewport, rows);
+    fuzzShader.setView(camera, bounds, viewport, rows);
 
-    // The projection is built for the view with the status bar up, so a
-    // taller view has to widen its vertical field of view by the same
-    // proportion - which on a perspective projection is one scale on y, and
-    // the viewport already applies one.
-    worldShader.ndcScale =
-        std::array {viewport.w / bounds.w,
-                    viewport.h / bounds.h * (viewRowsWithStatusBar / rows)};
+    auto pass = frame.beginPass(*worldTarget, {Graphics::Color::black()});
 
-    worldShader.ndcOffset =
-        std::array {(viewport.x + viewport.w * 0.5f) / bounds.w * 2.0f - 1.0f,
-                    1.0f - (viewport.y + viewport.h * 0.5f) / bounds.h * 2.0f};
+    drawGeometry(pass, worldShader, world.draws);
 
-    pass.setPipeline(worldShader.pipeline());
+    // Last, and only now: a mark stands for the pixels beneath it, so they all
+    // have to be there. Depth keeps a spectre behind a wall from being marked
+    // at all - the weapon needs no such test, being in front of everything.
+    drawGeometry(pass, fuzzShader, world.fuzzDraws);
+    markWeaponFuzz(pass, bounds, viewport, rows);
+
+    return true;
+}
+void View::drawGeometry(GPU::RenderPass& pass,
+                        WorldViewShader& shader,
+                        std::span<const Engine::TextureDraw> runs)
+{
+    if (runs.empty())
+        return;
+
+    pass.setPipeline(shader.pipeline());
     pass.setVertexBuffer(worldBuffer);
-    pass.setVertexUniforms(worldShader);
-    pass.setFragmentUniforms(worldShader);
+    pass.setUniforms(shader);
 
-    for (const auto& draw: world.draws)
+    for (const auto& run: runs)
     {
-        worldShader.texture = textureFor(draw.textureId);
-        worldShader.bindTextures(pass);
-        pass.draw(draw.vertexCount, draw.firstVertex);
+        shader.texture = textureFor(run.textureId);
+        shader.bindTextures(pass);
+        pass.draw(run.vertexCount, run.firstVertex);
     }
+}
+void View::resolveWorld(GPU::RenderPass& pass,
+                        const Graphics::Rect& bounds,
+                        const Graphics::Rect& viewport,
+                        float rows)
+{
+    auto scale = backingScale();
+
+    resolveShader.setDestination(bounds, viewport);
+    resolveShader.targetSize = std::array {targetPixels.x, targetPixels.y};
+
+    // One column and one row of DOOM's own frame, in this target's pixels: the
+    // fuzz keeps 1993's grain however large the window is.
+    resolveShader.fuzzGrain = std::array {
+        viewport.w * scale / (float) Engine::screenWidth, viewport.h * scale / rows};
+
+    resolveShader.fuzzPhase = (float) Engine::fuzzPhase();
+
+    pass.draw(resolveShader);
+}
+void View::ensureWorldTarget()
+{
+    auto scale = backingScale();
+    auto bounds = getLocalBounds();
+    auto pixels =
+        Graphics::Point {std::round(bounds.w * scale), std::round(bounds.h * scale)};
+
+    if (pixels.x < 1.0f || pixels.y < 1.0f)
+        return;
+
+    if (worldTarget && pixels.x == targetPixels.x && pixels.y == targetPixels.y)
+        return;
+
+    targetPixels = pixels;
+    worldTarget.emplace(makeWorldTarget((int) pixels.x, (int) pixels.y));
+    resolveShader.world = *worldTarget;
+}
+View::HudPlacement
+    View::placeHudSprite(int slot, const Graphics::Rect& viewport, float rows) const
+{
+    const auto& sprite = hud[slot];
+    const auto& was = previousHud[slot];
+
+    if (sprite.textureId < 0)
+        return {};
+
+    auto scaleX = viewport.w / (float) Engine::screenWidth;
+    auto scaleY = viewport.h / rows;
+    auto at = sprite.at;
+
+    if (was.textureId >= 0)
+        at = Engine::lerp(was.at, sprite.at, ticFraction);
+
+    return {{viewport.x + at.x * scaleX,
+             viewport.y + at.y * scaleY,
+             sprite.size.x * scaleX,
+             sprite.size.y * scaleY},
+            sprite.flip ? std::array {1.0f, 0.0f} : std::array {0.0f, 1.0f},
+            true};
 }
 void View::drawWeapon(GPU::RenderPass& pass,
                       const Graphics::Rect& bounds,
                       const Graphics::Rect& viewport,
                       float rows)
 {
-    auto scaleX = viewport.w / (float) Engine::screenWidth;
-    auto scaleY = viewport.h / rows;
-
-    hudShader.viewSize = std::array {bounds.w, bounds.h};
-
     for (auto i = 0; i < hud.size(); ++i)
     {
         const auto& sprite = hud[i];
-        const auto& was = previousHud[i];
+        auto placed = placeHudSprite(i, viewport, rows);
 
-        if (sprite.textureId < 0)
+        if (!placed.visible || sprite.fuzz)
             continue;
 
-        // The weapon bobs on the tic like everything else, so it is placed
-        // between tics like everything else.
-        auto at = sprite.at;
-
-        if (was.textureId >= 0)
-            at = Engine::lerp(was.at, sprite.at, ticFraction);
-
-        hudShader.dstOrigin =
-            std::array {viewport.x + at.x * scaleX, viewport.y + at.y * scaleY};
-        hudShader.dstSize =
-            std::array {sprite.size.x * scaleX, sprite.size.y * scaleY};
-        hudShader.uRange =
-            sprite.flip ? std::array {1.0f, 0.0f} : std::array {0.0f, 1.0f};
+        hudShader.setDestination(bounds, placed.dst);
+        hudShader.uRange = placed.uRange;
         hudShader.light = sprite.light;
         hudShader.texture = textureFor(sprite.textureId);
 
         pass.draw(hudShader);
+    }
+}
+void View::markWeaponFuzz(GPU::RenderPass& pass,
+                          const Graphics::Rect& bounds,
+                          const Graphics::Rect& viewport,
+                          float rows)
+{
+    for (auto i = 0; i < hud.size(); ++i)
+    {
+        const auto& sprite = hud[i];
+        auto placed = placeHudSprite(i, viewport, rows);
+
+        if (!placed.visible || !sprite.fuzz)
+            continue;
+
+        hudFuzzShader.setDestination(bounds, placed.dst);
+        hudFuzzShader.uRange = placed.uRange;
+        hudFuzzShader.texture = textureFor(sprite.textureId);
+
+        pass.draw(hudFuzzShader);
     }
 }
 void View::drawAutomap(GPU::RenderPass& pass,
@@ -389,8 +495,7 @@ void View::drawAutomap(GPU::RenderPass& pass,
 
     pass.setPipeline(automapShader.pipeline());
     pass.setVertexBuffer(automapBuffer);
-    pass.setVertexUniforms(automapShader);
-    pass.setFragmentUniforms(automapShader);
+    pass.setUniforms(automapShader);
     automapShader.bindTextures(pass);
     pass.draw((int) map.size(), 0);
 
@@ -518,9 +623,11 @@ void View::keyUp(const Graphics::KeyEvent& event)
 
 void View::mouseDown(const Graphics::MouseEvent& event)
 {
-    if (!window.isMouseLocked())
+    if (!isAiming())
     {
-        window.setMouseLocked(true);
+        if (auto* host = getWindow())
+            host->setMouseLocked(true);
+
         return;
     }
 
@@ -529,7 +636,7 @@ void View::mouseDown(const Graphics::MouseEvent& event)
 
 void View::mouseUp(const Graphics::MouseEvent& event)
 {
-    if (window.isMouseLocked())
+    if (isAiming())
         Doom::buttonUp(toDoomButton(event.button));
 }
 
@@ -543,9 +650,19 @@ void View::mouseDragged(const Graphics::MouseEvent& event)
     aim(event);
 }
 
+// Whether the mouse is currently the player's aim rather than a pointer: the
+// window has it locked, so every movement is a turn and every click is a shot.
+// A view that is in no window is in neither state and answers no.
+bool View::isAiming() const
+{
+    auto* host = getWindow();
+
+    return host != nullptr && host->isMouseLocked();
+}
+
 void View::aim(const Graphics::MouseEvent& event)
 {
-    if (!window.isMouseLocked())
+    if (!isAiming())
         return;
 
     mouseMovement.x += event.rawDelta.x * mouseSpeed;
