@@ -23,20 +23,33 @@ inline constexpr ScreenVertex unitQuad[] = {
 // and distance pick, and the palette turns the result into a colour. Indices
 // travel as 0..255 floats, so a texture's 0..1 sample is scaled back up on the
 // way in and a lookup row's sample on the way out.
+//
+// Both lookup tables are read with fetch rather than sample: a table is
+// addressed by an index the shader already holds, and fetch takes that index as
+// one, so the half-texel arithmetic that used to stand between the two - and
+// the Nearest sampler that had to round back to the texel it was aimed at - is
+// gone. What the sampler was silently supplying is written out below instead.
 struct DoomShader : GPU::ShaderProgram
 {
     GPU::Float indexOf(const GPU::Float4& texel) { return texel.x() * 255.0f; }
 
-    GPU::Float indexCoordinate(const GPU::Float& index)
-    {
-        return (index + 0.5f) / 256.0f;
-    }
+    // fetch truncates towards zero, so this is where the rounding lives now. An
+    // index arrives as a unorm scaled back up, which lands a hair either side of
+    // the whole number it means.
+    GPU::Int texelOf(const GPU::Float& index) { return toInt(index + 0.5f); }
 
     GPU::Float remap(const GPU::Float& index, const GPU::Float& row)
     {
-        auto uv = float2(indexCoordinate(index),
-                         (row + 0.5f) / (float) Engine::colormapRows);
-        return indexOf(sample(colormap, uv));
+        // The row is a continuous falloff, and at close range it runs tens of
+        // rows off the bright end of the table - WorldShader subtracts up to 64
+        // of them at the near plane. A texel outside the texture fetches as zero,
+        // where the Clamp address mode used to hold it at the first row, so the
+        // clamp is the shader's to make now. It bounds the table rather than the
+        // light levels: rows 32 and 33 are the invulnerability and blackout
+        // maps, which a surface locked to one of them arrives here already
+        // carrying.
+        auto bounded = clamp(row, 0.0f, (float) Engine::colormapRows - 1.0f);
+        return indexOf(fetch(colormap, int2(texelOf(index), texelOf(bounded))));
     }
 
     // Row 0 is the identity, so playing costs the lookup and nothing else.
@@ -44,7 +57,7 @@ struct DoomShader : GPU::ShaderProgram
 
     void setPaletteFragment(const GPU::Float& index)
     {
-        auto color = sample(palette, float2(indexCoordinate(index), 0.5f));
+        auto color = fetch(palette, int2(texelOf(index), 0));
         setFragment(float4(color.xyz(), 1.0f));
     }
 

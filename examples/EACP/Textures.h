@@ -29,9 +29,8 @@ inline GPU::Texture makePaletteTexture()
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
-// One row per light level. The shaders sample it clamped, so a surface too
-// bright or too far simply lands on the first or the last row and none of them
-// needs a clamp of its own.
+// One row per light level. It is fetched by texel rather than sampled, so no
+// address mode bounds it and DoomShader::remap does the clamping.
 inline GPU::Texture makeColormapTexture()
 {
     auto descriptor = GPU::TextureDescriptor {};

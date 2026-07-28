@@ -1527,6 +1527,17 @@ the input and drawing with it. Lowering it to two therefore *raises* latency on 
 (measured: sample-to-screen 23ms at three, 32ms at two). **This port should not lower
 it.**
 
+Merged since: **`WindowOptions::aspectRatio`**, the declarative window shape
+constraint — honoured by macOS's native `setContentAspectRatio` and by a `WM_SIZING`
+snap on Windows, so it anchors resize better than the callback did and also governs
+zoom; and **the shader EDSL's full intrinsic set** — `floor fract abs min max clamp
+step smoothstep mix sign fmod pow sqrt rsqrt exp log ceil round atan2 dot cross
+normalize length distance reflect`, each taking a float literal in any argument
+position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
+`ifThen`, `loop`), `Array<T, N>`, and texel `fetch`.
+
+**Numbers are never reused**, so a hole in the sequence below is an entry that closed.
+
 1. **No audio subsystem** — and eacp is not where this was answered. The output
    device comes from [MakeASound](https://github.com/eyalamirmusic/MakeASound), a CPM
    dependency of `examples/EACP`; the music is voiced by an emulated OPL3
@@ -1556,20 +1567,32 @@ it.**
    app cannot pick an initial window size that fits the display, nor clamp/center
    itself. Workaround: a conservative 3x default plus a resizable window with
    letterboxed rendering.
-5. **No declarative window aspect-ratio constraint.** `WindowOptions::onWillResize`
-   works for keeping a window 4:3, but macOS has a native
-   `NSWindow.contentAspectRatio` that anchors resize better and also governs zoom.
-6. **The shader EDSL has almost no scalar maths.** `sin`/`cos` exist but there is no
-   `floor`, `fract`, `abs`, `min`/`max`/`clamp`, `step` or `mix` for `Float`. B2 dodged
-   this by letting the samplers do the work — `Repeat` tiles wall textures instead of
-   `fract`, `Nearest` rounds the COLORMAP row instead of `floor`, `Clamp` bounds it —
-   but any shader wanting real arithmetic will hit this.
-7. **No offscreen render targets.** `Frame` only ever renders into the view's
-   drawable, so a pass cannot render into a texture and sample it later. Any
-   post-processing pass — a CRT/scanline filter — needs exactly that. (DOOM's melt
-   turned out not to; see **Renderer status**.)
-8. **No cull-mode state** in `RenderPipelineDescriptor`. Not blocking (DOOM's walls
-   are fine drawn double-sided), but every triangle is rasterised from both faces.
+7. **An offscreen pass has no depth attachment.** `TextureDescriptor::renderTarget`
+   and `Frame::beginPass(target, …)` are real, so a pass can render into a texture a
+   later pass samples — but `Frame.h` says the limit outright: *"Multisampling and
+   depth are deliberately absent."* The GPU world path sets `setDepth(true)` and
+   depends on it, so **the world cannot be rendered into a texture**, which is the one
+   thing this port wants an offscreen target for.
+
+   It blocks two things at once. **Spectre fuzz** (B4) is a read of the pixels beneath
+   the sprite, so the faithful implementation is world→texture, then a fuzz pass
+   sampling that texture at a jittered offset through COLORMAP row 6 — with no texture
+   there is nothing to sample. And the **screen melt** composites the outgoing frame,
+   which stays a 320x200 software capture rather than a full-resolution GPU one for
+   exactly the same reason.
+
+   Nearly all the machinery is already there: `OffscreenTarget` carries a
+   `depthTexture` and the snapshot path uses it, the drawable pass creates and attaches
+   a `Depth32Float`, and D3D12 passes a DSV to `OMSetRenderTargets` whenever the frame
+   has one. The texture-target `beginPass` is the one path that reaches for none of it.
+   MSAA there is genuinely optional; depth is not.
+8. **No cull-mode state** in `RenderPipelineDescriptor`, which carries library, vertex
+   layout, colour format, topology, sample count, blend mode and depth — and nothing
+   about winding or faces. Not blocking (DOOM's walls are fine drawn double-sided, and
+   the D3D12 backend hardcodes `D3D12_CULL_MODE_NONE` to match Metal's default), which
+   is exactly why it has stayed open: it is pure waste at a fixed cost. Metal wants
+   `setCullMode` on the encoder, D3D12 a rasterizer-desc field on the PSO, and both
+   want a winding convention stated once.
 9. **A `View` cannot reach the `Window` it is in.** Anything a view needs from its
    window — the mouse lock, the modifier keys — has to be handed to it by the app.
    This port declares the window *before* the view and hands it over as a
@@ -1588,8 +1611,72 @@ it.**
 11. **eacp binds the uniform buffer to both stages**, so Metal's validation layer logs
     an "unused binding" warning for every pass whose vertex or fragment function
     declares no uniform parameter — benign, but it is what Xcode's runtime-issues panel
-    fills up with. The emitter already computes `vertexUsesUniforms(graph)`, so gating
-    the bind on it would settle it.
+    fills up with. The emitter already computes `vertexUsesUniforms(graph)` — and
+    consults it to decide whether the vertex function declares the block at all — so
+    exposing that answer through `ShaderProgram` closes this with no new analysis.
+12. **No texture arrays, and no atlas primitive.** There is no `Texture2DArray` and no
+    array-slice binding anywhere in the GPU module. That is why the world is drawn as
+    one draw per texture (`View::drawWorld`), which is the largest draw count in the
+    renderer, and why instancing the billboards would win CPU work rather than draws.
+    With an array texture — or a sampler-visible atlas with a slice index per vertex —
+    the whole level collapses into a single draw, and the group-by-texture bookkeeping
+    in `Engine::buildGeometry` goes with it.
+13. **`R8Unorm` is not a `PixelFormat`**, so a single-channel *render target* is not
+    expressible: `PixelFormat` has BGRA8, RGBA8, RGBA16F and RGBA32F, while
+    `TextureFormat` has had R8Unorm since this port asked for it. That rules out the
+    most faithful answer to spectre fuzz — keep the world in palette-index space by
+    rendering the post-COLORMAP *index* into an R8 target, remap that index through
+    COLORMAP row 6 exactly as `R_DrawFuzzColumn` does, and resolve the palette in one
+    final full-screen pass. That is vanilla's own algorithm rather than an
+    approximation of it. RGBA8 with the index in `.r` round-trips an 8-bit unorm value
+    exactly and is the fallback, at four times the bandwidth.
+
+    Independently, and worth fixing either way:
+    `pixelFormatFor(TextureFormat::R8Unorm)` falls through its `default:` and returns
+    `PixelFormat::RGBA8Unorm` — a silent disagreement between a pipeline and its
+    attachment, of exactly the kind that function's own comment says neither backend
+    will accept. Unreachable today only because R8 cannot be a render target; it stops
+    being unreachable the moment this entry lands.
+
+### Interface findings
+
+The same rule and the same log, but these are not missing features. eacp can do the
+thing; the *shape* of the API made this port write something it should not have had
+to. They are worth as much as any feature, and were recorded nowhere before.
+
+I1. **A `ShaderProgram` owns its vertex buffer, so app-owned geometry falls off the
+    supported path.** `RenderPass::draw(program)` does six things — sets the pipeline,
+    binds `program.vertices()`, binds the uniform block to both stages, binds textures,
+    binds storage buffers, and issues the draw — and every one assumes the program owns
+    its geometry. The world's does not: it is a `Buffer` this port owns and updates in
+    place every frame, drawn as sub-ranges with a different texture per range. So
+    `View::drawWorld` cannot call `draw(program)` and reassembles its body by hand
+    instead, line for line, because one assumption in it does not hold. That is the
+    clearest interface finding of the port, and it is the largest draw in the whole
+    renderer. A `draw(program, buffer, vertexCount, firstVertex)` overload — or a
+    program that can be told its geometry lives elsewhere — puts it back on the path.
+
+I2. **`bindTextures` is public only because `draw(program)` calls it.** A direct
+    consequence of I1: it reads as an internal and documents itself as one — its own
+    comment is *"`RenderPass::draw(program)` calls this"* — and app code has to call it
+    because it took the draw apart. Fixing I1 hands it back to eacp.
+
+I3. **A texture's sampling is fixed when the shader compiles.** Deliberate, documented,
+    and with a Windows driver bug behind it (eacp's `SAMPLERS.md`), so this is a note
+    rather than a request — but the consequence should be written where a reader meets
+    it before hitting it: `WorldShader` has to set `texture.sampling` *before*
+    `compile()`, and a program wanting one texture slot sampled two ways needs two
+    programs.
+
+I4. **`setFramesInFlight` means two different things** — the note above the list, which
+    belongs at eacp's own declaration rather than here. One name, two meanings, and the
+    wrong intuition is the natural one.
+
+I5. **`prepare(int sampleCount, bool depth)` is a positional bool**, at the front door
+    of every shader: this port writes `shader.prepare(sampleCount(), true)` and nothing
+    at the call site says what the `true` is. A small descriptor, or a named enum,
+    reads better — and would have somewhere obvious to put a depth *format* if entry
+    7's offscreen depth ever needs one.
 
 ## MakeASound Gap Log
 

@@ -4,22 +4,6 @@
 
 namespace PureDoom
 {
-// Snaps a proposed content size back to DOOM's 4:3 shape by applying the smaller
-// of the two possible corrections, so dragging any edge or corner feels natural.
-inline void keepDisplayAspect(int& width, int& height)
-{
-    constexpr auto aspect = displayWidth / displayHeight;
-
-    auto heightFromWidth = (float) width / aspect;
-    auto widthFromHeight = (float) height * aspect;
-
-    if (std::abs(heightFromWidth - (float) height)
-        <= std::abs(widthFromHeight - (float) width))
-        height = (int) std::lround(heightFromWidth);
-    else
-        width = (int) std::lround(widthFromHeight);
-}
-
 inline Graphics::WindowOptions windowOptions()
 {
     auto options = Graphics::WindowOptions {};
@@ -28,7 +12,10 @@ inline Graphics::WindowOptions windowOptions()
     options.title = "Pure DOOM (eacp)";
     options.minWidth = (int) displayWidth;
     options.minHeight = (int) displayHeight;
-    options.onWillResize = keepDisplayAspect;
+
+    // The constraint governs resizing but is not retro-fitted to the size asked
+    // for above, which is already 4:3 because windowScale multiplies both.
+    options.aspectRatio = Graphics::Point {displayWidth, displayHeight};
     return options;
 }
 

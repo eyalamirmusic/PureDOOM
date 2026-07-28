@@ -365,10 +365,20 @@ The gap log is the deliverable of goal 2, so it should be accurate:
 
 ## Sequencing
 
-1. **P2** (aspect ratio) and the **Part 4** gap-log edits. Mechanical, no risk,
-   and the log stops being wrong immediately.
-2. **P1** (`fetch`). Small and self-contained. Verify by eye against the software
-   renderer on the same scene — the frame goldens cannot see it.
+1. ~~**P2** (aspect ratio) and the **Part 4** gap-log edits.~~ **Done.**
+   `keepDisplayAspect` is gone; the window carries `aspectRatio` instead. The gap
+   log closes 5 and 6, rewrites 7 as "an offscreen pass has no depth attachment",
+   adds 12 (texture arrays) and 13 (R8 render target), and gains an **Interface
+   findings** section carrying I1–I5.
+2. ~~**P1** (`fetch`).~~ **Done, eyeball check outstanding.** Both lookups are
+   `fetch(t, Int2)`. Two things the sampler had been supplying silently are now
+   written down: the rounding (`texelOf` adds the half before truncating, because
+   an index is a unorm scaled back up) and the **clamp** — `Clamp` addressing was
+   holding the light row at the table's first entry, and a texel outside a
+   `fetch` reads zero instead, which without the clamp would have drawn every
+   near surface black. The two paths are arithmetically identical, all 119 tests
+   are green and the shaders compile on Metal at boot, but the picture itself has
+   not been compared against Shift+F8.
 3. **E1** in eacp, then spectre fuzz here. This is the item that finishes the
    renderer, and it is mostly wiring machinery eacp already has.
 4. **E2**, **E5**, **E3**, **E4** in eacp — small, independent, and each removes a
