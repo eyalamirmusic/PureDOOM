@@ -53,12 +53,36 @@ claim below was checked in the checkout rather than inferred from a commit
 message.
 
 **What this repository's branch is green against**, which the rule above says has
-to be stated: `eacp-puredoom` at `c3e9026`, five commits past `a114455` — E1, E5,
-E2, E3, E4. It does not build against plain `~/Code/eacp` and is not meant to:
-`TextureDescriptor::depth` is what the world target is created with,
-`RenderPass::setUniforms` is what the hand-rolled draws bind through,
+to be stated: `eacp-puredoom` at `94ee5de`, six commits past `a114455` — E1, E5,
+E2, E3, E4 and the docs for them. It does not build against plain `~/Code/eacp` and
+is not meant to: `TextureDescriptor::depth` is what the world target is created
+with, `RenderPass::setUniforms` is what the hand-rolled draws bind through,
 `Graphics::primaryDisplay()` is what the window is sized from, and
-`View::getWindow()` is what the input path asks.
+`View::getWindow()` is what the input path asks. The engine and the tests link
+`eacp-core` only and build against either checkout — measured, all 120 pass.
+
+## What is left
+
+Everything that was *blocking* is done: the renderer's feature list is finished and
+so is the eacp work it waited on. What remains is one measurement and the things
+that measurement should decide, so the order below is not a preference.
+
+| | Item | State |
+|---|---|---|
+| **next** | Measure `buildGeometry` and the per-frame upload | nothing here has ever measured them, and three items below aim at that same cost |
+| | **P3** instancing, **P4** per-sector heights, **E6** texture arrays | *gated on that measurement* — they attack one cost from three sides and should not all be built |
+| | **P5** full-resolution melt | ready, self-contained, unblocked by E1 |
+| | **E7** `R8Unorm` as a `PixelFormat` | not blocking; carries a latent `pixelFormatFor` mismatch worth fixing regardless |
+| | **I1** app-owned geometry falls off `draw(program)` | open, and the clearest interface finding of the port |
+| | **I2** `bindTextures` public only because of I1 | closes when I1 does |
+
+Withdrawn rather than done: **I3** and **I4**, both of which asked eacp to document
+something it had already documented (`SAMPLERS.md`, `GPUView.h`). **I5** is
+half-answered — `prepare` takes a descriptor now, but still not a target.
+
+Gap-log entries with no plan item behind them, because none is a rendering problem:
+1 (audio, answered outside eacp), 2 and 2b (input), 3 (CPM app bundles), 10
+(`-fno-gnu-unique`).
 
 ---
 
@@ -152,7 +176,8 @@ zoom and fullscreen is still true, and the letterbox is still needed there.
 ### P3. Instancing for billboards and HUD sprites — medium
 
 `instanceInput(&Instance::field, slot)` + `setInstances` + `pass.drawInstanced`
-(`ShaderProgram.h:47-53`, `RenderPass.h:209`). Two places:
+(`ShaderProgram.h:47-53`, and `RenderPass.h`'s `drawInstanced(Program&, int, int)`).
+Two places:
 
 - **Things.** `Engine::buildGeometry` expands every visible thing into a
   camera-facing quad on the CPU, every refresh (`View::renderWorld`). As one
@@ -169,7 +194,7 @@ zoom and fullscreen is still true, and the letterbox is still needed there.
   sprite with every uniform rebound between them. There are at most a handful, so
   this is tidiness rather than throughput.
 
-`firstInstance` (`RenderPass.h:209`) lets one shared instance buffer be drawn in
+`firstInstance`, that call's last parameter, lets one shared instance buffer be drawn in
 per-texture runs, which fits the existing group-by-texture loop unchanged. **Be
 honest about the win**: it is CPU work and a nicer invariant, not draw count. The
 draw count stays one per sprite texture until **E6**.
@@ -421,7 +446,8 @@ than `width * 4`.
 
 A new entry, surfaced by this port and not yet in the gap log. There is no
 `Texture2DArray` and no array-slice binding anywhere in the GPU module. That is
-why the world is drawn as one draw per texture (`View.cpp:318-322`) and why P3's
+why the world is drawn as one draw per texture (`View::drawGeometry`'s run loop)
+and why P3's
 instancing wins CPU work rather than draw count. With an array texture — or a
 sampler-visible atlas with a slice index per vertex — the entire level collapses
 into a single draw, and the group-by-texture bookkeeping in `buildGeometry`
@@ -459,10 +485,12 @@ they are worth as much as any feature.
 
 ### I1. `ShaderProgram` owns its vertex buffer, so app-owned geometry falls off the path
 
-`pass.draw(program)` (`RenderPass.h:180-199`) does six things: sets the pipeline,
-binds `program.vertices()`, binds the uniform block to both stages, binds textures,
-binds storage buffers, and issues the draw. It assumes the program owns its
-geometry.
+**Open, and the clearest interface finding of the port.**
+
+`pass.draw(program)` (`RenderPass.h`, `draw(Program&)`) does six things: sets the
+pipeline, binds `program.vertices()`, binds the uniform block to the stage that
+reads it, binds textures, binds storage buffers, and issues the draw. It assumes
+the program owns its geometry.
 
 The world's geometry is app-owned and persistent — a `Buffer` updated in place
 every frame — and it is drawn as sub-ranges with a different texture per range. So
@@ -471,8 +499,7 @@ every frame — and it is drawn as sub-ranges with a different texture per range
 ```cpp
 pass.setPipeline(shader.pipeline());
 pass.setVertexBuffer(worldBuffer);
-pass.setVertexUniforms(shader);
-pass.setFragmentUniforms(shader);
+pass.setUniforms(shader);
 
 for (const auto& run: runs)
 {
@@ -483,10 +510,16 @@ for (const auto& run: runs)
 ```
 
 Every line of that is eacp's own `draw(program)` body, inlined because one
-assumption in it does not hold. This is the single clearest interface finding of
-the port. A `draw(program, buffer, vertexCount, firstVertex)` overload — or a
-program that can be told its geometry lives elsewhere — puts the largest draw in
-the whole renderer back on the supported path.
+assumption in it does not hold. A `draw(program, buffer, vertexCount,
+firstVertex)` overload — or a program that can be told its geometry lives
+elsewhere — puts the largest draw in the whole renderer back on the supported
+path.
+
+**E5 shortened it by a line without answering it**, which is worth noting because
+it is the shape of a half-fix: `setUniforms(program)` replaced the two per-stage
+setters, so the hand-rolled body now *shares* eacp's per-stage rule instead of
+reimplementing it. The body is still hand-rolled, and still has to be kept in step
+with `draw(program)` by hand.
 
 Spectre fuzz made it worse in the way that confirms the diagnosis: the fuzz marks
 come off the *same* app-owned buffer with a different program, so the hand-rolled
@@ -495,28 +528,34 @@ The workaround is now a small abstraction of eacp's own draw, living here.
 
 ### I2. `bindTextures` is public only because `draw(program)` calls it
 
-A direct consequence of I1: `program.bindTextures(pass)` reads like an internal —
-it is documented as "RenderPass::draw(program) calls this"
-(`ShaderProgram.h:738-741`) — and app code has to call it because it took the draw
-apart. Fix I1 and this leaves app code on its own.
+**Open**, and a direct consequence of I1: `program.bindTextures(pass)` reads like
+an internal — its own comment says "RenderPass::draw(program) calls this" — and app
+code has to call it because it took the draw apart. Fix I1 and this leaves app code
+on its own.
 
-### I3. A texture's sampling is fixed when the shader compiles
+### I3. A texture's sampling is fixed when the shader compiles — **already answered**
 
-Deliberate, documented, and with a Windows driver bug behind it (`SAMPLERS.md`),
-so this is a note rather than a request. But the consequence should be written
-down: `WorldShader` has to set `texture.sampling` *before* `compile()`, and a
-program that wants one texture slot sampled two ways needs two programs. Worth a
-sentence in the GPU README's sampling section, since the constraint is invisible
-until a shader wants it.
+**Withdrawn: eacp had already written this down, and this entry was the result of
+reading the header rather than the document beside it.** `SAMPLERS.md` states both
+halves — the sampling is fixed at `compile()` (with the `texture.sampling` line
+shown in place), and *"a program cannot change its mind per draw… needs one
+compiled program per configuration"*, with `Sprites::SpriteRenderer` as the worked
+case that keeps one shader per configuration.
 
-### I4. `setFramesInFlight` means two different things
+Worth keeping as a **finding about this plan** rather than about eacp: an entry
+asking for documentation is the one kind that costs nothing to write and can be
+wrong the moment it is written. Check the prose next to the code before filing one.
 
-Already in this repo's gap log as a note, and it belongs in eacp's header instead:
-on DXGI it is the depth of the present queue and lowering it lowers latency; on
-Metal it is `maximumDrawableCount`, and lowering it *raises* latency (measured
-here: 23ms at three, 32ms at two). One name, two meanings, and the wrong intuition
-is the natural one. Either the header says so at the declaration, or the two are
-named separately.
+### I4. `setFramesInFlight` means two different things — **already answered**
+
+**Withdrawn, same way.** The entry asked that eacp's header say at the declaration
+what this port's gap log said. `GPUView.h` already does, at more length and with
+the same measurement — the DXGI present queue against Metal's
+`maximumDrawableCount`, *"a smaller pool measurably raises latency: on the Maze
+view, sample-to-screen goes from 23ms at three to 32ms at two"*.
+
+That the number matches this port's own measurement of it is the interesting part:
+the two were measured independently, on different content, and agree.
 
 ### I5. `prepare(int sampleCount, bool depth)` is a positional bool
 
