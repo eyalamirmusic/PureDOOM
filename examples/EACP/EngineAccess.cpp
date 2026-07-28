@@ -201,21 +201,33 @@ float interpolatedHeight(const Vector<float>& previous, int index, float now)
     return std::lerp(previous[index], now, snapshot.alpha);
 }
 
-int sectorIndex(const Doom::Sector& sector)
+// The engine's state clusters are reached through out-of-line accessors over a
+// function-local static - Doom::level() calls Doom::engine(), which loads a
+// guard and a pointer - and nothing in this translation unit can inline any of
+// it. The geometry pass asks per line, per side, per texture band and then does
+// the whole walk a second time, which came to tens of thousands of calls a
+// frame: measured at just over half of buildGeometry's time, against a fifth for
+// the arithmetic the calls were fetching operands for.
+//
+// So the hot path takes its cluster as a parameter and the caller hoists one
+// reference for the walk. That is CLAUDE.md's own rule for the engine's per-pixel
+// drawers, which this file had not been following. Tests/Bench/GeometryBench.cpp
+// is what measured it and what says the geometry came out identical afterwards.
+int sectorIndex(const Doom::Level& level, const Doom::Sector& sector)
 {
-    return static_cast<int>(&sector - Doom::level().sectors.data());
+    return static_cast<int>(&sector - level.sectors.data());
 }
 
-float floorHeight(const Doom::Sector& sector)
+float floorHeight(const Doom::Level& level, const Doom::Sector& sector)
 {
     return interpolatedHeight(
-        snapshot.floor, sectorIndex(sector), toFloat(sector.floorheight));
+        snapshot.floor, sectorIndex(level, sector), toFloat(sector.floorheight));
 }
 
-float ceilingHeight(const Doom::Sector& sector)
+float ceilingHeight(const Doom::Level& level, const Doom::Sector& sector)
 {
     return interpolatedHeight(
-        snapshot.ceiling, sectorIndex(sector), toFloat(sector.ceilingheight));
+        snapshot.ceiling, sectorIndex(level, sector), toFloat(sector.ceilingheight));
 }
 
 int spriteBase()
@@ -254,8 +266,10 @@ Light fixedLight(int row)
 // fake contrast walls get for their orientation.
 Light sectorLight(int lightlevel, int contrast)
 {
-    if (fixedRow())
-        return fixedLight(fixedRow());
+    // One ask, not two: the accessor behind it is a call this file cannot
+    // inline, and the emitter reaches here once per surface.
+    if (auto fixed = fixedRow())
+        return fixedLight(fixed);
 
     auto lightnum = std::clamp((lightlevel >> Doom::LIGHTSEGSHIFT)
                                    + Doom::lighting().extralight + contrast,
@@ -721,13 +735,13 @@ struct WallTexture
     float height = 0.0f;
 };
 
-WallTexture wallTexture(int index)
+WallTexture wallTexture(const Doom::GraphicsData& gfx, int index)
 {
-    auto id = Doom::graphicsData().texturetranslation[index];
+    auto id = gfx.texturetranslation[index];
 
     return {id,
-            static_cast<float>(Doom::graphicsData().textures[id]->width),
-            static_cast<float>(Doom::graphicsData().textures[id]->height)};
+            static_cast<float>(gfx.textures[id]->width),
+            static_cast<float>(gfx.textures[id]->height)};
 }
 
 // One textured band of a linedef. `textureTop` is where the texture's own top
@@ -767,18 +781,21 @@ int wallContrast(const Doom::Line& line)
     return 0;
 }
 
-void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
+void emitLineSide(Emitter& emitter,
+                  const Doom::Level& level,
+                  const Doom::GraphicsData& gfx,
+                  const Doom::SkyState& sky,
+                  const Doom::Line& line,
+                  int index,
+                  int s)
 {
-    auto& sky = Doom::skyState();
-
     if (line.sidenum[s] < 0)
         return;
 
-    const auto& side = Doom::level().sides[line.sidenum[s]];
+    const auto& side = level.sides[line.sidenum[s]];
     const auto& front = *side.sector;
-    const auto* back = line.sidenum[s ^ 1] >= 0
-                           ? Doom::level().sides[line.sidenum[s ^ 1]].sector
-                           : nullptr;
+    const auto* back =
+        line.sidenum[s ^ 1] >= 0 ? level.sides[line.sidenum[s ^ 1]].sector : nullptr;
 
     const auto& v1 = s == 0 ? *line.v1 : *line.v2;
     const auto& v2 = s == 0 ? *line.v2 : *line.v1;
@@ -787,8 +804,8 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
     auto to = Point {toDouble(v2.x), toDouble(v2.y)};
 
     auto length = cells.lineLengths[index];
-    auto frontFloor = floorHeight(front);
-    auto frontCeiling = ceilingHeight(front);
+    auto frontFloor = floorHeight(level, front);
+    auto frontCeiling = ceilingHeight(level, front);
     auto rowOffset = toFloat(side.rowoffset);
     auto light = sectorLight(front.lightlevel, wallContrast(line));
     auto pegBottom = (line.flags & Doom::ML_DONTPEGBOTTOM) != 0;
@@ -798,7 +815,7 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
         if (side.midtexture <= 0)
             return;
 
-        auto texture = wallTexture(side.midtexture);
+        auto texture = wallTexture(gfx, side.midtexture);
         auto textureTop =
             (pegBottom ? frontFloor + texture.height : frontCeiling) + rowOffset;
 
@@ -812,12 +829,12 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
         return;
     }
 
-    auto backFloor = floorHeight(*back);
-    auto backCeiling = ceilingHeight(*back);
+    auto backFloor = floorHeight(level, *back);
+    auto backCeiling = ceilingHeight(level, *back);
 
     if (side.bottomtexture > 0 && backFloor > frontFloor)
     {
-        auto texture = wallTexture(side.bottomtexture);
+        auto texture = wallTexture(gfx, side.bottomtexture);
         auto textureTop = (pegBottom ? frontCeiling : backFloor) + rowOffset;
 
         emitWall(emitter,
@@ -836,7 +853,7 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
 
     if (side.toptexture > 0 && backCeiling < frontCeiling && !bothSky)
     {
-        auto texture = wallTexture(side.toptexture);
+        auto texture = wallTexture(gfx, side.toptexture);
         auto pegTop = (line.flags & Doom::ML_DONTPEGTOP) != 0;
         auto textureTop =
             (pegTop ? frontCeiling : backCeiling + texture.height) + rowOffset;
@@ -856,7 +873,7 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
     // leaves a gap rather than repeating.
     if (side.midtexture > 0)
     {
-        auto texture = wallTexture(side.midtexture);
+        auto texture = wallTexture(gfx, side.midtexture);
 
         auto openingBottom = std::max(backFloor, frontFloor);
         auto openingTop = std::min(backCeiling, frontCeiling);
@@ -883,17 +900,17 @@ void emitLineSide(Emitter& emitter, const Doom::Line& line, int index, int s)
 // left of the thing's position along the view plane, and its top sits the
 // sprite's top offset above the thing's feet.
 void emitSprite(Emitter& emitter,
+                const Doom::GraphicsData& gfx,
                 const Doom::Mobj& thing,
                 const Doom::Mobj& viewer,
                 const Point& right)
 {
-    auto& gfx = Doom::graphicsData();
     auto sprite = Doom::toIndex(thing.sprite);
 
     if (&thing == &viewer || sprite < 0 || sprite >= gfx.numsprites)
         return;
 
-    const auto& definition = Doom::graphicsData().sprites[sprite];
+    const auto& definition = gfx.sprites[sprite];
     auto frameIndex = static_cast<int>(thing.frame & Doom::FF_FRAMEMASK);
 
     if (frameIndex >= definition.numframes)
@@ -918,7 +935,7 @@ void emitSprite(Emitter& emitter,
     if (lump < 0 || lump >= gfx.numspritelumps)
         return;
 
-    auto width = static_cast<float>(Doom::graphicsData().spritewidth[lump].toInt());
+    auto width = static_cast<float>(gfx.spritewidth[lump].toInt());
     auto height = static_cast<float>(spriteHeight(lump));
 
     // A thing moves once a tic, so drawing it where the tic left it makes it
@@ -926,7 +943,7 @@ void emitSprite(Emitter& emitter,
     // get there, so winding that back by the part of the tic still to come puts
     // it where it would be at the moment being drawn.
     auto back = 1.0 - static_cast<double>(snapshot.alpha);
-    auto offset = toDouble(Doom::graphicsData().spriteoffset[lump]);
+    auto offset = toDouble(gfx.spriteoffset[lump]);
 
     auto left = Point {
         toDouble(thing.pos.x) - toDouble(thing.mom.x) * back - right.x * offset,
@@ -934,7 +951,7 @@ void emitSprite(Emitter& emitter,
 
     auto feet =
         toFloat(thing.pos.z) - static_cast<float>(toDouble(thing.mom.z) * back);
-    auto top = feet + toFloat(Doom::graphicsData().spritetopoffset[lump]);
+    auto top = feet + toFloat(gfx.spritetopoffset[lump]);
 
     auto light = (thing.frame & Doom::FF_FULLBRIGHT)
                      ? fullbrightLight()
@@ -958,7 +975,10 @@ void emitSprite(Emitter& emitter,
         emitter.quad(textureId, span, uv, light);
 }
 
-void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camera)
+void emitSprites(Emitter& emitter,
+                 const Doom::GraphicsData& gfx,
+                 const Doom::Mobj& viewer,
+                 const Camera& camera)
 {
     // The view plane's right axis, the one DOOM measures a sprite's width along,
     // so the billboards stay square-on to the camera being drawn.
@@ -973,7 +993,7 @@ void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camer
         if (!mobj || thinker->removed)
             continue;
 
-        emitSprite(emitter, *mobj, viewer, right);
+        emitSprite(emitter, gfx, *mobj, viewer, right);
     }
 }
 
@@ -981,19 +1001,20 @@ void emitSprites(Emitter& emitter, const Doom::Mobj& viewer, const Camera& camer
 // at a column picked by the direction the player faces. A cylinder around the
 // camera reproduces that - it never moves relative to the viewer, so it has no
 // parallax, and its texture repeats four times around, as the engine's does.
-void emitSky(Emitter& emitter, const Camera& camera)
+void emitSky(Emitter& emitter,
+             const Doom::GraphicsData& gfx,
+             const Doom::SkyState& sky,
+             const Camera& camera)
 {
-    auto& sky = Doom::skyState();
-
     // "Sky is allways drawn full bright, i.e. colormaps[0] is used. Because of
     // this hack, sky is not affected by INVUL inverse mapping" - drawPlanes,
     // whose words those are. Row 0 at any distance, and through any powerup.
     auto light = fixedLight(0);
 
-    if (sky.skytexture <= 0 || sky.skytexture >= Doom::graphicsData().numtextures)
+    if (sky.skytexture <= 0 || sky.skytexture >= gfx.numtextures)
         return;
 
-    auto texture = Doom::graphicsData().texturetranslation[sky.skytexture];
+    auto texture = gfx.texturetranslation[sky.skytexture];
 
     // DOOM pins the sky to screen rows, with row 100 on the horizon. A screen
     // row is linear in height on the cylinder, so two rings are exact.
@@ -1024,11 +1045,14 @@ void emitSky(Emitter& emitter, const Camera& camera)
     }
 }
 
-void emitFlat(
-    Emitter& emitter, int index, int flat, float height, const Light& light)
+void emitFlat(Emitter& emitter,
+              const Doom::GraphicsData& gfx,
+              int index,
+              int flat,
+              float height,
+              const Light& light)
 {
-    auto textureId = Doom::graphicsData().numtextures
-                     + Doom::graphicsData().flattranslation[flat];
+    auto textureId = gfx.numtextures + gfx.flattranslation[flat];
     auto first = cells.start[index];
 
     auto emitCorner = [&](int corner)
@@ -1047,11 +1071,13 @@ void emitFlat(
     }
 }
 
-void emitSubsector(Emitter& emitter, int index)
+void emitSubsector(Emitter& emitter,
+                   const Doom::Level& level,
+                   const Doom::GraphicsData& gfx,
+                   const Doom::SkyState& sky,
+                   int index)
 {
-    auto& sky = Doom::skyState();
-
-    const auto* sector = Doom::level().subsectors[index].sector;
+    const auto* sector = level.subsectors[index].sector;
 
     if (cells.count[index] < 3 || sector == nullptr)
         return;
@@ -1062,30 +1088,48 @@ void emitSubsector(Emitter& emitter, int index)
     // drawPlanes paints the sky wherever it finds one, and a floor is as free to
     // carry it as a ceiling.
     if (sector->floorpic != sky.skyflatnum)
-        emitFlat(emitter, index, sector->floorpic, floorHeight(*sector), light);
+        emitFlat(emitter,
+                 gfx,
+                 index,
+                 sector->floorpic,
+                 floorHeight(level, *sector),
+                 light);
 
     if (sector->ceilingpic != sky.skyflatnum)
-        emitFlat(emitter, index, sector->ceilingpic, ceilingHeight(*sector), light);
+        emitFlat(emitter,
+                 gfx,
+                 index,
+                 sector->ceilingpic,
+                 ceilingHeight(level, *sector),
+                 light);
 }
 
+// One reference each, for the whole walk. See sectorIndex above for what asking
+// per line instead was costing.
 void emitWorld(Emitter& emitter, const Camera& camera)
 {
-    for (auto i = 0; i < Doom::level().lines.size(); ++i)
+    const auto& level = Doom::level();
+    const auto& gfx = Doom::graphicsData();
+    const auto& sky = Doom::skyState();
+
+    for (auto i = 0; i < level.lines.size(); ++i)
     {
-        emitLineSide(emitter, Doom::level().lines[i], i, 0);
-        emitLineSide(emitter, Doom::level().lines[i], i, 1);
+        const auto& line = level.lines[i];
+
+        emitLineSide(emitter, level, gfx, sky, line, i, 0);
+        emitLineSide(emitter, level, gfx, sky, line, i, 1);
     }
 
-    for (auto i = 0; i < Doom::level().subsectors.size(); ++i)
-        emitSubsector(emitter, i);
+    for (auto i = 0; i < level.subsectors.size(); ++i)
+        emitSubsector(emitter, level, gfx, sky, i);
 
     const auto* viewer = displayPlayer().mo;
 
     if (viewer == nullptr)
         return;
 
-    emitSky(emitter, camera);
-    emitSprites(emitter, *viewer, camera);
+    emitSky(emitter, gfx, sky, camera);
+    emitSprites(emitter, gfx, *viewer, camera);
 }
 
 //

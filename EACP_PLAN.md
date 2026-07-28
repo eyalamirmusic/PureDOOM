@@ -64,14 +64,15 @@ with, `RenderPass::setUniforms` is what the hand-rolled draws bind through,
 ## What is left
 
 Everything that was *blocking* is done: the renderer's feature list is finished and
-so is the eacp work it waited on. What remains is one measurement and the things
-that measurement should decide, so the order below is not a preference.
+so is the eacp work it waited on. **The measurement that was to decide the next
+three items has been taken** (see **The measurement** below), and its answer is that
+none of the three is worth building for its cost.
 
 | | Item | State |
 |---|---|---|
-| **next** | Measure `buildGeometry` and the per-frame upload | nothing here has ever measured them, and three items below aim at that same cost |
-| | **P3** instancing, **P4** per-sector heights, **E6** texture arrays | *gated on that measurement* — they attack one cost from three sides and should not all be built |
-| | **P5** full-resolution melt | ready, self-contained, unblocked by E1 |
+| ~~**next**~~ | ~~Measure `buildGeometry` and the per-frame upload~~ | **Done.** `Tests/Bench/GeometryBench.cpp`, target `port-bench` |
+| | **P3** instancing, **P4** per-sector heights, **E6** texture arrays | **Not worth building for the cost they attack** — the whole of it is 4% of a refresh. See below; E6 keeps a case that is not about speed |
+| **next** | **P5** full-resolution melt | ready, self-contained, unblocked by E1 |
 | | **E7** `R8Unorm` as a `PixelFormat` | not blocking; carries a latent `pixelFormatFor` mismatch worth fixing regardless |
 | | **I1** app-owned geometry falls off `draw(program)` | open, and the clearest interface finding of the port |
 | | **I2** `bindTextures` public only because of I1 | closes when I1 does |
@@ -79,6 +80,91 @@ that measurement should decide, so the order below is not a preference.
 Withdrawn rather than done: **I3** and **I4**, both of which asked eacp to document
 something it had already documented (`SAMPLERS.md`, `GPUView.h`). **I5** is
 half-answered — `prepare` takes a descriptor now, but still not a target.
+
+---
+
+## The measurement
+
+`Tests/Bench/GeometryBench.cpp` (target `port-bench`) builds a frame of world
+geometry three times per tic through all three attract demos and reports what it
+cost. It is a benchmark, not a test: ctest never runs it, and the output is a
+number to read. It needs no GPU for the same reason `Tests/Port` does not, so the
+only part of the real frame it cannot see is the upload — which the app was
+instrumented for separately.
+
+It carries **its own gate**: a hash of every vertex and every draw the run
+emitted. A benchmark that reports only a time cannot tell a change that made the
+builder faster from one that made it emit something else, and no golden here can
+help — the frame goldens run the software renderer, which never executes a line of
+this. So an optimisation is honest exactly when the hash is unchanged.
+
+**Release, Apple silicon, 34,230 frames.** Before any of the work below:
+
+| demo | level | geometry | `buildGeometry` mean | p95 | per frame |
+|---|---|---|---|---|---|
+| demo1 | E1M5 | 825 lines, 384 subsectors, 216 things | 80.9µs | 85.3µs | 10,978 vertices, 300 KB, 119 draws |
+| demo2 | E1M3 | 1,026 / 461 / 280 | 99.1µs | 102.2µs | 13,805 vertices, 378 KB, 131 draws |
+| demo3 | E1M7 | 958 / 467 / 254 | 96.2µs | 101.9µs | 13,044 vertices, 357 KB, 125 draws |
+
+**In the app, the renderer is nowhere near its budget.** `render()` spends a few
+hundred microseconds of CPU against an 8.33ms refresh, and the display holds
+**120.5Hz without dropping a frame**, before and after. The proportions are the
+reliable part of that reading and the absolute numbers are not: everything in the
+frame scales together by up to 3x depending which core the display-link thread
+lands on, which is a fact about Apple silicon's scheduler rather than about this
+renderer. Of `render()`'s CPU, `buildGeometry` is ~45-55%, submitting the
+per-texture draws ~26-31%, and **the upload is 2.2-2.5% — 4 to 13µs**. The
+per-frame upload, in other words, was never a cost at all.
+
+### What it decided
+
+- **P3, instanced billboards — do not build.** Sprites are 12% of the vertices and
+  `emitSprite` does not appear in the profile at all (under 0.5%). Every thing in
+  the level is already cheaper than the walls around it, so moving the quad
+  expansion to the GPU wins nothing measurable. The *invariant* argument in P3's
+  entry still stands on its own merits; the performance argument is gone.
+- **P4, per-sector heights — do not build.** It attacks the largest share (walls
+  and flats are ~74% of the builder's time and 88% of its bytes), and that share is
+  still under 1% of a refresh. What it costs is a rewrite of the emitter with the
+  pegging rules moved into the vertex shader, plus an answer to animated textures
+  changing which draw a wall belongs to. That is the largest structural change on
+  the list, bought with the smallest measured saving on it.
+- **E6, texture arrays — keep, but not for speed.** ~125 draws a frame is the
+  biggest single item left, and it is still only the submission cost above. The
+  reason to want it is what its own entry says — the group-by-texture bookkeeping
+  in `buildGeometry` disappears, and one draw over app-owned geometry is a far
+  smaller ask of **I1** than 125 are. It is an eacp feature worth having; it is not
+  a frame-time fix.
+
+### What it found that was not on the list
+
+**Just over half of `buildGeometry` was the engine's state accessors, not
+geometry.** `Doom::level()`, `Doom::graphicsData()`, `Doom::skyState()`,
+`Doom::playerState()` and `Doom::lighting()` are out-of-line calls over a
+function-local static — each one reaching `Doom::engine()`, which loads a guard —
+and nothing in `EngineAccess.cpp` can inline any of them. The emitter asked per
+line, per side, per texture band, and then walked the whole world a second time to
+write what the first pass had counted: tens of thousands of calls a frame. Their
+disjoint self time came to **51.7%** of the builder, against a fifth for the
+arithmetic they were fetching operands for.
+
+`CLAUDE.md` already states the rule this breaks — hoist a cluster's reference once
+per function rather than calling the accessor per access — for the engine's own
+per-pixel drawers. The port had never been held to it. Hoisting it through the
+emitters costs about forty lines and **cut `buildGeometry` by 43%**: 80.9 → 45.7µs,
+99.1 → 57.5µs, 96.2 → 53.2µs, with all three geometry hashes **bit-identical** and
+all 120 tests green.
+
+That is larger than anything P3, P4 or E6 would have returned, at a fraction of the
+risk, and it was invisible to every gate in the repository. Two things generalise:
+
+- **The item that pays is rarely the item on the list.** Three plan entries had been
+  written against a cost none of their authors had measured, and the real answer was
+  in none of them. Measuring first was worth more than the measurement's stated
+  purpose.
+- **A benchmark wants a correctness gate as much as a test does.** The hash is what
+  made a 43% speedup safe to believe — without it, "faster" and "emitting less" read
+  the same on the way out.
 
 Gap-log entries with no plan item behind them, because none is a rendering problem:
 1 (audio, answered outside eacp), 2 and 2b (input), 3 (CPM app bundles), 10
@@ -173,7 +259,14 @@ governs zoom, which is what the gap entry asked for.
 Delete `keepDisplayAspect`. `letterboxedDisplayRect` stays — its comment about
 zoom and fullscreen is still true, and the letterbox is still needed there.
 
-### P3. Instancing for billboards and HUD sprites — medium
+### P3. Instancing for billboards and HUD sprites — **measured, and not worth it**
+
+**The performance case is gone.** Sprites are 12% of the emitted vertices and
+`emitSprite` does not reach 0.5% of the profile: every thing in the level is
+already cheaper than the walls around it. See **The measurement**. What survives is
+the invariant below — the shader cannot get a billboard's facing wrong the way the
+CPU can — which is a reason to want it that has nothing to do with speed. The
+original entry follows.
 
 `instanceInput(&Instance::field, slot)` + `setInstances` + `pass.drawInstanced`
 (`ShaderProgram.h:47-53`, and `RenderPass.h`'s `drawInstanced(Program&, int, int)`).
@@ -199,7 +292,7 @@ per-texture runs, which fits the existing group-by-texture loop unchanged. **Be
 honest about the win**: it is CPU work and a nicer invariant, not draw count. The
 draw count stays one per sprite texture until **E6**.
 
-### P4. `Uniform<InputBuffer>` for per-sector heights — large, measure first
+### P4. `Uniform<InputBuffer>` for per-sector heights — **measured, and not worth it**
 
 Structurally the biggest thing available, and the one most likely to be a mistake
 if taken on faith. `View::renderWorld` rebuilds the world and re-uploads it — up to
@@ -218,6 +311,14 @@ Two caveats, both real:
 **Do not start this without measuring the rebuild first.** It is worth it only if
 `buildGeometry` and the upload are actually hot, and nothing in this repository
 has measured them.
+
+**Now measured, and they are not.** The rebuild is under 1% of a refresh and the
+upload — the 262,144-vertex re-upload this entry is built around — is 4 to 13
+microseconds, 2% of the frame's CPU. Walls and flats are the largest share of what
+is left, so this entry does aim at the right part; the part is just very small.
+Against that: a rewrite of the emitter with the pegging arithmetic moved into the
+vertex shader, and an answer to animated textures changing which draw a wall
+belongs to. **Do not build it.** See **The measurement**.
 
 ### P5. A full-resolution melt — small, and newly possible
 
@@ -452,6 +553,13 @@ instancing wins CPU work rather than draw count. With an array texture — or a
 sampler-visible atlas with a slice index per vertex — the entire level collapses
 into a single draw, and the group-by-texture bookkeeping in `buildGeometry`
 disappears with it.
+
+**Measured**: 119 to 131 draws a frame across the three attract demos, costing
+26-31% of `render()`'s CPU — the largest single item left in the renderer, and
+still around 1% of a refresh. So this stays on the list, but **for its shape rather
+than its speed**: the bookkeeping goes, and asking **I1** to put *one* draw over
+app-owned geometry back on the supported path is a far smaller request than asking
+it for 125.
 
 ### E7. `R8Unorm` as a `PixelFormat`, and a latent mismatch worth fixing regardless
 
@@ -694,13 +802,28 @@ below is measurement, and one item that measurement should decide.
    repository's goldens are — forcing the predicate true, gating the cull bind on
    `!= None`, emptying the link's destructor — because a new gate that no plausible
    mistake would fail reads as coverage and is not.
-5. **Measure** `buildGeometry` and the per-frame upload. Only then decide between
-   **P3**, **P4** and **E6**, which all aim at the same cost from different sides
-   and should not all be built. The fuzz work added a second full-frame pass and a
-   full-window RGBA8 target to every frame, neither measured either — so a
-   measurement pass over the whole renderer is worth more now than it was.
+5. ~~**Measure** `buildGeometry` and the per-frame upload, then decide between
+   **P3**, **P4** and **E6**.~~ **Done — and it decided against all three.** See
+   **The measurement** above for the numbers and the verdicts. The whole renderer
+   costs a few hundred microseconds of CPU against an 8.33ms refresh and the
+   display never drops a frame, so none of the three buys anything a player could
+   see; the upload the plan was most suspicious of turned out to be 2% of the
+   frame's CPU.
+
+   **What the measurement actually paid for was not on the list**: half of
+   `buildGeometry` was the engine's out-of-line state accessors rather than
+   geometry, and hoisting them cut it by 43% with the emitted geometry
+   bit-identical. Three entries had been written against a cost nobody had
+   measured, and the answer was in none of them.
+
+   The benchmark is `Tests/Bench/GeometryBench.cpp`, kept as the target
+   `port-bench` so the next change to the emitter can be held against it. The two
+   things the fuzz work added and nobody had measured — a second full-frame pass
+   and a full-window RGBA8 target — are inside the app figures above and are not
+   separately visible; they are part of the ~30% spent submitting, and the frame
+   has 95% of itself spare either way.
 6. **P5**, the full-resolution melt — small, self-contained, and the last thing in
-   the renderer still running at 320x200 when it does not have to.
+   the renderer still running at 320x200 when it does not have to. **Next.**
 
 Two standing constraints from `CLAUDE.md` apply throughout and are worth
 restating here because everything above is renderer work:

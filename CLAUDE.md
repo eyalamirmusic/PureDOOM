@@ -995,7 +995,8 @@ cmake --build build --target PureDoomEACP
 ```
 
 Targets: `doom-engine`, `PureDoomEACP`, `SimTests` and `PrimitiveTests`,
-`record-goldens`, `nuked-opl3` (the emulated OPL3 the music runs on, linked by the app
+`record-goldens`, `port-bench` (the renderer's CPU cost — see **Measuring the
+renderer**), `nuked-opl3` (the emulated OPL3 the music runs on, linked by the app
 *and* by `SimTests`), and `doom-sim-probe` (the static library holding
 `Tests/SimProbe.cpp`, which both test binaries link so the shim is compiled once).
 Two build options: `PUREDOOM_BUILD_TESTS` and `PUREDOOM_BUILD_EACP_EXAMPLE`.
@@ -1468,6 +1469,66 @@ way that is easy to dismiss.
   subtlest bugs have lived (the double-clock-read that drew frames a tic in the past,
   the five-tic input lag, mouse accumulate-and-flush).
 
+## Measuring the renderer
+
+```bash
+cmake --build build --target port-bench && ./build/Tests/port-bench   # Release
+```
+
+`Tests/Bench/GeometryBench.cpp` builds a frame of world geometry three times per
+tic through all three attract demos and reports what it cost. It is a **benchmark,
+not a test** — ctest never runs it, it asserts nothing, and the output is a number
+to read. It needs no GPU for the same reason `Tests/Port` does not, so the one part
+of a real frame it cannot see is the upload.
+
+**Build it in Release.** A Debug figure is a measurement of the standard library's
+bounds checks.
+
+Three things about it are worth keeping.
+
+- **It carries its own correctness gate**, and that is what made acting on it safe.
+  Every run hashes every vertex and every draw it emitted, so an optimisation is
+  honest exactly when the hash is unchanged. Nothing else could say: the frame
+  goldens run the software renderer, which never executes a line of the port, so
+  "faster" and "quietly emitting less" would otherwise read identically. A benchmark
+  wants a correctness gate as much as a test does.
+- **It reports the walk separately from the stores.** Asking for a frame with a
+  one-vertex buffer makes every run fail the layout's bounds check, so the emitter
+  walks the whole world twice and writes none of it — which is how the double pass
+  (count, then write) was priced without instrumenting the emitter at all. The
+  stores are 7-10µs of it; the rest is the walk, done twice.
+- **The app is the other half, and its absolute numbers are not to be trusted.**
+  Everything in a frame scales together by up to 3x depending which core the
+  display-link thread lands on, which is Apple silicon's scheduler rather than the
+  renderer. The **proportions** hold: `buildGeometry` ~45-55% of `render()`'s CPU,
+  submitting the per-texture draws ~26-31%, the upload 2.2-2.5%. The display holds
+  120.5Hz without dropping a frame, and `render()` uses a few hundred microseconds
+  of an 8.33ms refresh.
+
+**What it found, and the rule it is a case of.** Just over half of `buildGeometry`
+was the engine's *state accessors* rather than geometry: `Doom::level()`,
+`Doom::graphicsData()`, `Doom::skyState()`, `Doom::playerState()` and
+`Doom::lighting()` are out-of-line calls over a function-local static, each
+reaching `Doom::engine()` and its guard, and `EngineAccess.cpp` can inline none of
+them. The emitter asked per line, per side, per texture band, then walked the world
+again — tens of thousands of calls a frame, **51.7% of the builder's disjoint self
+time** against a fifth for the arithmetic they were fetching operands for. Hoisting
+one reference per walk and passing it down cut `buildGeometry` by **43%** (80.9 →
+45.7µs on demo1) with every geometry hash bit-identical.
+
+That is the rule stated under **The `Engine` is the composition root** — hoist a
+cluster's reference once per function rather than calling the accessor per access —
+which had been written for the engine's per-pixel drawers and never applied to the
+port. **It applies to anything that reaches engine state in a loop.** The port is
+the worst case for it, being a separate translation unit where not one accessor can
+be inlined.
+
+Two things generalise past this measurement, both recorded in `EACP_PLAN.md`: the
+item that pays is rarely the item on the list — three plan entries had been written
+against a cost none of them had measured, and the real answer was in none of the
+three — and the whole exercise found nothing a player could see, because the
+renderer has 95% of its frame spare.
+
 ## Porting Rules
 
 - eacp is never modified from this repository. When the port hits something eacp
@@ -1771,11 +1832,18 @@ here because a reader scanning the log otherwise reads five **Answered** heading
     block and was being bound anyway, once per run, every frame.
 12. **No texture arrays, and no atlas primitive.** There is no `Texture2DArray` and no
     array-slice binding anywhere in the GPU module. That is why the world is drawn as
-    one draw per texture (`View::drawWorld`), which is the largest draw count in the
+    one draw per texture (`View::drawGeometry`), which is the largest draw count in the
     renderer, and why instancing the billboards would win CPU work rather than draws.
     With an array texture — or a sampler-visible atlas with a slice index per vertex —
     the whole level collapses into a single draw, and the group-by-texture bookkeeping
     in `Engine::buildGeometry` goes with it.
+
+    **Measured** (see **Measuring the renderer**): 119 to 131 draws a frame across
+    the three attract demos, costing 26-31% of `render()`'s CPU — the largest single
+    item left, and still around 1% of a refresh. So the entry stands **for its shape
+    rather than its speed**. The sharpest version of it is that asking **I1** to put
+    *one* draw over app-owned geometry back on the supported path is a far smaller
+    request than asking it for 125.
 13. **`R8Unorm` is not a `PixelFormat`**, so a single-channel *render target* is not
     expressible: `PixelFormat` has BGRA8, RGBA8, RGBA16F and RGBA32F, while
     `TextureFormat` has had R8Unorm since this port asked for it.
@@ -1813,7 +1881,7 @@ I1. **A `ShaderProgram` owns its vertex buffer, so app-owned geometry falls off 
     binds storage buffers, and issues the draw — and every one assumes the program owns
     its geometry. The world's does not: it is a `Buffer` this port owns and updates in
     place every frame, drawn as sub-ranges with a different texture per range. So
-    `View::drawWorld` cannot call `draw(program)` and reassembles its body by hand
+    `View::drawGeometry` cannot call `draw(program)` and reassembles its body by hand
     instead, line for line, because one assumption in it does not hold. That is the
     clearest interface finding of the port, and it is the largest draw in the whole
     renderer. A `draw(program, buffer, vertexCount, firstVertex)` overload — or a
