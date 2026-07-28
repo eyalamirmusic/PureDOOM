@@ -1567,25 +1567,34 @@ position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
    app cannot pick an initial window size that fits the display, nor clamp/center
    itself. Workaround: a conservative 3x default plus a resizable window with
    letterboxed rendering.
-7. **An offscreen pass has no depth attachment.** `TextureDescriptor::renderTarget`
-   and `Frame::beginPass(target, …)` are real, so a pass can render into a texture a
-   later pass samples — but `Frame.h` says the limit outright: *"Multisampling and
-   depth are deliberately absent."* The GPU world path sets `setDepth(true)` and
-   depends on it, so **the world cannot be rendered into a texture**, which is the one
-   thing this port wants an offscreen target for.
+7. **An offscreen pass had no depth attachment.** **Answered** — `~/Code/eacp-puredoom`
+   on branch `puredoom`, not yet upstream, so this stays in the log until it merges.
 
-   It blocks two things at once. **Spectre fuzz** (B4) is a read of the pixels beneath
-   the sprite, so the faithful implementation is world→texture, then a fuzz pass
-   sampling that texture at a jittered offset through COLORMAP row 6 — with no texture
-   there is nothing to sample. And the **screen melt** composites the outgoing frame,
-   which stays a 320x200 software capture rather than a full-resolution GPU one for
-   exactly the same reason.
+   `TextureDescriptor::renderTarget` and `Frame::beginPass(target, …)` were real, so a
+   pass could render into a texture a later pass sampled — but `Frame.h` said the limit
+   outright: *"Multisampling and depth are deliberately absent."* The GPU world path
+   sets `setDepth(true)` and depends on it, so **the world could not be rendered into a
+   texture**, which is the one thing this port wants an offscreen target for. It blocked
+   two things at once: **spectre fuzz** (B4), whose faithful implementation is
+   world→texture then a fuzz pass sampling that texture at a jittered offset through
+   COLORMAP row 6, and the **screen melt**, which composites an outgoing frame that
+   stays a 320x200 software capture for the same reason.
 
-   Nearly all the machinery is already there: `OffscreenTarget` carries a
-   `depthTexture` and the snapshot path uses it, the drawable pass creates and attaches
-   a `Depth32Float`, and D3D12 passes a DSV to `OMSetRenderTargets` whenever the frame
-   has one. The texture-target `beginPass` is the one path that reaches for none of it.
-   MSAA there is genuinely optional; depth is not.
+   The fix is `TextureDescriptor::depth`, beside `renderTarget` and `computeWrite`: the
+   buffer is created with the colour texture and dies with it, so a target stays one
+   object with no second lifetime to keep in step, and every pass clears it to the far
+   plane and stores nothing. `Texture::hasDepth()` is what a pipeline is built from.
+   MSAA there stays absent and should — a texture target has nothing to resolve *into*.
+
+   **What that work taught, and it generalises past eacp: on Apple silicon a depth test
+   appears to work with no depth attachment at all.** The tile memory is there either
+   way, so nulling the attachment left the new test green while Metal's validation layer
+   reported `MTLDepthStencilDescriptor sets depth test but MTLRenderPassDescriptor has a
+   nil depthAttachment texture` for every draw. A rendering test that passes is therefore
+   *not* evidence the attachment happened — **run the GPU suite under `MTL_DEBUG_LAYER=1`
+   and treat a silent validation layer as the other half of the measurement.** D3D12 has
+   no such luck (`OMSetRenderTargets` with a null DSV genuinely disables the test), which
+   is the second reason the Windows leg of CI is worth its cost.
 8. **No cull-mode state** in `RenderPipelineDescriptor`, which carries library, vertex
    layout, colour format, topology, sample count, blend mode and depth — and nothing
    about winding or faces. Not blocking (DOOM's walls are fine drawn double-sided, and

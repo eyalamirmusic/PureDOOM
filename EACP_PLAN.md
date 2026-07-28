@@ -65,7 +65,7 @@ message.
 | 4 | No display-metrics API | Open — **E3** |
 | 5 | No declarative window aspect-ratio constraint | **Closed** — `WindowOptions::aspectRatio` |
 | 6 | The shader EDSL has almost no scalar maths | **Closed** — the full intrinsic set landed |
-| 7 | No offscreen render targets | **Partially closed** — they exist, with no depth. See **E1** |
+| 7 | No offscreen render targets | **Closed on the branch** — `TextureDescriptor::depth`. See **E1** |
 | 8 | No cull-mode state | Open — **E2** |
 | 9 | A `View` cannot reach the `Window` it is in | Open — **E4** |
 | 10 | `-fno-gnu-unique` is added for every language | Open |
@@ -79,11 +79,14 @@ literal in any argument position, plus the `Int`/`Bool` vector families, stateme
 premise — "B2 dodged this by letting the samplers do the work" — describes a
 constraint that no longer exists.
 
-Gap 7 is the one to read carefully. `TextureDescriptor::renderTarget` and
-`Frame::beginPass(target, …)` are real, but `Frame.h:56` says it outright:
+Gap 7 was the one to read carefully, and **E1 has since answered it** on the
+`puredoom` branch. `TextureDescriptor::renderTarget` and
+`Frame::beginPass(target, …)` were real, but `Frame.h:56` said it outright:
 *"Multisampling and depth are deliberately absent."* The GPU world path sets
-`setDepth(true)` and depends on it, so **the world cannot be rendered into a
-texture today** — which is the one thing this port wanted offscreen targets for.
+`setDepth(true)` and depends on it, so the world could not be rendered into a
+texture — the one thing this port wanted offscreen targets for.
+`TextureDescriptor::depth` is what that entry became; see **E1** for what it
+turned out to cost and what it taught.
 
 ---
 
@@ -174,7 +177,42 @@ has measured them.
 Ranked by what unblocks the most here. Each names what already exists in eacp to
 build on, because in every case something does.
 
-### E1. A depth attachment on an offscreen pass — the highest-value ask
+### E1. A depth attachment on an offscreen pass — **done**
+
+Built on `~/Code/eacp-puredoom`, branch `puredoom`, and not upstream, so the gap
+log keeps its entry until it merges. All 809 eacp tests pass and so do this
+port's 119 against it.
+
+**What shipped.** `TextureDescriptor::depth`, beside `renderTarget` and
+`computeWrite` — the first of the two shapes below, and it held up: the buffer is
+created with the colour texture and dies with it, so a render target stays one
+object with no second lifetime to keep in step, and `Texture::hasDepth()` is what
+a pipeline gets built from. Metal attaches a private `Depth32Float`, cleared to
+the far plane and `DontCare`-stored exactly as the drawable pass does it; D3D12
+gets a `D32_FLOAT` resource with its own DSV heap, created in `DEPTH_WRITE` and
+left there so it needs no barrier, with the optimised clear value D3D12 demands.
+Four cases in `Tests/GPU/RenderTargetDepthTests.cpp`.
+
+**What it taught, which is worth more than the feature.** Breaking the attachment
+on purpose — the sharpness check the goldens here are held to — left the new test
+**green**. On Apple silicon the tile memory is there whether or not anything
+attached a depth buffer, so the hardware goes on depth-testing while Metal's
+validation layer reports `MTLDepthStencilDescriptor sets depth test but
+MTLRenderPassDescriptor has a nil depthAttachment texture` for every draw. **A
+passing render test is not evidence that an attachment happened.** Run the GPU
+suite under `MTL_DEBUG_LAYER=1` and treat a silent validation layer as the other
+half of the measurement — which, with the real implementation in, it is. D3D12
+has no such luck, since `OMSetRenderTargets` with a null DSV genuinely disables
+the test.
+
+**One consequence for this port, not yet acted on.** A texture pass is
+single-sampled, so the world rendered offscreen needs a *second* world pipeline at
+`sampleCount` 1; `View::prepareShader` builds one at the view's sample count
+today. That is the first thing spectre fuzz runs into.
+
+---
+
+The original entry, kept because it is what the work was scoped against:
 
 **What.** `Frame::beginPass(const Texture&, …)` renders into a colour attachment
 and nothing else (`Frame-Apple.mm:157-183`, `Frame-Windows.cpp:256+`).
@@ -379,8 +417,9 @@ The gap log is the deliverable of goal 2, so it should be accurate:
    near surface black. The two paths are arithmetically identical, all 119 tests
    are green and the shaders compile on Metal at boot, but the picture itself has
    not been compared against Shift+F8.
-3. **E1** in eacp, then spectre fuzz here. This is the item that finishes the
-   renderer, and it is mostly wiring machinery eacp already has.
+3. ~~**E1** in eacp~~ **done** (see above), then **spectre fuzz here** — still to
+   do, and now unblocked. It is the item that finishes the renderer. Note the
+   sample-count consequence recorded under E1 before starting.
 4. **E2**, **E5**, **E3**, **E4** in eacp — small, independent, and each removes a
    workaround that exists in this repository today.
 5. **Measure** `buildGeometry` and the per-frame upload. Only then decide between
