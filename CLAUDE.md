@@ -1056,23 +1056,27 @@ eacp is fetched from GitHub via CPM. To co-develop against a local checkout, pas
 expand tildes, and a quoted `~/...` path silently configures against a non-existent
 directory.
 
-**`-DCPM_eacp_SOURCE` is required again to build the app**, and it is worth knowing
-that this has swung twice. Nine features this port asked for reached eacp in two
-waves, and while the second wave — `TextureDescriptor::depth`,
-`RenderPass::setUniforms`, `RenderPipelineDescriptor::cullMode`,
-`Graphics::primaryDisplay()`, `View::getWindow()` — lived only on the `puredoom`
-branch, the app could not be built without pointing at that checkout. All nine
-merged, and for a while a scratch tree with **no** flag built every target and
-passed all 121 tests in `Release` (measured, not assumed).
+**`-DCPM_eacp_SOURCE` is not required**, and what makes that true has changed. It
+used to be that everything the app needed was in eacp `main`. Today the app uses
+`GPU::RenderPass::bind` (the gap log's **I1**), which is on eacp's `puredoom`
+branch and not upstream — so the **root `CMakeLists.txt` fetches that branch**,
+`GIT_TAG puredoom`, and says at the call so it goes back to `main` when `bind`
+merges.
 
-**`GPU::RenderPass::bind` is the tenth**, and it is on the `puredoom` branch and
-not upstream, so the app needs the flag until it merges. `View::drawGeometry` and
-the automap draw use it — see the gap log's **I1**. Nothing else does, so reverting
-those two call sites is all it would take to build against `main`; that is not
-worth doing, and this note is here so the swing is not mistaken for a broken tree.
+**Pinning the branch there rather than leaving it to the flag is the point.** A
+developer with `-DCPM_eacp_SOURCE=$HOME/Code/eacp-puredoom` cannot tell the
+difference either way; CI has no local checkout and would have failed every row
+the moment the app was pushed. This repository's branch and eacp's move together
+(`EACP_PLAN.md`), and the only place that can be *checked* is the build that
+fetches rather than points.
 
-`~/Code/eacp-puredoom` is the checkout to co-develop in (see `EACP_PLAN.md` for why
-it is a second one at that path and not `~/Code/eacp`).
+Measured rather than assumed: a scratch tree configured with **no**
+`CPM_eacp_SOURCE` at all — CI's own shape — builds every target including the app
+and passes all 121 tests in `Release`.
+
+`~/Code/eacp-puredoom` is still the checkout to co-develop in, and the flag is
+still what to use for it (see `EACP_PLAN.md` for why it is a second checkout at
+that path and not `~/Code/eacp`).
 
 `doom-engine` and the tests were never affected either way — they link `eacp-core`
 only, which is why the `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` loop builds against any

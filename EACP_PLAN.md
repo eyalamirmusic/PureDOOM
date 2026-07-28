@@ -60,10 +60,16 @@ and have all merged upstream, along with the Windows fixes that followed them; f
 spell in between, nothing local was needed at all and a scratch tree with **no**
 `CPM_eacp_SOURCE` built every target and passed all 121 tests in `Release`.
 
-That is the rhythm this split is for, and it swings both ways — the flag is
-mandatory again now and will stop being so when `bind` merges. The claim worth
-keeping current is not "the flag is needed" but *which* eacp a green build was green
-against.
+That is the rhythm this split is for, and the bookkeeping it demands is not the
+flag but the **fetch**: the root `CMakeLists.txt` pins `GIT_TAG puredoom` until
+`bind` merges, so a tree with no local eacp — CI's own shape, measured — builds the
+app against the branch this port is actually green against. Leaving that to
+`-DCPM_eacp_SOURCE` would have been invisible to every developer who has the
+checkout and fatal to every CI row that does not.
+
+The claim worth keeping current, then, is not "the flag is needed" but *which*
+eacp a green build was green against, stated somewhere a build without a local
+checkout can act on.
 
 ## What is left
 
@@ -964,10 +970,13 @@ below is measurement, and one item that measurement should decide.
    instead it made it app-facing on purpose. Splitting a convenience into state and
    draw does not take the state back; it says which half is whose.
 
-   The cost is the flag: this port needs `-DCPM_eacp_SOURCE` again until `bind`
-   merges, which is the second time that has swung. Recorded under **Build** in
-   `CLAUDE.md` so a fresh clone failing to build the app reads as expected rather
-   than broken.
+   **What it cost was a lesson about where the dependency is stated.** The obvious
+   answer — "this port needs `-DCPM_eacp_SOURCE` again until `bind` merges" — was
+   written down and was wrong within the hour: a developer who has the checkout
+   cannot tell, and CI has none and would have failed every row. The root
+   `CMakeLists.txt` fetches `GIT_TAG puredoom` instead, which is the only place the
+   two branches moving together is *checkable*. It reverts to `main` when `bind`
+   merges.
 8. **E7**, and that is the list. One eacp feature that blocks nothing, carrying a
    latent `pixelFormatFor` mismatch worth fixing on its own. **Next.**
 

@@ -62,10 +62,19 @@ CPMAddPackage(
 # (-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF, which is also what CI builds) stays a
 # CPU-only build that needs no GPU. CPM dedupes by NAME, so the app's own
 # requirements are expressed here and examples/EACP just links the targets.
+#
+# GIT_TAG is `puredoom` rather than `main` because the app uses
+# GPU::RenderPass::bind, which is on that branch and not yet upstream (the gap
+# log's I1). It goes back to `main` the day that merges, and the rule it is
+# standing in for is the one EACP_PLAN.md states: this repository's branch and
+# eacp's move together, and a green build proves nothing unless it says which
+# eacp it was green against. CI is where that has to be true - a developer can
+# point CPM_eacp_SOURCE at a local checkout and never notice the difference,
+# which is exactly how a branch nobody builds gets pushed.
 CPMAddPackage(
         NAME eacp
         GITHUB_REPOSITORY eyalamirmusic/eacp
-        GIT_TAG main
+        GIT_TAG puredoom
         OPTIONS
         "EACP_BUILD_GRAPHICS ${PUREDOOM_BUILD_EACP_EXAMPLE}"
         "EACP_BUILD_WEBVIEW OFF")
