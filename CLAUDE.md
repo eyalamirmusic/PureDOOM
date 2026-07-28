@@ -1348,13 +1348,17 @@ numbers. A failure prints the new checksum, so you can see what you did and deci
 whether you meant it. (`states[]` is hashed without its `action` pointer, which is a
 function address and differs between builds.)
 
-### Windows, and the three memory bugs it found
+### Windows, and the four bugs it found
 
 The engine builds and passes on **Windows arm64** under both **clang-cl** and
 **MSVC**, in `Debug` and `Release`. Getting there was not a portability exercise: the
 platform surfaced three genuine defects that macOS and Linux had been absorbing, and
 **none was visible to any gate here**, because the goldens hash the world and the
 picture and all three were correct right up until the heap gave out.
+
+A fourth arrived later and is kept in its own section below, because it is a
+different *kind* of defect and it walked through one more gate than these three
+did — including the sanitizer this section recommends for exactly this situation.
 
 - **A one-byte heap overflow, every boot.** `IdentifyVersion` sized seven WAD search
   paths by hand with the basename length written as a literal — and `"doomu.wad"` is
@@ -1377,6 +1381,55 @@ the LLVM toolchain ships no ASan runtime, but MSVC's does — build with
 `_WIN32` is the macro to test, never bare `WIN32`. `WIN32` is not a compiler macro at
 all — it arrives from the Windows SDK or from a build system that adds `-DWIN32`,
 which CMake happens to do for MSVC-style drivers.
+
+### The fourth one: a lifetime bug, and what it walked through
+
+**`Doom::host()` was being destroyed before the `Engine` whose destructor calls
+it.** `Thinker::operator delete` goes through `host().free`, the `Engine` owns
+every `Thinker`, and both were function-local statics — destroyed in reverse order
+of construction, with the `Engine` constructed *first*. So every thinker in the
+level was freed through a `std::function` whose lifetime had ended. `Host.cpp` now
+never destroys it, and says at the site why an ordering fix would have been the
+weaker answer.
+
+The bug itself is ordinary. **How long it survived is the part to learn from: it
+walked through four gates, each for a different reason, and one of them is the
+tool this section tells you to reach for.**
+
+- **The goldens could not see it.** They hash the world and the picture, and both
+  were correct right up until `main` returned. Same blind spot as the three above,
+  a different mechanism.
+- **macOS could not see it.** The storage is still mapped and libc++ leaves the
+  bytes alone, so the dead `std::function` still had a valid target and the call
+  landed. It is UB that works.
+- **AddressSanitizer could not see it** — and this is the one worth writing down,
+  because the advice directly above is *"run AddressSanitizer when a golden moves
+  for no reason."* That advice is still right; it is just not sufficient. **A
+  lifetime violation is not a range violation.** Nothing read out of bounds, the
+  object's storage was never unmapped, and all 120 tests passed clean under ASan
+  with the bug live. When ASan comes back green and the failure is real, stop
+  looking for a bad *index* and start looking at a bad *order* — of construction,
+  of destruction, of who outlives whom.
+- **CI saw it and nobody read it.** It had been failing every push for six days.
+
+Three things about the *shape* of the failure did the actual work, and all three
+generalise:
+
+- **`0xC0000409` is not only a stack overrun.** `STATUS_STACK_BUFFER_OVERRUN` is
+  also what the UCRT's `abort()` raises, which is where an unhandled
+  `bad_function_call` ends up. Reading it as its name cost the first pass of the
+  search, spent looking for a fixed-size buffer in the boot path.
+- **The durations said "at exit".** Every crashing test ran for as long as its work
+  takes — `Sim/demo1` for its full 1.65s replay, `Sim/wadDirectory` for 0.20s — and
+  then died with no output, because `abort()` does not flush. A crash *at boot*
+  would have taken the same few milliseconds in every case. That one reading turned
+  the search around.
+- **The survivors named the cause.** Of everything in `SimTests`, exactly
+  `Port/genmidiRejectsRubbish` and `Port/oplRefusesABadBank` passed — the only two
+  cases that never construct an `Engine`, and so never destroy one.
+  `PrimitiveTests` is green for the same reason, and that had been read for days as
+  "it boots nothing" without anyone asking what that implied. **When a suite fails
+  in bulk, the passing tests carry more information than the failing ones.**
 
 ### Read the warnings — they are a fifth gate
 
@@ -1415,6 +1468,15 @@ installed on it), and Windows on **x64 and ARM64** under **both MSVC and clang-c
 All five are Ninja, `Release`, every target built and all 120 tests run. The earlier
 matrix had a `macos-latest × gcc` row that was the clang row run twice: on a macOS
 runner bare `gcc`/`g++` resolve to `/usr/bin`, which is Apple Clang wearing the name.
+
+**They run on every branch**, not only `master`, and that was bought with six days
+of red CI: the port work sat on a branch for fifteen commits and was never once
+built on Windows or Linux, while a crash in every test that boots the engine failed
+`master` 21 runs running. A branch nobody builds is a branch whose author is
+guessing. The duplicate run a PR would otherwise cause is collapsed by a
+`concurrency` group keyed on the branch name — which also cancels any run a newer
+push has superseded, and at five configurations that is most of what would
+otherwise be wasted.
 
 Two Windows details the workflow depends on and states at its site: the MSVC command
 line is set up by calling `vcvarsall.bat` (located through `vswhere`) and forwarding

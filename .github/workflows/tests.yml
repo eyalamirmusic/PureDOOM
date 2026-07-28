@@ -24,12 +24,37 @@
 # checking would defeat the entire apparatus.
 name: Tests
 
+# Every branch, not just master, and that is a fix rather than a preference.
+#
+# This used to watch master alone, and the cost of that was measured: the port
+# work lived on a branch for fifteen commits - spectre fuzz, the whole audio
+# path, the eacp features - and not one of them was built on Windows or Linux
+# until the branch was finally opened as a PR. What that PR immediately found was
+# a crash that had been failing master for 21 consecutive runs, in every test
+# that boots the engine, on all four Windows rows.
+#
+# The bug was worth catching on the day it landed rather than six days later, and
+# nothing about it needed a PR to find. A branch that is never built is a branch
+# whose author is guessing.
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "**" ]
   pull_request:
     branches: [ "master" ]
     types: [ opened, synchronize ]
+
+# ...which would otherwise double the bill, since a PR branch gets both a `push`
+# and a `pull_request` event. Keying the group on the *branch name* is what makes
+# the two collapse into one: `head_ref` is set on a pull_request and names the
+# source branch, `ref_name` is what a push carries, and for one branch both spell
+# the same thing. The second run then cancels the first rather than racing it.
+#
+# It pays twice, because it also cancels a run that a newer push has already
+# superseded - which at five configurations, three of them Windows and none of
+# them quick, is most of what this workflow would otherwise waste.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   build:
