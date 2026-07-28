@@ -265,15 +265,26 @@ double midiTime();
 bool isWiping();
 
 // The screen melt, while one is running: the frame it is sliding away, as
-// palette indices, and how far down each column of it has moved so far. The
-// frame coming in is neither wanted nor asked for - it is the framebuffer left
-// as it is - which is what lets the melt run with no offscreen render target.
+// palette indices, and how far down each column of it has moved so far.
 //
 // Writes screenWidth x screenHeight indices and wipeColumns offsets in rows, and
 // returns whether a melt is running. On the first frame of one it is not yet:
 // the engine raises its wiping flag at the end of the frame that renders the
 // incoming screen and only sets the melt up on the next.
 bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffsets);
+
+// The frame the melt is revealing, on the same terms. Wanted only when the
+// outgoing frame is a full-resolution capture rather than this one's 320x200
+// twin: the engine's own composite (the framebuffer, left as it is) already
+// holds both halves at 320x200, and drawing the capture over that would leave
+// the copy it replaces showing wherever the two disagreed by a pixel.
+//
+// The composite the two make is doMelt's own, and Tests/Port/WipeTests.cpp holds
+// it against the engine's:
+//
+//     row r of column c = incoming[r]           where r <  slid[c / 2]
+//                         outgoing[r - slid]    where r >= slid[c / 2]
+bool wipeIncoming(std::span<std::uint8_t> outIncoming);
 
 // The engine's mouse sensitivity (the options menu changes it). It scales the
 // movement it is handed by (sensitivity + 5) / 10, so a view that runs ahead of

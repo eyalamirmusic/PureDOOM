@@ -50,6 +50,7 @@ nano_add_executable(SimTests
         Sim/IntermissionTests.cpp
         Port/GeometryTests.cpp
         Port/AutomapTests.cpp
+        Port/WipeTests.cpp
         Port/GenmidiTests.cpp
         Port/OplTests.cpp
         ${CMAKE_SOURCE_DIR}/examples/EACP/EngineAccess.cpp

@@ -2,6 +2,7 @@
 
 #include "Audio.h"
 #include "AutomapShader.h"
+#include "CaptureShader.h"
 #include "FuzzShader.h"
 #include "HudFuzzShader.h"
 #include "HudShader.h"
@@ -75,7 +76,11 @@ struct View final : GPU::GPUView
 
     static Graphics::Rect statusBarRect(const Graphics::Rect& dst, float rows);
 
+    // One of the engine's 320x200 index frames, drawn as it stands: the software
+    // frame it hands over, or - while the capture is what a melt is sliding away
+    // - the incoming screen the engine would have composited under it.
     void drawScreen(GPU::RenderPass& pass,
+                    const GPU::Texture& indices,
                     const Graphics::Rect& bounds,
                     const Graphics::Rect& dst,
                     float uvTop,
@@ -104,9 +109,16 @@ struct View final : GPU::GPUView
                       const Graphics::Rect& viewport,
                       float rows);
 
-    // Created at the window's pixel size and rebuilt when that changes, which is
-    // the one thing that invalidates it.
-    void ensureWorldTarget();
+    // Both targets are created at the window's pixel size and rebuilt when that
+    // changes, which is the one thing that invalidates either.
+    void ensureTargets();
+
+    // Whether the frame a running melt is sliding away is the capture rather
+    // than the engine's 320x200 copy of it. False for a melt out of the title,
+    // an intermission or the finale, which are 320x200 artwork and lose nothing
+    // by it; true for one out of a level, which is every transition a player
+    // spends a second watching.
+    bool meltingFromCapture() const;
 
     // Where a HUD sprite lands in the window this frame - the weapon bobs on the
     // tic like everything else, so it is placed between tics like everything
@@ -152,6 +164,14 @@ struct View final : GPU::GPUView
                   const Graphics::Rect& bounds,
                   const Graphics::Rect& dst);
 
+    // The captured frame back onto the screen: as it stands when this is the
+    // blit that presents it, sliding down its melt columns when it is the frame
+    // being melted away.
+    void drawCapture(GPU::RenderPass& pass,
+                     const Graphics::Rect& bounds,
+                     const Graphics::Rect& dst,
+                     bool sliding);
+
     void updateOverlay();
 
     void updateWipe();
@@ -194,11 +214,21 @@ struct View final : GPU::GPUView
     AutomapShader automapShader;
     OverlayShader overlayShader;
     WipeShader wipeShader;
+    CaptureShader captureShader;
 
     // DOOM's frame at the window's resolution: what the world is drawn into, and
     // what the fuzz reads. Optional only because it is sized from the window,
     // which the constructor has no size for yet.
     std::optional<GPU::Texture> worldTarget;
+
+    // The whole composited frame, in colour, at the same size - so that when a
+    // melt starts, the frame it is sliding away is still here at the window's
+    // resolution instead of only in the engine's 320x200 copy of it. Nothing is
+    // composited into it while a melt is running, which is what leaves it
+    // holding the frame the melt began over.
+    std::optional<GPU::Texture> captureTarget;
+    bool captureValid = false;
+
     Graphics::Point targetPixels;
 
     GPU::Texture framebuffer = makeIndexTexture();
@@ -206,6 +236,7 @@ struct View final : GPU::GPUView
     GPU::Texture colormapTexture = makeColormapTexture();
     GPU::Texture overlayTexture = makeOverlayTexture();
     GPU::Texture wipeTexture = makeIndexTexture();
+    GPU::Texture wipeIncomingTexture = makeIndexTexture();
     GPU::Texture wipeOffsetTexture = makeWipeOffsetTexture();
 
     GPU::Buffer worldBuffer {GPU::Device::shared(),
@@ -223,6 +254,7 @@ struct View final : GPU::GPUView
     Vector<Engine::AutomapVertex> automap;
     Vector<std::uint8_t> overlayPixels;
     Vector<std::uint8_t> wipePixels;
+    Vector<std::uint8_t> wipeIncomingPixels;
     Vector<std::uint8_t> paletteData;
     Array<std::uint8_t, Engine::wipeColumns> wipeOffsets;
 

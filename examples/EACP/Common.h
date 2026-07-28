@@ -45,6 +45,22 @@ constexpr auto worldAspect = displayWidth / (viewRowsWithStatusBar * crtStretch)
 constexpr auto worldTargetFormat = GPU::TextureFormat::RGBA8Unorm;
 constexpr auto worldTargetSamples = 1;
 
+// The finished frame is composited into a texture of its own before it reaches
+// the screen, so that when a melt starts the frame it is sliding away is still
+// somewhere at the window's resolution rather than only in the engine's 320x200
+// copy of it (View::render).
+//
+// Unlike the world target this one is drawn into by the *same* shaders that draw
+// onto the drawable - the resolve, the weapon, the status bar strip, the overlay
+// - which are prepared once, for the drawable. So its format is not a choice:
+// it has to be the one those pipelines already name.
+constexpr auto captureTargetFormat = GPU::TextureFormat::BGRA8Unorm;
+
+static_assert(GPU::pixelFormatFor(captureTargetFormat)
+                  == GPU::PixelFormat::BGRA8Unorm,
+              "the capture is drawn into by shaders prepared for the drawable, "
+              "whose colour format is ShaderProgram::prepare's default");
+
 // Ceilings for one frame of geometry; a shareware level fills a small fraction.
 constexpr auto maxVertices = 262144;
 constexpr auto maxDraws = 2048;

@@ -1615,6 +1615,35 @@ bool isWiping()
     return Doom::gameFlow().is_wiping_screen;
 }
 
+namespace
+{
+// initMelt leaves both of the melt's screens column-major - a column of two-pixel
+// shorts - because that is how the melt walks them. A texture wants them back the
+// way round they were. Copying the two bytes rather than the short keeps this
+// independent of byte order.
+void rowMajorCopy(const byte* columnMajor, std::span<std::uint8_t> out)
+{
+    for (auto column = 0; column < wipeColumns; ++column)
+        for (auto row = 0; row < screenHeight; ++row)
+        {
+            const auto* source = columnMajor + (column * screenHeight + row) * 2;
+            auto* destination = out.data() + row * screenWidth + column * 2;
+
+            destination[0] = source[0];
+            destination[1] = source[1];
+        }
+}
+
+// wipe_melt_running is the melt's own "I have been set up" flag, and the only one
+// to test: exitMelt frees the column table but leaves the pointer to it alone, so
+// between melts it is non-null and dangling. Until the melt is set up, neither
+// screen has been transposed and nothing has slid.
+bool meltIsSetUp()
+{
+    return Doom::gameFlow().is_wiping_screen && Doom::wipeState().meltRunning;
+}
+} // namespace
+
 bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffsets)
 {
     const auto* start = Doom::wipeState().scrStart;
@@ -1623,11 +1652,7 @@ bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffs
         || !fits(outStart, screenPixels) || !fits(outOffsets, wipeColumns))
         return false;
 
-    // wipe_melt_running is the melt's own "I have been set up" flag, and the only
-    // one to test: exitMelt frees the column table but leaves the pointer to it
-    // alone, so between melts it is non-null and dangling. Until the melt is set
-    // up, the outgoing screen is still row-major and nothing has slid.
-    if (!Doom::wipeState().meltRunning)
+    if (!meltIsSetUp())
     {
         std::copy_n(start, screenPixels, outStart.begin());
         std::fill_n(outOffsets.begin(), wipeColumns, std::uint8_t {0});
@@ -1643,20 +1668,28 @@ bool buildWipe(std::span<std::uint8_t> outStart, std::span<std::uint8_t> outOffs
             std::clamp(Doom::wipeState().wipe_melt_offsets[column], 0, screenHeight);
 
         outOffsets[column] = static_cast<std::uint8_t>(slid);
-
-        // initMelt leaves the outgoing screen column-major - a column of
-        // two-pixel shorts - because that is how the melt walks it. A texture
-        // wants it back the way round it was. Copying the two bytes rather than
-        // the short keeps this independent of byte order.
-        for (auto row = 0; row < screenHeight; ++row)
-        {
-            const auto* source = start + (column * screenHeight + row) * 2;
-            auto* destination = outStart.data() + row * screenWidth + column * 2;
-
-            destination[0] = source[0];
-            destination[1] = source[1];
-        }
     }
+
+    rowMajorCopy(start, outStart);
+
+    return true;
+}
+
+bool wipeIncoming(std::span<std::uint8_t> outIncoming)
+{
+    const auto* incoming = Doom::wipeState().wipe_scr_end;
+
+    if (!Doom::gameFlow().is_wiping_screen || incoming == nullptr
+        || !fits(outIncoming, screenPixels))
+        return false;
+
+    if (!meltIsSetUp())
+    {
+        std::copy_n(incoming, screenPixels, outIncoming.begin());
+        return true;
+    }
+
+    rowMajorCopy(incoming, outIncoming);
 
     return true;
 }

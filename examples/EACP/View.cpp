@@ -61,6 +61,7 @@ View::View()
     prepareQuadShader(hudShader);
     prepareQuadShader(overlayShader);
     prepareQuadShader(wipeShader);
+    prepareQuadShader(captureShader);
     prepareShader(automapShader);
 
     prepareTargetShader(worldShader, GPU::BlendMode::None);
@@ -74,17 +75,23 @@ View::View()
     // all, so neither lookup is theirs.
     worldShader.colormap = colormapTexture;
 
-    screenShader.screenIndices = framebuffer;
     overlayShader.overlay = overlayTexture;
     wipeShader.start = wipeTexture;
     wipeShader.offsets = wipeOffsetTexture;
+    captureShader.offsets = wipeOffsetTexture;
 
     geometry.resize(maxVertices);
     draws.resize(maxDraws);
     automap.resize(maxAutomapVertices);
     overlayPixels.resize(overlayBytes);
     wipePixels.resize(Engine::screenPixels);
+    wipeIncomingPixels.resize(Engine::screenPixels);
     paletteData.resize(256 * 4);
+
+    // The offsets are read on every blit, melt or not, so they start at the
+    // nothing-has-slid the blit multiplies away rather than at whatever the
+    // texture was created over.
+    wipeOffsetTexture.update(wipeOffsets.data());
 }
 
 void View::prepareShader(DoomShader& shader) const
@@ -235,7 +242,28 @@ void View::render(GPU::Frame& frame)
     if (!gpuView)
     {
         auto screenPass = frame.beginPass({Graphics::Color::black()});
-        drawScreen(screenPass, bounds, dst, 0.0f, 1.0f);
+
+        // The engine composites its own melt into the frame it hands over, so
+        // the software path normally has nothing to add. The one thing it
+        // cannot do is slide a frame it never drew: a melt out of a level is
+        // this path, because gamestate has already moved on to the
+        // intermission - which is why the level used to drop to 320x200 at the
+        // instant it started sliding. Drawing the incoming screen alone and
+        // putting the capture over it is what keeps it sharp.
+        if (meltingFromCapture())
+        {
+            drawScreen(screenPass, wipeIncomingTexture, bounds, dst, 0.0f, 1.0f);
+            drawCapture(screenPass, bounds, dst, true);
+        }
+        else
+        {
+            drawScreen(screenPass, framebuffer, bounds, dst, 0.0f, 1.0f);
+
+            // Nothing this renderer composited is on the screen any more, so
+            // there is nothing worth melting away next time.
+            captureValid = false;
+        }
+
         frameChanged = false;
         return;
     }
@@ -249,44 +277,82 @@ void View::render(GPU::Frame& frame)
     // two never share the frame.
     auto onMap = Engine::automapActive();
 
+    ensureTargets();
+
     // Into a texture, and before the screen's pass opens: what a spectre shows
     // is the frame behind it, and no pass can read the one it is writing.
     auto worldDrawn = !onMap && renderWorld(frame, bounds, viewport, rows);
 
-    auto pass = frame.beginPass({Graphics::Color::black()});
+    // While a melt is running the capture holds the frame it is sliding away,
+    // so this frame goes straight to the screen and leaves it alone.
+    auto capturing = !wipeVisible && captureTarget.has_value();
 
-    if (onMap)
-        drawAutomap(pass, bounds, viewport);
+    auto compose = [&](GPU::RenderPass& pass)
+    {
+        if (onMap)
+            drawAutomap(pass, bounds, viewport);
+        else
+        {
+            if (worldDrawn)
+                resolveWorld(pass, bounds, viewport, rows);
+
+            drawWeapon(pass, bounds, viewport, rows);
+        }
+
+        // With no status bar there is no strip to composite: the rows it sat in
+        // hold the software renderer's own view of the world, which is the one
+        // thing that must not reach the screen.
+        if (Engine::statusBarVisible())
+            drawScreen(pass,
+                       framebuffer,
+                       bounds,
+                       statusBarRect(dst, rows),
+                       rows / Engine::screenHeight,
+                       1.0f);
+
+        // Over the whole frame, status bar included: the melt slides the
+        // outgoing screen down across all 200 rows.
+        if (wipeVisible)
+        {
+            if (meltingFromCapture())
+                drawCapture(pass, bounds, dst, true);
+            else
+                drawWipe(pass, bounds, dst);
+        }
+
+        // The menu, the messages and the PAUSE graphic are already in the
+        // software frame whenever that is what is on the screen; over the GPU
+        // view they have to be put back. Inside the capture when there is one,
+        // because vanilla's outgoing screen carries whatever the menu had drawn
+        // over it too.
+        if (overlayVisible)
+            drawOverlay(pass, bounds, dst);
+    };
+
+    if (capturing)
+    {
+        // The inner scope is the encoder's: a command buffer has one open at a
+        // time, and the pass below samples what this one writes.
+        {
+            auto pass = frame.beginPass(*captureTarget, {Graphics::Color::black()});
+            compose(pass);
+        }
+
+        auto screenPass = frame.beginPass({Graphics::Color::black()});
+        drawCapture(screenPass, bounds, dst, false);
+        captureValid = true;
+    }
     else
     {
-        if (worldDrawn)
-            resolveWorld(pass, bounds, viewport, rows);
-
-        drawWeapon(pass, bounds, viewport, rows);
+        auto pass = frame.beginPass({Graphics::Color::black()});
+        compose(pass);
     }
 
-    // With no status bar there is no strip to composite: the rows it sat in
-    // hold the software renderer's own view of the world, which is the one
-    // thing that must not reach the screen.
-    if (Engine::statusBarVisible())
-        drawScreen(pass,
-                   bounds,
-                   statusBarRect(dst, rows),
-                   rows / Engine::screenHeight,
-                   1.0f);
-
-    // Over the whole frame, status bar included: the melt slides the outgoing
-    // screen down across all 200 rows.
-    if (wipeVisible)
-        drawWipe(pass, bounds, dst);
-
-    // The menu, the messages and the PAUSE graphic are already in the
-    // software frame whenever that is what is on the screen; over the GPU
-    // view they have to be put back.
-    if (overlayVisible)
-        drawOverlay(pass, bounds, dst);
-
     frameChanged = false;
+}
+bool View::meltingFromCapture() const
+{
+    return wipeVisible && captureValid && captureTarget.has_value();
 }
 void View::setDarkenRow(float row)
 {
@@ -302,11 +368,13 @@ Graphics::Rect View::statusBarRect(const Graphics::Rect& dst, float rows)
     return {dst.x, dst.y + dst.h * share, dst.w, dst.h * (1.0f - share)};
 }
 void View::drawScreen(GPU::RenderPass& pass,
+                      const GPU::Texture& indices,
                       const Graphics::Rect& bounds,
                       const Graphics::Rect& dst,
                       float uvTop,
                       float uvBottom)
 {
+    screenShader.screenIndices = indices;
     screenShader.setDestination(bounds, dst);
     screenShader.uvY = std::array {uvTop, uvBottom};
     pass.draw(screenShader);
@@ -316,8 +384,6 @@ bool View::renderWorld(GPU::Frame& frame,
                        const Graphics::Rect& viewport,
                        float rows)
 {
-    ensureWorldTarget();
-
     if (!worldTarget)
         return false;
 
@@ -384,7 +450,7 @@ void View::resolveWorld(GPU::RenderPass& pass,
 
     pass.draw(resolveShader);
 }
-void View::ensureWorldTarget()
+void View::ensureTargets()
 {
     auto scale = backingScale();
     auto bounds = getLocalBounds();
@@ -398,8 +464,16 @@ void View::ensureWorldTarget()
         return;
 
     targetPixels = pixels;
+
     worldTarget.emplace(makeWorldTarget((int) pixels.x, (int) pixels.y));
     resolveShader.world = *worldTarget;
+
+    captureTarget.emplace(makeScreenCapture((int) pixels.x, (int) pixels.y));
+    captureShader.capture = *captureTarget;
+
+    // The resized capture holds nothing, so a melt starting on the very next
+    // frame has to fall back to the engine's copy rather than slide a blank.
+    captureValid = false;
 }
 View::HudPlacement
     View::placeHudSprite(int slot, const Graphics::Rect& viewport, float rows) const
@@ -525,6 +599,16 @@ void View::drawWipe(GPU::RenderPass& pass,
     pass.draw(wipeShader);
 }
 
+void View::drawCapture(GPU::RenderPass& pass,
+                       const Graphics::Rect& bounds,
+                       const Graphics::Rect& dst,
+                       bool sliding)
+{
+    captureShader.setDestination(bounds, dst);
+    captureShader.slide = sliding ? 1.0f : 0.0f;
+    pass.draw(captureShader);
+}
+
 void View::updateOverlay()
 {
     overlayVisible = Engine::buildOverlay(overlayPixels);
@@ -537,11 +621,23 @@ void View::updateWipe()
 {
     wipeVisible = Engine::buildWipe(wipePixels, wipeOffsets);
 
-    if (wipeVisible)
-    {
-        wipeTexture.update(wipePixels.data());
-        wipeOffsetTexture.update(wipeOffsets.data());
-    }
+    if (!wipeVisible)
+        return;
+
+    wipeOffsetTexture.update(wipeOffsets.data());
+
+    // The engine's 320x200 outgoing frame is kept current even while the
+    // capture is the one being drawn, because which of the two is in use can
+    // change part-way through a melt: a window resize rebuilds the capture and
+    // takes the frame in it with it.
+    wipeTexture.update(wipePixels.data());
+
+    // The incoming half is wanted only alongside the capture. Otherwise the
+    // engine's own composite is what the software path draws, and it already
+    // carries both halves at 320x200 - drawing the capture over that would
+    // leave the copy it replaces showing wherever the two disagreed by a pixel.
+    if (meltingFromCapture() && Engine::wipeIncoming(wipeIncomingPixels))
+        wipeIncomingTexture.update(wipeIncomingPixels.data());
 }
 
 void View::updatePalette()

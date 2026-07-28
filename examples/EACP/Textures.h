@@ -87,6 +87,25 @@ inline GPU::Texture makeWorldTarget(int width, int height)
     return GPU::Device::shared().makeTexture(descriptor, nullptr);
 }
 
+// The finished frame, at the window's own resolution and already in colour: what
+// the screen is blitted from, and what a melt slides away.
+//
+// Depth because the shaders that draw into it are the ones prepared for the
+// drawable, which has one (GPUView::setDepth) - a pipeline that tests depth
+// against a pass with no depth attachment goes on working on Apple silicon and
+// stops on D3D12, which is the trap the gap log's entry 7 records.
+inline GPU::Texture makeScreenCapture(int width, int height)
+{
+    auto descriptor = GPU::TextureDescriptor {};
+    descriptor.width = width;
+    descriptor.height = height;
+    descriptor.format = captureTargetFormat;
+    descriptor.renderTarget = true;
+    descriptor.depth = true;
+
+    return GPU::Device::shared().makeTexture(descriptor, nullptr);
+}
+
 // Wall textures, flats and sprites tile across a surface, so WorldShader and
 // HudShader declare them repeating; they carry palette indices, which must never
 // be blended, so those shaders sample them nearest. A masked one needs a second

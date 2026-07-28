@@ -61,13 +61,14 @@ since merged upstream, along with the Windows fixes that followed them.
 
 Measured rather than assumed, because this is exactly the claim that rots: a
 scratch tree configured with **no** `CPM_eacp_SOURCE` builds every target including
-the app, and all 120 tests pass in `Release`. The flag remains the right tool for
+the app, and all 121 tests pass in `Release`. The flag remains the right tool for
 co-developing against a local eacp; it is no longer a prerequisite.
 
 ## What is left
 
 Everything that was *blocking* is done: the renderer's feature list is finished and
-so is the eacp work it waited on. **The measurement that was to decide the next
+so is the eacp work it waited on, and **nothing in the renderer still runs at
+320x200 that does not have to**. **The measurement that was to decide the next
 three items has been taken** (see **The measurement** below), and its answer is that
 none of the three is worth building for its cost.
 
@@ -75,8 +76,8 @@ none of the three is worth building for its cost.
 |---|---|---|
 | ~~**next**~~ | ~~Measure `buildGeometry` and the per-frame upload~~ | **Done.** `Tests/Bench/GeometryBench.cpp`, target `port-bench` |
 | | **P3** instancing, **P4** per-sector heights, **E6** texture arrays | **Not worth building for the cost they attack** — the whole of it is 4% of a refresh. See below; E6 keeps a case that is not about speed |
-| **next** | **P5** full-resolution melt | ready, self-contained, unblocked by E1 |
-| | **E7** `R8Unorm` as a `PixelFormat` | not blocking; carries a latent `pixelFormatFor` mismatch worth fixing regardless |
+| ~~**next**~~ | ~~**P5** full-resolution melt~~ | **Done.** Not the way this plan expected — see below |
+| **next** | **E7** `R8Unorm` as a `PixelFormat` | not blocking; carries a latent `pixelFormatFor` mismatch worth fixing regardless |
 | | **I1** app-owned geometry falls off `draw(program)` | open, and the clearest interface finding of the port |
 | | **I2** `bindTextures` public only because of I1 | closes when I1 does |
 
@@ -323,24 +324,56 @@ Against that: a rewrite of the emitter with the pegging arithmetic moved into th
 vertex shader, and an answer to animated textures changing which draw a wall
 belongs to. **Do not build it.** See **The measurement**.
 
-### P5. A full-resolution melt — small, and newly possible
+### P5. A full-resolution melt — **done**, and the entry's premise was wrong
 
-A new entry, and the one thing spectre fuzz unblocked without meaning to. The
-screen melt composites the outgoing frame, which is a 320x200 software capture
-(`Engine::buildWipe` → `wipeTexture`) because there was no full-resolution GPU
-frame to be had. There is one now: the world target *is* the outgoing frame, at the
-window's resolution, and the melt only ever reads it.
+Built here, no eacp change. The improvement is real and visible: at the end of
+every level the whole screen used to drop to 320x200 at the instant the melt
+started, and now the level slides away at the window's resolution over the
+intermission artwork it reveals. Verified by capturing the same scripted
+`Doom::exitLevel()` twice, once with the new path forced off.
 
-What it needs is a second target and a swap — the frame being melted away has to
-survive the frame that is drawing over it, and a texture cannot be sampled by the
-pass that writes it (`Frame.h` says so at `beginPass`). Two targets and a swap on
-the tic the melt starts.
+**Two things this entry got wrong, and the second is the one worth keeping.**
 
-Two things not to lose. The outgoing frame is often *not* a world at all — the
-title, the intermission and the finale are genuinely 320x200 artwork — so the
-software capture stays as the other branch rather than being replaced. And the melt
-reads its own outgoing frame in *index* space, so if it moves onto the target it
-should composite before the resolve, not after.
+- *"The world target is the outgoing frame."* It is not. The world target holds
+  the 3D viewport in **index** space, before the resolve, with no weapon, no
+  status bar and no overlay on it. The outgoing frame vanilla captures is
+  `screens[0]` — everything, composited.
+- *The melts that would benefit never reach `drawWipe`.* `Engine::viewActive()`
+  requires `gamestate == Level`, and a melt out of a level runs with `gamestate`
+  already moved on to the intermission. So the entire transition is on the
+  **software path**, where the engine has composited both halves into `screens[0]`
+  at 320x200 and the port simply draws it. No amount of improving the GPU melt's
+  outgoing texture could have touched the case the entry was written for — and the
+  cases `drawWipe` *does* handle (intermission→level, title→level) have an outgoing
+  frame that is genuinely 320x200 artwork and was already right.
+
+  **The general form: before improving a path, check that the case you care about
+  goes down it.** Both wrong claims read as obviously true from the renderer's
+  feature list, and neither survives reading `viewActive()`.
+
+**What it actually took.** The finished frame is composited into a full-window
+colour target and blitted to the drawable whenever the GPU renderer owns the view,
+so the frame that was on the screen is still somewhere after it has been presented.
+Nothing is composited into it while a melt is running, which is what leaves it
+holding the frame the melt began over. `Engine::wipeIncoming` exports the incoming
+screen so the software path can draw that half alone with the capture over it —
+drawing the capture over the engine's own composite would leave the copy it
+replaces showing wherever the two disagreed by a pixel.
+
+It costs one extra pass and one full-screen draw while in a level, and **that was
+measured rather than waved at**: the display holds 120.0 refreshes a second with
+the capture and 120.0 without it.
+
+**And it has a gate**, which is more than the rest of the port's melt ever had.
+`Tests/Port/WipeTests.cpp` recomposites from `buildWipe` and `wipeIncoming` by the
+shader's own rule and holds it against `screens[0]` every tic of a real melt, with
+three vacuity guards and three demonstrated breakages. See `CLAUDE.md` under
+`Tests/Port`.
+
+One departure from vanilla, recorded at `CaptureShader`: the engine slides indices
+and resolves them through the current palette; the capture was resolved when taken.
+They differ only if the palette changes mid-melt, and then the captured answer is
+the one that matches what was on the screen.
 
 ---
 
@@ -772,7 +805,9 @@ above.
 
    Still open, and no longer blocked: the **melt** composites a 320x200 software
    capture of the outgoing frame, which was a constraint and is now only a
-   choice — the world target could be it. That is **P5**.
+   choice — the world target could be it. That is **P5**. (It could not, as step
+   6 records; but the melt was genuinely unblocked, and by the same fact — a frame
+   the GPU drew can be kept in a texture.)
 
 **Where it stands: the renderer's feature list is finished, and so is the eacp
 work it was waiting on.** Of the gap log's thirteen entries, seven are closed and
@@ -835,8 +870,33 @@ below is measurement, and one item that measurement should decide.
    and a full-window RGBA8 target — are inside the app figures above and are not
    separately visible; they are part of the ~30% spent submitting, and the frame
    has 95% of itself spare either way.
-6. **P5**, the full-resolution melt — small, self-contained, and the last thing in
-   the renderer still running at 320x200 when it does not have to. **Next.**
+6. ~~**P5**, the full-resolution melt.~~ **Done — and the entry it was written as
+   was wrong about both of its premises.** The world target could not be the
+   outgoing frame (it is the 3D viewport in index space, with no weapon, status bar
+   or overlay on it), and the melts that would have benefited never reach the GPU
+   melt path at all: a melt out of a level runs with `gamestate` already on the
+   intermission, so `Engine::viewActive()` is false and the whole transition is the
+   software path's 320x200 composite.
+
+   What it took instead is the finished frame composited into a target of its own
+   and blitted, so the frame that was on the screen survives the frame drawn over
+   it — one extra pass while in a level, measured at no cost to the refresh rate
+   (120.0/sec either way). See **P5** above.
+
+   **Two things generalise, and the first is the same lesson the measurement in
+   step 5 taught one level up.** *Before improving a path, check that the case you
+   care about goes down it* — both of this entry's wrong claims read as obviously
+   true from the renderer's feature list and neither survives reading
+   `viewActive()`. And *a plan entry written from the feature list is a hypothesis,
+   not a specification*: P3, P4 and E6 were retired by measuring them, and P5 was
+   rewritten by reading the code it named.
+
+   It also closed the port's oldest untested rule. The melt's composite is
+   something the engine and the port each implement and neither shares, and
+   `Tests/Port/WipeTests.cpp` now holds the two against each other every tic of a
+   real melt.
+7. **E7**, **I1**/**I2**. What is left is one eacp feature that blocks nothing and
+   one interface finding that is worth more than any feature on the list. **Next.**
 
 Two standing constraints from `CLAUDE.md` apply throughout and are worth
 restating here because everything above is renderer work:

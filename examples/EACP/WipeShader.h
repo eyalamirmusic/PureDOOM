@@ -4,15 +4,18 @@
 
 namespace PureDoom
 {
-// The screen melt, drawn over the frame the renderer has already produced rather
-// than instead of it - which is what keeps the level it is revealing at the
-// window's resolution.
+// The screen melt when the frame being slid away is one the engine drew: the
+// title, an intermission or the finale, on its way out. It is 320x200 artwork and
+// loses nothing by staying 320x200 here.
 //
-// The melt only ever reads the outgoing screen, so that is the only one that has
-// to be a texture: what shows above it is the framebuffer left alone, the new
-// level. That is why this needs no offscreen render target. The outgoing screen
-// stays 320x200, and should - it is title or intermission artwork, on its way
-// out.
+// A melt out of a *level* is CaptureShader's, the outgoing frame there being one
+// this renderer composited and worth keeping at the window's resolution. The two
+// share the melt's rule and nothing else - this one resolves indices through the
+// palette, that one slides colour that was resolved when it was captured.
+//
+// Drawn over the frame the renderer has already produced rather than instead of
+// it: the melt only ever reads the outgoing screen, so what shows above it is the
+// framebuffer left alone, the new level at its own resolution.
 struct WipeShader final : ScreenQuadShader
 {
     WipeShader() { compile(); }

@@ -791,15 +791,49 @@ Two paths, toggled at runtime with **Shift+F8**:
   resolution behind the menu. Row 0 is the identity, so playing costs the lookup and
   nothing else. The status bar needs none of this: the engine darkens its own frame,
   which is where the strip is sampled from.
-- **Screen melt**: drawn over the GPU view, not instead of it, which keeps the
-  level it is revealing at the window's resolution. It needs **no offscreen render
-  target**: the melt only ever *reads* the outgoing frame, and what it composites is
+- **The frame is composited into a texture and blitted**, rather than drawn
+  straight onto the drawable, whenever the GPU renderer owns the view. Not for the
+  picture — the blit is the identity — but so that the finished frame is still
+  somewhere at the window's resolution *after* it has been presented, which is the
+  only thing that makes the melt below full-resolution. Nothing is composited into
+  it while a melt is running, which is what leaves it holding the frame the melt
+  began over. Measured: the display holds 120.0 refreshes a second with the extra
+  pass and 120.0 without it.
+- **Screen melt**: drawn over the frame the renderer produced rather than instead
+  of it. What it composites is
 
       column c, row r = the outgoing frame's row (r - offset[c]) when
                         r >= offset[c], and the incoming frame's row r otherwise
 
-  so "the incoming frame" is just the framebuffer left alone. Only the outgoing
-  frame becomes a texture, and it is a 320x200 software frame whatever happens.
+  which is `doMelt`'s own rule written the other way round — the engine copies
+  runs of rows into place as the columns move, and a shader has to answer for one
+  pixel with no memory of the last frame. `Tests/Port/WipeTests.cpp` holds the two
+  against each other every tic of a real melt, which is the only gate either has
+  ever had.
+
+  **The outgoing frame comes from one of two places, and which one is the whole
+  point.** A melt out of the title, an intermission or the finale is sliding away
+  320x200 artwork, and `Engine::buildWipe`'s copy of it is exactly right. A melt
+  out of a *level* — the end of every level, and every `IDCLEV` or load — is
+  sliding away a frame this renderer drew, and that is the capture above.
+
+  Getting there needed one thing the shape of the port did not offer. A melt out
+  of a level runs with `gamestate` already moved on to the intermission, so
+  `Engine::viewActive()` is false and the whole transition is on the **software
+  path**, where `screens[0]` is the engine's own 320x200 composite of *both*
+  halves — which is why the level used to drop to 320x200 at the instant it
+  started sliding, and why nothing about the GPU melt path could have fixed it.
+  `Engine::wipeIncoming` exports the incoming screen (`screens[3]`) so the port
+  can draw that half alone and put the capture over it. Drawing the capture over
+  the engine's composite instead would leave the copy it replaces showing wherever
+  the two disagreed by a pixel.
+
+  One departure from vanilla, at `CaptureShader`: the engine slides palette
+  *indices* and resolves them through whatever palette is current, while the
+  capture was resolved when it was taken. The two differ only if the palette
+  changes during a melt — a damage flash on a level's last tic, which entering the
+  intermission clears — and the captured answer is the one that matches what was
+  on the screen.
 
   Two things it has to respect. The engine raises `is_wiping_screen` at the end of
   the frame that renders the incoming screen and only sets the melt up on the *next*
@@ -1033,7 +1067,7 @@ checkout. All nine are in eacp `main` now.
 
 Checked rather than assumed, which is the only reason this paragraph is allowed to
 say so: a scratch tree configured with **no** `CPM_eacp_SOURCE` at all builds every
-target including the app, and all 120 tests pass in `Release`.
+target including the app, and all 121 tests pass in `Release`.
 
 The flag is still what you want for **co-developing** against a local eacp — that
 is what it is for — and `~/Code/eacp-puredoom` is still the checkout to do it in
@@ -1059,7 +1093,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-120 tests, roughly forty seconds. **Run it before and after anything you change in
+121 tests, roughly forty seconds. **Run it before and after anything you change in
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
@@ -1085,7 +1119,7 @@ not.
 | `Sim/CheatTests.cpp` | PrimitiveTests | the cheat-sequence matcher |
 | `Sim/EngineTests.cpp` | PrimitiveTests | the composition root, and that `resetEngine` is genuine |
 | `Sim/StateClusterTests.cpp` | PrimitiveTests | the `Engine`'s state clusters and accessor identity |
-| `Port/GeometryTests.cpp` `Port/AutomapTests.cpp` | SimTests | the *port's* builders — `Engine::buildGeometry` and `Engine::buildAutomap` — driven headlessly. See below |
+| `Port/GeometryTests.cpp` `Port/AutomapTests.cpp` `Port/WipeTests.cpp` | SimTests | the *port's* own decisions — `Engine::buildGeometry`, `Engine::buildAutomap`, and the screen melt's composite rule — driven headlessly. See below |
 | `Port/GenmidiTests.cpp` `Port/OplTests.cpp` | SimTests | the IWAD's OPL instrument bank, and the synth over it — the only part of the audio path anything can measure. See **Audio** |
 
 Run the binaries through ctest, not bare. NanoTest registers one ctest case per test
@@ -1275,7 +1309,24 @@ whatever the port emits — they do not run a line of it.
   says so in a comment at its declaration, and every `double` naming a map coordinate
   in that file is in whole units.
 
-Both cases were demonstrated **sharp**, the same bar the frame goldens are held to,
+- `Port/WipeTests` is the third, and unlike the other two it was written before a
+  bug rather than after one. The screen melt's composite is a *rule* the port and
+  the engine both implement and neither shares — `doMelt` copies runs of rows into
+  place as the columns move, and a fragment shader has to answer for one pixel with
+  no memory of the last frame. `Port/meltCompositesLikeTheEngine` recomposites from
+  what `Engine::buildWipe` and `Engine::wipeIncoming` hand over and holds it against
+  `screens[0]`, every tic of a real melt, reached by loading E1M1 (a level load
+  wipes exactly as any transition does).
+
+  Its three vacuity guards are the interesting part: a melt between two *identical*
+  screens composites correctly under any rule at all, so the test also asserts that
+  the melt ran its full length, that the seam spent most of it inside the frame,
+  and that the two screens differ over a quarter of it throughout. Demonstrated
+  sharp three ways — the seam off by one (320 pixels disagree), the two screens
+  swapped (63,878), and the negative-offset clamp dropped from `buildWipe`
+  (37,513).
+
+All three were demonstrated **sharp**, the same bar the frame goldens are held to,
 and one of them failed the bar first: an earlier `automapSpansTheFrame` measured the
 bounding box of the *whole* emitted map, which the arrow and the crosshair — drawn
 from the camera and the frame, not from the map — held open on their own. It passed
@@ -1465,7 +1516,7 @@ at by accident on one.
 macOS universal build (AppleClang, `arm64;x86_64` — so the x86_64 half is compiled
 though only the arm64 slice is run, the runner being Apple silicon and Rosetta not
 installed on it), and Windows on **x64 and ARM64** under **both MSVC and clang-cl**.
-All five are Ninja, `Release`, every target built and all 120 tests run. The earlier
+All five are Ninja, `Release`, every target built and all 121 tests run. The earlier
 matrix had a `macos-latest × gcc` row that was the clang row run twice: on a macOS
 runner bare `gcc`/`g++` resolve to `/usr/bin`, which is Apple Clang wearing the name.
 
@@ -1834,8 +1885,15 @@ first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
    was already the single-sampled one a texture pass needs — it only had to name the
    target's pixel format as well. The unpredicted one is that the world moving into
    a texture makes the **melt's** remaining 320x200 capture a choice rather than a
-   constraint: the outgoing frame could now be the target itself. Still not done, and
-   no longer blocked.
+   constraint.
+
+   **That is done now, and the shape it took is not the one predicted here.** The
+   outgoing frame could *not* be the world target: the target holds the 3D viewport
+   in index space with no weapon, no status bar and no overlay, and — the part that
+   settles it — a melt out of a level never reaches the GPU melt path at all,
+   `gamestate` having already moved on to the intermission. What it wanted was the
+   whole composited frame kept for a frame longer, which is a target of its own and
+   one more pass. See **Renderer status**.
 8. **There was no cull-mode state** in `RenderPipelineDescriptor`. **Closed** —
    merged into eacp `main`.
 
