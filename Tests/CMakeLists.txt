@@ -88,6 +88,22 @@ nano_add_executable(PrimitiveTests
         Sim/CheatTests.cpp
         TARGETS doom-sim-probe)
 
+# What a frame of world geometry costs the CPU. A benchmark, not a test: it
+# asserts nothing, ctest never runs it, and its output is a number to read. It
+# links the same headless EngineAccess.cpp SimTests does, so it needs no GPU -
+# the only part of the real frame it cannot see is the upload, which is measured
+# in the app.
+#
+# Build and run it in Release. A Debug figure is a measurement of the standard
+# library's bounds checks.
+add_executable(port-bench Bench/GeometryBench.cpp
+        ${CMAKE_SOURCE_DIR}/examples/EACP/EngineAccess.cpp)
+
+target_link_libraries(port-bench PRIVATE doom-sim-probe)
+target_include_directories(port-bench PRIVATE ${CMAKE_SOURCE_DIR}/examples/EACP)
+target_compile_definitions(port-bench PRIVATE
+        PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
+
 # Re-records the goldens - one demo per process, because the engine only boots
 # once. Run it when a change to the simulation was *intended*; the diff on
 # Goldens/ is then the reviewable record of what it changed.
