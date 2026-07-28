@@ -48,8 +48,7 @@ static void syncModifierKey(bool pressed, bool wasPressed, Doom::Key key)
         Doom::keyUp(key);
 }
 
-View::View(Graphics::Window& windowToUse)
-    : window(windowToUse)
+View::View()
 {
     setSampleCount(1);
     setDepth(true);
@@ -114,10 +113,16 @@ void View::update(Threads::FrameTime)
     // refresh, not only on the ones a tic falls on.
     audio.pump();
 
-    if (window.isCommandPressed())
-        window.setMouseLocked(false);
+    // Command releases the mouse, which is the only way out of a locked window
+    // on macOS - and the modifiers have to be polled because eacp reports no key
+    // events for them (gap 2), which DOOM binds as ordinary keys.
+    if (auto* host = getWindow())
+    {
+        if (host->isCommandPressed())
+            host->setMouseLocked(false);
 
-    syncModifierKeys(window.getModifiers());
+        syncModifierKeys(host->getModifiers());
+    }
 
     // One reading of the engine's clock answers both of the questions the
     // frame has for it: whether a tic is due, and how far into the tic the
@@ -618,9 +623,11 @@ void View::keyUp(const Graphics::KeyEvent& event)
 
 void View::mouseDown(const Graphics::MouseEvent& event)
 {
-    if (!window.isMouseLocked())
+    if (!isAiming())
     {
-        window.setMouseLocked(true);
+        if (auto* host = getWindow())
+            host->setMouseLocked(true);
+
         return;
     }
 
@@ -629,7 +636,7 @@ void View::mouseDown(const Graphics::MouseEvent& event)
 
 void View::mouseUp(const Graphics::MouseEvent& event)
 {
-    if (window.isMouseLocked())
+    if (isAiming())
         Doom::buttonUp(toDoomButton(event.button));
 }
 
@@ -643,9 +650,19 @@ void View::mouseDragged(const Graphics::MouseEvent& event)
     aim(event);
 }
 
+// Whether the mouse is currently the player's aim rather than a pointer: the
+// window has it locked, so every movement is a turn and every click is a shot.
+// A view that is in no window is in neither state and answers no.
+bool View::isAiming() const
+{
+    auto* host = getWindow();
+
+    return host != nullptr && host->isMouseLocked();
+}
+
 void View::aim(const Graphics::MouseEvent& event)
 {
-    if (!window.isMouseLocked())
+    if (!isAiming())
         return;
 
     mouseMovement.x += event.rawDelta.x * mouseSpeed;

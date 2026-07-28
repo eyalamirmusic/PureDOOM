@@ -27,7 +27,7 @@ namespace PureDoom
 // keyboard and the mouse back in.
 struct View final : GPU::GPUView
 {
-    explicit View(Graphics::Window& windowToUse);
+    View();
 
     void prepareShader(DoomShader& shader) const;
     void prepareQuadShader(ScreenQuadShader& shader);
@@ -180,6 +180,7 @@ struct View final : GPU::GPUView
     // curve is there to help a cursor reach a target, and through it the same
     // flick of the hand turns the player a different amount depending how fast it
     // was made.
+    bool isAiming() const;
     void aim(const Graphics::MouseEvent& event);
 
     static constexpr float mouseSpeed = 4.0f;
@@ -259,7 +260,6 @@ struct View final : GPU::GPUView
     // engine's mixer has to be pulled from the same thread that steps it.
     Audio audio;
 
-    Graphics::Window& window;
     Graphics::ModifierKeys modifiers;
 };
 } // namespace PureDoom

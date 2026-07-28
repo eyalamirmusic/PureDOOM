@@ -1705,12 +1705,20 @@ position, plus the `Int`/`Bool` vector families, statements (`var`, `select`,
    winding is consistent. A wrongly-wound triangle under culling does not draw wrongly,
    it does not draw at all — which is the Windows-missing-floors failure again, and
    `Tests/Port/GeometryTests` is where that measurement would belong.
-9. **A `View` cannot reach the `Window` it is in.** Anything a view needs from its
-   window — the mouse lock, the modifier keys — has to be handed to it by the app.
-   This port declares the window *before* the view and hands it over as a
-   `Graphics::Window&` at construction, which makes it impossible to be null. That is
-   a workaround, not a fix: it constrains member order in `App`. A `View::getWindow()`,
-   or a window reference given on `setContentView`, would settle it.
+9. **A `View` could not reach the `Window` it is in.** **Answered** —
+   `~/Code/eacp-puredoom` on branch `puredoom`, not yet upstream, so this stays in the
+   log until it merges.
+
+   `View::getWindow()` returns the window or null. A pointer rather than the reference
+   this port used to be handed, because a view can precede its window, outlive it or
+   never have one; only the view a window adopts carries it, and everything under that
+   walks up. `Window` owns the back-pointer as a member, so a view outliving its window
+   reports none rather than a dangling one.
+
+   `View` here no longer takes a `Graphics::Window&`, and `App`'s member order is now
+   only an order rather than a constraint. The four call sites became `isAiming()` and
+   one guarded block — the mouse lock and the polled modifier keys, which is entry 2's
+   workaround and still needed.
 10. **`-fno-gnu-unique` is added for every language.** eacp's top-level CMake adds it
     when the CXX compiler is GCC, but the option lands on all languages — including
     the OBJCXX its Apple platform files compile, and OBJCXX on macOS is always Apple
@@ -1823,6 +1831,13 @@ I5. **`prepare(int sampleCount, bool depth)` is a positional bool**, at the fron
     fix: the four that describe *where the draw lands* travel together and come from
     one place, so a `prepare(const Texture&, …)` overload — or a descriptor carrying
     them — would read as what it is.
+
+    **Half-answered on the branch, by entry 8's work rather than on its own.**
+    `ShaderProgram::prepare` takes a `RenderPipelineDescriptor` too now, so every
+    field has a name at the call site — which is what let cull mode land at all,
+    there being no sixth positional slot worth adding. The better half is still
+    open: the descriptor is filled in by hand from a target the caller is holding,
+    so `prepareTargetShader` still exists to do it.
 
 ## MakeASound Gap Log
 

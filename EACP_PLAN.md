@@ -53,9 +53,12 @@ claim below was checked in the checkout rather than inferred from a commit
 message.
 
 **What this repository's branch is green against**, which the rule above says has
-to be stated: `eacp-puredoom` at `1f98229`, one commit past `a114455` — E1. It does
-not build against plain `~/Code/eacp` and is not meant to, `TextureDescriptor::depth`
-being what the world target is created with.
+to be stated: `eacp-puredoom` at `c3e9026`, five commits past `a114455` — E1, E5,
+E2, E3, E4. It does not build against plain `~/Code/eacp` and is not meant to:
+`TextureDescriptor::depth` is what the world target is created with,
+`RenderPass::setUniforms` is what the hand-rolled draws bind through,
+`Graphics::primaryDisplay()` is what the window is sized from, and
+`View::getWindow()` is what the input path asks.
 
 ---
 
@@ -72,7 +75,7 @@ being what the world target is created with.
 | 6 | The shader EDSL has almost no scalar maths | **Closed** — the full intrinsic set landed |
 | 7 | No offscreen render targets | **Closed on the branch** — `TextureDescriptor::depth`. See **E1** |
 | 8 | No cull-mode state | **Closed on the branch** — see **E2** |
-| 9 | A `View` cannot reach the `Window` it is in | Open — **E4** |
+| 9 | A `View` cannot reach the `Window` it is in | **Closed on the branch** — see **E4** |
 | 10 | `-fno-gnu-unique` is added for every language | Open |
 | 11 | eacp binds the uniform buffer to both stages | **Closed on the branch** — see **E5** |
 
@@ -350,13 +353,24 @@ Whole, because a fractional multiple puts a texel grid on a pixel grid it does n
 divide into. It picks 3 on the machine this was built on — the same number the guess
 had, now derived — and 4 on a larger display.
 
-### E4. A `View` can reach its `Window` (gap 9)
+### E4. A `View` can reach its `Window` (gap 9) — **done**
 
-Everything a view needs from its window — the mouse lock, the modifier keys — is
-handed to it by the app. This port declares the window before the view and passes
-a `Graphics::Window&` at construction (`View::View`), which makes it impossible to
-be null and constrains member order in `App` forever. A `View::getWindow()`, or a
-window reference given on `setContentView`, settles it.
+Built on `~/Code/eacp-puredoom` at `c3e9026`. `View::getWindow()` returns the window
+or null; `Window::setContentView` is what establishes the link, and everything under
+the adopted view walks up to find it.
+
+**The lifetime is the whole of the design.** A back-pointer that outlives what it
+points at is worse than none, so `Window` owns the link as a *member* rather than
+clearing it from each platform's destructor — three of which are `= default`, and a
+fourth would have to be remembered the day a fourth platform arrives. Four tests over
+the four answers it can give (none yet, this one, none any more, none after the
+window adopted someone else), and the lifetime case was demonstrated sharp by
+emptying that destructor.
+
+**The port's half**: `View` no longer takes a `Graphics::Window&`, so `App`'s member
+order is an order again rather than a constraint. Verified in the running app, not
+only in eacp's tests — a probe printed a non-null `getWindow()` on the first
+refresh.
 
 ### E5. Gate the uniform bind on the stage that reads it (gap 11) — **done**
 
@@ -529,6 +543,14 @@ target's. `View::prepareTargetShader` hides it, which is the workaround and also
 the shape of the fix: a `prepare(const Texture&, …)` overload could read all four
 off the target it is handed, and a descriptor would at least name them.
 
+**Half-answered, by E2 rather than on its own.** `ShaderProgram::prepare` now takes
+a `RenderPipelineDescriptor` as well, so every field has a name at the call site —
+which is what let cull mode land at all, there being no sixth positional slot worth
+adding. What is *not* answered is the better half of the entry: the descriptor still
+has to be filled in by hand from a target the caller is holding, so
+`prepareTargetShader` still exists to do it. A `prepare(const Texture&, …)` that
+reads the sample count, the depth and the format off the target remains the fix.
+
 ---
 
 ## Part 4 — Edits to the gap log in `CLAUDE.md` — **done**
@@ -592,17 +614,47 @@ above.
    capture of the outgoing frame, which was a constraint and is now only a
    choice — the world target could be it. That is **P5**.
 
-**Where it stands: the renderer's feature list is finished.** Everything below is
-either eacp work that removes a workaround here, or a cost that has not been
-measured yet. Nothing left is a hole in the picture.
+**Where it stands: the renderer's feature list is finished, and so is the eacp
+work it was waiting on.** Of the gap log's thirteen entries, seven are closed and
+the six that remain are one that eacp was never going to answer (1, audio), two
+input gaps (2, 2b), a CMake one (3), a toolchain one (10), and the two this port
+added last (12, texture arrays; 13, R8 targets) — neither blocking. What is left
+below is measurement, and one item that measurement should decide.
 
-4. **E2**, **E5**, **E3**, **E4** in eacp — small, independent, and each removes a
-   workaround that exists in this repository today. **E5** is the one this port
-   would notice: the world target's two pipelines add passes whose vertex stage
-   declares no uniform block, so Metal's validation layer now logs more unused
-   binds than it did — and the validation layer's silence is the port's own
-   measurement for a shader change (see P1's caveat), so noise there costs
-   something real.
+4. ~~**E2**, **E5**, **E3**, **E4** in eacp.~~ **Done — all four, plus I5 as a side
+   effect.** `eacp-puredoom` at `a644b3e`, `f002eba`, `3c19ea9`, `c3e9026`; 823 eacp
+   tests and this port's 120 green against the last of them. Three of the four
+   removed a workaround here (the two hand-rolled draws bind through
+   `setUniforms`, the window is sized from the display, `View` no longer takes a
+   `Graphics::Window&`) and **E2 deliberately did not** — see its entry for why
+   enabling culling needs `buildGeometry`'s winding measured first.
+
+   **What the batch taught, which is more than the features.** Each of the four was
+   written up as small and independent, and each turned out to hide a decision the
+   entry had not noticed:
+
+   - **E5** was "expose a predicate", and the value is that the bind and the
+     signature it is aimed at now come from *one* walk. A predicate computed twice
+     is a predicate that can disagree with itself.
+   - **E2** was "add a cull field", and the field is the easy half: the two
+     backends' defaults both read "clockwise is front" and mean opposite things,
+     one viewport y-flip apart. **The first attempt reasoned it out and got it
+     backwards** — a printed pixel corrected it, and a second experiment (a
+     clip-space top-half quad landing at image row 0) ruled out the snapshot path
+     as the explanation. Handedness is not a thing to reason about when a rendered
+     pixel can be read.
+   - **E3** was "report the screen size", and the two things that make it usable
+     are *points, not pixels* and *work area, not frame* — each of which a naive
+     implementation gets wrong while passing any plausible check.
+   - **E4** was "a getter", and the getter is trivial; the lifetime is not. The
+     back-pointer is cleared by a *member's* destructor rather than by a line in
+     each platform's `= default` one, which is what makes it impossible to forget
+     on the fourth platform.
+
+   Every one of the four is pinned by tests **demonstrated sharp** the way this
+   repository's goldens are — forcing the predicate true, gating the cull bind on
+   `!= None`, emptying the link's destructor — because a new gate that no plausible
+   mistake would fail reads as coverage and is not.
 5. **Measure** `buildGeometry` and the per-frame upload. Only then decide between
    **P3**, **P4** and **E6**, which all aim at the same cost from different sides
    and should not all be built. The fuzz work added a second full-frame pass and a
