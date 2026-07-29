@@ -1839,6 +1839,16 @@ first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
    eacp is the top-level project, so `set_default_target_setting()` on a consumer app
    target would stamp an empty Info.plist template. Workaround:
    `examples/EACP/CMakeLists.txt` sets the `EACP_MACOS_PLIST` cache variable itself.
+
+   **Not a gap: the deployment target.** `eacp_setup_apple()` also sets
+   `CMAKE_OSX_DEPLOYMENT_TARGET`, and a consumer inherits none of it — which cost
+   this port a silently target-less build (see **Build**). That was filed here as a
+   second half of this entry and it does not belong: the platform floor is the
+   *consumer's* policy, not the library's, and a library reaching into its
+   consumer's cache to set global toolchain state is the wrong shape however
+   convenient it is. eacp's maintainer said so, and the entry is the weaker for
+   having assumed otherwise. What the port owes is stated where the port sets it.
+
 4. **There was no display-metrics API.** **Closed** — merged into eacp `main`.
 
    Nothing public reported the screen's visible size, so an app could not pick an

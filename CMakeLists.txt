@@ -1,5 +1,35 @@
 cmake_minimum_required(VERSION 3.31)
 
+# The oldest macOS this is built for. **An app's own business, and one of the
+# few things a library must not decide for it** - eacp sets its own only when it
+# is the top-level project, deliberately, so anything embedding it states its
+# floor here and states it before configuring eacp.
+#
+# Before project(), because that is when CMake fixes it.
+#
+# Leaving it out is not neutral, which is the trap: CMake's Darwin module makes
+# CMAKE_OSX_DEPLOYMENT_TARGET an *empty* cache entry, every binary then targets
+# whatever SDK is on the build machine, and **nothing anywhere reports it** - a
+# deployment target that is too new produces no diagnostic, so the first symptom
+# is an app refusing to launch on someone else's Mac. This port shipped that way
+# until a stray deprecation warning in eacp's own source - visible here and not
+# in eacp's build, because their floor is older than ours was - led back to it.
+#
+# 11.0 matches eacp's own number on purpose: this port links it, so a floor
+# below theirs would be a floor their code does not honour. Not verified on a
+# real macOS 11; what is verified is that the two agree and the build is
+# warning-free.
+# FORCE, and eacp's own copy of this says why: CMake's Darwin module creates
+# CMAKE_OSX_DEPLOYMENT_TARGET as an empty cache entry, so a plain CACHE set is a
+# no-op against it. Before project() that only bites on a *re*-configure of an
+# existing build directory - which is every developer's, and none of CI's, so
+# without FORCE this would look like it worked and quietly not. The guard is what
+# keeps -DCMAKE_OSX_DEPLOYMENT_TARGET=... on the command line winning.
+if (APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING
+            "Minimum macOS version, matching eacp's own" FORCE)
+endif ()
+
 project(PureDOOM)
 
 option(PUREDOOM_BUILD_EACP_EXAMPLE "" ON)
