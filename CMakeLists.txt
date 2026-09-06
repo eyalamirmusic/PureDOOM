@@ -74,80 +74,16 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 # eacp's own find_package(EADataStructures) reuses this one, and the engine itself
 # still links nothing but this header-only target.
 include(CPM)
-CPMAddPackage(
-        NAME EADataStructures
-        GITHUB_REPOSITORY eyalamirmusic/cpp_data_structures
-        GIT_TAG main)
 
-# eacp proper. Added here rather than inside examples/EACP because the tests want
-# it too: eacp-core carries <eacp/Core/Utils/Environment.h>, which is how anything
-# in this repository reads or writes a process environment variable. That is not a
-# nicety - std::getenv is deprecated by Microsoft's CRT, and setting a variable has
-# no portable spelling at all (_putenv_s against setenv), so every call site that
-# did it by hand carried an #ifdef and a suppression. eacp answers both.
-#
-# The heavy half is gated on whether the app is actually being built. With
-# EACP_BUILD_GRAPHICS OFF this compiles Core, SIMD and Network and stops - no
-# Graphics, GPU, WebView, Camera or Video - so the engine-only test loop
-# (-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF, which is also what CI builds) stays a
-# CPU-only build that needs no GPU. CPM dedupes by NAME, so the app's own
-# requirements are expressed here and examples/EACP just links the targets.
-#
-# GIT_TAG is `puredoom` rather than `main` because the app uses
-# GPU::RenderPass::bind, which is on that branch and not yet upstream (the gap
-# log's I1). It goes back to `main` the day that merges, and the rule it is
-# standing in for is the one EACP_PLAN.md states: this repository's branch and
-# eacp's move together, and a green build proves nothing unless it says which
-# eacp it was green against. CI is where that has to be true - a developer can
-# point CPM_eacp_SOURCE at a local checkout and never notice the difference,
-# which is exactly how a branch nobody builds gets pushed.
 CPMAddPackage(
         NAME eacp
         GITHUB_REPOSITORY eyalamirmusic/eacp
-        GIT_TAG puredoom
+        GIT_TAG main
         OPTIONS
         "EACP_BUILD_GRAPHICS ${PUREDOOM_BUILD_EACP_EXAMPLE}"
         "EACP_BUILD_WEBVIEW OFF")
 
-# eacp guards GCC's STB_GNU_UNIQUE emission with add_compile_options(-fno-gnu-unique),
-# keyed on the CXX compiler being GCC - but add_compile_options lands on every
-# language, including the OBJCXX its Apple platform files compile, and OBJCXX on
-# macOS is always Apple Clang, which rejects the GCC-only flag as an unknown
-# argument. A macOS GCC build (the second-compiler gate CLAUDE.md asks for) then
-# fails inside eacp-core before compiling any engine code. Until eacp scopes the
-# flag itself (gap log item 10), rewrite it across eacp's directory tree to apply
-# to C++ only: the same flag on every GCC-compiled TU, none on the clang .mm ones.
-# A target snapshots its directory's COMPILE_OPTIONS when it is created, so the
-# rewrite has to visit the targets themselves, not the directory properties.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    function(puredoom_scope_gnu_unique_flag dir)
-        get_directory_property(targets DIRECTORY ${dir} BUILDSYSTEM_TARGETS)
-        foreach (target ${targets})
-            get_target_property(options ${target} COMPILE_OPTIONS)
-            if (options)
-                list(TRANSFORM options REPLACE "^-fno-gnu-unique$"
-                        "$<$<COMPILE_LANGUAGE:CXX>:-fno-gnu-unique>")
-                set_target_properties(${target}
-                        PROPERTIES COMPILE_OPTIONS "${options}")
-            endif ()
-        endforeach ()
-        get_directory_property(subdirs DIRECTORY ${dir} SUBDIRECTORIES)
-        foreach (subdir ${subdirs})
-            puredoom_scope_gnu_unique_flag(${subdir})
-        endforeach ()
-    endfunction()
-    puredoom_scope_gnu_unique_flag(${eacp_SOURCE_DIR})
-endif ()
 
-# The OPL3 chip Nuked-OPL3 emulates is what DOOM's music was written for: the
-# instrument bank lives in the IWAD's GENMIDI lump, so this path needs no external
-# sound bank at all. Fetched here rather than in examples/EACP, unlike MakeASound,
-# because the OPL player is GPU-free and therefore *testable* - Tests/Port drives
-# it headlessly, so the test binary needs the chip too.
-#
-# Two files and no dependencies, so this costs the engine-only loop almost nothing.
-# It is LGPL-2.1-or-later against this repository's GPL-2, which is compatible;
-# it stays a separate target so the boundary is visible.
 CPMAddPackage(
         NAME NukedOPL3
         GITHUB_REPOSITORY nukeykt/Nuked-OPL3
