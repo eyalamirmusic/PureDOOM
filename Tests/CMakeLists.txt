@@ -8,8 +8,8 @@ add_library(doom-sim-probe STATIC SimProbe.cpp SimProbe.h)
 
 # eacp-core is named here rather than inherited: doom-engine links it PRIVATE,
 # because it is the engine's own implementation choice. The tests use
-# <eacp/Core/Utils/Environment.h> directly - TestMain points DOOMWADDIR at the
-# repository, DemoReplay reads DOOM_UPDATE_GOLDENS - so they depend on it in
+# <eacp/Core/Utils/Environment.h> directly - Iwad.h sets DOOMWADDIR for
+# TestMain, DemoReplay reads DOOM_UPDATE_GOLDENS - so they depend on it in
 # their own right and say so.
 target_link_libraries(doom-sim-probe PUBLIC doom-engine eacp-core)
 target_include_directories(doom-sim-probe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -61,10 +61,13 @@ nano_add_executable(SimTests
 # The emulated OPL3. The music player is the one half of the audio path a test
 # can drive - the chip is arithmetic, so it renders without a device - which is
 # why the dependency is at the root rather than with the app.
-target_link_libraries(SimTests PRIVATE nuked-opl3)
-
-target_compile_definitions(SimTests PRIVATE
-        PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
+#
+# eacp-network is for the shareware IWAD, which is not in the repository:
+# TestMain fetches it through OnlineResource (examples/EACP/Iwad.h, the same
+# code the app runs) on the first test that boots, and every later process finds
+# it on disk. It is built whatever PUREDOOM_BUILD_EACP_EXAMPLE says - Network is
+# one of the modules eacp compiles before it stops at Graphics.
+target_link_libraries(SimTests PRIVATE nuked-opl3 eacp-network)
 
 # examples/EACP is otherwise ungated in the engine-only loop: with
 # -DPUREDOOM_BUILD_EACP_EXAMPLE=OFF nothing builds the app, so an engine change can
@@ -100,10 +103,8 @@ nano_add_executable(PrimitiveTests
 add_executable(port-bench Bench/GeometryBench.cpp
         ${CMAKE_SOURCE_DIR}/examples/EACP/EngineAccess.cpp)
 
-target_link_libraries(port-bench PRIVATE doom-sim-probe)
+target_link_libraries(port-bench PRIVATE doom-sim-probe eacp-network)
 target_include_directories(port-bench PRIVATE ${CMAKE_SOURCE_DIR}/examples/EACP)
-target_compile_definitions(port-bench PRIVATE
-        PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
 
 # Re-records the goldens - one demo per process, because the engine only boots
 # once. Run it when a change to the simulation was *intended*; the diff on

@@ -1,4 +1,8 @@
 #include "App.h"
+#include "Iwad.h"
+
+#include <cstdio>
+#include <exception>
 
 using namespace eacp;
 
@@ -6,12 +10,6 @@ namespace PureDoom
 {
 void configureDefaults()
 {
-    // PureDOOM locates WAD files via DOOMWADDIR (defaulting to the current
-    // directory), so point it at the repository's shareware WAD unless the user
-    // has already chosen a directory.
-    if (!getEnv("DOOMWADDIR"))
-        setEnv("DOOMWADDIR", PUREDOOM_ROOT_DIR);
-
     Doom::setDefaultInt("key_up", Doom::Key::W);
     Doom::setDefaultInt("key_down", Doom::Key::S);
     Doom::setDefaultInt("key_strafeleft", Doom::Key::A);
@@ -23,6 +21,19 @@ void configureDefaults()
 
 int main(int argc, char** argv)
 {
+    // Before the engine boots, and before the app's own loop: the fetch pumps
+    // the event loop itself while the file comes down, and the engine finds the
+    // WAD through DOOMWADDIR, which this sets.
+    try
+    {
+        PureDoom::ensureIwad();
+    }
+    catch (const std::exception& e)
+    {
+        std::fprintf(stderr, "%s\n", e.what());
+        return 1;
+    }
+
     PureDoom::configureDefaults();
     Doom::initGame(argc, argv, Doom::DOOM_FLAG_MENU_DARKEN_BG);
 

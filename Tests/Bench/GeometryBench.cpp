@@ -26,6 +26,7 @@
 #include "SimProbe.h"
 
 #include <EngineAccess.h>
+#include <Iwad.h>
 
 #include <DOOM/Game/GameSession.h>
 #include <DOOM/Render/GraphicsData.h>
@@ -372,10 +373,19 @@ void report(const Run& run)
 int main()
 {
     // The engine locates WADs through DOOMWADDIR, falling back to the working
-    // directory - which says nothing about where this was run from. Not
-    // overwritten, so a developer pointing at another WAD still gets it.
-    if (!eacp::getEnv("DOOMWADDIR"))
-        eacp::setEnv("DOOMWADDIR", PUREDOOM_ROOT_DIR);
+    // directory - which says nothing about where this was run from. Fetches
+    // the shareware IWAD onto the machine if the tests have not already; a
+    // DOOMWADDIR already set is not overwritten, so a developer pointing at
+    // another WAD still gets it.
+    try
+    {
+        PureDoom::ensureIwad();
+    }
+    catch (const std::exception& e)
+    {
+        std::printf("%s\n", e.what());
+        return 1;
+    }
 
     if (!doomSimBoot("demo1"))
     {

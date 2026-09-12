@@ -8,11 +8,11 @@
 //
 // These live in SimTests rather than alongside the other Engine cases in
 // PrimitiveTests, and the reason is worth knowing before adding another: booting the
-// engine needs the IWAD, which Tests/TestMain.cpp finds by setting DOOMWADDIR from
-// PUREDOOM_ROOT_DIR - and only SimTests links that main. PrimitiveTests takes
-// NanoTest's default one, so a booting test placed there passes when the binary is
-// run from the repository root by hand and fails under ctest, which runs it from
-// somewhere else. That is exactly how this file came to exist.
+// engine needs the IWAD, which Tests/TestMain.cpp fetches and points DOOMWADDIR at
+// (examples/EACP/Iwad.h) - and only SimTests links that main. PrimitiveTests takes
+// NanoTest's default one, so a booting test placed there passes only when the
+// developer happens to have DOOMWADDIR set, and fails under ctest. That is exactly
+// how this file came to exist.
 
 #include "../Common.h"
 #include "../SimProbe.h"

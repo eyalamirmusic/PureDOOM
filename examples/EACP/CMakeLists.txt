@@ -42,6 +42,7 @@ add_executable(PureDoomEACP
         HudFuzzShader.h
         HudShader.h
         Input.h
+        Iwad.h
         Layout.h
         OverlayShader.h
         ResolveShader.h
@@ -58,10 +59,10 @@ add_executable(PureDoomEACP
 # nuked-opl3 is added at the root, where the tests reach it too - the music
 # player is drivable headlessly, so it has a gate the rest of the audio path
 # does not.
+# eacp-network is for the shareware IWAD, which is not in the repository:
+# Iwad.h fetches it through OnlineResource on first launch.
 target_link_libraries(PureDoomEACP PRIVATE
-        eacp-gpu doom-engine MakeASound nuked-opl3)
-target_compile_definitions(PureDoomEACP PRIVATE
-        PUREDOOM_ROOT_DIR="${CMAKE_SOURCE_DIR}")
+        eacp-gpu eacp-network doom-engine MakeASound nuked-opl3)
 
 set(BUNDLE_ID "com.eacp.puredoom")
 

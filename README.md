@@ -85,7 +85,10 @@ means a `~/.doomrc` left by an older build silently wins. `examples/EACP` applie
 its bindings again after `doom_init` for exactly that reason.
 
 There is no `-iwad` argument: WADs are found through `DOOMWADDIR`, falling back
-to the working directory. Other classic arguments (`-warp`, `-skill`, `-episode`,
+to the working directory. The shareware `doom1.wad` is not in the repository — the
+app and the tests fetch it once through eacp's `OnlineResource` and keep it in the
+app's support directory, unless `DOOMWADDIR` is already set, in which case whatever
+is there is used. Other classic arguments (`-warp`, `-skill`, `-episode`,
 `-config`) pass straight through.
 
 ## Where things are

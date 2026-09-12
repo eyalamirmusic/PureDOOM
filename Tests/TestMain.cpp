@@ -1,6 +1,8 @@
 #include "Common.h"
+#include "Iwad.h"
 
-#include <eacp/Core/Utils/Environment.h>
+#include <cstdio>
+#include <exception>
 
 #if defined(_WIN32) && defined(_DEBUG)
 #include <crtdbg.h>
@@ -27,10 +29,20 @@ int main(int argc, char* argv[])
 #endif
 
     // The engine locates WADs through DOOMWADDIR, falling back to the working
-    // directory - which ctest promises nothing about. Not overwritten, so a
-    // developer pointing at another WAD still gets it.
-    if (!eacp::getEnv("DOOMWADDIR"))
-        eacp::setEnv("DOOMWADDIR", PUREDOOM_ROOT_DIR);
+    // directory - which ctest promises nothing about. Every test is its own
+    // process, so this runs once per test: the first fetches the shareware IWAD
+    // onto the machine and the rest find it there without touching the network.
+    // A DOOMWADDIR already set is not overwritten, so a developer pointing at
+    // another WAD still gets it.
+    try
+    {
+        PureDoom::ensureIwad();
+    }
+    catch (const std::exception& e)
+    {
+        std::fprintf(stderr, "%s\n", e.what());
+        return 1;
+    }
 
     return nano::run(argc, argv);
 }

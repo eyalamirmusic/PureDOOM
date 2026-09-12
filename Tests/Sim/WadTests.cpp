@@ -11,7 +11,11 @@
 // is built on, and replacing them with real ownership is the kind of change that
 // can hand back plausible-looking rubbish.
 
-#include "Common.h"
+// Spelled relative like every other test here, and it is not cosmetic: a bare
+// "Common.h" resolved to examples/EACP/Common.h, which sits ahead of Tests/ on
+// SimTests' include path and pulls in eacp's GPU headers - and those now refuse
+// to compile into a binary that links no graphics.
+#include "../Common.h"
 #include "DemoReplay.h"
 
 #include <algorithm>

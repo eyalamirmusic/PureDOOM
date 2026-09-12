@@ -17,6 +17,8 @@
 
 #include "../Common.h"
 
+#include <Iwad.h>
+
 using namespace nano;
 
 namespace
@@ -70,7 +72,7 @@ auto tReadFileFillsTheOwner = test("Sim/readFileFillsItsOwner") = []
 {
     check(doomSimBoot() != 0, "the engine booted headless");
 
-    auto contents = doomSimReadFileIntoOwner(PUREDOOM_ROOT_DIR "/doom1.wad");
+    auto contents = doomSimReadFileIntoOwner(PureDoom::iwadPath().c_str());
 
     check(contents.length > 0, "the IWAD read back a non-empty file");
     check(contents.length == contents.ownerSize,

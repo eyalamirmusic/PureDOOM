@@ -657,7 +657,9 @@ Three things that bite:
   shared by the two shaders that draw off the world's vertex buffer — the surfaces,
   and the spectres' silhouettes marked over them, which have to agree to the pixel.
   Every shader is the difference from those, and nothing else.
-- `doom1.wad` — the shareware data file the game boots with.
+- **There is no WAD in the repository.** The shareware `doom1.wad` is fetched
+  through eacp's `OnlineResource` on first launch (`examples/EACP/Iwad.h`, see
+  **Build**) and kept under the app's support directory.
 
 Upstream's SDL reference port used to live in `examples/SDL` and was the best worked
 example of how the engine expects to be driven. It was deleted with the single
@@ -1082,11 +1084,33 @@ that path and not `~/Code/eacp`).
 only, which is why the `-DPUREDOOM_BUILD_EACP_EXAMPLE=OFF` loop builds against any
 checkout.
 
-The app boots `doom1.wad` from the repository root by default: PureDOOM has no
-`-iwad` argument — it locates WADs via `DOOMWADDIR` (falling back to the current
-directory), so `main` points `DOOMWADDIR` at the repo root unless the user already
-set it. Other classic DOOM arguments (`-warp`, `-skill`, `-episode`, …) pass
-straight through.
+**The shareware WAD is fetched, not shipped.** `examples/EACP/Iwad.h` asks eacp's
+`OnlineResource` for upstream PureDOOM's own `doom1.wad` — byte-identical to the
+file this repository forked with, so every golden still describes what arrives —
+and keeps it at `<Application Support>/PureDoomEACP/Resources/doom1.wad`. The
+app, `SimTests` and `port-bench` all go through the same `ensureIwad()`, and the
+directory is spelled out there so the three share one copy rather than each
+keeping one under its own name. PureDOOM has no `-iwad` argument — it locates
+WADs via `DOOMWADDIR` (falling back to the current directory) — so `ensureIwad`
+points `DOOMWADDIR` at that directory, unless the user already set it, in which
+case nothing is fetched and their WAD is used. Other classic DOOM arguments
+(`-warp`, `-skill`, `-episode`, …) pass straight through.
+
+Three decisions in that header are deliberate:
+
+- **A copy on disk is trusted** (`Freshness::trust`), never revalidated. The
+  shareware WAD is the last shareware there will be, and a machine that is offline
+  must still boot — `OnlineResource` refuses a copy whose revalidation *fails*, so
+  `Freshness::check` would turn no network into no game (eacp gap log, entry 14).
+  `Info::version` is the lever for a re-fetch, should one ever be needed.
+- **The fetch is blocking and happens before anything else** — before the engine
+  boots and before the app's own event loop, which is the contract
+  `OnlineResource::fetch` states for itself. First launch takes the download's
+  length with no window up; every later launch finds the file and fetches nothing.
+- **The tests fetch too, once per machine.** Every test is its own process, so
+  `TestMain` calls `ensureIwad` every time; the first downloads and the rest find
+  the copy. CI's runners have the network, and a fetch that fails is an honest
+  failure of every booting test rather than a mysterious one.
 
 ## Testing
 
@@ -1101,12 +1125,12 @@ ctest --test-dir build --output-on-failure
 `src/DOOM`.**
 
 Two binaries, and which one a test lives in is not cosmetic. **`SimTests`** boots
-the engine, and only it links `Tests/TestMain.cpp`, which points `DOOMWADDIR` at the
-repository root — so **any test that boots belongs there**. **`PrimitiveTests`**
-takes NanoTest's default `main` and covers what needs no boot. A booting test put in
-`PrimitiveTests` finds the IWAD when you run the binary by hand from the repo root
-and fails under ctest, which runs it from elsewhere; that reads as flakiness and is
-not.
+the engine, and only it links `Tests/TestMain.cpp`, which fetches the IWAD and
+points `DOOMWADDIR` at it (`examples/EACP/Iwad.h`) — so **any test that boots
+belongs there**. **`PrimitiveTests`** takes NanoTest's default `main` and covers
+what needs no boot. A booting test put in `PrimitiveTests` finds the IWAD only when
+the developer happens to have `DOOMWADDIR` set, and fails under ctest; that reads as
+flakiness and is not.
 
 | File | Binary | What it holds |
 |---|---|---|
@@ -2024,6 +2048,16 @@ first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
     attachment, of exactly the kind that function's own comment says neither backend
     will accept. Unreachable today only because R8 cannot be a render target; it stops
     being unreachable the moment this entry lands.
+14. **`OnlineResource` refuses a copy it holds when revalidating it fails.** With
+    `Freshness::check` and a sidecar carrying validators, `performFetch` sends the
+    conditional GET and treats *any* outcome other than 200 or 304 as failure — a
+    transport error included — so a machine that is offline, holding a complete and
+    valid copy, gets `!ok` and `fetch()` throws. The copy is exactly the thing the
+    validators exist to keep, and a revalidation that could not be asked should keep
+    it (HTTP's own `stale-if-error`), with `downloaded = false` and the error
+    reported alongside. Workaround: `Iwad.h` uses `Freshness::trust`, which is right
+    for a file that never changes but means the general case — a resource that
+    *does* change, wanted offline — has no correct setting yet.
 
 ### Interface findings
 
