@@ -10,14 +10,16 @@ struct App
     App()
     {
         window.setContentView(view);
+        view.input = &input;
         view.focus();
     }
 
-    // Their order is now only their order. It used to be a constraint: the view
-    // took a Graphics::Window& because a view could not reach the window it was
-    // in, so declaring them the other way round handed it a reference to an
-    // object that did not exist yet. It asks the window for itself now.
+    // The window and the view's order is only their order: the view asks the
+    // window for itself rather than being handed it. The input's is not - it
+    // listens to the window, which must outlive it, so it is declared last and
+    // destroyed first.
     Graphics::Window window {windowOptions()};
     View view;
+    Graphics::GameInput input {window};
 };
 } // namespace PureDoom

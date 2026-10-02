@@ -5,36 +5,14 @@
 namespace PureDoom
 {
 
-// The printable keys, mapped from the *positional* KeyCode rather than from the
-// character the event carries.
+// The keys, mapped from the *positional* KeyCode GameInput reports. It carries no
+// characters at all, so this is the only path rather than the preferred one, and
+// a key with no case here is simply not DOOM's.
 //
-// This has to be the primary path, not an optimisation: eacp reports a KeyCode on
-// every platform, but fills in charactersIgnoringModifiers only on macOS - the
-// Windows backend never assigns it, and assigns `characters` on key *down* alone
-// (see the gap log). Reading the character first therefore made every letter,
-// digit and punctuation key on Windows fall through to Doom::Key::Unknown, which
-// View::keyDown drops - so w/a/s/d did nothing while Space, Escape, Enter and the
-// arrows, all of which have a KeyCode case below, worked. That looked like partial
-// keyboard support and was really one missing string.
-//
-// KeyCode is positional (macOS virtual key values, which the Windows backend
-// translates to), so this matches by physical key, which is what a movement
-// binding wants. The character fallback below is kept for the keys eacp has no
-// constant for.
-//
-// Positional has to win over the character even where both are available, and the
-// reason is key *up*, not layout: Windows reports characters on key down alone. A
-// mapping that read the character first would identify a key one way when pressed
-// and another way when released, and on any layout where those disagree the
-// release would not match the press - so the engine would never clear the key and
-// the player would run into a wall forever. Down and up must resolve identically,
-// which only the positional code does on both platforms.
-//
-// The cost is that on a non-US macOS layout the letters are now the US-positional
-// ones (the physical WASD block), where before they followed the layout. For
-// movement that is the better answer and matches what other ports do; for typing a
-// savegame name it is a regression, and the note is here so that is a known trade
-// rather than a surprise.
+// Positional means by physical key: on a non-US layout the letters are the
+// US-positional ones (the physical WASD block) rather than what the layout prints
+// on them. For movement that is the right answer and matches other ports; for
+// typing a savegame name it is a known trade rather than a surprise.
 struct DoomKeyMapping
 {
     std::uint16_t keyCode = 0;
@@ -92,24 +70,27 @@ inline constexpr DoomKeyMapping printableKeys[] = {
     {Graphics::KeyCode::Slash, Doom::Key::Slash},
 };
 
-inline Doom::Key toDoomKey(const Graphics::KeyEvent& event)
+inline Doom::Key toDoomKey(std::uint16_t keyCode)
 {
     using namespace Graphics;
 
-    // A key the Windows backend could not translate has no positional identity, so
-    // it must not reach the character fallback: that would resolve it on key down
-    // (where Windows reports characters) and not on key up, leaving it held down
-    // forever. Dropping it is the safe answer, and DOOM binds nothing outside the
-    // table below.
-    if (event.keyCode == KeyCode::Unknown)
-        return Doom::Key::Unknown;
-
     for (const auto& mapping: printableKeys)
-        if (mapping.keyCode == event.keyCode)
+        if (mapping.keyCode == keyCode)
             return mapping.doomKey;
 
-    switch (event.keyCode)
+    switch (keyCode)
     {
+        // DOOM binds the modifiers as ordinary keys (fire, run, strafe) and does
+        // not tell left from right.
+        case KeyCode::Shift:
+        case KeyCode::RightShift:
+            return Doom::Key::Shift;
+        case KeyCode::Control:
+        case KeyCode::RightControl:
+            return Doom::Key::Ctrl;
+        case KeyCode::Option:
+        case KeyCode::RightOption:
+            return Doom::Key::Alt;
         case KeyCode::Tab:
             return Doom::Key::Tab;
         case KeyCode::Return:
@@ -153,29 +134,11 @@ inline Doom::Key toDoomKey(const Graphics::KeyEvent& event)
         case KeyCode::F12:
             return Doom::Key::F12;
         default:
-            break;
+            return Doom::Key::Unknown;
     }
-
-    // Last resort, for a key with no KeyCode constant at all. DOOM's codes for
-    // letters, digits and punctuation are their ASCII values, so the typed
-    // character is directly usable where one is reported. Only macOS reports one:
-    // this yields nothing on Windows, which is why the table above exists.
-    const auto& characters = event.charactersIgnoringModifiers;
-
-    if (characters.size() == 1)
-    {
-        auto character = characters.front();
-
-        if (character >= 'A' && character <= 'Z')
-            character = (char) (character - 'A' + 'a');
-
-        if (character >= ' ' && character <= '~')
-            return (Doom::Key) character;
-    }
-
-    return Doom::Key::Unknown;
 }
 
+// DOOM has three buttons; a fourth fires, as the left one does.
 inline Doom::MouseButton toDoomButton(Graphics::MouseButton button)
 {
     switch (button)
@@ -184,8 +147,11 @@ inline Doom::MouseButton toDoomButton(Graphics::MouseButton button)
             return Doom::MouseButton::Right;
         case Graphics::MouseButton::Middle:
             return Doom::MouseButton::Middle;
-        default:
+        case Graphics::MouseButton::Left:
+        case Graphics::MouseButton::Other:
             return Doom::MouseButton::Left;
     }
+
+    return Doom::MouseButton::Left;
 }
 } // namespace PureDoom

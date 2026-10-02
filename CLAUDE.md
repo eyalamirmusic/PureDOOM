@@ -1710,6 +1710,25 @@ renderer has 95% of its frame spare.
   pulls it from the main thread instead and hands finished frames across a wait-free
   queue, so there is no lock anywhere. See **Audio**.
 
+### How input reaches the engine
+
+Through eacp's `GameInput`, not the `View`'s key and mouse callbacks. `App` owns it,
+declared after the window it listens to so it is destroyed first, and hands the view
+a pointer. `View::update` takes **one `snapshot()` per refresh**, right after
+`audio.pump()` and before the tic-due early return (`View::pollInput`), and walks its
+`events()` in order: keys and buttons are posted to the engine as they come, and the
+frame's summed raw `mouseDelta()` is gathered into `mouseMovement` while the mouse is
+locked, for `flushMouse` to post once the tic is due. Four things are the port's own
+rather than DOOM's: a click while unlocked locks the mouse and is not a shot,
+**Command** releases the lock and is not forwarded, and **Shift+F8** / **Shift+F7**
+toggle the GPU world and the aim prediction. Repeats are already filtered, and losing
+focus releases every key, so neither needs handling here. The view keeps
+`setHandlesMouseEvents` and `focus()`: the window path delivers its events to the
+focused view, and that is what `GameInput` taps wherever GameController does not
+cover. Which feed is live is printed once per change (`PureDoom: input backend: …`);
+on macOS it reads `Window events` at launch and moves to GameController once that
+backend delivers its first key or mouse movement.
+
 ### What the engine expects of its host
 
 Two of these are not obvious, and getting either wrong makes the game feel broken
@@ -1742,9 +1761,12 @@ rather than fail outright.
   *assigns* the mouse delta rather than adding to it, and `G_BuildTiccmd` consumes and
   zeroes it once a tic. Posting one `doom_mouse_move` per platform mouse event — which
   arrive several times per tic — throws away all but the last, and the aim crawls.
-  Accumulate and flush once per tic (`View::flushMouse`). It also stops mouse motion
-  from filling `D_PostEvent`'s 64-slot ring buffer, which silently overwrites rather
-  than blocking, and so can swallow keystrokes.
+  Gather the movement every refresh (each `GameInput` snapshot's summed
+  `mouseDelta()`, `View::pollInput`) and post it once per tic (`View::flushMouse`),
+  *after* the tic's buttons: `buttonDown`/`buttonUp` post a mouse event carrying no
+  movement, and the last mouse event wins. It also stops mouse motion from filling
+  `D_PostEvent`'s 64-slot ring buffer, which silently overwrites rather than
+  blocking, and so can swallow keystrokes.
 - **The game only moves on a tic, 35 times a second.** The display refreshes two to
   four times as often. Step the engine when its own clock (`Engine::ticTime`) says a
   tic is due, and rebuild what derives from its state only then. Rendering still runs
@@ -1843,22 +1865,28 @@ first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
    dependency of `examples/EACP`; the music is voiced by an emulated OPL3
    (Nuked-OPL3) out of the IWAD's own GENMIDI bank. Both sound and music play. See
    **Audio**.
-2. **Modifier keys produce no key events**, on any platform — DOOM binds them as
-   ordinary keys (Ctrl = fire, Shift = run, Alt = strafe). Workaround: they are diffed
-   once per frame from polled `Window::getModifiers()` into synthetic down/up events.
-   (The punctuation half of this entry is **fixed upstream**.)
+2. **Modifier keys produced no key events**, on any platform — DOOM binds them as
+   ordinary keys (Ctrl = fire, Shift = run, Alt = strafe). **Closed** by eacp's
+   `GameInput`: `KeyCode::Shift`/`Control`/`Option`/`Command` and their right-hand
+   twins arrive as ordinary keys, and `Input.h` maps them like any other. The
+   workaround — diffing polled `Window::getModifiers()` into synthetic down/up events
+   once a frame — is gone. On macOS they come only through the GameController
+   backend (AppKit reports them through `flagsChanged:`, which the window path never
+   turns into key events), so they depend on it having taken the keys over.
+   (The punctuation half of this entry was **fixed upstream** earlier.)
 2b. **`charactersIgnoringModifiers` is macOS-only**, and `characters` is filled on key
    *down* alone. This is the bug that made the first Windows build look like it had
    *partial* keyboard support: `Input.h` read the character first, so Space, Escape,
    Enter, Tab and the arrows worked while **every letter, digit and punctuation key
    returned `Key::Unknown`**.
 
-   Workaround: `Input.h` maps the printable keys from the positional `KeyCode`, with
-   the character kept only as a last resort. **Positional has to win even where both
-   are available**, and the reason is key *up* rather than layout: with characters
-   reported on key down alone, a character-first mapping identifies a key one way when
-   pressed and another when released, so on any layout where those disagree the release
-   never matches the press and the engine never clears the key.
+   The workaround was to map from the positional `KeyCode` first and keep the
+   character as a last resort — positional had to win even where both were
+   available, because a character reported on key down alone resolves a key one way
+   when pressed and another when released. **Moot now**: `GameInput` carries no
+   characters at all, so the positional mapping is the only path rather than a
+   workaround, and the character fallback is deleted. What remains true is the
+   trade: on a non-US layout the letters are the US-positional ones.
 3. **CPM consumers don't get app-bundle setup.** `eacp_default_setup()` only runs when
    eacp is the top-level project, so `set_default_target_setting()` on a consumer app
    target would stamp an empty Info.plist template. Workaround:
@@ -1976,8 +2004,8 @@ first run. `EACP_PLAN.md` Part 2 holds the full write-ups.
 
    `View` here no longer takes a `Graphics::Window&`, and `App`'s member order is now
    only an order rather than a constraint. The four call sites became `isAiming()` and
-   one guarded block — the mouse lock and the polled modifier keys, which is entry 2's
-   workaround and still needed.
+   `setAiming()` — the mouse lock, which `GameInput` has no API for and leaves on the
+   window. The polled modifier keys that used to share the block went with entry 2.
 10. **`-fno-gnu-unique` is added for every language.** eacp's top-level CMake adds it
     when the CXX compiler is GCC, but the option lands on all languages — including
     the OBJCXX its Apple platform files compile, and OBJCXX on macOS is always Apple

@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <string>
 
 #include <DOOM/Game/DoomMain.h>
 #include <DOOM/UI/Automap.h>
@@ -186,22 +187,18 @@ struct View final : GPU::GPUView
     // thousand sprite lumps, and a level shows a small fraction of them.
     GPU::Texture& textureFor(int id);
 
-    // DOOM binds Ctrl/Shift/Alt as ordinary keys (fire/run/strafe), but eacp
-    // reports them only as modifier state, never as key events (see the gap log).
-    void syncModifierKeys(const Graphics::ModifierKeys& current);
-    void keyDown(const Graphics::KeyEvent& event) override;
-    void keyUp(const Graphics::KeyEvent& event) override;
-    void mouseDown(const Graphics::MouseEvent& event) override;
-    void mouseUp(const Graphics::MouseEvent& event) override;
-    void mouseMoved(const Graphics::MouseEvent& event) override;
-    void mouseDragged(const Graphics::MouseEvent& event) override;
+    // Takes the one GameInput snapshot a refresh gets and hands it to the engine:
+    // keys and buttons are posted in the order they arrived, and the mouse's
+    // movement is gathered for flushMouse to post once the tic is due. Every
+    // refresh rather than every tic, because the aim runs ahead on the movement
+    // gathered so far (pendingTurn).
+    void pollInput();
+    void handleInputEvent(const Graphics::GameInputFrame& frame,
+                          const Graphics::InputEvent& event);
+    void reportInputBackend();
 
-    // The device's own movement, not the pointer's: the system's acceleration
-    // curve is there to help a cursor reach a target, and through it the same
-    // flick of the hand turns the player a different amount depending how fast it
-    // was made.
     bool isAiming() const;
-    void aim(const Graphics::MouseEvent& event);
+    void setAiming(bool aiming);
 
     static constexpr float mouseSpeed = 4.0f;
 
@@ -292,6 +289,9 @@ struct View final : GPU::GPUView
     // engine's mixer has to be pulled from the same thread that steps it.
     Audio audio;
 
-    Graphics::ModifierKeys modifiers;
+    // The App's, which outlives the view's use of it; null until it is handed
+    // over.
+    Graphics::GameInput* input = nullptr;
+    std::string inputBackend;
 };
 } // namespace PureDoom

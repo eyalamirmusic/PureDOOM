@@ -37,15 +37,16 @@ static float turnFor(float movement)
     return -movement * sensitivity * pi / 4096.0f;
 }
 
-static void syncModifierKey(bool pressed, bool wasPressed, Doom::Key key)
+static bool isShiftHeld(const Graphics::GameInputFrame& frame)
 {
-    if (pressed == wasPressed)
-        return;
+    return frame.isDown(Graphics::KeyCode::Shift)
+           || frame.isDown(Graphics::KeyCode::RightShift);
+}
 
-    if (pressed)
-        Doom::keyDown(key);
-    else
-        Doom::keyUp(key);
+static bool isCommandKey(std::uint16_t keyCode)
+{
+    return keyCode == Graphics::KeyCode::Command
+           || keyCode == Graphics::KeyCode::RightCommand;
 }
 
 View::View()
@@ -120,16 +121,9 @@ void View::update(Threads::FrameTime)
     // refresh, not only on the ones a tic falls on.
     audio.pump();
 
-    // Command releases the mouse, which is the only way out of a locked window
-    // on macOS - and the modifiers have to be polled because eacp reports no key
-    // events for them (gap 2), which DOOM binds as ordinary keys.
-    if (auto* host = getWindow())
-    {
-        if (host->isCommandPressed())
-            host->setMouseLocked(false);
-
-        syncModifierKeys(host->getModifiers());
-    }
+    // Ahead of it too: the buttons are posted as they arrive, and the movement
+    // gathered here is what the aim runs ahead on between tics.
+    pollInput();
 
     // One reading of the engine's clock answers both of the questions the
     // frame has for it: whether a tic is due, and how far into the tic the
@@ -676,68 +670,104 @@ GPU::Texture& View::textureFor(int id)
     return *slot;
 }
 
-void View::syncModifierKeys(const Graphics::ModifierKeys& current)
+void View::pollInput()
 {
-    syncModifierKey(current.shift, modifiers.shift, Doom::Key::Shift);
-    syncModifierKey(current.control, modifiers.control, Doom::Key::Ctrl);
-    syncModifierKey(current.alt, modifiers.alt, Doom::Key::Alt);
-    modifiers = current;
-}
-
-void View::keyDown(const Graphics::KeyEvent& event)
-{
-    if (event.isRepeat)
+    if (input == nullptr)
         return;
 
-    if (event.keyCode == Graphics::KeyCode::F8 && event.modifiers.shift)
-    {
-        gpuWorld = !gpuWorld;
-        return;
-    }
+    const auto& frame = input->snapshot();
+    reportInputBackend();
 
-    if (event.keyCode == Graphics::KeyCode::F7 && event.modifiers.shift)
-    {
-        predictAim = !predictAim;
-        return;
-    }
+    for (const auto& event: frame.events())
+        handleInputEvent(frame, event);
 
-    if (auto key = toDoomKey(event); key != Doom::Key::Unknown)
-        Doom::keyDown(key);
-}
-
-void View::keyUp(const Graphics::KeyEvent& event)
-{
-    if (auto key = toDoomKey(event); key != Doom::Key::Unknown)
-        Doom::keyUp(key);
-}
-
-void View::mouseDown(const Graphics::MouseEvent& event)
-{
-    if (!isAiming())
-    {
-        if (auto* host = getWindow())
-            host->setMouseLocked(true);
-
-        return;
-    }
-
-    Doom::buttonDown(toDoomButton(event.button));
-}
-
-void View::mouseUp(const Graphics::MouseEvent& event)
-{
+    // The device's own movement, not the pointer's: the system's acceleration
+    // curve is there to help a cursor reach a target, and through it the same
+    // flick of the hand turns the player a different amount depending how fast
+    // it was made. It is only gathered here; flushMouse posts it after the
+    // buttons, because the engine takes the tic's movement from the last mouse
+    // event it saw and a button event carries none.
     if (isAiming())
-        Doom::buttonUp(toDoomButton(event.button));
+    {
+        auto delta = frame.mouseDelta();
+        mouseMovement.x += delta.x * mouseSpeed;
+        mouseMovement.y += delta.y * mouseSpeed;
+    }
 }
 
-void View::mouseMoved(const Graphics::MouseEvent& event)
+void View::handleInputEvent(const Graphics::GameInputFrame& frame,
+                            const Graphics::InputEvent& event)
 {
-    aim(event);
+    using Graphics::InputEventType;
+    namespace KeyCode = Graphics::KeyCode;
+
+    auto button = static_cast<Graphics::MouseButton>(event.code);
+
+    switch (event.type)
+    {
+        case InputEventType::KeyDown:
+            // Command is the way out of a locked window, and is not DOOM's.
+            if (isCommandKey(event.code))
+            {
+                setAiming(false);
+                return;
+            }
+
+            if (event.code == KeyCode::F8 && isShiftHeld(frame))
+            {
+                gpuWorld = !gpuWorld;
+                return;
+            }
+
+            if (event.code == KeyCode::F7 && isShiftHeld(frame))
+            {
+                predictAim = !predictAim;
+                return;
+            }
+
+            if (auto key = toDoomKey(event.code); key != Doom::Key::Unknown)
+                Doom::keyDown(key);
+
+            return;
+
+        case InputEventType::KeyUp:
+            if (auto key = toDoomKey(event.code); key != Doom::Key::Unknown)
+                Doom::keyUp(key);
+
+            return;
+
+        case InputEventType::MouseDown:
+            // The click that locks the mouse is not a shot.
+            if (!isAiming())
+                setAiming(true);
+            else
+                Doom::buttonDown(toDoomButton(button));
+
+            return;
+
+        case InputEventType::MouseUp:
+            if (isAiming())
+                Doom::buttonUp(toDoomButton(button));
+
+            return;
+
+        case InputEventType::MouseMove:
+            // Taken whole from the frame's summed delta instead.
+            return;
+    }
 }
 
-void View::mouseDragged(const Graphics::MouseEvent& event)
+// One line whenever the feed changes, so a run says which one is live: on macOS
+// GameController takes the keys over from the window on the first key it sees.
+void View::reportInputBackend()
 {
-    aim(event);
+    auto name = input->backendName();
+
+    if (name == inputBackend)
+        return;
+
+    inputBackend = name;
+    Doom::host().print("PureDoom: input backend: " + inputBackend + "\n");
 }
 
 // Whether the mouse is currently the player's aim rather than a pointer: the
@@ -750,12 +780,9 @@ bool View::isAiming() const
     return host != nullptr && host->isMouseLocked();
 }
 
-void View::aim(const Graphics::MouseEvent& event)
+void View::setAiming(bool aiming)
 {
-    if (!isAiming())
-        return;
-
-    mouseMovement.x += event.rawDelta.x * mouseSpeed;
-    mouseMovement.y += event.rawDelta.y * mouseSpeed;
+    if (auto* host = getWindow())
+        host->setMouseLocked(aiming);
 }
 } // namespace PureDoom
