@@ -199,7 +199,7 @@ void setResolution(int width, int height);
 // storage that outlives the engine.
 void setDefaultInt(std::string_view name, int value);
 
-template<typename T>
+template <typename T>
 void setDefaultInt(std::string_view name, T value)
 {
     setDefaultInt(name, static_cast<int>(value));
@@ -235,4 +235,10 @@ void keyUp(Key key);
 void buttonDown(MouseButton button);
 void buttonUp(MouseButton button);
 void mouseMove(int deltaX, int deltaY);
+
+// A controller's movement stick, as -127..127 on each axis with y up: x
+// strafes and y walks, each at its deflection's share of the current speed
+// (the run key still decides which). It is state rather than movement, held
+// until the next call, so post it when it changes and (0, 0) to let go.
+void joystickMove(int x, int y);
 } // namespace Doom

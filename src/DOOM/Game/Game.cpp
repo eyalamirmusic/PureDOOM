@@ -260,9 +260,8 @@ void buildTiccmd(Ticcmd& cmd)
     forward = side = 0;
 
     // use two stage accelerative turning
-    // on the keyboard and joystick
-    if (input.joyxmove < 0 || input.joyxmove > 0
-        || input.gamekeydown[config.key_right] || input.gamekeydown[config.key_left])
+    // on the keyboard
+    if (input.gamekeydown[config.key_right] || input.gamekeydown[config.key_left])
         input.turnheld += net.ticdup;
     else
         input.turnheld = 0;
@@ -283,20 +282,12 @@ void buildTiccmd(Ticcmd& cmd)
         {
             side -= speeds.sidemove[speed];
         }
-        if (input.joyxmove > 0)
-            side += speeds.sidemove[speed];
-        if (input.joyxmove < 0)
-            side -= speeds.sidemove[speed];
     }
     else
     {
         if (input.gamekeydown[config.key_right])
             cmd.angleturn -= speeds.angleturn[tspeed];
         if (input.gamekeydown[config.key_left])
-            cmd.angleturn += speeds.angleturn[tspeed];
-        if (input.joyxmove > 0)
-            cmd.angleturn -= speeds.angleturn[tspeed];
-        if (input.joyxmove < 0)
             cmd.angleturn += speeds.angleturn[tspeed];
     }
 
@@ -308,10 +299,15 @@ void buildTiccmd(Ticcmd& cmd)
     {
         forward -= speeds.forwardmove[speed];
     }
-    if (input.joyymove < 0)
-        forward += speeds.forwardmove[speed];
-    if (input.joyymove > 0)
-        forward -= speeds.forwardmove[speed];
+
+    // The stick is analog where 1993's joystick was a switch: a deflection is
+    // that share of the speed the run key picks, so a half push walks at half
+    // pace. Its x strafes rather than turns - the host turns through the mouse
+    // - and its y is negative forward, as the DOS joystick's was.
+    forward +=
+        speeds.forwardmove[speed] * -input.joyymove / TiccmdInput::joystickRange;
+    side += speeds.sidemove[speed] * input.joyxmove / TiccmdInput::joystickRange;
+
     if (input.gamekeydown[config.key_straferight])
         side += speeds.sidemove[speed];
     if (input.gamekeydown[config.key_strafeleft])

@@ -75,10 +75,13 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 # still links nothing but this header-only target.
 include(CPM)
 
+# jp/gamepad rather than main while GameInput's gamepads - which the controller
+# support in examples/EACP/Gamepad.h is built on - are still on that branch;
+# back to main when it merges.
 CPMAddPackage(
         NAME eacp
         GITHUB_REPOSITORY eyalamirmusic/eacp
-        GIT_TAG main
+        GIT_TAG jp/gamepad
         OPTIONS
         "EACP_BUILD_GRAPHICS ${PUREDOOM_BUILD_EACP_EXAMPLE}"
         "EACP_BUILD_WEBVIEW OFF")

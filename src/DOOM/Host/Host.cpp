@@ -19,6 +19,12 @@
 // which are plain Win32 - winsock.h reached them only by including windows.h on
 // its way past, while also declaring Winsock *1*, which then conflicts with the
 // <WinSock2.h> in Host/Net.cpp if the two ever meet in one translation unit.
+//
+// NOMINMAX because eacp's Environment.h below reaches EA::Vector, which spells
+// std::numeric_limits<int>::max() - a call windows.h's max macro otherwise eats.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #else
 #include <sys/time.h>

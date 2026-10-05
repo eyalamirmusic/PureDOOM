@@ -291,6 +291,18 @@ bool wipeIncoming(std::span<std::uint8_t> outIncoming);
 // the engine has to scale by the same amount or the two disagree.
 int mouseSensitivity();
 
+// Whether the menu is up, and whether it is waiting on a yes-or-no prompt
+// (quit, start a new game over this one): a controller's buttons mean menu
+// things while the first is true and answer the prompt while the second is.
+bool menuActive();
+bool promptActive();
+
+// The weapon slot - the keyboard's digit, 1 to 7 - one step from the one the
+// console player holds or is changing to, in `direction` (+1 next, -1
+// previous), skipping the slots they have nothing in. The player's own slot
+// when it is the only one, and 0 when there is no player.
+int weaponStepSlot(int direction);
+
 // Where the engine has the player standing as of the last tic, which between
 // tics is not where the frame is drawn from - see View::viewCamera, which
 // interpolates across the tic this one ends.

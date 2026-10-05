@@ -255,4 +255,16 @@ void mouseMove(int deltaX, int deltaY)
         postEvent(event);
     }
 }
+
+void joystickMove(int x, int y)
+{
+    Event event;
+
+    event.type = EventType::Joystick;
+    event.data1 = 0;
+    event.data2 = x;
+    event.data3 = -y;
+
+    postEvent(event);
+}
 } // namespace Doom

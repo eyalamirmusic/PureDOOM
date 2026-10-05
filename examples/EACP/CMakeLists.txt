@@ -39,6 +39,7 @@ add_executable(PureDoomEACP
         DoomShader.h
         EngineAccess.h
         FuzzShader.h
+        Gamepad.h
         HudFuzzShader.h
         HudShader.h
         Input.h
