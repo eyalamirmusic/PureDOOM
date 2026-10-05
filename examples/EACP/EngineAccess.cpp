@@ -1699,6 +1699,76 @@ int mouseSensitivity()
     return Doom::menuSettings().mouseSensitivity;
 }
 
+bool menuActive()
+{
+    return Doom::overlayState().menuactive;
+}
+
+bool promptActive()
+{
+    return Doom::menuState().messageToPrint != 0;
+}
+
+// The slot each weapon answers to on the keyboard: two share 1 and two share
+// 3, which the engine toggles between on a second press.
+static int weaponSlot(Doom::WeaponType weapon)
+{
+    using Weapon = Doom::WeaponType;
+
+    switch (weapon)
+    {
+        case Weapon::Fist:
+        case Weapon::Chainsaw:
+            return 1;
+        case Weapon::Pistol:
+            return 2;
+        case Weapon::Shotgun:
+        case Weapon::SuperShotgun:
+            return 3;
+        case Weapon::Chaingun:
+            return 4;
+        case Weapon::Missile:
+            return 5;
+        case Weapon::Plasma:
+            return 6;
+        case Weapon::Bfg:
+            return 7;
+        default:
+            return 0;
+    }
+}
+
+static bool holdsWeaponInSlot(const Doom::Player& player, int slot)
+{
+    for (auto weapon = 0; weapon < Doom::numWeapons; ++weapon)
+        if (player.weaponowned[weapon]
+            && weaponSlot((Doom::WeaponType) weapon) == slot)
+            return true;
+
+    return false;
+}
+
+int weaponStepSlot(int direction)
+{
+    constexpr auto slots = 7;
+
+    auto& players = Doom::playerState();
+    const auto& player = players.players[players.consoleplayer];
+    const auto changingTo = player.pendingweapon != Doom::WeaponType::NoChange;
+    const auto current = changingTo ? player.pendingweapon : player.readyweapon;
+    auto slot = weaponSlot(current);
+
+    for (auto step = 0; step < slots; ++step)
+    {
+        slot = (slot - 1 + direction + slots) % slots + 1;
+
+        if (holdsWeaponInSlot(player, slot))
+            return slot;
+    }
+
+    return 0;
+}
+
 Camera camera()
 {
     const auto& player = displayPlayer();

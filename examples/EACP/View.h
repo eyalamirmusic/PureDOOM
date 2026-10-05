@@ -4,6 +4,7 @@
 #include "AutomapShader.h"
 #include "CaptureShader.h"
 #include "FuzzShader.h"
+#include "Gamepad.h"
 #include "HudFuzzShader.h"
 #include "HudShader.h"
 #include "Input.h"
@@ -192,10 +193,17 @@ struct View final : GPU::GPUView
     // movement is gathered for flushMouse to post once the tic is due. Every
     // refresh rather than every tic, because the aim runs ahead on the movement
     // gathered so far (pendingTurn).
-    void pollInput();
+    void pollInput(double frameSeconds);
     void handleInputEvent(const Graphics::GameInputFrame& frame,
                           const Graphics::InputEvent& event);
     void reportInputBackend();
+
+    // The first controller in the frame, as the DOOM keys it stands for
+    // (Gamepad.h) and as mouse movement for the right stick. The keys are
+    // posted as edges against what the pad held last frame, so a stick that
+    // stays pushed is one key down, not one a frame.
+    void pollGamepad(const Graphics::GameInputFrame& frame, double frameSeconds);
+    void holdGamepadKeys(const DoomKeySet& keys);
 
     bool isAiming() const;
     void setAiming(bool aiming);
@@ -293,5 +301,10 @@ struct View final : GPU::GPUView
     // over.
     Graphics::GameInput* input = nullptr;
     std::string inputBackend;
+
+    // What the controller is holding down on the engine's keyboard, and the
+    // weapon digit a shoulder press chose, held for as long as the button is.
+    DoomKeySet gamepadKeysHeld;
+    Doom::Key weaponStepKeyHeld = Doom::Key::Unknown;
 };
 } // namespace PureDoom

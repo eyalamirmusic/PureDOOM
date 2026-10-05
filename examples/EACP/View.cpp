@@ -115,7 +115,7 @@ void View::prepareTargetShader(GPU::ShaderProgram& shader,
                    blend,
                    GPU::pixelFormatFor(worldTargetFormat));
 }
-void View::update(Threads::FrameTime)
+void View::update(Threads::FrameTime time)
 {
     // Ahead of the early return below: the device wants feeding on every
     // refresh, not only on the ones a tic falls on.
@@ -123,7 +123,7 @@ void View::update(Threads::FrameTime)
 
     // Ahead of it too: the buttons are posted as they arrive, and the movement
     // gathered here is what the aim runs ahead on between tics.
-    pollInput();
+    pollInput(time.delta);
 
     // One reading of the engine's clock answers both of the questions the
     // frame has for it: whether a tic is due, and how far into the tic the
@@ -670,7 +670,7 @@ GPU::Texture& View::textureFor(int id)
     return *slot;
 }
 
-void View::pollInput()
+void View::pollInput(double frameSeconds)
 {
     if (input == nullptr)
         return;
@@ -680,6 +680,8 @@ void View::pollInput()
 
     for (const auto& event: frame.events())
         handleInputEvent(frame, event);
+
+    pollGamepad(frame, frameSeconds);
 
     // The device's own movement, not the pointer's: the system's acceleration
     // curve is there to help a cursor reach a target, and through it the same
@@ -755,6 +757,59 @@ void View::handleInputEvent(const Graphics::GameInputFrame& frame,
             // Taken whole from the frame's summed delta instead.
             return;
     }
+}
+
+void View::pollGamepad(const Graphics::GameInputFrame& frame, double frameSeconds)
+{
+    if (frame.gamepadsChanged())
+        Doom::host().print("PureDoom: " + std::to_string(frame.gamepads().size())
+                           + " gamepad(s) connected\n");
+
+    if (frame.gamepads().empty())
+    {
+        holdGamepadKeys({});
+        weaponStepKeyHeld = Doom::Key::Unknown;
+        return;
+    }
+
+    // The first pad is the player's; a second one plugged in waits its turn.
+    const auto& pad = frame.gamepads()[0];
+    const auto prompt = Engine::promptActive();
+    const auto context = GamepadContext {Engine::menuActive() || prompt, prompt};
+
+    if (context.menu)
+    {
+        holdGamepadKeys(gamepadKeys(pad, context, Doom::Key::Unknown));
+        return;
+    }
+
+    if (auto step = weaponStep(pad); step != 0)
+        weaponStepKeyHeld = weaponDigitKey(Engine::weaponStepSlot(step));
+    else if (!weaponStepHeld(pad))
+        weaponStepKeyHeld = Doom::Key::Unknown;
+
+    holdGamepadKeys(gamepadKeys(pad, context, weaponStepKeyHeld));
+
+    // Into the same gathering as the mouse, so the aim runs ahead on it the
+    // same way and flushMouse posts it on the tic.
+    mouseMovement.x += aimMovement(pad, frameSeconds);
+}
+
+void View::holdGamepadKeys(const DoomKeySet& keys)
+{
+    const auto pressed = keys & ~gamepadKeysHeld;
+    const auto released = gamepadKeysHeld & ~keys;
+
+    for (auto bit = std::size_t {0}; bit < keys.size(); ++bit)
+    {
+        if (released[bit])
+            Doom::keyUp(keyFromBit(bit));
+
+        if (pressed[bit])
+            Doom::keyDown(keyFromBit(bit));
+    }
+
+    gamepadKeysHeld = keys;
 }
 
 // One line whenever the feed changes, so a run says which one is live: on macOS
