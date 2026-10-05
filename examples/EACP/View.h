@@ -70,6 +70,11 @@ struct View final : GPU::GPUView
     // at once, as vanilla's Doom::startTic does.
     void flushMouse();
 
+    // The left stick's reading to the engine, when it changed since the last
+    // tic: like the mouse, the engine takes joystick state from the last
+    // event it saw, so one a tic is as good as one a refresh.
+    void flushStick();
+
     void render(GPU::Frame& frame) override;
 
     // What the menu darkens behind itself. The status bar needs none of it: the
@@ -306,5 +311,11 @@ struct View final : GPU::GPUView
     // weapon digit a shoulder press chose, held for as long as the button is.
     DoomKeySet gamepadKeysHeld;
     Doom::Key weaponStepKeyHeld = Doom::Key::Unknown;
+
+    // The left stick as the frame last read it, and as the engine last heard
+    // it: joystick state is posted on the tic, with the mouse, and only when
+    // it moved.
+    StickMove stickMove;
+    StickMove stickMovePosted;
 };
 } // namespace PureDoom

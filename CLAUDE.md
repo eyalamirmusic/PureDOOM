@@ -1729,26 +1729,32 @@ cover. Which feed is live is printed once per change (`PureDoom: input backend: 
 on macOS it reads `Window events` at launch and moves to GameController once that
 backend delivers its first key or mouse movement.
 
-**A controller drives the same two inputs**, and the engine never learns a pad
-exists: `Gamepad.h` turns the first pad in each snapshot into the DOOM keys it stands
-for and `View::pollGamepad` posts only the *edges* against what the pad held last
-frame (`holdGamepadKeys`, a 256-bit set per frame), so a stick that stays pushed is
-one key down. The right stick is added to `mouseMovement` like the mouse — so the
-aim runs ahead on it too and `flushMouse` posts it on the tic — with a dead zone and
-a squared curve, scaled by the engine's own mouse sensitivity. In a level the left
-stick is WASD (running past `stickRunsAt`, or on the left trigger), the right
-trigger fires (Ctrl), South uses (Space), Start is Escape, Back is Tab, the D-pad is
-W/S and the turn arrows, and the shoulders or West/North step through the weapon
-slots the player holds — `Engine::weaponStepSlot` reads `weaponowned` and
-`readyweapon`, and the digit stays held while the button is, since a key down and
-up inside one tic never reaches `gamekeydown`. In the menu (`Engine::menuActive`)
-the D-pad and stick are the arrows, South is Enter — Y while a prompt is up
-(`Engine::promptActive`) — and East or Start is Escape; the stick turns nothing
-there, since the menu reads mouse x as a slider nudge. The pad's keys and the
-keyboard's share `gamekeydown`, so a stick returning to centre releases a W the
-keyboard is also holding; that is the trade for keeping the engine unaware.
-Gamepads come from eacp's `GameInput` (GameController on Apple, XInput on Windows)
-and need the `jp/gamepad` branch the root `CMakeLists.txt` pins until it merges.
+**A controller drives three inputs the engine already reads.** `Gamepad.h` turns
+the first pad in each snapshot into the DOOM keys its buttons stand for and
+`View::pollGamepad` posts only the *edges* against what the pad held last frame
+(`holdGamepadKeys`, a 256-bit set per frame), so a held button is one key down. The
+right stick is added to `mouseMovement` like the mouse — so the aim runs ahead on it
+too and `flushMouse` posts it on the tic — with a dead zone and a curve that climbs
+faster than the push, scaled by the engine's own mouse sensitivity. The left stick is
+the engine's **joystick**, which `buildTiccmd` now reads as analog where vanilla
+read only its sign: `Doom::joystickMove(x, y)` posts -127..127 per axis, x strafes
+and y walks at that share of the speed the run key picks, so a half push walks at
+half pace and the left trigger (Shift) sprints as the keyboard does. It is state
+rather than movement, so `View::flushStick` posts it on the tic only when it changed,
+and (0, 0) as the menu opens, since the world keeps running behind the menu. No demo
+carries a joystick event, so the goldens are untouched. In a level the right trigger
+fires (Ctrl), South uses (Space), Start is Escape, Back is Tab, the D-pad is W/S and
+the turn arrows, and the shoulders or West/North step through the weapon slots the
+player holds — `Engine::weaponStepSlot` reads `weaponowned` and `readyweapon`, and the
+digit stays held while the button is, since a key down and up inside one tic never
+reaches `gamekeydown`. In the menu (`Engine::menuActive`) the D-pad and stick are the
+arrows, South is Enter — Y while a prompt is up (`Engine::promptActive`) — and East or
+Start is Escape; the right stick turns nothing there, since the menu reads mouse x as
+a slider nudge. The pad's keys and the keyboard's share `gamekeydown`, so a D-pad
+release lets go of a W the keyboard is also holding; that is the trade for keeping
+the engine's keyboard unaware. Gamepads come from eacp's `GameInput` (GameController
+on Apple, XInput on Windows) and need the `jp/gamepad` branch the root
+`CMakeLists.txt` pins until it merges.
 
 ### What the engine expects of its host
 

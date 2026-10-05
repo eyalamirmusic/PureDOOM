@@ -45,7 +45,11 @@ struct TiccmdInput
     int dclickstate2 = 0;
     int dclicks2 = 0;
 
-    int joyxmove = 0; // joystick movement, repeated each tic
+    // A controller's movement stick, state until the next Joystick event:
+    // -joystickRange..joystickRange on each axis, y negative forward as the
+    // DOS joystick's was. Analog, where vanilla read only the sign.
+    static constexpr int joystickRange = 127;
+    int joyxmove = 0;
     int joyymove = 0;
     Array<bool, 5> joyarray = {}; // joystick button state (joybuttons views &[1])
 };

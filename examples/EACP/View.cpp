@@ -141,6 +141,7 @@ void View::update(Threads::FrameTime time)
 
     lastTic = tic;
     flushMouse();
+    flushStick();
 
     previousCamera = currentCamera;
     previousHud = hud;
@@ -206,6 +207,14 @@ void View::flushMouse()
     // away to nothing.
     mouseMovement.x -= (float) x;
     mouseMovement.y -= (float) y;
+}
+void View::flushStick()
+{
+    if (stickMove == stickMovePosted)
+        return;
+
+    Doom::joystickMove(stickMove.x, stickMove.y);
+    stickMovePosted = stickMove;
 }
 void View::render(GPU::Frame& frame)
 {
@@ -769,6 +778,7 @@ void View::pollGamepad(const Graphics::GameInputFrame& frame, double frameSecond
     {
         holdGamepadKeys({});
         weaponStepKeyHeld = Doom::Key::Unknown;
+        stickMove = {};
         return;
     }
 
@@ -777,11 +787,16 @@ void View::pollGamepad(const Graphics::GameInputFrame& frame, double frameSecond
     const auto prompt = Engine::promptActive();
     const auto context = GamepadContext {Engine::menuActive() || prompt, prompt};
 
+    // The menu takes the stick as its arrows and the engine keeps running
+    // behind it, so the player stops walking as it opens.
     if (context.menu)
     {
         holdGamepadKeys(gamepadKeys(pad, context, Doom::Key::Unknown));
+        stickMove = {};
         return;
     }
+
+    stickMove = moveStick(pad);
 
     if (auto step = weaponStep(pad); step != 0)
         weaponStepKeyHeld = weaponDigitKey(Engine::weaponStepSlot(step));
