@@ -78,7 +78,7 @@ include(CPM)
 CPMAddPackage(
         NAME eacp
         GITHUB_REPOSITORY eyalamirmusic/eacp
-        GIT_TAG main
+        GIT_TAG develop
         OPTIONS
         "EACP_BUILD_GRAPHICS ${PUREDOOM_BUILD_EACP_EXAMPLE}"
         "EACP_BUILD_WEBVIEW OFF")
