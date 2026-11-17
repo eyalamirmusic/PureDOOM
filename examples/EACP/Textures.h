@@ -2,6 +2,8 @@
 
 #include "Common.h"
 
+#include <cassert>
+
 namespace PureDoom
 {
 // How a texture is sampled is not set here: it belongs to the shader that
@@ -96,6 +98,10 @@ inline GPU::Texture makeWorldTarget(int width, int height)
 // stops on D3D12, which is the trap the gap log's entry 7 records.
 inline GPU::Texture makeScreenCapture(int width, int height)
 {
+    assert(GPU::pixelFormatFor(captureTargetFormat) == GPU::PixelFormat::BGRA8Unorm
+           && "the capture is drawn into by shaders prepared for the drawable, "
+              "whose colour format is ShaderProgram::prepare's default");
+
     auto descriptor = GPU::TextureDescriptor {};
     descriptor.width = width;
     descriptor.height = height;

@@ -754,6 +754,13 @@ void View::handleInputEvent(const Graphics::GameInputFrame& frame,
         case InputEventType::MouseMove:
             // Taken whole from the frame's summed delta instead.
             return;
+
+        case InputEventType::GamepadConnected:
+        case InputEventType::GamepadDisconnected:
+        case InputEventType::GamepadDown:
+        case InputEventType::GamepadUp:
+            // The port has no gamepad mapping yet.
+            return;
     }
 }
 

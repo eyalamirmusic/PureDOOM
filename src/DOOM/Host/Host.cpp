@@ -2,9 +2,17 @@
 // macro; it reaches this file only because CMake adds -DWIN32 for MSVC-style
 // drivers. It is load-bearing: the default file I/O below is fopen/fread/fseek,
 // which Microsoft's CRT deprecates in favour of its _s variants.
+//
+// NOMINMAX because <windows.h> below would otherwise define min and max as
+// macros, and the eacp headers included after it reach cpp_data_structures'
+// Span.h, whose std::numeric_limits<int>::max() the macro then breaks. eacp's own
+// Core/Utils/WinInclude.h sets it for the same reason.
 #if defined(_WIN32)
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #endif
 
 #include "Host.h"

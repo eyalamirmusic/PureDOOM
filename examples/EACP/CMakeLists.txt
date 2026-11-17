@@ -13,7 +13,7 @@ include(CPM)
 CPMAddPackage(
         NAME MakeASound
         GITHUB_REPOSITORY eyalamirmusic/MakeASound
-        GIT_TAG main)
+        GIT_TAG develop)
 
 # eacp only runs eacp_default_setup() when it is the top-level project, so as
 # a CPM dependency it never sets the bundle plist template that

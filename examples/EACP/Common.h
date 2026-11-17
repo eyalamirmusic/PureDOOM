@@ -53,13 +53,10 @@ constexpr auto worldTargetSamples = 1;
 // Unlike the world target this one is drawn into by the *same* shaders that draw
 // onto the drawable - the resolve, the weapon, the status bar strip, the overlay
 // - which are prepared once, for the drawable. So its format is not a choice:
-// it has to be the one those pipelines already name.
+// it has to be the one those pipelines already name. makeScreenCapture checks
+// that (Textures.h) - at run time, since eacp's pixelFormatFor is no longer
+// constexpr.
 constexpr auto captureTargetFormat = GPU::TextureFormat::BGRA8Unorm;
-
-static_assert(GPU::pixelFormatFor(captureTargetFormat)
-                  == GPU::PixelFormat::BGRA8Unorm,
-              "the capture is drawn into by shaders prepared for the drawable, "
-              "whose colour format is ShaderProgram::prepare's default");
 
 // Ceilings for one frame of geometry; a shareware level fills a small fraction.
 constexpr auto maxVertices = 262144;
